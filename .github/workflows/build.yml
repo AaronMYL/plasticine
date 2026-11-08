@@ -250,6 +250,9 @@ jobs:
           version=$(defaults read "$PWD/$app/Contents/Info.plist" CFBundleShortVersionString)
           updates="$HOME/Library/Application Support/Plasticine/Desktop/updates"
           mkdir -p "$updates" && date > "$updates/adopt-$version"
+          # 第一次打开先二选一（11-08）：CI 上替他选「在这台电脑上用」，好等本机本体。
+          printf '{"schema":1,"server":{"mode":"this_computer","remoteUrl":null},"serverChosen":true,"notifications":true,"devicePaused":false,"roots":["%s"]}\n' \
+            "$HOME" > "$HOME/Library/Application Support/Plasticine/Desktop/settings.json"
           open -n "$app"
           for _ in $(seq 1 120); do
             if curl -fsS --max-time 2 http://127.0.0.1:8790/v2/health; then
@@ -334,6 +337,12 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           $Setup = "desktop/release/Plasticine-Desktop-Setup-$env:VERSION.exe"
+          # 第一次打开先二选一（11-08）：CI 上替他选「在这台电脑上用」，好等本机本体。
+          $Desk = Join-Path $env:LOCALAPPDATA "Plasticine\Desktop"
+          New-Item -ItemType Directory -Force -Path $Desk | Out-Null
+          $Settings = @{ schema = 1; server = @{ mode = "this_computer"; remoteUrl = $null }; serverChosen = $true;
+            notifications = $true; devicePaused = $false; roots = @($env:USERPROFILE) }
+          $Settings | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8NoBOM (Join-Path $Desk "settings.json")
           Start-Process -FilePath $Setup -ArgumentList "/S", "--force-run" -Wait
           for ($i = 0; $i -lt 120; $i++) {
             try {
