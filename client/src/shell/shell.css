@@ -1,0 +1,302 @@
+/* 两层侧栏的壳（11-07）：图标栏 72（--layer-bar）· 第二栏 252（--layer-side）· 主区（--bg）；对话框浮在最上面。 */
+
+.shell {
+  display: flex;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ---------- 主区：Sheet 的遮罩只盖这里 ---------- */
+
+.shell-main-area {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  container: workspace / inline-size;
+}
+
+.shell-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+/* ---------- 对话框（悬浮，样式在 frame.css）---------- */
+
+.chat-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 8px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* 对话框跟着当前标签：顶栏是那个标签的图标（--fg2）和标题（区块标题 15/24·600，一行省略）。 */
+.chat-head-tab {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  color: var(--fg2);
+}
+
+.chat-head-tab > svg {
+  flex: none;
+}
+
+.chat-head-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 收起后的浮动圆球：原对话栏位置底部最右边，48px，距右、距底各 24；在 Sheet 之上。 */
+.chat-ball {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow: var(--lift);
+  cursor: pointer;
+}
+
+.chat-ball:focus-visible,
+.phone-chat-button:focus-visible,
+.phone-tab:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* 对话圆球在右下角：贴右边、拉满高的浮层底下让出它；偏左、随内容高的（sheet-fit）碰不到球，不让。 */
+.shell:has(.chat-ball) .sheet-panel:not(.sheet-fit) .sheet-body {
+  padding-bottom: calc(48px + 24px + 16px);
+}
+
+.chat-ball-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 手机 ---------- */
+
+.shell[data-phone='true'] {
+  flex-direction: column;
+}
+
+.shell[data-phone='true'] .shell-main-area {
+  flex: 1;
+  min-height: 0;
+}
+
+.phone-bar {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: calc(64px + env(safe-area-inset-bottom));
+  padding: 8px 4px env(safe-area-inset-bottom);
+  border-top: 1px solid var(--line);
+  background: var(--layer-side);
+}
+
+.phone-tab {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  color: var(--fg2);
+  font-size: 11px;
+  line-height: 14px;
+  cursor: pointer;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.phone-tab[aria-current='page'] {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.phone-chat-button {
+  position: fixed;
+  right: 16px;
+  bottom: calc(56px + 16px + env(safe-area-inset-bottom));
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow: var(--lift);
+  cursor: pointer;
+}
+
+@keyframes tip-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-tooltip {
+    animation: none;
+  }
+}
+
+.phone-bar { transition: transform 120ms ease; }
+.phone-bar[data-hidden='true']:not(:focus-within) { transform: translateY(100%); }
+@media (prefers-reduced-motion: reduce) {
+  .phone-bar { transition: none; }
+}
+
+.content-located { outline: 2px solid var(--fg2); outline-offset: 4px; animation: content-located 220ms ease-out; }
+@keyframes content-located { from { background-color: var(--tint2); } }
+@media (prefers-reduced-motion: reduce) { .content-located { animation: none; } }
+
+/* Windows 的窗口按钮在右上角：壳报来要让出多宽（WindowChrome.controlsRight，壳量出来的），主区顶上一行右边让开它再加 16；
+   不报就不让。 */
+.shell[data-window-controls='right'] .shell-main-area [data-titlebar] {
+  padding-right: calc(var(--window-controls) + 16px);
+}
+
+/* 手机底栏「更多」上的点、抽屉（设计稿 Phone-More）：四格类别色图标块 + 名字，下面一行设置。 */
+.phone-tab-dot {
+  position: absolute;
+  top: 6px;
+  left: calc(50% + 8px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.phone-tab .plasticine-mark {
+  flex: none;
+}
+
+.more-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.more-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.more-tile:active {
+  background: var(--tint);
+}
+
+.more-tile-dot {
+  position: absolute;
+  top: 6px;
+  left: calc(50% + 14px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  outline: 2px solid var(--layer-float);
+}
+
+.more-settings {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.more-settings > svg:first-child {
+  color: var(--fg2);
+}
+
+.more-settings > span {
+  flex: 1;
+}
+
+.more-settings > svg:last-child {
+  color: var(--fg3);
+}
+
+/* 「更多」抽屉只有把手，不要标题行（设计稿 Phone-More）；读屏照样念「更多」。 */
+.more-drawer .sheet-head {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.more-drawer .sheet-body {
+  padding: 6px 16px calc(24px + env(safe-area-inset-bottom));
+}

@@ -1,0 +1,25 @@
+# 在一台自己的服务器上用 Caddy 对外的示例（中继独立以前的写法：Caddy 自己占 443 / 80）。
+# 把 you.example.com 换成你的域名（或公网 IP；用 IP 时 Let's Encrypt 只发 shortlived 配置档的证书，约 6 天，Caddy 自动续）。
+# /v2/* 反代到本机的 app（只听 127.0.0.1:8790）；其余路径是客户端构建产物，放在
+# /var/www/plasticine/<版本>，current 指向在用的那一版。
+# 装好的安装包（docs/install-packages.md）自己发客户端，不需要这份文件；它只给想用 Caddy 挡在前面的部署参考。
+
+you.example.com {
+	header {
+		Strict-Transport-Security "max-age=300"
+		X-Content-Type-Options nosniff
+	}
+	handle /v2/* {
+		reverse_proxy 127.0.0.1:8790
+	}
+	handle {
+		root * /var/www/plasticine/current
+		# 带哈希的构建产物可以长缓存；入口页每次都要问一下，换版才能马上生效。
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@entry not path /assets/*
+		header @entry Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

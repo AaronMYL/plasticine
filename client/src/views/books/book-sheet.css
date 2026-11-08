@@ -1,0 +1,348 @@
+/* 「<书名> · 标注与讨论」浮层，目录、在书里找两个小浮层。 */
+
+/* ---------- 「标注与讨论」浮层 ---------- */
+.bk-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bk-sheet-tabs {
+  align-self: flex-start;
+}
+
+.bk-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bk-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.bk-filter .chip-button[aria-pressed='true'] {
+  background: var(--tint2);
+  font-weight: 500;
+}
+
+.bk-sheet .grow,
+.bk-ann-meta .grow {
+  flex: 1;
+}
+
+.bk-ann-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.bk-group-title {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  color: var(--fg2);
+  white-space: pre-wrap;
+}
+
+.bk-ann-list,
+.bk-disc-list,
+.bk-toc,
+.bk-hits,
+.bk-outline,
+.bk-keys {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bk-ann {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.bk-ann-quote {
+  margin: 0;
+  padding-left: 12px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+/* 左边那条线用这条高亮的颜色（tokens.css 的 --hl-*，第 100 条）。 */
+.bk-ann-quote.is-hl {
+  border-left: 3px solid var(--hl-ochre);
+}
+
+.bk-ann-quote.is-hl[data-c='sage'] {
+  border-left-color: var(--hl-sage);
+}
+
+.bk-ann-quote.is-hl[data-c='slate'] {
+  border-left-color: var(--hl-slate);
+}
+
+.bk-ann-quote.is-hl[data-c='rose'] {
+  border-left-color: var(--hl-rose);
+}
+
+.bk-ann-quote.is-ai {
+  border-left: 1px solid var(--fg3);
+}
+
+.bk-ann-note {
+  margin: 0;
+  padding-left: 12px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.bk-ann-note > span {
+  margin-right: 12px;
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.bk-ann-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding-left: 12px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.bk-disc {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.bk-disc-q,
+.bk-disc-a {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.bk-disc-a {
+  color: var(--fg2);
+}
+
+.bk-disc .bk-ann-meta {
+  padding-left: 0;
+}
+
+.bk-provenance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.bk-mark-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.bk-mark-toggle input {
+  accent-color: var(--fg);
+}
+
+.bk-generating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.bk-insight-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.bk-ol-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  padding: 12px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.bk-ol-row[aria-current='true'] {
+  background: var(--tint2);
+}
+
+.bk-ol-row:hover {
+  background: var(--tint);
+}
+
+.bk-ol-vol {
+  font-size: 12px;
+  line-height: 22px;
+  color: var(--fg2);
+}
+
+.bk-ol-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bk-ol-title {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.bk-ol-summary {
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--fg2);
+}
+
+.bk-ol-points {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.bk-ol-point::before {
+  content: '·';
+  margin-right: 8px;
+  color: var(--fg2);
+}
+
+.bk-key {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.bk-key:disabled {
+  cursor: default;
+}
+
+.bk-key-n {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.bk-key-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.bk-key-src {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.bk-regenerate {
+  align-self: flex-start;
+}
+
+.bk-toc-row,
+.bk-hit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.bk-toc-row[aria-current='true'] {
+  background: var(--tint2);
+  font-weight: 500;
+}
+
+.bk-toc-row .text-meta,
+.bk-hit .text-meta {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  color: var(--fg2);
+}
+
+.bk-hit b {
+  font-weight: 600;
+}
+
+.bk-search {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 抽屉的正文区不带内边距（原语 7），这里自己留 16。 */
+.sheet-drawer .bk-sheet,
+.sheet-drawer .bk-search {
+  padding: 16px;
+}
+
+.sheet-drawer .bk-toc {
+  padding: 8px 16px 16px;
+}
+
+.sheet-drawer .bk-sheet-tabs {
+  align-self: stretch;
+}
+
+.sheet-drawer .bk-sheet-tabs .segmented-item {
+  flex: 1;
+}

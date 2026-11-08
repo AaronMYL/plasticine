@@ -1,0 +1,137 @@
+/*
+ * 「昨晚整理了什么」（11-06 第 10、16 条，设计稿 Plasticine-Dream）：页头上面一行日期和读了多少；每组一个段标题 + 数，
+ * 行首一个小符号（新加 + 用 --ok、替换 ↻ 用 --fg2、拿不准 ! 、走不通 × 用 --err），行下一行链形出处，行尾「撤销」。
+ */
+
+.memory-dream > .dream-date {
+  margin: 0 0 -22px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.dream-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dream-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.dream-glyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 22px;
+}
+
+.dream-glyph-ok {
+  color: var(--ok);
+}
+
+.dream-glyph-quiet {
+  color: var(--fg2);
+}
+
+.dream-glyph-plain {
+  color: var(--fg);
+}
+
+.dream-glyph-err {
+  color: var(--err);
+}
+
+.dream-row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dream-row-main {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.dream-row[data-undone='true'] .dream-row-main {
+  color: var(--fg2);
+  text-decoration: line-through;
+  text-decoration-color: var(--fg3);
+}
+
+.dream-row-previous {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  text-decoration: line-through;
+  text-decoration-color: var(--fg3);
+}
+
+.dream-source {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.dream-source svg {
+  flex: none;
+}
+
+.dream-row-error {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--err);
+}
+
+.dream-row-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  min-height: 22px;
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.dream-more {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  width: 100%;
+  background: transparent;
+  color: var(--fg2);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dream-more:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .dream-row {
+    flex-wrap: wrap;
+  }
+
+  .dream-row-actions {
+    margin-left: 28px;
+  }
+}

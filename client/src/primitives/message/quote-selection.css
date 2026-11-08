@@ -1,0 +1,33 @@
+.msg-selection-source {
+  position: relative;
+  min-width: 0;
+}
+
+.msg-selection-source > .msg-selection {
+  position: absolute;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  background: var(--layer-float);
+  color: var(--fg);
+  box-shadow: var(--lift);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.msg-selection-source > .msg-selection:hover {
+  background: var(--tint);
+}
+
+.msg-selection-source > .msg-selection:focus-visible {
+  outline: 2px solid var(--fg2);
+  outline-offset: 2px;
+}

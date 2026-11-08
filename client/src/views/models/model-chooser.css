@@ -1,0 +1,152 @@
+/*
+ * 选模型（设计稿 Settings-AI 的弹层）：宽 300，搜索框 32 高；分组小字 11/16 --fg2；一项 32 高、圆角 6，
+ * 选中 --tint2 底 + 勾；底下 1px 线隔开「思考」和分段控件。翻译菜单里内嵌时同样的结构，宽随菜单。
+ */
+
+.model-chooser-pop {
+  width: 300px;
+  padding: 8px;
+}
+
+.model-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.model-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.model-search > svg {
+  position: absolute;
+  left: 10px;
+  color: var(--fg2);
+  pointer-events: none;
+}
+
+.model-search > .search-input {
+  width: 100%;
+  height: 32px;
+  padding-left: 30px;
+  font-size: 13px;
+}
+
+/* 打开弹层时焦点就在搜索框：只把描边加深，不出粗框。 */
+.model-search > .search-input:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--fg2);
+}
+
+.model-chooser-list {
+  display: flex;
+  flex-direction: column;
+  max-height: min(320px, 50vh);
+  margin-top: 2px;
+  overflow-y: auto;
+}
+
+.model-chooser-group {
+  padding: 6px 8px 2px;
+  color: var(--fg2);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.model-chooser-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-chooser-option:hover,
+.model-chooser-option:focus-visible,
+.model-chooser-option[aria-selected='true'] {
+  background: var(--tint2);
+  outline: none;
+}
+
+.model-chooser-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-chooser-option > svg {
+  flex: none;
+  color: var(--fg);
+}
+
+.model-chooser-empty {
+  margin: 0;
+  padding: 8px;
+  color: var(--fg2);
+  font-size: 13px;
+}
+
+.model-chooser-thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px 0 0 8px;
+  border-top: 1px solid var(--line);
+}
+
+.model-chooser-label {
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.model-chooser-thinking .segmented {
+  flex: 1;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.model-chooser-thinking .segmented-item {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+}
+
+.model-chooser-manage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  margin-top: 4px;
+  padding: 0 8px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.model-chooser-manage:hover,
+.model-chooser-manage:focus-visible {
+  color: var(--fg);
+}

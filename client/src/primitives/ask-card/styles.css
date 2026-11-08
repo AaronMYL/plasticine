@@ -1,0 +1,211 @@
+/*
+ * 原语 2 · 要你定卡。卡中卡：透明底 + inset 1px --line2，圆角 12，padding 16，不加阴影（component-recipes「要你定卡」）。
+ * 推荐项是唯一的实底主按钮；其余描边；整行选项圆角 8 描边；「问一句」「先不」是 --fg2 文字按钮，放右下。
+ */
+
+.ask-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.ask-card > .primary-button,
+.ask-card > .text-button {
+  align-self: flex-start;
+}
+
+.ask-card > p {
+  margin: 0;
+}
+
+.ask-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ask-card-task {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  overflow-wrap: anywhere;
+}
+
+.ask-question {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ask-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ask-option {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.ask-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ask-option-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ask-option-row:hover:not(:disabled) {
+  background: var(--tint);
+}
+
+.ask-option-row:disabled {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.ask-option-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.ask-option-hint {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.ask-option-detail {
+  flex-basis: 100%;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.ask-detail {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 第 5 批：依据小签打头，后面接为什么现在问。 */
+.ask-basis .tag {
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+.ask-write {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.ask-write-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 22px;
+  resize: vertical;
+}
+
+.ask-write-input::placeholder {
+  color: var(--fg2);
+}
+
+.ask-write-input:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.ask-blocked {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.ask-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.ask-card-foot-end {
+  display: inline-flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+/* 答了的卡收成一行：小签 + 一句 + 「选择：…」，都是 --fg2 以下的分量，留在原位不抢眼。 */
+.ask-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.ask-line-question {
+  overflow-wrap: anywhere;
+}
+
+.ask-line-answer {
+  color: var(--fg);
+}
+
+.ask-line .primary-button,
+.ask-line .chip-button {
+  margin-left: auto;
+}
+
+/* 2026-11-03：要你定卡的类别图标块（取代「要你确认 · 自迭代」小签）。 */
+.ask-glyph {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.ask-glyph[data-urgent='true'] {
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--accent);
+}

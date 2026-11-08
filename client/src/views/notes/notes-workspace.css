@@ -1,0 +1,379 @@
+/* 主区变窄时先让出目录，再让出列表；正文与草稿仍在同一实例中。 */
+.notes > .page-head {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: 'title controls tools';
+  gap: 12px;
+}
+
+.notes-columns {
+  position: relative;
+  grid-template-columns: 208px 280px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.notes-columns[data-folders-visible='false'] {
+  grid-template-columns: 272px minmax(0, 1fr);
+}
+
+.notes-columns[data-list-visible='false'] {
+  grid-template-columns: 208px minmax(0, 1fr);
+}
+
+.notes-columns[data-folders-visible='false'][data-list-visible='false'],
+.notes-columns[data-layout='single'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.notes-columns:has(> .notes-folder-pending) {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.notes-folder-pending {
+  grid-column: 1 / -1;
+}
+
+.note-list[hidden],
+.notes-detail[hidden] {
+  display: none;
+}
+
+.note-list-head {
+  position: sticky;
+  top: -16px;
+  z-index: 2;
+  display: grid;
+  gap: 12px;
+  margin-top: -16px;
+  padding-block: 16px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.note-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  min-width: 0;
+  padding-inline: 4px;
+}
+
+.note-list-heading h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 22px;
+  font-weight: 500;
+}
+
+.note-list-count {
+  flex: none;
+  font: 11px / 18px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg2);
+}
+
+.note-collection-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.note-collection-toggle span,
+.note-row-folder,
+.note-current-folder {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-collection-toggle svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.note-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  color: var(--fg2);
+}
+
+.note-search .search-input {
+  min-width: 0;
+  width: 100%;
+  min-height: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  appearance: none;
+  font-size: 14px;
+}
+
+.note-search:focus-within,
+.note-collection-toggle:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.note-search .search-input:focus {
+  outline: none;
+}
+
+.note-list-item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  border-radius: 8px;
+  transition: background-color 160ms ease;
+}
+
+.note-list-item:hover {
+  background: var(--tint);
+}
+
+.note-list-item:has(> .note-row[aria-current='true']) {
+  background: var(--tint2);
+}
+
+.note-list-item .note-row {
+  min-width: 0;
+  flex: 1;
+}
+
+.note-row-title > span[aria-label='私密'] {
+  display: inline-flex;
+  vertical-align: -1px;
+  margin-right: 4px;
+  color: var(--fg2);
+}
+
+.note-list-item > .note-actions {
+  position: absolute;
+  top: 8px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+}
+
+.note-actions[data-open='true'] {
+  background: var(--tint2);
+}
+
+/* 笔记 ⋯ 的小表单（Popover role="dialog"）：上面几行动作，下面标题、文件夹各一行「字段 + 按钮」。 */
+.note-actions-pop {
+  width: 288px;
+}
+
+.note-actions-field {
+  display: grid;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.note-actions-field > label {
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.note-actions-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.note-actions-line > .popover-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.note-actions-line > .chip-button {
+  flex: none;
+  white-space: nowrap;
+}
+
+.note-actions-error {
+  margin: 4px 8px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.note-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.note-current-folder {
+  max-width: min(100%, 240px);
+}
+
+.note-meta .note-actions {
+  margin-left: auto;
+}
+
+.notes .page-head .notes-back {
+  margin: 0;
+  align-self: center;
+}
+
+.notes-detail:not([hidden]) .note-editor {
+  animation: note-content-in 180ms ease-out;
+}
+
+.note-import,
+.note-review {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+
+.note-toggle-named {
+  display: inline-flex;
+  align-items: center;
+}
+
+.note-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.note-toggle input,
+.note-change input {
+  accent-color: var(--fg);
+}
+
+.note-ai-cursor {
+  align-self: flex-start;
+  border-left: 1px solid var(--fg2);
+  padding-left: 4px;
+  color: var(--fg2);
+  font-size: 11px;
+}
+
+.note-ai-dot {
+  font-size: 16px;
+}
+
+.note-chart-block {
+  border-block: 1px solid var(--line);
+  padding: 12px 0;
+  font-size: 14px;
+}
+
+.note-import a {
+  color: inherit;
+}
+
+.note-import .note-prose {
+  min-height: 0;
+}
+
+.note-chart-block svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.note-chart-block textarea {
+  width: 100%;
+  font-family: var(--mono);
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line2);
+  resize: vertical;
+}
+
+.notes-columns[data-layout='single'] .note-list-head {
+  top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.notes-columns[data-layout='wide'] .note-pane {
+  padding-left: 32px;
+}
+
+.note-prose th,
+.note-prose td {
+  min-width: 4em;
+}
+
+.note-prose th > p,
+.note-prose td > p {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .note-search .search-input {
+    font-size: 16px;
+  }
+}
+
+/* 2026-11-04 第 2 批悬停规则：笔记行尾的 ⋯ 常显，不再悬停才出现。 */
+
+@keyframes note-content-in {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-list-item {
+    transition: none;
+  }
+
+  .notes-detail:not([hidden]) .note-editor {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .note-actions-pop .popover-item {
+    height: 40px;
+  }
+
+  .note-actions-pop .popover-field {
+    height: 40px;
+    font-size: 16px;
+  }
+}
+
+/* Plasticine 写的笔记：标题后一个 ✦（2026-11-05 设计稿 Notes）。 */
+.note-row-title .ai-mark,
+.note-meta .ai-mark {
+  margin-left: 4px;
+  vertical-align: -1px;
+}
+
+.note-meta .ai-mark {
+  margin-left: 0;
+}

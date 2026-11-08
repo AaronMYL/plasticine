@@ -1,0 +1,273 @@
+/*
+ * 设置 · AI 的模型两栏（《优化清单》第 13 条，设计稿 Settings-AI）：左「模型」右「各用哪个」，中间空 32；
+ * 栏头 15/24·600 + 右边一个小按钮或搜索框；行之间 1px --line，行高 40。窄了（手机）上下两段。
+ */
+
+.ai-models {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px 32px;
+  align-items: start;
+}
+
+.ai-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ai-pane-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  margin-bottom: 6px;
+}
+
+.ai-pane-head > h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.ai-use-search {
+  width: 150px;
+}
+
+.ai-use-search > .search-input {
+  height: 28px;
+  font-size: 13px;
+}
+
+/* ---------- 左：每家一行 ---------- */
+
+.ai-provider-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-provider {
+  border-top: 1px solid var(--line);
+  padding: 4px 0;
+}
+
+.ai-provider-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-provider-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ai-provider-toggle:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.ai-provider-toggle > svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.ai-provider-name {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ai-provider-method,
+.ai-provider-count {
+  color: var(--fg2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ai-provider-method {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-provider-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-provider-models {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0 8px 18px;
+}
+
+.ai-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-provider-model {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ai-provider-model > input {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--fg);
+}
+
+.ai-provider-model > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-add {
+  margin-bottom: 12px;
+  padding: 8px 0 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- 右：各用哪个 ---------- */
+
+.ai-use-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-use {
+  border-top: 1px solid var(--line);
+}
+
+.ai-use:focus {
+  outline: none;
+}
+
+.ai-use-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.ai-use[data-nested='true'] .ai-use-line {
+  padding-left: 16px;
+}
+
+.ai-use-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-use[data-nested='true'] .ai-use-name {
+  color: var(--fg2);
+}
+
+.ai-use-fold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ai-use-fold:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.ai-use-value {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  max-width: 62%;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ai-use-value > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-use-value[data-quiet='true'] {
+  color: var(--fg2);
+}
+
+.ai-use-value:hover,
+.ai-use-value[aria-expanded='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.ai-use-value:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.ai-use-value > svg {
+  flex: none;
+}
+
+.ai-use-issue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -6px 0 0;
+  padding: 0 8px 8px 0;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.ai-use[data-nested='true'] .ai-use-issue {
+  padding-left: 16px;
+}

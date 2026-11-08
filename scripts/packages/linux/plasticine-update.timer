@@ -1,0 +1,13 @@
+# 开机两分钟后查一次，之后每天一次；错开整点，免得所有实例同一刻去下载。
+
+[Unit]
+Description=Plasticine 每天检查更新
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1d
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

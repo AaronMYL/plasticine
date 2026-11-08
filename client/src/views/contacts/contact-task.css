@@ -1,0 +1,266 @@
+/* 联系人 · 任务卡（第 113 条）：卡中卡（--line2 描边、圆角 12、内边距 16）；五段进度 做完 --ok、正在 --run、出错 --err、
+   还没 --line2；等你的点是 glyph 的陶土橙。 */
+
+/* ---------- 任务卡 ---------- */
+
+.nt-card {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 400px;
+  gap: 12px;
+  /* 外面那一行按内容收缩（靠左 / 靠右站），百分比宽度会被压到最窄：给定 400，窄了再缩。 */
+  width: 400px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.nt-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.nt-card-head > .glyph {
+  align-self: center;
+  width: 6px;
+  height: 6px;
+}
+
+.nt-card-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.nt-deadline {
+  flex: none;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.nt-bars {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.nt-bars > span {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line2);
+}
+
+.nt-bars > span[data-state='done'] {
+  background: var(--ok);
+}
+
+.nt-bars > span[data-state='run'] {
+  background: var(--run);
+}
+
+.nt-bars > span[data-state='err'] {
+  background: var(--err);
+}
+
+.nt-status {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  text-align: left;
+}
+
+.nt-acceptance {
+  margin: 0;
+  color: var(--fg2);
+}
+
+.nt-delivery {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--line2);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.nt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nt-input {
+  width: 100%;
+}
+
+.nt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.nt-actions-gap {
+  flex: 1;
+}
+
+.nt-actions .nt-chip {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+
+/* ---------- 2026-11-05 Friend-Task-States：状态一行、计时、结果收起、提示 ---------- */
+
+.nt-card {
+  background: var(--bg);
+}
+
+.nt-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.nt-status-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nt-status-row .ai-mark {
+  vertical-align: -2px;
+}
+
+.nt-elapsed {
+  flex: none;
+  font-size: 12px;
+}
+
+.nt-ok {
+  display: inline-grid;
+  color: var(--ok);
+}
+
+.nt-delivery {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.nt-fold {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  margin: -6px 0 -4px -8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.nt-fold:hover {
+  background: var(--tint2);
+}
+
+.nt-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+.nt-actions-tight {
+  padding-top: 0;
+  margin-top: -4px;
+}
+
+.nt-actions-tight .text-button {
+  padding: 0;
+}
+
+.mention-option-label {
+  flex: 1;
+}
+
+/* 群任务卡（Group / Phone-Group）：成员小头像 +「全群 · 谁先接谁做」，谁接了一行，我来接 / 让 Plasticine 接。 */
+.gt-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.gt-claimed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.gt-claimed .gt-claimer {
+  flex: 1;
+}
+
+.gt-time {
+  color: var(--fg2);
+}
+
+.gt-claimed .gt-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg2);
+}
+
+.gt-nobody {
+  color: var(--fg2);
+  font-size: 12px;
+}
+.nt-work-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nt-work-link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+
+.nt-work-link:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 4px;
+}

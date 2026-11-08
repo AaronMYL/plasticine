@@ -1,0 +1,28 @@
+{
+  "name": "plasticine-desktop",
+  "productName": "Plasticine",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Plasticine 的 Mac / Windows 客户端（Electron 壳）",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "build": "node build/bundle.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test --test-concurrency=2 \"tests/**/*.test.ts\"",
+    "start": "node build/bundle.ts && electron .",
+    "smoke": "xvfb-run -a -s \"-screen 0 1440x900x24\" node build/smoke.ts",
+    "dist:mac": "node build/bundle.ts && electron-builder --mac -c electron-builder.json",
+    "dist:win": "node build/bundle.ts && electron-builder --win -c electron-builder.json"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0",
+    "esbuild": "0.28.2"
+  },
+  "allowScripts": {
+    "electron@45.2.3": true,
+    "esbuild@0.28.2": true,
+    "electron-winstaller": false
+  }
+}

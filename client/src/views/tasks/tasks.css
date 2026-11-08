@@ -1,0 +1,616 @@
+/* 任务栏目主区（设计稿 Tasks-Run / Tasks-Timed / Tasks-Ideas / Phone-Tasks）：标题 24/32·600，下面一列 1px 细线分开的行；
+   行高至少 46、上下 10、行间 12；小节（队友、刚做完）上空 36、标题 15/24·600；定时表四列：做什么 · 下次 96 · 上次 150 ·
+   开关和 ⋯ 76。没有卡片、没有阴影，颜色只染图标块、项目点和状态符。 */
+
+.page.tasks-main {
+  gap: 0;
+  padding-top: 44px;
+}
+
+.tasks-title {
+  margin: 0 0 20px;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.tasks-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.tasks-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.tasks-rows > li + li {
+  border-top: 1px solid var(--line);
+}
+
+.tasks-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 10px 0;
+  box-sizing: border-box;
+}
+
+.tasks-row-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tasks-row-main:focus-visible,
+.tasks-mate:focus-visible,
+.tasks-phone-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.tasks-row-inline {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tasks-row-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.tasks-row-meta,
+.tasks-row-note {
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tasks-row-note[data-error='true'] {
+  color: var(--err);
+}
+
+.tasks-lead {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+}
+
+.tasks-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.tasks-elapsed {
+  flex: none;
+  width: 44px;
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tasks-when {
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tasks-chevron {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg3);
+  cursor: pointer;
+}
+
+.tasks-recent-row > svg {
+  flex: none;
+  color: var(--fg3);
+}
+
+.tasks-section {
+  margin-top: 36px;
+}
+
+.tasks-section-title {
+  margin: 0;
+  padding-bottom: 6px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+/* 队友：一排五位，上下细线；圆形图标块 36 + 状态符 · 名字 + 一行在做什么。 */
+.tasks-mates {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.tasks-mate {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px 12px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tasks-mate-face {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tile-hue) var(--hue-wash), transparent);
+  color: var(--tile-hue);
+}
+
+.tasks-mate-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tasks-mate-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+}
+
+/* 定时表：表头 11/16·500，四列对齐。 */
+.tasks-timed-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  color: var(--fg2);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.tasks-timed-head > span:first-child {
+  flex: 1 1 auto;
+  padding-left: 40px;
+}
+
+.tasks-timed-head > span:nth-child(2),
+.tasks-timed-next {
+  flex: none;
+  width: 96px;
+}
+
+.tasks-timed-head > span:nth-child(3),
+.tasks-timed-last {
+  flex: none;
+  width: 150px;
+}
+
+.tasks-timed-head > span:nth-child(4),
+.tasks-timed-tail {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 76px;
+}
+
+.tasks-timed-what {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.tasks-timed-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tasks-timed-next {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tasks-last {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.tasks-last[data-glyph='err'] {
+  color: var(--err);
+}
+
+.tasks-timed-tail input[role='switch']:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.tasks-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 12px 40px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* 建议：图标块 · ✦ 标题 500 · 为什么 · 三个按钮。 */
+.tasks-idea {
+  align-items: flex-start;
+  padding: 14px 0;
+}
+
+.tasks-idea-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tasks-idea-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+}
+
+.tasks-idea-body > .tasks-row-meta {
+  margin-top: 2px;
+  white-space: normal;
+}
+
+.tasks-idea-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tasks-waiting {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tasks-empty {
+  margin: 0;
+  padding: 16px 0;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.tasks-error {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 8px;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* 右侧弹层：标题行是浮层自己的（名字 · 开关 · 关上），下面一项一行（标签 72 宽）。 */
+.tasks-sheet-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.tasks-field {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.tasks-field:first-child {
+  border-top: 0;
+}
+
+.tasks-field-label {
+  color: var(--fg2);
+  font-size: 13px;
+}
+
+.tasks-sheet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tasks-sheet-list li {
+  display: flex;
+  flex-direction: column;
+}
+
+.tasks-sheet-body .tasks-confirm {
+  padding: 12px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.tasks-remove {
+  align-self: flex-start;
+  margin-top: 12px;
+}
+
+/* 手机（Phone-Tasks）：标题「任务」+ 分段控件；定时一行一个，点开是底部抽屉。 */
+.tasks-segmented {
+  display: flex;
+  width: 100%;
+}
+
+.tasks-segmented .segmented-item {
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 28px;
+  text-decoration: none;
+}
+
+.tasks-phone-row {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tasks-phone-row .tasks-timed-text {
+  flex: 1 1 auto;
+}
+
+.tasks-phone-row > svg {
+  flex: none;
+  color: var(--fg3);
+}
+
+@media (max-width: 767px) {
+  .page.tasks-main {
+    padding-top: 16px;
+  }
+
+  .tasks-mates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tasks-mates > li + li {
+    border-top: 1px solid var(--line);
+  }
+
+  .tasks-mate {
+    padding-right: 0;
+  }
+
+  .tasks-elapsed {
+    display: none;
+  }
+
+  .tasks-row-inline {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+}
+
+/* 手机底部抽屉的内容区贴边了：和标题行同一个左右留白。 */
+.sheet-drawer.tasks-sheet .sheet-body {
+  padding: 4px 16px 24px;
+}
+
+/* 心跳的弹层（设计稿 Tasks-Heartbeat）：多久一次 · 模型 · 看什么（能拖、能删、一句话改）· 最近。 */
+.heartbeat-every {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.heartbeat-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg2);
+}
+
+.heartbeat-select-wrap svg {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+}
+
+/* 设计稿那样的方框：去掉系统自带的下拉箭头，换成和别处一样的小箭头。 */
+.heartbeat-select {
+  width: 120px;
+  height: 34px;
+  padding: 0 28px 0 10px;
+  border: 0;
+  border-radius: 8px;
+  appearance: none;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.heartbeat-select:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.heartbeat-model .line-model {
+  justify-content: space-between;
+  width: 220px;
+  height: 34px;
+  padding: 0 10px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: 14px;
+}
+
+.heartbeat-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.heartbeat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  border-radius: 6px;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+
+.heartbeat-item[data-over] {
+  background: var(--tint);
+}
+
+.heartbeat-grip {
+  display: grid;
+  width: 20px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg3);
+  cursor: grab;
+}
+
+.heartbeat-grip:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.heartbeat-item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.heartbeat-remove {
+  opacity: 0.55;
+}
+
+.heartbeat-item:hover .heartbeat-remove,
+.heartbeat-remove:focus-visible {
+  opacity: 1;
+}
+
+.heartbeat-say {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  margin-top: 6px;
+  padding: 0 10px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.heartbeat-say:focus-within {
+  box-shadow: inset 0 0 0 1px var(--fg2);
+}
+
+.heartbeat-say-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: 14px;
+}
+
+.heartbeat-say-input::placeholder {
+  color: var(--fg3);
+}
+
+.heartbeat-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+  list-style: none;
+}
+
+.heartbeat-recent li[data-failed] {
+  color: var(--err);
+}
+
+.heartbeat-recent-at {
+  margin-right: 12px;
+  font-family: var(--mono);
+}

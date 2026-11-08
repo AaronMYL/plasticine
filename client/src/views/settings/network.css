@@ -1,0 +1,317 @@
+/* 设置 · 账号与网络、对外可见、通知记录（第 113 条）。只用方向 I 令牌：一底一前景，陶土橙只给「等你」（建议待确认的圈、
+   「n 处等你确认」的点），选中的单选是 --fg 实心，可听到的档位是 --tint2 台阶色块。 */
+
+/* ---------- 账号与网络 ---------- */
+
+.network-join {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 32em;
+}
+
+.network-join-submit {
+  align-self: flex-start;
+}
+
+.network-me {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.network-handle {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.network-name {
+  color: var(--fg2);
+}
+
+.network-invite {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.network-invite-fresh {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  width: 100%;
+  max-width: 44em;
+  padding: 12px 8px 12px 16px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.network-invite-code {
+  grid-column: 1 / -1;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 500;
+}
+
+.network-share {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--fg2);
+  user-select: all;
+}
+
+.network-invites {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 32em;
+}
+
+.network-invite-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.network-invite-row > :first-child {
+  flex: 1;
+}
+
+.network-invite-meta {
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.network-invite-used {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg2);
+}
+
+/* ---------- 对外可见：矩阵 ---------- */
+
+.vis-head {
+  align-items: center;
+}
+
+.vis-head .block-title {
+  flex: 1;
+}
+
+.vis-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--tint2);
+  font-size: 13px;
+}
+
+.vis-matrix {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.vis-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 200px) repeat(4, minmax(48px, 88px));
+  align-items: center;
+  min-height: 40px;
+}
+
+.vis-cols {
+  min-height: 32px;
+}
+
+.vis-col {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.vis-group {
+  margin: 0;
+  padding: 12px 0 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.vis-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.vis-rule {
+  height: 1px;
+  margin: 8px 0;
+  background: var(--line);
+}
+
+.vis-head .vis-confirm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.vis-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.vis-count {
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.vis-cell {
+  display: grid;
+  place-items: center;
+}
+
+.vis-fill {
+  width: calc(100% - 16px);
+  height: 24px;
+  border-radius: 6px;
+  background: var(--tint2);
+}
+
+.vis-radio {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  cursor: pointer;
+}
+
+.vis-radio::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.vis-radio[data-state='on'] {
+  box-shadow: inset 0 0 0 1.5px var(--fg);
+}
+
+.vis-radio[data-state='on']::after {
+  background: var(--fg);
+}
+
+.vis-radio[data-state='ask'] {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.vis-radio[data-state='ask']::after {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.vis-radio:hover:not(:disabled) {
+  background: var(--tint);
+}
+
+.vis-radio:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.vis-radio:disabled {
+  cursor: default;
+}
+
+/* ---------- 通知记录 ---------- */
+
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 44em;
+}
+
+.notice-row + .notice-row {
+  border-top: 1px solid var(--line);
+}
+
+.notice-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notice-head:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.notice-row[data-read='true'] .notice-title {
+  color: var(--fg2);
+}
+
+.notice-unread {
+  background: var(--fg);
+}
+
+.notice-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice-time {
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.notice-body {
+  padding: 0 0 12px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--fg2);
+}
+
+.notice-body p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.notice-empty {
+  margin: 0;
+  color: var(--fg2);
+}

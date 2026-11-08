@@ -1,0 +1,110 @@
+/* 网页栏目没选标签时的主区：居中一个输入框（36 高、细线），下面「最近关掉的」一行一个。 */
+
+.web-start {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 96px 40px 40px;
+}
+
+.web-start-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.web-start-form:focus-within {
+  box-shadow: inset 0 0 0 1px var(--fg2);
+}
+
+.web-start-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 16px;
+}
+
+.web-start-input::placeholder {
+  color: var(--fg3);
+}
+
+.web-start-recent {
+  margin-top: 36px;
+}
+
+.web-start-recent ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.web-start-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.web-start-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-start-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-start-tools {
+  display: flex;
+  gap: 8px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-start-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 88px;
+  padding: 10px 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.web-start-tool:hover {
+  background: var(--tint);
+}

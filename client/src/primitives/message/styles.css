@@ -1,0 +1,438 @@
+/* 原语 1 · 消息。只用方向 I 令牌；它的回复不装气泡，你的话是 --tint 气泡。 */
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--fg);
+  min-width: 0;
+}
+
+.msg-user {
+  align-items: flex-end;
+}
+
+.msg-bubble {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 12px 12px 4px 12px;
+  background: var(--bubble);
+  min-width: 0;
+}
+
+.msg-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 结论后面的正文（原来的「理由」，2026-11-05 第 4 条起直接展开）：就是正文 14/22·400，和结论隔一行的距离。 */
+.msg-prose {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+
+.msg-quotes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.msg-quote {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.msg-user-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.msg-user-status-text.is-error,
+.msg-error,
+.msg-run-note.is-error {
+  color: var(--err);
+}
+
+.msg-conclusion {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.msg-cursor {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: var(--run);
+  vertical-align: middle;
+}
+
+.msg-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.msg-tag-outline {
+  background: transparent;
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.msg-disagreement {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding-left: 12px;
+  border-left: 1px solid var(--fg3);
+}
+
+.msg-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.msg-card-placeholder,
+.msg-run-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.msg-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.msg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+/* 你的话：复制、引用在气泡左边、和气泡同一行，底对齐，不另占一行（user-message.tsx）。 */
+.msg-user-line {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.msg-user-actions {
+  flex: 0 1 auto;
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
+/* 电脑上没悬停、焦点也不在里面时，这一排透明着；透明的按钮不该点得到（2026-11-04）。 */
+@media (hover: hover) {
+  .msg-user:not(:hover):not(:focus-within) .msg-user-actions {
+    pointer-events: none;
+  }
+}
+
+/* 复制、引用这类安静操作（.msg-quiet）桌面上悬停或键盘焦点进来才显出来；用 opacity 留着占位，消息不跳动。
+   触屏没有悬停，保持常显。「它做了什么 · n 项 · 时长」是信息不是安静操作，不带这个类，一直显示。 */
+@media (hover: hover) and (pointer: fine) {
+  .msg-actions > .msg-quiet {
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .msg:hover .msg-actions > .msg-quiet,
+  .msg:focus-within .msg-actions > .msg-quiet {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-actions > .msg-quiet {
+    transition: none;
+  }
+}
+
+.msg-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.msg-copy-error {
+  flex-basis: 100%;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--err);
+}
+
+.msg-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.msg-chip:hover {
+  background: var(--tint);
+}
+
+.msg-link {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.msg-chip:focus-visible,
+.msg-link:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.msg-run-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+/* 工具明细在动作行下方展开：网格行 0fr ↔ 1fr 出高度动效，内容同时淡入；减少动态效果时即时。 */
+.msg-run-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--motion-slow) var(--ease-in-out),
+    opacity var(--motion-base) var(--ease-out);
+}
+
+.msg-run-panel[data-open='true'] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* 第一次点开时外壳才放进来：从收起的样子过渡过去。 */
+@starting-style {
+  .msg-run-panel[data-open='true'] {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.msg-run-panel-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.msg-run-panel[data-open='true'] .msg-run-panel-inner {
+  padding-top: 4px;
+}
+
+/* 这一轮的耗时、装入和 Token：明细里的次要信息，12/18 --fg2，和动作列表一样大。 */
+.msg-run-context {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.msg-run-context p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-run-panel {
+    transition: none;
+  }
+}
+
+.msg-actions > div:not(.msg-icon) {
+  min-width: 0;
+}
+
+/* 这一轮的工具调用：动作行最左边「🔧 n ⌄」（12 --fg2，没有描边），和复制、引用一样高；是信息不是安静操作，常显。 */
+.msg-process {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
+}
+
+.msg-process:hover,
+.msg-process[aria-expanded='true'] {
+  color: var(--fg);
+  background: var(--tint);
+}
+
+.msg-run-chevron {
+  display: inline-flex;
+  transition: transform var(--motion-base) var(--ease-out);
+}
+
+.msg-process[aria-expanded='true'] .msg-run-chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-process,
+  .msg-run-chevron {
+    transition: none;
+  }
+}
+
+.msg-process:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.msg-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/*
+ * 悬浮对话框和手机全屏对话里像聊天一样：Plasticine 的回复放在左对齐的浅底气泡里（圆角 12 12 12 4），
+ * 你的话是右对齐的气泡；部件和卡跟在气泡下面。记录整页仍是阅读排版，不装气泡。
+ */
+.conv-column .msg-assistant .msg-body,
+.conv-sheet .msg-assistant .msg-body {
+  align-self: flex-start;
+  max-width: 92%;
+  padding: 8px 12px;
+  border-radius: 12px 12px 12px 4px;
+  background: var(--tint2);
+}
+
+.conv-column .msg-assistant .msg-conclusion,
+.conv-sheet .msg-assistant .msg-conclusion {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.conv-column .msg-user .msg-bubble,
+.conv-sheet .msg-user .msg-bubble {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* 聊天里的复制、引用一排压低到 24，不在每条消息下面空出一大块；手机上你的话不带这一排（长按选字照样能复制）。 */
+.conv-column .msg-actions,
+.conv-sheet .msg-actions {
+  margin-top: 0;
+}
+
+.conv-column .msg-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.conv-column .msg-process {
+  height: 24px;
+}
+
+.conv-sheet .msg-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.conv-sheet .msg-user-actions {
+  display: none;
+}
+
+.msg-run-item {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 18px;
+  min-width: 0;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+
+.msg-run-item details {
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.msg-run-seq {
+  font-family: var(--mono);
+  color: var(--fg2);
+  font-variant-numeric: tabular-nums;
+}
+
+.msg-run-receipt {
+  margin-left: auto;
+  color: var(--fg2);
+}
+
+@media (pointer: coarse) {
+  .msg-icon,
+  .msg-chip,
+  .msg-process {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}

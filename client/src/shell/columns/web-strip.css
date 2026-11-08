@@ -1,0 +1,203 @@
+/*
+ * 网页栏目收起后的窄栏（web-strip.tsx）：56 宽，图标块 36×36、圆角 8、上下间隔 4，居中一列；当前那一个 --tint2 底，
+ * 悬停 --tint。顶上一行 56 放展开按钮（和展开时的标题行同高）；置顶、分组、今天之间不写字，今天上面一道 1px 线。
+ * 拖着的那一块浮起来（--lift）；落点那一道线缩在窄栏里。
+ */
+
+.web-strip {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  width: 56px;
+  min-height: 0;
+}
+
+.web-strip-head {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 100%;
+  height: 56px;
+}
+
+.web-strip-scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 0;
+  padding: 4px 0 12px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.web-strip-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 2px;
+  border-radius: 12px;
+  list-style: none;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.web-strip-list[data-drop-zone='true'] {
+  background: var(--tint2);
+}
+
+.web-strip-today {
+  min-height: 40px;
+}
+
+.web-strip-item {
+  position: relative;
+  touch-action: none;
+}
+
+.web-strip-item[data-dragging='true'] {
+  border-radius: 8px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+}
+
+.web-strip-tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.web-strip-tile:hover {
+  background: var(--tint);
+  color: var(--fg);
+}
+
+.web-strip-tile[aria-current='page'],
+.web-strip-tile[aria-expanded='true'],
+.web-strip-tile[data-drop-zone='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+/* 组里有当前那一页：组块下面一个 --fg 小点（不是陶土：陶土只表示等你）。 */
+.web-strip-tile[aria-current='true'] {
+  position: relative;
+}
+
+.web-strip-tile[aria-current='true']::after {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--fg);
+  content: '';
+}
+
+.web-strip-tile:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.web-strip-rule {
+  flex: none;
+  width: 32px;
+  height: 1px;
+  margin: 4px 0;
+  background: var(--line2);
+}
+
+.web-strip-new {
+  color: var(--fg2);
+}
+
+.web-strip-line {
+  right: 10px;
+  left: 10px;
+}
+
+.web-strip[data-dragging='true'] .web-strip-tile:hover {
+  background: transparent;
+}
+
+/* 分组浮出来的那一块：组名 + 一行一个标签（图标 + 标题），宽 280。 */
+.web-strip-pop {
+  width: 280px;
+  padding: 6px;
+}
+
+.web-strip-pop-title {
+  margin: 0;
+  padding: 4px 8px 6px;
+  color: var(--fg2);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.web-strip-pop-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-strip-pop-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-strip-pop-row:hover,
+.web-strip-pop-row:focus-visible {
+  background: var(--tint);
+  outline: none;
+}
+
+.web-strip-pop-row[aria-current='page'] {
+  background: var(--tint2);
+}
+
+.web-strip-pop-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-strip-list,
+  .web-strip-tile {
+    transition: none;
+  }
+}

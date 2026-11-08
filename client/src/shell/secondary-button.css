@@ -1,0 +1,41 @@
+/* 从 base.css 分出来（文件长度）：次按钮和行里的小号按钮。 */
+
+/* 次按钮（2026-11-05 设计稿）：透明底 + --line2 描边，和主按钮同高；行里的小号（停止、去看）用 .button-small。 */
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--tint);
+}
+
+.secondary-button:disabled {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.primary-button.button-small,
+.secondary-button.button-small {
+  height: 28px;
+  padding: 0 10px;
+}
+
+.secondary-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}

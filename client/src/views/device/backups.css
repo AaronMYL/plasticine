@@ -1,0 +1,32 @@
+.backup-detail {
+  padding: 16px;
+  overflow-wrap: anywhere;
+}
+.backup-restore-card {
+  margin: 16px;
+  overflow-wrap: anywhere;
+}
+.backup-restore-card pre {
+  white-space: pre-wrap;
+  font: inherit;
+  margin: 8px 0;
+}
+.backup-detail .tool-row {
+  flex-wrap: wrap;
+}
+.backup-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.backup-comparison section {
+  min-width: 0;
+}
+.backup-comparison details {
+  margin-top: 8px;
+}
+.backup-comparison summary {
+  color: var(--fg2);
+  font-size: 12px;
+  cursor: pointer;
+}

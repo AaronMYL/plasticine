@@ -1,0 +1,25 @@
+/* 默认头像（2026-11-05 设计稿）：名字首字 + 暖色底，圆的；联系人那边是 .contact-avatar，同一个颜色。 */
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+button.avatar {
+  cursor: pointer;
+}
+
+button.avatar:focus-visible {
+  outline: 2px solid var(--fg2);
+  outline-offset: 2px;
+}

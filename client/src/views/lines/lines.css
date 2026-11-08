@@ -1,0 +1,460 @@
+/* 和 Plasticine 的对话（2026-11-05 设计稿 Main / Steps / Waiting）：正文列最宽 720 居中，输入框和正文列同宽；
+   你的话是 --bubble 气泡（primitives/message），Plasticine 的回复是普通文字，15/26。 */
+
+.line-conv {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.line-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 0 8px;
+}
+
+.line-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(720px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+/* 内容不满一屏时贴着底部（输入框上面），像聊天。 */
+.line-scroll > .line-column {
+  margin-top: auto;
+}
+
+.line-item {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.line-day {
+  color: var(--fg2);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.line-note {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.line-note.is-error {
+  color: var(--err);
+}
+
+/* 委派、自动触发与旧记录不冒充本人；展开时才露出输入全文。 */
+/* 系统发在主线上的通知（《优化清单》第 12 条）：铃 + 一句话，不是气泡、也不是 Plasticine 的回答。 */
+.line-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.line-notice > svg {
+  flex: none;
+  margin-top: 4px;
+  color: var(--fg2);
+}
+
+.line-input-record {
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.line-input-record > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.line-input-record > summary::-webkit-details-marker {
+  display: none;
+}
+
+.line-input-record > summary svg {
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.line-input-record[open] > summary svg {
+  transform: rotate(90deg);
+}
+
+.line-input-record > summary:focus-visible {
+  outline: 2px solid var(--fg2);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.line-input-text {
+  padding: 6px 0 4px 19px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* —— 一轮 —— */
+
+.line-turn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.line-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: stretch;
+  font-size: 15px;
+  line-height: 26px;
+  color: var(--fg);
+}
+
+.line-answer .markdown p {
+  margin-bottom: 10px;
+}
+
+.line-answer .markdown ul,
+.line-answer .markdown ol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.line-answer .markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.line-answer .markdown code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--tint2);
+}
+
+.line-thinking {
+  align-self: stretch;
+  padding: 2px 0 4px 12px;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* 「想了 12 秒 ›」「做了 6 步 ›」：一行安静的开关，点开在原地展开。 */
+.line-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin-left: -8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 18px;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
+}
+
+.line-fold:hover,
+.line-fold[aria-expanded='true'] {
+  background: var(--tint);
+  color: var(--fg);
+}
+
+.line-fold svg {
+  color: var(--fg2);
+}
+
+.line-fold:focus-visible {
+  outline: 2px solid var(--fg2);
+  outline-offset: 1px;
+}
+
+/* 展开的步骤：图标 · 做了什么 → 结果；左边一根细线把图标串起来。 */
+.line-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-self: stretch;
+  margin: 2px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.line-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 32px;
+}
+
+.line-step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 9.5px;
+  top: 22px;
+  bottom: -10px;
+  width: 1px;
+  background: var(--line2);
+}
+
+.line-step-icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.line-step-what {
+  flex: none;
+  max-width: 55%;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-step-arrow {
+  flex: none;
+  color: var(--fg3);
+  font-size: 13px;
+}
+
+.line-step-result {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-step[data-ok='false'] .line-step-result {
+  color: var(--err);
+}
+
+/* —— 干活时的一行、原位的状态 —— */
+
+.line-live,
+.line-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 28px;
+}
+
+.line-live-text,
+.line-state-text {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 15px;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-elapsed {
+  flex: none;
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.line-state-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--fg2);
+}
+
+.line-state[data-kind='err'] .line-state-icon,
+.line-state[data-kind='err'] .line-state-text {
+  color: var(--err);
+}
+
+.line-state-sep {
+  color: var(--fg3);
+}
+
+.line-retry {
+  font-size: 14px;
+}
+
+.line-spinner {
+  flex: none;
+  animation: line-spin 0.9s linear infinite;
+}
+
+.line-spinner-track {
+  stroke: var(--line2);
+}
+
+.line-spinner-arc {
+  stroke: var(--run);
+}
+
+@keyframes line-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-spinner {
+    animation: none;
+  }
+}
+
+/* —— 后台线的卡 —— */
+
+.line-card-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.line-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  max-width: 560px;
+  box-sizing: border-box;
+  padding: 10px 10px 12px 14px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.line-card[data-status='idle'] {
+  padding-bottom: 6px;
+}
+
+.line-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 28px;
+}
+
+.line-card-lead {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+}
+
+.line-card-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-card-status {
+  margin: 0;
+  padding-left: 26px;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-card-status[data-status='failed'],
+.line-card-status[data-status='unmet'] {
+  color: var(--err);
+}
+
+.line-card-fold {
+  display: flex;
+  flex-direction: column;
+  padding-left: 18px;
+}
+
+.line-card-note {
+  margin: 0;
+  padding-left: 26px;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.line-card-note.is-error {
+  color: var(--err);
+}
+
+.line-card-action {
+  height: 28px;
+  padding: 0 10px;
+}
+
+/* 手机：字号 16（iOS 不放大），按键 36。 */
+.shell[data-phone='true'] .line-input {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.shell[data-phone='true'] .line-stop,
+.shell[data-phone='true'] .line-send {
+  width: 36px;
+  height: 36px;
+}
+
+.shell[data-phone='true'] .line-column {
+  width: calc(100% - 32px);
+}
+
+.shell[data-phone='true'] .line-composer-dock {
+  padding: 8px 0 12px;
+}
+
+/* 手机上你的话旁边不带复制 / 引用那一排（长按选字照样能复制）。 */
+.shell[data-phone='true'] .line-conv .msg-user-actions {
+  display: none;
+}

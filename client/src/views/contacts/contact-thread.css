@@ -1,0 +1,326 @@
+/* 联系人 · 聊天（第 113 条）：左 = 对方、右 = 我；我的气泡 --tint 底，对方的描边；AI 没气泡、前面一个 ✦（--fg2）；
+   AI↔AI 折成正中一行。浮动对话覆盖显示，不改变此处的文字和输入框排版。 */
+
+/* ---------- 聊天 ---------- */
+
+.contact-thread {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ct-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+}
+
+.ct-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ct-head .icon-button[aria-pressed='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.ct-find {
+  flex: none;
+  margin: 0 24px 8px;
+}
+
+.ct-items {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 8px 40px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 消息少的时候贴着底部（输入框那一头），多了照常往上滚。 */
+.ct-items > :first-child {
+  margin-top: auto;
+}
+
+.ct-earlier {
+  align-self: center;
+}
+
+.ct-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cm-day {
+  margin: 0;
+  padding-bottom: 8px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+  text-align: center;
+}
+
+.cm-line {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: min(560px, 88%);
+  min-width: 0;
+}
+
+.cm-line[data-side='them'] {
+  align-self: flex-start;
+}
+
+.cm-line[data-side='me'] {
+  align-self: flex-end;
+  justify-content: flex-end;
+}
+
+.cm-line[data-ai='true'] {
+  align-items: flex-start;
+}
+
+.cm-bubble {
+  min-width: 0;
+  padding: 8px 12px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.cm-line[data-side='them'] > .cm-bubble {
+  border-radius: 12px 12px 12px 4px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.cm-line[data-side='me'] > .cm-bubble {
+  border-radius: 12px 12px 4px 12px;
+  background: var(--bubble);
+}
+
+.cm-line[data-side='me'][data-status='sending'] > .cm-bubble {
+  color: var(--fg2);
+}
+
+.cm-bubble > .ai-mark {
+  margin-right: 6px;
+  color: var(--fg2);
+}
+
+.cm-ai-slot {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 22px;
+}
+
+.cm-ai-slot .ai-mark {
+  color: var(--fg2);
+}
+
+.cm-ai-text {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.cm-line[data-side='me'] > .cm-ai-text {
+  text-align: right;
+}
+
+.cm-system {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  text-align: center;
+}
+
+.cm-failed {
+  flex: none;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--err);
+}
+
+.cm-avatar-gap {
+  flex: none;
+  width: 24px;
+}
+
+.cm-task-line {
+  max-width: 100%;
+}
+
+.cm-exchange {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cm-fold {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.cm-fold-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.cm-fold-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 70%;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cm-fold-button > span:not(.ai-mark):first-of-type {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cm-fold-button .ai-mark {
+  color: var(--fg2);
+}
+
+.cm-fold-button:hover {
+  background: var(--tint);
+}
+
+.cm-fold-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.cm-exchange-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---------- 输入框 ---------- */
+
+.contact-composer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 24px 24px;
+}
+
+.contact-composer-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.contact-composer-box {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 8px 8px 16px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.contact-composer-box:focus-within {
+  box-shadow: inset 0 0 0 1px var(--fg2);
+}
+
+.contact-composer-input {
+  flex: 1;
+  min-width: 0;
+  max-height: 160px;
+  padding: 5px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  resize: none;
+}
+
+.contact-composer-input::placeholder {
+  color: var(--fg2);
+}
+
+.contact-composer-key {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  align-self: center;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.contact-composer-ai[aria-pressed='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.contact-send {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--fg);
+  color: var(--bg);
+  cursor: pointer;
+}
+
+.contact-send:disabled {
+  background: var(--tint2);
+  color: var(--fg3);
+  cursor: default;
+}
+
+.contact-send:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.ct-request {
+  flex: none;
+  padding: 0 24px 24px;
+}

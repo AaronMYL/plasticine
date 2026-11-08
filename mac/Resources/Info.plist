@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.plasticine.app</string>
+    <key>CFBundleName</key>
+    <string>Plasticine</string>
+    <key>CFBundleDisplayName</key>
+    <string>Plasticine</string>
+    <key>CFBundleExecutable</key>
+    <string>Plasticine</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.7.5</string>
+    <key>CFBundleVersion</key>
+    <string>14</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.productivity</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <!-- 「这台 Mac」模式：窗口和健康检查走 http://127.0.0.1:8790（App 自己起的服务，只听本机）。 -->
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>Plasticine 需要截取主屏幕，让你授权的设备任务读取画面并按指定位置操作。</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Plasticine 在你授权的任务中与本机应用交互。系统会在需要时请求你确认。</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>文件附件</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array><string>public.data</string><string>public.content</string></array>
+        </dict>
+    </array>
+</dict>
+</plist>

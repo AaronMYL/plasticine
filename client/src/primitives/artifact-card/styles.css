@@ -1,0 +1,57 @@
+/*
+ * 成果卡片（component-recipes「3. 成果卡片」）：卡中卡——透明底 + inset 1px --line2、圆角 12、padding 12；左侧 36×44 圆角 8
+ * --tint2 的类型块（等宽 11 --fg2）；标题 500；版本和核实等宽 12 --fg2；右侧「打开」下划线文字按钮。没有阴影。
+ */
+
+.artifact-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.artifact-kind {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--tint2);
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.artifact-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.artifact-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.artifact-meta,
+.artifact-source,
+.artifact-note {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.artifact-note.is-error {
+  color: var(--err);
+}

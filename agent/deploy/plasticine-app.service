@@ -1,0 +1,38 @@
+# Template of a systemd unit for running Plasticine from a checkout or unpacked server package on your own server.
+# Not installed by any script (the Linux package installs its own unit, scripts/packages/linux). To install, as root:
+#   1. Check the paths below: `command -v node` (Node 24) and the release directory the service runs from.
+#   2. cp plasticine-app.service /etc/systemd/system/ && systemctl daemon-reload
+#   3. systemctl enable --now plasticine-app && systemctl status plasticine-app
+# Caddy serves the client build from /var/www/plasticine/current and proxies /v2/* to 127.0.0.1:8790.
+
+[Unit]
+Description=Plasticine 新版服务（对话、笔记、配对登录）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plasticine
+Group=plasticine
+# 装的是打包好的发布版：/opt/plasticine/versions/<版本> + current（和 Linux 安装包同一布局）。
+WorkingDirectory=/opt/plasticine/current
+# The subscription credential from the device login lives here, so the library and notes/ do too.
+Environment=PLASTICINE_STATE=/home/plasticine/state/agent
+Environment=PLASTICINE_PORT=8790
+# 开发期干跑（第 8 条）：外部动作只记录不执行。启用新版那天改成 0。
+Environment=PLASTICINE_DRY_RUN=1
+# M6：切换脚本只改此文件的干跑字段，缺文件时沿用上面的干跑默认值。
+EnvironmentFile=-/home/plasticine/state/agent/system.env
+# Node 24 is installed under /opt/node and linked into /usr/local/bin (there is no /usr/bin/node on the host).
+ExecStart=/usr/local/bin/node agent/src/app/main.ts
+# SIGTERM: stop taking requests, let running turns finish (60 s grace in the code), close the library.
+KillSignal=SIGTERM
+TimeoutStopSec=90
+Restart=on-failure
+RestartSec=5
+# Notes and the library are readable by the plasticine user only. No NoNewPrivileges / sandboxing on purpose:
+# the service keeps the host's full permissions (decision 10).
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

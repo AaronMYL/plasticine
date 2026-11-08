@@ -1,0 +1,369 @@
+/* 统一工作详情：电脑沿用主区 560px Sheet；手机整页。只靠间距和分隔线组织正文，输入留在页底。 */
+
+.work-sheet {
+  overflow: hidden;
+}
+
+.sheet-panel.work-sheet {
+  right: 16px;
+  width: min(560px, calc(100% - 32px));
+}
+
+.work-sheet .sheet-body {
+  display: flex;
+  padding: 0;
+  overflow: hidden;
+}
+
+.work-detail {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.work-scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 0;
+  padding: 24px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.work-title h2 {
+  margin: 0;
+  color: var(--fg);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  overflow-wrap: anywhere;
+}
+
+.work-project {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--fg2);
+}
+
+.work-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.work-state > span:nth-child(2) {
+  flex: 1;
+}
+
+.work-state[data-status='failed'] {
+  color: var(--err);
+}
+
+.work-state-note {
+  margin: -12px 0 0;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.work-section {
+  min-width: 0;
+}
+
+.work-section h3,
+.work-revision h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.work-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.work-section-head .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+.work-request,
+.work-source,
+.work-progress p,
+.work-process-input {
+  margin: 0;
+  font-size: 14px;
+  line-height: 24px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.work-source {
+  margin-top: 14px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line2);
+  color: var(--fg2);
+}
+
+.work-section .markdown {
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.work-section .markdown > :first-child {
+  margin-top: 0;
+}
+
+.work-section .markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.work-progress p {
+  margin-top: 8px;
+  color: var(--fg2);
+}
+
+.work-history {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.work-history details {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.work-history summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.work-history summary > span:first-of-type {
+  flex: 1;
+}
+
+.work-history details[open] .markdown {
+  margin-top: 12px;
+}
+
+.work-process {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.work-process-body {
+  margin-top: 12px;
+}
+
+.work-process-input {
+  margin: 16px 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--line2);
+  color: var(--fg2);
+}
+
+.work-footer {
+  flex: none;
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.work-compose {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+}
+
+.work-compose:focus-within {
+  border-color: var(--fg2);
+}
+
+.work-compose textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  max-height: 160px;
+  padding: 0;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.work-compose textarea::placeholder {
+  color: var(--fg3);
+}
+
+.work-send {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: var(--fg);
+  color: var(--bg);
+  cursor: pointer;
+}
+
+.work-send:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.work-send:focus-visible,
+.work-history summary:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+}
+
+.work-queue,
+.work-send-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.work-error,
+.work-send-error {
+  color: var(--err);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.work-error .text-button {
+  margin-left: 8px;
+}
+
+.work-placeholder {
+  align-self: flex-start;
+  padding: 24px;
+  color: var(--fg2);
+  font-size: 14px;
+}
+
+.work-revision {
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.work-revision p {
+  margin: 8px 0 14px;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.work-revision textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+}
+
+.work-revision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.work-manual {
+  color: var(--fg2);
+  font-size: 14px;
+}
+
+/* 手机上的工作详情是真正一页；顶部返回、正文滚动、底部补充，不再叠底栏或对话圆钮。 */
+.sheet-drawer.work-sheet {
+  inset: 0;
+  height: 100dvh;
+  max-height: none;
+  padding: env(safe-area-inset-top) 0 0;
+  border-radius: 0;
+}
+
+.sheet-drawer.work-sheet .sheet-handle,
+.sheet-drawer.work-sheet .sheet-close {
+  display: none;
+}
+
+.sheet-drawer.work-sheet .sheet-head {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  padding: 6px 12px;
+}
+
+.sheet-drawer.work-sheet .work-back {
+  width: 44px;
+  height: 44px;
+}
+
+.sheet-drawer.work-sheet .work-scroll {
+  padding: 24px 16px;
+}
+
+.sheet-drawer.work-sheet .work-footer {
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+}
+
+.sheet-drawer.work-sheet .button-small,
+.sheet-drawer.work-sheet .work-revision-actions button,
+.sheet-drawer.work-sheet .work-task-actions button,
+.sheet-drawer.work-sheet .work-send,
+.sheet-drawer.work-sheet .text-button,
+.sheet-drawer.work-sheet .line-fold,
+.sheet-drawer.work-sheet .work-history summary {
+  min-height: 44px;
+}
+
+.sheet-drawer.work-sheet .work-send {
+  width: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-sheet {
+    animation: none;
+  }
+}

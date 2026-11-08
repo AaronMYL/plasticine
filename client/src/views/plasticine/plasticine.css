@@ -1,0 +1,196 @@
+/* Plasticine 栏目的主区（11-07 设计稿 Plasticine-Main / Side / Phone-Plasticine）：顶上一行 56，下面是记录和输入框。 */
+
+.messages-plasticine {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  /* 记录里读屏用的 sr-only 是绝对定位、包含块在滚动区外面：不剪掉会把整个主区撑出一条滚动条。 */
+  overflow: hidden;
+}
+
+.messages-thread-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 16px 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.messages-thread-head .plasticine-mark {
+  margin-right: 2px;
+}
+
+/* 在记录里找（2026-11-05）：顶上一行下面一个搜索框，结果一行一条，点了滚到那一句。 */
+.line-search {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: none;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.line-search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.line-search-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.line-search-results {
+  display: flex;
+  flex-direction: column;
+  max-height: 30dvh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.line-search-result {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.line-search-result:hover {
+  background: var(--tint);
+}
+
+.line-search-who {
+  flex: none;
+  color: var(--fg2);
+}
+
+.line-search-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-search-empty {
+  margin: 4px 0;
+  color: var(--fg2);
+  font-size: 13px;
+}
+
+.messages-thread-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.messages-thread-spacer {
+  flex: 1;
+}
+
+/* 手机顶上「主线 ⌄」：点了出主线、旁聊和新旁聊。 */
+.thread-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.thread-switch:hover {
+  background: var(--tint);
+}
+
+.thread-switch-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-switch > svg:last-child {
+  flex: none;
+  color: var(--fg2);
+}
+
+.thread-switch-error {
+  color: var(--err);
+  font-size: 12px;
+}
+
+.messages-thread-head .icon-button[aria-pressed='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+/* 在记录里找：和正文列同宽对齐（conversation.css 的 .conv-page）。 */
+.messages-plasticine .conv-search {
+  width: 100%;
+  max-width: none;
+  margin: 12px 0 8px;
+  padding-inline: max(24px, calc((100% - 768px) / 2));
+}
+
+/* 手机上一整页：两边 16，和别的手机页一样。 */
+.messages-plasticine[data-phone='true'] .conv-page .conv-list,
+.messages-plasticine[data-phone='true'] .conv-page .conv-composer,
+.messages-plasticine[data-phone='true'] .conv-search {
+  padding-inline: 16px;
+}
+
+.messages-plasticine .conv {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.messages-plasticine[data-phone='true'] .messages-thread-head {
+  height: 52px;
+  padding: 0 8px;
+}
+
+
+/* 主区只放这一条对话：占满主区高度，记录自己滚，输入框贴底。 */
+.messages-plasticine {
+  height: 100%;
+}

@@ -1,0 +1,289 @@
+/*
+ * 工具组几页（记账、日历、提醒、专注、浏览器、文件、工具开关）和站内信：都在浮层（Sheet）里，平铺、没有卡片；行之间 1px
+ * --line，数字和时间等宽；表单是一排输入框加一个主按钮（一块区域最多一个主按钮）。值全来自方向 I 令牌。
+ */
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 手机上浮层是底部抽屉，抽屉本身不留边：页面自己留，且不被抽屉压缩（否则第一行被盖住）。 */
+.sheet-drawer .tool {
+  flex: 0 0 auto;
+  padding: 16px;
+}
+
+/* 手机上一行一律三层：名字和说明 → 细字 → 状态和按钮，不按文字长短忽左忽右。 */
+@media (max-width: 767px) {
+  .tool-groups .tool-row-main,
+  .tool-groups .tool-row-meta {
+    flex-basis: 100%;
+  }
+}
+
+.tool-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-bar-grow {
+  flex: 1;
+}
+
+.file-path-form { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
+.file-path-form > input { flex: 1; min-width: 0; }
+.file-create > summary { display: flex; align-items: center; gap: 8px; color: var(--fg2); cursor: pointer;
+  font-size: 13px; line-height: 22px; list-style: none; }
+.file-create > summary::-webkit-details-marker { display: none; }
+.file-create[open] > summary { margin-bottom: 16px; }
+.file-create > .tool-form + .tool-form { margin-top: 16px; }
+.file-text-content { font-family: var(--mono); font-size: 13px; line-height: 22px; resize: vertical; }
+.tool-row > .tool-confirm { flex-basis: 100%; }
+.tool-row-main > svg { flex: none; vertical-align: middle; }
+
+.tool-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.tool-form .field {
+  flex: 1 1 8em;
+  min-width: 0;
+}
+
+.tool-form .field-narrow {
+  flex: 0 1 7em;
+}
+
+.tool-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tool-row-main {
+  flex: 1;
+  min-width: 10em;
+  overflow-wrap: anywhere;
+}
+
+/* 提醒的说明与日期放在同一内容列，删除独占右列；窄抽屉里不挤掉操作文字。 */
+.reminder-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.reminder-row > .tool-row-main {
+  min-width: 0;
+  grid-column: 1;
+}
+
+.reminder-row > .tool-row-meta {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.reminder-row > button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  min-width: 40px;
+}
+
+@media (max-width: 767px) {
+  .tool-return { margin: 12px 16px 0; }
+  .reminder-form > .field:first-child { flex-basis: 100%; }
+}
+
+.tool-row-meta,
+.tool-num {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-num {
+  font-family: var(--mono);
+}
+
+.tool-num-strong {
+  font-family: var(--mono);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+}
+
+.tool-figure {
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-sub {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.tool-error {
+  color: var(--err);
+}
+
+.tool-frame {
+  display: block;
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  cursor: crosshair;
+}
+
+.tool-select {
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: 14px;
+}
+
+.tool-body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.tool-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.calendar-grid > .text-meta { padding: 8px; text-align: center; }
+.calendar-day { display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-height: 64px; padding: 8px 4px; border: 1px solid var(--line); border-radius: 4px;
+  background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.calendar-day[aria-pressed='true'] { background: var(--tint2); }
+.calendar-day[aria-current='date'] { border-color: var(--accent); font-weight: 600; }
+.tool-row > .inline-edit { flex-basis: 100%; width: 100%; }
+.tool-row:has(> .inline-edit) { flex-wrap: wrap; }
+
+/* 原型：工具开关固定两行结构（用户视角审查 2026-11-01 第 12 条） */
+.tool-group-row {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tool-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-group-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 500;
+}
+
+/* 名字（和它后面的 ⓘ）之后的第一样东西靠右：状态签、开关、按钮排在行尾。 */
+:is(.tool-group-name, .tool-group-name + .info-tip) + :not(.info-tip) {
+  margin-left: auto;
+}
+
+.tool-group-name + .info-tip {
+  margin-left: -4px;
+}
+
+/* 技能说明：名字下面一行小字，两行放不下省略。 */
+.tool-group-desc {
+  display: -webkit-box;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.tool-group-details {
+  margin-top: 4px;
+}
+
+.tool-group-details summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.tool-group-details p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+/* 文件 Sheet 的一行：名字靠左占满，类型 / 时间 / 操作靠右成一组，和图标按钮居中对齐
+   （用户视角审查 2026-11-01 P2：「报告 · 文件夹 · 时间 · ✎ · 🗑」列没对齐）。 */
+.file-row {
+  align-items: center;
+}
+
+.file-row > .tool-row-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+.file-row-side {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* 截图记账 · 这周（第二批「记账直接记」）：账本数字下面一行细字，清原图的确认在下一行展开，说清后果。 */
+.money-week { display: flex; flex-direction: column; gap: 4px; }
+.money-week-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 8px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 22px;
+  color: var(--fg2);
+}
+.money-week-warn { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 22px; color: var(--fg); }
+.money-week .tool-confirm { align-items: center; padding: 4px 0; }

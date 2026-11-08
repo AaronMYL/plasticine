@@ -1,0 +1,171 @@
+/*
+ * 消息（2026-11-04 第 2 批，设计稿 Messages / Mail / Phone-Messages）：在联系人那套样式（contacts.css）上改的几处——
+ * 左栏 320、标题下面一条撑满的分段控件；Plasticine 那一条是 --fg 实底的「P」方块；右边和 Plasticine 的记录顶上一行 56；
+ * 邮件阅读区：主题当标题（24/32），发件人一行，正文是一块白纸（mail.css），居中最宽 720。
+ */
+
+.messages .contacts-list,
+.messages[data-narrow='true'] .contacts-list {
+  width: 320px;
+  padding: 20px 12px 12px;
+}
+
+.messages-filter {
+  display: flex;
+  flex: none;
+  margin: 0 4px 12px;
+}
+
+.messages-filter .segmented-item {
+  flex: 1;
+  justify-content: center;
+}
+
+.contacts[data-phone='true'] .messages-filter {
+  margin: 0 16px 12px;
+}
+
+/* ---------- 邮件阅读区 ---------- */
+
+.mail-reader {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mail-reader-head {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 20px 16px 16px 32px;
+}
+
+.mail-reader-title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin-right: 8px;
+}
+
+.mail-reader-subject {
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.mail-reader-from {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+
+.mail-reader-from .contact-avatar-square {
+  border-radius: 4px;
+}
+
+.mail-reader-sender {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 发件地址：名字后面 12 号 --fg2，放不下先省略它。 */
+.mail-reader-address {
+  flex: 0 1000 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-reader-time,
+.mail-reader-other-time {
+  flex: none;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.mail-reader-body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 32px 32px;
+  overflow-y: auto;
+}
+
+.mail-reader-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.mail-reader-others {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.mail-reader-other {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mail-reader-other:hover {
+  background: var(--tint);
+}
+
+.mail-reader-other:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.mail-reader-other-subject {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-reader .contact-composer {
+  flex: none;
+}
+
+.mail-reader[data-phone='true'] .mail-reader-head {
+  padding: 8px 8px 12px;
+}
+
+.mail-reader[data-phone='true'] .mail-reader-body {
+  padding: 0 16px 24px;
+}
+
+/* Plasticine 那一行在做时，实时状态前的动态符号和字之间留一点。 */
+

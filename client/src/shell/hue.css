@@ -1,0 +1,28 @@
+/* 类别色小方块与项目色圆点（设计稿 2026-11-02）：颜色只染图标和圆点，小方块的底是同色淡化（--hue-wash）。 */
+
+.hue-tile {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tile-hue) var(--hue-wash), transparent);
+  color: var(--tile-hue);
+}
+
+.project-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  white-space: nowrap;
+}
+
+.project-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

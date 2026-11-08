@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'">
+<title>Plasticine</title>
+<style>
+  :root { color-scheme: light dark; --bg: #fcf9f6; --fg: #2a2622; --fg3: #8a847c; --line: #e6e0d8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #2b2826; --fg: #f5f1ec; --fg3: #9b958d; --line: #45403b; } }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  body { display: grid; place-items: center; -webkit-app-region: drag; }
+  main { width: 360px; display: grid; gap: 14px; -webkit-app-region: no-drag; }
+  h1 { font-size: 20px; margin: 0; font-weight: 600; }
+  p { margin: 0; color: var(--fg3); }
+  form { display: grid; gap: 8px; }
+  label { font-weight: 500; }
+  input { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
+    background: transparent; color: inherit; }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 0; background: var(--fg); color: var(--bg);
+    cursor: pointer; justify-self: start; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">正在打开 Plasticine…</h1>
+  <p id="detail"></p>
+  <form id="remote" hidden>
+    <label for="address">远程地址</label>
+    <input id="address" name="address" placeholder="https://you.cyberhunter.top" autocomplete="url" required>
+    <button type="submit">连上</button>
+  </form>
+</main>
+<script src="start.js"></script>
+</body>
+</html>

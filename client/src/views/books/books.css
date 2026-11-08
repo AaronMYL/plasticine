@@ -1,0 +1,399 @@
+/* 图书馆：封面格子、在读、导入状态。方向 I：一底一前景，没有卡片和阴影；只有弹出菜单用 --lift。 */
+
+/* ---------- 封面（书里自带封面图就用它；没有就画文字封面） ---------- */
+.bk-cover {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  aspect-ratio: 3 / 4.2;
+  padding: 12px 12px 16px;
+  border-radius: 4px;
+  background: var(--tint2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--fg);
+  overflow: hidden;
+  text-align: start;
+}
+
+.bk-cover[data-tone='ink'] {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.bk-cover[data-tone='line'] {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.bk-cover-title {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* 中文短书名竖排，靠右上，和传统书脊题签一样。 */
+.bk-cover[data-vertical='true'] .bk-cover-title {
+  align-self: flex-end;
+  writing-mode: vertical-rl;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.bk-cover-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bk-cover-rule {
+  display: block;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.2;
+}
+
+.bk-cover-author {
+  font-size: 11px;
+  line-height: 16px;
+  opacity: 0.75;
+}
+
+.bk-cover-format {
+  position: absolute;
+  right: 8px;
+  bottom: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 16px;
+  opacity: 0.6;
+}
+
+.bk-cover-image {
+  padding: 0;
+}
+
+.bk-cover-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bk-cover-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.bk-cover-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* ---------- 图书馆 ---------- */
+.bk-library {
+  max-width: 1040px;
+}
+
+.bk-library[data-dragging='true'] {
+  outline: 2px dashed var(--line2);
+  outline-offset: -8px;
+}
+
+.bk-import-button {
+  gap: 4px;
+}
+
+.bk-imports {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bk-import {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.bk-import b {
+  font-weight: 500;
+}
+
+.bk-import-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bk-import-meta {
+  margin-left: auto;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.bk-import-error,
+.bk-import-note {
+  display: block;
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.bk-import-error {
+  color: var(--err);
+}
+
+.bk-import-note {
+  color: var(--fg2);
+}
+
+.bk-imports .dot-err {
+  background: var(--err);
+}
+
+.bk-reading-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 32px;
+}
+
+.bk-reading {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.bk-reading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.bk-title {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.bk-author {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.bk-where {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.bk-progress {
+  position: relative;
+  height: 2px;
+  margin: 8px 0 4px;
+  border-radius: 2px;
+  background: var(--line2);
+}
+
+.bk-progress > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 2px;
+  background: var(--fg);
+}
+
+.bk-reading-meta {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.bk-reading-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.bk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 116px);
+  gap: 24px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bk-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bk-item-title {
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bk-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  margin-top: -4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.bk-item-meta > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bk-item-progress {
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 「更多」压在封面右上角，常显（2026-11-04 第 2 批悬停规则：次要操作收进 ⋯，⋯ 本身不藏）。 */
+.bk-item-more {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.bk-item-menu {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 232px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: var(--lift);
+}
+
+.bk-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.bk-menu-item:hover {
+  background: var(--tint);
+}
+
+.bk-menu-note {
+  margin: 0;
+  padding: 4px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.bk-menu-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.bk-drop {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+/* ---------- 手机 ---------- */
+/* 手机页头只有「导入」一个图标：和查找、站内信排在同一行，不另起一行。 */
+.bk-phone .page-head {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: 'title controls tools';
+}
+
+.bk-phone.page {
+  padding: 16px 16px 96px;
+  gap: 20px;
+}
+
+.bk-phone .bk-reading-list {
+  grid-template-columns: 1fr;
+}
+
+.bk-phone .bk-reading {
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.bk-phone .bk-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 12px;
+}
+
+.bk-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bk-progress-row .bk-progress {
+  flex: 1;
+}
+
+.bk-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--fg2);
+}

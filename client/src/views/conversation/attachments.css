@@ -1,0 +1,85 @@
+.message-attachments {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.conv-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+.conv-attachment-draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+.conv-attachment-draft > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conv-attachment-draft .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.attachment-preview {
+  padding: 16px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+
+.attachment-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
+.attachment-thumbnail { border: 0; padding: 0; background: transparent; width: 48px; height: 48px; flex-shrink: 0; }
+.attachment-thumbnail img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+.attachment-text { white-space: pre-wrap; font: inherit; }
+.attachment-source-options { display: flex; flex-direction: column; gap: 16px; padding: 20px; }
+
+.payment-card {
+  padding: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.payment-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 12px;
+}
+
+.payment-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.payment-fields input,
+.payment-fields select {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+}
+
+.payment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 12px;
+}

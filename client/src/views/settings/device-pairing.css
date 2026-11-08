@@ -1,0 +1,159 @@
+.device-pair-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.device-pair-sheet .sheet-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.device-pair-content {
+  flex: 1;
+  min-height: 0;
+  padding: 24px;
+  overflow: auto;
+}
+
+.device-pair-content > h3,
+.device-pair-result > h3 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.device-pair-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  text-align: center;
+}
+
+.device-pair-hero h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.device-pair-qr {
+  padding: 12px;
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  background: var(--bg);
+  line-height: 0;
+}
+
+.device-pair-code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font: 22px/28px var(--mono);
+}
+
+.device-pair-expiry {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.device-pair-hero .primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-pair-help {
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+
+.device-pair-help summary {
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.device-pair-help p,
+.device-pair-copy-error p,
+.device-pair-address p {
+  margin: 12px 0;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.device-pair-mac {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.device-pair-footer {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+}
+
+.device-pair-wait {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.device-pair-result {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.device-pair-success {
+  color: var(--ok);
+}
+
+.device-pair-connected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 0;
+  border-block: 1px solid var(--line);
+  text-align: left;
+}
+
+.device-pair-connected > span:not(.glyph) {
+  flex: 1;
+}
+
+.device-pair-address {
+  max-width: 320px;
+}
+
+@media (max-width: 767px) {
+  .device-pair-sheet .primary-button,
+  .device-pair-sheet .chip-button,
+  .device-pair-sheet .text-button,
+  .device-pair-sheet .icon-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

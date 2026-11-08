@@ -1,0 +1,27 @@
+/* 对话的三个容器：同一套结构，只改宽度和字号（对话整页里的消息 15/24）。 */
+
+.conv {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+/* 「问这一页」开关：只有图标；开着是当前位置的 --tint2 底加 1px 描边（和网页工具条上按下的图标一个样子）。 */
+.conv-ask-page[aria-pressed='true'] {
+  background: var(--tint2);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+}
+
+.model-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block: 12px;
+}
+
+.model-choice label {
+  min-width: 0;
+  flex: 1 1 12rem;
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.plasticine.app",
+  "productName": "Plasticine",
+  "copyright": "Plasticine contributors",
+  "directories": { "output": "release", "buildResources": "build-resources" },
+  "files": ["dist/**/*", "!dist/**/*.map", "package.json", "!**/node_modules/**/*"],
+  "asar": true,
+  "npmRebuild": false,
+  "afterPack": "build/after-pack.ts",
+  "electronLanguages": ["zh-CN", "zh-TW", "en", "en-US"],
+  "mac": {
+    "target": [{ "target": "dmg", "arch": ["universal"] }, { "target": "zip", "arch": ["universal"] }],
+    "icon": "dist/icon.png",
+    "category": "public.app-category.productivity",
+    "minimumSystemVersion": "14.0",
+    "identity": "-",
+    "hardenedRuntime": false,
+    "gatekeeperAssess": false,
+    "artifactName": "Plasticine-Desktop-mac-${env.PLASTICINE_RELEASE_VERSION}.${ext}",
+    "x64ArchFiles": "Contents/{MacOS/plasticine-helper,Resources/node/node}",
+    "binaries": ["Contents/MacOS/plasticine-helper"],
+    "extraFiles": [{ "from": "stage/helper/plasticine-helper", "to": "MacOS/plasticine-helper" }],
+    "extraResources": [
+      { "from": "stage/server", "to": "server" },
+      { "from": "stage/node/node", "to": "node/node" }
+    ],
+    "extendInfo": {
+      "NSScreenCaptureUsageDescription": "Plasticine 需要截取主屏幕，让你授权的设备任务读取画面并按指定位置操作。",
+      "NSAppleEventsUsageDescription": "Plasticine 在你授权的任务中与本机应用交互。系统会在需要时请求你确认。",
+      "NSCalendarsFullAccessUsageDescription": "Plasticine 读你的日程放进首页「今天」，并按你的话建日程、提醒。",
+      "NSCalendarsUsageDescription": "Plasticine 读你的日程放进首页「今天」，并按你的话建日程、提醒。",
+      "NSRemindersFullAccessUsageDescription": "Plasticine 读你的提醒事项放进首页「今天」，并按你的话新建、标完成。",
+      "NSRemindersUsageDescription": "Plasticine 读你的提醒事项放进首页「今天」，并按你的话新建、标完成。",
+      "LSApplicationCategoryType": "public.app-category.productivity"
+    }
+  },
+  "dmg": { "title": "Plasticine", "artifactName": "Plasticine-Desktop-mac-${env.PLASTICINE_RELEASE_VERSION}.${ext}" },
+  "win": {
+    "target": [{ "target": "nsis", "arch": ["x64"] }],
+    "icon": "build-resources/icon.ico",
+    "executableName": "Plasticine",
+    "signAndEditExecutable": false,
+    "extraResources": [
+      { "from": "stage/server", "to": "server" },
+      { "from": "stage/node/node.exe", "to": "node/node.exe" },
+      { "from": "stage/helper/PlasticineHelper.exe", "to": "helper/PlasticineHelper.exe" }
+    ]
+  },
+  "nsis": {
+    "oneClick": true,
+    "perMachine": false,
+    "allowElevation": false,
+    "runAfterFinish": true,
+    "deleteAppDataOnUninstall": false,
+    "shortcutName": "Plasticine",
+    "include": "build-resources/installer.nsh",
+    "artifactName": "Plasticine-Desktop-Setup-${env.PLASTICINE_RELEASE_VERSION}.${ext}"
+  },
+  "publish": null
+}

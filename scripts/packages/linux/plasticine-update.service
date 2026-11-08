@@ -1,0 +1,13 @@
+# Plasticine 自更新（Linux 安装包）：查发布清单，有新版就下载、核对 SHA-256、换上、重启、健康检查，不健康自动退回。
+# 由 plasticine-update.timer 开机后和每天触发；马上查一次：systemctl start plasticine-update.service。
+
+[Unit]
+Description=Plasticine 自更新
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/plasticine/plasticine.env
+ExecStart=/opt/plasticine/node/bin/node /opt/plasticine/current/scripts/packages/update.ts update \
+  --root /opt/plasticine --restart-command "systemctl restart plasticine.service"

@@ -1,0 +1,499 @@
+/*
+ * 联系人（第 113 条，设计稿第二版）。电脑：列表 288 | 聊天 | 资料栏 272，板块之间 1px --line；手机：每一步一整页。
+ * 左 = 对方、右 = 我：我的气泡 --tint 底，对方的描边；AI 没气泡、前面一个 ✦；AI↔AI 折成正中一行。颜色只用令牌：陶土橙只给
+ * 「等你」的点，进度条做完 --ok、正在 --run、出错 --err。
+ * 浮动对话始终覆盖页面，不参与此处的列宽计算。
+ */
+
+.contacts {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.contacts-list {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 288px;
+  min-height: 0;
+  padding: 24px 12px 12px;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+}
+
+.contacts-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.contacts-profile {
+  flex: none;
+  width: 272px;
+  min-height: 0;
+  padding: 32px 24px;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+}
+
+/* 主区窄（平板、对话框让出一块）：资料栏浮在聊天右边，点按钮才出来。 */
+.contacts[data-narrow='true'] .contacts-profile {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  border-left: 0;
+  background: var(--bg);
+  box-shadow: var(--lift);
+}
+
+.contacts[data-narrow='true'] .contacts-list {
+  width: 256px;
+}
+
+/* 对话框收成右下角的圆球时，资料栏不在右边的话，输入框给圆球让出 48 + 24 + 16。 */
+.shell:has(.chat-ball) .contacts:not([data-phone='true']):not([data-profile='true']) :is(.contact-composer,
+  .ct-request) {
+  padding-right: 88px;
+}
+
+.contacts-profile-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+/* ---------- 列表 ---------- */
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contact-list-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 12px 12px;
+}
+
+.contact-list-title {
+  flex: 1;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.contact-list-head .icon-button[aria-pressed='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.contact-list-search {
+  margin: 0 4px 8px;
+}
+
+.contact-list-empty {
+  margin: 0;
+  padding: 24px 12px;
+  color: var(--fg2);
+}
+
+.contact-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 人和邮件之间一道线：位置说明分段，不写段名（手机上是行间那道线拉满）。 */
+.contact-row-item[data-group-start='true'] {
+  margin-top: 8px;
+}
+
+.contacts:not([data-phone='true']) .contact-row-item[data-group-start='true'] {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contact-row:hover {
+  background: var(--tint);
+}
+
+.contact-row[aria-current='true'] {
+  background: var(--tint2);
+}
+
+.contact-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.contact-row-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.contact-row-top,
+.contact-row-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.contact-row-top {
+  align-items: baseline;
+}
+
+.contact-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contact-row-time {
+  flex: none;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.contact-row-preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contact-row-preview .ai-mark {
+  margin-right: 4px;
+  color: var(--fg2);
+}
+
+.contact-unread {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.contact-requests-row {
+  padding-block: 8px;
+}
+
+.contact-requests-dot {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+}
+
+.contact-requests-count {
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+/* 默认头像（2026-11-05 设计稿）：名字首字 + 暖色底（陶土掺进页面底色，深浅色都跟着令牌走）。 */
+.contact-avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  color: var(--fg);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.contact-avatar[data-step='s'] {
+  font-size: 11px;
+}
+
+.contact-avatar[data-step='m'] {
+  font-size: 14px;
+}
+
+.contact-avatar[data-step='l'] {
+  font-size: 22px;
+}
+
+.contact-avatar[data-step='xl'] {
+  font-size: 24px;
+}
+
+.contact-avatar-square {
+  border-radius: 8px;
+  background: var(--tint2);
+  color: var(--fg2);
+}
+
+/* ---------- 新请求、找不到 ---------- */
+
+.contacts-requests {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 40px;
+  overflow-y: auto;
+}
+
+.contacts-requests > * {
+  width: 100%;
+  max-width: 560px;
+}
+
+.request-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.request-row {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+
+.request-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.request-who {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+
+.request-name {
+  font-weight: 500;
+}
+
+.request-handle {
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+.request-hello {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ct-request .request-row {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.contact-missing {
+  padding: 24px;
+}
+
+.contact-sheet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-sheet-submit {
+  align-self: flex-start;
+}
+
+/* ---------- 手机：每一步一整页 ---------- */
+
+.contacts[data-phone='true'] {
+  flex-direction: column;
+}
+
+.contacts-phone-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.contacts[data-phone='true'] .contacts-list {
+  width: auto;
+  padding: 16px 0 96px;
+  border-right: 0;
+}
+
+.contacts[data-phone='true'] .contact-list {
+  gap: 0;
+}
+
+.contacts[data-phone='true'] .contact-list-head {
+  padding: 0 8px 8px 16px;
+}
+
+.contacts[data-phone='true'] .contact-list-search {
+  margin: 0 16px 8px;
+}
+
+.contacts[data-phone='true'] .contact-rows {
+  gap: 0;
+}
+
+.contacts[data-phone='true'] .contact-row {
+  min-height: 52px;
+  padding: 10px 16px;
+  border-radius: 0;
+}
+
+.contacts[data-phone='true'] .contact-row-item {
+  position: relative;
+}
+
+.contacts[data-phone='true'] .contact-row-item + .contact-row-item::before,
+.contacts[data-phone='true'] .contact-requests-row + .contact-rows > .contact-row-item:first-child::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 16px;
+  left: 72px;
+  height: 1px;
+  background: var(--line);
+}
+
+.contacts[data-phone='true'] .contact-row-item[data-group-start='true']::before {
+  left: 0;
+  right: 0;
+}
+
+.contacts[data-phone='true'] .contact-requests-dot {
+  width: 44px;
+}
+
+.contacts[data-phone='true'] .contact-requests-row > svg {
+  color: var(--fg2);
+}
+
+.ct-head[data-phone='true'] {
+  gap: 4px;
+  padding: 8px 4px 4px;
+}
+
+.ct-who {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contacts[data-phone='true'] .ct-items {
+  padding: 16px;
+}
+
+.contacts[data-phone='true'] .cm-line {
+  max-width: 88%;
+}
+
+.contacts[data-phone='true'] .contact-composer,
+.contacts[data-phone='true'] .ct-request {
+  padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
+}
+
+.contact-composer[data-phone='true'] .contact-composer-box {
+  min-height: 44px;
+  padding: 6px 6px 6px 14px;
+  align-items: center;
+}
+
+.contact-composer[data-phone='true'] .contact-composer-input {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.contact-composer[data-phone='true'] .contact-send {
+  width: 44px;
+  height: 44px;
+}
+
+.contact-profile[data-phone='true'] {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 24px calc(24px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+
+.contact-profile[data-phone='true'] .profile-who {
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.contact-profile[data-phone='true'] .profile-name {
+  font-size: 22px;
+  line-height: 28px;
+}
+
+.contact-profile[data-phone='true'] .contact-relation {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-self: stretch;
+}
+
+.contact-profile[data-phone='true'] .profile-safety-button {
+  align-self: stretch;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.contacts[data-phone='true'] .request-list {
+  padding: 0 16px;
+}

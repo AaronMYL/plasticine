@@ -1,0 +1,154 @@
+/* 设置 · 系统里桌面客户端那几行（设计稿 Settings-System）：「跑在哪」两张卡、「这台电脑」三行。 */
+
+.desktop-place {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.desktop-place-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.desktop-place-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  cursor: pointer;
+  transition: box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.desktop-place-card[data-selected='true'] {
+  box-shadow: inset 0 0 0 2px var(--fg);
+}
+
+.desktop-place-card:has(input:disabled) {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.desktop-place-card input[type='radio'] {
+  flex: none;
+  margin: 3px 0 0;
+  accent-color: var(--fg);
+}
+
+.desktop-place-card input[type='radio']:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.desktop-place-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.desktop-place-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.desktop-place-detail,
+.desktop-place-live,
+.desktop-place-note {
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+}
+
+.desktop-place-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.desktop-place-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg3);
+}
+
+.desktop-place-live[data-tone='ok'] .desktop-place-dot { background: var(--ok); }
+.desktop-place-live[data-tone='run'] .desktop-place-dot { background: var(--run); }
+.desktop-place-live[data-tone='err'] .desktop-place-dot { background: var(--err); }
+
+.desktop-place-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--fg2);
+}
+
+.desktop-place-address {
+  margin-top: 6px;
+}
+
+.desktop-place-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.desktop-place-note {
+  flex: 1;
+  margin: 0;
+}
+
+.desktop-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  border-top: 1px solid var(--line);
+}
+
+.desktop-row-sub {
+  min-height: 36px;
+  border-top: 0;
+  padding-left: 12px;
+}
+
+.desktop-row-sub .desktop-row-title {
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+.desktop-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-row-meta {
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+@media (max-width: 767px) {
+  .desktop-place-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

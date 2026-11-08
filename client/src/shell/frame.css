@@ -1,0 +1,84 @@
+/*
+ * 壳的分层（11-07 两层侧栏）：图标栏最暗 --layer-bar，第二栏暗一档 --layer-side，主区 --layer-page（= --bg），
+ * 悬浮对话框最亮 --layer-float + --lift。区域靠底色和 1px 线分开。
+ */
+
+.shell {
+  flex-direction: row;
+  background: var(--layer-page);
+}
+
+.shell-main-area {
+  background: var(--layer-page);
+}
+
+.shell[data-phone='true'] {
+  flex-direction: column;
+}
+
+.page-enter {
+  min-height: 100%;
+  height: 100%;
+}
+
+/* ---------- 网页标签：工具条和页面同色，原生网页画在它下面 ---------- */
+
+.shell-main-web {
+  overflow: hidden;
+}
+
+/*
+ * Mac 0.3.0 起原生网页垫在主网页下面（mac-bridge.ts）：网页标签显示时，网页那一块主网页不画底色，露出下面的原生网页。
+ * 整页、壳、主区都不铺底，顶栏、侧栏、工具条各自铺自己的；页面左上角圆角外那一点用一块 --layer-bar 垫着。
+ * 对话框、圆球照常画（它们是 hitRegions）。
+ */
+body:has(.shell[data-native-web='true']),
+.shell[data-native-web='true'],
+.shell[data-native-web='true'] .shell-main-area,
+.shell[data-native-web='true'] .web-frame {
+  background: transparent;
+}
+
+.shell[data-native-web='true'] .shell-main-area {
+  position: relative;
+  isolation: isolate;
+}
+
+.shell[data-native-web='true'] .web-bar {
+  background: var(--layer-page);
+}
+
+/* ---------- 按下：轻轻一压（120ms），所有按钮一样 ---------- */
+
+.primary-button,
+.chip-button,
+.icon-button,
+.chat-ball {
+  transition: transform var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+
+.primary-button:active:not(:disabled),
+.chip-button:active:not(:disabled),
+.icon-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.chat-ball:active {
+  transform: scale(0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-button,
+  .chip-button,
+  .icon-button,
+  .chat-ball {
+    transition: none;
+  }
+
+  .primary-button:active:not(:disabled),
+  .chip-button:active:not(:disabled),
+  .icon-button:active:not(:disabled),
+  .chat-ball:active {
+    transform: none;
+  }
+}

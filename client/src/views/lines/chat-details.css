@@ -1,0 +1,375 @@
+/* 《优化清单》第 17 条（11-07 设计稿 Plasticine-Main / Side / Dark / Phone）：主线和旁聊的消息细节。
+   正文 14/22；消息之间按时间加一条细线分隔；悬停一条出表情 · 回复 · 更多；子代理是一张细线框的卡；
+   往上翻着时来了新消息出「n 条新消息」；旁聊顶上是它围绕的那一条。 */
+
+.line-conv .line-column {
+  gap: 14px;
+}
+
+.line-conv .line-item {
+  gap: 14px;
+}
+
+/* 同一轮里隔一段发一条的话，和别的消息一样隔开。 */
+.line-conv .line-turn {
+  gap: 14px;
+}
+
+.line-turn > .line-msg {
+  align-self: stretch;
+}
+
+/* 设计稿的按钮都是无底无框的：这几处自己的按钮先清掉浏览器默认。 */
+.line-card-steps,
+.line-reaction,
+.line-emoji,
+.line-side-link,
+.line-new-pill {
+  border: 0;
+  font-family: inherit;
+}
+
+.line-card-steps,
+.line-emoji,
+.line-side-link {
+  background: transparent;
+}
+
+.line-conv .line-answer {
+  gap: 10px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.line-conv .line-answer .markdown h2,
+.line-conv .line-answer .markdown h3,
+.line-conv .line-answer .markdown h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.line-conv .line-answer .markdown a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+
+/* 时间分隔：一条细线中间一个时间。 */
+.line-conv .line-day {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 2px;
+  color: var(--fg3);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.line-conv .line-day::before,
+.line-conv .line-day::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* —— 一条消息：正文 + 表情 + 悬停条 —— */
+
+.line-msg {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.line-msg[data-from='me'] {
+  align-items: stretch;
+}
+
+.line-msg[data-from='me'] > .line-reactions {
+  justify-content: flex-end;
+}
+
+.line-conv .msg-bubble {
+  max-width: 76%;
+  border-radius: 12px;
+}
+
+.line-hoverbar {
+  position: absolute;
+  top: -18px;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(2px);
+  transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+}
+
+.line-msg:hover > .line-hoverbar,
+.line-msg:focus-within > .line-hoverbar,
+.line-hoverbar[data-open='true'] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.line-hoverbar .icon-button {
+  width: 28px;
+  height: 28px;
+}
+
+/* 触屏没有悬停：手机上这一排不出（长按选字照样能复制）。 */
+.shell[data-phone='true'] .line-hoverbar {
+  display: none;
+}
+
+.line-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.line-reaction {
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--tint);
+  font-size: 13px;
+  line-height: 24px;
+  cursor: pointer;
+}
+
+.line-reaction:hover {
+  background: var(--tint2);
+}
+
+.line-emoji-menu {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+}
+
+.line-emoji {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 32px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.line-emoji:hover,
+.line-emoji[aria-pressed='true'] {
+  background: var(--tint2);
+}
+
+/* 气泡里「回复 Plasticine：……」那一行。 */
+.msg-reply {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line2);
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.msg-reply > svg {
+  flex: none;
+}
+
+.msg-reply-text,
+.line-reply-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-reply-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 6px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.line-reply-chip-text {
+  flex: 1;
+}
+
+/* —— 子代理的卡（.sub）—— */
+
+.line-conv .line-card {
+  max-width: none;
+  padding: 10px 12px 10px 14px;
+  gap: 2px;
+}
+
+.line-conv .line-card[data-status='idle'] {
+  padding-bottom: 10px;
+}
+
+.line-card-steps {
+  padding: 0;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.line-card-steps:hover {
+  color: var(--fg);
+}
+
+.line-conv .line-card-status {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.line-conv .line-card-title {
+  font-weight: 400;
+}
+
+/* Plasticine 把话题挪到了旁聊：一行入口。 */
+.line-side-link {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.line-side-link:hover {
+  background: var(--tint);
+}
+
+.line-side-kind {
+  color: var(--fg2);
+}
+
+.line-side-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 「n 条新消息」：浮在输入框上面正中。 */
+.line-composer-dock {
+  position: relative;
+}
+
+.line-new-pill {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 15px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  transform: translateX(-50%);
+  box-shadow: var(--lift);
+  cursor: pointer;
+  animation: line-pill-in var(--motion-fast) var(--ease-out);
+}
+
+@keyframes line-pill-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-new-pill {
+    animation: none;
+  }
+
+  .line-hoverbar {
+    transition: opacity var(--motion-fast) linear;
+    transform: none;
+  }
+}
+
+/* —— 旁聊顶上那一条 —— */
+
+.line-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.line-topic-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg2);
+}
+
+.line-topic-title {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.line-topic-excerpt {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: pre-wrap;
+}
+
+/* 旁聊从顶上那一条往下读（设计稿 Plasticine-Side），不贴底。 */
+.line-conv[data-kind='side'] .line-scroll > .line-column {
+  margin-top: 0;
+}
+
+/* 右下角对话框、手机全屏里也是同一套消息样式（设计稿：你的话是 --bubble 气泡）。 */
+.conv-column .line-conv .msg-user .msg-bubble,
+.conv-sheet .line-conv .msg-user .msg-bubble {
+  background: var(--bubble);
+  color: var(--fg);
+}

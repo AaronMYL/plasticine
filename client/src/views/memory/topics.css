@@ -1,0 +1,443 @@
+/*
+ * 记忆主题目录与文档（第 102 条；11-06 第 16、19 条照设计稿 Plasticine-Memory 重做）：页头搜索；「昨晚整理了 n 条」一行淡底入口；
+ * 拿不准的整节左侧 1px --fg3 细线；目录按类型分组，每篇一行名字 + 一句简介，档位小签只在不是私密时出现。
+ * 文档是 16/28 的阅读列，每行右边链回原话，[[双链]] 下划线可点。
+ */
+
+.memory-topics > :not(.page-head) {
+  width: 100%;
+}
+
+.memory-doc > :not(.page-head) {
+  width: 100%;
+  max-width: 760px;
+}
+
+/* ---------- 页头搜索（设计稿 Plasticine-Memory：240 宽、34 高、细线框） ---------- */
+
+.memory-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.memory-search:focus-within {
+  box-shadow: inset 0 0 0 1px var(--fg2);
+}
+
+.memory-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: 14px;
+}
+
+.memory-search input::placeholder {
+  color: var(--fg3);
+}
+
+.memory-hit-text {
+  font-weight: 400;
+}
+
+.topic-row[data-archived='true'] .memory-hit-text {
+  color: var(--fg2);
+}
+
+/* ---------- 昨晚整理了 n 条 ---------- */
+
+.dream-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: -4px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--tint);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease;
+}
+
+.dream-entry:hover {
+  background: var(--tint2);
+}
+
+.dream-entry:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.dream-entry-title {
+  font-weight: 500;
+}
+
+.dream-entry-counts {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 分组的段 ---------- */
+
+.memory-block {
+  gap: 6px;
+}
+
+.memory-block-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+/* ---------- 拿不准的（整节是 Plasticine 推断的：左侧 1px 细线） ---------- */
+
+.uncertain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 2px 0 2px 14px;
+  list-style: none;
+  box-shadow: inset 1px 0 0 var(--fg3);
+}
+
+.uncertain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.uncertain-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 34px;
+}
+
+.uncertain-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+/* 依据的 ⓘ 跟在这句话最后一个字后面（折行时也在字后，不跑到行尾）。 */
+.uncertain-text .info-tip {
+  margin-left: 4px;
+  vertical-align: -3px;
+}
+
+.uncertain-answers,
+.uncertain-fix {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.uncertain-fix .field-input {
+  flex: 1;
+  min-width: 12em;
+  height: 28px;
+}
+
+.uncertain-done {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 6px 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.uncertain-done-text {
+  text-decoration: line-through;
+  text-decoration-color: var(--line2);
+}
+
+/* ---------- 目录：每篇一行（名字 + 开头那句简介），档位小签只在不是私密时出现 ---------- */
+
+.topic-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topic-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease;
+}
+
+.topic-row:hover {
+  background: var(--tint);
+}
+
+.topic-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.topic-row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topic-row-title {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.topic-row-summary {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topic-tier {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.topic-row-full {
+  flex: none;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.topic-row-chevron {
+  display: inline-flex;
+  flex: none;
+  color: var(--fg2);
+}
+
+/* ---------- 文档 ---------- */
+
+.memory-doc > .doc-back {
+  width: auto;
+  align-self: flex-start;
+  margin-bottom: -20px;
+}
+
+.doc-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.doc-summary {
+  flex: 1;
+  min-width: 12em;
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--fg2);
+}
+
+.doc-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.doc-meta {
+  margin: -12px 0 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.doc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doc-section-title {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.doc-lines {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doc-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.doc-line:last-child {
+  border-bottom: 0;
+}
+
+.doc-line-text {
+  font-size: 16px;
+  line-height: 28px;
+  overflow-wrap: anywhere;
+}
+
+.doc-line[data-basis='inferred'] .doc-line-text {
+  padding-left: 12px;
+  box-shadow: inset 1px 0 0 var(--fg3);
+}
+
+.doc-line-tag {
+  margin-left: 8px;
+  vertical-align: 2px;
+}
+
+.doc-line-source {
+  min-height: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .memory-search {
+    width: 100%;
+  }
+
+  .doc-line {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .doc-line-source {
+    justify-self: start;
+  }
+
+  .memory-doc > .doc-back {
+    margin-bottom: -16px;
+  }
+}
+
+@media (max-width: 767px) {
+  .uncertain-answers .chip-button {
+    min-width: 56px;
+  }
+}
+
+/* ---------- 「怎么替你做事」最前面的硬线（第 4 批） ---------- */
+
+.doc-hard .doc-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.doc-hard-lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 0 0 16px;
+  list-style: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.doc-hard-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.doc-hard-line svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+/* ---------- 双链与档位（第 16、19 条） ---------- */
+
+.doc-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.doc-link:hover {
+  text-decoration-color: var(--fg2);
+}
+
+.doc-link:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.doc-tier {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.doc-meta + .doc-tier {
+  margin-top: -12px;
+}
+
+@media (max-width: 767px) {
+  .doc-tier {
+    margin-bottom: 16px;
+  }
+}

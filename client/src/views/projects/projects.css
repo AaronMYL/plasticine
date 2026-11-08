@@ -1,0 +1,266 @@
+/* 项目页（列表、表单和共用小块）：方向 I 令牌，无卡片无阴影，板块靠 1px --line 和留白分开；强调色只做「等你」的点。 */
+
+.proj-page {
+  container-type: inline-size;
+  gap: 24px;
+}
+
+.proj-new {
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.proj-num {
+  font-size: 12px;
+  color: var(--fg);
+}
+
+.proj-dim {
+  color: var(--fg3);
+}
+
+.dot.proj-dot-err {
+  background: var(--err);
+}
+
+.proj-health {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  white-space: nowrap;
+}
+
+.proj-health-risk {
+  color: var(--fg);
+}
+
+.proj-health-off {
+  color: var(--err);
+}
+
+/* ---------- 列表 ---------- */
+
+.proj-colhead,
+.proj-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px 104px 72px 64px;
+  gap: 16px;
+}
+
+.proj-colhead {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.proj-list {
+  margin: -16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proj-row {
+  align-items: start;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.proj-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.proj-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proj-name {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.proj-status {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.proj-next {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.proj-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  padding-top: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.proj-wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.proj-due {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  color: var(--fg);
+}
+
+.proj-due-note {
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+.proj-overdue .proj-due-note {
+  color: var(--err);
+}
+
+.proj-nodebar {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.proj-seg {
+  width: 10px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line2);
+}
+
+.proj-seg-done {
+  background: var(--fg);
+}
+
+.proj-health-none {
+  color: var(--fg3);
+}
+
+.proj-health[data-proposed='true'] {
+  color: var(--fg2);
+}
+
+.proj-nodebar-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.proj-cell-tasks {
+  gap: 4px 8px;
+}
+
+.proj-new-form,
+.proj-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 40em;
+}
+
+.proj-form-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.proj-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--err);
+}
+
+.proj-textarea {
+  height: auto;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 22px;
+  resize: vertical;
+}
+
+.proj-person-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 8px;
+}
+
+@container (max-width: 760px) {
+  .proj-colhead {
+    display: none;
+  }
+
+  .proj-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 'main main' 'nodes due' 'tasks updated';
+    gap: 8px 16px;
+  }
+
+  .proj-row-main { grid-area: main; }
+  .proj-cell-nodes { grid-area: nodes; }
+  .proj-cell-tasks { grid-area: tasks; }
+  .proj-due { grid-area: due; flex-direction: row; gap: 6px; justify-self: end; }
+  .proj-updated { grid-area: updated; justify-self: end; }
+}
+
+.proj-unfiled-row {
+  flex-wrap: wrap;
+}
+
+.proj-unfiled-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.project-concerns {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.project-concerns-head {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.proj-standing {
+  display: inline-grid;
+  place-items: center;
+  color: var(--fg3);
+}
+
+.proj-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.proj-health[data-proposed='true'] .dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px currentColor;
+}

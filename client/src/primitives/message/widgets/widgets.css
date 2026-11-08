@@ -1,0 +1,430 @@
+/*
+ * 消息里的部件（设计稿 2026-11-03）：卡中卡写法——透明底、--line2 描边环、圆角 12、内边距 12；
+ * 工具卡头是类别色小方块 + 类别字，左边一条 2px 类别色细条表示「这是一个工具的东西」；按下有 120ms 的轻压。
+ */
+
+.msg-widgets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.msg-user .msg-widgets {
+  align-items: flex-end;
+}
+
+.widget {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  min-width: 0;
+}
+
+.widget-prompt,
+.widget-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+}
+
+.widget-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.widget-options.is-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.widget-option {
+  justify-content: flex-start;
+  gap: 8px;
+  height: auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  text-align: left;
+  flex-wrap: wrap;
+}
+
+.widget-options.is-row .widget-option {
+  justify-content: center;
+}
+
+.widget-option[aria-pressed='true'] {
+  background: var(--tint2);
+  font-weight: 500;
+}
+
+.widget-option-label {
+  min-width: 0;
+}
+
+.widget-option-hint {
+  flex-basis: 100%;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.widget-check {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.widget-option[aria-pressed='true'] .widget-check {
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow: none;
+}
+
+.widget-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.widget-answered {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--fg2);
+}
+
+.widget-answered-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--fg);
+}
+
+.widget-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.widget-input-row .field-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- 图片 ---------- */
+
+.widget-gallery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.widget-gallery[data-count='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.widget-gallery[data-count='3'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.widget-image {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+}
+
+.widget-image a,
+.widget-image-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.widget-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  object-fit: cover;
+  aspect-ratio: 4 / 3;
+}
+
+.widget-image figcaption {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+/* ---------- 表格 ---------- */
+
+.widget-table-scroll {
+  overflow-x: auto;
+  margin: 0 -12px;
+  padding: 0 12px;
+}
+
+.widget-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.widget-table th {
+  padding: 0 8px 4px 0;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+  color: var(--fg2);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line2);
+}
+
+.widget-table td {
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.widget-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.widget-table [data-align='end'] {
+  text-align: right;
+  padding-right: 0;
+}
+
+/* ---------- 工具卡 ---------- */
+
+.tool-card {
+  position: relative;
+  gap: 4px;
+  padding-left: 16px;
+}
+
+.tool-card::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 0;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--card-hue);
+}
+
+.tool-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.tool-card-kind {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--card-hue);
+}
+
+.tool-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg);
+}
+
+.tool-card-status.is-quiet {
+  color: var(--fg2);
+}
+
+.tool-card-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.tool-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tool-card-figure {
+  margin: 0;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 500;
+}
+
+.tool-card-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.tool-card-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.tool-card-line .text-meta,
+.tool-card-meta {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.tool-card-meta {
+  margin: 0;
+}
+
+.tool-card-when {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-card[data-state='cancelled'] .tool-card-body {
+  color: var(--fg2);
+}
+
+.tool-card[data-state='cancelled'] .tool-card-figure,
+.tool-card[data-state='cancelled'] .tool-card-title {
+  color: var(--fg2);
+  text-decoration: line-through;
+  text-decoration-color: var(--line2);
+}
+
+.tool-card-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--tint2);
+  overflow: hidden;
+}
+
+.tool-card-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--card-hue);
+  transition: width 1s linear;
+}
+
+.tool-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tool-card-skip {
+  margin-left: auto;
+}
+
+.tool-card-conflict {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* 日历卡的时间条：已有安排 --tint2，新的一段类别色描边，撞上的 --accent 描边（等你看一眼）。 */
+.day-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.day-strip-track {
+  position: relative;
+  /* 落在时间窗边上的那一段不撑出卡外（不然对话里横向多出一条滚动条）。 */
+  overflow: hidden;
+  height: 28px;
+  border-radius: 4px;
+  background: var(--tint);
+}
+
+.day-strip-block {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: 11px;
+  line-height: 24px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.day-strip-block[data-conflict='true'] {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.day-strip-block.is-new {
+  top: 2px;
+  background: color-mix(in srgb, var(--card-hue) var(--hue-wash), transparent);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--card-hue);
+  font-weight: 500;
+}
+
+.day-strip-hours {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+/* 作答没送到：部件下面一句原因（只有出错写字用 --err）。 */
+.widget-error {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--err);
+}

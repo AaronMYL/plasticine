@@ -1,0 +1,227 @@
+/* 2026-11-05 第 9 条：工具栏固定在编辑区（.note-pane 这个滚动容器）顶上，滚动正文时一直看得见。和页面同色的底
+   盖住滚上去的正文，底下 1px 细线分开；上面多 8px 的底，贴顶时字不顶着边。让开它的高度见 use-sticky-tools.ts。 */
+.note-command-bar {
+  position: sticky;
+  top: -24px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 16px;
+  margin-top: -8px;
+  padding-top: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--layer-page);
+}
+
+.note-command-bar[data-expanded='false'] {
+  position: static;
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+  gap: 0;
+}
+
+.note-command-bar[data-expanded='false'] .note-format-toolbar,
+.note-command-bar[data-expanded='false'] > .note-ai-tools > .note-toolbar {
+  display: none;
+}
+
+.note-format-toolbar {
+  gap: 4px;
+}
+
+.note-ai-tools {
+  flex: 1;
+  min-width: min(100%, 180px);
+}
+
+.note-ai-tools > .note-toolbar {
+  flex-wrap: wrap;
+}
+
+.note-command-bar:has(.note-ai-prompt) {
+  /* 写修改要求时整块很高：不再固定，跟着正文走。 */
+  position: static;
+}
+
+.note-command-bar:has(.note-ai-prompt) .note-ai-tools {
+  flex-basis: 100%;
+}
+
+.note-menu-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease;
+}
+
+.note-menu-button:hover:not(:disabled),
+.note-menu-button[data-open='true'] {
+  background: var(--tint);
+  color: var(--fg);
+}
+
+.note-menu-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.note-ai-prompt {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--fg3);
+}
+
+.note-ai-prompt strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.note-ai-prompt blockquote {
+  max-height: 80px;
+  overflow-y: auto;
+  margin: 0;
+  padding-left: 8px;
+  border-left: 1px solid var(--line2);
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-ai-prompt textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 72px;
+  padding: 8px 12px;
+  resize: vertical;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  font: inherit;
+  line-height: 22px;
+}
+
+.note-selection-tools {
+  position: fixed;
+  z-index: 20;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--lift);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  max-width: calc(100vw - 16px);
+}
+
+.note-selection-tools > .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.note-selection-tools > .note-selection-more {
+  margin-left: auto;
+}
+
+/* 补充建议：画在当前段落下方留出的空里（note-suggestions.tsx 用装饰给段落加下边距），不在顶部工具栏。 */
+.note-suggestion {
+  position: absolute;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--fg3);
+}
+
+.note-suggestion p {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.note-suggestion > .text-button {
+  flex: none;
+  min-height: 22px;
+}
+
+/* 续写：光标后的灰字。外层盖住整段宽度但不接点击，只有灰字本身可以点，避免挡住这一行已写的字。 */
+.note-ghost-line {
+  position: absolute;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  font: 16px / 28px var(--sans);
+}
+
+.note-ghost {
+  color: var(--fg2);
+  font-style: italic;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.note-ghost-key {
+  margin-left: 6px;
+  padding: 0 4px;
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  color: var(--fg3);
+  font: 11px / 16px var(--mono);
+  font-style: normal;
+  text-indent: 0;
+  vertical-align: 2px;
+}
+
+.note-ai-error {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-menu-button {
+    transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .note-ai-prompt textarea {
+    font-size: 16px;
+  }
+  .note-ai-tools > .note-toolbar {
+    flex-wrap: wrap;
+  }
+  .note-ghost-key {
+    display: none;
+  }
+  .note-selection-tools .icon-button,
+  .note-selection-tools .text-button,
+  .note-menu-button {
+    min-height: 40px;
+  }
+}

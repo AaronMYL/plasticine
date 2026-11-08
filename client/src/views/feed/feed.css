@@ -1,0 +1,480 @@
+/*
+ * 信息流页（第 3 批，用户 11-04 定）：瀑布流卡片。卡片 12 圆角、1px --line2 内描边、无阴影；头部 28 的来源标记（X 头像
+ * 正圆、订阅和新闻站点首字 8 圆角方块）；命中关注点一个陶土橙点 + 关注点名；标题 15/24·600、正文 14/22；配图 8 圆角铺满
+ * 卡片内宽；卡底 赞 · 收藏 · 问 · 不感兴趣 · 原文 五个图标按钮；
+ * 不感兴趣落定后收成一行可撤销的占位。分列见 feed-masonry.ts（电脑两三列按宽度、手机一列）。
+ */
+
+.feed {
+  gap: 24px;
+}
+
+/* 瀑布流要宽：三列各 300 起，页面列放宽到 1240；浮动对话覆盖其上。 */
+@media (min-width: 768px) {
+  .page.feed:not(.page-fill) {
+    max-width: calc(1240px + 64px);
+  }
+}
+
+.feed-list,
+.feed-source-list,
+.feed-sites {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed-board {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feed-masonry {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.feed-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feed-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  min-width: 0;
+}
+
+/* 「不感兴趣」落定后就地收成的占位：同一张卡的框，一行短话 +「撤销」；高度变化由 useHeightMorph 平滑过渡。 */
+.feed-card[data-collapsed='true'] {
+  padding: 6px 8px 6px 16px;
+}
+
+.feed-undo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.feed-undo-note {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--fg2);
+}
+
+.feed-undo .feed-undo-button {
+  flex: none;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--motion-fast) ease-out;
+}
+
+.feed-undo .feed-undo-button:hover:not(:disabled) { background: var(--tint2); }
+
+@media (max-width: 767px) {
+  .feed-undo .feed-undo-button { height: 40px; padding: 0 12px; }
+}
+
+.feed-card[data-hidden='true'] .feed-card-title,
+.feed-card[data-hidden='true'] .feed-card-text {
+  color: var(--fg2);
+}
+
+.feed-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.feed-mark {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 600;
+  object-fit: cover;
+}
+
+.feed-mark.is-round { border-radius: 50%; }
+.feed-mark.is-square { border-radius: 8px; }
+
+.feed-card-source {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-card-name,
+.feed-card-handle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.feed-card-name {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.feed-card-handle {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.feed-card-time {
+  flex: none;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 挑这条的理由（新闻才有）：时间后面一个小 ⓘ，tooltip 是理由。 */
+.feed-card-why {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: -4px -6px -4px -4px;
+  color: var(--fg3);
+}
+
+.feed-hit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg);
+}
+
+.feed-hit-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.feed-card-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.feed-card-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+/* X 的帖子保留换行；太长的帖子在卡上只露前十二行，点「打开原文」看全文。 */
+.feed-card-text.is-post {
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 12;
+  overflow: hidden;
+}
+
+.feed-card-image {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--tint2);
+}
+
+.feed-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 -6px -4px;
+}
+
+.feed-card-spacer { flex: 1; }
+.feed-card-actions .icon-button { color: var(--fg2); }
+.feed-card-actions .icon-button:hover { color: var(--fg); }
+.feed-card-actions .icon-button[aria-pressed='true'] { color: var(--fg); }
+.feed-card .op-lines:empty { display: none; }
+
+.feed .page-head-controls { display: flex; align-items: center; gap: 12px; }
+
+/* 窄屏页头的控件整行放在标题下面（base.css）：分段靠左、「加来源」靠右。 */
+@container workspace (max-width: 760px) {
+  .feed .page-head-controls { justify-content: space-between; }
+  .feed .page-head-controls .segmented { overflow-x: auto; }
+}
+
+@media (max-width: 767px) {
+  .feed-card-actions .icon-button { width: 40px; height: 40px; }
+}
+
+.feed-more {
+  align-self: flex-start;
+}
+
+.feed-subscribe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.feed-subscribe .field-input { flex: 1 1 240px; }
+.feed-subscribe-note { flex-basis: 100%; margin: 0; }
+.feed-manage,
+.feed-sources > .text-button { align-self: flex-start; }
+.feed-target { display: flex; flex-direction: column; max-width: 560px; }
+
+/* 信息源在 Sheet 里：手机抽屉的 body 没有内边距，这里补上；桌面 panel 的 16 由 sheet-body 给。 */
+.sheet-drawer .feed-sources { padding: 16px; }
+
+.feed-source-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feed-source-title {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--fg2);
+}
+
+.feed-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.feed-source > .op-lines {
+  width: 100%;
+}
+
+.feed-source-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  flex: 1 1 200px;
+}
+
+.feed-query-edit {
+  align-self: flex-start;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.feed-source-query {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.feed-sites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.feed-mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.feed-interest, .feed-comments { padding: 16px 0; border-top: 1px solid var(--line); }
+.feed-interest .field-input { display: block; margin: 8px 0 16px; }
+.feed-comments { margin-top: 12px; }
+.feed-comments textarea { min-height: 64px; height: auto; padding: 8px 12px; resize: vertical; }
+.feed-comment-list { list-style: none; padding: 0; margin: 0 0 16px; }
+.feed-comment { padding: 8px 0; }
+.feed-comment.is-ai { border-left: 1px solid var(--fg3); padding-left: 12px; }
+.feed-comment p { margin: 4px 0; }
+.feed-comment-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.feed-comment-actions { display: flex; gap: 12px; margin-top: 8px; }
+.feed-sites li { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+
+/* 手机的「筛选」抽屉（设计稿 Phone-Feed）：分段占一行，「加来源」在下面。 */
+.feed-filter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 16px 24px;
+}
+
+.feed-filter .feed-segments {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/*
+ * 第 6 批第 8、9 条：正文的中文 / 展开 / 原文、小图表、抖音收藏的几条要点。展开时高度由 useHeightMorph 平滑过渡；
+ * 截出来的开头末尾两行渐隐（遮罩只用透明度，颜色取哪个令牌都一样）。
+ */
+.feed-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.feed-card-text.is-faded {
+  -webkit-mask-image: linear-gradient(to bottom, var(--fg) calc(100% - 44px), transparent);
+  mask-image: linear-gradient(to bottom, var(--fg) calc(100% - 44px), transparent);
+}
+
+.feed-text[data-mode='full'] .feed-card-text.is-post,
+.feed-text[data-mode='original'] .feed-card-text.is-post {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+.feed-text-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin-top: -2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.feed-text-toggle,
+.feed-text-link {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.feed-text-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.feed-text-from {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.feed-text-link {
+  color: var(--fg2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--motion-fast) ease-out;
+}
+
+.feed-text-link:hover,
+.feed-text-toggle:hover { color: var(--fg); }
+
+.feed-text-toggle:focus-visible,
+.feed-text-link:focus-visible {
+  outline: 2px solid var(--fg3);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.feed-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.feed-chart svg { display: block; overflow: visible; }
+.feed-chart-line { fill: none; stroke: var(--card-hue); stroke-width: 2; stroke-linejoin: round; }
+.feed-chart-bar { fill: var(--card-hue); }
+.feed-chart-axis { stroke: var(--line2); stroke-width: 1; }
+
+.feed-chart-caption {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.feed-points {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--fg2);
+}
+
+.feed-mark.hue-tile {
+  background: color-mix(in srgb, var(--tile-hue) var(--hue-wash), transparent);
+  color: var(--tile-hue);
+}
+
+@media (max-width: 767px) {
+  .feed-text-toggle,
+  .feed-text-link { min-height: 32px; }
+}
+
+
+/* 电脑上顶上一行 56（11-07 设计稿 Feed）：写这一路的名字，下面一道线，横跨主区。 */
+.feed-top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  margin: -24px -32px 0;
+  padding: 0 16px 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.feed-top-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}

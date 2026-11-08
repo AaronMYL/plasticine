@@ -1,0 +1,132 @@
+/* 聊天里的一封来信（2026-11-04 用户定：整宽阅读区，不进聊天气泡）。收着是标题一行 + 正文开头一行，板块之间一道
+   1px 细线；摊开是发件人一行、白纸的正文（iframe 里的信自己定颜色，背景固定浅色）、附件名。 */
+
+.mail-item {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+}
+
+.mail-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 0 4px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mail-head:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.mail-subject {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-item[data-open='true'] .mail-subject {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.mail-time {
+  flex: none;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.mail-preview {
+  margin: 0 0 12px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--fg2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-read {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+}
+
+.mail-from {
+  margin: 0;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 白纸：邮件是照白底设计的，深色模式下也是一块白纸；四角 8 圆角，一道细线收边。 */
+.mail-frame {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: var(--mail-paper);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.mail-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.mail-text p {
+  margin: 0;
+}
+
+.mail-text a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--fg3);
+}
+
+.mail-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.mail-attachments li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mail-wait {
+  padding: 8px 0;
+}

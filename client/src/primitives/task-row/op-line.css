@@ -1,0 +1,23 @@
+/* 一个写操作还没了结时就地的那一行（op-line.tsx）。 */
+
+.op-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.op-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.op-line-state.is-error,
+.op-line-reason.is-error {
+  color: var(--err);
+}
+

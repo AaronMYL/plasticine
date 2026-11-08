@@ -1,0 +1,73 @@
+/*
+ * 就地编辑：编辑态输入框透明底、--line2 描边、圆角 8，字号行高和阅读态一样（14/22）；
+ * 状态行 12/18 --fg2，只有「没存上」用 --err。冲突横幅由调用方给（.banner）。
+ */
+
+.inline-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inline-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inline-edit-input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  resize: vertical;
+}
+
+.inline-edit-input.is-mono {
+  max-width: 8em;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.inline-edit-input:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.inline-edit-readonly-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.inline-edit-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.inline-edit-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.inline-edit-status {
+  flex: 1;
+  min-width: 10em;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.inline-edit-status.is-error {
+  color: var(--err);
+}

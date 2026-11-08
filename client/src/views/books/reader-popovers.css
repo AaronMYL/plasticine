@@ -1,0 +1,159 @@
+/* 正文上的弹出菜单（--lift）和高亮四色的色块：阅读页和「标注」筛选共用。 */
+
+/* ---------- 正文上的弹出菜单 ---------- */
+.bk-pop {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: var(--lift);
+}
+
+.bk-pop-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+
+.bk-pop-row > button {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.bk-pop-row > button:hover,
+.bk-pop-row > .bk-pop-main {
+  background: var(--tint2);
+}
+
+.bk-pop-row > button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.bk-pop-row > i {
+  width: 1px;
+  height: 16px;
+  margin: 0 2px;
+  background: var(--line2);
+}
+
+.bk-pop-note {
+  max-width: 320px;
+  margin: 0;
+  padding: 6px 8px 2px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.bk-pop-note b {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg2);
+}
+
+.bk-pop-error {
+  max-width: 320px;
+  margin: 0;
+  padding: 2px 8px 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--err);
+}
+
+.bk-pop-editor {
+  width: 320px;
+  padding: 8px;
+  gap: 8px;
+}
+
+.bk-note-input {
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  resize: vertical;
+}
+
+.bk-note-input:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.bk-pop-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.bk-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.bk-swatch-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.bk-swatch-button[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px var(--fg);
+}
+
+.bk-swatch-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 0;
+}
+
+.bk-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--hl-ochre);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.bk-swatch[data-c='sage'] {
+  background: var(--hl-sage);
+}
+
+.bk-swatch[data-c='slate'] {
+  background: var(--hl-slate);
+}
+
+.bk-swatch[data-c='rose'] {
+  background: var(--hl-rose);
+}

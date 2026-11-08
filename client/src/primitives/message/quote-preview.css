@@ -1,0 +1,51 @@
+.quote-preview {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  color: var(--fg2);
+  background: var(--tint2);
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.quote-preview details { flex: 1; min-width: 0; }
+.quote-preview summary { min-height: 44px; padding: 8px; cursor: pointer; overflow-wrap: anywhere; }
+.quote-preview summary:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; border-radius: 4px; }
+.quote-preview-label { color: var(--fg); }
+.quote-preview-scope { display: inline-block; margin-left: 8px; }
+.quote-preview-toggle { display: inline-block; margin-left: 8px; text-decoration: underline; }
+.quote-preview-remove { flex: none; margin: 4px; }
+/* 书引用：「回到原文」跳到阅读页那一句（下划线文字按钮，和 summary 同一行高）。 */
+.quote-preview-source {
+  flex: none;
+  padding: 8px 8px 8px 0;
+  color: var(--fg2);
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+.quote-preview-source:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; border-radius: 4px; }
+.quote-preview-detail { padding: 0 8px 8px; }
+.quote-preview-detail p { margin: 0 0 8px; }
+.quote-preview-detail pre {
+  max-height: 240px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  color: var(--fg);
+}
+.conv-quote-limit { margin: 4px 0 8px; color: var(--fg2); font-size: 12px; line-height: 18px; }
+.conv-quote-limit[role="alert"] { color: var(--err); }
+/* 引用了书的那条消息下面：「归入 · 《书名》 · 讨论」，右对齐，跟着气泡。 */
+.msg-book-archive {
+  margin: 4px 0 0;
+  align-self: flex-end;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+  text-align: right;
+}

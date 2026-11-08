@@ -1,0 +1,157 @@
+/* 首页工作列表、结果与开始输入。 */
+
+.home-work-open {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 12px;
+  min-width: 0;
+  min-height: 60px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-work-open:hover .home-doing-title,
+.home-result-row:hover .home-result-title {
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+
+.home-work-open:focus-visible,
+.home-result-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.home-result-row {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 0;
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-result-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-result-unmet {
+  margin-left: 8px;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* 手机上一行放不下标题和原因：原因换到标题下面一行，原因本身不被截掉一半。 */
+.home[data-device='phone'] .home-result-unmet {
+  display: block;
+  margin-left: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-result-time {
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  flex: none;
+}
+
+.home-results-all {
+  margin-left: auto;
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.home-results-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 0;
+}
+
+.home-results-loading span {
+  width: 70%;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--tint);
+}
+
+.home-results-loading span:last-child {
+  width: 48%;
+}
+
+.home-results-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.home-start {
+  padding-top: 24px;
+}
+
+.home-start h2 {
+  margin: 0 0 16px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 32px;
+}
+
+.home-start form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+}
+
+.home-start textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 24px;
+  resize: vertical;
+}
+
+.home-start form:focus-within {
+  border-color: var(--fg2);
+}
+
+.home[data-device='phone'] .home-start .primary-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+

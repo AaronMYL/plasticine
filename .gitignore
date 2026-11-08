@@ -1,0 +1,23 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# Runtime state, data snapshots and secrets never enter the repository.
+# Anchored to the repository root, so source folders such as agent/src/state/ are still tracked.
+/data/
+/state/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.env
+.env.*
+*credentials*.json
+*.pem
+*.key
+# Node 运行时的编译缓存
+node-compile-cache/
+
+# Optional local copy of agent/skills for coding agents (npm run skills:sync).
+/.claude/

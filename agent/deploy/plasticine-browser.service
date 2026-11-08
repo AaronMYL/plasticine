@@ -1,0 +1,23 @@
+# 用户服务：安装到 ~plasticine/.config/systemd/user/，不是 /etc/systemd/system/。
+# Chromium snap 必须由 plasticine 的 systemd --user manager 创建用户 cgroup。
+[Unit]
+Description=Plasticine 共享浏览器
+
+[Service]
+Type=simple
+WorkingDirectory=/home/plasticine
+ExecStart=/usr/bin/xvfb-run -a -s "-screen 0 1920x1200x24" /snap/bin/chromium \
+  --no-first-run --no-default-browser-check \
+  --remote-debugging-address=127.0.0.1 --remote-debugging-port=9333 \
+  --user-data-dir=/home/plasticine/browser-profile
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillMode=control-group
+UMask=0077
+# 浏览器自身的诊断也可能包含 URL、表单等用户输入，不送 journald。
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=default.target

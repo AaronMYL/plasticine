@@ -1,0 +1,184 @@
+/*
+ * 记忆页的约定（2026-11-03 起单独一段；原来的原话 | 解释 | 约定三栏去掉了）和引用的条目：行之间 1px --line，
+ * 没有卡片、没有阴影。「它提议」= 左侧 1px --fg3 细线 + 小签；diff 删去的 --fg2 删除线。
+ */
+
+/* 约定那一段：一栏，阅读列宽同首页（约 760px）、靠左。 */
+.agreements-page > :not(.page-head) {
+  width: 100%;
+  max-width: 760px;
+}
+
+.agreements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+
+.mem-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mem-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.mem-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.mem-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.mem-text.is-stale {
+  color: var(--fg2);
+}
+
+.mem-tags,
+.mem-actions,
+.mem-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.mem-actions {
+  gap: 4px 16px;
+}
+
+/* 行尾 ⋯（在对话里提 · 来路 · 改 · 撤，2026-11-04 第 2 批）：排在种类、状态那一行的最右边。 */
+.mem-more {
+  margin-left: auto;
+}
+
+.mem-confirm {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.mem-meta,
+.mem-applicability {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  overflow-wrap: anywhere;
+}
+
+.mem-meta {
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.mem-quote {
+  align-self: flex-start;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  quotes: '「' '」';
+}
+
+.mem-proposal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--fg3);
+}
+
+.mem-proposal .tag {
+  align-self: flex-start;
+}
+
+.mem-diff {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.mem-diff-removed {
+  color: var(--fg2);
+}
+
+.mem-more {
+  align-self: flex-start;
+}
+
+.mem-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line2);
+}
+
+.mem-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.mem-facts dt {
+  color: var(--fg2);
+}
+
+.mem-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 来路 / 用户编辑记录：每次改动一行，等宽的版本号和时间。 */
+.change-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.change-log-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.change-log-meta {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.change-log-reason {
+  flex-basis: 100%;
+  overflow-wrap: anywhere;
+}

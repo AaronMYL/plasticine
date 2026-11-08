@@ -1,0 +1,595 @@
+/*
+ * 全局底子和几个各页共用的小部件（按钮、输入框、状态点、标题条、警示横幅）。值都来自方向 I 令牌表：
+ * 主按钮 --fg 实底 --bg 字；次按钮透明底 --line2 描边；文字按钮 --fg 加下划线；焦点环 2px --fg 外偏 2px。
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 22px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+/* ---------- 按钮 ---------- */
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primary-button:disabled {
+  background: var(--tint2);
+  color: var(--fg3);
+  cursor: default;
+}
+
+.chip-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chip-button:hover,
+.icon-button:hover:not(:disabled) {
+  background: var(--tint);
+}
+
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: 12px;
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.text-button-quiet {
+  color: var(--fg2);
+  text-decoration: none;
+}
+
+.text-button:disabled,
+.chip-button:disabled {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  cursor: pointer;
+}
+
+.icon-button:disabled {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.primary-button:focus-visible,
+.chip-button:focus-visible,
+.text-button:focus-visible,
+.icon-button:focus-visible,
+.field-input:focus-visible,
+.search-input:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* ---------- 输入 ---------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+/* 字段名后面跟 ⓘ。 */
+.field-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 字段下面常显的一句（做了要花钱、收不回这类后果）：12/18 --fg2。 */
+.field-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  white-space: pre-line;
+}
+
+.field-input,
+.search-input {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: 14px;
+}
+
+/* 第 92 条：来源、时间、w 混着中文时沿用正文字体，数字等宽，避免中文回退到宋体。 */
+.text-meta {
+  font-family: var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.text-mono,
+.field-input-mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.field-input::placeholder,
+.search-input::placeholder {
+  color: var(--fg2);
+}
+
+textarea.field-input {
+  height: auto;
+  min-height: 64px;
+  padding: 8px 12px;
+  line-height: 22px;
+  resize: vertical;
+}
+
+/* ---------- 状态点：6px，旁边总配一个字 ---------- */
+
+.dot {
+  display: inline-block;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg3);
+}
+
+.dot-accent {
+  background: var(--accent);
+}
+
+.dot-open {
+  background: var(--ok);
+}
+
+.dot-connecting {
+  background: var(--run);
+}
+
+.dot-closed {
+  background: var(--fg3);
+}
+
+.dot-ok {
+  background: var(--ok);
+}
+
+.dot-run {
+  background: var(--run);
+}
+
+/*
+ * ---------- 小签：11/16·500，padding 1px 6px，圆角 4，中文不拉字距 ----------
+ * 要你授权 / 要你动手 = --accent 描边 --fg 字；要你定 / 要你确认 = --line2 描边 --fg 字；
+ * 「它提议的」「定时」这类来源 = --line2 描边 --fg2 字；中性（子任务 n/m、等 n 个前置）= --tint2 底 --fg2 字。
+ */
+
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tag-accent {
+  box-shadow: inset 0 0 0 1px var(--accent);
+  color: var(--fg);
+}
+
+.tag-outline {
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+}
+
+.tag-outline-quiet {
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.tag-neutral {
+  background: var(--tint2);
+  color: var(--fg2);
+}
+
+/* ---------- 页面、标题条、空状态 ---------- */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100%;
+  padding: 24px 32px 48px;
+}
+
+/*
+ * 标题条和正文在主区里同列居中。2026-11-07 用户要求所有页面都用覆盖式对话，浮窗的开合与大小不参与页面排版。
+ * 铺满型页面（page-fill：笔记、对话）和任务看板不受限。
+ */
+@media (min-width: 768px) {
+  .page:not(.page-fill) {
+    width: 100%;
+    max-width: calc(var(--page-max) + 64px);
+    margin-inline: auto;
+  }
+
+  .page:has(.tasks-page[data-view='board']):not(.page-fill) {
+    max-width: none;
+  }
+}
+
+.page-fill {
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+.page-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: 'title controls tools';
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-head:not(:has(.page-head-controls)) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'title tools';
+}
+
+/* 电脑上页头右边没有通用工具（铃第 113 条去掉了，查找在顶栏）：只有标题和本页控件；窄的主区照旧把控件折到第二行。 */
+@container workspace (min-width: 761px) {
+  .page-head:not(:has(.page-head-tools)) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'title controls';
+  }
+
+  .page-head:not(:has(.page-head-tools)):not(:has(.page-head-controls)) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'title';
+  }
+}
+
+.page-head-title {
+  grid-area: title;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  gap: 4px 12px;
+}
+
+.page-head-title h1 {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.page-head-meta {
+  flex-basis: 100%;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.page-head-status {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.page-head-tools {
+  grid-area: tools;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-head-controls {
+  grid-area: controls;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.page-head-controls button {
+  white-space: nowrap;
+}
+
+.page-back {
+  margin-left: -8px;
+}
+
+/* 带返回的页头（手机上一层一层进）：返回和标题同一行，长标题截断，不把标题挤到第二行。 */
+.page-head-title:has(.page-back) {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.page-head-title:has(.page-back) h1 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-head-tools .icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 段里直接放的按钮按字宽，不拉满一行（拉满像一条输入框）。 */
+.block > :is(.chip-button, .primary-button) {
+  align-self: flex-start;
+}
+
+.block-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* 段标题后的 ⓘ：和标题垂直居中，不跟着基线往下掉。 */
+.block-head > .info-tip {
+  align-self: center;
+  margin-left: -8px;
+}
+
+.block-title {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.block-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--fg2);
+}
+
+.block-empty,
+.gate-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.block-empty.is-error,
+.gate-note.is-error {
+  color: var(--err);
+}
+
+.gate-note,
+.page-loading {
+  padding: 24px 32px;
+}
+
+/* ---------- 警示横幅：--tint2 底、左侧 6px --accent 点、--fg 字、圆角 8，一页最多一条 ---------- */
+
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--tint2);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.banner-text {
+  flex: 1;
+  min-width: 12em;
+}
+
+/*
+ * ---------- 分段控件：单选的少量切换（页签、视图切换） ----------
+ * --tint2 底 padding 2 圆角 8；段高 28 圆角 6；选中段 --bg 底 + --line2 描边、500 字，未选 --fg2。
+ */
+
+.segmented {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--tint2);
+}
+
+.segmented-item {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg2);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmented-item[aria-pressed='true'],
+.segmented-item[aria-current='page'] {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.segmented-item:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+@container workspace (max-width: 760px) {
+  .page-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'title tools' 'controls controls';
+    gap: 12px;
+  }
+}
+
+@media (max-width: 767px) {
+  .page-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'title tools' 'controls controls';
+    gap: 12px;
+  }
+
+  .page {
+    padding: 16px 16px 48px;
+  }
+
+  .page-fill {
+    padding-bottom: 0;
+  }
+
+  .icon-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .primary-button,
+  .chip-button,
+  .segmented-item {
+    min-height: 40px;
+    height: auto;
+  }
+
+  .text-button {
+    min-height: 40px;
+    padding-block: 8px;
+  }
+
+  .page-head-controls {
+    max-width: 100%;
+  }
+
+  .field-input,
+  .search-input {
+    font-size: 16px;
+    min-height: 40px;
+  }
+}
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}

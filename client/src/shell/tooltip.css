@@ -1,0 +1,92 @@
+/* 悬停提示（tooltip.tsx）：方向 I 悬停提示框——--fg 底 --bg 字、12/18·500、padding 4 8、圆角 4、不加阴影。
+   位置由 Floating UI 写 left / top（不用 transform），transform 留给出入场：从所在一侧 3px 外滑进来并淡入，
+   出 --motion-fast（120ms），收三分之二（80ms）。减少动态效果时只淡入淡出。 */
+.tooltip {
+  z-index: 1000;
+  max-width: 320px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--fg);
+  color: var(--bg);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+  pointer-events: none;
+  opacity: 0;
+  transition-property: opacity, transform;
+  transition-duration: calc(var(--motion-fast) * 2 / 3);
+  transition-timing-function: var(--ease-out);
+}
+
+/* 没出来时（和收起时）停在靠元素那一侧 3px：在上面的从下面升上来，其余同理。 */
+.tooltip[data-side='top'] {
+  transform: translateY(3px);
+}
+
+.tooltip[data-side='bottom'] {
+  transform: translateY(-3px);
+}
+
+.tooltip[data-side='left'] {
+  transform: translateX(3px);
+}
+
+.tooltip[data-side='right'] {
+  transform: translateX(-3px);
+}
+
+/* 写在各侧之后：同样的权重，后写的赢。 */
+.tooltip[data-status='open'] {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--motion-fast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip[data-side] {
+    transform: none;
+  }
+}
+
+/* ⓘ（info-tip.tsx）：16px 描边图标，--fg2，悬停、聚焦、开着时 --fg。跟在要补充的那个东西后面，不另起一行；
+   可点区域 24 见方（手机 32），图标本身不变大。 */
+.info-tip {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg2);
+  vertical-align: middle;
+  cursor: help;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.info-tip:hover,
+.info-tip[data-tip-open] {
+  color: var(--fg);
+}
+
+.info-tip:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 0;
+  color: var(--fg);
+}
+
+@media (pointer: coarse) {
+  .info-tip {
+    width: 32px;
+    height: 32px;
+    margin: -8px -4px;
+  }
+}

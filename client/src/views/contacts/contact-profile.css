@@ -1,0 +1,142 @@
+/* 联系人 · 资料（第 113 条）：头像、名字、@handle、关系分段控件、交付、代你说过、核对安全码；空的小节不出现。 */
+
+/* ---------- 资料 ---------- */
+
+.contact-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-height: 100%;
+}
+
+.profile-who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.profile-names {
+  min-width: 0;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.profile-handle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  overflow-wrap: anywhere;
+}
+
+.contact-relation .segmented-item.segmented-item {
+  font-size: 13px;
+  padding: 0 10px;
+}
+
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-label {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.profile-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.profile-list > li {
+  display: contents;
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profile-item-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-list .dot.profile-dot-run {
+  background: var(--run);
+}
+
+.profile-list .dot.profile-dot-ok {
+  background: var(--ok);
+}
+
+.profile-list .dot.profile-dot-err {
+  background: var(--err);
+}
+
+.profile-list .dot.profile-dot-off {
+  background: var(--fg3);
+}
+
+.profile-meta {
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--fg2);
+}
+
+.profile-safety {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.profile-safety .profile-safety-button {
+  height: 32px;
+  padding: 0 12px;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.profile-safety-changed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.profile-safety-code {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 20px;
+}
+

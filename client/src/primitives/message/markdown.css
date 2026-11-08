@@ -1,0 +1,15 @@
+.markdown { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.markdown p { margin: 0 0 8px; white-space: pre-wrap; }
+.markdown p:last-child { margin-bottom: 0; }
+.markdown h1, .markdown h2, .markdown h3, .markdown h4 { font-size: inherit; margin: 16px 0 8px; }
+.markdown ul, .markdown ol { margin: 8px 0; padding-left: 24px; }
+.markdown a { color: var(--fg); text-underline-offset: 3px; }
+.markdown blockquote { border-left: 1px solid var(--line2); margin: 8px 0; padding-left: 12px; color: var(--fg2); }
+.markdown pre { max-width: 100%; overflow-x: auto; padding: 12px; border: 1px solid var(--line2);
+  border-radius: 8px; font-size: 12px; }
+.markdown code { font-family: var(--mono); font-size: 13px; }
+.markdown-table { max-width: 100%; overflow-x: auto; }
+.markdown table { border-collapse: collapse; font-size: 13px; }
+.markdown th, .markdown td { padding: 8px 12px; border: 1px solid var(--line2); text-align: left; }
+.markdown hr { border: 0; border-top: 1px solid var(--line2); margin: 12px 0; }
+.msg-selection { align-self: flex-start; }

@@ -1,0 +1,348 @@
+/*
+ * 设置弹框（2026-11-05）：盖住整个窗口的 --scrim；居中一块 --layer-float + --lift，圆角 12；左边分段（比弹框暗一点的
+ * --tint 底），右边段名 + 这一段的内容，内容自己滚。手机上是全屏的一张，分段是顶上一排横滑。
+ * 层级：对话框 40 < 设置 55 < 小弹层（⋯ 菜单）60 < 悬停提示 1000。
+ */
+
+.settings-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 54;
+  background: var(--scrim);
+}
+
+.settings-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 55;
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  width: min(880px, calc(100vw - 48px));
+  height: min(640px, calc(100vh - 48px));
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  color: var(--fg);
+  overflow: hidden;
+  translate: -50% -50%;
+}
+
+.settings-dialog:focus {
+  outline: none;
+}
+
+/* 收起动画那 120ms 里已经不挡点击了。 */
+.settings-scrim[data-closing='true'],
+.settings-dialog[data-closing='true'] {
+  pointer-events: none;
+}
+
+.settings-dialog-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 16px 12px;
+  background: var(--tint);
+  box-shadow: inset -1px 0 0 var(--line);
+  overflow-y: auto;
+}
+
+.settings-dialog-title {
+  margin: 0;
+  padding: 4px 12px 8px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.settings-dialog-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.settings-nav-item > svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.settings-nav-item > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-nav-item:hover {
+  background: var(--tint);
+}
+
+.settings-nav-item[aria-current='page'] {
+  background: var(--tint2);
+  font-weight: 500;
+}
+
+.settings-nav-item[aria-current='page'] > svg {
+  color: var(--fg);
+}
+
+.settings-nav-item:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.settings-dialog-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.settings-dialog-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 64px;
+  padding: 8px 12px 0 32px;
+}
+
+.settings-dialog-section {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.settings-dialog-pane {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 32px 48px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/* 段里各块：小节标题（不再自带下划线）分开，块之间一条细线；正文列不铺满宽屏。 */
+.settings-dialog .settings-content {
+  max-width: 600px;
+  gap: 24px;
+}
+
+.settings-dialog .settings-content .block-head {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+/* 模型档位：一行一项，左边名字右边下拉，两项并排（和网页翻译那一块同一种写法）。 */
+.settings-dialog .model-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.settings-dialog .model-choice > label {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.settings-dialog .model-choice .field-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.settings-dialog .model-choice > .text-meta {
+  grid-column: 1 / -1;
+}
+
+.settings-dialog .settings-content > .block + .block,
+.settings-dialog .settings-content > .settings-spot + .settings-spot,
+.settings-dialog .settings-content > .block + .settings-spot,
+.settings-dialog .settings-content > .settings-spot + .block {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+
+.settings-dialog .settings-content > .block,
+.settings-dialog .settings-content > .settings-spot > .block {
+  gap: 12px;
+}
+
+.settings-dialog .settings-system,
+.settings-dialog .settings-ai {
+  max-width: none;
+}
+
+/* AI 段：模型两栏整宽，下面的技能、工具开关照旧窄栏。 */
+.settings-dialog .settings-ai > .block:not(.ai-models) {
+  max-width: 600px;
+}
+
+.settings-spot {
+  min-width: 0;
+  scroll-margin-top: 8px;
+}
+
+.settings-spot:focus {
+  outline: none;
+}
+
+/* 「有没保存的修改」：盖住弹框，中间一小块；两个按钮，主的「继续编辑」在右。 */
+.settings-ask-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--scrim);
+}
+
+.settings-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(320px, 100%);
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+}
+
+.settings-ask-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.settings-ask-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.settings-ask-actions > button {
+  height: 32px;
+  padding: 0 12px;
+}
+
+.settings-ask-discard {
+  color: var(--err);
+}
+
+/* 手机：全屏一张；顶上「设置」+ 关，下面一排分段横滑，再下面是内容。 */
+.settings-dialog[data-phone='true'] {
+  top: 0;
+  left: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  border-radius: 0;
+  translate: none;
+}
+
+.settings-dialog[data-phone='true'] .settings-dialog-nav {
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 8px;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--line);
+  overflow: visible;
+}
+
+.settings-dialog[data-phone='true'] .settings-dialog-title {
+  padding: 8px 16px 4px;
+  font-size: 22px;
+  line-height: 28px;
+}
+
+.settings-dialog[data-phone='true'] .settings-dialog-sections {
+  flex-direction: row;
+  gap: 4px;
+  padding: 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.settings-dialog[data-phone='true'] .settings-dialog-sections::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-dialog[data-phone='true'] .settings-nav-item {
+  width: auto;
+  height: 36px;
+  padding: 0 12px;
+}
+
+.settings-dialog[data-phone='true'] .settings-nav-item > svg {
+  display: none;
+}
+
+.settings-dialog[data-phone='true'] .settings-dialog-head {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 8px);
+  right: 8px;
+  height: auto;
+  padding: 0;
+}
+
+.settings-dialog[data-phone='true'] .settings-dialog-section {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.settings-dialog[data-phone='true'] .settings-dialog-close {
+  width: 44px;
+  height: 44px;
+}
+
+.settings-dialog[data-phone='true'] .settings-dialog-pane {
+  padding: 16px 16px 48px;
+}
+
+.settings-dialog[data-phone='true'] .model-choice {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-nav-item {
+    transition: none;
+  }
+}

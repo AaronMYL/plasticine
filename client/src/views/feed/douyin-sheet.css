@@ -1,0 +1,180 @@
+/*
+ * 抖音收藏的勾选清单（设计稿 Feed-Douyin）：头部 上次同步 + 同步；收藏夹 + 搜索一行；每条 勾选 · 标题 / 作者 · 日期 ·
+ * 四格进度；底部 已选 n 条 · 说明（ⓘ）· 处理选中的。列表自己滚，头和底不动。
+ */
+.douyin-sheet .sheet-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.douyin {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.douyin-sync-meta {
+  margin-right: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  white-space: nowrap;
+}
+
+.douyin-sync { display: inline-flex; align-items: center; gap: 6px; margin-right: 4px; }
+
+.douyin-filters {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+
+.douyin-folder { flex: 0 0 150px; }
+
+.douyin-search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.douyin-search:focus-within { box-shadow: inset 0 0 0 1px var(--fg3); }
+
+.douyin-search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--fg);
+  outline: none;
+}
+
+.douyin-search-input::placeholder { color: var(--fg3); }
+
+.douyin-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 16px 12px;
+  overscroll-behavior: contain;
+}
+
+.douyin-list { margin: 0; padding: 0; list-style: none; }
+
+.douyin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.douyin-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  cursor: pointer;
+}
+
+.douyin-check {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--fg);
+}
+
+.douyin-row-text { min-width: 0; display: flex; flex-direction: column; }
+
+.douyin-row-title {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.douyin-row-meta {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+  font-variant-numeric: tabular-nums;
+}
+
+.douyin-row[data-run='failed'] .douyin-row-meta { color: var(--err); }
+.douyin-row-why { flex: none; color: var(--fg3); }
+
+.douyin-steps { flex: none; display: inline-flex; gap: 2px; }
+
+.douyin-steps i {
+  display: block;
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line2);
+  transition: background-color var(--motion-slow) ease-out;
+}
+
+.douyin-steps i[data-on] { background: var(--fg); }
+.douyin-steps[data-run='running'] i:not([data-on]):first-of-type,
+.douyin-steps[data-run='running'] i[data-on] + i:not([data-on]) { background: var(--run); }
+
+.douyin-more { margin-top: 10px; font-size: 12px; color: var(--fg2); }
+.douyin-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.douyin-note {
+  margin: 12px 0 0;
+  padding: 0 16px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.douyin-scroll .douyin-note { padding: 0; }
+.douyin-note.is-error { color: var(--err); }
+
+.douyin-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.douyin-picked { flex: 1; font-size: 14px; line-height: 22px; }
+
+.douyin-how {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg2);
+}
+
+.douyin-how .info-tip { width: 24px; height: 24px; color: var(--fg3); }
+
+@media (max-width: 767px) {
+  .douyin-folder { flex-basis: 120px; }
+  .douyin-how-text { display: none; }
+  .douyin-row-main { padding: 14px 0; }
+  .douyin-check { width: 20px; height: 20px; }
+  .douyin-sync-meta { display: none; }
+}

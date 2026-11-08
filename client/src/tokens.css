@@ -1,0 +1,188 @@
+/*
+ * 方向 I · Absolute 的令牌（plasticine-visual / references/visual-foundation.md，2026-10-27 定）。
+ * 只放令牌表里的值；新令牌先过「要你确认」。默认跟随系统（第 66 条），
+ * 设置里固定浅 / 深时在 <html> 上写 data-theme="light" | "dark"。
+ */
+
+/* Geist 两款随应用打包（SIL OFL，见 fonts/OFL.txt），只打英文字体；中文走系统回退。 */
+@font-face {
+  font-family: 'Geist';
+  src: url('./fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('./fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  /*
+   * 浅色（2026-11-05 他定「照 0.2 老版暖米色」）：页面暖米 #FCF9F6、字是暖墨 #2A2622；细线、浅底都用暖墨 / 暖棕掺透明，
+   * 不再是冷灰。陶土 #A1674E 是老版的强调色（logo、停止按钮那一块）。
+   */
+  --bg: #fcf9f6;
+  --fg: #2a2622;
+  --fg2: #6b635b;
+  --fg3: #a1988f;
+  --line: rgba(42, 38, 34, 0.07);
+  --line2: rgba(42, 38, 34, 0.16);
+  --tint: rgba(110, 74, 46, 0.045);
+  --tint2: rgba(110, 74, 46, 0.075);
+  --accent: #a1674e;
+  --run: #5a6b85;
+  --ok: #587559;
+  --err: #a9483a;
+  --scrim: rgba(42, 32, 24, 0.2);
+  --lift: 0 0 0 1px var(--line2), 0 8px 24px rgba(60, 40, 24, 0.1);
+  /* 你的消息气泡（老版 #F0EAE3）：比悬停底实、比选中底暖，单独一个令牌，不再借 --tint。 */
+  --bubble: #f0eae3;
+
+  /*
+   * 图书的高亮四色（本人 2026-11-01 定：多色高亮，赭黄 / 灰绿 / 灰蓝 / 灰粉，降饱和，只做文字底）。
+   * 这是方向 I 令牌表之外新加的一组，只给书里的高亮底色和标注列表左边那条线用，不做别的强调。
+   */
+  --hl-ochre: rgba(204, 168, 82, 0.28);
+  --hl-sage: rgba(88, 117, 89, 0.26);
+  --hl-slate: rgba(90, 107, 133, 0.24);
+  --hl-rose: rgba(169, 96, 112, 0.18);
+  /* 图书正文的字号和行距（第 100 条）：默认同笔记长文 16/28，阅读页的「Aa」在这本书的正文上改它，别处不用。 */
+  --read-size: 16px;
+  --read-leading: 28px;
+  /* 邮件正文的白纸（2026-11-04）：邮件是照白底设计的，深色模式下也是一块白纸，所以深色不改它；别处不用。 */
+  --mail-paper: #ffffff;
+
+  /*
+   * 类别色与项目色（设计稿 2026-11-02，第 102 条：视觉规范放开，可以用多于一种强调色，颜色可以表达意义）。
+   * 只染小方块图标、圆点、进度条和描边，不铺大面积底色；字仍是 --fg / --fg2。浅底对比度都 ≥ 4.5:1（能写字），
+   * 深色单独定值。陶土橙仍只给「等你」，不给项目。弹框确认后再写进 plasticine-visual 的令牌表。
+   */
+  --hue-clay: #a15b3d;
+  --hue-ochre: #8a6622;
+  --hue-teal: #2f7a6e;
+  --hue-sky: #3a72a3;
+  --hue-rose: #a65067;
+  --hue-olive: #6b7230;
+  --hue-slate: #5a6b85;
+  --hue-sage: #587559;
+  --hue-err: var(--err);
+  --hue-ink: var(--fg2);
+  /* 类别色小方块的底：同色 14%（深色 20%），只在 28–32px 的小方块里用。 */
+  --hue-wash: 14%;
+
+  /*
+   * 区域分层（设计稿 2026-11-03，第 102 条视觉放开后的「区域区分」）：左侧栏、顶部标签栏、中间页面、悬浮对话框各一层，
+   * 靠底色明暗分开，不靠描边堆。页面仍是 --bg；侧栏、标签栏比它暗一档、两档，对话框比它亮一档（再加 --lift）。
+   * 次要字 --fg2 在侧栏上 ≥ 4.5:1；标签栏上未选标签的字用 --fg（--fg2 只给图标），见 tabs.css。
+   */
+  --layer-side: #f3f0eb;
+  --layer-bar: #ebe6e0;
+  --layer-page: var(--bg);
+  /* 页面正文列最宽多少（标题条同宽，在主区里居中；见 shell/base.css 的 .page）。 */
+  --page-max: 880px;
+  --layer-float: #fefdfa;
+  /* 连接状态灯：绿 = 已连接，黄 = 连接中，红 = 未连接；只染 8px 的点（图形对比度 ≥ 3:1），旁边总有悬停文字和读屏文字。 */
+  --signal-on: #3f8f55;
+  --signal-wait: #a8770f;
+  --signal-off: #c8553d;
+  /*
+   * 动效（设计稿 2026-11-03）：短、只动透明度、位置和尺寸。按压 120ms；标签开关、切换、小浮层 180ms；
+   * 圆球展开成对话框、补位重排 260ms。开启「减少动态效果」时全部即时（motion.ts 和各处的 media 查询）。
+   */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 260ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --sans: 'Geist', 'PingFang SC', 'MiSans', 'Microsoft YaHei', system-ui, sans-serif;
+  --mono: 'Geist Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  /*
+   * 间距（4 / 8 / 12 / 16 / 24 / 32 / 48）、圆角（4 / 8 / 12 / 正圆）、字号直接写令牌表里的值，
+   * 不另起变量名：令牌表只有上面这些名字，新名字要过「要你确认」。
+   */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #2b2826;
+    --fg: #f5f1ec;
+    --fg2: #b8b0a7;
+    --fg3: #8a827a;
+    --line: rgba(245, 236, 226, 0.07);
+    --line2: rgba(245, 236, 226, 0.16);
+    --tint: rgba(245, 236, 226, 0.045);
+    --tint2: rgba(245, 236, 226, 0.085);
+    --accent: #c98a6e;
+    --run: #9aaac4;
+    --ok: #95b096;
+    --err: #e08a7a;
+    --scrim: rgba(12, 9, 7, 0.45);
+    --lift: 0 0 0 1px var(--line2), 0 12px 32px rgba(12, 9, 7, 0.4);
+    --bubble: #3a3531;
+    --hl-ochre: rgba(214, 180, 98, 0.3);
+    --hl-sage: rgba(149, 176, 150, 0.24);
+    --hl-slate: rgba(154, 170, 196, 0.24);
+    --hl-rose: rgba(214, 140, 156, 0.22);
+    --hue-clay: #d99377;
+    --hue-ochre: #d6b266;
+    --hue-teal: #74c2b4;
+    --hue-sky: #8dbbe3;
+    --hue-rose: #e59db0;
+    --hue-olive: #b9c27a;
+    --hue-slate: #9aaac4;
+    --hue-sage: #95b096;
+    --hue-wash: 20%;
+    --layer-side: #24211f;
+    --layer-bar: #1d1b19;
+    --layer-float: #37332f;
+    --signal-on: #6cc184;
+    --signal-wait: #e5b852;
+    --signal-off: #e5735b;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #2b2826;
+  --fg: #f5f1ec;
+  --fg2: #b8b0a7;
+  --fg3: #8a827a;
+  --line: rgba(245, 236, 226, 0.07);
+  --line2: rgba(245, 236, 226, 0.16);
+  --tint: rgba(245, 236, 226, 0.045);
+  --tint2: rgba(245, 236, 226, 0.085);
+  --accent: #c98a6e;
+  --run: #9aaac4;
+  --ok: #95b096;
+  --err: #e08a7a;
+  --scrim: rgba(12, 9, 7, 0.45);
+  --lift: 0 0 0 1px var(--line2), 0 12px 32px rgba(12, 9, 7, 0.4);
+  --bubble: #3a3531;
+  --hl-ochre: rgba(214, 180, 98, 0.3);
+  --hl-sage: rgba(149, 176, 150, 0.24);
+  --hl-slate: rgba(154, 170, 196, 0.24);
+  --hl-rose: rgba(214, 140, 156, 0.22);
+  --hue-clay: #d99377;
+  --hue-ochre: #d6b266;
+  --hue-teal: #74c2b4;
+  --hue-sky: #8dbbe3;
+  --hue-rose: #e59db0;
+  --hue-olive: #b9c27a;
+  --hue-slate: #9aaac4;
+  --hue-sage: #95b096;
+  --hue-wash: 20%;
+  --layer-side: #24211f;
+  --layer-bar: #1d1b19;
+  --layer-float: #37332f;
+  --signal-on: #6cc184;
+  --signal-wait: #e5b852;
+  --signal-off: #e5735b;
+}

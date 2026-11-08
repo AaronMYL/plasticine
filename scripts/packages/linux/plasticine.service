@@ -1,0 +1,31 @@
+# Plasticine 实例（Linux 安装包，docs/install-packages.md）。install.sh 装到 /etc/systemd/system/。
+# 程序在 /opt/plasticine/current（自更新换这个指针），数据在 /var/lib/plasticine/state，设置在 /etc/plasticine/plasticine.env。
+# 服务只听 127.0.0.1；从别的电脑用走 SSH 隧道（install.sh 结束时会打印命令）。
+
+[Unit]
+Description=Plasticine
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plasticine
+Group=plasticine
+WorkingDirectory=/opt/plasticine/current
+Environment=PLASTICINE_STATE=/var/lib/plasticine/state
+Environment=PLASTICINE_PORT=8790
+Environment=PLASTICINE_CLIENT_DIR=client/dist
+Environment=PLASTICINE_PLAIN_HTTP=1
+# 2026-11-05 他定：朋友的实例真跑，不是开发期干跑；对外的动作仍由硬线审批把关。想先只记不做，在 plasticine.env 写 1。
+Environment=PLASTICINE_DRY_RUN=0
+EnvironmentFile=-/etc/plasticine/plasticine.env
+ExecStart=/opt/plasticine/node/bin/node agent/src/app/main.ts
+# SIGTERM：不再接新请求，让正在跑的轮次收尾（代码里给 60 秒），关库。
+KillSignal=SIGTERM
+TimeoutStopSec=90
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

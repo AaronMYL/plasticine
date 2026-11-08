@@ -1,0 +1,68 @@
+// state/: the shared state service, the only writer of plasticine.sqlite. Other modules open it once and use the
+// stores it returns; the database handle, the generic store and the migration runner stay inside this directory.
+// Object, input and event types come from shared/state.ts.
+
+export { BOOKS_DIRECTORY, NOTES_DIRECTORY, openState } from './service.ts';
+export type { BookStores } from './books.ts';
+export type { BookChapterFile, BookContent, BookFiles } from './book-files.ts';
+export type { OpenStateOptions, StateService } from './service.ts';
+export { StateError, STATE_ERROR_CODES } from './errors.ts';
+export type { StateErrorCode } from './errors.ts';
+export { allPages, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from './object-store.ts';
+export { ASSET_NAME_PATTERN, ASSETS_DIRECTORY, digestOf } from './note-bodies.ts';
+export type { BodyDigest, NoteAsset } from './note-bodies.ts';
+export { previewOf, titleOf, UNTITLED_NOTE } from './notes.ts';
+export type { NoteFilter, NoteStore } from './notes.ts';
+export type { AgreementFilter, AgreementStore } from './agreements.ts';
+export type { ApiRequestLog } from './api-requests.ts';
+export type { AskStore } from './asks.ts';
+export type { PushSubscriptionStore } from './push-subscriptions.ts';
+export type { ProjectStore, TodoPatch } from './projects.ts';
+export type { DeviceKeyStore } from './device-keys.ts';
+export type { DeviceStore } from './devices.ts';
+export type { LegacyRecordOutcome, LegacyRowStore } from './legacy-rows.ts';
+export type { PairingCodeStore } from './pairing-codes.ts';
+export type { SessionStore } from './sessions.ts';
+export type { LegacyIdMap, LegacyTarget } from './legacy-ids.ts';
+export type { MemoryFilter, MemoryStore } from './memory.ts';
+export type { MemoryDocStores } from './memory-docs.ts';
+export type { MemoryCurationStores } from './memory-curation.ts';
+export type { MemoryJournalStore } from './memory-journal.ts';
+export type { MemoryDreamStore } from './memory-dreams.ts';
+export type { RevisionNote, SpaceSave, SpaceStore } from './spaces.ts';
+export type { SubscriptionStore } from './subscriptions.ts';
+export type { ScheduleStores } from './schedules.ts';
+export type { SuggestionStore } from './suggestions.ts';
+export type { DeviceTimeZone, DeviceTimeZoneStore } from './device-time-zones.ts';
+export type { CalendarSnapshotStore } from './calendar-snapshots.ts';
+export type { IntakeStores } from './intake.ts';
+export type { IssuedReceipt, ReceiptStore } from './receipts.ts';
+export type { DailySettingsStore, SettingsRead } from './daily-settings.ts';
+export { FEED_TRANSLATE_ATTEMPTS_MAX } from './feed-translations.ts';
+export type { FeedTranslationDone, FeedTranslationRow, FeedTranslationStore } from './feed-translations.ts';
+export type { MacJobRow, NewVideoWork, VideoAdvance, VideoWorkRow, VideoWorkStore } from './video-works.ts';
+export type { AddedFeedItem, FeedItemStore, FeedPageFilter } from './feed-items.ts';
+export type { FeedSourceFilter, FeedSourceStore } from './feed-sources.ts';
+export type { FeedSourceStatus, FeedSourceStatusStore } from './feed-source-status.ts';
+export type { NodeActionStore } from './node-actions.ts';
+export type { NodePairingCodeStore } from './node-pairing-codes.ts';
+export type { NodeStore } from './nodes.ts';
+export type { InboxBox, InboxFilter, InboxStores } from './inbox.ts';
+export type { MoneyStores } from './money.ts';
+export type { TranslateSettingsInput, TranslateSettingsStore } from './translate-settings.ts';
+export type { TranslationCache } from './translation-cache.ts';
+export type { ToolGroupStore } from './tool-groups.ts';
+export type { NetworkStores } from './network.ts';
+export type { ContactMessageStore } from './contact-messages.ts';
+export type { NetworkTaskStores } from './network-tasks.ts';
+export type { GroupStores, MemberInput } from './groups.ts';
+export { lineRef, MAIN_LINE_ID, plainText } from './lines.ts';
+export type { DayCompaction, LineDayRow } from './line-days.ts';
+export type { LineListFilter, LineMessageMeta, LineMessageRow, LinePatch, LineRow, LineStores, NewLine, QueuedRow,
+  SaidLine } from './lines.ts';
+export { APPROVAL_STATUSES } from './line-approvals.ts';
+export type { ApprovalStatus, LineApproval, LineApprovalStore, NewLineApproval } from './line-approvals.ts';
+export type { KernelSettingsStores, StoredCredential } from './kernel-settings.ts';
+export { prepareOfflineRestore } from './backup-recovery.ts';
+export type { CachedFavicon, FaviconStore } from './favicons.ts';
+export type { WebTabsSnapshot, WebTabsStateStore } from './web-tabs.ts';

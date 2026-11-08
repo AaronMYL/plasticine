@@ -1,0 +1,281 @@
+/* 项目详情（2026-11-05 设计稿 Project）：最宽 1040；左栏 待办 · 线，右栏 340 档案 · 笔记，间距 48；每块一个 15/24 小节标题，
+   行与行之间 1px --line，没有卡片。 */
+
+.proj-detail.page {
+  display: block;
+}
+
+.proj-detail {
+  width: min(1040px, 100%);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 24px 32px 48px;
+}
+
+.proj-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.proj-hue-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dot-hue, var(--fg2));
+}
+
+.proj-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.proj-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 48px;
+}
+
+.proj-main,
+.proj-side {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+
+.proj-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.proj-head-gap {
+  flex: 1;
+}
+
+.proj-detail .proj-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proj-detail .proj-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+}
+
+.proj-detail .proj-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proj-row-error {
+  flex: none;
+  color: var(--err);
+  font-size: 12px;
+}
+
+/* 勾掉：15px 圆圈，勾上是 --fg2 实底。 */
+.proj-check-input {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--line2);
+  appearance: none;
+  cursor: pointer;
+}
+
+.proj-check-input:checked {
+  background: var(--fg2);
+  box-shadow: none;
+}
+
+.proj-check-input:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1.5px var(--fg3);
+}
+
+.proj-due {
+  flex: none;
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.proj-due[data-soon='true'] {
+  color: var(--fg);
+}
+
+.proj-due[data-late='true'] {
+  color: var(--err);
+}
+
+/* 做完的留在最后，字退一档。 */
+.proj-row[data-done='true'] .proj-row-title {
+  color: var(--fg3);
+  text-decoration: line-through;
+  text-decoration-color: var(--line2);
+}
+
+.proj-add-due {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+}
+
+.proj-add-due:focus-visible {
+  color: var(--fg);
+}
+
+.proj-add-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.proj-detail .home-doing-row {
+  min-height: 44px;
+}
+
+.proj-date {
+  flex: none;
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.proj-profile {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.proj-profile-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.proj-profile-row dt {
+  flex: none;
+  width: 56px;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.proj-profile-row dd {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.proj-note {
+  gap: 10px;
+  cursor: pointer;
+}
+
+.proj-note svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.proj-note:hover .proj-row-title {
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .proj-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 项目列表上「还没归项目」的那几行。 */
+.proj-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proj-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.proj-line:last-child {
+  border-bottom: 0;
+}
+
+.proj-line-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 对话里定下的事：行尾一个「原话」，回到他说定的那句。 */
+.proj-quote-link {
+  margin-left: 8px;
+  color: var(--fg3);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.proj-quote-link:hover,
+.proj-quote-link:focus-visible {
+  color: var(--fg);
+}

@@ -1,0 +1,96 @@
+/* 悬浮对话框（设计稿 2026-11-03）：最亮一层 --layer-float + --lift，圆角 12；手机全屏。 */
+
+.chat-dialog {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.chat-dialog[data-fullscreen='true'] {
+  inset: 0;
+  border-radius: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.chat-dialog[data-dragging='true'] {
+  user-select: none;
+}
+
+.chat-dialog[data-fullscreen='false'] .chat-head {
+  cursor: grab;
+  touch-action: none;
+}
+
+.chat-dialog[data-dragging='true'] .chat-head {
+  cursor: grabbing;
+}
+
+.chat-dialog .conv {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.chat-grip {
+  position: absolute;
+  z-index: 2;
+  touch-action: none;
+}
+
+.chat-grip-n {
+  top: 0;
+  right: 16px;
+  left: 16px;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.chat-grip-w {
+  top: 16px;
+  bottom: 16px;
+  left: 0;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.chat-grip-nw {
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 12px 0 0 0;
+  cursor: nwse-resize;
+}
+
+.chat-grip-nw:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.chat-grip:hover {
+  background: var(--tint2);
+}
+
+.chat-collapse {
+  flex: none;
+}
+
+/* 手机：圆球在底栏上方右侧 16，56px。 */
+.shell[data-phone='true'] .chat-ball {
+  right: 16px;
+  bottom: calc(56px + 16px + env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+}
+
+.shell[data-phone='true'] .phone-bar {
+  background: var(--layer-side);
+}

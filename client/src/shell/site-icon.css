@@ -1,0 +1,41 @@
+/*
+ * 网站图标（site-icon.tsx）：16px、圆角 4。首字母方块是网站固定的类别色底 + --bg 字；真图标载入前是一块 --tint2
+ * （不先闪首字母），载好就是图标本身。深色模式下给图标垫一块很淡的亮底：透明底的深色图标（GitHub、X）不会消失。
+ */
+
+.site-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 11px;
+  font-weight: 600;
+}
+
+.site-icon[data-kind='letter'] {
+  background: var(--site-hue);
+  color: var(--bg);
+}
+
+.site-icon[data-kind='image'][data-ready='false'] {
+  background: var(--tint2);
+}
+
+.site-icon > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .site-icon[data-kind='image'] {
+    background: color-mix(in srgb, var(--fg) 24%, transparent);
+  }
+}
+
+:root[data-theme='dark'] .site-icon[data-kind='image'] {
+  background: color-mix(in srgb, var(--fg) 24%, transparent);
+}

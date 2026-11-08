@@ -1,0 +1,197 @@
+// 界面 → 壳的 ipc：每条都先认人（只收界面视图里本站主 frame 发的；开始页只能用「本体跑在哪」那两条），再按共享 schema
+// 校验参数，不过就丢掉并记一笔，不往下做。壳 → 界面的事件在 ui-events.ts。
+
+import { ipcMain, type IpcMainEvent, type IpcMainInvokeEvent, type WebContents } from 'electron';
+import { Value } from 'typebox/value';
+import { DESKTOP_PERMISSIONS, DevicePairRequestSchema, ServerChoiceSchema, type DesktopPermission,
+  type DevicePairRequest, type ServerChoice } from '../../../agent/shared/api/desktop-bridge.ts';
+import { LoginImportRequestSchema, type LoginImportRequest } from '../../../agent/shared/api/mac-logins.ts';
+import { TitlebarLayoutSchema, WEB_TAB_COMMANDS, WebTabsSyncSchema, type WebTabsSync }
+  from '../../../agent/shared/api/mac-bridge.ts';
+import { TranslateDeliverySchema, TranslatePageConfigSchema, type TranslateDelivery, type TranslatePageConfig }
+  from '../../../agent/shared/api/mac-translate.ts';
+import { WebPageToolSchema, type WebPageTool } from '../../../agent/shared/api/web-page-tools.ts';
+import { HELPER_METHODS, isHelperMethod, type HelperMethod } from '../../../agent/shared/desktop-helper-protocol.ts';
+import { CHANNELS } from './channels.ts';
+
+/** 通知的标题、正文、hash 上限：一行标题、几行正文就够，再长是出错了。 */
+const NOTIFY_TITLE_MAX = 200;
+const NOTIFY_BODY_MAX = 2_000;
+const HASH_MAX = 500;
+const TAB_ID_MAX = 100;
+const URL_MAX = 4_096;
+
+export interface ShellServices {
+  info(): { version: string; platform: 'macos' | 'windows' | 'linux'; tools: string[] };
+  /** 界面视图和它现在该载入的源地址；开始页的地址另算。 */
+  ui(): WebContents;
+  allowedOrigin(): string | null;
+  startPage(): string;
+  notify(title: string, body: string, hash: string): void;
+  notificationsEnabled(): boolean;
+  setNotifications(enabled: boolean): boolean;
+  serverStatus(): unknown;
+  chooseServer(choice: ServerChoice): Promise<unknown>;
+  updateStatus(): unknown;
+  updateCheck(): Promise<unknown>;
+  updateInstall(): void;
+  updateRollback(): void;
+  deviceStatus(): unknown;
+  devicePair(request: DevicePairRequest): Promise<unknown>;
+  devicePause(paused: boolean): unknown;
+  openPermission(permission: DesktopPermission): void;
+  /** 界面直接调系统助手（client/src/mac/desktop-helper.ts）：只放行协议里的方法，参数先过 schema。 */
+  helperCall(method: HelperMethod, params: Record<string, unknown>): Promise<unknown>;
+  chromeCurrent(): unknown;
+  tabsSync(state: WebTabsSync): void;
+  tabsCommand(tabId: string, command: string): void;
+  tabsNavigate(tabId: string, url: string): void;
+  tabsSnapshot(tabId: string): Promise<unknown>;
+  tabsTool(tabId: string, tool: WebPageTool): Promise<unknown>;
+  tabsInput(input: Record<string, unknown>): void;
+  translateConfigure(tabId: string, config: TranslatePageConfig | null): void;
+  translateDeliver(tabId: string, delivery: TranslateDelivery): void;
+  loginsSites(): Promise<unknown>;
+  loginsSources(): Promise<unknown>;
+  loginsImport(request: LoginImportRequest): Promise<unknown>;
+  loginsForget(host: string): Promise<unknown>;
+  openFullDiskAccess(): void;
+  log(line: string): void;
+}
+
+type Sender = IpcMainEvent | IpcMainInvokeEvent;
+
+function text(value: unknown, max: number): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= max;
+}
+
+/** 消息是不是界面视图里本站主 frame 发的。startPage：开始页也算（只给「本体跑在哪」那两条用）。 */
+function trusted(services: ShellServices, event: Sender, startPage = false): boolean {
+  const frame = event.senderFrame;
+  if (event.sender !== services.ui() || frame === null || frame.parent !== null) {
+    return false;
+  }
+  if (startPage && frame.url.startsWith(services.startPage())) {
+    return true;
+  }
+  const origin = services.allowedOrigin();
+  try {
+    return origin !== null && new URL(frame.url).origin === new URL(origin).origin;
+  } catch (error) {
+    if (error instanceof TypeError) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+export function registerBridge(services: ShellServices): void {
+  const on = (channel: string, handle: (...args: unknown[]) => void): void => {
+    ipcMain.on(channel, (event, ...args: unknown[]) => {
+      if (!trusted(services, event)) {
+        services.log(`丢掉一条不是界面本站发的消息（${channel}）。`);
+        return;
+      }
+      handle(...args);
+    });
+  };
+  const handle = (channel: string, run: (...args: unknown[]) => unknown, startPage = false): void => {
+    ipcMain.handle(channel, (event, ...args: unknown[]) => {
+      if (!trusted(services, event, startPage)) {
+        throw new Error('不是界面本站发的请求。');
+      }
+      return run(...args);
+    });
+  };
+  const invalid = (channel: string): never => {
+    throw new Error(`${channel} 的参数不对。`);
+  };
+
+  ipcMain.on(CHANNELS.info, (event) => {
+    event.returnValue = trusted(services, event, true) ? services.info() : null;
+  });
+  ipcMain.on(CHANNELS.chromeCurrent, (event) => {
+    event.returnValue = trusted(services, event, true) ? services.chromeCurrent() : null;
+  });
+  on(CHANNELS.notify, (title, body, hash) => {
+    if (text(title, NOTIFY_TITLE_MAX) && typeof body === 'string' && body.length <= NOTIFY_BODY_MAX
+      && typeof hash === 'string' && hash.length <= HASH_MAX) {
+      services.notify(title, body, hash);
+    }
+  });
+  handle(CHANNELS.notificationsEnabled, () => services.notificationsEnabled());
+  handle(CHANNELS.notificationsSet, (enabled) => (typeof enabled === 'boolean'
+    ? services.setNotifications(enabled) : invalid(CHANNELS.notificationsSet)));
+  handle(CHANNELS.serverStatus, () => services.serverStatus(), true);
+  handle(CHANNELS.serverChoose, (choice) => (Value.Check(ServerChoiceSchema, choice)
+    ? services.chooseServer(choice) : invalid(CHANNELS.serverChoose)), true);
+  handle(CHANNELS.updateStatus, () => services.updateStatus());
+  handle(CHANNELS.updateCheck, () => services.updateCheck());
+  on(CHANNELS.updateInstall, () => services.updateInstall());
+  on(CHANNELS.updateRollback, () => services.updateRollback());
+  handle(CHANNELS.deviceStatus, () => services.deviceStatus());
+  handle(CHANNELS.devicePair, (request) => (Value.Check(DevicePairRequestSchema, request)
+    ? services.devicePair(request) : invalid(CHANNELS.devicePair)));
+  handle(CHANNELS.devicePause, (paused) => (typeof paused === 'boolean'
+    ? services.devicePause(paused) : invalid(CHANNELS.devicePause)));
+  on(CHANNELS.devicePermission, (permission) => {
+    if ((DESKTOP_PERMISSIONS as readonly unknown[]).includes(permission)) {
+      services.openPermission(permission as DesktopPermission);
+    }
+  });
+  handle(CHANNELS.helperCall, (method, params) => {
+    const name = typeof method === 'string' ? method : '';
+    if (!isHelperMethod(name) || name === 'cancel' || !Value.Check(HELPER_METHODS[name].params, params ?? {})) {
+      return invalid(CHANNELS.helperCall);
+    }
+    return services.helperCall(name, (params ?? {}) as Record<string, unknown>);
+  });
+  on(CHANNELS.chromeTitlebar, (layout) => {
+    if (!Value.Check(TitlebarLayoutSchema, layout)) {
+      services.log('顶栏布局的形状不对，没用。');
+    }
+  });
+  on(CHANNELS.tabsSync, (state) => {
+    if (Value.Check(WebTabsSyncSchema, state)) {
+      services.tabsSync(state);
+    } else {
+      services.log('网页标签清单的形状不对，没用。');
+    }
+  });
+  on(CHANNELS.tabsCommand, (tabId, command) => {
+    if (text(tabId, TAB_ID_MAX) && (WEB_TAB_COMMANDS as readonly unknown[]).includes(command)) {
+      services.tabsCommand(tabId, String(command));
+    }
+  });
+  on(CHANNELS.tabsNavigate, (tabId, url) => {
+    if (text(tabId, TAB_ID_MAX) && text(url, URL_MAX) && /^https?:\/\//i.test(url)) {
+      services.tabsNavigate(tabId, url);
+    }
+  });
+  handle(CHANNELS.tabsSnapshot, (tabId) => (text(tabId, TAB_ID_MAX) ? services.tabsSnapshot(tabId)
+    : invalid(CHANNELS.tabsSnapshot)));
+  handle(CHANNELS.tabsTool, (tabId, tool) => (text(tabId, TAB_ID_MAX) && Value.Check(WebPageToolSchema, tool)
+    ? services.tabsTool(tabId, tool) : invalid(CHANNELS.tabsTool)));
+  on(CHANNELS.tabsInput, (input) => {
+    if (typeof input === 'object' && input !== null && typeof (input as { x?: unknown }).x === 'number') {
+      services.tabsInput(input as Record<string, unknown>);
+    }
+  });
+  on(CHANNELS.translateConfigure, (tabId, config) => {
+    if (text(tabId, TAB_ID_MAX) && (config === null || Value.Check(TranslatePageConfigSchema, config))) {
+      services.translateConfigure(tabId, config);
+    }
+  });
+  on(CHANNELS.translateDeliver, (tabId, delivery) => {
+    if (text(tabId, TAB_ID_MAX) && Value.Check(TranslateDeliverySchema, delivery)) {
+      services.translateDeliver(tabId, delivery);
+    }
+  });
+  handle(CHANNELS.loginsSites, () => services.loginsSites());
+  handle(CHANNELS.loginsSources, () => services.loginsSources());
+  handle(CHANNELS.loginsImport, (request) => (Value.Check(LoginImportRequestSchema, request)
+    ? services.loginsImport(request) : invalid(CHANNELS.loginsImport)));
+  handle(CHANNELS.loginsForget, (host) => (text(host, 253) ? services.loginsForget(host)
+    : invalid(CHANNELS.loginsForget)));
+  on(CHANNELS.loginsFullDisk, () => services.openFullDiskAccess());
+}

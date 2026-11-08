@@ -1,0 +1,426 @@
+/* 设置浮层：一段一个标题条；开关是带文字的复选框（role="switch"），不另起组件类型。 */
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-content { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+.settings-sections { align-self: flex-start; position: sticky; top: 0; z-index: 1; }
+/* 定位区块或字段时，给固定分类栏和阅读间隔留空间。 */
+.settings-content > .block,
+.settings .block-title,
+.settings-ai-choice { scroll-margin-top: 48px; }
+.settings-ai-choice:focus { outline: 2px solid var(--line2); outline-offset: 4px; }
+.settings .model-choice { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.settings .model-choice label { display: flex; flex-direction: column; gap: 8px; font-size: 12px; }
+.settings .model-choice .field-input { width: 100%; min-width: 0; }
+.settings .model-choice > .text-meta { grid-column: 1 / -1; }
+.sheet-drawer .settings { flex: 0 0 auto; padding: 16px; }
+.settings textarea.field-input { min-height: 96px; }
+
+.settings .block { min-width: 0; }
+.settings .block + .block { border-top: 1px solid var(--line); padding-top: 24px; }
+.settings .field { width: 100%; max-width: 32em; }
+.settings .block-head > .icon-button { margin-left: auto; }
+.settings .block-empty { max-width: 44em; }
+
+.settings-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 22px;
+  cursor: pointer;
+}
+
+.settings-switch input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--fg);
+}
+
+.settings-switch input:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* 带说明的开关：说明在名字后的 ⓘ 里（11-04 重做悬停）。 */
+.settings-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.settings-message {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg);
+}
+
+.settings-retry {
+  align-self: flex-start;
+}
+
+/* 账户与设备：设备名一行、链接一行、退出一行；确认时两个按钮和那句说明排在一起（和设备页的 device-confirm 一样）。 */
+.settings-device { margin: 0; font-size: 14px; line-height: 22px; }
+.settings-device strong { font-weight: 500; }
+.settings-device-link,
+.settings-logout { align-self: flex-start; }
+.settings-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.settings-connection-status { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 12px;
+  border-radius: 8px; background: var(--tint); font-size: 12px; line-height: 18px; }
+.settings-connection-status dt { color: var(--fg2); }
+.settings-connection-status dd { margin: 0; }
+
+.settings-number {
+  max-width: 16em;
+}
+
+.settings-time-zone { display: flex; flex-direction: column; gap: 12px; }
+.settings-time-zone .segmented { align-self: flex-start; }
+/* 现在用的时区和那里的时间一行常显：看一眼就能核对，不再写「跟随设备的时区设置」「确认后点保存」。 */
+.time-zone-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  font-size: 14px;
+  line-height: 22px;
+}
+.time-zone-results { display: flex; flex-direction: column; max-height: 240px; overflow: auto;
+  gap: 4px; margin: 0; padding: 0; list-style: none; }
+.time-zone-result { display: flex; flex-direction: column; align-items: flex-start;
+  width: 100%; height: auto; min-height: 48px; padding: 8px 12px; text-align: left; }
+.time-zone-result[aria-pressed='true'] { background: var(--tint2); }
+.time-zone-result .text-meta { color: var(--fg2); font-size: 12px; }
+.settings-time-zone details > summary { cursor: pointer; color: var(--fg2); font-size: 12px; }
+.settings-time-zone details > .field { margin-top: 12px; }
+@media (max-width: 767px) {
+  .settings-content > .block,
+  .settings .block-title,
+  .settings-ai-choice { scroll-margin-top: 64px; }
+  .settings .model-choice { grid-template-columns: minmax(0, 1fr); }
+  .settings-switch { min-height: 40px; }
+  .settings-time-zone details > summary { min-height: 40px; padding-block: 10px; }
+}
+
+/* iPhone App 里的三个原生入口：一行排不下就换行。 */
+.settings-ios-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+/* 第 3 批 设置 · 浏览器：登录着的网站一行（字母方块 · 名字 · 域名 · 日子 · ⋯）、导入一行、导入登录弹层。 */
+.login-local {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.login-sites {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.login-site,
+.login-import-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.login-site {
+  border-bottom: 1px solid var(--line);
+}
+
+.login-site-tile {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.login-import-tile {
+  width: 28px;
+  height: 28px;
+}
+
+.login-site-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.login-site-host {
+  width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-site-day {
+  width: 48px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.login-import {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-import-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.login-import-source {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.login-import-source[data-chosen='true'] {
+  background: var(--tint2);
+}
+
+.login-import-source input {
+  margin: 0;
+}
+
+.login-import-source-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-import-source-name {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+}
+
+.login-import-note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.login-import-note.is-error {
+  color: var(--err);
+}
+
+.login-import-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .login-site-host {
+    display: none;
+  }
+}
+
+.login-local-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: -2px;
+  color: inherit;
+}
+
+/* 外观：段标题就是它的名字，选择框按内容宽，不拉满一行。 */
+.settings-appearance { align-self: flex-start; width: auto; min-width: 200px; }
+
+/* 设置 · 系统（2026-11-05 设计稿 Settings-System）：版本一行在描边框里；运行情况两列；设备、备份一行一条，行底 1px --line。 */
+.system-update {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.system-update-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.system-update-text .text-meta {
+  font-size: 12px;
+}
+
+.system-facts {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 0 12px;
+  margin: 0;
+}
+
+.system-facts dt {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  color: var(--fg2);
+  font-size: 13px;
+}
+
+.system-facts dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.system-warn {
+  margin: 0 0 8px;
+  color: var(--err);
+  font-size: 13px;
+}
+
+.system-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.system-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+  color: var(--fg2);
+}
+
+.system-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.system-row-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+.system-ok {
+  display: inline-flex;
+  color: var(--ok);
+}
+
+.system-row-icon {
+  display: inline-flex;
+}
+
+.backups-trigger {
+  margin-top: 4px;
+}
+
+@media (max-width: 767px) {
+  .system-facts {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+}
+
+.system-head-gap {
+  flex: 1;
+}
+
+.system-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.system-code-value {
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+/* 收不回的操作先常显后果（断开模型、撤销设备、退出这台）。 */
+.settings-confirm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  margin: 8px -12px 0;
+  padding: 0 8px 0 12px;
+  border-radius: 8px;
+  background: var(--tint2);
+}
+
+.settings-confirm-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.settings-confirm-text b {
+  font-weight: 500;
+}
+
+/* 下拉（2026-11-05 设计稿 Settings-AI）：近白底、--line2 描边、右边一个向下的箭头（图标，不用浏览器自带的）。 */
+.select-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.select-wrap select {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding-right: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--layer-float);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  appearance: none;
+}
+
+.select-wrap svg {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  color: var(--fg2);
+  transform: translateY(-50%);
+  pointer-events: none;
+}

@@ -1,0 +1,443 @@
+/* 首页「现在」（2026-11-05 设计稿 Home / Phone-Home）：单列最宽 880，块间 28；每块一个 15/24 小节标题，行与行之间
+   1px --line，没有卡片。电脑上「今天」和「信息流」左右两栏（间距 48）。 */
+
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: min(880px, 100%);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 24px 32px 48px;
+}
+
+.home-greeting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-greeting h1 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.home-date {
+  color: var(--fg2);
+  font-weight: 400;
+}
+
+.home-greeting[data-phone='true'] {
+  align-items: flex-start;
+}
+
+.home-greeting[data-phone='true'] h1 {
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.home-greeting[data-phone='true'] .home-date {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.home-greeting-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.home-greeting-tools .icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.home-section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.home-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.home-section-count {
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.home-section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.home-section-link svg {
+  color: var(--fg2);
+}
+
+.home-section-link:hover svg {
+  color: var(--fg);
+}
+
+.home-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 一行：左边符号，中间字，右边时间 / 按钮；行底 1px --line。 */
+.home-row-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--line);
+}
+
+/* —— 等你 —— */
+
+.home-wait-row {
+  min-height: 52px;
+}
+
+.home-wait-row .ask-glyph {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.home-wait-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-wait-card {
+  padding: 12px 0 16px 40px;
+  border-bottom: 1px solid var(--line);
+}
+
+.home-wait-card[data-phone='true'] {
+  padding-left: 0;
+}
+
+/* —— 在做 —— */
+
+.home-doing-lead {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+}
+
+.home-doing-text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.home-doing-title {
+  flex: none;
+  max-width: 260px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-doing-status {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-doing-status[data-status='failed'] {
+  color: var(--err);
+}
+
+.home-doing-elapsed {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.home-doing-row[data-phone='true'] {
+  min-height: 60px;
+}
+
+.home-doing-row[data-phone='true'] .home-doing-text {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.home-doing-row[data-phone='true'] .home-doing-title {
+  max-width: 100%;
+}
+
+.home-doing-row[data-phone='true'] .home-doing-status {
+  width: 100%;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* —— 接着看：一排六格 —— */
+
+.home-continue {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 -8px;
+  padding: 0;
+  list-style: none;
+}
+
+.home-continue-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  min-height: 96px;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.home-continue-item:hover {
+  background: var(--tint);
+}
+
+.home-continue-item:focus-visible {
+  outline: 2px solid var(--fg2);
+  outline-offset: -2px;
+}
+
+.home-continue-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.home-continue-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  margin-top: auto;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* —— 今天（第 15 条，设计稿 Main / Phone-Now）：时间列等宽，日历颜色点，提醒是空心圈 —— */
+
+.home-today-time {
+  flex: none;
+  width: 88px;
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.home-today-lead {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 8px;
+}
+
+.home-today-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot-hue, var(--fg2));
+}
+
+.home-today-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-today-meta,
+.home-today-synced {
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.home-section[data-device='phone'] .home-today-time {
+  width: 48px;
+}
+
+.home-feed-row {
+  min-height: 40px;
+  padding: 0;
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-feed-row:hover .home-feed-title {
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+
+.home-feed-row .feed-mark {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.home-feed-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-feed-time {
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* —— 手机 —— */
+
+.home[data-device='phone'] {
+  gap: 24px;
+  padding: 12px 16px 96px;
+}
+
+.home[data-device='phone'] .home-row-line .button-small {
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.home[data-device='phone'] .home-wait-row {
+  min-height: 60px;
+}
+
+.home[data-device='phone'] .home-wait-title {
+  white-space: normal;
+}
+
+@media (max-width: 1100px) {
+  .home-continue {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* —— 回顾（第 7 条，设计稿 Main）：✦ 一句，右边箭头；昨晚整理的几种数跟在后面一小行。 —— */
+
+.home-review-row {
+  padding: 0;
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+}
+
+.home-review-row > svg {
+  color: var(--fg3);
+}
+
+.home-review-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-review-row:hover .home-review-title {
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+
+.home-review-meta {
+  margin-left: 8px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}

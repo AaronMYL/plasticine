@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FCF9F6" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2B2826" />
+    <title>离线 · Plasticine</title>
+    <style>
+      /* 方向 I：一底一前景，没有卡片、没有阴影；字体走系统中文回退，离线时不加载任何资源。 */
+      :root { color-scheme: light; --bg: #fcf9f6; --fg: #2a2622; --fg2: #6b635b; --line2: rgba(42, 38, 34, 0.16); }
+      @media (prefers-color-scheme: dark) {
+        :root { color-scheme: dark; --bg: #2b2826; --fg: #f5f1ec; --fg2: #b8b0a7; --line2: rgba(245, 236, 226, 0.16); }
+      }
+      html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--fg); }
+      body {
+        display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px;
+        box-sizing: border-box;
+        font: 14px/22px 'PingFang SC', 'MiSans', 'Microsoft YaHei', system-ui, sans-serif;
+      }
+      main { display: flex; flex-direction: column; gap: 16px; max-width: 32em; }
+      h1 { margin: 0; font-size: 24px; line-height: 32px; font-weight: 600; }
+      p { margin: 0; color: var(--fg2); }
+      button {
+        align-self: flex-start; height: 32px; padding: 0 12px; border: 0; border-radius: 8px;
+        background: var(--fg); color: var(--bg); font: inherit; font-size: 12px; cursor: pointer;
+      }
+      button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Plasticine</h1>
+      <p>你离线了 · 连上网后会自动恢复。</p>
+      <button type="button" onclick="location.reload()">重试</button>
+    </main>
+    <script>
+      // 网络一回来就自己回到刚才要去的那一页，不用等人点。
+      addEventListener('online', function () { location.reload(); });
+    </script>
+  </body>
+</html>

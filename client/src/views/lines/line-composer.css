@@ -1,0 +1,223 @@
+/* 和 Plasticine 说话的输入框（2026-11-05 设计稿 Main）：近白底、圆角 12；排队的消息在框里字的上面；发送键左边是停止键。 */
+
+.line-composer-dock {
+  flex: none;
+  padding: 8px 0 24px;
+}
+
+.line-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.line-input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  transition: box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.line-input-box:focus-within {
+  box-shadow: inset 0 0 0 1px var(--fg3);
+}
+
+.line-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line-queued-author {
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+.line-queued {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 4px 0 10px;
+  border-radius: 8px;
+  background: var(--tint2);
+}
+
+.line-queued-icon {
+  display: inline-flex;
+  color: var(--fg2);
+}
+
+.line-queued-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-queued-error {
+  flex: none;
+  color: var(--err);
+  font-size: 12px;
+}
+
+.line-queued-now {
+  flex: none;
+  font-size: 12px;
+}
+
+.line-queued-state {
+  flex: none;
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+.line-queued-withdraw {
+  width: 24px;
+  height: 24px;
+}
+
+.line-quotes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.line-input {
+  width: 100%;
+  min-height: 26px;
+  max-height: 200px;
+  box-sizing: border-box;
+  padding: 4px 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  resize: none;
+  field-sizing: content;
+  outline: none;
+}
+
+.line-input::placeholder {
+  color: var(--fg2);
+}
+
+.line-input-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.line-input-spacer {
+  flex: 1;
+}
+
+.line-model {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.line-model:hover {
+  background: var(--tint);
+  color: var(--fg);
+}
+
+.line-model-error {
+  color: var(--err);
+  font-size: 12px;
+}
+
+.line-stop,
+.line-send {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.line-stop {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+}
+
+.line-stop:hover:not(:disabled) {
+  background: var(--tint);
+}
+
+.line-stop svg rect {
+  fill: currentColor;
+}
+
+.line-send {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.line-send:disabled {
+  background: var(--tint2);
+  color: var(--fg3);
+  cursor: default;
+}
+
+.line-composer-note {
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.line-composer-note.is-error {
+  color: var(--err);
+}
+
+
+/* 当前页来源在发送前可见，名称和实际范围分开，移除仍保留输入。 */
+.line-page-source { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.line-source-chip {
+  display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 32px; padding: 0 4px 0 8px;
+  border-radius: 4px; background: var(--tint2); color: var(--fg2); font-size: 12px; line-height: 18px;
+}
+.line-source-chip > svg { flex: none; }
+.line-source-kind { flex: none; }
+.line-source-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg); }
+.line-source-scope { margin-left: auto; flex: none; font-size: 11px; }
+.line-source-chip .icon-button { flex: none; width: 24px; height: 24px; }
+.line-source-error { padding: 0 8px; color: var(--err); font-size: 12px; line-height: 18px; }
+.line-source-actions { display: flex; gap: 16px; }
+.line-source-actions .text-button { font-size: 12px; }
+@media (max-width: 767px) {
+  .line-source-chip { flex-wrap: wrap; padding-right: 0; gap: 4px 8px; }
+  .line-source-chip .line-source-title { flex: 1; }
+  .line-source-chip .icon-button { width: 44px; height: 44px; }
+  .line-source-actions .text-button { min-height: 44px; }
+  .line-input-tools > .icon-button, .line-stop, .line-send { min-width: 44px; min-height: 44px; }
+}

@@ -1,0 +1,158 @@
+/* 网页工具条上的「文A」和它的菜单（2026-11-03 沉浸式翻译）。开着是按下的样子（--tint2 底、--fg 图标），右上角的点是
+   StatusGlyph；菜单是浮起物（--layer-float 底 + --lift），和首页卡的 ⋯ 菜单同一种写法。 */
+
+.translate {
+  position: relative;
+  flex: none;
+}
+
+.translate-button {
+  position: relative;
+}
+
+.translate-button[aria-pressed='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.translate-button[aria-disabled='true'] {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.translate-button[aria-disabled='true']:hover {
+  background: transparent;
+}
+
+.translate-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.translate-dot .glyph {
+  width: 6px;
+  height: 6px;
+}
+
+.translate-dot .glyph[data-status='err'] {
+  width: 7px;
+  height: 7px;
+}
+
+/* 都译完：安静的小勾，和出错的叉同大，不抢「文A」。 */
+.translate-dot .glyph[data-status='done'] {
+  width: 7px;
+  height: 7px;
+}
+
+.translate-pop {
+  position: fixed;
+  z-index: 60;
+}
+
+.translate-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 272px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+}
+
+.translate-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.translate-menu-row > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.translate-menu-row:hover,
+.translate-menu-row:focus-visible {
+  background: var(--tint2);
+  outline: none;
+}
+
+.translate-menu-value {
+  color: var(--fg2);
+}
+
+.translate-menu-row > svg {
+  flex: none;
+  color: var(--fg3);
+}
+
+.translate-menu-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 12px;
+}
+
+.translate-menu-display {
+  display: flex;
+  margin: 2px 4px 4px;
+}
+
+.translate-menu-display .segmented-item {
+  flex: 1;
+}
+
+.translate-menu-line {
+  width: 100%;
+  height: 1px;
+  margin: 2px 0;
+  border: 0;
+  background: var(--line);
+}
+
+/* 模型那一行和「翻译成」同一种写法；点开就地出共用的选模型。 */
+.translate-menu-model > .translate-menu-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.translate-menu-models {
+  padding: 4px 4px 6px;
+}
+
+.translate-menu-error {
+  margin: 0;
+  padding: 2px 8px 6px;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+@media (hover: none) {
+  .translate-menu-row {
+    min-height: 44px;
+  }
+}
+
+.translate-pop[data-leaving='true'] {
+  pointer-events: none;
+}

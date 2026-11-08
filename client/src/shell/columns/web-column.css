@@ -1,0 +1,284 @@
+/*
+ * 网页栏目的第二栏：竖排标签（11-07 设计稿 Web / kit.mjs 的 .pins / .tab / .grp）。搜标签一行 34，置顶四个一行（40 高、
+ * --tint 底），组标题 30 高，一个标签 32 高；当前那个 --bg 底加细线、行尾 ×；拖着的那一行浮起来（--lift）。
+ */
+
+.web-column {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.web-search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 11px 8px 9px 12px;
+}
+
+.web-search-field {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.web-search-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+}
+
+.web-search-field input::placeholder {
+  color: var(--fg3);
+}
+
+.web-search-field:focus-within {
+  box-shadow: inset 0 0 0 1px var(--fg2);
+}
+
+/* 置顶：四个一行的图标格，--tint 底；当前那一个 --bg 底加细线。 */
+.web-pins {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 8px;
+  list-style: none;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.web-pins[data-drop-zone='true'] {
+  background: var(--tint2);
+}
+
+.web-pin {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--tint);
+  cursor: pointer;
+}
+
+.web-pin:hover {
+  background: var(--tint2);
+}
+
+.web-pin[aria-current='page'] {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.web-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 16px);
+  height: 30px;
+  margin: 0 8px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-group-head:hover {
+  background: var(--tint);
+}
+
+.web-group[data-drop-zone='true'] .web-group-head {
+  background: var(--tint2);
+}
+
+.web-group-chevron {
+  display: flex;
+  transition: transform var(--motion-base) var(--ease-out);
+}
+
+.web-group-head[aria-expanded='false'] .web-group-chevron {
+  transform: rotate(-90deg);
+}
+
+.web-group-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-tab-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 8px;
+  border-radius: 8px;
+  touch-action: none;
+}
+
+.web-tab-item:hover {
+  background: var(--tint);
+}
+
+.web-tab-item:has([aria-current='page']) {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.web-tab-item[data-dragging='true'] {
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  cursor: grabbing;
+}
+
+.web-tab-row {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-tab-row[data-indent='true'] {
+  padding-left: 30px;
+}
+
+.web-tab-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.web-tab-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 行尾 ×：当前那一个常显，别的悬停才出（拖动时都不出）。 */
+.web-tab-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg3);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.web-tab-item:hover .web-tab-close,
+.web-tab-item:has([aria-current='page']) .web-tab-close,
+.web-tab-close:focus-visible {
+  opacity: 1;
+}
+
+.web-tab-close:hover {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.web-column[data-dragging='true'] .web-tab-close {
+  opacity: 0;
+}
+
+.web-today {
+  min-height: 32px;
+}
+
+.web-drop-line {
+  position: absolute;
+  right: 16px;
+  left: 16px;
+  z-index: 3;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: var(--fg);
+  pointer-events: none;
+}
+
+.web-new {
+  width: calc(100% - 16px);
+  color: var(--fg2);
+}
+
+.web-group-rename {
+  padding: 8px;
+}
+
+.web-group-hues {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px 8px;
+}
+
+.web-group-hue {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.web-group-hue[aria-pressed='true'] {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-group-chevron,
+  .web-tab-close {
+    transition: none;
+  }
+}

@@ -1,0 +1,141 @@
+/*
+ * 图标栏（11-07 设计稿 kit.mjs .rail）：72 宽、--layer-bar 底；入口 40×40 圆角 8，图标 18（Plasticine 标记 20），
+ * 当前那一个 --tint2 底、--fg；组间 10 空隙。底部 ⌘K、新建、头像。Mac 客户端的交通灯落在顶上那一块（44 高）里。
+ */
+
+.rail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  width: 72px;
+  padding: 14px 0;
+  background: var(--layer-bar);
+}
+
+.rail[data-lights='true'] {
+  padding-top: 0;
+}
+
+/* 交通灯的位置（壳画灯，这里只留出来，也是拖动窗口的地方）。 */
+.rail-lights {
+  display: block;
+  flex: none;
+  width: 100%;
+  height: 56px;
+}
+
+.rail-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rail-group,
+.rail-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rail-foot {
+  margin-top: auto;
+}
+
+.rail-item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
+}
+
+.rail-item:hover {
+  background: var(--tint);
+  color: var(--fg);
+}
+
+.rail-item[aria-current='page'],
+.rail-item[aria-expanded='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.rail-item:active {
+  transform: scale(0.96);
+}
+
+.rail-item:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* 「任务」有事等他：右上角一个陶土点，外圈一道图标栏底色隔开。 */
+.rail-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  outline: 2px solid var(--layer-bar);
+}
+
+.rail-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--tint2);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+/* 没连上 / 连接中才出的那个灯（连着时不画：默认值不显示）。 */
+.rail-signal {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  outline: 2px solid var(--layer-bar);
+  background: var(--err);
+}
+
+.rail-signal[data-status='connecting'] {
+  background: var(--run);
+  animation: rail-signal 1.6s ease-in-out infinite;
+}
+
+@keyframes rail-signal {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-item,
+  .rail-item:active {
+    transition: none;
+    transform: none;
+  }
+
+  .rail-signal[data-status='connecting'] {
+    animation: none;
+  }
+}
