@@ -1,0 +1,84 @@
+/* 欢迎消息（11-08 设计稿 First-Main）：标记 20 + 名字 15·600 + 时间；正文同 Plasticine 的回答；下面的开始是一排描边
+   小按钮（高 32、圆角 8、图标 14），换行时整行往下排。 */
+
+.welcome-message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: stretch;
+}
+
+.welcome-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.welcome-name {
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.welcome-time {
+  color: var(--fg3);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.welcome-text .markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.welcome-starts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.welcome-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--layer-float);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.welcome-start:hover:not(:disabled) {
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--fg3);
+}
+
+.welcome-start:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.welcome-start:disabled {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.welcome-start:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.welcome-start > svg {
+  color: var(--fg2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-start {
+    transition: none;
+  }
+}

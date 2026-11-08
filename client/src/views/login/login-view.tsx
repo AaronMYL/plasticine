@@ -1,167 +1,119 @@
-// 配对这台设备：输入服务器上生成的一次性配对码，换一个长期会话（第 90 条 ②）。
-// 配对码不是密码，不存、不写日志；失败时写一句原因和下一步。服务端的码是 8 位字母数字（7KQ4-M2XD），空格、
-// 连字符、大小写都不要紧。每次配对带一个 requestId：回执丢了（超时、断网）再点「配对」，码和设备名没改就沿用
-// 同一个标识，服务端认出是同一次配对，给已登记的那台设备一个新会话，不会拿已用掉的码报错，也不多登记一台。
+// 登录（11-08 设计稿 Sign-In / Phone-SignIn）：@账号或地址 + 密码 +「登录」。11-08 他定去掉配对码：一份 Plasticine
+// 只有一个主人，别的设备用 @账号和密码登录，密码只存在这份 Plasticine 里。
+// - 在实例自己的网址上打开：@账号按 /v2/account/state 预填，密码对了就登记这台设备、拿到会话；
+// - 填的是别的 @账号或地址：跳到那一份的登录页（密码不带过去，到那边再填）；
+// - 「忘了密码」点开一个浮框写怎么重设（本机在桌面客户端里重设，服务器上运行 plasticine password）；
+// - 桌面客户端里多一个「换一个地方」（回开始页二选一）。
+// 出错（密码不对、试错太多被限流、连不上）就地一行，不弹框。
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import { ApiError, errorText, isUncertain } from '../../api/errors.ts';
-import { createRequestId } from '../../api/request-id.ts';
-import { DEVICE_NAME_MAX_CHARS, PAIRING_CODE_INPUT_MAX_CHARS } from '../../api/shared.ts';
-import type { SessionView } from '../../api/types.ts';
-import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
-import { Icon } from '../../shell/icons.tsx';
-import { StatusGlyph } from '../../shell/glyph.tsx';
-import { usePhone } from '../../shell/use-viewport-width.ts';
-import { clearPairingLink, readPairingInvitation } from './pairing-link.ts';
+import { errorText } from '../../api/errors.ts';
+import type { AccountState, SessionView } from '../../api/shared.ts';
+import { handleHost, loginTarget, normalizeHandle, validHandle } from '../onboard/handle.ts';
+import { Brand, ChangePlace, PasswordField, suggestedDeviceName } from '../onboard/onboard-parts.tsx';
 import './login.css';
 
-/** 没填设备名时用这个（服务端要求设备名非空）。 */
-const DEFAULT_DEVICE_NAME = '这台设备';
+const FORGOT_TEXT = '密码只存在你自己的 Plasticine 里。在装着它的那台电脑上打开 Plasticine 就能重设；'
+  + '装在服务器上的，在服务器上运行 ';
 
-/** 一次配对：用哪个标识、对应哪个码和设备名。 */
-interface PairingAttempt {
-  requestId: string;
-  key: string;
+/** 框里右边的那串网址（电脑上才显示）：填的是 @账号时是它的网址。 */
+function addressOf(input: string): string | null {
+  const handle = normalizeHandle(input);
+  return handle !== '' && !/[.:/]/.test(input) && validHandle(handle) ? handleHost(handle) : null;
 }
 
-/** 和服务端一样忽略空格、连字符、大小写：只是写法不同的同一个码，算同一次配对。 */
-function attemptKey(code: string, deviceName: string): string {
-  return `${code.replace(/[\s-]/g, '').toUpperCase()}\n${deviceName}`;
-}
-
-export function LoginView({ onPaired, onSessionOpened }: { onPaired: (session: SessionView) => void;
-  onSessionOpened?: (session: SessionView) => void }): ReactNode {
-  const api = useApi();
-  const phone = usePhone();
-  const [invitation, setInvitation] = useState(readPairingInvitation);
-  const [code, setCode] = useState(invitation?.code ?? '');
-  const [deviceName, setDeviceName] = useState(invitation === null ? '' : suggestedDeviceName());
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [expired, setExpired] = useState(invitation !== null && Date.parse(invitation.expiresAt) <= Date.now());
-  const [uncertain, setUncertain] = useState(false);
-  const [paired, setPaired] = useState<SessionView | null>(null);
-  // 回执不确定的那一次：同一个码和设备名再试就沿用它的标识；明确失败或改了输入就换新的。
-  const attempt = useRef<PairingAttempt | null>(null);
-  useEffect(clearPairingLink, []);
+function Forgot(): ReactNode {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (invitation === null || busy || uncertain || paired !== null) return;
-    const timeout = setTimeout(() => setExpired(true), Math.max(0, Date.parse(invitation.expiresAt) - Date.now()));
-    return () => clearTimeout(timeout);
-  }, [invitation, busy, uncertain, paired]);
-
-  const manual = (): void => {
-    setInvitation(null);
-    setCode('');
-    setExpired(false);
-    setError(null);
-    setUncertain(false);
-    attempt.current = null;
-  };
-
-  const submit = async (event: FormEvent): Promise<void> => {
-    event.preventDefault();
-    const name = deviceName.trim() === '' ? DEFAULT_DEVICE_NAME : deviceName.trim();
-    const key = attemptKey(code, name);
-    if (attempt.current === null || attempt.current.key !== key) {
-      attempt.current = { requestId: createRequestId(), key };
-    }
-    const { requestId } = attempt.current;
-    setBusy(true);
-    setError(null);
-    try {
-      const session = await api.session.pair({ code: code.trim(), deviceName: name, requestId });
-      attempt.current = null;
-      setUncertain(false);
-      if (invitation === null) onPaired(session);
-      else { onSessionOpened?.(session); setPaired(session); }
-    } catch (cause) {
-      setUncertain(isUncertain(cause));
-      if (!isUncertain(cause)) {
-        attempt.current = null;
-      }
-      setError(errorText(cause));
-      if (cause instanceof ApiError && cause.code === 'pairing_code_expired') setExpired(true);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const brand = <div className="login-brand"><PlasticineMark size={28} /><span>Plasticine</span></div>;
-  if (paired !== null) {
-    return <main className="login login-invite"><div className="login-form">
-      {brand}<div className="login-result" role="status"><span className="login-success">
-        <Icon name="check" size={40} /></span><h1 className="login-title">这台{phone ? '手机' : '设备'}已连接</h1>
-        <p className="login-instance">{paired.device.name}</p></div>
-      <button type="button" className="primary-button" onClick={() => onPaired(paired)}>打开 Plasticine</button>
-    </div></main>;
-  }
-  if (expired) {
-    return <main className="login login-invite"><div className="login-form">
-      {brand}<h1 className="login-title">配对邀请已过期</h1>
-      <p className="login-instance">请在原设备重新生成配对邀请。</p>
-      <button type="button" className="primary-button" onClick={manual}>输入新的配对码</button>
-    </div></main>;
-  }
+    if (!open) return undefined;
+    const outside = (event: PointerEvent): void => {
+      if (event.target instanceof Node && box.current?.contains(event.target) !== true) setOpen(false);
+    };
+    const escape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', outside);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [open]);
   return (
-    <main className={`login${invitation === null ? '' : ' login-invite'}`}>
-      <form className="login-form" onSubmit={(event) => void submit(event)}>
-        {brand}
-        <h1 className="login-title">{invitation === null ? '配对这台设备' : '连接到 Plasticine'}</h1>
-        <p className="login-instance">{window.location.host}</p>
-        {invitation !== null ? null : <label className="field">
-          <span className="field-label">配对码</span>
-          <input
-            className="field-input field-input-mono"
-            autoCapitalize="characters"
-            spellCheck={false}
-            autoComplete="one-time-code"
-            maxLength={PAIRING_CODE_INPUT_MAX_CHARS}
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            placeholder="7KQ4-M2XD"
-            disabled={busy}
-            required
-          />
-        </label>}
-        <label className="field">
-          <span className="field-label">{invitation === null ? '这台设备叫什么' : '设备名称'}</span>
-          <input
-            className="field-input"
-            placeholder="例如：书房的 Mac"
-            maxLength={DEVICE_NAME_MAX_CHARS}
-            value={deviceName}
-            onChange={(event) => setDeviceName(event.target.value)}
-            disabled={busy}
-          />
-        </label>
-        {error === null ? null : (
-          <p className="login-error" role="alert">
-            {error}
-          </p>
-        )}
-        <button type="submit" className="primary-button" disabled={busy || code.trim() === ''}>
-          {busy ? '正在连接…' : invitation === null ? '配对' : `连接这台${phone ? '手机' : '设备'}`}
-        </button>
-        {busy ? <p className="login-connecting" role="status"><StatusGlyph status="run" label="正在连接" />
-          正在等待连接回执</p> : null}
-        {invitation === null ? <details className="login-help"><summary>在哪里获取配对码？</summary>
-          <p>在已登录的设备上打开「设置 → 系统 → 设备 → 添加设备」，复制 8 位字母数字的备用码。</p>
-          <p>第一次安装后，用安装器给出的登录链接打开；服务器安装可运行 <code>pairing-cli</code>。</p>
-        </details> : <button type="button" className="text-button text-button-quiet login-switch"
-          disabled={busy || uncertain} onClick={manual}>不是要连接这一份？</button>}
-      </form>
-    </main>
+    <div className="ob-forgot" ref={box}>
+      <button type="button" className="ob-link ob-link-u" aria-expanded={open} aria-controls="login-forgot"
+        onClick={() => setOpen((value) => !value)}>忘了密码</button>
+      {open ? <div id="login-forgot" className="ob-forgot-pop" role="tooltip">
+        <p>{FORGOT_TEXT}<code>plasticine password</code>。</p>
+      </div> : null}
+    </div>
   );
 }
 
-function suggestedDeviceName(): string {
-  const agent = navigator.userAgent;
-  if (/iPhone/i.test(agent)) return '我的 iPhone';
-  if (/iPad/i.test(agent)) return '我的 iPad';
-  if (/Android/i.test(agent)) return '我的手机';
-  if (/Macintosh/i.test(agent)) return '我的 Mac';
-  if (/Windows/i.test(agent)) return '我的 Windows 电脑';
-  return '这台浏览器';
+export interface LoginViewProps {
+  /** /v2/account/state；读不到是 null（照样能在这里登录）。 */
+  account: AccountState | null;
+  onSignedIn: (session: SessionView) => void;
+  navigate?: (url: string) => void;
+}
+
+export function LoginView({ account, onSignedIn, navigate = (url) => window.location.assign(url) }: LoginViewProps)
+  : ReactNode {
+  const api = useApi();
+  const [who, setWho] = useState(account?.handle ?? '');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const target = loginTarget(who, account === null ? undefined : account.handle, new URL(window.location.href));
+  const address = addressOf(who);
+  const ready = !busy && (target.kind === 'elsewhere' || (target.kind === 'here' && password !== ''));
+  const submit = (event: FormEvent): void => {
+    event.preventDefault();
+    if (target.kind === 'bad') {
+      setError('认不出这个 @账号或地址。');
+      return;
+    }
+    if (target.kind === 'elsewhere') {
+      navigate(target.url);
+      return;
+    }
+    if (password === '') return;
+    setBusy(true);
+    setError(null);
+    api.account.signIn({ password, deviceName: suggestedDeviceName() }).then(onSignedIn, (cause: unknown) => {
+      setBusy(false);
+      setError(errorText(cause));
+    });
+  };
+  return (
+    <main className="ob-page login" aria-label="登录">
+      <div className="ob-col">
+        <Brand />
+        <h1 className="ob-title">登录</h1>
+        <form onSubmit={submit} noValidate>
+          <div className="ob-field">
+            <label className="ob-label" htmlFor="login-who">@账号或地址</label>
+            <div className="ob-input" data-invalid={target.kind === 'bad' && error !== null}>
+              <span className="ob-pre" aria-hidden="true">@</span>
+              <input id="login-who" value={who} autoComplete="username" autoCapitalize="none" spellCheck={false}
+                inputMode="email" disabled={busy} autoFocus={account?.handle == null}
+                onChange={(event) => { setWho(event.target.value); setError(null); }} />
+              {address === null ? null : <span className="ob-suffix login-address">{address}</span>}
+            </div>
+          </div>
+          <PasswordField id="login-password" label="密码" value={password} autoComplete="current-password"
+            disabled={busy || target.kind === 'elsewhere'} autoFocus={account?.handle != null}
+            invalid={error !== null && target.kind === 'here'}
+            onChange={(value) => { setPassword(value); setError(null); }} />
+          {error === null ? null : <p className="ob-error" role="alert">{error}</p>}
+          <button type="submit" className="primary-button ob-big" disabled={!ready}>
+            {busy ? '正在登录…' : '登录'}
+          </button>
+        </form>
+        <div className="ob-links login-links"><ChangePlace /><span className="login-gap" /><Forgot /></div>
+      </div>
+    </main>
+  );
 }

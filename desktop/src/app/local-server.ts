@@ -2,8 +2,12 @@
 // 用自带的 Node 跑 agent/src/app/main.ts，崩了按 1、2、4…30 秒退避重启，稳定跑满一分钟退避归零。停的时候先关 stdin
 // （本体设了 PLASTICINE_STOP_ON_STDIN_EOF=1，读到结尾自己收尾；壳被强制结束、管道一断也一样，不留孤儿进程占端口），
 // 再发 SIGTERM，4 秒后还在就强制结束。日志写进 logs/server.log，超过 10 MB 换一份、只留上一份。
+// 每次拉起都换一个本机令牌（11-08 首次使用流程，agent/shared/api/account.ts）：只在内存里、经环境变量交给本体，
+// 不写盘、不进日志；壳凭它替本机界面登录，界面经 localGrant 拿它建账号、重设密码。
 
 import type { ChildProcess } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import { LOCAL_TOKEN_ENV } from '../../../agent/shared/api/account.ts';
 import type { LocalServerState } from '../../../agent/shared/api/desktop-bridge.ts';
 import { LOCAL_SERVER_PORT } from './server-target.ts';
 
@@ -15,6 +19,12 @@ export const STABLE_MS = 60_000;
 export const HEALTH_TIMEOUT_MS = 60_000;
 /** 退出客户端时等本体收尾的上限。 */
 export const STOP_GRACE_MS = 4_000;
+/** 本机令牌的随机字节数（base64url 后 43 个字符）。 */
+const LOCAL_TOKEN_BYTES = 32;
+
+export function newLocalToken(): string {
+  return randomBytes(LOCAL_TOKEN_BYTES).toString('base64url');
+}
 
 export class RestartBackoff {
   private failures = 0;
@@ -31,7 +41,7 @@ export class RestartBackoff {
 
 /** 本体进程的环境：只带几样系统变量，其余全是安装包的设置。 */
 export function serverEnvironment(input: { platform: NodeJS.Platform; serverDirectory: string; stateDirectory: string;
-  base: NodeJS.ProcessEnv; join(...parts: string[]): string }): Record<string, string> {
+  base: NodeJS.ProcessEnv; join(...parts: string[]): string; localToken?: string }): Record<string, string> {
   const inherited = input.platform === 'win32'
     ? ['PATH', 'SystemRoot', 'SystemDrive', 'TEMP', 'TMP', 'USERPROFILE', 'LOCALAPPDATA', 'APPDATA', 'ComSpec',
       'PATHEXT', 'windir', 'HOMEDRIVE', 'HOMEPATH', 'USERNAME']
@@ -55,12 +65,15 @@ export function serverEnvironment(input: { platform: NodeJS.Platform; serverDire
   // 2026-11-05 他定：装在这台电脑上的实例真跑；对外的动作仍由硬线审批把关。
   environment.PLASTICINE_DRY_RUN = '0';
   environment.PLASTICINE_STOP_ON_STDIN_EOF = '1';
+  if (input.localToken !== undefined) {
+    environment[LOCAL_TOKEN_ENV] = input.localToken;
+  }
   return environment;
 }
 
 export interface LocalServerDeps {
-  /** 拉起本体进程；没带本体时不会被调。 */
-  launch(): ChildProcess;
+  /** 拉起本体进程，token 是这一次的本机令牌（放进环境变量）；没带本体时不会被调。 */
+  launch(token: string): ChildProcess;
   /** 本体在 timeoutMs 内答上 /v2/health 就是 true；signal 取消时尽快回 false。 */
   healthy(timeoutMs: number, signal: AbortSignal): Promise<boolean>;
   now(): number;
@@ -71,6 +84,7 @@ export class LocalServer {
   private readonly deps: LocalServerDeps;
   private readonly bundled: boolean;
   private child: ChildProcess | null = null;
+  private childToken: string | null = null;
   private wanted = false;
   private startedAt = 0;
   private readonly backoff = new RestartBackoff();
@@ -92,6 +106,11 @@ export class LocalServer {
 
   get problem(): string | null {
     return this.problemText;
+  }
+
+  /** 正在跑的那一个本体的本机令牌；没在跑是 null。 */
+  get token(): string | null {
+    return this.child === null ? null : this.childToken;
   }
 
   onChange(listener: () => void): () => void {
@@ -138,6 +157,7 @@ export class LocalServer {
     await exited;
     clearTimeout(timer);
     this.child = null;
+    this.childToken = null;
     this.set('stopped', null);
   }
 
@@ -159,14 +179,16 @@ export class LocalServer {
 
   private launch(): void {
     let child: ChildProcess;
+    const token = newLocalToken();
     try {
-      child = this.deps.launch();
+      child = this.deps.launch(token);
     } catch (error) {
       this.set('failed', `本机本体没能启动：${error instanceof Error ? error.message : String(error)}`);
       this.scheduleRestart();
       return;
     }
     this.child = child;
+    this.childToken = token;
     this.startedAt = this.deps.now();
     this.set('starting', null);
     child.once('error', (error) => this.deps.log(`本体进程出错：${error.message}`));
@@ -190,6 +212,7 @@ export class LocalServer {
       return;
     }
     this.child = null;
+    this.childToken = null;
     this.health?.abort();
     if (!this.wanted) {
       this.set('stopped', null);

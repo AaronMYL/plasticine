@@ -1,41 +1,13 @@
-// /v2/devices: the registered devices, and revoking one (its sessions end with it; the rows stay).
+// /v2/devices: the registered devices, and revoking one (its sessions end with it; the rows stay). 2026-11-08: the
+// browser pairing invitations (/v2/devices/pairing-codes*) are gone; devices log in with the password instead.
 
-import type { BrowserPairingStatus, DeviceListResponse, RevokeDeviceResponse } from '../../shared/api/index.ts';
+import type { DeviceListResponse, RevokeDeviceResponse } from '../../shared/api/index.ts';
 import { MAX_PAGE_SIZE } from '../state/index.ts';
 import { notFoundError } from './api-error.ts';
 import { SESSION_COOKIE } from './config.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';
 import { clearedCookie } from './http.ts';
 import { deviceView } from './views.ts';
-import { issuePairingCode } from './pairing-code.ts';
-
-export function issueBrowserPairingCode(context: RequestContext): Reply {
-  requireUserAuth(context);
-  return { status: 201, body: issuePairingCode(context.deps.state, context.deps.now()) };
-}
-
-/** GET /v2/devices/pairing-codes/:id；读取已有配对记录，不增设邀请存储。 */
-export function browserPairingStatus(context: RequestContext): Reply {
-  const auth = requireAuth(context);
-  const { state, now } = context.deps;
-  const invitation = state.pairingCodes.get(param(context, 'id'));
-  if (invitation === undefined) {
-    throw notFoundError('这份配对邀请');
-  }
-  const checkedAt = now();
-  const device = invitation.deviceId === null ? undefined : state.devices.get(invitation.deviceId);
-  let status: BrowserPairingStatus['status'] = 'waiting';
-  if (invitation.usedAt !== null) {
-    status = device !== undefined && device.revokedAt === null ? 'connected' : 'revoked';
-  } else if (Date.parse(invitation.expiresAt) <= checkedAt.getTime()) {
-    status = 'expired';
-  }
-  const body: BrowserPairingStatus = {
-    id: invitation.id, expiresAt: invitation.expiresAt, checkedAt: checkedAt.toISOString(), status,
-    device: status === 'connected' && device !== undefined ? deviceView(device, auth.device.id) : null,
-  };
-  return { status: 200, body };
-}
 
 /** GET /v2/devices */
 export function listDevices(context: RequestContext): Reply {

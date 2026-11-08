@@ -108,7 +108,7 @@ export function uncertainError(what: string, reason = '连接中断'): ApiError 
   });
 }
 
-export function unauthorizedError(message = '这台设备的会话已失效。', next = '重新输入配对码。'): ApiError {
+export function unauthorizedError(message = '这台设备的会话已失效。', next = '重新登录。'): ApiError {
   return new ApiError({ kind: 'unauthorized', code: 'unauthorized', message, next, status: 401 });
 }
 

@@ -127,6 +127,23 @@ export class FakeNetwork implements NetworkApi {
     return structuredClone([...this.issued].reverse());
   }
 
+  /** 建账号时起的 @账号（fake-account.ts）：直接在网络里注册，不要邀请码（11-08 决定 4）。 */
+  register(handle: string, displayName: string): void {
+    this.applyJoin({ requestId: `req_setup_${handle}`, handle, displayName });
+  }
+
+  /** 网络上的账号（同步读，不要会话：账号状态不用登录也能读）；没加入是 null。 */
+  accountNow(): NetworkStatus['account'] {
+    return this.state.account;
+  }
+
+  /** 设置 · 账号改名字时网络上的显示名跟着改。 */
+  rename(displayName: string): void {
+    if (this.state.account !== null) {
+      this.state = { ...this.state, account: { ...this.state.account, displayName } };
+    }
+  }
+
   /** 预置：已经加入、发过一个码且被用掉（本地开发）。 */
   seedJoined(handle: string, displayName: string): void {
     this.applyJoin({ requestId: 'req_seed_join', handle, displayName });
@@ -140,8 +157,8 @@ export class FakeNetwork implements NetworkApi {
       joined: true,
       relayUrl: input.relayUrl ?? this.state.relayUrl,
       account: { id: `acct_${input.handle}`, handle: input.handle, displayName: input.displayName, joinedAt: at,
-        avatar: null, host: `${input.handle}.cyberhunter.top` },
-      tunnel: { state: 'ready', detail: `${input.handle}.cyberhunter.top` },
+        avatar: null, host: `${input.handle.replace(/_/g, '-')}.cyberhunter.top` },
+      tunnel: { state: 'ready', detail: `${input.handle.replace(/_/g, '-')}.cyberhunter.top` },
       lastSyncAt: at,
       lastError: null,
       inviteNeeded: false,

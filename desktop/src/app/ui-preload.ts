@@ -4,7 +4,8 @@
 // - 网页标签垫在界面下面时（tab-layering.ts），落在网页标签那一块、不在浮层里的鼠标事件截下来转给主进程。
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { DevicePairRequest, DesktopPermission, ServerChoice } from '../../../agent/shared/api/desktop-bridge.ts';
+import type { DevicePairRequest, DesktopPermission, PlasticineDesktopExternal, PlasticineDesktopServer,
+  ServerChoice } from '../../../agent/shared/api/desktop-bridge.ts';
 import type { LoginImportRequest } from '../../../agent/shared/api/mac-logins.ts';
 import type { TitlebarLayout, WebTabCommand, WebTabsSync } from '../../../agent/shared/api/mac-bridge.ts';
 import type { TranslateDelivery, TranslatePageConfig } from '../../../agent/shared/api/mac-translate.ts';
@@ -164,7 +165,20 @@ const bridge = {
   server: {
     status: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.serverStatus),
     choose: (choice: ServerChoice): Promise<unknown> => ipcRenderer.invoke(CHANNELS.serverChoose, choice),
-  },
+    localGrant: async (): Promise<string | null> => {
+      const grant: unknown = await ipcRenderer.invoke(CHANNELS.serverLocalGrant);
+      return typeof grant === 'string' ? grant : null;
+    },
+    showWelcome: (): void => ipcRenderer.send(CHANNELS.serverWelcome),
+  } satisfies PlasticineDesktopServer,
+  external: {
+    open: (url: string): void => ipcRenderer.send(CHANNELS.externalOpen, url),
+    capture: async (port: number, timeoutMs: number): Promise<string | null> => {
+      const captured: unknown = await ipcRenderer.invoke(CHANNELS.externalCapture, port, timeoutMs);
+      return typeof captured === 'string' ? captured : null;
+    },
+    cancelCapture: (): void => ipcRenderer.send(CHANNELS.externalCancel),
+  } satisfies PlasticineDesktopExternal,
   updates: {
     status: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.updateStatus),
     check: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.updateCheck),

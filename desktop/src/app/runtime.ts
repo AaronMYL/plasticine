@@ -62,7 +62,7 @@ export function resources(input: { packaged: boolean; resourcesPath: string; dis
 }
 
 export function launchServer(input: { node: string; server: string; state: string; logs: string;
-  platform: NodeJS.Platform }): ChildProcess {
+  platform: NodeJS.Platform; localToken: string }): ChildProcess {
   mkdirSync(input.state, { recursive: true, mode: 0o700 });
   mkdirSync(input.logs, { recursive: true });
   const logFile = join(input.logs, 'server.log');
@@ -70,7 +70,7 @@ export function launchServer(input: { node: string; server: string; state: strin
   const log = openSync(logFile, 'a', 0o600);
   return spawn(input.node, ['agent/src/app/main.ts'], { cwd: input.server, windowsHide: true,
     stdio: ['pipe', log, log], env: serverEnvironment({ platform: input.platform, serverDirectory: input.server,
-      stateDirectory: input.state, base: process.env, join }) });
+      stateDirectory: input.state, base: process.env, join, localToken: input.localToken }) });
 }
 
 /** 本机本体在 timeoutMs 内答上 /v2/health。 */

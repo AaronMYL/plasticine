@@ -16,7 +16,13 @@ export const DEVICE_NAME_MAX_CHARS = 60;
 export const DeviceNameSchema = Type.String({ minLength: 1, maxLength: DEVICE_NAME_MAX_CHARS });
 
 export const DeviceInputSchema = Type.Object(
-  { name: DeviceNameSchema, firstSeenAt: IsoTimeSchema, lastSeenAt: IsoTimeSchema },
+  {
+    name: DeviceNameSchema,
+    firstSeenAt: IsoTimeSchema,
+    lastSeenAt: IsoTimeSchema,
+    /** 桌面客户端凭本机令牌替本机界面登录的那台（迁移 0112）；旧行和别的设备是 false。 */
+    local: Type.Optional(Type.Boolean()),
+  },
   STRICT,
 );
 export type DeviceInput = Static<typeof DeviceInputSchema>;

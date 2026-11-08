@@ -6,6 +6,7 @@ import type { AssistantMessage, ImageContent, Message, TextContent, ToolResultMe
   from '@earendil-works/pi-ai';
 import { Value } from 'typebox/value';
 import type { LineMessageView } from '../../shared/api/lines.ts';
+import type { WelcomeStart } from '../../shared/welcome-start.ts';
 import { splitReply } from '../../shared/line-reply.ts';
 import { MessageWidgetSchema, type MessageWidget } from '../../shared/api/message-widgets.ts';
 import type { LineMessageRow } from '../state/index.ts';
@@ -40,8 +41,19 @@ export interface LineNoticeMessage {
   timestamp: number;
 }
 
-/** 贴到一条线上、不开一轮的消息：后台线的结果、系统通知。 */
-export type PostedMessage = LineReportMessage | LineNoticeMessage;
+/**
+ * 欢迎（2026-11-08《首次使用流程》）：建账号成功时 Plasticine 在主线上先打的招呼。固定文案（不调模型），下面带几个
+ * 能点的「开始」。是 Plasticine 说的，但不是模型说的：送给模型时换成一句标明来历的话。
+ */
+export interface LineWelcomeMessage {
+  role: 'welcome';
+  text: string;
+  starts: WelcomeStart[];
+  timestamp: number;
+}
+
+/** 贴到一条线上、不开一轮的消息：后台线的结果、系统通知、欢迎。 */
+export type PostedMessage = LineReportMessage | LineNoticeMessage | LineWelcomeMessage;
 
 /** 压缩摘要：不存进消息表（存在线的 summary 上），装上下文时放在最前面。 */
 export interface LineSummaryMessage {
@@ -55,6 +67,7 @@ declare module '@earendil-works/pi-agent-core' {
     lineReport: LineReportMessage;
     lineSummary: LineSummaryMessage;
     notice: LineNoticeMessage;
+    welcome: LineWelcomeMessage;
   }
 }
 
@@ -125,11 +138,15 @@ export function noticeText(message: LineNoticeMessage): string {
   return `［系统通知；这不是用户说的，也不是你说的］\n${message.text}`;
 }
 
+export function welcomeText(message: LineWelcomeMessage): string {
+  return `［Plasticine 发过一条欢迎（建账号时的固定文案，这不是用户说的）］\n${message.text}`;
+}
+
 export function summaryText(message: LineSummaryMessage): string {
   return `［这条线早先的内容已经压缩成下面的摘要；细节以摘要为准，需要原文时问用户或查记录］\n${message.summary}`;
 }
 
-/** 送给模型前：本内核自己的三种消息换成用户话（标明不是他说的），其余原样。 */
+/** 送给模型前：本内核自己的几种消息换成用户话（标明不是他说的），其余原样。 */
 export function convertToLlm(messages: AgentMessage[]): Message[] {
   return messages.flatMap((message): Message[] => {
     if (message.role === 'lineReport') {
@@ -140,6 +157,9 @@ export function convertToLlm(messages: AgentMessage[]): Message[] {
     }
     if (message.role === 'notice') {
       return [{ role: 'user', content: noticeText(message), timestamp: message.timestamp }];
+    }
+    if (message.role === 'welcome') {
+      return [{ role: 'user', content: welcomeText(message), timestamp: message.timestamp }];
     }
     return [message];
   });
@@ -246,6 +266,9 @@ export function messageView(row: LineMessageRow, sayOf: SayOf, callArgs?: (toolC
   }
   if (message.role === 'notice') {
     return view({ role: 'notice', origin: { kind: 'system' }, text: message.text, summary: message.brief });
+  }
+  if (message.role === 'welcome') {
+    return view({ role: 'welcome', text: message.text, starts: message.starts });
   }
   return view({ role: 'user', origin: { kind: 'unknown' }, text: '' });
 }

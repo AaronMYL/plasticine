@@ -10,6 +10,8 @@ import { OrNull as Nullable } from './api/lineage.ts';
 export const NET_PREFIX = '/v2/net';
 export const NET_ACCOUNTS_PATH = `${NET_PREFIX}/accounts`;
 export const NET_INVITES_PATH = `${NET_PREFIX}/invites`;
+/** GET …/handles/:handle（不要签名）：这个 @handle 能不能注册（2026-11-08 自助注册）。 */
+export const NET_HANDLES_PATH = `${NET_PREFIX}/handles`;
 export const NET_ENVELOPES_PATH = `${NET_PREFIX}/envelopes`;
 export const NET_ACK_PATH = `${NET_ENVELOPES_PATH}/ack`;
 export const NET_BLOCKS_PATH = `${NET_PREFIX}/blocks`;
@@ -82,6 +84,14 @@ export type NetInvite = Static<typeof NetInviteSchema>;
 export const NetInviteResponseSchema = Type.Object({ invite: NetInviteSchema });
 export const NetInvitesResponseSchema = Type.Object({ invites: Type.Array(NetInviteSchema) });
 export const NetInviteCheckSchema = Type.Object({ valid: Type.Boolean() });
+
+/** 一个 @handle 能不能注册：不能时说是被占了、格式不对，还是留给系统用的词。 */
+export const NetHandleCheckSchema = Type.Object({
+  handle: Type.String(),
+  available: Type.Boolean(),
+  reason: Type.Union([Type.Literal('taken'), Type.Literal('invalid'), Type.Literal('reserved'), Type.Null()]),
+}, STRICT);
+export type NetHandleCheck = Static<typeof NetHandleCheckSchema>;
 
 // ---------- 信封 ----------
 

@@ -33,6 +33,7 @@ export * from './web-tabs.ts';
 export * from './favicons.ts';
 export * from './push.ts';
 export * from './session.ts';
+export * from './account.ts';
 export * from './today.ts';
 export * from './calendar.ts';
 export * from './tool-groups.ts';

@@ -10,6 +10,7 @@ import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.t
 import { MessageWidgetAnswerSchema, MessageWidgetSchema } from './message-widgets.ts';
 import { CONVERSATION_QUOTE_MAX_COUNT, ConversationQuoteInputSchema } from '../conversation-quotes.ts';
 import { LineReplySchema } from '../line-reply.ts';
+import { WelcomeStartSchema } from '../welcome-start.ts';
 
 const STRICT = { additionalProperties: false };
 
@@ -121,8 +122,13 @@ export const LineStepViewSchema = Type.Object({
 }, STRICT);
 export type LineStepView = Static<typeof LineStepViewSchema>;
 
-/** notice：系统发在主线上的通知（《优化清单》第 12 条），origin 是 system，summary 是系统通知里那一句。 */
-export const LINE_MESSAGE_ROLES = ['user', 'assistant', 'toolResult', 'lineReport', 'lineSummary', 'notice'] as const;
+/**
+ * notice：系统发在主线上的通知（《优化清单》第 12 条），origin 是 system，summary 是系统通知里那一句。
+ * welcome：建账号成功时 Plasticine 在主线上打的招呼（2026-11-08《首次使用流程》）：固定文案、不调模型；text 是那句话，
+ * starts 是下面三个能点的「开始」，origin 是 null（和回答一样是 Plasticine 说的，不是他说的）。
+ */
+export const LINE_MESSAGE_ROLES = ['user', 'assistant', 'toolResult', 'lineReport', 'lineSummary', 'notice',
+  'welcome'] as const;
 export const LineMessageRoleSchema = Type.Enum(LINE_MESSAGE_ROLES);
 
 export const LineMessageViewSchema = Type.Object({
@@ -160,6 +166,11 @@ export const LineMessageViewSchema = Type.Object({
   reactions: Type.Optional(Type.Array(Type.String())),
   /** 他这句是针对哪一条回的（「回复 Plasticine：……」）；不是回复是 null。 */
   replyTo: Type.Optional(Nullable(LineReplySchema)),
+  /**
+   * welcome 那一条下面的「开始」（按顺序画；点了把 prompt 当他说的话发进主线）。别的角色没有这一项；旧客户端缓存里
+   * 也没有。
+   */
+  starts: Type.Optional(Type.Array(WelcomeStartSchema)),
   createdAt: IsoTimeSchema,
 }, STRICT);
 export type LineMessageView = Static<typeof LineMessageViewSchema>;

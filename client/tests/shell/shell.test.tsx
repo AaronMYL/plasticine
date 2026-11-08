@@ -277,70 +277,30 @@ describe('壳 · 页头与手机', () => {
 });
 
 describe('三栏壳 · 登录', () => {
-  it('没有会话时是配对页；输对配对码进壳', async () => {
+  it('没有会话时是登录页（@账号 + 密码）；密码对了进壳', async () => {
     const app = await renderApp({ signedIn: false });
-    expect(screen.getByRole('heading', { name: '配对这台设备' })).toBeTruthy();
-    const code = app.control.session.issueCode();
-    fireEvent.change(screen.getByLabelText('配对码'), { target: { value: code } });
-    fireEvent.change(screen.getByLabelText('这台设备叫什么'), { target: { value: '书房的 Mac' } });
-    fireEvent.click(screen.getByRole('button', { name: '配对' }));
+    expect(await screen.findByRole('heading', { name: '登录' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'fake-password' } });
+    fireEvent.click(screen.getByRole('button', { name: '登录' }));
     await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: HOME_HEADING })).toBeTruthy());
+    expect((await app.api.session.current())?.device.name).toBe('浏览器');
   });
 
-  it('没填设备名时用「这台设备」配对（服务端要求设备名非空）', async () => {
-    const app = await renderApp({ signedIn: false });
-    fireEvent.change(screen.getByLabelText('配对码'), { target: { value: ` ${app.control.session.issueCode()} ` } });
-    fireEvent.click(screen.getByRole('button', { name: '配对' }));
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: HOME_HEADING })).toBeTruthy());
-    expect((await app.api.session.current())?.device.name).toBe('这台设备');
-  });
-
-  it('配对码不对：写原因，留在配对页', async () => {
+  it('密码不对：写原因，留在登录页', async () => {
     await renderApp({ signedIn: false });
-    fireEvent.change(screen.getByLabelText('配对码'), { target: { value: '000000' } });
-    fireEvent.click(screen.getByRole('button', { name: '配对' }));
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('配对码不对'));
+    fireEvent.change(await screen.findByLabelText('密码'), { target: { value: 'not-the-password' } });
+    fireEvent.click(screen.getByRole('button', { name: '登录' }));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('密码不对'));
+    expect(screen.getByRole('heading', { name: '登录' })).toBeTruthy();
   });
 
-  it('会话中途失效：下一次请求拿到 401，回到配对页，草稿还在', async () => {
+  it('会话中途失效：下一次请求拿到 401，回到登录页，草稿还在', async () => {
     const app = await renderApp();
     fireEvent.change(chatInput(), { target: { value: '失效前写的' } });
     app.control.session.expire();
     navTo('笔记');
-    await waitFor(() => expect(screen.getByRole('heading', { name: '配对这台设备' })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('heading', { name: '登录' })).toBeTruthy());
     expect(app.state.conversationUi.store.get().draft).toBe('失效前写的');
-  });
-
-  it('回执丢了（配对其实已落地）再点「配对」：用同一个 requestId，登进同一台设备，不多登记一台', async () => {
-    const app = await renderApp({
-      signedIn: false,
-      setup: (fake) => fake.control.faults.next('pair', { kind: 'uncertain', landed: true }),
-    });
-    const pair = vi.spyOn(app.api.session, 'pair');
-    fireEvent.change(screen.getByLabelText('配对码'), { target: { value: app.control.session.issueCode() } });
-    fireEvent.change(screen.getByLabelText('这台设备叫什么'), { target: { value: '书房的 Mac' } });
-    fireEvent.click(screen.getByRole('button', { name: '配对' }));
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('结果待核实'));
-    fireEvent.click(screen.getByRole('button', { name: '配对' }));
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: HOME_HEADING })).toBeTruthy());
-    const [first, second] = pair.mock.calls.map(([input]) => input.requestId);
-    expect(first).toMatch(/^req_/);
-    expect(second).toBe(first);
-    expect(await app.api.devices.list()).toHaveLength(1);
-  });
-
-  it('配对明确失败后改了码再试：换一个新的 requestId', async () => {
-    const app = await renderApp({ signedIn: false });
-    const pair = vi.spyOn(app.api.session, 'pair');
-    fireEvent.change(screen.getByLabelText('配对码'), { target: { value: '000000' } });
-    fireEvent.click(screen.getByRole('button', { name: '配对' }));
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('配对码不对'));
-    fireEvent.change(screen.getByLabelText('配对码'), { target: { value: app.control.session.issueCode() } });
-    fireEvent.click(screen.getByRole('button', { name: '配对' }));
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: HOME_HEADING })).toBeTruthy());
-    const ids = pair.mock.calls.map(([input]) => input.requestId);
-    expect(ids).toHaveLength(2);
-    expect(ids[1]).not.toBe(ids[0]);
   });
 
   it('连着时不画连接灯；连不上时头像角上一个灯，读屏念出来', async () => {

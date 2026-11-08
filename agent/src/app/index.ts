@@ -1,5 +1,6 @@
 // app/: the HTTP service. Resources are one file each, the routes one table (router.ts); request and response
-// shapes come from shared/api. Started by main.ts; pairing codes are made by pairing-cli.ts.
+// shapes come from shared/api. Started by main.ts; the owner logs in with a password (password-cli.ts resets it,
+// setup-link-cli.ts prints the one-time setup link); pairing-cli.ts still makes the old pairing codes.
 
 export { createApp } from './app.ts';
 export type { App, AppOptions } from './app.ts';

@@ -46,6 +46,11 @@ export const DeviceViewSchema = Type.Object({
   revokedAt: Type.Union([IsoTimeSchema, Type.Null()]),
   /** The device this request came from. */
   current: Type.Boolean(),
+  /**
+   * 桌面客户端替本机界面登录的那台（POST /v2/session/local）：设备列表里显示「这台电脑」。旧客户端缓存里没有这一项，
+   * 没有按 false。
+   */
+  local: Type.Optional(Type.Boolean()),
 });
 export type DeviceView = Static<typeof DeviceViewSchema>;
 
@@ -56,27 +61,6 @@ export type DeviceListResponse = Static<typeof DeviceListResponseSchema>;
 /** DELETE /v2/devices/:id — revoking the current device logs this browser out as well. */
 export const RevokeDeviceResponseSchema = Type.Object({ device: DeviceViewSchema });
 export type RevokeDeviceResponse = Static<typeof RevokeDeviceResponseSchema>;
-
-/** 浏览器登录邀请；与下方的执行节点配对码分别发放，不能互换。 */
-export const BrowserPairingCodeResponseSchema = Type.Object({
-  id: IdSchema,
-  code: Type.String(),
-  issuedAt: IsoTimeSchema,
-  expiresAt: IsoTimeSchema,
-});
-export type BrowserPairingCodeResponse = Static<typeof BrowserPairingCodeResponseSchema>;
-
-/** GET /v2/devices/pairing-codes/:id（已登录）；只认这次邀请的使用记录，不根据设备列表推测。 */
-export const BrowserPairingStatusSchema = Type.Object({
-  id: IdSchema,
-  expiresAt: IsoTimeSchema,
-  checkedAt: IsoTimeSchema,
-  status: Type.Union([
-    Type.Literal('waiting'), Type.Literal('connected'), Type.Literal('expired'), Type.Literal('revoked'),
-  ]),
-  device: Type.Union([DeviceViewSchema, Type.Null()]),
-});
-export type BrowserPairingStatus = Static<typeof BrowserPairingStatusSchema>;
 
 // ---------- M5：执行节点 ----------
 

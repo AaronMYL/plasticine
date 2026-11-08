@@ -16,7 +16,8 @@ import { DEFAULT_TIME_ZONE, LineError, MAX_BACKGROUND_LINES, NOW, type After, ty
   type OpenLine, type SendInput, type SendResult } from './kernel-types.ts';
 import { lineTools, type LineControl } from './line-tools.ts';
 import { outcomeTool } from './outcome-tool.ts';
-import { isAssistant, messageView, userMessage, type AttachmentNote, type LineNoticeMessage, type PostedMessage,
+import { isAssistant, messageView, userMessage, type AttachmentNote, type LineNoticeMessage,
+  type LineWelcomeMessage, type PostedMessage,
   type ReportOutcome } from './messages.ts';
 import { pageSubmitAskTool } from './page-submit-tool.ts';
 import { linePrompt } from './prompt.ts';
@@ -29,6 +30,7 @@ import { rollDay } from './day-context.ts';
 import { readResultTool } from './large-results.ts';
 import { chats, openSideTool, replyFor, retitled, SIDES_LIMIT, toggleReaction, type SideControl }
   from './side-chats.ts';
+import type { WelcomeStart } from '../../shared/welcome-start.ts';
 import { replyMarker } from '../../shared/line-reply.ts';
 import { AnswerWaits } from './waits.ts';
 
@@ -421,6 +423,17 @@ export class LineKernel implements LineControl, SideControl {
   notice(input: { key: string; text: string; brief: string }): LineMessageView | null {
     const main = this.#state.lines.main();
     const message: LineNoticeMessage = { role: 'notice', key: input.key, text: input.text, brief: input.brief,
+      timestamp: this.#now().getTime() };
+    return this.#post(main.id, message);
+  }
+
+  /**
+   * 欢迎（2026-11-08《首次使用流程》）：建账号成功时在主线上放 Plasticine 的招呼，固定文案、不开一轮。和通知一样，
+   * 主线正在跑时插进这一轮并返回 null。
+   */
+  welcome(input: { text: string; starts: WelcomeStart[] }): LineMessageView | null {
+    const main = this.#state.lines.main();
+    const message: LineWelcomeMessage = { role: 'welcome', text: input.text, starts: input.starts,
       timestamp: this.#now().getTime() };
     return this.#post(main.id, message);
   }

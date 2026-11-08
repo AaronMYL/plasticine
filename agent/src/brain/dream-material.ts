@@ -40,6 +40,7 @@ function speaker(row: LineMessageRow): { who: string; max: number; stated: boole
       }
       return { who: origin === 'network' ? '别人发来（资料）' : '交给这条线的话', max: MESSAGE_CHARS, stated: false };
     case 'assistant':
+    case 'welcome':
       return { who: 'Plasticine', max: MESSAGE_CHARS, stated: false };
     case 'toolResult':
       return { who: '工具结果（资料）', max: TOOL_CHARS, stated: false };

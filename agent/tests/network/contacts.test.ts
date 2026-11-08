@@ -28,7 +28,7 @@ test('没加入网络：状态说没加入、给默认中继地址；联系人�
   const cookie = await pair(t);
   const status = json(await call(t, 'GET', '/v2/network', { cookie }));
   assert.deepEqual(status, { joined: false, relayUrl: 'https://cyberhunter.top', account: null, lastSyncAt: null,
-    lastError: null, inviteNeeded: true, welcome: false, tunnel: null });
+    lastError: null, inviteNeeded: false, welcome: false, tunnel: null });
   const add = await call(t, 'POST', '/v2/contacts/add', { cookie, body: { requestId: 'add-req-0001',
     handle: 'someone' } });
   assert.equal(add.status, 409);

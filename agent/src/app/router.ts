@@ -4,6 +4,13 @@
 // 回来汇报和十件事、定时任务、旧的模型连接与模型偏好的接口都删了；对话走 /v2/lines，模型走 /v2/model-providers。
 
 import {
+  ACCOUNT_HANDLES_PATH,
+  ACCOUNT_PASSWORD_PATH,
+  ACCOUNT_PATH,
+  ACCOUNT_SETUP_PATH,
+  ACCOUNT_STATE_PATH,
+  LOCAL_SESSION_PATH,
+  PASSWORD_SESSION_PATH,
   ACTIONS_PATH,
   AGREEMENTS_PATH,
   ASKS_PATH,
@@ -106,7 +113,10 @@ import { decideClientUpdate, listClientUpdates, previewClientUpdate } from './cl
 import { CONTACT_ROUTES } from './contact-routes.ts';
 import type { HttpMethod, Route } from './context.ts';
 import { getDeviceKey, registerDeviceKey } from './device-keys.ts';
-import { browserPairingStatus, issueBrowserPairingCode, listDevices, revokeDevice } from './devices.ts';
+import { listDevices, revokeDevice } from './devices.ts';
+import { getAccountState, handleAvailability, patchAccount, setAccountPassword } from './account.ts';
+import { setupAccount } from './account-setup.ts';
+import { localLogin, passwordLogin } from './password-session.ts';
 import { streamEvents } from './events.ts';
 import { getFeedRefresh, refreshFeed } from './feed-refresh.ts';
 import { addFeedComment, blockFeedSite, listFeedComments, retryFeedComment } from './feed-work.ts';
@@ -169,7 +179,7 @@ import { addProjectTodo, createProject, editProject, editProjectTodo, fileProjec
   setProjectHealth, unfileProjectItem } from './projects.ts';
 import { pushKey, pushStatus, subscribePush, unsubscribePush } from './push.ts';
 import { search } from './search.ts';
-import { currentSession, logout, pairDevice } from './session.ts';
+import { currentSession, logout } from './session.ts';
 import { getSystemOperations } from './system-operations.ts';
 import { createTerm, proposeTerm, termDecodings } from './terms.ts';
 import { getDailySettings, updateDailySettings } from './today.ts';
@@ -188,12 +198,18 @@ export const ROUTES: readonly Route[] = [
   ...HEARTBEAT_ROUTES,
   ...CALENDAR_ROUTES,
   { method: 'GET', path: HEALTH_PATH, auth: false, handler: health },
-  { method: 'POST', path: SESSION_PATH, auth: false, handler: pairDevice },
+  // 2026-11-08《首次使用流程》：账号与密码登录（shared/api/account.ts）；配对码登录（POST /v2/session、
+  // /v2/devices/pairing-codes*）下掉了，节点配对（/v2/nodes/pairing-codes）照旧。
+  { method: 'GET', path: ACCOUNT_STATE_PATH, auth: false, handler: getAccountState },
+  { method: 'POST', path: ACCOUNT_SETUP_PATH, auth: false, handler: setupAccount },
+  { method: 'GET', path: `${ACCOUNT_HANDLES_PATH}/:handle`, auth: false, handler: handleAvailability },
+  { method: 'PUT', path: ACCOUNT_PASSWORD_PATH, auth: true, handler: setAccountPassword },
+  { method: 'PATCH', path: ACCOUNT_PATH, auth: true, handler: patchAccount },
+  { method: 'POST', path: PASSWORD_SESSION_PATH, auth: false, handler: passwordLogin },
+  { method: 'POST', path: LOCAL_SESSION_PATH, auth: false, handler: localLogin },
   { method: 'GET', path: SESSION_PATH, auth: true, handler: currentSession },
   { method: 'DELETE', path: SESSION_PATH, auth: true, handler: logout },
   { method: 'GET', path: DEVICES_PATH, auth: true, handler: listDevices },
-  { method: 'POST', path: `${DEVICES_PATH}/pairing-codes`, auth: true, handler: issueBrowserPairingCode },
-  { method: 'GET', path: `${DEVICES_PATH}/pairing-codes/:id`, auth: true, handler: browserPairingStatus },
   { method: 'DELETE', path: `${DEVICES_PATH}/:id`, auth: true, handler: revokeDevice },
   { method: 'GET', path: DEVICE_KEYS_PATH, auth: true, handler: getDeviceKey },
   { method: 'POST', path: DEVICE_KEYS_PATH, auth: true, handler: registerDeviceKey },

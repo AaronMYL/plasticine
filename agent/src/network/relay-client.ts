@@ -12,10 +12,12 @@ import {
   NET_ACK_PATH,
   NET_BLOCKS_PATH,
   NET_ENVELOPES_PATH,
+  NET_HANDLES_PATH,
   NET_HEADERS,
   NET_INVITES_PATH,
   NET_TASKS_PATH,
   NetAccountResponseSchema,
+  NetHandleCheckSchema,
   NetInviteCheckSchema,
   NetInviteResponseSchema,
   NetInvitesResponseSchema,
@@ -25,6 +27,7 @@ import {
   type Envelope,
   type EnvelopesResponse,
   type NetAccount,
+  type NetHandleCheck,
   type NetInvite,
   type NetTaskStatus,
   type NetTaskStatusRecord,
@@ -203,6 +206,12 @@ export class RelayClient {
   async checkInvite(code: string): Promise<boolean> {
     const path = `${NET_INVITES_PATH}/${encodeURIComponent(code)}`;
     return (await this.#call({ method: 'GET', path, signer: null }, NetInviteCheckSchema)).valid;
+  }
+
+  /** 不要签名：这个 @handle 能不能注册（起 @账号时先问一句）。 */
+  async handleAvailability(handle: string): Promise<NetHandleCheck> {
+    const path = `${NET_HANDLES_PATH}/${encodeURIComponent(handle)}`;
+    return this.#call({ method: 'GET', path, signer: null }, NetHandleCheckSchema);
   }
 
   async postEnvelope(signer: Signer, envelope: Envelope): Promise<void> {

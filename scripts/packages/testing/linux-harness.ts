@@ -48,7 +48,10 @@ function fakeCommands(bin: string, root: string): void {
   script(join(bin, 'userdel'), `rm -f "${marker}"`);
   script(join(bin, 'chown'), 'exit 0');
   script(join(bin, 'journalctl'), 'exit 0');
-  script(join(bin, 'id'), `if [ "$1" = plasticine ]; then test -f "${marker}"; else exec /usr/bin/id "$@"; fi`);
+  // 场地里当自己是 root（plasticine 命令要 root 才切到 plasticine 用户）；runuser 直接跑后面的命令。
+  script(join(bin, 'id'), [`if [ "$1" = plasticine ]; then test -f "${marker}";`,
+    'elif [ "$1" = -u ]; then echo 0;', 'else exec /usr/bin/id "$@"; fi'].join(' '));
+  script(join(bin, 'runuser'), 'shift 3\nexec "$@"');
 }
 
 /** 用正在跑的这个 Node 做一份「nodejs.org」：bin/node 是一行转发脚本，SHASUMS256.txt 照真的格式写。 */
@@ -180,6 +183,20 @@ export function fakeServerPackage(directory: string, version: string, options: {
   writeFileSync(join(directory, 'manifest.json'), JSON.stringify({ schema: 1, name: 'plasticine-server', version,
     commit: 'c'.repeat(40), builtAt: '2026-11-05T00:00:00.000Z', node: '>=24.11', releaseUrl: 'https://unused.test',
     excluded: [] }));
+  // 建账号链接和重设密码（2026-11-08）：只核对 install.sh / plasticine 命令怎么调它们。
+  writeFileSync(join(directory, 'agent/src/app/setup-link-cli.ts'), [
+    "process.stdout.write('在浏览器里打开这个链接建账号（30 分钟内有效，只能用一次）：\\n');",
+    "process.stdout.write(`  http://127.0.0.1:${process.env['PLASTICINE_PORT']}/#/setup?t=FAKE-SETUP-LINK\\n`);",
+    '',
+  ].join('\n'));
+  writeFileSync(join(directory, 'agent/src/app/password-cli.ts'), [
+    "import { readFileSync, writeFileSync } from 'node:fs';",
+    "const line = readFileSync(0, 'utf8').split('\\n')[0] ?? '';",
+    "writeFileSync(process.env['PLASTICINE_STATE'] + '/password-cli-called',",
+    "  JSON.stringify({ args: process.argv.slice(2), length: line.length }));",
+    "process.stdout.write('密码改好了。\\n');",
+    '',
+  ].join('\n'));
   writeFileSync(join(directory, 'agent/src/app/main.ts'), [
     "import { createServer } from 'node:http';",
     "import { mkdirSync, writeFileSync } from 'node:fs';",

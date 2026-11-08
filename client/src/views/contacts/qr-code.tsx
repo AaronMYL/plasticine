@@ -23,8 +23,8 @@ export function QrCode({ text, size }: { text: string; size: number }): ReactNod
   return (
     <svg className="net-qr" role="img" aria-label={`二维码：${text}`} width={size} height={size}
       viewBox={`0 0 ${count} ${count}`} shapeRendering="crispEdges">
-      <rect width={count} height={count} fill="var(--bg)" />
-      <path d={path} fill="var(--fg)" />
+      <rect width={count} height={count} fill="var(--qr-paper)" />
+      <path d={path} fill="var(--qr-ink)" />
     </svg>
   );
 }

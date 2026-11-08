@@ -9,7 +9,9 @@
 // PLASTICINE_ACME_DIRECTORY (the ACME directory for the tunnel certificate; default Let's Encrypt).
 // Install packages (docs/install-packages.md): PLASTICINE_CLIENT_DIR (serve the client build from here, there is no
 // Caddy; the client manifest defaults to its client-manifest.json), PLASTICINE_STOP_ON_STDIN_EOF (`1`: the Mac App or
-// the Windows tray owns this process and closes stdin to stop it).
+// the Windows tray owns this process and closes stdin to stop it), PLASTICINE_LOCAL_TOKEN (the desktop client's local
+// token: requests from 127.0.0.1 carrying it may set up the account, log in this computer and reset the password;
+// unset on servers, so nothing is accepted that way).
 // 2026-11-05 Harness 重做：模型都在库里（设置 · AI 登录或填 key，kernel/），不再从环境变量选模型和推理档。
 // Start-up order: recovery (uploads, devices, payment reads, memory curation) → network → tunnel → lines → backups →
 // scans → listen. On SIGTERM / SIGINT: stop taking requests, stop the lines (they resume after the restart), close the
@@ -25,6 +27,7 @@ import { createGmailTransports, CredentialFiles, CREDENTIALS_DIRECTORY } from '.
 import { FeedFetcher } from '../daily/index.ts';
 import { DATABASE_FILE, DEFAULT_PORT, DEFAULT_VAPID_SUBJECT, HOST } from './config.ts';
 import { MAINTENANCE_SOCKET_FILE } from '../../shared/api/maintenance.ts';
+import { LOCAL_TOKEN_ENV } from '../../shared/api/account.ts';
 import { openMaintenanceSocket } from './maintenance-socket.ts';
 import { stopOnStdinEof, stopSignal } from './stop-signal.ts';
 import { KernelModels, ProviderLogins } from '../kernel/index.ts';
@@ -115,6 +118,7 @@ async function main(): Promise<number> {
         compact: createCompactor({ state, models: kernelModels, now: () => new Date() }) },
       kernelModels: { models: kernelModels, logins: kernelLogins },
       network: networkSettings(process.env),
+      localToken: nonEmpty(process.env[LOCAL_TOKEN_ENV]) ?? null,
     });
     app.start();
     const port = await app.listen(config.port, HOST);

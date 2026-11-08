@@ -1,34 +1,33 @@
+// /v2/session（2026-11-08 起用「@账号 + 密码」登录，配对码下掉了）：密码换会话、cookie 的属性、只存散列、输错限流、
+// 慢请求、登出、最后时间。账号的其余接口在 account.test.ts。
+
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import { request } from 'node:http';
 import { afterEach, beforeEach, test } from 'node:test';
-import { PAIRING_REPLAY_WINDOW_MS, REPLAYED_HEADER } from '../../shared/api/index.ts';
-import { PAIRING_CODE_TTL_MS, PAIRING_FAILURE_LIMIT } from '../../src/app/config.ts';
-import { issuePairingCode, normalizePairingCode } from '../../src/app/pairing-code.ts';
-import { call, cookieFrom, json, pair, startTestApp, type TestApp } from './helpers.ts';
+import { PASSWORD_FAILURE_LIMIT } from '../../src/app/config.ts';
+import { hashPassword } from '../../src/app/password-hash.ts';
+import { call, cookieFrom, json, pair, startTestApp, TEST_PASSWORD, type TestApp } from './helpers.ts';
 
 let t: TestApp;
 
 beforeEach(async () => {
   t = await startTestApp();
+  const { hash, salt } = await hashPassword(TEST_PASSWORD);
+  t.state.ownerAccount.setPassword(hash, salt, t.clock.now().toISOString());
 });
 
 afterEach(async () => {
   await t.close();
 });
 
-function exchange(code: string, deviceName = 'Alex 的 iPhone') {
-  return call(t, 'POST', '/v2/session', { body: { code, deviceName } });
+function login(password: string, deviceName = 'Alex 的 iPhone') {
+  return call(t, 'POST', '/v2/session/password', { body: { password, deviceName } });
 }
 
-function exchangeWithId(code: string, requestId: string, deviceName = 'Alex 的 iPhone') {
-  return call(t, 'POST', '/v2/session', { body: { code, deviceName, requestId } });
-}
-
-test('配对码换到会话：201、登记设备、cookie 是 HttpOnly + Secure + SameSite=Strict', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const reply = await exchange(code);
+test('密码换到会话：201、登记设备、cookie 是 HttpOnly + Secure + SameSite=Strict', async () => {
+  const reply = await login(TEST_PASSWORD);
   assert.equal(reply.status, 201);
   const cookie = reply.headers.get('set-cookie') ?? '';
   assert.match(cookie, /HttpOnly/);
@@ -38,141 +37,48 @@ test('配对码换到会话：201、登记设备、cookie 是 HttpOnly + Secure 
   const device = body['device'] as Record<string, unknown>;
   assert.equal(device['name'], 'Alex 的 iPhone');
   assert.equal(device['current'], true);
+  assert.equal(device['local'], false);
   assert.equal(t.state.devices.list().length, 1);
   const me = await call(t, 'GET', '/v2/session', { cookie: cookieFrom(reply) });
   assert.equal(me.status, 200);
 });
 
-test('配对码只能用一次：第二次 401 pairing_code_used，不再登记设备', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  assert.equal((await exchange(code)).status, 201);
-  const again = await exchange(code, '另一台');
-  assert.equal(again.status, 401);
-  assert.equal(json(again)['code'], 'pairing_code_used');
-  assert.equal(t.state.devices.list().length, 1);
-});
-
-test('回执丢了用同一 requestId 和同一个码重发：给同一台设备再发一个新会话，不登记第二台', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const first = await exchangeWithId(code, 'req_pair_0001');
-  assert.equal(first.status, 201);
-  const again = await exchangeWithId(code, 'req_pair_0001', '重发时换了名字');
-  assert.equal(again.status, 201);
-  assert.equal(again.headers.get(REPLAYED_HEADER), '1');
-  assert.equal(t.state.devices.list().length, 1);
-  const firstDevice = json(first)['device'] as Record<string, unknown>;
-  const againDevice = json(again)['device'] as Record<string, unknown>;
-  assert.equal(againDevice['id'], firstDevice['id']);
-  assert.equal(againDevice['name'], 'Alex 的 iPhone');
-  assert.notEqual(cookieFrom(again), cookieFrom(first));
-  const me = await call(t, 'GET', '/v2/session', { cookie: cookieFrom(again) });
-  assert.equal(me.status, 200);
-});
-
-test('同一个码换了 requestId 再来：照旧 401 pairing_code_used', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  assert.equal((await exchangeWithId(code, 'req_pair_0001')).status, 201);
-  const other = await exchangeWithId(code, 'req_pair_0002');
-  assert.equal(other.status, 401);
-  assert.equal(json(other)['code'], 'pairing_code_used');
-  assert.equal(t.state.devices.list().length, 1);
-});
-
-test('同一 requestId 拿来配另一个码：409 request_id_reused，不登记设备', async () => {
-  const first = issuePairingCode(t.state, t.clock.now());
-  assert.equal((await exchangeWithId(first.code, 'req_pair_0001')).status, 201);
-  const second = issuePairingCode(t.state, t.clock.now());
-  const reply = await exchangeWithId(second.code, 'req_pair_0001');
-  assert.equal(reply.status, 409);
-  assert.equal(json(reply)['code'], 'request_id_reused');
-  assert.equal(t.state.devices.list().length, 1);
-});
-
-test('超过 10 分钟再重放：不再认作同一次配对，401 pairing_code_used', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  assert.equal((await exchangeWithId(code, 'req_pair_0001')).status, 201);
-  t.clock.advance(PAIRING_REPLAY_WINDOW_MS + 1);
-  const late = await exchangeWithId(code, 'req_pair_0001');
-  assert.equal(late.status, 401);
-  assert.equal(json(late)['code'], 'pairing_code_used');
-  assert.equal(t.state.devices.list().length, 1);
-});
-
-test('那台设备撤销之后重放：不发会话', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const first = await exchangeWithId(code, 'req_pair_0001');
-  const device = json(first)['device'] as Record<string, unknown>;
-  const revoked = await call(t, 'DELETE', `/v2/devices/${String(device['id'])}`, { cookie: cookieFrom(first) });
-  assert.equal(revoked.status, 200);
-  const again = await exchangeWithId(code, 'req_pair_0001');
-  assert.equal(again.status, 401);
-  assert.equal(again.headers.get('set-cookie'), null);
-});
-
-test('别的操作用过的 requestId 拿来配对：409 request_id_reused', async () => {
-  const cookie = await pair(t);
-  const created = await call(t, 'POST', '/v2/notes', { cookie, body: { requestId: 'req_shared_01', markdown: '' } });
-  assert.equal(created.status, 201);
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const reply = await exchangeWithId(code, 'req_shared_01');
-  assert.equal(reply.status, 409);
-  assert.equal(json(reply)['code'], 'request_id_reused');
-  assert.equal(t.state.devices.list().length, 1);
-});
-
-test('配对码 10 分钟后过期：401 pairing_code_expired', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  t.clock.advance(PAIRING_CODE_TTL_MS + 1);
-  const reply = await exchange(code);
-  assert.equal(reply.status, 401);
-  assert.equal(json(reply)['code'], 'pairing_code_expired');
-  assert.equal(json(reply)['field'], 'code');
-});
-
-test('库里只存配对码和会话令牌的散列，不存原文', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const reply = await exchange(code);
+test('库里只存密码的慢哈希和会话令牌的散列，不存原文', async () => {
+  const reply = await login(TEST_PASSWORD);
   const sha = (text: string): string => createHash('sha256').update(text).digest('hex');
-  const stored = t.state.pairingCodes.findByHash(sha(normalizePairingCode(code)));
-  assert.ok(stored !== undefined);
-  assert.notEqual(stored.codeHash, code);
   const token = cookieFrom(reply).split('=')[1] ?? '';
   const session = t.state.sessions.findByTokenHash(sha(token));
   assert.ok(session !== undefined);
   assert.notEqual(session.tokenHash, token);
+  const stored = t.state.ownerAccount.credentials();
+  assert.ok(stored !== null);
+  assert.match(stored.hash, /^scrypt\$16384\$8\$1\$[0-9a-f]{128}$/);
+  assert.equal(stored.hash.includes(TEST_PASSWORD), false);
 });
 
-test('输入时大小写、空格、横线都不要紧', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const sloppy = ` ${code.toLowerCase().replace('-', ' ')} `;
-  assert.equal((await exchange(sloppy)).status, 201);
-});
-
-test('错码 401 pairing_code_invalid；连续错太多次 429，对的码这时也先不收', async () => {
-  const wrong = await exchange('0000-0000');
+test('错了 401 login_failed；连续错太多次 429，对的这时也先不收', async () => {
+  const wrong = await login('fake-wrong-pass');
   assert.equal(wrong.status, 401);
-  assert.equal(json(wrong)['code'], 'pairing_code_invalid');
-  for (let index = 1; index < PAIRING_FAILURE_LIMIT; index += 1) {
-    await exchange('0000-0000');
+  assert.equal(json(wrong)['code'], 'login_failed');
+  for (let index = 1; index < PASSWORD_FAILURE_LIMIT; index += 1) {
+    await login('fake-wrong-pass');
   }
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const blocked = await exchange(code);
+  const blocked = await login(TEST_PASSWORD);
   assert.equal(blocked.status, 429);
   assert.equal(json(blocked)['code'], 'too_many_attempts');
 });
 
 test('设备名缺了 400 并说是哪个字段', async () => {
-  const reply = await call(t, 'POST', '/v2/session', { body: { code: 'ABCD-EFGH' } });
+  const reply = await call(t, 'POST', '/v2/session/password', { body: { password: TEST_PASSWORD } });
   assert.equal(reply.status, 400);
   assert.equal(json(reply)['code'], 'invalid_request');
 });
 
 test('慢请求开始后别的请求已错满十次，慢请求读完正文时也必须受限', async () => {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const body = JSON.stringify({ code, deviceName: '慢请求设备' });
+  const body = JSON.stringify({ password: TEST_PASSWORD, deviceName: '慢请求设备' });
   const arrived = once(t.app.server, 'request');
   const reply = Promise.withResolvers<number>();
-  const slow = request(`${t.base}/v2/session`, {
+  const slow = request(`${t.base}/v2/session/password`, {
     method: 'POST', headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) },
   }, (res) => {
     res.resume();
@@ -182,8 +88,8 @@ test('慢请求开始后别的请求已错满十次，慢请求读完正文时�
   try {
     slow.write(body.slice(0, -1));
     await arrived;
-    for (let index = 0; index < PAIRING_FAILURE_LIMIT; index += 1) {
-      assert.equal((await exchange('0000-0000')).status, 401);
+    for (let index = 0; index < PASSWORD_FAILURE_LIMIT; index += 1) {
+      assert.equal((await login('fake-wrong-pass')).status, 401);
     }
     slow.end(body.slice(-1));
     assert.equal(await reply.promise, 429);

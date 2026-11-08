@@ -54,7 +54,12 @@ test('在临时前缀里装、自更新、坏版本自动退回、手动回退�
     publish(sandbox, join(sandbox.root, 'pkg-v1'), V1);
     const installed = run(sandbox, 'sh', [join(sandbox.release, 'install.sh')]);
     assert.equal(installed.code, 0, installed.output);
-    assert.match(installed.output, /ssh -N -L/);
+    // 2026-11-08：装完打印一次性建账号链接（设计稿 Linux-Install）和以后用得上的命令；不再有配对码。
+    assert.match(installed.output, /装好了，正在运行/);
+    assert.match(installed.output, new RegExp(`http://127\\.0\\.0\\.1:${sandbox.port}/#/setup\\?t=FAKE-SETUP-LINK`));
+    assert.match(installed.output, new RegExp(`ssh -L ${sandbox.port}:127\\.0\\.0\\.1:${sandbox.port}`));
+    assert.match(installed.output, /plasticine password +重设密码/);
+    assert.doesNotMatch(installed.output, /配对码/);
     assert.equal(readlinkSync(join(app, 'current')), `versions/${V1}`);
     assert.equal(existsSync(join(app, 'previous')), false);
     assert.equal((await health(sandbox))?.['version'], V1);
@@ -67,6 +72,18 @@ test('在临时前缀里装、自更新、坏版本自动退回、手动回退�
     assert.ok(existsSync(join(sandbox.root, 'user-plasticine')));
     const calls = readFileSync(join(sandbox.systemdState, 'calls.log'), 'utf8');
     assert.match(calls, /^enable plasticine\.service plasticine-update\.timer$/m);
+  });
+
+  await t.test('plasticine password / setup-link：切到 plasticine 用户跑本体自带的命令，带上状态目录', () => {
+    const reset = run(sandbox, ctl, ['password', '--stdin']);
+    assert.equal(reset.code, 0, reset.output);
+    assert.match(reset.output, /密码改好了/);
+    const called = JSON.parse(readFileSync(join(data, 'state', 'password-cli-called'), 'utf8')) as { args: string[] };
+    assert.deepEqual(called.args, ['--stdin']);
+    const link = run(sandbox, ctl, ['setup-link']);
+    assert.equal(link.code, 0, link.output);
+    assert.match(link.output, /#\/setup\?t=/);
+    assert.match(run(sandbox, ctl, ['nonsense']).output, /password\|setup-link/);
   });
 
   await t.test('再跑一次安装命令：同一版不重下，服务照常', async () => {

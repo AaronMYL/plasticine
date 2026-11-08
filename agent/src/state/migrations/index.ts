@@ -25,6 +25,8 @@ import { migration as plasticineProjectGoal } from './0104-plasticine-project-go
 import { migration as calendarSnapshots } from './0106-calendar-snapshots.ts';
 import { migration as webTabs } from './0109-web-tabs.ts';
 import { migration as favicons } from './0110-favicons.ts';
+import { migration as ownerAccount } from './0111-owner-account.ts';
+import { migration as deviceLocal } from './0112-device-local.ts';
 import { migration as objects } from './0001-objects.ts';
 import { migration as tasks } from './0002-tasks.ts';
 import { migration as records } from './0003-records.ts';
@@ -180,6 +182,8 @@ export const MIGRATIONS: readonly Migration[] = [
   calendarSnapshots,
   webTabs,
   favicons,
+  ownerAccount,
+  deviceLocal,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

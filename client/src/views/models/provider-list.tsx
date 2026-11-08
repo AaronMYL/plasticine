@@ -4,6 +4,7 @@
 
 import { useState, type ReactNode } from 'react';
 import type { ModelProviderView } from '../../api/shared.ts';
+import { Icon } from '../../shell/icons.tsx';
 import { RevealMore, type RevealAction } from '../../shell/reveal-more.tsx';
 import { arrangeProviders, providerMark, providerName } from './model-store.ts';
 
@@ -44,8 +45,15 @@ export function providerMoreActions(provider: ModelProviderView,
   ];
 }
 
-function ProviderRow({ provider, onAction, compact }: { provider: ModelProviderView;
-  onAction: (provider: ModelProviderView, action: ProviderAction) => void; compact: boolean }): ReactNode {
+/** 一家正在连（在浏览器里登录…）：那一行行尾换成这一块。 */
+export interface ProviderPending {
+  id: string;
+  node: ReactNode;
+}
+
+function ProviderRow({ provider, onAction, compact, pending }: { provider: ModelProviderView;
+  onAction: (provider: ModelProviderView, action: ProviderAction) => void; compact: boolean;
+  pending: ReactNode | null }): ReactNode {
   const name = providerName(provider);
   const more = providerMoreActions(provider, onAction);
   const action = primaryAction(provider);
@@ -59,7 +67,7 @@ function ProviderRow({ provider, onAction, compact }: { provider: ModelProviderV
             {connectedText(provider)}</span>
         )}
       </span>
-      {provider.connected === null ? (
+      {pending !== null ? pending : provider.connected === null ? (
         <button type="button" className="secondary-button button-small" onClick={() => onAction(provider, action)}>
           {action === 'login' ? '登录' : '填 key'}
         </button>
@@ -68,23 +76,37 @@ function ProviderRow({ provider, onAction, compact }: { provider: ModelProviderV
   );
 }
 
-export function ProviderList({ providers, onAction, columns = 1, compact = false }: {
+export function ProviderList({ providers, onAction, columns = 1, compact = false, pending = null }: {
   providers: readonly ModelProviderView[];
   onAction: (provider: ModelProviderView, action: ProviderAction) => void;
   columns?: 1 | 2;
+  /** 连接页（设计稿 Connect-Model）：行矮一点，「其他 n 家」是最后一行。 */
   compact?: boolean;
+  pending?: ProviderPending | null;
 }): ReactNode {
   const [expanded, setExpanded] = useState(false);
   const { featured, more } = arrangeProviders(providers);
   const shown = expanded ? [...featured, ...more] : featured;
+  const rowMore = compact && !expanded && more.length > 0;
   return (
     <div className="provider-list-wrap">
       <ul className="provider-list" data-columns={columns} aria-label="模型提供商">
         {shown.map((provider) => (
-          <ProviderRow key={provider.id} provider={provider} onAction={onAction} compact={compact} />
+          <ProviderRow key={provider.id} provider={provider} onAction={onAction} compact={compact}
+            pending={pending?.id === provider.id ? pending.node : null} />
         ))}
+        {rowMore ? (
+          <li className="provider-row" data-compact="true">
+            <button type="button" className="provider-more-row" aria-expanded={false}
+              onClick={() => setExpanded(true)}>
+              <span className="provider-mark" aria-hidden="true"><Icon name="plus" size={14} /></span>
+              <span className="provider-name">其他 {more.length} 家</span>
+              <Icon name="chevron-right" size={14} />
+            </button>
+          </li>
+        ) : null}
       </ul>
-      {more.length === 0 ? null : (
+      {more.length === 0 || rowMore ? null : (
         <button type="button" className="text-button text-button-quiet provider-more" aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}>
           {expanded ? '收起' : `更多 ${more.length} 家`}

@@ -22,7 +22,7 @@ import type { MailImageFetchOptions } from '../../src/cloud-tools/mail-image-fet
 import type { FaviconFetchOptions } from '../../src/cloud-tools/favicon-fetch.ts';
 import type { FeedFetcher } from '../../src/daily/index.ts';
 import { SESSION_COOKIE } from '../../src/app/config.ts';
-import { issuePairingCode } from '../../src/app/pairing-code.ts';
+import { hashPassword } from '../../src/app/password-hash.ts';
 import { TextModelError, type TextAnswer } from '../../src/kernel/index.ts';
 import type { ModelSource } from '../../src/lines/index.ts';
 import { openState, type StateService } from '../../src/state/index.ts';
@@ -106,6 +106,8 @@ export interface TestAppOptions {
   noModel?: boolean;
   /** 新内核的模型连接（不给就不装）：拿到这个服务的库再造。 */
   kernelModels?: (state: StateService) => NonNullable<AssembleOptions['kernelModels']>;
+  /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；不给 = 没设，本机令牌一律不认。 */
+  localToken?: string;
 }
 
 // Ticks only when woken in tests, so a test sees exactly the work it started.
@@ -160,6 +162,7 @@ export async function startTestApp(steps: TextStep[] = [], options: TestAppOptio
     network: { autoSync: false, responder: false, ...options.network },
     lines: { models: source, ...options.lines },
     ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels(state) }),
+    localToken: options.localToken ?? null,
   });
   if (options.startTasks !== false) {
     app.start();
@@ -236,12 +239,21 @@ export function cookieFrom(reply: ApiReply): string {
   return `${SESSION_COOKIE}=${match[1]}`;
 }
 
-/** Pairs a new device and returns its cookie. */
+/** 测试用的主人密码：明显是假的。 */
+export const TEST_PASSWORD = 'fake-test-password';
+
+/**
+ * 登记一台新设备并返回它的 cookie（2026-11-08 起用密码登录，配对码下掉了）：还没设密码就先替主人设上测试密码，
+ * 再走 POST /v2/session/password。
+ */
 export async function pair(t: TestApp, deviceName = '测试手机'): Promise<string> {
-  const { code } = issuePairingCode(t.state, t.clock.now());
-  const reply = await call(t, 'POST', '/v2/session', { body: { code, deviceName } });
+  if (t.state.ownerAccount.credentials() === null) {
+    const { hash, salt } = await hashPassword(TEST_PASSWORD);
+    t.state.ownerAccount.setPassword(hash, salt, t.clock.now().toISOString());
+  }
+  const reply = await call(t, 'POST', '/v2/session/password', { body: { password: TEST_PASSWORD, deviceName } });
   if (reply.status !== 201) {
-    throw new Error(`配对失败：${reply.status} ${JSON.stringify(reply.body)}`);
+    throw new Error(`登录失败：${reply.status} ${JSON.stringify(reply.body)}`);
   }
   return cookieFrom(reply);
 }

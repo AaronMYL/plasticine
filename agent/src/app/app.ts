@@ -26,6 +26,9 @@ import {
   HOST,
   PAIRING_FAILURE_LIMIT,
   PAIRING_FAILURE_WINDOW_MS,
+  PASSWORD_FAILURE_LIMIT,
+  PASSWORD_FAILURE_WINDOW_MS,
+  PASSWORD_GLOBAL_FAILURE_LIMIT,
   SHUTDOWN_GRACE_MS,
   SSE_HEARTBEAT_MS,
 } from './config.ts';
@@ -39,6 +42,7 @@ import { withClientFiles } from './static-client.ts';
 import type { MacDownloads } from './mac-updates.ts';
 import type { KernelModelParts } from './model-providers.ts';
 import { createRequestHandler } from './server.ts';
+import { SourceLimiter } from './source-limiter.ts';
 import { askView } from './asks.ts';
 import { BrowserSessions } from './browser-sessions.ts';
 
@@ -89,6 +93,8 @@ export interface AppOptions {
   browserSessions?: BrowserSessions;
   /** 第 6 批第 9 条：视频解析与抖音收藏（video/）。 */
   video: Video;
+  /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；没设是 null，本机令牌一律不认。 */
+  localToken?: string | null;
 }
 
 export interface App {
@@ -171,6 +177,9 @@ export function createApp(options: AppOptions): App {
     push: options.push,
     sseHeartbeatMs: options.sseHeartbeatMs ?? SSE_HEARTBEAT_MS,
     pairingLimiter: new AttemptLimiter(PAIRING_FAILURE_LIMIT, PAIRING_FAILURE_WINDOW_MS, () => now().getTime()),
+    passwordLimiter: new SourceLimiter({ perSource: PASSWORD_FAILURE_LIMIT, global: PASSWORD_GLOBAL_FAILURE_LIMIT,
+      windowMs: PASSWORD_FAILURE_WINDOW_MS }, () => now().getTime()),
+    localToken: options.localToken ?? null,
     now,
     daily: options.daily,
     scans: options.scans,

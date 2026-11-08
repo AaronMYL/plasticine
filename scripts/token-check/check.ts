@@ -49,6 +49,8 @@ export const DESIGN_TOKENS: readonly string[] = [
   'read-leading',
   // 邮件正文的白纸（2026-11-04 用户定「邮件按原样排版」）：邮件照白底设计，深色模式下也是白纸；只给邮件阅读区。
   'mail-paper',
+  'qr-paper',
+  'qr-ink',
   // 第 102 条：类别 / 项目色，深浅各一套（只染小方块、圆点、2px 色条和类别小字）。
   'hue-clay',
   'hue-ochre',

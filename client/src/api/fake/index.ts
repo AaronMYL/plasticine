@@ -26,6 +26,7 @@ import { FakeNodes } from './fake-nodes.ts';
 import { FakeNotes } from './fake-notes.ts';
 import { FakePush } from './fake-push.ts';
 import { FakeSession } from './fake-session.ts';
+import { FakeAccount } from './fake-account.ts';
 import { FakeSigned } from './fake-signed.ts';
 import { FakeToday } from './fake-today.ts';
 import { FakeMemoryTopics } from './fake-memory-topics.ts';
@@ -74,6 +75,8 @@ export interface FakeControl {
   backups: FakeBackups;
   attachments: FakeAttachments;
   session: FakeSession;
+  /** 11-08 首次使用流程：建账号、密码登录。 */
+  account: FakeAccount;
   notes: FakeNotes;
   books: FakeBooks;
   asks: FakeAsks;
@@ -157,7 +160,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const now = options.now ?? ((): Date => new Date());
   const bus = new FakeEventBus();
   const faults = new FaultPlan();
-  const session = new FakeSession(now, faults);
+  const session = new FakeSession(now);
   const receipts = new FakeReceipts(faults, () => session.currentSession()?.device.id ?? null);
   const attachments = new FakeAttachments(session, now);
   const notes = new FakeNotes({ session, bus, faults, now });
@@ -191,6 +194,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     replyMs: options.streamStepMs > 0 ? CONTACT_REPLY_MS : 0 });
   const networkTasks = new FakeNetworkTasks({ session, receipts, contacts, lines, now });
   const network = new FakeNetwork({ session, receipts, now });
+  const account = new FakeAccount({ session, network, lines: () => lines, now });
   const visibility = new FakeVisibility({ session, receipts, relationCounts: () => contacts.relationCounts(),
     marked: (row) => memoryTopics.applyTier(row.kind === 'project' ? 'project' : 'memory_topic', row.id, row.tier,
       row.version) });
@@ -216,6 +220,9 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       occurredAt: hours(76), origin: 'ai', review: true });
     moneyDrafts.seedWeek(4, 1);
     session.signInForDevelopment('本地开发');
+    // 设置 · 账号「登录着的设备」：另外两台用 @账号和密码登录着（11-08 设计稿 Settings-Account）。
+    session.seedDevice('iPhone');
+    session.seedDevice('Windows 笔记本');
     seedNotes(notes, now());
     seedBooks(books, lines, now());
     seedCognition({ memory, agreements }, now());
@@ -242,6 +249,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     systems,
     translate: new FakeTranslate(session, modelProviders),
     session,
+    account,
     devices: session,
     notes,
     books,
@@ -284,6 +292,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       backups,
       attachments,
       session,
+      account,
       notes,
       books,
       asks,

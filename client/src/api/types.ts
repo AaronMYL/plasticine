@@ -94,7 +94,6 @@ export type {
   NoteConflict,
   NoteMetaView,
   NoteView,
-  PairDeviceRequest,
   PushKeyResponse,
   PushPayload,
   ReplyLayers,

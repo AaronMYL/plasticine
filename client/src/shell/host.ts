@@ -5,6 +5,8 @@
 // null，界面照网页的做法走。
 
 import type {
+  PlasticineDesktopExternal,
+  PlasticineDesktopServer,
   PlasticineIOSBridge,
   PlasticineMacLogins,
   PlasticineMacWebTabs,
@@ -60,6 +62,47 @@ export function hostTranslate(): PlasticineMacTranslate | null {
 /** 这台电脑上网页标签的登录（从 Chrome / Safari 搬一次）；没有是 null。 */
 export function hostLogins(): PlasticineMacLogins | null {
   return bridge()?.logins ?? null;
+}
+
+/** 壳上可能挂着的 Electron 新几样（agent/shared/api/desktop-bridge.ts）；旧 Swift App 没有。 */
+type DesktopExtras = { server?: Partial<PlasticineDesktopServer>; external?: Partial<PlasticineDesktopExternal> };
+
+function extras(): DesktopExtras | undefined {
+  return bridge() as DesktopExtras | undefined;
+}
+
+/**
+ * 本机令牌（首次使用流程，11-08）：窗口载入的是壳自己拉起的本机本体时有；连远程、旧 App、网页里是 null。
+ * 壳读不出来时也当没有（建账号、改密码改走别的路，界面就地说一句）。
+ */
+export async function hostLocalGrant(): Promise<string | null> {
+  const server = extras()?.server;
+  if (server?.localGrant === undefined) {
+    return null;
+  }
+  try {
+    const token = await server.localGrant();
+    return typeof token === 'string' && token !== '' ? token : null;
+  } catch (cause) {
+    console.warn('桌面客户端没给本机令牌', cause);
+    return null;
+  }
+}
+
+/** 回到桌面客户端的开始页（「换一个地方」）；不在桌面客户端里是 null。 */
+export function hostShowWelcome(): (() => void) | null {
+  const server = extras()?.server;
+  const show = server?.showWelcome;
+  return show === undefined ? null : () => show.call(server);
+}
+
+/** 交给系统浏览器、在本机等一次 OAuth 回调（模型订阅登录）；不在桌面客户端里是 null。 */
+export function hostExternal(): PlasticineDesktopExternal | null {
+  const external = extras()?.external;
+  if (external?.open === undefined || external.capture === undefined || external.cancelCapture === undefined) {
+    return null;
+  }
+  return external as PlasticineDesktopExternal;
 }
 
 /** 桌面壳里的设备助手（Electron 壳才有）；没有是 null。 */

@@ -1,52 +1,47 @@
-import { parseReleaseManifest, type ReleaseAsset, type ReleaseManifest }
-  from '../../../../agent/shared/release-manifest.ts';
+import { parseReleaseManifest, type ReleaseAsset } from '../../../../agent/shared/release-manifest.ts';
+import { parseDesktopManifest } from '../../../../agent/shared/desktop-release.ts';
 
-export const DOWNLOAD_ASSET_KEYS = ['mac', 'windows', 'linuxInstaller', 'server'] as const;
-type AssetKey = typeof DOWNLOAD_ASSET_KEYS[number];
-export interface DownloadCatalog {
-  manifest: ReleaseManifest;
-  assets: Record<AssetKey, ReleaseAsset>;
-}
+// 下载页读的两份发布清单（11-08）：desktop.json 给桌面客户端（主下载），manifest.json 只取 Linux 安装脚本。
+// 地址都先核过（https、不带账号密码、文件名老实），不从版本号或平台名猜地址。
 
 const LOCAL = new Set(['localhost', '127.0.0.1', '[::1]']);
 const FILE_NAME = /^[A-Za-z0-9_-][A-Za-z0-9._-]*$/;
 
-/** 四个真实包齐备才给下载动作；不能从版本号或平台名字猜文件地址。 */
-export function parseDownloadCatalog(text: string, manifestUrl: string): DownloadCatalog {
-  const manifest = parseReleaseManifest(text);
-  const resolved: Partial<Record<AssetKey, ReleaseAsset>> = {};
-  for (const key of DOWNLOAD_ASSET_KEYS) {
-    const asset = manifest.assets[key];
-    if (asset === undefined) throw new Error('安装包还没有齐备。');
-    const url = new URL(asset.url, manifestUrl);
-    const permitted = url.protocol === 'https:' || (url.protocol === 'http:' && LOCAL.has(url.hostname));
-    if (!permitted || url.username !== '' || url.password !== '' || !FILE_NAME.test(asset.name)) {
-      throw new Error('清单中的下载地址格式不对。');
-    }
-    resolved[key] = { ...asset, url: url.href };
+/** 清单里的一个包：地址只认 https（本机开发认 http 的本机地址），不带账号密码，文件名老实。 */
+function checkedAsset(asset: ReleaseAsset, manifestUrl: string): ReleaseAsset {
+  const url = new URL(asset.url, manifestUrl);
+  const permitted = url.protocol === 'https:' || (url.protocol === 'http:' && LOCAL.has(url.hostname));
+  if (!permitted || url.username !== '' || url.password !== '' || !FILE_NAME.test(asset.name)) {
+    throw new Error('清单中的下载地址格式不对。');
   }
-  return { manifest, assets: resolved as Record<AssetKey, ReleaseAsset> };
+  return { ...asset, url: url.href };
 }
 
-/** 只生成供用户复制的命令；URL 取自已经核验的安装脚本资产，不执行它。 */
-export function linuxInstallCommand(catalog: DownloadCatalog): string {
-  const quoted = `'${catalog.assets.linuxInstaller.url.replace(/'/g, "'\\''")}'`;
-  return `curl -fsSL ${quoted} | sudo sh`;
+/** 桌面客户端（11-08 起的主下载）：Mac 给 dmg（没有 dmg 才给 zip），Windows 给安装程序；没有的系统是 null。 */
+export interface DesktopCatalog {
+  version: string;
+  mac: ReleaseAsset | null;
+  windows: ReleaseAsset | null;
 }
 
-export function existingInstanceUrl(input: string): string {
-  const value = input.trim();
-  if (value === '') throw new Error('先填入 Plasticine 地址。');
-  const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(value);
-  let url: URL;
-  try {
-    url = new URL(hasScheme ? value : `https://${value}`);
-  } catch (cause) {
-    if (cause instanceof TypeError) throw new Error('地址不完整，请核对后再打开。');
-    throw cause;
-  }
-  if (!['http:', 'https:'].includes(url.protocol) || url.username !== '' || url.password !== '') {
-    throw new Error('请填写不带账号密码的 http 或 https 地址。');
-  }
-  return url.href;
+export function parseDesktopCatalog(text: string, manifestUrl: string): DesktopCatalog {
+  const manifest = parseDesktopManifest(text);
+  const mac = manifest.assets.macDisk ?? manifest.assets.mac;
+  const windows = manifest.assets.windows;
+  if (mac === undefined && windows === undefined) throw new Error('桌面客户端还没有安装包。');
+  return { version: manifest.version, mac: mac === undefined ? null : checkedAsset(mac, manifestUrl),
+    windows: windows === undefined ? null : checkedAsset(windows, manifestUrl) };
+}
+
+/** 「2026.1108」：发布版本号的前两段（年.月日），下载页上看得懂哪天的。 */
+export function shortVersion(version: string): string {
+  return version.split('.').slice(0, 2).join('.');
+}
+
+/** 装在服务器上：只要 manifest.json 里的 Linux 安装脚本，命令照 linuxInstallCommand。 */
+export function parseLinuxCommand(text: string, manifestUrl: string): string {
+  const asset = parseReleaseManifest(text).assets.linuxInstaller;
+  if (asset === undefined) throw new Error('Linux 安装脚本还没有。');
+  const url = checkedAsset(asset, manifestUrl).url;
+  return `curl -fsSL '${url.replace(/'/g, "'\\''")}' | sudo sh`;
 }

@@ -1,7 +1,8 @@
 // 设置 · 系统（2026-11-05 设计稿 Settings-System）：去掉启用 / 验收、度量、自迭代策略 / 记录之后剩下的四块——
 //   版本      有新版本时一行：新版本 · 现在 ·「更新并重启」（后果常显：会重启约 1 分钟，在做的线重启后接着做）；
 //   运行情况  已运行 · 模型 · 磁盘 · 邮件（两列）；
-//   设备      配对过的设备一行一台（这台 / 上次在线），⋯ 撤销 / 退出，段头配对（devices-block.tsx）；
+//   替你动手的电脑  还连着的旧 Mac App 执行节点（node-devices.tsx）；登录着的设备 11-08 挪到 设置 · 账号，
+//             「添加设备」（配对码、二维码、Mac 专用码）随配对码一起去掉；
 //   日历和提醒事项  他 Mac 给没给完全访问，「去授权」（calendar-access.tsx，第 15 条）；
 // 在桌面客户端（Electron 壳）里最上面另有「Plasticine 跑在哪」「这台电脑」两段（desktop-place.tsx、
 // desktop-computer.tsx，第 14 条），日历和提醒事项挪到它们后面，和这台电脑的事放在一起。
@@ -23,8 +24,8 @@ import { choiceName } from '../models/model-store.ts';
 import { CalendarAccess } from './calendar-access.tsx';
 import { DesktopComputer } from './desktop-computer.tsx';
 import { DesktopPlace } from './desktop-place.tsx';
+import { NodeDevices } from './node-devices.tsx';
 import { desktopShell, useDesktopState } from './desktop-shell.ts';
-import { Devices } from './devices-block.tsx';
 import { SectionHead } from './section-head.tsx';
 import { Failure, useRead } from './system-read.tsx';
 
@@ -185,7 +186,7 @@ export function SystemSection(): ReactNode {
       {desktop ? <><DesktopBlocks /><CalendarAccess /></> : null}
       <Version operations={operations.value} />
       <Running value={operations.value} error={operations.error} onReload={operations.reload} />
-      <Devices />
+      <NodeDevices />
       {desktop ? null : <CalendarAccess />}
       <BackupBlock />
     </>

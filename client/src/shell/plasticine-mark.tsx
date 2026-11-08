@@ -3,6 +3,8 @@
 // 路径照设计稿 /design/icon/plasticine-icon-v1-sidebar-20.svg（16 格）。App 图标和 favicon 在 client/public/icon.svg。
 
 import type { ReactNode } from 'react';
+// 标记的颜色在 glyph.css 里（下载页这种独立入口也要它）。
+import './glyph.css';
 
 const BLOB = 'M15.17 8.10 C15.12 8.66 15.00 9.23 14.85 9.76 C14.69 10.29 14.48 10.80 14.24 11.28 C14.00 11.77 '
   + '13.72 12.23 13.40 12.66 C13.08 13.09 12.72 13.50 12.33 13.85 C11.94 14.21 11.50 14.54 11.04 '

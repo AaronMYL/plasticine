@@ -23,6 +23,12 @@ export class AttemptLimiter {
     this.#failures.push(this.#now());
   }
 
+  /** No failure left in the window (a per-source limiter can be dropped). */
+  empty(): boolean {
+    this.#prune();
+    return this.#failures.length === 0;
+  }
+
   /** How long until the oldest failure in the window expires; 0 when not blocked. */
   retryAfterMs(): number {
     this.#prune();

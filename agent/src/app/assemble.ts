@@ -125,6 +125,8 @@ export interface AssembleOptions {
   memoryCuration?: boolean;
   /** 新内核的模型连接（/v2/model-providers）；不给就不装（回 503）。 */
   kernelModels?: KernelModelParts;
+  /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；不给或 null = 不认本机令牌。 */
+  localToken?: string | null;
 }
 
 export interface NetworkAssembly {
@@ -400,6 +402,7 @@ export function assembleApp(options: AssembleOptions): App {
     ...(tunnel === undefined ? {} : { tunnel }),
     ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels }),
     ...(options.clientDirectory === undefined ? {} : { clientDirectory: options.clientDirectory }),
+    localToken: options.localToken ?? null,
   });
 }
 

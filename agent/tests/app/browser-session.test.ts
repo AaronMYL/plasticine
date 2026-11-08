@@ -73,7 +73,7 @@ test('内部浏览器创建的笔记归 AI，本人发送、配对邀请和确�
   const personal = await call(t, 'POST', '/v2/notes', { cookie: user,
     body: { requestId: newRequestId(), markdown: '本人写的笔记' } });
   assert.equal(json(personal)['author'], 'user');
-  const personalPaths = ['/v2/devices/pairing-codes', '/v2/contacts/contact_missing/messages',
+  const personalPaths = ['/v2/contacts/contact_missing/messages',
     '/v2/inbox/message_missing/replies', '/v2/inbox/feedback', '/v2/feed/items/item_missing/comments',
     '/v2/asks/ask_missing/answer', '/v2/lines/main/widgets', '/v2/contacts/add',
     '/v2/contacts/contact_missing/request', '/v2/contacts/contact_missing/relation',
@@ -87,6 +87,12 @@ test('内部浏览器创建的笔记归 AI，本人发送、配对邀请和确�
     const denied = await call(t, 'POST', path, { cookie, body: { requestId: newRequestId(), text: '不能记成本人' } });
     assert.equal(denied.status, 403, path);
     assert.equal(json(denied)['code'], 'user_confirmation_required', path);
+  }
+  // 账号（2026-11-08）：内部浏览器不能替他改密码、改名字。
+  for (const [method, path, body] of [['PUT', '/v2/account/password', { password: 'fake-new-pass-9' }],
+    ['PATCH', '/v2/account', { displayName: '内部浏览器' }]] as const) {
+    const denied = await call(t, method, path, { cookie, body });
+    assert.equal(denied.status, 403, path);
   }
 });
 

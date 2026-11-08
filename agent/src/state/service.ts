@@ -21,6 +21,7 @@ import { MEMORY_DATABASE, openDatabase } from './db.ts';
 import { createDeviceKeyStore } from './device-keys.ts';
 import { createDeviceStore } from './devices.ts';
 import { createDeviceTimeZoneStore } from './device-time-zones.ts';
+import { createOwnerAccountStore } from './owner-account.ts';
 import { createCalendarSnapshotStore } from './calendar-snapshots.ts';
 import { createFeedCommentStore } from './feed-comments.ts';
 import { createFeedFetchRuns } from './feed-fetch-runs.ts';
@@ -189,6 +190,8 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     timedSlots: createTimedSlotStore(context),
     heartbeatFacts: createHeartbeatFacts(context),
     deviceTimeZones: createDeviceTimeZoneStore(context),
+    // 主人账号（2026-11-08《首次使用流程》）：名字、密码哈希、建账号令牌。
+    ownerAccount: createOwnerAccountStore(context),
     calendarSnapshots: createCalendarSnapshotStore(context),
   };
 }

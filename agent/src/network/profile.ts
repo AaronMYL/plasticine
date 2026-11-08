@@ -1,4 +1,4 @@
-// 头像（2026-11-05 他定）：账号头像在本机裁成圆形小图（data URL），和名字一起加密发给每个好友（profile 信封；
+// 头像（2026-11-05 他定）和名字（2026-11-08）：账号头像在本机裁成圆形小图（data URL），和名字一起加密发给每个好友（profile 信封；
 // 加人时的 hello 也带上）。中继只看到「一封 profile」，看不到图。
 
 import { AVATAR_MAX_CHARS } from '../../shared/net-wire.ts';
@@ -21,14 +21,23 @@ export function checkAvatar(avatar: string | null): string | null {
 
 /** 换头像并发给每个好友。 */
 export function broadcastProfile(context: NetworkContext, avatar: string | null): NetworkIdentity {
-  const checked = checkAvatar(avatar);
+  return sendProfile(context, { avatar: checkAvatar(avatar) });
+}
+
+/** 改名字（2026-11-08 设置 · 账号）：和头像同一封 profile 发给每个好友，他们那边的名字跟着变。 */
+export function renameProfile(context: NetworkContext, displayName: string): NetworkIdentity {
+  return sendProfile(context, { displayName });
+}
+
+function sendProfile(context: NetworkContext, patch: { avatar?: string | null; displayName?: string }):
+  NetworkIdentity {
   return context.desk.commit((changes) => {
     const identity = requireIdentity(context);
-    const updated = context.state.networkIdentity.update(identity.version, { avatar: checked });
+    const updated = context.state.networkIdentity.update(identity.version, patch);
     const touched: string[] = [];
     for (const contact of context.state.contacts.active()) {
       enqueue(context, contact, { kind: 'profile', author: 'me', text: '', quiet: true,
-        payload: { displayName: updated.displayName, avatar: checked } });
+        payload: { displayName: updated.displayName, avatar: updated.avatar } });
       touched.push(contact.id);
     }
     changes.afterCommit(() => {

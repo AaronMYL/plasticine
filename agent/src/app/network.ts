@@ -1,4 +1,5 @@
-// /v2/network*、/v2/network-tasks*（第 113 条，规格第 6、9 节）：这台实例在 Cyber Hunter 网络上的账号（加入、邀请码）
+// /v2/network*、/v2/network-tasks*（第 113 条，规格第 6、9 节）：这台实例在 Cyber Hunter 网络上的账号（加入、邀请码；
+// 2026-11-08 起加入不要码，码只用来邀请朋友）
 // 和跨用户任务（看一项、表态、交付、验收）。账号视图只挑公开字段：钥匙一把都不出去。
 
 import {
@@ -22,10 +23,7 @@ import { readJsonBody } from './http.ts';
 import { idempotent, idempotentAsync } from './idempotency.ts';
 import { checkInput } from './validate.ts';
 
-/**
- * 加入免码只可能在一种情况：连中继走本机回环（中继和这台实例在同一台机器上，中继按这个认第一个账号）。中继独立以后
- * 这台实例不知道中继上有没有人；回环时不出邀请码那一栏，真要码时中继会说。
- */
+/** 连中继走本机回环：中继和这台实例在同一台机器上（Alex 的），第一次打开的引导不走。 */
 function maybeFirstOnRelay(relayUrl: string): boolean {
   return isLoopback(relayUrl);
 }
@@ -42,8 +40,9 @@ export function networkStatus(deps: AppDeps): NetworkStatus {
       host: network.publicHost(identity.handle) },
     lastSyncAt: identity?.lastSyncAt ?? null,
     lastError: identity?.lastError ?? null,
-    inviteNeeded: identity === undefined && !maybeFirstOnRelay(relayUrl),
-    // 有隧道才算朋友那种新装的实例（第三步就是经隧道拿证书）；和中继同机的那台、测试和本地开发不装隧道。
+    // 2026-11-08 自助注册：不再要邀请码（字段留给旧客户端）。
+    inviteNeeded: false,
+    // 有隧道才算朋友那种新装的实例（第三步就是经隧道拿证书）；Alex 那台、测试和本地开发不装隧道。
     welcome: identity === undefined && deps.tunnel !== null && !maybeFirstOnRelay(relayUrl)
       && deps.state.lineMessages.page(deps.state.lines.main().id, null, 1).rows.length === 0,
     tunnel: tunnelStatus(deps),

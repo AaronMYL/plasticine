@@ -1,131 +1,16 @@
-.login {
-  display: grid;
-  place-items: center;
-  min-height: 100dvh;
-  padding: 16px;
+/* 登录（11-08 设计稿 Sign-In / Phone-SignIn）：版式在 views/onboard/onboard.css，这里只有登录页自己的两处。 */
+
+.login-links {
+  justify-content: flex-start;
 }
 
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: min(360px, 100%);
+.login-gap {
+  flex: 1;
 }
 
-.login-title {
-  margin: 0;
-  font-size: 24px;
-  line-height: 32px;
-  font-weight: 600;
-}
-
-.login-hint {
-  margin: 0;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--fg2);
-}
-
-.login-error {
-  margin: 0;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--err);
-}
-
-/* 原型：登录页品牌和两步说明（用户视角审查 2026-11-01 第 14 条） */
-.login-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  line-height: 24px;
-  font-weight: 600;
-  margin-bottom: 24px;
-}
-
-.login-instance {
-  margin: 0;
-  font-size: 14px;
-  line-height: 22px;
-  color: var(--fg2);
-  overflow-wrap: anywhere;
-}
-
-.login-form > .primary-button {
-  min-height: 44px;
-  margin-top: 8px;
-}
-
-.login-help {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-  color: var(--fg2);
-  font-size: 14px;
-  line-height: 22px;
-}
-
-.login-help summary {
-  cursor: pointer;
-  color: var(--fg);
-}
-
-.login-result {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding-block: 48px;
-  text-align: center;
-}
-
-.login-success {
-  color: var(--ok);
-}
-
-.login-connecting {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--fg2);
-  font-size: 12px;
-}
-
-.login-switch {
-  align-self: flex-start;
-  margin-top: 24px;
-}
-
+/* 手机上框太窄，不放右边那串网址（设计稿 Phone-SignIn）。 */
 @media (max-width: 767px) {
-  .login {
-    align-items: start;
-    padding: max(40px, env(safe-area-inset-top)) 24px 24px;
-  }
-
-  .login-form {
-    min-height: calc(100dvh - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  }
-
-  .login-brand {
-    margin-bottom: 32px;
-  }
-
-  .login-form .field-input {
-    min-height: 48px;
-  }
-
-  .login-form > .login-instance {
-    margin-bottom: 16px;
-  }
-
-  .login-switch {
-    min-height: 44px;
-    margin-top: auto;
-  }
-
-  .login-result {
-    flex: 1;
-    justify-content: center;
+  .login-address {
+    display: none;
   }
 }

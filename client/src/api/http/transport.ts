@@ -34,7 +34,7 @@ export interface ResponseLike {
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<ResponseLike>;
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /** 没拿到回答时这次请求算什么：写操作是「结果待核实」，读操作是失败（什么都没改，再读一次就行）。 */
 export type LostAs = 'uncertain' | 'failed';
@@ -214,7 +214,7 @@ export class Transport {
     }
     if (value.code === 'unauthorized') {
       this.onUnauthorized();
-      return unauthorizedError(value.error, value.next ?? '重新输入配对码。');
+      return unauthorizedError(value.error, value.next ?? '重新登录。');
     }
     return new ApiError({
       kind: kindOf(status, value.code, spec.lostAs),

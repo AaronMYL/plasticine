@@ -79,15 +79,32 @@ describe('真接口 · 请求形状', () => {
     });
   });
 
-  it('配对：POST /v2/session 带配对码、设备名和 requestId', async () => {
+  it('账号：建账号带本机令牌请求头；密码登录 POST /v2/session/password；改名 PATCH 后再读一次状态', async () => {
     const session = {
       device: { id: 'dev_1', name: 'Mac', firstSeenAt: AT, lastSeenAt: AT, revokedAt: null, current: true },
       session: { createdAt: AT, expiresAt: AT },
     };
-    const { api: http, calls } = api(() => json(201, session));
-    const body = { code: '7KQ4-M2XD', deviceName: 'Mac', requestId: REQUEST_ID };
-    expect(await http.session.pair(body)).toEqual(session);
-    expect(calls[0]).toMatchObject({ url: '/v2/session', method: 'POST', body });
+    const state = { setup: 'done', handle: 'alex', displayName: 'Alex', passwordSet: true,
+      networkUrl: 'https://alex.cyberhunter.top' };
+    const { api: http, calls } = api(
+      () => json(201, { session, network: { joined: true, url: state.networkUrl, problem: null } }),
+      () => json(201, session),
+      () => json(200, { ok: true }),
+      () => json(200, state),
+      () => json(200, { handle: 'alex', available: true, reason: null }),
+    );
+    const setup = { displayName: 'Alex', handle: 'alex', password: 'fake-pass-1234', deviceName: 'Mac' };
+    await http.account.setup(setup, 'fake-local-token');
+    expect(calls[0]).toMatchObject({ url: '/v2/account/setup', method: 'POST', body: setup });
+    expect(calls[0]?.headers['x-plasticine-local-token']).toBe('fake-local-token');
+    expect(await http.account.signIn({ password: 'fake-password', deviceName: 'Mac' })).toEqual(session);
+    expect(calls[1]).toMatchObject({ url: '/v2/session/password', method: 'POST' });
+    expect(calls[1]?.headers['x-plasticine-local-token']).toBeUndefined();
+    expect(await http.account.rename('Alex')).toEqual(state);
+    expect(calls[2]).toMatchObject({ url: '/v2/account', method: 'PATCH', body: { displayName: 'Alex' } });
+    expect(calls[3]).toMatchObject({ url: '/v2/account/state', method: 'GET' });
+    await http.account.handle('alex');
+    expect(calls[4]).toMatchObject({ url: '/v2/account/handles/alex', method: 'GET' });
   });
 });
 
@@ -173,23 +190,6 @@ describe('真接口 · 回执不确定与幂等重试', () => {
     const { api: http } = api(() => text(503, 'Service Unavailable'));
     await expect(http.lines.read('main', {})).rejects.toMatchObject({ kind: 'failed' });
   });
-
-  it('配对断网：「结果待核实」，用同一 requestId 再发一次就能核实', async () => {
-    const session = {
-      device: { id: 'dev_1', name: 'Mac', firstSeenAt: AT, lastSeenAt: AT, revokedAt: null, current: true },
-      session: { createdAt: AT, expiresAt: AT },
-    };
-    const { api: http, calls } = api(
-      () => new TypeError('network'),
-      () => json(201, session),
-    );
-    const input = { code: '7KQ4-M2XD', deviceName: 'Mac', requestId: REQUEST_ID };
-    const pairing = http.session.pair(input);
-    await expect(pairing).rejects.toMatchObject({ kind: 'uncertain', code: 'receipt_unknown' });
-    await expect(pairing).rejects.toThrow('不知道配对成没成');
-    expect(await http.session.pair(input)).toEqual(session);
-    expect(calls[1]?.body).toEqual(calls[0]?.body);
-  });
 });
 
 describe('真接口 · 401', () => {
@@ -205,13 +205,12 @@ describe('真接口 · 401', () => {
     expect(await http.session.current()).toBeNull();
   });
 
-  it('配对码不对（401 pairing_code_invalid）只写原因，不当成会话失效', async () => {
-    const body = { error: '配对码不对。', code: 'pairing_code_invalid', field: 'code', next: '核对后再输入。' };
+  it('密码不对（401 login_failed）只写原因，不当成会话失效', async () => {
+    const body = { error: '密码不对。', code: 'login_failed', field: 'password' };
     const { api: http, unauthorized } = api(() => json(401, body));
-    await expect(http.session.pair({ code: 'XXXX-XXXX', deviceName: 'Mac' })).rejects.toMatchObject({
+    await expect(http.account.signIn({ password: 'nope', deviceName: 'Mac' })).rejects.toMatchObject({
       kind: 'invalid',
-      field: 'code',
-      message: '配对码不对。',
+      message: '密码不对。',
     });
     expect(unauthorized).not.toHaveBeenCalled();
   });

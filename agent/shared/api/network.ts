@@ -1,5 +1,5 @@
-// /v2/network: 这台 Plasticine 在 Cyber Hunter 网络上的账号（第 113 条）。加入要邀请码（中继里第一个账号从中继本机
-// 免码）；加入后可以给朋友生成邀请码。中继本身的接口在 /v2/net/*，不走设备会话，见 docs/specs/contacts-network.md。
+// /v2/network: 这台 Plasticine 在 Cyber Hunter 网络上的账号（第 113 条）。2026-11-08 起自助注册：起 @账号就是在网络里
+// 注册，不要邀请码（旧实例带着码来也照收，用了谁的码就先给谁发好友请求）；加入后照旧可以给朋友生成邀请码。中继本身的接口在 /v2/net/*，不走设备会话，见 docs/specs/contacts-network.md。
 
 import { Type, type Static } from 'typebox';
 import { API_PREFIX, IsoTimeSchema, RequestIdSchema } from './common.ts';
@@ -34,10 +34,10 @@ export const NetworkStatusSchema = Type.Object({
   lastError: OrNull(Type.String()),
   /**
    * 第一次打开（2026-11-05 Friend-Onboard）：新装的实例（还没加入网络、主对话一句都没说过）连上模型后接着走加入网络、
-   * 在手机上打开两步。和中继同机的那台不走。
+   * 在手机上打开两步。中继在本机的那台（Alex 的）不走。
    */
   welcome: Type.Optional(Type.Boolean()),
-  /** 加入要不要邀请码：这台实例自己托管中继、中继上还没有账号、从本机连中继时不要（第一个账号），表单不出那一栏。 */
+  /** 加入要不要邀请码：2026-11-08 起自助注册，一律 false（字段留着给旧客户端）。 */
   inviteNeeded: Type.Boolean(),
 });
 export type NetworkStatus = Static<typeof NetworkStatusSchema>;

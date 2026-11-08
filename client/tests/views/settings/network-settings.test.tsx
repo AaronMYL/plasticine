@@ -1,4 +1,5 @@
-// 设置的三段新内容（第 113 条）：账号与网络（没加入是表单，加入了是 @handle、邀请朋友、发过的码）、对外可见（三类联系人的
+// 设置的三段新内容（第 113 条）：邀请朋友（11-08 起 @账号在最上面的账号一行；还要邀请码的旧情形才出加入表单；加入了是
+// 邀请朋友、发过的码）、对外可见（三类联系人的
 // 台阶、每条材料四个单选、建议是橙色空心圈、「n 处等你确认」+「全部确认」）、通知记录（原 Plasticine 通知）。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -18,7 +19,8 @@ function pane(): HTMLElement {
 }
 
 describe('设置 · 分段', () => {
-  it('六段：通用 · AI · 日常 · 浏览器与信息流 · 账号 · 系统；账号里是头像、这台设备、账号与网络、对外可见、通知记录', async () => {
+  it('六段：通用 · AI · 日常 · 浏览器与信息流 · 账号 · 系统；账号里是名字和密码、登录着的设备、头像、邀请朋友、对外可见、通知记录',
+    async () => {
     await renderApp({ hash: '#/settings', setup: seed });
     const nav = await within(await screen.findByRole('dialog', { name: '设置' }))
       .findByRole('navigation', { name: '设置分类' });
@@ -26,25 +28,17 @@ describe('设置 · 分段', () => {
       .toEqual(['通用', 'AI', '日常', '浏览器与信息流', '账号', '系统']);
     fireEvent.click(within(nav).getByRole('button', { name: '账号' }));
     const titles = within(pane()).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent);
-    expect(titles.slice(0, 5)).toEqual(['头像', '这台设备', '账号与网络', '对外可见', '通知记录']);
+    expect(titles.slice(0, 5)).toEqual(['登录着的设备', '头像', '邀请朋友', '对外可见', '通知记录']);
+    expect(within(pane()).getByRole('region', { name: '名字和密码' })).toBeTruthy();
   });
 });
 
-describe('设置 · 账号与网络', () => {
-  it('没加入：@handle、显示名，handle 不合格式不让加入；中继本机第一个账号不出邀请码一栏；加入后是 @handle 和显示名',
-    async () => {
-    const app = await renderApp({ hash: '#/settings/network' });
-    const form = await within(pane()).findByRole('form', { name: '加入网络' });
-    expect(within(form).queryByRole('textbox', { name: '邀请码' })).toBeNull();
-    const join = within(form).getByRole('button', { name: '加入' }) as HTMLButtonElement;
-    fireEvent.change(within(form).getByRole('textbox', { name: '@handle' }), { target: { value: 'Alex!' } });
-    fireEvent.change(within(form).getByRole('textbox', { name: '显示名' }), { target: { value: 'Alex' } });
-    expect(join.disabled).toBe(true);
-    expect(within(form).getByRole('alert').textContent).toContain('小写字母');
-    fireEvent.change(within(form).getByRole('textbox', { name: '@handle' }), { target: { value: 'alex' } });
-    fireEvent.click(join);
-    expect(await within(pane()).findByText('@alex')).toBeTruthy();
-    expect((await app.api.network.status()).account?.displayName).toBe('Alex');
+describe('设置 · 邀请朋友', () => {
+  it('没加入、不要邀请码：这一段不出现（在最上面的账号一行起 @账号）', async () => {
+    await renderApp({ hash: '#/settings/network' });
+    await within(pane()).findByRole('region', { name: '名字和密码' });
+    expect(within(pane()).queryByRole('form', { name: '加入网络' })).toBeNull();
+    expect(within(pane()).queryByRole('heading', { name: '邀请朋友' })).toBeNull();
   });
 
   it('中继上已经有人了：表单多一栏邀请码', async () => {
@@ -57,7 +51,7 @@ describe('设置 · 账号与网络', () => {
 
   it('加入了：邀请朋友生成一个码和一句能复制的话；发过的码列出来，用掉的写是谁', async () => {
     await renderApp({ hash: '#/settings/network', setup: seed });
-    expect(await within(pane()).findByText('@alex')).toBeTruthy();
+    expect(await within(pane()).findByText(/@alex/)).toBeTruthy();
     const invites = await within(pane()).findByRole('list', { name: '发过的邀请码' });
     expect(within(invites).getByText('@linyi')).toBeTruthy();
     fireEvent.click(within(pane()).getByRole('button', { name: '邀请朋友' }));

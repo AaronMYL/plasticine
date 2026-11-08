@@ -1,6 +1,7 @@
 // Linux 上的 Electron 冒烟（xvfb）：打好壳 → 起假接口的界面（client 的 Vite）和一个英文网页 → 用壳打开界面 →
 // 从界面里开一个网页标签（走真实的「站外链接开成网页标签」那条路）→ 注入的翻译脚本报 page → 开翻译，界面拿假接口
-// 译好送回 → 网页标签里出现译文。每一步截一张整屏图（import -window root）。真实的 Mac / Windows 行为这里验不了。
+// 译好送回 → 网页标签里出现译文。每一步截一张整屏图（import -window root）。之后跑首次使用流程（smoke-onboard.ts）：
+// 开始页二选一、连远程的就地报错、本机本体起来、本机自动登录。真实的 Mac / Windows 行为这里验不了。
 //   xvfb-run -a -s "-screen 0 1440x900x24" node desktop/build/smoke.ts [截图目录]
 
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -10,17 +11,10 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
-import { fileURLToPath } from 'node:url';
 import { Cdp } from '../../scripts/browser/cdp.ts';
 import { bundle } from './bundle.ts';
-
-const DESKTOP = fileURLToPath(new URL('..', import.meta.url));
-const ROOT = join(DESKTOP, '..');
-const ELECTRON = join(DESKTOP, 'node_modules', 'electron', 'dist',
-  process.platform === 'win32' ? 'electron.exe' : 'electron');
-/** SMOKE_APP 指向打好的安装包里的可执行文件时，冒烟跑那个（electron-builder --linux dir 的 linux-unpacked）。 */
-const PACKAGED = process.env.SMOKE_APP ?? null;
-const STEP_TIMEOUT_MS = 60_000;
+import { smokeOnboard } from './smoke-onboard.ts';
+import { DESKTOP, ELECTRON, freePort, PACKAGED, ROOT, shoot, stop, targets, until } from './smoke-kit.ts';
 
 const ARTICLE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Vertical tabs</title>
 <link rel="icon" href="/favicon.png"></head><body style="font:18px/1.6 sans-serif;max-width:720px;margin:40px auto">
@@ -31,16 +25,6 @@ nobody can tell apart.</p>
 <p>Putting tabs on the side shows full titles, lets groups collapse, and keeps pinned sites as a row of icons.</p>
 <script>window.__clicks = 0; addEventListener('mousedown', () => { window.__clicks += 1; });</script>
 </body></html>`;
-
-function freePort(): Promise<number> {
-  return new Promise((resolve) => {
-    const server = createServer();
-    server.listen(0, '127.0.0.1', () => {
-      const port = (server.address() as AddressInfo).port;
-      server.close(() => resolve(port));
-    });
-  });
-}
 
 async function site(): Promise<{ server: Server; url: string }> {
   const icon = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQ'
@@ -56,42 +40,6 @@ async function site(): Promise<{ server: Server; url: string }> {
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   return { server, url: `http://127.0.0.1:${(server.address() as AddressInfo).port}/article` };
-}
-
-async function until<T>(what: string, probe: () => Promise<T | null | undefined | false>): Promise<T> {
-  const deadline = Date.now() + STEP_TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    try {
-      const value = await probe();
-      if (value !== null && value !== undefined && value !== false) {
-        return value;
-      }
-    } catch (error) {
-      if (!(error instanceof Error)) {
-        throw error;
-      }
-    }
-    await pause(500);
-  }
-  throw new Error(`等了 ${STEP_TIMEOUT_MS / 1000} 秒还没有：${what}`);
-}
-
-async function targets(port: number): Promise<{ url: string; type: string; webSocketDebuggerUrl: string }[]> {
-  const response = await fetch(`http://127.0.0.1:${port}/json/list`);
-  return await response.json() as { url: string; type: string; webSocketDebuggerUrl: string }[];
-}
-
-function shoot(directory: string, name: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('import', ['-window', 'root', join(directory, `${name}.png`)], { stdio: 'ignore' });
-    child.once('exit', (code) => (code === 0 ? resolve() : reject(new Error(`截图没成（${code}）`))));
-  });
-}
-
-function stop(child: ChildProcess | null): void {
-  if (child !== null && child.exitCode === null) {
-    child.kill('SIGTERM');
-  }
 }
 
 export async function smoke(shots: string): Promise<string[]> {
@@ -216,7 +164,7 @@ export async function smoke(shots: string): Promise<string[]> {
 if (import.meta.main) {
   const shots = process.argv[2] ?? join(tmpdir(), 'plasticine-desktop-shots');
   try {
-    const passed = await smoke(shots);
+    const passed = [...await smoke(shots), ...await smokeOnboard(shots)];
     console.log(['冒烟通过：', ...passed.map((line) => `  ✔ ${line}`), `截图：${shots}`].join('\n'));
     process.exit(0);
   } catch (error) {

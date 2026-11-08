@@ -3,9 +3,9 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { desktopPaths } from '../src/app/desktop-paths.ts';
-import { initialChoice, LOCAL_SERVER_URL, normalizeRemoteUrl, RemoteUrlError, sameOrigin,
+import { LOCAL_SERVER_URL, normalizeRemoteUrl, prefillRemote, RemoteUrlError, sameOrigin,
   targetUrl } from '../src/app/server-target.ts';
-import { defaultSettings, SettingsStore } from '../src/app/settings-store.ts';
+import { defaultSettings, serverChosen, SettingsStore } from '../src/app/settings-store.ts';
 import { tempDir } from './helpers.ts';
 
 test('Mac 上本体数据接着 Swift 版的目录，Electron 的网页数据单放', () => {
@@ -22,15 +22,19 @@ test('Windows 上本体数据接着托盘版的 %LOCALAPPDATA%\\Plasticine\\stat
   assert.equal(paths.logs, 'C:\\Users\\a\\AppData\\Local\\Plasticine\\logs');
 });
 
-test('第一次打开：新装默认这台电脑，装过的照旧远程，没带本体只能远程，Swift 版选过的接着用', () => {
-  assert.deepEqual(initialChoice({ bundled: true, priorInstall: false, legacyRemote: null, legacyMode: null }),
-    { mode: 'this_computer', remoteUrl: null });
-  assert.deepEqual(initialChoice({ bundled: true, priorInstall: true, legacyRemote: 'https://203.0.113.10/',
-    legacyMode: null }), { mode: 'remote', remoteUrl: 'https://203.0.113.10/' });
-  assert.equal(initialChoice({ bundled: false, priorInstall: false, legacyRemote: null, legacyMode: 'this_computer' })
-    .mode, 'remote');
-  assert.equal(initialChoice({ bundled: true, priorInstall: true, legacyRemote: 'http://bad', legacyMode:
-    'this_computer' }).remoteUrl, null);
+test('第一次打开没有默认选择：设置里记着还没选，旧 Swift 版的远程地址只当预填', (t) => {
+  const file = join(tempDir(t), 'settings.json');
+  const store = new SettingsStore(file, () => defaultSettings(prefillRemote('https://203.0.113.7/'), '/home/a'),
+    () => undefined);
+  assert.equal(serverChosen(store.get()), false);
+  assert.equal(store.get().server.remoteUrl, 'https://203.0.113.7/');
+  assert.equal(prefillRemote(null).remoteUrl, null);
+  assert.equal(prefillRemote('http://bad').remoteUrl, null);
+  // 11-08 那一版自动默认成这台电脑、没记「选过」：照第一次打开处理，再问一次。
+  writeFileSync(file, JSON.stringify({ schema: 1, server: { mode: 'this_computer', remoteUrl: null },
+    notifications: true, devicePaused: false, roots: ['/home/a'] }));
+  assert.equal(serverChosen(new SettingsStore(file, () => defaultSettings(prefillRemote(null), '/home/a'),
+    () => undefined).get()), false);
 });
 
 test('远程地址只收 https 源地址，没写协议的补上', () => {
@@ -41,11 +45,12 @@ test('远程地址只收 https 源地址，没写协议的补上', () => {
   }
 });
 
-test('窗口载入的地址：这台电脑是本机端口；远程没填过时先回本机', () => {
+test('窗口载入的地址：这台电脑是本机端口；远程没填过地址是 null（回开始页），不悄悄回落本机', () => {
   assert.equal(targetUrl({ mode: 'this_computer', remoteUrl: 'https://a.b/' }, true), LOCAL_SERVER_URL);
   assert.equal(targetUrl({ mode: 'remote', remoteUrl: 'https://a.b/' }, true), 'https://a.b/');
-  assert.equal(targetUrl({ mode: 'remote', remoteUrl: null }, true), LOCAL_SERVER_URL);
+  assert.equal(targetUrl({ mode: 'remote', remoteUrl: null }, true), null);
   assert.equal(targetUrl({ mode: 'remote', remoteUrl: null }, false), null);
+  assert.equal(targetUrl({ mode: 'this_computer', remoteUrl: 'https://a.b/' }, false), null);
   assert.ok(sameOrigin('https://a.b/#/notes', 'https://a.b/'));
   assert.ok(!sameOrigin('https://evil.a.b/', 'https://a.b/'));
   assert.ok(!sameOrigin('not a url', 'https://a.b/'));

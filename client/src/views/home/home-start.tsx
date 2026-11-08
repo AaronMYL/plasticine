@@ -1,4 +1,5 @@
 // 还没有工作时给一个直接开始的入口；发出的那句在已有对话里继续，不留一个看不到答案的首页输入框。
+// 11-08 首次使用流程：主线里有欢迎消息（建账号时服务端放的，下面带几个开始）时不再出这一块——开始在主线里。
 
 import { useState, type ReactNode } from 'react';
 import { LINE_MESSAGE_MAX_CHARS } from '../../api/shared.ts';
@@ -12,10 +13,12 @@ export function HomeStart({ phone }: { phone: boolean }): ReactNode {
   const { inlineDrafts, shellPrefs } = useClientState();
   const list = useStore(live.lines.list);
   const asks = useStore(live.asks.store);
+  const thread = useStore(live.lines.thread('main'));
   const key = 'home:start';
   const text = useStore(inlineDrafts.store).get(key) ?? '';
   const [busy, setBusy] = useState(false);
   const main = list.lines.find((line) => line.kind === 'main');
+  if (thread.messages.some((message) => message.role === 'welcome')) return null;
   if (!list.loaded || list.error !== null || !asks.loaded || asks.error !== null || asks.open.length > 0
     || list.lines.some((line) => line.kind === 'background') || main?.lastAnswer != null
     || main !== undefined && main.status !== 'idle') return null;

@@ -4,6 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import type { NetInvite } from '../../shared/net-wire.ts';
 import type { NetworkTaskExecution } from '../../shared/api/contacts.ts';
+import type { HandleAvailability } from '../../shared/api/account.ts';
 import type { Contact, ContactMessage, Group, GroupMessage, GroupTask, NetworkIdentity,
   NetworkTask } from '../../shared/state.ts';
 import type { AskDesk, AskResolver, Changes } from '../attention/index.ts';
@@ -18,7 +19,7 @@ import { changeOf, groupChange, requireContact, requireIdentity, signerOf, type 
 import { cancelGroupTask, claimGroupTask, offerGroupTask, type GroupTaskInput } from './group-tasks.ts';
 import { afterGroup, createGroup, leaveGroup, postGroupMessage, requireGroup, updateGroup, type CreateGroupInput,
   type UpdateGroupInput } from './groups.ts';
-import { broadcastProfile } from './profile.ts';
+import { broadcastProfile, renameProfile } from './profile.ts';
 import { generateIdentityKeys } from './crypto.ts';
 import { NetworkError } from './errors.ts';
 import { Inbound } from './inbound.ts';
@@ -309,6 +310,27 @@ export class NetworkService {
   }
 
   // ---------- 头像 ----------
+
+  /** 改网络上的名字，发给每个好友（主人账号改名时一起改，app/account.ts）。 */
+  rename(displayName: string): NetworkIdentity {
+    return renameProfile(this.#context, displayName);
+  }
+
+  /**
+   * 起 @账号前问中继这个名字能不能用（2026-11-08 自助注册）。中继连不上、出错、太旧没有这个接口都回 unreachable：
+   * 界面照常让他填，真注册时中继再说。
+   */
+  async handleAvailability(handle: string): Promise<HandleAvailability> {
+    try {
+      return await this.#client(this.relayUrl()).handleAvailability(handle);
+    } catch (error) {
+      if (error instanceof RelayCallError) {
+        safeLog('warn', 'network_handle_check_failed', { category: errorCategory(error) });
+        return { handle, available: false, reason: 'unreachable' };
+      }
+      throw error;
+    }
+  }
 
   /** 换头像（data URL，界面裁好的圆形小图；null = 去掉），加密发给每个好友。 */
   setAvatar(avatar: string | null): NetworkIdentity {

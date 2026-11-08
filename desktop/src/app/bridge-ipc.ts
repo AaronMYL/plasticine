@@ -1,5 +1,6 @@
 // 界面 → 壳的 ipc：每条都先认人（只收界面视图里本站主 frame 发的；开始页只能用「本体跑在哪」那两条），再按共享 schema
-// 校验参数，不过就丢掉并记一笔，不往下做。壳 → 界面的事件在 ui-events.ts。
+// 校验参数，不过就丢掉并记一笔，不往下做。本机令牌另按发起方当前地址核一次（只给本机同源）。壳 → 界面的事件在
+// ui-events.ts。
 
 import { ipcMain, type IpcMainEvent, type IpcMainInvokeEvent, type WebContents } from 'electron';
 import { Value } from 'typebox/value';
@@ -20,6 +21,9 @@ const NOTIFY_BODY_MAX = 2_000;
 const HASH_MAX = 500;
 const TAB_ID_MAX = 100;
 const URL_MAX = 4_096;
+/** 等登录回调的端口：只收非特权端口（Codex 是 1455）。 */
+const CAPTURE_PORT_MIN = 1024;
+const CAPTURE_PORT_MAX = 65_535;
 
 export interface ShellServices {
   info(): { version: string; platform: 'macos' | 'windows' | 'linux'; tools: string[] };
@@ -32,6 +36,12 @@ export interface ShellServices {
   setNotifications(enabled: boolean): boolean;
   serverStatus(): unknown;
   chooseServer(choice: ServerChoice): Promise<unknown>;
+  /** 本机令牌：frameUrl 是发起方主 frame 当前的地址，不是本机同源回 null（account-client.ts 的 localGrantFor）。 */
+  localGrant(frameUrl: string): string | null;
+  showWelcome(): void;
+  openExternal(url: string): void;
+  capture(port: number, timeoutMs: number): Promise<string | null>;
+  cancelCapture(): void;
   updateStatus(): unknown;
   updateCheck(): Promise<unknown>;
   updateInstall(): void;
@@ -60,6 +70,19 @@ export interface ShellServices {
 }
 
 type Sender = IpcMainEvent | IpcMainInvokeEvent;
+
+/** 交给系统浏览器的只收 http(s) 网址。 */
+export function webAddress(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:';
+  } catch (error) {
+    if (error instanceof TypeError) {
+      return false;
+    }
+    throw error;
+  }
+}
 
 function text(value: unknown, max: number): value is string {
   return typeof value === 'string' && value.length > 0 && value.length <= max;
@@ -125,6 +148,20 @@ export function registerBridge(services: ShellServices): void {
   handle(CHANNELS.serverStatus, () => services.serverStatus(), true);
   handle(CHANNELS.serverChoose, (choice) => (Value.Check(ServerChoiceSchema, choice)
     ? services.chooseServer(choice) : invalid(CHANNELS.serverChoose)), true);
+  ipcMain.handle(CHANNELS.serverLocalGrant, (event) => (trusted(services, event)
+    ? services.localGrant(event.senderFrame?.url ?? '') : null));
+  on(CHANNELS.serverWelcome, () => services.showWelcome());
+  on(CHANNELS.externalOpen, (url) => {
+    if (text(url, URL_MAX) && webAddress(url)) {
+      services.openExternal(url);
+    } else {
+      services.log('丢掉一个不是 http(s) 的外部链接。');
+    }
+  });
+  handle(CHANNELS.externalCapture, (port, timeoutMs) => (Number.isInteger(port) && Number(port) >= CAPTURE_PORT_MIN
+    && Number(port) <= CAPTURE_PORT_MAX && Number.isInteger(timeoutMs) && Number(timeoutMs) > 0
+    ? services.capture(Number(port), Number(timeoutMs)) : invalid(CHANNELS.externalCapture)));
+  on(CHANNELS.externalCancel, () => services.cancelCapture());
   handle(CHANNELS.updateStatus, () => services.updateStatus());
   handle(CHANNELS.updateCheck, () => services.updateCheck());
   on(CHANNELS.updateInstall, () => services.updateInstall());

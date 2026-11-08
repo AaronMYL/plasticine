@@ -1,82 +1,25 @@
-// 假的配对码登录：服务端生成一次性配对码，设备输入后拿到长期会话（第 90 条 ②）。
-// 配对码只在内存里，用一次就作废。和真服务端一样：带 requestId 的配对，同一 requestId + 同一个码
-// 在 10 分钟内重发，给那次登记的设备再开一个会话，不新建设备；换了 requestId 就是码用过了。
+// 假的会话和设备：读当前会话、退出、设备列表和撤销。11-08 去掉配对码：登记设备、开会话由 fake-account.ts
+// 建账号 / 密码登录 / 本机登录时调 signInAs。
 
 import type { DevicesApi, SessionApi } from '../client.ts';
 import { ApiError, unauthorizedError } from '../errors.ts';
-import { PAIRING_REPLAY_WINDOW_MS, type BrowserPairingCodeResponse, type BrowserPairingStatus } from '../shared.ts';
-import type { DeviceView, PairDeviceRequest, SessionView } from '../types.ts';
-import { faultError, type FaultPlan } from './faults.ts';
+import type { DeviceView, SessionView } from '../types.ts';
 
-/** 一次带 requestId 的配对登记了哪台设备，用的哪个码。 */
-interface PairingRecord {
-  code: string;
-  deviceId: string;
-  at: number;
-}
-
-interface Invitation extends BrowserPairingCodeResponse {
-  deviceId: string | null;
-}
-
-// 与服务端相同的八位 Crockford 字母数字；假的值只按序号生成，测试不用随机猜。
-const CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-const CODE_STRIDE = 7919;
 // 会话的有效期和真服务端一样写 400 天（浏览器 cookie 的上限），假实现里只是显示用。
 const SESSION_TTL_MS = 400 * 24 * 60 * 60 * 1000;
 
 export class FakeSession implements SessionApi, DevicesApi {
   private session: SessionView | null = null;
-  private readonly codes = new Map<string, Invitation>();
   private readonly devices = new Map<string, DeviceView>();
-  private readonly pairings = new Map<string, PairingRecord>();
   private readonly unauthorizedListeners = new Set<() => void>();
   private sequence = 0;
   private readonly now: () => Date;
-  private readonly faults: FaultPlan | null;
 
-  constructor(now: () => Date, faults: FaultPlan | null = null) {
+  constructor(now: () => Date) {
     this.now = now;
-    this.faults = faults;
   }
 
   async current(): Promise<SessionView | null> {
-    return this.session;
-  }
-
-  async pair(input: PairDeviceRequest): Promise<SessionView> {
-    const fault = this.faults?.take('pair');
-    if (fault !== undefined && (fault.kind === 'failed' || !fault.landed)) {
-      throw faultError('pair', fault);
-    }
-    const code = normalizeCode(input.code);
-    const replayed = this.replay(input.requestId, code);
-    const invitation = this.codes.get(code);
-    if (replayed !== undefined) {
-      this.session = replayed;
-    } else if (invitation !== undefined && invitation.deviceId === null
-      && Date.parse(invitation.expiresAt) > this.now().getTime()) {
-      this.session = this.open(this.register(input.deviceName));
-      invitation.deviceId = this.session.device.id;
-      if (input.requestId !== undefined) {
-        this.pairings.set(input.requestId, { code, deviceId: this.session.device.id, at: this.now().getTime() });
-      }
-    } else {
-      throw new ApiError({
-        kind: 'invalid',
-        code: invitation !== undefined && Date.parse(invitation.expiresAt) <= this.now().getTime()
-          ? 'pairing_code_expired' : 'pairing_code_invalid',
-        message: invitation !== undefined && Date.parse(invitation.expiresAt) <= this.now().getTime()
-          ? '这份配对邀请已过期。' : '配对码不对或已经用过。',
-        next: '在原设备重新生成配对邀请。',
-        field: 'code',
-        status: 401,
-      });
-    }
-    if (fault !== undefined) {
-      // 回执丢了，但配对已经落地：码用掉了，设备登记了。
-      throw faultError('pair', fault);
-    }
     return this.session;
   }
 
@@ -88,31 +31,6 @@ export class FakeSession implements SessionApi, DevicesApi {
     this.require();
     const currentId = this.session?.device.id;
     return [...this.devices.values()].map((device) => ({ ...device, current: device.id === currentId }));
-  }
-
-  async issuePairingCode(): Promise<BrowserPairingCodeResponse> {
-    this.require();
-    const invitation = this.newInvitation();
-    return { id: invitation.id, code: invitation.code, issuedAt: invitation.issuedAt,
-      expiresAt: invitation.expiresAt };
-  }
-
-  async pairingStatus(id: string): Promise<BrowserPairingStatus> {
-    this.require();
-    const invitation = [...this.codes.values()].find((entry) => entry.id === id);
-    if (invitation === undefined) {
-      throw new ApiError({ kind: 'not_found', code: 'not_found', message: '没有这份配对邀请。', status: 404 });
-    }
-    const device = invitation.deviceId === null ? undefined : this.devices.get(invitation.deviceId);
-    let status: BrowserPairingStatus['status'] = 'waiting';
-    if (invitation.deviceId !== null) {
-      status = device !== undefined && device.revokedAt === null ? 'connected' : 'revoked';
-    } else if (Date.parse(invitation.expiresAt) <= this.now().getTime()) {
-      status = 'expired';
-    }
-    return { id, expiresAt: invitation.expiresAt, checkedAt: this.now().toISOString(), status,
-      device: status === 'connected' && device !== undefined
-        ? { ...device, current: device.id === this.session?.device.id } : null };
   }
 
   async revoke(id: string): Promise<DeviceView> {
@@ -130,29 +48,15 @@ export class FakeSession implements SessionApi, DevicesApi {
     return { ...revoked, current: self };
   }
 
-  /** 服务端那一侧：生成一个一次性配对码。 */
-  issueCode(): string {
-    return this.newInvitation().code;
-  }
-
-  private newInvitation(): Invitation {
-    this.sequence += 1;
-    let value = this.sequence * CODE_STRIDE;
-    let raw = '';
-    for (let digit = 0; digit < 8; digit += 1) {
-      raw = CODE_ALPHABET[value % CODE_ALPHABET.length] + raw;
-      value = Math.floor(value / CODE_ALPHABET.length);
-    }
-    const invitation: Invitation = { id: `pair_${this.sequence}`, code: `${raw.slice(0, 4)}-${raw.slice(4)}`,
-      issuedAt: this.now().toISOString(),
-      expiresAt: new Date(this.now().getTime() + PAIRING_REPLAY_WINDOW_MS).toISOString(), deviceId: null };
-    this.codes.set(raw, invitation);
-    return invitation;
-  }
-
-  /** 测试：再登记一台已配对的设备（不切换当前会话）。 */
+  /** 测试：再登记一台已登录的设备（不切换当前会话）。 */
   seedDevice(deviceName: string): DeviceView {
     return this.register(deviceName);
+  }
+
+  /** 建账号、密码登录（fake-account.ts）：登记这台设备并换成它的会话。 */
+  signInAs(deviceName: string, local = false): SessionView {
+    this.session = { ...this.open(this.register(deviceName, local)), actor: 'user' };
+    return this.session;
   }
 
   /** 开发预置：直接有一个会话。 */
@@ -206,29 +110,7 @@ export class FakeSession implements SessionApi, DevicesApi {
     };
   }
 
-  /** 同一次配对的重发：那台设备还在（没撤销）就再开一个会话。 */
-  private replay(requestId: string | undefined, code: string): SessionView | undefined {
-    if (requestId === undefined) {
-      return undefined;
-    }
-    const record = this.pairings.get(requestId);
-    if (record === undefined || this.now().getTime() - record.at > PAIRING_REPLAY_WINDOW_MS) {
-      return undefined;
-    }
-    if (record.code !== code) {
-      throw new ApiError({
-        kind: 'failed',
-        code: 'request_id_reused',
-        message: '这个 request_id 已经用在另一个操作上了。',
-        field: 'requestId',
-        status: 409,
-      });
-    }
-    const device = this.devices.get(record.deviceId);
-    return device === undefined || device.revokedAt !== null ? undefined : this.open(device);
-  }
-
-  private register(deviceName: string): DeviceView {
+  private register(deviceName: string, local = false): DeviceView {
     this.sequence += 1;
     const at = this.now().toISOString();
     const device: DeviceView = {
@@ -238,6 +120,7 @@ export class FakeSession implements SessionApi, DevicesApi {
       lastSeenAt: at,
       revokedAt: null,
       current: false,
+      ...(local ? { local: true } : {}),
     };
     this.devices.set(device.id, device);
     return device;
@@ -248,8 +131,4 @@ export class FakeSession implements SessionApi, DevicesApi {
     const expiresAt = new Date(at.getTime() + SESSION_TTL_MS).toISOString();
     return { device: { ...device, current: true }, session: { createdAt: at.toISOString(), expiresAt } };
   }
-}
-
-function normalizeCode(code: string): string {
-  return code.toUpperCase().replace(/[\s-]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
 }

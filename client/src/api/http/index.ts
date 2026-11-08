@@ -9,6 +9,7 @@ import { HttpLines, HttpModelProviders } from './lines.ts';
 import { HttpTasks } from './tasks.ts';
 import { HttpTranslate } from './translate.ts';
 import type { PlasticineApi } from '../client.ts';
+import { HttpAccount } from './account.ts';
 import { HttpAgreements } from './agreements.ts';
 import { HttpAttachments } from './attachments.ts';
 import { HttpBooks } from './books.ts';
@@ -73,6 +74,7 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     systems: new HttpSystems(transport),
     translate: new HttpTranslate(transport),
     session,
+    account: new HttpAccount(transport),
     devices: new HttpDevices(transport),
     attachments: new HttpAttachments(transport),
     moneyDrafts: new HttpMoneyDrafts(transport),

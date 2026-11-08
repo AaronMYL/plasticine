@@ -18,6 +18,7 @@ const COLUMNS: ColumnMap = {
   firstSeenAt: 'text',
   lastSeenAt: 'text',
   revokedAt: 'text',
+  local: 'boolean',
 };
 
 const SPEC: StoreSpec<typeof DeviceSchema, typeof DeviceInputSchema, typeof DevicePatchSchema> = {
@@ -26,7 +27,7 @@ const SPEC: StoreSpec<typeof DeviceSchema, typeof DeviceInputSchema, typeof Devi
   input: DeviceInputSchema,
   patch: DevicePatchSchema,
   columns: COLUMNS,
-  defaults: {},
+  defaults: { local: false },
 };
 
 export function createDeviceStore(context: StoreContext) {

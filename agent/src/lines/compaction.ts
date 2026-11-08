@@ -66,7 +66,7 @@ export function messageTokens(message: AgentMessage): number {
     });
     return textTokens(parts.join(''));
   }
-  if (message.role === 'lineReport' || message.role === 'notice') {
+  if (message.role === 'lineReport' || message.role === 'notice' || message.role === 'welcome') {
     return textTokens(message.text);
   }
   if (message.role === 'lineSummary') {
@@ -87,10 +87,10 @@ export function contextTokens(messages: readonly AgentMessage[]): number {
   return messages.reduce((sum, message) => sum + messageTokens(message), 0);
 }
 
-/** 能从哪里切：用户的话、回答、贴回来的结果、系统通知；工具结果要跟着它的调用，不能从它切。 */
+/** 能从哪里切：用户的话、回答、贴回来的结果、系统通知、欢迎；工具结果要跟着它的调用，不能从它切。 */
 function cutPoint(message: AgentMessage): boolean {
   return message.role === 'user' || message.role === 'assistant' || message.role === 'lineReport'
-    || message.role === 'notice';
+    || message.role === 'notice' || message.role === 'welcome';
 }
 
 /** 从新往旧攒够 keep 个 token，在那附近（不早于它）找一个能切的地方；返回保留部分的第一条下标。 */

@@ -458,3 +458,8 @@
 .shell[data-phone='true'] .line-conv .msg-user-actions {
   display: none;
 }
+
+/* 主线里只有建账号时的那条欢迎（11-08 设计稿 First-Main）：从顶上排，不贴底。 */
+.line-scroll[data-welcome-only='true'] > .line-column {
+  margin-top: 0;
+}

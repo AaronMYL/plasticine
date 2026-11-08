@@ -1,19 +1,63 @@
-// 有会话才进壳；任何请求拿到 401 就回到配对页（《实施方案》第 5 节约定 3）。
-// 配对会话即是本人的确认凭据，不再初始化另一层浏览器签名钥匙。
+// 有会话才进壳；任何请求拿到 401 就回到登录页（《实施方案》第 5 节约定 3）。
+// 11-08 首次使用流程：没登录时先读 /v2/account/state——还没有主人（setup = needed）直接到建账号页；
+// 已经有主人的到登录页（@账号 + 密码）。桌面客户端里载入的是壳拉起的本机本体时，凭本机令牌直接登录，不问密码。
+// 读不到账号状态（旧服务端、断网）不挡：照样给登录页，登录时服务端自己说清。
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApi } from '../api/context.tsx';
 import { errorText } from '../api/errors.ts';
-import type { SessionView } from '../api/types.ts';
+import type { PlasticineApi } from '../api/client.ts';
+import type { AccountState, SessionView } from '../api/shared.ts';
 import { useClientState } from '../state/context.tsx';
 import { LoginView } from '../views/login/login-view.tsx';
-import { clearPairingLink } from '../views/login/pairing-link.ts';
+import { suggestedDeviceName } from '../views/onboard/onboard-parts.tsx';
+import { SetupView } from '../views/onboard/setup-view.tsx';
+import { hostLocalGrant } from './host.ts';
 
 type Gate =
   | { status: 'checking' }
-  | { status: 'signed-out' }
+  | { status: 'setup' }
+  | { status: 'signed-out'; account: AccountState | null }
   | { status: 'signed-in' }
   | { status: 'error'; error: string };
+
+/** 没登录时去哪：建账号、本机直接登录，或登录页。 */
+async function signedOutGate(api: PlasticineApi): Promise<Gate | SessionView> {
+  let account: AccountState | null = null;
+  try {
+    account = await api.account.state();
+  } catch (cause) {
+    console.warn('没读到账号状态，照样给登录页', cause);
+  }
+  if (account?.setup === 'needed') {
+    return { status: 'setup' };
+  }
+  const token = await hostLocalGrant();
+  if (token !== null) {
+    try {
+      return await api.account.signInLocal(suggestedDeviceName(), token);
+    } catch (cause) {
+      console.warn('本机直接登录没成，给登录页', cause);
+    }
+  }
+  return { status: 'signed-out', account };
+}
+
+function isSession(value: Gate | SessionView): value is SessionView {
+  return 'device' in value;
+}
+
+/**
+ * 已经登录着却打开了登录 / 建账号页（桌面客户端连远程时直接载入 <地址>/#/login）：换成首页，不停在登录页。
+ * 建账号页刚建完的那次已经换成了主线。
+ */
+function leaveSignInHash(): void {
+  const hash = window.location.hash;
+  if (hash.startsWith('#/login') || hash.startsWith('#/setup')) {
+    const { pathname, search } = window.location;
+    window.history.replaceState(window.history.state, '', `${pathname}${search}#/today`);
+  }
+}
 
 export function SessionGate({ children }: { children: ReactNode }): ReactNode {
   const api = useApi();
@@ -23,27 +67,31 @@ export function SessionGate({ children }: { children: ReactNode }): ReactNode {
 
   useEffect(() => {
     let live = true;
-    api.session.current().then(
-      (session) => {
-        if (!live) {
-          return;
-        }
-        setGate({ status: session === null ? 'signed-out' : 'signed-in' });
-        if (session !== null) {
-          clearPairingLink();
-          notesCache.activate(session.device.id);
-        } else { notesCache.clear(); }
-      },
-      (cause: unknown) => {
-        if (live) {
-          setGate({ status: 'error', error: errorText(cause) });
-        }
-      },
-    );
+    const settle = (next: Gate | SessionView): void => {
+      if (!live) return;
+      if (isSession(next)) {
+        leaveSignInHash();
+        notesCache.activate(next.device.id);
+        setGate({ status: 'signed-in' });
+      } else {
+        if (next.status !== 'signed-in') notesCache.clear();
+        setGate(next);
+      }
+    };
     const signedOut = (): void => {
       notesCache.clear();
-      setGate({ status: 'signed-out' });
+      setGate({ status: 'checking' });
+      void signedOutGate(api).then(settle);
     };
+    api.session.current().then(
+      (session) => {
+        if (session !== null) settle(session);
+        else void signedOutGate(api).then(settle);
+      },
+      (cause: unknown) => {
+        if (live) setGate({ status: 'error', error: errorText(cause) });
+      },
+    );
     const stop = api.onUnauthorized(signedOut);
     window.addEventListener('plasticine:logout', signedOut);
     return () => {
@@ -53,7 +101,8 @@ export function SessionGate({ children }: { children: ReactNode }): ReactNode {
     };
   }, [api, notesCache, attempt]);
 
-  const onPaired = (session: SessionView): void => {
+  const onSignedIn = (session: SessionView): void => {
+    leaveSignInHash();
     notesCache.activate(session.device.id);
     setGate({ status: 'signed-in' });
   };
@@ -71,10 +120,11 @@ export function SessionGate({ children }: { children: ReactNode }): ReactNode {
       </p>
     );
   }
+  if (gate.status === 'setup') {
+    return <SetupView onSignedIn={onSignedIn} />;
+  }
   if (gate.status === 'signed-out') {
-    return <LoginView onPaired={onPaired} onSessionOpened={(session) => {
-      notesCache.activate(session.device.id);
-    }} />;
+    return <LoginView account={gate.account} onSignedIn={onSignedIn} />;
   }
   return children;
 }

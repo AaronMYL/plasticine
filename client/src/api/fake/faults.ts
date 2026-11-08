@@ -13,7 +13,6 @@ export type FaultOperation =
   | 'get'
   | 'lookup'
   | 'answerWidget'
-  | 'pair'
   | 'command'
   | 'answer'
   | 'ask_feedback'
@@ -82,7 +81,6 @@ const OPERATION_LABELS: Record<FaultOperation, string> = {
   get: '读笔记',
   lookup: '核实',
   answerWidget: '作答',
-  pair: '配对',
   command: '任务命令',
   answer: '作答',
   ask_feedback: '问题反馈',

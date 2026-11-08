@@ -1,4 +1,4 @@
-// 壳自己的设置（userData/settings.json）：本体跑在哪、系统通知开关、设备服务暂停、授权目录。整份读、整份写，
+// 壳自己的设置（userData/settings.json）：本体跑在哪（选过没有）、系统通知开关、设备服务暂停、授权目录。整份读、整份写，
 // 写时先写同目录临时文件再改名。读到坏文件不覆盖：挪成 settings.json.broken-<时间> 留着，再用默认值（不删数据）。
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
@@ -13,6 +13,11 @@ const ROOTS_MAX = 50;
 export const DesktopSettingsSchema = Type.Object({
   schema: Type.Literal(1),
   server: ServerChoiceSchema,
+  /**
+   * 他在开始页二选一过没有（11-08）。没有这一项的旧文件是 11-08 那一版自动默认成这台电脑写下的，照没选过处理，
+   * 再问一次。
+   */
+  serverChosen: Type.Optional(Type.Boolean()),
   notifications: Type.Boolean(),
   devicePaused: Type.Boolean(),
   /** 本机授权目录：文件动作和命令的工作目录只在这些目录里；空表示不授权。默认是整个家目录（和 Mac 壳一样）。 */
@@ -21,7 +26,11 @@ export const DesktopSettingsSchema = Type.Object({
 export type DesktopSettings = Static<typeof DesktopSettingsSchema>;
 
 export function defaultSettings(server: ServerChoice, home: string): DesktopSettings {
-  return { schema: 1, server, notifications: true, devicePaused: false, roots: [home] };
+  return { schema: 1, server, serverChosen: false, notifications: true, devicePaused: false, roots: [home] };
+}
+
+export function serverChosen(settings: DesktopSettings): boolean {
+  return settings.serverChosen === true;
 }
 
 export class SettingsStore {

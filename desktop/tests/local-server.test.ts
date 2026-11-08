@@ -23,13 +23,16 @@ class FakeChild extends EventEmitter {
   }
 }
 
-function server(options: { healthy: boolean[] }): { local: LocalServer; children: FakeChild[]; logs: string[] } {
+function server(options: { healthy: boolean[] }): { local: LocalServer; children: FakeChild[]; logs: string[];
+  tokens: string[]; } {
   const children: FakeChild[] = [];
+  const tokens: string[] = [];
   const logs: string[] = [];
   let checks = 0;
   const local = new LocalServer({
-    launch: () => {
+    launch: (token) => {
       const child = new FakeChild();
+      tokens.push(token);
       children.push(child);
       return child as unknown as ChildProcess;
     },
@@ -37,7 +40,7 @@ function server(options: { healthy: boolean[] }): { local: LocalServer; children
     now: () => Date.now(),
     log: (line) => logs.push(line),
   }, true);
-  return { local, children, logs };
+  return { local, children, logs, tokens };
 }
 
 test('退避：1、2、4…30 秒，稳定跑满一分钟归零', () => {
@@ -92,4 +95,27 @@ test('没带本体：不拉起，状态是 absent 并说去选远程', async () 
   assert.equal(await local.start(), false);
   assert.equal(local.state, 'absent');
   assert.match(local.problem ?? '', /远程/);
+});
+
+test('每次起本体都换一个本机令牌，经环境变量交给本体，停了就没有', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { local, children, tokens, logs } = server({ healthy: [true, true] });
+  assert.equal(local.token, null);
+  await local.start();
+  assert.equal(tokens.length, 1);
+  assert.match(tokens[0] ?? '', /^[A-Za-z0-9_-]{43}$/);
+  assert.equal(local.token, tokens[0]);
+  children[0]?.emit('exit', 1, null);
+  assert.equal(local.token, null);
+  t.mock.timers.tick(1_000);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(tokens.length, 2);
+  assert.notEqual(tokens[1], tokens[0]);
+  assert.equal(local.token, tokens[1]);
+  await local.stop();
+  assert.equal(local.token, null);
+  assert.ok(logs.every((line) => !tokens.some((token) => line.includes(token))));
+  const environment = serverEnvironment({ platform: 'darwin', serverDirectory: '/app/server', stateDirectory: '/s',
+    base: {}, join, localToken: 'fake-local-token' });
+  assert.equal(environment.PLASTICINE_LOCAL_TOKEN, 'fake-local-token');
 });

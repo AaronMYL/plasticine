@@ -165,7 +165,7 @@ install_units() {
     sed -e "s#/opt/plasticine#$APP#g" -e "s#/var/lib/plasticine#$DATA#g" -e "s#/etc/plasticine#$CONF#g" \
       "$APP/current/scripts/packages/linux/$unit" > "$UNITS/$unit"
   done
-  sed -e "s#/opt/plasticine#$APP#g" -e "s#/etc/plasticine#$CONF#g" \
+  sed -e "s#/opt/plasticine#$APP#g" -e "s#/etc/plasticine#$CONF#g" -e "s#/var/lib/plasticine#$DATA#g" \
     "$APP/current/scripts/packages/linux/plasticine-ctl.sh" > "$BIN/plasticine"
   chmod 755 "$BIN/plasticine"
   systemctl daemon-reload
@@ -192,6 +192,24 @@ wait_healthy() {
   die "服务 $HEALTH_SECONDS 秒内没答上健康检查。看日志：journalctl -u plasticine -n 100"
 }
 
+# 以 plasticine 用户跑一条命令（库归它）：有 runuser 用它（util-linux，systemd 发行版都有），没有退到 sudo。
+as_service_user() {
+  if command -v runuser >/dev/null 2>&1; then
+    runuser -u "$SERVICE_USER" -- "$@"
+  else
+    sudo -u "$SERVICE_USER" -- "$@"
+  fi
+}
+
+# 2026-11-08《首次使用流程》：还没有主人就打印一次性建账号链接（30 分钟、用一次）；已经有主人它自己说一句。
+print_setup_link() {
+  port=$1
+  link_cli="$APP/current/agent/src/app/setup-link-cli.ts"
+  [ -f "$link_cli" ] || return 0
+  as_service_user env PLASTICINE_STATE="$DATA/state" PLASTICINE_PORT="$port" "$APP/node/bin/node" "$link_cli" >&2 \
+    || say "建账号链接这次没生成出来；稍后运行 sudo plasticine setup-link 再拿一条。"
+}
+
 install() {
   command -v curl >/dev/null 2>&1 || die "需要 curl"
   command -v tar >/dev/null 2>&1 || die "需要 tar"
@@ -206,11 +224,16 @@ install() {
   wait_healthy
   port=$(configured_port)
   say ""
-  say "Plasticine $(readlink "$APP/current" | sed 's#versions/##') 已经在运行（只听 127.0.0.1:$port）。"
-  say "在你自己的电脑上开一条 SSH 隧道，再用浏览器打开："
-  say "  ssh -N -L $port:127.0.0.1:$port <用户>@<这台服务器>"
-  say "  http://127.0.0.1:$port/"
-  say "每天自动更新；手动：sudo plasticine update；回到上一版：sudo plasticine rollback"
+  say "✓ Plasticine $(readlink "$APP/current" | sed 's#versions/##') 装好了，正在运行（只听 127.0.0.1:$port）"
+  say ""
+  print_setup_link "$port"
+  say "  这台服务器没有图形界面的话，先在你电脑上运行："
+  say "  ssh -L $port:127.0.0.1:$port <用户>@<这台服务器>"
+  say ""
+  say "以后："
+  say "  plasticine password   重设密码"
+  say "  plasticine status     看运行状态"
+  say "  每天自动更新；手动 sudo plasticine update，回到上一版 sudo plasticine rollback"
 }
 
 uninstall() {

@@ -1,6 +1,6 @@
-// 第一次打开 Electron 版时，接着用 Swift 版 Mac App 的选择（他手动装一次就行，第 18 条）：本体跑在哪、远程地址。
-// Swift 版存在 com.plasticine.app 的 defaults 里（serverMode：thisMac / remote；server：https 地址）。只读，不改不删。
-// 以前装过（有 defaults 或 Plasticine 的数据目录）而没选过的，照 Swift 版的规矩保持远程。
+// 第一次打开 Electron 版时读一下 Swift 版 Mac App 存的远程地址，给开始页「连到我的 Plasticine」那一格预填（11-08 起
+// 不再拿它替他选，开始页先二选一）。Swift 版存在 com.plasticine.app 的 defaults 里（serverMode：thisMac / remote；
+// server：https 地址）。只读，不改不删。
 
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';

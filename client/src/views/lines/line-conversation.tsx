@@ -32,6 +32,7 @@ import { activityText, lineElapsed, pausedText, useNow } from './line-time.ts';
 import type { LineThreadData } from './line-thread-data.ts';
 import { buildTimeline, lastTurn, seqRange, type TimelineItem } from './timeline.ts';
 import { TurnView } from './turn-view.tsx';
+import { WelcomeMessage } from './welcome-message.tsx';
 import { WorkLineAction } from './work-status.tsx';
 import './lines.css';
 import './chat-details.css';
@@ -40,7 +41,8 @@ import './chat-details.css';
 const STICK_PX = 48;
 
 function itemTime(item: TimelineItem): string | null {
-  if (item.kind === 'user' || item.kind === 'input' || item.kind === 'report' || item.kind === 'notice') {
+  if (item.kind === 'user' || item.kind === 'input' || item.kind === 'report' || item.kind === 'notice'
+    || item.kind === 'welcome') {
     return item.message.createdAt;
   }
   if (item.kind === 'child') return item.line.createdAt;
@@ -118,6 +120,8 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
       return <SideLink lineId={item.lineId} title={item.title} />;
     case 'child':
       return <LineCard line={item.line} stopped={item.line.outcome === 'stopped'} />;
+    case 'welcome':
+      return <WelcomeMessage lineId={lineId} message={item.message} />;
     case 'notice':
       return <p className="line-notice" role="note" aria-label="系统通知" data-message-seq={item.message.seq}>
         <Icon name="bell" size={14} />
@@ -202,7 +206,9 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
     window.dispatchEvent(new Event(FOCUS_COMPOSER_EVENT));
   };
   const actions = useActionsFor(line, lineId);
-  const breaks = timeBreaks(items.map((item) => ({ at: itemTime(item) })), timeZone);
+  // 只有建账号时那条欢迎（设计稿 First-Main）：从上往下排、不画时间分隔，像 Plasticine 先开口。
+  const welcomeOnly = items.length === 1 && items[0]?.kind === 'welcome';
+  const breaks = welcomeOnly ? [] : timeBreaks(items.map((item) => ({ at: itemTime(item) })), timeZone);
   // 往上翻开时记下那时有几项；之后多出来的就是「n 条新消息」（回到底部清掉）。
   const [awayAt, setAwayAt] = useState<number | null>(null);
   const unread = awayAt === null ? 0 : items.length - awayAt;
@@ -246,7 +252,8 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
   return (
     <ThreadActionsProvider value={actions}>
     <section className="line-conv" aria-label="对话" data-kind={line?.kind}>
-      <div ref={scroller} className="line-scroll" role="log" aria-label="对话记录" onScroll={(event) => {
+      <div ref={scroller} className="line-scroll" role="log" aria-label="对话记录" data-welcome-only={welcomeOnly}
+        onScroll={(event) => {
         const element = event.currentTarget;
         atBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < STICK_PX;
         setAwayAt((away) => (atBottom.current ? null : away ?? items.length));

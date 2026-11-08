@@ -32,6 +32,11 @@ export const LAST_SEEN_WRITE_INTERVAL_MS = 60 * 1000;
 // guesses per 10 minutes make a lucky guess practically impossible while a typo or two still goes through.
 export const PAIRING_FAILURE_LIMIT = 10;
 export const PAIRING_FAILURE_WINDOW_MS = 10 * 60 * 1000;
+// 密码输错（2026-11-08 密码登录，沿用配对码的做法）：同一来源 10 分钟里错 10 次先停；所有来源加起来错 30 次也停，
+// 挡住换着地址猜。密码至少 8 位、scrypt 慢哈希，这个速度猜不中；输错一两次的人照常进。建账号链接输错也算在里面。
+export const PASSWORD_FAILURE_LIMIT = PAIRING_FAILURE_LIMIT;
+export const PASSWORD_FAILURE_WINDOW_MS = PAIRING_FAILURE_WINDOW_MS;
+export const PASSWORD_GLOBAL_FAILURE_LIMIT = 30;
 
 // Proxies drop a silent connection after about a minute; a comment line every 25 seconds keeps the stream open.
 export const SSE_HEARTBEAT_MS = 25 * 1000;

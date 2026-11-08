@@ -54,7 +54,7 @@ export class ApiError extends Error {
   }
 }
 
-export const UNAUTHORIZED_NEXT = '在服务器上运行配对脚本生成配对码，再在这台设备上输入。';
+export const UNAUTHORIZED_NEXT = '用 @账号和密码登录；忘了密码，在装着 Plasticine 的那台电脑上重设（服务器上运行 plasticine password）。';
 
 export function unauthorized(message = '这台设备还没登录，或者登录已失效。'): ApiError {
   return new ApiError(401, 'unauthorized', message, { next: UNAUTHORIZED_NEXT });

@@ -12,6 +12,7 @@ export function deviceView(device: Device, currentDeviceId: string | null): Devi
     lastSeenAt: device.lastSeenAt,
     revokedAt: device.revokedAt,
     current: device.id === currentDeviceId,
+    local: device.local === true,
   };
 }
 

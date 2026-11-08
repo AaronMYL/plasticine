@@ -20,20 +20,18 @@ describe('连接模型', () => {
     expect(await screen.findByRole('heading', { name: HOME_HEADING })).toBeTruthy();
   });
 
-  it('订阅登录：开授权页，浏览器没跳回来时贴回调地址，连上', async () => {
+  it('订阅登录（本机网页）：开授权页，那一行写「在浏览器里登录…」，本体自己收回调，不要贴地址', async () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
-    const app = await renderApp({ hash: '#/today', modelConnected: false });
+    await renderApp({ hash: '#/today', modelConnected: false });
     const page = await screen.findByRole('main', { name: '连接模型' });
-    fireEvent.click(within(within(page).getByRole('listitem', { name: 'ChatGPT' })).getByRole('button',
-      { name: '登录' }));
-    expect(await screen.findByText('在浏览器里登录 ChatGPT…')).toBeTruthy();
+    expect(within(page).getByRole('heading', { name: '连上一个模型' })).toBeTruthy();
+    const row = within(page).getByRole('listitem', { name: 'ChatGPT' });
+    fireEvent.click(within(row).getByRole('button', { name: '登录' }));
+    expect(await within(row).findByText('在浏览器里登录…')).toBeTruthy();
     await waitFor(() => expect(open).toHaveBeenCalled());
-    fireEvent.change(screen.getByLabelText('回调地址'),
-      { target: { value: 'http://localhost:1455/auth/callback?code=x' } });
-    fireEvent.click(screen.getByRole('button', { name: '继续' }));
-    expect(await screen.findByRole('img', { name: '已连接' })).toBeTruthy();
-    expect((await app.api.modelProviders.list()).providers.find((item) => item.id === 'openai')?.connected)
-      .toBe('oauth');
+    expect(screen.queryByLabelText('回调地址')).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: '取消登录' }));
+    expect(within(row).getByRole('button', { name: '登录' })).toBeTruthy();
   });
 
   it('设置 · AI：连着的每家一行写订阅还是 key；没连的在「添加提供商」里平级列出；断开先问一句', async () => {

@@ -109,7 +109,6 @@ import type {
   NoteMetaView,
   NoteSearch,
   NoteView,
-  PairDeviceRequest,
   PushKeyResponse,
   SaveNoteRequest,
   SessionView,
@@ -122,18 +121,12 @@ import type {
 export interface SessionApi {
   /** GET /v2/session：当前会话；没有会话时返回 null（不抛 401）。 */
   current(signal?: AbortSignal): Promise<SessionView | null>;
-  /**
-   * POST /v2/session：配对码换长期会话，并登记这台设备。码用一次就作废；带 requestId 时，同一次配对
-   * （同一 requestId + 同一个码）10 分钟内重发，服务端给已登记的那台设备再发一个会话，不新建设备。
-   */
-  pair(input: PairDeviceRequest): Promise<SessionView>;
+  // 11-08 去掉配对码：登录在 account-client.ts（@账号 + 密码、本机令牌）。
   /** DELETE /v2/session */
   logout(): Promise<void>;
 }
 
 export interface DevicesApi {
-  issuePairingCode(): Promise<import('./shared.ts').BrowserPairingCodeResponse>;
-  pairingStatus(id: string, signal?: AbortSignal): Promise<import('./shared.ts').BrowserPairingStatus>;
   /** GET /v2/devices：配对过的设备，撤销过的也在。 */
   list(signal?: AbortSignal): Promise<DeviceView[]>;
   /** DELETE /v2/devices/:id：撤销一台设备，它的会话一起失效；撤销两次结果一样。 */
@@ -338,6 +331,8 @@ export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
   clientUpdates: ClientUpdatesApi;
   backups: BackupsApi;
   session: SessionApi;
+  /** 11-08 首次使用流程：建账号、@账号 + 密码登录、设密码。 */
+  account: import('./account-client.ts').AccountApi;
   devices: DevicesApi;
   notes: NotesApi;
   books: import('./books-client.ts').BooksApi;

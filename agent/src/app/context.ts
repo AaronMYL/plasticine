@@ -17,6 +17,7 @@ import type { SkillStore } from '../skills/index.ts';
 import type { StateService } from '../state/index.ts';
 import type { BackupService, ClientReleases } from '../system/index.ts';
 import type { AttemptLimiter } from './attempt-limiter.ts';
+import type { SourceLimiter } from './source-limiter.ts';
 import { ApiError, unauthorized } from './api-error.ts';
 import type { EventHub } from './event-hub.ts';
 import type { M5bServices } from './m5b-services.ts';
@@ -46,8 +47,12 @@ export interface AppDeps {
   push: PushService;
   /** How often an open event stream re-checks its session and sends a keep-alive (config.ts SSE_HEARTBEAT_MS). */
   sseHeartbeatMs: number;
-  /** Wrong pairing codes, counted across all callers. */
+  /** Wrong node pairing codes, counted across all callers. */
   pairingLimiter: AttemptLimiter;
+  /** 密码、建账号链接输错（2026-11-08）：按来源和全部来源一起数。 */
+  passwordLimiter: SourceLimiter;
+  /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；没设是 null（服务器上的实例都是）。 */
+  localToken: string | null;
   now: () => Date;
   /** M4: 信息流、关注点、书签. */
   daily: Daily;
@@ -112,7 +117,7 @@ export interface Reply {
 export type HandlerResult = Reply | 'streamed';
 export type Handler = (context: RequestContext) => HandlerResult | Promise<HandlerResult>;
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface Route {
   method: HttpMethod;

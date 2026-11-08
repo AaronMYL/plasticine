@@ -1,0 +1,59 @@
+/* 设置 · 账号（11-08 设计稿 Settings-Account）：名字一行、密码一行、登录着的设备一行一台；行高 52，行底 1px --line，
+   名字和设备下面一行 12/18 --fg2。就地展开的表单缩进到和名字对齐。 */
+
+.account-profile .system-rows {
+  border-top: 1px solid var(--line);
+}
+
+.account-row,
+.account-devices .system-row {
+  min-height: 52px;
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+
+.account-device-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.account-device-meta {
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-devices .system-row > svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.account-edit {
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+  list-style: none;
+}
+
+.account-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+}
+
+.account-inline-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.account-logout {
+  align-self: flex-start;
+  margin-top: 12px;
+}

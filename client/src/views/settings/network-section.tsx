@@ -1,7 +1,7 @@
-// 设置 · 账号与网络（第 113 条）：这台 Plasticine 在 Cyber Hunter 网络上的账号。没加入：@handle、显示名、邀请码（中继本机
-// 的第一个账号不要这一栏），「加入」；
-// 加入了：@handle 和显示名、和中继同步出的错（有才写）、「邀请朋友」生成一个码并给出一句可以直接复制给朋友的话、
-// 发过的码（用掉的写是谁用的，没用的写哪天过期）。
+// 设置 · 账号 ·「邀请朋友」（第 113 条）：加入了网络才有——和中继同步出的错（有才写）、「邀请朋友」生成一个码并给出一句
+// 可以直接复制给朋友的话、发过的码（用掉的写是谁用的，没用的写哪天过期）。
+// 11-08：@账号和名字挪到最上面的账号一行（account-profile.tsx），没加入的在那里自助起 @账号，不要邀请码；
+// 下面这个加入表单只留给旧地址直接打开、还要邀请码的情形。
 
 import { useEffect, type ReactNode } from 'react';
 import { NETWORK_HANDLE_PATTERN, type NetworkInvite } from '../../api/shared.ts';
@@ -96,10 +96,6 @@ function Joined(): ReactNode {
   }
   return (
     <>
-      <div className="network-me">
-        <span className="network-handle mono">@{account.handle}</span>
-        <span className="network-name">{account.displayName}</span>
-      </div>
       {status?.lastError == null ? null : <p className="block-empty is-error" role="alert">{status.lastError}</p>}
       <div className="network-invite">
         <button type="button" className="chip-button network-invite-button"
@@ -131,10 +127,14 @@ export function NetworkSection(): ReactNode {
     network.status.open();
     network.invites.open();
   }, [network]);
+  // 没加入、也不要邀请码：在上面账号一行里起 @账号就行，这里整段不出现。
+  if (status.value !== null && !status.value.joined && !status.value.inviteNeeded) {
+    return null;
+  }
   return (
     <section className="block" aria-labelledby="settings-network">
       <header className="block-head">
-        <h3 id="settings-network" className="block-title">账号与网络</h3>
+        <h3 id="settings-network" className="block-title">{status.value?.joined === false ? '加入网络' : '邀请朋友'}</h3>
       </header>
       <LoadNote resource={status} what="网络账号" onRetry={() => void network.status.reload()} />
       {status.value === null ? null : status.value.joined ? <Joined />

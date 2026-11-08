@@ -1,5 +1,5 @@
-// 本体跑在哪（设置 · 系统「Plasticine 跑在哪」，设计稿 Settings-System）：这台电脑或远程。这里只有纯逻辑：第一次装时
-// 默认哪个、远程地址怎么规整、窗口该载入哪个地址。切换不搬数据（他 11-06 定）。
+// 本体跑在哪（开始页二选一、设置 · 系统「Plasticine 跑在哪」）：这台电脑或远程。这里只有纯逻辑：第一次打开时的预填、
+// 远程地址怎么规整、窗口该载入哪个地址。切换不搬数据（他 11-06 定）。
 
 import type { ServerChoice } from '../../../agent/shared/api/desktop-bridge.ts';
 
@@ -8,19 +8,11 @@ export const LOCAL_SERVER_PORT = 8790;
 export const LOCAL_SERVER_URL = `http://127.0.0.1:${LOCAL_SERVER_PORT}/`;
 
 /**
- * 第一次打开时默认哪个：包里没带本体只能远程；以前装过 Plasticine（有 Swift 版的设置或数据目录）照旧用远程，
- * 不改老用户的习惯（和 mac/Sources/Plasticine/server-mode.swift 同一条）；新装的默认这台电脑。
+ * 第一次打开时不替他选（11-08 首次使用流程：先二选一，不再悄悄默认这台电脑）。设置里先放一份没选过的：模式只是占位，
+ * 旧 Swift 版存的远程地址留作「连到我的 Plasticine」那一格的预填。
  */
-export function initialChoice(input: { bundled: boolean; priorInstall: boolean; legacyRemote: string | null;
-  legacyMode: 'this_computer' | 'remote' | null }): ServerChoice {
-  const remoteUrl = input.legacyRemote === null ? null : safeRemote(input.legacyRemote);
-  if (!input.bundled) {
-    return { mode: 'remote', remoteUrl };
-  }
-  if (input.legacyMode !== null) {
-    return { mode: input.legacyMode, remoteUrl };
-  }
-  return { mode: input.priorInstall ? 'remote' : 'this_computer', remoteUrl };
+export function prefillRemote(legacyRemote: string | null): ServerChoice {
+  return { mode: 'this_computer', remoteUrl: legacyRemote === null ? null : safeRemote(legacyRemote) };
 }
 
 function safeRemote(raw: string): string | null {
@@ -57,12 +49,12 @@ export function normalizeRemoteUrl(input: string): string {
   return `${url.origin}/`;
 }
 
-/** 窗口载入哪个地址。选了远程却没填过地址：先回这台电脑（带了本体时），否则是 null，界面打开设置让他填。 */
+/** 窗口载入哪个地址。远程没地址、这台电脑却没带本体：null，窗口回开始页让他重选（不悄悄回落本机）。 */
 export function targetUrl(choice: ServerChoice, bundled: boolean): string | null {
   if (choice.mode === 'remote') {
-    return choice.remoteUrl ?? (bundled ? LOCAL_SERVER_URL : null);
+    return choice.remoteUrl;
   }
-  return bundled ? LOCAL_SERVER_URL : choice.remoteUrl;
+  return bundled ? LOCAL_SERVER_URL : null;
 }
 
 /** 某个网址是不是现在界面所在的本站（ipc 只收本站主 frame 的消息）。 */

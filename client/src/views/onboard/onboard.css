@@ -1,0 +1,338 @@
+/* 首次使用流程的整窗页面（11-08 设计稿 Create-Account / Sign-In / Connect-Model / Phone-Step）：整页 --bg，
+   居中一列 400 宽，没有卡片；标题 24/32·600，字段一栏一栏往下，主按钮整宽。手机上一列贴顶、左右留 24。 */
+
+.ob-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: 48px 24px;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.ob-col {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 16px;
+  width: min(400px, 100%);
+  margin: auto 0;
+}
+
+.ob-col > form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ob-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.ob-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+/* 标题下面那一句（连接模型「用你已有的订阅登录，或者填 key。」）：贴着标题。 */
+.ob-sub {
+  margin: -8px 0 0;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+/* 三段进度：短横，走过的 --fg、没走的 --line2。 */
+.ob-steps {
+  display: flex;
+  gap: 4px;
+}
+
+.ob-steps > span {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line2);
+}
+
+.ob-steps > span[data-done='true'] {
+  background: var(--fg);
+}
+
+/* 字段：名字一行、框一行、框下面一行小字（地址、出错）。 */
+.ob-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ob-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* 输入框外面一层：前面的 @、后面的状态 / 地址 / 显示密码都在框里；聚焦时整框描深。 */
+.ob-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 4px 0 12px;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  transition: box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.ob-input:focus-within {
+  box-shadow: inset 0 0 0 1.5px var(--fg);
+}
+
+.ob-input[data-invalid='true'] {
+  box-shadow: inset 0 0 0 1px var(--err);
+}
+
+.ob-input > input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+}
+
+.ob-input > input::placeholder {
+  color: var(--fg3);
+}
+
+.ob-input > input:disabled {
+  color: var(--fg2);
+}
+
+.ob-pre {
+  color: var(--fg3);
+  font-size: 14px;
+}
+
+/* 框里最右边：「能用 / 被占了」、地址、显示密码。 */
+.ob-suffix {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  max-width: 55%;
+  padding-right: 8px;
+  overflow: hidden;
+  color: var(--fg3);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ob-suffix[data-tone='ok'] {
+  color: var(--ok);
+}
+
+.ob-suffix[data-tone='err'] {
+  color: var(--err);
+}
+
+.ob-input .icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+.ob-input .icon-button[aria-pressed='true'] {
+  color: var(--fg);
+}
+
+.ob-note {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.ob-error {
+  margin: 0;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* 主按钮：整宽、高 44，和登录页一样。 */
+.ob-big.primary-button {
+  width: 100%;
+  height: 44px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.ob-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 24px;
+}
+
+.ob-links-center {
+  justify-content: center;
+}
+
+.ob-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.ob-link:hover {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line2);
+}
+
+.ob-link:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.ob-link-u {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line2);
+}
+
+/* 「忘了密码」点开的浮框（和 ⓘ 一样是补充说明，但要能多看几行、能复制命令）。 */
+.ob-forgot {
+  position: relative;
+}
+
+.ob-forgot-pop {
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 300px;
+  max-width: calc(100vw - 48px);
+  box-sizing: border-box;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 20px;
+  animation: ob-pop-in var(--motion-base) var(--ease-out);
+}
+
+.ob-forgot-pop p {
+  margin: 0;
+}
+
+.ob-forgot-pop code {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+@keyframes ob-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+/* 手机步骤：二维码、地址、一句、主按钮，居中。 */
+.ob-qr-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0 8px;
+  text-align: center;
+}
+
+.ob-qr {
+  /* 深色模式下也是白底深码（--qr-paper / --qr-ink 两种模式同值）。 */
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--qr-paper);
+  border: 1px solid var(--line2);
+  line-height: 0;
+}
+
+.ob-address {
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+/* 连接模型里一家在浏览器里登录：行尾一圈 + 一句。 */
+.ob-row-wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-forgot-pop {
+    animation: none;
+  }
+
+  .ob-input {
+    transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .ob-page {
+    padding: max(80px, calc(env(safe-area-inset-top) + 48px)) 24px 24px;
+  }
+
+  .ob-col {
+    margin: 0;
+  }
+
+  .ob-input {
+    height: 44px;
+  }
+
+  .ob-input > input {
+    font-size: 16px;
+  }
+}

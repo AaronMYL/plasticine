@@ -2,35 +2,176 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'">
+<meta http-equiv="Content-Security-Policy"
+  content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; font-src 'self'">
+<meta name="color-scheme" content="light dark">
 <title>Plasticine</title>
+<!-- 桌面客户端的开始页（11-08 首次使用流程，设计稿 Welcome / Welcome-Win）：二选一、连到我的 Plasticine、正在打开、
+     没起来。令牌照 client/src/tokens.css 的方向 I（暖米 / 暖炭黑），跟随系统深浅色；只用壳自带的静态文件。 -->
 <style>
-  :root { color-scheme: light dark; --bg: #fcf9f6; --fg: #2a2622; --fg3: #8a847c; --line: #e6e0d8; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #2b2826; --fg: #f5f1ec; --fg3: #9b958d; --line: #45403b; } }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
-    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; }
-  body { display: grid; place-items: center; -webkit-app-region: drag; }
-  main { width: 360px; display: grid; gap: 14px; -webkit-app-region: no-drag; }
-  h1 { font-size: 20px; margin: 0; font-weight: 600; }
-  p { margin: 0; color: var(--fg3); }
-  form { display: grid; gap: 8px; }
-  label { font-weight: 500; }
-  input { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line);
-    background: transparent; color: inherit; }
-  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 0; background: var(--fg); color: var(--bg);
-    cursor: pointer; justify-self: start; }
+  @font-face { font-family: 'Geist'; src: url('fonts/Geist-Variable.woff2') format('woff2');
+    font-weight: 100 900; font-style: normal; font-display: swap; }
+  :root { color-scheme: light dark;
+    --bg: #fcf9f6; --fg: #2a2622; --fg2: #6b635b; --fg3: #a1988f; --line2: rgba(42, 38, 34, .16);
+    --tint2: rgba(110, 74, 46, .075); --accent: #a1674e; --err: #a9483a; --float: #fefdfa;
+    --sans: Geist, 'PingFang SC', MiSans, 'Microsoft YaHei', system-ui, sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #2b2826; --fg: #f5f1ec; --fg2: #b8b0a7; --fg3: #8a827a; --line2: rgba(245, 236, 226, .16);
+      --tint2: rgba(245, 236, 226, .085); --accent: #c98a6e; --err: #e08a7a; --float: #37332f; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--sans);
+    font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+  /* 空白处能拖窗口；Mac 交通灯在左上，Windows 的窗口按钮（titleBarOverlay，138 × 32）在右上：内容只在中间，
+     上下各留出顶栏那么高，窄窗口也不压着它们。 */
+  body { display: flex; align-items: center; justify-content: center; padding: 48px 24px;
+    -webkit-app-region: drag; user-select: none; }
+  main { -webkit-app-region: no-drag; }
+  section { display: flex; flex-direction: column; gap: 20px; width: 400px; max-width: 100%;
+    animation: enter 180ms ease-out; }
+  section.wide { width: 640px; }
+  @keyframes enter { from { opacity: 0; transform: translateY(4px); } }
+  @media (prefers-reduced-motion: reduce) { section { animation: none; } }
   [hidden] { display: none !important; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--fg3); outline-offset: 2px; }
+  svg { flex: none; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
+  .mark-blob { fill: var(--accent); }
+  .mark-swirl { stroke: var(--bg); }
+  h1 { font-size: 26px; line-height: 34px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
+  .meta { font-size: 12px; line-height: 18px; color: var(--fg2); margin: 0; }
+  .detail { color: var(--fg2); margin: -10px 0 0; user-select: text; overflow-wrap: anywhere; }
+  .choice { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line2); padding: 22px; display: flex;
+    flex-direction: column; gap: 12px; background: var(--float); text-align: left; min-height: 188px;
+    transition: box-shadow 120ms ease-out; }
+  .card:hover:not(:disabled), .card.on { box-shadow: inset 0 0 0 1.5px var(--fg); }
+  .card:disabled { cursor: default; opacity: .45; }
+  .card-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--tint2); display: flex;
+    align-items: center; justify-content: center; }
+  .card-title { font-size: 16px; line-height: 24px; font-weight: 600; }
+  .card-detail { color: var(--fg2); font-size: 13px; line-height: 20px; }
+  .tags { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { font-size: 12px; line-height: 18px; color: var(--fg2); background: var(--tint2); border-radius: 6px;
+    padding: 2px 8px; }
+  form { display: flex; flex-direction: column; gap: 20px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 13px; line-height: 20px; color: var(--fg2); }
+  .input { height: 42px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line2); padding: 0 12px;
+    display: flex; align-items: center; gap: 8px; background: var(--bg); font-size: 15px;
+    transition: box-shadow 120ms ease-out; }
+  .input:focus-within { box-shadow: inset 0 0 0 1.5px var(--fg); }
+  .input input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; color: inherit;
+    padding: 0; height: 100%; user-select: text; }
+  .input input::placeholder { color: var(--fg3); }
+  .input input:focus-visible { outline: 0; }
+  .suffix { color: var(--fg3); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .error { color: var(--err); font-size: 13px; line-height: 20px; margin: -14px 0 0; }
+  .primary { height: 44px; border-radius: 10px; background: var(--fg); color: var(--bg); font-size: 15px;
+    font-weight: 500; display: flex; align-items: center; justify-content: center; width: 100%;
+    transition: opacity 120ms ease-out; }
+  .primary:disabled { opacity: .35; cursor: default; }
+  .link { font-size: 13px; color: var(--fg2); display: inline-flex; align-items: center; gap: 4px;
+    align-self: flex-start; }
+  .link:hover { color: var(--fg); }
+  .progress { height: 2px; border-radius: 1px; background: var(--tint2); overflow: hidden; position: relative; }
+  .progress i { position: absolute; top: 0; bottom: 0; width: 30%; background: var(--fg2); border-radius: 1px;
+    animation: slide 1.4s ease-in-out infinite; }
+  @keyframes slide { from { left: -30%; } to { left: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .progress i { animation: none; left: 0; width: 100%; opacity: .3; } }
+  @media (max-width: 720px) { .choice { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
+<template id="brand">
+  <div class="brand"><svg width="26" height="26" viewBox="0 0 16 16" aria-hidden="true"><path class="mark-blob"
+    d="M15.17 8.10 C15.12 8.66 15.00 9.23 14.85 9.76 C14.69 10.29 14.48 10.80 14.24 11.28 C14.00 11.77 13.72 12.23
+    13.40 12.66 C13.08 13.09 12.72 13.50 12.33 13.85 C11.94 14.21 11.50 14.54 11.04 14.80 C10.58 15.06 10.08 15.27
+    9.57 15.41 C9.07 15.54 8.52 15.61 8.00 15.62 C7.48 15.62 6.94 15.54 6.43 15.41 C5.92 15.28 5.41 15.08 4.94 14.84
+    C4.47 14.59 4.02 14.28 3.60 13.94 C3.19 13.60 2.80 13.21 2.45 12.79 C2.11 12.36 1.79 11.90 1.53 11.40 C1.27 10.91
+    1.05 10.37 0.90 9.82 C0.75 9.27 0.66 8.68 0.65 8.10 C0.64 7.52 0.70 6.92 0.83 6.37 C0.97 5.81 1.19 5.25 1.46 4.76
+    C1.73 4.27 2.08 3.80 2.45 3.41 C2.82 3.01 3.25 2.66 3.69 2.37 C4.12 2.07 4.59 1.84 5.06 1.63 C5.53 1.43 6.02 1.28
+    6.51 1.16 C6.99 1.04 7.49 0.95 8.00 0.91 C8.51 0.87 9.03 0.86 9.55 0.92 C10.06 0.98 10.60 1.08 11.11 1.26 C11.61
+    1.45 12.13 1.69 12.58 2.01 C13.03 2.33 13.47 2.73 13.82 3.18 C14.18 3.62 14.48 4.15 14.70 4.68 C14.92 5.21 15.07
+    5.80 15.15 6.37 C15.23 6.94 15.22 7.54 15.17 8.10Z"></path><path class="mark-swirl"
+    d="M4.40 8.00 L4.44 7.81 L4.48 7.63 L4.53 7.45 L4.59 7.28 L4.66 7.11 L4.74 6.94 L4.82 6.78 L4.91 6.63
+    L5.01 6.48 L5.11 6.33 L5.23 6.20 L5.34 6.07 L5.47 5.95 L5.59 5.83 L5.73 5.73 L5.87 5.63 L6.01 5.54
+    L6.15 5.46 L6.30 5.38 L6.45 5.32 L6.60 5.26 L6.76 5.21 L6.91 5.17 L7.07 5.14 L7.23 5.11 L7.38 5.10
+    L7.54 5.09 L7.69 5.09 L7.85 5.10 L8.00 5.12 L8.15 5.15 L8.30 5.18 L8.44 5.22 L8.58 5.27 L8.72 5.32
+    L8.85 5.39 L8.98 5.45 L9.10 5.53 L9.22 5.61 L9.33 5.69 L9.44 5.78 L9.54 5.88 L9.64 5.98 L9.73 6.08
+    L9.81 6.19 L9.89 6.30 L9.96 6.41 L10.02 6.53 L10.08 6.65 L10.13 6.77 L10.17 6.89 L10.21 7.02 L10.24 7.14
+    L10.26 7.27 L10.27 7.39 L10.28 7.51 L10.29 7.64 L10.28 7.76 L10.27 7.88 L10.25 8.00 L10.23 8.12
+    L10.20 8.23 L10.17 8.34 L10.13 8.45 L10.08 8.56 L10.03 8.66 L9.97 8.76 L9.91 8.85 L9.85 8.94 L9.78 9.03
+    L9.70 9.11 L9.63 9.18 L9.55 9.25 L9.47 9.32 L9.38 9.38 L9.29 9.44 L9.20 9.49 L9.11 9.53 L9.02 9.57
+    L8.93 9.61 L8.83 9.64 L8.74 9.66 L8.64 9.68 L8.55 9.69 L8.45 9.70 L8.36 9.70 L8.27 9.70 L8.18 9.69
+    L8.09 9.68 L8.00 9.66 L7.91 9.64 L7.83 9.61 L7.75 9.58 L7.67 9.55 L7.60 9.51 L7.52 9.47 L7.45 9.42
+    L7.39 9.38 L7.33 9.32 L7.27 9.27 L7.21 9.21 L7.16 9.16 L7.11 9.10 L7.07 9.03 L7.03 8.97 L7.00 8.90
+    L6.96 8.84 L6.94 8.77 L6.91 8.71 L6.90 8.64 L6.88 8.57 L6.87 8.50 L6.86 8.44 L6.86 8.37"
+    fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>Plasticine
+  </div>
+</template>
 <main>
-  <h1 id="title">正在打开 Plasticine…</h1>
-  <p id="detail"></p>
-  <form id="remote" hidden>
-    <label for="address">远程地址</label>
-    <input id="address" name="address" placeholder="https://you.cyberhunter.top" autocomplete="url" required>
-    <button type="submit">连上</button>
-  </form>
+  <section id="welcome" class="wide" hidden>
+    <div data-brand></div>
+    <h1>在哪里用 Plasticine？</h1>
+    <div class="choice">
+      <button type="button" class="card" id="choose-local">
+        <span class="card-icon"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+          stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5"
+          width="13" height="8.5" rx="1.5"></rect><path d="M5.5 14h5M8 11v3"></path></svg></span>
+        <span class="card-title">在这台电脑上</span>
+        <span class="card-detail">数据只在这台电脑里。</span>
+        <span class="tags" id="local-tags"><span>第一次用选这个</span><span id="stops-when">合上盖子就停</span></span>
+      </button>
+      <button type="button" class="card" id="choose-remote">
+        <span class="card-icon"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+          stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path
+          d="M4.6 12.5a3 3 0 0 1-.4-6 4 4 0 0 1 7.6-1.1 3.4 3.4 0 0 1-.1 7.1z"></path></svg></span>
+        <span class="card-title">连到我的 Plasticine</span>
+        <span class="card-detail">已经在服务器或另一台电脑上用着。</span>
+        <span class="tags"><span>用 @账号和密码</span></span>
+      </button>
+    </div>
+    <p class="meta">以后在 设置 · 系统 里能换。</p>
+  </section>
+
+  <section id="remote" hidden>
+    <div data-brand></div>
+    <h1>连到我的 Plasticine</h1>
+    <form id="remote-form" novalidate>
+      <div class="field">
+        <label for="address">@账号或地址</label>
+        <div class="input">
+          <input id="address" name="address" placeholder="@你的账号" autocomplete="url" autocapitalize="off"
+            spellcheck="false" aria-describedby="address-error">
+          <span class="suffix" id="address-host" aria-hidden="true"></span>
+        </div>
+      </div>
+      <p class="error" id="address-error" role="alert" hidden></p>
+      <button type="submit" class="primary" id="connect">连上</button>
+    </form>
+    <button type="button" class="link" data-back><svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path
+      d="M10 3.5L5.5 8l4.5 4.5"></path></svg>换一个地方</button>
+  </section>
+
+  <section id="starting" hidden>
+    <div data-brand></div>
+    <h1>正在打开 Plasticine…</h1>
+    <p class="detail" id="starting-detail" hidden></p>
+    <div class="progress" role="progressbar" aria-label="正在打开"><i></i></div>
+  </section>
+
+  <section id="failed" hidden>
+    <div data-brand></div>
+    <h1 id="failed-title">这台电脑上的 Plasticine 没起来</h1>
+    <p class="detail" id="failed-detail"></p>
+    <button type="button" class="primary" id="retry">再试一次</button>
+    <button type="button" class="link" data-back><svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path
+      d="M10 3.5L5.5 8l4.5 4.5"></path></svg>换一个地方</button>
+  </section>
 </main>
 <script src="start.js"></script>
 </body>

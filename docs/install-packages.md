@@ -18,12 +18,29 @@
 | | Linux（VPS） | Mac | Windows |
 |---|---|---|---|
 | 装 | `curl -fsSL https://cyberhunter.top/download/install.sh \| sudo sh` | 下载 `Plasticine-mac-<版本>.zip`，解开拖进「应用程序」，打开 | 下载 `Plasticine-Setup-<版本>.exe` 运行；没签名，SmartScreen 提示时选「更多信息 → 仍要运行」 |
-| 打开 | 自己电脑上 `ssh -N -L 8790:127.0.0.1:8790 <用户>@<VPS>`，浏览器开 `http://127.0.0.1:8790/` | App 窗口直接就是（设置里「服务器」是「这台 Mac」） | 托盘图标「打开 Plasticine」，用默认浏览器（Edge / Chrome）打开 |
+| 打开 | 装完打印一条建账号链接（见下）；没图形界面先在自己电脑上 `ssh -L 8790:127.0.0.1:8790 <用户>@<VPS>`，再用浏览器打开它 | App 窗口直接就是（设置里「服务器」是「这台 Mac」） | 托盘图标「打开 Plasticine」，用默认浏览器（Edge / Chrome）打开 |
+| 账号 | 第一次用建账号链接起名字、@账号和密码；以后别的设备用 @账号 + 密码登录；忘了密码 `plasticine password` | 本机由客户端直接登录，不问密码 | 同 Mac |
 | 更新 | 自动：开机后两分钟、之后每天（`plasticine-update.timer`）；马上查：`sudo plasticine update` | 自动：启动时、每 6 小时；菜单「检查更新」 | 自动：启动后一分钟、之后每天 |
 | 回到上一版 | `sudo plasticine rollback` | 菜单「回到上一版」 | 托盘「回到上一版」 |
 | 卸载 | 重跑安装脚本并传 `--uninstall`，数据保留；`--purge` 会连同实例数据删除 | 退出 App，删掉 App；数据在 `~/Library/Application Support/Plasticine` | 「设置 → 应用」里卸载；最后会问要不要连数据一起删（默认不删） |
 | 程序 | `/opt/plasticine`（`versions/<版本>`，`current`、`previous` 指针，`node/`） | `Plasticine.app`（带 `Contents/MacOS/node` 和 `Contents/Resources/server`） | `%LOCALAPPDATA%\Programs\Plasticine` |
 | 数据 | `/var/lib/plasticine/state`（`plasticine` 用户），设置 `/etc/plasticine/plasticine.env` | `~/Library/Application Support/Plasticine/server`，日志 `~/Library/Logs/Plasticine` | `%LOCALAPPDATA%\Plasticine`（`state`、`logs`、`installers`） |
+
+### 第一次：建账号（2026-11-08，代替配对码）
+
+一份 Plasticine 只有一个主人，账号是「@账号 + 密码」；密码只存在这份 Plasticine 里（scrypt 慢哈希），中继不知道。
+
+- Linux：`install.sh` 装完以 `plasticine` 用户运行 `agent/src/app/setup-link-cli.ts`，打印
+  `http://127.0.0.1:<端口>/#/setup?t=<令牌>`（30 分钟内有效、只能用一次；配了 `PLASTICINE_PUBLIC_URL` 另打一行那个地址
+  的）。在这个链接里起名字、@账号（顺带在 Cyber Hunter 网络里自助注册，不要邀请码）和密码。过期了运行
+  `sudo plasticine setup-link` 再拿一条；已经有主人时它只说一句。
+- Mac / Windows 和新的桌面客户端：壳启动本体时给一个本机令牌（环境变量 `PLASTICINE_LOCAL_TOKEN`），本机界面凭它建账号、
+  直接登录、重设密码；只认 `127.0.0.1` 直连来的请求。服务器上不设这个变量，也就不认。
+- 别的设备（手机、另一台电脑）：@账号或地址 + 密码登录。输错按来源和全局限流。
+- 忘了密码：服务器上 `plasticine password`（输两遍、不回显；脚本里 `plasticine password --stdin` 读一行），本机实例在
+  桌面客户端里直接重设。已经登录着的设备照旧。
+- 老实例（有登录着的设备、还没设密码）照常用，登录着时设一次密码。旧的配对码脚本 `pairing-cli.ts` 还在，但登录页
+  不再收配对码。
 
 Linux、Windows 和带 bundled server manifest 的 Mac 读发布点的 `manifest.json`；Mac 不随当前连接本机或远端而切换更新来源。
 版本比装着的新才下载，核对 SHA-256 和大小再换上。

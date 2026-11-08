@@ -4,7 +4,7 @@
 
 import { homedir, hostname } from 'node:os';
 import { join } from 'node:path';
-import { app, dialog, Notification, powerMonitor, safeStorage, shell } from 'electron';
+import { app, dialog, Notification, powerMonitor, safeStorage, session, shell } from 'electron';
 import type { DesktopEvent } from '../../../agent/shared/api/desktop-bridge.ts';
 import { FeedRunner, readPageScript } from '../feeds/feed-runner.ts';
 import { HelperProcess } from '../helper/helper-process.ts';
@@ -24,19 +24,21 @@ import { TabViews } from '../tabs/tab-views.ts';
 import { adoptLocalSigning } from '../updates/adopt-signing.ts';
 import { resign, signedLocally } from '../updates/self-signing.ts';
 import { DEFAULT_RELEASE_URL, UpdateManager } from '../updates/update-manager.ts';
-import { installMenu, installTray, type MenuActions } from './app-menu.ts';
+import { enterLocal, localGrantFor, probePlace } from './account-client.ts';
+import { installMenu, installTray, type MenuActions, type MenuState } from './app-menu.ts';
 import { registerBridge } from './bridge-ipc.ts';
 import { CHANNELS } from './channels.ts';
 import { desktopPaths, type ShellPlatform } from './desktop-paths.ts';
 import { legacyChoice } from './legacy-settings.ts';
 import { LocalServer } from './local-server.ts';
 import { MainWindow } from './main-window.ts';
+import { OAuthCapture } from './oauth-capture.ts';
 import { openPermission } from './permissions.ts';
 import { fetchBytes, launchDetached, launchServer, logger, readUrl, resources, runChecked, spawnHelper,
   waitHealthy } from './runtime.ts';
 import { ServerPlace } from './server-place.ts';
 import { defaultSettings, SettingsStore } from './settings-store.ts';
-import { initialChoice } from './server-target.ts';
+import { LOCAL_SERVER_URL, prefillRemote } from './server-target.ts';
 import { UiEvents } from './ui-events.ts';
 import { uiSession, webSession } from './web-session.ts';
 
@@ -68,9 +70,9 @@ async function start(): Promise<void> {
   const files = resources({ packaged: app.isPackaged, resourcesPath: process.resourcesPath, dist: __dirname,
     platform, env: process.env });
   const legacy = legacyChoice(platform, paths.root);
-  const settings = new SettingsStore(paths.settingsFile, () => defaultSettings(initialChoice({
-    bundled: files.server !== null, priorInstall: legacy.priorInstall, legacyRemote: legacy.remote,
-    legacyMode: legacy.mode }), homedir()), log);
+  // 第一次打开不替他选：开始页二选一；Swift 版存的远程地址只当「连到我的 Plasticine」的预填。
+  const settings = new SettingsStore(paths.settingsFile, () => defaultSettings(prefillRemote(legacy.remote),
+    homedir()), log);
   const tabAgent = app.userAgentFallback.replace(/\s(?:Electron|plasticine-desktop|Plasticine)\/\S+/gi, '');
   const uiAgent = `${tabAgent} PlasticineDesktop/${version}`;
   uiSession(uiAgent);
@@ -78,12 +80,22 @@ async function start(): Promise<void> {
   const ui = main.ui.webContents;
   const web = webSession(() => main.window, tabAgent);
   const local = new LocalServer({
-    launch: () => launchServer({ node: files.node ?? '', server: files.server ?? '', state: paths.serverState,
-      logs: paths.logs, platform }),
+    launch: (localToken) => launchServer({ node: files.node ?? '', server: files.server ?? '',
+      state: paths.serverState, logs: paths.logs, platform, localToken }),
     healthy: waitHealthy, now: Date.now, log,
   }, files.server !== null && files.node !== null);
+  const deviceName = hostname().slice(0, 60) || '这台电脑';
+  const uiCookies = session.defaultSession.cookies;
   const place = new ServerPlace({ ui, settings, local, startPage: join(__dirname, 'start.html'),
-    override: process.env.PLASTICINE_DESKTOP_URL ?? null, log });
+    override: process.env.PLASTICINE_DESKTOP_URL ?? null, log,
+    openExternal: (url) => void shell.openExternal(url),
+    probe: (origin) => probePlace(origin, fetch),
+    enterLocal: () => local.token === null ? Promise.resolve('') : enterLocal({ origin: LOCAL_SERVER_URL,
+      token: local.token, deviceName, fetch, log, jar: {
+        get: (url) => uiCookies.get({ url }),
+        set: (details) => uiCookies.set(details),
+      } }) });
+  const capture = new OAuthCapture(log);
   const events = new UiEvents(() => ui, () => place.onSite(), log);
   const helper = new HelperProcess({ spawn: () => spawnHelper(files.helper), roots: () => settings.get().roots, log });
   let translate: TabTranslate | null = null;
@@ -113,7 +125,7 @@ async function start(): Promise<void> {
     now: () => new Date(), log });
   const node = new NodeService({ api: (server) => new NodeApi(server, (input, init) => fetch(input, init)),
     credentials, journal: (server, nodeId) => new ActionJournal(paths.actions, server, nodeId), runner,
-    identity: { name: hostname().slice(0, 60) || '这台电脑', platform: platform === 'darwin' ? 'macos'
+    identity: { name: deviceName, platform: platform === 'darwin' ? 'macos'
       : platform === 'win32' ? 'windows' : 'linux', appVersion: version },
     idleSeconds: async () => powerMonitor.getSystemIdleTime(), requestId: () => `desktop-${crypto.randomUUID()}`,
     sleep: (ms, signal) => new Promise((resolve) => {
@@ -134,9 +146,11 @@ async function start(): Promise<void> {
   const logins = new Logins({ session: web, platform, home: homedir(), localAppData: process.env.LOCALAPPDATA ?? null,
     sinceFile: join(app.getPath('userData'), 'logins-since.json'), now: () => new Date(), log });
   const desktopEvent = (event: DesktopEvent): void => events.send('__plasticineDesktopEvent', event);
+  let menuState: (state: MenuState) => void = () => undefined;
   place.onChange((status) => {
     desktopEvent({ type: 'server', status });
     node.useServer(place.server());
+    menuState({ thisComputer: place.thisComputer() });
   });
   updates.onChange((status) => desktopEvent({ type: 'update', status }));
   node.onChange((status) => desktopEvent({ type: 'device', status }));
@@ -176,6 +190,10 @@ async function start(): Promise<void> {
     notificationsEnabled: () => settings.get().notifications,
     setNotifications: (enabled) => settings.update((value) => ({ ...value, notifications: enabled })).notifications,
     serverStatus: () => place.status(), chooseServer: (choice) => place.choose(choice),
+    localGrant: (frameUrl) => localGrantFor(frameUrl, local.token),
+    showWelcome: () => void place.welcome(),
+    openExternal: (url) => void shell.openExternal(url),
+    capture: (port, timeoutMs) => capture.capture(port, timeoutMs), cancelCapture: () => capture.cancel(),
     updateStatus: () => updates.status(), updateCheck: () => updates.check(),
     updateInstall: () => updates.install(), updateRollback: () => updates.rollback(),
     deviceStatus: () => node.status(), devicePair: (request) => node.pair(request.code),
@@ -206,9 +224,19 @@ async function start(): Promise<void> {
   });
   const actions: MenuActions = {
     show: () => main.show(),
+    // 没登录（开始页、登录页、建账号页）时设置里没东西可改：回开始页，那里能换地方。
     settings: () => {
       main.show();
-      events.navigate('#/settings/system');
+      void place.signedIn().then((signedIn) => (signedIn ? events.navigate('#/settings/system') : place.welcome()))
+        .catch((error: unknown) => log(`没打开设置：${error instanceof Error ? error.message : String(error)}`));
+    },
+    connect: () => {
+      main.show();
+      void place.welcome();
+    },
+    resetPassword: () => {
+      main.show();
+      events.navigate('#/settings/account');
     },
     checkUpdates: () => void updates.check(),
     webMenu: (command) => events.send('__plasticineWebMenu', command),
@@ -218,8 +246,17 @@ async function start(): Promise<void> {
     },
     quit: () => app.quit(),
   };
-  installMenu(platform, actions);
-  installTray(platform, files.icon, actions);
+  const menu = installMenu(platform, actions);
+  const tray = installTray(platform, files.icon, actions);
+  let shownThisComputer: boolean | null = null;
+  menuState = (state) => {
+    if (state.thisComputer !== shownThisComputer) {
+      shownThisComputer = state.thisComputer;
+      menu(state);
+      tray(state);
+    }
+  };
+  menuState({ thisComputer: place.thisComputer() });
   app.on('second-instance', () => main.show());
   app.on('activate', () => main.show());
   let stopping = false;
@@ -231,6 +268,7 @@ async function start(): Promise<void> {
     event.preventDefault();
     stopping = true;
     node.stop();
+    capture.cancel();
     feeds.stop();
     updates.stop();
     helper.stop();

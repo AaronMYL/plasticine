@@ -1,5 +1,5 @@
 // 把壳打成 Electron 能直接跑的几份 JS（dist/）：主进程、界面 preload、网页标签 preload（sandbox 的 preload 只能是一个
-// 文件）、两段注入脚本（X 时间线、抖音），再拷开始页和图标。注入网页标签的脚本只写一份：client/src/mac/ 里的那几份
+// 文件）、两段注入脚本（X 时间线、抖音）、开始页（静态页、脚本、字体），再拷图标。注入网页标签的脚本只写一份：client/src/mac/ 里的那几份
 // 原样打进来（圈一块、问这一页那两段字符串在这里包成函数），Mac 的 Swift 壳和 Electron 壳共用。
 //   node desktop/build/bundle.ts            打一次
 //   node desktop/build/bundle.ts --check     只核对能打（lint 不跑它，CI 的构建跑）
@@ -62,9 +62,13 @@ export async function bundle(): Promise<void> {
       resolveDir: MAC_SCRIPTS, loader: 'ts' }, outfile: join(DIST, 'pages', `${name}.js`), platform: 'browser',
     format: 'iife', target: 'chrome140' });
   }
-  for (const page of ['start.html', 'start.js']) {
-    copyFileSync(join(DESKTOP, 'src', 'pages', page), join(DIST, page));
-  }
+  // 开始页：静态页 + 打成一份的脚本（和主进程共用 @账号 / 地址的解析），字体用界面同一份 Geist（只打英文字体）。
+  copyFileSync(join(DESKTOP, 'src', 'pages', 'start.html'), join(DIST, 'start.html'));
+  await build({ ...common, sourcemap: false, entryPoints: [join(DESKTOP, 'src', 'pages', 'start.ts')],
+    outfile: join(DIST, 'start.js'), platform: 'browser', format: 'iife', target: 'chrome140' });
+  mkdirSync(join(DIST, 'fonts'), { recursive: true });
+  copyFileSync(join(ROOT, 'client', 'src', 'fonts', 'Geist-Variable.woff2'),
+    join(DIST, 'fonts', 'Geist-Variable.woff2'));
   mkdirSync(dirname(join(DIST, 'icon.png')), { recursive: true });
   copyFileSync(join(ROOT, 'client', 'public', 'icon-512.png'), join(DIST, 'icon.png'));
 }

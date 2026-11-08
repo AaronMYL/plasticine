@@ -122,6 +122,24 @@ export interface PlasticineDesktopServer {
   status(): Promise<unknown>;
   /** 换本体跑在哪：存下、停或起本机本体、窗口载入新地址（界面会重新加载）。回 ServerStatusSchema。 */
   choose(choice: ServerChoice): Promise<unknown>;
+  /**
+   * 首次使用流程（11-08）：界面载入的是壳自己拉起的本机本体时，给本机令牌（请求头 LOCAL_TOKEN_HEADER 用，
+   * agent/shared/api/account.ts）；连远程或不在本站时是 null。建账号页凭它建账号，设置 · 账号凭它不问旧密码改密码。
+   */
+  localGrant(): Promise<string | null>;
+  /** 回到开始页（「在哪里用 Plasticine？」二选一）：登录页的「换一个地方」、菜单「连接到…」都走这里。 */
+  showWelcome(): void;
+}
+
+/**
+ * 站外链接交给系统浏览器（11-08：模型订阅登录在桌面客户端里直接开系统浏览器）。只收 http(s)；要在点击里调。
+ * capture：在本机 127.0.0.1:<port> 上等一次 OAuth 回调（连远程实例时，浏览器跳回的 localhost 在这台电脑上），
+ * 拿到就回完整的回调地址，超时或取消回 null；界面再把它交给本体已有的「贴回调地址」接口。
+ */
+export interface PlasticineDesktopExternal {
+  open(url: string): void;
+  capture(port: number, timeoutMs: number): Promise<string | null>;
+  cancelCapture(): void;
 }
 
 export interface PlasticineDesktopUpdates {
@@ -175,4 +193,5 @@ export interface PlasticineDesktopBridge {
   updates: PlasticineDesktopUpdates;
   device: PlasticineDesktopDevice;
   helper: PlasticineDesktopHelper;
+  external: PlasticineDesktopExternal;
 }
