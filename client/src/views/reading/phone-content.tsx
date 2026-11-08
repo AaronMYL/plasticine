@@ -76,8 +76,7 @@ export function PhoneContent({ route, children, quote = null, ready = true, onBa
 }
 
 export function PhoneUnavailable({ route, navigate, onBack }: Omit<PhoneContentProps, 'children'>): ReactNode {
-  // 资料库里手机上不能开的是读书（图书馆和空间都能开）。
-  const label = route.view === 'books' ? '图书' : navLabel(route.view);
+  const label = navLabel(route.view);
   return (
     <PhoneContent route={route} navigate={navigate} onBack={onBack}>
       <header className="phone-read-title"><Icon name="file" size={24} /><h1>{label}</h1></header>

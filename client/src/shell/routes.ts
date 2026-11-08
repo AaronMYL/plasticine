@@ -151,13 +151,12 @@ function settingsLink(segment: string | undefined): Route {
 
 /**
  * 手机上能开的页（11-07 定：底栏 现在 · Plasticine · 消息 · 笔记 · 更多，任务、信息流、图书、空间在「更多」里）；
- * 项目和记忆从搜索、引用承接只读详情；网页标签只在电脑上；不支持的对象保留地址并说明。
+ * 图书点开一本整屏读（2026-11-08）；项目和记忆从搜索、引用承接只读详情；网页标签只在电脑上；不支持的对象保留地址并说明。
  */
 const PHONE_VIEWS: ReadonlySet<ViewId> = new Set<ViewId>(['today', 'plasticine', 'messages', 'conversation',
   'contacts', 'notes', 'feed', 'settings', 'work', 'tasks', 'books']);
 
 export function phonePageAvailable(route: Route): boolean {
-  if (route.view === 'books') return route.bookId == null || route.spaceId != null;
   if (PHONE_VIEWS.has(route.view)) return true;
   if (route.view === 'projects') return route.projectId != null;
   if (route.view === 'memory') {

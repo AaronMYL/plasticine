@@ -136,12 +136,10 @@ test('手机网页：触屏、没有桥、四项底栏；项目和记忆只读�
   await evidence(page, 'client-phone-memory');
 
   await page.evaluate(`location.hash = '#/books/book_1/2/40'`);
-  await until(page, `document.querySelector('.phone-read-unavailable')?.textContent === '图书暂时不能在手机打开。'`,
-    '不支持的图书详情保留对象、章节和位置');
+  await until(page, `document.querySelector('.bk-reader, .bk-library') !== null
+    && document.querySelector('.phone-read-unavailable') === null`, '图书在手机上直接打开（2026-11-08），不再是说明页');
   assert.equal(await page.evaluate('location.hash'), '#/books/book_1/2/40');
-  assert.equal(await page.evaluate(`document.querySelector('.phone-content-actions button')?.textContent`),
-    '复制链接到电脑', '给出可接着使用原地址的操作');
-  await evidence(page, 'client-phone-unsupported-book');
+  await evidence(page, 'client-phone-book');
   const calls = await checkNativeCalls(page);
   assert.deepEqual(calls, [], '手机网页不调原生桥');
 });

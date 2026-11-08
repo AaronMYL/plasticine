@@ -60,14 +60,23 @@ describe('手机内容承接', () => {
     expect(app.api.memoryTopics.get).toHaveBeenCalledTimes(2);
   });
 
-  it('不支持的图书链接留在说明页，能复制原链接到电脑', async () => {
+  it('图书点开一本整屏读（2026-11-08）：阅读页手机版式，不画底栏，地址照旧', async () => {
+    await renderApp({ width: 390, hash: '#/books/book_taoan', seed: true });
+    expect(await screen.findByRole('button', { name: '回到图书馆' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '目录' })).toBeTruthy();
+    expect(screen.queryByText('图书暂时不能在手机打开。')).toBeNull();
+    expect(document.querySelector('.bk-phone-reader')).not.toBeNull();
+    expect(window.location.hash).toBe('#/books/book_taoan');
+  });
+
+  it('不支持的页留在说明页，能复制原链接到电脑', async () => {
     const copy = vi.fn(() => Promise.resolve());
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: copy } });
-    await renderApp({ width: 390, hash: '#/books/book_1/2/40' });
-    expect(await screen.findByText('图书暂时不能在手机打开。')).toBeTruthy();
-    expect(window.location.hash).toBe('#/books/book_1/2/40');
+    await renderApp({ width: 390, hash: '#/projects' });
+    expect(await screen.findByText('项目暂时不能在手机打开。')).toBeTruthy();
+    expect(window.location.hash).toBe('#/projects');
     fireEvent.click(screen.getByRole('button', { name: '复制链接到电脑' }));
-    await waitFor(() => expect(copy).toHaveBeenCalledWith(expect.stringContaining('#/books/book_1/2/40')));
+    await waitFor(() => expect(copy).toHaveBeenCalledWith(expect.stringContaining('#/projects')));
   });
 
   it('别处修改同一项目后重读待办；其他项目、工作和笔记事件不触发整页读取', async () => {

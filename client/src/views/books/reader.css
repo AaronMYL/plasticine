@@ -381,8 +381,8 @@
   color: var(--fg2);
 }
 
-/* 对话栏收起时右下有 48 的圆球：底栏右边让出圆球的位置。 */
-.shell:not(:has(.chat-column)) .bk-foot {
+/* 对话栏收起时右下有 48 的圆球：底栏右边让出圆球的位置（手机阅读页不画圆球，不让）。 */
+.shell:not(:has(.chat-column)) .bk-reader:not(.bk-phone-reader) .bk-foot {
   padding-right: 88px;
 }
 

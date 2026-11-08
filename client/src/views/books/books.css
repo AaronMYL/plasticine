@@ -296,6 +296,11 @@
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
+/* 文字封面的书名从右上角起（竖排）：在图书馆里让开压在右上角的 ⋯，不盖住第一个字。 */
+.bk-item .bk-cover:not(.bk-cover-image) .bk-cover-title {
+  margin-top: 24px;
+}
+
 .bk-item-menu {
   position: absolute;
   top: 36px;
