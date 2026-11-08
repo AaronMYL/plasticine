@@ -42,6 +42,14 @@ export function createFeedSourceStatusStore(context: StoreContext) {
         ON CONFLICT (source_id) DO UPDATE SET checked_at = $at, ok_at = $at, error = NULL, added = $added`,
       { id: sourceId, at, added });
     },
+    /**
+     * 「现在刷新」X（第 7 批第 10 条）：读 X 的是电脑客户端，这里只把上次读的时间挪到很早，让它下次来问时就到点；
+     * 上次成没成、原因都留着。还没读过的本来就到点，不用动。
+     */
+    expire(sourceId: string): void {
+      context.db.run('UPDATE feed_source_status SET checked_at = $at WHERE source_id = $id',
+        { id: sourceId, at: new Date(0).toISOString() });
+    },
     /** 这一次没成：记时间和原因，上次成功的时间留着。 */
     failed(sourceId: string, at: string, error: string): void {
       context.db.run(`INSERT INTO feed_source_status (source_id, checked_at, ok_at, error, added)

@@ -221,13 +221,16 @@ export interface MenuItemProps {
   checked?: boolean | undefined;
   /** 只留入口、还不能用：看得见、点不动，为什么点不动常显在名字下面一行小字（11-04 重做悬停：不再整行浮框）。 */
   unavailable?: string;
+  /** 删除这类收不回或要去「最近删除」找回的：字和图标用 --err。 */
+  danger?: boolean | undefined;
 }
 
 export function MenuItem(props: MenuItemProps): ReactNode {
   const unavailable = props.unavailable !== undefined;
   return (
     <button type="button" role={props.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
-      className="popover-item" disabled={props.disabled} title={props.title}
+      className={props.danger === true ? 'popover-item is-danger' : 'popover-item'} disabled={props.disabled}
+      title={props.title}
       aria-checked={props.checked} aria-disabled={unavailable ? true : undefined}
       aria-description={props.unavailable}
       onClick={unavailable ? undefined : props.onSelect}>

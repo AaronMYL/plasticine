@@ -25,7 +25,7 @@ const LOOK: Record<ToolCard['tool'], { label: string; name: ToolName | null; hue
   confirm: string; done: string }> = {
   money: { label: '记账', name: '记账', hue: 'olive', icon: 'wallet', confirm: '记上', done: '已记上' },
   focus: { label: '专注', name: null, hue: 'sage', icon: 'timer', confirm: '开始', done: '在专注' },
-  reminder: { label: '提醒', name: null, hue: 'ochre', icon: 'bell', confirm: '好', done: '已设好' },
+  reminder: { label: '提醒', name: null, hue: 'ochre', icon: 'bell', confirm: '好的', done: '已设好' },
   calendar: { label: '日历', name: null, hue: 'rose', icon: 'today', confirm: '加进日历', done: '已加进日历' },
 };
 
@@ -247,7 +247,7 @@ function CalendarBody({ card }: { card: CalendarCard }): ReactNode {
 }
 
 const EDIT_LABEL: Record<ToolCard['tool'], string> = {
-  money: '改', focus: '改时长', reminder: '改时间', calendar: '换个时间',
+  money: '修改', focus: '改时长', reminder: '改时间', calendar: '换个时间',
 };
 
 export function ToolCardView({ card, answer, onAnswer, onReset, onEdit }: AnswerProps & { card: ToolCard }): ReactNode {

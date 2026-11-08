@@ -43,11 +43,11 @@ export function AgreementRow({ agreement }: { agreement: AgreementView }): React
     { icon: 'quote', label: '在对话里提', onSelect: () => mention({ type: 'agreement', id: agreement.id,
       version: agreement.version, label: agreement.title ?? '这条约定', text: agreement.text }) },
     { icon: 'history', label: historyOpen ? '收起来路' : '上下文与版本来路', onSelect: () => setHistoryOpen(!historyOpen) },
-    { icon: 'edit', label: '改', title: '改约定', disabled: pending || editing,
+    { icon: 'edit', label: '修改', title: '修改约定', disabled: pending || editing,
       onSelect: () => startCognitionEdit(editDrafts, editKey, agreement.version, fields) },
   ];
   if (canRevoke && !confirmingRevoke) {
-    more.push({ icon: 'trash', label: '撤', disabled: pending, onSelect: () => setConfirmingRevoke(true) });
+    more.push({ icon: 'trash', label: '撤回', disabled: pending, onSelect: () => setConfirmingRevoke(true) });
   }
   const confirmButton = canConfirm && agreement.proposedDiff === null && !confirmingRevoke ? (
     <button type="button" className="chip-button" disabled={pending} onClick={() => decide('confirm')}>
@@ -81,7 +81,7 @@ export function AgreementRow({ agreement }: { agreement: AgreementView }): React
         <div className="mem-confirm" role="group" aria-label="确认撤掉">
           <span>撤掉这条约定？撤了它就不再按这条办。</span>
           <button type="button" className="chip-button" onClick={() => decide('revoke')}>
-            撤
+            撤回
           </button>
           <button type="button" className="text-button text-button-quiet" onClick={() => setConfirmingRevoke(false)}>
             先不

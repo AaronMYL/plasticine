@@ -165,7 +165,7 @@ describe('笔记页', () => {
     await waitFor(() => expect(document.activeElement).toBe(dom));
     const id = window.location.hash.replace('#/notes/', '');
     fireEvent.click(width < 768 ? screen.getByRole('button', { name: '返回笔记列表' })
-      : within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '现在' }));
+      : within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '首页' }));
     await settle();
     expect(document.activeElement).not.toBe(dom);
     await act(async () => {
@@ -202,7 +202,7 @@ describe('笔记页', () => {
     const create = vi.spyOn(app.api.notes, 'create');
     fireEvent.click(screen.getByRole('button', { name: '新建' }));
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('结果待核实'));
-    fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '现在' }));
+    fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '首页' }));
     await settle();
     fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '笔记' }));
     await settle();

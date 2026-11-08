@@ -31,7 +31,7 @@ function ConfirmRemove({ skill, onDone, onCancel }: { skill: SkillRow; onDone: (
           setBusy(false);
           setError(errorText(cause));
         });
-      }}>删</button>
+      }}>删除</button>
     </div>
   );
 }

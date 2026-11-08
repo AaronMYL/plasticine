@@ -58,14 +58,14 @@ describe('消息 · 列表', () => {
   it('筛选：全部 · 人 · 群 · 邮件；没有 AI 建议；全部是人在前、邮件和系统来源在后中间一道线', async () => {
     await open('#/messages');
     expect(within(within(list()).getByRole('group', { name: '筛选' })).getAllByRole('button')
-      .map((button) => button.textContent)).toEqual(['全部', '人', '群', '邮件']);
+      .map((button) => button.textContent)).toEqual(['全部', '联系人', '群组', '邮件']);
     fireEvent.click(filterButton('邮件'));
     expect(rowNames('邮件')).toEqual(['阿里云']);
     const mail = within(list()).getByRole('button', { name: '阿里云，1 条没读' });
     expect(mail.querySelector('.contact-avatar-square')).not.toBeNull();
     expect(mail.querySelector('.contact-unread')?.textContent).toBe('1');
-    fireEvent.click(filterButton('人'));
-    expect(rowNames('人')).toEqual(['林一', '周可', '陈默', '阿杰']);
+    fireEvent.click(filterButton('联系人'));
+    expect(rowNames('联系人')).toEqual(['林一', '周可', '陈默', '阿杰']);
     fireEvent.click(filterButton('全部'));
     expect(rowNames('全部')).toContain('巡查');
     // 人和邮件之间一道线，画在邮件段第一行上面。
@@ -174,7 +174,7 @@ describe('消息 · 和人的聊天', () => {
     const app = await open('#/messages/c_linyi');
     const input = await screen.findByRole('textbox', { name: '发给林一' });
     fireEvent.change(input, { target: { value: '@' } });
-    const menu = await screen.findByRole('listbox', { name: '@ 谁' });
+    const menu = await screen.findByRole('listbox', { name: '@ 联系人' });
     expect(within(menu).getAllByRole('option').map((option) => option.textContent))
       .toEqual(['林林一', '林一的 Plasticine', '我的 Plasticine']);
     fireEvent.click(within(menu).getByRole('option', { name: /林一的 Plasticine/ }));

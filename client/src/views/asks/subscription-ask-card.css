@@ -1,0 +1,72 @@
+/* 样刊附的「开启定时」卡（设计稿 Chat-Sample）：--line2 描边、圆角 12、最宽 520；头和脚之间 1px 细线。出现时轻轻上浮淡入。 */
+
+.sub-card {
+  width: 100%;
+  max-width: 520px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  overflow: hidden;
+  animation: sub-card-in var(--motion-base, 200ms) var(--ease-out);
+}
+
+@keyframes sub-card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.sub-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sub-card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sub-card-when {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+}
+
+.sub-card-title {
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub-card-title:hover {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sub-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.sub-card-answered {
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sub-card {
+    animation: none;
+  }
+}

@@ -11,6 +11,6 @@ it('精确记忆链接能读列表页外的整理前原话：只读显示原文�
   } });
   const focus = await screen.findByRole('region', { name: '引用的条目' });
   expect(within(focus).getByText('真正引用的解释')).toBeDefined();
-  expect(within(focus).queryByRole('button', { name: '改' })).toBeNull();
+  expect(within(focus).queryByRole('button', { name: '修改' })).toBeNull();
   expect(app.api.memory).toBeDefined();
 });

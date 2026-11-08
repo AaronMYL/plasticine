@@ -149,6 +149,12 @@ export interface TimelineInput {
   summaries: ReadonlyMap<string, string>;
 }
 
+/** 没内容的提醒：空白或字面上的 "null"。 */
+export function blankNotice(text: string | null): boolean {
+  const trimmed = text?.trim() ?? '';
+  return trimmed === '' || trimmed === 'null';
+}
+
 export function buildTimeline(input: TimelineInput): TimelineItem[] {
   const items: TimelineItem[] = [];
   const byId = new Map(input.lines.map((line) => [line.id, line]));
@@ -168,8 +174,11 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
       turn = null;
       items.push({ kind: message.origin?.kind === 'user' ? 'user' : 'input', key: `m-${message.seq}`, message });
     } else if (message.role === 'notice') {
-      turn = null;
-      items.push({ kind: 'notice', key: `m-${message.seq}`, message });
+      // 修复前留下过一条正文是字符串 "null" 的提醒（11-08 17:02）：空的和 "null" 的不画，数据不动。
+      if (!blankNotice(message.text)) {
+        turn = null;
+        items.push({ kind: 'notice', key: `m-${message.seq}`, message });
+      }
     } else if (message.role === 'welcome') {
       turn = null;
       items.push({ kind: 'welcome', key: `m-${message.seq}`, message });

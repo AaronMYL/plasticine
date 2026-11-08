@@ -1,0 +1,282 @@
+/*
+ * 资料库的主区（2026-11-08 设计稿 Library-Subscription / Library-Trash）：资料库首页、订阅页、「最近删除」。
+ * 方向 I：一底一前景，行和行之间 1px --line，没有卡片；数字等宽。
+ */
+
+/* ---------- 资料库首页 ---------- */
+
+.lib-label {
+  margin: 0;
+  padding: 0 0 6px;
+  color: var(--fg2);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.lib-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lib-row > .spaces-row {
+  flex: 1;
+  min-width: 0;
+  border-bottom: 0;
+}
+
+.lib-row .rename-field {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.lib-count {
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lib-trash-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--fg2);
+}
+
+.lib-trash-link {
+  margin-top: 24px;
+}
+
+/* ---------- 订阅页 ---------- */
+
+.lib-sub-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lib-sub-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.lib-sub-title h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.lib-sub-title .text-meta {
+  margin: 0;
+}
+
+.lib-sub-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.lib-sub-actions > .primary-button {
+  margin-right: 8px;
+}
+
+.lib-sub-actions > .reveal-more {
+  margin-left: 0;
+}
+
+.lib-sub.page {
+  gap: 0;
+}
+
+.lib-note {
+  margin: 12px 0 0;
+}
+
+.lib-note.is-error {
+  color: var(--err);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.lib-sub .block-empty {
+  margin-top: 16px;
+}
+
+.lib-issues {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lib-issue {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 14px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.lib-issue:hover {
+  background: var(--tint);
+}
+
+.lib-issue:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.lib-issue > svg {
+  flex: none;
+  color: var(--fg3);
+}
+
+.lib-issue-n {
+  flex: none;
+  width: 56px;
+  padding-left: 4px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lib-issue-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lib-issue-title {
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lib-sub[data-phone='true'] .lib-sub-head {
+  gap: 10px;
+  padding-bottom: 16px;
+}
+
+.lib-sub[data-phone='true'] .lib-sub-title h1 {
+  font-size: 22px;
+  line-height: 28px;
+}
+
+.lib-sub-primary {
+  display: flex;
+  padding: 16px 0 4px;
+}
+
+.lib-sub-primary > .primary-button {
+  flex: 1;
+  height: 40px;
+}
+
+.lib-sub[data-phone='true'] .lib-issue-title {
+  white-space: normal;
+}
+
+/* ---------- 最近删除 ---------- */
+
+.lib-trash-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.lib-trash-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 56px 96px auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 6px 0;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+
+.lib-trash-row > .hue-tile {
+  justify-self: center;
+}
+
+.lib-trash-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lib-trash-title {
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lib-trash-error {
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.lib-trash-kind,
+.lib-trash-time {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .lib-trash-row {
+    grid-template-columns: 28px minmax(0, 1fr) auto auto;
+  }
+
+  .lib-trash-kind {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .lib-trash-row > .secondary-button {
+    height: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lib-issue {
+    transition: none;
+  }
+}
+
+/* 次要的一行（日期、类型、时间）：12/18 --fg2（text-meta 只管字体和等宽数字）。 */
+.lib-sub-title .text-meta,
+.lib-issue-text .text-meta,
+.lib-trash-kind,
+.lib-trash-time {
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}

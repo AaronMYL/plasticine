@@ -9,6 +9,7 @@ import { SpacePage } from '../spaces/space-page.tsx';
 import { SpacesList } from '../spaces/spaces-list.tsx';
 import './books.css';
 import './reader.css';
+import './reader-paged.css';
 import './reader-popovers.css';
 import './book-sheet.css';
 
@@ -26,7 +27,7 @@ export interface BooksPageProps {
 export function BooksPage({ bookId, spaceId = null, spacesList = false, position, phone, navigate }: BooksPageProps)
   : ReactNode {
   if (spacesList) {
-    return <SpacesList navigate={navigate} />;
+    return <SpacesList phone={phone} navigate={navigate} />;
   }
   if (spaceId !== null) {
     return <SpacePage key={spaceId} spaceId={spaceId} phone={phone} navigate={navigate} />;

@@ -239,8 +239,12 @@ export class WebTabsStore {
     this.markLoaded(id);
   }
 
-  /** 原生层报来的网址、标题；还在载入、标题是空的时候留着原来的标题。 */
+  /** 原生层报来的网址、标题；还在载入、标题是空的时候留着原来的标题；网址是空的整条不收。 */
   update(id: string, patch: { url: string; title: string }): void {
+    // 空网址不收：本体要求网址至少一个字，收了整份摆放就送不上去（PUT /v2/web-tabs 一直 400）。
+    if (patch.url.trim() === '') {
+      return;
+    }
     const tab = this.tab(id);
     const title = patch.title.trim() === '' && tab?.url === patch.url ? tab.title : patch.title;
     if (tab === null || (tab.url === patch.url && tab.title === title)) {

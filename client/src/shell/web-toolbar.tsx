@@ -1,6 +1,6 @@
 // 网页工具条（11-07 设计稿 Web / Windows-Web）：← → ↻（载入中 ↻ 变 ✕）· 圈一块 · 地址框（平时只显示网站名，点了出
-// 完整网址可改）· 文A · 收进（置顶或放进分组，和竖排标签的右键菜单同一份）· ⋯。顶上 56 高，和第二栏顶上对齐；
-// Windows 的窗口按钮在右上角时右边让出它们的宽度（壳告诉界面）。圈一块只放图标，悬停写「圈一块」；圈的时候按钮按下着，
+// 完整网址可改）· 文A · 收进（置顶或放进分组，和竖排标签的右键菜单同一份）· ⋯。顶上 56 高，和第二栏顶上对齐
+// （Windows 的窗口按钮 11-08 起在标题栏里，这里不用让）。圈一块只放图标，悬停写「圈一块」；圈的时候按钮按下着，
 // 再点一下取消。要原生做的按钮（前进后退刷新、圈一块、文A）没有原生网页标签时不出。
 
 import type { ReactNode } from 'react';
@@ -33,7 +33,7 @@ export function WebToolbar(props: WebToolbarProps): ReactNode {
     'data-web-toggle': kind,
   });
   return (
-    <div className="web-bar web-toolbar" data-tip-side="bottom" data-titlebar="">
+    <div className="web-bar web-toolbar" data-tip-side="bottom">
       {native === null ? null : (
         <span className="web-nav" role="group" aria-label="前进后退">
           <IconButton icon="back" label="后退" disabled={nav?.canGoBack !== true}

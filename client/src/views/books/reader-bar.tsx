@@ -39,7 +39,7 @@ export function ReaderBar(props: ReaderBarProps): ReactNode {
       </IconButton>
       {props.phone ? null : <IconButton icon="sparkle" label="大纲与重点" onClick={() => props.onOpen('insights')} />}
       {props.phone ? null : <IconButton icon="search" label="在书里找" onClick={() => props.onOpen('search')} />}
-      <button type="button" className="bk-aa" aria-label="字号与行距" title="字号与行距"
+      <button type="button" className="bk-aa" aria-label="字号与翻页" data-tip="字号与翻页"
         onClick={() => props.onOpen('type')}>Aa</button>
     </header>
   );

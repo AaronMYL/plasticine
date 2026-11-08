@@ -1,70 +1,76 @@
 // 信息流页（第 3 批，用户 11-04 定；11-07 设计稿 Feed）：瀑布流卡片——有图的大卡、没图的短卡，电脑两三列按宽度、手机
-// 一列；命中关注点的排前面。看哪一路（全部 · 订阅 · 来源 · 收藏）在第二栏选（feed-column.tsx），主区顶上一行写这一路的
-// 名字；「加来源」在第二栏顶上的 +，抖音收藏的勾选清单在第二栏里再点一下「抖音收藏」。每个来源的开关、频率和出错原因在
-// 「设置 · 信息流」。读失败就地说原因并给「重新读取」，手里有一份就照常显示那一份。瀑布流按每条原样估高分列，卡片收成
-// 「不感兴趣 · 撤销」的占位时列不重排，只是那一列下面的卡平滑上移。手机没有第二栏：页头「筛选」抽屉里选。
+// 一列；命中关注点的排前面。看哪一路（全部 · 收藏 · 每个来源）在第二栏选（feed-column.tsx），主区顶上一行写这一路的
+// 名字。第 7 批第 10 条：来源都在第二栏管——+ 开「加来源」，每行 ⋯ 的「设置…」开这个来源的设置（这两个浮层挂在这页），
+// 抖音收藏的勾选清单在第二栏里再点一下「抖音收藏」或它的 ⋯。读失败就地说原因并给「重新读取」，手里有一份就照常显示那
+// 一份。瀑布流按每条原样估高分列，卡片收成「不感兴趣 · 撤销」的占位时列不重排，只是那一列下面的卡平滑上移。手机没有
+// 第二栏：页头「筛选」抽屉里是同一份来源列表和 ⋯。
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { COGNITION_PAGE_DEFAULT } from '../../api/shared.ts';
+import { COGNITION_PAGE_DEFAULT, type FeedNavSource } from '../../api/shared.ts';
 import type { FeedItemView } from '../../api/types.ts';
 import { useLive } from '../../live.tsx';
 import type { ActionOp } from '../../state/action-ops.ts';
 import { useClientState } from '../../state/context.tsx';
-import type { FeedSegment } from '../../state/feed-ui.ts';
+import { segmentOf, type FeedSegment } from '../../state/feed-ui.ts';
 import { useStore } from '../../state/use-store.ts';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
-import { FeedIssueBanner } from '../spaces/feed-issue-banner.tsx';
+import { TitlebarTitle, useInTitlebar } from '../../shell/titlebar.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
-import { useOpenPanel } from '../../shell/panel.ts';
 import { useRoute } from '../../shell/use-route.ts';
 import { usePhone } from '../../shell/use-viewport-width.ts';
 import { PendingOps } from '../pending/pending-ops.tsx';
 import { FeedCard } from './feed-card.tsx';
 import { feedText } from './feed-text.ts';
 import { cardHeight, COLUMN_GAP_PX, columnCount, layoutColumns } from './feed-masonry.ts';
-import { FeedSources } from './feed-sources.tsx';
 import { DouyinSheet } from './douyin-sheet.tsx';
+import { FeedAdd } from './feed-add.tsx';
+import { useFeedNav } from './feed-nav-data.ts';
+import { FeedSourceList } from './feed-source-list.tsx';
+import { FeedSourceSettings } from './feed-source-settings.tsx';
 import { FeedTarget } from './feed-target.tsx';
 import './feed.css';
 
-const SEGMENTS: ReadonlyArray<{ segment: FeedSegment; label: string }> = [
-  { segment: 'all', label: '全部' },
-  { segment: 'x', label: 'X 关注' },
-  { segment: 'rss', label: 'RSS' },
-  { segment: 'news', label: '按关注点的新闻' },
-  { segment: 'douyin', label: '抖音收藏' },
-  { segment: 'saved', label: '收藏' },
-];
+const SEGMENT_LABELS: Readonly<Record<Exclude<FeedSegment, `source:${string}`>, string>> = {
+  all: '全部',
+  saved: '收藏',
+  x: 'X 关注',
+  rss: 'RSS',
+  news: '按关注点的新闻',
+  douyin: '抖音收藏',
+  reddit: 'Reddit',
+};
 
 // 估高（feed.css）：「展开 / 译自…」那一行 18 + 间距 10；小图表 64 + 说明 18 + 间距 18；抖音的一条要点约一行半。
 const TOOLS_ROW_PX = 28;
 const CHART_PX = 100;
 const POINT_CHARS = 30;
 
-const EMPTY_TEXT: Readonly<Record<FeedSegment, string>> = {
-  all: '还没有内容。加个订阅或关注点，有了就出现在这里。',
+const EMPTY_TEXT: Readonly<Record<string, string>> = {
+  all: '还没有内容。点第二栏顶上的 + 加个来源，有了就出现在这里。',
   x: '还没有 X 上的内容。',
-  rss: '还没有订阅的内容。',
   news: '还没有新闻。',
   douyin: '还没有处理过的抖音收藏。',
   saved: '还没有收藏。',
 };
+const EMPTY_SOURCE = '这个来源还没有内容。';
 
 export function FeedPage(): ReactNode {
   const { route } = useRoute();
   return route.feedItemId == null ? <FeedListPage /> : <FeedTarget key={route.feedItemId} id={route.feedItemId} />;
 }
 
-function Segments({ segment, onChange }: { segment: FeedSegment; onChange: (segment: FeedSegment) => void }) {
+/** 手机的「筛选」抽屉：和电脑第二栏同一份来源列表（每行的 ⋯ 也在），底下「加来源」。 */
+function PhoneFilter({ segment, onShow, onAdd, onSettings, onDouyin }: { segment: FeedSegment;
+  onShow: (segment: FeedSegment) => void; onAdd: () => void; onSettings: (row: FeedNavSource) => void;
+  onDouyin: () => void }): ReactNode {
+  const { nav, error } = useFeedNav();
   return (
-    <div className="segmented feed-segments" role="group" aria-label="信息流来自哪里">
-      {SEGMENTS.map((entry) => (
-        <button key={entry.segment} type="button" className="segmented-item"
-          aria-pressed={segment === entry.segment} onClick={() => onChange(entry.segment)}>
-          {entry.label}
-        </button>
-      ))}
+    <div className="feed-filter">
+      {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
+      <FeedSourceList nav={nav} segment={segment} onList onShow={onShow} onSettings={onSettings}
+        onDouyin={onDouyin} />
+      <button type="button" className="secondary-button feed-filter-add" onClick={onAdd}>加来源</button>
     </div>
   );
 }
@@ -117,12 +123,11 @@ function Masonry({ items, dismissed }: { items: readonly FeedItemView[]; dismiss
 function FeedListPage(): ReactNode {
   const live = useLive();
   const { feedUi } = useClientState();
-  const openPanel = useOpenPanel();
   const data = useStore(live.feed.data);
   const sources = useStore(live.feed.sources);
   const refresh = useStore(live.feed.refresh.state);
   const ui = useStore(feedUi.store);
-  const segment: FeedSegment = ui.savedOnly ? 'saved' : ui.kind ?? 'all';
+  const segment = segmentOf(ui);
   const phone = usePhone();
   const adding = ui.sourcesOpen;
   const douyin = ui.douyinOpen;
@@ -152,8 +157,13 @@ function FeedListPage(): ReactNode {
     if ('itemId' in request) { return itemIds.has(request.itemId); }
     return 'sourceId' in request && sourceIds.has(request.sourceId);
   };
+  // 桌面客户端里来源名写在标题栏里（11-08），主区不再画只写着来源名的那条顶栏。
+  const titled = useInTitlebar();
   const loading = data.status === 'idle' || data.status === 'loading';
-  const label = SEGMENTS.find((entry) => entry.segment === segment)?.label ?? '全部';
+  const viewed = ui.sourceId === null ? undefined : sources.sources?.others.find((row) => row.id === ui.sourceId);
+  const label = segment.startsWith('source:') ? viewed?.label ?? '' : SEGMENT_LABELS[segment as 'all'];
+  const empty = ui.sourceId === null ? EMPTY_TEXT[segment] ?? EMPTY_TEXT['all'] : EMPTY_SOURCE;
+  const settings = ui.settingsSource;
   return (
     <div className="page feed">
       {phone ? (
@@ -161,8 +171,8 @@ function FeedListPage(): ReactNode {
           <IconButton icon="filter" label="筛选" size={17} aria-haspopup="dialog" aria-expanded={filtering}
             aria-pressed={segment !== 'all'} onClick={() => setFiltering(true)} />
         )} />
-      ) : (
-        <header className="feed-top" data-titlebar="">
+      ) : titled ? (label === '' ? null : <TitlebarTitle text={label} />) : (
+        <header className="feed-top">
           <h2 className="feed-top-title">{label}</h2>
         </header>
       )}
@@ -180,10 +190,9 @@ function FeedListPage(): ReactNode {
           </button>
         </p>
       )}
-      {segment === 'all' ? <FeedIssueBanner phone={phone} /> : null}
       <section className="feed-board" aria-label="条目">
         {loading ? <p className="block-empty">正在读信息流…</p> : null}
-        {data.status === 'ready' && data.items.length === 0 ? <p className="block-empty">{EMPTY_TEXT[segment]}</p>
+        {data.status === 'ready' && data.items.length === 0 ? <p className="block-empty">{empty}</p>
           : null}
         <Masonry items={data.items} dismissed={ui.dismissedIds} />
         {data.moreError === null ? null : (
@@ -204,25 +213,35 @@ function FeedListPage(): ReactNode {
       </section>
       <Sheet open={filtering} variant="drawer" className="sheet-fit" title="筛选"
         onClose={() => setFiltering(false)}>
-        <div className="feed-filter">
-          <Segments segment={segment} onChange={(next) => {
-            void live.feed.setSegment(next);
-            setFiltering(false);
-          }} />
-          <button type="button" className="secondary-button feed-filter-add" onClick={() => {
-            setFiltering(false);
-            setAdding(true);
-          }}>加来源</button>
-        </div>
-      </Sheet>
-      <Sheet open={adding} variant={phone ? 'drawer' : 'panel'} title="加来源" onClose={() => setAdding(false)}>
-        <FeedSources onManage={() => {
-          setAdding(false);
-          openPanel({ kind: 'settings', section: 'browser', focus: 'feed' });
+        <PhoneFilter segment={segment} onShow={(next) => {
+          void live.feed.setSegment(next);
+          setFiltering(false);
+        }} onAdd={() => {
+          setFiltering(false);
+          feedUi.openAdd();
+        }} onSettings={(row) => {
+          setFiltering(false);
+          feedUi.setSettingsSource(row);
         }} onDouyin={() => {
+          setFiltering(false);
+          setDouyin(true);
+        }} />
+      </Sheet>
+      <Sheet open={adding} variant={phone ? 'drawer' : 'panel'} className="sheet-fit" title="加来源"
+        onClose={() => setAdding(false)}>
+        <FeedAdd onClose={() => setAdding(false)} onDouyin={() => {
           setAdding(false);
           setDouyin(true);
         }} />
+      </Sheet>
+      <Sheet open={settings !== null} variant={phone ? 'drawer' : 'panel'} className="sheet-fit"
+        title={settings === null ? '设置' : `${settings.label} · 设置`}
+        onClose={() => feedUi.setSettingsSource(null)}>
+        {settings === null ? null : <FeedSourceSettings key={settings.source.id} row={settings}
+          onClose={() => feedUi.setSettingsSource(null)} onDouyin={() => {
+            feedUi.setSettingsSource(null);
+            setDouyin(true);
+          }} />}
       </Sheet>
       <DouyinSheet open={douyin} onClose={() => setDouyin(false)} />
     </div>

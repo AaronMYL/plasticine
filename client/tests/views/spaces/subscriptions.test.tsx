@@ -1,4 +1,4 @@
-// 订阅（《优化清单》第 6、7 条）：信息流顶部的最新一期、订阅浮层（最新一期 / 往期 / 设置）、改设置、开定时要先有样刊、
+// 订阅（《优化清单》第 6、7 条）：信息流顶部不再放（第 7 批第 10 条挪到资料库）、改设置、开定时要先有样刊、
 // 首页「回顾」一节；图表刻度和空间地址。
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -7,31 +7,9 @@ import { chartScale } from '../../../src/views/spaces/chart-scale.ts';
 import { renderApp } from '../../helpers.tsx';
 
 describe('信息流顶部的订阅', () => {
-  it('只放最新一期的摘要和几个重点；「打开」进那一期空间', async () => {
+  it('第 7 批第 10 条：订阅挪到资料库，信息流「全部」顶上不再有研究周报的横幅', async () => {
     await renderApp({ hash: '#/feed', setup: (fake) => fake.control.spaces.seed() });
-    const banner = await screen.findByRole('region', { name: '订阅' });
-    expect(within(banner).getByText(/^研究周报 · 第 2 期/)).toBeTruthy();
-    expect(within(banner).getByText(/睡眠中的记忆重放/)).toBeTruthy();
-    expect(within(banner).getByText('14 篇读过 · 5 篇重点 · 2 篇和你有关')).toBeTruthy();
-    fireEvent.click(within(banner).getByRole('button', { name: '打开' }));
-    await waitFor(() => expect(window.location.hash).toBe('#/books/space/sp_research_2'));
-  });
-
-  it('「订阅」开浮层：最新一期、往期各期、设置；往期点了进那一期', async () => {
-    await renderApp({ hash: '#/feed', setup: (fake) => fake.control.spaces.seed() });
-    const banner = await screen.findByRole('region', { name: '订阅' });
-    fireEvent.click(within(banner).getByRole('button', { name: '订阅' }));
-    const sheet = await screen.findByRole('dialog', { name: '认知与神经科学研究周报' });
-    expect(within(sheet).getByRole('heading', { name: /睡眠中的记忆重放/ })).toBeTruthy();
-    fireEvent.click(within(sheet).getByRole('button', { name: /往期/ }));
-    expect(within(sheet).getAllByRole('button', { name: /第 \d 期/ })).toHaveLength(2);
-    fireEvent.click(within(sheet).getByRole('button', { name: /第 1 期/ }));
-    await waitFor(() => expect(window.location.hash).toBe('#/books/space/sp_research_1'));
-  });
-
-  it('还没有研究订阅出过一期：整条不出现', async () => {
-    await renderApp({ hash: '#/feed' });
-    await screen.findByRole('heading', { name: '信息流' });
+    await screen.findByRole('region', { name: '条目' });
     expect(screen.queryByRole('region', { name: '订阅' })).toBeNull();
   });
 });
@@ -55,6 +33,18 @@ describe('订阅设置', () => {
     const sub = await app.api.subscriptions.get('sub_research');
     expect(sub.settings.kind === 'research' ? [sub.settings.topics, sub.settings.focus] : null)
       .toEqual([['记忆巩固', '睡眠', '注意力的神经机制', '工作记忆'], 'clinical']);
+  });
+
+  it('第 7 批：订阅设置浮层从资料库的订阅页打开，改了「保存」能存', async () => {
+    const app = await renderApp({ hash: '#/library/sub/sub_research', setup: (fake) => fake.control.spaces.seed() });
+    await screen.findByRole('heading', { name: '认知与神经科学研究周报' });
+    fireEvent.click(screen.getByRole('button', { name: '订阅设置' }));
+    const sheet = await screen.findByRole('dialog', { name: '认知与神经科学研究周报' });
+    fireEvent.click(within(sheet).getByRole('button', { name: '临床应用' }));
+    await act(async () => fireEvent.click(within(sheet).getByRole('button', { name: '保存' })));
+    const sub = await app.api.subscriptions.get('sub_research');
+    expect(sub.settings.kind === 'research' ? sub.settings.focus : null).toBe('clinical');
+    expect(window.location.hash).toBe('#/library/sub/sub_research');
   });
 
   it('开着的订阅能暂停；暂停后能「现在出一期」、能重新开定时', async () => {

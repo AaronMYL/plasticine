@@ -14,3 +14,9 @@ test('本实例根文档识别路由，端口、协议、附件和配对查询�
     assert.equal(internalPageHash(url, server), null, url);
   }
 });
+
+test('空网址、空白不是站内首页（新开的网页标签还没载入时壳报过空网址）', () => {
+  const server = 'https://plasticine.test/';
+  assert.equal(internalPageHash('', server), null);
+  assert.equal(internalPageHash('  ', server), null);
+});

@@ -52,7 +52,7 @@ function Rename({ group, onDone }: { group: ContactRow; onDone: () => void }): R
     }}>
       <input className="field-input" aria-label="群名" value={name} autoFocus maxLength={40}
         onChange={(event) => setName(event.target.value)} />
-      <button type="submit" className="primary-button" disabled={name.trim() === ''}>改</button>
+      <button type="submit" className="primary-button" disabled={name.trim() === ''}>修改</button>
     </form>
   );
 }

@@ -32,7 +32,7 @@ export function addDraftKey(field: AddField): string {
 type Reaction = NonNullable<FeedItemView['reaction']>;
 type Level = FeedSourceView['level'];
 
-const REACTION_LABELS: Readonly<Record<Reaction, string>> = { like: '赞', dislike: '不感兴趣' };
+const REACTION_LABELS: Readonly<Record<Reaction, string>> = { like: '点赞', dislike: '不感兴趣' };
 
 /** 链接只收 http(s) 开头的完整网址（服务端同样拒别的）；空着就是不带链接。 */
 export function linkProblem(url: string): string | null {

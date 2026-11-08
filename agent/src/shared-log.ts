@@ -50,6 +50,7 @@ const EVENTS = {
   feed_translate_failed: '一条信息流没翻成中文，原因记下了，下次扫描再试',
   video_parse_failed: '一条视频没解析成，原因记在那一条上，可在抖音收藏里再处理',
   video_skill_seed_failed: '视频解析技能没装进数据目录，下次启动再装',
+  sample_card_backfill_failed: '样刊的「开启定时」卡没补上，下次启动再补',
   feed_subscription_failed: '一个订阅这次没抓到，原因记在设置那一行，两小时后再试',
   sse_failed: '事件推送失败，已关闭对应连接',
   after_commit_failed: '请求已提交，后续动作失败',

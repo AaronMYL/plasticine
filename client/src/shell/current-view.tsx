@@ -3,6 +3,7 @@
 
 import { Suspense, type ReactNode } from 'react';
 import type { BooksPageProps } from '../views/books/books-page.tsx';
+import type { LibraryPageProps } from '../views/library/library-page.tsx';
 import { ProjectsPage } from '../views/projects/projects-page.tsx';
 import { FeedPage } from '../views/feed/feed-page.tsx';
 import type { MemoryPageProps } from '../views/memory/memory-page.tsx';
@@ -18,6 +19,7 @@ import { PhoneUnavailable } from '../views/reading/phone-content.tsx';
 const NotesView = lazyView<NotesViewProps>(() => import('../views/notes/notes-view.tsx'), 'NotesView');
 const MemoryPage = lazyView<MemoryPageProps>(() => import('../views/memory/memory-page.tsx'), 'MemoryPage');
 const BooksPage = lazyView<BooksPageProps>(() => import('../views/books/books-page.tsx'), 'BooksPage');
+const LibraryPage = lazyView<LibraryPageProps>(() => import('../views/library/library-page.tsx'), 'LibraryPage');
 import { WebStart } from '../views/web/web-start.tsx';
 
 const ToolPage = lazyView<{ tool: ToolName | null }>(() => import('../views/tools/tool-page.tsx'), 'ToolPage');
@@ -63,6 +65,8 @@ function RoutedView({ route, phone, navigate, onBack }: CurrentViewProps): React
       return <BooksPage bookId={route.bookId ?? null} spaceId={route.spaceId ?? null}
         spacesList={route.spacesList === true} position={route.bookPosition ?? null} phone={phone}
         navigate={navigate} />;
+    case 'library':
+      return <LibraryPage route={route} phone={phone} navigate={navigate} />;
     case 'projects':
       return <ProjectsPage projectId={route.projectId ?? null} phone={phone} navigate={navigate} onBack={onBack} />;
     case 'memory':

@@ -135,6 +135,8 @@ function fromDaily(error: DailyError): ApiError {
       return new ApiError(400, 'invalid_request', domainErrorText(error.code), field);
     case 'conflict':
       return new ApiError(409, 'conflict', domainErrorText(error.code), field);
+    case 'rate_limited':
+      return new ApiError(429, 'too_many_attempts', error.message, { ...field, next: '过一会儿再试。' });
   }
 }
 

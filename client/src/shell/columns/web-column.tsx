@@ -105,7 +105,7 @@ export function WebColumn(props: WebColumnProps): ReactNode {
     .includes(needle)).slice(0, 20);
   return (
     <div ref={root} className="web-column" data-dragging={drag.dragging !== null}>
-      <div className="web-search" data-titlebar="">
+      <div className="web-search">
         <label className="web-search-field">
           <Icon name="search" size={14} />
           <input type="search" placeholder="搜标签" aria-label="搜标签" value={query}

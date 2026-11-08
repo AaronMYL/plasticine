@@ -88,7 +88,10 @@ const NEWEST_FIRST = 'arrived_at DESC, id DESC';
 // shared/feed-order.ts，两边要一起改。
 const LIST_ORDER = 'day DESC, (concern_id IS NOT NULL) DESC, arrived_at DESC, id DESC';
 // 列表、计数、最近来源和关切线索都只看站外的和手动加的（FEED_LIST_ORIGINS）；不感兴趣的另由 includeHidden 决定。
-const LISTED = `origin IN (${FEED_LIST_ORIGINS.map((origin) => `'${origin}'`).join(', ')})`;
+// 删了的来源（迁移 0113）：它没收藏过的条目不再列，收藏过的留着。
+const FROM_LIVE_SOURCE = `(saved_at IS NOT NULL
+  OR source_id NOT IN (SELECT id FROM feed_sources WHERE removed_at IS NOT NULL))`;
+const LISTED = `origin IN (${FEED_LIST_ORIGINS.map((origin) => `'${origin}'`).join(', ')}) AND ${FROM_LIVE_SOURCE}`;
 const SHOWN = `${LISTED} AND (reaction IS NULL OR reaction <> 'dislike')`;
 
 export interface FeedPageFilter {
@@ -103,14 +106,18 @@ export interface FeedPageFilter {
   saved?: boolean;
   /** 第 3 批页头分段：只要 X / 订阅 / 新闻（shared FEED_ITEM_KINDS 的推法）。 */
   kind?: (typeof FEED_FILTER_KINDS)[number];
+  /** 第 7 批第 10 条：第二栏点一个订阅 / Reddit 版块，只看这一个来源。 */
+  sourceId?: string;
 }
 
-// 分段筛选：X、订阅按来源的种类；新闻是其余站外收集的（手动添加的 origin 是 manual，不算）。
+// 分段筛选：X、订阅、Reddit、抖音按来源的种类；新闻是其余站外收集的（手动添加的 origin 是 manual，不算）。
 const KIND_CLAUSES: Readonly<Record<(typeof FEED_FILTER_KINDS)[number], string>> = {
   x: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'x')",
   rss: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'rss')",
-  news: "origin = 'feed' AND source_id NOT IN (SELECT id FROM feed_sources WHERE kind IN ('x', 'rss', 'douyin'))",
+  news: `origin = 'feed' AND source_id NOT IN (SELECT id FROM feed_sources
+    WHERE kind IN ('x', 'rss', 'douyin', 'reddit'))`,
   douyin: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'douyin')",
+  reddit: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'reddit')",
 };
 
 export interface AddedFeedItem {
@@ -142,6 +149,10 @@ function whereOf(filter: FeedPageFilter): { where: string; params: Params } {
   }
   if (filter.kind !== undefined) {
     clauses.push(KIND_CLAUSES[filter.kind]);
+  }
+  if (filter.sourceId !== undefined) {
+    clauses.push('source_id = $source_id');
+    params['source_id'] = filter.sourceId;
   }
   clauses.push(filter.includeHidden === true ? LISTED : SHOWN);
   return { where: clauses.join(' AND '), params };
@@ -219,7 +230,7 @@ export function createFeedItemStore(context: StoreContext) {
     },
     /** 第 8 条第二栏：[from, before) 里进来的、显示着的条目按来路数（x / rss / news / douyin / manual）。 */
     countByKind(from: string, before: string): Record<(typeof FEED_FILTER_KINDS)[number] | 'manual', number> {
-      const counts = { x: 0, rss: 0, news: 0, douyin: 0, manual: 0 };
+      const counts = { x: 0, rss: 0, news: 0, douyin: 0, reddit: 0, manual: 0 };
       const range = { from, before };
       const span = 'arrived_at >= $from AND arrived_at < $before';
       for (const kind of FEED_FILTER_KINDS) {
@@ -231,6 +242,12 @@ export function createFeedItemStore(context: StoreContext) {
         AND origin = 'manual'`, range);
       counts.manual = Number(manual?.['n'] ?? 0);
       return counts;
+    },
+    /** 第 7 批第 10 条第二栏每个来源一行：[from, before) 里进来的、显示着的条目按来源数。 */
+    countBySource(from: string, before: string): Map<string, number> {
+      const rows = context.db.all(`SELECT source_id, count(*) AS n FROM feed_items
+        WHERE arrived_at >= $from AND arrived_at < $before AND ${SHOWN} GROUP BY source_id`, { from, before });
+      return new Map(rows.map((row) => [String(row['source_id']), Number(row['n'])]));
     },
     /** The newest item a concern brought back (探索方向的「最近的线索」). */
     latestForConcern: (concernId: string): FeedItem | undefined =>

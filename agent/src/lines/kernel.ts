@@ -79,7 +79,7 @@ export class LineKernel implements LineControl, SideControl {
             && (tool.lineKinds === undefined || tool.lineKinds.includes(scope.kind))).map((tool) => tool.create(scope)),
         meta: (name) => meta.get(name),
       }),
-      prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl),
+      prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.()),
         this.#options.skillsContext?.(line.id) ?? ''].filter((part) => part.trim() !== '').join('\n\n'),
       publish: (event) => this.#options.publish(event),
       gate: this.#gate,

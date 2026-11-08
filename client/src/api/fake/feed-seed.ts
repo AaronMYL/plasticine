@@ -2,9 +2,7 @@
 // 没图的短卡、命中关注点的、收藏过的。配图和头像是本地画的 SVG（真接口里是服务端图片代理地址），只给开发和截图用。
 
 import type { FeedItemView } from '../types.ts';
-import { NEWS_SOURCE_ID, X_SOURCE_ID, type FakeFeed } from './fake-feed.ts';
-
-const DOUYIN_SOURCE_ID = 'src_douyin';
+import { DOUYIN_SOURCE_ID, NEWS_SOURCE_ID, X_SOURCE_ID, type FakeFeed } from './fake-feed.ts';
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -74,6 +72,40 @@ export function seedFeedBoard(feed: FakeFeed, now: Date): void {
     feed.seedItem({ origin: 'feed', ...item });
   }
   seedTranslated(feed, ago);
+  seedReddit(feed, ago);
+}
+
+/** 第 7 批第 10、13 条（设计稿 Feed-Sources）：两个 Reddit 版块（英文帖翻好了）、一个上次没取到的订阅。 */
+function seedReddit(feed: FakeFeed, ago: (hours: number) => string): void {
+  const fine = { checkedAt: ago(0.5), okAt: ago(0.5), error: null };
+  feed.seedSource({ id: 'src_r_neuro', kind: 'reddit', label: 'r/neuroscience',
+    query: 'https://www.reddit.com/r/neuroscience/.rss', status: fine });
+  feed.seedSource({ id: 'src_r_cogsci', kind: 'reddit', label: 'r/cogsci',
+    query: 'https://www.reddit.com/r/cogsci/.rss', status: fine });
+  feed.seedSource({ id: 'src_simon', kind: 'rss', label: 'Simon Willison',
+    query: 'https://simonwillison.net/atom/everything/',
+    status: { checkedAt: ago(1), okAt: ago(26), error: '订阅没有返回可读内容，请检查地址后再试。' } });
+  const reddit = (name: string): FeedItemView['author'] => ({ name, handle: null, avatar: null });
+  const items: Array<Pick<FeedItemView, 'id' | 'title'> & Partial<FeedItemView>> = [
+    { id: 'fr_time', title: 'Hippocampal time cells replay in order during maze runs', sourceId: 'src_r_neuro',
+      site: 'www.reddit.com', author: reddit('u/synapse_lab'),
+      url: 'https://www.reddit.com/r/neuroscience/comments/1gm2abc/hippocampal_time_cells/',
+      summary: 'New single-unit recordings show hippocampal time cells replay in order while mice run a maze.',
+      zh: { state: 'done', lang: 'en', from: '英文', title: '海马体「时间细胞」在小鼠走迷宫时会按顺序重放，新论文给出了单细胞记录',
+        text: '新的单细胞记录显示，小鼠走迷宫时海马体的时间细胞会按顺序重放。', digest: null },
+      arrivedAt: ago(0.2) },
+    { id: 'fr_attn', title: 'Attention: spotlight or filter? A decade of intracranial evidence',
+      sourceId: 'src_r_cogsci',
+      site: 'www.reddit.com', author: reddit('u/attn_matters'),
+      url: 'https://www.reddit.com/r/cogsci/comments/1gm1xyz/attention_spotlight_or_filter/',
+      summary: 'A review that sorts ten years of intracranial recordings by the two hypotheses.',
+      zh: { state: 'done', lang: 'en', from: '英文', title: '注意力到底是「聚光灯」还是「过滤器」？',
+        text: '这篇综述把过去十年的颅内记录证据按两种假说分开列了出来。', digest: null },
+      arrivedAt: ago(0.25) },
+  ];
+  for (const item of items) {
+    feed.seedItem({ origin: 'feed', ...item });
+  }
 }
 
 const LONG_POST = 'We handed 4,800 backtested trading strategies to a model and let it run for three months. The '

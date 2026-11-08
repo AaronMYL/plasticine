@@ -150,6 +150,7 @@ type Editing = 'name' | 'handle' | 'password' | null;
 
 export function AccountProfile(): ReactNode {
   const api = useApi();
+  const { network } = useLive();
   const timeZone = useTimeZone();
   const [state, setState] = useState<AccountState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -157,6 +158,9 @@ export function AccountProfile(): ReactNode {
   const [localToken, setLocalToken] = useState<string | null>(null);
   const [setAt, setSetAt] = useState<string | null>(null);
   const [round, setRound] = useState(0);
+  useEffect(() => {
+    network.status.open();
+  }, [network]);
   useEffect(() => {
     const controller = new AbortController();
     api.account.state(controller.signal).then((value) => {
@@ -168,6 +172,8 @@ export function AccountProfile(): ReactNode {
     return () => controller.abort();
   }, [api, round]);
   const name = state?.displayName ?? '';
+  // 头像在网络状态里（设置 · 账号下面「头像」那块换的），和图标栏读同一份。
+  const avatar = useStore(network.status.data).value?.account?.avatar ?? null;
   const host = hostOf(state?.networkUrl ?? null);
   const reread = (): void => {
     setEditing(null);
@@ -179,7 +185,7 @@ export function AccountProfile(): ReactNode {
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {state === null ? null : <ul className="system-rows">
         <li className="system-row account-row">
-          <FaceAvatar name={name === '' ? '?' : name} avatar={null} size={AVATAR_SIZE} />
+          <FaceAvatar name={name === '' ? '?' : name} avatar={avatar} size={AVATAR_SIZE} />
           <span className="account-device-main">
             <span className="system-row-title">{name === '' ? '没起名字' : name}</span>
             <span className="text-meta account-device-meta">
@@ -189,11 +195,16 @@ export function AccountProfile(): ReactNode {
           {state.handle === null ? <button type="button" className="secondary-button button-small"
             aria-expanded={editing === 'handle'} onClick={() => setEditing('handle')}>起一个 @账号</button> : null}
           <button type="button" className="secondary-button button-small" aria-label="改名字"
-            aria-expanded={editing === 'name'} onClick={() => setEditing('name')}>改</button>
+            aria-expanded={editing === 'name'} onClick={() => setEditing('name')}>修改</button>
         </li>
         {editing === 'name' ? <li className="account-edit"><RenameForm name={name} onDone={(next) => {
           if (next === null) setEditing(null);
-          else { setState(next); setEditing(null); }
+          else {
+            setState(next);
+            setEditing(null);
+            // 图标栏、首页问候读的是网络状态里的名字：重读它，名字立刻跟着变。
+            void network.status.reload();
+          }
         }} /></li> : null}
         {editing === 'handle' ? <li className="account-edit"><ClaimHandle name={name} onDone={reread} /></li> : null}
         <li className="system-row account-row">

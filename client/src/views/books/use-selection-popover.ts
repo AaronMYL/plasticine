@@ -1,0 +1,39 @@
+// 正文里选中一段、停下一会儿，弹出「引用到对话 · 四色 · 批注 · 复制」：位置量在 overlay 那一层里（滚动时是正文框，
+// 翻页时是阅读区）。正在写批注时不被新的选区顶掉。
+
+import { useEffect, type Dispatch, type RefObject, type SetStateAction } from 'react';
+import type { PopoverState } from './popover-layer.tsx';
+import { rangeRects, rectIn } from './reading-scroll.ts';
+import { selectionOffsets } from './text-offsets.ts';
+
+// 选区停下多久再弹菜单：拖着选的时候不跟着闪。
+const SELECTION_SETTLE_MS = 200;
+
+export function useSelectionPopover(root: HTMLElement | null, overlay: RefObject<HTMLElement | null>,
+  setPopover: Dispatch<SetStateAction<PopoverState | null>>): void {
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onSelection = (): void => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const selection = document.getSelection();
+        const box = overlay.current;
+        if (root === null || box === null || selection === null || selection.rangeCount === 0
+          || selection.isCollapsed) {
+          return;
+        }
+        const range = selection.getRangeAt(0);
+        const offsets = root.contains(range.commonAncestorContainer) ? selectionOffsets(root, range) : null;
+        if (offsets !== null) {
+          setPopover((current) => current?.kind === 'note' ? current
+            : { kind: 'selection', ...offsets, rect: rectIn(box, rangeRects(range)) });
+        }
+      }, SELECTION_SETTLE_MS);
+    };
+    document.addEventListener('selectionchange', onSelection);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('selectionchange', onSelection);
+    };
+  }, [root, overlay, setPopover]);
+}

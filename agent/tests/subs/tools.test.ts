@@ -56,3 +56,16 @@ test('space_write 不合规（图表数据个数对不上）就报一句能照�
     type: 'chart', kind: 'bar', title: '销量', x: ['一月', '二月'], series: [{ name: '销量', values: [1] }],
     caption: '月销量', source: { label: '行业协会月报' } }] } }), /横轴/);
 });
+
+test('他删了的空间：space_list 不列，space_read 明说已删除，space_write 改它要先还原', async () => {
+  const tools = subsTools(t.state, () => PORT, () => new Date());
+  const written = await call(tools, 'space_write', { title: '签证核查',
+    doc: { headline: '能办', stats: [], blocks: [], sources: [] } });
+  const id = String(written['id']);
+  t.state.spaces.markDeleted(id, Number(written['version']));
+  const listed = await call(tools, 'space_list', {});
+  assert.deepEqual(listed['spaces'], []);
+  await assert.rejects(call(tools, 'space_read', { id }), /已删除/);
+  await assert.rejects(call(tools, 'space_write', { id, version: 2, title: '签证核查',
+    doc: { headline: '改', stats: [], blocks: [], sources: [] } }), /最近删除/);
+});

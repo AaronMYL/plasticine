@@ -1,5 +1,5 @@
-// 信息流页（第 3 批，用户 11-04 定）：瀑布流卡片；页头分段 全部 · X · 订阅 · 新闻 · 收藏，右边「加来源」；命中关注点的
-// 排前面、带关注点名；卡底 赞 · 收藏 · 讨论 · 不感兴趣 · 打开原文；整张卡不挂浮框（11-04），理由在 ⓘ；读失败可重读。
+// 信息流页（第 3 批，用户 11-04 定；第 7 批第 10 条第二栏每个来源一行）：瀑布流卡片；命中关注点的排前面、带关注点名；
+// 卡底 点赞 · 收藏 · 讨论 · 不感兴趣 · 打开原文；整张卡不挂浮框（11-04），理由在 ⓘ；读失败可重读。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -25,17 +25,23 @@ function titles(): (string | null)[] {
   return within(board()).queryAllByRole('listitem').map((row) => row.getAttribute('aria-label'));
 }
 
-/** 看哪一路在第二栏选（11-07 两层侧栏）：全部 · 订阅 · 来源（X 关注、RSS、按关注点的新闻、抖音收藏、收藏）。 */
-const SOURCES: Readonly<Record<string, string>> = { 全部: '全部', X: 'X 关注', 订阅: 'RSS', 新闻: '按关注点的新闻', 抖音: '抖音收藏', 收藏: '收藏' };
+/** 看哪一路在第二栏选（第 7 批第 10 条）：全部 · 收藏 · 每个来源一行（X 关注、抖音收藏、按关注点的新闻、每个订阅）。 */
+const SOURCES: Readonly<Record<string, string>> = { 全部: '全部', X: 'X 关注', 订阅: '慢工博客', 新闻: '按关注点的新闻',
+  抖音: '抖音收藏', 收藏: '收藏' };
 
-function segment(name: string): HTMLElement {
-  return within(screen.getByRole('complementary', { name: '信息流' })).getByRole('button', { name: new RegExp(`^${SOURCES[name] ?? name}`) });
+function column(): HTMLElement {
+  return screen.getByRole('complementary', { name: '信息流' });
 }
 
-/** 关注点（多少、搜什么）在页头「加来源」打开的 Sheet 里。 */
+function segment(name: string): HTMLElement {
+  return within(column()).getByRole('button', { name: new RegExp(`^${SOURCES[name] ?? name}`) });
+}
+
+/** 关注点（多少、搜什么）在第二栏「按关注点的新闻」那一行 ⋯ 的「设置…」里。 */
 function openSources(): HTMLElement {
-  fireEvent.click(within(screen.getByRole('complementary', { name: '信息流' })).getByRole('button', { name: '加来源或订阅' }));
-  return within(main()).getByRole('dialog', { name: '加来源' });
+  fireEvent.click(within(column()).getByRole('button', { name: '「按关注点的新闻」的操作' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '设置…' }));
+  return within(main()).getByRole('dialog', { name: '按关注点的新闻 · 设置' });
 }
 
 function ago(hours: number): string {
@@ -128,7 +134,7 @@ describe('信息流页', () => {
     expect(why.getAttribute('data-tip')).toBe('你在留意端侧模型。');
     expect(why.getAttribute('aria-description')).toBe('你在留意端侧模型。');
     const names = within(news).getAllByRole('button').map((button) => button.getAttribute('aria-label'));
-    expect(names).toEqual(['为什么推给你', '赞', '收藏', '讨论', '不感兴趣']);
+    expect(names).toEqual(['为什么推给你', '点赞', '收藏', '讨论', '不感兴趣']);
     const original = within(news).getByRole('link', { name: '打开原文' });
     expect(original.getAttribute('href')).toBe('https://news.example.com/a');
     expect(original.getAttribute('target')).toBe('_blank');
@@ -151,19 +157,19 @@ describe('信息流页', () => {
     expect(side?.topic?.ref).toBe('f_news');
   });
 
-  it('加来源：关注点带档位，点「少」就改成少', async () => {
+  it('关注点的设置：关注点带档位，点「偏少」就改成少', async () => {
     const app = await renderApp({ hash: '#/feed', setup: seed });
     await settle();
     const sources = within(openSources()).getByRole('list', { name: '关注点' });
     const levels = within(sources).getByRole('group', { name: '「本地优先同步」的档位' });
     expect(within(levels).getByRole('button', { name: '正常' }).getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(within(levels).getByRole('button', { name: '少' }));
-    const less = (): HTMLElement => within(levels).getByRole('button', { name: '少' });
+    fireEvent.click(within(levels).getByRole('button', { name: '偏少' }));
+    const less = (): HTMLElement => within(levels).getByRole('button', { name: '偏少' });
     await waitFor(() => expect(less().getAttribute('aria-pressed')).toBe('true'));
     expect((await app.api.feed.sources()).interests[0]?.level).toBe('less');
   });
 
-  it('加来源里关注点显示实际搜索词，就地编辑后保存；「每个来源的开关和频率」去设置', async () => {
+  it('关注点的设置里显示实际搜索词，就地编辑后保存', async () => {
     const app = await renderApp({ hash: '#/feed', setup: seed });
     await settle();
     const sheet = openSources();
@@ -174,10 +180,6 @@ describe('信息流页', () => {
     fireEvent.click(within(row).getByRole('button', { name: '保存' }));
     await waitFor(() => expect(row.textContent).toContain('搜：offline sync'));
     expect((await app.api.feed.sources()).interests[0]?.query).toBe('offline sync');
-    fireEvent.click(within(sheet).getByRole('button', { name: '每个来源的开关和频率' }));
-    const settings = await screen.findByRole('dialog', { name: '设置' });
-    expect(within(settings).getByRole('button', { name: '浏览器与信息流' }).getAttribute('aria-current')).toBe('page');
-    expect(window.location.hash).toBe('#/settings/browser');
   });
 
   it('搜索词保存回执丢失保留草稿，原请求重试后更新', async () => {

@@ -23,8 +23,8 @@ function setup() {
 it('第 94 条：预置与手动信息流都使用自己的来源，不再产生阅读标签', async () => {
   const fake = createFakeApi({ seed: true, streamStepMs: 0, now: () => NOW });
   const sources = await fake.api.feed.sources();
-  // 第 3 批：其他来源里是站内的（手动添加、按关注点搜新闻）、订阅和 X，没有阅读。
-  expect(sources.others.every((source) => ['internal', 'rss', 'x'].includes(source.kind))).toBe(true);
+  // 第 3 批：其他来源里是站内的（手动添加、按关注点搜新闻）、订阅和 X；第 7 批加了 Reddit 版块。没有阅读。
+  expect(sources.others.every((source) => ['internal', 'rss', 'x', 'reddit'].includes(source.kind))).toBe(true);
   expect(JSON.stringify(sources)).not.toContain('阅读');
   const items = await fake.api.feed.list({});
   expect(items.items.some((item) => item.originLabel === '阅读')).toBe(false);

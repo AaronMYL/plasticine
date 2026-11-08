@@ -77,10 +77,10 @@ describe('信息流的中文、小图表和抖音收藏', () => {
     expect(within(douyin).getByText('和你有关：你笔记里记过每月定投')).toBeTruthy();
   });
 
-  it('来源管理里打开抖音收藏：勾选后「处理选中的」，处理过的不重复', async () => {
+  it('第二栏抖音收藏的 ⋯ 里打开勾选清单：勾选后「处理选中的」，处理过的不重复', async () => {
     await renderApp({ hash: '#/feed', setup: seed });
-    fireEvent.click(await screen.findByRole('button', { name: '加来源或订阅' }));
-    fireEvent.click(await screen.findByRole('button', { name: '选收藏' }));
+    fireEvent.click(await screen.findByRole('button', { name: '「抖音收藏」的操作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '选收藏…' }));
     const sheet = await screen.findByRole('dialog', { name: '抖音收藏' });
     const row = await within(sheet).findByRole('checkbox', { name: '选中 一口气看懂睡眠周期' });
     expect((row as HTMLInputElement).checked).toBe(false);

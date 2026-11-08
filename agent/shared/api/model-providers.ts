@@ -24,7 +24,7 @@ export type ProviderAuthMethod = Static<typeof ProviderAuthMethodSchema>;
 export const THINKING_LEVELS = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 export const ThinkingLevelSchema = Type.Enum(THINKING_LEVELS);
 export const THINKING_LABELS: Readonly<Record<(typeof THINKING_LEVELS)[number], string>> = {
-  off: '关闭', minimal: '最低', low: '低', medium: '中', high: '高', xhigh: '很高', max: '最高',
+  off: '关闭', minimal: '最低', low: '较低', medium: '中等', high: '较高', xhigh: '很高', max: '最高',
 };
 
 export const ProviderModelViewSchema = Type.Object({

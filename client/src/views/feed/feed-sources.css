@@ -1,0 +1,201 @@
+/* 信息流的来源列表（feed-source-list.tsx，第 7 批第 10 条）：第二栏和手机筛选抽屉共用。一行就是第二栏的 .column-item，
+   行尾的 ⋯（和「登录」）叠在右边：悬停、键盘进来、菜单开着时淡出来，同时行尾的个数淡掉让位。手机上没有悬停，⋯ 一直在。 */
+
+.feed-srcs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed-src {
+  position: relative;
+}
+
+.feed-src-main {
+  width: calc(100% - 16px);
+  text-align: left;
+  cursor: pointer;
+}
+
+.feed-src[data-login] .feed-src-main {
+  padding-right: 76px;
+}
+
+.feed-src[data-paused] .column-item-text {
+  color: var(--fg2);
+}
+
+.feed-src-trail {
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.feed-src-tools {
+  position: absolute;
+  top: 3px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+}
+
+.feed-src-more {
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.feed-src:hover .feed-src-more,
+.feed-src:focus-within .feed-src-more,
+.feed-src[data-open] .feed-src-more {
+  opacity: 1;
+}
+
+.feed-src:hover .feed-src-trail,
+.feed-src:focus-within .feed-src-trail,
+.feed-src[data-open] .feed-src-trail {
+  opacity: 0;
+}
+
+.feed-src-login {
+  height: 22px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.feed-src-login:hover {
+  background: var(--tint);
+}
+
+.feed-src-login:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.feed-src-dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--err);
+}
+
+.feed-src-error {
+  margin: 0 18px 6px 44px;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.reddit-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--hue-clay);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.reddit-mark[data-size='20'] {
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+}
+
+.reddit-mark[data-size='28'] {
+  width: 28px;
+  height: 28px;
+  font-size: 15px;
+}
+
+/* ⋯ 菜单的「删除」用出错色；删除前的确认是一张贴着 ⋯ 的小卡。 */
+.feed-src-menu .popover-separator + .popover-item {
+  color: var(--err);
+}
+
+.feed-src-confirm {
+  width: 264px;
+  padding: 14px;
+}
+
+.feed-src-confirm-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.feed-src-confirm-text {
+  margin: 4px 0 12px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.feed-src-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.secondary-button.feed-danger {
+  color: var(--err);
+}
+
+/* 手机（筛选抽屉）和没有悬停的设备：⋯ 一直在，个数让到它左边。 */
+.feed-filter .feed-src-more {
+  opacity: 1;
+}
+
+.feed-filter .feed-src-main {
+  padding-right: 44px;
+}
+
+.feed-filter .feed-src[data-login] .feed-src-main {
+  padding-right: 92px;
+}
+
+.feed-filter .feed-src .feed-src-trail {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .feed-src-more {
+    opacity: 1;
+  }
+
+  .feed-src-main {
+    padding-right: 44px;
+  }
+
+  .feed-src[data-login] .feed-src-main {
+    padding-right: 92px;
+  }
+
+  .feed-src .feed-src-trail {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-src-more,
+  .feed-src-trail,
+  .feed-src-login {
+    transition: none;
+  }
+}

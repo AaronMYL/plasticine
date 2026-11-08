@@ -9,8 +9,8 @@ export type MessageFilter = (typeof MESSAGE_FILTERS)[number];
 
 export const FILTER_LABELS: Readonly<Record<MessageFilter, string>> = {
   all: '全部',
-  people: '人',
-  groups: '群',
+  people: '联系人',
+  groups: '群组',
   mail: '邮件',
 };
 

@@ -39,7 +39,7 @@ export interface LineParts {
   desk: AskDesk;
   hub: EventHub;
   now: () => Date;
-  publicUrl: string;
+  publicUrl: () => string;
   legacy?: LegacyParts;
   /** 别的模块交来的工具（网络的发任务卡）。 */
   tools?: readonly KernelTool[];

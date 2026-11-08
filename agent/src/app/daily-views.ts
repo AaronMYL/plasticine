@@ -35,6 +35,7 @@ export function feedItemKind(item: Pick<FeedItem, 'origin'>, source: FeedSource 
   if (source?.kind === 'x') { return 'x'; }
   if (source?.kind === 'rss') { return 'rss'; }
   if (source?.kind === 'douyin') { return 'douyin'; }
+  if (source?.kind === 'reddit') { return 'reddit'; }
   return 'news';
 }
 

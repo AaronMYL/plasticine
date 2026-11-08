@@ -1,11 +1,12 @@
-// 设置浮层里「今日」那一段的数据：十件事上限、离开多久算「回来」、采访开关和每天几题（GET / PUT /v2/today/settings）。
+// 设置 · 通用里「时区」的数据（GET / PUT /v2/today/settings 里的 timeZone）。2026-11-08 第 7 批：「日常」那一栏删了，
+// 十件事上限、离开多久算回来、每天回看（和早先隐藏的采访开关、每天几题）11-06 起没有代码在读，界面不再读写它们；
+// 服务端 schema 不动（这些字段在 PUT 里本来可选，不带就不改）。
 // 改了的字存在 inline-drafts（`settings:daily:<字段>`，切页、刷新都在、算进离开提醒），点「保存」才提交；标识和请求体
-// 存在 state/action-ops，回执丢了原样重发。别处改过（409）就重读一次设置，草稿留着再存。存上了今日页重拉一份。
+// 存在 state/action-ops，回执丢了原样重发。别处改过（409）就重读一次设置，草稿留着再存。
 
 import type { PlasticineApi } from '../../api/client.ts';
 import { ApiError, errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
-import { BRIEF_LIMIT_MAX, INTERVIEW_PER_DAY_MAX, RETURN_THRESHOLD_HOURS_MAX } from '../../api/shared.ts';
 import type { DailySettingsView, UpdateDailySettingsRequest } from '../../api/types.ts';
 import { isOpenOp, type ActionOps, type ActionRequest } from '../../state/action-ops.ts';
 import type { InlineDrafts } from '../../state/inline-drafts.ts';
@@ -14,14 +15,8 @@ import { Store } from '../../state/store.ts';
 import type { LoadStatus } from '../../state/load.ts';
 import { isTimeZone } from '../../../../agent/shared/time-zone.ts';
 
-export const SETTING_FIELDS = [
-  'briefLimit', 'returnThresholdHours', 'interviewEnabled', 'interviewPerDay', 'timeZone',
-  'cognitionReviewEnabled',
-] as const;
+export const SETTING_FIELDS = ['timeZone'] as const;
 export type SettingField = (typeof SETTING_FIELDS)[number];
-
-/** 离开阈值最少一刻钟（shared 里 PUT 的下限）。 */
-const RETURN_THRESHOLD_HOURS_MIN = 0.25;
 
 export function settingDraftKey(field: SettingField): string {
   return `settings:daily:${field}`;
@@ -37,17 +32,12 @@ export interface DailySettingsDeps {
   api: PlasticineApi;
   ops: ActionOps;
   drafts: InlineDrafts;
-  /** 存上了：今日页按新的上限重拉。 */
+  /** 存上了。 */
   onSaved: () => void;
 }
 
 function valueOf(settings: DailySettingsView, field: SettingField): string {
   return String(settings[field] ?? '');
-}
-
-function inRange(text: string, min: number, max: number, integer: boolean): boolean {
-  const value = Number(text);
-  return Number.isFinite(value) && value >= min && value <= max && (!integer || Number.isInteger(value));
 }
 
 export class DailySettingsStore {
@@ -105,16 +95,6 @@ export class DailySettingsStore {
     if (timeZone !== '' && !isTimeZone(timeZone)) {
       return '时区要用 IANA 名称，例如 Asia/Shanghai、America/Chicago；留空使用设备时区。';
     }
-    if (!inRange(this.field('briefLimit'), 1, BRIEF_LIMIT_MAX, true)) {
-      return `十件事上限要是 1 到 ${BRIEF_LIMIT_MAX} 的整数。`;
-    }
-    const hours = RETURN_THRESHOLD_HOURS_MAX;
-    if (!inRange(this.field('returnThresholdHours'), RETURN_THRESHOLD_HOURS_MIN, hours, false)) {
-      return `离开多久算回来要在 ${RETURN_THRESHOLD_HOURS_MIN} 到 ${hours} 小时之间。`;
-    }
-    if (!inRange(this.field('interviewPerDay'), 1, INTERVIEW_PER_DAY_MAX, true)) {
-      return `每天几题要是 1 到 ${INTERVIEW_PER_DAY_MAX} 的整数。`;
-    }
     return null;
   }
 
@@ -141,17 +121,12 @@ export class DailySettingsStore {
     }
     this.deps.ops.dismiss(DAILY_SETTINGS_OP_KEY);
     const changes: Omit<UpdateDailySettingsRequest, 'requestId' | 'version'> = {
-      briefLimit: Number(this.field('briefLimit')),
-      returnThresholdHours: Number(this.field('returnThresholdHours')),
-      interviewEnabled: this.field('interviewEnabled') === 'true',
-      cognitionReviewEnabled: this.field('cognitionReviewEnabled') === 'true',
-      interviewPerDay: Number(this.field('interviewPerDay')),
       timeZone: this.field('timeZone') || null,
     };
     const request = this.deps.ops.begin(
       DAILY_SETTINGS_OP_KEY,
       '保存',
-      '今日设置',
+      '时区',
       (requestId) => ({ kind: 'daily_settings', body: { requestId, version: settings.version, ...changes } }),
       createRequestId,
     );

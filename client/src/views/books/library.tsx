@@ -1,4 +1,4 @@
-// 图书馆：页头「图书」+「n 本 · 在读 n · 标注 n」，排序（最近 / 书名 / 作者）和「导入书」；导入中的书一行一个状态；
+// 图书馆：页头「图书馆」（11-08 图书单独一栏后和第二栏第一行同名）+「n 本 · 在读 n · 标注 n」，排序（最近 / 书名 / 作者）和「导入书」；导入中的书一行一个状态；
 // 「在读」两列（封面、章、进度、上次在哪台设备读、接着读）；「全部」封面格子。整页可以把书拖进来。
 
 import { StatusGlyph } from '../../shell/glyph.tsx';
@@ -12,10 +12,14 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
 import { useDismiss } from '../../shell/use-dismiss.ts';
+import { RenameField } from '../../shell/rename-field.tsx';
+import { useDeleteConfirm } from '../library/library-actions.tsx';
+import { libraryChanged } from '../library/library-signal.ts';
 import type { Route } from '../../shell/routes.ts';
 import { BookCover } from './book-cover.tsx';
 import { chapterDotted, isReading, percentText, progressLabel, readingTime } from './book-format.ts';
 import { sizeText, useBookImports, type ImportRow } from './book-import.ts';
+import { onQueuedBookImport } from './import-queue.ts';
 import { SORT_LABELS, sortBooks, type LibrarySort } from './library-sort.ts';
 
 export interface LibraryProps {
@@ -125,30 +129,40 @@ interface GridItemProps {
 
 function GridItem({ book, onOpen, onDeleted }: GridItemProps): ReactNode {
   const api = useApi();
-  const [menu, setMenu] = useState<'closed' | 'open' | 'confirm'>('closed');
-  const [error, setError] = useState<string | null>(null);
+  const [menu, setMenu] = useState<'closed' | 'open'>('closed');
+  const [renaming, setRenaming] = useState(false);
+  const confirm = useDeleteConfirm();
   const item = useRef<HTMLLIElement>(null);
   const more = useRef<HTMLButtonElement>(null);
-  // 点外面、Esc、窗口失焦、切页、缩放、滚动都收（use-dismiss.ts）；还没确认的删除就此作罢。
+  // 点外面、Esc、窗口失焦、切页、缩放、滚动都收（use-dismiss.ts）。
   useDismiss({ open: menu !== 'closed', inside: [item], anchor: more, onDismiss: (reason) => {
     setMenu('closed');
     if (reason === 'escape') {
       more.current?.focus();
     }
   } });
+  // 2026-11-08：删了进资料库「最近删除」，能还原；删前照全站一样先问。
   const remove = (): void => {
-    setError(null);
-    api.books.remove(book.id, createRequestId()).then(() => {
-      setMenu('closed');
-      onDeleted();
-    }, (cause: unknown) => setError(errorText(cause)));
+    setMenu('closed');
+    confirm.ask(book.title, async () => {
+      await api.books.remove(book.id, createRequestId());
+      libraryChanged();
+    }, onDeleted);
+  };
+  const rename = async (title: string): Promise<void> => {
+    await api.books.rename(book.id, { requestId: createRequestId(), title });
+    libraryChanged();
+    onDeleted();
   };
   return (
     <li className="bk-item" ref={item}>
       <button type="button" className="bk-cover-button" aria-label={`打开《${book.title}》`} onClick={onOpen}>
         <BookCover book={book} />
       </button>
-      <span className="bk-item-title">{book.title}</span>
+      {renaming ? <span className="bk-item-title">
+        <RenameField value={book.title} label={`《${book.title}》的新书名`} onSave={rename}
+          onDone={() => setRenaming(false)} />
+      </span> : <span className="bk-item-title">{book.title}</span>}
       <IconButton ref={more} icon="more" label={`《${book.title}》的更多操作`} className="bk-item-more"
         aria-expanded={menu !== 'closed'} onClick={() => setMenu(menu === 'closed' ? 'open' : 'closed')} />
       <span className="bk-item-meta">
@@ -157,21 +171,18 @@ function GridItem({ book, onOpen, onDeleted }: GridItemProps): ReactNode {
       </span>
       {menu === 'closed' ? null : (
         <div className="bk-item-menu" role="menu" aria-label={`《${book.title}》`}>
-          {menu === 'open' ? (
-            <button type="button" role="menuitem" className="bk-menu-item" onClick={() => setMenu('confirm')}>
-              <Icon name="trash" /> 从图书馆删掉
-            </button>
-          ) : <>
-            <p className="bk-menu-note">删掉《{book.title}》？标注跟着收起来，原文件留在服务器上。</p>
-            <div className="bk-menu-actions">
-              <button type="button" className="text-button text-button-quiet" onClick={() => setMenu('closed')}>
-                算了</button>
-              <button type="button" className="primary-button" onClick={remove}>删掉</button>
-            </div>
-          </>}
-          {error === null ? null : <p className="bk-import-error" role="alert">{error}</p>}
+          <button type="button" role="menuitem" className="bk-menu-item" onClick={() => {
+            setMenu('closed');
+            setRenaming(true);
+          }}>
+            <Icon name="edit" /> 改名
+          </button>
+          <button type="button" role="menuitem" className="bk-menu-item is-danger" onClick={remove}>
+            <Icon name="trash" /> 删除
+          </button>
         </div>
       )}
+      {confirm.dialog}
     </li>
   );
 }
@@ -191,6 +202,9 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
       open(book);
     }
   });
+  // 图书第二栏栏头「导入书」选的文件交到这里导入（进度和出错都在这页上）。
+  const { importFiles } = imports;
+  useEffect(() => onQueuedBookImport(importFiles), [importFiles]);
   const onDrop = (event: DragEvent<HTMLDivElement>): void => {
     event.preventDefault();
     setDragging(false);
@@ -223,7 +237,7 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
         }
       }}
       onDrop={onDrop}>
-      <PageHeader title="图书" controls={controls} />
+      <PageHeader title="图书馆" controls={controls} />
       <input ref={picker} type="file" accept={ACCEPT} multiple hidden aria-label="选择要导入的书"
         onChange={(event) => {
           imports.importFiles([...event.target.files ?? []]);

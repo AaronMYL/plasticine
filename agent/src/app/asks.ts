@@ -10,6 +10,7 @@ import {
   AskFeedbackRequestSchema,
   DeferAskRequestSchema,
   ScheduleCardPreviewSchema,
+  SubscriptionCardPreviewSchema,
   TaskCardPreviewSchema,
   type AnswerAskResponse,
   type AskAboutResponse,
@@ -17,6 +18,7 @@ import {
   type AskView,
   type DeferAskResponse,
   type ScheduleCardPreview,
+  type SubscriptionCardPreview,
   type TaskCardPreview,
 } from '../../shared/api/index.ts';
 import { Value } from 'typebox/value';
@@ -58,16 +60,25 @@ function scheduleCardOf(ask: Ask): ScheduleCardPreview | null {
   return Value.Check(ScheduleCardPreviewSchema, preview) ? preview : null;
 }
 
+/** 样刊附的「开启定时」卡（subs/sample-card.ts）；对不上格式就不画。 */
+function subscriptionCardOf(ask: Ask): SubscriptionCardPreview | null {
+  const preview = ask.context?.['subscription'];
+  return ask.purpose === 'subscription_schedule' && Value.Check(SubscriptionCardPreviewSchema, preview)
+    ? preview : null;
+}
+
 export function askView(_state: unknown, ask: Ask): AskView {
   const longOptions = ask.options.some((option) => option.description !== null);
   const taskCard = taskCardOf(ask);
   const scheduleCard = scheduleCardOf(ask);
+  const subscriptionCard = subscriptionCardOf(ask);
   return {
     id: ask.id,
     ...(ask.purpose === 'network_task' && typeof ask.context?.['networkTaskId'] === 'string'
       ? { networkTaskId: ask.context['networkTaskId'] } : {}),
     ...(taskCard === null ? {} : { taskCard }),
     ...(scheduleCard === null ? {} : { scheduleCard }),
+    ...(subscriptionCard === null ? {} : { subscriptionCard }),
     feedback: ask.feedback,
     ...(ask.purpose === 'device_action' ? { deviceAction: true } : {}),
     ...(ask.context?.['requiresSignature'] === true ? { requiresSignature: true } : {}),

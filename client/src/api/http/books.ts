@@ -21,6 +21,7 @@ import {
   type CreateBookAnnotationRequest,
   type DismissKeyPointRequest,
   type GenerateBookInsightRequest,
+  type RenameBookRequest,
   type SaveBookProgressRequest,
   type UpdateBookAnnotationRequest,
   type UploadBookRequest,
@@ -61,6 +62,16 @@ export class HttpBooks implements BooksApi {
   get(id: string, signal?: AbortSignal) {
     return this.transport.request({ method: 'GET', path: bookPath(id), schema: BookViewSchema,
       what: '读这本书', lostAs: 'failed', signal });
+  }
+
+  rename(id: string, input: RenameBookRequest) {
+    return this.transport.request({ method: 'PATCH', path: bookPath(id), body: input, schema: BookViewSchema,
+      what: '改书名', lostAs: 'uncertain' });
+  }
+
+  restore(id: string, requestId: string) {
+    return this.transport.request({ method: 'POST', path: `${bookPath(id)}/restore`, body: { requestId },
+      schema: BookViewSchema, what: '还原这本书', lostAs: 'uncertain' });
   }
 
   async remove(id: string, requestId: string): Promise<void> {

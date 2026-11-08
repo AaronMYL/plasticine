@@ -41,7 +41,7 @@ describe('设置 · AI 模型选择', () => {
   it('各用哪个：默认在最上，成组的折成一行点开再分开配，跟默认是浅色；搜功能只留对得上的', async () => {
     await renderApp({ hash: '#/settings/ai', setup: seed });
     const first = await screen.findByRole('button', { name: /^默认：/ });
-    expect(first.getAttribute('aria-label')).toBe('默认：GPT-5.5 · 高');
+    expect(first.getAttribute('aria-label')).toBe('默认：GPT-5.5 · 较高');
     const notes = screen.getByRole('button', { name: '笔记 · 8 项' });
     expect(notes.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('button', { name: /^润色：/ })).toBeNull();
@@ -59,7 +59,7 @@ describe('设置 · AI 模型选择', () => {
   it('心跳、做梦没单独设时用默认那一家里启用的最便宜的模型、低档', async () => {
     await renderApp({ hash: '#/settings/ai', setup: seed });
     expect((await screen.findByRole('button', { name: /^心跳：/ })).getAttribute('aria-label'))
-      .toBe('心跳：GPT-5.5 mini · 低');
+      .toBe('心跳：GPT-5.5 mini · 较低');
     expect(screen.getByRole('button', { name: /^做梦：/ }).getAttribute('data-quiet')).toBe('true');
   });
 
@@ -105,7 +105,7 @@ describe('设置 · AI 模型选择', () => {
         model: 'claude-sonnet-5' }, thinking: null } });
     } });
     expect((await screen.findByRole('button', { name: /^后台线（子代理）：/ })).getAttribute('aria-label'))
-      .toBe('后台线（子代理）：Claude Sonnet 5 · 高');
+      .toBe('后台线（子代理）：Claude Sonnet 5 · 较高');
     const list = screen.getByRole('list', { name: '连着的提供商' });
     const claude = within(list).getByRole('listitem', { name: 'Claude' });
     fireEvent.click(within(claude).getByRole('button', { name: /个启用/ }));
@@ -124,7 +124,7 @@ describe('设置 · AI 模型选择', () => {
     fireEvent.click(within(chooser).getByRole('option', { name: 'Claude Sonnet 5' }));
     await waitFor(async () => expect((await purposeOf(app, 'main'))?.chosen)
       .toEqual({ model: { provider: 'anthropic', model: 'claude-sonnet-5' }, thinking: null }));
-    expect(await screen.findByRole('button', { name: '对话模型：Claude Sonnet 5 · 高' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: '对话模型：Claude Sonnet 5 · 较高' })).toBeTruthy();
     const after = await app.api.modelProviders.list();
     expect(after.chosen).toEqual(before.chosen);
     expect((await purposeOf(app, 'side'))?.effective?.model).toBe('claude-sonnet-5');

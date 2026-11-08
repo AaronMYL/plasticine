@@ -1,12 +1,11 @@
-// 桌面客户端顶上一条的不可拖动区（11-07 两层侧栏）：窗口顶上 44px 里不在 noDrag 里的点击壳一律当拖窗口，所以顶上那几块
-// （图标栏顶、第二栏顶、主区顶栏，都标 data-titlebar）里的按钮、输入框要报成不可拖动；别处的按钮、压在 44 以下的不报；
-// 标了 data-no-drag 的整块算一块。顶上那几块变了就重报，没变不重复报。
+// 桌面客户端的标题栏（11-08）：Swift Mac App 认不了 -webkit-app-region，标题栏里按钮、输入框的矩形要报给它（其余当拖窗口）；
+// 压在 44 以下的不报。标题栏里变了就重报，没变不重复报。Electron 壳没有 titlebar()，不报。
 
 import { act, render, waitFor } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TitlebarLayout, WebTabFrame } from '../../src/api/shared.ts';
-import { collectTitlebar, useTitlebarReport } from '../../src/shell/window-chrome.ts';
+import { collectNoDrag, useTitlebarReport } from '../../src/shell/window-chrome.ts';
 
 function box(frame: WebTabFrame): DOMRect {
   return { left: frame.x, top: frame.y, width: frame.width, height: frame.height, x: frame.x, y: frame.y,
@@ -24,9 +23,9 @@ function fakeLayout(this: Element): DOMRect {
 const titlebar = vi.fn<(layout: TitlebarLayout) => void>();
 
 function Harness({ revision, children }: { revision: string; children: ReactNode }): ReactNode {
-  const root = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLElement>(null);
   useTitlebarReport(root, revision);
-  return <div ref={root}>{children}</div>;
+  return <header ref={root}>{children}</header>;
 }
 
 beforeEach(() => {
@@ -41,25 +40,24 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('顶上一条的不可拖动区', () => {
-  it('只报 data-titlebar 那几块里、压在顶上 44 以内的按钮和输入框；data-no-drag 的整块算一块', () => {
-    const root = document.createElement('div');
+describe('标题栏的不可拖动区（Swift Mac App）', () => {
+  it('报标题栏里压在 44 以内的按钮、输入框、链接；44 以下的、没大小的不报', () => {
+    const root = document.createElement('header');
     root.innerHTML = `
-      <div data-titlebar><button data-frame="90,14,28,28">新旁聊</button></div>
-      <div data-titlebar><input data-frame="84,14,227,34"><button data-frame="84,60,40,40">在下面</button></div>
-      <div data-titlebar><div data-no-drag data-frame="400,8,600,32"><button data-frame="410,10,20,20">里面</button>
-      </div></div>
-      <button data-frame="20,10,40,40">不在顶上那几块里</button>`;
-    expect(collectTitlebar(root)).toEqual([
-      { x: 90, y: 14, width: 28, height: 28 },
-      { x: 84, y: 14, width: 227, height: 34 },
-      { x: 400, y: 8, width: 600, height: 32 },
+      <button data-frame="96,8,28,28">后退</button>
+      <input data-frame="300,6,200,32">
+      <a href="#" data-frame="600,8,28,28">链接</a>
+      <button data-frame="84,60,40,40">在下面</button>
+      <button>没大小</button>`;
+    expect(collectNoDrag(root)).toEqual([
+      { x: 96, y: 8, width: 28, height: 28 },
+      { x: 300, y: 6, width: 200, height: 32 },
+      { x: 600, y: 8, width: 28, height: 28 },
     ]);
   });
 
-  it('挂上就报一次；顶上那块里的按钮变了重报；几何没变不重复报', async () => {
-    const view = render(<Harness revision="a"><div data-titlebar><button data-frame="10,10,20,20">一</button></div>
-    </Harness>);
+  it('挂上就报一次；标题栏里的按钮变了重报；几何没变不重复报', async () => {
+    const view = render(<Harness revision="a"><button data-frame="10,10,20,20">一</button></Harness>);
     expect(titlebar).toHaveBeenCalledTimes(1);
     expect(titlebar.mock.calls[0]?.[0]).toEqual({ height: 44, noDrag: [{ x: 10, y: 10, width: 20, height: 20 }] });
     const button = view.container.querySelector('button')!;
@@ -70,11 +68,10 @@ describe('顶上一条的不可拖动区', () => {
     expect(titlebar).toHaveBeenCalledTimes(2);
   });
 
-  it('换栏目、换页（revision 变）就重新找顶上那几块再报', () => {
-    const view = render(<Harness revision="a"><div data-titlebar><button data-frame="10,10,20,20">一</button></div>
-    </Harness>);
-    view.rerender(<Harness revision="b"><div data-titlebar><button data-frame="50,10,20,20">二</button></div>
-    </Harness>);
-    expect(titlebar.mock.calls.at(-1)?.[0].noDrag).toEqual([{ x: 50, y: 10, width: 20, height: 20 }]);
+  it('Electron 壳没有 titlebar()：什么都不报，也不出错', () => {
+    window.plasticineDesktop = { version: '0.9.0', notify: vi.fn(), windowChrome: {
+      current: () => ({ trafficLightInset: 96, fullScreen: false }) } };
+    render(<Harness revision="a"><button data-frame="10,10,20,20">一</button></Harness>);
+    expect(titlebar).not.toHaveBeenCalled();
   });
 });

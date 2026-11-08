@@ -73,9 +73,9 @@ export const NODE_PROTOCOL_VERSION = 1;
 export const NODE_CREDENTIAL_SCHEME = 'Bearer';
 
 export const DEVICE_CLASS_LABELS: Readonly<Record<DeviceActionClass, string>> = {
-  read: '读',
-  write: '写',
-  delete: '删',
+  read: '读取',
+  write: '写入',
+  delete: '删除',
   command: '运行命令',
   browser: '浏览器站点',
   input: '点击输入',

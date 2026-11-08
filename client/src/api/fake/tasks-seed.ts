@@ -140,3 +140,25 @@ export function seedScheduleScene(lines: FakeLines, raiseAsk: (seed: AskSeed) =>
   lines.change(MAIN_LINE_ID, { status: 'waiting', activity: null, activeSince: said });
   raiseAsk(scheduleAsk());
 }
+
+const SAMPLE_SAID = '每周五为我整理认知科学、神经科学、意识的最新重要研究，重点解读原始论文。';
+const SAMPLE_REPORT = '**第 1 期样刊写好了。** 重点解读 2 篇原始研究：1 篇 Nature Neuroscience 正式论文、'
+  + '1 篇未评审预印本，已分开标出。\n\n[认知科学与意识研究周报 · 第 1 期](https://203.0.113.10/#/books/space/space-sample)';
+
+/** 第 7 批第 14 条（设计稿 Chat-Sample）：样刊写完，主线最下面摊着「每周五 08:00 出一期」的卡。 */
+export function seedSampleScene(lines: FakeLines, raiseAsk: (seed: AskSeed) => void, now: Date): void {
+  const said = new Date(now.getTime() - 120_000).toISOString();
+  lines.record(MAIN_LINE_ID, { role: 'user', text: SAMPLE_SAID, origin: { kind: 'user', userText: SAMPLE_SAID },
+    thinking: null, thinkingMs: null, steps: [],
+    toolCallId: null, tool: null, say: null, ok: null, summary: null, stopReason: null, childLineId: null,
+    attachments: [], widgets: [], createdAt: said });
+  lines.record(MAIN_LINE_ID, { role: 'assistant', text: SAMPLE_REPORT, thinking: null, thinkingMs: null, steps: [],
+    toolCallId: null, tool: null, say: null, ok: null, summary: null, stopReason: 'stop', childLineId: null,
+    attachments: [], widgets: [], createdAt: now.toISOString() });
+  raiseAsk({ id: 'ask-sample-card', kind: 'decide', question: '每周五 08:00 出一期', detail: '认知科学与意识研究周报',
+    basis: 'inferred', lineId: null,
+    options: [{ id: 'start', label: '开启定时', recommended: true, description: null },
+      { id: 'revise', label: '再改改', recommended: false, description: null }],
+    subscriptionCard: { subscriptionId: 'sub-cogsci', title: '认知科学与意识研究周报', when: '每周五 08:00 出一期',
+      spaceId: 'space-sample', issueNumber: 1 } });
+}

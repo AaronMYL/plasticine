@@ -89,9 +89,9 @@ function Running({ value, error, onReload }: { value: SystemOperations | null; e
   const facts: Array<[string, ReactNode]> = value === null ? [] : [
     ['已运行', uptimeText(value.uptimeSeconds)],
     ['模型', choiceName(models.value) ?? '没连上'],
-    ['磁盘', <>剩 <span className="mono">{gb(value.diskFreeBytes)}</span> / <span className="mono">
+    ['磁盘', <>剩余 <span className="mono">{gb(value.diskFreeBytes)}</span> / <span className="mono">
       {gb(value.diskTotalBytes)}</span> GB</>],
-    ['邮件', <>收 <span className="mono">{clock(value.mail.receivedAt)}</span> · 发 <span className="mono">
+    ['邮件', <>收到 <span className="mono">{clock(value.mail.receivedAt)}</span> · 发出 <span className="mono">
       {clock(value.mail.sentAt)}</span></>],
   ];
   return (

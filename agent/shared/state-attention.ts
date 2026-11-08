@@ -30,6 +30,8 @@ export const ASK_PURPOSES = [
   // 新内核（2026-11-05 Harness 重做）：线上的硬线工具要他点头（只放行这一次）；线上的 ask_user 问他一件事。
   'line_approval',
   'line_question',
+  // 第 7 批第 14 条：研究周报样刊出来时问他开不开定时（subs/sample-card.ts）。
+  'subscription_schedule',
 ] as const;
 export const AskPurposeSchema = Type.Enum(ASK_PURPOSES);
 export type AskPurpose = Static<typeof AskPurposeSchema>;
@@ -57,6 +59,7 @@ export const ASK_PURPOSE_LINES: Readonly<Record<AskPurpose, { line: AskLine; bas
   network_reply: { line: 'by_confidence', basis: 'missing' },
   line_approval: { line: 'hard_line', basis: 'hard_line' },
   line_question: { line: 'by_confidence', basis: 'missing' },
+  subscription_schedule: { line: 'by_confidence', basis: 'inferred' },
 };
 
 /** 四档渠道（《从零方案》第 6 节，关切上已有同一份 CHANNELS）：不打扰 · 下次汇报 · 弹框 · 立刻打断。 */

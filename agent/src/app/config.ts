@@ -6,17 +6,7 @@ export const HOST = '127.0.0.1';
 export const DEFAULT_PORT = 8790;
 export const DATABASE_FILE = 'plasticine.sqlite';
 
-export { DEFAULT_PUBLIC_URL } from '../../shared/public-url.ts';
-import { DEFAULT_PUBLIC_URL } from '../../shared/public-url.ts';
-
-export function publicUrlFromEnv(env: Record<string, string | undefined> = process.env): string {
-  const url = new URL(env['PLASTICINE_PUBLIC_URL'] ?? DEFAULT_PUBLIC_URL);
-  if (!['http:', 'https:'].includes(url.protocol) || url.username !== '' || url.password !== ''
-    || url.search !== '' || url.hash !== '') {
-    throw new Error('PLASTICINE_PUBLIC_URL 要填不带登录信息、查询参数或 hash 的网页地址。');
-  }
-  return url.href.replace(/\/$/, '');
-}
+// 对外的网页地址按需取：app/public-url.ts（环境变量 > @账号的网址 > 本机地址）。
 
 // A note may hold 400 000 characters (old limit); in UTF-8 Chinese that is 1.2 MB, plus JSON escaping.
 export const MAX_BODY_BYTES = 2 * 1024 * 1024;

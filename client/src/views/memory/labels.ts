@@ -5,7 +5,7 @@ import type { AgreementView, ChangeRecordView, MemoryEntryView } from '../../api
 export const ACTOR_TEXT: Readonly<Record<ChangeRecordView['actor'], string>> = {
   user: '你',
   brain: 'Plasticine',
-  hand: '手',
+  hand: '手动',
   system: '系统',
   migration: '迁移',
 };

@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { routeHash, type Route } from './routes.ts';
 import { SECTIONS, sectionOf, type SectionId } from './sections.ts';
 
-const KEY = 'plasticine:sections';
+// v2：11-08 图书单独一栏，旧记的「资料库」可能停在图书上，换个键不沿用。
+const KEY = 'plasticine:sections:v2';
 
 function read(): Partial<Record<SectionId, string>> {
   try {

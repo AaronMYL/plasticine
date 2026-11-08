@@ -29,7 +29,7 @@ describe('M3 退出条件', () => {
     const app = await renderApp({ hash: '#/memory/agreements/agr_ledger', setup: seed });
     await settle();
     fireEvent.click(within(entryRow(OLD)).getByRole('button', { name: /的更多操作$/ }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '改' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '修改' }));
     const editor = within(entryRow(OLD)).getByRole('group', { name: '改约定' });
     fireEvent.change(within(editor).getByLabelText('正文', { selector: 'textarea' }), { target: { value: NEW } });
     const save = within(editor).getByRole('button', { name: '保存' });

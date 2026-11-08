@@ -22,7 +22,6 @@ export const CHANNELS = {
   devicePermission: 'desktop:device-permission',
   helperCall: 'desktop:helper-call',
   chromeCurrent: 'chrome:current',
-  chromeTitlebar: 'chrome:titlebar',
   tabsSync: 'tabs:sync',
   tabsCommand: 'tabs:command',
   tabsNavigate: 'tabs:navigate',

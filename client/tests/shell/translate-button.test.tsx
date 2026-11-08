@@ -129,14 +129,14 @@ describe('网页工具条 · 文A', () => {
     fireEvent.click(within(menu).getByRole('menuitemradio', { name: '只看译文' }));
     await waitFor(async () => expect((await app.api.translate.settings()).display).toBe('translation'));
     const before = await app.api.modelProviders.list();
-    const row = await within(menu).findByRole('menuitem', { name: /^模型\s*GPT-5\.5 · 高/ });
+    const row = await within(menu).findByRole('menuitem', { name: /^模型\s*GPT-5\.5 · 较高/ });
     fireEvent.click(row);
     const options = within(menu).getByRole('listbox', { name: '模型' });
     expect(within(options).getByRole('option', { name: '跟默认' }).getAttribute('aria-selected')).toBe('true');
-    fireEvent.click(within(menu).getByRole('button', { name: '低' }));
+    fireEvent.click(within(menu).getByRole('button', { name: '较低' }));
     await waitFor(async () => expect((await app.api.modelProviders.list()).purposes
       .find((item) => item.purpose === 'translation')?.chosen).toEqual({ model: null, thinking: 'low' }));
-    expect(await within(menu).findByRole('menuitem', { name: /^模型\s*GPT-5\.5 · 低/ })).toBeTruthy();
+    expect(await within(menu).findByRole('menuitem', { name: /^模型\s*GPT-5\.5 · 较低/ })).toBeTruthy();
     expect((await app.api.modelProviders.list()).chosen).toEqual(before.chosen);
     expect(screen.queryByRole('dialog', { name: '设置' })).toBeNull();
     expect(translate.configure).not.toHaveBeenCalledWith(tabId, expect.anything());

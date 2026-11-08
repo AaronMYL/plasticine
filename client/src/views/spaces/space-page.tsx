@@ -1,5 +1,6 @@
 // 空间页（《优化清单》第 6 条，设计稿 Library-Space）：Plasticine 写的报告、周报、核查、整理稿都在这里读和改。
-// 从上到下：顶部一行出处（✦ 订阅 · 名字，点了开订阅）和编辑；一小行期号日期；结论大标题；一排数字卡；正文（小节、图表、
+// 从上到下：顶部一行出处（✦ 订阅 · 名字，点了去订阅页）和编辑、⋯（改名 / 删除，11-08：改名在大标题处原处改，删了进
+// 「最近删除」）；一小行期号日期；结论大标题；一排数字卡；正文（小节、图表、
 // 图片、引用）；出处。右侧目录。Plasticine 刚改过这一期时，页底一条「这一期改好了：…… 以后都这样 / 撤销」。
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -9,6 +10,11 @@ import { createRequestId } from '../../api/request-id.ts';
 import type { SpaceView } from '../../api/shared.ts';
 import { AiMark, StatusGlyph } from '../../shell/glyph.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
+import { LIBRARY_HOME, subscriptionRoute } from '../../shell/library-routes.ts';
+import { RenameField } from '../../shell/rename-field.tsx';
+import { RevealMore } from '../../shell/reveal-more.tsx';
+import { TitlebarActions, TitlebarTitle, useInTitlebar } from '../../shell/titlebar.tsx';
+import { useDeleteConfirm, useSpaceActions } from '../library/library-actions.tsx';
 import { useRead } from '../memory/use-read.ts';
 import { SpaceBlocks, SpaceStats } from './space-blocks.tsx';
 import { SpaceEditor } from './space-editor.tsx';
@@ -27,8 +33,8 @@ export interface SpacePageProps {
 
 function Crumb({ space, onOpen }: { space: SpaceView; onOpen: () => void }): ReactNode {
   if (space.subscription !== null) {
-    return <button type="button" className="space-crumb text-meta" onClick={onOpen}
-      aria-haspopup="dialog"><AiMark />订阅 · {space.subscription.title}</button>;
+    return <button type="button" className="space-crumb text-meta" onClick={onOpen}>
+      <AiMark />订阅 · {space.subscription.title}</button>;
   }
   return <span className="space-crumb text-meta">{space.author === 'ai' ? <AiMark /> : null}空间</span>;
 }
@@ -81,7 +87,11 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   const [saved, setSaved] = useState<SpaceView | null>(null);
   const [editing, setEditing] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const actions = useSpaceActions();
+  const confirm = useDeleteConfirm();
   const scroller = useRef<HTMLDivElement>(null);
+  const titled = useInTitlebar();
   const space = saved !== null && saved.version >= (value?.version ?? 0) ? saved : value;
   // 打开过就算看过这一期：信息流第二栏「订阅」那一行的新一期点收掉。
   useEffect(() => {
@@ -102,16 +112,31 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
       setSaved(next);
     }
   };
+  // 桌面客户端里空间名写进标题栏、编辑 / 订阅设置 / ⋯ 放进标题栏右边（11-08），主区不再画这条顶栏；网页版仍在页头。
+  const tools = <>
+    {editing ? null : <IconButton icon="edit" label="编辑" onClick={() => setEditing(true)} />}
+    {space.subscription === null ? null : (
+      <IconButton icon="sliders" label="订阅设置" aria-haspopup="dialog" onClick={() => setSheet(true)} />
+    )}
+    <RevealMore label={`「${space.title}」的更多操作`} actions={editing ? [] : [
+      { icon: 'edit', label: '改名', onSelect: () => setRenaming(true) },
+      { icon: 'trash', label: '删除', danger: true, onSelect: () => confirm.ask(space.title,
+        () => actions.remove(space.id),
+        () => navigate(space.subscription === null ? LIBRARY_HOME : subscriptionRoute(space.subscription.id))) },
+    ]} />
+  </>;
   return (
     <div className="page page-fill space-page" data-phone={phone}>
-      <header className="space-top">
-        <Crumb space={space} onOpen={() => setSheet(true)} />
-        <span className="grow" />
-        {editing ? null : <IconButton icon="edit" label="编辑" onClick={() => setEditing(true)} />}
-        {space.subscription === null ? null : (
-          <IconButton icon="sliders" label="订阅设置" aria-haspopup="dialog" onClick={() => setSheet(true)} />
-        )}
-      </header>
+      {titled ? <><TitlebarTitle text={space.title} /><TitlebarActions>{tools}</TitlebarActions></> : (
+        <header className="space-top">
+          <Crumb space={space} onOpen={() => {
+            if (space.subscription !== null) navigate(subscriptionRoute(space.subscription.id));
+          }} />
+          <span className="grow" />
+          {tools}
+        </header>
+      )}
+      {confirm.dialog}
       <div className="space-scroll" ref={scroller}>
         <article className="space-article" aria-label={space.title}>
           {editing ? <SpaceEditor space={space} onCancel={() => setEditing(false)} onSaved={(next) => {
@@ -119,7 +144,13 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
             setEditing(false);
           }} /> : <>
             {space.doc.kicker === undefined ? null : <p className="text-meta space-kicker">{space.doc.kicker}</p>}
-            <h1 className="space-headline">{space.doc.headline ?? space.title}</h1>
+            {renaming ? <h1 className="space-headline">
+              <RenameField value={space.title} label={`「${space.title}」的新名字`}
+                onSave={(title) => actions.rename(space.id, title).then(() => {
+                  setSaved(null);
+                  reload();
+                })} onDone={() => setRenaming(false)} />
+            </h1> : <h1 className="space-headline">{space.doc.headline ?? space.title}</h1>}
             <SpaceStats stats={space.doc.stats} />
             <SpaceBlocks doc={space.doc} />
           </>}

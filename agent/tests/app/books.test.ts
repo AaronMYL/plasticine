@@ -283,3 +283,42 @@ async function waitInsight(app: TestApp, cookie: string, id: string, kind: strin
     await sleep(10);
   }
 }
+
+test('改书名；删了进「最近删除」能还原，标注跟着回来；同一个文件再传一次还原删掉的那本', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const renamed = await call(app, 'PATCH', `${PATH}/${id}`, { cookie, body: { requestId: 'book-rename-1',
+      title: '浮生六记（沈复）' } });
+    assert.equal(renamed.status, 200);
+    assert.equal(json(renamed)['title'], '浮生六记（沈复）');
+    assert.equal((await call(app, 'PATCH', `${PATH}/${id}`, { cookie, body: { requestId: 'book-rename-2',
+      title: '  ' } })).status, 400);
+    const text = await chapterText(app, cookie, id, 1);
+    const quote = '事如春梦了无痕';
+    const start = text.indexOf(quote);
+    const note = await call(app, 'POST', `${PATH}/${id}/annotations`, { cookie, body: { requestId: 'annotation-mark-1',
+      chapter: 1, start, end: start + quote.length, quote, prefix: text.slice(Math.max(0, start - 8), start),
+      suffix: text.slice(start + quote.length).slice(0, 8), color: 'ochre', deviceLabel: 'Mac' } });
+    assert.equal(note.status, 201, JSON.stringify(note.body));
+    await call(app, 'DELETE', `${PATH}/${id}`, { cookie, body: { requestId: 'book-delete-1' } });
+    const trash = json(await call(app, 'GET', '/v2/library/trash', { cookie }))['items'] as Record<string, unknown>[];
+    assert.deepEqual(trash.map((item) => [item['kind'], item['id'], item['title']]),
+      [['book', id, '浮生六记（沈复）']]);
+    const restored = await call(app, 'POST', `${PATH}/${id}/restore`, { cookie, body: { requestId: 'book-restore-1' } });
+    assert.equal(restored.status, 200);
+    assert.equal(json(restored)['annotationCount'], 1);
+    await call(app, 'DELETE', `${PATH}/${id}`, { cookie, body: { requestId: 'book-delete-2' } });
+    const again = await call(app, 'POST', PATH, { cookie, body: upload('book-reupload', '浮生六记.txt',
+      Buffer.from(TXT, 'utf8')) });
+    assert.equal(again.status, 200);
+    assert.equal((json(again)['book'] as Record<string, unknown>)['id'], id);
+    assert.equal(json(again)['duplicate'], true);
+    assert.deepEqual(json(await call(app, 'GET', '/v2/library/trash', { cookie }))['items'], []);
+    assert.equal((await call(app, 'POST', `${PATH}/nope/restore`, { cookie, body: { requestId: 'book-restore-2' } })).status,
+      404);
+  } finally {
+    await app.close();
+  }
+});

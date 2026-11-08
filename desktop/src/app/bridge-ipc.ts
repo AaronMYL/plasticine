@@ -7,12 +7,13 @@ import { Value } from 'typebox/value';
 import { DESKTOP_PERMISSIONS, DevicePairRequestSchema, ServerChoiceSchema, type DesktopPermission,
   type DevicePairRequest, type ServerChoice } from '../../../agent/shared/api/desktop-bridge.ts';
 import { LoginImportRequestSchema, type LoginImportRequest } from '../../../agent/shared/api/mac-logins.ts';
-import { TitlebarLayoutSchema, WEB_TAB_COMMANDS, WebTabsSyncSchema, type WebTabsSync }
+import { WEB_TAB_COMMANDS, type WebTabsSync }
   from '../../../agent/shared/api/mac-bridge.ts';
 import { TranslateDeliverySchema, TranslatePageConfigSchema, type TranslateDelivery, type TranslatePageConfig }
   from '../../../agent/shared/api/mac-translate.ts';
 import { WebPageToolSchema, type WebPageTool } from '../../../agent/shared/api/web-page-tools.ts';
 import { HELPER_METHODS, isHelperMethod, type HelperMethod } from '../../../agent/shared/desktop-helper-protocol.ts';
+import { readSync } from '../tabs/tab-sync.ts';
 import { CHANNELS } from './channels.ts';
 
 /** 通知的标题、正文、hash 上限：一行标题、几行正文就够，再长是出错了。 */
@@ -183,16 +184,15 @@ export function registerBridge(services: ShellServices): void {
     }
     return services.helperCall(name, (params ?? {}) as Record<string, unknown>);
   });
-  on(CHANNELS.chromeTitlebar, (layout) => {
-    if (!Value.Check(TitlebarLayoutSchema, layout)) {
-      services.log('顶栏布局的形状不对，没用。');
-    }
-  });
   on(CHANNELS.tabsSync, (state) => {
-    if (Value.Check(WebTabsSyncSchema, state)) {
-      services.tabsSync(state);
-    } else {
+    const { sync, dropped } = readSync(state);
+    if (dropped > 0) {
+      services.log(`网页标签清单里有 ${dropped} 个标签的网址不对，跳过了它们。`);
+    }
+    if (sync === null) {
       services.log('网页标签清单的形状不对，没用。');
+    } else {
+      services.tabsSync(sync);
     }
   });
   on(CHANNELS.tabsCommand, (tabId, command) => {

@@ -11,7 +11,7 @@ it('手机读到非首篇，切到首页再切回笔记恢复正文；返回回�
   const app = await renderApp({ width: 390, hash: '#/notes/second', storage, setup });
   await waitFor(() => expect(document.querySelector('.ProseMirror')?.textContent).toContain('第二篇正文'));
   const navigation = screen.getByRole('navigation', { name: '主导航' });
-  fireEvent.click(within(navigation).getByRole('button', { name: '现在' }));
+  fireEvent.click(within(navigation).getByRole('button', { name: '首页' }));
   await screen.findByRole('heading', { level: 1, name: HOME_HEADING });
   fireEvent.click(within(navigation).getByRole('button', { name: '笔记' }));
   await waitFor(() => expect(document.querySelector('.ProseMirror')?.textContent).toContain('第二篇正文'));

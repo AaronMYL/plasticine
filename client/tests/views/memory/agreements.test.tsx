@@ -95,10 +95,10 @@ describe('引用里的一条约定（#/memory/agreements/<id>）', () => {
     await renderApp({ hash: '#/memory/agreements/agr_1', width: 1440, setup: seed });
     const agreement = await waitFor(() => row('「接上」'));
     expect(within(agreement).getByRole('button', { name: '确认生效' })).toBeTruthy();
-    expect(within(agreement).queryByRole('button', { name: '撤' })).toBeNull();
+    expect(within(agreement).queryByRole('button', { name: '撤回' })).toBeNull();
     fireEvent.click(within(agreement).getByRole('button', { name: /的更多操作$/ }));
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent))
-      .toEqual(['在对话里提', '上下文与版本来路', '改', '撤']);
+      .toEqual(['在对话里提', '上下文与版本来路', '修改', '撤回']);
   });
 });
 

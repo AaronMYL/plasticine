@@ -15,7 +15,7 @@ describe('技能', () => {
     fireEvent.click(within(row).getByRole('button', { name: '删「research-notes」' }));
     const confirm = screen.getByRole('alertdialog', { name: '删「research-notes」' });
     expect(confirm.textContent).toContain('正在用它的线不受影响');
-    fireEvent.click(within(confirm).getByRole('button', { name: '删' }));
+    fireEvent.click(within(confirm).getByRole('button', { name: '删除' }));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect((await app.api.skills.list({})).total).toBe(0);
   });

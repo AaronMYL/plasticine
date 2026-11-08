@@ -26,16 +26,16 @@ function navTo(label: string): void {
 const RAIL_LABELS = RAIL_GROUPS.flat().map((id) => SECTIONS[id].label);
 
 describe('壳 · 两层侧栏（11-07 设计稿）', () => {
-  it('图标栏三组入口（组间只留空隙不写组名），底部搜索、新建、头像；「现在」没有第二栏', async () => {
+  it('图标栏三组入口（组间只留空隙不写组名），底部搜索、新建、头像；「首页」没有第二栏', async () => {
     await renderApp();
     const groups = [...rail().querySelectorAll('.rail-group')].map((group) => within(group as HTMLElement)
       .getAllByRole('button').map((button) => button.getAttribute('aria-label')));
-    expect(groups).toEqual([['现在', 'Plasticine', '消息', '任务'], ['网页', '信息流'], ['笔记', '资料库']]);
+    expect(groups).toEqual([['首页', 'Plasticine', '消息', '任务'], ['网页', '信息流'], ['笔记', '图书', '资料库']]);
     expect(within(rail()).getByRole('button', { name: '搜索和切换' })).toBeTruthy();
     expect(within(rail()).getByRole('button', { name: '新建…' })).toBeTruthy();
     expect(within(rail()).getByRole('button', { name: '设置 · 我' }).querySelector('.rail-avatar')?.textContent)
       .toBe('我');
-    expect(within(rail()).getByRole('button', { name: '现在' }).getAttribute('aria-current')).toBe('page');
+    expect(within(rail()).getByRole('button', { name: '首页' }).getAttribute('aria-current')).toBe('page');
     expect(document.querySelector('.column')).toBeNull();
   });
 
@@ -85,7 +85,7 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     const dialog = screen.getByRole('dialog', { name: '设置' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(within(dialog).getAllByRole('button').filter((button) => button.closest('nav') !== null)
-      .map((button) => button.textContent)).toEqual(['通用', 'AI', '日常', '浏览器与信息流', '账号', '系统']);
+      .map((button) => button.textContent)).toEqual(['通用', 'AI', '浏览器', '账号', '系统']);
     expect(window.location.hash).toBe('#/settings');
     fireEvent.click(within(dialog).getByRole('button', { name: '系统' }));
     await settle();
@@ -113,7 +113,7 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     dialog = await screen.findByRole('dialog', { name: '设置' });
     expect(within(dialog).getByRole('button', { name: '系统' }).getAttribute('aria-current')).toBe('page');
     expect(window.location.hash).toBe('#/settings/system');
-    expect(within(rail()).getByRole('button', { name: '现在' }).getAttribute('aria-current')).toBe('page');
+    expect(within(rail()).getByRole('button', { name: '首页' }).getAttribute('aria-current')).toBe('page');
   });
 
   it('设置开着时走到了别的地址，弹框收起、那一页照常打开', async () => {
@@ -125,7 +125,7 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     expect(window.location.hash).toBe('#/projects');
   });
 
-  it('有事等他时「任务」带一个陶土点；圆球写「等你 n」，在「现在」上圆球不带数', async () => {
+  it('有事等他时「任务」带一个陶土点；圆球写「等你 n」，在「首页」上圆球不带数', async () => {
     await renderApp({ width: 1200, setup: (fake) => {
       fake.control.asks.raise({ id: 'ask_wait', kind: 'decide', question: '首页卡片按类别还是按项目上色？',
         options: [{ id: 'a', label: '按类别', recommended: true, description: null }] });
@@ -156,7 +156,7 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
     act(() => {
       app.state.conversationUi.addQuote({ id: 'q1', kind: 'note', sourceId: 'n1', label: '《摘记》', text: '一段' });
     });
-    for (const label of ['任务', '笔记', '资料库', '现在']) {
+    for (const label of ['任务', '笔记', '图书', '资料库', '首页']) {
       navTo(label);
       await settle();
     }
@@ -173,7 +173,7 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
     navTo('任务');
     await settle();
     expect(screen.getByRole('main').scrollTop).toBe(0);
-    navTo('现在');
+    navTo('首页');
     await settle();
     expect(screen.getByRole('main').scrollTop).toBe(300);
   });
@@ -230,6 +230,32 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
   });
 });
 
+describe('壳 · 图书单独一栏（第 7 批设计稿 Books）', () => {
+  it('图书第二栏：「图书馆」带总数，下面「在读」最近读的在前、行尾进度；资料库第二栏不再列图书', async () => {
+    await renderApp({ seed: true, hash: '#/books' });
+    await settle();
+    const column = await screen.findByRole('complementary', { name: '图书' });
+    const library = within(column).getByRole('link', { name: /^图书馆/ });
+    expect(library.getAttribute('aria-current')).toBe('page');
+    await waitFor(() => expect(library.querySelector('.column-count')?.textContent).toBe('5'));
+    expect(within(column).getByRole('heading', { name: '在读' })).toBeTruthy();
+    const reading = within(column).getAllByRole('link').slice(1).map((link) => link.textContent);
+    expect(reading[0]).toMatch(/^浮生六记\d+%$/);
+    expect(reading.some((text) => text?.startsWith('庄子'))).toBe(false);
+    expect(within(column).getByRole('button', { name: '导入书' })).toBeTruthy();
+    fireEvent.click(within(column).getByRole('link', { name: /^浮生六记/ }));
+    await settle();
+    expect(window.location.hash).toMatch(/^#\/books\/[^/]+/);
+    expect(within(rail()).getByRole('button', { name: '图书' }).getAttribute('aria-current')).toBe('page');
+    navTo('资料库');
+    await settle();
+    expect(window.location.hash).toBe('#/library');
+    const archive = screen.getByRole('complementary', { name: '资料库' });
+    expect(within(archive).queryByText('图书馆')).toBeNull();
+    expect(within(archive).queryByRole('heading', { name: '图书' })).toBeNull();
+  });
+});
+
 describe('壳 · ⌘K 全局切换', () => {
   it('⌘K 弹出、Esc 收起；对话框照常能输入发送', async () => {
     await renderApp();
@@ -249,22 +275,22 @@ describe('壳 · 页头与手机', () => {
       await settle();
       expect(within(rail()).getByRole('button', { name: new RegExp(`^${label}`) }).getAttribute('aria-current'))
         .toBe('page');
-      if (label !== '现在') {
+      if (label !== '首页') {
         expect(screen.getByRole('complementary', { name: label })).toBeTruthy();
       }
     }
-    navTo('现在');
+    navTo('首页');
     await settle();
     expect(screen.getByRole('heading', { level: 1, name: HOME_HEADING })).toBeTruthy();
   });
 
-  it('手机宽度：底栏 现在 · Plasticine · 消息 · 笔记 · 更多，没有侧栏；右下圆球展开是全屏对话，草稿共用', async () => {
+  it('手机宽度：底栏 首页 · Plasticine · 消息 · 笔记 · 更多，没有侧栏；右下圆球展开是全屏对话，草稿共用', async () => {
     const app = await renderApp({ width: 390 });
     expect(screen.queryByRole('complementary', { name: '对话框' })).toBeNull();
     expect(screen.queryByRole('navigation', { name: '栏目' })).toBeNull();
     const tabs = screen.getByRole('navigation', { name: '主导航' });
     expect(within(tabs).getAllByRole('button').map((button) => button.textContent)).toEqual([
-      '现在', 'Plasticine', '消息', '笔记', '更多',
+      '首页', 'Plasticine', '消息', '笔记', '更多',
     ]);
     act(() => app.state.conversationUi.setDraft('电脑上写的'));
     fireEvent.click(screen.getByRole('button', { name: /展开对话框/ }));

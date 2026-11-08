@@ -7,7 +7,8 @@ import { OpLines } from '../../primitives/task-row/op-line.tsx';
 import { useOp } from '../pending/pending-ops.tsx';
 
 const KEY = 'feed:interest:new';
-export function FeedInterest(): ReactNode {
+/** alwaysOpen：在「加来源」里直接摊开表单（不先给「加关注点」那个按钮），也没有「先不」。 */
+export function FeedInterest({ alwaysOpen = false }: { alwaysOpen?: boolean }): ReactNode {
   const live = useLive();
   const { inlineDrafts } = useClientState();
   const drafts = useStore(inlineDrafts.store);
@@ -16,7 +17,7 @@ export function FeedInterest(): ReactNode {
   const sent = locked && op.request.kind === 'feed_interest' ? op.request.body : null;
   const label = sent?.label ?? drafts.get(`${KEY}:label`) ?? '';
   const query = sent?.query ?? drafts.get(`${KEY}:query`) ?? '';
-  const open = locked || drafts.get(`${KEY}:open`) === 'yes' || label !== '' || query !== '';
+  const open = alwaysOpen || locked || drafts.get(`${KEY}:open`) === 'yes' || label !== '' || query !== '';
   if (!open) {
     return <button type="button" className="text-button" onClick={() => inlineDrafts.set(`${KEY}:open`, 'yes')}>
       加关注点
@@ -30,9 +31,9 @@ export function FeedInterest(): ReactNode {
     <p className="text-meta">同时在「个人」项目里建一条留意方向。</p>
     <button type="button" className="chip-button" disabled={locked || !label.trim() || !query.trim()}
       onClick={() => void live.feedActions.addInterest()}>添加关注点</button>{' '}
-    <button type="button" className="text-button" disabled={locked} onClick={() => {
+    {alwaysOpen ? null : <button type="button" className="text-button" disabled={locked} onClick={() => {
       for (const field of ['label', 'query', 'open']) { inlineDrafts.clear(`${KEY}:${field}`); }
-    }}>先不</button>
+    }}>先不</button>}
     <OpLines ops={op === undefined ? [] : [op]} onRetry={(key) => void live.feedActions.retry(key)}
       onDismiss={(key) => live.feedActions.dismiss(key)} />
   </section>;

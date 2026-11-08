@@ -1,11 +1,12 @@
 // 你的话：右对齐的 --tint 气泡。还没拿到回执时，气泡下面一行写状态和能做的事：
-// 结果待核实 → 「再核实」（同一标识去查，不重发）；没送到 / 失败 → 「重发」「放回输入框」。
+// 结果待核实 → 「再核实」（同一标识去查，不重发）；没送到 / 失败 → 「重发」「放回输入框」，行尾一个复制。
+// 送到了的那句，复制、回复在对话的悬停条里（views/lines/thread-actions.tsx）；11-08 第 7 批第 9 条删了气泡左边那一排
+// 旧的「复制消息」「引用这句话」（和悬停条重复）。选中一段照样能引用（QuoteSelection）。
 
 import type { ReactNode } from 'react';
 import type { QuoteChip } from '../../api/types.ts';
 import { USER_STATE_TEXT, type UserState } from './states.ts';
 import { QuoteSelection } from './quote-selection.tsx';
-import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { CopyMessage } from './copy-message.tsx';
 import { QuotePreview } from './quote-preview.tsx';
@@ -62,25 +63,17 @@ function StatusLine(props: UserMessageProps): ReactNode {
           放回输入框
         </button>
       ) : null}
+      {/* 还没送到的这句没有悬停条：复制留在这一行。 */}
+      {props.text === '' ? null : <CopyMessage text={props.text} />}
     </div>
   );
 }
 
-/**
- * 复制、引用排在气泡左边、和气泡同一行（2026-11-04：原来在气泡下面另起一行，往上又找不到能悬停的「一行」——电脑上
- * 永远不出现、却空占一行，看不见也点得到）。整条消息是悬停范围（reveal-scope），和 Plasticine 的回复（article）一样
- * 悬停或键盘焦点进来才出现；触屏照旧常显，手机对话里不带这一排（styles.css）。没有气泡就没有可复制的话，不出这一排。
- */
 export function UserMessage(props: UserMessageProps): ReactNode {
   const empty = props.text === '' && props.quotes.length === 0 && props.attachments == null;
   return (
-    <div className="msg msg-user reveal-scope" data-state={props.state}>
-      {empty ? null : <div className="msg-user-line">
-        <div className="msg-actions msg-user-actions reveal-hover">
-          <CopyMessage text={props.text} />
-          {props.onQuote === undefined ? null : <IconButton icon="quote" label="引用这句话"
-            className="msg-icon msg-quiet" onClick={() => props.onQuote?.(props.text)} />}
-        </div>
+    <div className="msg msg-user" data-state={props.state}>
+      {empty ? null : (
         <div className="msg-bubble">
           {props.replyTo == null ? null : (
             <div className="msg-reply">
@@ -98,7 +91,7 @@ export function UserMessage(props: UserMessageProps): ReactNode {
           <QuoteSelection onQuote={props.onQuote}><div className="msg-text">{props.text}</div></QuoteSelection>
           {props.attachments}
         </div>
-      </div>}
+      )}
       {props.widgets}
       <StatusLine {...props} />
       {props.state === 'sent' && bookArchive(props.quotes) !== null ? (

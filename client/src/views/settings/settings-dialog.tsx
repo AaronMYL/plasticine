@@ -1,5 +1,5 @@
 // 设置弹框（2026-11-05 他定：设置从标签页改成居中弹框）。电脑上居中约 880×640（窗口小时跟着收），--layer-float 底 +
-// --lift，背后 --scrim 盖住整个窗口；左边六段，右边这一段的内容自己滚；右上角关。Esc、点蒙层也关。焦点困在弹框里，
+// --lift，背后 --scrim 盖住整个窗口；左边五段，右边这一段的内容自己滚；右上角关。Esc、点蒙层也关。焦点困在弹框里，
 // 关了回到打开它的地方。手机上是全屏的一张，分段是顶上一排。
 // 段里有没保存的修改（settings-dialog-context.ts 的登记处）时，关、切段之前先在弹框里问一句：「继续编辑」/「放弃修改」。
 // 出现淡入、略放大到位（--motion-base），收起更快（--motion-fast）；减少动态效果时即时（motion.ts）。
@@ -18,7 +18,6 @@ import './settings-dialog.css';
 const SECTION_ICONS: Readonly<Record<SettingsSection, IconName>> = {
   general: 'settings',
   ai: 'sparkle',
-  daily: 'today',
   browser: 'globe',
   account: 'person',
   system: 'device',

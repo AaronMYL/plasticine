@@ -128,3 +128,19 @@ test('迁移 0084：「Plasticine 写的」整体迁成空间，原笔记标上�
     await dir.cleanup();
   }
 });
+
+test('删除进「最近删除」、还原回来；只列不属于订阅的空间', () => {
+  const sub = t.state.subscriptions.create(research());
+  const own = t.state.spaces.create({ title: '签证核查', doc: doc('能办'), author: 'ai' });
+  t.state.spaces.create({ title: '第 1 期', doc: doc('周报'), author: 'ai', subscriptionId: sub.id, issueNumber: 1 });
+  assert.deepEqual(t.state.spaces.list({ standalone: true }).map((space) => space.title), ['签证核查']);
+  const deleted = t.state.spaces.markDeleted(own.id, own.version);
+  assert.notEqual(deleted.deletedAt, null);
+  assert.deepEqual(t.state.spaces.deleted().map((space) => space.id), [own.id]);
+  assert.deepEqual(t.state.spaces.list({ standalone: true }), []);
+  const restored = t.state.spaces.restore(own.id);
+  assert.equal(restored.deletedAt, null);
+  assert.equal(restored.version, deleted.version + 1);
+  assert.deepEqual(t.state.spaces.deleted(), []);
+  assert.deepEqual(t.state.spaces.restore(own.id), restored);
+});

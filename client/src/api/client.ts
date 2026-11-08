@@ -277,8 +277,20 @@ export interface FeedApi {
   react(id: string, input: ReactFeedItemRequest): Promise<FeedItemView>;
   /** POST /v2/feed/items/:id/save：收藏 / 取消收藏；版本旧了抛 ConflictError。 */
   save(id: string, input: SaveFeedItemRequest): Promise<FeedItemView>;
-  /** POST /v2/feed/sources/:id/level：多 / 正常 / 少 / 关掉；版本旧了抛 ConflictError。 */
+  /** POST /v2/feed/sources/:id/level：偏多 / 正常 / 偏少 / 暂停（off）；版本旧了抛 ConflictError。 */
   setSourceLevel(id: string, input: SetSourceLevelRequest): Promise<FeedSourceView>;
+  /** GET /v2/feed/sources/reddit/preview：加 Reddit 版块前看最新三条；取不到回原因。 */
+  previewReddit(query: import('./shared.ts').RedditPreviewQuery, signal?: AbortSignal):
+    Promise<import('./shared.ts').RedditPreviewResponse>;
+  /** POST /v2/feed/sources/reddit：加一个 Reddit 版块。 */
+  addReddit(input: import('./shared.ts').AddRedditRequest): Promise<FeedSourceView>;
+  /** POST /v2/feed/sources/:id/settings：订阅改名字、网址、档位；Reddit 改排序。 */
+  updateSource(id: string, input: import('./shared.ts').UpdateFeedSourceRequest): Promise<FeedSourceView>;
+  /** POST /v2/feed/sources/:id/refresh：现在刷新这一个来源。 */
+  refreshSource(id: string, input: import('./shared.ts').RefreshFeedSourceRequest):
+    Promise<import('./shared.ts').RefreshFeedSourceResponse>;
+  /** POST /v2/feed/sources/:id/delete：删掉一个订阅 / Reddit 版块。 */
+  deleteSource(id: string, input: import('./shared.ts').DeleteFeedSourceRequest): Promise<FeedSourceView>;
 }
 
 export interface EventsApi {
@@ -343,6 +355,8 @@ export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
   /** 第 6、7 条：空间与订阅（研究周报、个人回顾）。 */
   spaces: import('./spaces-client.ts').SpacesApi;
   subscriptions: import('./spaces-client.ts').SubscriptionsApi;
+  /** 11-08：资料库「最近删除」。 */
+  library: import('./spaces-client.ts').LibraryApi;
   asks: AsksApi;
   push: PushApi;
   memory: MemoryApi;

@@ -35,3 +35,17 @@ it('代码里的对象文本保持代码，流式未闭合标记保留原文', (
   expect(screen.queryByRole('link')).toBeNull();
   expect(container.textContent).toContain('尚未结束的 **文字');
 });
+
+it('Plasticine 写的本实例或旧 IP 的 #/ 链接换成站内地址、不新开窗口；站外和没有 #/ 的照旧', () => {
+  const here = window.location.origin;
+  render(<Markdown text={'[旧的](https://203.0.113.10/#/books/space/s-1) '
+    + `[这台](${here}/#/notes) [站外](https://example.com/#/x) [根](https://203.0.113.10/)`} />);
+  const old = screen.getByRole('link', { name: '旧的' });
+  expect(old.getAttribute('href')).toBe('#/books/space/s-1');
+  expect(old.getAttribute('target')).toBeNull();
+  expect(screen.getByRole('link', { name: '这台' }).getAttribute('href')).toBe('#/notes');
+  const outside = screen.getByRole('link', { name: '站外' });
+  expect(outside.getAttribute('href')).toBe('https://example.com/#/x');
+  expect(outside.getAttribute('target')).toBe('_blank');
+  expect(screen.getByRole('link', { name: '根' }).getAttribute('href')).toBe('https://203.0.113.10/');
+});

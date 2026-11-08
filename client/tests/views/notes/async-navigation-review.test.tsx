@@ -40,7 +40,7 @@ it('新建回执迟到时保存创建结果，但用户已离开的页面不被�
   });
   fireEvent.click(screen.getByRole('button', { name: '新建' }));
   await waitFor(() => expect(create).toHaveBeenCalledOnce());
-  fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '现在' }));
+  fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '首页' }));
   await waitFor(() => expect(window.location.hash).toBe('#/today'));
   await act(async () => gate.resolve());
   expect(window.location.hash).toBe('#/today');

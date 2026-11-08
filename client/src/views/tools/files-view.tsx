@@ -72,7 +72,7 @@ function EntryActions({ entry, mode, onDone }: { entry: FileEntryView; mode: 'mo
         />
       </label>
       <button type="button" className="primary-button" disabled={confirm !== entry.name} onClick={() => void submit()}>
-        {mode === 'move' ? '改' : '删除（进回收）'}
+        {mode === 'move' ? '修改' : '删除（进回收）'}
       </button>
       <button type="button" className="text-button text-button-quiet" onClick={onDone}>
         不改了

@@ -27,7 +27,7 @@ describe('记忆 · 主题目录', () => {
       expect(await within(main()).findByRole('button', { name: /昨晚整理了 12 条.*新加 7 · 替换 3 · 拿不准 1/ }))
         .toBeTruthy();
       const uncertain = within(main()).getByRole('region', { name: '拿不准的' });
-      expect(within(uncertain).getAllByRole('button', { name: '对' }).length).toBeLessThanOrEqual(3);
+      expect(within(uncertain).getAllByRole('button', { name: '没错' }).length).toBeLessThanOrEqual(3);
       const regions = within(main()).getAllByRole('region').map((region) => region.getAttribute('aria-labelledby'));
       expect(regions).toEqual(['memory-uncertain', 'topics-about_you', 'topics-project', 'topics-person',
         'topics-topic', 'topics-skill']);
@@ -73,7 +73,7 @@ describe('记忆 · 主题目录', () => {
     const app = await renderApp({ hash: '#/memory', setup: seed });
     const send = vi.spyOn(app.api.signed, 'send');
     const uncertain = await within(main()).findByRole('region', { name: '拿不准的' });
-    fireEvent.click(within(uncertain).getAllByRole('button', { name: '对' })[0]!);
+    fireEvent.click(within(uncertain).getAllByRole('button', { name: '没错' })[0]!);
     expect(await within(uncertain).findByText('已记进《关于你》', {}, { timeout: 3000 })).toBeTruthy();
     await waitFor(async () => expect((await app.api.memoryTopics.list()).uncertain).toHaveLength(2));
     expect(send.mock.calls[0]?.[0]).toMatchObject({ target: { kind: 'memory_uncertain' } });
@@ -88,9 +88,9 @@ describe('记忆 · 主题目录', () => {
     const restarting = new ApiError({ kind: 'failed', code: NOT_RECEIVED_CODE, status: 503,
       message: '服务正在重启，这一步没有执行。' });
     vi.spyOn(app.api.signed, 'send').mockRejectedValueOnce(restarting).mockImplementation(real);
-    fireEvent.click(within(uncertain).getAllByRole('button', { name: '对' })[0]!);
+    fireEvent.click(within(uncertain).getAllByRole('button', { name: '没错' })[0]!);
     expect(await within(uncertain).findByText(/没有送到/)).toBeTruthy();
-    expect(within(uncertain).getAllByRole('button', { name: '对' })).toHaveLength(3);
+    expect(within(uncertain).getAllByRole('button', { name: '没错' })).toHaveLength(3);
     fireEvent.click(within(uncertain).getByRole('button', { name: '重发' }));
     expect(await within(uncertain).findByText('已记进《关于你》', {}, { timeout: 3000 })).toBeTruthy();
     await waitFor(async () => expect((await app.api.memoryTopics.list()).uncertain).toHaveLength(2));

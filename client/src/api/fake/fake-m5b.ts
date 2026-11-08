@@ -54,4 +54,6 @@ export function seedM5b(control: FakeM5bControl, now: Date): void {
     receivedAt: new Date(now.getTime() - 3 * 86_400_000).toISOString() });
   control.files.seed('报告', 'directory');
   control.files.seed('报告/周报.md');
+  // 回收里一份（资料库「最近删除」看得到文件那一类）。
+  control.files.seedTrashed('材料索引-片09.txt', new Date(now.getTime() - 3 * 86_400_000).toISOString());
 }

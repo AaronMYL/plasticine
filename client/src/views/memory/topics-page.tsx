@@ -73,7 +73,7 @@ function UncertainRow({ item }: { item: UncertainItem }): ReactNode {
         {fixing ? null : (
           <div className="uncertain-answers">
             <button type="button" className="chip-button"
-              onClick={() => void live.memoryTopics.answer(item, 'yes')}>对</button>
+              onClick={() => void live.memoryTopics.answer(item, 'yes')}>没错</button>
             <button type="button" className="chip-button"
               onClick={() => void live.memoryTopics.answer(item, 'no')}>不对</button>
             <RevealMore label={`「${item.text}」的更多操作`} actions={[

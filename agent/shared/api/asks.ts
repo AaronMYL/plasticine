@@ -16,7 +16,7 @@ import {
 } from '../state.ts';
 import { ASK_BASES } from '../act-or-ask.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
-import { ScheduleCardPreviewSchema } from './schedule-card.ts';
+import { ScheduleCardPreviewSchema, SubscriptionCardPreviewSchema } from './schedule-card.ts';
 import { LINE_MESSAGE_MAX_CHARS } from './lines.ts';
 
 export const ASKS_PATH = `${API_PREFIX}/asks`;
@@ -63,6 +63,8 @@ export const AskViewSchema = Type.Object({
   taskCard: Type.Optional(TaskCardPreviewSchema),
   /** 起草好的定时卡（《优化清单》第 3 条）：他点确认才生效。 */
   scheduleCard: Type.Optional(ScheduleCardPreviewSchema),
+  /** 研究周报样刊附的「开启定时 / 再改改」卡（第 7 批第 14 条）。 */
+  subscriptionCard: Type.Optional(SubscriptionCardPreviewSchema),
   collision: Type.Optional(Type.Boolean()),
   why: Type.Optional(Type.String()),
   /** 为什么问（第 5 批「做还是问」）：推出来的 / 有几种可能 / 资料里没有 / 硬线；上线前的旧卡没有。展开依据里放在第一行。 */

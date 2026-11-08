@@ -1,41 +1,39 @@
-// 资料库栏目的第二栏（11-07 设计稿 Library-Space）：「空间」（Plasticine 写的报告、周报、核查、整理稿，类别色图标块）、
-// 「文件」（工作目录最上一层的文件夹）、「图书」（在读的书和进度）。顶上 +：新空间跟 Plasticine 说（对话框展开）。
-// 数据：GET /v2/spaces、GET /v2/files、GET /v2/books。手机上没有第二栏，「更多 · 空间」打开同一份列表的整页。
+// 资料库栏目的第二栏（11-07 设计稿 Library-Space，11-08 Library-Subscription）：「订阅」（个人回顾、研究周报，带往期数，
+// library-subscriptions.tsx）、「空间」（不属于订阅的报告、核查、整理稿，类别色图标块；行尾 ⋯ 改名 / 打开 / 删除，
+// library-space-rows.tsx）、「文件」（工作目录最上一层的文件夹），底部「最近删除」。图书 11-08 起单独一栏（books-column.tsx）。
+// 顶上 +：新空间跟 Plasticine 说（对话框展开）。
+// 数据：GET /v2/subscriptions、GET /v2/spaces?standalone=true、GET /v2/files、GET /v2/library/trash。
+// 手机上没有第二栏，「更多 · 资料库」打开资料库首页（#/library）。
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
-import type { BookView, FileEntryView, SpaceListItem } from '../../api/shared.ts';
+import type { FileEntryView, SpaceListItem } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
-import { HueTile, type HueName } from '../hue.tsx';
+import { useLibraryRevision } from '../../views/library/library-signal.ts';
 import { IconButton } from '../icon-button.tsx';
-import { Icon, type IconName } from '../icons.tsx';
+import { Icon } from '../icons.tsx';
 import type { Route } from '../routes.ts';
-import { ColumnHead, ColumnLabel, ColumnLink, ColumnNote } from './column.tsx';
+import { ColumnFoot, ColumnHead, ColumnLabel, ColumnLink, ColumnNote } from './column.tsx';
+import { SubscriptionRows, TrashRow } from './library-subscriptions.tsx';
+import { SpaceRows } from './library-space-rows.tsx';
 
-/** 图书一节最多列几本（在读的在前）；全部在图书馆里。 */
-const BOOKS_SHOWN = 6;
-
-export function spaceLook(space: SpaceListItem): { icon: IconName; hue: HueName } {
-  if (space.kind === 'research') return { icon: 'space', hue: 'sky' };
-  if (space.kind === 'review') return { icon: 'sparkle', hue: 'teal' };
-  return { icon: 'file', hue: space.author === 'ai' ? 'sky' : 'sage' };
-}
+export { spaceLook } from './space-look.ts';
 
 export interface LibraryData {
   spaces: SpaceListItem[] | null;
   folders: FileEntryView[] | null;
-  books: BookView[] | null;
   error: string | null;
 }
 
 export function useLibraryData(): LibraryData {
   const api = useApi();
   const live = useLive();
-  const [data, setData] = useState<LibraryData>({ spaces: null, folders: null, books: null, error: null });
+  const [data, setData] = useState<LibraryData>({ spaces: null, folders: null, error: null });
   const [round, setRound] = useState(0);
+  const revision = useLibraryRevision();
   useEffect(() => live.hub.on((event) => {
-    if (event.type === 'resync' || event.type === 'book.changed') {
+    if (event.type === 'resync') {
       setRound((value) => value + 1);
     }
   }), [live.hub]);
@@ -44,33 +42,13 @@ export function useLibraryData(): LibraryData {
     const fail = (cause: unknown): void => {
       if (!controller.signal.aborted) setData((previous) => ({ ...previous, error: errorText(cause) }));
     };
-    api.spaces.list(controller.signal).then((result) => setData((previous) => ({ ...previous,
+    api.spaces.list(controller.signal, { standalone: true }).then((result) => setData((previous) => ({ ...previous,
       spaces: result.spaces })), fail);
     api.files.list('', controller.signal).then((result) => setData((previous) => ({ ...previous,
       folders: result.entries.filter((entry) => entry.kind === 'directory') })), fail);
-    api.books.list(controller.signal).then((result) => setData((previous) => ({ ...previous,
-      books: result.books })), fail);
     return () => controller.abort();
-  }, [api, round]);
+  }, [api, round, revision]);
   return data;
-}
-
-/** 在读的在前（按上次读的时间），没读过的在后。 */
-function readingFirst(books: readonly BookView[]): BookView[] {
-  return [...books].sort((a, b) => (b.progress?.updatedAt ?? '').localeCompare(a.progress?.updatedAt ?? ''));
-}
-
-export function SpaceRows({ spaces, current, navigate }: { spaces: readonly SpaceListItem[];
-  current: string | null; navigate: (route: Route) => void }): ReactNode {
-  return spaces.map((space) => {
-    const look = spaceLook(space);
-    return (
-      <ColumnLink key={space.id} route={{ view: 'books', noteId: null, bookId: null, spaceId: space.id }}
-        current={current === space.id} navigate={navigate} lead={<HueTile hue={look.hue} icon={look.icon} size={22} />}>
-        {space.title}
-      </ColumnLink>
-    );
-  });
 }
 
 export function LibraryColumn({ route, navigate, onAsk }: { route: Route; navigate: (route: Route) => void;
@@ -78,13 +56,11 @@ export function LibraryColumn({ route, navigate, onAsk }: { route: Route; naviga
   const live = useLive();
   const data = useLibraryData();
   const spaceId = route.view === 'books' ? route.spaceId ?? null : null;
-  const bookId = route.view === 'books' ? route.bookId ?? null : null;
   const openFolder = (path: string): void => {
     live.m5b.folder.set(path);
     void live.m5b.files.reset();
     navigate({ view: 'tools', noteId: null, tool: '文件' });
   };
-  const books = data.books === null ? [] : readingFirst(data.books).slice(0, BOOKS_SHOWN);
   return (
     <>
       <ColumnHead title="资料库">
@@ -92,6 +68,7 @@ export function LibraryColumn({ route, navigate, onAsk }: { route: Route; naviga
       </ColumnHead>
       <div className="column-scroll">
         {data.error === null ? null : <ColumnNote>{data.error}</ColumnNote>}
+        <SubscriptionRows route={route} navigate={navigate} />
         {data.spaces === null || data.spaces.length === 0 ? null : <>
           <ColumnLabel>空间</ColumnLabel>
           <SpaceRows spaces={data.spaces} current={spaceId} navigate={navigate} />
@@ -105,19 +82,8 @@ export function LibraryColumn({ route, navigate, onAsk }: { route: Route; naviga
             </button>
           ))}
         </>}
-        <ColumnLabel>图书</ColumnLabel>
-        <ColumnLink route={{ view: 'books', noteId: null, bookId: null }} current={route.view === 'books'
-          && spaceId === null && bookId === null && route.spacesList !== true} navigate={navigate}
-          lead={<Icon name="library" size={16} />}>图书馆</ColumnLink>
-        {books.map((book) => (
-          <ColumnLink key={book.id} route={{ view: 'books', noteId: null, bookId: book.id }}
-            current={bookId === book.id} navigate={navigate} lead={<Icon name="books" size={16} />}
-            trail={book.progress === null ? undefined
-              : <span className="column-count">{Math.round(book.progress.percent * 100)}%</span>}>
-            {book.title}
-          </ColumnLink>
-        ))}
       </div>
+      <ColumnFoot><TrashRow route={route} navigate={navigate} /></ColumnFoot>
     </>
   );
 }

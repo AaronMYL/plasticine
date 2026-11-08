@@ -1,9 +1,13 @@
 // /v2/spaces（shared/api/spaces.ts，《优化清单》第 6 条）：资料库里的空间。读列表、读一个、他直接改（存成新的一版，
-// 作者记他）、撤销最近一版、笔记 AI 的续写和补充（和笔记同一个助手）。写都按 requestId 幂等、带 version。
+// 作者记他；改名也走这里）、撤销最近一版、删除进「最近删除」和还原（11-08）、笔记 AI 的续写和补充（和笔记同一个助手）。
+// 写都按 requestId 幂等、带 version（还原不带：删掉的不会再被改）。
 
 import {
+  DeleteSpaceRequestSchema,
   NoteAssistRequestSchema,
+  RestoreSpaceRequestSchema,
   SaveSpaceRequestSchema,
+  SPACE_LIST_STANDALONE_PARAM,
   UndoSpaceRequestSchema,
   type SpaceListResponse,
 } from '../../shared/api/index.ts';
@@ -28,11 +32,12 @@ function requireSpace(state: StateService, id: string): Space {
   return space;
 }
 
-/** GET /v2/spaces */
+/** GET /v2/spaces[?standalone=true] */
 export function listSpaces(context: RequestContext): Reply {
   requireAuth(context);
   const { state } = context.deps;
-  const body: SpaceListResponse = { spaces: state.spaces.list({}, { limit: LIST_MAX })
+  const standalone = context.url.searchParams.get(SPACE_LIST_STANDALONE_PARAM) === 'true';
+  const body: SpaceListResponse = { spaces: state.spaces.list({ standalone }, { limit: LIST_MAX })
     .map((space) => spaceListItem(state, space)) };
   return { status: 200, body };
 }
@@ -65,6 +70,31 @@ export async function undoSpace(context: RequestContext): Promise<Reply> {
   const space = requireSpace(state, param(context, 'id'));
   return idempotent(context, body.requestId, () =>
     ({ status: 200, body: spaceView(state, state.spaces.undo(space.id, body.version, 'user')) }));
+}
+
+/** DELETE /v2/spaces/:id：移到「最近删除」（只打删除时间）。 */
+export async function deleteSpace(context: RequestContext): Promise<Reply> {
+  requireUserAuth(context);
+  const body = checkInput(DeleteSpaceRequestSchema, await readJsonBody(context.req), '删除空间');
+  const { state } = context.deps;
+  const space = requireSpace(state, param(context, 'id'));
+  return idempotent(context, body.requestId, () => {
+    state.spaces.markDeleted(space.id, body.version);
+    return { status: 200, body: { deleted: true } };
+  });
+}
+
+/** POST /v2/spaces/:id/restore：从「最近删除」还原。 */
+export async function restoreSpace(context: RequestContext): Promise<Reply> {
+  requireUserAuth(context);
+  const body = checkInput(RestoreSpaceRequestSchema, await readJsonBody(context.req), '还原空间');
+  const { state } = context.deps;
+  const id = param(context, 'id');
+  if (state.spaces.get(id) === undefined) {
+    throw notFoundError('这个空间');
+  }
+  return idempotent(context, body.requestId, () =>
+    ({ status: 200, body: spaceView(state, state.spaces.restore(id)) }));
 }
 
 /** POST /v2/spaces/:id/assist：续写、补充（和笔记共用一个助手，正文没有改动，建议由他采用）。 */

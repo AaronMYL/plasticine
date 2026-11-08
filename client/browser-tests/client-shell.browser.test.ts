@@ -1,6 +1,6 @@
 // 装成客户端的验收底座本身（scripts/browser/as-client.ts、fake-native.ts）：电脑按有鼠标、手机按触屏，客户端
 // User-Agent 和模拟的原生桥都在网页第一行脚本之前装好；网页调桥按共享协议核对。2026-11-05 起网页是正式端（不再拦
-// 「请用客户端」），手机只用网页：底栏只有首页 · 消息 · 笔记 · 信息流；项目、记忆承接只读详情，其余对象保留地址。
+// 「请用客户端」），手机只用网页：底栏 首页 · Plasticine · 消息 · 笔记 · 更多（11-08）；项目、记忆承接只读详情，其余对象保留地址。
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -92,7 +92,7 @@ test('装成 Mac：有鼠标、PlasticineMac 标记和桥，网页标签同步�
   assert.ok(tools.includes('circle'), `调过圈一块：${tools.join('、')}`);
 });
 
-test('手机网页：触屏、没有桥、四项底栏；项目和记忆只读承接，不支持的页保留完整地址', async (t) => {
+test('手机网页：触屏、没有桥、五项底栏；项目和记忆只读承接，不支持的页保留完整地址', async (t) => {
   const server = await devServer();
   const browser = await launchBrowser();
   t.after(async () => {
@@ -109,8 +109,8 @@ test('手机网页：触屏、没有桥、四项底栏；项目和记忆只读�
   assert.equal(await page.evaluate('innerWidth'), 390);
   await until(page, `document.querySelector('nav.phone-bar') !== null`, '底栏');
   assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('nav.phone-bar .phone-tab'))
-    .map((tab) => tab.textContent.trim())`), ['首页', '消息', '笔记', '信息流']);
-  await click(page, 'nav.phone-bar .phone-tab:nth-child(3)');
+    .map((tab) => tab.textContent.trim())`), ['首页', 'Plasticine', '消息', '笔记', '更多']);
+  await click(page, 'nav.phone-bar .phone-tab:nth-child(4)');
   await until(page, `location.hash.startsWith('#/notes')`, '点「笔记」到笔记');
   await page.evaluate(`location.hash = '#/projects'`);
   await until(page, `document.querySelector('.phone-read-unavailable')?.textContent === '项目暂时不能在手机打开。'`,
@@ -135,10 +135,10 @@ test('手机网页：触屏、没有桥、四项底栏；项目和记忆只读�
     + ' .phone-content [contenteditable="true"]') === null`), true, '记忆主题不露编辑控件');
   await evidence(page, 'client-phone-memory');
 
-  await page.evaluate(`location.hash = '#/books/book_1/2/40'`);
+  await page.evaluate(`location.hash = '#/books/book_fusheng/0/40'`);
   await until(page, `document.querySelector('.bk-reader, .bk-library') !== null
     && document.querySelector('.phone-read-unavailable') === null`, '图书在手机上直接打开（2026-11-08），不再是说明页');
-  assert.equal(await page.evaluate('location.hash'), '#/books/book_1/2/40');
+  assert.equal(await page.evaluate('location.hash'), '#/books/book_fusheng/0/40');
   await evidence(page, 'client-phone-book');
   const calls = await checkNativeCalls(page);
   assert.deepEqual(calls, [], '手机网页不调原生桥');

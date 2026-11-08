@@ -8,7 +8,7 @@ import type { SettingsSection } from './routes.ts';
 export type { SettingsSection } from './routes.ts';
 /** 设置弹框打开时定位到哪一处（段里带 data-settings-focus 的那一块）。 */
 export type SettingsFocus = 'notes' | 'conversation' | 'tasks' | 'translate' | 'translation-model'
-  | 'feed' | 'visibility' | 'notices';
+  | 'feed' | 'visibility' | 'notices' | 'time-zone';
 
 export type Panel =
   | { kind: 'work'; lineId: string; taskId?: never; groupTaskId?: never }

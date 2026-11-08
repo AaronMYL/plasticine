@@ -196,12 +196,6 @@
 @keyframes content-located { from { background-color: var(--tint2); } }
 @media (prefers-reduced-motion: reduce) { .content-located { animation: none; } }
 
-/* Windows 的窗口按钮在右上角：壳报来要让出多宽（WindowChrome.controlsRight，壳量出来的），主区顶上一行右边让开它再加 16；
-   不报就不让。 */
-.shell[data-window-controls='right'] .shell-main-area [data-titlebar] {
-  padding-right: calc(var(--window-controls) + 16px);
-}
-
 /* 手机底栏「更多」上的点、抽屉（设计稿 Phone-More）：四格类别色图标块 + 名字，下面一行设置。 */
 .phone-tab-dot {
   position: absolute;

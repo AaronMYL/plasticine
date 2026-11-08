@@ -115,7 +115,7 @@ function Lines({ projectId }: { projectId: string }): ReactNode {
   }
   return (
     <section aria-label="这个项目的线">
-      <Head title="线" />
+      <Head title="工作线" />
       <ul className="proj-list">
         {lines.map((line) => <DoingRow key={line.id} line={line} phone={false} now={now} />)}
       </ul>

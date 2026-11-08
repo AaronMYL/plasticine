@@ -175,7 +175,8 @@ function absolute(raw: string, base: string): string {
   }
 }
 
-export function parseFeed(source: string, base: string, now: Date): ParsedFeedItem[] {
+/** windowMs：只要这么近的条目（默认两天；Reddit「本周最佳」要放宽到一周多）。 */
+export function parseFeed(source: string, base: string, now: Date, windowMs: number = WINDOW_MS): ParsedFeedItem[] {
   const root = xml(source);
   const atom = local(root) === 'feed';
   const channel = atom ? root : child(root, 'channel');
@@ -188,7 +189,7 @@ export function parseFeed(source: string, base: string, now: Date): ParsedFeedIt
   for (const entry of elements(channel).filter((node) => local(node) === (atom ? 'entry' : 'item'))) {
     const at = Date.parse(content(child(entry, atom ? 'published' : 'pubdate'))
       || content(child(entry, 'updated')) || content(child(entry, 'date')));
-    if (!Number.isFinite(at) || at < now.getTime() - WINDOW_MS || at > now.getTime()) {
+    if (!Number.isFinite(at) || at < now.getTime() - windowMs || at > now.getTime()) {
       continue;
     }
     const linkNode = atom ? elements(entry).find((node) => local(node) === 'link'

@@ -1,0 +1,145 @@
+/*
+ * 桌面客户端的标题栏（11-08 设计稿 Strip-Open / Strip-Collapsed，照 ChatGPT 桌面版）：最上面一条 44 高、--layer-bar 底；
+ * 下面左边是图标栏（72，宽度不变），第二栏 + 主区放在一块左上角圆角 12 的面板里，面板左、上一道 1px --line2。
+ * 壳的 .shell 在有标题栏时（data-titled）换成两行两列的格子：标题栏占满第一行，图标栏、面板在第二行。
+ */
+
+.shell[data-titled] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 44px minmax(0, 1fr);
+  background: var(--layer-bar);
+}
+
+.shell[data-titled] > .titlebar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.shell[data-titled] > .rail {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  padding-top: 4px;
+}
+
+.shell-panel {
+  display: contents;
+}
+
+.shell[data-titled] > .shell-panel {
+  position: relative;
+  display: flex;
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+  border-top-left-radius: 12px;
+  background: var(--bg);
+}
+
+/* 面板左、上那道细线压在内容上面（第二栏、主区都有自己的底色），不接鼠标。 */
+.shell[data-titled] > .shell-panel::after {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  border-top: 1px solid var(--line2);
+  border-left: 1px solid var(--line2);
+  border-top-left-radius: 12px;
+  content: '';
+  pointer-events: none;
+}
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 calc(var(--titlebar-controls, 0px) + 12px) 0 var(--titlebar-lights, 12px);
+  background: var(--layer-bar);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+}
+
+.titlebar button,
+.titlebar a,
+.titlebar input,
+.titlebar [role='button'] {
+  -webkit-app-region: no-drag;
+}
+
+.titlebar .icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.titlebar-rule {
+  flex: none;
+  width: 1px;
+  height: 16px;
+  margin: 0 10px 0 8px;
+  background: var(--line2);
+}
+
+.titlebar-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 480px;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titlebar-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+/* 页名换了淡入（页面换了标题栏不跳）；减少动态效果时不动。 */
+.titlebar-title {
+  animation: titlebar-title-in var(--motion-fast) var(--ease-out);
+}
+
+@keyframes titlebar-title-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titlebar-title {
+    animation: none;
+  }
+}
+
+/* 标题栏底下的东西各自管自己的头：网页窄栏顶上那个展开按钮不要了（展开在标题栏里）。 */
+.shell[data-titled] .web-strip-head {
+  display: none;
+}
+
+.shell[data-titled] .web-strip {
+  padding-top: 8px;
+}
+
+/*
+ * Chromium 按 DOM 先后算拖动区：后面的 no-drag 才能把标题栏上的拖动区挖掉。压到标题栏上的浮层（对话框拖上去、设置、
+ * ⌘K、菜单）标 no-drag，点得到。
+ */
+.shell[data-titled] .chat-dialog,
+.shell[data-titled] .settings-scrim,
+.shell[data-titled] .settings-dialog,
+.shell[data-titled] .palette-layer,
+.popover {
+  -webkit-app-region: no-drag;
+}

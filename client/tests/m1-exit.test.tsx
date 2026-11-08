@@ -44,7 +44,7 @@ describe('M1 退出条件', () => {
     typeInNote(await noteEditor(), '还没存上的一段。');
     fireEvent.change(screen.getByRole('textbox', { name: '问一句' }), { target: { value: '想问又没问的' } });
 
-    fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '现在' }));
+    fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '首页' }));
     await settle();
     expect(screen.getByRole('heading', { level: 1, name: HOME_HEADING })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '笔记' }));

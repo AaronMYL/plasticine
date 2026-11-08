@@ -22,6 +22,7 @@ import { sideRoute } from '../../shell/routes.ts';
 import { useRoute } from '../../shell/use-route.ts';
 import { when } from '../notes/note-time.ts';
 import { DouyinMark, FeedChartView, FeedText, FeedVideoBody, videoMeta } from './feed-body.tsx';
+import { RedditMark } from './feed-source-list.tsx';
 import { useOps } from '../../state/ops.ts';
 
 export interface CardSource {
@@ -44,6 +45,10 @@ export function sourceOf(item: FeedItemView): CardSource {
   if (item.kind === 'rss') {
     return { name: item.sourceLabel, handle: item.author?.name ?? item.site, avatar: null, round: false };
   }
+  if (item.kind === 'reddit') {
+    // 第 7 批第 13 条：Reddit 圆标 + r/版块 + u/作者。
+    return { name: item.sourceLabel, handle: item.author?.name ?? null, avatar: null, round: true };
+  }
   return { name: item.site ?? item.sourceLabel, handle: null, avatar: null, round: false };
 }
 
@@ -60,6 +65,14 @@ export function SourceMark({ source }: { source: CardSource }): ReactNode {
       loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
   }
   return <span className={`feed-mark ${shape}`} aria-hidden="true">{initial(source.name)}</span>;
+}
+
+/** 卡片头的来源标：抖音的方块、Reddit 的圆标，别的按头像或首字。 */
+function CardMark({ item, source }: { item: FeedItemView; source: CardSource }): ReactNode {
+  if (item.kind === 'douyin') {
+    return <DouyinMark />;
+  }
+  return item.kind === 'reddit' ? <RedditMark size={28} /> : <SourceMark source={source} />;
 }
 
 /**
@@ -155,7 +168,7 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
   return (
     <>
       <header className="feed-card-head">
-        {item.kind === 'douyin' ? <DouyinMark /> : <SourceMark source={source} />}
+        <CardMark item={item} source={source} />
         <div className="feed-card-source">
           <span className="feed-card-name">{source.name}</span>
           {source.handle === null ? null : <span className="feed-card-handle">{source.handle}</span>}
@@ -176,7 +189,7 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
           style={ratio === null ? undefined : { aspectRatio: `1 / ${ratio}` }} />
       )}
       <footer className="feed-card-actions">
-        <IconButton icon={liked ? 'heart-filled' : 'heart'} label="赞" aria-pressed={liked} disabled={lockedReact}
+        <IconButton icon={liked ? 'heart-filled' : 'heart'} label="点赞" aria-pressed={liked} disabled={lockedReact}
           onClick={() => void actions.react(item, 'like')} />
         <IconButton icon={item.saved ? 'star-filled' : 'star'} label={item.saved ? '已收藏' : '收藏'}
           aria-pressed={item.saved} disabled={lockedSave}

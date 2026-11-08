@@ -83,6 +83,20 @@ export const UndoSpaceRequestSchema = Type.Object({
 }, STRICT);
 export type UndoSpaceRequest = Static<typeof UndoSpaceRequestSchema>;
 
+/** DELETE /v2/spaces/:id：移到「最近删除」（只打删除时间，能还原），带 version。 */
+export const DeleteSpaceRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  version: Type.Integer({ minimum: 1 }),
+}, STRICT);
+export type DeleteSpaceRequest = Static<typeof DeleteSpaceRequestSchema>;
+
+/** POST /v2/spaces/:id/restore：从「最近删除」还原。 */
+export const RestoreSpaceRequestSchema = Type.Object({ requestId: RequestIdSchema }, STRICT);
+export type RestoreSpaceRequest = Static<typeof RestoreSpaceRequestSchema>;
+
+/** GET /v2/spaces?standalone=true：只要不属于订阅的空间（资料库第二栏「空间」一组；各期在订阅页里）。 */
+export const SPACE_LIST_STANDALONE_PARAM = 'standalone';
+
 /** 一期的简报：信息流顶部、订阅的往期、首页回顾都用它。 */
 export const IssueBriefSchema = Type.Object({
   spaceId: IdSchema,

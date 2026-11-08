@@ -1,5 +1,5 @@
 // 竖排标签的摆放规整与合并（两端共用：服务端存之前规整一遍，客户端读回来、合并旧存档时用同一套）。
-// · 每个标签恰好在一处（置顶、某一组、今天）；对不上的放进今天，不丢；重复的只留第一处。
+// · 每个标签恰好在一处（置顶、某一组、今天）；对不上的放进今天，不丢；重复的只留第一处；网址是空的丢掉。
 // · 合并：把一份还没搬上来的摆放并进现有的——同一个网址已经有标签的不再加；进同名的组（没有就新建一组）；
 //   「关掉的」按时间并起来，最多留 WEB_TABS_ARCHIVED_MAX 条。
 
@@ -19,12 +19,17 @@ function clip(title: string): string {
   return title.length > WEB_TAB_TITLE_MAX ? title.slice(0, WEB_TAB_TITLE_MAX) : title;
 }
 
-/** 每个标签恰好在一处；没有摆放的标签放进今天最上面；同一个 id 的标签只留第一个；标签按竖排的先后排。 */
+function blank(url: string): boolean {
+  return url.trim() === '';
+}
+
+/** 网址是空的标签和「关掉的」丢掉；每个标签恰好在一处；没有摆放的标签放进今天最上面；同一个 id 的标签只留第一个；标签按竖排的先后排。 */
 export function normalizeLayout(layout: WebTabsLayout): WebTabsLayout {
   const tabs: WebTab[] = [];
   const ids = new Set<string>();
   for (const tab of layout.tabs) {
-    if (!ids.has(tab.id)) {
+    // 网址是空的标签（11-08 之前壳报过空网址、存进了摆放）丢掉：本体要求网址至少一个字，留着整份都送不上去。
+    if (!ids.has(tab.id) && !blank(tab.url)) {
       ids.add(tab.id);
       tabs.push(tab.title.length > WEB_TAB_TITLE_MAX ? { ...tab, title: clip(tab.title) } : tab);
     }
@@ -50,7 +55,7 @@ export function normalizeLayout(layout: WebTabsLayout): WebTabsLayout {
   const strays = tabs.filter((tab) => !seen.has(tab.id)).map((tab) => tab.id);
   const keys = new Set<string>();
   const archived = [...layout.archived].filter((entry) => {
-    if (keys.has(entry.key)) {
+    if (keys.has(entry.key) || blank(entry.url)) {
       return false;
     }
     keys.add(entry.key);

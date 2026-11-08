@@ -65,6 +65,28 @@ describe('记账', () => {
     expect(await text('挪钱')).not.toContain('−¥10.00');
   });
 
+  it('删一笔账先说后果：「先不」什么都不动，「删除」才删', async () => {
+    const app = await renderApp({ setup: (fake) => {
+      fake.control.m5b.money.seed({ id: 'noodles', kind: 'expense', merchant: '面馆', amountCents: 1000,
+        occurredAt: new Date().toISOString() });
+    } });
+    await settle();
+    const sheet = openTool('记账');
+    const row = await within(sheet).findByRole('listitem', { name: '面馆' });
+    const remove = vi.spyOn(app.api.money, 'remove');
+    fireEvent.click(within(row).getByRole('button', { name: '删除' }));
+    const confirm = within(row).getByRole('group', { name: '确认删除这笔账' });
+    expect(confirm.textContent).toContain('不再算进收支');
+    fireEvent.click(within(confirm).getByRole('button', { name: '先不' }));
+    expect(within(row).queryByRole('group', { name: '确认删除这笔账' })).toBeNull();
+    expect(remove).not.toHaveBeenCalled();
+    fireEvent.click(within(row).getByRole('button', { name: '删除' }));
+    fireEvent.click(within(within(row).getByRole('group', { name: '确认删除这笔账' }))
+      .getByRole('button', { name: '删除' }));
+    await waitFor(() => expect(remove).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(within(sheet).queryByRole('listitem', { name: '面馆' })).toBeNull());
+  });
+
   it('停在统计页记一笔后自动刷新当前范围，收到别处记账事件也刷新', async () => {
     const app = await renderApp();
     await settle();

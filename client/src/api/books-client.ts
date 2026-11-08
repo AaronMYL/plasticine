@@ -16,6 +16,7 @@ import type {
   DismissKeyPointRequest,
   ExportBookNotesResponse,
   GenerateBookInsightRequest,
+  RenameBookRequest,
   SaveBookProgressRequest,
   UpdateBookAnnotationRequest,
   UploadBookRequest,
@@ -29,8 +30,12 @@ export interface BooksApi {
   upload(input: UploadBookRequest, signal?: AbortSignal): Promise<UploadBookResponse>;
   /** GET /v2/books/:id */
   get(id: string, signal?: AbortSignal): Promise<BookView>;
-  /** DELETE /v2/books/:id：只打删除时间，原文件和标注都留着。 */
+  /** DELETE /v2/books/:id：只打删除时间，原文件和标注都留着；进资料库「最近删除」。 */
   remove(id: string, requestId: string): Promise<void>;
+  /** PATCH /v2/books/:id：改书名。 */
+  rename(id: string, input: RenameBookRequest): Promise<BookView>;
+  /** POST /v2/books/:id/restore：从「最近删除」还原。 */
+  restore(id: string, requestId: string): Promise<BookView>;
   /** GET /v2/books/:id/chapters/:index */
   chapter(id: string, index: number, signal?: AbortSignal): Promise<BookChapterResponse>;
   /** 封面、插图的地址：chapter 回答里的 assetBaseUrl 加 encodeURIComponent(key)。 */

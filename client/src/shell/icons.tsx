@@ -101,6 +101,7 @@ export type IconName =
   | 'play'
   | 'grip'
   | 'library'
+  | 'archive'
   | 'space'
   | 'users'
   | 'column-collapse'
@@ -113,6 +114,9 @@ const PATHS: Record<IconName, ReactNode> = {
   plus: <path d="M8 3v10M3 8h10" />,
   // 拖动把手：两列三行的点（心跳清单那样能拖的行）。
   // 两层侧栏（11-07 设计稿）：资料库（书架）、空间（报告）、群。
+  // 资料库（第 7 批设计稿 boards-b8.mjs 的 ARCHIVE）：档案盒，盖子一条 + 盒身 + 拉手。
+  archive: <><rect x="1.8" y="2.5" width="12.4" height="3.4" rx="1" />
+    <path d="M2.9 5.9v6.3c0 .7.6 1.3 1.3 1.3h7.6c.7 0 1.3-.6 1.3-1.3V5.9M6.4 8.7h3.2" /></>,
   library: <path d="M3 2.5v11M6 2.5v11M9.1 2.9l3.4 10.4" />,
   space: <>
     <rect x="2.5" y="2" width="11" height="12" rx="1.5" />

@@ -123,3 +123,33 @@ test('首页回顾：最近一期个人回顾的一句；没有就是 null', asy
   assert.equal(latest['headline'], '侧栏方案定稿；悬赏还缺赏金来源，卡了三天');
   assert.equal(latest['edition'], 'daily');
 });
+
+test('删空间进「最近删除」、能还原；列表可只要不属于订阅的；改名走 PUT 带 version', async () => {
+  const { app, cookie } = await start();
+  const sub = research(app);
+  const own = writeSpace(app.state, { title: '签证核查', doc: DOC }, 'ai');
+  writeSpace(app.state, { title: '研究周报 · 第 1 期', doc: DOC, subscriptionId: sub.id }, 'ai');
+  const standalone = json(await call(app, 'GET', '/v2/spaces?standalone=true', { cookie }))['spaces'] as
+    Record<string, unknown>[];
+  assert.deepEqual(standalone.map((item) => item['title']), ['签证核查']);
+  const renamed = await call(app, 'PUT', `/v2/spaces/${own.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 1, title: '马来西亚签证核查', doc: DOC } });
+  assert.equal(json(renamed)['title'], '马来西亚签证核查');
+  assert.equal((await call(app, 'DELETE', `/v2/spaces/${own.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 1 } })).status, 409);
+  const removed = await call(app, 'DELETE', `/v2/spaces/${own.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 2 } });
+  assert.equal(removed.status, 200);
+  assert.equal((await call(app, 'GET', `/v2/spaces/${own.id}`, { cookie })).status, 404);
+  const trash = json(await call(app, 'GET', '/v2/library/trash', { cookie }))['items'] as Record<string, unknown>[];
+  assert.deepEqual(trash.map((item) => [item['kind'], item['id'], item['title']]),
+    [['space', own.id, '马来西亚签证核查']]);
+  const restored = await call(app, 'POST', `/v2/spaces/${own.id}/restore`, { cookie, body: {
+    requestId: newRequestId() } });
+  assert.equal(restored.status, 200);
+  assert.equal(json(restored)['title'], '马来西亚签证核查');
+  assert.equal((await call(app, 'GET', `/v2/spaces/${own.id}`, { cookie })).status, 200);
+  assert.deepEqual(json(await call(app, 'GET', '/v2/library/trash', { cookie }))['items'], []);
+  assert.equal((await call(app, 'POST', '/v2/spaces/nope/restore', { cookie, body: {
+    requestId: newRequestId() } })).status, 404);
+});

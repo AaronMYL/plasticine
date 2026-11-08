@@ -129,3 +129,16 @@ test('规整：每个标签只在一处，没摆放的放进今天最上面，�
     pinned: ['a', 'ghost'], today: ['a', 'b'] }));
   assert.deepEqual([layout.pinned, layout.today], [['a'], ['c', 'b']]);
 });
+
+test('规整摆放：网址是空的标签和「关掉的」丢掉，其余不动（卡住的旧数据能送上去）', () => {
+  const layout = normalizeLayout(layoutOf({
+    tabs: [tab('a', 'https://a.example.com/'), tab('blank', '')],
+    pinned: ['blank'], today: ['a'],
+    archived: [{ key: 'x@1', url: '', title: 'X', closedAt: '2026-11-07T00:00:00.000Z' },
+      { key: 'y@1', url: 'https://y.example.com/', title: 'Y', closedAt: '2026-11-07T00:00:00.000Z' }],
+  }));
+  assert.deepEqual(layout.tabs.map((entry) => entry.id), ['a']);
+  assert.deepEqual(layout.pinned, []);
+  assert.deepEqual(layout.today, ['a']);
+  assert.deepEqual(layout.archived.map((entry) => entry.key), ['y@1']);
+});

@@ -78,8 +78,14 @@ export const DESIGN_TOKENS: readonly string[] = [
   // 第 108 条：页面列最宽多少；对话框停在右边展开时页面列让出的宽度（壳在 .shell 上就地设，见 shell/layout.ts）。
   'page-max',
   'chat-reserve',
-  // 11-08：Windows 右上角窗口按钮要让出的宽度（壳报的 controlsRight，壳在 .shell 上就地设）。
-  'window-controls',
+  // 11-08 桌面客户端标题栏（shell/titlebar.tsx 在 .titlebar 上就地设）：左边红绿灯让出的宽度（壳报的
+  // trafficLightInset）、右边 Windows 窗口按钮让出的宽度（壳报的 controlsRight）。
+  'titlebar-lights',
+  'titlebar-controls',
+  // 11-08 第 7 批：图书翻页时一页的宽、高和页间距（books/page-surface.ts 按 .bk-sheet 量好，就地设在 .bk-text 上）。
+  'page-width',
+  'page-height',
+  'page-gap',
 ];
 
 /** 元素上就地设成某个 --hue-* 的变量（shell/hue.tsx）：用它们等于用类别色令牌。 */

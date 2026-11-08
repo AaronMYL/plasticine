@@ -60,7 +60,7 @@ describe('连接模型', () => {
     expect(JSON.stringify(listed).includes('sk-test-value')).toBe(false);
   });
 
-  it('名字、排序和「GPT-5.5 · 高」', () => {
+  it('名字、排序和「GPT-5.5 · 较高」', () => {
     expect(providerName({ id: 'openai', name: 'OpenAI' })).toBe('ChatGPT');
     expect(providerName({ id: 'groq', name: 'Groq' })).toBe('Groq');
     const provider = (id: string, connected: 'oauth' | null = null) => ({ id, name: id, methods: ['api_key' as const],
@@ -72,6 +72,6 @@ describe('连接模型', () => {
     expect(more.map((item) => item.id)).toEqual(['groq']);
     expect(choiceLabel({ providers: [provider('deepseek', 'oauth')], chosen: null,
       version: 0, purposes: [], defaultIssue: null,
-      effective: { provider: 'deepseek', model: 'm', thinking: 'high' } })).toBe('M 1 · 高');
+      effective: { provider: 'deepseek', model: 'm', thinking: 'high' } })).toBe('M 1 · 较高');
   });
 });

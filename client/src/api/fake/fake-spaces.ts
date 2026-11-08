@@ -2,13 +2,15 @@
 // 「以后都这样」把那一版上的规则写进订阅设置；没出过样刊不能开定时；首页回顾读最近一期日报和昨晚的整理。
 
 import { ApiError } from '../errors.ts';
-import type { SpacesApi, SubscriptionsApi } from '../spaces-client.ts';
+import type { SpaceListFilter, SpacesApi, SubscriptionsApi } from '../spaces-client.ts';
 import type {
   AdoptRuleRequest,
+  DeleteSpaceRequest,
   IssueBrief,
   MemoryDreamView,
   NoteAssistRequest,
   NoteAssistView,
+  RestoreSpaceRequest,
   ReviewSummary,
   RunSubscriptionRequest,
   RunSubscriptionResponse,
@@ -56,7 +58,7 @@ export class FakeSpaces {
 
   /** 假查找用：每个空间的标题和正文（JSON 原样当正文查）。 */
   searchable(): { id: string; updatedAt: string; title: string; text: string }[] {
-    return this.spaceRows.map((row) => ({ id: row.id, updatedAt: row.updatedAt, title: row.title,
+    return this.live().map((row) => ({ id: row.id, updatedAt: row.updatedAt, title: row.title,
       text: JSON.stringify(row.doc) }));
   }
 
@@ -66,8 +68,19 @@ export class FakeSpaces {
     this.subs = subscriptionSeeds(now);
   }
 
+  /** 没删的。 */
+  private live(): SeedSpace[] {
+    return this.spaceRows.filter((row) => (row.deletedAt ?? null) === null);
+  }
+
+  /** 「最近删除」里的空间（假 GET /v2/library/trash 用）。 */
+  deletedRows(): { id: string; title: string; deletedAt: string }[] {
+    return this.spaceRows.flatMap((row) => (row.deletedAt == null ? []
+      : [{ id: row.id, title: row.title, deletedAt: row.deletedAt }]));
+  }
+
   private space(id: string): SeedSpace {
-    const found = this.spaceRows.find((row) => row.id === id);
+    const found = this.live().find((row) => row.id === id);
     if (found === undefined) {
       throw notFound('这个空间');
     }
@@ -104,7 +117,7 @@ export class FakeSpaces {
   }
 
   private issues(subscriptionId: string): IssueBrief[] {
-    return this.spaceRows.filter((row) => row.subscriptionId === subscriptionId)
+    return this.live().filter((row) => row.subscriptionId === subscriptionId)
       .sort((a, b) => (b.issueNumber ?? 0) - (a.issueNumber ?? 0))
       .map((row) => this.brief(row)).filter((brief): brief is IssueBrief => brief !== null);
   }
@@ -122,9 +135,10 @@ export class FakeSpaces {
   }
 
   readonly spaces: SpacesApi = {
-    list: async (): Promise<SpaceListResponse> => {
+    list: async (_signal?: AbortSignal, filter: SpaceListFilter = {}): Promise<SpaceListResponse> => {
       this.deps.session.require();
-      return { spaces: [...this.spaceRows].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((row) => ({
+      const rows = this.live().filter((row) => filter.standalone !== true || row.subscriptionId === null);
+      return { spaces: rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((row) => ({
         id: row.id, title: row.title, kind: row.kind, author: row.author, subscriptionId: row.subscriptionId,
         issueNumber: row.issueNumber, edition: row.edition, updatedAt: row.updatedAt })) };
     },
@@ -158,6 +172,28 @@ export class FakeSpaces {
         row.doc = structuredClone(previous.doc);
         row.revisions.push({ doc: structuredClone(previous.doc), change: null, rule: null });
         row.updatedAt = this.deps.now().toISOString();
+        return this.view(row);
+      });
+    },
+    remove: async (id: string, input: DeleteSpaceRequest): Promise<void> => {
+      this.deps.session.require();
+      await this.deps.receipts.run('save', input.requestId, 'DELETE /v2/spaces', () => {
+        const row = this.space(id);
+        if (row.revisions.length !== input.version) {
+          throw conflict('这个空间在别处改过了，刷新后再删。');
+        }
+        row.deletedAt = this.deps.now().toISOString();
+        return true;
+      });
+    },
+    restore: (id: string, input: RestoreSpaceRequest): Promise<SpaceView> => {
+      this.deps.session.require();
+      return this.deps.receipts.run('save', input.requestId, 'POST /v2/spaces/restore', () => {
+        const row = this.spaceRows.find((item) => item.id === id);
+        if (row === undefined) {
+          throw notFound('这个空间');
+        }
+        row.deletedAt = null;
         return this.view(row);
       });
     },

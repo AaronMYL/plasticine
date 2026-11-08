@@ -52,16 +52,17 @@ import { SkillStore } from '../skills/index.ts';
 import { Tasks } from '../tasks/index.ts';
 import { BackupService, ClientReleases } from '../system/index.ts';
 import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
+import { errorCategory, safeLog } from '../shared-log.ts';
 import { join } from 'node:path';
 import type { BackupObjectKind } from '../../shared/api/index.ts';
 import { createApp, type App } from './app.ts';
 import { agreementView, memoryEntryView } from './cognition-views.ts';
 import { assembleLines, type LineAssembly } from './assemble-lines.ts';
-import { publicUrlFromEnv } from './config.ts';
+import { publicUrlSource } from './public-url.ts';
 import { publishNetworkChange } from './contact-streams.ts';
 import { taskCardTool } from './task-card-tool.ts';
 import { linePort } from './subscriptions.ts';
-import { ensureReviewSubscription, subsTools } from '../subs/index.ts';
+import { ensureReviewSubscription, SampleCards, subsTools } from '../subs/index.ts';
 import { scanDiskNotice } from './disk-notice.ts';
 import { reportAnnouncement } from './report-announcement.ts';
 import { EventHub } from './event-hub.ts';
@@ -171,7 +172,8 @@ export function assembleApp(options: AssembleOptions): App {
   const server = new ServerCommands({ stateDirectory: options.stateDirectory, now });
   const skills = new SkillStore({ stateDirectory: options.stateDirectory, now,
     ...(options.builtinSkills === undefined ? {} : { builtinDirectory: options.builtinSkills }) });
-  const publicUrl = options.publicUrl ?? publicUrlFromEnv();
+  const fixedUrl = options.publicUrl;
+  const publicUrl = fixedUrl === undefined ? publicUrlSource(state) : () => fixedUrl;
   const presenter = new Presenter(state);
   const desk = new AskDesk({ state, presenter, now });
   const late = new LateLines();
@@ -212,8 +214,9 @@ export function assembleApp(options: AssembleOptions): App {
     stateDirectory: options.stateDirectory,
     dryRun: options.dryRun,
     now,
-    internalCookies: () => browserSessions.cookies(publicUrl),
-    internalUrl: publicUrl,
+    internalCookies: () => browserSessions.cookies(publicUrl()),
+    // 云端浏览器认本实例页面用的地址：装配时取一次（入网后重启才换；它只用来把 #/ 地址认成站内页）。
+    internalUrl: publicUrl(),
     ...(options.cloudTransports === undefined ? {} : { transports: options.cloudTransports }),
     ...(options.checkCredentialMode === undefined ? {} : { checkCredentialMode: options.checkCredentialMode }),
     ...(options.mailImages === undefined ? {} : { mailImages: options.mailImages }),
@@ -302,7 +305,7 @@ export function assembleApp(options: AssembleOptions): App {
     lineChanged: (lineId) => network.lineChanged(lineId),
     tools: [taskCardTool(state, network), ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。
-      ...subsTools(state, () => linePort(lines), now),
+      ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId)),
       ...calendarTools({ state, devices: devices.actions, sync: calendar, now, zone: calendarZone })],
     askTools: tasks.askTools(),
     legacy: { registry, permission, dryRun: options.dryRun, sshAvailable: m5b.cloud.transportAvailable.ssh,
@@ -335,6 +338,9 @@ export function assembleApp(options: AssembleOptions): App {
   });
   presenter.setNotifier(push);
   // 通知统一成「主线一条消息 + 系统通知」（《优化清单》第 12 条）：不再发任何通知邮件。
+  // 第 7 批第 14 条：样刊出来附「开启定时 / 再改改」卡；确认写在主线上，「再改改」交给主线问他。
+  const sampleCards = new SampleCards({ state, desk, notice: (input) => { lines.notice(input); },
+    tell: (text) => { lines.tell(MAIN_LINE_ID, text); } });
   const notices = new Notices({ state, post: (input) => lines.notice(input), push, now });
   const daily = createDaily({ state, now,
     feedCommentGenerator: createFeedCommentGenerator(text),
@@ -348,12 +354,19 @@ export function assembleApp(options: AssembleOptions): App {
   });
   const resolvers: Partial<Record<string, AskResolver>> = {
     ...lines.resolvers(),
+    subscription_schedule: sampleCards.resolver,
     money_confirmation: moneyDrafts.resolver,
     backup_restore: backups.resolver,
     ...network.resolvers(),
     ...(devices.approvals === undefined ? {} : { device_action: devices.approvals.resolver }),
   };
   desk.setResolver(routeAsks(resolvers, { resolve: () => undefined }));
+  // 补发：还没开定时、已经出过样刊的订阅（11-08 他那份周报），最新那一期没出过卡的补一张。同一期不会出第二张。
+  try {
+    sampleCards.backfill();
+  } catch (error) {
+    safeLog('error', 'sample_card_backfill_failed', { category: errorCategory(error), error });
+  }
   const scans = new ScanScheduler(options.scanTickMs === undefined ? {} : { tickMs: options.scanTickMs });
   // 项目（用户 2026-11-01 定）：每周现状、逾期与停滞提醒（主线通知）。
   const projectWatch = new ProjectWatch({ state, now,

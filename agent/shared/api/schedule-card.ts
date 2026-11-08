@@ -26,3 +26,19 @@ export const ScheduleCardPreviewSchema = Type.Object({
   replaces: Type.Boolean(),
 }, STRICT);
 export type ScheduleCardPreview = Static<typeof ScheduleCardPreviewSchema>;
+
+/**
+ * 研究周报样刊出来时附的卡（第 7 批第 14 条，他定，设计稿 Chat-Sample）：「每周五 08:00 出一期」+ 订阅名，按钮「开启定时」
+ * 「再改改」；带上那一期（站内链接打开）。
+ */
+export const SubscriptionCardPreviewSchema = Type.Object({
+  subscriptionId: IdSchema,
+  /** 订阅名。 */
+  title: Type.String(),
+  /** 「每周五 08:00 出一期」：按订阅设置拼，他所在地的时间。 */
+  when: Type.String(),
+  /** 样刊那一期（空间）和期号。 */
+  spaceId: IdSchema,
+  issueNumber: OrNull(Type.Integer({ minimum: 1 })),
+}, STRICT);
+export type SubscriptionCardPreview = Static<typeof SubscriptionCardPreviewSchema>;

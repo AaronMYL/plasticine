@@ -24,6 +24,15 @@ describe('竖排标签', () => {
     expect(tabs.get().current).toBe(a);
   });
 
+  it('原生层报来空网址不收（网址、标题留着原来的）', () => {
+    const tabs = new WebTabsStore(null, () => NOON);
+    const a = tabs.open('https://a.example', 'A', 'user');
+    tabs.update(a, { url: '', title: '' });
+    tabs.update(a, { url: ' ', title: '新标题' });
+    expect(tabs.tab(a)).toMatchObject({ url: 'https://a.example', title: 'A' });
+    expect(tabs.layout().tabs.map((tab) => tab.url)).toEqual(['https://a.example']);
+  });
+
   it('置顶、放进分组、拿出来：每个标签恰好在一处，拿出来回到「今天」最上面', () => {
     const tabs = new WebTabsStore(null, () => NOON);
     const a = tabs.open('https://a.example', 'A', 'user');

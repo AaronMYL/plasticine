@@ -45,8 +45,11 @@ function DefaultTimed({ row, actions, close }: TimedSheetProps): ReactNode {
       </Field>
       {row.lineId === null ? null : (
         <Field label="它的线">
-          <button type="button" className="text-button" onClick={() => openPanel({ kind: 'work',
-            lineId: row.lineId! })}>看这条线做了什么</button>
+          <button type="button" className="text-button" onClick={() => {
+            // 先收起这一层再开工作详情（11-08 第 15 条）：两层叠着时关工作详情要点两次。
+            close();
+            openPanel({ kind: 'work', lineId: row.lineId! });
+          }}>看这条线做了什么</button>
         </Field>
       )}
       {!row.canRemove ? null : removing ? (

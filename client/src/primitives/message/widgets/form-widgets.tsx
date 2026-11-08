@@ -21,7 +21,7 @@ function Answered({ text, onReset }: { text: string; onReset?: (() => void) | un
       <Icon name="check" size={14} />
       <span className="widget-answered-text">{text}</span>
       {onReset === undefined ? null
-        : <button type="button" className="text-button text-button-quiet" onClick={onReset}>改</button>}
+        : <button type="button" className="text-button text-button-quiet" onClick={onReset}>修改</button>}
     </p>
   );
 }

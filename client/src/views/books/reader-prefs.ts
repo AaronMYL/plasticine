@@ -1,4 +1,4 @@
-// 阅读页记在这台设备上的几样：字号和行距、某本书「在原文里标出」重点开没开、这台设备上读到哪。
+// 阅读页记在这台设备上的几样：字号和行距、阅读方式（翻页 / 滚动）、某本书「在原文里标出」重点开没开、这台设备上读到哪。
 // 都放 localStorage；浏览器不让存（隐私模式、存满了）时照样能读，只是下次不记得，写一条警告不打断阅读。
 
 export interface Typography {
@@ -10,17 +10,25 @@ export interface Typography {
 
 /** 正文字号五档；电脑默认 16（笔记长文 16/28），手机默认 17（设计稿 17/30）。 */
 export const TYPE_SIZES = [15, 16, 17, 18, 20] as const;
-/** 行距三档，按字号的倍数：紧 / 适中 / 松。适中 1.75 即 16/28。 */
+/** 行距三档，按字号的倍数：紧凑 / 适中 / 宽松。适中 1.75 即 16/28。 */
 export const TYPE_LEADINGS = [
-  { label: '紧', ratio: 1.6 },
+  { label: '紧凑', ratio: 1.6 },
   { label: '适中', ratio: 1.75 },
-  { label: '松', ratio: 1.9 },
+  { label: '宽松', ratio: 1.9 },
 ] as const;
 
 export const DESKTOP_TYPOGRAPHY: Typography = { size: 1, leading: 1 };
 export const PHONE_TYPOGRAPHY: Typography = { size: 2, leading: 1 };
 
+/** 阅读方式（第 7 批第 3 条，他定）：默认左右翻页、一次一页；「Aa」里能切回上下滚。 */
+export type ReadingMode = 'paged' | 'scroll';
+export const READING_MODES: ReadonlyArray<{ mode: ReadingMode; label: string }> = [
+  { mode: 'paged', label: '翻页' },
+  { mode: 'scroll', label: '滚动' },
+];
+
 const TYPOGRAPHY_KEY = 'plasticine.books.typography';
+const MODE_KEY = 'plasticine.books.mode';
 const KEY_POINTS_KEY = 'plasticine.books.key-points.';
 const POSITION_KEY = 'plasticine.books.position.';
 
@@ -78,6 +86,14 @@ export function loadTypography(phone: boolean): Typography {
 
 export function saveTypography(typography: Typography): void {
   write(TYPOGRAPHY_KEY, JSON.stringify(typography));
+}
+
+export function loadReadingMode(): ReadingMode {
+  return read(MODE_KEY) === 'scroll' ? 'scroll' : 'paged';
+}
+
+export function saveReadingMode(mode: ReadingMode): void {
+  write(MODE_KEY, mode);
 }
 
 /** 字号和行高（px）。 */

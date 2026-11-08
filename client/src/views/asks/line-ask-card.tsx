@@ -11,6 +11,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { DeviceActionCard } from '../device/device-action-card.tsx';
 import { ScheduleAskCard } from './schedule-ask-card.tsx';
+import { SubscriptionAskCard } from './subscription-ask-card.tsx';
 import { TaskCardPreview } from './task-card-preview.tsx';
 import type { AskWork } from './asks-store.ts';
 import './line-ask-card.css';
@@ -105,6 +106,10 @@ export function LineAskCard({ ask, thread }: { ask: AskView; thread?: string | n
   // 起草好的定时卡（《优化清单》第 3 条）：照稿子画成定时卡。
   if (ask.scheduleCard !== undefined) {
     return <ScheduleAskCard ask={ask} card={ask.scheduleCard} />;
+  }
+  // 研究周报样刊附的「开启定时 / 再改改」（第 7 批第 14 条）。
+  if (ask.subscriptionCard !== undefined) {
+    return <SubscriptionAskCard ask={ask} card={ask.subscriptionCard} />;
   }
   return <PlainAskCard ask={ask} thread={thread ?? null} />;
 }

@@ -6,7 +6,7 @@ import { PushDeviceContext } from '../../../src/api/push-device.ts';
 import { LiveProvider, useLive, useTimeZone } from '../../../src/live.tsx';
 import { ClientStateProvider } from '../../../src/state/context.tsx';
 import { Telemetry, TelemetryContext, memorySink } from '../../../src/telemetry.ts';
-import { DailySettingsSection } from '../../../src/views/settings/daily-settings-section.tsx';
+import { TimeZoneSection } from '../../../src/views/settings/time-zone-section.tsx';
 import { renderApp, type AppHarness } from '../../helpers.tsx';
 
 const deviceZone = 'Pacific/Honolulu';
@@ -19,7 +19,7 @@ function Probe() {
     live.feed.open();
     live.m5b.money.open();
   }, [live]);
-  return <><output aria-label="当前时区">{timeZone}</output><DailySettingsSection /></>;
+  return <><output aria-label="当前时区">{timeZone}</output><TimeZoneSection /></>;
 }
 
 function probe(app: AppHarness) {

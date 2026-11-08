@@ -18,6 +18,8 @@ export type { ReviewEntry, ReviewMaterials, ReviewState } from './review-materia
 export { buildRun, runSubscription } from './run.ts';
 export type { RunPort, RunState, SubscriptionRun } from './run.ts';
 export { spacePath, subsTools } from './tools.ts';
+export { SAMPLE_CARD_PURPOSE, SampleCards, scheduleText } from './sample-card.ts';
+export type { SampleCardOptions, SampleCardState } from './sample-card.ts';
 export type { ToolState } from './tools.ts';
 export { SubscriptionTimed } from './timed.ts';
 export type { SubsTimedLines, SubsTimedOptions, SubsTimedState } from './timed.ts';

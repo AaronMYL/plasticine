@@ -18,9 +18,9 @@ function gridTitles(): string[] {
 describe('图书馆', () => {
   it('页头只有标题；没有封面图的书画文字封面，中文短书名竖排', async () => {
     await library();
-    expect(screen.getByRole('heading', { level: 1, name: '图书' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: '图书馆' })).toBeTruthy();
     // 2026-11-03《全量界面优化》：页头不写副标题；封面不写格式。11-04 重做悬停：本数、在读和下面各节重复，删掉。
-    expect(screen.getByRole('heading', { level: 1, name: '图书' }).hasAttribute('title')).toBe(false);
+    expect(screen.getByRole('heading', { level: 1, name: '图书馆' }).hasAttribute('title')).toBe(false);
     const cover = screen.getAllByRole('img', { name: '《浮生六记》文字封面' })[0] as HTMLElement;
     expect(cover.dataset.vertical).toBe('true');
     expect(cover.textContent).toContain('沈复');
@@ -76,13 +76,48 @@ describe('图书馆', () => {
     expect(screen.queryByText(/正在导入/)).toBeNull();
   });
 
-  it('删书要先确认，确认后从图书馆里拿掉', async () => {
+  it('图书第二栏栏头「导入书」：在读书时选了文件，回到图书馆导入，进度和结果都在图书馆页上', async () => {
+    await renderApp({ hash: '#/books/book_fusheng', setup: (fake) => seedBooks(fake.control.books, fake.control.lines,
+      NOW) });
+    const column = await screen.findByRole('complementary', { name: '图书' });
+    const input = within(column).getByLabelText('从图书栏选择要导入的书') as HTMLInputElement;
+    const file = new File(['第一行\n\n第二行'], '栏里导的书.txt', { type: 'text/plain' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    await waitFor(() => expect(window.location.hash).toBe('#/books'));
+    await screen.findByRole('region', { name: '全部' });
+    await waitFor(() => expect(gridTitles()).toContain('栏里导的书'));
+  });
+
+  it('删书要先确认（会移到「最近删除」），确认后从图书馆里拿掉，在「最近删除」里能还原', async () => {
+    const app = await library();
+    fireEvent.click(screen.getByRole('button', { name: '《庄子》的更多操作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '删除' }));
+    const dialog = screen.getByRole('alertdialog', { name: '删除「庄子」？' });
+    expect(within(dialog).getByText('会移到「最近删除」，在那里可以还原。')).toBeTruthy();
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: '取消' }));
+    await act(async () => fireEvent.click(within(dialog).getByRole('button', { name: '删除' })));
+    await waitFor(() => expect(gridTitles()).not.toContain('庄子'));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    const trash = await app.api.library.trash();
+    expect(trash.items.map((item) => [item.kind, item.title])).toEqual([['book', '庄子']]);
+  });
+
+  it('改名在书名那一格原处改：回车存，Esc 不改', async () => {
     await library();
     fireEvent.click(screen.getByRole('button', { name: '《庄子》的更多操作' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /从图书馆删掉/ }));
-    expect(screen.getByText(/删掉《庄子》？/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '删掉' }));
-    await waitFor(() => expect(gridTitles()).not.toContain('庄子'));
+    fireEvent.click(screen.getByRole('menuitem', { name: '改名' }));
+    const field = screen.getByRole('textbox', { name: '《庄子》的新书名' });
+    fireEvent.change(field, { target: { value: '庄子（内篇）' } });
+    await act(async () => fireEvent.keyDown(field, { key: 'Enter' }));
+    await waitFor(() => expect(gridTitles()).toContain('庄子（内篇）'));
+    fireEvent.click(screen.getByRole('button', { name: '《庄子（内篇）》的更多操作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '改名' }));
+    const again = screen.getByRole('textbox', { name: '《庄子（内篇）》的新书名' });
+    fireEvent.change(again, { target: { value: '别的' } });
+    fireEvent.keyDown(again, { key: 'Escape' });
+    expect(gridTitles()).toContain('庄子（内篇）');
   });
 
 });

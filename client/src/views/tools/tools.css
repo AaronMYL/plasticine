@@ -78,6 +78,17 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* 删一笔账前那一行：后果一句 + 删除 / 先不，占满整行宽。 */
+.tool-confirm {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
 .tool-row-main {
   flex: 1;
   min-width: 10em;

@@ -100,7 +100,7 @@ export function AddContactSheet({ open, phone, onClose, onAdded }: { open: boole
         <DraftField draftKey={addDraftKey('handle')} label="@handle" placeholder="linyi" disabled={locked} />
         <DraftField draftKey={addDraftKey('note')} label="一句话" disabled={locked} />
         <button type="submit" className="primary-button contact-sheet-submit" disabled={locked || handle === ''}>
-          加
+          添加
         </button>
         {op === undefined || op.status === 'running' ? null : (
           <OpLine op={op} onRetry={(key) => void contactActions.retry(key)}

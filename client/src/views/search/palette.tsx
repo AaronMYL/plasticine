@@ -200,7 +200,7 @@ export function Palette({ phone, onClose, onOpen }: PaletteProps): ReactNode {
         </div>
         {phone ? null : (
           <div className="palette-foot">
-            <span><span className="kbd">↑↓</span> 选</span>
+            <span><span className="kbd">↑↓</span> 选择</span>
             <span><span className="kbd">↵</span> 打开</span>
             <span className="palette-foot-spacer" />
             <InfoTip label="查找范围" text={SCOPE_NOTE} side="top" />

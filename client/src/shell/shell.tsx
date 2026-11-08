@@ -6,7 +6,7 @@
 // 网页标签在桌面客户端里真开（host.ts 的原生网页标签，use-native-web-tabs.ts）：中间区由原生网页画，垫在主网页下面；
 // 网页版里点标签在新窗口打开。主区里的浮层一次只开一个，遮罩只盖主区。壳不含业务：数据都在视图和 state/ 里。
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode }
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
   from 'react';
 import { useLive } from '../live.tsx';
 import { useMacCommands } from '../mac/use-mac-commands.ts';
@@ -28,7 +28,7 @@ import { ShellColumn } from './columns/shell-column.tsx';
 import { ColumnExpandButton, ColumnToggleContext, type ColumnToggle } from './columns/column-toggle.tsx';
 import { CurrentTabContext, type CurrentTab } from './current-tab-context.ts';
 import { CurrentView } from './current-view.tsx';
-import { hostWebTabs } from './host.ts';
+import { hostWebTabs, hostWindowChrome } from './host.ts';
 import { IconButton } from './icon-button.tsx';
 import { internalPage } from './internal-page.ts';
 import { PHONE_BELOW, computeLayout } from './layout.ts';
@@ -42,7 +42,9 @@ import { MoreDrawer, PhoneBar, phoneFullPage } from './phone-bar.tsx';
 import { Rail, type NewKind } from './rail.tsx';
 import { HOME, parseHash, routeHash, sideRoute, type Route, type ViewId } from './routes.ts';
 import { MainErrorBoundary } from './main-error-boundary.tsx';
-import { SECTIONS, hasColumn, sectionOf, type MoreItemId, type PhoneTabId, type SectionId } from './sections.ts';
+import {
+  MORE_ITEMS, SECTIONS, hasColumn, sectionOf, type MoreItemId, type PhoneTabId, type SectionId,
+} from './sections.ts';
 import { useSectionMemory } from './section-memory.ts';
 import { TabsContext, type TabActions } from './tabs-context.ts';
 import { usePhoneNavigation } from './use-phone-navigation.ts';
@@ -54,13 +56,13 @@ import { useWebChrome } from './web-chrome.ts';
 import { useWebTabsSync } from './use-web-tabs-sync.ts';
 import { WebTabView } from './web-tab-view.tsx';
 import { WebTranslateProvider } from './web-translate-context.tsx';
-import { useTitlebarReport, useWindowChrome } from './window-chrome.ts';
+import { useWindowChrome } from './window-chrome.ts';
+import { Titlebar, TitlebarProvider, useTitlebarState } from './titlebar.tsx';
 import { ClientUpdateBanner } from './client-update.tsx';
 import { ConnectionBanner } from './connection-banner.tsx';
 import { TooltipLayer } from './tooltip.tsx';
-import { useAccountName } from './account-name.ts';
+import { useAccountFace } from './account-name.ts';
 import { useSettingsDialog } from './use-settings-dialog.tsx';
-import { usePresenceTracking } from './use-presence.ts';
 import './shell.css';
 import './rail.css';
 import './columns/column.css';
@@ -111,8 +113,7 @@ export function Shell(): ReactNode {
   const { route: linked, navigate } = useRoute();
   const width = useViewportWidth();
   const phone = width < PHONE_BELOW;
-  const { shellPrefs, webTabs, pageSteps, presence, conversationUi } = useClientState();
-  usePresenceTracking(presence);
+  const { shellPrefs, webTabs, pageSteps, conversationUi } = useClientState();
   const prefs = useStore(shellPrefs.store);
   const webState = useStore(webTabs.store);
   const [webBridge] = useState(hostWebTabs);
@@ -163,7 +164,7 @@ export function Shell(): ReactNode {
   const connection = useStore(live.hub.status);
   const telemetry = useTelemetry();
   const waiting = useWaitingCount();
-  const accountName = useAccountName();
+  const account = useAccountFace();
   const browserPage = route.view === 'browser' && !phone;
   // 云端浏览器页的「返回」回到进来前的那一页。
   const beforeBrowser = useRef<Route>(HOME);
@@ -176,8 +177,10 @@ export function Shell(): ReactNode {
   const workFullPage = layout.phone && activePanel?.kind === 'work';
   const main = useRememberedScroll<HTMLElement>(`view:${route.view}`);
   const phoneNavigation = usePhoneNavigation();
-  const shellRef = useRef<HTMLDivElement>(null);
-  useTitlebarReport(shellRef, `${section}|${routeHash(route)}`);
+  // 桌面客户端最上面一条标题栏（11-08，titlebar.tsx）：有窗口外观桥、不是手机宽度时才有。
+  const [hasWindowChrome] = useState(() => hostWindowChrome() !== null);
+  const titled = hasWindowChrome && !layout.phone;
+  const titlebar = useTitlebarState(titled);
 
   const go = useCallback((next: Route): void => {
     if (next.view !== lastPage.current.view) {
@@ -382,20 +385,16 @@ export function Shell(): ReactNode {
   };
   const moreItem = (item: MoreItemId): void => {
     setMore(false);
-    if (item === 'tasks') go(SECTIONS.tasks.root);
-    else if (item === 'feed') go(SECTIONS.feed.root);
-    else if (item === 'books') go(SECTIONS.library.root);
-    else go({ view: 'books', noteId: null, bookId: null, spacesList: true });
+    const target = MORE_ITEMS.find((entry) => entry.id === item);
+    if (target !== undefined) go(target.route);
   };
   const column = !layout.phone && hasColumn(section);
   // 第二栏收起（11-08）：按栏目各记各的；网页收成窄栏，别的栏目整列让给主区，展开按钮在主区页头最左边。
   const columnCollapsed = column && prefs.collapsedColumns.includes(section);
   const columnHidden = columnCollapsed && section !== 'web';
   toggleColumnRef.current = column ? () => shellPrefs.setColumnCollapsed(section, !columnCollapsed) : null;
-  const columnToggle: ColumnToggle = { collapsed: columnCollapsed,
+  const columnToggle: ColumnToggle = { collapsed: columnCollapsed, inTitlebar: titled,
     toggle: () => shellPrefs.setColumnCollapsed(section, !columnCollapsed) };
-  const lights = !layout.phone && windowChrome.trafficLightInset > 0;
-  const controlsRight = windowChrome.controlsRight ?? 0;
 
   return (
     <TabsContext.Provider value={tabActions}>
@@ -403,23 +402,26 @@ export function Shell(): ReactNode {
     <WebTranslateProvider>
     <CurrentTabContext.Provider value={current}>
     <PanelContext.Provider value={openPanel}>
-      <div ref={shellRef} className="shell" data-phone={layout.phone} data-section={section}
+    <TitlebarProvider state={titlebar}>
+      <div className="shell" data-phone={layout.phone} data-section={section}
         data-native-web={webTab !== null && nativeTabs?.showing === true ? 'true' : undefined}
-        data-window-controls={controlsRight > 0 ? 'right' : undefined}
-        style={controlsRight > 0 ? { '--window-controls': `${controlsRight}px` } as CSSProperties : undefined}
+        data-titled={titled ? '' : undefined}
         data-column={columnHidden ? 'hidden' : columnCollapsed ? 'strip' : undefined}>
+        {titled ? <Titlebar title={current.title} chrome={windowChrome} column={column ? columnToggle : null}
+          state={titlebar} /> : null}
         {layout.phone ? null : (
-          <Rail section={section} waiting={waiting} connection={connection} accountName={accountName}
-            trafficLights={lights} onSection={focusSection} onSearch={() => setPalette(true)} onNew={newThing}
+          <Rail section={section} waiting={waiting} connection={connection} accountName={account.name}
+            accountAvatar={account.avatar} onSection={focusSection} onSearch={() => setPalette(true)} onNew={newThing}
             onSettings={() => settings.open()} />
         )}
+        <div className="shell-panel">
         <ColumnToggleContext.Provider value={columnToggle}>
         {column ? <ShellColumn section={section} route={route} navigate={go} webId={webTab?.id ?? null}
           onOpenTab={openTabWeb} onCloseTab={closeWebTab} onReopen={(entry) => tabActions.reopenTab(entry.key)}
           onAsk={expandChat} collapsed={columnCollapsed} onSearch={() => setPalette(true)} /> : null}
         <div className="shell-main-area">
-          {columnHidden ? (
-            <div className="column-reveal" data-titlebar=""><ColumnExpandButton tipSide="right" /></div>
+          {columnHidden && !titled ? (
+            <div className="column-reveal"><ColumnExpandButton tipSide="right" /></div>
           ) : null}
           <ConnectionBanner />
           <ClientUpdateBanner />
@@ -453,6 +455,7 @@ export function Shell(): ReactNode {
           </Sheet>
         </div>
         </ColumnToggleContext.Provider>
+        </div>
         {chatOpen && !workFullPage ? (
           <ChatDialog
             fullscreen={layout.phone}
@@ -475,6 +478,7 @@ export function Shell(): ReactNode {
         {settings.element}
         <TooltipLayer />
       </div>
+    </TitlebarProvider>
     </PanelContext.Provider>
     </CurrentTabContext.Provider>
     </WebTranslateProvider>

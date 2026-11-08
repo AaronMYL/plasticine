@@ -135,6 +135,13 @@ function createBookRecords(context: StoreContext) {
     /** 同一个文件再传一次时找回原来那本（没删的）。 */
     findBySource: (sha256: string): BookRecord | undefined =>
       store.select(`${LIVE} AND source_sha256 = $sha`, { sha: sha256 }, { limit: 1 })[0],
+    /** 同一个文件删过的那本（最近删的）：重新上传时还原它，标注才回得来。 */
+    findDeletedBySource: (sha256: string): BookRecord | undefined =>
+      store.select('deleted_at IS NOT NULL AND source_sha256 = $sha', { sha: sha256 }, { limit: 1 },
+        'deleted_at DESC, id')[0],
+    /** 删掉的（「最近删除」），删的时间新的在前。 */
+    deleted: (): BookRecord[] => allPages((page) => store.select('deleted_at IS NOT NULL', {}, page,
+      'deleted_at DESC, id')),
   };
 }
 

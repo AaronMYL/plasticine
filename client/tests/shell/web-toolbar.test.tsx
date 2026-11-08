@@ -123,9 +123,9 @@ describe('电脑网页工具条', () => {
       '复制链接', '在浏览器打开', '｜', '下载', '历史记录', '｜', '导入登录…']);
     fireEvent.click(within(menu).getByRole('menuitem', { name: '导入登录…' }));
     expect(await screen.findByRole('dialog', { name: '导入登录' })).toBeTruthy();
-    // 设置是弹框（2026-11-05）：开在「浏览器与信息流」，底下还是这个网页标签。
+    // 设置是弹框（2026-11-05）：开在「浏览器」，底下还是这个网页标签。
     const settings = screen.getByRole('dialog', { name: '设置' });
-    expect(within(settings).getByRole('button', { name: '浏览器与信息流' }).getAttribute('aria-current')).toBe('page');
+    expect(within(settings).getByRole('button', { name: '浏览器' }).getAttribute('aria-current')).toBe('page');
     expect(window.location.hash).toBe('#/settings/browser');
   });
 });

@@ -14,6 +14,7 @@ import {
   type FeedItem,
 } from '../state.ts';
 import { FeedChartSchema, FeedZhViewSchema } from '../feed-translation.ts';
+import { REDDIT_SORTS } from '../reddit.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { NextOffsetSchema, OrNull, PageLimitSchema } from './lineage.ts';
 
@@ -120,6 +121,8 @@ export const FeedListQuerySchema = Type.Object(
     saved: Type.Optional(Type.Boolean()),
     /** 第 3 批页头分段：X · 订阅 · 新闻；不给就是全部。 */
     kind: Type.Optional(Type.Enum(FEED_FILTER_KINDS)),
+    /** 第 7 批第 10 条：只看这一个来源（第二栏的一个订阅 / Reddit 版块）。 */
+    sourceId: Type.Optional(IdSchema),
     tz: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
     limit: Type.Optional(PageLimitSchema),
     offset: Type.Optional(Type.Integer({ minimum: 0 })),
@@ -246,39 +249,104 @@ export const FeedSourceResponseSchema = Type.Object({ source: FeedSourceViewSche
 export type FeedSourceResponse = Static<typeof FeedSourceResponseSchema>;
 
 /**
- * 第 6 批第 8 条：信息流的第二栏（全部 / 订阅 / 来源，带个数）。个数是今天新来的（他的时区），「全部」= 各来源之和
- * 再加手动添加的。订阅那一节由订阅那条线填，这里先留位置（空数组）。收藏不带个数。
+ * 第 7 批第 10 条（他定）：信息流的第二栏——顶上「全部」「收藏」，下面「来源」每个来源一行：X 关注、抖音收藏、按关注点的
+ * 新闻（内置三种），每个订阅、每个 Reddit 版块各一行。个数是今天新来的（他的时区），「全部」= 各来源之和再加手动添加的。
  */
-export const FEED_NAV_SOURCES = ['x', 'rss', 'news', 'douyin', 'saved'] as const;
-export type FeedNavSourceKey = (typeof FEED_NAV_SOURCES)[number];
-export const FEED_NAV_LABELS: Readonly<Record<FeedNavSourceKey, string>> = {
+export const FEED_NAV_KINDS = ['x', 'douyin', 'news', 'rss', 'reddit'] as const;
+export type FeedNavKind = (typeof FEED_NAV_KINDS)[number];
+export const FEED_NAV_LABELS: Readonly<Record<FeedNavKind, string>> = {
   x: 'X 关注',
-  rss: 'RSS',
-  news: '按关注点的新闻',
   douyin: '抖音收藏',
-  saved: '收藏',
+  news: '按关注点的新闻',
+  rss: 'RSS',
+  reddit: 'Reddit',
 };
+/** 内置的三种：没有删除。 */
+export const FEED_BUILT_IN_NAV_KINDS: readonly FeedNavKind[] = ['x', 'douyin', 'news'];
 export const FeedNavQuerySchema = Type.Object({
   tz: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
 }, { additionalProperties: false });
 export type FeedNavQuery = Static<typeof FeedNavQuerySchema>;
-export const FeedNavSubscriptionSchema = Type.Object({
-  id: IdSchema,
-  label: Type.String(),
-  /** 有没有新一期还没看。 */
-  fresh: Type.Boolean(),
-});
-export type FeedNavSubscription = Static<typeof FeedNavSubscriptionSchema>;
 export const FeedNavSourceSchema = Type.Object({
-  key: Type.Enum(FEED_NAV_SOURCES),
+  kind: Type.Enum(FEED_NAV_KINDS),
+  /** 名字：内置的用固定名字，订阅用他起的（或订阅源自己的），Reddit 是 r/版块。 */
   label: Type.String(),
-  /** 今天新来的条数；收藏是 null（不数）。 */
-  count: OrNull(Type.Integer({ minimum: 0 })),
+  /** 这一行的来源（内置的也有一行：X、抖音收藏、「按关注点搜新闻」的总开关）；暂停就是 level = off。 */
+  source: FeedSourceViewSchema,
+  /** 今天新来的条数。 */
+  count: Type.Integer({ minimum: 0 }),
+  /** 上次没取到的原因（行尾小红点，悬停看）；抖音是同步的状态（等电脑上线、没做成）。没有就是 null。 */
+  problem: OrNull(Type.String()),
 });
 export type FeedNavSource = Static<typeof FeedNavSourceSchema>;
 export const FeedNavResponseSchema = Type.Object({
   all: Type.Integer({ minimum: 0 }),
-  subscriptions: Type.Array(FeedNavSubscriptionSchema),
   sources: Type.Array(FeedNavSourceSchema),
 });
 export type FeedNavResponse = Static<typeof FeedNavResponseSchema>;
+
+/** POST /v2/feed/sources/reddit → 201 { source }：加一个 Reddit 版块（第 7 批第 13 条），服务器直接取，不用登录。 */
+export const FEED_REDDIT_PATH = `${FEED_SOURCES_PATH}/reddit`;
+export const AddRedditRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  subreddit: Type.String({ minLength: 1, maxLength: 200 }),
+  sort: Type.Enum(REDDIT_SORTS),
+}, { additionalProperties: false });
+export type AddRedditRequest = Static<typeof AddRedditRequestSchema>;
+
+/** GET /v2/feed/sources/reddit/preview?subreddit=&sort= — 加之前看最新几条（服务端代取）；取不到给原因。 */
+export const FEED_REDDIT_PREVIEW_PATH = `${FEED_REDDIT_PATH}/preview`;
+export const RedditPreviewQuerySchema = Type.Object({
+  subreddit: Type.String({ minLength: 1, maxLength: 200 }),
+  sort: Type.Enum(REDDIT_SORTS),
+}, { additionalProperties: false });
+export type RedditPreviewQuery = Static<typeof RedditPreviewQuerySchema>;
+export const RedditPreviewPostSchema = Type.Object({
+  title: Type.String(),
+  url: Type.String(),
+  author: OrNull(Type.String()),
+  publishedAt: IsoTimeSchema,
+});
+export type RedditPreviewPost = Static<typeof RedditPreviewPostSchema>;
+export const RedditPreviewResponseSchema = Type.Object({
+  /** 认出来的版块名（他填的网址、r/ 前缀都去掉了）；认不出是 null。 */
+  subreddit: OrNull(Type.String()),
+  posts: Type.Array(RedditPreviewPostSchema),
+  /** 取不到的原因（版块不存在、限流、网络）；取到了是 null。 */
+  error: OrNull(Type.String()),
+});
+export type RedditPreviewResponse = Static<typeof RedditPreviewResponseSchema>;
+
+/**
+ * POST /v2/feed/sources/:id/settings → 200 { source }：改一个来源（第 7 批第 10 条「设置…」）。订阅：名字、网址、档位；
+ * Reddit：排序（和档位）。只给要改的。
+ */
+export const UpdateFeedSourceRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  version: Type.Integer({ minimum: 1 }),
+  label: Type.Optional(Type.String({ minLength: 1, maxLength: 200, pattern: '\\S' })),
+  url: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
+  level: Type.Optional(Type.Enum(FEED_SOURCE_LEVELS)),
+  sort: Type.Optional(Type.Enum(REDDIT_SORTS)),
+}, { additionalProperties: false });
+export type UpdateFeedSourceRequest = Static<typeof UpdateFeedSourceRequestSchema>;
+
+/** POST /v2/feed/sources/:id/refresh → 200 { source, added }：现在刷新这一个（订阅、Reddit 马上取；X 记成到点）。 */
+export const RefreshFeedSourceRequestSchema = Type.Object({ requestId: RequestIdSchema },
+  { additionalProperties: false });
+export type RefreshFeedSourceRequest = Static<typeof RefreshFeedSourceRequestSchema>;
+export const RefreshFeedSourceResponseSchema = Type.Object({
+  source: FeedSourceViewSchema,
+  added: Type.Integer({ minimum: 0 }),
+});
+export type RefreshFeedSourceResponse = Static<typeof RefreshFeedSourceResponseSchema>;
+
+/**
+ * POST /v2/feed/sources/:id/delete → 200 { source }：删掉一个订阅 / Reddit 版块（内置的不能删）。不再抓；它没收藏过的
+ * 条目从信息流拿掉，收藏过的留在「收藏」里；再加同一个地址会找回来。
+ */
+export const DeleteFeedSourceRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  version: Type.Integer({ minimum: 1 }),
+}, { additionalProperties: false });
+export type DeleteFeedSourceRequest = Static<typeof DeleteFeedSourceRequestSchema>;

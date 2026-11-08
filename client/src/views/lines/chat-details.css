@@ -130,6 +130,22 @@
   height: 28px;
 }
 
+/* 复制没写进剪贴板：悬停条下面就地一行（只有出错写字）。 */
+.line-copy-error {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
 /* 触屏没有悬停：手机上这一排不出（长按选字照样能复制）。 */
 .shell[data-phone='true'] .line-hoverbar {
   display: none;

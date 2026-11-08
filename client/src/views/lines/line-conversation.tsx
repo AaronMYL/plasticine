@@ -199,6 +199,8 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
   const lastUser = [...items].reverse().find((item) => item.kind === 'user');
   const since = lastUser?.kind === 'user' ? lastUser.message.createdAt : null;
   const waiting = line?.status === 'waiting' ? waitingAsks(asks.open, line.id, since) : [];
+  // 样刊附的「开启定时」卡不挂在哪条线上（第 7 批第 14 条）：开着就摊在主线最下面，答了就收起。
+  const sampleCards = line?.kind === 'main' ? asks.open.filter((ask) => ask.subscriptionCard !== undefined) : [];
   const streaming = data.live?.text ?? '';
   const quote: QuoteMessage = (seq, text, author) => {
     const sourceId = `line:${line?.id ?? lineId}:${seq}`;
@@ -297,6 +299,7 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
                 if (text !== null) conversationUi.restoreToComposer(text, []);
               }} />
           ))}
+          {sampleCards.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}
           <Tail data={data} asks={waiting} />
         </div>
       </div>

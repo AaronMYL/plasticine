@@ -42,6 +42,8 @@ import {
   DOUYIN_SYNC_PATH,
   FEED_REFRESH_PATH,
   FEED_SOURCES_PATH,
+  FEED_REDDIT_PATH,
+  FEED_REDDIT_PREVIEW_PATH,
   FILES_CONTENT_PATH,
   FILES_FOLDERS_PATH,
   FILES_MOVE_PATH,
@@ -88,7 +90,9 @@ import {
   TOOL_GROUPS_PATH,
 } from '../../shared/api/index.ts';
 import { REVIEW_PATH, SPACES_PATH, SUBSCRIPTIONS_PATH } from '../../shared/api/spaces.ts';
-import { assistSpace, getSpace, listSpaces, saveSpace, undoSpace } from './spaces.ts';
+import { assistSpace, deleteSpace, getSpace, listSpaces, restoreSpace, saveSpace, undoSpace } from './spaces.ts';
+import { LIBRARY_TRASH_PATH } from '../../shared/api/library.ts';
+import { listLibraryTrash } from './library-trash.ts';
 import { adoptSubscriptionRule, getReviewSummary, getSubscription, listSubscriptions, runSubscriptionNow,
   updateSubscription } from './subscriptions.ts';
 import { TRANSLATE_MODEL_PATH, TRANSLATE_PATH, TRANSLATE_SETTINGS_PATH } from '../../shared/api/translate.ts';
@@ -104,8 +108,8 @@ import { createBookAnnotation, deleteBookAnnotation, dismissKeyPoint, exportBook
 import { addBookmark, editBookmark, importBookmarks, listBookmarks, orderBookmarks, removeBookmark }
   from './bookmarks.ts';
 import { getFavicon, getWebTabs, mergeWebTabs, putFavicon, putWebTabs } from './web-tabs.ts';
-import { deleteBook, getBook, getBookAsset, getBookChapter, listBooks, saveBookProgress, searchInBook,
-  uploadBook } from './books.ts';
+import { deleteBook, getBook, getBookAsset, getBookChapter, listBooks, renameBook, restoreBook, saveBookProgress,
+  searchInBook, uploadBook } from './books.ts';
 import { ackBrowser, streamBrowser } from './browser-stream.ts';
 import { actBrowser, getBrowser, getBrowserFrame, openBrowser, settleAction, tabBrowser } from './browser.ts';
 import { getSkill, listSkills, removeSkill } from './skills.ts';
@@ -121,6 +125,7 @@ import { streamEvents } from './events.ts';
 import { getFeedRefresh, refreshFeed } from './feed-refresh.ts';
 import { addFeedComment, blockFeedSite, listFeedComments, retryFeedComment } from './feed-work.ts';
 import { FEED_X_PATH, getXTimelineDue, reportXTimeline } from './feed-x.ts';
+import { addReddit, deleteFeedSource, previewReddit, refreshFeedSource, updateFeedSource } from './feed-sources.ts';
 import { douyinJobs, listDouyin, processDouyin, reportDouyin, syncDouyin } from './video.ts';
 import {
   addFeedItem,
@@ -266,6 +271,8 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: BOOKS_PATH, auth: true, handler: uploadBook },
   { method: 'GET', path: `${BOOKS_PATH}/:id`, auth: true, handler: getBook },
   { method: 'DELETE', path: `${BOOKS_PATH}/:id`, auth: true, handler: deleteBook },
+  { method: 'PATCH', path: `${BOOKS_PATH}/:id`, auth: true, handler: renameBook },
+  { method: 'POST', path: `${BOOKS_PATH}/:id/restore`, auth: true, handler: restoreBook },
   { method: 'GET', path: `${BOOKS_PATH}/:id/chapters/:index`, auth: true, handler: getBookChapter },
   { method: 'GET', path: `${BOOKS_PATH}/:id/assets/:key`, auth: true, handler: getBookAsset },
   { method: 'GET', path: `${BOOKS_PATH}/:id/search`, auth: true, handler: searchInBook },
@@ -331,6 +338,9 @@ export const ROUTES: readonly Route[] = [
   { method: 'GET', path: `${SPACES_PATH}/:id`, auth: true, handler: getSpace },
   { method: 'PUT', path: `${SPACES_PATH}/:id`, auth: true, handler: saveSpace },
   { method: 'POST', path: `${SPACES_PATH}/:id/undo`, auth: true, handler: undoSpace },
+  { method: 'DELETE', path: `${SPACES_PATH}/:id`, auth: true, handler: deleteSpace },
+  { method: 'POST', path: `${SPACES_PATH}/:id/restore`, auth: true, handler: restoreSpace },
+  { method: 'GET', path: LIBRARY_TRASH_PATH, auth: true, handler: listLibraryTrash },
   { method: 'POST', path: `${SPACES_PATH}/:id/assist`, auth: true, handler: assistSpace },
   { method: 'GET', path: SUBSCRIPTIONS_PATH, auth: true, handler: listSubscriptions },
   { method: 'GET', path: `${SUBSCRIPTIONS_PATH}/:id`, auth: true, handler: getSubscription },
@@ -383,6 +393,12 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: `${FEED_ITEMS_PATH}/:id/comments/:commentId/retry`, auth: true, handler: retryFeedComment },
   { method: 'POST', path: `${FEED_SOURCES_PATH}/blocked`, auth: true, handler: blockFeedSite },
   { method: 'GET', path: FEED_SOURCES_PATH, auth: true, handler: listFeedSources },
+  // 第 7 批第 10、13 条：每个来源在第二栏管（刷新 / 设置 / 删除），Reddit 版块。
+  { method: 'GET', path: FEED_REDDIT_PREVIEW_PATH, auth: true, handler: previewReddit },
+  { method: 'POST', path: FEED_REDDIT_PATH, auth: true, handler: addReddit },
+  { method: 'POST', path: `${FEED_SOURCES_PATH}/:id/settings`, auth: true, handler: updateFeedSource },
+  { method: 'POST', path: `${FEED_SOURCES_PATH}/:id/refresh`, auth: true, handler: refreshFeedSource },
+  { method: 'POST', path: `${FEED_SOURCES_PATH}/:id/delete`, auth: true, handler: deleteFeedSource },
   { method: 'POST', path: FEED_SOURCES_PATH, auth: true, handler: addInterest },
   { method: 'POST', path: `${FEED_SOURCES_PATH}/subscriptions`, auth: true, handler: addSubscription },
   { method: 'POST', path: `${FEED_SOURCES_PATH}/:id/level`, auth: true, handler: setSourceLevel },

@@ -1,29 +1,29 @@
 // 主窗口：一个 BaseWindow，里面是界面（Plasticine 本站网页）的 WebContentsView，网页标签的视图按 tab-layering.ts
-// 叠在它上面或垫在它下面（所以界面视图底色透明）。Mac 隐藏标题栏、交通灯并进界面顶栏（左边距 20，竖直中线对齐
-// 顶栏中线，和 Swift 版一样）；Windows 隐藏标题栏，右上角是系统的窗口按钮（titleBarOverlay，Window Controls Overlay）。
+// 叠在它上面或垫在它下面（所以界面视图底色透明）。Mac 隐藏标题栏、红绿灯落在界面自己画的标题栏里（44 高，竖直居中，
+// 位置和让出的宽度见 traffic-lights.ts）；Windows 隐藏标题栏，右上角是系统的窗口按钮（titleBarOverlay，Window Controls
+// Overlay），和界面标题栏一样高。拖窗口靠界面标题栏上的 -webkit-app-region。
 // Mac 上关窗口只隐藏；Windows 上关窗口也只隐藏（托盘里还在，本机本体照样跑），退出在托盘菜单里。
 
 import { BaseWindow, nativeTheme, WebContentsView, type BaseWindowConstructorOptions } from 'electron';
-import { TITLEBAR_HEIGHT, TRAFFIC_LIGHT_INSET_DEFAULT } from '../../../agent/shared/api/mac-bridge.ts';
+import { TITLEBAR_HEIGHT } from '../../../agent/shared/api/mac-bridge.ts';
+import { macTrafficLights } from './traffic-lights.ts';
 
-/** Windows 右上角窗口按钮那一条的高度（设计稿 Windows-Web：按钮中线在 16 像素处）。 */
-export const WINDOWS_CONTROLS_HEIGHT = 32;
 const MIN_WIDTH = 900;
 const MIN_HEIGHT = 600;
 /** 方向 I 的底色（tokens.css 的 --bg，浅色 / 深色），窗口还没画出界面时用它，不闪白。 */
 const BACKGROUND = { light: '#FCF9F6', dark: '#2B2826' };
 const SYMBOL = { light: '#2A2622', dark: '#F5F1EC' };
 
-export function windowOptions(platform: NodeJS.Platform, dark: boolean): BaseWindowConstructorOptions {
+export function windowOptions(platform: NodeJS.Platform, dark: boolean, systemVersion: string)
+  : BaseWindowConstructorOptions {
   const common: BaseWindowConstructorOptions = { width: 1440, height: 900, minWidth: MIN_WIDTH, minHeight: MIN_HEIGHT,
     show: false, title: 'Plasticine', backgroundColor: dark ? BACKGROUND.dark : BACKGROUND.light };
   if (platform === 'darwin') {
-    // 交通灯按钮 14 高：竖直中线对齐 44 高的顶栏中线，上沿在 22 - 7 = 15。
-    return { ...common, titleBarStyle: 'hidden', trafficLightPosition: { x: 20, y: (TITLEBAR_HEIGHT - 14) / 2 } };
+    return { ...common, titleBarStyle: 'hidden', trafficLightPosition: macTrafficLights(systemVersion).position };
   }
   if (platform === 'win32') {
     return { ...common, titleBarStyle: 'hidden', titleBarOverlay: { color: '#00000000',
-      symbolColor: dark ? SYMBOL.dark : SYMBOL.light, height: WINDOWS_CONTROLS_HEIGHT } };
+      symbolColor: dark ? SYMBOL.dark : SYMBOL.light, height: TITLEBAR_HEIGHT } };
   }
   return common;
 }
@@ -38,10 +38,13 @@ export class MainWindow {
   readonly ui: WebContentsView;
   private readonly platform: NodeJS.Platform;
   private quitting = false;
+  /** Mac 红绿灯让出的宽度（按系统版本，traffic-lights.ts）。 */
+  private readonly lightsInset: number;
 
   constructor(platform: NodeJS.Platform, preload: string, onResize: () => void) {
     this.platform = platform;
-    this.window = new BaseWindow(windowOptions(platform, nativeTheme.shouldUseDarkColors));
+    this.lightsInset = macTrafficLights(process.getSystemVersion()).inset;
+    this.window = new BaseWindow(windowOptions(platform, nativeTheme.shouldUseDarkColors, process.getSystemVersion()));
     this.ui = new WebContentsView({ webPreferences: { preload, contextIsolation: true, sandbox: true,
       nodeIntegration: false, spellcheck: true } });
     this.ui.setBackgroundColor('#00000000');
@@ -69,7 +72,7 @@ export class MainWindow {
 
   chrome(): WindowChromeState {
     const fullScreen = this.window.isFullScreen();
-    const inset = this.platform === 'darwin' && !fullScreen ? TRAFFIC_LIGHT_INSET_DEFAULT : 0;
+    const inset = this.platform === 'darwin' && !fullScreen ? this.lightsInset : 0;
     return { trafficLightInset: inset, fullScreen };
   }
 

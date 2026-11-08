@@ -15,7 +15,18 @@ import {
   DouyinProcessResponseSchema,
   DouyinSyncResponseSchema,
   FEED_NAV_PATH,
+  FEED_REDDIT_PATH,
+  FEED_REDDIT_PREVIEW_PATH,
   FeedNavResponseSchema,
+  RedditPreviewResponseSchema,
+  RefreshFeedSourceResponseSchema,
+  type AddRedditRequest,
+  type DeleteFeedSourceRequest,
+  type RedditPreviewQuery,
+  type RedditPreviewResponse,
+  type RefreshFeedSourceRequest,
+  type RefreshFeedSourceResponse,
+  type UpdateFeedSourceRequest,
   type DouyinListQuery,
   type DouyinListResponse,
   type DouyinProcessRequest,
@@ -49,6 +60,10 @@ import type {
 } from '../types.ts';
 import { conflictWith } from './conflict.ts';
 import type { Transport } from './transport.ts';
+
+function sourcePath(id: string): string {
+  return `${FEED_SOURCES_PATH}/${encodeURIComponent(id)}`;
+}
 
 function itemPath(id: string): string {
   return `${FEED_ITEMS_PATH}/${encodeURIComponent(id)}`;
@@ -108,6 +123,7 @@ export class HttpFeed implements FeedApi {
         includeHidden: query.includeHidden,
         saved: query.saved,
         kind: query.kind,
+        sourceId: query.sourceId,
         tz: query.tz,
         limit: query.limit,
         offset: query.offset,
@@ -122,6 +138,37 @@ export class HttpFeed implements FeedApi {
   async subscribe(body: AddSubscriptionRequest): Promise<FeedSourceView> {
     const result = await this.transport.request({ method: 'POST', path: FEED_SUBSCRIPTIONS_PATH, body,
       schema: FeedSourceResponseSchema, what: '添加订阅', lostAs: 'uncertain' });
+    return result.source;
+  }
+
+  previewReddit(query: RedditPreviewQuery, signal?: AbortSignal): Promise<RedditPreviewResponse> {
+    return this.transport.request({ method: 'GET', path: FEED_REDDIT_PREVIEW_PATH,
+      query: { subreddit: query.subreddit, sort: query.sort },
+      schema: RedditPreviewResponseSchema, what: '预览 Reddit 版块', lostAs: 'failed', signal });
+  }
+
+  async addReddit(body: AddRedditRequest): Promise<FeedSourceView> {
+    const result = await this.transport.request({ method: 'POST', path: FEED_REDDIT_PATH, body,
+      schema: FeedSourceResponseSchema, what: '加 Reddit 版块', lostAs: 'uncertain' });
+    return result.source;
+  }
+
+  async updateSource(id: string, body: UpdateFeedSourceRequest): Promise<FeedSourceView> {
+    const result = await this.transport.request({ method: 'POST', path: `${sourcePath(id)}/settings`, body,
+      schema: FeedSourceResponseSchema, what: '改来源', lostAs: 'uncertain',
+      refine: conflictWith(FeedSourceViewSchema) });
+    return result.source;
+  }
+
+  refreshSource(id: string, body: RefreshFeedSourceRequest): Promise<RefreshFeedSourceResponse> {
+    return this.transport.request({ method: 'POST', path: `${sourcePath(id)}/refresh`, body,
+      schema: RefreshFeedSourceResponseSchema, what: '刷新来源', lostAs: 'uncertain' });
+  }
+
+  async deleteSource(id: string, body: DeleteFeedSourceRequest): Promise<FeedSourceView> {
+    const result = await this.transport.request({ method: 'POST', path: `${sourcePath(id)}/delete`, body,
+      schema: FeedSourceResponseSchema, what: '删来源', lostAs: 'uncertain',
+      refine: conflictWith(FeedSourceViewSchema) });
     return result.source;
   }
 

@@ -15,6 +15,32 @@ export interface MarginItem {
   onOpen?: () => void;
 }
 
+/** 页边那几条：有批注的高亮（「批注」）和 Plasticine 标的重点（同一条重点只列一次，带「收下 / 不要」）。 */
+export function marginItemsOf<P extends { pointId: string; text: string }>(input: {
+  highlights: readonly { id: string }[];
+  keyPoints: readonly P[];
+  annotations: readonly { id: string; note: string | null }[];
+  onAccept: (point: P) => void;
+  onDismiss: (point: P) => void;
+}): MarginItem[] {
+  const notes = input.highlights.flatMap((mark) => {
+    const note = input.annotations.find((item) => item.id === mark.id)?.note;
+    return note == null ? [] : [{ key: `n:${mark.id}`, kind: 'note' as const, title: '批注', text: note,
+      selector: `[data-annotation-id="${mark.id}"]` }];
+  });
+  const seen = new Set<string>();
+  const points = input.keyPoints.flatMap((point) => {
+    if (seen.has(point.pointId)) {
+      return [];
+    }
+    seen.add(point.pointId);
+    return [{ key: `p:${point.pointId}`, kind: 'point' as const, title: 'Plasticine 标的重点', text: point.text,
+      selector: `[data-key-point="${point.pointId}"]`, onAccept: () => input.onAccept(point),
+      onDismiss: () => input.onDismiss(point) }];
+  });
+  return [...notes, ...points];
+}
+
 // 两条之间至少隔 16（间距令牌，板块内）。
 const STACK_GAP = 16;
 

@@ -43,6 +43,45 @@ describe('设置 · 账号', () => {
     expect((await app.api.account.state()).displayName).toBe('慕远');
   });
 
+  it('改完名字图标栏的名字立刻跟着变（重读网络状态）', async () => {
+    await renderApp({ hash: '#/settings/account', setup: joined });
+    const region = await account();
+    const rail = screen.getByRole('navigation', { name: '栏目' });
+    await waitFor(() => expect(within(rail).getByRole('button', { name: '设置 · Alex' })).toBeTruthy());
+    fireEvent.click(within(region).getByRole('button', { name: '改名字' }));
+    const form = within(region).getByRole('form', { name: '改名字' });
+    fireEvent.change(within(form).getByLabelText('名字'), { target: { value: '慕远' } });
+    fireEvent.click(within(form).getByRole('button', { name: '保存' }));
+    await waitFor(() => expect(within(rail).getByRole('button', { name: '设置 · 慕远' })).toBeTruthy());
+    expect(within(rail).getByRole('button', { name: '设置 · 慕远' }).querySelector('.rail-avatar')?.textContent)
+      .toBe('慕');
+  });
+
+  it('换过头像：图标栏和账号第一行画那张图，不再画首字', async () => {
+    const face = 'data:image/png;base64,iVBORw0KGgo=';
+    await renderApp({ hash: '#/settings/account', setup: (fake) => {
+      joined(fake);
+      void fake.control.network.setAvatar({ requestId: 'avatar-1', avatar: face });
+    } });
+    const region = await account();
+    await waitFor(() => expect(region.querySelector(`img[src="${face}"]`)).not.toBeNull());
+    const rail = screen.getByRole('navigation', { name: '栏目' });
+    const button = within(rail).getByRole('button', { name: '设置 · Alex' });
+    expect(button.querySelector('img.rail-avatar')?.getAttribute('src')).toBe(face);
+    expect(button.querySelector('span.rail-avatar')).toBeNull();
+  });
+
+  it('手机首页右上角的头像也画那张图', async () => {
+    const face = 'data:image/png;base64,iVBORw0KGgo=';
+    await renderApp({ hash: '#/today', width: 390, setup: (fake) => {
+      joined(fake);
+      void fake.control.network.setAvatar({ requestId: 'avatar-2', avatar: face });
+    } });
+    const button = await screen.findByRole('button', { name: '设置 · Alex' });
+    await waitFor(() => expect(button.querySelector('img')?.getAttribute('src')).toBe(face));
+    expect(button.textContent).toBe('');
+  });
+
   it('网页里改密码要旧密码；旧密码不对就地一行', async () => {
     const app = await renderApp({ hash: '#/settings/account', setup: joined });
     const region = await account();

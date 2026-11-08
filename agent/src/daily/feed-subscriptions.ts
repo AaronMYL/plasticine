@@ -14,6 +14,8 @@ import type { FeedFetcher } from './feed-fetch.ts';
 import { matchInterest } from './feed-match.ts';
 import { parseFeed } from './feed-parse.ts';
 import { safeUrl } from './link-data.ts';
+import { DailyError } from './errors.ts';
+import { REDDIT_WINDOW_MS, redditPost, type RedditPost } from './reddit.ts';
 
 /** 用户 11-04：「不花钱、频率低，比如每 2 小时」——订阅和 X 一样。 */
 export const FEED_SOURCE_EVERY_MS = 2 * 60 * 60 * 1000;
@@ -23,6 +25,13 @@ const PER_ROUND: Readonly<Record<FeedSource['level'], number>> = { more: 40, nor
 const ARTICLE_SUMMARY_CHARS = 400;
 // X 帖子没有标题：取正文第一行的前这些字当标题（读屏念、问 Plasticine 时引用）。
 const POST_TITLE_CHARS = 60;
+// Reddit 限流（429）后先停这么久再取 Reddit 的版块，再碰上就翻倍，最多停到下一个两小时。
+const REDDIT_BACKOFF_MS = 30 * 60 * 1000;
+// 一轮里两个 Reddit 版块之间隔一会儿，别一下子连着打。
+const REDDIT_GAP_MS = 2_000;
+/** 加 Reddit 来源时的预览：最新几条。 */
+export const REDDIT_PREVIEW_COUNT = 3;
+const POLLED_KINDS = ['rss', 'reddit'] as const;
 
 export const X_READ_ERROR_TEXT: Readonly<Record<NonNullable<XTimelineReport['error']>['code'], string>> = {
   signed_out: '在 Plasticine 浏览器里登录 X',
@@ -79,10 +88,43 @@ function postEntry(post: XPost): NewEntry {
   };
 }
 
+function articleEntry(hit: ReturnType<typeof parseFeed>[number]): NewEntry {
+  return {
+    key: `rss:${createHash('sha256').update(hit.url).digest('hex')}`,
+    title: hit.title, url: hit.url, summary: clip(hit.text, ARTICLE_SUMMARY_CHARS),
+    text: `${hit.title}\n${hit.text}`, publishedAt: hit.publishedAt, author: hit.author, authorHandle: null,
+    avatarUrl: null, imageUrl: httpsOrNull(hit.image), imageRatio: null,
+  };
+}
+
+function redditEntry(post: RedditPost): NewEntry {
+  return {
+    key: `reddit:${createHash('sha256').update(post.url).digest('hex')}`,
+    title: post.title, url: post.url, summary: clip(post.text, ARTICLE_SUMMARY_CHARS),
+    text: `${post.title}\n${post.text}`, publishedAt: post.publishedAt, author: post.author, authorHandle: null,
+    avatarUrl: null, imageUrl: httpsOrNull(post.image), imageRatio: null,
+  };
+}
+
+function wait(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(done, ms);
+    function done(): void {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', done);
+      resolve();
+    }
+    signal.addEventListener('abort', done, { once: true });
+  });
+}
+
 export class FeedSubscriptions {
   readonly #options: FeedSubscriptionsOptions;
   readonly #controller = new AbortController();
   #running: Promise<void> | null = null;
+  /** Reddit 限流以后到这个时刻之前不取 Reddit；连着限流时停得更久。 */
+  #redditPausedUntil = 0;
+  #redditBackoffMs = REDDIT_BACKOFF_MS;
 
   constructor(options: FeedSubscriptionsOptions) {
     this.#options = options;
@@ -106,11 +148,45 @@ export class FeedSubscriptions {
     if (this.#running !== null || this.#controller.signal.aborted || this.#options.fetcher === undefined) {
       return 'skipped';
     }
-    const due = this.#options.state.feedSources.all({ kind: 'rss' })
-      .filter((source) => source.query !== null && this.#due(source));
+    const now = this.#options.now().getTime();
+    const due = POLLED_KINDS.flatMap((kind) => this.#options.state.feedSources.all({ kind }))
+      .filter((source) => source.query !== null && this.#due(source)
+        && (source.kind !== 'reddit' || now >= this.#redditPausedUntil));
     if (due.length === 0) { return 'skipped'; }
     this.#running = this.#poll(due).finally(() => { this.#running = null; });
     return 'started';
+  }
+
+  /**
+   * 「现在刷新」（第 7 批第 10 条）：订阅和 Reddit 马上取这一个（上一轮还在跑就等它跑完再取），回这次加了几条；
+   * X 由电脑客户端读，把它记成到点，客户端下次来问时就去读。
+   */
+  async refreshNow(sourceId: string): Promise<number> {
+    const { state } = this.#options;
+    const source = state.feedSources.require(sourceId);
+    if (source.kind === 'x') {
+      state.feedSourceStatus.expire(source.id);
+      return 0;
+    }
+    if (!POLLED_KINDS.some((kind) => kind === source.kind) || source.query === null) {
+      throw new DailyError('invalid_input', '这个来源不能单独刷新。');
+    }
+    await this.settled();
+    const before = state.feedSourceStatus.read(source.id)?.checkedAt;
+    this.#running = this.#poll([source], true).finally(() => { this.#running = null; });
+    await this.#running;
+    const after = state.feedSourceStatus.read(source.id);
+    return after?.checkedAt === before ? 0 : after?.added ?? 0;
+  }
+
+  /** 加 Reddit 来源前的预览：取一次、不入库，回最新几条；取不到就抛出原因。 */
+  async previewReddit(url: string, signal: AbortSignal): Promise<RedditPost[]> {
+    const { fetcher, now } = this.#options;
+    if (fetcher === undefined) {
+      throw new DailyError('invalid_input', 'Reddit 抓取还没接上，请稍后再试。');
+    }
+    const page = await fetcher.get(url, signal);
+    return parseFeed(page.text, page.url, now(), REDDIT_WINDOW_MS).map(redditPost).slice(0, REDDIT_PREVIEW_COUNT);
   }
 
   async settled(): Promise<void> {
@@ -122,23 +198,31 @@ export class FeedSubscriptions {
     await this.settled();
   }
 
-  async #poll(sources: readonly FeedSource[]): Promise<void> {
+  async #poll(sources: readonly FeedSource[], asked = false): Promise<void> {
     const { state, fetcher, now } = this.#options;
+    let reddit = 0;
     for (const source of sources) {
       if (this.#controller.signal.aborted || fetcher === undefined) { return; }
+      if (source.kind === 'reddit') {
+        if (!asked && now().getTime() < this.#redditPausedUntil) { continue; }
+        if (reddit > 0) { await wait(REDDIT_GAP_MS, this.#controller.signal); }
+        reddit += 1;
+      }
       try {
         const page = await fetcher.get(source.query ?? '', this.#controller.signal);
-        const entries = parseFeed(page.text, page.url, now()).map((hit): NewEntry => ({
-          key: `rss:${createHash('sha256').update(hit.url).digest('hex')}`,
-          title: hit.title, url: hit.url, summary: clip(hit.text, ARTICLE_SUMMARY_CHARS),
-          text: `${hit.title}\n${hit.text}`, publishedAt: hit.publishedAt, author: hit.author, authorHandle: null,
-          avatarUrl: null, imageUrl: httpsOrNull(hit.image), imageRatio: null,
-        }));
+        const entries = source.kind === 'reddit'
+          ? parseFeed(page.text, page.url, now(), REDDIT_WINDOW_MS).map((hit) => redditEntry(redditPost(hit)))
+          : parseFeed(page.text, page.url, now()).map(articleEntry);
         const added = this.#ingest(state.feedSources.require(source.id), entries);
         state.feedSourceStatus.succeeded(source.id, now().toISOString(), added);
+        if (source.kind === 'reddit') { this.#redditBackoffMs = REDDIT_BACKOFF_MS; }
       } catch (error) {
         if (this.#controller.signal.aborted) { return; }
         state.feedSourceStatus.failed(source.id, now().toISOString(), failureText(error));
+        if (source.kind === 'reddit' && error instanceof DailyError && error.code === 'rate_limited') {
+          this.#redditPausedUntil = now().getTime() + this.#redditBackoffMs;
+          this.#redditBackoffMs = Math.min(this.#redditBackoffMs * 2, FEED_SOURCE_EVERY_MS);
+        }
         safeLog('warn', 'feed_subscription_failed', { objectId: source.id, category: errorCategory(error), error });
       }
     }

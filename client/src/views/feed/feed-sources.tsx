@@ -1,7 +1,6 @@
-// 信息流页头「加来源」打开的 Sheet（第 3 批 11-04；以前叫「信息源」，用户视角审查 2026-11-01 第 11 条：阅读页里不常驻
-// 空表单）：先是加订阅（只给网址）、加关注点；再是关注点 · 不要的各一组，每个来源一行：名字、查询词、档位（多 / 正常 /
-// 少 / 关掉，分段控件；关掉不删，探索方向关切照旧）；最后是最近来源的网站和条数。X、订阅、按关注点搜新闻的开关和出错原因
-// 在「设置 · 信息流」，这里给一个去那里的按钮。读失败给「重新读取」。
+// 关注点的编辑器（第 7 批第 10 条起是第二栏「按关注点的新闻」那一行 ⋯ 里的「设置…」）：加关注点；关注点 · 不要的各一组，
+// 每个来源一行：名字、查询词、档位（偏多 / 正常 / 偏少 / 关掉，分段控件；关掉不删）；最后是最近来源的网站和条数。
+// 加订阅、Reddit、X、抖音收藏都在第二栏的「加来源」里，不在这里。读失败给「重新读取」。
 
 import type { ReactNode } from 'react';
 import type { FeedSourceView } from '../../api/types.ts';
@@ -11,14 +10,13 @@ import { isOpenOp } from '../../state/action-ops.ts';
 import { feedLevelOpKey } from '../../state/m4-action-requests.ts';
 import { useStore } from '../../state/use-store.ts';
 import { useOp } from '../pending/pending-ops.tsx';
-import { FeedSubscription } from './feed-subscription.tsx';
 import { FeedQuery } from './feed-query.tsx';
 import { FeedInterest, FeedSite } from './feed-interest.tsx';
 
 const LEVELS: ReadonlyArray<{ level: FeedSourceView['level']; label: string }> = [
-  { level: 'more', label: '多' },
+  { level: 'more', label: '偏多' },
   { level: 'normal', label: '正常' },
-  { level: 'less', label: '少' },
+  { level: 'less', label: '偏少' },
   { level: 'off', label: '关掉' },
 ];
 
@@ -85,20 +83,7 @@ function Group({ title, sources }: { title: string; sources: readonly FeedSource
   );
 }
 
-/** 第 6 批第 9 条：抖音收藏一行，点开勾选清单。 */
-function DouyinRow({ onOpen }: { onOpen: () => void }): ReactNode {
-  return (
-    <div className="feed-source-group">
-      <h3 className="feed-source-title">抖音收藏</h3>
-      <div className="feed-source">
-        <span className="feed-source-name">选要处理的收藏，处理好的进信息流</span>
-        <button type="button" className="secondary-button button-small" onClick={onOpen}>选收藏</button>
-      </div>
-    </div>
-  );
-}
-
-export function FeedSources({ onManage, onDouyin }: { onManage?: () => void; onDouyin?: () => void }): ReactNode {
+export function FeedSources(): ReactNode {
   const live = useLive();
   const data = useStore(live.feed.sources);
   return (
@@ -114,10 +99,8 @@ export function FeedSources({ onManage, onDouyin }: { onManage?: () => void; onD
       )}
       {data.sources === null ? null : (
         <>
-          <FeedSubscription />
           <FeedInterest />
           <Group title="关注点" sources={data.sources.interests} />
-          {onDouyin === undefined ? null : <DouyinRow onOpen={onDouyin} />}
           <Group title="不要的" sources={data.sources.blocked.filter((source) => source.level === 'off')} />
           {data.sources.recentSites.length === 0 ? null : (
             <div className="feed-source-group">
@@ -130,9 +113,6 @@ export function FeedSources({ onManage, onDouyin }: { onManage?: () => void; onD
                 ))}
               </ul>
             </div>
-          )}
-          {onManage === undefined ? null : (
-            <button type="button" className="text-button feed-manage" onClick={onManage}>每个来源的开关和频率</button>
           )}
         </>
       )}

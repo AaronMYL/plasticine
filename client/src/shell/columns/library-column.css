@@ -1,0 +1,67 @@
+/*
+ * 资料库第二栏的空间行（2026-11-08 设计稿 Library-Menu / Library-Rename）：行尾 ⋯ 悬停、键盘聚焦、菜单开着时出现
+ * （他定「悬停出 ⋯」；触屏常显），出现时淡入；⋯ 压在行的右端，行字给它让出位置。改名时那一行原样，名字换成输入框。
+ */
+.column-row {
+  position: relative;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+}
+
+.column-row > .reveal-more {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  opacity: 0;
+  translate: 0 -50%;
+  pointer-events: none;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.column-row:hover > .reveal-more,
+.column-row:focus-within > .reveal-more,
+.column-row > .reveal-more[aria-expanded='true'] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.column-row:hover > .column-item,
+.column-row:focus-within > .column-item,
+.column-row:has(> .reveal-more[aria-expanded='true']) > .column-item {
+  padding-right: 34px;
+  background: var(--tint);
+}
+
+.column-row:has(> .reveal-more[aria-expanded='true']) > .column-item[aria-current='page'],
+.column-row:hover > .column-item[aria-current='page'] {
+  background: var(--tint2);
+}
+
+@media (pointer: coarse) {
+  .column-row > .reveal-more {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .column-row > .column-item {
+    padding-right: 34px;
+  }
+}
+
+.column-item-editing {
+  cursor: default;
+}
+
+.column-item-editing:hover {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .column-row > .reveal-more {
+    transition: none;
+  }
+}

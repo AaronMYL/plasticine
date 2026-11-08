@@ -9,8 +9,13 @@ import { compareFeedItems } from '../../../../agent/shared/feed-order.ts';
 import { searchTerms } from '../../../../agent/shared/feed-search.ts';
 import type { AddSubscriptionRequest } from '../shared.ts';
 import {
-  FEED_NAV_LABELS,
-  FEED_NAV_SOURCES,
+  type AddRedditRequest,
+  type DeleteFeedSourceRequest,
+  type RedditPreviewQuery,
+  type RedditPreviewResponse,
+  type RefreshFeedSourceRequest,
+  type RefreshFeedSourceResponse,
+  type UpdateFeedSourceRequest,
   type DouyinListQuery,
   type DouyinListResponse,
   type DouyinProcessRequest,
@@ -20,6 +25,7 @@ import {
   type FeedNavResponse,
 } from '../shared.ts';
 import { FakeDouyin } from './fake-douyin.ts';
+import { FakeFeedSources } from './fake-feed-sources.ts';
 import { ApiError, ConflictError } from '../errors.ts';
 import { COGNITION_PAGE_DEFAULT, FEED_LIST_ORIGINS, FEED_ORIGIN_LABELS } from '../shared.ts';
 import type {
@@ -43,6 +49,11 @@ function listed(item: FeedItemView): boolean {
   return (FEED_LIST_ORIGINS as readonly string[]).includes(item.origin);
 }
 
+/** 条目从哪一路来，按来源的种类推（和服务端 feedItemKind 一样）。 */
+function itemKindOf(kind: FeedSourceView['kind'] | undefined): FeedItemView['kind'] {
+  return kind === 'x' || kind === 'rss' || kind === 'douyin' || kind === 'reddit' ? kind : 'news';
+}
+
 export type FeedItemSeed = Pick<FeedItemView, 'id' | 'title'> & Partial<FeedItemView>;
 export type FeedSourceSeed = Pick<FeedSourceView, 'id' | 'kind' | 'label'> & Partial<FeedSourceView>;
 
@@ -57,6 +68,7 @@ export interface FakeFeedDeps {
 export const MANUAL_SOURCE_ID = 'src_manual';
 export const X_SOURCE_ID = 'src_x';
 export const NEWS_SOURCE_ID = 'src_news';
+export const DOUYIN_SOURCE_ID = 'src_douyin';
 /** 和服务端 FEED_SOURCE_EVERY_MS 一样：订阅和 X 每 2 小时。 */
 const EVERY_MINUTES = 120;
 const STALE_NEXT = '看 current 里的最新版，确认后用最新的 version 再来。';
@@ -96,6 +108,9 @@ export class FakeFeed implements FeedApi {
   all(): FeedItemView[] { return structuredClone([...this.items.values()]); }
   private readonly items = new Map<string, FeedItemView>();
   private readonly sourceRows = new Map<string, FeedSourceView>();
+  /** 删掉的来源（第 7 批第 10 条）：行留着，不再列；它没收藏过的条目不再显示。 */
+  private readonly removed = new Set<string>();
+  private readonly sourceDesk: FakeFeedSources;
   private readonly deps: FakeFeedDeps;
   private sequence = 0;
   readonly commentRows = new Map<string, FeedComment[]>();
@@ -107,10 +122,15 @@ export class FakeFeed implements FeedApi {
   constructor(deps: FakeFeedDeps) {
     this.deps = deps;
     this.douyinRows = new FakeDouyin(deps);
+    this.sourceDesk = new FakeFeedSources(deps, { sources: this.sourceRows, items: this.items, removed: this.removed,
+      freshToday: (item, timeZone) => this.shown(item) && item.reaction !== 'dislike'
+        && dayIn(new Date(item.arrivedAt), timeZone) === dayIn(this.deps.now(), timeZone),
+      seedSource: (seed) => this.seedSource(seed) });
     this.seedSource({ id: MANUAL_SOURCE_ID, kind: 'internal', label: '手动添加' });
     // 第 3 批：和服务端一样，X 和「按关注点搜新闻」两行内置来源一直在。
     this.seedSource({ id: X_SOURCE_ID, kind: 'x', label: 'X · 你关注的人', ref: 'x:following' });
     this.seedSource({ id: NEWS_SOURCE_ID, kind: 'internal', label: '按关注点搜新闻', ref: 'internal:news' });
+    this.seedSource({ id: DOUYIN_SOURCE_ID, kind: 'douyin', label: '抖音收藏', ref: 'douyin:favorites' });
   }
 
   async refresh(input: RefreshFeedRequest): Promise<FeedRefresh> {
@@ -187,11 +207,12 @@ export class FakeFeed implements FeedApi {
     const limit = query.limit ?? COGNITION_PAGE_DEFAULT;
     const offset = query.offset ?? 0;
     const timeZone = query.tz ?? localZone();
-    const all = [...this.items.values()].filter(listed)
+    const all = [...this.items.values()].filter((item) => this.shown(item))
       .filter((item) => query.includeHidden === true || item.reaction !== 'dislike')
       .filter((item) => query.saved !== true || item.saved)
       .filter((item) => query.origin === undefined || item.origin === query.origin)
       .filter((item) => query.kind === undefined || item.kind === query.kind)
+      .filter((item) => query.sourceId === undefined || item.sourceId === query.sourceId)
       .filter((item) => query.day === undefined || dayIn(new Date(item.arrivedAt), timeZone) === query.day)
       .sort(compareFeedItems);
     return {
@@ -203,16 +224,40 @@ export class FakeFeed implements FeedApi {
 
   async nav(timeZone: string): Promise<FeedNavResponse> {
     this.deps.session.require();
-    const today = dayIn(this.deps.now(), timeZone);
-    const fresh = [...this.items.values()].filter(listed).filter((item) => item.reaction !== 'dislike'
-      && dayIn(new Date(item.arrivedAt), timeZone) === today);
-    const count = (kind: FeedItemView['kind']): number => fresh.filter((item) => item.kind === kind).length;
-    return {
-      all: fresh.length,
-      subscriptions: [],
-      sources: FEED_NAV_SOURCES.map((key) => ({ key, label: FEED_NAV_LABELS[key],
-        count: key === 'saved' ? null : count(key) })),
-    };
+    return this.sourceDesk.nav(timeZone);
+  }
+
+  async previewReddit(query: RedditPreviewQuery): Promise<RedditPreviewResponse> {
+    this.deps.session.require();
+    return this.sourceDesk.previewReddit(query);
+  }
+
+  async addReddit(input: AddRedditRequest): Promise<FeedSourceView> {
+    this.deps.session.require();
+    return this.deps.receipts.run('feed', input.requestId, 'POST /v2/feed/sources/reddit',
+      () => this.sourceDesk.addReddit(input));
+  }
+
+  async updateSource(id: string, input: UpdateFeedSourceRequest): Promise<FeedSourceView> {
+    this.deps.session.require();
+    return this.deps.receipts.run('feed', input.requestId, `POST /v2/feed/sources/${id}/settings`,
+      () => this.sourceDesk.update(id, input));
+  }
+
+  async refreshSource(id: string, input: RefreshFeedSourceRequest): Promise<RefreshFeedSourceResponse> {
+    this.deps.session.require();
+    return this.sourceDesk.refresh(id, input);
+  }
+
+  async deleteSource(id: string, input: DeleteFeedSourceRequest): Promise<FeedSourceView> {
+    this.deps.session.require();
+    return this.deps.receipts.run('feed', input.requestId, `POST /v2/feed/sources/${id}/delete`,
+      () => this.sourceDesk.remove(id, input));
+  }
+
+  /** 列不列：站外收集的和手动添加的，删掉的来源只留收藏过的。 */
+  private shown(item: FeedItemView): boolean {
+    return listed(item) && (item.saved || !this.removed.has(item.sourceId));
   }
 
   douyin(query: DouyinListQuery): Promise<DouyinListResponse> {
@@ -229,7 +274,7 @@ export class FakeFeed implements FeedApi {
 
   async sources(): Promise<FeedSourcesResponse> {
     this.deps.session.require();
-    const all = [...this.sourceRows.values()];
+    const all = [...this.sourceRows.values()].filter((source) => !this.removed.has(source.id));
     const sites = new Map<string, number>();
     for (const item of [...this.items.values()].filter(listed)) {
       if (item.site !== null) {
@@ -239,7 +284,8 @@ export class FakeFeed implements FeedApi {
     return {
       interests: all.filter((source) => source.kind === 'interest'),
       blocked: all.filter((source) => source.kind === 'blocked_site'),
-      others: all.filter((source) => source.kind === 'internal' || source.kind === 'rss' || source.kind === 'x'),
+      others: all.filter((source) => source.kind === 'internal' || source.kind === 'rss' || source.kind === 'x'
+        || source.kind === 'reddit'),
       everyMinutes: EVERY_MINUTES,
       recentSites: [...sites.entries()].map(([site, count]) => ({ site, count })),
     };
@@ -367,7 +413,7 @@ export class FakeFeed implements FeedApi {
     const sourceId = seed.sourceId ?? MANUAL_SOURCE_ID;
     const sourceKind = this.sourceRows.get(sourceId)?.kind;
     const kind: FeedItemView['kind'] = origin === 'manual' ? 'manual'
-      : sourceKind === 'x' || sourceKind === 'rss' || sourceKind === 'douyin' ? sourceKind : 'news';
+      : itemKindOf(sourceKind);
     const item: FeedItemView = {
       origin,
       kind,

@@ -1,0 +1,95 @@
+/* 删除前的确认（confirm-dialog.tsx）：盖住整个窗口（--scrim），中间一块 400 宽、圆角 12、--layer-float 底、--lift；
+   标题 15/24·600，后果一行 13/20 --fg2，按钮靠右：取消（次按钮）、删除（--err 实底）。 */
+.confirm-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--scrim);
+}
+
+.confirm-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: min(400px, 100%);
+  padding: 20px 20px 16px;
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+}
+
+.confirm-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.confirm-body {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.confirm-error {
+  margin: 4px 0 0;
+  color: var(--err);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--err);
+  color: var(--bg);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.danger-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.danger-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.danger-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .confirm-actions > button {
+    height: 40px;
+    padding: 0 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .danger-button {
+    transition: none;
+  }
+}

@@ -12,6 +12,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
+import { TitlebarActions, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { mainLineRoute, sideRoute, type Route } from '../../shell/routes.ts';
 import { Conversation } from '../conversation/conversation.tsx';
@@ -128,24 +129,31 @@ export function PlasticinePage({ route, phone, navigate }: PlasticinePageProps):
   const title = sideId === null ? '主线' : side?.title ?? '旁聊';
   const topic = sideId === null ? null : side?.topic ?? null;
   const iconSize = phone ? 20 : 16;
+  // 桌面客户端里页名在标题栏里、这几个按钮放进标题栏右边（11-08），主区不再画这条顶栏。
+  const titled = useInTitlebar();
+  const tools = <>
+    {topic?.kind === 'feed' ? <IconButton icon="external" size={iconSize} label="去信息流里的原条目"
+      onClick={() => navigate({ view: 'feed', noteId: null, feedItemId: topic.ref })} /> : null}
+    {phone ? null : <IconButton icon="search" size={iconSize} label="在记录里找" aria-pressed={finding}
+      onClick={() => setFinding((value) => !value)} />}
+    {phone ? <IconButton icon="memory" size={iconSize} label="记忆"
+      onClick={() => navigate({ view: 'memory', noteId: null })} /> : null}
+    {phone ? <NewSideButton navigate={navigate} /> : null}
+    {phone ? null : (
+      <IconButton icon="more" size={iconSize} label="更多" aria-expanded={menu !== null}
+        onClick={(event) => setMenu(anchorOf(event.currentTarget))} />
+    )}
+  </>;
   return (
     <div className="messages-plasticine" data-phone={phone} data-side={sideId === null ? undefined : 'true'}>
-      <header className="messages-thread-head" data-titlebar="">
-        {phone ? <ChatSwitch current={sideId} title={title} navigate={navigate} />
-          : <h2 className="messages-thread-name"><span className="messages-thread-title">{title}</span></h2>}
-        <span className="messages-thread-spacer" />
-        {topic?.kind === 'feed' ? <IconButton icon="external" size={iconSize} label="去信息流里的原条目"
-          onClick={() => navigate({ view: 'feed', noteId: null, feedItemId: topic.ref })} /> : null}
-        {phone ? null : <IconButton icon="search" size={iconSize} label="在记录里找" aria-pressed={finding}
-          onClick={() => setFinding((value) => !value)} />}
-        {phone ? <IconButton icon="memory" size={iconSize} label="记忆"
-          onClick={() => navigate({ view: 'memory', noteId: null })} /> : null}
-        {phone ? <NewSideButton navigate={navigate} /> : null}
-        {phone ? null : (
-          <IconButton icon="more" size={iconSize} label="更多" aria-expanded={menu !== null}
-            onClick={(event) => setMenu(anchorOf(event.currentTarget))} />
-        )}
-      </header>
+      {titled ? <TitlebarActions>{tools}</TitlebarActions> : (
+        <header className="messages-thread-head">
+          {phone ? <ChatSwitch current={sideId} title={title} navigate={navigate} />
+            : <h2 className="messages-thread-name"><span className="messages-thread-title">{title}</span></h2>}
+          <span className="messages-thread-spacer" />
+          {tools}
+        </header>
+      )}
       {finding ? <LineSearch lineId={sideId ?? MAIN_LINE_ALIAS} /> : null}
       {sideId === null ? <Conversation container="page" /> : (
         <div className="conv conv-page" data-container="page">

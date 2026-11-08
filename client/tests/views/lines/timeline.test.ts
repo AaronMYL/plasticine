@@ -126,3 +126,16 @@ describe('线的事件改本地副本', () => {
   });
 });
 
+
+describe('没内容的提醒不画', () => {
+  it('正文是空的或字面上的 "null" 的提醒跳过（数据不动），别的照常', () => {
+    seq = 0;
+    const messages = [
+      msg({ role: 'notice', text: 'null' }),
+      msg({ role: 'notice', text: '  ' }),
+      msg({ role: 'notice', text: '后台线做完了' }),
+    ];
+    const items = buildTimeline({ lineId: 'line-main', messages, lines: [], summaries: new Map() });
+    expect(items.map((item) => item.kind)).toEqual(['notice']);
+  });
+});

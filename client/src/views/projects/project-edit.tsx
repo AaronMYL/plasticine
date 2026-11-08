@@ -127,7 +127,7 @@ export function PeopleForm({ row, people, onDone, onCancel }: {
     <form className="proj-edit" onSubmit={submit} aria-label="编辑分工">
       {draft.map((person, index) => (
         <div key={index} className="proj-person-fields">
-          <input className="field-input" aria-label="谁" placeholder="谁" value={person.who}
+          <input className="field-input" aria-label="负责人" placeholder="负责人" value={person.who}
             onChange={(event) => change(index, { who: event.target.value })} />
           <input className="field-input" aria-label="负责什么" placeholder="负责什么" value={person.does}
             onChange={(event) => change(index, { does: event.target.value })} />

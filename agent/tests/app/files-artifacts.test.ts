@@ -70,6 +70,10 @@ test('改名、删除要打现在的名字；删除挪进回收能还原；重�
   assert.equal(again.headers.get(REPLAYED_HEADER), '1');
   const trash = json(await call(t, 'GET', '/v2/files/trash', { cookie }))['entries'] as Body[];
   assert.equal(trash.length, 1);
+  // 资料库「最近删除」把文件回收里的也列进来（11-08）。
+  const library = json(await call(t, 'GET', '/v2/library/trash', { cookie }))['items'] as Body[];
+  assert.deepEqual(library.map((item) => [item['kind'], item['id'], item['title'], item['originalPath']]),
+    [['file', trash[0]?.['id'], 'a.txt', 'a.txt']]);
   const restored = await call(t, 'POST', '/v2/files/restore', {
     cookie,
     body: { requestId: newRequestId('rs'), id: String(trash[0]?.['id']) },

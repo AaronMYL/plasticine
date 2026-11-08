@@ -1,0 +1,107 @@
+/* 阅读页 · 翻页模式（reader.tsx 的 data-mode='paged'；滚动模式在 reader.css）。 */
+
+/*
+ * 翻页（第 7 批第 3 条，照 foliate-js 的 paginator）：阅读区不滚；.bk-sheet 一页宽、藏起溢出，是翻页时改 scrollLeft
+ * 的那个容器；.bk-text 固定高度、按页宽分栏（column-fill: auto，一栏一页），栏宽栏高由 page-surface.ts 写成变量。
+ * 触摸横滑自己处理（use-paged.ts），只留双指缩放给浏览器。
+ */
+.bk-page[data-mode='paged'] {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overscroll-behavior: none;
+  padding: 28px 24px 0;
+  touch-action: pinch-zoom;
+}
+
+.bk-page[data-mode='paged'] .bk-sheet {
+  flex: 1;
+  width: 100%;
+  max-width: 640px;
+  min-height: 0;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.bk-page[data-mode='paged'] .bk-text {
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  column-width: var(--page-width, 640px);
+  column-gap: var(--page-gap, 48px);
+  column-fill: auto;
+}
+
+/* 插图最高一页，不拆到两页上。 */
+.bk-page[data-mode='paged'] .bk-content img {
+  max-height: var(--page-height, 100%);
+  object-fit: contain;
+  break-inside: avoid;
+}
+
+.bk-page[data-mode='paged'] .bk-content pre,
+.bk-page[data-mode='paged'] .bk-content h2,
+.bk-page[data-mode='paged'] .bk-content h3,
+.bk-page[data-mode='paged'] .bk-content h4 {
+  break-inside: avoid;
+  break-after: avoid;
+}
+
+/* 左右两侧的圆形箭头：鼠标停到那一侧才浮出来，键盘 Tab 到也出来；触屏不画（点两侧照样翻）。 */
+.bk-turn {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  color: var(--fg);
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.bk-turn-prev {
+  left: 24px;
+}
+
+.bk-turn-next {
+  right: 24px;
+}
+
+.bk-turn[data-shown='true'],
+.bk-turn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bk-turn:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+@media (hover: none) {
+  .bk-turn {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-turn {
+    transition: none;
+  }
+}
+
+/* 手机：左右各留 24，不画箭头（点两侧、左右滑）。 */
+.bk-phone-reader .bk-page[data-mode='paged'] {
+  padding: 16px 24px 0;
+}

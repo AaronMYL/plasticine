@@ -15,6 +15,7 @@ import {
 import { checkedArgs, type KernelTool, type LineScope, type ToolArgs } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
 import { researchDraft } from './defaults.ts';
+import { SubsError } from './errors.ts';
 import { runSubscription, type RunPort, type RunState } from './run.ts';
 import { changeSubscription, writeSpace } from './writes.ts';
 
@@ -55,7 +56,9 @@ function text(args: ToolArgs, key: string, fallback: string): string {
   return typeof value === 'string' ? value : fallback;
 }
 
-export function subsTools(state: ToolState, port: () => RunPort, now: () => Date): KernelTool[] {
+/** issued：订阅新出了一期（样刊出来时附「开启定时」卡，sample-card.ts）。 */
+export function subsTools(state: ToolState, port: () => RunPort, now: () => Date,
+  issued?: (subscriptionId: string) => void): KernelTool[] {
   const timeZone = (): string => state.dailySettings.read().settings.timeZone ?? FALLBACK_TIME_ZONE;
   return [
     tool({
@@ -67,6 +70,9 @@ export function subsTools(state: ToolState, port: () => RunPort, now: () => Date
         + '他让改某一期时只改这一期，change 写改了什么；能长期适用的写进 rule 让他决定。',
       run: (args) => {
         const space = writeSpace(state, args, 'ai');
+        if (args.id === undefined && space.subscriptionId !== null) {
+          issued?.(space.subscriptionId);
+        }
         return { id: space.id, version: space.version, issueNumber: space.issueNumber, link: spacePath(space.id) };
       },
     }),
@@ -75,6 +81,10 @@ export function subsTools(state: ToolState, port: () => RunPort, now: () => Date
       say: () => '读空间', description: '读一个空间的正文、版本和所属订阅；接着改之前先读。',
       run: ({ id }) => {
         const space = state.spaces.require(id);
+        // 他删了的（在资料库「最近删除」里）：不读给模型，说清楚是删了；space_list 也不列。
+        if (space.deletedAt !== null) {
+          throw new SubsError('not_found', '这个空间已删除（在资料库「最近删除」里，他还原之前不能读或改）。');
+        }
         return { id, title: space.title, version: space.version, subscriptionId: space.subscriptionId,
           issueNumber: space.issueNumber, edition: space.edition, doc: space.doc };
       },

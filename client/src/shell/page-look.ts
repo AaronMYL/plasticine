@@ -11,7 +11,9 @@ export function pageIcon(route: Route | null): IconName {
   }
   switch (route.view) {
     case 'notes': return 'notes';
-    case 'books': return route.spaceId != null ? 'space' : 'books';
+    case 'books':
+      if (route.spaceId != null) return 'space';
+      return route.spacesList === true ? 'archive' : 'books';
     case 'projects': return 'folder';
     case 'feed': return 'feed';
     case 'messages':

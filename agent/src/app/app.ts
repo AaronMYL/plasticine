@@ -49,7 +49,7 @@ import { BrowserSessions } from './browser-sessions.ts';
 export interface AppOptions {
   state: StateService;
   text: TextModels;
-  publicUrl?: string;
+  publicUrl?: () => string;
   desk: AskDesk;
   presenter: Presenter;
   push: PushService;

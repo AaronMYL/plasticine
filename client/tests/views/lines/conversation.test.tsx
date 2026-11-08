@@ -143,3 +143,23 @@ describe('和 Plasticine 的对话', () => {
   });
 });
 
+
+describe('样刊附的「开启定时」卡（第 7 批第 14 条）', () => {
+  it('不挂在线上、主线空闲也摊在最下面：每周五 08:00 出一期 + 订阅名（站内链到那一期）；点「开启定时」作答收起', async () => {
+    const app = await openThread(({ control }) => {
+      control.asks.raise({ id: 'ask-sample', kind: 'decide', question: '每周五 08:00 出一期', lineId: null,
+        detail: '认知科学与意识研究周报', basis: 'inferred',
+        options: [{ id: 'start', label: '开启定时', recommended: true, description: null },
+          { id: 'revise', label: '再改改', recommended: false, description: null }],
+        subscriptionCard: { subscriptionId: 'sub-1', title: '认知科学与意识研究周报', when: '每周五 08:00 出一期',
+          spaceId: 'space-1', issueNumber: 1 } });
+    });
+    const card = await screen.findByRole('region', { name: '每周五 08:00 出一期 · 认知科学与意识研究周报' });
+    expect(within(card).getByRole('link', { name: '看认知科学与意识研究周报第 1 期' }).getAttribute('href'))
+      .toBe('#/books/space/space-1');
+    expect(within(card).getAllByRole('button').map((button) => button.textContent)).toEqual(['开启定时', '再改改']);
+    fireEvent.click(within(card).getByRole('button', { name: '开启定时' }));
+    await waitFor(async () => expect((await app.api.asks.get('ask-sample')).answer?.optionId).toBe('start'));
+    await waitFor(() => expect(screen.queryByRole('region', { name: /每周五 08:00 出一期/ })).toBeNull());
+  });
+});

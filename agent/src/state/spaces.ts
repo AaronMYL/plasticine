@@ -66,6 +66,8 @@ export interface SpaceSave {
 
 export interface SpaceListFilter {
   subscriptionId?: string;
+  /** 只要不属于订阅的（资料库第二栏「空间」一组）。 */
+  standalone?: boolean;
 }
 
 function readRevision(row: Row): SpaceRevision {
@@ -110,7 +112,7 @@ export function createSpaceStore(context: StoreContext) {
     return context.db.transaction(() => {
       const current = spaces.require(id);
       if (current.deletedAt !== null) {
-        throw new StateError('invalid_input', '这个空间已经删了，先恢复再改。');
+        throw new StateError('invalid_input', '这个空间已经删了，先在资料库「最近删除」里还原再改。');
       }
       const updated = spaces.update(id, expectedVersion, { doc: input.doc, author,
         ...(input.title === undefined ? {} : { title: input.title }) });
@@ -137,8 +139,13 @@ export function createSpaceStore(context: StoreContext) {
         return spaces.select('deleted_at IS NULL AND subscription_id = $sub', { sub: filter.subscriptionId }, page,
           'issue_number DESC, created_at DESC, id DESC');
       }
-      return spaces.select('deleted_at IS NULL', {}, page, 'updated_at DESC, id DESC');
+      const where = filter.standalone === true ? 'deleted_at IS NULL AND subscription_id IS NULL'
+        : 'deleted_at IS NULL';
+      return spaces.select(where, {}, page, 'updated_at DESC, id DESC');
     },
+    /** 删掉的（「最近删除」），删的时间新的在前。 */
+    deleted: (): Space[] => allPages((page) => spaces.select('deleted_at IS NOT NULL', {}, page,
+      'deleted_at DESC, id DESC')),
     /** 一个订阅的全部各期，新的在前。 */
     issues: (subscriptionId: string): Space[] => allPages((page) => spaces.select(
       'deleted_at IS NULL AND subscription_id = $sub', { sub: subscriptionId }, page,
@@ -179,6 +186,14 @@ export function createSpaceStore(context: StoreContext) {
       }
       return current.deletedAt !== null ? current
         : spaces.update(id, expectedVersion, { deletedAt: context.now() });
+    },
+    /** 从「最近删除」还原：清掉删除时间（版本加一）；本来就没删的原样返回。 */
+    restore(id: string): Space {
+      const current = spaces.get(id);
+      if (current === undefined) {
+        throw notFound('spaces', id);
+      }
+      return current.deletedAt === null ? current : spaces.update(id, current.version, { deletedAt: null });
     },
   };
 }

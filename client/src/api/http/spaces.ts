@@ -1,12 +1,16 @@
 // 空间与订阅的真实现（第 6、7 条）：按 shared/api/spaces.ts 的路径发请求、按同一份 schema 校验回答。
 
-import type { SpacesApi, SubscriptionsApi } from '../spaces-client.ts';
+import type { LibraryApi, SpacesApi, SubscriptionsApi } from '../spaces-client.ts';
+import { Type } from 'typebox';
 import {
+  LIBRARY_TRASH_PATH,
+  LibraryTrashResponseSchema,
   NoteAssistViewSchema,
   noteAssistTimeoutMs,
   REVIEW_PATH,
   ReviewSummarySchema,
   RunSubscriptionResponseSchema,
+  SPACE_LIST_STANDALONE_PARAM,
   SPACES_PATH,
   SpaceListResponseSchema,
   SpaceViewSchema,
@@ -22,10 +26,20 @@ const ASSIST_GRACE_MS = 5000;
 const spacePath = (id: string): string => `${SPACES_PATH}/${encodeURIComponent(id)}`;
 const subscriptionPath = (id: string): string => `${SUBSCRIPTIONS_PATH}/${encodeURIComponent(id)}`;
 
-export function createSpacesHttp(transport: Transport): { spaces: SpacesApi; subscriptions: SubscriptionsApi } {
+const DeletedSchema = Type.Object({ deleted: Type.Boolean() });
+
+export function createSpacesHttp(transport: Transport):
+  { spaces: SpacesApi; subscriptions: SubscriptionsApi; library: LibraryApi } {
   const spaces: SpacesApi = {
-    list: (signal) => transport.request({ method: 'GET', path: SPACES_PATH, schema: SpaceListResponseSchema,
-      what: '读空间', lostAs: 'failed', signal }),
+    list: (signal, filter) => transport.request({ method: 'GET', path: filter?.standalone === true
+      ? `${SPACES_PATH}?${SPACE_LIST_STANDALONE_PARAM}=true` : SPACES_PATH, schema: SpaceListResponseSchema,
+    what: '读空间', lostAs: 'failed', signal }),
+    remove: async (id, input) => {
+      await transport.request({ method: 'DELETE', path: spacePath(id), body: input, schema: DeletedSchema,
+        what: '删除空间', lostAs: 'uncertain' });
+    },
+    restore: (id, input) => transport.request({ method: 'POST', path: `${spacePath(id)}/restore`, body: input,
+      schema: SpaceViewSchema, what: '还原空间', lostAs: 'uncertain' }),
     get: (id, signal) => transport.request({ method: 'GET', path: spacePath(id), schema: SpaceViewSchema,
       what: '读这个空间', lostAs: 'failed', signal }),
     save: (id, input) => transport.request({ method: 'PUT', path: spacePath(id), body: input,
@@ -50,5 +64,9 @@ export function createSpacesHttp(transport: Transport): { spaces: SpacesApi; sub
     review: (signal) => transport.request({ method: 'GET', path: REVIEW_PATH, schema: ReviewSummarySchema,
       what: '读回顾', lostAs: 'failed', signal }),
   };
-  return { spaces, subscriptions };
+  const library: LibraryApi = {
+    trash: (signal) => transport.request({ method: 'GET', path: LIBRARY_TRASH_PATH, schema: LibraryTrashResponseSchema,
+      what: '读最近删除', lostAs: 'failed', signal }),
+  };
+  return { spaces, subscriptions, library };
 }

@@ -41,8 +41,9 @@ export type Registration = Static<typeof RegistrationSchema>;
 // 信息流的来源（《UI 方案》第 9 节「Sources：关注点、不要的、最近来源」）。interest = 关注点，每个挂一条探索方向关切；
 // internal = 站内（手动添加、「按关注点搜新闻」这个总开关；任务、关切两个站内来源 2026-11-04 起停收）；
 // blocked_site = 不要的网站；rss = 订阅；x = X 上他关注的人（第 3 批 11-04：Mac 在线时读他登录着的「关注」时间线）；
-// douyin = 抖音收藏（第 6 批第 9 条：他勾选处理、总结好的进信息流）。
-export const FEED_SOURCE_KINDS = ['interest', 'internal', 'blocked_site', 'rss', 'x', 'douyin'] as const;
+// douyin = 抖音收藏（第 6 批第 9 条：他勾选处理、总结好的进信息流）；reddit = 一个 Reddit 版块（第 7 批第 13 条：
+// 服务器直接取版块的 Atom，query 存那个地址，排序就在地址里）。
+export const FEED_SOURCE_KINDS = ['interest', 'internal', 'blocked_site', 'rss', 'x', 'douyin', 'reddit'] as const;
 export const FEED_SOURCE_LEVELS = ['more', 'normal', 'less', 'off'] as const;
 export const FeedSourceInputSchema = Type.Object(
   {
@@ -82,10 +83,11 @@ export const FEED_LIST_ORIGINS = ['feed', 'manual'] as const satisfies readonly 
 export const FEED_REACTIONS = ['like', 'dislike'] as const;
 /**
  * 第 3 批：一条信息流从哪一路来——X 上他关注的人、订阅、按关注点搜的新闻、手动添加。由来源的种类推出来，不单存：
- * x → x，rss → rss，手动添加 → manual，其余站外收集的（关注点搜索、迁移来的旧条目）→ news。页头分段按它筛（不含 manual）。
+ * x → x，rss → rss，reddit → reddit，手动添加 → manual，其余站外收集的（关注点搜索、迁移来的旧条目）→ news。
+ * 页头分段按它筛（不含 manual）。
  */
-export const FEED_ITEM_KINDS = ['x', 'rss', 'news', 'manual', 'douyin'] as const;
-export const FEED_FILTER_KINDS = ['x', 'rss', 'news', 'douyin'] as const satisfies
+export const FEED_ITEM_KINDS = ['x', 'rss', 'news', 'manual', 'douyin', 'reddit'] as const;
+export const FEED_FILTER_KINDS = ['x', 'rss', 'news', 'douyin', 'reddit'] as const satisfies
   readonly (typeof FEED_ITEM_KINDS)[number][];
 // 旧信息流的长摘要完整保留，最多 100 000 字符。
 export const FEED_TEXT_MAX_CHARS = 100_000;

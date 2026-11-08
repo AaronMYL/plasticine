@@ -35,25 +35,24 @@ describe('M4 · 结果不明的操作：原样重发，没了结时不让输入�
 });
 
 describe('M4 · 就地写的字按 id 存', () => {
-  it('今日设置写到一半：关设置先问，继续编辑还在，算进离开提醒；存上之后草稿清掉、今日按新上限读', async () => {
+  it('时区改到一半：关设置先问，继续编辑还在，算进离开提醒；存上之后草稿清掉、版本加一', async () => {
     const app = await renderApp();
     await settle();
     fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
     const sheet = (): HTMLElement => screen.getByRole('dialog', { name: '设置' });
-    const limit = async (): Promise<HTMLElement> => {
-      fireEvent.click(within(sheet()).getByRole('button', { name: '日常' }));
-      return within(sheet()).findByLabelText('十件事最多列几条');
-    };
-    fireEvent.change(await limit(), { target: { value: '5' } });
+    fireEvent.click(within(sheet()).getByRole('button', { name: '通用' }));
+    fireEvent.click(await within(sheet()).findByRole('button', { name: '选择时区' }));
+    const field = (): HTMLElement => within(sheet()).getByLabelText('时区名称');
+    fireEvent.change(field(), { target: { value: 'Asia/Tokyo' } });
     fireEvent.click(within(sheet()).getByRole('button', { name: '关掉设置' }));
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: '继续编辑' }));
-    expect(within(sheet()).getByLabelText('十件事最多列几条')).toHaveProperty('value', '5');
+    expect(field()).toHaveProperty('value', 'Asia/Tokyo');
     expect(leaveAsks()).toBe(true);
-    fireEvent.change(within(sheet()).getByLabelText('离开多久算「回来」（小时）'), { target: { value: '0' } });
+    fireEvent.change(field(), { target: { value: 'Mars/Base' } });
     expect(within(sheet()).getByRole('button', { name: '保存' })).toHaveProperty('disabled', true);
-    fireEvent.change(within(sheet()).getByLabelText('离开多久算「回来」（小时）'), { target: { value: '6' } });
+    fireEvent.change(field(), { target: { value: 'Asia/Tokyo' } });
     fireEvent.click(within(sheet()).getByRole('button', { name: '保存' }));
     await waitFor(() => expect(app.state.inlineDrafts.hasAny()).toBe(false));
-    expect(await app.api.today.settings()).toMatchObject({ briefLimit: 5, returnThresholdHours: 6, version: 1 });
+    expect(await app.api.today.settings()).toMatchObject({ timeZone: 'Asia/Tokyo', version: 1 });
   });
 });

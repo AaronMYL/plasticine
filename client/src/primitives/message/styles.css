@@ -127,60 +127,11 @@
   line-height: 18px;
 }
 
-.msg-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
-  align-items: center;
-}
-
-/* 你的话：复制、引用在气泡左边、和气泡同一行，底对齐，不另占一行（user-message.tsx）。 */
-.msg-user-line {
-  display: flex;
-  justify-content: flex-end;
-  align-items: flex-end;
-  gap: 4px;
-  width: 100%;
-  min-width: 0;
-}
-
-.msg-user-actions {
-  flex: 0 1 auto;
-  justify-content: flex-end;
-  margin-top: 0;
-}
-
-/* 电脑上没悬停、焦点也不在里面时，这一排透明着；透明的按钮不该点得到（2026-11-04）。 */
-@media (hover: hover) {
-  .msg-user:not(:hover):not(:focus-within) .msg-user-actions {
-    pointer-events: none;
-  }
-}
-
-/* 复制、引用这类安静操作（.msg-quiet）桌面上悬停或键盘焦点进来才显出来；用 opacity 留着占位，消息不跳动。
-   触屏没有悬停，保持常显。「它做了什么 · n 项 · 时长」是信息不是安静操作，不带这个类，一直显示。 */
-@media (hover: hover) and (pointer: fine) {
-  .msg-actions > .msg-quiet {
-    opacity: 0;
-    transition: opacity 120ms ease;
-  }
-
-  .msg:hover .msg-actions > .msg-quiet,
-  .msg:focus-within .msg-actions > .msg-quiet {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .msg-actions > .msg-quiet {
-    transition: none;
-  }
-}
-
-.msg-icon {
-  width: 28px;
-  height: 28px;
+/* 还没送到的那句，状态行尾的复制：和状态字一样高，不把这一行撑高。 */
+.msg-copy {
+  width: 18px;
+  height: 18px;
+  color: var(--fg2);
 }
 
 .msg-copy-error {
@@ -293,10 +244,6 @@
   }
 }
 
-.msg-actions > div:not(.msg-icon) {
-  min-width: 0;
-}
-
 /* 这一轮的工具调用：动作行最左边「🔧 n ⌄」（12 --fg2，没有描边），和复制、引用一样高；是信息不是安静操作，常显。 */
 .msg-process {
   display: inline-flex;
@@ -374,30 +321,8 @@
   color: var(--bg);
 }
 
-/* 聊天里的复制、引用一排压低到 24，不在每条消息下面空出一大块；手机上你的话不带这一排（长按选字照样能复制）。 */
-.conv-column .msg-actions,
-.conv-sheet .msg-actions {
-  margin-top: 0;
-}
-
-.conv-column .msg-icon {
-  width: 24px;
-  height: 24px;
-}
-
 .conv-column .msg-process {
   height: 24px;
-}
-
-.conv-sheet .msg-icon {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-}
-
-.conv-sheet .msg-user-actions {
-  display: none;
 }
 
 .msg-run-item {
@@ -429,7 +354,6 @@
 }
 
 @media (pointer: coarse) {
-  .msg-icon,
   .msg-chip,
   .msg-process {
     min-width: 40px;

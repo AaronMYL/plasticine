@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UserMessage } from './index.tsx';
 
@@ -58,11 +58,18 @@ describe('消息原语 · 你的话', () => {
     expect(screen.getByText('《读书摘记》')).toBeTruthy();
   });
 
-  it('复制消息保留原文与换行，得到剪贴板回执后才显示已复制', async () => {
+  it('送到了的那句气泡旁边没有旧的复制、引用一排（复制、回复在对话的悬停条里）', () => {
+    render(<UserMessage text="你好" quotes={[]} state="sent" onQuote={() => undefined} />);
+    expect(screen.queryByRole('button', { name: '复制消息' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '引用这句话' })).toBeNull();
+  });
+
+  it('发送中、没送到的那句状态行尾留一个复制：保留原文与换行，得到剪贴板回执后才显示已复制', async () => {
     const writeText = vi.fn(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    render(<UserMessage text={'第一行\n第二行'} quotes={[]} state="sent" />);
-    fireEvent.click(screen.getByRole('button', { name: '复制消息' }));
+    render(<UserMessage text={'第一行\n第二行'} quotes={[]} state="failed" onResend={() => undefined} />);
+    const status = screen.getByRole('status');
+    fireEvent.click(within(status).getByRole('button', { name: '复制消息' }));
     expect(writeText).toHaveBeenCalledWith('第一行\n第二行');
     await screen.findByRole('button', { name: '已复制' });
   });
@@ -70,7 +77,8 @@ describe('消息原语 · 你的话', () => {
   it('复制失败说明手动复制路径，原消息仍可读', async () => {
     const writeText = vi.fn(async () => { throw new Error('clipboard denied'); });
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    render(<UserMessage text="保留这段话" quotes={[]} state="sent" />);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    render(<UserMessage text="保留这段话" quotes={[]} state="sending" />);
     fireEvent.click(screen.getByRole('button', { name: '复制消息' }));
     expect((await screen.findByRole('alert')).textContent).toContain('手动复制');
     expect(screen.getByText('保留这段话')).toBeTruthy();

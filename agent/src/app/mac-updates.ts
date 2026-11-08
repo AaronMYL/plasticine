@@ -25,8 +25,8 @@ export const MAC_LATEST_FILE = 'latest.json';
 export interface MacDownloadsOptions {
   /** <状态目录>/downloads/mac */
   directory: string;
-  /** 服务器的公开地址（config.ts publicUrlFromEnv），下载地址和它同源。 */
-  publicUrl: string;
+  /** 服务器的公开地址（app/public-url.ts，按需取），下载地址和它同源。 */
+  publicUrl: () => string;
 }
 
 function noPackage(): ApiError {
@@ -81,7 +81,7 @@ export class MacDownloads {
   }
 
   url(release: MacReleaseFile): string {
-    return `${this.#options.publicUrl}${MAC_DOWNLOADS_PATH}/${encodeURIComponent(release.file)}`;
+    return `${this.#options.publicUrl()}${MAC_DOWNLOADS_PATH}/${encodeURIComponent(release.file)}`;
   }
 
   async bytes(release: MacReleaseFile): Promise<Buffer> {

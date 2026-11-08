@@ -9,6 +9,7 @@ import { WebContentsView, shell, type BaseWindow, type Session, type WebContents
 import type { WebTabEvent, WebTabFrame, WebTabsSync } from '../../../agent/shared/api/mac-bridge.ts';
 import { TAB_CHANNELS } from '../app/channels.ts';
 import { tabLayer, viewBounds, type TabLayer } from './tab-layering.ts';
+import { reportedUrl } from './tab-url.ts';
 
 /** 叫标签里的脚本做事的时限：圈一块要等他框，给足五分钟；别的 30 秒。 */
 const CALL_TIMEOUT_MS = 30_000;
@@ -22,6 +23,11 @@ export interface Tab {
   openedBy: 'user' | 'plasticine';
   /** 用户最近一次在这个标签里动键鼠的时间（他正看着时 Plasticine 不点不填）。 */
   lastInputAt: number;
+  /**
+   * 最近一次叫它载入的网址（11-08）：Electron 在 did-start-loading 时 getURL() 还是空的，要到 did-navigate 才有；
+   * 那之前报给界面的网址用这个，空网址界面会当成站内首页、关掉标签。
+   */
+  requestedUrl: string;
 }
 
 export interface TabViewsDeps {
@@ -156,7 +162,11 @@ export class TabViews {
     if (!isWeb(url)) {
       return;
     }
-    void this.tabs.get(tabId)?.view.webContents.loadURL(url).catch((error: unknown) => {
+    const tab = this.tabs.get(tabId);
+    if (tab !== undefined) {
+      tab.requestedUrl = url;
+    }
+    void tab?.view.webContents.loadURL(url).catch((error: unknown) => {
       this.deps.log(`网页没载入：${error instanceof Error ? error.message : String(error)}`);
     });
   }
@@ -221,7 +231,7 @@ export class TabViews {
       contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false } });
     view.setVisible(false);
     view.webContents.setUserAgent(this.deps.userAgent);
-    const tab: Tab = { id: tabId, view, openedBy, lastInputAt: 0 };
+    const tab: Tab = { id: tabId, view, openedBy, lastInputAt: 0, requestedUrl: isWeb(url) ? url : '' };
     this.tabs.set(tabId, tab);
     this.deps.window.contentView.addChildView(view, 0);
     this.watch(tab);
@@ -270,8 +280,12 @@ export class TabViews {
     if (contents.isDestroyed()) {
       return;
     }
+    const url = reportedUrl(contents.getURL(), tab.requestedUrl);
+    if (url === null) {
+      return;
+    }
     const history = contents.navigationHistory;
-    this.deps.emit({ type: 'state', tabId: tab.id, url: contents.getURL(), title: contents.getTitle(),
+    this.deps.emit({ type: 'state', tabId: tab.id, url, title: contents.getTitle(),
       canGoBack: history.canGoBack(), canGoForward: history.canGoForward(), loading: contents.isLoading() });
   }
 

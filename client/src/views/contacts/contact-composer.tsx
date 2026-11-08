@@ -77,7 +77,7 @@ export function startsMention(text: string, caret: number): boolean {
 function MentionMenu({ choices, active, onPick }: { choices: readonly MentionChoice[]; active: number;
   onPick: (choice: MentionChoice) => void }): ReactNode {
   return (
-    <div className="mention-menu" role="listbox" aria-label="@ 谁">
+    <div className="mention-menu" role="listbox" aria-label="@ 联系人">
       {choices.map((choice, index) => (
         <button key={choice.id} type="button" role="option" aria-selected={index === active}
           className="mention-option" onMouseDown={(event) => event.preventDefault()} onClick={() => onPick(choice)}>

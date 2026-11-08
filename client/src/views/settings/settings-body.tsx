@@ -1,7 +1,7 @@
-// 设置弹框里一段的内容（2026-11-05 他定六段，见 routes.ts SETTINGS_SECTIONS）。原来的各块照用，只是重新编排：
-//   通用 = 外观 · 通知 · 装到主屏幕 · 提建议或反馈（2026-11-05 度量采集删了；11-06 他定通知全改成消息，邮件兜底删了）；
+// 设置弹框里一段的内容（2026-11-05 他定六段；11-08 第 7 批删「日常」剩五段，见 routes.ts SETTINGS_SECTIONS）：
+//   通用 = 外观 · 时区 · 通知 · 装到主屏幕 · 提建议或反馈（2026-11-05 度量采集删了；11-06 他定通知全改成消息）；
 //   AI = 模型（提供商平级）· 默认模型 · 技能 · 工具开关（2026-11-05 照设计稿 Settings-AI）；
-//   日常 = 今日；浏览器与信息流 = 登录着的网站 · 导入 · 网页翻译 · 信息流来源；
+//   浏览器 = 登录着的网站 · 导入 · 网页翻译（11-08 信息流来源挪到信息流第二栏）；
 //   账号 = 名字和 @账号 · 密码 · 登录着的设备 · 头像 · 邀请朋友 · 对外可见 · 通知记录（11-08 设计稿 Settings-Account）；
 //   系统 = 版本 · 运行情况 · 替你动手的电脑 · 备份（设计稿 Settings-System）。
 // 段名是弹框右边的标题，段里每块用自己的小节标题分开，不加说明段落。从别处带着 focus 打开时滚到那一块并把焦点给它。
@@ -16,9 +16,7 @@ import { AccountProfile } from './account-profile.tsx';
 import { AvatarSection } from './avatar-section.tsx';
 import { AppearanceSection } from './appearance-section.tsx';
 import { BrowserSection } from './browser-section.tsx';
-import { DailySettingsSection } from './daily-settings-section.tsx';
 import { Devices } from './devices-block.tsx';
-import { FeedSourcesSection } from './feed-sources-section.tsx';
 import { FeedbackSection } from './feedback-section.tsx';
 import { InstallSection } from './install-section.tsx';
 import { ModelsSection } from '../models/models-section.tsx';
@@ -28,6 +26,7 @@ import type { PushSwitchStatus } from './push-switch.ts';
 import { SectionHead } from './section-head.tsx';
 import { SkillsSection } from './skills-section.tsx';
 import { SystemSection } from './system-section.tsx';
+import { TimeZoneSection } from './time-zone-section.tsx';
 import { TranslateSettingsSection } from './translate-settings-section.tsx';
 import { VisibilitySection } from './visibility-section.tsx';
 import './settings.css';
@@ -36,8 +35,7 @@ import './network.css';
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsSection, string>> = {
   general: '通用',
   ai: 'AI',
-  daily: '日常',
-  browser: '浏览器与信息流',
+  browser: '浏览器',
   account: '账号',
   system: '系统',
 };
@@ -126,6 +124,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
     case 'general':
       return <>
         <AppearanceSection />
+        <Spot name="time-zone"><TimeZoneSection /></Spot>
         <NotificationSection />
         <InstallSection />
         <FeedbackSection />
@@ -136,13 +135,10 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
         <SkillsSection />
         <ToolSwitches />
       </>;
-    case 'daily':
-      return <DailySettingsSection />;
     case 'browser':
       return <>
         <BrowserSection />
         <Spot name="translate"><TranslateSettingsSection /></Spot>
-        <Spot name="feed"><FeedSourcesSection /></Spot>
       </>;
     case 'account':
       return <>

@@ -160,6 +160,29 @@ describe('Mac 原生网页标签', () => {
     expect(app.state.webTabs.get().tabs).toHaveLength(count);
   });
 
+  it('壳报来空网址（新开的标签还没载入）：不关标签、不跳页，网址标题不动，只更新载入中', async () => {
+    const bridge = install();
+    const app = await renderApp();
+    let id = '';
+    act(() => {
+      id = app.state.webTabs.open('https://example.com/a', 'A', 'user');
+      window.location.hash = webHash(id);
+    });
+    emit({ type: 'state', tabId: id, url: '', title: '', canGoBack: false, canGoForward: false, loading: true });
+    expect(window.location.hash).toBe(webHash(id));
+    expect(bridge.command).not.toHaveBeenCalledWith(id, 'close');
+    expect(app.state.webTabs.get().tabs.find((candidate) => candidate.id === id))
+      .toMatchObject({ url: 'https://example.com/a', title: 'A' });
+    const main = screen.getByRole('main');
+    expect(within(main).getByRole('button', { name: '停止载入' })).toBeTruthy();
+    expect(within(main).getByRole('button', { name: '网址：https://example.com/a' })).toBeTruthy();
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const count = app.state.webTabs.get().tabs.length;
+    emit({ type: 'opened', tabId: 'native:blank', url: '', title: '', openedBy: 'user', activate: true });
+    expect(app.state.webTabs.get().tabs).toHaveLength(count);
+    expect(window.location.hash).toBe(webHash(id));
+  });
+
   it('地址栏回车、前进后退、刷新、在系统浏览器打开都交给原生层', async () => {
     const bridge = install();
     const app = await renderApp();

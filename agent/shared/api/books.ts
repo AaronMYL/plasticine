@@ -8,6 +8,7 @@ import {
   BOOK_INSIGHT_STATUSES,
   BOOK_NOTE_MAX_CHARS,
   BOOK_QUOTE_MAX_CHARS,
+  BOOK_TITLE_MAX_CHARS,
   BOOK_CONTEXT_CHARS,
   ANNOTATION_ORIGINS,
   BookOutlineSchema,
@@ -147,6 +148,17 @@ export type UpdateBookAnnotationRequest = Static<typeof UpdateBookAnnotationRequ
 
 export const DeleteBookRequestSchema = Type.Object({ requestId: RequestIdSchema }, { additionalProperties: false });
 export type DeleteBookRequest = Static<typeof DeleteBookRequestSchema>;
+
+/** PATCH /v2/books/:id：改书名（资料库「最近删除」那一批，11-08）。 */
+export const RenameBookRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  title: Type.String({ minLength: 1, maxLength: BOOK_TITLE_MAX_CHARS }),
+}, { additionalProperties: false });
+export type RenameBookRequest = Static<typeof RenameBookRequestSchema>;
+
+/** POST /v2/books/:id/restore：从「最近删除」还原，标注跟着回来。 */
+export const RestoreBookRequestSchema = Type.Object({ requestId: RequestIdSchema }, { additionalProperties: false });
+export type RestoreBookRequest = Static<typeof RestoreBookRequestSchema>;
 
 export const BookInsightViewSchema = Type.Object({
   kind: Type.Enum(BOOK_INSIGHT_KINDS),

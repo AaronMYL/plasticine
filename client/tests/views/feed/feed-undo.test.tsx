@@ -28,7 +28,7 @@ describe('信息流卡底：赞', () => {
     await renderApp({ hash: '#/feed', setup: seed });
     await settle();
     const names = within(card('端侧大模型')).getAllByRole('button').map((button) => button.getAttribute('aria-label'));
-    expect(names).toEqual(['赞', '收藏', '讨论', '不感兴趣']);
+    expect(names).toEqual(['点赞', '收藏', '讨论', '不感兴趣']);
     expect(within(card('端侧大模型')).getByRole('link', { name: '打开原文' })).toBeTruthy();
     expect(card('端侧大模型').querySelector('.feed-card-actions')?.textContent).toBe('');
   });
@@ -36,7 +36,7 @@ describe('信息流卡底：赞', () => {
   it('点「赞」按下、图标变实心，服务端记成 like；再点取消', async () => {
     const app = await renderApp({ hash: '#/feed', setup: seed });
     await settle();
-    const like = (): HTMLElement => within(card('端侧大模型')).getByRole('button', { name: '赞' });
+    const like = (): HTMLElement => within(card('端侧大模型')).getByRole('button', { name: '点赞' });
     expect(like().getAttribute('aria-pressed')).toBe('false');
     expect(like().querySelector('path')?.getAttribute('fill')).toBeNull();
     fireEvent.click(like());

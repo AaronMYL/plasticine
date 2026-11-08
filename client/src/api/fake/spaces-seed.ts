@@ -16,6 +16,8 @@ export interface SeedSpace {
   updatedAt: string;
   /** 每一版的正文，最后一个是现在的；带着「改了什么」和规则。 */
   revisions: { doc: SpaceDoc; change: string | null; rule: string | null }[];
+  /** 删掉的（在资料库「最近删除」里）。 */
+  deletedAt?: string | null;
 }
 
 export const RESEARCH_ID = 'sub_research';
@@ -98,6 +100,7 @@ export function spaceSeeds(now: Date): SeedSpace[] {
     plain('sp_bounty', '悬赏规则草稿', '## 验收\n\n接单的人交付后，发单人 48 小时内验收。', 50),
     plain('sp_visa', '马来西亚签证核查', 'DE Rantau 数字游民签证：年收入门槛 2.4 万美元。', 70),
     issue('sp_research_1', '研究周报 · 第 1 期', ISSUE_ONE, RESEARCH_ID, 1, null, 200),
+    { ...plain('sp_old_draft', '赏金来源的旧草稿', '先从朋友圈试三单。', 90), deletedAt: ago(now, 3) },
   ];
 }
 

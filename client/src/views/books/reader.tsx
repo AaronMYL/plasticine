@@ -1,8 +1,11 @@
-// 阅读页：一次一章，往下滚着读，章末「上一章 / 下一章」。打开时接着这台设备上次读到的地方；别的设备读得更靠后时
-// 顶上一条横幅问跳不跳。选中一段弹出菜单（引用到对话 · 四色高亮 · 批注 · 复制），点高亮改它；电脑上对话栏收起、
-// 主区够宽时批注和 Plasticine 标的重点排在页边，否则高亮后面一个小角标。进度停下 2 秒存一次、切走立刻存。
+// 阅读页：一次一章。默认左右翻页、一次一页（第 7 批第 3 条，翻页的手势和排版在 use-paged.ts / paginator.ts），
+// 翻过最后一页进下一章第一页、往回翻过第一页进上一章最后一页；「Aa」里能切回往下滚着读（章末「上一章 / 下一章」）。
+// 打开时接着这台设备上次读到的地方；别的设备读得更靠后时顶上一条横幅问跳不跳。选中一段弹出菜单（引用到对话 ·
+// 四色高亮 · 批注 · 复制），点高亮改它；滚动模式下主区够宽时批注和 Plasticine 标的重点排在页边，否则（和翻页时）
+// 高亮后面一个小角标。进度：翻页时翻完一页记一次，滚动时停下记；服务端停下 2 秒存一次、切走立刻存。
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties,
+  type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { useLive } from '../../live.tsx';
@@ -15,22 +18,27 @@ import { BookSheet, type SheetTab } from './book-sheet.tsx';
 import { bookPercent, minutesToRead, percentText } from './book-format.ts';
 import { buildBookQuote, openConversation } from './book-quote.ts';
 import { ChapterView, type FlashMark } from './chapter-view.tsx';
+import { MOTION, play } from '../../shell/motion.ts';
 import { currentDeviceLabel } from './device-label.ts';
-import { MarginNotes, type MarginItem } from './margin-notes.tsx';
+import { MarginNotes, marginItemsOf, type MarginItem } from './margin-notes.tsx';
+import { sizeColumns } from './page-surface.ts';
+import { PageZones } from './page-zones.tsx';
 import { PopoverLayer, type PopoverState } from './popover-layer.tsx';
 import { ProgressSaver } from './progress-saver.ts';
 import { OtherDeviceBanner, ReaderBar, type ReaderPanel } from './reader-bar.tsx';
 import { chapterDecorations, htmlText, keyPointMarks, sentenceEnd } from './reader-decorations.ts';
 import { ReaderFooter } from './reader-footer.tsx';
-import { loadKeyPointsShown, loadLocalPosition, loadTypography, saveKeyPointsShown, saveTypography,
-  typeMetrics, type Typography } from './reader-prefs.ts';
+import { loadKeyPointsShown, loadLocalPosition, loadReadingMode, loadTypography, saveKeyPointsShown,
+  saveReadingMode, saveTypography, typeMetrics, type ReadingMode, type Typography } from './reader-prefs.ts';
 import { otherDeviceAhead, startPosition } from './reading-position.ts';
-import { elementRects, offsetAtTop, rangeRects, rectIn, scrollToOffset } from './reading-scroll.ts';
+import { elementRects, offsetAtTop, rectIn, scrollToOffset } from './reading-scroll.ts';
 import { SearchSheet } from './search-sheet.tsx';
-import { selectionOffsets } from './text-offsets.ts';
+import { plainText } from './text-offsets.ts';
 import { TocSheet } from './toc-sheet.tsx';
 import { TypographyMenu } from './typography-menu.tsx';
 import { useAnnotations, useBook, useInsight } from './use-book-data.ts';
+import { usePaged } from './use-paged.ts';
+import { useSelectionPopover } from './use-selection-popover.ts';
 
 const HEADING_FIRST = /^<h[234]>/;
 
@@ -43,10 +51,13 @@ export interface ReaderProps {
 
 // 页边放批注要的主区宽度：正文 640 + 间隔 24 + 页边 168 + 两边留白，窄了就改用角标。
 const MARGIN_MIN_WIDTH = 920;
-// 选区停下多久再弹菜单：拖着选的时候不跟着闪。
-const SELECTION_SETTLE_MS = 200;
 // 跳过去之后那一段闪多久（和 CSS 的 bk-flash 动画一样长）。
 const FLASH_MS = 1_600;
+// 翻过章节头尾时新的一章从那一侧滑进来一点（翻页本身是平移整页，换章换的是正文，只做个方向感）。
+const CHAPTER_SLIDE = 24;
+
+/** 要放到眼前的位置：章内某一字，或这一章最后一页（往前翻进上一章）。 */
+type Target = number | 'end';
 
 interface Jump {
   chapter: number;
@@ -115,13 +126,21 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
   const [sheetTab, setSheetTab] = useState<SheetTab>('annotations');
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const [typography, setTypography] = useState<Typography>(() => loadTypography(phone));
+  const [mode, setMode] = useState<ReadingMode>(loadReadingMode);
+  const paged = mode === 'paged';
   const [keyPointsShown, setKeyPointsShown] = useState(() => loadKeyPointsShown(book.id));
   const [flash, setFlash] = useState<FlashMark | null>(null);
   const [root, setRoot] = useState<HTMLElement | null>(null);
   const [layoutKey, setLayoutKey] = useState(0);
   const [page, setPage] = useState<HTMLDivElement | null>(null);
-  const textBox = useRef<HTMLDivElement>(null);
-  const pending = useRef<number | null>(start.at.offset);
+  const [sheet, setSheet] = useState<HTMLDivElement | null>(null);
+  const [textBox, setTextBox] = useState<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLElement | null>(null);
+  /** 正文容器里现在放的是第几章（换章时新正文还没放好，别拿旧的那章去定位）。 */
+  const rootChapter = useRef<number | null>(null);
+  const pending = useRef<Target | null>(start.at.offset);
+  /** 翻过章节头尾换来的这一章：正文放好时从那一侧滑进来。 */
+  const edge = useRef<1 | -1 | null>(null);
   const flashTarget = useRef<Jump | null>(position === null ? null
     : { chapter: position.chapter, start: position.offset });
   const [jumpCount, setJumpCount] = useState(0);
@@ -173,8 +192,8 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
     annotations: annotationList, keyPoints: keyPoints.value, showKeyPoints: keyPointsShown }),
   [chapterIndex, chapterText, annotationList, keyPoints.value, keyPointsShown]);
   const pointMarks = useMemo(() => keyPointMarks(decorations.keyPoints), [decorations.keyPoints]);
-  // 设计稿 2026-11-03：对话是悬浮框，不再占阅读页的宽度；页边批注只看阅读页自己够不够宽。
-  const showMargins = !phone && pageWidth >= MARGIN_MIN_WIDTH;
+  // 设计稿 2026-11-03：对话是悬浮框，不再占阅读页的宽度；页边批注只看阅读页自己够不够宽。翻页时没有页边，用角标。
+  const showMargins = !phone && !paged && pageWidth >= MARGIN_MIN_WIDTH;
   const actions = useMemo(() => new AnnotationActions(api.books, book.id, annotations.reload),
     [api, book.id, annotations.reload]);
   const chapterTitle = book.toc[chapterIndex]?.title ?? chapter?.title ?? '';
@@ -185,42 +204,124 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
     saver.update({ chapter: chapterIndex, offset, percent: next });
   }, [book.toc, chapterIndex, saver]);
 
-  // 你自己滚的才量「读到哪」；程序滚过去（打开、跳转）的那一下直接记目标位置，短章滚不到也不会被记回开头。
+  // 你自己滚的、翻完的才量「读到哪」；程序放过去（打开、跳转）的那一下直接记目标位置，短章滚不到也不会被记回开头。
   // 打开时回到上次的位置只改显示、不存：别的设备读得更靠后时，没点「跳过去」之前不拿这台的旧位置去盖它。
   const programmatic = useRef(false);
   const restoring = useRef(true);
-  const scrollTo = useCallback((container: HTMLElement, offset: number): void => {
-    if (page === null) {
-      return;
+  const paging = usePaged({
+    enabled: paged, stage: page, sheet, text: textBox, root: rootRef,
+    busy: () => panel !== null || popover !== null,
+    onTurnStart: () => setPopover(null),
+    onTurned: (offset) => save(offset),
+    onEdge: (direction) => {
+      const next = chapterIndex + direction;
+      if (next < 0 || next >= book.toc.length) {
+        return;
+      }
+      edge.current = direction;
+      pending.current = direction === 1 ? 0 : 'end';
+      setPopover(null);
+      setChapter(chapters.peek(book.id, next));
+      setChapterIndex(next);
+    },
+  });
+  const { paginator } = paging;
+
+  /** 把某一处放到眼前：翻页时翻到它所在的那一页，滚动时滚到它；然后记进度（打开那一下只改百分比）。 */
+  const place = useCallback((container: HTMLElement, target: Target): void => {
+    let offset: number;
+    if (paged) {
+      if (paginator === null || sheet === null || textBox === null) {
+        return;
+      }
+      sizeColumns(sheet, textBox);
+      offset = paginator.showOffset(target);
+    } else {
+      if (page === null) {
+        return;
+      }
+      offset = target === 'end' ? plainText(container).length : target;
+      programmatic.current = true;
+      if (target === 'end') {
+        page.scrollTop = page.scrollHeight;
+      } else {
+        scrollToOffset(container, page, offset);
+      }
+      requestAnimationFrame(() => {
+        programmatic.current = false;
+      });
     }
-    programmatic.current = true;
-    scrollToOffset(container, page, offset);
-    requestAnimationFrame(() => {
-      programmatic.current = false;
-    });
     if (restoring.current) {
       restoring.current = false;
       setPercent(bookPercent(book.toc, chapterIndex, offset));
     } else {
       save(offset);
     }
-  }, [page, save, book.toc, chapterIndex]);
+  }, [paged, paginator, sheet, textBox, page, save, book.toc, chapterIndex]);
+  const placeRef = useRef(place);
+  placeRef.current = place;
 
   const onScroll = (): void => {
-    if (root === null || page === null || programmatic.current) {
+    if (paged || root === null || page === null || programmatic.current) {
       return;
     }
     save(offsetAtTop(root, page));
   };
 
   const onRendered = useCallback((container: HTMLElement): void => {
+    rootRef.current = container;
+    rootChapter.current = chapterIndex;
     setRoot(container);
     setLayoutKey((count) => count + 1);
-    if (pending.current !== null) {
-      scrollTo(container, pending.current);
+    const target = pending.current;
+    if (target !== null && (!paged || paginator !== null)) {
       pending.current = null;
+      place(container, target);
+    } else if (paged && paginator !== null && sheet !== null && textBox !== null) {
+      sizeColumns(sheet, textBox);
+      paginator.relayout();
     }
-  }, [scrollTo]);
+    const from = edge.current;
+    edge.current = null;
+    if (from !== null) {
+      play(textBox, [{ opacity: 0, transform: `translateX(${from * CHAPTER_SLIDE}px)` },
+        { opacity: 1, transform: 'translateX(0)' }], MOTION.base);
+    }
+  }, [place, paged, paginator, sheet, textBox, chapterIndex]);
+
+  // 翻页的容器（ref）比正文晚一步到、换了阅读方式：还没放的那一处这时放上（只认正文是这一章的时候）。
+  useLayoutEffect(() => {
+    const container = rootRef.current;
+    const target = pending.current;
+    const ready = container !== null && rootChapter.current === chapterIndex && (!paged || paginator !== null);
+    if (!ready || target === null) {
+      return;
+    }
+    pending.current = null;
+    placeRef.current(container, target);
+  }, [paged, paginator, chapterIndex]);
+
+  // 改了字号行距：重新排版，回到锚点那一页（滚动模式照旧不动）。
+  useLayoutEffect(() => {
+    if (paged && paginator !== null && sheet !== null && textBox !== null && rootRef.current !== null) {
+      sizeColumns(sheet, textBox);
+      paginator.relayout();
+    }
+  }, [typography, paged, paginator, sheet, textBox]);
+
+  // 插图到了会把后面的字往后推：重新排版回到锚点。
+  useEffect(() => {
+    if (!paged || root === null || paginator === null) {
+      return undefined;
+    }
+    const relayout = (event: Event): void => {
+      if (event.target instanceof HTMLImageElement) {
+        paginator.relayout();
+      }
+    };
+    root.addEventListener('load', relayout, true);
+    return () => root.removeEventListener('load', relayout, true);
+  }, [paged, root, paginator]);
 
   const jumpTo = useCallback((jump: Jump): void => {
     setPanel(null);
@@ -231,14 +332,14 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
       setChapter(chapters.peek(book.id, jump.chapter));
       setChapterIndex(jump.chapter);
     } else if (root !== null) {
-      scrollTo(root, jump.start);
       pending.current = null;
+      place(root, jump.start);
     }
     if (jump.start > 0 || jump.end !== undefined) {
       flashTarget.current = jump;
       setJumpCount((count) => count + 1);
     }
-  }, [chapterIndex, root, scrollTo, chapters, book.id]);
+  }, [chapterIndex, root, place, chapters, book.id]);
 
   // 跳到的那一段闪一下：要等那一章的正文到了才知道这句话到哪结束。
   useEffect(() => {
@@ -259,31 +360,10 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
     return () => clearTimeout(timer);
   }, [flash]);
 
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const onSelection = (): void => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        const selection = document.getSelection();
-        const box = textBox.current;
-        if (root === null || box === null || selection === null || selection.rangeCount === 0
-          || selection.isCollapsed) {
-          return;
-        }
-        const range = selection.getRangeAt(0);
-        const offsets = root.contains(range.commonAncestorContainer) ? selectionOffsets(root, range) : null;
-        if (offsets !== null) {
-          setPopover((current) => current?.kind === 'note' ? current
-            : { kind: 'selection', ...offsets, rect: rectIn(box, rangeRects(range)) });
-        }
-      }, SELECTION_SETTLE_MS);
-    };
-    document.addEventListener('selectionchange', onSelection);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('selectionchange', onSelection);
-    };
-  }, [root]);
+  // 弹出菜单量位置、放进去的那一层：滚动时是正文框（跟着正文滚），翻页时是阅读区（多栏容器会跟着翻页挪走）。
+  const overlay = useRef<HTMLElement | null>(null);
+  overlay.current = paged ? page : textBox;
+  useSelectionPopover(root, overlay, setPopover);
 
   const quoteRange = (from: number, to: number, chapterAt = chapterIndex, text = chapterText.slice(from, to)): void => {
     try {
@@ -304,7 +384,26 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
     }
   };
   const openAt = (element: HTMLElement): { top: number; bottom: number; left: number } =>
-    textBox.current === null ? { top: 0, bottom: 0, left: 0 } : rectIn(textBox.current, elementRects(element));
+    overlay.current === null ? { top: 0, bottom: 0, left: 0 } : rectIn(overlay.current, elementRects(element));
+  const changeMode = (next: ReadingMode): void => {
+    if (next === mode) {
+      return;
+    }
+    // 换阅读方式前记下现在读到哪，换过去还在这一处。
+    const container = rootRef.current;
+    if (container !== null) {
+      pending.current = paged ? paginator?.anchor ?? 0 : page === null ? 0 : offsetAtTop(container, page);
+    }
+    if (page !== null) {
+      page.scrollTop = 0;
+    }
+    if (sheet !== null) {
+      sheet.scrollLeft = 0;
+    }
+    setPopover(null);
+    setMode(next);
+    saveReadingMode(next);
+  };
   const changeTypography = (next: Typography): void => {
     setTypography(next);
     saveTypography(next);
@@ -319,48 +418,37 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
     }
     setPanel((current) => (current === next && next === 'type' ? null : next));
   };
-  const marginItems = useMemo((): MarginItem[] => {
-    if (!showMargins) {
-      return [];
-    }
-    const notes = decorations.highlights.flatMap((mark) => {
-      const note = annotationList.find((item) => item.id === mark.id)?.note;
-      return note == null ? [] : [{ key: `n:${mark.id}`, kind: 'note' as const, title: '批注', text: note,
-        selector: `[data-annotation-id="${mark.id}"]` }];
-    });
-    const seen = new Set<string>();
-    const points = decorations.keyPoints.flatMap((point) => {
-      if (seen.has(point.pointId)) {
-        return [];
-      }
-      seen.add(point.pointId);
-      return [{ key: `p:${point.pointId}`, kind: 'point' as const, title: 'Plasticine 标的重点', text: point.text,
-        selector: `[data-key-point="${point.pointId}"]`,
-        onAccept: () => void actions.accept(point.pointId, point, chapterText, deviceLabel)
-          .catch((cause: unknown) => setChapterError(errorText(cause))),
-        onDismiss: () => void actions.dismiss(point.pointId).then(keyPoints.reload,
-          (cause: unknown) => setChapterError(errorText(cause))) }];
-    });
-    return [...notes, ...points];
-  }, [showMargins, decorations, annotationList, actions, chapterText, deviceLabel, keyPoints.reload]);
+  const marginItems = useMemo((): MarginItem[] => (!showMargins ? [] : marginItemsOf({
+    highlights: decorations.highlights, keyPoints: decorations.keyPoints, annotations: annotationList,
+    onAccept: (point) => void actions.accept(point.pointId, point, chapterText, deviceLabel)
+      .catch((cause: unknown) => setChapterError(errorText(cause))),
+    onDismiss: (point) => void actions.dismiss(point.pointId).then(keyPoints.reload,
+      (cause: unknown) => setChapterError(errorText(cause))),
+  })), [showMargins, decorations, annotationList, actions, chapterText, deviceLabel, keyPoints.reload]);
   const metrics = typeMetrics(typography);
   // 「Aa」改的字号行距走两个阅读令牌（tokens.css 的 --read-size / --read-leading，reader.css 的 .bk-content 用它们）。
   const typeStyle = { '--read-size': `${metrics.fontSize}px`,
     '--read-leading': `${metrics.lineHeight}px` } as CSSProperties;
   const bannerChapter = banner === null ? '' : book.toc[banner.chapter]?.title ?? '';
+  const popoverLayer = popover === null || chapter === null ? null : (
+    <PopoverLayer key={`${popover.kind}:${JSON.stringify(popover.rect)}`} popover={popover}
+      chapter={chapterIndex} chapterText={chapterText} deviceLabel={deviceLabel} annotations={annotationList}
+      keyPoints={decorations.keyPoints} actions={actions} onChange={setPopover} onQuote={quoteRange}
+      onDone={() => document.getSelection()?.removeAllRanges()} onDismissed={keyPoints.reload} />
+  );
 
   return (
     <div className={phone ? 'bk-reader bk-phone-reader' : 'bk-reader'} data-margins={showMargins}>
       <ReaderBar title={book.title} author={book.author} chapterTitle={chapterTitle} phone={phone}
         annotationCount={annotations.value?.length ?? book.annotationCount}
         onBack={() => navigate({ view: 'books', noteId: null })} onOpen={openPanel} />
-      {panel === 'type' ? <TypographyMenu value={typography} onChange={changeTypography}
-        onClose={() => setPanel(null)} /> : null}
+      {panel === 'type' ? <TypographyMenu value={typography} mode={mode} onChange={changeTypography}
+        onMode={changeMode} onClose={() => setPanel(null)} /> : null}
       {banner === null ? null : <OtherDeviceBanner progress={banner} chapterTitle={bannerChapter} now={new Date()}
         onStay={() => setBanner(null)} onJump={() => jumpTo({ chapter: banner.chapter, start: banner.offset })} />}
-      <div ref={setPage} className="bk-page" onScroll={onScroll}>
-        <div ref={textBox} className="bk-text"
-          style={typeStyle}>
+      <div ref={setPage} className="bk-page" data-mode={mode} onScroll={onScroll}>
+        <div ref={setSheet} className="bk-sheet">
+        <div ref={setTextBox} className="bk-text" style={typeStyle}>
           {/* 章节正文多半自带标题（EPUB 的 h1、TXT 的章名行），这时不再另画一个，免得标题出现两次。 */}
           {chapter !== null && HEADING_FIRST.test(chapter.html) ? null
             : <h2 className="bk-chapter-title">{chapterTitle}</h2>}
@@ -375,25 +463,22 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
               onHighlight={(id, element) => setPopover({ kind: 'highlight', annotationId: id, rect: openAt(element) })}
               onKeyPoint={(pointId, element) => setPopover({ kind: 'key-point', pointId, rect: openAt(element) })} />
           )}
-          {popover === null || chapter === null ? null : (
-            <PopoverLayer key={`${popover.kind}:${JSON.stringify(popover.rect)}`} popover={popover}
-              chapter={chapterIndex} chapterText={chapterText} deviceLabel={deviceLabel} annotations={annotationList}
-              keyPoints={decorations.keyPoints} actions={actions} onChange={setPopover} onQuote={quoteRange}
-              onDone={() => document.getSelection()?.removeAllRanges()} onDismissed={keyPoints.reload} />
-          )}
+          {paged ? null : popoverLayer}
           <MarginNotes items={marginItems} root={root} layoutKey={layoutKey} />
-          <nav className="bk-chapter-nav" aria-label="翻章">
+          {paged ? null : <nav className="bk-chapter-nav" aria-label="翻章">
             {chapterIndex > 0 ? <button type="button" className="chip-button"
               onClick={() => jumpTo({ chapter: chapterIndex - 1, start: 0 })}>
               ‹ 上一章 · {book.toc[chapterIndex - 1]?.title}</button> : <span />}
             {chapterIndex < book.toc.length - 1 ? <button type="button" className="chip-button"
               onClick={() => jumpTo({ chapter: chapterIndex + 1, start: 0 })}>
               下一章 · {book.toc[chapterIndex + 1]?.title} ›</button> : <span className="text-meta">全书完</span>}
-          </nav>
+          </nav>}
         </div>
+        </div>
+        {paged ? popoverLayer : null}
+        {paged ? <PageZones hover={paging.hover} onTurn={paging.turn} /> : null}
       </div>
-      <ReaderFooter chapterTitle={chapterTitle} percent={percent} sync={sync} phone={phone}
-        markedCount={keyPointsShown ? decorations.keyPoints.length : null} />
+      <ReaderFooter percent={percent} sync={sync} />
       <TocSheet open={panel === 'toc'} phone={phone} title={book.title} toc={book.toc} current={chapterIndex}
         onClose={() => setPanel(null)} onPick={(index) => jumpTo({ chapter: index, start: 0 })} />
       <SearchSheet open={panel === 'search'} phone={phone} bookId={book.id} title={book.title}

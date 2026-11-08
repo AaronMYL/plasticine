@@ -89,7 +89,7 @@ export function WebStrip(props: WebStripProps): ReactNode {
   const shownGroup = opened === null ? undefined : state.groups.find((group) => group.id === opened.id);
   return (
     <div ref={root} className="web-strip" data-dragging={drag.dragging !== null}>
-      <div className="web-strip-head" data-titlebar="">
+      <div className="web-strip-head">
         <ColumnExpandButton className="web-strip-tile" tipSide="right" />
       </div>
       <IconButton icon="search" label="搜标签" title="搜标签 ⌘K" className="web-strip-tile" data-tip-side="right"

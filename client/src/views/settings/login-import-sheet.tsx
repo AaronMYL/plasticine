@@ -118,7 +118,7 @@ export function LoginImportSheet({ logins, open, onClose, onImported }: {
           </p>
         ) : null}
         <div className="login-import-actions">
-          <button type="button" className="text-button" onClick={onClose}>{phase.kind === 'done' ? '好' : '先不'}</button>
+          <button type="button" className="text-button" onClick={onClose}>{phase.kind === 'done' ? '好的' : '先不'}</button>
           {phase.kind === 'done' ? null : (
             <button type="button" className="primary-button"
               disabled={phase.kind === 'busy' || chosen?.available !== true} onClick={start}>

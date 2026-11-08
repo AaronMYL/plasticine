@@ -1,4 +1,5 @@
 import { Fragment, useMemo, type ReactNode } from 'react';
+import { inAppHash } from '../../shell/internal-page.ts';
 import { cjkMarked } from './cjk-marked.ts';
 import './markdown.css';
 
@@ -70,7 +71,8 @@ function renderToken(token: Token): ReactNode {
         ? <ol start={typeof token.start === 'number' ? token.start : 1}>{items}</ol> : <ul>{items}</ul>;
     }
     case 'link': {
-      const href = String(token.href);
+      // 指向本实例或旧 IP 的 #/ 地址：换成站内地址，站内打开（第 7 批第 14 条）。
+      const href = inAppHash(String(token.href)) ?? String(token.href);
       return /^(https?:|mailto:|#\/|\/)/i.test(href)
         ? <a href={href} title={token.title ?? undefined} target={href.startsWith('http') ? '_blank' : undefined}
           rel="noreferrer">{children()}</a> : children();

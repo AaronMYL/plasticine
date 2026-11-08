@@ -3,10 +3,10 @@
 // 说明不再进 ⋯：必要的常显，补充的用 ⓘ（info-tip.tsx）。
 // 一列里有的行有次要操作、有的没有：没有的那行留一个同宽、读屏看不见的占位，⋯ 列对齐，不时有时无地错位。
 
-import { useRef, useState, type ReactNode } from 'react';
+import { Fragment, useRef, useState, type ReactNode } from 'react';
 import { IconButton } from './icon-button.tsx';
 import type { IconName } from './icons.tsx';
-import { anchorOf, MenuItem, Popover, type PopoverAnchor } from './popover.tsx';
+import { anchorOf, MenuItem, MenuSeparator, Popover, type PopoverAnchor } from './popover.tsx';
 
 export interface RevealAction {
   icon: IconName;
@@ -15,6 +15,8 @@ export interface RevealAction {
   onSelect: (anchor: PopoverAnchor) => void;
   disabled?: boolean | undefined;
   title?: string | undefined;
+  /** 删除：上面一道分隔线，字用 --err（设计稿 Library-Menu）。 */
+  danger?: boolean | undefined;
 }
 
 export interface RevealMoreProps {
@@ -45,12 +47,16 @@ export function RevealMore({ label, actions = [] }: RevealMoreProps): ReactNode 
         aria-haspopup="menu" aria-expanded={menu !== null} onClick={click} />
       {menu === null ? null : (
         <Popover anchor={menu} label={label} role="menu" align="end" trigger={button} onClose={close}>
-          {actions.map((action) => (
-            <MenuItem key={action.label} icon={action.icon} label={action.label} disabled={action.disabled === true}
-              {...(action.title === undefined ? {} : { title: action.title })} onSelect={() => {
-                close();
-                action.onSelect(menu);
-              }} />
+          {actions.map((action, index) => (
+            <Fragment key={action.label}>
+              {action.danger === true && index > 0 ? <MenuSeparator /> : null}
+              <MenuItem icon={action.icon} label={action.label} disabled={action.disabled === true}
+                danger={action.danger} {...(action.title === undefined ? {} : { title: action.title })}
+                onSelect={() => {
+                  close();
+                  action.onSelect(menu);
+                }} />
+            </Fragment>
           ))}
         </Popover>
       )}

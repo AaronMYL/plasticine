@@ -4,6 +4,8 @@ import { createHash } from 'node:crypto';
 import {
   BOOK_UPLOAD_MAX_BYTES,
   DeleteBookRequestSchema,
+  RenameBookRequestSchema,
+  RestoreBookRequestSchema,
   SaveBookProgressRequestSchema,
   UploadBookRequestSchema,
   type BookChapterResponse,
@@ -80,7 +82,7 @@ export async function uploadBook(context: RequestContext): Promise<Reply> {
       }
       throw error;
     }
-    if (!imported.duplicate) {
+    if (!imported.duplicate || imported.restored) {
       publishBook(context, imported.book.id, 'book');
     }
     const reply: UploadBookResponse = { book: bookView(state, imported.book), duplicate: imported.duplicate };
@@ -98,6 +100,39 @@ export async function deleteBook(context: RequestContext): Promise<Reply> {
     state.books.update(book.id, book.version, { deletedAt: now().toISOString() });
     publishBook(context, book.id, 'book');
     return { status: 200, body: { deleted: true } };
+  });
+}
+
+/** PATCH /v2/books/:id：改书名（图书馆每本的 ⋯ · 改名）。 */
+export async function renameBook(context: RequestContext): Promise<Reply> {
+  requireAuth(context);
+  const body = checkInput(RenameBookRequestSchema, await readJsonBody(context.req), '改书名');
+  const { state } = context.deps;
+  const book = liveBook(state, param(context, 'id'));
+  const title = body.title.trim();
+  if (title === '') {
+    throw new ApiError(400, 'invalid_request', '书名不能是空的。', { field: 'title' });
+  }
+  return idempotent(context, body.requestId, () => {
+    const renamed = state.books.update(book.id, book.version, { title });
+    publishBook(context, book.id, 'book');
+    return { status: 200, body: bookView(state, renamed) };
+  });
+}
+
+/** POST /v2/books/:id/restore：从「最近删除」还原；本来就在图书馆里的原样回。 */
+export async function restoreBook(context: RequestContext): Promise<Reply> {
+  requireAuth(context);
+  const body = checkInput(RestoreBookRequestSchema, await readJsonBody(context.req), '还原书');
+  const { state } = context.deps;
+  const book = state.books.get(param(context, 'id'));
+  if (book === undefined) {
+    throw notFoundError('这本书');
+  }
+  return idempotent(context, body.requestId, () => {
+    const restored = book.deletedAt === null ? book : state.books.update(book.id, book.version, { deletedAt: null });
+    publishBook(context, book.id, 'book');
+    return { status: 200, body: bookView(state, restored) };
   });
 }
 

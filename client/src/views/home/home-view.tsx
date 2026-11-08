@@ -1,4 +1,4 @@
-// 首页「现在」（2026-11-05 设计稿 Home / Phone-Home）。从上到下：
+// 首页（2026-11-05 设计稿 Home / Phone-Home）。从上到下：
 //   日期问候一行   「11月5日 星期四  晚上好，Alex」（名字取网络显示名，取不到不带），没有副标题；
 //   等你 n         开着的要你定卡，一行一件（home-now.tsx）；
 //   在做           在跑的后台线，一行一条实时状态，能叫停（home-now.tsx）；
@@ -31,7 +31,9 @@ function Greeting({ now, phone }: { now: Date; phone: boolean }): ReactNode {
   const openPanel = useOpenPanel();
   const timeZone = useTimeZone();
   useEffect(() => live.network.status.open(), [live.network.status]);
-  const name = useStore(live.network.status.data).value?.account?.displayName ?? null;
+  const account = useStore(live.network.status.data).value?.account ?? null;
+  const name = account?.displayName ?? null;
+  const avatar = account?.avatar ?? null;
   const { date, hello } = greetingOf(now, name, timeZone);
   if (!phone) {
     return (
@@ -46,7 +48,10 @@ function Greeting({ now, phone }: { now: Date; phone: boolean }): ReactNode {
       <div className="home-greeting-tools">
         <IconButton icon="search" label="查找内容" size={18} onClick={() => openPanel({ kind: 'search' })} />
         <button type="button" className="avatar home-avatar" aria-label={`设置 · ${name ?? DEFAULT_ACCOUNT_NAME}`}
-          onClick={() => openPanel({ kind: 'settings' })}>{accountInitial(name ?? DEFAULT_ACCOUNT_NAME)}</button>
+          onClick={() => openPanel({ kind: 'settings' })}>
+          {avatar === null ? accountInitial(name ?? DEFAULT_ACCOUNT_NAME)
+            : <img className="avatar-image" src={avatar} alt="" aria-hidden="true" />}
+        </button>
       </div>
     </header>
   );

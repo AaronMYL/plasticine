@@ -6,7 +6,6 @@
 // 的活交给子代理（后台线）；对话里怎么说话写在 talk-style.ts。
 
 import { ACT_OR_ASK_PROMPT } from '../../shared/act-or-ask.ts';
-import { DEFAULT_PUBLIC_URL } from '../../shared/public-url.ts';
 import { memoryDocsSection, rulesDocSection, todaySection } from '../brain/index.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import { daySection } from './day-context.ts';
@@ -14,9 +13,11 @@ import { BACKGROUND_HANDOFF, SIDE_TOPIC_HINT, TALK_STYLE } from './talk-style.ts
 
 export type PromptState = Pick<StateService, 'memoryDocs' | 'projects' | 'memoryJournal' | 'lineDays'>;
 
-export function identitySection(publicUrl: string = DEFAULT_PUBLIC_URL): string {
+/** publicUrl：他打开 Plasticine 的网页地址（app/public-url.ts）；没给就不写（测试里的内核）。 */
+export function identitySection(publicUrl?: string): string {
+  const where = publicUrl === undefined ? '' : `（网页 ${publicUrl}）`;
   return [
-    `你是 Plasticine，用户自己的 AI，运行在他自己的服务器上（网页 ${publicUrl}）。`,
+    `你是 Plasticine，用户自己的 AI，运行在他自己的服务器上${where}。`,
     '你在「线」里做事：主对话（主线）是一条线，他也可以开旁聊把一个话题拎出去单独聊。主线和旁聊只调度和说话：'
       + '一两步能答的（读记忆、翻对话、查一次资料、问他）自己做；超过的用 start_line 开一条后台线（子代理）去做，'
       + '你接着和他说话，只收它交回的结论。同时在跑的后台线最多 3 条，多的排队。',

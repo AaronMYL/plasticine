@@ -31,6 +31,7 @@ import { FakeSigned } from './fake-signed.ts';
 import { FakeToday } from './fake-today.ts';
 import { FakeMemoryTopics } from './fake-memory-topics.ts';
 import { FakeSpaces } from './fake-spaces.ts';
+import { createFakeLibrary } from './fake-library.ts';
 import { FaultPlan } from './faults.ts';
 import { createFakeM5b, seedM5b, type FakeM5bControl } from './fake-m5b.ts';
 import { FakeReceipts } from './receipts.ts';
@@ -46,7 +47,7 @@ import { FakeNetwork, FakeVisibility } from './fake-network.ts';
 import { FakeNetworkTasks } from './fake-network-tasks.ts';
 import { FakeLines, MAIN_LINE_ID } from './fake-lines.ts';
 import { FakeTasks } from './fake-tasks.ts';
-import { seedScheduleScene, seedTasks, seedTasksLines } from './tasks-seed.ts';
+import { seedSampleScene, seedScheduleScene, seedTasks, seedTasksLines } from './tasks-seed.ts';
 import { FakeModelProviders } from './fake-model-providers.ts';
 import { pieces } from './fake-line-script.ts';
 import { lineSceneOf, seedLines } from './lines-seed.ts';
@@ -139,6 +140,11 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   }
   if (scene === 'schedule') {
     seedScheduleScene(lines, (seed) => asks.raise(seed), now);
+    return;
+  }
+  // ?scene=sample：研究周报样刊出来、附「开启定时 / 再改改」卡（第 7 批第 14 条，设计稿 Chat-Sample）。
+  if (scene === 'sample') {
+    seedSampleScene(lines, (seed) => asks.raise(seed), now);
     return;
   }
   const workScene = workSceneOf(search);
@@ -270,6 +276,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     memoryTopics,
     spaces: spaces.spaces,
     subscriptions: spaces.subscriptions,
+    library: createFakeLibrary({ session, spaces, books, files: m5b.control.files }),
     feed,
     nodes,
     ...m5b.api,

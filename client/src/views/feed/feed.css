@@ -337,14 +337,19 @@
 .feed-filter {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 16px 16px 24px;
+  align-items: stretch;
+  padding: 8px 0 24px;
 }
 
-.feed-filter .feed-segments {
-  max-width: 100%;
-  overflow-x: auto;
+/* 手机的筛选抽屉（第 7 批第 10 条）：和电脑第二栏同一份来源列表，行占满宽；底下「加来源」。 */
+.feed-filter > .column-item {
+  margin: 0 8px;
+  padding-right: 44px;
+}
+
+.feed-filter-add {
+  align-self: flex-start;
+  margin: 16px 16px 0;
 }
 
 /*

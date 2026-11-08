@@ -6,13 +6,13 @@ import { TRANSLATE_SETTINGS_CHANGED } from '../../../src/shell/web-translate-con
 async function openSection() {
   const app = await renderApp({ hash: '#/device' });
   fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
-  fireEvent.click(within(await screen.findByRole('dialog', { name: '设置' })).getByRole('button', { name: '浏览器与信息流' }));
+  fireEvent.click(within(await screen.findByRole('dialog', { name: '设置' })).getByRole('button', { name: '浏览器' }));
   const section = await screen.findByRole('region', { name: '网页翻译' });
   await within(section).findByRole('combobox', { name: '翻译成' });
   return { app, section };
 }
 
-describe('设置 · 浏览器与信息流 · 网页翻译', () => {
+describe('设置 · 浏览器 · 网页翻译', () => {
   it('模型集中在 AI 设置，翻译成中文、双语对照、用词表开着，总是翻译的网站一个一个列出来', async () => {
     const { section } = await openSection();
     expect(within(section).queryByRole('combobox', { name: '翻译模型' })).toBeNull();

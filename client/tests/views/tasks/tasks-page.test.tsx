@@ -3,7 +3,7 @@
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { seedScheduleScene, seedTasks } from '../../../src/api/fake/tasks-seed.ts';
+import { ideasSeed, seedScheduleScene, seedTasks, teammatesSeed, timedSeed } from '../../../src/api/fake/tasks-seed.ts';
 import { NOW, renderApp } from '../../helpers.tsx';
 
 describe('任务栏目', () => {
@@ -34,6 +34,21 @@ describe('任务栏目', () => {
     expect(within(sheet).getByText('每晚整理记忆')).toBeTruthy();
     expect(within(sheet).getByText('整理了 11 条')).toBeTruthy();
     expect(within(sheet).getByRole('switch', { name: '做梦：开着' })).toBeTruthy();
+  });
+
+  it('定时弹层里点「看这条线做了什么」：先收起定时这一层再开工作详情，关一次就回到列表', async () => {
+    await renderApp({ hash: '#/tasks/timed', setup: ({ control }) => {
+      const timed = timedSeed(NOW).map((row) => (row.id === 'dream' ? { ...row, lineId: 'line-dream' } : row));
+      control.tasks.seed({ timed, teammates: teammatesSeed(), ideas: ideasSeed(NOW) });
+      control.lines.put(control.lines.blank('line-dream', 'background', '整理记忆', { status: 'idle',
+        outcome: 'done' }));
+    } });
+    fireEvent.click(await screen.findByRole('button', { name: '打开：做梦' }));
+    const sheet = await screen.findByRole('dialog', { name: '做梦' });
+    fireEvent.click(within(sheet).getByRole('button', { name: '看这条线做了什么' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '做梦' })).toBeNull());
+    await waitFor(() => expect(window.location.hash).toContain('line-dream'));
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
   });
 
   it('建议：开始做开一条线；加成待办、忽略都收起来', async () => {

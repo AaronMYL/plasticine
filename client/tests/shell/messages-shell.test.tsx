@@ -24,18 +24,18 @@ function phoneBar(): HTMLElement | null {
 }
 
 describe('手机 · 底栏与消息的几页', () => {
-  it('底栏是 现在 · Plasticine · 消息 · 笔记 · 更多；「更多」是底部抽屉：任务、信息流、图书、空间和设置', async () => {
+  it('底栏是 首页 · Plasticine · 消息 · 笔记 · 更多；「更多」是底部抽屉：任务、信息流、图书、资料库和设置', async () => {
     await renderApp({ hash: '#/today', width: 390, setup: seed });
     await settle();
     const bar = screen.getByRole('navigation', { name: '主导航' });
     expect(within(bar).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['现在', 'Plasticine', '消息', '笔记', '更多']);
+      .toEqual(['首页', 'Plasticine', '消息', '笔记', '更多']);
     fireEvent.click(within(bar).getByRole('button', { name: '更多' }));
     const drawer = await screen.findByRole('dialog', { name: '更多' });
     expect(within(drawer).getAllByRole('button').map((button) => button.textContent).filter((text) => text !== ''))
-      .toEqual(['任务', '信息流', '图书', '空间', '设置']);
-    fireEvent.click(within(drawer).getByRole('button', { name: '空间' }));
-    await waitFor(() => expect(window.location.hash).toBe('#/books/space'));
+      .toEqual(['任务', '信息流', '图书', '资料库', '设置']);
+    fireEvent.click(within(drawer).getByRole('button', { name: '资料库' }));
+    await waitFor(() => expect(window.location.hash).toBe('#/library'));
     expect(within(bar).getByRole('button', { name: '更多' }).getAttribute('aria-current')).toBe('page');
   });
 

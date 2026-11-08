@@ -7,28 +7,22 @@
 import { join } from 'node:path';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import { openState, type StateService } from '../state/index.ts';
-import { DEFAULT_RELAY_URL, effectiveRelayUrl } from '../network/index.ts';
 import { DATABASE_FILE, DEFAULT_PORT } from './config.ts';
 import { issueSetupToken } from './setup-link.ts';
+import { configuredPublicUrl, handlePublicUrl } from './public-url.ts';
 
 function setupPath(token: string): string {
   return `/#/setup?t=${encodeURIComponent(token)}`;
 }
 
-/** 对外能打开的那个地址：配了 PLASTICINE_PUBLIC_URL 用它；不然有 @账号就用 <handle>.<中继主域名>。 */
+/** 对外能打开的那个地址：配了 PLASTICINE_PUBLIC_URL 用它；不然有 @账号就用它的网址（app/public-url.ts）。 */
 function networkBase(state: StateService, env: NodeJS.ProcessEnv): string | null {
-  const configured = env['PLASTICINE_PUBLIC_URL'];
-  if (configured !== undefined && configured !== '') {
+  const configured = configuredPublicUrl(env);
+  if (configured !== null) {
     return new URL(configured).origin;
   }
   const identity = state.networkIdentity.get();
-  if (identity === undefined) {
-    return null;
-  }
-  const relay = new URL(effectiveRelayUrl(identity.relayUrl, env['PLASTICINE_NETWORK_URL'] ?? DEFAULT_RELAY_URL));
-  const host = ['127.0.0.1', 'localhost', '[::1]'].includes(relay.hostname) ? new URL(DEFAULT_RELAY_URL).hostname
-    : relay.hostname;
-  return `https://${identity.handle}.${host}`;
+  return identity === undefined ? null : handlePublicUrl(identity.handle, identity.relayUrl, env);
 }
 
 function main(): number {

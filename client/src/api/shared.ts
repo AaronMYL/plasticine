@@ -3,6 +3,8 @@
 
 export * from '../../../agent/shared/api/index.ts';
 export { internalPageHash } from '../../../agent/shared/internal-page.ts';
+export { LEGACY_PUBLIC_URLS } from '../../../agent/shared/public-url.ts';
+export * from '../../../agent/shared/reddit.ts';
 export { replyExcerpt, replyMarker, splitReply, type LineReply } from '../../../agent/shared/line-reply.ts';
 export {
   FEED_LONG_TEXT_CHARS,

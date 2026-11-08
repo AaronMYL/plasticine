@@ -1,13 +1,14 @@
 // 界面（Plasticine 本站网页）的 preload：contextIsolation + sandbox，只经 contextBridge 暴露那一份接口
-// （agent/shared/api/desktop-bridge.ts 的 PlasticineDesktopBridge，挂在 window.plasticineDesktop）。另外两件只能在这里做的事：
-// - 顶栏拖动区：界面报 titlebar 布局，这里在页面最上层放一层不接鼠标的 -webkit-app-region 区域（顶栏可拖、按钮不拖）。
-// - 网页标签垫在界面下面时（tab-layering.ts），落在网页标签那一块、不在浮层里的鼠标事件截下来转给主进程。
+// （agent/shared/api/desktop-bridge.ts 的 PlasticineDesktopBridge，挂在 window.plasticineDesktop）。另外一件只能在这里做的事：
+// 网页标签垫在界面下面时（tab-layering.ts），落在网页标签那一块、不在浮层里的鼠标事件截下来转给主进程。
+// 拖窗口不经这里（11-08 起）：界面自己画最上面那条标题栏，标 -webkit-app-region: drag，按钮 no-drag；以前那层盖在
+// 内容上、看不见的 44px 拖动区删了，windowChrome 也不再有 titlebar()（那是 Swift Mac App 才要的）。
 
 import { contextBridge, ipcRenderer } from 'electron';
 import type { DevicePairRequest, DesktopPermission, PlasticineDesktopExternal, PlasticineDesktopServer,
   ServerChoice } from '../../../agent/shared/api/desktop-bridge.ts';
 import type { LoginImportRequest } from '../../../agent/shared/api/mac-logins.ts';
-import type { TitlebarLayout, WebTabCommand, WebTabsSync } from '../../../agent/shared/api/mac-bridge.ts';
+import type { WebTabCommand, WebTabsSync } from '../../../agent/shared/api/mac-bridge.ts';
 import type { TranslateDelivery, TranslatePageConfig } from '../../../agent/shared/api/mac-translate.ts';
 import type { WebPageTool } from '../../../agent/shared/api/web-page-tools.ts';
 import { forwardsToTab } from '../tabs/tab-layering.ts';
@@ -22,7 +23,6 @@ interface ShellInfo {
 // 不是本站（或开始页）的网页拿到的是 null：什么都不暴露。
 const shellInfo = ipcRenderer.sendSync(CHANNELS.info) as ShellInfo | null;
 const info: ShellInfo = shellInfo ?? { version: '', platform: 'linux', tools: [] };
-const DRAG_HOST = 'plasticine-titlebar';
 /** 主进程报的网页标签光标（Electron 的叫法）→ CSS 的叫法。 */
 const CURSORS: Readonly<Record<string, string>> = { pointer: 'default', hand: 'pointer', text: 'text', wait: 'wait',
   crosshair: 'crosshair', help: 'help', move: 'move', progress: 'progress', grab: 'grab', grabbing: 'grabbing' };
@@ -43,24 +43,6 @@ function chromeCurrent(): unknown {
   }
   const area = overlay.getTitlebarAreaRect();
   return { ...current, controlsRight: Math.max(0, Math.round(window.innerWidth - (area.x + area.width))) };
-}
-
-/** 顶栏拖动区：整条顶栏可拖，按钮、标签、地址栏这些 noDrag 矩形不拖；这一层不接鼠标，只给系统看。 */
-function applyTitlebar(layout: TitlebarLayout): void {
-  let host = document.querySelector<HTMLElement>(DRAG_HOST);
-  if (host === null) {
-    host = document.createElement(DRAG_HOST);
-    host.setAttribute('aria-hidden', 'true');
-    document.documentElement.appendChild(host);
-  }
-  host.style.cssText = `position:fixed;left:0;top:0;right:0;height:${layout.height}px;z-index:2147483647;`
-    + 'pointer-events:none;-webkit-app-region:drag;';
-  host.replaceChildren(...layout.noDrag.map((rect) => {
-    const hole = document.createElement('div');
-    hole.style.cssText = `position:fixed;left:${rect.x}px;top:${rect.y}px;width:${rect.width}px;`
-      + `height:${rect.height}px;pointer-events:none;-webkit-app-region:no-drag;`;
-    return hole;
-  }));
 }
 
 function modifiers(event: MouseEvent): string[] {
@@ -142,13 +124,7 @@ const bridge = {
     setEnabled: (enabled: boolean): Promise<unknown> => ipcRenderer.invoke(CHANNELS.notificationsSet, enabled),
   },
   webTabs,
-  windowChrome: {
-    current: chromeCurrent,
-    titlebar(layout: TitlebarLayout): void {
-      applyTitlebar(layout);
-      ipcRenderer.send(CHANNELS.chromeTitlebar, layout);
-    },
-  },
+  windowChrome: { current: chromeCurrent },
   translate: {
     configure: (tabId: string, config: TranslatePageConfig | null): void =>
       ipcRenderer.send(CHANNELS.translateConfigure, tabId, config),

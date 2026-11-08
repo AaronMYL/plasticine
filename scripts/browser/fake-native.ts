@@ -312,7 +312,7 @@ const FAKE_LOGINS: FakeNativeConfig['logins'] = {
   result: { sites: 120, cookies: 1840, passwords: 0, skipped: 4, problem: null },
 };
 
-/** Mac 交通灯让出的宽度（mac-bridge.ts 的 TRAFFIC_LIGHT_INSET_DEFAULT 是没报值时的默认，原生实际报 78）。 */
+/** Swift Mac App 报的红绿灯让出宽度（78；Electron 壳按系统版本报，见 desktop/src/app/traffic-lights.ts）。 */
 const MAC_TRAFFIC_LIGHT_INSET = 78;
 // 画出来的「网页」：白底、一条标题、八行正文的灰条，宽按悬停预览缩略图（WEB_THUMBNAIL_WIDTH）。
 const PICTURE_HEIGHT = 320;

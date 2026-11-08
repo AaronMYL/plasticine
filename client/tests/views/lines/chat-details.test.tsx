@@ -70,6 +70,28 @@ describe('主线的对话', () => {
     expect(screen.queryByRole('group', { name: '正在回复' })).toBeNull();
   });
 
+  it('悬停条「⋯ · 复制」复制这一条的全文（不是回复用的第一行摘要），写进剪贴板后换成「已复制」回执', async () => {
+    const writes: string[] = [];
+    Object.defineProperty(navigator, 'clipboard', { configurable: true,
+      value: { writeText: async (text: string) => { writes.push(text); } } });
+    const long = '第一行写得比较长，超过回复摘要的四十个字：这一句要一直写下去，直到超过那个长度为止才算数。\n第二行也要在';
+    await openThread();
+    send(long);
+    const row = await waitFor(() => {
+      const found = (conv().getByText(/第一行写得比较长/) as HTMLElement).closest<HTMLElement>('.line-msg');
+      expect(found).not.toBeNull();
+      return found as HTMLElement;
+    });
+    expect(within(row).queryByRole('button', { name: '复制消息' })).toBeNull();
+    expect(within(row).queryByRole('button', { name: '引用这句话' })).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: '更多' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '复制' }));
+    await waitFor(() => expect(writes).toEqual([long]));
+    expect(await within(row).findByRole('button', { name: '已复制' })).toBeTruthy();
+    expect(within(row).getByRole('status').textContent).toBe('已复制到剪贴板');
+    expect(row.querySelector('.line-hoverbar')?.getAttribute('data-open')).toBe('true');
+  });
+
   it('表情：点了加一个反应、存下来；再点那个反应拿掉', async () => {
     const app = await openThread();
     send('它是什么时候装上的？谁装的？');

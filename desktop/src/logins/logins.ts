@@ -12,6 +12,7 @@ import type { LoginImportRequest, LoginImportResult, LoginSources, SiteLogins }
 import { SITE_LOGINS_MAX } from '../../../agent/shared/api/mac-logins.ts';
 import { cbcKey, ChromeImportProblem, cookieHosts, readCookies, siteOf, windowsEncryptedKey, type ChromeCookie,
   type ChromeKey } from './chrome-cookies.ts';
+import { loggedInSites } from './login-cookies.ts';
 
 /** Chrome 的口令派生次数（Mac 1003；Linux 没有钥匙环时 1 次、口令 peanuts）。 */
 const MAC_ROUNDS = 1003;
@@ -92,8 +93,8 @@ export class Logins {
 
   async sites(): Promise<SiteLogins> {
     const since = this.since();
-    const hosts = new Set((await this.deps.session.cookies.get({})).map((cookie) => siteOf(cookie.domain ?? '')));
-    const sites = [...hosts].filter((host) => host !== '').sort().slice(0, SITE_LOGINS_MAX)
+    // 只看登录凭证 Cookie（login-cookies.ts）：没登录的网站也种匿名 Cookie，不算登录着。
+    const sites = loggedInSites(await this.deps.session.cookies.get({})).slice(0, SITE_LOGINS_MAX)
       .map((host) => ({ host, name: host.split('.')[0] ?? host, password: false, since: since[host] ?? null }));
     return { sites };
   }

@@ -50,8 +50,8 @@ export function CognitionEditor(props: Props): ReactNode {
     const icon = props.buttonIcon ?? (props.button === undefined ? 'edit' : undefined);
     return <>{status}<div className="mem-actions">
       {icon === undefined ? <button type="button" className="text-button" disabled={pending} onClick={start}>
-        {props.button ?? '改'}
-      </button> : <IconButton icon={icon} label={props.button ?? '改'} title={props.label}
+        {props.button ?? '修改'}
+      </button> : <IconButton icon={icon} label={props.button ?? '修改'} title={props.label}
         disabled={pending} onClick={start} />}
       {props.actions}
     </div></>;

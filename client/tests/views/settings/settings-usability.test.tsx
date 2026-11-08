@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest';
 import { memoryStorage, renderApp } from '../../helpers.tsx';
 
-async function openSettings(section: 'AI' | '日常' | '通用' = 'AI') {
+async function openSettings(section: 'AI' | '通用' = 'AI') {
   fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
   const panel = await screen.findByRole('dialog', { name: '设置' });
   fireEvent.click(within(panel).getByRole('button', { name: section }));
@@ -27,9 +27,13 @@ describe('设置的用户操作路径', () => {
     expect(close).toBeTruthy();
   });
 
-  it('中文城市搜索可以选择北京时间，跟随设备也可直接切回', async () => {
+  it('时区在通用里、外观后面；中文城市搜索可以选择北京时间，跟随设备也可直接切回', async () => {
     const app = await renderApp();
-    const panel = await openSettings('日常');
+    const panel = await openSettings('通用');
+    const zone = await within(panel).findByRole('region', { name: '时区' });
+    const appearance = within(panel).getByRole('heading', { name: '外观' });
+    expect(appearance.compareDocumentPosition(zone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(panel).queryByRole('button', { name: '保存' })).toBeNull();
     fireEvent.click(await within(panel).findByRole('button', { name: '选择时区' }));
     const search = within(panel).getByRole('searchbox', { name: '搜索城市或时区' });
     fireEvent.change(search, { target: { value: '广州' } });
@@ -62,18 +66,16 @@ it('信息流卡片的操作是有名字的图标按钮，tooltip 就是名字�
   expect(sides[0]?.topic?.ref).toBe('ui-actions');
 });
 
-// 用户视角审查 2026-11-01 P2：日常里的勾要说明打开后每天会发生什么（含义取自 agent 里对应功能的实现）。
-// 11-04 重做悬停：说明不常显，在开关名字后的 ⓘ 里；开关本身读屏经 aria-describedby 念到。
-// 11-04「每天一项现实碰撞」随判断页撤掉（改动方案第 3 批），只剩回看一个勾。
-describe('设置 · 日常的说明', () => {
-  it('「每天回看项目、工作和反例线索」的说明在名字后的 ⓘ 里，读屏念得到', async () => {
-    await renderApp();
-    const panel = await openSettings('日常');
-    const review = await within(panel).findByRole('switch', { name: '每天回看项目、工作和反例线索' });
-    const row = review.closest('.settings-switch-row') as HTMLElement;
-    expect(within(row).getByRole('button', { name: /的说明$/ }).getAttribute('data-tip')).toContain('反例');
-    const described = document.getElementById(review.getAttribute('aria-describedby') ?? '');
-    expect(described?.textContent).toContain('反例');
-    expect(described?.classList.contains('sr-only')).toBe(true);
+// 2026-11-08 第 7 批：「日常」那一栏删了（十件事、离开多久算回来、每天回看 11-06 起没有代码在读）；旧链接落到通用的时区。
+describe('设置 · 日常删了', () => {
+  it('分段里没有「日常」，没有那三项；旧地址 #/settings/daily 打开通用、定位到时区', async () => {
+    await renderApp({ hash: '#/settings/daily' });
+    const panel = await screen.findByRole('dialog', { name: '设置' });
+    const nav = within(panel).getByRole('navigation', { name: '设置分类' });
+    expect(within(nav).queryByRole('button', { name: '日常' })).toBeNull();
+    expect(within(nav).getByRole('button', { name: '通用' }).getAttribute('aria-current')).toBe('page');
+    await within(panel).findByRole('region', { name: '时区' });
+    await waitFor(() => expect(document.activeElement?.getAttribute('data-settings-focus')).toBe('time-zone'));
+    expect(within(panel).queryByText(/十件事|离开多久|每天回看/)).toBeNull();
   });
 });

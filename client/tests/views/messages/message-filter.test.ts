@@ -33,7 +33,7 @@ const ROWS: ContactRow[] = [
 
 describe('消息列表的筛选', () => {
   it('四段：全部 · 人 · 群 · 邮件，默认全部', () => {
-    expect(MESSAGE_FILTERS.map((filter) => FILTER_LABELS[filter])).toEqual(['全部', '人', '群', '邮件']);
+    expect(MESSAGE_FILTERS.map((filter) => FILTER_LABELS[filter])).toEqual(['全部', '联系人', '群组', '邮件']);
   });
 
   it('人只有人，群只有群，邮件只有邮件；新请求那一行在全部和人里', () => {

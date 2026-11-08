@@ -8,7 +8,7 @@ import { ColumnCollapseButton } from './column-toggle.tsx';
 
 export function ColumnHead({ title, children }: { title: string; children?: ReactNode }): ReactNode {
   return (
-    <div className="column-head" data-titlebar="">
+    <div className="column-head">
       <h2 className="column-title">{title}</h2>
       <span className="column-head-tools">
         {children}

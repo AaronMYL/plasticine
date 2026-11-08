@@ -44,31 +44,50 @@ describe('地址和栏目', () => {
     expect(navLabel('contacts')).toBe('消息');
   });
 
-  it('图标栏三组：现在、Plasticine、消息、任务 ｜ 网页、信息流 ｜ 笔记、资料库', () => {
+  it('图标栏三组：首页、Plasticine、消息、任务 ｜ 网页、信息流 ｜ 笔记、图书、资料库', () => {
     expect(RAIL_GROUPS.map((group) => group.map((id) => SECTIONS[id].label)))
-      .toEqual([['现在', 'Plasticine', '消息', '任务'], ['网页', '信息流'], ['笔记', '资料库']]);
+      .toEqual([['首页', 'Plasticine', '消息', '任务'], ['网页', '信息流'], ['笔记', '图书', '资料库']]);
+    expect(SECTIONS.books.icon).toBe('books');
+    expect(SECTIONS.library.icon).toBe('archive');
+    expect(routeHash(SECTIONS.library.root)).toBe('#/library');
+    expect(navLabel('today')).toBe('首页');
   });
 
-  it('每个地址归一个栏目：记忆在 Plasticine，项目和工作在任务，空间和图书在资料库', () => {
+  it('资料库自己的地址：#/library、#/library/sub/<订阅>、#/library/trash 来回不变', () => {
+    expect(parseHash('#/library')).toMatchObject({ view: 'library' });
+    expect(parseHash('#/library/sub/s%201')).toMatchObject({ view: 'library', subscriptionId: 's 1' });
+    expect(parseHash('#/library/trash')).toMatchObject({ view: 'library', libraryTrash: true });
+    for (const hash of ['#/library', '#/library/sub/s%201', '#/library/trash']) {
+      expect(routeHash(parseHash(hash))).toBe(hash);
+    }
+    expect(routeHash(parseHash('#/library/whatever'))).toBe('#/library');
+  });
+
+  it('每个地址归一个栏目：记忆在 Plasticine，项目和工作在任务，图书馆和读书在图书，空间在资料库', () => {
     const cases: [string, string][] = [['#/today', 'now'], ['#/plasticine', 'plasticine'], ['#/memory', 'plasticine'],
       ['#/messages/c1', 'messages'], ['#/tasks/timed', 'tasks'], ['#/projects/p1', 'tasks'], ['#/web/t1', 'web'],
-      ['#/feed', 'feed'], ['#/notes/n1', 'notes'], ['#/books/space/s1', 'library'], ['#/books/b1', 'library'],
+      ['#/feed', 'feed'], ['#/notes/n1', 'notes'], ['#/books/space/s1', 'library'], ['#/books/space', 'library'],
+      ['#/books', 'books'], ['#/books/b1/2/30', 'books'], ['#/library', 'library'], ['#/library/trash', 'library'],
       ['#/tools/files', 'library']];
     for (const [hash, section] of cases) {
       expect(sectionOf(parseHash(hash))).toBe(section);
     }
   });
 
-  it('手机底栏五格：现在 · Plasticine · 消息 · 笔记 · 更多；任务、信息流、图书、空间在「更多」里', () => {
+  it('手机底栏五格：首页 · Plasticine · 消息 · 笔记 · 更多；任务、信息流、图书、资料库在「更多」里', () => {
     expect(PHONE_TABS).toEqual(['now', 'plasticine', 'messages', 'notes', 'more']);
-    expect(MORE_ITEMS.map((item) => item.label)).toEqual(['任务', '信息流', '图书', '空间']);
+    expect(MORE_ITEMS.map((item) => item.label)).toEqual(['任务', '信息流', '图书', '资料库']);
+    expect(MORE_ITEMS.map((item) => routeHash(item.route))).toEqual(['#/tasks', '#/feed', '#/books', '#/library']);
+    expect(phoneTabOf(parseHash('#/library'))).toBe('more');
     expect(phoneTabOf(parseHash('#/tasks'))).toBe('more');
     expect(phoneTabOf(parseHash('#/feed'))).toBe('more');
     expect(phoneTabOf(parseHash('#/memory'))).toBe('plasticine');
   });
 
-  it('设置精简成六段（2026-11-05）：通用 · AI · 日常 · 浏览器与信息流 · 账号 · 系统；旧段名落到新段的对应处', () => {
-    expect(SETTINGS_SECTIONS).toEqual(['general', 'ai', 'daily', 'browser', 'account', 'system']);
+  it('设置五段（11-08 删「日常」）：通用 · AI · 浏览器 · 账号 · 系统；旧段名落到新段的对应处', () => {
+    expect(SETTINGS_SECTIONS).toEqual(['general', 'ai', 'browser', 'account', 'system']);
+    expect(parseHash('#/settings/daily')).toEqual({ view: 'settings', noteId: null, settingsSection: 'general',
+      settingsFocus: 'time-zone' });
     expect(routeHash(parseHash('#/settings/browser'))).toBe('#/settings/browser');
     expect(parseHash('#/settings/feed')).toEqual({ view: 'settings', noteId: null, settingsSection: 'browser',
       settingsFocus: 'feed' });

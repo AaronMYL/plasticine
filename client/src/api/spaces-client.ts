@@ -3,13 +3,16 @@
 
 import type {
   AdoptRuleRequest,
+  DeleteSpaceRequest,
   NoteAssistRequest,
   NoteAssistView,
+  RestoreSpaceRequest,
   ReviewSummary,
   RunSubscriptionRequest,
   RunSubscriptionResponse,
   SaveSpaceRequest,
   SpaceListResponse,
+  LibraryTrashResponse,
   SpaceView,
   SubscriptionListResponse,
   SubscriptionView,
@@ -17,14 +20,27 @@ import type {
   UpdateSubscriptionRequest,
 } from './shared.ts';
 
+export interface SpaceListFilter {
+  standalone?: boolean;
+}
+
+/** GET /v2/library/trash：资料库「最近删除」（空间、图书、文件）。 */
+export interface LibraryApi {
+  trash(signal?: AbortSignal): Promise<LibraryTrashResponse>;
+}
+
 export interface SpacesApi {
-  /** GET /v2/spaces：资料库第二栏「空间」。 */
-  list(signal?: AbortSignal): Promise<SpaceListResponse>;
+  /** GET /v2/spaces：全部没删的（⌘K 用）；standalone 只要不属于订阅的（资料库第二栏「空间」）。 */
+  list(signal?: AbortSignal, filter?: SpaceListFilter): Promise<SpaceListResponse>;
   get(id: string, signal?: AbortSignal): Promise<SpaceView>;
   /** PUT /v2/spaces/:id：他直接改，带 version，旧了 409。 */
   save(id: string, input: SaveSpaceRequest): Promise<SpaceView>;
   /** POST /v2/spaces/:id/undo：撤回最近一版。 */
   undo(id: string, input: UndoSpaceRequest): Promise<SpaceView>;
+  /** DELETE /v2/spaces/:id：移到「最近删除」，带 version。 */
+  remove(id: string, input: DeleteSpaceRequest): Promise<void>;
+  /** POST /v2/spaces/:id/restore：从「最近删除」还原。 */
+  restore(id: string, input: RestoreSpaceRequest): Promise<SpaceView>;
   /** POST /v2/spaces/:id/assist：续写、补充（和笔记同一个助手）。 */
   assist(id: string, input: NoteAssistRequest, signal?: AbortSignal): Promise<NoteAssistView>;
 }

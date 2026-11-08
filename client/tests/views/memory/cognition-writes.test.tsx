@@ -30,8 +30,8 @@ it.each(['active', 'under_review'] as const)('约定状态 %s 的改和撤在同
   const row = await within(screen.getByRole('main')).findByRole('listitem', { name: '原文' });
   fireEvent.click(within(row).getByRole('button', { name: /的更多操作$/ }));
   const menu = screen.getByRole('menu');
-  expect(within(menu).getByRole('menuitem', { name: '撤' })).toBeTruthy();
-  fireEvent.click(within(menu).getByRole('menuitem', { name: '改' }));
+  expect(within(menu).getByRole('menuitem', { name: '撤回' })).toBeTruthy();
+  fireEvent.click(within(menu).getByRole('menuitem', { name: '修改' }));
   const editor = within(row).getByRole('group', { name: '改约定' });
   fireEvent.change(within(editor).getByLabelText('正文'), { target: { value: '改好的正文' } });
   fireEvent.change(within(editor).getByLabelText('适用范围'), { target: { value: '新范围' } });

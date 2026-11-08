@@ -1,7 +1,6 @@
-// 桌面客户端的窗口外观（11-07 两层侧栏：Mac 的交通灯落在图标栏顶上；Windows 的窗口按钮在右上角）。壳经 host.ts 报
-// 交通灯要不要留位置、是不是全屏、右上角要让出多宽；网页侧把窗口顶上一条（TITLEBAR_HEIGHT）里哪些矩形是按钮、输入框
-// （不可拖动）报回去，其余空白处由壳当窗口拖动区。顶上那一条由各块自己标 data-titlebar（图标栏顶、第二栏顶、主区顶栏）。
-// 协议在 agent/shared/api/mac-bridge.ts。网页版、手机、没有这条桥的旧 App：不留位置，不报。
+// 桌面客户端的窗口外观（11-08 起红绿灯、Windows 窗口按钮都在界面自己画的标题栏里，titlebar.tsx）。壳经 host.ts 报
+// 红绿灯让出多宽、是不是全屏、右上角窗口按钮让出多宽。Swift Mac App 还要网页把标题栏里按钮的矩形报回去（它认不了
+// -webkit-app-region）；Electron 壳不要。协议在 agent/shared/api/mac-bridge.ts。网页版、手机、没有这条桥的旧 App：没有标题栏。
 
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 import { Value } from 'typebox/value';
@@ -67,70 +66,52 @@ function frameOf(element: Element): WebTabFrame {
   return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
 }
 
-/** 标在一整块上：这一块整个不可拖动，块里的按钮不再单报（整条标签栏，含「+」和组小签）。 */
-export const NO_DRAG_ATTRIBUTE = 'data-no-drag';
-const NO_DRAG_SELECTOR = `button, input, a, [${NO_DRAG_ATTRIBUTE}]`;
-
-/**
- * 顶栏里不可拖动的矩形：按钮、输入框、链接各一块；标了 data-no-drag 的整块算一块，块里的不再单报——
- * 标签之间、标签里图标和字之间的缝不会漏成拖动区，标签再多也只是一块（不碰 HIT_REGIONS_MAX）。
- */
+/** 标题栏里不可拖动的矩形：按钮、输入框、链接各一块，没大小的不报。 */
 export function collectNoDrag(bar: Element): WebTabFrame[] {
-  return collectIn(bar).slice(0, HIT_REGIONS_MAX);
-}
-
-/** 窗口顶上一条里标了 data-titlebar 的各块：每块里的不可拖动矩形，只留压在顶上 TITLEBAR_HEIGHT 里的。 */
-export const TITLEBAR_ATTRIBUTE = 'data-titlebar';
-
-export function collectTitlebar(root: Element): WebTabFrame[] {
   const frames: WebTabFrame[] = [];
-  for (const block of root.querySelectorAll(`[${TITLEBAR_ATTRIBUTE}]`)) {
-    for (const frame of collectIn(block)) {
-      if (frame.y < TITLEBAR_HEIGHT) {
-        frames.push(frame);
-      }
+  for (const element of bar.querySelectorAll('button, input, a')) {
+    const frame = frameOf(element);
+    if (frame.width > 0 && frame.height > 0 && frame.y < TITLEBAR_HEIGHT) {
+      frames.push(frame);
     }
   }
   return frames.slice(0, HIT_REGIONS_MAX);
 }
 
-function collectIn(bar: Element): WebTabFrame[] {
-  const frames: WebTabFrame[] = [];
-  for (const element of bar.querySelectorAll(NO_DRAG_SELECTOR)) {
-    const block = element.parentElement?.closest(`[${NO_DRAG_ATTRIBUTE}]`) ?? null;
-    if (block !== null && bar.contains(block)) {
-      continue;
-    }
-    const frame = frameOf(element);
-    if (frame.width > 0 && frame.height > 0) {
-      frames.push(frame);
-    }
-  }
-  return frames;
-}
-
 /**
- * 把顶栏的不可拖动区报给原生，几何一变就重报。原生把顶栏 44px 里不在 noDrag 里的点击一律当拖窗口、先于网页，
- * 报慢了就是「点标签没反应」（2026-11-04）。
+ * 只给 Swift Mac App：把标题栏里按钮的矩形报过去，几何一变就重报（它的 WKWebView 认不了 -webkit-app-region，标题栏
+ * 44px 里不在 noDrag 里的点击一律当拖窗口、先于网页）。Electron 壳没有 titlebar()，什么都不做。
  *
- * 什么时候量：挂上和 revision 变时当场量；之后顶栏里的 DOM 变了（切当前标签、改标题、开关标签、拖动时的 transform）、
- * 有块变了大小（ResizeObserver）、标签条横向滚动、窗口改大小，都排到下一帧量（一帧里多次只量一次）；量的时候顶栏里
- * 还有动画在播（开标签从 0 宽长出来、补位平移、拖完回位——子组件先开始动画，当场量到的是第 0 帧），等它播完或被取消
- * 再量一次。量出来和上次一样就不报。
- * 不像 useHitRegions 那样一直逐帧量：顶栏在 Mac App 里一直都在，空闲时每秒 60 次唤醒主线程只为确认没变，费电；
- * 这样空闲时零开销，有变化时一次也只量五六个矩形。
+ * 什么时候量：挂上和 revision 变时当场量；之后标题栏里的 DOM 变了（页名、页面放进来的按钮）、大小变了、窗口改大小，
+ * 都排到下一帧量（一帧里多次只量一次）。量出来和上次一样就不报。空闲时零开销。
  */
 export function useTitlebarReport(bar: RefObject<HTMLElement | null>, revision: string): void {
   const bridge = hostWindowChrome();
   useLayoutEffect(() => {
     const element = bar.current;
-    if (bridge === null || element === null) {
+    const send = bridge?.titlebar?.bind(bridge);
+    if (send === undefined || element === null) {
       return undefined;
     }
     let disposed = false;
     let frame = 0;
     let last: WebTabFrame[] | null = null;
-    const awaited = new WeakSet<Animation>();
+    const report = (): void => {
+      frame = 0;
+      if (disposed) {
+        return;
+      }
+      const noDrag = collectNoDrag(element);
+      if (last !== null && sameFrames(last, noDrag)) {
+        return;
+      }
+      try {
+        send({ height: TITLEBAR_HEIGHT, noDrag });
+        last = noDrag;
+      } catch (cause) {
+        console.warn('标题栏的拖动区没能报给 Mac 原生层', cause);
+      }
+    };
     const schedule = (): void => {
       if (disposed || frame !== 0) {
         return;
@@ -141,43 +122,10 @@ export function useTitlebarReport(bar: RefObject<HTMLElement | null>, revision: 
       }
       frame = window.requestAnimationFrame(report);
     };
-    const awaitAnimations = (): void => {
-      if (typeof element.getAnimations !== 'function') {
-        return;
-      }
-      for (const animation of element.getAnimations({ subtree: true })) {
-        if (!awaited.has(animation)) {
-          awaited.add(animation);
-          // 播完 resolve、被取消（关标签被打断）reject：两种结局都是停了，都再量一次。
-          animation.finished.then(schedule, schedule);
-        }
-      }
-    };
-    const report = (): void => {
-      frame = 0;
-      if (disposed) {
-        return;
-      }
-      const noDrag = collectTitlebar(element);
-      if (last === null || !sameFrames(last, noDrag)) {
-        try {
-          bridge.titlebar({ height: TITLEBAR_HEIGHT, noDrag });
-          last = noDrag;
-        } catch (cause) {
-          console.warn('顶栏的拖动区没能报给 Mac 原生层', cause);
-        }
-      }
-      awaitAnimations();
-    };
-    // 只看顶上那几块（别处的变化——对话流式出字——不该把主线程叫醒）；换栏目、换页时 revision 变，重新找这几块。
     const mutations = new MutationObserver(schedule);
+    mutations.observe(element, { subtree: true, childList: true, attributes: true, characterData: true });
     const sizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
-    for (const block of element.querySelectorAll(`[${TITLEBAR_ATTRIBUTE}]`)) {
-      mutations.observe(block, { subtree: true, childList: true, attributes: true, characterData: true });
-      sizes?.observe(block);
-    }
-    // scroll 不冒泡：在顶栏上按捕获阶段听，标签条（.tabstrip-list）横向滚动也听得到。
-    element.addEventListener('scroll', schedule, { capture: true, passive: true });
+    sizes?.observe(element);
     window.addEventListener('resize', schedule);
     report();
     return () => {
@@ -187,7 +135,6 @@ export function useTitlebarReport(bar: RefObject<HTMLElement | null>, revision: 
       }
       mutations.disconnect();
       sizes?.disconnect();
-      element.removeEventListener('scroll', schedule, { capture: true });
       window.removeEventListener('resize', schedule);
     };
   }, [bar, bridge, revision]);

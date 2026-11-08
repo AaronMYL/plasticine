@@ -19,13 +19,13 @@ function pane(): HTMLElement {
 }
 
 describe('设置 · 分段', () => {
-  it('六段：通用 · AI · 日常 · 浏览器与信息流 · 账号 · 系统；账号里是名字和密码、登录着的设备、头像、邀请朋友、对外可见、通知记录',
+  it('五段：通用 · AI · 浏览器 · 账号 · 系统；账号里是名字和密码、登录着的设备、头像、邀请朋友、对外可见、通知记录',
     async () => {
     await renderApp({ hash: '#/settings', setup: seed });
     const nav = await within(await screen.findByRole('dialog', { name: '设置' }))
       .findByRole('navigation', { name: '设置分类' });
     expect(within(nav).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['通用', 'AI', '日常', '浏览器与信息流', '账号', '系统']);
+      .toEqual(['通用', 'AI', '浏览器', '账号', '系统']);
     fireEvent.click(within(nav).getByRole('button', { name: '账号' }));
     const titles = within(pane()).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent);
     expect(titles.slice(0, 5)).toEqual(['登录着的设备', '头像', '邀请朋友', '对外可见', '通知记录']);

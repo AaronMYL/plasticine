@@ -1,5 +1,5 @@
-// 信息流的「加来源」：电脑上是第二栏顶上的 +（11-07 两层侧栏），手机上在页头「筛选」抽屉里；点开是 Sheet（桌面 panel /
-// 手机 drawer），里面是加订阅、加关注点和关注点列表；阅读区只剩卡片。
+// 信息流的「加来源」（第 7 批第 10 条）：电脑上是第二栏顶上的 +，手机上在页头「筛选」抽屉里；点开是 Sheet（桌面 panel /
+// 手机 drawer），顶上五种：网址 · Reddit · 关注点 · X 关注 · 抖音收藏；阅读区只剩卡片。
 
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -20,15 +20,18 @@ describe('信息流 · 加来源 Sheet', () => {
     await renderApp({ hash: '#/feed', setup: seed });
     await settle();
     expect(within(main()).queryByRole('region', { name: '加来源' })).toBeNull();
-    expect(within(main()).queryByRole('list', { name: '关注点' })).toBeNull();
-    const open = within(screen.getByRole('complementary', { name: '信息流' })).getByRole('button', { name: '加来源或订阅' });
+    const open = within(screen.getByRole('complementary', { name: '信息流' })).getByRole('button', { name: '加来源' });
     expect(open.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(open);
     const sheet = within(main()).getByRole('dialog', { name: '加来源' });
     expect(sheet.className).toContain('sheet-panel');
     expect(sheet.getAttribute('aria-modal')).toBeNull();
-    expect(within(sheet).getByRole('list', { name: '关注点' })).toBeTruthy();
+    const kinds = ['网址', 'Reddit', '关注点', 'X 关注', '抖音收藏'];
+    expect(within(sheet).getAllByRole('tab')).toEqual(kinds.map((name) => within(sheet).getByRole('tab', { name })));
+    expect(within(sheet).getByRole('tab', { name: '网址' }).getAttribute('aria-selected')).toBe('true');
     expect(within(sheet).getByRole('form', { name: '加订阅' })).toBeTruthy();
+    fireEvent.click(within(sheet).getByRole('tab', { name: '关注点' }));
+    expect(within(sheet).getByRole('region', { name: '加关注点' })).toBeTruthy();
     expect(open.getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(within(sheet).getByRole('button', { name: '关掉加来源' }));
     expect(within(main()).queryByRole('dialog', { name: '加来源' })).toBeNull();
@@ -41,7 +44,7 @@ describe('信息流 · 加来源 Sheet', () => {
     expect(within(main()).queryByRole('button', { name: '查找内容' })).toBeNull();
     fireEvent.click(within(main()).getByRole('button', { name: '筛选' }));
     const filter = within(main()).getByRole('dialog', { name: '筛选' });
-    expect(within(filter).getByRole('group', { name: '信息流来自哪里' })).toBeTruthy();
+    expect(await within(filter).findByRole('list', { name: '来源' })).toBeTruthy();
     fireEvent.click(within(filter).getByRole('button', { name: '加来源' }));
     const sheet = within(main()).getByRole('dialog', { name: '加来源' });
     expect(sheet.className).toContain('sheet-drawer');

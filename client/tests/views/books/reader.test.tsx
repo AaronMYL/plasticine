@@ -43,6 +43,8 @@ function chapterText(fake: FakeApi): string {
 
 beforeEach(() => {
   window.localStorage.clear();
+  // 下面这些是滚动模式下的行为（「Aa」里切回滚动，不回归）；翻页的见 reader-paged.test.tsx。
+  window.localStorage.setItem('plasticine.books.mode', 'scroll');
 });
 
 describe('阅读页 · 接着读', () => {
@@ -89,11 +91,15 @@ describe('阅读页 · 打开', () => {
   it('这台设备读过、别的设备之后读得更靠后：顶上一条横幅「iPhone 上读到 卷一 · 28%」，跳过去 / 留在这里', async () => {
     window.localStorage.setItem(`plasticine.books.position.${BOOK}`,
       JSON.stringify({ chapter: 0, offset: 0, percent: 0, savedAt: '2026-01-01T00:00:00.000Z' }));
-    await reader();
+    const app = await reader();
+    const save = vi.spyOn(app.api.books, 'saveProgress');
     const banner = (await screen.findByText(/iPhone 上读到/)).closest('.bk-banner') as HTMLElement;
     expect(banner.textContent).toMatch(/^iPhone 上读到 卷一 · \d+%（.+）/);
-    // 没点「跳过去」之前，这台设备的旧位置不往服务端存（不盖掉 iPhone 那份）。
-    expect(document.querySelector('.bk-foot-sync')?.textContent).toContain('已同步');
+    // 没点「跳过去」之前，这台设备的旧位置不往服务端存（不盖掉 iPhone 那份）；底栏默认不写同步状态。
+    expect(document.querySelector('.bk-foot-sync')).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem(`plasticine.books.position.${BOOK}`) ?? '{}'))
+      .toMatchObject({ offset: 0, savedAt: '2026-01-01T00:00:00.000Z' });
+    expect(save).not.toHaveBeenCalled();
     fireEvent.click(within(banner).getByRole('button', { name: '留在这里' }));
     expect(screen.queryByText(/iPhone 上读到/)).toBeNull();
   });
@@ -101,10 +107,11 @@ describe('阅读页 · 打开', () => {
   it('点「跳过去」：横幅收起，跳到那台设备读到的地方并记成这台的进度', async () => {
     window.localStorage.setItem(`plasticine.books.position.${BOOK}`,
       JSON.stringify({ chapter: 0, offset: 0, percent: 0, savedAt: '2026-01-01T00:00:00.000Z' }));
-    await reader();
+    const app = await reader();
+    const save = vi.spyOn(app.api.books, 'saveProgress');
     fireEvent.click(await screen.findByRole('button', { name: '跳过去' }));
     expect(screen.queryByText(/iPhone 上读到/)).toBeNull();
-    await waitFor(() => expect(document.querySelector('.bk-foot-sync')?.textContent).toContain('正在同步'));
+    await waitFor(() => expect(save).toHaveBeenCalled(), { timeout: 4000 });
     const saved = JSON.parse(window.localStorage.getItem(`plasticine.books.position.${BOOK}`) ?? '{}') as
       { offset?: number };
     expect(saved.offset).toBeGreaterThan(0);
@@ -119,7 +126,7 @@ describe('阅读页 · 打开', () => {
 
   it('顶栏：返回、书名和章、目录 / 标注与讨论（带数）/ 大纲与重点 / 在书里找 / Aa', async () => {
     await reader();
-    for (const name of ['回到图书馆', '目录', '大纲与重点', '在书里找', '字号与行距']) {
+    for (const name of ['回到图书馆', '目录', '大纲与重点', '在书里找', '字号与翻页']) {
       expect(screen.getByRole('button', { name })).toBeTruthy();
     }
     expect(screen.getByRole('button', { name: /标注与讨论，5 条标注/ }).textContent).toContain('5');

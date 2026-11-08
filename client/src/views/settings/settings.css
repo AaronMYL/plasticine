@@ -47,13 +47,6 @@
   outline-offset: 2px;
 }
 
-/* 带说明的开关：说明在名字后的 ⓘ 里（11-04 重做悬停）。 */
-.settings-switch-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .settings-message {
   margin: 0;
   font-size: 12px;
@@ -75,10 +68,6 @@
   border-radius: 8px; background: var(--tint); font-size: 12px; line-height: 18px; }
 .settings-connection-status dt { color: var(--fg2); }
 .settings-connection-status dd { margin: 0; }
-
-.settings-number {
-  max-width: 16em;
-}
 
 .settings-time-zone { display: flex; flex-direction: column; gap: 12px; }
 .settings-time-zone .segmented { align-self: flex-start; }

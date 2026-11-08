@@ -1,5 +1,6 @@
-// 图标栏（《优化清单》第 2 条，11-07 设计稿 kit.mjs 的 rail）：72 宽、--layer-bar 底，最左一条放顶层入口——
-// 现在、Plasticine、消息、任务 ｜ 网页、信息流 ｜ 笔记、资料库（组间只留空隙）；底部 ⌘K、新建、头像（打开设置弹框）。
+// 图标栏（《优化清单》第 2 条，11-07 设计稿 kit.mjs 的 rail；11-08 第 7 批改名、图书单独一栏）：72 宽、--layer-bar 底，
+// 最左一条放顶层入口——首页、Plasticine、消息、任务 ｜ 网页、信息流 ｜ 笔记、图书、资料库（组间只留空隙）；
+// 底部 ⌘K、新建、头像（打开设置弹框；换过头像画那张，没有画名字的第一个字）。
 // 「任务」有事等他时带一个陶土点（全站只这一个意思）。悬停浮出名字（悬停提示层，data-tip）。
 // Mac 客户端隐藏标题栏时交通灯落在图标栏顶上：壳告诉界面（host.ts 的窗口外观）才留出那一块；网页里不画假的灯。
 
@@ -26,8 +27,8 @@ export interface RailProps {
   waiting: number;
   connection: ConnectionStatus;
   accountName: string;
-  /** 交通灯要不要留位置（Mac 客户端、不在全屏）。 */
-  trafficLights: boolean;
+  /** 自己的头像（data URL）；没换过是 null。 */
+  accountAvatar: string | null;
   onSection: (section: SectionId) => void;
   onSearch: () => void;
   onNew: (kind: NewKind) => void;
@@ -46,8 +47,7 @@ export function Rail(props: RailProps): ReactNode {
   const [menu, setMenu] = useState<PopoverAnchor | null>(null);
   const offline = props.connection !== 'open';
   return (
-    <nav className="rail" aria-label="栏目" data-lights={props.trafficLights}>
-      {props.trafficLights ? <span className="rail-lights" data-titlebar="" aria-hidden="true" /> : null}
+    <nav className="rail" aria-label="栏目">
       <div className="rail-groups">
         {RAIL_GROUPS.map((group) => (
           <ul key={group[0]} className="rail-group">
@@ -83,7 +83,9 @@ export function Rail(props: RailProps): ReactNode {
             : `设置 · ${props.accountName}`}
           data-tip={offline ? `${props.accountName} · ${CONNECTION_TEXT[props.connection]}` : props.accountName}
           data-tip-side="right" onClick={props.onSettings}>
-          <span className="rail-avatar" aria-hidden="true">{accountInitial(props.accountName)}</span>
+          {props.accountAvatar === null
+            ? <span className="rail-avatar" aria-hidden="true">{accountInitial(props.accountName)}</span>
+            : <img className="rail-avatar rail-avatar-image" src={props.accountAvatar} alt="" aria-hidden="true" />}
           {offline ? <span className="rail-signal" data-status={props.connection} aria-hidden="true" /> : null}
         </button>
       </div>

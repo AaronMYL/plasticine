@@ -89,6 +89,12 @@ export class FeedFetcher {
       }
       if (!response.ok || response.body === null) {
         if (response.body !== null) { await bounded(response.body.cancel(), deadline); }
+        if (response.status === 429) {
+          throw new DailyError('rate_limited', '对方限流了（请求太频繁），稍后自动再试。');
+        }
+        if (response.status === 404) {
+          throw new DailyError('invalid_input', '地址打不开（404），请检查名字或地址。');
+        }
         throw new DailyError('invalid_input', '订阅没有返回可读内容，请检查地址后再试。');
       }
       const reader = response.body.getReader();

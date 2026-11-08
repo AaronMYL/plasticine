@@ -162,16 +162,28 @@ export function useNativeWebTabs(input: NativeWebTabsInput): NativeWebTabs | nul
         return;
       }
       switch (event.type) {
-        case 'state':
-          setNav((previous) => ({ ...previous, [event.tabId]: { url: event.url, title: event.title,
+        case 'state': {
+          // 空网址（旧壳新开标签时报过）：只更新前进后退和载入中，网址、标题、浏览记录都不动。
+          const blank = event.url.trim() === '';
+          setNav((previous) => ({ ...previous, [event.tabId]: {
+            url: blank ? previous[event.tabId]?.url ?? tabs.tab(event.tabId)?.url ?? '' : event.url,
+            title: blank ? previous[event.tabId]?.title ?? event.title : event.title,
             canGoBack: event.canGoBack, canGoForward: event.canGoForward, loading: event.loading } }));
+          if (blank) {
+            return;
+          }
           tabs.update(event.tabId, { url: event.url, title: event.title });
           if (!event.loading) {
             history.record({ url: event.url, title: event.title, at: new Date().toISOString() });
           }
           applySiteZoom(event.tabId, event.url);
           return;
+        }
         case 'opened': {
+          if (event.url.trim() === '') {
+            console.warn('桌面壳报来一个没有网址的新标签，没有收', event.tabId);
+            return;
+          }
           if (event.openedBy === 'user') {
             const internal = internalPage(event.url);
             if (internal !== null) {

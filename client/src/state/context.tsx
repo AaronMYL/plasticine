@@ -23,7 +23,6 @@ import { WebTabsStore } from './web-tabs.ts';
 import { MessagesUi } from './messages-ui.ts';
 import { WidgetAnswersStore } from './widget-answers.ts';
 import { PageSteps } from './page-steps.ts';
-import { PresenceTracker } from './presence.ts';
 
 export interface ClientState {
   attachments: AttachmentDrafts;
@@ -52,7 +51,6 @@ export interface ClientState {
   /** 第 3 批：Plasticine 在网页标签里做过的步（Mac 报来的），对话框里列出来。 */
   pageSteps: PageSteps;
   /** 2026-11-05：这台设备上 App 在不在前台，首页「离开时」那一行按它算（存 localStorage）。 */
-  presence: PresenceTracker;
 }
 
 export interface ClientStateOptions {
@@ -60,7 +58,7 @@ export interface ClientStateOptions {
   storage?: KeyValueStorage | null;
   /** 已确认的普通笔记使用有界持久缓存；浏览器入口使用 localStorage，草稿仍与它分开。 */
   noteCacheStorage?: KeyValueStorage | null;
-  /** 「现在」（前台记录按它算离开多久）；测试给固定的。 */
+  /** 「现在」（网页标签的时间按它算）；测试给固定的。 */
   now?: () => Date;
 }
 
@@ -90,8 +88,6 @@ export function createClientState(options: ClientStateOptions = {}): ClientState
     messagesUi: new MessagesUi(),
     widgetAnswers: new WidgetAnswersStore(),
     pageSteps: new PageSteps(),
-    presence: new PresenceTracker(options.noteCacheStorage === undefined ? storage : options.noteCacheStorage,
-      options.now),
   };
 }
 

@@ -174,6 +174,15 @@ export class FakeFiles implements FilesApi {
     });
   }
 
+  /** 本地开发：回收里先放一份。 */
+  seedTrashed(path: string, trashedAt: string): void {
+    const entry = this.put(path, 'file', 10);
+    this.entries.delete(path);
+    this.sequence += 1;
+    const id = `trash_${this.sequence}`;
+    this.bin.set(id, { id, name: entry.name, originalPath: entry.path, trashedAt, entry });
+  }
+
   seed(path: string, kind: FileEntryView['kind'] = 'file', bytes = 10): FileEntryView {
     return this.put(path, kind, bytes);
   }

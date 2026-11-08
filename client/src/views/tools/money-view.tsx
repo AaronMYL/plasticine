@@ -126,6 +126,7 @@ function Ledger({ date, entryId, highlighted }: {
   const money = useStore(m5b.money.data);
   const value = money.value;
   const [editing, setEditing] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
   if (value === null) {
     return null;
   }
@@ -181,13 +182,23 @@ function Ledger({ date, entryId, highlighted }: {
                 {yuan(entry.cnyCents)}
                 {entry.currency === 'CNY' ? '' : ` ${entry.currency}`}
               </span>
-              <button
-                type="button"
-                className="text-button text-button-quiet"
-                onClick={() => void m5bActions.removeMoney(entry)}
-              >
-                删
+              <button type="button" className="text-button text-button-quiet" aria-expanded={removing === entry.id}
+                onClick={() => setRemoving(entry.id)}>
+                删除
               </button>
+              {/* 删除先说后果再删（第 7 批第 12 条：原来点了直接删）。 */}
+              {removing !== entry.id ? null : (
+                <div className="tool-confirm" role="group" aria-label="确认删除这笔账">
+                  <span>删掉这笔账？删了就不再算进收支和资产。</span>
+                  <button type="button" className="chip-button" onClick={() => {
+                    setRemoving(null);
+                    void m5bActions.removeMoney(entry);
+                  }}>删除</button>
+                  <button type="button" className="text-button text-button-quiet" onClick={() => setRemoving(null)}>
+                    先不
+                  </button>
+                </div>
+              )}
               {editing !== entry.id ? null :
                 <MoneyEditor entry={entry} ledger={value} onClose={() => setEditing(null)} />}
             </li>

@@ -24,6 +24,7 @@ import {
   type DismissKeyPointRequest,
   type ExportBookNotesResponse,
   type GenerateBookInsightRequest,
+  type RenameBookRequest,
   type ResolvedConversationQuote,
   type SaveBookProgressRequest,
   type UpdateBookAnnotationRequest,
@@ -170,6 +171,41 @@ export class FakeBooks implements BooksApi {
   async get(id: string): Promise<BookView> {
     this.deps.session.require();
     return this.viewOf(this.require(id));
+  }
+
+  /** 「最近删除」里的书（假 GET /v2/library/trash 用）。 */
+  deletedRows(): { id: string; title: string; deletedAt: string }[] {
+    return [...this.books.values()].flatMap((book) => (book.deletedAt === null ? []
+      : [{ id: book.view.id, title: book.view.title, deletedAt: book.deletedAt }]));
+  }
+
+  async rename(id: string, input: RenameBookRequest): Promise<BookView> {
+    this.deps.session.require();
+    const book = this.require(id);
+    const title = input.title.trim();
+    if (title === '') {
+      throw invalid(400, 'invalid_request', '书名不能是空的。');
+    }
+    if (!this.results.has(input.requestId)) {
+      book.view = { ...book.view, title, version: book.view.version + 1 };
+      this.results.set(input.requestId, true);
+      this.emit(id, 'book');
+    }
+    return this.viewOf(book);
+  }
+
+  async restore(id: string, requestId: string): Promise<BookView> {
+    this.deps.session.require();
+    const book = this.books.get(id);
+    if (book === undefined) {
+      throw invalid(404, 'not_found', '这本书不在了。');
+    }
+    if (!this.results.has(requestId)) {
+      book.deletedAt = null;
+      this.results.set(requestId, true);
+      this.emit(id, 'book');
+    }
+    return this.viewOf(book);
   }
 
   async remove(id: string, requestId: string): Promise<void> {
@@ -409,6 +445,13 @@ export class FakeBooks implements BooksApi {
     const existing = [...this.books.values()].find((book) => book.sha256 === input.sha256 && book.deletedAt === null);
     if (existing !== undefined) {
       return { book: this.viewOf(existing), duplicate: true };
+    }
+    // 删过的同一个文件：还原那本（标注跟着回来），和服务端一样。
+    const deleted = [...this.books.values()].find((book) => book.sha256 === input.sha256 && book.deletedAt !== null);
+    if (deleted !== undefined) {
+      deleted.deletedAt = null;
+      this.emit(deleted.view.id, 'book');
+      return { book: this.viewOf(deleted), duplicate: true };
     }
     const title = input.fileName.replace(/\.[^.]+$/, '');
     const paragraphs = format === 'txt' ? decodeText(input.content).split(/\r?\n/).map((line) => line.trim())

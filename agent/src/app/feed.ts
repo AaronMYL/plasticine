@@ -12,8 +12,6 @@ import {
   DEFAULT_TIME_ZONE,
   FeedListQuerySchema,
   FeedItemViewSchema,
-  FEED_NAV_LABELS,
-  FEED_NAV_SOURCES,
   FeedNavQuerySchema,
   type FeedNavResponse,
   FeedSourceViewSchema,
@@ -35,7 +33,6 @@ import {
   cleanSourceLinks,
   dayRange,
   FEED_SOURCE_EVERY_MS,
-  localDay,
   RETIRED_SOURCE_REFS,
   siteOf,
   sourceSearchTerms,
@@ -48,6 +45,7 @@ import { cleanFeedItemView, feedItemKind, feedItemView, feedSourceView } from '.
 import { readJsonBody, readJsonBodyWithDigest } from './http.ts';
 import { idempotent } from './idempotency.ts';
 import { checkInput, queryObject } from './validate.ts';
+import { navOf } from './feed-nav.ts';
 
 // 加订阅时找订阅地址最多等这么久（页面本身 + 声明的订阅 + 几个常见路径，共用一个时限）。
 const DISCOVER_TIMEOUT_MS = 15_000;
@@ -141,6 +139,7 @@ export function listFeed(context: RequestContext): Reply {
     ...(query.includeHidden === undefined ? {} : { includeHidden: query.includeHidden }),
     ...(query.saved === undefined ? {} : { saved: query.saved }),
     ...(query.kind === undefined ? {} : { kind: query.kind }),
+    ...(query.sourceId === undefined ? {} : { sourceId: query.sourceId }),
   };
   // One more than asked shows whether another page follows.
   const page = state.feedItems.listPage(filter, { limit: limit + 1, offset });
@@ -152,23 +151,12 @@ export function listFeed(context: RequestContext): Reply {
   return { status: 200, body };
 }
 
-/**
- * GET /v2/feed/nav?tz= — 第二栏：全部 / 订阅 / 来源，带今天新来的个数。订阅那一节由订阅那条线填（第 6 批 subs 线），
- * 这里先给空数组。
- */
+/** GET /v2/feed/nav?tz= — 第二栏：全部，和每个来源一行（第 7 批第 10 条），带今天新来的个数（feed-nav.ts）。 */
 export function feedNav(context: RequestContext): Reply {
   requireAuth(context);
   const query = checkInput(FeedNavQuerySchema, queryObject(context.url.searchParams, {}), '查询参数');
   const timeZone = query.tz ?? DEFAULT_TIME_ZONE;
-  const { start, end } = dayRange(localDay(context.deps.now(), timeZone), timeZone);
-  const counts = context.deps.state.feedItems.countByKind(start.toISOString(), end.toISOString());
-  const sources = FEED_NAV_SOURCES.map((key) => ({ key, label: FEED_NAV_LABELS[key],
-    count: key === 'saved' ? null : counts[key] }));
-  const body: FeedNavResponse = {
-    all: counts.x + counts.rss + counts.news + counts.douyin + counts.manual,
-    subscriptions: [],
-    sources,
-  };
+  const body: FeedNavResponse = navOf(context.deps, timeZone);
   return { status: 200, body };
 }
 
@@ -186,7 +174,8 @@ export function listFeedSources(context: RequestContext): Reply {
     interests: sources.filter((source) => source.kind === 'interest').map(view),
     blocked: sources.filter((source) => source.kind === 'blocked_site').map(view),
     // 任务、项目两个站内来源停了（信息流只放站外资讯），不再列在「其他来源」里；手动添加、订阅、X 留着。
-    others: sources.filter((source) => (source.kind === 'internal' || source.kind === 'rss' || source.kind === 'x')
+    others: sources.filter((source) => (source.kind === 'internal' || source.kind === 'rss' || source.kind === 'x'
+      || source.kind === 'reddit')
       && (source.ref === null || !RETIRED_SOURCE_REFS.includes(source.ref))).map(view),
     everyMinutes: FEED_SOURCE_EVERY_MS / 60_000,
     recentSites: state.feedItems.recentSites(RECENT_SITES_MAX),

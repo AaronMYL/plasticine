@@ -24,7 +24,8 @@ import type { FakeReceipts } from './receipts.ts';
 export type AskSeed = Pick<AskView, 'id' | 'kind' | 'question'> &
   Partial<Pick<AskView, 'channel' | 'detail' | 'options' | 'lineId' | 'createdAt' | 'kindLabel'
     | 'moneyDraftId' | 'restorePreviewId' | 'deviceAction' | 'why' | 'channelReason' | 'collision'
-    | 'requiresSignature' | 'basis' | 'rulesOffer' | 'taskCard' | 'networkTaskId' | 'scheduleCard'>>;
+    | 'requiresSignature' | 'basis' | 'rulesOffer' | 'taskCard' | 'networkTaskId' | 'scheduleCard'
+    | 'subscriptionCard'>>;
 
 export interface FakeAsksDeps {
   session: FakeSession;

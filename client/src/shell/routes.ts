@@ -6,6 +6,7 @@
 // 最合适的新页面——任务回首页（「在做」在那里），关切去项目，成果去笔记（成果迁进「Plasticine 写的」），判断去记忆。
 
 import type { IconName } from './icons.tsx';
+import { libraryHash, parseLibraryHash } from './library-routes.ts';
 import type { SettingsFocus } from './panel.ts';
 
 // 成果卡片和侧栏「工具 · 成果」都在主区打开成果页（第 92 条）。
@@ -33,6 +34,8 @@ export const VIEW_IDS = [
   'tools',
   // 2026-11-07《优化清单》第 3 条：任务栏目（在做 / 等你 / 定时 / 建议，#/tasks/<段>）。侧栏入口第三段做，地址先能打开。
   'tasks',
+  // 2026-11-08：资料库（#/library 空间列表、#/library/sub/<订阅>、#/library/trash 最近删除），见 library-routes.ts。
+  'library',
 ] as const;
 
 export type ViewId = (typeof VIEW_IDS)[number];
@@ -67,10 +70,10 @@ export interface Route {
   memoryDream?: boolean;
   /**
    * 设置弹框开在哪一段（#/settings/<段>，2026-11-05 起设置不占标签：这种地址只用来开弹框，壳认到就开、地址换回当前标签的）。
-   * 旧段名（feed、network…）和旧地址 #/device 都映射到新的六段，见 settingsLink。
+   * 旧段名（feed、network…）和旧地址 #/device 都映射到新的五段，见 settingsLink。
    */
   settingsSection?: SettingsSection;
-  /** 跟着旧段名来的定位（#/settings/feed 到「浏览器与信息流」里的信息流来源）。 */
+  /** 跟着旧段名来的定位（#/settings/feed 到「浏览器」里的信息流来源）。 */
   settingsFocus?: SettingsFocus;
   /** 工具页是哪一个（#/tools/<名>）。 */
   tool?: ToolName | null;
@@ -81,6 +84,10 @@ export interface Route {
   spaceId?: string | null;
   /** 空间的列表（#/books/space，手机「更多 · 空间」；电脑上空间列在资料库的第二栏）。 */
   spacesList?: boolean;
+  /** 资料库里打开的订阅（#/library/sub/<id>）。 */
+  subscriptionId?: string | null;
+  /** 资料库「最近删除」（#/library/trash）。 */
+  libraryTrash?: boolean;
   /** 打开时跳到书里的哪一处（#/books/<id>/<章>/<字>）：对话里的书引用片「回到原文」、讨论、搜索从外面跳进来用。 */
   bookPosition?: BookRoutePosition | null;
   /** 网页栏目打开的是哪个标签（#/web/<id>）；没选是 null。 */
@@ -122,14 +129,15 @@ export interface NavItem {
 }
 
 /**
- * 设置弹框的六段（2026-11-05 他定）：通用（原「常用」+ 外观）· AI（含笔记、翻译模型）· 日常 · 浏览器与信息流 ·
- * 账号（原「账号与网络」+「对外可见」+「通知记录」）· 系统（原系统页）。
+ * 设置弹框的五段（2026-11-05 他定六段，11-08 第 7 批删掉「日常」、时区挪进通用）：通用（外观、时区、通知）·
+ * AI（含笔记、翻译模型）· 浏览器 · 账号（原「账号与网络」+「对外可见」+「通知记录」）· 系统（原系统页）。
  */
-export const SETTINGS_SECTIONS = ['general', 'ai', 'daily', 'browser', 'account', 'system'] as const;
+export const SETTINGS_SECTIONS = ['general', 'ai', 'browser', 'account', 'system'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
-/** 旧地址的段名（第 113 条和第 3 批那九段）落到新六段的哪一段、哪一处。 */
+/** 旧地址的段名（第 113 条和第 3 批那九段）落到新五段的哪一段、哪一处。 */
 const LEGACY_SETTINGS: Readonly<Record<string, { section: SettingsSection; focus?: SettingsFocus }>> = {
+  daily: { section: 'general', focus: 'time-zone' },
   feed: { section: 'browser', focus: 'feed' },
   network: { section: 'account' },
   visibility: { section: 'account', focus: 'visibility' },
@@ -150,11 +158,11 @@ function settingsLink(segment: string | undefined): Route {
 }
 
 /**
- * 手机上能开的页（11-07 定：底栏 现在 · Plasticine · 消息 · 笔记 · 更多，任务、信息流、图书、空间在「更多」里）；
+ * 手机上能开的页（11-07 定、11-08 改名：底栏 首页 · Plasticine · 消息 · 笔记 · 更多，任务、信息流、图书、资料库在「更多」里）；
  * 图书点开一本整屏读（2026-11-08）；项目和记忆从搜索、引用承接只读详情；网页标签只在电脑上；不支持的对象保留地址并说明。
  */
 const PHONE_VIEWS: ReadonlySet<ViewId> = new Set<ViewId>(['today', 'plasticine', 'messages', 'conversation',
-  'contacts', 'notes', 'feed', 'settings', 'work', 'tasks', 'books']);
+  'contacts', 'notes', 'feed', 'settings', 'work', 'tasks', 'books', 'library']);
 
 export function phonePageAvailable(route: Route): boolean {
   if (PHONE_VIEWS.has(route.view)) return true;
@@ -241,6 +249,7 @@ export function parseHash(hash: string): Route {
     return notesRoute(id);
   }
   if (view === 'work') return workRoute(id, sub);
+  if (view === 'library') return parseLibraryHash(id, sub);
   if (view === 'tasks') return tasksRoute(id);
   if (view === 'settings') {
     return settingsLink(id);
@@ -405,6 +414,9 @@ export function routeHash(route: Route): string {
   if (route.view === 'web') {
     return route.webTabId == null ? '#/web' : `#/web/${encodeURIComponent(route.webTabId)}`;
   }
+  if (route.view === 'library') {
+    return libraryHash(route);
+  }
   if (route.view === 'tasks') {
     const section = route.tasksSection ?? 'run';
     return section === 'run' ? '#/tasks' : `#/tasks/${section}`;
@@ -476,9 +488,9 @@ function contactsHash(route: Route): string {
 }
 
 const VIEW_LABELS: Readonly<Record<ViewId, string>> = {
-  today: '现在', plasticine: 'Plasticine', web: '网页', work: '工作', messages: '消息', conversation: '消息',
-  contacts: '消息', projects: '项目', memory: '记忆', notes: '笔记', books: '资料库', feed: '信息流', browser: '浏览器',
-  settings: '设置', tools: '工具', tasks: '任务',
+  today: '首页', plasticine: 'Plasticine', web: '网页', work: '工作', messages: '消息', conversation: '消息',
+  contacts: '消息', projects: '项目', memory: '记忆', notes: '笔记', books: '图书', feed: '信息流', browser: '浏览器',
+  settings: '设置', tools: '工具', tasks: '任务', library: '资料库',
 };
 
 export function navLabel(view: ViewId): string {
