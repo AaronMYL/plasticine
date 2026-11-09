@@ -1,6 +1,6 @@
 # Plasticine 桌面客户端（Electron 壳）
 
-《优化清单》第 14 条（他 11-06 定）：Mac 和 Windows 共用这一套壳。自己的窗口、应用内浏览器（竖排标签由界面管、壳管
+Mac 和 Windows 共用这一套壳。自己的窗口、应用内浏览器（竖排标签由界面管、壳管
 视图）、问这一页、翻译、系统通知、「这台电脑 / 远程」切换、自动更新、设备服务都在这里写一遍；截屏、点按、文件、
 命令、Apple 日历和提醒事项交给各系统的助手进程（协议在 `agent/shared/desktop-helper-protocol.ts`）。
 
@@ -14,7 +14,7 @@
 | `src/node/` | 设备服务：配对、hello、长轮询、回执接续、设备上限、授权目录、凭证（safeStorage） |
 | `src/helper/` | 拉起系统助手（协议和调用器在 `agent/shared/desktop-helper-*`） |
 | `src/logins/` | 网站登录：列、退出、从 Chrome 搬一次（Mac 读「Chrome Safe Storage」，Windows 用 DPAPI） |
-| `src/feeds/` | 信息流要这台电脑做的：X「关注」时间线、抖音收藏和下载地址（看不见的窗口里用他的登录取） |
+| `src/feeds/` | 信息流要这台电脑做的：X「关注」时间线、抖音收藏和下载地址（看不见的窗口里用用户自己的登录取） |
 | `src/updates/` | 自更新（`desktop.json`）、坏版本退回、Mac 本机证书重签 |
 | `helpers/windows/` | Windows 助手（C#） |
 | `build/` | `bundle.ts`（esbuild 打成 `dist/`）、`smoke.ts`（Linux xvfb 冒烟） |
@@ -58,11 +58,11 @@ npm run smoke                           # Linux：xvfb 里打开壳、开网页�
 
 ## 第一次打开（11-08 首次使用流程）
 
-- 没选过（没有设置文件，或 11-08 那一版自动默认成这台电脑、没记「选过」的）就停在开始页二选一，不替他选、不起本体。
+- 没选过（没有设置文件，或 11-08 那一版自动默认成这台电脑、没记「选过」的）就停在开始页二选一，不替用户选、不起本体。
   Swift 版存的远程地址只当「连到我的 Plasticine」那一格的预填。
 - 「在这台电脑上」：存下、起本机本体（开始页显示正在打开）；起来后问 `GET /v2/account/state`：`needed` 载入
   `127.0.0.1:8790/#/setup` 建账号；`done` 由主进程带本机令牌 `POST /v2/session/local`，把 Set-Cookie 写进界面视图的
-  session 再载入，他看不到登录页（会话还有效就不再登记一次设备）。本体还没有账号接口时照旧载入首页。
+  session 再载入，用户看不到登录页（会话还有效就不再登记一次设备）。本体还没有账号接口时照旧载入首页。
 - 「连到我的 Plasticine」：一格「@账号或地址」（`@handle`、`handle`、`handle.cyberhunter.top`、`https://…` 都认，不带点的
   当 @账号）；「连上」先探 `<地址>/v2/account/state`（旧版本体 404 时看 `/v2/health`），到不了就地一行原因，到了存下并载入
   `<地址>/#/login`。远程没地址时回开始页，不再悄悄回落本机。
@@ -77,7 +77,7 @@ npm run smoke                           # Linux：xvfb 里打开壳、开网页�
 ## 自更新
 
 每 6 小时查 `https://cyberhunter.top/download/desktop.json`，有新版就下载、核对 SHA-256 和大小，下好了发系统通知、
-设置 · 系统「客户端」那一行显示，他点「重新打开」才换：
+设置 · 系统「客户端」那一行显示，用户点「重新打开」才换：
 
 - Mac：解开 zip → 用本机证书「Plasticine Local Signing」重签 → 客户端退出后脚本只换 `Plasticine.app/Contents`
   （文件夹不动，Dock 上固定的图标照旧能用，0.7.1 修过的问题）→ 重新打开。旧的 Contents 进「上一版」。
@@ -92,7 +92,7 @@ npm run smoke                           # Linux：xvfb 里打开壳、开网页�
 版本都用同一张证书签，签名身份固定。系统问能不能用证书私钥、能不能读「Plasticine Safe Storage」时点「始终允许」。
 固定不住也照样用钥匙串，不退回明文。
 
-## 他第一次手动安装
+## 第一次手动安装
 
 **Mac**
 
@@ -102,7 +102,7 @@ npm run smoke                           # Linux：xvfb 里打开壳、开网页�
 3. 第一次打开：右键「打开」（临时签名，系统会提示来源）。客户端会自己换成本机证书签的那一份并重新打开一次：钥匙串问
    「codesign 想用 Plasticine Local Signing」点「始终允许」；之后问「Plasticine Safe Storage」也点「始终允许」。
 4. 打开后先问「在哪里用 Plasticine？」：
-   - 用腾讯云上那份：点「连到我的 Plasticine」，填 `@账号`（或地址，Swift 版用过的地址已经预填），「连上」，再用 @账号 +
+   - 用服务器上那份：点「连到我的 Plasticine」，填 `@账号`（或地址，Swift 版用过的地址已经预填），「连上」，再用 @账号 +
      密码登录。已经登录着的设备照常用；还没设过密码时，在已登录的设备上会弹一次「给 @账号设一个密码」。
    - 在这台 Mac 上新起一份：点「在这台电脑上」，等它起来，填名字、@账号、密码建账号（一步）。以后打开由客户端自动登录，
      不问密码。
