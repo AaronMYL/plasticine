@@ -229,11 +229,11 @@ export class ModelResolver {
 
   #resolvePurpose(purpose: ModelPurpose): Resolution {
     const override = this.#settings.overrides[purpose] ?? { model: null, thinking: null };
-    const fallback = purposeInfo(purpose).fallback;
+    const { fallback, thinking } = purposeInfo(purpose);
     const parent = fallback === 'main' ? this.resolve('main') : fallback === 'cheap' ? this.cheap() : this.resolve();
     const parentRef = parent.effective;
     return this.#settle({ purpose, requested: override.model, candidates: [override.model, parentRef],
-      thinking: override.thinking ?? parent.thinking, explicitThinking: override.thinking !== null,
+      thinking: override.thinking ?? thinking ?? parent.thinking, explicitThinking: override.thinking !== null,
       fallbackNote: (used) => sameRef(used, parentRef) ? '回到默认' : `暂用 ${this.#nameOf(used)}` });
   }
 }

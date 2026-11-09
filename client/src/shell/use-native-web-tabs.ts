@@ -23,7 +23,7 @@ import type { PageSteps } from '../state/page-steps.ts';
 import { WebHistory } from '../state/tabs-history.ts';
 import { siteOf, SiteZoom } from '../state/tabs-zoom.ts';
 import type { WebTabsState, WebTabsStore } from '../state/web-tabs.ts';
-import { useHitRegions } from './hit-regions.ts';
+import { collectHitRegions, useHitRegions } from './hit-regions.ts';
 import { internalPage } from './internal-page.ts';
 import { parseHash, type Route } from './routes.ts';
 
@@ -142,12 +142,15 @@ export function useNativeWebTabs(input: NativeWebTabsInput): NativeWebTabs | nul
       return;
     }
     const parsed = JSON.parse(digest) as { tabs: [string, string, 'user' | 'plasticine'][]; active: string | null;
-      frame: WebTabFrame | null; hitRegions: WebTabFrame[] };
+      frame: WebTabFrame | null };
+    // 浮层这一刻现量（11-09）：useHitRegions 要晚一帧才量到，网页刚显示的那次同步会先报 []，桌面壳就先把网页叠到上面、
+    // 盖住对话框几帧；它量到之后 digest 变了照样再同步一次。
+    const frame = parsed.frame;
     try {
       bridge.sync({ tabs: parsed.tabs.map(([tabId, url, openedBy]) => ({ tabId, url,
         ...(openedBy === 'plasticine' ? { openedBy } : {}) })),
-        active: parsed.frame === null ? null : parsed.active, frame: parsed.frame,
-        hitRegions: parsed.frame === null ? [] : parsed.hitRegions });
+        active: frame === null ? null : parsed.active, frame,
+        hitRegions: frame === null ? [] : collectHitRegions(document, frame) });
     } catch (cause) {
       console.warn('网页标签没能同步给 Mac 原生层', cause);
     }

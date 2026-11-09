@@ -3,17 +3,22 @@
 
 import { Value } from 'typebox/value';
 import type { NotesApi } from '../client.ts';
-import { badResponseError, NoteConflictError } from '../errors.ts';
+import { ApiError, badResponseError, NoteConflictError } from '../errors.ts';
 import { toMeta } from '../note-meta.ts';
 import { NOTE_LIST_MAX, NoteConflictSchema, NoteListResponseSchema, NOTES_PATH, NoteViewSchema } from '../shared.ts';
 import { NoteFoldersViewSchema, NoteImageViewSchema, NoteAssistViewSchema, NoteImportViewSchema } from '../shared.ts';
-import { noteAssistTimeoutMs } from '../shared.ts';
+import { noteAssistTimeoutMs, NoteAssistStreamEventSchema } from '../shared.ts';
 import type { NoteFolderCommand, NoteFoldersView, NoteImageRequest, NoteImageView,
   NoteAssistRequest, NoteAssistView, NoteImportView } from '../shared.ts';
 import type { NoteListResponse } from '../shared.ts';
 import type { CreateNoteRequest, NoteMetaView, NoteSearch, NoteView, SaveNoteRequest } from '../types.ts';
 import type { LocalEvents } from './local-events.ts';
 import type { Transport } from './transport.ts';
+
+/** 服务端的等待窗口再加一点：续写 5 秒，其余 10 秒（网络和排队的余量）。 */
+function assistTimeoutMs(input: NoteAssistRequest): number {
+  return noteAssistTimeoutMs(input) + (input.action === 'predict' ? 5000 : 10_000);
+}
 
 /** 一页 400 篇，翻这么多页还没完就是服务端的 nextOffset 有问题，停下来报错，不无限翻。 */
 const NOTE_PAGES_MAX = 50;
@@ -85,10 +90,33 @@ export class HttpNotes implements NotesApi {
       schema: NoteImageViewSchema, what: '上传图片', lostAs: 'uncertain', timeoutMs: 60_000, signal });
   }
   async assist(id: string, input: NoteAssistRequest, signal?: AbortSignal): Promise<NoteAssistView> {
-    const graceMs = input.action === 'predict' ? 5000 : 10_000;
     return this.transport.request({ method: 'POST', path: `${notePath(id)}/assist`, body: input,
-      schema: NoteAssistViewSchema, what: '笔记建议', lostAs: 'failed',
-      timeoutMs: noteAssistTimeoutMs(input) + graceMs, signal });
+      schema: NoteAssistViewSchema, what: '笔记建议', lostAs: 'failed', timeoutMs: assistTimeoutMs(input), signal });
+  }
+  async assistStream(id: string, input: NoteAssistRequest, onText: (delta: string) => void,
+    signal?: AbortSignal): Promise<NoteAssistView> {
+    let view: NoteAssistView | null = null;
+    let failure: ApiError | null = null;
+    await this.transport.stream({ method: 'POST', path: `${notePath(id)}/assist`, body: { ...input, stream: true },
+      schema: NoteAssistStreamEventSchema, what: '笔记建议', lostAs: 'failed', timeoutMs: assistTimeoutMs(input),
+      signal }, (event) => {
+      if (event.type === 'text') {
+        onText(event.delta);
+      } else if (event.type === 'done') {
+        view = event.view;
+      } else {
+        // 开始送之后才失败：服务端照普通错误回答的口径给了文案，没有状态码可分，算失败。
+        failure = new ApiError({ kind: 'failed', code: event.error.code, message: event.error.error,
+          next: event.error.next, field: event.error.field });
+      }
+    });
+    if (failure !== null) {
+      throw failure;
+    }
+    if (view === null) {
+      throw badResponseError('笔记建议', '没给最终文字就结束了', false);
+    }
+    return view;
   }
   async imported(id: string, signal?: AbortSignal): Promise<NoteImportView> {
     return this.transport.request({ method: 'GET', path: `${notePath(id)}/import`,

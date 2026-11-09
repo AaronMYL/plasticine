@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
-import type { DouyinResolved, VideoDigest, VideoPreview } from '../../shared/api/video.ts';
+import type { DouyinResolved, VideoDigest } from '../../shared/api/video.ts';
 import type { VideoWorkRow } from '../../src/state/index.ts';
 import {
   DouyinFavorites,
@@ -32,21 +32,15 @@ const DIGEST: VideoDigest = { summary: '讲定投的三个误区。', outline: [
   related: ['和你有关：你笔记里记过每月定投'] };
 
 interface Calls {
-  previews: number;
   summaries: string[];
   images: number;
   downloads: string[];
   transcribed: number;
 }
 
-function fakes(options: { enough?: boolean; transcriber?: boolean } = {}) {
-  const calls: Calls = { previews: 0, summaries: [], images: 0, downloads: [], transcribed: 0 };
+function fakes(options: { transcriber?: boolean } = {}) {
+  const calls: Calls = { summaries: [], images: 0, downloads: [], transcribed: 0 };
   const digester: VideoDigester = {
-    async preview() {
-      calls.previews += 1;
-      const preview: VideoPreview = { ...DIGEST, enough: options.enough ?? false };
-      return preview;
-    },
     async summarize(input) {
       calls.summaries.push(input.transcript);
       return DIGEST;
@@ -75,7 +69,7 @@ function fakes(options: { enough?: boolean; transcriber?: boolean } = {}) {
   return { calls, digester, media, transcriber: options.transcriber === false ? null : transcriber };
 }
 
-function setup(options: { enough?: boolean; transcriber?: boolean; slots?: () => number } = {}) {
+function setup(options: { transcriber?: boolean; slots?: () => number } = {}) {
   const parts = fakes(options);
   const summarized: VideoWorkRow[] = [];
   const worker = new VideoWorker({ state: t.state, slots: options.slots ?? (() => 3),
@@ -95,30 +89,12 @@ const RESOLVED = (workId: string, patch: Partial<DouyinResolved> = {}): DouyinRe
   caption: '定投的三个误区 #理财', videoUrl: 'https://v3-web.douyinvod.com/x/video.mp4', images: [], subtitles: [],
   durationSeconds: 222, ...patch });
 
-test('配文够了：预览完直接总结，不取地址不转写；总结好的进信息流，再发一次不出两条', async () => {
-  const s = setup({ enough: true });
-  const work = listed('7300000000000000001', '三个误区：一、回撤停投；二、只看年化；三、频繁换基金。');
+test('抖音视频不先看标题配文：直接排给 Mac 取地址、停在等 Mac；交回后下载转写，自带字幕也不用', async () => {
+  const s = setup();
+  const work = listed('7300000000000000002', '三个误区：一、回撤停投；二、只看年化；三、频繁换基金。');
   assert.equal(s.douyin.process({ ids: [work.id] }).queued, 1);
   await s.worker.settled();
-  const done = t.state.videoWorks.require(work.id);
-  assert.equal(done.stage, 'summarized');
-  assert.equal(done.run, 'idle');
-  assert.equal(done.transcriptSource, 'caption');
-  assert.equal(s.calls.downloads.length, 0);
-  assert.equal(t.state.videoMacJobs.take('2000-01-01T00:00:00.000Z', 10).length, 0);
-  const item = publishToFeed(t.state, done, new Date('2026-11-07T08:00:00.000Z'), 'Asia/Shanghai');
-  assert.equal(item?.title, '普通人做指数定投的三个误区');
-  assert.equal(publishToFeed(t.state, t.state.videoWorks.require(work.id), new Date(), 'Asia/Shanghai'), null);
-  assert.equal(t.state.videoWorks.require(work.id).feedItemId, item?.id);
-  assert.equal(s.douyin.process({ ids: [work.id] }).queued, 0, '处理过的不重复');
-});
-
-test('配文不够：排给 Mac 取地址、停在等 Mac；交回后先用自带字幕，不下载', async () => {
-  const s = setup();
-  const work = listed('7300000000000000002');
-  s.douyin.process({ ids: [work.id] });
-  await s.worker.settled();
-  assert.equal(t.state.videoWorks.require(work.id).stage, 'previewed');
+  assert.equal(t.state.videoWorks.require(work.id).stage, 'synced');
   assert.equal(t.state.videoWorks.require(work.id).run, 'waiting_mac');
   const [job] = s.douyin.jobs();
   assert.deepEqual(job, { id: job?.id, kind: 'resolve', workId: '7300000000000000002',
@@ -129,13 +105,34 @@ test('配文不够：排给 Mac 取地址、停在等 Mac；交回后先用自�
   await s.worker.settled();
   const done = t.state.videoWorks.require(work.id);
   assert.equal(done.stage, 'summarized');
-  assert.equal(done.transcriptSource, 'subtitle');
+  assert.equal(done.transcriptSource, 'local');
   assert.equal(done.caption, '定投的三个误区 #理财');
-  assert.equal(s.calls.downloads.length, 0);
-  assert.deepEqual(s.calls.summaries, ['[00:01] 自带字幕第一句']);
+  assert.deepEqual(s.calls.downloads, ['https://v3-web.douyinvod.com/x/video.mp4']);
+  assert.deepEqual(s.calls.summaries, ['[00:00] 本地转写第一句']);
   assert.match(resultText(done), /核心观点：\n- 回撤时停投/);
   assert.deepEqual(s.douyin.report({ requestId: 'report-0002', jobId: job!.id,
     resolved: RESOLVED('7300000000000000002') }), { accepted: false, added: 0 }, '交过的活不再动');
+  const item = publishToFeed(t.state, done, new Date('2026-11-07T08:00:00.000Z'), 'Asia/Shanghai');
+  assert.equal(item?.title, '普通人做指数定投的三个误区');
+  assert.equal(publishToFeed(t.state, t.state.videoWorks.require(work.id), new Date(), 'Asia/Shanghai'), null);
+  assert.equal(t.state.videoWorks.require(work.id).feedItemId, item?.id);
+  assert.equal(s.douyin.process({ ids: [work.id] }).queued, 0, '处理过的不重复');
+});
+
+test('没做成的抖音作品重来：丢掉过期的下载地址，排给 Mac 重新取', async () => {
+  const s = setup({ transcriber: false });
+  const work = listed('7300000000000000008');
+  t.state.videoWorks.advance(work.id, { resolved: RESOLVED('7300000000000000008') });
+  s.douyin.process({ ids: [work.id] });
+  await s.worker.settled();
+  assert.equal(t.state.videoWorks.require(work.id).run, 'failed');
+  assert.equal(s.douyin.process({ ids: [work.id] }).queued, 1);
+  await s.worker.settled();
+  const again = t.state.videoWorks.require(work.id);
+  assert.equal(again.resolved, null);
+  assert.equal(again.run, 'waiting_mac');
+  const [job] = s.douyin.jobs();
+  assert.equal(job?.kind === 'resolve' ? job.workId : null, '7300000000000000008');
 });
 
 test('没有字幕：在本机下载、抽音频、本地转写，记下耗时和峰值内存', async () => {
@@ -167,7 +164,7 @@ test('图文作品：读图里的文字，结合配文总结', async () => {
   assert.equal(done.kind, 'images');
 });
 
-test('没装本地转写又没字幕：记成没做成并写原因；Mac 没登录：等 Mac 的那条也记原因', async () => {
+test('没装本地转写：记成没做成并写原因；Mac 没登录：等 Mac 的那条也记原因', async () => {
   const s = setup({ transcriber: false });
   const work = listed('7300000000000000005');
   t.state.videoWorks.advance(work.id, { resolved: RESOLVED('7300000000000000005') });
@@ -186,8 +183,9 @@ test('没装本地转写又没字幕：记成没做成并写原因；Mac 没登�
 
 test('排进后台线的并发上限：没有空位时不开工，有了再接着走', async () => {
   let free = 0;
-  const s = setup({ enough: true, slots: () => free });
-  const work = listed('7300000000000000007', '配文就是全文');
+  const s = setup({ slots: () => free });
+  const work = listed('7300000000000000007');
+  t.state.videoWorks.advance(work.id, { resolved: RESOLVED('7300000000000000007') });
   s.douyin.process({ ids: [work.id] });
   await s.worker.settled();
   assert.equal(t.state.videoWorks.require(work.id).run, 'queued');

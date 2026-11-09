@@ -19,6 +19,7 @@ import {
 } from '../errors.ts';
 import type { ApiErrorKind } from '../errors.ts';
 import { ApiErrorSchema } from '../shared.ts';
+import { readEventStream } from './event-stream.ts';
 
 /**
  * 一次请求最多等这么久，超过就当没拿到回答。15 秒：一条消息的 202 和一篇笔记的保存都是本机 SQLite 写一次，
@@ -26,10 +27,11 @@ import { ApiErrorSchema } from '../shared.ts';
  */
 export const REQUEST_TIMEOUT_MS = 15_000;
 
-/** fetch 回答里用到的部分；测试给假的 fetch 时只要实现这两样。 */
+/** fetch 回答里用到的部分；测试给假的 fetch 时只要实现这两样（流式的回答再给 body，不给就整段读）。 */
 export interface ResponseLike {
   readonly status: number;
   text(): Promise<string>;
+  readonly body?: ReadableStream<Uint8Array> | null;
 }
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<ResponseLike>;
@@ -134,7 +136,8 @@ export class Transport {
   }
 
   async request<T extends TSchema>(spec: RequestSpec<T>): Promise<Static<T>> {
-    const { status, text } = await this.exchange(spec);
+    const { status, text } = await this.exchange(spec, 'application/json', async (response) => ({
+      status: response.status, text: await response.text() }));
     const body = parseBody(text);
     if (status >= 200 && status < 300) {
       if (!body.ok) {
@@ -148,8 +151,42 @@ export class Transport {
     throw this.failure(status, body, spec);
   }
 
+  /**
+   * 回答是 SSE 的请求（笔记续写）：2xx 时一条条事件过 spec.schema 再交给 onEvent，读完才返回；不是 2xx 照普通请求的
+   * 错误分类。事件不合 schema 当回答格式不对，停下不读了。
+   */
+  async stream<T extends TSchema>(spec: RequestSpec<T>, onEvent: (event: Static<T>) => void): Promise<void> {
+    const malformed: { reason: string | null } = { reason: null };
+    const failed = await this.exchange(spec, 'text/event-stream', async (response) => {
+      if (response.status < 200 || response.status >= 300) {
+        return { status: response.status, text: await response.text() };
+      }
+      await readEventStream(response, (data) => {
+        const parsed = parseBody(data);
+        if (!parsed.ok || !Value.Check(spec.schema, parsed.value)) {
+          malformed.reason = parsed.ok ? firstSchemaError(spec.schema, parsed.value) : parsed.reason;
+          throw badResponseError(spec.what, malformed.reason, spec.lostAs === 'uncertain');
+        }
+        onEvent(parsed.value);
+      }).catch((cause: unknown) => {
+        // 读到不合格式的事件是这边主动停的，不是连接断了；别的错误交给 exchange 按没拿到回答处理。
+        if (malformed.reason === null) {
+          throw cause;
+        }
+      });
+      return null;
+    });
+    if (malformed.reason !== null) {
+      throw badResponseError(spec.what, malformed.reason, spec.lostAs === 'uncertain');
+    }
+    if (failed !== null) {
+      throw this.failure(failed.status, parseBody(failed.text), spec);
+    }
+  }
+
   /** 发出去并读完回答；计时从发出算到读完。调用方自己取消的照原样抛出，不算没拿到回答。 */
-  private async exchange<T extends TSchema>(spec: RequestSpec<T>): Promise<{ status: number; text: string }> {
+  private async exchange<T extends TSchema, R>(spec: RequestSpec<T>, accept: string,
+    read: (response: ResponseLike) => Promise<R>): Promise<R> {
     const controller = new AbortController();
     let timedOut = false;
     const timeoutMs = spec.timeoutMs ?? this.timeoutMs;
@@ -159,7 +196,7 @@ export class Transport {
     }, timeoutMs);
     const forward = (): void => controller.abort(spec.signal?.reason);
     spec.signal?.addEventListener('abort', forward, { once: true });
-    const headers: Record<string, string> = { ...spec.headers, accept: 'application/json' };
+    const headers: Record<string, string> = { ...spec.headers, accept };
     const init: RequestInit = {
       method: spec.method,
       credentials: 'same-origin',
@@ -173,8 +210,7 @@ export class Transport {
       init.body = bodyText;
     }
     try {
-      const response = await this.fetch(urlOf(spec.path, spec.query), init);
-      return { status: response.status, text: await response.text() };
+      return await read(await this.fetch(urlOf(spec.path, spec.query), init));
     } catch (cause) {
       if (spec.signal?.aborted === true) {
         throw cause;

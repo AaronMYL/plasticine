@@ -3,10 +3,11 @@
 // 2026-11-05 Harness 重做后旧的模型通道（agent/src/model/）删掉，所有调模型的地方都从这里走。
 
 import type { ThinkingLevel } from '@earendil-works/pi-agent-core';
-import type { AssistantMessage, ImageContent, Message, TextContent } from '@earendil-works/pi-ai';
+import { normalizeContext, type Api, type AssistantMessage, type Context, type ImageContent, type Message,
+  type Model, type TextContent } from '@earendil-works/pi-ai';
 import type { ReasoningLevel } from '../../shared/model.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
-import { classifyFailure, type ModelChoice, type ModelSource } from '../lines/index.ts';
+import { classifyFailure, type CompleteOptions, type ModelChoice, type ModelSource } from '../lines/index.ts';
 
 export interface TextImage {
   data: string;
@@ -34,9 +35,12 @@ export interface TextAnswer {
   complete: boolean;
 }
 
-/** 旁路调用只认这一个口子；测试给假的。 */
+/** 边生成边要字的调用方（笔记续写，2026-11-09）给这个：每来一段回答的文字调一次。 */
+export type TextDeltas = (delta: string) => void;
+
+/** 旁路调用只认这一个口子；测试给假的。不流式的实现可以不理 onText，调用方最后照样拿到全文。 */
 export interface TextModels {
-  ask(request: TextRequest, signal: AbortSignal): Promise<TextAnswer>;
+  ask(request: TextRequest, signal: AbortSignal, onText?: TextDeltas): Promise<TextAnswer>;
   /** 缓存与排队任务先固定一次选择；身份包含真正生效的模型和思考强度。 */
   snapshot?(purpose: ModelPurpose): { identity: string; models: TextModels };
 }
@@ -101,22 +105,43 @@ function answerOf(message: AssistantMessage): string {
   return message.content.flatMap((block) => (block.type === 'text' ? [block.text] : [])).join('');
 }
 
+/**
+ * 和主线一样走 streamFn（pi-ai 的 streamSimple），把回答文字的增量交出去，最后拿整条回答。
+ * 「关」不传推理档：和 KernelModels.complete、pi-agent-core 调 streamFn 一样。
+ */
+async function streamed(models: ModelSource, model: Model<Api>, context: Context, options: CompleteOptions,
+  onText: TextDeltas): Promise<AssistantMessage> {
+  const { reasoning, ...rest } = options;
+  // streamFn 和主线一样收 pi-ai 的 transcript（系统提示折成第一条），用 pi-ai 自己的 normalizeContext 转。
+  const stream = await models.streamFn(model, normalizeContext(context),
+    reasoning === undefined || reasoning === 'off' ? rest : { ...rest, reasoning });
+  for await (const event of stream) {
+    if (event.type === 'text_delta') {
+      onText(event.delta);
+    }
+  }
+  return stream.result();
+}
+
 export function kernelText(models: ModelSource, now: () => Date = () => new Date()): TextModels {
-  const ask = async (request: TextRequest, signal: AbortSignal,
-    choice: ModelChoice | undefined): Promise<TextAnswer> => {
+  const ask = async (request: TextRequest, signal: AbortSignal, choice: ModelChoice | undefined,
+    onText: TextDeltas | undefined): Promise<TextAnswer> => {
     signal.throwIfAborted();
     if (choice === undefined) {
       throw new TextModelError('no_model', NO_MODEL_TEXT);
     }
     const at = now().getTime();
     const messages = request.messages.map((message) => toMessage(message, at, choice.model));
-    const response = await models.complete(choice.model, { systemPrompt: request.system, messages }, {
+    const context: Context = { systemPrompt: request.system, messages };
+    const options: CompleteOptions = {
       signal,
       reasoning: request.purpose !== undefined || request.reasoning === undefined
         ? choice.thinking : thinkingOf(request.reasoning),
       ...(request.maxOutputTokens === undefined ? {}
         : { maxTokens: Math.min(request.maxOutputTokens, choice.model.maxTokens) }),
-    });
+    };
+    const response = onText === undefined ? await models.complete(choice.model, context, options)
+      : await streamed(models, choice.model, context, options, onText);
     signal.throwIfAborted();
     if (response.stopReason === 'error' || response.stopReason === 'aborted') {
       throw failureOf(response, now());
@@ -124,12 +149,14 @@ export function kernelText(models: ModelSource, now: () => Date = () => new Date
     return { text: answerOf(response), complete: response.stopReason !== 'length' };
   };
   return {
-    ask: (request, signal) => ask(request, signal, models.current(request.purpose)),
+    ask: (request, signal, onText) => ask(request, signal, models.current(request.purpose), onText),
     snapshot(purpose) {
       const choice = models.current(purpose);
       const identity = choice === undefined ? 'unconfigured'
         : `${choice.model.provider}/${choice.model.id}/${choice.thinking}`;
-      return { identity, models: { ask: (request, signal) => ask({ ...request, purpose }, signal, choice) } };
+      return { identity, models: {
+        ask: (request, signal, onText) => ask({ ...request, purpose }, signal, choice, onText),
+      } };
     },
   };
 }

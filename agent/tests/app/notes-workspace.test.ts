@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { NOTE_IMAGE_MAX_BYTES } from '../../shared/api/index.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
+import { Value } from 'typebox/value';
+import { NOTE_IMAGE_MAX_BYTES, NoteAssistStreamEventSchema, type NoteAssistStreamEvent }
+  from '../../shared/api/index.ts';
+import { TextModelError } from '../../src/kernel/index.ts';
+import type { TextStep } from '../brain/helpers.ts';
+import { call, json, pair, startTestApp, type ApiReply, type TestApp } from './helpers.ts';
 
 let t: TestApp;
 let cookie: string;
@@ -60,4 +64,60 @@ test('笔记AI返回建议，服务器不擅自改正文或加版本', async () 
   assert.equal((await json(response))['markdown'], '接下来的一句');
   assert.equal(t.state.notes.require(current.id).version, 1);
   assert.equal(t.state.notes.readBody(current), '# 原文\n正文');
+});
+
+/** SSE 回答拆成一条条事件，每条都要合 shared 里的 schema。 */
+function events(reply: ApiReply): NoteAssistStreamEvent[] {
+  const text = Buffer.from(reply.body as ArrayBuffer).toString();
+  return text.split('\n\n').filter((frame) => frame.trim() !== '').map((frame) => {
+    assert.ok(frame.startsWith('data: '), frame);
+    const value: unknown = JSON.parse(frame.slice('data: '.length));
+    assert.ok(Value.Check(NoteAssistStreamEventSchema, value), frame);
+    return value;
+  });
+}
+
+async function streamingApp(step: TextStep): Promise<{ app: TestApp; cookie: string }> {
+  const app = await startTestApp([step]);
+  return { app, cookie: await pair(app) };
+}
+
+test('续写要流式：回 SSE，增量拼起来是最终文字的开头，最后一条 done 以它为准', async () => {
+  const current = note('正在记录这段经历');
+  const response = await call(t, 'POST', `/v2/notes/${current.id}/assist`, {
+    cookie, body: { action: 'predict', markdown: '正在记录这段经历', before: '正在记录这段经历', after: '',
+      stream: true },
+  });
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /^text\/event-stream/);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  const received = events(response);
+  const done = received.at(-1);
+  assert.equal(done?.type, 'done');
+  assert.equal(done?.type === 'done' ? done.view.markdown : null, '接下来的一句');
+  const text = received.flatMap((event) => (event.type === 'text' ? [event.delta] : [])).join('');
+  assert.equal(text, '接下来的一句');
+  assert.ok(received.length > 2, '一段段送');
+});
+
+test('流式续写开始送之前失败：照旧是普通的错误回答；送了一半才失败：最后一条是 error', async (context) => {
+  const early = await streamingApp(new TextModelError('busy', '连不上模型'));
+  context.after(() => early.app.close());
+  const target = early.app.state.notes.create({ markdown: '前文', folder: '笔记', author: 'user' });
+  const failed = await call(early.app, 'POST', `/v2/notes/${target.id}/assist`, {
+    cookie: early.cookie, body: { action: 'predict', markdown: '前文', stream: true } });
+  assert.equal(failed.status, 500);
+  assert.equal(typeof json(failed)['error'], 'string');
+  const late = await streamingApp(async (_request, _signal, onText) => {
+    onText?.('，先写');
+    throw new TextModelError('busy', '连不上模型');
+  });
+  context.after(() => late.app.close());
+  const other = late.app.state.notes.create({ markdown: '前文', folder: '笔记', author: 'user' });
+  const broken = await call(late.app, 'POST', `/v2/notes/${other.id}/assist`, {
+    cookie: late.cookie, body: { action: 'predict', markdown: '前文', stream: true } });
+  assert.equal(broken.status, 200);
+  const received = events(broken);
+  assert.deepEqual(received.slice(0, 1), [{ type: 'text', delta: '，先写' }]);
+  assert.equal(received.at(-1)?.type, 'error');
 });

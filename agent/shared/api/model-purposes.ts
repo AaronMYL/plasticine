@@ -3,6 +3,8 @@
 // 设置里成组的折成一行（group），点开再分开配。
 //
 // fallback：没单独设时跟谁。default 是全局默认；main 是主线；cheap 是全局默认那一家里已启用、目录价最低的模型。
+// thinking：没单独选思考档时用这一档，不跟 fallback 的档。2026-11-09 他定：笔记续写、主动补充不开思考（要停下就有）；
+// 模型不支持「关」就用它支持的最低档（model-resolve.ts 夹档，不算问题）。
 
 export const MODEL_PURPOSE_FALLBACKS = ['default', 'main', 'cheap'] as const;
 export type ModelPurposeFallback = (typeof MODEL_PURPOSE_FALLBACKS)[number];
@@ -20,6 +22,7 @@ interface PurposeEntry {
   readonly label: string;
   readonly group: ModelPurposeGroup | null;
   readonly fallback: ModelPurposeFallback;
+  readonly thinking?: 'off';
 }
 
 export const MODEL_PURPOSES = [
@@ -33,8 +36,8 @@ export const MODEL_PURPOSES = [
   { id: 'translation', label: '翻译', group: null, fallback: 'default' },
   { id: 'network_reply', label: '联系人和群代答', group: null, fallback: 'default' },
   { id: 'compaction', label: '对话压缩', group: null, fallback: 'default' },
-  { id: 'note_predict', label: '续写', group: 'notes', fallback: 'default' },
-  { id: 'note_interject', label: '主动补充', group: 'notes', fallback: 'default' },
+  { id: 'note_predict', label: '续写', group: 'notes', fallback: 'default', thinking: 'off' },
+  { id: 'note_interject', label: '主动补充', group: 'notes', fallback: 'default', thinking: 'off' },
   { id: 'note_polish', label: '润色', group: 'notes', fallback: 'default' },
   { id: 'note_organize', label: '整理结构', group: 'notes', fallback: 'default' },
   { id: 'note_correct', label: '语音纠偏', group: 'notes', fallback: 'default' },

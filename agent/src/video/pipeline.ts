@@ -1,9 +1,9 @@
-// 一条作品往前走（《优化清单》第 9 条）：已同步 → 已预览 → 已转写 → 已总结。
-//   1. 预览：先用标题和配文（低成本）；配文已经说清了就直接总结，不再转写。网页链接没有配文，跳过预览。
-//   2. 要看内容：抖音的下载地址要 Mac 取（没取到就排给 Mac，这一条停在「等 Mac」，Mac 交回再接着走）；
-//      别的网站交给 yt-dlp，直链直接下。
-//   3. 图文：读每张图里的文字，结合配文总结。视频：先用作品自带字幕，没有再下载、抽音频、本地转写（一次只转一条）。
-//   4. 总结：逐字稿 + 大纲、核心观点、和他兴趣有关的重点。
+// 一条作品往前走（《优化清单》第 9 条；11-09 他定「这种就直接转」）：已同步 → 已转写 → 已总结。
+//   1. 取内容：抖音的下载地址要 Mac 取（没取到就排给 Mac，这一条停在「等 Mac」，Mac 交回再接着走）；
+//      别的网站交给 yt-dlp，直链直接下。不再先拿标题和配文预览（「已预览」只留在旧数据里）。
+//   2. 图文：读每张图里的文字，结合配文总结。抖音视频：不看标题、配文和自带字幕，直接下载、抽音频、本地转写
+//      （一次只转一条）。别的网站的视频照旧先用自带字幕，没有再本地转写。
+//   3. 总结：逐字稿 + 大纲、核心观点、和他兴趣有关的重点。
 // 每一步写进库再走下一步，进程重启后从停下的那一步接着走；临时文件做完就删。
 
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -44,7 +44,7 @@ export interface PipelinePorts {
 /** 走到哪停下了：summarized 做完、waiting_mac 等 Mac 交下载地址。 */
 export type PipelineEnd = 'summarized' | 'waiting_mac';
 
-export const NO_TRANSCRIBER_TEXT = '这条没有自带字幕，这台机器还没装本地转写（见 docs/specs/video-parse.md）。';
+export const NO_TRANSCRIBER_TEXT = '这台机器还没装本地转写，转不了这条（见 docs/specs/video-parse.md）。';
 
 function inputOf(work: VideoWorkRow, interests: readonly string[]): DigestInput {
   return { title: work.title, caption: work.caption, author: work.author, interests };
@@ -55,15 +55,6 @@ export async function advanceWork(id: string, ports: PipelinePorts, signal: Abor
   const interests = ports.interests();
   if (work.stage === 'summarized') {
     return 'summarized';
-  }
-  if (work.stage === 'synced' && work.platform === 'douyin') {
-    const preview = await ports.digester.preview(inputOf(work, interests), signal);
-    work = ports.works.advance(id, { stage: 'previewed', preview });
-    if (preview.enough) {
-      const { enough: _enough, ...digest } = preview;
-      ports.works.advance(id, { stage: 'summarized', digest, transcript: work.caption, transcriptSource: 'caption' });
-      return 'summarized';
-    }
   }
   if (work.stage !== 'transcribed') {
     const ready = await transcribe(work, ports, signal);
@@ -115,15 +106,6 @@ async function fromDouyin(work: VideoWorkRow, resolved: DouyinResolved, director
     const { transcript, ...digest } = read;
     ports.works.advance(work.id, { stage: 'transcribed', transcript, transcriptSource: 'images', digest });
     return;
-  }
-  const subtitle = resolved.subtitles.find((entry) => entry.lang.startsWith('zh')) ?? resolved.subtitles[0];
-  if (subtitle !== undefined) {
-    const lines = parseSubtitle(await ports.media.fetchText(subtitle.url, signal), subtitle.format);
-    if (lines.length > 0) {
-      ports.works.advance(work.id, { stage: 'transcribed', transcript: transcriptText(lines),
-        transcriptSource: 'subtitle' });
-      return;
-    }
   }
   if (resolved.videoUrl === null) {
     throw new Error('Mac 没取到这条的视频地址。');

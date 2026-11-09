@@ -20,6 +20,9 @@ export interface FakeNotesDeps {
   now: () => Date;
 }
 
+/** 假的续写边生成边给时一段几个字。 */
+const FAKE_DELTA_CHARS = 2;
+
 /** 写一版时从旧记录里沿用的字段；标题、预览、字节数、时间由正文和时钟重新算。 */
 type NoteIdentity = Omit<NoteView, 'title' | 'preview' | 'bytes' | 'markdown' | 'updatedAt'>;
 
@@ -145,6 +148,17 @@ export class FakeNotes implements NotesApi {
     const markdown = input.action === 'predict' ? '，再想一步。' : input.action === 'interject'
       ? '还可以问问：下一步需要什么证据？' : `${input.selected ?? input.markdown}\n\n整理后的补充。`;
     return { markdown, label: input.action === 'interject' ? 'Plasticine 想接一句' : '修改建议' };
+  }
+  /** 假的也一段段给（两个字一段，段与段之间让出一轮微任务），界面走和真接口一样的路。 */
+  async assistStream(id: string, input: NoteAssistRequest, onText: (delta: string) => void,
+    signal?: AbortSignal): Promise<NoteAssistView> {
+    const view = await this.assist(id, input, signal);
+    for (let start = 0; start < view.markdown.length; start += FAKE_DELTA_CHARS) {
+      await Promise.resolve();
+      signal?.throwIfAborted();
+      onText(view.markdown.slice(start, start + FAKE_DELTA_CHARS));
+    }
+    return view;
   }
   async imported(id: string): Promise<NoteImportView> {
     this.requireAccess(id);

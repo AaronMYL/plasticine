@@ -177,6 +177,12 @@
   font: 16px / 28px var(--sans);
 }
 
+/* 中文输入法组字时只藏起来，不改正文和装饰（note-suggestions.tsx）；组完对得上再露出来。 */
+.note-body[data-composing] > .note-ghost-line,
+.note-body[data-composing] > .note-suggestion {
+  visibility: hidden;
+}
+
 .note-ghost {
   color: var(--fg2);
   font-style: italic;

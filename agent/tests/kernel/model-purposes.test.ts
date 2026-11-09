@@ -304,3 +304,50 @@ test('对话压缩调用独立模型与思考；摘要模型窗口较小时分�
   assert.equal(state.lines.main().summary, '完整摘要');
   assert.equal(messages.length, 3);
 });
+
+test('续写、主动补充默认不开思考：没单独选时用模型支持的最低档，不支持「关」的不报问题；单独选过的照用', async () => {
+  const { kernel, fakes } = await setup();
+  assert.equal(kernel.effective('note_predict')?.thinking, 'off');
+  assert.equal(kernel.effective('note_interject')?.thinking, 'off');
+  assert.equal(kernel.effective('note_polish')?.thinking, 'medium');
+  // 像 GPT-6.1 Sol：目录里「关」是 null，最低是「低」。不传推理档 OpenAI 会用它自己的默认档，反而更慢。
+  const model = kernel.models.getModel('fake-sub', 'sub-large');
+  assert.ok(model !== undefined);
+  model.thinkingLevelMap = { off: null, minimal: null };
+  const view = kernel.settings().purposes.find((item) => item.purpose === 'note_predict');
+  assert.equal(view?.effective?.thinking, 'low');
+  assert.equal(view?.issue, null);
+  kernel.configure({ version: kernel.settings().version, purposes: [
+    { purpose: 'note_interject', chosen: { model: null, thinking: 'high' } }] });
+  assert.equal(kernel.effective('note_interject')?.thinking, 'high');
+  const seen: unknown[] = [];
+  fakes.oauth.appendResponses([(_context, options) => {
+    seen.push(options?.reasoning);
+    return fauxAssistantMessage('续写');
+  }]);
+  await kernelText(kernel).ask({ purpose: 'note_predict', system: '', messages: [{ role: 'user', content: '前文' }] },
+    new AbortController().signal);
+  assert.deepEqual(seen, ['low']);
+});
+
+test('旁路请求要增量时边生成边给，拼起来和最终回答一样；「关」不传推理档', async () => {
+  const { kernel, fakes } = await setup();
+  const seen: unknown[] = [];
+  const text = '，然后把事实一条一条记清楚，再和上周的记录对一下。';
+  fakes.oauth.appendResponses([(_context, options) => {
+    seen.push(options?.reasoning);
+    return fauxAssistantMessage(text);
+  }]);
+  const deltas: string[] = [];
+  const answer = await kernelText(kernel).ask({ purpose: 'note_predict', system: '',
+    messages: [{ role: 'user', content: '前文' }] }, new AbortController().signal, (delta) => deltas.push(delta));
+  assert.equal(answer.text, text);
+  assert.equal(answer.complete, true);
+  assert.ok(deltas.length > 1, '不是一次给全文');
+  assert.equal(deltas.join(''), text);
+  assert.deepEqual(seen, [undefined]);
+  fakes.oauth.appendResponses([fauxAssistantMessage('', { stopReason: 'error', errorMessage: 'rate limit 429' })]);
+  await assert.rejects(kernelText(kernel).ask({ purpose: 'note_predict', system: '',
+    messages: [{ role: 'user', content: '前文' }] }, new AbortController().signal, () => undefined),
+  (error: unknown) => error instanceof Error && error.name === 'TextModelError');
+});

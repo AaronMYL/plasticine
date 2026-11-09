@@ -44,6 +44,19 @@ body:has(.shell[data-native-web='true']),
   isolation: isolate;
 }
 
+/*
+ * 桌面客户端有标题栏时，第二栏和主区装在一块自己铺 --bg 的面板里（titlebar.css）：网页标签显示时面板也不铺，
+ * 不然垫在下面的网页被它盖住，只剩一片底色和圆球（11-09 他录的屏）。第二栏、工具条各自有底色，看着不变。
+ */
+.shell[data-native-web='true'][data-titled] > .shell-panel {
+  background: transparent;
+}
+
+/* 壳不铺底以后，面板左上角圆角外那一点（图标栏 72 宽、标题栏 44 高，圆角 12）露出窗口底色：只在那 12 × 12 垫 --layer-bar。 */
+.shell[data-native-web='true'][data-titled] {
+  background: linear-gradient(var(--layer-bar), var(--layer-bar)) 72px 44px / 12px 12px no-repeat;
+}
+
 .shell[data-native-web='true'] .web-bar {
   background: var(--layer-page);
 }

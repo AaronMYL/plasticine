@@ -510,6 +510,60 @@ test('笔记续写：真实输入法取消迟到请求，光标移动重新预�
   assert.doesNotMatch(markdown, /迟到候选/);
 });
 
+// 2026-11-09 他说「会和我正在输入的文字冲突，导致我正在输入的文字出现两遍」：灰字在时用拼音输入法打字。组字期间
+// 不能有改装饰的事务打在正在组的那一段上；组完提交的字是灰字开头就接着显示剩下的，不是就撤下；正文里那几个字只出现一次。
+test('灰字在时中文输入法组字：组字中不发改装饰的事务、灰字只是藏起来；组完提交的字只出现一次，对得上灰字接着显示', async (t) => {
+  const { app, page } = await start(t, ['然后把事实记清楚。', '但是还有别的解释。']);
+  const note = app.state.notes.create({ markdown: '正在记录这段经历\n\n后文已写好的结论。', folder: '笔记', author: 'user' });
+  await page.evaluate(`location.hash = '#/notes/${note.id}'`);
+  await reloadPage(page);
+  await until(() => page.evaluate(`Boolean(document.querySelector('.note-body .ProseMirror'))`), '打开正文');
+  const end = `${EDITOR}.state.doc.child(0).nodeSize - 1`;
+  await page.evaluate(`${EDITOR}.chain().focus().setTextSelection(${end}).run()`);
+  await until(() => page.evaluate(`document.querySelector('.note-ghost')?.textContent === '然后把事实记清楚。'`),
+    '灰字出现');
+  await pause(100);
+  await page.evaluate(`(() => { window.imeLog = [];
+    ${EDITOR}.on('transaction', ({ transaction }) => window.imeLog.push({ doc: transaction.docChanged,
+      composing: ${EDITOR}.view.composing })); })(); 0`);
+  for (const text of ['r', 'ra', 'ran', 'ran h', 'ran ho', 'ran hou']) {
+    await page.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
+    await pause(20);
+  }
+  assert.equal(await page.evaluate(`${EDITOR}.view.composing`), true, '真实浏览器处于组字');
+  assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.note-ghost-line')).visibility`), 'hidden',
+    '组字时灰字藏起来');
+  await page.send('Input.insertText', { text: '然后' });
+  await until(() => page.evaluate(`!${EDITOR}.view.composing`), '组字提交');
+  await until(() => page.evaluate(`document.querySelector('.note-ghost')?.textContent === '把事实记清楚。'`),
+    '组完对得上，灰字接着显示剩下的');
+  assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.note-ghost-line')).visibility`),
+    'visible');
+  const log = await page.evaluate<{ doc: boolean; composing: boolean }[]>('window.imeLog');
+  assert.deepEqual(log.filter((entry) => entry.composing && !entry.doc), [], '组字期间没有只改装饰的事务');
+  const first = await page.evaluate<string>(`${EDITOR}.state.doc.child(0).textContent`);
+  assert.equal(first, '正在记录这段经历然后', '提交的字只出现一次');
+  assert.equal(app.requests.length, 1, '照着打不重新要');
+  for (const text of ['d', 'da', 'dan', 'dan s', 'dan sh', 'dan shi']) {
+    await page.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
+    await pause(20);
+  }
+  await page.send('Input.insertText', { text: '但是' });
+  await until(() => page.evaluate(`!${EDITOR}.view.composing`), '第二次组字提交');
+  await until(() => page.evaluate(`document.querySelector('.note-ghost')?.textContent !== '把事实记清楚。'`),
+    '对不上的灰字撤下');
+  assert.equal(await page.evaluate<string>(`${EDITOR}.state.doc.child(0).textContent`), '正在记录这段经历然后但是');
+  // 模型的第二条开头又写了一遍刚打的「但是」：服务端去掉了，灰字从「还有」开始。
+  await until(() => page.evaluate(`document.querySelector('.note-ghost')?.textContent === '还有别的解释。'`),
+    '停笔后再要一次，重复的开头去掉');
+  assert.equal(app.requests.length, 2);
+  await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+  await until(() => app.state.notes.readBody(app.state.notes.require(note.id)).includes('还有别的解释'), 'Tab采用后保存');
+  const markdown = await page.evaluate<string>(`${EDITOR}.getMarkdown()`);
+  assert.equal(markdown.match(/然后/g)?.length, 1);
+  assert.equal(markdown.match(/但是/g)?.length, 1, '模型重复的「但是」去掉了，收下后只有一处');
+});
+
 test('笔记建议贴着正文：编号列表里Tab采用续写、灰字在光标行、补充建议在段落下方、选段工具不挡选中的字',
   async (t) => {
     const long = '，接着把第二项写完整，不在半句停下，也不受字数限制，一直写到这一段自然结束的地方。';

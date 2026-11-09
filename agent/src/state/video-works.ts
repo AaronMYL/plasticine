@@ -276,12 +276,15 @@ function createVideoWorkStore(context: StoreContext) {
     },
     /**
      * 他要处理这几条：没总结过、没在动的排上（failed 的重来）；总结过的、在排 / 在跑的不动。返回真正排上的 id。
+     * 没做成的抖音作品重来时丢掉旧的下载地址：地址带签名、几小时就过期，让 Mac 重新取一次。
      */
     want(ids: readonly string[]): string[] {
       return db.transaction(() => {
         const queued: string[] = [];
         for (const id of ids) {
           const changes = db.run(`UPDATE video_works SET want = 'full', run = 'queued', error = NULL,
+            resolved = CASE WHEN run = 'failed' AND platform = 'douyin' AND stage <> 'transcribed' THEN NULL
+              ELSE resolved END,
             version = version + 1, updated_at = $at
             WHERE id = $id AND stage <> 'summarized' AND run IN ('idle', 'failed')`, { id, at: context.now() });
           if (changes > 0) {

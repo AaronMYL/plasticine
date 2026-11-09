@@ -5,7 +5,8 @@
 import { Type, type TSchema } from 'typebox';
 import type { ToolRole } from '../../shared/tools.ts';
 import { defineTool, type Tool, type ToolContext, type ToolSpec } from '../../src/brain/tools/registry.ts';
-import { TextModelError, type TextAnswer, type TextModels, type TextRequest } from '../../src/kernel/index.ts';
+import { TextModelError, type TextAnswer, type TextDeltas, type TextModels, type TextRequest }
+  from '../../src/kernel/index.ts';
 import { openState, type StateService } from '../../src/state/index.ts';
 
 export const ALL_ROLES: ToolRole[] = ['conversation', 'worker', 'verifier', 'diagnosis'];
@@ -86,9 +87,22 @@ function delay(ms: number, signal: AbortSignal, ignoreAbort: boolean): Promise<v
 }
 
 /**
- * 剧本里的一步：一段文字（模型答的话）、一个 TextModelError（这次失败）、或者一个函数（自己看请求、自己决定答什么）。
+ * 剧本里的一步：一段文字（模型答的话）、一个 TextModelError（这次失败）、或者一个函数（自己看请求、自己决定答什么；
+ * 要增量的调用会给第三个参数，函数可以自己一段段交）。
  */
-export type TextStep = string | TextModelError | ((request: TextRequest, signal: AbortSignal) => Promise<TextAnswer>);
+export type TextStep = string | TextModelError
+  | ((request: TextRequest, signal: AbortSignal, onText?: TextDeltas) => Promise<TextAnswer>);
+
+/** 要增量时一段文字按这么多字一段交出去，段与段之间让出一轮事件循环，像真的模型那样陆续到。 */
+const SCRIPTED_DELTA_CHARS = 4;
+
+async function deliver(text: string, signal: AbortSignal, onText: TextDeltas): Promise<void> {
+  for (let start = 0; start < text.length; start += SCRIPTED_DELTA_CHARS) {
+    signal.throwIfAborted();
+    onText(text.slice(start, start + SCRIPTED_DELTA_CHARS));
+    await new Promise<void>((resolve) => setImmediate(resolve));
+  }
+}
 
 export interface ScriptedText {
   models: TextModels;
@@ -100,7 +114,7 @@ export interface ScriptedText {
 export function scriptedText(steps: TextStep[]): ScriptedText {
   const requests: TextRequest[] = [];
   const models: TextModels = {
-    async ask(request, signal) {
+    async ask(request, signal, onText) {
       requests.push(structuredClone(request));
       const step = steps[Math.min(requests.length - 1, steps.length - 1)];
       if (step === undefined) {
@@ -110,7 +124,10 @@ export function scriptedText(steps: TextStep[]): ScriptedText {
         throw step;
       }
       if (typeof step === 'function') {
-        return step(request, signal);
+        return step(request, signal, onText);
+      }
+      if (onText !== undefined) {
+        await deliver(step, signal, onText);
       }
       return { text: step, complete: true };
     },

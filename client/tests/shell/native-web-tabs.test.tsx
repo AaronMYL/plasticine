@@ -123,6 +123,9 @@ describe('Mac 原生网页标签', () => {
     });
     await waitFor(() => expect(lastSync(bridge).hitRegions).toEqual([{ x: 996, y: 236, width: 420, height: 640 }]));
     expect(lastSync(bridge).frame).toEqual({ x: 216, y: 100, width: 1224, height: 800 });
+    // 11-09：网页刚显示的那一次同步就带上压着的对话框——先报 [] 再补上，桌面壳会先把网页叠到上面、盖住对话框几帧。
+    const firstShown = bridge.sync.mock.calls.map(([state]) => state).find((state) => state.frame !== null);
+    expect(firstShown?.hitRegions).toEqual([{ x: 996, y: 236, width: 420, height: 640 }]);
   });
 
   it('原生层报来的地址和标题记进标签；它开的新标签加进来，后台开的不抢当前标签，关掉也跟着关', async () => {

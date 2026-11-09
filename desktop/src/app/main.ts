@@ -17,6 +17,8 @@ import { NodeApi } from '../node/node-api.ts';
 import { NodeService } from '../node/node-service.ts';
 import { realPathSystem } from '../node/path-policy.ts';
 import { TabActions } from '../tabs/tab-actions.ts';
+import { shellAgent, tabUserAgent } from '../tabs/tab-agent.ts';
+import type { ForwardedMouse } from '../tabs/tab-input.ts';
 import { runTool, SHELL_TOOLS } from '../tabs/tab-tools.ts';
 import { TabFavicons } from '../tabs/tab-favicon.ts';
 import { TabTranslate } from '../tabs/tab-translate.ts';
@@ -73,8 +75,8 @@ async function start(): Promise<void> {
   // 第一次打开不替他选：开始页二选一；Swift 版存的远程地址只当「连到我的 Plasticine」的预填。
   const settings = new SettingsStore(paths.settingsFile, () => defaultSettings(prefillRemote(legacy.remote),
     homedir()), log);
-  const tabAgent = app.userAgentFallback.replace(/\s(?:Electron|plasticine-desktop|Plasticine)\/\S+/gi, '');
-  const uiAgent = `${tabAgent} PlasticineDesktop/${version}`;
+  const tabAgent = tabUserAgent(app.userAgentFallback);
+  const uiAgent = `${shellAgent(app.userAgentFallback)} PlasticineDesktop/${version}`;
   uiSession(uiAgent);
   const main = new MainWindow(platform, join(__dirname, 'preload-ui.cjs'), () => undefined);
   const ui = main.ui.webContents;
@@ -213,7 +215,7 @@ async function start(): Promise<void> {
     tabsNavigate: (tabId, url) => tabs.navigate(tabId, url),
     tabsSnapshot: async (tabId) => ({ tabId, ...await tabs.call(tabId, 'snapshot') as object }),
     tabsTool: (tabId, tool) => runTool(tabs, tabId, tool),
-    tabsInput: (input) => tabs.forward(input as unknown as Electron.MouseInputEvent),
+    tabsInput: (input) => tabs.forward(input as unknown as ForwardedMouse),
     translateConfigure: (tabId, config) => tabTranslate.configure(tabId, config),
     translateDeliver: (tabId, delivery) => tabTranslate.deliver(tabId, delivery),
     loginsSites: () => logins.sites(), loginsSources: () => logins.sources(),

@@ -113,7 +113,8 @@ describe('笔记 AI 编辑流程', () => {
 });
 
 describe('笔记续写输入保护', () => {
-  it('中文组合开始立即取消预测，迟到结果不出现，组合中的 Tab 不会采用', async () => {
+  // 2026-11-09 改：组字开始不再撤在途的续写（组完提交的字可能正是灰字的开头），组字期间不画、不采用。
+  it('中文组字开始不撤在途的续写；组字期间到的结果不画、Tab 不采用；组完正文没变再画出来', async () => {
     const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', '正在写作的文字') });
     const editor = await noteEditor();
     const gate = Promise.withResolvers<{ markdown: string; label: string }>();
@@ -125,12 +126,14 @@ describe('笔记续写输入保护', () => {
     act(() => editor.commands.focus('end'));
     await waitFor(() => expect(signal).toBeDefined(), { timeout: 3000 });
     fireEvent.compositionStart(editor.view.dom);
-    expect(signal?.aborted).toBe(true);
-    await act(async () => gate.resolve({ markdown: '不该出现的候选', label: '续写' }));
+    expect(signal?.aborted).toBe(false);
+    await act(async () => gate.resolve({ markdown: '，组完再出现的候选', label: '续写' }));
     expect(document.querySelector('.note-ghost')).toBeNull();
     fireEvent.keyDown(editor.view.dom, { key: 'Tab', isComposing: true });
     expect(editor.getText()).toBe('正在写作的文字');
     fireEvent.compositionEnd(editor.view.dom);
+    await waitFor(() => expect(document.querySelector('.note-ghost')?.textContent).toBe('，组完再出现的候选'));
+    expect(editor.getText()).toBe('正在写作的文字');
     fireEvent.click(screen.getByRole('checkbox', { name: '续写建议' }));
   });
 

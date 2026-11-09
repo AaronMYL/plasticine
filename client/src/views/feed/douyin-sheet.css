@@ -173,7 +173,6 @@
 
 @media (max-width: 767px) {
   .douyin-folder { flex-basis: 120px; }
-  .douyin-how-text { display: none; }
   .douyin-row-main { padding: 14px 0; }
   .douyin-check { width: 20px; height: 20px; }
   .douyin-sync-meta { display: none; }

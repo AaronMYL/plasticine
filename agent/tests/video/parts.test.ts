@@ -65,11 +65,28 @@ test('视频解析技能装进数据目录：只装一次，改过的提示词�
     writeFileSync(file, '我改过的提示词');
     assert.equal(seedVideoSkill(directory), false);
     assert.equal(skillPrompt(directory)('summary'), '我改过的提示词');
-    assert.equal(skillPrompt(directory)('preview'), DEFAULT_PROMPTS.preview);
+    assert.equal(skillPrompt(directory)('images'), DEFAULT_PROMPTS.images);
     const skills = new SkillStore({ stateDirectory: directory });
     const found = skills.search('视频');
     assert.deepEqual(found.issues, []);
     assert.ok(found.skills.some((skill) => skill.name === 'video-parse'));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('没人改过的旧版技能说明换成新版；改过的不动', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'video-skill-'));
+  try {
+    seedVideoSkill(directory);
+    const skill = join(videoSkillDirectory(directory), 'SKILL.md');
+    const retired = readFileSync(join(import.meta.dirname, 'fixtures', 'video-skill-2026-11-07.md'), 'utf8');
+    writeFileSync(skill, retired);
+    seedVideoSkill(directory);
+    assert.match(readFileSync(skill, 'utf8'), /抖音视频直接在本体这台机器上下载/);
+    writeFileSync(skill, '我自己写的说明');
+    seedVideoSkill(directory);
+    assert.equal(readFileSync(skill, 'utf8'), '我自己写的说明');
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

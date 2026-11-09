@@ -141,6 +141,12 @@ export interface NotesApi {
     signal?: AbortSignal): Promise<import('./shared.ts').NoteImageView>;
   assist(id: string, input: import('./shared.ts').NoteAssistRequest,
     signal?: AbortSignal): Promise<import('./shared.ts').NoteAssistView>;
+  /**
+   * 同一个接口带 stream: true（续写边生成边显示，2026-11-09）：onText 每到一段调一次，返回最终文字，以它为准
+   * （拼起来的增量是它的开头，结尾可能少一点）。
+   */
+  assistStream(id: string, input: import('./shared.ts').NoteAssistRequest, onText: (delta: string) => void,
+    signal?: AbortSignal): Promise<import('./shared.ts').NoteAssistView>;
   imported(id: string, signal?: AbortSignal): Promise<import('./shared.ts').NoteImportView>;
   /** GET /v2/notes：服务端正文搜索，翻完匹配结果的所有页。 */
   list(query: NoteSearch, signal?: AbortSignal): Promise<NoteMetaView[]>;

@@ -1,14 +1,18 @@
 // 应用内浏览器的视图层：每个网页标签一个 WebContentsView（共用一个持久的 session，和界面自己的 Cookie 分开，网站登录
 // 留在这台电脑上）。开、关、切换、排序、置顶、分组都由界面管数据，界面每次变化发一整份 sync；壳只管视图：第一次见到的
 // 标签载入地址，清单里没有了的关掉（壳自己开的标签界面认领前不关），在前的那个按界面给的位置显示，其余藏起来。
-// 叠在界面上面还是垫到下面见 tab-layering.ts。地址、标题、能否前进后退、载入中变了报 state；新窗口、target=_blank
-// 开成新标签并切过去（opened）；http(s) 以外的链接交给系统。
+// 叠在界面上面还是垫到下面见 tab-layering.ts，什么时候露出来、藏起来见 tab-stage.ts。地址、标题、能否前进后退、载入中
+// 变了报 state；登录弹窗这类带尺寸的 window.open 开成真的小窗口（tab-popups.ts），其余新窗口、target=_blank 开成新标签
+// 并切过去（opened）；http(s) 以外的链接交给系统。
 
 import { randomUUID } from 'node:crypto';
 import { WebContentsView, shell, type BaseWindow, type Session, type WebContents } from 'electron';
 import type { WebTabEvent, WebTabFrame, WebTabsSync } from '../../../agent/shared/api/mac-bridge.ts';
 import { TAB_CHANNELS } from '../app/channels.ts';
-import { tabLayer, viewBounds, type TabLayer } from './tab-layering.ts';
+import { dispatchMouse, type ForwardedMouse } from './tab-input.ts';
+import { restackIndex, tabLayer, viewBounds, type TabLayer } from './tab-layering.ts';
+import { TabPopups } from './tab-popups.ts';
+import { TabStage } from './tab-stage.ts';
 import { reportedUrl } from './tab-url.ts';
 
 /** 叫标签里的脚本做事的时限：圈一块要等他框，给足五分钟；别的 30 秒。 */
@@ -69,9 +73,17 @@ export class TabViews {
   private frameValue: WebTabFrame | null = null;
   private hitRegions: WebTabFrame[] | undefined;
   private layerValue: TabLayer = 'above';
+  private readonly stage: TabStage;
+  private readonly popups: TabPopups;
 
   constructor(deps: TabViewsDeps) {
     this.deps = deps;
+    this.stage = new TabStage({
+      place: (tabId, layer) => this.place(tabId, layer),
+      show: (tabId, visible) => this.tabs.get(tabId)?.view.setVisible(visible),
+    });
+    this.popups = new TabPopups({ window: deps.window, userAgent: deps.userAgent, log: deps.log,
+      openTab: (url) => this.open(url, 'user', true) });
   }
 
   get active(): Tab | null {
@@ -205,22 +217,21 @@ export class TabViews {
   }
 
   /** 网页标签垫在界面下面时，界面 preload 截下来的鼠标事件转给在前的标签（坐标换成标签自己的）。 */
-  forward(input: Electron.MouseInputEvent | Electron.MouseWheelInputEvent): void {
+  forward(input: ForwardedMouse): void {
     const tab = this.active;
     const frame = this.frameValue;
     if (tab === null || frame === null || this.layerValue !== 'below') {
       return;
     }
-    const bounds = viewBounds(frame);
     if (input.type === 'mouseDown') {
       tab.view.webContents.focus();
       tab.lastInputAt = Date.now();
     }
-    tab.view.webContents.sendInputEvent({ ...input, x: Math.round(input.x - bounds.x),
-      y: Math.round(input.y - bounds.y) });
+    dispatchMouse(tab.view.webContents, input, viewBounds(frame), this.deps.log);
   }
 
   closeAll(): void {
+    this.popups.closeAll();
     for (const tab of this.list()) {
       this.close(tab.id);
     }
@@ -250,6 +261,7 @@ export class TabViews {
     }
     this.tabs.delete(tabId);
     this.unclaimed.delete(tabId);
+    this.stage.forget(tabId);
     this.deps.window.contentView.removeChildView(tab.view);
     tab.view.webContents.close();
     if (this.activeId === tabId) {
@@ -261,17 +273,24 @@ export class TabViews {
     const frame = this.frameValue;
     const active = this.active;
     this.layerValue = tabLayer(frame, this.hitRegions);
-    // 垫到下面时界面在那一块不画底色；叠在上面时界面照常。
-    for (const tab of this.list()) {
-      const shown = tab === active && frame !== null && frame.width > 0 && frame.height > 0;
-      if (shown && frame !== null) {
-        tab.view.setBounds(viewBounds(frame));
-        const children = this.deps.window.contentView.children;
-        const uiIndex = children.indexOf(this.deps.ui);
-        const index = this.layerValue === 'above' ? children.length : Math.max(0, uiIndex);
-        this.deps.window.contentView.addChildView(tab.view, index);
-      }
-      tab.view.setVisible(shown);
+    // 垫到下面时界面在那一块不画底色；叠在上面时界面照常。先摆好位置，再交给 stage 决定露出来的时机和层。
+    const shown = active !== null && frame !== null && frame.width > 0 && frame.height > 0 ? active : null;
+    if (shown !== null && frame !== null) {
+      shown.view.setBounds(viewBounds(frame));
+    }
+    this.stage.update(shown?.id ?? null, this.layerValue);
+  }
+
+  /** 把标签的视图放到界面上面或下面；已经在那一层就不动（tab-layering.ts 的 restackIndex）。 */
+  private place(tabId: string, layer: TabLayer): void {
+    const tab = this.tabs.get(tabId);
+    if (tab === undefined) {
+      return;
+    }
+    const content = this.deps.window.contentView;
+    const index = restackIndex(content.children, this.deps.ui, tab.view, layer);
+    if (index !== null) {
+      content.addChildView(tab.view, index);
     }
   }
 
@@ -310,14 +329,19 @@ export class TabViews {
         tab.lastInputAt = Date.now();
       }
     });
-    contents.setWindowOpenHandler(({ url }) => {
-      if (isWeb(url)) {
-        this.open(url, 'user', true);
-      } else if (/^(mailto|tel):/i.test(url)) {
-        void shell.openExternal(url);
+    contents.setWindowOpenHandler((details) => {
+      const popup = this.popups.allow(details);
+      if (popup !== null) {
+        return popup;
+      }
+      if (isWeb(details.url)) {
+        this.open(details.url, 'user', true);
+      } else if (/^(mailto|tel):/i.test(details.url)) {
+        void shell.openExternal(details.url);
       }
       return { action: 'deny' };
     });
+    contents.on('did-create-window', (child) => this.popups.adopt(child));
     contents.on('will-navigate', (event, url) => {
       if (!isWeb(url) && !url.startsWith('about:')) {
         event.preventDefault();

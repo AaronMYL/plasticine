@@ -1,8 +1,11 @@
 // 笔记建议画在 contenteditable 外，正文只给它让出空间：光标所在段落加下边距（装饰），不往正文里插节点，不干扰中文输入法。
 // 续写和补充各记各的空间（2026-11-04 用户定：两者可以同时在），同一段落的下边距是原来的边距加两者之和。
+// 输入法组字期间不改装饰（2026-11-09 他说正在打的字会出现两遍；查到组字一开始就有一个清边距的事务打在正在组的
+// 那一段上，疑为原因之一）：组字中要改的空间先记着，组完（flushSuggestionSpace）再改；正文变了空间跟着映射，
+// 不在组字的事务里顺手清掉。
 
 import type { Editor } from '@tiptap/core';
-import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
+import { Plugin, PluginKey, type EditorState, type Transaction } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 
 export type SuggestionKind = 'predict' | 'interject';
@@ -14,6 +17,8 @@ interface SpaceChange { kind: SuggestionKind; value: SuggestionSpace | null }
 
 const spaceKey = new PluginKey<SuggestionSpaces>('noteSuggestionSpace');
 const NO_SPACE: SuggestionSpaces = { predict: null, interject: null };
+/** 组字期间想改、还没改的空间。 */
+const waiting = new WeakMap<Editor, Partial<Record<SuggestionKind, SuggestionSpace | null>>>();
 
 export function suggestionSpaces(state: EditorState): SuggestionSpaces {
   return spaceKey.getState(state) ?? NO_SPACE;
@@ -32,9 +37,30 @@ function sameSpace(a: SuggestionSpace | null, b: SuggestionSpace | null): boolea
 }
 
 export function setSuggestionSpace(editor: Editor, kind: SuggestionKind, value: SuggestionSpace | null): void {
-  if (editor.isDestroyed || sameSpace(suggestionSpaces(editor.state)[kind], value)) { return; }
+  if (editor.isDestroyed) { return; }
+  if (editor.view.composing) {
+    waiting.set(editor, { ...waiting.get(editor), [kind]: value });
+    return;
+  }
+  if (sameSpace(suggestionSpaces(editor.state)[kind], value)) { return; }
   const change: SpaceChange = { kind, value };
   editor.view.dispatch(editor.state.tr.setMeta(spaceKey, change).setMeta('addToHistory', false));
+}
+
+/** 组字结束后补上组字期间记下的改动。 */
+export function flushSuggestionSpace(editor: Editor): void {
+  const pending = waiting.get(editor);
+  waiting.delete(editor);
+  for (const kind of SUGGESTION_KINDS) {
+    const value = pending?.[kind];
+    if (value !== undefined) { setSuggestionSpace(editor, kind, value); }
+  }
+}
+
+function mapSpace(transaction: Transaction, value: SuggestionSpace | null): SuggestionSpace | null {
+  if (value === null) { return null; }
+  const mapped = transaction.mapping.mapResult(value.position);
+  return mapped.deleted ? null : { ...value, position: mapped.pos };
 }
 
 function decorations(state: EditorState): DecorationSet {
@@ -58,7 +84,7 @@ function decorations(state: EditorState): DecorationSet {
   return found.length === 0 ? DecorationSet.empty : DecorationSet.create(state.doc, found);
 }
 
-/** 正文一改，位置就不作数了：两条建议都会被撤下，空间一起清掉。 */
+/** 正文改了，空间跟着映射到新位置（灰字被照着打的字吃掉时还在同一段）；建议撤下时由界面清掉。 */
 export function suggestionSpacePlugin(
   handleKeyDown: (view: EditorView, event: KeyboardEvent) => boolean,
 ): Plugin<SuggestionSpaces> {
@@ -66,10 +92,12 @@ export function suggestionSpacePlugin(
     state: {
       init: () => NO_SPACE,
       apply(transaction, value) {
-        if (transaction.docChanged) { return NO_SPACE; }
+        const mapped = transaction.docChanged
+          ? { predict: mapSpace(transaction, value.predict), interject: mapSpace(transaction, value.interject) }
+          : value;
         const change: SpaceChange | undefined = transaction.getMeta(spaceKey);
-        if (change === undefined) { return value; }
-        return { ...value, [change.kind]: change.value };
+        if (change === undefined) { return mapped; }
+        return { ...mapped, [change.kind]: change.value };
       },
     },
     props: { decorations, handleKeyDown },

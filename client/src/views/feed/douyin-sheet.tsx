@@ -1,6 +1,6 @@
 // 抖音收藏的勾选清单（《优化清单》第 9 条，设计稿 Feed-Douyin，放在信息流的来源管理里）：上次同步 + 同步；收藏夹、
 // 搜标题和作者；每条一行：勾选、标题、作者 · 收藏日期、四格进度（已同步 → 已预览 → 已转写 → 已总结）；底部「已选 n 条」
-// +「处理选中的」。不全量处理：他勾哪几条才处理哪几条，先看标题和配文，不够再转写（ⓘ 里说）。Mac 不在线时取地址的活
+// +「处理选中的」。不全量处理：他勾哪几条才处理哪几条；视频直接下载转写（11-09 他定，ⓘ 里说）。Mac 不在线时取地址的活
 // 排着，这一行写「等 Mac 上线」。
 
 import { useEffect, useMemo, type ReactNode } from 'react';
@@ -143,9 +143,8 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
         <footer className="douyin-foot">
           <span className="douyin-picked" role="status">{state.notice ?? <>已选 <Count n={selected.size} /> 条</>}</span>
           <span className="douyin-how">
-            <span className="douyin-how-text">先看标题和配文，不够再转写</span>
             <InfoTip label="怎么处理" side="top"
-              text="先用标题和配文做个预览；说不清的再用作品自带字幕，没有字幕就在你的服务器上转写，最后写出要点。处理过的不会重复处理。" />
+              text="视频在你的服务器上下载、转写，再写出要点；图文读图里的文字。处理过的不会重复处理。" />
           </span>
           <button type="button" className="primary-button button-small" disabled={selected.size === 0
             || busy === 'process'} onClick={() => void store.process()}>处理选中的</button>

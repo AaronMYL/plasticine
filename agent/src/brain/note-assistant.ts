@@ -2,7 +2,8 @@ import { NOTE_ASSIST_CONTEXT_CHARS, NOTE_PREDICT_BEFORE_CHARS, NOTE_PREDICT_AFTE
   NOTE_ASSIST_DOCUMENT_CHARS, NOTE_ASSIST_SELECTION_CHARS, noteAssistTimeoutMs,
   type NoteAssistRequest, type NoteAssistView }
   from '../../shared/api/notes-workspace.ts';
-import type { TextModels } from '../kernel/index.ts';
+import type { TextDeltas, TextModels } from '../kernel/index.ts';
+import { PredictText } from './note-overlap.ts';
 
 const LABELS: Record<NoteAssistRequest['action'], string> = {
   predict: '续写', interject: 'Plasticine 想接一句', polish: '润色', organize: '整理',
@@ -59,7 +60,11 @@ export class NoteAssistant {
     this.#models = models;
   }
 
-  async suggest(input: NoteAssistRequest, signal: AbortSignal): Promise<NoteAssistView> {
+  /**
+   * onText：要边生成边看的调用方给（笔记续写，2026-11-09 他定「第一个字出来就画灰字」）。只有续写交增量：开头和光标前
+   * 重复的先去掉；送出的是最终文字的开头，结尾在返回的最终文字里收拾。其余动作照旧只给最终文字。
+   */
+  async suggest(input: NoteAssistRequest, signal: AbortSignal, onText?: TextDeltas): Promise<NoteAssistView> {
     if (input.action === 'custom' && !input.instruction?.trim()) {
       throw new Error('请先写下修改要求，再生成修改稿。');
     }
@@ -75,8 +80,15 @@ export class NoteAssistant {
       before: (input.before ?? input.markdown.slice(0, NOTE_ASSIST_CONTEXT_CHARS)).slice(-NOTE_ASSIST_CONTEXT_CHARS),
       after: (input.after ?? '').slice(0, NOTE_ASSIST_CONTEXT_CHARS),
     };
-    const payload = brief ? cursorContext(input)
-      : { scope, text, instruction: input.instruction ?? '', context };
+    const cursor = cursorContext(input);
+    const payload = brief ? cursor : { scope, text, instruction: input.instruction ?? '', context };
+    const shaping = input.action === 'predict' ? new PredictText(cursor.before, cursor.after) : null;
+    const deltas = shaping === null || onText === undefined ? undefined : (delta: string): void => {
+      const fresh = shaping.push(delta);
+      if (fresh !== '') {
+        onText(fresh);
+      }
+    };
     const boundary = brief ? CURSOR_BOUNDARY : SCOPE_BOUNDARY[scope];
     const timeout = AbortSignal.timeout(noteAssistTimeoutMs(input));
     const requestSignal = AbortSignal.any([signal, timeout]);
@@ -87,7 +99,7 @@ export class NoteAssistant {
         messages: [{ role: 'user', content: JSON.stringify(payload) }],
         purpose: `note_${input.action}`,
         maxOutputTokens: outputBudget(input.action, text.length),
-      }, requestSignal);
+      }, requestSignal, deltas);
     } catch (cause) {
       signal.throwIfAborted();
       if (timeout.aborted) {
@@ -100,7 +112,7 @@ export class NoteAssistant {
       throw new Error('笔记建议还没有完整生成，请重试；正文没有改动。');
     }
     const raw = answer.text;
-    const markdown = input.action === 'predict' ? raw.trimEnd().replace(/^["“「]|["”」]$/g, '')
+    const markdown = shaping !== null ? shaping.finish(raw)
       : raw.trim().replace(/^```(?:markdown|md)\s*\n([\s\S]*?)\n```$/, '$1');
     if (markdown.trim() === '' && !brief) {
       throw new Error('没有生成可用的笔记建议，请重试；正文没有改动。');

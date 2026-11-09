@@ -1,36 +1,51 @@
-// 笔记里的两种自动建议（2026-11-04 用户定：各管各的、可以同时出现）：
-// - 续写：停笔 0.7 秒，光标后的灰字；Tab 或点灰字采用。
-// - 补充：停笔 3.5 秒，当前段落下方一句；「加上」或点文字采用，× 不用。
-// 两者各有计时器、请求和显示位，一个出现不清掉另一个；打字、移动光标、输入法开始照常把两者都撤下。
+// 笔记里的两种自动建议（2026-11-04 用户定：各管各的、可以同时出现；2026-11-09 他定按第一性原理重做）：
+// - 续写：停笔 NOTE_PREDICT_PAUSE_MS，光标后的灰字；边生成边显示，第一段字到了就画。接着打的字和灰字开头一样，
+//   灰字留着、只去掉打出的部分（note-predict-live.ts）；对不上才撤下，等下一次停笔。Tab 或点灰字采用。
+// - 补充：光标停在段尾约 3 秒给一次，同一段只给一次（段落内容没变就不再给；换段或这段又写了新内容算新的一次），
+//   没什么可补就不出。「加上」或点文字采用，× 不用。
+// 中文输入法组字期间不改正文也不改装饰：建议只用 CSS 藏起来（.note-body[data-composing]），在途的续写接着收；
+// 组完按提交进正文的字比，对得上接着显示剩下的，对不上才撤下。
 // 同时在时 Tab 归续写（灰字就在光标后，Tab 是它的键），补充用「加上」或点它的文字；Esc 两个一起收起。
 
 import type { Editor } from '@tiptap/core';
 import type { Node as DocumentNode } from '@tiptap/pm/model';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { NOTE_ASSIST_CONTEXT_CHARS, NOTE_PREDICT_BEFORE_CHARS, NOTE_PREDICT_AFTER_CHARS,
   type NoteAssistRequest } from '../../api/shared.ts';
 import { useEditorDom } from './editor-dom.ts';
 import { InlineSuggestion, type Suggestion } from './note-inline-suggestion.tsx';
-import { SUGGESTION_KINDS, suggestionSpacePlugin, unregisterSuggestionSpace,
+import { followTyping, ghostPosition, remaining, startPrediction, withDelta, withFinal,
+  type LivePrediction } from './note-predict-live.ts';
+import { flushSuggestionSpace, SUGGESTION_KINDS, suggestionSpacePlugin, unregisterSuggestionSpace,
   type SuggestionKind } from './note-suggestion-space.ts';
 
-export const NOTE_PREDICT_PAUSE_MS = 700;
-export const NOTE_INTERJECT_PAUSE_MS = 3500;
-/** 补充不追着打断：离上一次至少隔一分钟、全文至少多写了这么多字。 */
-const INTERJECT_MIN_CHARS = 80;
-const INTERJECT_INTERVAL_MS = 60_000;
+/**
+ * 停下就有（2026-11-09）：0.4 秒。拼音打字时候选、空格之间的间隔大多在这以内，再短会在每个词之间都发一次；
+ * 灰字边生成边画、照着打不作废，等到的主要是模型出第一个字的时间。
+ */
+export const NOTE_PREDICT_PAUSE_MS = 400;
+/** 补充：光标停在段尾约 3 秒（2026-11-09 他定）。 */
+export const NOTE_INTERJECT_PAUSE_MS = 3000;
 const COMPOSITION_SETTLE_MS = 30;
-const PREDICT_MIN_CHARS = 6;
+/** 这一段写了这么多字才给建议，刚起头的一两个字不值得要。 */
+const SUGGEST_MIN_CHARS = 6;
+/** 给过补充的段落记这么多就够了，再多丢掉最早的。 */
+const INTERJECTED_MAX = 500;
 
 type Shown = Readonly<Record<SuggestionKind, Suggestion | null>>;
 const NOTHING_SHOWN: Shown = { predict: null, interject: null };
 
+interface InterjectRequest { controller: AbortController; doc: DocumentNode; position: number; key: string }
+
 function predictRequest(doc: DocumentNode, position: number): NoteAssistRequest {
+  const before = doc.textBetween(Math.max(0, position - NOTE_PREDICT_BEFORE_CHARS), position, '\n');
   return {
     action: 'predict',
-    markdown: doc.textBetween(Math.max(0, position - NOTE_PREDICT_BEFORE_CHARS), position, '\n'),
+    markdown: before,
+    before,
     after: doc.textBetween(position, Math.min(doc.content.size, position + NOTE_PREDICT_AFTER_CHARS), '\n'),
   };
 }
@@ -49,6 +64,33 @@ function interjectRequest(editor: Editor, position: number): NoteAssistRequest {
   return { action: 'interject', markdown: before, before, after };
 }
 
+function sameSuggestion(a: Suggestion | null, b: Suggestion | null): boolean {
+  return a === b || (a !== null && b !== null && a.kind === b.kind && a.text === b.text
+    && a.position === b.position && a.doc === b.doc);
+}
+
+/** 给过补充的段落：按段落内容记，内容变了就是新的一段。 */
+class GivenParagraphs {
+  readonly #keys = new Set<string>();
+
+  has(key: string): boolean {
+    return this.#keys.has(key);
+  }
+
+  add(key: string): void {
+    this.#keys.delete(key);
+    this.#keys.add(key);
+    const oldest = this.#keys.values().next();
+    if (this.#keys.size > INTERJECTED_MAX && oldest.done !== true) {
+      this.#keys.delete(oldest.value);
+    }
+  }
+
+  delete(key: string): void {
+    this.#keys.delete(key);
+  }
+}
+
 export function NoteSuggestions({ editor, noteId, predict, interject, paused, onError }: {
   editor: Editor; noteId: string; predict: boolean; interject: boolean; paused: boolean;
   onError: (message: string | null) => void;
@@ -59,31 +101,63 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
   const composing = useRef(false);
   const latest = useRef({ onError });
   latest.current = { onError };
-  const lastInterjection = useRef({ time: 0, length: editor.getText().length });
+  const live = useRef<LivePrediction | null>(null);
+  const requests = useRef<{ predict: AbortController | null; interject: InterjectRequest | null }>(
+    { predict: null, interject: null });
+  const given = useRef({ noteId, paragraphs: new GivenParagraphs() });
+  if (given.current.noteId !== noteId) {
+    given.current = { noteId, paragraphs: new GivenParagraphs() };
+  }
   const show = (kind: SuggestionKind, value: Suggestion | null): void => {
-    if (shownRef.current[kind] === value) { return; }
+    if (sameSuggestion(shownRef.current[kind], value)) { return; }
     shownRef.current = { ...shownRef.current, [kind]: value };
     setShown(shownRef.current);
   };
-  const hideAll = (): void => {
-    for (const kind of SUGGESTION_KINDS) { show(kind, null); }
+  /** 续写的灰字照 live 画；组字期间不碰（React 一重画就可能改装饰），组完再画。 */
+  const showPrediction = (): void => {
+    if (composing.current || editor.view.composing) { return; }
+    const value = live.current;
+    const text = value === null ? '' : remaining(value);
+    show('predict', value === null || text === '' ? null
+      : { kind: 'predict', text, position: ghostPosition(value), doc: value.doc });
+  };
+  const drop = (kind: SuggestionKind): void => {
+    if (kind === 'predict') {
+      requests.current.predict?.abort();
+      requests.current.predict = null;
+      live.current = null;
+    } else {
+      const pending = requests.current.interject;
+      if (pending !== null) {
+        // 还没回来就被打断的不算给过：回到这一段、内容没变，还可以再要。
+        pending.controller.abort();
+        given.current.paragraphs.delete(pending.key);
+        requests.current.interject = null;
+      }
+    }
+    show(kind, null);
+  };
+  const dropAll = (): void => {
+    for (const kind of SUGGESTION_KINDS) { drop(kind); }
   };
   const current = (value: Suggestion): boolean => !editor.isDestroyed && editor.isEditable
     && !composing.current && !editor.view.composing && editor.state.doc === value.doc
     && editor.state.selection.empty && editor.state.selection.from === value.position;
   const adopt = (kind: SuggestionKind): void => {
     const value = shownRef.current[kind];
-    if (value === null || !current(value)) { show(kind, null); return; }
+    if (value === null || !current(value)) { drop(kind); return; }
     // 采用会改正文，另一条的位置随之作废，两条一起撤下。
-    hideAll();
+    dropAll();
     if (value.kind === 'predict') {
       editor.chain().focus().insertContentAt(value.position, { type: 'text', text: value.text }).run();
     } else {
       editor.chain().focus().insertContentAt(value.position, value.text, { contentType: 'markdown' }).run();
+      // 加上的是 Plasticine 的话，不再对着它补充。
+      given.current.paragraphs.add(editor.state.selection.$from.parent.textContent);
     }
   };
-  const handlers = useRef({ show, hideAll, adopt, current });
-  handlers.current = { show, hideAll, adopt, current };
+  const handlers = useRef({ dropAll, adopt });
+  handlers.current = { dropAll, adopt };
 
   useEffect(() => {
     // 排在所有扩展前面：编号 / 待办列表自己也认 Tab（缩进一级），有建议时 Tab 先给采用（2026-11-03 用户反馈）。
@@ -98,7 +172,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
         handlers.current.adopt(visible.predict === null ? 'interject' : 'predict');
         return true;
       }
-      if (event.key === 'Escape') { handlers.current.hideAll(); return true; }
+      if (event.key === 'Escape') { handlers.current.dropAll(); return true; }
       return false;
     }), (plugin, plugins) => [plugin, ...plugins]);
     return () => unregisterSuggestionSpace(editor);
@@ -107,96 +181,171 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
   const dom = useEditorDom(editor);
   useEffect(() => {
     if (dom === null) { return; }
+    const body = dom.closest('.note-body');
     const timers: Record<SuggestionKind, ReturnType<typeof setTimeout> | null> = { predict: null, interject: null };
-    const controllers: Record<SuggestionKind, AbortController | null> = { predict: null, interject: null };
     let settled: ReturnType<typeof setTimeout> | null = null;
     let disposed = false;
-    const cancel = (): void => {
+    const stopTimers = (): void => {
       for (const kind of SUGGESTION_KINDS) {
         const timer = timers[kind];
         if (timer !== null) { clearTimeout(timer); timers[kind] = null; }
-        controllers[kind]?.abort();
-        controllers[kind] = null;
       }
-      handlers.current.hideAll();
     };
     const eligible = (): boolean => !disposed && !paused && !editor.isDestroyed && editor.isEditable
       && editor.isFocused && !composing.current && !editor.view.composing && editor.state.selection.empty
       && editor.state.selection.$from.parent.isTextblock
       && editor.state.selection.$from.parent.type.name !== 'codeBlock'
       && editor.state.selection.$from.parentOffset === editor.state.selection.$from.parent.content.size;
-    const request = async (kind: SuggestionKind): Promise<void> => {
-      timers[kind] = null;
-      if (!eligible()) { return; }
-      const signal = new AbortController();
-      controllers[kind] = signal;
-      const position = editor.state.selection.from;
+    const paragraphText = (): string => editor.state.selection.$from.parent.textContent;
+    const requestPrediction = async (): Promise<void> => {
+      timers.predict = null;
+      if (!eligible() || live.current !== null) { return; }
+      const controller = new AbortController();
+      requests.current.predict = controller;
       const doc = editor.state.doc;
-      const input = kind === 'predict' ? predictRequest(doc, position) : interjectRequest(editor, position);
-      if (kind === 'interject') {
-        // 发出就算一次：空结果、被打断、失败都不再马上重来（2026-11-04：原来只在显示时更新，空结果后一直排补充）。
-        lastInterjection.current = { time: Date.now(), length: editor.getText().length };
-      }
+      const position = editor.state.selection.from;
+      live.current = startPrediction(position, doc);
+      const mine = (): boolean => requests.current.predict === controller && live.current !== null;
       try {
-        const value = await api.notes.assist(noteId, input, signal.signal);
-        const candidate: Suggestion = { text: value.markdown, kind, position, doc };
-        if (signal.signal.aborted || !eligible() || !handlers.current.current(candidate)) { return; }
+        const view = await api.notes.assistStream(noteId, predictRequest(doc, position), (delta) => {
+          if (!mine() || live.current === null) { return; }
+          live.current = withDelta(live.current, delta);
+          showPrediction();
+        }, controller.signal);
+        if (!mine() || live.current === null) { return; }
         latest.current.onError(null);
-        if (value.markdown.trim() === '') { return; }
-        handlers.current.show(kind, candidate);
+        const final = withFinal(live.current, view.markdown);
+        if (final === null || remaining(final) === '') { drop('predict'); return; }
+        live.current = final;
+        showPrediction();
       } catch (cause) {
-        if (!signal.signal.aborted) { latest.current.onError(errorText(cause)); }
+        if (mine()) {
+          latest.current.onError(errorText(cause));
+          drop('predict');
+        }
       } finally {
-        if (controllers[kind] === signal) { controllers[kind] = null; }
+        if (requests.current.predict === controller) { requests.current.predict = null; }
       }
     };
-    const canInterject = (): boolean => interject
-      && Date.now() - lastInterjection.current.time >= INTERJECT_INTERVAL_MS
-      && editor.getText().length - lastInterjection.current.length >= INTERJECT_MIN_CHARS;
-    const activity = (): void => {
-      cancel();
-      if (!eligible()) { return; }
-      if (predict && editor.state.selection.$from.parent.textContent.trim().length >= PREDICT_MIN_CHARS) {
-        timers.predict = setTimeout(() => void request('predict'), NOTE_PREDICT_PAUSE_MS);
+    const requestInterjection = async (): Promise<void> => {
+      timers.interject = null;
+      const key = paragraphText();
+      if (!eligible() || requests.current.interject !== null || shownRef.current.interject !== null
+        || key.trim().length < SUGGEST_MIN_CHARS || given.current.paragraphs.has(key)) {
+        return;
       }
-      if (canInterject()) {
-        timers.interject = setTimeout(() => void request('interject'), NOTE_INTERJECT_PAUSE_MS);
+      // 发出就算这一段给过：没什么可补（空）也不再要；回来之前被打断的在 drop 里取消记号。
+      given.current.paragraphs.add(key);
+      const pending: InterjectRequest = { controller: new AbortController(), doc: editor.state.doc,
+        position: editor.state.selection.from, key };
+      requests.current.interject = pending;
+      try {
+        const value = await api.notes.assist(noteId, interjectRequest(editor, pending.position),
+          pending.controller.signal);
+        if (requests.current.interject !== pending) { return; }
+        requests.current.interject = null;
+        latest.current.onError(null);
+        const candidate: Suggestion = { text: value.markdown, kind: 'interject', position: pending.position,
+          doc: pending.doc };
+        if (value.markdown.trim() === '') { return; }
+        if (current(candidate)) {
+          show('interject', candidate);
+        } else {
+          // 回来时正在组字、或者刚好挪开了：没给出去，这一段还可以再要。
+          given.current.paragraphs.delete(key);
+        }
+      } catch (cause) {
+        if (requests.current.interject === pending) {
+          requests.current.interject = null;
+          latest.current.onError(errorText(cause));
+        }
       }
     };
-    const startComposition = (): void => { composing.current = true; cancel(); };
+    const schedule = (): void => {
+      stopTimers();
+      if (!eligible() || paragraphText().trim().length < SUGGEST_MIN_CHARS) { return; }
+      if (predict && live.current === null) {
+        timers.predict = setTimeout(() => void requestPrediction(), NOTE_PREDICT_PAUSE_MS);
+      }
+      if (interject && shownRef.current.interject === null && !given.current.paragraphs.has(paragraphText())) {
+        timers.interject = setTimeout(() => void requestInterjection(), NOTE_INTERJECT_PAUSE_MS);
+      }
+    };
+    /** 正文或光标变了：续写对得上就接着显示，对不上撤下；补充只认它出现时的那一版正文和光标。 */
+    const sync = (): void => {
+      if (disposed || composing.current || editor.view.composing) { return; }
+      const value = live.current;
+      if (value !== null) {
+        const next = followTyping(value, editor.state.doc, editor.state.selection);
+        if (next === null || (next.done && remaining(next) === '')) {
+          drop('predict');
+        } else if (next !== value) {
+          live.current = next;
+        }
+        showPrediction();
+      }
+      const pending = requests.current.interject;
+      if (pending !== null && (editor.state.doc !== pending.doc || editor.state.selection.from !== pending.position)) {
+        drop('interject');
+      }
+      const visible = shownRef.current.interject;
+      if (visible !== null && !current(visible)) { drop('interject'); }
+      schedule();
+    };
+    const startComposition = (): void => {
+      composing.current = true;
+      stopTimers();
+      // 只用 CSS 藏起来：不改 React 状态、不发事务，正在组的那一段一点不动。
+      body?.setAttribute('data-composing', '');
+    };
     const endComposition = (): void => {
       const finish = (): void => {
         if (disposed || editor.isDestroyed) { return; }
         if (editor.view.composing) { settled = setTimeout(finish, COMPOSITION_SETTLE_MS); return; }
+        settled = null;
         composing.current = false;
-        activity();
+        flushSuggestionSpace(editor);
+        // 先把灰字换成对得上的剩余部分（或撤下）再去掉隐藏，不让组字前的旧灰字闪一下。
+        flushSync(() => {
+          sync();
+          showPrediction();
+        });
+        body?.removeAttribute('data-composing');
       };
       if (settled !== null) { clearTimeout(settled); }
       settled = setTimeout(finish, COMPOSITION_SETTLE_MS);
     };
+    const blur = (): void => {
+      stopTimers();
+      handlers.current.dropAll();
+    };
     dom.addEventListener('compositionstart', startComposition);
     dom.addEventListener('compositionend', endComposition);
-    editor.on('update', activity);
-    editor.on('selectionUpdate', activity);
-    editor.on('blur', cancel);
-    editor.on('focus', activity);
-    if (predict || interject) { activity(); }
+    editor.on('update', sync);
+    editor.on('selectionUpdate', sync);
+    editor.on('blur', blur);
+    editor.on('focus', sync);
+    if (predict || interject) { sync(); }
     return () => {
       disposed = true;
-      cancel();
+      stopTimers();
+      handlers.current.dropAll();
       if (settled !== null) { clearTimeout(settled); }
-      editor.off('update', activity);
-      editor.off('selectionUpdate', activity);
-      editor.off('blur', cancel);
-      editor.off('focus', activity);
+      composing.current = false;
+      body?.removeAttribute('data-composing');
+      editor.off('update', sync);
+      editor.off('selectionUpdate', sync);
+      editor.off('blur', blur);
+      editor.off('focus', sync);
       dom.removeEventListener('compositionstart', startComposition);
       dom.removeEventListener('compositionend', endComposition);
     };
+    // show / drop / current 每次渲染重建，但只读 ref 和 editor；effect 跟着它们重跑反而会打断在途请求。
   }, [api, editor, dom, noteId, predict, interject, paused]);
 
   return SUGGESTION_KINDS.map((kind) => {
     const value = shown[kind];
     return value === null ? null : <InlineSuggestion key={kind} editor={editor} suggestion={value}
-      onAdopt={() => adopt(kind)} onDismiss={() => show(kind, null)} />;
+      onAdopt={() => adopt(kind)} onDismiss={() => drop(kind)} />;
   });
 }

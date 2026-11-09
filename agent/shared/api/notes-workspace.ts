@@ -1,6 +1,6 @@
 import { Type, type Static } from 'typebox';
 import { NoteFolderSchema, NoteMarkdownSchema } from '../state.ts';
-import { IdSchema, RequestIdSchema } from './common.ts';
+import { ApiErrorSchema, IdSchema, RequestIdSchema } from './common.ts';
 
 export const NOTE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 export const NOTE_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] as const;
@@ -49,6 +49,8 @@ export const NoteAssistRequestSchema = Type.Object({
   before: Type.Optional(Type.String({ maxLength: NOTE_ASSIST_CONTEXT_CHARS })),
   after: Type.Optional(Type.String({ maxLength: NOTE_ASSIST_CONTEXT_CHARS })),
   instruction: Type.Optional(Type.String({ maxLength: 4000 })),
+  /** true：回答是 text/event-stream，一条条 NoteAssistStreamEvent（2026-11-09 续写边生成边显示）。 */
+  stream: Type.Optional(Type.Boolean()),
 }, { additionalProperties: false });
 export type NoteAssistRequest = Static<typeof NoteAssistRequestSchema>;
 /** 续写要及时让位于输入；完整修改稿给足生成时间。沿用 Live 的三个等待窗口。 */
@@ -59,6 +61,18 @@ export function noteAssistTimeoutMs(input: Pick<NoteAssistRequest, 'action' | 's
 }
 export const NoteAssistViewSchema = Type.Object({ markdown: Type.String(), label: Type.String() });
 export type NoteAssistView = Static<typeof NoteAssistViewSchema>;
+/**
+ * stream: true 的回答，和 /v2/events、浏览器画面一样是 SSE（一条一行 `data: <JSON>`）：
+ * - text：续写又生成了一段（开头和光标前重复的已经去掉）；拼起来是最终文字的开头。
+ * - done：最终文字，以它为准（结尾可能比送过的少一点：和光标后重复的、引号、空白）。
+ * - error：开始送之后才失败；开始之前失败照旧是普通的错误回答（状态码 + ApiError）。
+ */
+export const NoteAssistStreamEventSchema = Type.Union([
+  Type.Object({ type: Type.Literal('text'), delta: Type.String() }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('done'), view: NoteAssistViewSchema }, { additionalProperties: false }),
+  Type.Object({ type: Type.Literal('error'), error: ApiErrorSchema }, { additionalProperties: false }),
+]);
+export type NoteAssistStreamEvent = Static<typeof NoteAssistStreamEventSchema>;
 export const NoteImportDetailsSchema = Type.Object({
   variants: Type.Array(Type.Object({
     kind: Type.Enum(['original', 'corrected', 'polished']), markdown: NoteMarkdownSchema,

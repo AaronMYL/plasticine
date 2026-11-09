@@ -112,7 +112,7 @@ export function resultOf(stdout: string): TranscribeResult {
     peakMb: parsed.peakMb, engine: parsed.engine };
 }
 
-/** 服务器上的设置（环境变量，部署时写进 systemd 单元）：没配就没有本地转写，只用自带字幕。 */
+/** 服务器上的设置（环境变量，部署时写进 systemd 单元）：没配就没有本地转写：抖音视频转不了，别的网站只能用自带字幕。 */
 export function transcriberFromEnv(env: NodeJS.ProcessEnv): Transcriber | null {
   const engine = TRANSCRIBE_ENGINES.find((name) => name === env['PLASTICINE_TRANSCRIBE_ENGINE']);
   const model = env['PLASTICINE_TRANSCRIBE_MODEL'];

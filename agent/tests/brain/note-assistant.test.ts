@@ -107,3 +107,50 @@ test('老客户端的补充只带整篇时照旧取最后一段，续写也标�
   const predict = JSON.parse(String(model.requests[1]?.messages[0]?.content)) as Record<string, unknown>;
   assert.deepEqual([predict['scope'], predict['before'], predict['after']], ['cursor', '前半句', '后半句']);
 });
+
+test('续写边生成边送：增量去掉和光标前重复的开头再交出，最终文字和送出的一致；补充不流式', async () => {
+  const model = scriptedText(['想去公园散步，顺便把这件事想清楚。', '要不要先列证据？']);
+  const assistant = new NoteAssistant(model.models);
+  const deltas: string[] = [];
+  const result = await assistant.suggest({ action: 'predict', markdown: '我今天想去', before: '我今天想去', after: '' },
+    new AbortController().signal, (delta) => deltas.push(delta));
+  assert.equal(result.markdown, '公园散步，顺便把这件事想清楚。');
+  assert.ok(deltas.length > 1, '一段段交出');
+  assert.equal(deltas.join(''), result.markdown);
+  assert.ok(deltas.every((delta) => delta !== ''));
+  const interject: string[] = [];
+  const answer = await assistant.suggest({ action: 'interject', markdown: '前文' }, new AbortController().signal,
+    (delta) => interject.push(delta));
+  assert.equal(answer.markdown, '要不要先列证据？');
+  assert.deepEqual(interject, []);
+});
+
+test('续写结尾重复了光标后已经写好的开头：最终文字里去掉；不流式的模型也一样去重', async () => {
+  const model = scriptedText(['，然后把事实记清楚。后文已写好']);
+  const assistant = new NoteAssistant(model.models);
+  const input = { action: 'predict' as const, markdown: '正在记录这段经历', before: '正在记录这段经历',
+    after: '\n后文已写好的结论。' };
+  assert.equal((await assistant.suggest(input, new AbortController().signal, () => undefined)).markdown,
+    '，然后把事实记清楚。');
+  assert.equal((await assistant.suggest(input, new AbortController().signal)).markdown, '，然后把事实记清楚。');
+});
+
+test('续写生成到一半失败或被叫停：照常报错，已经送出的增量由调用方作废', async () => {
+  const abort = new AbortController();
+  const model = scriptedText([async (_request, _signal, onText) => {
+    onText?.('，先写');
+    throw new TextModelError('busy', '连不上模型');
+  }, async (_request, signal, onText) => {
+    onText?.('，再写');
+    abort.abort();
+    signal.throwIfAborted();
+    return { text: '，再写', complete: true };
+  }]);
+  const assistant = new NoteAssistant(model.models);
+  const deltas: string[] = [];
+  await assert.rejects(assistant.suggest({ action: 'predict', markdown: '前文' }, new AbortController().signal,
+    (delta) => deltas.push(delta)), /续写失败：连不上模型/);
+  await assert.rejects(assistant.suggest({ action: 'predict', markdown: '前文' }, abort.signal,
+    (delta) => deltas.push(delta)), /abort/i);
+  assert.deepEqual(deltas, ['，先写', '，再写']);
+});

@@ -28,6 +28,7 @@ import { migration as favicons } from './0110-favicons.ts';
 import { migration as ownerAccount } from './0111-owner-account.ts';
 import { migration as deviceLocal } from './0112-device-local.ts';
 import { migration as feedSourceRemoved } from './0113-feed-source-removed.ts';
+import { migration as noteSuggestThinking } from './0120-note-suggest-thinking.ts';
 import { migration as objects } from './0001-objects.ts';
 import { migration as tasks } from './0002-tasks.ts';
 import { migration as records } from './0003-records.ts';
@@ -186,6 +187,7 @@ export const MIGRATIONS: readonly Migration[] = [
   ownerAccount,
   deviceLocal,
   feedSourceRemoved,
+  noteSuggestThinking,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

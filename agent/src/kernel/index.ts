@@ -7,4 +7,5 @@ export type { KernelModelsOptions, KernelModelState } from './models.ts';
 export { LOGIN_START_WAIT_MS, LOGIN_TTL_MS, ProviderLogins } from './logins.ts';
 export { TranslateModel } from './translate-model.ts';
 export { kernelText, NO_MODEL_TEXT, TextModelError, thinkingOf } from './text.ts';
-export type { TextAnswer, TextImage, TextMessage, TextModelErrorKind, TextModels, TextRequest } from './text.ts';
+export type { TextAnswer, TextDeltas, TextImage, TextMessage, TextModelErrorKind, TextModels, TextRequest }
+  from './text.ts';
