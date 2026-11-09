@@ -27,8 +27,9 @@ Agent、界面、桌面客户端都在这里改、测、打包、发版。Cyber 
 - **许可边界**：Plasticine 是 AGPL-3.0；`agent/protocol/` 和 `agent/shared/` 里开头标了
   `// SPDX-License-Identifier: Apache-2.0` 的文件是 Apache-2.0，闭源的 Cyber Hunter 中继只用这些。
   - Apache-2.0 的文件只能引用别的 Apache-2.0 文件、node 内置和 npm 包（`agent/tests/shared/license-boundary.test.ts` 查）；
-  - 新的线上格式放进 Apache-2.0 那边，网络之外的功能放 AGPL 这边；改许可范围先问他。
+  - 新的线上格式放进 Apache-2.0 那边，网络之外的功能放 AGPL 这边。
 - **提交作者是 AaronMYL**：`git config user.name AaronMYL`，邮箱用 GitHub 给的 noreply 地址；提交里不写共同作者行。
+- **先问再做**：新增依赖、改数据库结构（新迁移）、改接口或线上格式、删除分支 / 标签 / Release，先问维护者。
 - **不删用户数据**：迁移只加不改，删除只记 `deleted_at` / `removed_at`；迁移号在 `agent/src/state/migrations/` 里顺延。
 - **信息身份必须真实**：用户原话、系统处理、推测、现实结果分开记；系统不能冒充用户确认。
 - **只用可擦除的 TypeScript 语法**：Node 24 直接跑 `.ts`（类型剥离）。
