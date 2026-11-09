@@ -38,6 +38,8 @@ export interface Resources {
   node: string | null;
   helper: string | null;
   icon: string;
+  /** Mac 菜单栏图标（单色模板图；同目录的 @2x 由系统自己挑）。 */
+  trayTemplate: string;
 }
 
 export function resources(input: { packaged: boolean; resourcesPath: string; dist: string;
@@ -58,6 +60,7 @@ export function resources(input: { packaged: boolean; resourcesPath: string; dis
     node: pick(input.env.PLASTICINE_DESKTOP_NODE, join(base, 'node', input.platform === 'win32' ? 'node.exe' : 'node')),
     helper: pick(input.env.PLASTICINE_DESKTOP_HELPER, helper),
     icon: join(input.dist, 'icon.png'),
+    trayTemplate: join(input.dist, 'trayTemplate.png'),
   };
 }
 

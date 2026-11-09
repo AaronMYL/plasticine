@@ -47,12 +47,17 @@ test('Mac：新版没写下起来了的记号，换回上一版、记下坏版�
 test('Windows：静默装新版，起不来静默装回上一版；没有上一版就只记失败', () => {
   const script = windowsInstallScript({ pid: 12, setup: 'C:\\u\\new.exe', previousSetup: "C:\\u\\o'ld.exe",
     marker: 'C:\\m', rolledBack: 'C:\\r.json', version: '2026.1108.000000', exeName: 'Plasticine.exe',
-    waitSeconds: 90 });
+    installed: 'C:\\p\\Plasticine.exe', log: 'C:\\u\\install.log', waitSeconds: 90 });
+  // 安装程序没把新版带起来时脚本自己打开；旧进程不退就强行结束；全程记录（11-09 他点了「重新打开」没重启）。
+  assert.match(script, /\$Installed = 'C:\\p\\Plasticine\.exe'/);
+  assert.match(script, /Start-Process -FilePath \$Installed/);
+  assert.match(script, /Get-Process -Id 12 .*ProcessName -eq \$ExeName .*Stop-Process -Force/);
+  assert.match(script, /Start-Transcript -LiteralPath 'C:\\u\\install\.log'/);
   assert.match(script, /'\/S','--updated','--force-run'/);
   assert.match(script, /\$Previous = 'C:\\u\\o''ld\.exe'/);
   assert.match(script, /Get-Process -Name \$ExeName/);
   assert.match(script, /\$ExeName = 'Plasticine'/);
   const first = windowsInstallScript({ pid: 12, setup: 'a', previousSetup: null, marker: 'm', rolledBack: 'r',
-    version: 'v', exeName: 'Plasticine.exe', waitSeconds: 90 });
+    version: 'v', exeName: 'Plasticine.exe', installed: 'p', log: 'l', waitSeconds: 90 });
   assert.match(first, /\$Previous = \$null/);
 });

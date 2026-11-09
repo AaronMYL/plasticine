@@ -78,6 +78,10 @@ export interface WindowsInstallInput {
   version: string;
   /** 主程序的文件名（结束没起来的新版用）。 */
   exeName: string;
+  /** 主程序的完整路径：安装程序没把它带起来时，脚本自己打开（11-09 他点了「重新打开」没重启）。 */
+  installed: string;
+  /** 这次换版本的记录，出了问题看这里。 */
+  log: string;
   waitSeconds: number;
 }
 
@@ -96,9 +100,20 @@ export function windowsInstallScript(input: WindowsInstallInput): string {
     `$Rolled = ${psQuote(input.rolledBack)}`,
     `$Version = ${psQuote(input.version)}`,
     `$ExeName = ${psQuote(input.exeName.replace(/\.exe$/i, ''))}`,
+    `$Installed = ${psQuote(input.installed)}`,
+    `Start-Transcript -LiteralPath ${psQuote(input.log)} -Force | Out-Null`,
     `Wait-Process -Id ${input.pid} -Timeout 30 -ErrorAction SilentlyContinue`,
+    // 旧进程 30 秒还没退（比如还在等本机本体停），强行结束，不然安装程序换不了文件。
+    `Get-Process -Id ${input.pid} -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -eq $ExeName } |`
+      + ' Stop-Process -Force',
     'Remove-Item -LiteralPath $Marker -ErrorAction SilentlyContinue',
     "Start-Process -FilePath $Setup -ArgumentList '/S','--updated','--force-run' -Wait",
+    // 安装程序有时不把新版带起来：10 秒内没看到进程就自己打开。
+    'for ($i = 0; $i -lt 10; $i++) {',
+    '  if (Get-Process -Name $ExeName -ErrorAction SilentlyContinue) { break }',
+    '  Start-Sleep -Seconds 1',
+    '}',
+    'if (-not (Get-Process -Name $ExeName -ErrorAction SilentlyContinue)) { Start-Process -FilePath $Installed }',
     `for ($i = 0; $i -lt ${input.waitSeconds}; $i++) {`,
     '  if (Test-Path -LiteralPath $Marker) { exit 0 }',
     '  Start-Sleep -Seconds 1',
@@ -106,6 +121,7 @@ export function windowsInstallScript(input: WindowsInstallInput): string {
     'if ($Previous -eq $null) { exit 2 }',
     'Get-Process -Name $ExeName -ErrorAction SilentlyContinue | Stop-Process -Force',
     "Start-Process -FilePath $Previous -ArgumentList '/S','--updated','--force-run' -Wait",
+    'if (-not (Get-Process -Name $ExeName -ErrorAction SilentlyContinue)) { Start-Process -FilePath $Installed }',
     '$At = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")',
     "$Record = '{\"failed\":\"' + $Version + '\",\"at\":\"' + $At + '\"}'",
     'Set-Content -LiteralPath $Rolled -Encoding UTF8 -Value $Record',

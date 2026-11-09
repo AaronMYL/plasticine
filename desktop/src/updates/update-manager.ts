@@ -250,7 +250,8 @@ export class UpdateManager {
       const script = join(this.deps.directory, 'install.ps1');
       writeFileSync(script, `﻿${windowsInstallScript({ pid: this.deps.pid, setup,
         previousSetup: existsSync(previousSetup) ? previousSetup : null, marker, rolledBack, version,
-        exeName: basename(this.deps.installed), waitSeconds: HEALTH_WAIT_SECONDS })}`);
+        exeName: basename(this.deps.installed), installed: this.deps.installed,
+        log: join(this.deps.directory, 'install.log'), waitSeconds: HEALTH_WAIT_SECONDS })}`);
       this.save((state) => ({ ...state, previous: existsSync(previousSetup) ? this.deps.version : null }));
       this.deps.launchDetached('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle',
         'Hidden', '-File', script]);

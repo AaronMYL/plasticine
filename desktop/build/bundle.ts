@@ -71,6 +71,10 @@ export async function bundle(): Promise<void> {
     join(DIST, 'fonts', 'Geist-Variable.woff2'));
   mkdirSync(dirname(join(DIST, 'icon.png')), { recursive: true });
   copyFileSync(join(ROOT, 'client', 'public', 'icon-512.png'), join(DIST, 'icon.png'));
+  // Mac 菜单栏图标：单色模板图（泥团剪出卷线），系统按深浅色自己上色；@2x 给视网膜屏。
+  for (const name of ['trayTemplate.png', 'trayTemplate@2x.png']) {
+    copyFileSync(join(DESKTOP, 'src', 'assets', name), join(DIST, name));
+  }
 }
 
 if (import.meta.main) {

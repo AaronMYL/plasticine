@@ -249,7 +249,7 @@ async function start(): Promise<void> {
     quit: () => app.quit(),
   };
   const menu = installMenu(platform, actions);
-  const tray = installTray(platform, files.icon, actions);
+  const tray = installTray(platform, { color: files.icon, template: files.trayTemplate }, actions);
   let shownThisComputer: boolean | null = null;
   menuState = (state) => {
     if (state.thisComputer !== shownThisComputer) {

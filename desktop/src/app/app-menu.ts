@@ -1,7 +1,8 @@
 // 菜单、托盘和快捷键。Mac：应用菜单（检查更新、连接到…、重设密码…、设置 ⌘,）、编辑（没有它 ⌘C / ⌘V 不灵）、网页
 // （⌘F / ⌘P / ⌘Y：键盘在网页标签里时界面收不到，由菜单交给界面，和 Swift 版一样）、窗口；⌥Space 叫出窗口并聚焦对话
-// （Swift 版的默认快捷键）。Windows：没有菜单栏，托盘里有「打开」「连接到…」「重设密码…」「检查更新」「退出」——
-// 关窗口只隐藏，本机本体照样跑。「连接到…」登录前也能用（回开始页二选一）；「重设密码…」只在选了这台电脑时有。
+// （Swift 版的默认快捷键）；菜单栏右上还有一个 Plasticine 图标（11-09 他问起，和 Windows 托盘一样的几项）。
+// Windows：没有菜单栏，托盘里有「打开」「连接到…」「重设密码…」「检查更新」「退出」——关窗口只隐藏，本机本体照样跑。
+// 「连接到…」登录前也能用（回开始页二选一）；「重设密码…」只在选了这台电脑时有。
 
 import { app, globalShortcut, Menu, nativeImage, Tray, type MenuItemConstructorOptions } from 'electron';
 
@@ -74,23 +75,36 @@ function macTemplate(actions: MenuActions, state: MenuState): MenuItemConstructo
   ];
 }
 
-/** Windows 托盘（Mac 不用：Dock 就是入口）。icon 是 PNG 路径。回一个换菜单状态的函数。 */
-export function installTray(platform: NodeJS.Platform, icon: string, actions: MenuActions): (state: MenuState) => void {
-  if (platform !== 'win32') {
+/** 托盘的几项：Windows 托盘和 Mac 菜单栏图标共用。 */
+export function trayTemplate(platform: NodeJS.Platform, actions: MenuActions, state: MenuState):
+  MenuItemConstructorOptions[] {
+  return [
+    { label: '打开 Plasticine', click: actions.show },
+    ...(platform === 'darwin' ? [{ label: '设置…', click: actions.settings }] : []),
+    { label: '连接到…', click: actions.connect },
+    { label: '重设密码…', click: actions.resetPassword, visible: state.thisComputer },
+    { label: '检查更新', click: actions.checkUpdates },
+    { type: 'separator' },
+    { label: '退出（本机的 Plasticine 也会停）', click: actions.quit },
+  ];
+}
+
+/**
+ * Windows 托盘、Mac 菜单栏图标。icons.color 是彩色 PNG（Windows），icons.template 是单色模板图（Mac，系统按深浅色上色）。
+ * Windows 点图标打开窗口、右键出菜单；Mac 点图标出菜单（菜单栏的习惯）。回一个换菜单状态的函数。
+ */
+export function installTray(platform: NodeJS.Platform, icons: { color: string; template: string },
+  actions: MenuActions): (state: MenuState) => void {
+  if (platform !== 'win32' && platform !== 'darwin') {
     return () => undefined;
   }
-  const tray = new Tray(nativeImage.createFromPath(icon));
+  const image = nativeImage.createFromPath(platform === 'darwin' ? icons.template : icons.color);
+  if (platform === 'darwin') image.setTemplateImage(true);
+  const tray = new Tray(image);
   tray.setToolTip('Plasticine');
-  tray.on('click', actions.show);
+  if (platform === 'win32') tray.on('click', actions.show);
   const update = (state: MenuState): void => {
-    tray.setContextMenu(Menu.buildFromTemplate([
-      { label: '打开 Plasticine', click: actions.show },
-      { label: '连接到…', click: actions.connect },
-      { label: '重设密码…', click: actions.resetPassword, visible: state.thisComputer },
-      { label: '检查更新', click: actions.checkUpdates },
-      { type: 'separator' },
-      { label: '退出（本机的 Plasticine 也会停）', click: actions.quit },
-    ]));
+    tray.setContextMenu(Menu.buildFromTemplate(trayTemplate(platform, actions, state)));
   };
   update({ thisComputer: false });
   return update;

@@ -1,5 +1,6 @@
-// 设置 · 系统（2026-11-05 设计稿 Settings-System）：去掉启用 / 验收、度量、自迭代策略 / 记录之后剩下的四块——
-//   版本      有新版本时一行：新版本 · 现在 ·「更新并重启」（后果常显：会重启约 1 分钟，在做的线重启后接着做）；
+// 设置 · 系统（2026-11-05 设计稿 Settings-System）：去掉启用 / 验收、度量、自迭代策略 / 记录之后剩下的几块。
+// 原来最上面的「版本 · 更新并重启」11-09 去掉：那是自迭代时代的客户端候选，装包的实例没有发布回执，候选永远挂着、
+// 点了也不会换（他在 Windows 上点了没反应、换完还提示）。现在服务器自己按下载页更新，桌面客户端在「这台电脑」里更新。
 //   运行情况  已运行 · 模型 · 磁盘 · 邮件（两列）；
 //   替你动手的电脑  还连着的旧 Mac App 执行节点（node-devices.tsx）；登录着的设备 11-08 挪到 设置 · 账号，
 //             「添加设备」（配对码、二维码、Mac 专用码）随配对码一起去掉；
@@ -12,7 +13,7 @@ import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
-import type { BackupList, ClientUpdatesResponse, SystemOperations } from '../../api/shared.ts';
+import type { BackupList, SystemOperations } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { relativeTime } from '../../shell/relative-time.ts';
@@ -33,45 +34,6 @@ import { Failure, useRead } from './system-read.tsx';
 const OPERATIONS_POLL_MS = 30_000;
 /** 备份一段列最近几份。 */
 const BACKUP_ROWS = 3;
-
-function Version({ operations }: { operations: SystemOperations | null }): ReactNode {
-  const api = useApi();
-  const updates = useRead<ClientUpdatesResponse>((signal) => api.clientUpdates.list(signal), [api]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const next = updates.value?.updates.find((item) => item.status === 'candidate' || item.status === 'queued');
-  if (next === undefined) {
-    return null;
-  }
-  const update = (): void => {
-    setBusy(true);
-    api.clientUpdates.decide(next.manifest.buildId, { requestId: createRequestId(),
-      currentBuildId: updates.value?.current?.buildId ?? null, targetBuildId: next.manifest.buildId,
-      decision: 'publish' }).then(() => {
-      setBusy(false);
-      updates.reload();
-    }, (cause: unknown) => {
-      setBusy(false);
-      setError(errorText(cause));
-    });
-  };
-  return (
-    <section className="block" aria-labelledby="settings-version">
-      <SectionHead id="settings-version" title="版本" />
-      <div className="system-update">
-        <span className="system-update-text">
-          <span>有新版本 <span className="mono">{next.manifest.buildId}</span>
-            {operations?.version == null ? null : <span className="text-meta">　现在 <span className="mono">
-              {operations.version}</span></span>}</span>
-          <span className="text-meta">更新时会重启，约 1 分钟；在做的线重启后接着做</span>
-        </span>
-        <button type="button" className="primary-button" disabled={busy || next.status === 'queued'}
-          onClick={update}>{next.status === 'queued' ? '在更新' : '更新并重启'}</button>
-      </div>
-      {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
-    </section>
-  );
-}
 
 function uptimeText(seconds: number): string {
   const days = Math.floor(seconds / 86_400);
@@ -184,7 +146,6 @@ export function SystemSection(): ReactNode {
   return (
     <>
       {desktop ? <><DesktopBlocks /><CalendarAccess /></> : null}
-      <Version operations={operations.value} />
       <Running value={operations.value} error={operations.error} onReload={operations.reload} />
       <NodeDevices />
       {desktop ? null : <CalendarAccess />}

@@ -40,7 +40,7 @@
     "target": [{ "target": "nsis", "arch": ["x64"] }],
     "icon": "build-resources/icon.ico",
     "executableName": "Plasticine",
-    "signAndEditExecutable": false,
+    "signAndEditExecutable": true,
     "extraResources": [
       { "from": "stage/server", "to": "server" },
       { "from": "stage/node/node.exe", "to": "node/node.exe" },
