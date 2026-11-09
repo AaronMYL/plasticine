@@ -74,6 +74,13 @@ export function buildGithubRelease(options: GithubReleaseOptions): { version: st
     copyFileSync(path, target);
     uploaded.push(basename(path));
   }
+  // 旧 Swift Mac App 的迁移桥要读 Mac 包的身份记录（appVersion），跟着附件一起发。
+  const macIdentity = join(options.artifacts, 'mac-package.json');
+  if (!existsSync(macIdentity)) {
+    throw new Error('这一版缺 mac-package.json，不发布。');
+  }
+  copyFileSync(macIdentity, join(options.out, 'mac-package.json'));
+  uploaded.push('mac-package.json');
   writeFileSync(join(options.out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   writeFileSync(join(options.out, 'desktop.json'), `${JSON.stringify(desktop, null, 2)}\n`);
   uploaded.push('manifest.json', 'desktop.json');
