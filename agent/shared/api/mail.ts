@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 邮件按原样显示（用户 2026-11-04 弹框定）：联系人里一封邮件点开是整宽的阅读区，不进聊天气泡。
 // - GET /v2/contacts/:id/mail/:mailId → 这封信的正文：清洗后的 HTML（cid: 已换成 data:，远程图已换成服务端代理地址），
 //   以及纯文字（只有纯文字的信照原段落显示）。

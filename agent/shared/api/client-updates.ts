@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Type, type Static } from 'typebox';
 import { IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 const STRICT = { additionalProperties: false };

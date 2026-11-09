@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 隧道客户端（实例这一头，frp 模型）：一条 WSS 控制连接到中继主域名（升级请求带账号签名），中继说「open <id>」就另拨
 // 一条 TLS 工作连接（ALPN WORK_ALPN）、开头说 <id> 一行，之后这条连接上来的就是外面浏览器的原始字节，交给本机的
 // TLS 终结（tunnel-terminator.ts）。断了按退避重连；每 20 秒说一句，60 秒没听到中继就当断了。
@@ -13,7 +14,7 @@ import {
   TUNNEL_PATH,
   WORK_ALPN,
   type RelayControlMessage,
-} from '../../shared/tunnel-wire.ts';
+} from '../shared/tunnel-wire.ts';
 import { signedHeaders, type Signer } from './relay-client.ts';
 
 const HTTPS_PORT = 443;

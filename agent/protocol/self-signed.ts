@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 自签证书：中继的主域名在 ACME 证书到手前先用一张顶着（进程能起来，浏览器会警告），本机演示和测试里的假实例也用它。
 // Node 自己不会签证书；用 @peculiar/x509（acme-client 本来就带着它）加 WebCrypto 的 P-256。
 

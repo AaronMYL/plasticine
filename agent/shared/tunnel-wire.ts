@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Cyber Hunter 隧道的线上格式（2026-11-05 中继独立 + 实例隧道）：每个实例 <handle>.cyberhunter.top 的流量经中继到
 // 实例自己。照 frp 的做法：一条带账号签名的控制连接（WSS 到中继主域名），中继要用时在控制连接上说「开一条工作连接
 // <id>」，实例另拨一条 TLS（ALPN 是 WORK_ALPN）到主域名、先说 <id> 一行，中继把两条连接对接。中继只转加密字节，

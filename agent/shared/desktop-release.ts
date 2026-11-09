@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 桌面客户端（Electron 壳，《优化清单》第 14 条）的发布清单：发布点根上的 desktop.json。
 // 不放进 manifest.json：已经装着的 Linux 更新器、旧 Mac App、Windows 托盘按严格 schema 读 manifest.json，多一个键
 // 它们就读不懂、停在旧版。桌面客户端只读这一份；旧的 Swift Mac App 不读它，所以不会被自动换成 Electron 版

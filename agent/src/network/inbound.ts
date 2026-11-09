@@ -11,10 +11,10 @@ import type { Contact, ContactMessage, NetworkIdentity } from '../../shared/stat
 import type { Changes } from '../attention/index.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import { changeOf, groupChange, signerOf, type NetworkChange, type NetworkContext } from './context.ts';
-import { openEnvelope } from './crypto.ts';
+import { openEnvelope } from '../../protocol/crypto.ts';
 import { receiveClaim, receiveGroupTask } from './group-tasks.ts';
 import { receiveGroupMessage, receiveGroupUpdate, unknownMembers, type GroupReceipt } from './groups.ts';
-import { RelayCallError } from './relay-client.ts';
+import { RelayCallError } from '../../protocol/relay-client.ts';
 import { receiveCancel, receiveDelivery, receiveOffer, receiveReply, receiveVerdict } from './tasks.ts';
 
 export interface InboundOutcome {

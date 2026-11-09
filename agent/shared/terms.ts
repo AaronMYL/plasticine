@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Type, type Static } from 'typebox';
 
 export const TERM_TIERS = ['exact', 'metaphor', 'borrowed'] as const;

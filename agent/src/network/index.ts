@@ -4,11 +4,11 @@
 // 不碰数据库句柄（只用 state/ 的 stores）。
 
 export { generateIdentityKeys, newNonce, openEnvelope, PROTOCOL_INFO, requestSigningText, safetyCode, sealEnvelope,
-  sha256Hex, signEnvelope, signText, verifyEnvelope, verifyText } from './crypto.ts';
-export type { IdentityKeys, KeyPair, OpenedEnvelope, SafetyParty, SealInput } from './crypto.ts';
+  sha256Hex, signEnvelope, signText, verifyEnvelope, verifyText } from '../../protocol/crypto.ts';
+export type { IdentityKeys, KeyPair, OpenedEnvelope, SafetyParty, SealInput } from '../../protocol/crypto.ts';
 export { checkRelayUrl, DEFAULT_RELAY_URL, effectiveRelayUrl, LEGACY_RELAY_URLS, RelayCallError, RelayClient,
-  signedHeaders } from './relay-client.ts';
-export type { RelayClientOptions, RelayFailure, Signer } from './relay-client.ts';
+  signedHeaders } from '../../protocol/relay-client.ts';
+export type { RelayClientOptions, RelayFailure, Signer } from '../../protocol/relay-client.ts';
 export { NetworkError, NETWORK_ERROR_CODES } from './errors.ts';
 export type { NetworkErrorCode } from './errors.ts';
 export type { NetworkChange } from './context.ts';
@@ -24,17 +24,17 @@ export { taskStage, taskWaiting } from './tasks.ts';
 export type { TaskDecision, TaskVerdict } from './tasks.ts';
 export { gatherMaterials, listMaterials, reachOf, suggestTier } from './visibility.ts';
 export type { MaterialEntry } from './visibility.ts';
-export { createAcmeIssuer, LETS_ENCRYPT_DIRECTORY } from './acme.ts';
-export type { AcmeAutoOptions, AcmeClientLike, AcmeIssuerOptions } from './acme.ts';
-export { CertificateKeeper, ChallengeResponses, renewAt, writePrivateFile } from './certificates.ts';
-export type { CertificateIssuer, CertificateKeeperOptions } from './certificates.ts';
-export { selfSignedCertificate } from './self-signed.ts';
-export type { CertificatePair } from './self-signed.ts';
-export { ACME_CHALLENGE_PREFIX, challengeToken, plainResponse, readRequestHead } from './http-head.ts';
-export type { RequestHead } from './http-head.ts';
-export { backoffDelay, TunnelClient } from './tunnel-client.ts';
-export type { TunnelClientOptions, TunnelState, TunnelStatus } from './tunnel-client.ts';
-export { terminate } from './tunnel-terminator.ts';
-export type { TerminatorOptions } from './tunnel-terminator.ts';
+export { createAcmeIssuer, LETS_ENCRYPT_DIRECTORY } from '../../protocol/acme.ts';
+export type { AcmeAutoOptions, AcmeClientLike, AcmeIssuerOptions } from '../../protocol/acme.ts';
+export { CertificateKeeper, ChallengeResponses, renewAt, writePrivateFile } from '../../protocol/certificates.ts';
+export type { CertificateIssuer, CertificateKeeperOptions } from '../../protocol/certificates.ts';
+export { selfSignedCertificate } from '../../protocol/self-signed.ts';
+export type { CertificatePair } from '../../protocol/self-signed.ts';
+export { ACME_CHALLENGE_PREFIX, challengeToken, plainResponse, readRequestHead } from '../../protocol/http-head.ts';
+export type { RequestHead } from '../../protocol/http-head.ts';
+export { backoffDelay, TunnelClient } from '../../protocol/tunnel-client.ts';
+export type { TunnelClientOptions, TunnelState, TunnelStatus } from '../../protocol/tunnel-client.ts';
+export { terminate } from '../../protocol/tunnel-terminator.ts';
+export type { TerminatorOptions } from '../../protocol/tunnel-terminator.ts';
 export { TUNNEL_DIRECTORY, TunnelService } from './tunnel.ts';
 export type { TunnelServiceOptions } from './tunnel.ts';

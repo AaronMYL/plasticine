@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 一个名字的 TLS 证书：存在状态目录（<host>.key.pem 只有本人可读、<host>.cert.pem），读回来做成 SecureContext，
 // 到了寿命的三分之二就找签发方续（Let's Encrypt 90 天的证书第 60 天续，短期证书同理）。实例给自己的
 // <handle>.cyberhunter.top、中继给主域名，都用这一份；签发方是 acme.ts（HTTP-01），测试里是假的。

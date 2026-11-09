@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Five of the six core objects (《从零方案》第 4 节) plus sources; tasks live in state-tasks.ts.
 // Each object has three schemas: Input (what a normal write may send on create), Patch (what a normal update may
 // send) and the full row. User-confirmed fields are never in Input or Patch; they only arrive through a

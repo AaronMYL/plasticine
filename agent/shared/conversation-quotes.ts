@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 引用协议和存储格式共用一份。全文由服务端按版本解析；落盘的是实际原文，历史不会随笔记修改而变化。
 import { Type, type Static } from 'typebox';
 import { Value } from 'typebox/value';

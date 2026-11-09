@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Cyber Hunter 网络的线上格式（第 113 条，docs/specs/contacts-network.md 第 2–4 节）：中继接口 /v2/net/* 的请求与
 // 回答、信封、信封里的明文。中继（agent/src/network-relay/）和每个实例的客户端（agent/src/network/）共用这一份；
 // 界面不用它（界面的接口在 shared/api/contacts.ts、network.ts、visibility.ts）。

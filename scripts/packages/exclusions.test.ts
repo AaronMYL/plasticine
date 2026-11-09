@@ -38,7 +38,7 @@ test('在当前源码的副本上排除中继：文件删掉、运行时 import 
   assert.ok(excluded.includes('agent/src/network-relay/'));
   assert.equal(existsSync(join(root, 'agent/src/network-relay')), false);
   assert.equal(existsSync(join(root, 'agent/tests/network-relay')), false);
-  assert.equal(existsSync(join(root, 'agent/src/network/tunnel-client.ts')), true);
+  assert.equal(existsSync(join(root, 'agent/src/network/tunnel.ts')), true);
   assert.deepEqual(runtimeImportsOf(join(root, 'agent'), excluded), []);
 });
 

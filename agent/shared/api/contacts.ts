@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // /v2/contacts: 联系人（第 113 条，docs/specs/contacts-network.md 第 6 节）。一张并好的列表：网络上的人、站内信里的邮件
 // （按发件地址归并）、系统来源（巡查、反馈、Cyber Hunter、采访）。聊天里左右 = 谁的，author 说是人还是 AI；
 // 同一段 AI↔AI 沟通在服务端收成一项 exchange。任务卡、交付记录、分身说过的话都挂在联系人上。

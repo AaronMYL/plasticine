@@ -7,7 +7,7 @@ import type { Contact, ContactMessage, NetworkIdentity } from '../../shared/stat
 import { changeOf, requireContact, requireIdentity, signerOf, type NetworkContext } from './context.ts';
 import { NetworkError } from './errors.ts';
 import { enqueue } from './outbox.ts';
-import { RelayCallError } from './relay-client.ts';
+import { RelayCallError } from '../../protocol/relay-client.ts';
 
 function relayError(error: unknown, notFound: string): never {
   if (error instanceof RelayCallError) {

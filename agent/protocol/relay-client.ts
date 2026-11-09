@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 实例这一头和中继说话（规格第 3 节）：每个请求带账号签名（注册时用新钥匙签）。中继地址来自 PLASTICINE_NETWORK_URL，
 // 默认 https://cyberhunter.top（2026-11-05 中继独立成服务）；和中继在同一台机器上的实例走中继的本机口
 // http://127.0.0.1:8791。
@@ -32,7 +33,7 @@ import {
   type NetTaskStatus,
   type NetTaskStatusRecord,
   type RegisterAccountRequest,
-} from '../../shared/net-wire.ts';
+} from '../shared/net-wire.ts';
 import { newNonce, requestSigningText, signText } from './crypto.ts';
 
 export const DEFAULT_RELAY_URL = 'https://cyberhunter.top';

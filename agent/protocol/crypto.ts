@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 身份与加密（docs/specs/contacts-network.md 第 2 节），全用 node:crypto：
 // - 每个实例两对钥匙：Ed25519 签名、X25519 加密。公钥是 32 字节原样的 base64url，私钥是 PKCS#8 DER 的 base64url；
 //   私钥只给 state/ 存进本机库，不进日志、接口回答、测试快照（这里的函数从不把私钥放进返回的错误或文字）。
@@ -21,7 +22,7 @@ import {
   verify,
   type KeyObject,
 } from 'node:crypto';
-import type { Envelope, EnvelopeKind } from '../../shared/net-wire.ts';
+import type { Envelope, EnvelopeKind } from '../shared/net-wire.ts';
 
 export const PROTOCOL_INFO = 'cyber-hunter/v1';
 const ENVELOPE_CONTEXT = `${PROTOCOL_INFO}/envelope`;

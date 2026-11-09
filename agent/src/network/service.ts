@@ -20,13 +20,13 @@ import { cancelGroupTask, claimGroupTask, offerGroupTask, type GroupTaskInput } 
 import { afterGroup, createGroup, leaveGroup, postGroupMessage, requireGroup, updateGroup, type CreateGroupInput,
   type UpdateGroupInput } from './groups.ts';
 import { broadcastProfile, renameProfile } from './profile.ts';
-import { generateIdentityKeys } from './crypto.ts';
+import { generateIdentityKeys } from '../../protocol/crypto.ts';
 import { NetworkError } from './errors.ts';
 import { Inbound } from './inbound.ts';
 import { Outbox } from './outbox.ts';
 import { Responder } from './responder.ts';
 import { checkRelayUrl, DEFAULT_RELAY_URL, effectiveRelayUrl, RelayCallError, RelayClient,
-  type Signer } from './relay-client.ts';
+  type Signer } from '../../protocol/relay-client.ts';
 import { SyncLoop } from './sync.ts';
 import { cancelTask, decideTask, deliverFinishedLocal, deliverTask, networkTaskResolver, offerTask, stopLocalTask,
   verdictTask, type OfferInput, type TaskDecision, type TaskVerdict } from './tasks.ts';

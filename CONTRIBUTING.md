@@ -9,7 +9,9 @@
 
 ## 贡献的授权
 
-Plasticine 按 [PolyForm Noncommercial 1.0.0](LICENSE) 公开，商业用途由版权人另外授权。提交 PR 即表示你同意：
+Plasticine 按 [AGPL-3.0](LICENSE) 开源；`agent/protocol/` 和 `agent/shared/` 里开头标了 Apache-2.0 的文件按 [Apache-2.0](LICENSES/Apache-2.0.txt)。
+提交 PR 即表示你同意：
 
 - 你的贡献是你自己写的，或者你有权提交；
-- 你的贡献按本仓库的协议公开，同时授权版权人（AaronMYL）把它一并用于商业授权。
+- 你的贡献按它所在文件的协议公开；
+- 同时免费、不可撤销地授权版权人（AaronMYL）按别的条款使用你的贡献，比如上架应用商店，或者和闭源的 Cyber Hunter 服务一起用。

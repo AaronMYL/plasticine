@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 发布目录和下载页共用的清单形状；不依赖 Node，可直接在浏览器核验。
 
 import { Type, type Static } from 'typebox';

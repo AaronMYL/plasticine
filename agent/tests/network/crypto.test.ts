@@ -12,7 +12,7 @@ import {
   signText,
   verifyText,
   type IdentityKeys,
-} from '../../src/network/crypto.ts';
+} from '../../protocol/crypto.ts';
 
 const ALICE = 'acct-alice-0001';
 const BOB = 'acct-bob-00002';

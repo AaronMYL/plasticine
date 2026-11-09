@@ -3,7 +3,7 @@
 
 import { normalizeRemoteUrl, RemoteUrlError } from './server-target.ts';
 
-/** Cyber Hunter 网络的主域名：@账号的网址是 <账号>.<这个>（和中继 agent/src/network/relay-client.ts 一致）。 */
+/** Cyber Hunter 网络的主域名：@账号的网址是 <账号>.<这个>（和中继 agent/protocol/relay-client.ts 一致）。 */
 export const NETWORK_DOMAIN = 'cyberhunter.top';
 /**
  * 和 agent/shared/api/account.ts 的 HandleSchema 同一条规则（和中继一致：小写字母、数字、下划线，3–24 位；这里不引

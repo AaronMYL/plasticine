@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Pieces the memory, judgment and agreement views share: a source with its w, and one line of an object's history
 // (判断的「来路」、记忆条目的「用户编辑记录」，《从零方案》第 4 节).
 

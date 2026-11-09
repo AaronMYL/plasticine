@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Mac 原生客户端的自更新（第 102 条：Mac 用本机自签证书签名、自己更新）。Mac App 按这个口径实现
 // （mac/Sources/Plasticine/self-update-metadata.swift）：
 //   GET /v2/nodes/mac/latest（节点 Bearer）→ { version, sha256, url }

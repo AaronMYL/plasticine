@@ -6,11 +6,11 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { TLSSocket } from 'node:tls';
 import { errorCategory, safeLog } from '../shared-log.ts';
-import { createAcmeIssuer, LETS_ENCRYPT_DIRECTORY } from './acme.ts';
-import { CertificateKeeper, ChallengeResponses, type CertificateIssuer } from './certificates.ts';
-import type { Signer } from './relay-client.ts';
-import { TunnelClient, type TunnelStatus } from './tunnel-client.ts';
-import { terminate } from './tunnel-terminator.ts';
+import { createAcmeIssuer, LETS_ENCRYPT_DIRECTORY } from '../../protocol/acme.ts';
+import { CertificateKeeper, ChallengeResponses, type CertificateIssuer } from '../../protocol/certificates.ts';
+import type { Signer } from '../../protocol/relay-client.ts';
+import { TunnelClient, type TunnelStatus } from '../../protocol/tunnel-client.ts';
+import { terminate } from '../../protocol/tunnel-terminator.ts';
 
 /** 隧道证书和 ACME 账号钥匙放在状态目录的这个子目录。 */
 export const TUNNEL_DIRECTORY = 'tunnel';

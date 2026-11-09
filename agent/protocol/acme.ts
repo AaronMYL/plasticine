@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // ACME 签发（RFC 8555，HTTP-01）：不自己写协议，用 acme-client（简报要求用成熟的包）。账号钥匙第一次生成后存在
 // 状态目录、以后复用；每张证书一把新的 P-256 钥匙。验证应答挂在 ChallengeResponses 上，:80 收到
 // /.well-known/acme-challenge/<token> 时从那里取（实例经隧道收到、中继在自己的 :80 上收到）。

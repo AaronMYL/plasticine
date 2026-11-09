@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // 实例这一头的 TLS 终结：隧道送来的是外面浏览器的原始字节（中继不解密）。看第一个字节——
 // - 0x16（TLS 握手）：用这台实例自己的 <handle>.cyberhunter.top 证书解开，交给实例的 HTTP 服务；
 // - 其余（中继 :80 转来的明文）：只回 ACME HTTP-01 验证，别的一律 404。

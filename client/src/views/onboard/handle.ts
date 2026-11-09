@@ -3,7 +3,7 @@
 import { Value } from 'typebox/value';
 import { HandleSchema } from '../../api/shared.ts';
 
-/** @账号对应的网址后缀（中继的主域名，agent/src/network/relay-client.ts 的默认中继）。 */
+/** @账号对应的网址后缀（中继的主域名，agent/protocol/relay-client.ts 的默认中继）。 */
 export const HANDLE_DOMAIN = 'cyberhunter.top';
 
 /** @账号对应的网址主机名：域名里不能有下划线，换成连字符（和中继、服务端同一条）。 */

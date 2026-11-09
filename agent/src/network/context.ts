@@ -7,7 +7,7 @@ import type { Contact, ContactMessage, NetworkIdentity } from '../../shared/stat
 import type { AskDesk } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
 import { NetworkError } from './errors.ts';
-import type { RelayClient, Signer } from './relay-client.ts';
+import type { RelayClient, Signer } from '../../protocol/relay-client.ts';
 
 /**
  * 一次改动碰到的联系人（或群）和它聊天里的哪几项（界面据此推 contacts_changed / contact_item）。群的改动 groupId

@@ -4,7 +4,7 @@
 
 A personal AI workspace that runs on your own computer or server. Chat, notes, tasks, memory, contacts and messages
 live in your own instance. Mac and Windows get a desktop client; phones use the web app. The UI is Chinese for now.
-Free for personal and noncommercial use under PolyForm Noncommercial 1.0.0; commercial use needs a separate license.
+Licensed under AGPL-3.0; `agent/protocol/` and the wire-format files in `agent/shared/` are Apache-2.0. Commercial use is welcome.
 
 > 早期版本，一份 Plasticine 只有一个主人。欢迎来改，见 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [悬赏](BOUNTIES.md)。
 
@@ -97,16 +97,21 @@ PLASTICINE_STATE=./state PLASTICINE_CLIENT_DIR=client/dist PLASTICINE_PLAIN_HTTP
 | 目录 | 是什么 |
 |---|---|
 | `agent/src/` | 服务端（Node 24 直接跑 TypeScript） |
-| `agent/shared/` | 服务端和界面共用的 schema |
+| `agent/protocol/` | 连 Cyber Hunter 网络的那一头：签名、加密、隧道、证书（Apache-2.0） |
+| `agent/shared/` | 服务端和界面共用的 schema；线上格式那几个文件是 Apache-2.0 |
 | `client/` | React + Vite 网页界面 |
 | `desktop/` | Electron 桌面客户端（Mac / Windows） |
 | `mac/` | Mac 原生 App 与设备助手（Swift） |
 | `scripts/packages/` | 安装包、更新器和发布清单 |
 
 Cyber Hunter 的中心中继是独立服务，不在这个仓库里（见 [docs/open-source-exclusions.md](docs/open-source-exclusions.md)）；
-实例这一头的网络和隧道客户端在 `agent/src/network/`。
+实例这一头：协议和隧道客户端在 `agent/protocol/`，联系人、同步这些在 `agent/src/network/`。
 
 ## 许可证
 
-[PolyForm Noncommercial 1.0.0](LICENSE)：个人和非营利用途可以免费使用、修改、自己部署、转发（转发时附上协议）。
-商业用途要另外授权，请到 GitHub 联系 [@AaronMYL](https://github.com/AaronMYL)。2026-11-09 以前的版本是按 AGPL-3.0 发的。
+- Plasticine 按 [AGPL-3.0](LICENSE) 开源。个人、公司都可以免费使用、修改、拿来做生意；
+  把改过的版本发给别人，或者放到网上给别人用，要按 AGPL 把对应的源码给他们。
+- `agent/protocol/`，和 `agent/shared/` 里开头标了 Apache-2.0 的文件（线上格式和它们用到的类型），按 [Apache-2.0](LICENSES/Apache-2.0.txt)：拿去接自己的服务、写别的客户端都行，不要求公开源码。
+- 「Plasticine」「Cyber Hunter」的名字和图标不在代码许可里，见 [TRADEMARKS.md](TRADEMARKS.md)。
+
+版权 © AaronMYL。2026-11-09 当天有几个版本按 PolyForm Noncommercial 1.0.0 发布，之后改回 AGPL-3.0。

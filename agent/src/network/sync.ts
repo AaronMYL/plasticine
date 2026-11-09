@@ -8,7 +8,7 @@ import { requireIdentity, signerOf, type NetworkContext } from './context.ts';
 import type { Inbound } from './inbound.ts';
 import type { Outbox } from './outbox.ts';
 import type { Responder } from './responder.ts';
-import { RelayCallError } from './relay-client.ts';
+import { RelayCallError } from '../../protocol/relay-client.ts';
 
 /** 出错后的退避：2 秒起翻倍，最长一分钟。 */
 const SYNC_RETRY_BASE_MS = 2_000;

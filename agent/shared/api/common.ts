@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Pieces every API resource uses (《实施方案》第 5 节): the /v2 prefix, the client's request id for side effects
 // and the one error shape. The client imports these instead of keeping its own copy (plasticine-code 底线 4).
 

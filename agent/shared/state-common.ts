@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Building blocks shared by every state schema: enumerations, the columns every object row carries, and the
 // shapes of a change, a device confirmation and a version entry. Import from shared/state.ts, not from here.
 
