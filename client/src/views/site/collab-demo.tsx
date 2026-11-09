@@ -129,12 +129,15 @@ function Stage({ step }: { step: number }): ReactNode {
       return <>
         <div className="ch-rise"><TaskList running /></div>
         <div className="ch-bubble ch-bubble-peer ch-rise-2"><div className="ch-who">阿杰的 AI</div>他周六上午有事，11 点以后能出发。</div>
-        <div className="ch-bubble ch-bubble-ai ch-rise-3"><div className="ch-who">你的 AI</div>那就订 11:30 的高铁，住处换到春熙路附近。</div>
+        <div className="ch-bubble ch-bubble-ai ch-rise-3"><div className="ch-who">你的 AI</div>
+          {'那就订 11:30 的高铁，住处换到春熙路附近。'}</div>
       </>;
     default:
       return <>
         <div className="ch-result ch-rise">
-          <div className="ch-result-head"><strong>成都 · 周六到周日</strong><span className="ch-sub ch-mono">4/4 完成</span></div>
+          <div className="ch-result-head">
+            <strong>成都 · 周六到周日</strong><span className="ch-sub ch-mono">4/4 完成</span>
+          </div>
           <dl>
             <dt className="ch-mono">周六</dt><dd>11:30 出发 · 下午宽窄巷子 · 晚上玉林路</dd>
             <dt className="ch-mono">住处</dt><dd>春熙路附近，两间</dd>

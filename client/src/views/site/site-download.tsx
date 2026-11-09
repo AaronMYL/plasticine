@@ -60,15 +60,17 @@ export function HeroDownload(): ReactNode {
   const label = platform === 'phone' || platform === 'linux' ? '下载' : `下载 ${mac ? 'Mac' : 'Windows'} 版`;
   return (
     <a className="ch-btn ch-btn-primary" href={asset === null || platform === 'phone' ? '#download' : asset.url}>
-      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M3 13h10"
-        fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" strokeWidth="1.6"
+          strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
       <span>{label}</span>
     </a>
   );
 }
 
-function DesktopCard({ name, kind, asset, mine, load, onRetry }: { name: string; kind: string; asset: ReleaseAsset | null;
-  mine: boolean; load: Load<DesktopCatalog>['kind']; onRetry: () => void }): ReactNode {
+function DesktopCard({ name, kind, asset, mine, load, onRetry }: { name: string; kind: string;
+  asset: ReleaseAsset | null; mine: boolean; load: Load<DesktopCatalog>['kind']; onRetry: () => void }): ReactNode {
   return (
     <div className="ch-card" data-mine={mine}>
       <div className="ch-card-head"><strong>{name}</strong>

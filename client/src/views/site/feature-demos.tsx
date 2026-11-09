@@ -21,8 +21,8 @@ export const FEATURES: ReadonlyArray<{ id: FeatureId; label: string; title: stri
 
 const RISE = ['ch-rise', 'ch-rise-2', 'ch-rise-3', 'ch-rise-4'];
 
-function Choices<T extends string>({ items, value, onPick }: { items: ReadonlyArray<readonly [T, string]>; value: T | null;
-  onPick: (value: T) => void }): ReactNode {
+function Choices<T extends string>({ items, value, onPick }: { items: ReadonlyArray<readonly [T, string]>;
+  value: T | null; onPick: (value: T) => void }): ReactNode {
   return (
     <div className="ch-row" style={{ gap: 8 }}>
       {items.map(([id, label]) => (
@@ -53,7 +53,9 @@ function NotesDemo(): ReactNode {
         <ul className="ch-list">
           <li className="ch-item ch-rise"><span className="ch-chip">结构</span><span>按时间写，每天一节</span></li>
           <li className="ch-item ch-rise-2"><span className="ch-chip">补充</span><span>写上住处的位置和价格</span></li>
-          <li className="ch-item ch-rise-3"><span className="ch-chip ch-chip-blue">联系人</span><span>结尾写写和阿杰的分工</span></li>
+          <li className="ch-item ch-rise-3">
+            <span className="ch-chip ch-chip-blue">联系人</span><span>结尾写写和阿杰的分工</span>
+          </li>
         </ul>
       ) : null}
     </div>
@@ -114,7 +116,8 @@ function BookDemo(): ReactNode {
         <button type="button" className="ch-act" style={{ alignSelf: 'flex-start' }} aria-pressed={asked}
           onClick={() => setAsked(true)}>为什么找不到路了？</button>
         {asked ? <>
-          <div className="ch-bubble ch-bubble-ai ch-rise" style={{ maxWidth: '100%' }}><div className="ch-who">Plasticine</div>
+          <div className="ch-bubble ch-bubble-ai ch-rise" style={{ maxWidth: '100%' }}>
+            <div className="ch-who">Plasticine</div>
             文中没明说。常见的读法：一路做的记号反而找不回去，桃花源不在刻意去找的路上。</div>
           <div className="ch-saved ch-rise-2">
             <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2h8v12l-4-3-4 3z" fill="none"

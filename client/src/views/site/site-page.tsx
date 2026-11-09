@@ -84,8 +84,9 @@ function Features(): ReactNode {
             <span className="ch-pill ch-mono" style={{ alignSelf: 'flex-start', marginTop: 6 }}><i />演示 · 点右边试试</span>
           </div>
           <div className="ch-win">
-            <div className="ch-winbar" aria-hidden="true"><b /><b /><b /><span className="ch-mono" style={{ marginLeft: 6 }}>
-              {feature.window}</span></div>
+            <div className="ch-winbar" aria-hidden="true">
+              <b /><b /><b /><span className="ch-mono" style={{ marginLeft: 6 }}>{feature.window}</span>
+            </div>
             <div className="ch-winbody" key={id}><FeatureDemo id={id} /></div>
           </div>
         </div>
@@ -124,7 +125,9 @@ function Start(): ReactNode {
         <ol className="ch-tuts">
           {TUTORIAL.map((item, index) => (
             <li key={item.title} className="ch-tut">
-              <div className={item.column === true ? 'ch-mini ch-mini-col' : 'ch-mini'} aria-hidden="true">{item.mini}</div>
+              <div className={item.column === true ? 'ch-mini ch-mini-col' : 'ch-mini'} aria-hidden="true">
+                {item.mini}
+              </div>
               <div>
                 <div className="ch-no ch-mono">{`0${index + 1}`}</div>
                 <h3>{item.title}</h3>
