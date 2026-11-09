@@ -13,8 +13,12 @@ import { SECRET_SHAPES } from '../scan-tests.ts';
 export const INCLUDED_PATHS: readonly string[] = [
   'package.json',
   'package-lock.json',
+  'LICENSE',
+  'LICENSES',
+  'TRADEMARKS.md',
   'agent/package.json',
   'agent/src',
+  'agent/protocol',
   'agent/shared',
   'client/package.json',
   'scripts/maint.ts',

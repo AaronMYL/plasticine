@@ -5,7 +5,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-const ROOTS = ['agent/tests', 'client/tests', 'agent/src', 'client/src', 'scripts'];
+const ROOTS = ['agent/tests', 'client/tests', 'agent/src', 'agent/protocol', 'client/src', 'scripts'];
 const TEST_FILE = /\.test\.tsx?$/;
 
 export const SECRET_SHAPES: ReadonlyArray<{ name: string; pattern: RegExp }> = [

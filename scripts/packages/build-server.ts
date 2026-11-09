@@ -49,9 +49,9 @@ export function serverArchiveName(version: string): string {
 
 function buildClient(options: BuildOptions, commit: string, committedAt: string, run: Run): void {
   const head = run('git', ['-C', options.repo, 'rev-parse', 'HEAD']);
-  const dirty = run('git', ['-C', options.repo, 'status', '--porcelain', '--', 'client', 'agent/shared']);
+  const dirty = run('git', ['-C', options.repo, 'status', '--porcelain', '--', 'client', 'agent/shared', 'agent/protocol']);
   if (head !== commit || dirty !== '') {
-    throw new Error('客户端在工作区构建：先 checkout 到要打包的提交，并且 client/、agent/shared/ 没有未提交的改动。');
+    throw new Error('客户端在工作区构建：先 checkout 到要打包的提交，并且 client/、agent/shared/、agent/protocol/ 没有未提交的改动。');
   }
   run('npm', ['run', '-s', 'build', '-w', 'client'], { cwd: options.repo,
     env: { ...process.env, PLASTICINE_BUILD_ID: commit, PLASTICINE_BUILT_AT: committedAt } });
