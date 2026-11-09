@@ -31,7 +31,7 @@ live in your own instance. Mac and Windows get a desktop client; phones use the 
 3. 连一个模型：用你已有的订阅登录（比如 ChatGPT），或者填 API Key。
    - 订阅登录会打开浏览器。登录完跳不回来时，点「粘贴回调地址」，把浏览器地址栏里的地址粘进来。
    - 以后在「设置 → AI」里换模型、加提供商。提供商列表来自 [pi-ai](https://github.com/earendil-works/pi)。
-4. 在手机上也能用：扫码打开 `https://<@账号>.cyberhunter.top`，输入密码。
+4. 在手机上也能用：手机浏览器打开 `https://<账号>.cyberhunter.top`（账号不带 @），用 `@账号` + 密码登录。
 
 在本机用的桌面客户端每次自动登录；手机和别的电脑用 `@账号` + 密码登录。
 
