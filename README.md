@@ -10,7 +10,7 @@ Licensed under AGPL-3.0; `agent/protocol/` and the wire-format files in `agent/s
 
 ## 下载安装
 
-下载页：<https://cyberhunter.top/download>
+下载页：<https://cyberhunter.top/download>。安装包都在本仓库的 [Releases](https://github.com/AaronMYL/plasticine/releases)，每一版都留着，遇到问题可以装回旧版。
 
 | 平台 | 装 | 第一次打开 |
 |---|---|---|
