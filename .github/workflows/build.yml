@@ -1,8 +1,9 @@
 name: Build packages
 run-name: "Build packages · ${{ github.sha }}"
 # Builds the Linux server package, the Windows installer, the Mac App and the Electron desktop clients for Mac and
-# Windows from one commit, smoke-tests each, and keeps them as run artifacts (30 days). Only GitHub-hosted runners;
-# no secrets, no self-hosted runners. Publishing to a download site happens elsewhere, from these artifacts.
+# Windows from one commit, smoke-tests each, keeps them as run artifacts (30 days), and when everything passed attaches
+# them to a GitHub Release tagged v<version> (old releases stay, for rollback). Only GitHub-hosted runners; no secrets
+# beyond the job's own token. The download site (cyberhunter.top/download) only mirrors the release's manifest files.
 on:
   workflow_dispatch:
 permissions:
@@ -359,3 +360,69 @@ jobs:
           name: desktop-windows-${{ needs.request.outputs.short }}
           path: desktop/release/*.exe
           retention-days: 30
+
+  release:
+    # 11-09 他定：安装包发到本仓库的 GitHub Releases（标签 v<版本>，旧版本都留着，方便回退）；官网和自动更新的下载地址
+    # 都指向这里。全部构建和冒烟都过了才发；同一版已经发过就不动（带版本号的文件不能换）。
+    needs: [request, linux, windows, mac, desktop-mac, desktop-windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.commit }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: plasticine-server-${{ needs.request.outputs.short }}
+          path: dist/artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: plasticine-windows-${{ needs.request.outputs.short }}
+          path: dist/artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: plasticine-mac-package-${{ needs.request.outputs.short }}
+          path: dist/artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-mac-${{ needs.request.outputs.short }}
+          path: dist/desktop
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-windows-${{ needs.request.outputs.short }}
+          path: dist/desktop
+      - name: 整理附件和清单
+        id: assets
+        env:
+          COMMIT: ${{ needs.request.outputs.commit }}
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund --ignore-scripts
+          result=$(node scripts/packages/github-release.ts --artifacts dist/artifacts --desktop dist/desktop \
+            --commit "$COMMIT" --repo "$GITHUB_REPOSITORY" --out dist/release)
+          echo "$result"
+          echo "version=$(node -e 'console.log(JSON.parse(process.argv[1]).version)' "$result")" >> "$GITHUB_OUTPUT"
+          ls -la dist/release
+      - name: 发 GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT: ${{ needs.request.outputs.commit }}
+          VERSION: ${{ steps.assets.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "$tag 已经发过，不动。"
+            exit 0
+          fi
+          notes="Plasticine $VERSION（提交 ${COMMIT:0:7}）。下载：Windows 用 Plasticine-Desktop-Setup-$VERSION.exe，"
+          notes+="Mac 用 Plasticine-Desktop-mac-$VERSION.dmg；服务器用 install.sh。"
+          gh release create "$tag" dist/release/* --repo "$GITHUB_REPOSITORY" --target "$COMMIT" \
+            --title "Plasticine $VERSION" --notes "$notes" --latest
