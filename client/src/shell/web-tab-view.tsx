@@ -3,13 +3,13 @@
 // 里外链照旧跳出去，这里给一个「在浏览器打开」。
 // 2026-11-03（Mac 0.3.0，用户定）：原生网页垫在主网页下面，那一块主网页透明；悬浮对话框和圆球照常盖在网页上，
 // 它们占的矩形报成 hitRegions（hit-regions.ts），不再让出一侧。
-// 2026-11-04 第 2 批「浏览器」：工具条在 web-toolbar.tsx；这里管三个弹层（收进置顶或分组、⋯、历史记录，一次只开一个）、
+// 2026-11-04 第 2 批「浏览器」：工具条在 web-toolbar.tsx；这里管弹层（⋯、历史记录、手机 ⋯ 里的书签，一次只开一个）、
 // 查找条、阅读模式（原生网页先藏起来）、工具条下面那一句（web-page-actions.ts），以及 ⌘F / ⌘P / ⌘Y（键盘在原生网页
 // 里时由原生菜单经 __plasticineWebMenu 交过来）。11-07 两层侧栏：标签在第二栏竖排，书签和分组的弹层没了。
+// 第 8 批第 1 条（11-09）：「收进置顶或分组」的弹层去掉（地址框里换成书签按钮）；手机 ⋯ 里的「书签」开同一份书签。
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { WEB_MENU_COMMANDS, type WebMenuCommand } from '../api/shared.ts';
-import { useClientState } from '../state/context.tsx';
 import type { WebTab } from '../state/web-tabs.ts';
 import './web-toolbar.css';
 import { AiMark } from './glyph.tsx';
@@ -17,9 +17,9 @@ import { Icon } from './icons.tsx';
 import { IconButton } from './icon-button.tsx';
 import { HIT_REGION_ATTRIBUTE } from './hit-regions.ts';
 import { anchorOf, type PopoverAnchor } from './popover.tsx';
-import { TabMenu } from './columns/web-tab-menu.tsx';
 import type { NativeWebTabs } from './use-native-web-tabs.ts';
 import type { WebChrome } from './web-chrome.ts';
+import { WebBookmarksPopover } from './web-bookmarks-popover.tsx';
 import { WebFindBar } from './web-find-bar.tsx';
 import { WebHistoryPopover } from './web-history-popover.tsx';
 import { WebMoreMenu } from './web-more-menu.tsx';
@@ -71,13 +71,14 @@ function useFrameReport(setFrame: NativeWebTabs['setFrame'] | null): RefObject<H
   return element;
 }
 
-type Open = { kind: WebPopoverKind; anchor: PopoverAnchor } | null;
+/** 手机 ⋯ 里点开的书签也是一个弹层（没有自己的按钮）。 */
+type Open = { kind: WebPopoverKind | 'bookmarks'; anchor: PopoverAnchor } | null;
 
 /** 一次只开一个弹层；点着开着的那个按钮是关掉。 */
 function usePopoverToggle(): { open: Open; setOpen: (open: Open) => void; toggle: (kind: WebPopoverKind,
   element: HTMLElement) => void; close: () => void } {
   const [open, setOpenState] = useState<Open>(null);
-  const closedAt = useRef<{ kind: WebPopoverKind; at: number } | null>(null);
+  const closedAt = useRef<{ kind: NonNullable<Open>['kind']; at: number } | null>(null);
   const pressed = useRef<EventTarget | null>(null);
   const current = useRef(open);
   current.current = open;
@@ -135,8 +136,6 @@ function NoticeRow({ actions, web }: { actions: WebPageActions; web: WebChrome |
 export interface WebTabViewProps {
   tab: WebTab;
   native: NativeWebTabs | null;
-  /** 关掉这个标签（收进菜单里的「关掉」）。 */
-  onCloseTab?: (id: string) => void;
   phone?: boolean;
   /** 圈一块、截图交给对话框、存进笔记后打开（web-chrome.ts）。 */
   web?: WebChrome | null;
@@ -146,7 +145,6 @@ export interface WebTabViewProps {
 
 export function WebTabView(props: WebTabViewProps): ReactNode {
   const { tab, native, phone = false, web = null } = props;
-  const { webTabs } = useClientState();
   const now = props.now ?? (() => new Date());
   const popovers = usePopoverToggle();
   const [finding, setFinding] = useState(false);
@@ -218,12 +216,14 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
 
   const leading = tab.openedBy === 'plasticine' ? <AiMark label="Plasticine 打开的" />
     : <Icon name={url.startsWith('https://') ? 'lock' : 'globe'} size={13} />;
+  const showBookmarks = (anchor: PopoverAnchor): void => popovers.setOpen({ kind: 'bookmarks', anchor });
   const open = popovers.open;
-  const openKind = open?.kind ?? null;
+  const openKind = open === null || open.kind === 'bookmarks' ? null : open.kind;
   return (
     <div className="web-tab" aria-label={`网页：${tab.title}`}>
-      <WebToolbar tab={tab} url={url} native={native} leading={leading} open={openKind} onToggle={popovers.toggle}
-        circling={actions.circling} onCircle={actions.circle} />
+      <WebToolbar tab={tab} url={url} title={title} native={native} leading={leading} open={openKind}
+        onToggle={popovers.toggle} circling={actions.circling} onCircle={actions.circle}
+        onBookmarkError={actions.report} />
       {/* 查找条和那一句浮在网页右上角，不把网页往下推（不跳布局）；盖在原生网页上，报成 hitRegions。 */}
       {(finding && native !== null) || actions.notice !== null ? (
         <div className="web-floats" data-phone={phone} {...{ [HIT_REGION_ATTRIBUTE]: 'web-floats' }}>
@@ -240,10 +240,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
           </p>
         ) : reading ? <WebReader tabId={tab.id} url={url} onExit={() => setReading(false)} /> : null}
       </div>
-      {open?.kind === 'keep' ? (
-        <TabMenu tabs={webTabs} tabId={tab.id} anchor={open.anchor} onClose={popovers.close}
-          onCloseTab={(id) => props.onCloseTab?.(id)} onNewGroup={() => undefined} />
-      ) : null}
+      {open?.kind === 'bookmarks' ? <WebBookmarksPopover anchor={open.anchor} onClose={popovers.close} /> : null}
       {open?.kind === 'history' && native !== null ? (
         <WebHistoryPopover anchor={open.anchor} history={native.history} now={now} onClose={popovers.close}
           onOpen={(visit) => native.navigate(tab.id, visit.url)} />
@@ -261,6 +258,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
           onCapture={actions.capture} onClip={actions.clip} onPrint={actions.print} onCopyLink={actions.copyLink}
           onOpenOutside={openOutside} onDownloads={actions.downloads}
           onHistory={(anchor) => popovers.setOpen({ kind: 'history', anchor })}
+          {...(phone ? { onBookmarks: showBookmarks } : {})}
           {...(hostLogins() === null ? {} : { onImportLogins: openLoginImport })}
           {...(phone ? { onCircle: actions.circle } : {})} />
       ) : null}

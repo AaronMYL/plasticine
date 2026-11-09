@@ -52,8 +52,21 @@ export interface LineWelcomeMessage {
   timestamp: number;
 }
 
-/** 贴到一条线上、不开一轮的消息：后台线的结果、系统通知、欢迎。 */
-export type PostedMessage = LineReportMessage | LineNoticeMessage | LineWelcomeMessage;
+/**
+ * 来信（第 8 批第 6 条，他 11-09 定）：个人回顾的日报、周报写成来信放进资料库后，Plasticine 在主线说一句（text），
+ * 下面带一张来信卡（spaceId、title）。是 Plasticine 写的（不是系统通知），送给模型时标明来历。key 是这封信的稳定标识。
+ */
+export interface LineLetterMessage {
+  role: 'letter';
+  key: string;
+  text: string;
+  spaceId: string;
+  title: string;
+  timestamp: number;
+}
+
+/** 贴到一条线上、不开一轮的消息：后台线的结果、系统通知、欢迎、来信。 */
+export type PostedMessage = LineReportMessage | LineNoticeMessage | LineWelcomeMessage | LineLetterMessage;
 
 /** 压缩摘要：不存进消息表（存在线的 summary 上），装上下文时放在最前面。 */
 export interface LineSummaryMessage {
@@ -68,6 +81,7 @@ declare module '@earendil-works/pi-agent-core' {
     lineSummary: LineSummaryMessage;
     notice: LineNoticeMessage;
     welcome: LineWelcomeMessage;
+    letter: LineLetterMessage;
   }
 }
 
@@ -142,6 +156,11 @@ export function welcomeText(message: LineWelcomeMessage): string {
   return `［Plasticine 发过一条欢迎（建账号时的固定文案，这不是用户说的）］\n${message.text}`;
 }
 
+export function letterText(message: LineLetterMessage): string {
+  return `［你给他写了一封信《${message.title}》（空间 ${message.spaceId}），放进了资料库，在主线发了下面这一句；`
+    + `这不是用户说的］\n${message.text}`;
+}
+
 export function summaryText(message: LineSummaryMessage): string {
   return `［这条线早先的内容已经压缩成下面的摘要；细节以摘要为准，需要原文时问用户或查记录］\n${message.summary}`;
 }
@@ -160,6 +179,9 @@ export function convertToLlm(messages: AgentMessage[]): Message[] {
     }
     if (message.role === 'welcome') {
       return [{ role: 'user', content: welcomeText(message), timestamp: message.timestamp }];
+    }
+    if (message.role === 'letter') {
+      return [{ role: 'user', content: letterText(message), timestamp: message.timestamp }];
     }
     return [message];
   });
@@ -269,6 +291,9 @@ export function messageView(row: LineMessageRow, sayOf: SayOf, callArgs?: (toolC
   }
   if (message.role === 'welcome') {
     return view({ role: 'welcome', text: message.text, starts: message.starts });
+  }
+  if (message.role === 'letter') {
+    return view({ role: 'letter', text: message.text, letter: { spaceId: message.spaceId, title: message.title } });
   }
   return view({ role: 'user', origin: { kind: 'unknown' }, text: '' });
 }

@@ -44,3 +44,10 @@ export function PlasticineMark({ size = 20, label }: { size?: number; label?: st
     </svg>
   );
 }
+
+/** 同一个标记写成一段 SVG 字：来信的署名在 iframe 里（第 8 批第 6 条），用不了组件。颜色由那边的样式给。 */
+export function plasticineMarkSvg(size: number): string {
+  return `<svg class="plasticine-mark" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true">`
+    + `<path class="plasticine-mark-blob" d="${BLOB}"></path><path class="plasticine-mark-swirl" d="${SWIRL}" `
+    + 'fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+}

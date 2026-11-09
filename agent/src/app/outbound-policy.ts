@@ -117,7 +117,7 @@ export function responseTextPolicy(pathname: string, body: unknown, state: TextS
         fields.set(code, new Set(['verificationUri']));
       }
     }
-  } else if (/^\/v2\/bookmarks(?:\/[^/]+(?:\/remove)?)?\/?$/.test(pathname)) {
+  } else if (/^\/v2\/bookmarks(?:\/[^/]+(?:\/(?:remove|restore))?)?\/?$/.test(pathname)) {
     bookmark(fields, root?.['bookmark']);
     bookmark(fields, root?.['current']);
     each(root?.['bookmarks'], (entry) => bookmark(fields, entry));

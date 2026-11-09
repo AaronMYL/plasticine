@@ -25,6 +25,8 @@ export function reportBrief(stopReason: string | null): string | null {
   if (stopReason === 'failed') return '后台的一件事没做完';
   return null;
 }
+/** 来信（第 8 批第 6 条）：系统通知里那一句，不带信的题目和正文（第 91 条）；点开到主线那张来信卡。 */
+export const LETTER_BRIEF = 'Plasticine 给你写了一封信';
 export const PUSH_KEY_PATH = `${PUSH_PATH}/key`;
 export const PUSH_SUBSCRIPTIONS_PATH = `${PUSH_PATH}/subscriptions`;
 export const PushStatusSchema = Type.Object({ subscribed: Type.Boolean() });

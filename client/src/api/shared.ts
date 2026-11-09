@@ -3,6 +3,7 @@
 
 export * from '../../../agent/shared/api/index.ts';
 export { internalPageHash } from '../../../agent/shared/internal-page.ts';
+export { bookmarkKey } from '../../../agent/shared/bookmarks.ts';
 export { LEGACY_PUBLIC_URLS } from '../../../agent/shared/public-url.ts';
 export * from '../../../agent/shared/reddit.ts';
 export { replyExcerpt, replyMarker, splitReply, type LineReply } from '../../../agent/shared/line-reply.ts';
@@ -92,8 +93,11 @@ export type {
   SpaceBlock,
   SpaceChart,
   SpaceDoc,
+  SpaceGenre,
   SpaceLink,
   SpaceSource,
   Subscription,
   SubscriptionSettings,
 } from '../../../agent/shared/state.ts';
+// 第 8 批第 6 条：空间是整页网页（报告 / 来信）；旧版式的空间是空文档。
+export { EMPTY_SPACE_DOC, SPACE_GENRES, SPACE_LINK_KINDS } from '../../../agent/shared/state.ts';

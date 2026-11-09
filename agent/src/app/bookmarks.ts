@@ -1,5 +1,6 @@
-// /v2/bookmarks：书签（第 110 条）——列表、加、改名和移项目、移除、排序、导入。写操作按 requestId 幂等，改和移除
-// 带 version，过时就 409 带现在的那一条；新加的在提交之后记进来源（daily/ 的 onAdded）。业务规则在 daily/bookmarks.ts。
+// /v2/bookmarks：书签（第 110 条）——列表、加、改名和移项目、移除、撤销移除、排序、导入。写操作按 requestId 幂等，
+// 改、移除和撤销带 version，过时就 409 带现在的那一条；新加的在提交之后记进来源（daily/ 的 onAdded）；写成了告诉各设备
+// （bookmarks_changed，第 8 批第 1 条：书签各设备同一份）。业务规则在 daily/bookmarks.ts。
 
 import {
   AddBookmarkRequestSchema,
@@ -7,6 +8,7 @@ import {
   ImportBookmarksRequestSchema,
   OrderBookmarksRequestSchema,
   RemoveBookmarkRequestSchema,
+  RestoreBookmarkRequestSchema,
   type BookmarkListResponse,
   type BookmarkResponse,
   type BookmarkView,
@@ -17,7 +19,7 @@ import { StateError } from '../state/index.ts';
 import { ApiError } from './api-error.ts';
 import { param, requireAuth, type AppDeps, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
-import { idempotent } from './idempotency.ts';
+import { idempotent, type AfterCommit } from './idempotency.ts';
 import { checkInput } from './validate.ts';
 
 export function bookmarkView(bookmark: Bookmark, suggestions: ReadonlyMap<string, string>): BookmarkView {
@@ -47,6 +49,11 @@ function views(deps: AppDeps): BookmarkView[] {
 
 function single(deps: AppDeps, bookmark: Bookmark): BookmarkView {
   return views(deps).find((view) => view.id === bookmark.id) ?? bookmarkView(bookmark, new Map());
+}
+
+/** 写成了（提交之后）告诉各设备重读书签。 */
+function announce(deps: AppDeps, afterCommit: AfterCommit): void {
+  afterCommit(() => deps.hub.publish({ type: 'bookmarks_changed' }));
 }
 
 /** A version conflict answered with the bookmark as it is now. */
@@ -81,6 +88,9 @@ export async function addBookmark(context: RequestContext): Promise<Reply> {
   return idempotent(context, body.requestId, (afterCommit) => {
     const { requestId: _requestId, ...input } = body;
     const { bookmark, created } = deps.daily.bookmarks.add(input, 'manual', afterCommit);
+    if (created) {
+      announce(deps, afterCommit);
+    }
     const response: BookmarkResponse = { bookmark: single(deps, bookmark) };
     return { status: created ? 201 : 200, body: response };
   });
@@ -92,9 +102,10 @@ export async function editBookmark(context: RequestContext): Promise<Reply> {
   const body = checkInput(EditBookmarkRequestSchema, await readJsonBody(context.req), '改书签');
   const id = param(context, 'id');
   const { deps } = context;
-  return idempotent(context, body.requestId, () => {
+  return idempotent(context, body.requestId, (afterCommit) => {
     const bookmark = withCurrent(deps, id, () => deps.daily.bookmarks.edit(id, body.version,
       { title: body.title, projectId: body.projectId }));
+    announce(deps, afterCommit);
     const response: BookmarkResponse = { bookmark: single(deps, bookmark) };
     return { status: 200, body: response };
   });
@@ -106,9 +117,24 @@ export async function removeBookmark(context: RequestContext): Promise<Reply> {
   const body = checkInput(RemoveBookmarkRequestSchema, await readJsonBody(context.req), '移除书签');
   const id = param(context, 'id');
   const { deps } = context;
-  return idempotent(context, body.requestId, () => {
+  return idempotent(context, body.requestId, (afterCommit) => {
     const bookmark = withCurrent(deps, id, () => deps.daily.bookmarks.remove(id, body.version));
+    announce(deps, afterCommit);
     const response: BookmarkResponse = { bookmark: bookmarkView(bookmark, new Map()) };
+    return { status: 200, body: response };
+  });
+}
+
+/** POST /v2/bookmarks/:id/restore */
+export async function restoreBookmark(context: RequestContext): Promise<Reply> {
+  requireAuth(context);
+  const body = checkInput(RestoreBookmarkRequestSchema, await readJsonBody(context.req), '撤销移除书签');
+  const id = param(context, 'id');
+  const { deps } = context;
+  return idempotent(context, body.requestId, (afterCommit) => {
+    const bookmark = withCurrent(deps, id, () => deps.daily.bookmarks.restore(id, body.version));
+    announce(deps, afterCommit);
+    const response: BookmarkResponse = { bookmark: single(deps, bookmark) };
     return { status: 200, body: response };
   });
 }
@@ -118,8 +144,9 @@ export async function orderBookmarks(context: RequestContext): Promise<Reply> {
   requireAuth(context);
   const body = checkInput(OrderBookmarksRequestSchema, await readJsonBody(context.req), '书签排序');
   const { deps } = context;
-  return idempotent(context, body.requestId, () => {
+  return idempotent(context, body.requestId, (afterCommit) => {
     deps.daily.bookmarks.order(body.ids);
+    announce(deps, afterCommit);
     const response: BookmarkListResponse = { bookmarks: views(deps) };
     return { status: 200, body: response };
   });
@@ -132,6 +159,9 @@ export async function importBookmarks(context: RequestContext): Promise<Reply> {
   const { deps } = context;
   return idempotent(context, body.requestId, (afterCommit) => {
     const { added, skipped } = deps.daily.bookmarks.importItems(body.items, afterCommit);
+    if (added > 0) {
+      announce(deps, afterCommit);
+    }
     const response: ImportBookmarksResponse = { added, skipped, bookmarks: views(deps) };
     return { status: 200, body: response };
   });

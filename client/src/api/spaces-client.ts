@@ -4,8 +4,6 @@
 import type {
   AdoptRuleRequest,
   DeleteSpaceRequest,
-  NoteAssistRequest,
-  NoteAssistView,
   RestoreSpaceRequest,
   ReviewSummary,
   RunSubscriptionRequest,
@@ -33,7 +31,7 @@ export interface SpacesApi {
   /** GET /v2/spaces：全部没删的（⌘K 用）；standalone 只要不属于订阅的（资料库第二栏「空间」）。 */
   list(signal?: AbortSignal, filter?: SpaceListFilter): Promise<SpaceListResponse>;
   get(id: string, signal?: AbortSignal): Promise<SpaceView>;
-  /** PUT /v2/spaces/:id：他直接改，带 version，旧了 409。 */
+  /** PUT /v2/spaces/:id：改名（只给 title）或在页面上改字（给 html），带 version，旧了 409。 */
   save(id: string, input: SaveSpaceRequest): Promise<SpaceView>;
   /** POST /v2/spaces/:id/undo：撤回最近一版。 */
   undo(id: string, input: UndoSpaceRequest): Promise<SpaceView>;
@@ -41,8 +39,8 @@ export interface SpacesApi {
   remove(id: string, input: DeleteSpaceRequest): Promise<void>;
   /** POST /v2/spaces/:id/restore：从「最近删除」还原。 */
   restore(id: string, input: RestoreSpaceRequest): Promise<SpaceView>;
-  /** POST /v2/spaces/:id/assist：续写、补充（和笔记同一个助手）。 */
-  assist(id: string, input: NoteAssistRequest, signal?: AbortSignal): Promise<NoteAssistView>;
+  /** 网页里的插图（/v2/notes/assets/…）：沙盒里的页面带不了会话，由外面读好再传进去。 */
+  asset(path: string, signal?: AbortSignal): Promise<Blob>;
 }
 
 export interface SubscriptionsApi {

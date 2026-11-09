@@ -1,6 +1,6 @@
 // 网页工具条的地址框（11-07 设计稿 Web）：平时是网站名（--fg）加路径（--fg2），前面一把锁或 ✦；点一下换成整个网址的
 // 输入框（选中全部），回车交给原生层换地址（像网址的补 https://，不像的当搜索词），Esc 或离开收回。
-// 没有原生网页标签（网页版、手机浏览器）时只显示网址，点不进去。
+// 没有原生网页标签（网页版、手机浏览器）时只显示网址，点不进去。框里右端可以放一个按钮（书签，bookmark-toggle.tsx）。
 
 import { useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { WebTab } from '../state/web-tabs.ts';
@@ -81,10 +81,12 @@ export interface WebAddressProps {
   native: NativeWebTabs | null;
   /** 网站名前面：锁 / ✦。 */
   leading: ReactNode;
+  /** 框里右端（书签按钮）；改网址的时候不出。 */
+  trailing?: ReactNode;
 }
 
 export function WebAddress(props: WebAddressProps): ReactNode {
-  const { tab, url, native, leading } = props;
+  const { tab, url, native, leading, trailing } = props;
   const [editing, setEditing] = useState(false);
   const host = hostOf(url);
   if (editing && native !== null) {
@@ -101,6 +103,7 @@ export function WebAddress(props: WebAddressProps): ReactNode {
         <button type="button" className="web-address-host" aria-label={`网址：${url}`}
           onClick={() => setEditing(true)}>{shown}</button>
       )}
+      {trailing}
     </div>
   );
 }

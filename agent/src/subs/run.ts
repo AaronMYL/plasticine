@@ -35,11 +35,18 @@ const PREPRINTS = { skip: '不收预印本', mark: '收预印本，但标出来'
 const FOCUS = { basic: '偏基础研究', clinical: '偏临床应用' } as const;
 const DEPTH = { expert: '写给专业读者', popular: '写成科普' } as const;
 
-const DOC_RULES = [
-  '写成一个空间：调用 space_write（subscriptionId 填上面的编号）。kicker 写「第 N 期 · 日期范围」；headline 写一句结论；',
-  'stats 最多四个数字卡；每个小节用 heading 块（id 用英文短词），目录就是这些小节。',
-  '图表只能用原文里的数据画，source 写清是哪篇的哪张表；自己整理出来的数据写 basis 说明怎么整理的；不编数。',
-  '图片要写来源。每条说法用 [^n] 标出处，出处写进 sources（有网址写 url，站内的写 link）。',
+// 研究周报写成报告（11-09 他定「研究周报照旧是报告」）；个人回顾写成来信（「日报和周报都改成来信」）。
+const REPORT_RULES = [
+  '写成一页报告：调用 space_write，genre 填 report，subscriptionId 填上面的编号，版式照 space_write 的说明用现成的类。',
+  'rp-kick 写「刊名 · 第 N 期」和日期范围；h1 写一句结论；数字条写读过几篇、几篇是重点、几篇和他的兴趣有关；',
+  '每个小节一个带 id 的 section（目录就是这些小节）；最后一节是来源索引，正文里用 [n] 指它。',
+  '图表只能用原文里的数据画，图下写清是哪篇的哪张表；自己整理出来的数写依据；不编数。',
+].join('');
+const LETTER_RULES = [
+  '写成一封来信：调用 space_write，genre 填 letter，subscriptionId 填上面的编号，edition 照上面填；title 是信的题目',
+  '（短，像一句话的题目，不写「日报」「周报」和日期）；say 写在主线里发给他的那一句（「给你写了一封信：……」）。',
+  '信纸照 space_write 的说明：第一段 lt-lead 直接落到他的事；配一张插图（figure.lt-fig 带 data-illustrate）；',
+  '中间几段说清楚；最后一段留一个下一步。说到的事能点回去的写链接（原对话、项目、原文网址）；数字照材料写，不编。',
 ].join('');
 
 function rulesText(rules: readonly { text: string }[]): string {
@@ -58,8 +65,8 @@ function researchMessage(subscription: Subscription, settings: ResearchSettings,
     settings.output === '' ? '' : `输出要求：${settings.output}`,
     `每期按这几个小节写：${settings.sections.map((name, index) => `${index + 1}. ${name}`).join(' ')}`,
     rulesText(settings.rules),
-    '先查最近一周的新研究，读原文再写；读过几篇、几篇是重点、几篇和他的兴趣有关，写进数字卡。',
-    DOC_RULES,
+    '先查最近一周的新研究，读原文再写。',
+    REPORT_RULES,
   ];
   return lines.filter((line) => line !== '').join('\n');
 }
@@ -71,10 +78,10 @@ function materialsText(materials: ReviewMaterials): string {
     + project.events.join('；'));
   const interests = materials.interests.map((item) => `- ${item.label}（${{ explicit: '明确关注', saved: '收藏',
     project: '正在推进的项目', talk: `交流里 ${item.days ?? 0} 天出现过` }[item.why]}）`);
-  const dream = materials.dream === null ? '没有昨晚的整理：不写「昨晚整理了什么」这一节。'
+  const dream = materials.dream === null ? '没有昨晚的整理：不提「昨晚整理了什么」。'
     : `昨晚整理了 ${materials.dream.total} 条记忆：新加 ${materials.dream.add}、替换 ${materials.dream.replace}、`
-      + `拿不准 ${materials.dream.unsure}、走不通的路 ${materials.dream.deadEnd}。写一节「昨晚整理了什么」，`
-      + '出处写 link {kind: "memory_doc"} 或说明在记忆页的「昨晚整理」里。';
+      + `拿不准 ${materials.dream.unsure}、走不通的路 ${materials.dream.deadEnd}。值得说就在信里提一句，`
+      + '出处写 data-link="memory_doc:<id>" 或说在记忆页的「昨晚整理」里。';
   return [
     `范围：${materials.from} 到 ${materials.to}。`,
     `今天的记录（${entries.length} 条）：`, ...entries,
@@ -89,17 +96,19 @@ function reviewMessage(subscription: Subscription, settings: ReviewSettings, edi
   materials: ReviewMaterials): string {
   const daily = edition === 'daily';
   return [
-    `写个人回顾的${daily ? '日报' : '周报'}。订阅编号：${subscription.id}，edition 填 ${edition}。`,
+    `给他写个人回顾的${daily ? '每日来信（早上一封）' : '每周来信（周日晚上一封，长一点）'}。订阅编号：`
+      + `${subscription.id}，edition 填 ${edition}。`,
     '目的：帮他发现值得回顾、继续推进、进一步了解的事，不是把聊天记录重新总结一遍。',
-    daily ? '日报讲当天进展、待续问题、下一步。当天没有值得回顾的就不写（不调 space_write），只回一句「今天跳过，并进周报」。'
-      : '周报讲跨天的变化、反复出现的主题、项目之间的联系，不是七份日报拼起来。',
-    '分两节：「来自交流」（反复讨论的问题、已形成的决定、有明确进展的项目、一直没解决的问题）和「外部新信息」'
-      + '（他关注方向上的新研究），各附来源；每条重要结论用 [^n] 标出处，能点回原对话（link {kind: "message", '
-      + 'id: "line:…"}）、项目（link {kind: "project"}）或原始资料（url）。',
-    '值得跟进的事写进最后一节「值得跟进」。只读：不改项目状态、不建任务、不对外发消息。',
+    daily ? '写昨天的进展、没解决的问题，再加一件和他的目标、书单、正在推进的事相关、值得说的。'
+      + '没什么值得说的就不写（不调 space_write），只回一句「今天跳过，并进周报」。'
+      : '写跨天的变化、反复出现的主题、项目之间的联系，不是七份日报拼起来。',
+    '材料分两路：来自交流（反复讨论的问题、已形成的决定、有明确进展的项目、一直没解决的问题）和外部新信息'
+      + '（他关注方向上的新研究）；信里说到的要有出处：原对话写 <a data-link="message:line:…">（材料里的出处照抄），'
+      + '项目写 <a data-link="project:<id>">，原始资料写 <a href="网址">。',
+    '只读：不改项目状态、不建任务、不对外发消息。',
     rulesText(settings.rules),
     materialsText(materials),
-    DOC_RULES,
+    LETTER_RULES,
   ].filter((line) => line !== '').join('\n');
 }
 

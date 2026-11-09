@@ -1,11 +1,14 @@
-// 空间的存取（《优化清单》第 6 条，11-06 定）：一个空间一行，正文是结构化文档；每次保存另记一版（space_revisions），
-// 撤销就是把上一版的正文再存成新的一版。删除只打 deleted_at。写都在一个事务里，并告诉统一全文索引（来源 space）。
-// 这里不做业务判断：正文合不合规（图表要有来源、[^n] 有对应出处）由 subs/ 在写之前核对。
+// 空间的存取（《优化清单》第 6 条，11-06 定；第 8 批第 6 条 11-09 改成整页网页）：一个空间一行，正文是 body 里的
+// 网页片段（html，体裁 genre）；旧空间重写以前还是结构化文档（doc）。每次保存另记一版（space_revisions），撤销就是把
+// 上一版的正文再存成新的一版。删除只打 deleted_at。写都在一个事务里，并告诉统一全文索引（来源 space）。
+// 这里不做业务判断：正文的清洗、合不合规由 subs/ 在写之前做。
 
 import { Type } from 'typebox';
 import {
   IsoTimeSchema,
   Nullable,
+  SPACE_GENRES,
+  SPACE_HTML_MAX_CHARS,
   SpaceDocSchema,
   SpaceInputSchema,
   SpaceRevisionSchema,
@@ -16,6 +19,7 @@ import {
   type Space,
   type SpaceAuthor,
   type SpaceDoc,
+  type SpaceGenre,
   type SpaceInput,
   type SpaceRevision,
 } from '../../shared/state.ts';
@@ -27,6 +31,8 @@ import { allPages, ObjectStore, type StoreContext, type StoreSpec } from './obje
 const SpacePatchSchema = Type.Partial(Type.Object({
   title: Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS }),
   doc: SpaceDocSchema,
+  genre: Nullable(Type.Enum(SPACE_GENRES)),
+  html: Nullable(Type.String({ minLength: 1, maxLength: SPACE_HTML_MAX_CHARS })),
   author: Type.Enum(SPACE_AUTHORS),
   deletedAt: Nullable(IsoTimeSchema),
 }), { additionalProperties: false });
@@ -35,6 +41,8 @@ const COLUMNS: ColumnMap = {
   ...RECORD_META_COLUMNS,
   title: 'text',
   doc: 'json',
+  genre: 'text',
+  html: 'text',
   author: 'text',
   subscriptionId: 'text',
   issueNumber: 'integer',
@@ -49,7 +57,8 @@ const SPEC: StoreSpec<typeof SpaceSchema, typeof SpaceInputSchema, typeof SpaceP
   input: SpaceInputSchema,
   patch: SpacePatchSchema,
   columns: COLUMNS,
-  defaults: { subscriptionId: null, issueNumber: null, edition: null, sourceNoteId: null, deletedAt: null },
+  defaults: { genre: null, html: null, subscriptionId: null, issueNumber: null, edition: null, sourceNoteId: null,
+    deletedAt: null },
   searchSource: 'space',
 };
 
@@ -59,9 +68,12 @@ export interface RevisionNote {
   rule?: string | null;
 }
 
+/** 存一版：网页版给 genre 和 html；只改名就只给 title。doc 只在撤回到旧版时跟着回去。 */
 export interface SpaceSave {
   title?: string;
-  doc: SpaceDoc;
+  doc?: SpaceDoc;
+  genre?: SpaceGenre | null;
+  html?: string | null;
 }
 
 export interface SpaceListFilter {
@@ -75,6 +87,8 @@ function readRevision(row: Row): SpaceRevision {
     spaceId: row['space_id'],
     version: row['version'],
     doc: JSON.parse(String(row['doc'])),
+    genre: row['genre'] ?? null,
+    html: row['html'] ?? null,
     title: row['title'],
     author: row['author'],
     savedAt: row['saved_at'],
@@ -90,11 +104,12 @@ export function createSpaceStore(context: StoreContext) {
 
   function addRevision(space: Space, note: RevisionNote, restoredFrom: number | null): void {
     try {
-      context.db.run(`INSERT INTO space_revisions (space_id, version, title, doc, author, saved_at, change, rule,
-        restored_from) VALUES ($space, $version, $title, $doc, $author, $at, $change, $rule, $restored)`, {
+      context.db.run(`INSERT INTO space_revisions (space_id, version, title, doc, genre, html, author, saved_at,
+        change, rule, restored_from) VALUES ($space, $version, $title, $doc, $genre, $html, $author, $at, $change,
+        $rule, $restored)`, {
         space: space.id, version: space.version, title: space.title, doc: JSON.stringify(space.doc),
-        author: space.author, at: space.updatedAt, change: note.change ?? null, rule: note.rule ?? null,
-        restored: restoredFrom,
+        genre: space.genre, html: space.html, author: space.author, at: space.updatedAt, change: note.change ?? null,
+        rule: note.rule ?? null, restored: restoredFrom,
       });
     } catch (error) {
       throw fromSqliteError(error, '记空间的一版');
@@ -114,8 +129,11 @@ export function createSpaceStore(context: StoreContext) {
       if (current.deletedAt !== null) {
         throw new StateError('invalid_input', '这个空间已经删了，先在资料库「最近删除」里还原再改。');
       }
-      const updated = spaces.update(id, expectedVersion, { doc: input.doc, author,
-        ...(input.title === undefined ? {} : { title: input.title }) });
+      const updated = spaces.update(id, expectedVersion, { author,
+        ...(input.title === undefined ? {} : { title: input.title }),
+        ...(input.doc === undefined ? {} : { doc: input.doc }),
+        ...(input.genre === undefined ? {} : { genre: input.genre }),
+        ...(input.html === undefined ? {} : { html: input.html }) });
       if (updated.version !== expectedVersion) {
         addRevision(updated, note, restoredFrom);
       }
@@ -146,6 +164,9 @@ export function createSpaceStore(context: StoreContext) {
     /** 删掉的（「最近删除」），删的时间新的在前。 */
     deleted: (): Space[] => allPages((page) => spaces.select('deleted_at IS NOT NULL', {}, page,
       'deleted_at DESC, id DESC')),
+    /** 还没有网页版的（旧版式），先建的在前：一次性重写找它们。 */
+    withoutPage: (): Space[] => allPages((page) => spaces.select('deleted_at IS NULL AND html IS NULL', {}, page,
+      'created_at ASC, id ASC')),
     /** 一个订阅的全部各期，新的在前。 */
     issues: (subscriptionId: string): Space[] => allPages((page) => spaces.select(
       'deleted_at IS NULL AND subscription_id = $sub', { sub: subscriptionId }, page,
@@ -169,8 +190,8 @@ export function createSpaceStore(context: StoreContext) {
         if (previous === undefined) {
           throw new StateError('invalid_input', '这已经是最早的一版，没有可以撤回的改动。');
         }
-        return save(id, expectedVersion, { title: previous.title, doc: previous.doc }, author,
-          { change: `撤回到第 ${previous.version} 版` }, previous.version);
+        return save(id, expectedVersion, { title: previous.title, doc: previous.doc, genre: previous.genre,
+          html: previous.html }, author, { change: `撤回到第 ${previous.version} 版` }, previous.version);
       });
     },
     revision,

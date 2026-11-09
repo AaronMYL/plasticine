@@ -17,7 +17,7 @@ import { DEFAULT_TIME_ZONE, LineError, MAX_BACKGROUND_LINES, NOW, type After, ty
 import { lineTools, type LineControl } from './line-tools.ts';
 import { outcomeTool } from './outcome-tool.ts';
 import { isAssistant, messageView, userMessage, type AttachmentNote, type LineNoticeMessage,
-  type LineWelcomeMessage, type PostedMessage,
+  type LineLetterMessage, type LineWelcomeMessage, type PostedMessage,
   type ReportOutcome } from './messages.ts';
 import { pageSubmitAskTool } from './page-submit-tool.ts';
 import { linePrompt } from './prompt.ts';
@@ -435,6 +435,17 @@ export class LineKernel implements LineControl, SideControl {
     const main = this.#state.lines.main();
     const message: LineWelcomeMessage = { role: 'welcome', text: input.text, starts: input.starts,
       timestamp: this.#now().getTime() };
+    return this.#post(main.id, message);
+  }
+
+  /**
+   * 来信（第 8 批第 6 条）：个人回顾写成来信后在主线放 Plasticine 的一句话和来信卡，不开一轮。和通知一样，主线正在跑
+   * 时插进这一轮并返回 null。同一封只发一次由调用方按 key 记回执。
+   */
+  letter(input: { key: string; text: string; spaceId: string; title: string }): LineMessageView | null {
+    const main = this.#state.lines.main();
+    const message: LineLetterMessage = { role: 'letter', key: input.key, text: input.text, spaceId: input.spaceId,
+      title: input.title, timestamp: this.#now().getTime() };
     return this.#post(main.id, message);
   }
 

@@ -8,8 +8,6 @@ import type {
   DeleteSpaceRequest,
   IssueBrief,
   MemoryDreamView,
-  NoteAssistRequest,
-  NoteAssistView,
   RestoreSpaceRequest,
   ReviewSummary,
   RunSubscriptionRequest,
@@ -25,7 +23,7 @@ import type {
 } from '../shared.ts';
 import type { FakeReceipts } from './receipts.ts';
 import type { FakeSession } from './fake-session.ts';
-import { REVIEW_ID, spaceSeeds, subscriptionSeeds, type SeedSpace } from './spaces-seed.ts';
+import { REVIEW_ID, SEED_ASSETS, spaceSeeds, subscriptionSeeds, type SeedSpace } from './spaces-seed.ts';
 
 export interface FakeSpacesDeps {
   session: FakeSession;
@@ -45,6 +43,18 @@ function conflict(message: string): ApiError {
 
 const ONE_MINUTE_MS = 60_000;
 
+/** 网页版的那一句：报告取第一个 h1，来信就是题目；旧版式取结论大标题。 */
+function headlineOf(row: SeedSpace): string {
+  if (row.html === null) {
+    return row.doc.headline ?? row.title;
+  }
+  if (row.genre === 'letter') {
+    return row.title;
+  }
+  const found = /<h1[^>]*>([\s\S]*?)<\/h1>/.exec(row.html)?.[1];
+  return found === undefined ? row.title : found.replace(/<[^>]+>/g, '');
+}
+
 export class FakeSpaces {
   private readonly deps: FakeSpacesDeps;
   private spaceRows: SeedSpace[] = [];
@@ -59,7 +69,7 @@ export class FakeSpaces {
   /** 假查找用：每个空间的标题和正文（JSON 原样当正文查）。 */
   searchable(): { id: string; updatedAt: string; title: string; text: string }[] {
     return this.live().map((row) => ({ id: row.id, updatedAt: row.updatedAt, title: row.title,
-      text: JSON.stringify(row.doc) }));
+      text: row.html === null ? JSON.stringify(row.doc) : row.html.replace(/<[^>]+>/g, ' ') }));
   }
 
   seed(): void {
@@ -102,7 +112,8 @@ export class FakeSpaces {
     const lastChange = last === undefined || last.change === null || version === 1 ? null
       : { version, change: last.change, rule: last.rule,
         adopted: last.rule !== null && (sub?.settings.rules.some((rule) => rule.text === last.rule) ?? false) };
-    return { id: row.id, title: row.title, version, kind: row.kind, author: row.author, updatedAt: row.updatedAt,
+    return { id: row.id, title: row.title, version, kind: row.kind, genre: row.genre, author: row.author,
+      createdAt: row.createdAt, updatedAt: row.updatedAt, html: row.html,
       doc: structuredClone(row.doc), subscription: sub === undefined ? null
         : { id: sub.id, title: sub.title, version: sub.version },
       issueNumber: row.issueNumber, edition: row.edition, lastChange };
@@ -113,7 +124,8 @@ export class FakeSpaces {
       return null;
     }
     return { spaceId: row.id, subscriptionId: row.subscriptionId, issueNumber: row.issueNumber, edition: row.edition,
-      title: row.title, headline: row.doc.headline ?? row.title, stats: row.doc.stats, createdAt: row.createdAt };
+      genre: row.genre, title: row.title, headline: headlineOf(row), stats: row.html === null ? row.doc.stats : [],
+      createdAt: row.createdAt };
   }
 
   private issues(subscriptionId: string): IssueBrief[] {
@@ -139,8 +151,9 @@ export class FakeSpaces {
       this.deps.session.require();
       const rows = this.live().filter((row) => filter.standalone !== true || row.subscriptionId === null);
       return { spaces: rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((row) => ({
-        id: row.id, title: row.title, kind: row.kind, author: row.author, subscriptionId: row.subscriptionId,
-        issueNumber: row.issueNumber, edition: row.edition, updatedAt: row.updatedAt })) };
+        id: row.id, title: row.title, kind: row.kind, genre: row.genre, author: row.author,
+        subscriptionId: row.subscriptionId, issueNumber: row.issueNumber, edition: row.edition,
+        version: row.revisions.length, createdAt: row.createdAt, updatedAt: row.updatedAt })) };
     },
     get: async (id: string): Promise<SpaceView> => {
       this.deps.session.require();
@@ -153,11 +166,15 @@ export class FakeSpaces {
         if (row.revisions.length !== input.version) {
           throw conflict('这个空间在别处改过了，这次没有存。');
         }
-        row.doc = structuredClone(input.doc);
+        if (input.html !== undefined && row.html === null) {
+          throw new ApiError({ kind: 'invalid', code: 'invalid_input', status: 400,
+            message: '这一页还是旧版式，不能在页面上改字。' });
+        }
+        row.html = input.html ?? row.html;
         row.title = input.title ?? row.title;
         row.author = 'user';
         row.updatedAt = this.deps.now().toISOString();
-        row.revisions.push({ doc: structuredClone(input.doc), change: null, rule: null });
+        row.revisions.push({ doc: row.doc, genre: row.genre, html: row.html, change: null, rule: null });
         return this.view(row);
       });
     },
@@ -170,7 +187,9 @@ export class FakeSpaces {
           throw conflict('没有可以撤回的改动。');
         }
         row.doc = structuredClone(previous.doc);
-        row.revisions.push({ doc: structuredClone(previous.doc), change: null, rule: null });
+        row.html = previous.html;
+        row.genre = previous.genre;
+        row.revisions.push({ ...previous, doc: structuredClone(previous.doc), change: null, rule: null });
         row.updatedAt = this.deps.now().toISOString();
         return this.view(row);
       });
@@ -197,10 +216,13 @@ export class FakeSpaces {
         return this.view(row);
       });
     },
-    assist: async (_id: string, input: NoteAssistRequest): Promise<NoteAssistView> => {
+    asset: async (path: string): Promise<Blob> => {
       this.deps.session.require();
-      return { label: input.action === 'predict' ? '续写' : 'Plasticine 想接一句',
-        markdown: input.action === 'predict' ? '下一步可以对照无创记录的结果。' : '要不要把阈值效应单独列一节？' };
+      const asset = SEED_ASSETS[path];
+      if (asset === undefined) {
+        throw notFound('这张图');
+      }
+      return new Blob([asset.data], { type: asset.type });
     },
   };
 

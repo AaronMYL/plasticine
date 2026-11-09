@@ -156,6 +156,8 @@ export type LiveEvent =
   | { type: 'video.changed' }
   /** 11-08：竖排标签的摆放在别的设备上改了（version 是改完的版本）。 */
   | { type: 'webTabs.changed'; version: number }
+  /** 第 8 批第 1 条：书签在别处改了（各设备同一份），重读列表。 */
+  | { type: 'bookmarks.changed' }
   | { type: 'note.updated'; note: NoteMetaView }
   | { type: 'note.deleted'; noteId: string }
   | ({ type: 'ask.created'; ask: AskView; current: boolean } & BoardEventState)

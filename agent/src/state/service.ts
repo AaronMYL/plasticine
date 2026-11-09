@@ -61,6 +61,7 @@ import { createSearchIndex, type SearchIndex } from './search-index.ts';
 import { createSearchStore } from './search.ts';
 import { createScheduleStores } from './schedules.ts';
 import { createSessionStore } from './sessions.ts';
+import { createSpaceRewriteStore } from './space-rewrites.ts';
 import { createSpaceStore } from './spaces.ts';
 import { createSubscriptionStore } from './subscriptions.ts';
 import { createSuggestionStore } from './suggestions.ts';
@@ -149,6 +150,8 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     notes: createNoteStore(context, notes),
     // 第 6、7 条（11-06 定）：Plasticine 写的都是空间；订阅（研究周报、个人回顾）每一期是一个空间。
     spaces: createSpaceStore(context),
+    // 第 8 批第 6 条：旧空间按新版式重写的记录（做成了不再做，失败的下次启动再试）。
+    spaceRewrites: createSpaceRewriteStore(context),
     subscriptions: createSubscriptionStore(context),
     asks: createAskStore(context),
     pushSubscriptions: createPushSubscriptionStore(context),

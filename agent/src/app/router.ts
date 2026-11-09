@@ -90,7 +90,7 @@ import {
   TOOL_GROUPS_PATH,
 } from '../../shared/api/index.ts';
 import { REVIEW_PATH, SPACES_PATH, SUBSCRIPTIONS_PATH } from '../../shared/api/spaces.ts';
-import { assistSpace, deleteSpace, getSpace, listSpaces, restoreSpace, saveSpace, undoSpace } from './spaces.ts';
+import { deleteSpace, getSpace, listSpaces, restoreSpace, saveSpace, undoSpace } from './spaces.ts';
 import { LIBRARY_TRASH_PATH } from '../../shared/api/library.ts';
 import { listLibraryTrash } from './library-trash.ts';
 import { adoptSubscriptionRule, getReviewSummary, getSubscription, listSubscriptions, runSubscriptionNow,
@@ -105,8 +105,8 @@ import { getBackstage, setBackstageRule } from './backstage.ts';
 import { createBackup, getBackup, getRestorePreview, listBackups, previewRestore, restoreBackup } from './backups.ts';
 import { createBookAnnotation, deleteBookAnnotation, dismissKeyPoint, exportBookNotes, generateBookInsight,
   getBookInsight, listBookAnnotations, listBookDiscussions, updateBookAnnotation } from './book-notes.ts';
-import { addBookmark, editBookmark, importBookmarks, listBookmarks, orderBookmarks, removeBookmark }
-  from './bookmarks.ts';
+import { addBookmark, editBookmark, importBookmarks, listBookmarks, orderBookmarks, removeBookmark,
+  restoreBookmark } from './bookmarks.ts';
 import { getFavicon, getWebTabs, mergeWebTabs, putFavicon, putWebTabs } from './web-tabs.ts';
 import { deleteBook, getBook, getBookAsset, getBookChapter, listBooks, renameBook, restoreBook, saveBookProgress,
   searchInBook, uploadBook } from './books.ts';
@@ -341,7 +341,6 @@ export const ROUTES: readonly Route[] = [
   { method: 'DELETE', path: `${SPACES_PATH}/:id`, auth: true, handler: deleteSpace },
   { method: 'POST', path: `${SPACES_PATH}/:id/restore`, auth: true, handler: restoreSpace },
   { method: 'GET', path: LIBRARY_TRASH_PATH, auth: true, handler: listLibraryTrash },
-  { method: 'POST', path: `${SPACES_PATH}/:id/assist`, auth: true, handler: assistSpace },
   { method: 'GET', path: SUBSCRIPTIONS_PATH, auth: true, handler: listSubscriptions },
   { method: 'GET', path: `${SUBSCRIPTIONS_PATH}/:id`, auth: true, handler: getSubscription },
   { method: 'PUT', path: `${SUBSCRIPTIONS_PATH}/:id`, auth: true, handler: updateSubscription },
@@ -372,6 +371,7 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: BOOKMARKS_IMPORT_PATH, auth: true, handler: importBookmarks },
   { method: 'PUT', path: `${BOOKMARKS_PATH}/:id`, auth: true, handler: editBookmark },
   { method: 'POST', path: `${BOOKMARKS_PATH}/:id/remove`, auth: true, handler: removeBookmark },
+  { method: 'POST', path: `${BOOKMARKS_PATH}/:id/restore`, auth: true, handler: restoreBookmark },
   { method: 'GET', path: WEB_TABS_PATH, auth: true, handler: getWebTabs },
   { method: 'PUT', path: WEB_TABS_PATH, auth: true, handler: putWebTabs },
   { method: 'POST', path: WEB_TABS_MERGE_PATH, auth: true, handler: mergeWebTabs },

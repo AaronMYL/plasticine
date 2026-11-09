@@ -1,0 +1,153 @@
+/*
+ * 资料库首页的缩略图卡片（第 8 批第 6 条，设计稿 Library-Spaces / Phone-Library，11-09）：「最近」一排三张、「全部」
+ * 四列；卡片是缩略图 + 标题（两行）+「报告 / 来信 · 时间」和 ⋯。手机上「最近」一排横滑（每张 220 宽），「全部」两列。
+ */
+
+@media (min-width: 768px) {
+  .page.lib-grid-page:not(.page-fill) {
+    max-width: 1000px;
+    padding: 32px 48px 40px;
+  }
+}
+
+.lib-grid-page {
+  gap: 36px;
+}
+
+.lib-grid-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lib-grid-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.lib-grid-count {
+  color: var(--fg3);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.lib-cards {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lib-recent {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.lib-all {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px 20px;
+}
+
+.lib-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lib-card-link {
+  display: block;
+  border-radius: 10px;
+}
+
+.lib-card-link .space-thumb::after {
+  transition: box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.lib-card-link:hover .space-thumb::after {
+  box-shadow: inset 0 0 0 1px var(--fg3);
+}
+
+.lib-card-link:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.lib-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 22px;
+  text-decoration: none;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.lib-card .rename-field {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.lib-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -6px;
+}
+
+.lib-card-meta .text-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.lib-card-meta .reveal-more {
+  width: 24px;
+  height: 24px;
+  color: var(--fg3);
+}
+
+@media (max-width: 767px) {
+  .lib-grid-page {
+    gap: 24px;
+  }
+
+  .lib-recent {
+    display: flex;
+    gap: 12px;
+    margin-inline: -16px;
+    overflow-x: auto;
+    padding: 0 16px 4px;
+    scroll-padding-inline: 16px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .lib-recent::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lib-recent .lib-card {
+    width: 220px;
+    flex: none;
+    scroll-snap-align: start;
+  }
+
+  .lib-all {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
+  }
+
+  .lib-all .lib-card-title {
+    font-size: 13px;
+    line-height: 20px;
+  }
+}

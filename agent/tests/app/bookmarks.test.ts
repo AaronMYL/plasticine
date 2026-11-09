@@ -104,6 +104,50 @@ test('改名、移到别的项目；过时的 version 回 409 带现在的；移
   assert.notEqual(app.state.bookmarks.require(id).deletedAt, null);
 });
 
+test('撤销移除：回到原来的位置；同一个网址这期间又加了一条就回那一条，不出两条；过时的 409', async () => {
+  const { app, cookie } = await start();
+  const a = await add(app, cookie, { kind: 'web', title: 'A', target: 'https://a.example.com/' });
+  await add(app, cookie, { kind: 'web', title: 'B', target: 'https://b.example.com/' });
+  const removed = json(await call(app, 'POST', `/v2/bookmarks/${String(a['id'])}/remove`, { cookie,
+    body: { requestId: newRequestId('rm'), version: a['version'] } }))['bookmark'] as Body;
+  const stale = await call(app, 'POST', `/v2/bookmarks/${String(a['id'])}/restore`, { cookie,
+    body: { requestId: newRequestId('rs'), version: a['version'] } });
+  assert.equal(stale.status, 409);
+  const restored = await call(app, 'POST', `/v2/bookmarks/${String(a['id'])}/restore`, { cookie,
+    body: { requestId: newRequestId('rs'), version: removed['version'] } });
+  assert.equal(restored.status, 200, JSON.stringify(restored.body));
+  assert.equal((json(restored)['bookmark'] as Body)['id'], a['id']);
+  assert.deepEqual((await list(app, cookie)).map((row) => row['title']), ['A', 'B']);
+  assert.equal(app.state.bookmarks.require(String(a['id'])).deletedAt, null);
+
+  const again = json(await call(app, 'POST', `/v2/bookmarks/${String(a['id'])}/remove`, { cookie,
+    body: { requestId: newRequestId('rm'), version: (json(restored)['bookmark'] as Body)['version'] } }))['bookmark'];
+  const twin = await add(app, cookie, { kind: 'web', title: 'A 又加', target: 'https://a.example.com/' });
+  const back = await call(app, 'POST', `/v2/bookmarks/${String(a['id'])}/restore`, { cookie,
+    body: { requestId: newRequestId('rs'), version: (again as Body)['version'] } });
+  assert.equal(back.status, 200, JSON.stringify(back.body));
+  assert.equal((json(back)['bookmark'] as Body)['id'], twin['id']);
+  assert.equal((await list(app, cookie)).length, 2);
+});
+
+test('书签改了（加、改名、移除、撤销、排序）告诉各设备：bookmarks_changed', async () => {
+  const { app, cookie } = await start();
+  const seen: string[] = [];
+  const publish = app.app.deps.hub.publish.bind(app.app.deps.hub);
+  app.app.deps.hub.publish = (event) => {
+    seen.push(event.type);
+    return publish(event);
+  };
+  const row = await add(app, cookie, { kind: 'web', title: 'A', target: 'https://a.example.com/' });
+  await add(app, cookie, { kind: 'web', title: 'A', target: 'https://a.example.com/' }, 200);
+  const edit = json(await call(app, 'PUT', `/v2/bookmarks/${String(row['id'])}`, { cookie,
+    body: { requestId: newRequestId('ed'), version: row['version'], title: '新名字' } }))['bookmark'] as Body;
+  await call(app, 'POST', '/v2/bookmarks/order', { cookie, body: { requestId: newRequestId('or'), ids: [row['id']] } });
+  await call(app, 'POST', `/v2/bookmarks/${String(row['id'])}/remove`, { cookie,
+    body: { requestId: newRequestId('rm'), version: edit['version'] } });
+  assert.deepEqual(seen.filter((type) => type === 'bookmarks_changed').length, 4, '同一个网址再加一次没改，不发');
+});
+
 test('排序：按给的先后，没列到的排后面', async () => {
   const { app, cookie } = await start();
   const a = await add(app, cookie, { kind: 'web', title: 'A', target: 'https://a.example.com/' });

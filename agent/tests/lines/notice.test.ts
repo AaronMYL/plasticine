@@ -78,3 +78,28 @@ test('主线正在跑：通知插进这一轮，排在这一步的工具结果�
   const roles = h.kernel.read('main', 50).messages.map((message) => message.role);
   assert.ok(roles.indexOf('notice') > roles.indexOf('toolResult'), roles.join(','));
 });
+
+const LETTER = { key: 'letter:s-1', text: '给你写了一封信：你定的「做梦」，今天信息流里有篇原文能对上。', spaceId: 's-1',
+  title: '做梦，有了一组数字' };
+
+test('来信（第 8 批第 6 条）：主线里一句 Plasticine 的话带来信卡，不开一轮；模型看到是它写的信、不是他说的', async () => {
+  const h = await harness();
+  const view = h.kernel.letter(LETTER);
+  assert.equal(view?.role, 'letter');
+  assert.deepEqual(view?.letter, { spaceId: 's-1', title: '做梦，有了一组数字' });
+  assert.equal(view?.origin, null);
+  await h.kernel.settled();
+  assert.equal(h.kernel.read('main', 50).line.status, 'idle', '不开一轮');
+  assert.equal(h.faux.state.callCount, 0);
+  let seen = '';
+  h.respond([(context) => {
+    const letter = context.messages.find((message) => message.role === 'user' && typeof message.content === 'string'
+      && message.content.includes('做梦，有了一组数字'));
+    seen = letter?.role === 'user' && typeof letter.content === 'string' ? letter.content : '';
+    return fauxAssistantMessage('嗯。');
+  }]);
+  h.kernel.send('main', { text: '那封信我看了' });
+  await h.kernel.settled();
+  assert.match(seen, /你给他写了一封信《做梦，有了一组数字》（空间 s-1）/);
+  assert.match(seen, /这不是用户说的/);
+});

@@ -59,6 +59,8 @@ export type TimelineItem =
   | { kind: 'notice'; key: string; message: LineMessageView }
   /** 建账号时服务端放的欢迎（11-08 设计稿 First-Main）：Plasticine 打招呼，下面几个「开始」。 */
   | { kind: 'welcome'; key: string; message: LineMessageView }
+  /** 来信（第 8 批第 6 条，设计稿 Chat-Letter）：Plasticine 的一句话，下面一张来信卡。 */
+  | { kind: 'letter'; key: string; message: LineMessageView }
   /** Plasticine 把话题挪到了一条旁聊（open_side_chat，第 17 条）：一行入口，点了过去。 */
   | { kind: 'side'; key: string; lineId: string; title: string; message: LineMessageView };
 
@@ -182,6 +184,9 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
     } else if (message.role === 'welcome') {
       turn = null;
       items.push({ kind: 'welcome', key: `m-${message.seq}`, message });
+    } else if (message.role === 'letter') {
+      turn = null;
+      items.push({ kind: 'letter', key: `m-${message.seq}`, message });
     } else if (message.role === 'lineReport') {
       turn = null;
       const line = message.childLineId === null ? null : byId.get(message.childLineId) ?? null;

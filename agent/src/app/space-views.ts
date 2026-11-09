@@ -11,7 +11,7 @@ import type {
 } from '../../shared/api/index.ts';
 import type { Space, Subscription } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { nextRunAt, REVIEW_SUBSCRIPTION_ID, schedulesOf, summaryOf } from '../subs/index.ts';
+import { nextRunAt, pageSummary, REVIEW_SUBSCRIPTION_ID, schedulesOf, summaryOf } from '../subs/index.ts';
 
 type ViewState = Pick<StateService, 'spaces' | 'subscriptions' | 'memoryDreams'>;
 
@@ -27,9 +27,9 @@ function kindOf(state: ViewState, space: Space): SpaceKind {
 }
 
 export function spaceListItem(state: ViewState, space: Space): SpaceListItem {
-  return { id: space.id, title: space.title, kind: kindOf(state, space), author: space.author,
+  return { id: space.id, title: space.title, kind: kindOf(state, space), genre: space.genre, author: space.author,
     subscriptionId: space.subscriptionId, issueNumber: space.issueNumber, edition: space.edition,
-    updatedAt: space.updatedAt };
+    version: space.version, createdAt: space.createdAt, updatedAt: space.updatedAt };
 }
 
 function lastChange(state: ViewState, space: Space, subscription: Subscription | undefined): SpaceView['lastChange'] {
@@ -45,8 +45,8 @@ function lastChange(state: ViewState, space: Space, subscription: Subscription |
 export function spaceView(state: ViewState, space: Space): SpaceView {
   const subscription = space.subscriptionId === null ? undefined : state.subscriptions.get(space.subscriptionId);
   return {
-    id: space.id, title: space.title, version: space.version, kind: kindOf(state, space), author: space.author,
-    updatedAt: space.updatedAt, doc: space.doc,
+    id: space.id, title: space.title, version: space.version, kind: kindOf(state, space), genre: space.genre,
+    author: space.author, createdAt: space.createdAt, updatedAt: space.updatedAt, html: space.html, doc: space.doc,
     subscription: subscription === undefined ? null
       : { id: subscription.id, title: subscription.title, version: subscription.version },
     issueNumber: space.issueNumber, edition: space.edition, lastChange: lastChange(state, space, subscription),
@@ -57,9 +57,10 @@ export function issueBrief(space: Space): IssueBrief | null {
   if (space.subscriptionId === null || space.issueNumber === null) {
     return null;
   }
-  const { headline, stats } = summaryOf(space.title, space.doc);
+  const { headline, stats } = space.html === null ? summaryOf(space.title, space.doc)
+    : pageSummary(space.title, space.genre ?? 'report', space.html);
   return { spaceId: space.id, subscriptionId: space.subscriptionId, issueNumber: space.issueNumber,
-    edition: space.edition, title: space.title, headline, stats, createdAt: space.createdAt };
+    edition: space.edition, genre: space.genre, title: space.title, headline, stats, createdAt: space.createdAt };
 }
 
 function briefs(state: ViewState, subscriptionId: string): IssueBrief[] {

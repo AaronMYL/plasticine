@@ -24,7 +24,7 @@ describe('壳偏好 · 悬浮对话框', () => {
       chatCollapsedByView: { today: true }, chatWidth: 400, chatFrame: { width: 'wide' } }));
     const upgraded = new ShellPrefs(storage).store.get();
     expect(upgraded).toEqual({ sidebarCollapsed: true, chatOpen: null, chatFrame: CHAT_FRAME_DEFAULT,
-      phoneChatOpen: false, contactProfile: true, askPage: false, collapsedColumns: [] });
+      phoneChatOpen: false, contactProfile: true, askPage: false, collapsedColumns: [], bookmarksCollapsed: false });
     new ShellPrefs(storage).setChatOpen(true);
     expect(JSON.parse(storage.getItem('plasticine:shell-prefs') ?? '{}')).not.toHaveProperty('chatWidth');
   });
@@ -41,6 +41,15 @@ describe('壳偏好 · 悬浮对话框', () => {
     expect(new ShellPrefs(storage).store.get().askPage).toBe(false);
     new ShellPrefs(storage).setAskPage(true);
     expect(new ShellPrefs(storage).store.get().askPage).toBe(true);
+  });
+});
+
+describe('壳偏好 · 网页栏的「书签」一节（第 8 批第 1 条）', () => {
+  it('默认展开；收起了存在本机，下次打开还是收着', () => {
+    const storage = memoryStorage();
+    expect(new ShellPrefs(storage).store.get().bookmarksCollapsed).toBe(false);
+    new ShellPrefs(storage).setBookmarksCollapsed(true);
+    expect(new ShellPrefs(storage).store.get().bookmarksCollapsed).toBe(true);
   });
 });
 

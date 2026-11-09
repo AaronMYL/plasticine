@@ -2,11 +2,10 @@
 
 import type { LibraryApi, SpacesApi, SubscriptionsApi } from '../spaces-client.ts';
 import { Type } from 'typebox';
+import { ApiError } from '../errors.ts';
 import {
   LIBRARY_TRASH_PATH,
   LibraryTrashResponseSchema,
-  NoteAssistViewSchema,
-  noteAssistTimeoutMs,
   REVIEW_PATH,
   ReviewSummarySchema,
   RunSubscriptionResponseSchema,
@@ -20,13 +19,25 @@ import {
 } from '../shared.ts';
 import type { Transport } from './transport.ts';
 
-// 续写给的等待余量（同笔记 http/notes.ts）。
-const ASSIST_GRACE_MS = 5000;
-
 const spacePath = (id: string): string => `${SPACES_PATH}/${encodeURIComponent(id)}`;
 const subscriptionPath = (id: string): string => `${SUBSCRIPTIONS_PATH}/${encodeURIComponent(id)}`;
 
 const DeletedSchema = Type.Object({ deleted: Type.Boolean() });
+// 网页里能用的插图只在这里（Plasticine 自己的资产，和笔记里的图同一处）。
+const ASSET_PREFIX = '/v2/notes/assets/';
+
+/** 插图按原样读回来（同源，带会话 cookie）：沙盒里的页面自己读不了，外面读好再传进去。 */
+async function readAsset(path: string, signal?: AbortSignal): Promise<Blob> {
+  if (!path.startsWith(ASSET_PREFIX)) {
+    throw new ApiError({ kind: 'invalid', code: 'invalid_input', message: '这张图不是 Plasticine 自己的资产。' });
+  }
+  const response = await fetch(path, { credentials: 'same-origin', ...(signal === undefined ? {} : { signal }) });
+  if (!response.ok) {
+    throw new ApiError({ kind: response.status === 404 ? 'not_found' : 'failed', code: 'asset_unavailable',
+      status: response.status, message: `插图没读到（${response.status}）。` });
+  }
+  return response.blob();
+}
 
 export function createSpacesHttp(transport: Transport):
   { spaces: SpacesApi; subscriptions: SubscriptionsApi; library: LibraryApi } {
@@ -46,9 +57,7 @@ export function createSpacesHttp(transport: Transport):
       schema: SpaceViewSchema, what: '保存空间', lostAs: 'uncertain' }),
     undo: (id, input) => transport.request({ method: 'POST', path: `${spacePath(id)}/undo`, body: input,
       schema: SpaceViewSchema, what: '撤销', lostAs: 'uncertain' }),
-    assist: (id, input, signal) => transport.request({ method: 'POST', path: `${spacePath(id)}/assist`, body: input,
-      schema: NoteAssistViewSchema, what: '续写', lostAs: 'failed',
-      timeoutMs: noteAssistTimeoutMs(input) + ASSIST_GRACE_MS, signal }),
+    asset: readAsset,
   };
   const subscriptions: SubscriptionsApi = {
     list: (signal) => transport.request({ method: 'GET', path: SUBSCRIPTIONS_PATH,

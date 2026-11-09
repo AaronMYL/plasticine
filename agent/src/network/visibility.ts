@@ -7,6 +7,7 @@
 // - 常驻的「个人」项目不建议；其余项目（含常驻的 Plasticine）建议「合作」——合作方来问的多半是项目上的事。
 // - 笔记不建议：笔记多半是自己的草稿，要用户自己挑。上了锁的笔记根本不进列表，也永远不给分身。
 
+import { spaceHtmlText } from '../../shared/space-html.ts';
 import { spaceDocText } from '../../shared/space-text.ts';
 import { RELATION_REACH, TIERS, type MaterialKind, type Tier } from '../../shared/api/visibility.ts';
 import { STANDING_PROJECT_IDS, type Contact, type MemoryDoc, type Project } from '../../shared/state.ts';
@@ -97,7 +98,7 @@ function materialOf(state: MaterialState, kind: MaterialKind, id: string): { tit
   if (kind === 'space') {
     const space = state.spaces.get(id);
     return space === undefined || space.deletedAt !== null ? null
-      : { title: space.title, text: spaceDocText(space.doc) };
+      : { title: space.title, text: space.html === null ? spaceDocText(space.doc) : spaceHtmlText(space.html) };
   }
   const note = state.notes.get(id);
   if (note === undefined || note.deletedAt !== null || note.private) {

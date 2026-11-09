@@ -31,6 +31,8 @@ export const ServerEventSchema = Type.Union([
   Type.Object({ type: Type.Literal('video_changed') }),
   // 竖排网页标签的摆放（11-08 起存在本体里）在别的设备上改了：version 比自己手上的新就重读。
   Type.Object({ type: Type.Literal('web_tabs_changed'), version: Type.Integer({ minimum: 0 }) }),
+  // 书签（第 8 批第 1 条，各设备同一份）在别处改了：重读列表。
+  Type.Object({ type: Type.Literal('bookmarks_changed') }),
   Type.Object({ type: Type.Literal('money_draft_changed'), draft: MoneyDraftViewSchema }),
   Type.Object({ type: Type.Literal('attachment_changed'), attachment: AttachmentViewSchema }),
   // 联系人（第 113 条）：列表变了、某个联系人的聊天里多了或变了一项。

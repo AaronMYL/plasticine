@@ -10,6 +10,7 @@ import type {
   ImportBookmarksResponse,
   OrderBookmarksRequest,
   RemoveBookmarkRequest,
+  RestoreBookmarkRequest,
 } from './shared.ts';
 
 export interface BookmarksApi {
@@ -21,6 +22,8 @@ export interface BookmarksApi {
   edit(id: string, input: EditBookmarkRequest): Promise<BookmarkView>;
   /** POST /v2/bookmarks/:id/remove。 */
   remove(id: string, input: RemoveBookmarkRequest): Promise<BookmarkView>;
+  /** POST /v2/bookmarks/:id/restore：撤销移除；同一个网址这期间又加了一条就回那一条。 */
+  restore(id: string, input: RestoreBookmarkRequest): Promise<BookmarkView>;
   /** POST /v2/bookmarks/order。 */
   order(input: OrderBookmarksRequest): Promise<BookmarkListResponse>;
   /** POST /v2/bookmarks/import：浏览器导出的书签，文件夹已经对到项目上、用户确认过。 */

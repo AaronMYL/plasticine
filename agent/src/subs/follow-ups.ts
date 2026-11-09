@@ -1,7 +1,9 @@
-// 回顾的「值得跟进」进建议（《优化清单》第 4、7 条）：日报、周报写完以后，最后一节「值得跟进」里的每一条出一张建议卡，
-// 他点了才开始做。同一期同一条只提一次（key = review:<空间>:<第几条>）。
+// 回顾的「值得跟进」进建议（《优化清单》第 4、7 条）：日报、周报写完以后，值得跟进的每一条出一张建议卡，他点了才开始
+// 做。同一期同一条只提一次（key = review:<空间>:<第几条>）。11-09 起回顾是来信：信里标了 data-follow 的那几条；
+// 旧版式（还没重写）照旧读最后一节「值得跟进」。
 
 import type { Space } from '../../shared/state.ts';
+import { followTexts } from './space-page.ts';
 
 /** 这一节的标题里有这几个字就算。 */
 const FOLLOW_UP_HEADING = '值得跟进';
@@ -28,7 +30,7 @@ function items(markdown: string): string[] {
     .replace(/\*\*/g, '').trim()).filter((line) => line !== '');
 }
 
-export function followUps(space: Space): FollowUp[] {
+function docFollowUps(space: Space): string[] {
   const blocks = space.doc.blocks;
   const start = blocks.findIndex((block) => block.type === 'heading' && block.text.includes(FOLLOW_UP_HEADING));
   if (start === -1) {
@@ -43,6 +45,11 @@ export function followUps(space: Space): FollowUp[] {
       found.push(...items(block.markdown));
     }
   }
+  return found;
+}
+
+export function followUps(space: Space): FollowUp[] {
+  const found = space.html === null ? docFollowUps(space) : followTexts(space.html);
   return found.map((text, index) => ({ key: `review:${space.id}:${index + 1}`, title: clip(text, TITLE_MAX_CHARS),
     goal: clip(text, GOAL_MAX_CHARS) }));
 }

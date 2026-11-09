@@ -30,6 +30,10 @@ describe('连接模型', () => {
     expect(await within(row).findByText('在浏览器里登录…')).toBeTruthy();
     await waitFor(() => expect(open).toHaveBeenCalled());
     expect(screen.queryByLabelText('回调地址')).toBeNull();
+    // 自动收不到时的退路（11-09）：点「粘贴回调地址」才出输入框，光标直接进去。
+    fireEvent.click(within(page).getByRole('button', { name: '粘贴回调地址' }));
+    const field = await within(page).findByLabelText('回调地址');
+    await waitFor(() => expect(document.activeElement).toBe(field));
     fireEvent.click(within(row).getByRole('button', { name: '取消登录' }));
     expect(within(row).getByRole('button', { name: '登录' })).toBeTruthy();
   });

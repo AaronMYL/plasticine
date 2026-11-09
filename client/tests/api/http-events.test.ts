@@ -53,7 +53,7 @@ describe('真事件流 · 连接', () => {
         'agreement_changed', 'feed_item_changed', 'node_changed', 'node_action_recorded', 'money_changed',
         'inbox_changed', 'tool_group_changed', 'video_changed', 'browser_changed', 'contacts_changed', 'contact_item',
         'line_changed', 'line_text', 'line_thinking', 'line_tool', 'line_message', 'line_queue',
-        'web_tabs_changed',
+        'web_tabs_changed', 'bookmarks_changed',
       ].sort(),
     );
     source.open();
@@ -64,6 +64,12 @@ describe('真事件流 · 连接', () => {
     const { source, events } = connect();
     source.emit('project_invalidated', { type: 'project_invalidated', projectId: 'project-one' }, 'project-1');
     expect(events).toEqual([{ type: 'project.invalidated', projectId: 'project-one' }]);
+  });
+
+  it('书签在别处改了（第 8 批第 1 条，各设备同一份）：映射成 bookmarks.changed，书签列表据此重读', () => {
+    const { source, events } = connect();
+    source.emit('bookmarks_changed', { type: 'bookmarks_changed' }, 'bm-1');
+    expect(events).toEqual([{ type: 'bookmarks.changed' }]);
   });
 
   it('浏览器自己重连时报 connecting，不重新建连接；放弃了（CLOSED）才报 closed，并去查一次会话', async () => {

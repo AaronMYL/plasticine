@@ -20,6 +20,7 @@ import { useTelemetry } from '../telemetry.ts';
 import { BackupRestoreCard } from '../views/device/backup-restore-card.tsx';
 import { Palette } from '../views/search/palette.tsx';
 import type { PaletteTarget } from '../views/search/palette-results.ts';
+import { openBookmark } from '../views/bookmarks/bookmark-address.ts';
 import { ToolPanel } from '../views/tools/tool-panel.tsx';
 import { BrowserView } from '../views/tools/browser-view.tsx';
 import { WorkDetail } from '../views/lines/work-detail.tsx';
@@ -263,7 +264,7 @@ export function Shell(): ReactNode {
   const openWebTab = useMemo(() => (desktopTabs ? (url: string, title: string) => tabActions.openWeb(url, title)
     : null), [desktopTabs, tabActions]);
   useExternalLinks(openWebTab);
-  // 竖排标签存在本体里（11-08）：挂上就对上；书签在服务端迁移里已经搬进分组。
+  // 竖排标签存在本体里（11-08）：挂上就对上。书签和标签分开（第 8 批第 1 条），书签在网页栏单独一节。
   useWebTabsSync();
   const pageTitle = usePageTitle();
   const current = useMemo<CurrentTab>(() => (webTab !== null
@@ -364,6 +365,8 @@ export function Shell(): ReactNode {
       openTabWeb(target.id);
     } else if (target.kind === 'reopen') {
       tabActions.reopenTab(target.key);
+    } else if (target.kind === 'bookmark') {
+      openBookmark(webTabs, tabActions.openWeb, { title: target.title, target: target.url });
     } else {
       conversationUi.setDraft(target.text);
       expandChat();
@@ -434,7 +437,7 @@ export function Shell(): ReactNode {
             <MainErrorBoundary key={webTab === null ? boundaryKey(route) : webTab.id} onHome={() => go(HOME)}>
               <PageEnter key={webTab === null ? routeHash(route) : webTab.id}>
                 {webTab !== null ? <WebTabView tab={webTab} native={nativeTabs} phone={layout.phone}
-                  onCloseTab={closeWebTab} web={webChrome} />
+                  web={webChrome} />
                   : browserPage ? <BrowserView onBack={() => go(beforeBrowser.current)} />
                     : <CurrentView {...{ route, phone: layout.phone, navigate: go, onBack: goBack }} />}
               </PageEnter>

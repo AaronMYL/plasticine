@@ -33,6 +33,8 @@ export class ServerEventMapper {
         return [{ type: 'video.changed' }];
       case 'web_tabs_changed':
         return [{ type: 'webTabs.changed', version: event.version }];
+      case 'bookmarks_changed':
+        return [{ type: 'bookmarks.changed' }];
       case 'node_changed':
         return [{ type: 'node.changed', node: event.node }];
       case 'node_action_recorded':

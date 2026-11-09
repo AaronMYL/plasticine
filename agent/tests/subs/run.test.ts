@@ -40,6 +40,7 @@ test('研究周报：第一次开一条后台线（researcher 模型），以后
   assert.match(first.run.message, /1\. 本周概览 2\. 重点研究/);
   assert.match(first.run.message, /- 每期最多 1 张图/);
   assert.match(first.run.message, /space_write/);
+  assert.match(first.run.message, /genre 填 report/);
   const saved = t.state.subscriptions.require(sub.id);
   assert.equal(saved.lineId, 'line-1');
   assert.equal(saved.lastRunAt, '2026-11-09T01:00:00.000Z');
@@ -79,18 +80,23 @@ test('回顾的材料：今天的记录带出处、不参考的对话不进来�
   assert.equal(materials.dream, null);
 });
 
-test('回顾的消息：日报要求没价值就跳过、只读、分「来自交流」「外部新信息」；没有昨晚的整理就不写那一节', () => {
+test('回顾写成来信：日报写昨天的进展和没解决的、没价值就跳过、只读；没有昨晚的整理就不提；周报长一点', () => {
   const review = ensureReviewSubscription(t.state, 'Asia/Shanghai');
   const lines = port();
   const { run } = runSubscription(t.state, lines, review.id, new Date('2026-11-07T00:00:00Z'), 'daily');
   assert.equal(run.purpose, 'review');
-  assert.match(run.message, /日报/);
+  assert.match(run.message, /每日来信/);
+  assert.match(run.message, /昨天的进展、没解决的问题/);
   assert.match(run.message, /不调 space_write/);
-  assert.match(run.message, /「来自交流」/);
-  assert.match(run.message, /「外部新信息」/);
+  assert.match(run.message, /genre 填 letter/);
+  assert.match(run.message, /say 写在主线里/);
+  assert.match(run.message, /data-illustrate/);
   assert.match(run.message, /不改项目状态、不建任务、不对外发消息/);
-  assert.match(run.message, /不写「昨晚整理了什么」这一节/);
+  assert.match(run.message, /不提「昨晚整理了什么」/);
   assert.match(run.message, /edition 填 daily/);
+  const weekly = runSubscription(t.state, lines, review.id, new Date('2026-11-08T13:00:00Z'), 'weekly').run;
+  assert.match(weekly.message, /每周来信/);
+  assert.match(weekly.message, /跨天的变化、反复出现的主题、项目之间的联系/);
 });
 
 test('回顾的材料：一天之内做完的整理算「昨晚整理」，撤销了的那条不算', () => {

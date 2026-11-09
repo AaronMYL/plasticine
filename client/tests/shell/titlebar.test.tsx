@@ -76,15 +76,20 @@ describe('桌面客户端的标题栏', () => {
     expect(within(titlebar()).getByText('全部')).toBeTruthy();
   });
 
-  it('空间页：编辑、订阅设置挪进标题栏右边', async () => {
+  it('空间页（第 8 批第 6 条）：「让 Plasticine 改」、✎ 改字、⋯ 在标题栏右边；来信是「回信」', async () => {
     desktop({ trafficLightInset: 96, fullScreen: false });
-    const { view: { container } } = await renderApp({ hash: '#/books/space/sp_research_2',
+    const { view: { container } } = await renderApp({ hash: '#/books/space/sp_cog_1',
       setup: (fake) => fake.control.spaces.seed() });
     const actions = titlebar().querySelector<HTMLElement>('.titlebar-actions')!;
-    expect(await within(actions).findByRole('button', { name: '订阅设置' })).toBeTruthy();
-    expect(within(actions).getByRole('button', { name: '编辑' })).toBeTruthy();
-    expect(within(titlebar()).getByText('研究周报 · 第 2 期')).toBeTruthy();
+    expect(await within(actions).findByRole('button', { name: '让 Plasticine 改' })).toBeTruthy();
+    expect(within(actions).getByRole('button', { name: '改字' })).toBeTruthy();
+    expect(within(actions).getByRole('button', { name: /的更多操作$/ })).toBeTruthy();
+    expect(within(titlebar()).getByText(/^认知科学与意识研究周报｜第1期/)).toBeTruthy();
     expect(container.querySelector('.space-top')).toBeNull();
+    act(() => {
+      window.location.hash = '#/books/space/sp_letter_dream';
+    });
+    expect(await within(actions).findByRole('button', { name: '回信' })).toBeTruthy();
   });
 
   it('Plasticine 对话：页名在标题栏，在记录里找、更多挪进右边', async () => {

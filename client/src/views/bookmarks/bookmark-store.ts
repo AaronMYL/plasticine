@@ -1,16 +1,18 @@
-// 书签的数据（第 111 条）：在用的书签和项目名单（名字、颜色）。登录后就拉——新标签页、地址栏的 ☆、书签页、
-// 标签分组（项目的名字和颜色）都要用；重连（resync）时再拉一份。信息流收藏和书签分开（2026-11-04），信息流的
-// 变化不再牵动书签。写操作直接发，回来的那一条换进列表；失败交给调用的地方说一句。
+// 书签的数据（第 111 条）：在用的书签和项目名单（名字、颜色）。登录后就拉——网页栏的「书签」一节、地址框里的书签
+// 按钮、⌘K、项目的名字和颜色都要用；重连（resync）、别处改了书签（bookmarks.changed，第 8 批第 1 条：各设备同一份）
+// 时再拉一份。信息流收藏和书签分开（2026-11-04），信息流的变化不再牵动书签。写操作直接发，回来的那一条换进列表
+// （按 position 排）；失败交给调用的地方说一句。
 
 import type { PlasticineApi } from '../../api/client.ts';
 import type { EventsHub } from '../../api/events-hub.ts';
 import { createRequestId } from '../../api/request-id.ts';
-import type {
-  AddBookmarkRequest,
-  BookmarkView,
-  ImportBookmarkItem,
-  ImportBookmarksResponse,
-  ProjectHue,
+import {
+  bookmarkKey,
+  type AddBookmarkRequest,
+  type BookmarkView,
+  type ImportBookmarkItem,
+  type ImportBookmarksResponse,
+  type ProjectHue,
 } from '../../api/shared.ts';
 import { Store } from '../../state/store.ts';
 import type { LoadStatus } from '../../state/load.ts';
@@ -40,6 +42,11 @@ export class BookmarkStore {
   private readonly hub: EventsHub;
   private readonly loader: SnapshotLoader<{ bookmarks: BookmarkView[]; projects: ProjectChip[] }>;
   private stopListening: (() => void) | null = null;
+  /**
+   * 从地址框加的：加的那个网址 → 书签 id。服务端会去掉网址里像口令的参数，存下的和标签的网址对不上时，地址框靠它
+   * 认出「这一页已经收藏了」（只在这次打开里记）。
+   */
+  private readonly aliases = new Map<string, string>();
 
   constructor(api: PlasticineApi, hub: EventsHub) {
     this.api = api;
@@ -62,7 +69,7 @@ export class BookmarkStore {
     }
     this.loader.restart();
     this.stopListening = this.hub.on((event) => {
-      if (event.type === 'resync') {
+      if (event.type === 'resync' || event.type === 'bookmarks.changed') {
         this.loader.schedule();
       }
     });
@@ -89,9 +96,31 @@ export class BookmarkStore {
     return this.data.get().bookmarks.find((bookmark) => bookmark.kind === kind && bookmark.target === target) ?? null;
   }
 
+  /** 这个网址的网页书签（同一个网页按 bookmarkKey 比）；没有是 null。 */
+  findWeb(url: string): BookmarkView | null {
+    const key = bookmarkKey('web', url);
+    const bookmarks = this.data.get().bookmarks;
+    const direct = bookmarks.find((bookmark) => bookmark.kind === 'web' && bookmarkKey('web', bookmark.target) === key);
+    if (direct !== undefined) {
+      return direct;
+    }
+    const alias = key === null ? undefined : this.aliases.get(key);
+    return alias === undefined ? null : bookmarks.find((bookmark) => bookmark.id === alias) ?? null;
+  }
+
   async add(input: NewBookmark): Promise<BookmarkView> {
     const bookmark = await this.api.bookmarks.add({ requestId: createRequestId(), ...input });
     this.put(bookmark);
+    return bookmark;
+  }
+
+  /** 收藏这个网页（地址框里的书签按钮）。 */
+  async addWeb(url: string, title: string): Promise<BookmarkView> {
+    const bookmark = await this.add({ kind: 'web', title: title.trim() === '' ? url : title, target: url });
+    const key = bookmarkKey('web', url);
+    if (key !== null) {
+      this.aliases.set(key, bookmark.id);
+    }
     return bookmark;
   }
 
@@ -102,14 +131,46 @@ export class BookmarkStore {
     return next;
   }
 
-  async remove(bookmark: BookmarkView): Promise<void> {
-    await this.api.bookmarks.remove(bookmark.id, { requestId: createRequestId(), version: bookmark.version });
+  /** 移除；回的是移除之后的那一版（撤销要带它的 version）。 */
+  async remove(bookmark: BookmarkView): Promise<BookmarkView> {
+    const removed = await this.api.bookmarks.remove(bookmark.id, { requestId: createRequestId(),
+      version: bookmark.version });
     this.data.set((data) => ({ ...data, bookmarks: data.bookmarks.filter((row) => row.id !== bookmark.id) }));
+    return removed;
   }
 
+  /**
+   * 撤销移除：先放回原处（removed 是移除回来的那一版，位置没变），再按服务端回的换上；服务端回的是同一个网址后来又加的
+   * 那一条时，放回去的拿掉。没成就拿掉、交给调用的地方说一句。
+   */
+  async restore(removed: BookmarkView): Promise<BookmarkView> {
+    this.put(removed);
+    try {
+      const restored = await this.api.bookmarks.restore(removed.id, { requestId: createRequestId(),
+        version: removed.version });
+      if (restored.id !== removed.id) {
+        this.drop(removed.id);
+      }
+      this.put(restored);
+      return restored;
+    } catch (cause) {
+      this.drop(removed.id);
+      throw cause;
+    }
+  }
+
+  /** 排序：先按新的先后画（拖动松手就到位），再按服务端回的；没成就重读一份、交给调用的地方说一句。 */
   async order(ids: readonly string[]): Promise<void> {
-    const list = await this.api.bookmarks.order({ requestId: createRequestId(), ids: [...ids] });
-    this.data.set((data) => ({ ...data, bookmarks: list.bookmarks }));
+    const rank = new Map(ids.map((id, index) => [id, index]));
+    this.data.set((data) => ({ ...data, bookmarks: [...data.bookmarks]
+      .sort((a, b) => (rank.get(a.id) ?? ids.length) - (rank.get(b.id) ?? ids.length)) }));
+    try {
+      const list = await this.api.bookmarks.order({ requestId: createRequestId(), ids: [...ids] });
+      this.data.set((data) => ({ ...data, bookmarks: list.bookmarks }));
+    } catch (cause) {
+      this.loader.schedule();
+      throw cause;
+    }
   }
 
   async importItems(items: readonly ImportBookmarkItem[]): Promise<ImportBookmarksResponse> {
@@ -122,8 +183,12 @@ export class BookmarkStore {
     this.data.set((data) => {
       const known = data.bookmarks.some((row) => row.id === bookmark.id);
       const bookmarks = known ? data.bookmarks.map((row) => (row.id === bookmark.id ? bookmark : row))
-        : [...data.bookmarks, bookmark];
+        : [...data.bookmarks, bookmark].sort((a, b) => a.position - b.position);
       return { ...data, bookmarks };
     });
+  }
+
+  private drop(id: string): void {
+    this.data.set((data) => ({ ...data, bookmarks: data.bookmarks.filter((row) => row.id !== id) }));
   }
 }

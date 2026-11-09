@@ -7,6 +7,7 @@
 // 归档：记忆里退休的行（改写、合并、不再成立）和退休的文档算归档；他说「忘掉」的行不收。
 
 import { TIERS, type Tier } from '../../shared/api/visibility.ts';
+import { spaceHtmlText } from '../../shared/space-html.ts';
 import { spaceDocText } from '../../shared/space-text.ts';
 import { INDEX_LINE_KINDS, type IndexKind, type IndexLineKind } from '../../shared/search-index.ts';
 import type { Database, Row } from './db.ts';
@@ -328,11 +329,11 @@ const bookAnnotation: IndexSource = {
   },
 };
 
-// 空间（第 6 条）：档位照 visibility_marks，没标的私密；删掉的不收。
+// 空间（第 6 条）：档位照 visibility_marks，没标的私密；删掉的不收。第 8 批第 6 条起正文是网页（版本 2：重建一遍）。
 const space: IndexSource = {
   name: 'space',
   kind: 'space',
-  version: 1,
+  version: 2,
   keys: pagedKeys('spaces', 'id', 'deleted_at IS NULL'),
   load({ db }, ref) {
     const row = byId(db, 'spaces', ref);
@@ -341,7 +342,8 @@ const space: IndexSource = {
     }
     let body: string;
     try {
-      body = spaceDocText(JSON.parse(text(row, 'doc')));
+      const html = row['html'];
+      body = typeof html === 'string' ? spaceHtmlText(html) : spaceDocText(JSON.parse(text(row, 'doc')));
     } catch (cause) {
       throw new StateError('corrupt_record', '有空间的正文暂时无法读取，请重试查找。', { cause });
     }

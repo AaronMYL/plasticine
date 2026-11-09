@@ -271,7 +271,6 @@ button.space-crumb:hover {
 
 .space-top .grow,
 .space-toast .grow,
-.space-edit-bar .grow,
 .sub-foot .grow {
   flex: 1;
   min-width: 0;
@@ -316,86 +315,10 @@ button.space-crumb:hover {
   line-height: 30px;
 }
 
-/* ---------- 在空间里改 ---------- */
-
-.space-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.space-edit-bar {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 0;
-  background: var(--bg);
-}
-
-.space-edit-headline,
-.space-edit-text,
-.space-edit-heading {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--fg);
-  font: inherit;
-  resize: vertical;
-}
-
-.space-edit-headline {
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 30px;
-}
-
-.space-edit-text {
-  font-size: 16px;
-  line-height: 28px;
-}
-
-.space-edit-heading {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 28px;
-}
-
-.space-edit-headline:focus,
-.space-edit-text:focus,
-.space-edit-heading:focus {
-  border-color: var(--line2);
-  outline: none;
-}
-
-.space-edit-fixed {
-  opacity: 0.72;
-}
-
-.space-edit-error,
 .sub-problem {
   color: var(--err);
   font-size: 13px;
   line-height: 20px;
-}
-
-.space-suggestion {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  padding-left: 12px;
-  color: var(--fg2);
-}
-
-.space-suggestion p {
-  flex: 1;
-  margin: 0;
 }
 
 /* ---------- 订阅浮层 ---------- */

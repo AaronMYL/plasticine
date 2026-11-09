@@ -16,7 +16,7 @@ import type { DeviceSubscription, PushDevice, PushPermission } from '../../api/p
 import { createRequestId } from '../../api/request-id.ts';
 import { Store } from '../../state/store.ts';
 import { hostNotify, inDesktopApp } from '../../shell/host.ts';
-import { isDeferredStandaloneAsk, MAIN_THREAD_PATH, NOTICE_TITLE, PUSH_BODY, reportBrief,
+import { isDeferredStandaloneAsk, LETTER_BRIEF, MAIN_THREAD_PATH, NOTICE_TITLE, PUSH_BODY, reportBrief,
   type LineMessageView } from '../../api/shared.ts';
 import type { LiveEvent } from '../../api/types.ts';
 
@@ -37,6 +37,7 @@ export interface PushSwitchState {
 export function mainLineBrief(message: LineMessageView): string | null {
   if (message.role === 'notice') return message.summary ?? null;
   if (message.role === 'lineReport') return reportBrief(message.stopReason);
+  if (message.role === 'letter') return LETTER_BRIEF;
   return null;
 }
 

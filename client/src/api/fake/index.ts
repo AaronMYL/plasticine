@@ -51,6 +51,7 @@ import { seedSampleScene, seedScheduleScene, seedTasks, seedTasksLines } from '.
 import { FakeModelProviders } from './fake-model-providers.ts';
 import { pieces } from './fake-line-script.ts';
 import { lineSceneOf, seedLines } from './lines-seed.ts';
+import { seedLetterScene } from './letter-seed.ts';
 import { seedWorkScene, workSceneOf } from './work-seed.ts';
 
 /** 本地开发里导入一本书、生成一次大纲要等多久（毫秒）：够看清进行中的样子，又不拖。 */
@@ -147,6 +148,11 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
     seedSampleScene(lines, (seed) => asks.raise(seed), now);
     return;
   }
+  // ?scene=letter：早上收到的来信（第 8 批第 6 条，设计稿 Chat-Letter）。
+  if (scene === 'letter') {
+    seedLetterScene(lines, now);
+    return;
+  }
   const workScene = workSceneOf(search);
   if (workScene !== null) {
     seedWorkScene(deps, now, workScene);
@@ -184,7 +190,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const deviceKeys = new FakeDeviceKeys({ session, faults, now });
   const projects = new FakeProjects({ session, bus, receipts, lines: () => lines.all(), now });
   const feed = new FakeFeed({ session, bus, receipts, now });
-  const bookmarks = new FakeBookmarks({ session, receipts, now, projects: () => projects.names() });
+  const bookmarks = new FakeBookmarks({ session, receipts, now, bus, projects: () => projects.names() });
   const webTabs = new FakeWebTabs({ session, receipts, bus });
   const today = new FakeToday({ session, receipts });
   const memoryTopics = new FakeMemoryTopics({ session, receipts, now });

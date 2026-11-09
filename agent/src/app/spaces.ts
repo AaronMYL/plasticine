@@ -1,10 +1,9 @@
-// /v2/spaces（shared/api/spaces.ts，《优化清单》第 6 条）：资料库里的空间。读列表、读一个、他直接改（存成新的一版，
-// 作者记他；改名也走这里）、撤销最近一版、删除进「最近删除」和还原（11-08）、笔记 AI 的续写和补充（和笔记同一个助手）。
-// 写都按 requestId 幂等、带 version（还原不带：删掉的不会再被改）。
+// /v2/spaces（shared/api/spaces.ts，《优化清单》第 6 条）：资料库里的空间。读列表、读一个、他在页面上直接改字（存成
+// 新的一版，作者记他；改名也走这里）、撤销最近一版、删除进「最近删除」和还原（11-08）。第 8 批第 6 条起空间是整页网页，
+// 笔记的续写和补充在空间里不再用（/assist 去掉）。写都按 requestId 幂等、带 version（还原不带：删掉的不会再被改）。
 
 import {
   DeleteSpaceRequestSchema,
-  NoteAssistRequestSchema,
   RestoreSpaceRequestSchema,
   SaveSpaceRequestSchema,
   SPACE_LIST_STANDALONE_PARAM,
@@ -49,15 +48,15 @@ export function getSpace(context: RequestContext): Reply {
   return { status: 200, body: spaceView(state, requireSpace(state, param(context, 'id'))) };
 }
 
-/** PUT /v2/spaces/:id：他在空间里直接改。 */
+/** PUT /v2/spaces/:id：他在页面上直接改字（给 html），或改名（只给 title）。 */
 export async function saveSpace(context: RequestContext): Promise<Reply> {
   requireUserAuth(context);
   const body = checkInput(SaveSpaceRequestSchema, await readJsonBody(context.req), '保存空间');
   const { state } = context.deps;
   const space = requireSpace(state, param(context, 'id'));
   return idempotent(context, body.requestId, () => {
-    const saved = writeSpace(state, { id: space.id, version: body.version, title: body.title ?? space.title,
-      doc: body.doc }, 'user');
+    const { space: saved } = writeSpace(state, { id: space.id, version: body.version, title: body.title ?? space.title,
+      ...(body.html === undefined ? {} : { html: body.html }) }, 'user');
     return { status: 200, body: spaceView(state, saved) };
   });
 }
@@ -95,19 +94,4 @@ export async function restoreSpace(context: RequestContext): Promise<Reply> {
   }
   return idempotent(context, body.requestId, () =>
     ({ status: 200, body: spaceView(state, state.spaces.restore(id)) }));
-}
-
-/** POST /v2/spaces/:id/assist：续写、补充（和笔记共用一个助手，正文没有改动，建议由他采用）。 */
-export async function assistSpace(context: RequestContext): Promise<Reply> {
-  requireAuth(context);
-  requireSpace(context.deps.state, param(context, 'id'));
-  const input = checkInput(NoteAssistRequestSchema, await readJsonBody(context.req), '空间里的续写');
-  const controller = new AbortController();
-  const abort = (): void => controller.abort();
-  context.res.once('close', abort);
-  try {
-    return { status: 200, body: await context.deps.noteAssistant.suggest(input, controller.signal) };
-  } finally {
-    context.res.off('close', abort);
-  }
 }

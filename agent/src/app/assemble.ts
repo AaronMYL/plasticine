@@ -41,7 +41,8 @@ import { BACKGROUND_TIME_ZONE, createDaily, type FeedFetcher } from '../daily/in
 import { DeviceService, type NodeTransport } from '../devices/index.ts';
 import { bookmarkTrigger, contactTrigger, deviceTrigger, ensureIntake, feedTrigger, IntakeDesk, mailTrigger, ruleGoal,
   type RecordInput } from '../intake/index.ts';
-import { kernelText, type TextModels } from '../kernel/index.ts';
+import { kernelText, type Illustrator, type TextModels } from '../kernel/index.ts';
+import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
 import { MoneyDraftDesk } from '../life/index.ts';
 import type { LineKernel } from '../lines/index.ts';
 import { DEFAULT_RELAY_URL, NetworkService, TunnelService, type TunnelServiceOptions } from '../network/index.ts';
@@ -54,7 +55,7 @@ import { BackupService, ClientReleases } from '../system/index.ts';
 import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import { join } from 'node:path';
-import type { BackupObjectKind } from '../../shared/api/index.ts';
+import { LETTER_BRIEF, MAIN_THREAD_PATH, type BackupObjectKind } from '../../shared/api/index.ts';
 import { createApp, type App } from './app.ts';
 import { agreementView, memoryEntryView } from './cognition-views.ts';
 import { assembleLines, type LineAssembly } from './assemble-lines.ts';
@@ -126,6 +127,8 @@ export interface AssembleOptions {
   memoryCuration?: boolean;
   /** 新内核的模型连接（/v2/model-providers）；不给就不装（回 503）。 */
   kernelModels?: KernelModelParts;
+  /** 来信的插图（第 8 批第 6 条）：测试给假的；不给就用连着的 OpenAI（kernel/images.ts），没连模型就是 null。 */
+  illustrator?: Illustrator | null;
   /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；不给或 null = 不认本机令牌。 */
   localToken?: string | null;
 }
@@ -169,6 +172,7 @@ export function assembleApp(options: AssembleOptions): App {
   // 第 7 条（11-07 定）：个人回顾是一个订阅，日报每天早上 8 点、周报周日晚上，按他所在地的时区；没有就建上。
   ensureReviewSubscription(state, state.dailySettings.read().settings.timeZone ?? BACKGROUND_TIME_ZONE);
   const text = options.text ?? kernelText(options.lines.models, now);
+  const illustrator = options.illustrator !== undefined ? options.illustrator : illustratorOf(options.kernelModels);
   const server = new ServerCommands({ stateDirectory: options.stateDirectory, now });
   const skills = new SkillStore({ stateDirectory: options.stateDirectory, now,
     ...(options.builtinSkills === undefined ? {} : { builtinDirectory: options.builtinSkills }) });
@@ -305,7 +309,13 @@ export function assembleApp(options: AssembleOptions): App {
     lineChanged: (lineId) => network.lineChanged(lineId),
     tools: [taskCardTool(state, network), ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。
-      ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId)),
+      ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId), {
+        illustrator,
+        // 第 8 批第 6 条：来信写好了，主线里 Plasticine 说一句、带来信卡；系统通知只说「给你写了一封信」。
+        lettered: (space, say) => {
+          lines.letter({ key: `letter:${space.id}`, text: say, spaceId: space.id, title: space.title });
+          notices.announce({ body: LETTER_BRIEF, url: MAIN_THREAD_PATH, tag: `letter:${space.id}` });
+        } }),
       ...calendarTools({ state, devices: devices.actions, sync: calendar, now, zone: calendarZone })],
     askTools: tasks.askTools(),
     legacy: { registry, permission, dryRun: options.dryRun, sshAvailable: m5b.cloud.transportAvailable.ssh,
@@ -375,6 +385,9 @@ export function assembleApp(options: AssembleOptions): App {
   scans.add({ name: '项目现状与逾期', run: () => projectWatch.scan() });
   // 记忆整理（用户 2026-11-02 定）：补建文档、重试失败的整理、排下一批旧条目迁移。
   scans.add({ name: '记忆整理', run: () => memoryCurator.scan() });
+  // 第 8 批第 6 条：旧空间按新版式重写一遍（每个进程只跑一遍；做成的记下，失败的下次启动再试）。
+  const rewriter = spaceRewriter(state, text, illustrator);
+  scans.add({ name: '旧空间重写成网页', run: () => rewriter.once() });
   scans.add({ name: '磁盘空间', run: () => scanDiskNotice({ notices, directory: options.stateDirectory, now }) });
   scans.add({ name: '已记账原图清理', run: () => moneyDrafts.purge() });
   scans.add({ name: '客户端发布记录', run: () => clientUpdates.scan() });

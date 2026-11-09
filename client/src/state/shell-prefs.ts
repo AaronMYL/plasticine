@@ -42,6 +42,8 @@ export interface ShellPrefsState {
    * 笔记、消息的列表照样要用，不该跟着一起收。
    */
   collapsedColumns: readonly string[];
+  /** 网页栏里「书签」一节收起来了没有（第 8 批第 1 条：整节能收起、记住）。默认展开。 */
+  bookmarksCollapsed: boolean;
 }
 
 /** 把对话框放回窗口里：大小在上下限之间，整个框都在窗口里（离边至少 16）。 */
@@ -71,7 +73,7 @@ export class ShellPrefs {
   readonly store: Store<ShellPrefsState>;
   constructor(storage: KeyValueStorage | null = null) {
     const initial: ShellPrefsState = { sidebarCollapsed: null, chatOpen: null, chatFrame: CHAT_FRAME_DEFAULT,
-      phoneChatOpen: false, contactProfile: true, askPage: false, collapsedColumns: [] };
+      phoneChatOpen: false, contactProfile: true, askPage: false, collapsedColumns: [], bookmarksCollapsed: false };
     try {
       const saved: unknown = JSON.parse(storage?.getItem('plasticine:shell-prefs') ?? 'null');
       if (saved !== null && typeof saved === 'object') {
@@ -93,6 +95,9 @@ export class ShellPrefs {
         }
         if ('collapsedColumns' in saved && Array.isArray(saved.collapsedColumns)) {
           initial.collapsedColumns = saved.collapsedColumns.filter((id): id is string => typeof id === 'string');
+        }
+        if ('bookmarksCollapsed' in saved && typeof saved.bookmarksCollapsed === 'boolean') {
+          initial.bookmarksCollapsed = saved.bookmarksCollapsed;
         }
       }
     } catch (cause) {
@@ -137,6 +142,10 @@ export class ShellPrefs {
       if (collapsed && rest.length !== state.collapsedColumns.length) return state;
       return { ...state, collapsedColumns: collapsed ? [...rest, section] : rest };
     });
+  }
+
+  setBookmarksCollapsed(collapsed: boolean): void {
+    this.store.set((state) => ({ ...state, bookmarksCollapsed: collapsed }));
   }
 
   setAskPage(on: boolean): void {

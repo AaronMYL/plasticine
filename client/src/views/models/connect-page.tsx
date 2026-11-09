@@ -14,7 +14,7 @@ import { useStore } from '../../state/use-store.ts';
 import { Spinner } from '../lines/line-parts.tsx';
 import { useFirstRun } from '../onboard/first-run.ts';
 import { Stepper } from '../onboard/onboard-parts.tsx';
-import { CallbackForm, Connected, KeyForm } from './provider-connect.tsx';
+import { CallbackForm, Connected, KeyForm, PasteFallback, pasteFirst } from './provider-connect.tsx';
 import { ProviderList, type ProviderAction } from './provider-list.tsx';
 import { useProviderLogin } from './use-provider-login.ts';
 import './models.css';
@@ -34,10 +34,9 @@ function LoginWatcher({ provider, onDone, onCancel, cancelRef }: { provider: Mod
   useEffect(() => () => {
     cancelRef.current = null;
   }, [cancelRef]);
-  const paste = flow.route === 'paste' || flow.route === 'copy';
   return (
     <>
-      {paste ? <CallbackForm flow={flow} /> : null}
+      {pasteFirst(flow) ? <CallbackForm flow={flow} /> : <PasteFallback flow={flow} copy />}
       {flow.error === null ? null : <p className="ob-error" role="alert">{flow.error}</p>}
     </>
   );

@@ -53,11 +53,12 @@ describe('资料库第二栏', () => {
     const aside = column();
     const subs = await within(aside).findByRole('link', { name: /个人回顾/ });
     expect(subs.getAttribute('href')).toBe('#/library/sub/sub-review');
-    expect(subs.textContent).toContain('2');
+    expect(subs.textContent).toContain('3');
     expect(within(aside).getByRole('link', { name: /认知与神经科学研究周报/ }).textContent).toContain('2');
     await within(aside).findByRole('link', { name: '马来西亚签证核查' });
     expect(within(aside).queryByRole('link', { name: /研究周报 · 第 2 期/ })).toBeNull();
     expect(within(aside).queryByRole('link', { name: /日报 · 11月7日/ })).toBeNull();
+    expect(within(aside).getByRole('link', { name: /AI 信息流核查/ })).toBeTruthy();
     const trash = within(aside).getByRole('link', { name: /最近删除/ });
     await waitFor(() => expect(trash.textContent).toContain('1'));
   });
@@ -96,6 +97,38 @@ describe('资料库第二栏', () => {
     await act(async () => fireEvent.click(restore));
     await within(aside).findByRole('link', { name: '悬赏规则草稿' });
     await waitFor(() => expect(screen.queryByRole('button', { name: '还原空间「悬赏规则草稿」' })).toBeNull());
+  });
+});
+
+describe('资料库首页（第 8 批第 6 条，设计稿 Library-Spaces）', () => {
+  it('缩略图卡片：「最近」三张、「全部」带数量；卡片下面是标题、「报告 / 来信 · 时间」和 ⋯', async () => {
+    await open('#/library');
+    const recent = await screen.findByRole('region', { name: '最近' });
+    const cards = await within(recent).findAllByRole('listitem');
+    expect(cards).toHaveLength(3);
+    expect(within(cards[0] as HTMLElement).getByRole('link', { name: '做梦，有了一组数字' }).getAttribute('href'))
+      .toBe('#/books/space/sp_letter_dream');
+    expect(within(cards[0] as HTMLElement).getByText(/^来信 · \S+/)).toBeTruthy();
+    expect(within(cards[1] as HTMLElement).getByText(/^报告 · /)).toBeTruthy();
+    const all = screen.getByRole('region', { name: '全部' });
+    const count = within(all).getAllByRole('listitem').length;
+    expect(within(all).getByRole('heading', { level: 2 }).textContent).toBe(`全部${count}`);
+    expect(within(all).getByRole('link', { name: '马来西亚签证核查' })).toBeTruthy();
+    expect(document.querySelectorAll('.lib-card .space-thumb').length).toBe(count + 3);
+  });
+
+  it('卡片 ⋯ 改名在原处改；删除先问', async () => {
+    const app = await open('#/library');
+    const all = await screen.findByRole('region', { name: '全部' });
+    fireEvent.click(within(all).getByRole('button', { name: '「AI 信息流核查｜记忆、子代理与商业落地」的更多操作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '改名' }));
+    const field = within(all).getByRole('textbox', { name: '「AI 信息流核查｜记忆、子代理与商业落地」的新名字' });
+    fireEvent.change(field, { target: { value: 'AI 信息流核查' } });
+    await act(async () => fireEvent.keyDown(field, { key: 'Enter' }));
+    await waitFor(async () => expect((await app.api.spaces.get('sp_aifeed')).title).toBe('AI 信息流核查'));
+    fireEvent.click(within(all).getByRole('button', { name: '「马来西亚签证核查」的更多操作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '删除' }));
+    expect(screen.getByRole('alertdialog', { name: '删除「马来西亚签证核查」？' })).toBeTruthy();
   });
 });
 
@@ -138,9 +171,11 @@ describe('订阅页', () => {
 });
 
 describe('手机上的资料库', () => {
-  it('#/library 顶上列订阅、中间空间、底下「最近删除」；订阅页和「最近删除」都能开', async () => {
+  it('#/library「最近」「全部」缩略图，下面订阅和「最近删除」；订阅页和「最近删除」都能开', async () => {
     await open('#/library', 390);
     await screen.findByRole('heading', { level: 1, name: '资料库' });
+    expect(await screen.findByRole('region', { name: '最近' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '新空间：跟 Plasticine 说' })).toBeTruthy();
     const subs = await screen.findByRole('region', { name: '订阅' });
     fireEvent.click(await within(subs).findByRole('button', { name: /个人回顾/ }));
     await screen.findByRole('heading', { level: 1, name: '个人回顾' });

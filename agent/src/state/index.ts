@@ -30,6 +30,7 @@ export type { MemoryCurationStores } from './memory-curation.ts';
 export type { MemoryJournalStore } from './memory-journal.ts';
 export type { MemoryDreamStore } from './memory-dreams.ts';
 export type { RevisionNote, SpaceSave, SpaceStore } from './spaces.ts';
+export type { SpaceRewrite, SpaceRewriteStore } from './space-rewrites.ts';
 export type { SubscriptionStore } from './subscriptions.ts';
 export type { ScheduleStores } from './schedules.ts';
 export type { SuggestionStore } from './suggestions.ts';

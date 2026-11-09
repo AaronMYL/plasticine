@@ -1,4 +1,5 @@
-// 网页工具条（11-07 设计稿 Web）：← → ↻ · 圈一块 · 地址框（网站名 + 路径，点了出完整网址）· 文A · 收进（置顶或分组）· ⋯；
+// 网页工具条（11-07 设计稿 Web）：← → ↻ · 圈一块 · 地址框（网站名 + 路径，点了出完整网址；框里右端是书签按钮，
+// 第 8 批第 1 条，见 web-bookmarks.test.tsx）· 文A · ⋯；
 // ⋯ 菜单按原生报来的能力显示；查找、缩放（按网站记住）、截图、存进笔记、打印、阅读模式、历史记录、圈一块。
 // 书签和分组的弹层没了：标签在网页栏目的第二栏竖排（11-07）。
 
@@ -73,28 +74,14 @@ function openMore(): HTMLElement {
 }
 
 describe('电脑网页工具条', () => {
-  it('左起 ← → ↻ · 圈一块 · 网址 · 文A · 收进 · ⋯；地址框写网站名和路径', async () => {
+  it('左起 ← → ↻ · 圈一块 · 网址（框里右端书签）· 文A · ⋯；地址框写网站名和路径', async () => {
     install();
     const app = await renderApp();
     await openArticle(app);
     const bar = screen.getByRole('main').querySelector('.web-toolbar') as HTMLElement;
     const names = [...bar.querySelectorAll('button')].map((button) => button.getAttribute('aria-label'));
-    expect(names).toEqual(['后退', '前进', '重新载入', '圈一块', `网址：${ARTICLE}`, '翻译这一页', '收进置顶或分组',
-      '更多']);
+    expect(names).toEqual(['后退', '前进', '重新载入', '圈一块', `网址：${ARTICLE}`, '加书签', '翻译这一页', '更多']);
     expect(within(bar).getByRole('button', { name: /^网址/ }).textContent).toBe('blog.example.org/local-first-sync');
-  });
-
-  it('收进：置顶、放进分组、放回今天，和竖排标签的右键菜单是同一份', async () => {
-    install();
-    const app = await renderApp();
-    const id = await openArticle(app);
-    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: '收进置顶或分组' }));
-    fireEvent.click(within(screen.getByRole('menu', { name: '标签的操作' })).getByRole('menuitem', { name: '置顶' }));
-    expect(app.state.webTabs.get().pinned).toEqual([id]);
-    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: '收进置顶或分组' }));
-    fireEvent.click(within(screen.getByRole('menu', { name: '标签的操作' }))
-      .getByRole('menuitem', { name: '放回今天' }));
-    expect(app.state.webTabs.get().today).toEqual([id]);
   });
 
   it('原生没报的不出：旧 App 没有圈一块，⋯ 里只有不靠原生新接口的几项', async () => {

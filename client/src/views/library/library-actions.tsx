@@ -1,4 +1,4 @@
-// 资料库里的改名和删除（2026-11-08）：空间改名走 PUT /v2/spaces/:id（先读到 version 和正文，只换标题），删除走
+// 资料库里的改名和删除（2026-11-08）：空间改名走 PUT /v2/spaces/:id（先读到 version，只给标题），删除走
 // DELETE /v2/spaces/:id；书改名 PATCH、删除 DELETE。删除前一律先问（ConfirmDialog），删了进「最近删除」能还原。
 // 做完通知资料库各处重读（library-signal.ts）。
 
@@ -22,7 +22,7 @@ export function useSpaceActions(): SpaceActions {
   return {
     rename: async (id, title) => {
       const space = await api.spaces.get(id);
-      await api.spaces.save(id, { requestId: createRequestId(), version: space.version, title, doc: space.doc });
+      await api.spaces.save(id, { requestId: createRequestId(), version: space.version, title });
       libraryChanged();
     },
     remove: async (id) => {

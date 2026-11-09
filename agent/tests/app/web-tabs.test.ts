@@ -61,6 +61,29 @@ test('合并旧存档：同一个网址跳过，回合并后的整份', async ()
   assert.deepEqual((body['layout'] as { pinned: string[]; today: string[] }).today, ['a']);
 });
 
+test('合并旧存档里的「书签」一组（0121 起书签和标签分开）：不再成组，组里的网页加成书签，已经有的不重复', async () => {
+  t = await startTestApp([], { startTasks: false });
+  const cookie = await pair(t);
+  const existing = await call(t, 'POST', '/v2/bookmarks', { cookie, body: { requestId: newRequestId('bm'),
+    kind: 'web', title: '已有的', target: 'https://kept.example.com/' } });
+  assert.equal(existing.status, 201, JSON.stringify(existing.body));
+  const merged = await call(t, 'POST', '/v2/web-tabs/merge', { cookie, body: { requestId: newRequestId('wt'),
+    layout: layout({
+      tabs: [tab('b1', 'https://kept.example.com/'), tab('b2', 'https://new.example.com/page'),
+        tab('g1', 'https://grouped.example.com/'), tab('t1', 'https://today.example.com/')],
+      groups: [{ id: 'wtg-bookmarks', name: '书签', hue: 'ochre', collapsed: true, tabIds: ['b1', 'b2'] },
+        { id: 'g-work', name: '工作', hue: 'sky', collapsed: false, tabIds: ['g1'] }],
+      today: ['t1'],
+    }) } });
+  assert.equal(merged.status, 200, JSON.stringify(merged.body));
+  const saved = json(merged)['layout'] as { groups: { name: string }[]; tabs: { url: string }[] };
+  assert.deepEqual(saved.groups.map((group) => group.name), ['工作']);
+  assert.deepEqual(saved.tabs.map((entry) => entry.url).sort(),
+    ['https://grouped.example.com/', 'https://today.example.com/']);
+  const list = json(await call(t, 'GET', '/v2/bookmarks', { cookie }))['bookmarks'] as { target: string }[];
+  assert.deepEqual(list.map((entry) => entry.target), ['https://kept.example.com/', 'https://new.example.com/page']);
+});
+
 async function startSite(handler: (path: string) => { status: number; type?: string; body?: Buffer | string })
   : Promise<{ port: number; hits: string[] }> {
   const hits: string[] = [];

@@ -1,5 +1,7 @@
 // /v2/spaces、/v2/subscriptions、/v2/review（《优化清单》第 6、7 条，11-06 定）：
-// - 空间：列表（资料库第二栏「空间」）、读一个、他直接改、撤销最近一版、笔记 AI 的续写和补充。
+// - 空间：列表（资料库第二栏「空间」、资料库首页的缩略图）、读一个、他在页面上直接改字、改名、撤销最近一版。
+//   第 8 批第 6 条（11-09）起空间是整页网页：html 是 body 里的正文片段，genre 是报告 / 来信；还没重写成网页的旧空间
+//   html 是 null，照旧按 doc 显示。笔记的续写、补充在空间里不再用。
 // - 订阅：列表（信息流第二栏「订阅」、顶部最新一期）、一个订阅（最新一期 / 往期 / 设置）、改设置、开定时 / 暂停、
 //   「以后都这样」、现在出一期。
 // - 回顾：首页「现在」的「回顾」一节（最近一期个人回顾的一句、昨晚整理了几条）。
@@ -7,6 +9,8 @@
 import { Type, type Static } from 'typebox';
 import {
   SPACE_EDITIONS,
+  SPACE_GENRES,
+  SPACE_HTML_MAX_CHARS,
   SPACE_TITLE_MAX_CHARS,
   SPACE_AUTHORS,
   SpaceDocSchema,
@@ -24,6 +28,7 @@ export const REVIEW_PATH = `${API_PREFIX}/review`;
 
 const STRICT = { additionalProperties: false };
 const Edition = OrNull(Type.Enum(SPACE_EDITIONS));
+const Genre = OrNull(Type.Enum(SPACE_GENRES));
 
 /** 空间是什么来路：一般空间、研究周报的一期、个人回顾的一期。界面按它选图标。 */
 export const SPACE_KINDS = ['space', 'research', 'review'] as const;
@@ -33,10 +38,15 @@ export const SpaceListItemSchema = Type.Object({
   id: IdSchema,
   title: Type.String(),
   kind: Type.Enum(SPACE_KINDS),
+  /** 报告 / 来信；旧版式还没重写是 null。 */
+  genre: Genre,
   author: Type.Enum(SPACE_AUTHORS),
   subscriptionId: OrNull(IdSchema),
   issueNumber: OrNull(Type.Integer({ minimum: 1 })),
   edition: Edition,
+  /** 正文这一版是第几版：缩略图按它认缓存。 */
+  version: Type.Integer({ minimum: 1 }),
+  createdAt: IsoTimeSchema,
   updatedAt: IsoTimeSchema,
 }, STRICT);
 export type SpaceListItem = Static<typeof SpaceListItemSchema>;
@@ -58,8 +68,12 @@ export const SpaceViewSchema = Type.Object({
   title: Type.String(),
   version: Type.Integer({ minimum: 1 }),
   kind: Type.Enum(SPACE_KINDS),
+  genre: Genre,
   author: Type.Enum(SPACE_AUTHORS),
+  createdAt: IsoTimeSchema,
   updatedAt: IsoTimeSchema,
+  /** 网页正文（body 里的片段，清洗过）；旧版式还没重写是 null，这时按 doc 显示。 */
+  html: OrNull(Type.String()),
   doc: SpaceDocSchema,
   subscription: OrNull(Type.Object({ id: IdSchema, title: Type.String(), version: Type.Integer({ minimum: 1 }) },
     STRICT)),
@@ -69,11 +83,12 @@ export const SpaceViewSchema = Type.Object({
 }, STRICT);
 export type SpaceView = Static<typeof SpaceViewSchema>;
 
+/** PUT /v2/spaces/:id：改名只给 title；在页面上改字给 html（整页正文片段，服务端再清洗一遍）。 */
 export const SaveSpaceRequestSchema = Type.Object({
   requestId: RequestIdSchema,
   version: Type.Integer({ minimum: 1 }),
   title: Type.Optional(Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS })),
-  doc: SpaceDocSchema,
+  html: Type.Optional(Type.String({ minLength: 1, maxLength: SPACE_HTML_MAX_CHARS })),
 }, STRICT);
 export type SaveSpaceRequest = Static<typeof SaveSpaceRequestSchema>;
 
@@ -103,6 +118,8 @@ export const IssueBriefSchema = Type.Object({
   subscriptionId: IdSchema,
   issueNumber: Type.Integer({ minimum: 1 }),
   edition: Edition,
+  /** 来信 / 报告（第 8 批第 6 条）；旧版式和旧客户端缓存里没有。 */
+  genre: Type.Optional(Genre),
   title: Type.String(),
   headline: Type.String(),
   stats: Type.Array(SpaceStatSchema),

@@ -1,7 +1,11 @@
 // 假空间与订阅（设计稿 Library-Space / Library-Subscription / Feed / Main「回顾」，11-06）：认知与神经科学研究周报
-// 第 1、2 期（第 2 期刚被 Plasticine 改过：图从 4 张减到 1 张）、个人回顾日报和周报、两个一般空间。内容是示例。
+// 第 1、2 期（第 2 期刚被 Plasticine 改过：图从 4 张减到 1 张）、个人回顾日报和周报、两个一般空间，都是还没重写的
+// 旧版式。第 8 批第 6 条（11-09）的网页版：来信《做梦，有了一组数字》、认知科学与意识研究周报第 1 期（报告）、
+// AI 信息流核查（报告）。内容是示例。
 
-import type { SpaceDoc, SpaceKind, Subscription } from '../shared.ts';
+import { EMPTY_SPACE_DOC, type SpaceDoc, type SpaceGenre, type SpaceKind, type Subscription } from '../shared.ts';
+import { AIFEED_REPORT_HTML } from './spaces-aifeed-seed.ts';
+import { COG_REPORT_HTML, DREAM_ART_SVG, DREAM_LETTER_HTML } from './spaces-pages-seed.ts';
 
 export interface SeedSpace {
   id: string;
@@ -11,17 +15,32 @@ export interface SeedSpace {
   subscriptionId: string | null;
   issueNumber: number | null;
   edition: 'daily' | 'weekly' | null;
+  genre: SpaceGenre | null;
+  html: string | null;
   doc: SpaceDoc;
   createdAt: string;
   updatedAt: string;
   /** 每一版的正文，最后一个是现在的；带着「改了什么」和规则。 */
-  revisions: { doc: SpaceDoc; change: string | null; rule: string | null }[];
+  revisions: SeedRevision[];
   /** 删掉的（在资料库「最近删除」里）。 */
   deletedAt?: string | null;
 }
 
+export interface SeedRevision {
+  doc: SpaceDoc;
+  genre: SpaceGenre | null;
+  html: string | null;
+  change: string | null;
+  rule: string | null;
+}
+
 export const RESEARCH_ID = 'sub_research';
 export const REVIEW_ID = 'sub-review';
+export const COG_ID = 'sub_cog';
+/** 来信插图的假资产（设计稿里的示意图）。 */
+export const SEED_ASSETS: Readonly<Record<string, { type: string; data: string }>> = {
+  '/v2/notes/assets/sample-dream.svg': { type: 'image/svg+xml', data: DREAM_ART_SVG },
+};
 
 function ago(now: Date, hours: number): string {
   return new Date(now.getTime() - hours * 3_600_000).toISOString();
@@ -81,20 +100,30 @@ export function spaceSeeds(now: Date): SeedSpace[] {
   const weekly = review('这周反复回到两件事：侧栏和赏金', '周报 · 10月27日–11月2日', [
     ['来自交流', '- 侧栏讨论了四天，从三栏收到两层[^1]'], ['外部新信息', '- 记忆巩固方向有三篇新研究'],
   ]);
+  const legacy = (doc: SpaceDoc, change: string | null = null, rule: string | null = null): SeedRevision =>
+    ({ doc, genre: null, html: null, change, rule });
   const plain = (id: string, title: string, markdown: string, hours: number): SeedSpace => {
     const doc: SpaceDoc = { stats: [], sources: [], blocks: [{ type: 'text', markdown }] };
     return { id, title, kind: 'space', author: 'ai', subscriptionId: null, issueNumber: null, edition: null, doc,
-      createdAt: ago(now, hours), updatedAt: ago(now, hours), revisions: [{ doc, change: null, rule: null }] };
+      genre: null, html: null, createdAt: ago(now, hours), updatedAt: ago(now, hours), revisions: [legacy(doc)] };
   };
   const issue = (id: string, title: string, doc: SpaceDoc, sub: string, number: number,
     edition: SeedSpace['edition'], hours: number, revisions?: SeedSpace['revisions']): SeedSpace => ({
     id, title, kind: sub === REVIEW_ID ? 'review' : 'research', author: 'ai', subscriptionId: sub, issueNumber: number,
-    edition, doc, createdAt: ago(now, hours), updatedAt: ago(now, hours / 2),
-    revisions: revisions ?? [{ doc, change: null, rule: null }] });
+    edition, doc, genre: null, html: null, createdAt: ago(now, hours), updatedAt: ago(now, hours / 2),
+    revisions: revisions ?? [legacy(doc)] });
+  const page = (base: Omit<SeedSpace, 'doc' | 'revisions' | 'createdAt' | 'updatedAt' | 'author'>, hours: number):
+    SeedSpace => ({ ...base, author: 'ai', doc: EMPTY_SPACE_DOC, createdAt: ago(now, hours), updatedAt: ago(now, hours),
+    revisions: [{ doc: EMPTY_SPACE_DOC, genre: base.genre, html: base.html, change: null, rule: null }] });
   return [
+    page({ id: 'sp_letter_dream', title: '做梦，有了一组数字', kind: 'review', subscriptionId: REVIEW_ID, issueNumber: 3,
+      edition: 'daily', genre: 'letter', html: DREAM_LETTER_HTML }, 0.5),
+    page({ id: 'sp_cog_1', title: '认知科学与意识研究周报｜第1期：学会看见，与意识的因果解释', kind: 'research',
+      subscriptionId: COG_ID, issueNumber: 1, edition: null, genre: 'report', html: COG_REPORT_HTML }, 5.2),
+    page({ id: 'sp_aifeed', title: 'AI 信息流核查｜记忆、子代理与商业落地', kind: 'space', subscriptionId: null,
+      issueNumber: null, edition: null, genre: 'report', html: AIFEED_REPORT_HTML }, 0.95),
     issue('sp_research_2', '研究周报 · 第 2 期', ISSUE_TWO, RESEARCH_ID, 2, null, 30, [
-      { doc: ISSUE_TWO, change: null, rule: null },
-      { doc: ISSUE_TWO, change: '图从 4 张减到 1 张', rule: '每期最多 1 张图' }]),
+      legacy(ISSUE_TWO), legacy(ISSUE_TWO, '图从 4 张减到 1 张', '每期最多 1 张图')]),
     issue('sp_daily_1107', '日报 · 11月7日', daily, REVIEW_ID, 2, 'daily', 6),
     issue('sp_weekly_1102', '周报 · 11月2日', weekly, REVIEW_ID, 1, 'weekly', 120),
     plain('sp_bounty', '悬赏规则草稿', '## 验收\n\n接单的人交付后，发单人 48 小时内验收。', 50),
@@ -111,6 +140,12 @@ export function subscriptionSeeds(now: Date): Subscription[] {
       timeZone: 'Asia/Shanghai', lineId: null, lastRunAt: ago(now, 6),
       settings: { kind: 'review', daily: { on: true, time: '08:00' }, weekly: { on: true, weekday: 0, time: '21:00' },
         topics: ['记忆巩固'], sources: [], exclude: [], rules: [] } },
+    { id: COG_ID, createdAt: at, updatedAt: at, version: 1, title: '认知科学与意识研究周报', kind: 'research',
+      status: 'sample', timeZone: 'Asia/Shanghai', lineId: 'line_cog', lastRunAt: ago(now, 5),
+      settings: { kind: 'research', topics: ['认知科学', '神经科学', '意识'], focus: 'basic', depth: 'expert',
+        sources: ['PubMed', 'bioRxiv', 'Nature Neuroscience'], preprints: 'mark', filter: '',
+        schedule: { every: 'week', weekday: 5, time: '08:00' }, sections: ['先看结论', '本期研究'], output: '',
+        rules: [] } },
     { id: RESEARCH_ID, createdAt: at, updatedAt: at, version: 3, title: '认知与神经科学研究周报', kind: 'research',
       status: 'active', timeZone: 'Asia/Shanghai', lineId: 'line_research', lastRunAt: ago(now, 30),
       settings: { kind: 'research', topics: ['记忆巩固', '睡眠', '预测加工', '注意力的神经机制'], focus: 'basic',

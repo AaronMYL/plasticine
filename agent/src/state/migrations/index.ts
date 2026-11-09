@@ -29,6 +29,8 @@ import { migration as ownerAccount } from './0111-owner-account.ts';
 import { migration as deviceLocal } from './0112-device-local.ts';
 import { migration as feedSourceRemoved } from './0113-feed-source-removed.ts';
 import { migration as noteSuggestThinking } from './0120-note-suggest-thinking.ts';
+import { migration as bookmarksApart } from './0121-bookmarks-apart.ts';
+import { migration as spacePages } from './0122-space-pages.ts';
 import { migration as objects } from './0001-objects.ts';
 import { migration as tasks } from './0002-tasks.ts';
 import { migration as records } from './0003-records.ts';
@@ -188,6 +190,8 @@ export const MIGRATIONS: readonly Migration[] = [
   deviceLocal,
   feedSourceRemoved,
   noteSuggestThinking,
+  bookmarksApart,
+  spacePages,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

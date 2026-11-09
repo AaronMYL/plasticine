@@ -146,6 +146,13 @@
   background: var(--line);
 }
 
+/* 本来会自动完成时收起的退路：点「粘贴回调地址」展开分隔线 + 贴回调的输入框。 */
+.connect-paste {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .connect-field {
   display: flex;
   flex-direction: column;

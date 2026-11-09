@@ -33,6 +33,8 @@ export interface WebPage {
 export interface WebPageActions {
   notice: WebNotice | null;
   dismiss: () => void;
+  /** 别处（地址框里的书签按钮）没成：在这里说一句。 */
+  report: (text: string) => void;
   capture: (scope: CaptureScope, target: CaptureTarget) => void;
   clip: () => void;
   /** 正在圈：圈一块的按钮按下着，再点一下取消。 */
@@ -179,6 +181,7 @@ export function useWebPageActions(page: WebPage, native: NativeWebTabs | null, w
   return {
     notice,
     dismiss: () => setNotice(null),
+    report: (text) => setNotice({ kind: 'error', text }),
     capture,
     clip,
     circling,

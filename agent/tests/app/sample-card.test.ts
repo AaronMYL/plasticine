@@ -15,13 +15,13 @@ afterEach(async () => {
   t = undefined;
 });
 
-const DOC = { headline: '海马体的时间细胞', stats: [], blocks: [], sources: [] };
+const HTML = '<h1 class="rp-h1">海马体的时间细胞</h1><p>本期读了三篇原文。</p>';
 
 function draftWithSample(app: TestApp): string {
   const sub = app.state.subscriptions.create({ title: '认知科学与意识研究周报', kind: 'research', status: 'draft',
     timeZone: 'Asia/Shanghai', settings: researchDraft({ topics: ['意识'],
       schedule: { every: 'week', weekday: 5, time: '08:00' } }) });
-  writeSpace(app.state, { title: '第 1 期', doc: DOC, subscriptionId: sub.id }, 'ai');
+  writeSpace(app.state, { title: '第 1 期', genre: 'report', html: HTML, subscriptionId: sub.id }, 'ai');
   return sub.id;
 }
 
@@ -45,7 +45,7 @@ test('服务起来时补卡：出过样刊还没开定时的补一张，重启�
   const id = draftWithSample(t);
   const active = t.state.subscriptions.create({ title: '已经开了的', kind: 'research', status: 'active',
     timeZone: 'UTC', settings: researchDraft({}) });
-  writeSpace(t.state, { title: '第 1 期', doc: DOC, subscriptionId: active.id }, 'ai');
+  writeSpace(t.state, { title: '第 1 期', genre: 'report', html: HTML, subscriptionId: active.id }, 'ai');
   const directory = t.directory;
   await t.close(true);
   t = await startTestApp([], { startTasks: false, directory });
@@ -85,11 +85,12 @@ test('样刊写完就出卡（space_write 出新一期）；改这一期不再�
     .find((item) => item.name === 'space_write');
   assert.ok(tool !== undefined);
   const run = tool.create({ lineId: 'line-main', kind: 'main', projectId: null });
-  const result = await run.execute('call-sample-1', { title: '第 1 期', doc: DOC, subscriptionId: sub.id } as never);
+  const result = await run.execute('call-sample-1', { title: '第 1 期', genre: 'report', html: HTML,
+    subscriptionId: sub.id } as never);
   const first = result.content[0];
   const written = JSON.parse(first?.type === 'text' ? first.text : '{}') as { id: string; version: number };
   await run.execute('call-sample-2', { id: written.id, version: written.version, title: '第 1 期（改）',
-    doc: DOC } as never);
+    html: HTML } as never);
   const open = openCards((await call(t, 'GET', '/v2/asks', { cookie })).body);
   assert.equal(open.length, 1);
   assert.equal(open[0]?.subscriptionCard?.spaceId, written.id);

@@ -1,5 +1,5 @@
-// 书签（2026-11-03 用户定，第 110 条）：加（同一个网址 / 地址只留一条）、改名和移项目、移除（只记时间）、排序、
-// 导入浏览器导出的书签。没归项目的书签由这里推一个项目（shared/bookmarks.ts 的推法）。
+// 书签（2026-11-03 用户定，第 110 条）：加（同一个网址 / 地址只留一条）、改名和移项目、移除（只记时间）、撤销移除、
+// 排序、导入浏览器导出的书签。没归项目的书签由这里推一个项目（shared/bookmarks.ts 的推法）。
 // 2026-11-04 用户定：信息流收藏归信息流、网页收藏归书签，两边分开——这里不再跟信息流收藏同步；origin = feed、
 // 带 feedItemId 的旧书签（迁移 0045 搬来的，0051 已从书签移走）照样读得出来。
 // 数据只经 state/ 写；加了书签记一条触发由 app/ 注入（onAdded），这里不碰进门。
@@ -142,6 +142,24 @@ export class BookmarkDesk {
   remove(id: string, version: number): Bookmark {
     this.#requireLive(id);
     return this.#state.bookmarks.update(id, version, { deletedAt: this.#now().toISOString() });
+  }
+
+  /**
+   * 撤销移除：回到原来的位置（position 没动过）。同一个网址 / 地址这期间又加了一条，就回那一条（不出两条）。
+   * 本来就在用的原样回。version 是移除回来的那一版。
+   */
+  restore(id: string, version: number): Bookmark {
+    const bookmark = this.#state.bookmarks.get(id);
+    if (bookmark === undefined) {
+      throw new DailyError('not_found', '没有这条书签。');
+    }
+    if (bookmark.deletedAt === null) {
+      return bookmark;
+    }
+    const key = bookmarkKey(bookmark.kind, bookmark.target);
+    const twin = key === null ? undefined
+      : this.live().find((other) => bookmarkKey(other.kind, other.target) === key);
+    return twin ?? this.#state.bookmarks.update(id, version, { deletedAt: null });
   }
 
   /** 按 ids 的先后重排：列到的依次排在最前，没列到的保持原来的相对顺序排在后面。 */

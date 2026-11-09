@@ -127,18 +127,16 @@ test('停下日报 = 回顾设置里关掉日报；删研究周报 = 订阅暂�
   assert.deepEqual(timed.rows('subscription'), []);
 });
 
-test('回顾写完：记上次；「值得跟进」里每一条出一张建议，同一期不重复', () => {
+test('回顾写完：记上次；信里标了值得跟进的每一条出一张建议，同一期不重复', () => {
   ensureReviewSubscription(t.state, 'Asia/Shanghai');
   const now = { at: new Date('2026-11-07T10:00:00+08:00') };
   const { timed, lines, suggested } = setup(now);
   timed.tick(now.at);
   now.at = new Date('2026-11-08T08:00:00+08:00');
   timed.tick(now.at);
-  writeSpace(t.state, { title: '日报 11月8日', subscriptionId: REVIEW_SUBSCRIPTION_ID, edition: 'daily',
-    doc: { stats: [], sources: [{ label: '11月8日的对话' }], blocks: [
-      { type: 'heading', id: 'talk', text: '来自交流' }, { type: 'text', markdown: '定了悬赏规则。' },
-      { type: 'heading', id: 'next', text: '值得跟进' },
-      { type: 'text', markdown: '- 把**验收**一节写完[^1]\n- 约赵一舟聊合作' }] } }, 'ai');
+  writeSpace(t.state, { title: '悬赏规则定了', subscriptionId: REVIEW_SUBSCRIPTION_ID, edition: 'daily',
+    genre: 'letter', html: '<p class="lt-lead">昨天定了悬赏规则，还差验收一节。</p><ul>'
+      + '<li data-follow>把<b>验收</b>一节写完</li><li data-follow>约赵一舟聊合作</li></ul>' }, 'ai');
   lines.views.set('line-1', { status: 'idle', outcome: 'done', lastAnswer: '日报写好了' });
   timed.ended('line-1');
   const slot = t.state.timedSlots.require('review:daily');

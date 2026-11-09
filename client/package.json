@@ -23,6 +23,7 @@
     "@tiptap/pm": "3.31.4",
     "@tiptap/react": "3.31.4",
     "@tiptap/starter-kit": "3.31.4",
+    "lxgw-wenkai-webfont": "1.7.0",
     "marked": "17.0.6",
     "marked-cjk-friendly": "0.1.3",
     "qrcode-generator": "2.0.4",

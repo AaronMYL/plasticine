@@ -14,10 +14,16 @@ describe('信息流顶部的订阅', () => {
   });
 });
 
+/** 订阅设置在空间页的 ⋯ 里（第 8 批第 6 条：标题栏右边是「让 Plasticine 改」、✎、⋯）。 */
+async function openSettings(title: string): Promise<void> {
+  fireEvent.click(await screen.findByRole('button', { name: `「${title}」的更多操作` }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: '订阅设置' }));
+}
+
 describe('订阅设置', () => {
   it('改关注和偏向：「保存」才存；预印本开关和时间照设置', async () => {
     const app = await renderApp({ hash: '#/books/space/sp_research_2', setup: (fake) => fake.control.spaces.seed() });
-    fireEvent.click(await screen.findByRole('button', { name: '订阅设置' }));
+    await openSettings('研究周报 · 第 2 期');
     const sheet = await screen.findByRole('dialog', { name: '认知与神经科学研究周报' });
     const save = within(sheet).getByRole('button', { name: '保存' }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
@@ -49,7 +55,7 @@ describe('订阅设置', () => {
 
   it('开着的订阅能暂停；暂停后能「现在出一期」、能重新开定时', async () => {
     const app = await renderApp({ hash: '#/books/space/sp_research_2', setup: (fake) => fake.control.spaces.seed() });
-    fireEvent.click(await screen.findByRole('button', { name: '订阅设置' }));
+    await openSettings('研究周报 · 第 2 期');
     const sheet = await screen.findByRole('dialog', { name: '认知与神经科学研究周报' });
     await act(async () => fireEvent.click(within(sheet).getByRole('button', { name: '暂停订阅' })));
     expect((await app.api.subscriptions.get('sub_research')).status).toBe('paused');
@@ -61,7 +67,7 @@ describe('订阅设置', () => {
 
   it('个人回顾的设置：日报、周报的开关和时间', async () => {
     await renderApp({ hash: '#/books/space/sp_daily_1107', setup: (fake) => fake.control.spaces.seed() });
-    fireEvent.click(await screen.findByRole('button', { name: '订阅设置' }));
+    await openSettings('日报 · 11月7日');
     const sheet = await screen.findByRole('dialog', { name: '个人回顾' });
     expect((within(sheet).getByRole('switch', { name: '出日报' }) as HTMLInputElement).checked).toBe(true);
     expect((within(sheet).getByRole('switch', { name: '出周报' }) as HTMLInputElement).checked).toBe(true);
@@ -70,16 +76,16 @@ describe('订阅设置', () => {
 });
 
 describe('首页「回顾」', () => {
-  it('最近一期日报的一句、昨晚整理了几条；点了进那一期空间', async () => {
+  it('最近一封来信的题目、昨晚整理了几条；点了进那封信', async () => {
     await renderApp({ setup: (fake) => {
       fake.control.spaces.seed();
       fake.control.memoryTopics.seed();
     } });
     const section = await screen.findByRole('region', { name: '回顾' });
-    expect(within(section).getByText('日报：侧栏方案定稿；悬赏还缺赏金来源，卡了三天')).toBeTruthy();
+    expect(within(section).getByText('来信：做梦，有了一组数字')).toBeTruthy();
     expect(within(section).getByText(/昨晚整理了 \d+ 条记忆/)).toBeTruthy();
-    fireEvent.click(within(section).getByRole('button', { name: /日报：/ }));
-    await waitFor(() => expect(window.location.hash).toBe('#/books/space/sp_daily_1107'));
+    fireEvent.click(within(section).getByRole('button', { name: /来信：/ }));
+    await waitFor(() => expect(window.location.hash).toBe('#/books/space/sp_letter_dream'));
   });
 
   it('没有回顾也没有整理：整节不出现', async () => {

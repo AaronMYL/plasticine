@@ -1,5 +1,5 @@
-// ⌘K 全局切换（《优化清单》第 2 条，11-07 设计稿 Palette）：标签、笔记、空间、项目、旁聊、对话、图书都能搜到，用统一
-// 索引（/v2/search）加这台设备上的竖排标签和旁聊；结果按组列（palette-results.ts），最后一组是「让 Plasticine 做」
+// ⌘K 全局切换（《优化清单》第 2 条，11-07 设计稿 Palette）：标签、书签、笔记、空间、项目、旁聊、对话、图书都能搜到，
+// 用统一索引（/v2/search）加这台设备上的竖排标签、旁聊和书签；结果按组列（palette-results.ts），最后一组是「让 Plasticine 做」
 // （这句话放进对话框的输入框）。↑↓ 选、↵ 打开、Esc 收起；弹出 / 收起是缩放淡入（减少动态效果时直接出现）。
 // 电脑上浮在窗口上方居中（宽 640），手机上占满屏幕。
 
@@ -11,6 +11,7 @@ import type { LineView, SearchResult } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
+import { webBookmarks } from '../bookmarks/bookmark-address.ts';
 import { spaceLook } from '../../shell/columns/library-column.tsx';
 import { SiteIcon } from '../../shell/site-icon.tsx';
 import { HueTile, type HueName } from '../../shell/hue.tsx';
@@ -33,10 +34,11 @@ const SEARCH_DELAY_MS = 150;
 /** 一次要多少条（分组后每组只列几条）。 */
 const SEARCH_LIMIT = 30;
 
-const SCOPE_NOTE = '查标签、旁聊、空间、笔记、和 Plasticine 的对话（主线、旁聊、后台线）、记忆、信息流和图书；'
+const SCOPE_NOTE = '查标签、书签、旁聊、空间、笔记、和 Plasticine 的对话（主线、旁聊、后台线）、记忆、信息流和图书；'
   + '已删除的内容和「不感兴趣」的信息流不查。';
 
-const LEADS: Readonly<Record<Exclude<PaletteGroup, 'tab' | 'side' | 'ask'>, { icon: IconName; hue: HueName }>> = {
+const LEADS: Readonly<Record<Exclude<PaletteGroup, 'tab' | 'bookmark' | 'side' | 'ask'>,
+  { icon: IconName; hue: HueName }>> = {
   space: { icon: 'space', hue: 'sky' },
   note: { icon: 'notes', hue: 'teal' },
   message: { icon: 'conversation', hue: 'slate' },
@@ -53,7 +55,9 @@ const PHONE_ENTER: Keyframe[] = [{ opacity: 0, transform: 'translateY(8px)' }, {
 
 function Lead({ item, spaces }: { item: PaletteItem; spaces: ReadonlyMap<string, SpaceLook> }): ReactNode {
   const kind = item.lead.kind;
-  if (kind === 'tab') return <SiteIcon url={item.lead.url ?? ''} title={item.title} tabId={item.lead.tabId} />;
+  if (kind === 'tab' || kind === 'bookmark') {
+    return <SiteIcon url={item.lead.url ?? ''} title={item.title} tabId={item.lead.tabId} />;
+  }
   const space = item.lead.spaceId === undefined ? undefined : spaces.get(item.lead.spaceId);
   if (space !== undefined) return <HueTile hue={space.hue} icon={space.icon} size={22} />;
   if (kind === 'side') return <span className="palette-mark"><PlasticineMark size={14} /></span>;
@@ -120,6 +124,7 @@ export function Palette({ phone, onClose, onOpen }: PaletteProps): ReactNode {
   const { webTabs } = useClientState();
   const tabs = useStore(webTabs.store);
   const lines = useStore(live.lines.list);
+  const bookmarks = webBookmarks(useStore(live.bookmarks.data).bookmarks);
   const [query, setQuery] = useState('');
   const [composing, setComposing] = useState(false);
   const [active, setActive] = useState(0);
@@ -130,8 +135,8 @@ export function Palette({ phone, onClose, onOpen }: PaletteProps): ReactNode {
   const sides = useMemo(() => lines.lines.filter((line): line is LineView => line.kind === 'side')
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), [lines.lines]);
   const now = new Date();
-  const items = paletteItems({ query, results, tabs: tabs.tabs, archived: tabs.archived, sides, today: tabs.today,
-    dayText: (iso) => listTime(iso, now, timeZone) });
+  const items = paletteItems({ query, results, tabs: tabs.tabs, archived: tabs.archived, bookmarks, sides,
+    today: tabs.today, dayText: (iso) => listTime(iso, now, timeZone) });
   const current = Math.min(active, Math.max(0, items.length - 1));
   useLayoutEffect(() => {
     play(box.current, phone ? PHONE_ENTER : ENTER, MOTION.base, EASE_OUT);
@@ -170,7 +175,7 @@ export function Palette({ phone, onClose, onOpen }: PaletteProps): ReactNode {
         }}>
         <div className="palette-input-row">
           <Icon name="search" size={16} />
-          <input className="palette-input" autoFocus aria-label="搜索和切换" placeholder="搜标签、笔记、空间、旁聊…"
+          <input className="palette-input" autoFocus aria-label="搜索和切换" placeholder="搜标签、书签、笔记、空间…"
             value={query} role="combobox" aria-expanded="true" aria-controls="palette-list"
             aria-activedescendant={items[current] === undefined ? undefined : `palette-${current}`}
             onChange={(event) => setQuery(event.target.value)}

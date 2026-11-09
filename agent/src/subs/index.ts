@@ -4,13 +4,17 @@
 
 export { SubsError } from './errors.ts';
 export type { SubsErrorCode } from './errors.ts';
-export { checkSpaceDoc, docFromMarkdown, summaryOf } from './space-doc.ts';
+export { summaryOf } from './space-doc.ts';
+export { checkSpacePage, editSpaceHtml, followTexts, pageSummary, SPACE_EDITS_MAX } from './space-page.ts';
+export type { SpaceEdit } from './space-page.ts';
+export { sanitizeSpaceHtml } from './space-sanitize.ts';
+export type { SanitizedHtml } from './space-sanitize.ts';
 export { nextRunAt, schedulesOf } from './schedule.ts';
 export type { SubscriptionSlot } from './schedule.ts';
 export { rankInterests, TALK_MIN_DAYS } from './interests.ts';
 export type { Interest, InterestInput, InterestWhy } from './interests.ts';
-export { adoptRule, changeSubscription, writeSpace } from './writes.ts';
-export type { SpaceState, SpaceWrite, SubscriptionChange } from './writes.ts';
+export { adoptRule, changeSubscription, editSpace, writeSpace } from './writes.ts';
+export type { SpaceState, SpaceWrite, SpaceWritten, SubscriptionChange } from './writes.ts';
 export { DEFAULT_REVIEW, ensureReviewSubscription, RESEARCH_SECTIONS, researchDraft, REVIEW_SUBSCRIPTION_ID }
   from './defaults.ts';
 export { reviewMaterials } from './review-materials.ts';
@@ -24,4 +28,10 @@ export type { ToolState } from './tools.ts';
 export { SubscriptionTimed } from './timed.ts';
 export type { SubsTimedLines, SubsTimedOptions, SubsTimedState } from './timed.ts';
 export { followUps } from './follow-ups.ts';
+export { ASSET_PATH, ILLUSTRATION_CREDIT, illustrate } from './illustrate.ts';
+export type { Illustrated, IllustrateOptions } from './illustrate.ts';
+export { REWRITE_ATTEMPTS_MAX, REWRITE_CHANGE, requiredNumbers, SpaceRewriter } from './rewrite.ts';
+export type { RewriteOptions, RewriteResult, RewriteState } from './rewrite.ts';
+export { LETTER_GUIDE, REPORT_GUIDE, SPACE_RULES } from './space-guide.ts';
+export type { SpacePageHooks } from './tools.ts';
 export type { FollowUp } from './follow-ups.ts';

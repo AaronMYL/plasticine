@@ -498,7 +498,8 @@ export class LineRunner {
       }
       return saved;
     });
-    if (message.role === 'lineReport' || message.role === 'notice' || message.role === 'welcome') {
+    if (message.role === 'lineReport' || message.role === 'notice' || message.role === 'welcome'
+      || message.role === 'letter') {
       this.#steeredReports.delete(message);
     }
     if (queueId !== undefined) {

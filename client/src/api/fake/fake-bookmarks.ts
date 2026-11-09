@@ -1,6 +1,7 @@
 // 假的书签（第 110 条）：和真服务端（agent/src/app/bookmarks.ts、daily/bookmarks.ts）同一套规矩——同一个网址 /
 // 地址只留一条、网页只收 http(s)、页面要 #/ 地址、移除只记时间、没归项目的按 shared/bookmarks.ts 的推法推一个项目。
-// 信息流收藏和书签分开（2026-11-04），这里不跟信息流同步。写操作按 requestId 幂等，过时了回 409（ConflictError）。
+// 信息流收藏和书签分开（2026-11-04），这里不跟信息流同步。写操作按 requestId 幂等，过时了回 409（ConflictError）；
+// 写成了发 bookmarks.changed（第 8 批第 1 条，和真服务端一样）。
 
 import { bookmarkKey, suggestProject, type SuggestionCandidate } from '../../../../agent/shared/bookmarks.ts';
 import type { BookmarksApi } from '../bookmarks-client.ts';
@@ -15,7 +16,9 @@ import type {
   ImportBookmarksResponse,
   OrderBookmarksRequest,
   RemoveBookmarkRequest,
+  RestoreBookmarkRequest,
 } from '../shared.ts';
+import type { FakeEventBus } from './event-bus.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeReceipts } from './receipts.ts';
 
@@ -31,6 +34,8 @@ export interface FakeBookmarksDeps {
   session: FakeSession;
   receipts: FakeReceipts;
   now: () => Date;
+  /** 写成了发 bookmarks.changed；不给（单测直接 new）就不发。 */
+  bus?: FakeEventBus;
   /** 推项目要看的项目名单。 */
   projects: () => { id: string; name: string }[];
 }
@@ -84,7 +89,12 @@ export class FakeBookmarks implements BookmarksApi {
     this.deps.session.require();
     return this.deps.receipts.run('bookmark', input.requestId, 'POST /v2/bookmarks', () => {
       const { requestId: _requestId, snapshot, ...rest } = input;
-      return this.view(this.insert({ ...rest, ...(snapshot === undefined ? {} : { snapshot: snapshot.text }) }));
+      const before = this.rows.size;
+      const stored = this.insert({ ...rest, ...(snapshot === undefined ? {} : { snapshot: snapshot.text }) });
+      if (this.rows.size > before) {
+        this.changed();
+      }
+      return this.view(stored);
     });
   }
 
@@ -100,6 +110,7 @@ export class FakeBookmarks implements BookmarksApi {
         updatedAt: this.deps.now().toISOString(),
         version: stored.view.version + 1,
       };
+      this.changed();
       return this.view(stored);
     });
   }
@@ -109,6 +120,33 @@ export class FakeBookmarks implements BookmarksApi {
     return this.deps.receipts.run('bookmark', input.requestId, `POST /v2/bookmarks/${id}/remove`, () => {
       const stored = this.writable(id, input.version);
       this.drop(stored);
+      this.changed();
+      return this.view(stored);
+    });
+  }
+
+  async restore(id: string, input: RestoreBookmarkRequest): Promise<BookmarkView> {
+    this.deps.session.require();
+    return this.deps.receipts.run('bookmark', input.requestId, `POST /v2/bookmarks/${id}/restore`, () => {
+      const stored = this.rows.get(id);
+      if (stored === undefined) {
+        throw new ApiError({ kind: 'not_found', code: 'not_found', status: 404, message: '没有这条书签。' });
+      }
+      if (stored.deletedAt === null) {
+        return this.view(stored);
+      }
+      const key = bookmarkKey(stored.view.kind, stored.view.target);
+      const twin = key === null ? undefined
+        : this.live().find((row) => bookmarkKey(row.view.kind, row.view.target) === key);
+      if (twin !== undefined) {
+        return this.view(twin);
+      }
+      if (stored.view.version !== input.version) {
+        throw new ConflictError(this.view(stored), '这条书签在别处改过了，这次没有改。', STALE_NEXT);
+      }
+      stored.deletedAt = null;
+      stored.view = { ...stored.view, updatedAt: this.deps.now().toISOString(), version: stored.view.version + 1 };
+      this.changed();
       return this.view(stored);
     });
   }
@@ -125,6 +163,7 @@ export class FakeBookmarks implements BookmarksApi {
           stored.view = { ...stored.view, position, version: stored.view.version + 1 };
         }
       });
+      this.changed();
       return { bookmarks: this.views() };
     });
   }
@@ -154,6 +193,9 @@ export class FakeBookmarks implements BookmarksApi {
         } else {
           skipped += 1;
         }
+      }
+      if (added > 0) {
+        this.changed();
       }
       return { added, skipped, bookmarks: this.views() };
     });
@@ -212,6 +254,10 @@ export class FakeBookmarks implements BookmarksApi {
       position: this.nextPosition(), createdAt: at, updatedAt: at, version: 1 } };
     this.rows.set(stored.view.id, stored);
     return stored;
+  }
+
+  private changed(): void {
+    this.deps.bus?.emit({ type: 'bookmarks.changed' });
   }
 
   private drop(stored: Stored): void {

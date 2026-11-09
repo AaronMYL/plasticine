@@ -1,14 +1,16 @@
 // 连上一家模型的三步（2026-11-05 设计稿 Connect）：
 //   登录   use-provider-login.ts：开始订阅登录 → 在浏览器里打开授权页 →「在浏览器里登录 ChatGPT…」，隔一会儿问一次
 //          走到哪了；桌面客户端连远程实例时在本机等回调、自动完成；普通网页连远程实例时把地址栏里 localhost:1455
-//          开头的那串贴进来（说明在 ⓘ 里）；
+//          开头的那串贴进来（说明在 ⓘ 里）。11-09 他要「回调复制粘贴地址的登录方式」：哪种情况都能改用复制登录链接、
+//          在任何浏览器（比如手机上）登录、再把回调地址贴回来——自动收不到时有一条退路；
 //   填 key  一个密码框 +「连接」；
 //   连上了  一个勾、「已连接」和哪一家；「开始用」「再连一家」。
 // 设置 · AI 里就地展开，第一次打开 / 重新登录的连接页里一张卡一步。
 
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { ModelProviderView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
+import { Collapse } from '../../shell/collapse.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
@@ -35,9 +37,16 @@ function CopyLink({ url }: { url: string | null }): ReactNode {
   );
 }
 
-/** 贴回调地址（普通网页连远程实例、旧 Mac App）：说明在 ⓘ 里。 */
-export function CallbackForm({ flow }: { flow: ProviderLogin }): ReactNode {
+/** 贴回调地址：说明在 ⓘ 里。focus：从「粘贴回调地址」点开时光标直接进输入框。 */
+export function CallbackForm({ flow, focus = false }: { flow: ProviderLogin; focus?: boolean }): ReactNode {
   const [callback, setCallback] = useState('');
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!focus) return undefined;
+    // 收起的那一段要先放出来（Collapse 下一帧才去掉 hidden），再把光标放进去。
+    const frame = requestAnimationFrame(() => input.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [focus]);
   const submit = (event: FormEvent): void => {
     event.preventDefault();
     flow.complete(callback);
@@ -45,7 +54,7 @@ export function CallbackForm({ flow }: { flow: ProviderLogin }): ReactNode {
   return (
     <form className="connect-field" onSubmit={submit}>
       <span className="connect-label">粘贴回调地址<InfoTip label="「粘贴回调地址」的说明" text={CALLBACK_TIP} /></span>
-      <input className="field-input field-input-mono" aria-label="回调地址"
+      <input ref={input} className="field-input field-input-mono" aria-label="回调地址"
         placeholder={flow.login?.prompt?.placeholder ?? 'http://localhost:1455/auth/callback?code=…'} value={callback}
         onChange={(event) => setCallback(event.target.value)} />
       <button type="submit" className="secondary-button connect-continue"
@@ -54,11 +63,43 @@ export function CallbackForm({ flow }: { flow: ProviderLogin }): ReactNode {
   );
 }
 
+/** 要不要一上来就摆出贴回调的输入框：本体收不到回调的两种（普通网页连远程实例、旧 Mac App）要；别的收起来。 */
+export function pasteFirst(flow: ProviderLogin): boolean {
+  return flow.route === 'paste' || flow.route === 'copy';
+}
+
+/**
+ * 本来会自动完成的几种：收起的「粘贴回调地址」，点开才有输入框（自动收不到时的退路）。copy：旁边没有「复制登录链接」
+ * 的地方（连接页那一行只有「在浏览器里登录…」）一起给，好拿去别的浏览器（比如手机上）登录。
+ */
+export function PasteFallback({ flow, copy = false }: { flow: ProviderLogin; copy?: boolean }): ReactNode {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      {open ? null : (
+        <div className="connect-links">
+          <button type="button" className="text-button text-button-quiet" aria-expanded={false}
+            disabled={flow.login === null} onClick={() => setOpen(true)}>粘贴回调地址</button>
+          {copy ? <CopyLink url={flow.login?.url ?? null} /> : null}
+        </div>
+      )}
+      <Collapse open={open}>
+        {open ? (
+          <div className="connect-paste">
+            <div className="connect-rule" />
+            <CallbackForm flow={flow} focus />
+          </div>
+        ) : null}
+      </Collapse>
+    </>
+  );
+}
+
 export function LoginFlow({ provider, onDone, onCancel }: { provider: ModelProviderView; onDone: () => void;
   onCancel: () => void }): ReactNode {
   const flow = useProviderLogin(provider, onDone, onCancel);
   const name = providerName(provider);
-  const paste = flow.route === 'paste' || flow.route === 'copy';
+  const paste = pasteFirst(flow);
   return (
     <div className="connect-step">
       <div className="connect-wait-head">
@@ -66,13 +107,14 @@ export function LoginFlow({ provider, onDone, onCancel }: { provider: ModelProvi
         <h2 className="connect-step-title">在浏览器里登录 {name}…</h2>
       </div>
       <div className="connect-links">
-        {flow.route === 'copy' ? <CopyLink url={flow.login?.url ?? null} /> : (
+        {flow.route === 'copy' ? null : (
           <button type="button" className="text-button" disabled={flow.login?.url == null}
             onClick={flow.reopen}>重新打开登录页</button>
         )}
+        <CopyLink url={flow.login?.url ?? null} />
         <button type="button" className="text-button text-button-quiet" onClick={flow.cancel}>取消</button>
       </div>
-      {paste ? <><div className="connect-rule" /><CallbackForm flow={flow} /></> : null}
+      {paste ? <><div className="connect-rule" /><CallbackForm flow={flow} /></> : <PasteFallback flow={flow} />}
       {flow.error === null ? null : <p className="connect-error" role="alert">{flow.error}</p>}
     </div>
   );

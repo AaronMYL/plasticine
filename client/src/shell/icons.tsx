@@ -55,6 +55,8 @@ export type IconName =
   | 'collapse'
   | 'pin'
   | 'bookmark'
+  | 'bookmark-filled'
+  | 'tab-new'
   | 'region'
   | 'star'
   | 'star-filled'
@@ -165,7 +167,11 @@ const PATHS: Record<IconName, ReactNode> = {
   expand: <path d="M9.5 2.5h4v4M13.5 2.5l-4 4M6.5 13.5h-4v-4M2.5 13.5l4-4" />,
   collapse: <path d="M13.5 6.5h-4v-4M9.5 6.5l4-4M2.5 9.5h4v4M6.5 9.5l-4 4" />,
   pin: <path d="m10 2 4 4-3 1-3 4-1-2-2-1 4-3zM7 9l-5 5" />,
+  // 书签（第 8 批第 1 条，地址框里）：空心 = 这个网址没收藏，实心 = 收藏了。
   bookmark: <path d="M4 2.5h8v11l-4-3-4 3z" />,
+  'bookmark-filled': <path d="M4 2.5h8v11l-4-3-4 3z" fill="currentColor" />,
+  // 在新标签打开：一个框里一个加号。
+  'tab-new': <><rect x="2.5" y="3" width="11" height="10" rx="2" /><path d="M8 6v4M6 8h4" /></>,
   // 圈一块（第 2 批「浏览器」）：三个取景角 + 指针。
   region: <path d="M2.7 6V3.3a.6.6 0 0 1 .6-.6H6M10 2.7h2.7a.6.6 0 0 1 .6.6V6M2.7 10v2.7a.6.6 0 0 0 .6.6H6
     M8.7 8.7l5 2-2.1.8-.9 2.2z" />,

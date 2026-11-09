@@ -33,6 +33,7 @@ import type { LineThreadData } from './line-thread-data.ts';
 import { buildTimeline, lastTurn, seqRange, type TimelineItem } from './timeline.ts';
 import { TurnView } from './turn-view.tsx';
 import { WelcomeMessage } from './welcome-message.tsx';
+import { LetterCard } from '../spaces/letter-card.tsx';
 import { WorkLineAction } from './work-status.tsx';
 import './lines.css';
 import './chat-details.css';
@@ -42,7 +43,7 @@ const STICK_PX = 48;
 
 function itemTime(item: TimelineItem): string | null {
   if (item.kind === 'user' || item.kind === 'input' || item.kind === 'report' || item.kind === 'notice'
-    || item.kind === 'welcome') {
+    || item.kind === 'welcome' || item.kind === 'letter') {
     return item.message.createdAt;
   }
   if (item.kind === 'child') return item.line.createdAt;
@@ -122,6 +123,13 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
       return <LineCard line={item.line} stopped={item.line.outcome === 'stopped'} />;
     case 'welcome':
       return <WelcomeMessage lineId={lineId} message={item.message} />;
+    case 'letter':
+      return <MessageRow seq={item.message.seq} author="Plasticine" text={item.message.text}>
+        <div className="line-answer" data-message-seq={item.message.seq}>
+          <Markdown text={item.message.text} />
+          {item.message.letter === undefined ? null : <LetterCard letter={item.message.letter} />}
+        </div>
+      </MessageRow>;
     case 'notice':
       return <p className="line-notice" role="note" aria-label="系统通知" data-message-seq={item.message.seq}>
         <Icon name="bell" size={14} />

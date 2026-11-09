@@ -56,7 +56,8 @@ test('迁移 0109 登记了、只加表；书签搬进分组一次：网页书�
     { kind: 'web', title: '重复的', target: 'https://news.ycombinator.com/showhn.html' },
   ] });
   bookmark(db, 'b5', { kind: 'web', title: '删掉的', target: 'https://gone.example.com/', position: 4, deleted: true });
-  migrate(db, MIGRATIONS, steppingClock());
+  // 只跑到 0109：0121 起「书签」一组又拆回了书签（bookmarks-apart-migration.test.ts）。
+  migrate(db, MIGRATIONS.filter((migration) => migration.id <= ID), steppingClock());
   const { layout, version } = createWebTabsStore(contextOf(db)).read();
   assert.equal(version, 1);
   assert.deepEqual(layout.groups.map((group) => [group.name, group.collapsed, group.tabIds.length]),

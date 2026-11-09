@@ -1,6 +1,7 @@
 // /v2/bookmarks：书签（2026-11-03 用户定，第 110 条）。列表（按 position 排，删掉的不在里面）、加（⌘D / ☆ / 右键标签 /
-// 「关掉，存进书签」存一组）、改名和移项目、移除、排序、导入浏览器导出的书签 HTML。每个写操作按 requestId 幂等，
-// 改和移除带它画出来时的 version，过时就 409 带现在的那一条。信息流的收藏仍走 /v2/feed/items/:id/save，服务端把它
+// 「关掉，存进书签」存一组）、改名和移项目、移除、撤销移除、排序、导入浏览器导出的书签 HTML。每个写操作按 requestId
+// 幂等，改、移除和撤销带它画出来时的 version，过时就 409 带现在的那一条；写成了发 bookmarks_changed（各设备同一份）。
+// 第 8 批第 1 条（11-09）：书签在网页栏最上面单独一节，和标签分开；地址框里的书签按钮加 / 取消当前网址。信息流的收藏仍走 /v2/feed/items/:id/save，服务端把它
 // 记成一条 origin = feed 的书签。
 
 import { Type, type Static } from 'typebox';
@@ -101,6 +102,16 @@ export const RemoveBookmarkRequestSchema = Type.Object(
   STRICT,
 );
 export type RemoveBookmarkRequest = Static<typeof RemoveBookmarkRequestSchema>;
+
+/**
+ * POST /v2/bookmarks/:id/restore → 200 { bookmark }：撤销移除（第 8 批第 1 条：删除不确认，原处一行「撤销」）。
+ * version 是移除回来的那一版；同一个网址这期间又加了一条就回那一条，不出两条。
+ */
+export const RestoreBookmarkRequestSchema = Type.Object(
+  { requestId: RequestIdSchema, version: Type.Integer({ minimum: 1 }) },
+  STRICT,
+);
+export type RestoreBookmarkRequest = Static<typeof RestoreBookmarkRequestSchema>;
 
 /** POST /v2/bookmarks/order → 200 { bookmarks }：按 ids 的先后重排；没列到的排在后面、相互顺序不变。 */
 export const OrderBookmarksRequestSchema = Type.Object(

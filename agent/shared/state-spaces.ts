@@ -1,6 +1,7 @@
-// 空间与订阅（《优化清单》第 6、7 条，用户 11-06 定，11-07 补）。
-// 空间：Plasticine 写的都是空间（报告、周报、核查、整理稿、草稿）；存成结构化文档，由 Plasticine 自己的页面渲染，不生成
-// 独立的 HTML。图表只能用存下来的数据画、要写来源；图片要写来源；自己整理的数据要写依据。
+// 空间与订阅（《优化清单》第 6、7 条，用户 11-06 定，11-07 补；第 8 批第 6 条 11-09 改）。
+// 空间：Plasticine 写的都是空间。11-09 起空间是整页网页，两种体裁：报告（按内容自由排版）和来信（固定信纸，模型只写
+// 正文）；存的是 body 里的正文片段（html），版式底子由显示的一端套上。旧的结构化文档（doc）留给历史：重写成网页以前的
+// 版本还在 space_revisions 里。图表只能用存下来的数据画、要写来源；图片要写来源；自己整理的数据要写依据。
 // 订阅：任务和产物分开。订阅本身就是任务设置（关注范围、信息源、筛选标准、执行时间、输出要求），每一期是一个空间。
 // 个人回顾也是一个订阅（kind review），日报每天早上、周报周日晚上。
 // Import from shared/state.ts.
@@ -18,6 +19,8 @@ export const SPACE_BLOCKS_MAX = 400;
 export const SPACE_STATS_MAX = 4;
 // 一张图最多这么多个点：再多就看不清了，也说明数据没整理。
 export const SPACE_CHART_POINTS_MAX = 120;
+// 一页的正文片段最多这么长（报告里内联的 SVG 图表占得多；插图存成资产，不内联）。
+export const SPACE_HTML_MAX_CHARS = 500_000;
 export const SPACE_AUTHORS = ['user', 'ai'] as const;
 export type SpaceAuthor = (typeof SPACE_AUTHORS)[number];
 
@@ -105,13 +108,25 @@ export const SpaceDocSchema = Type.Object({
 }, STRICT);
 export type SpaceDoc = Static<typeof SpaceDocSchema>;
 
+/** 体裁：报告（按内容自由排版）、来信（固定信纸）。旧空间重写成网页以前是 null（照旧按 doc 显示）。 */
+export const SPACE_GENRES = ['report', 'letter'] as const;
+export type SpaceGenre = (typeof SPACE_GENRES)[number];
+const Html = Type.String({ minLength: 1, maxLength: SPACE_HTML_MAX_CHARS });
+
+/** 网页版之前的空间没有正文文档：新写的空间 doc 存这个空的。 */
+export const EMPTY_SPACE_DOC: SpaceDoc = { stats: [], blocks: [], sources: [] };
+
 /** review 的两种：日报、周报；研究周报和一般空间是 null。 */
 export const SPACE_EDITIONS = ['daily', 'weekly'] as const;
 export type SpaceEdition = (typeof SPACE_EDITIONS)[number];
 
 export const SpaceInputSchema = Type.Object({
   title: Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS }),
+  /** 旧版的结构化正文；网页版的空间是空的（EMPTY_SPACE_DOC）。 */
   doc: SpaceDocSchema,
+  genre: Type.Optional(Nullable(Type.Enum(SPACE_GENRES))),
+  /** body 里的正文片段（清洗过）；旧空间重写以前是 null。 */
+  html: Type.Optional(Nullable(Html)),
   author: Type.Enum(SPACE_AUTHORS),
   subscriptionId: Type.Optional(Nullable(IdSchema)),
   issueNumber: Type.Optional(Nullable(Type.Integer({ minimum: 1 }))),
@@ -136,6 +151,8 @@ export const SpaceRevisionSchema = Type.Object({
   spaceId: IdSchema,
   version: Type.Integer({ minimum: 1 }),
   doc: SpaceDocSchema,
+  genre: Nullable(Type.Enum(SPACE_GENRES)),
+  html: Nullable(Html),
   title: Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS }),
   author: Type.Enum(SPACE_AUTHORS),
   savedAt: IsoTimeSchema,

@@ -126,9 +126,10 @@ export type LineStepView = Static<typeof LineStepViewSchema>;
  * notice：系统发在主线上的通知（《优化清单》第 12 条），origin 是 system，summary 是系统通知里那一句。
  * welcome：建账号成功时 Plasticine 在主线上打的招呼（2026-11-08《首次使用流程》）：固定文案、不调模型；text 是那句话，
  * starts 是下面三个能点的「开始」，origin 是 null（和回答一样是 Plasticine 说的，不是他说的）。
+ * letter：来信（第 8 批第 6 条）：个人回顾写成来信后 Plasticine 在主线说的一句，下面带来信卡（letter）。
  */
 export const LINE_MESSAGE_ROLES = ['user', 'assistant', 'toolResult', 'lineReport', 'lineSummary', 'notice',
-  'welcome'] as const;
+  'welcome', 'letter'] as const;
 export const LineMessageRoleSchema = Type.Enum(LINE_MESSAGE_ROLES);
 
 export const LineMessageViewSchema = Type.Object({
@@ -171,6 +172,8 @@ export const LineMessageViewSchema = Type.Object({
    * 也没有。
    */
   starts: Type.Optional(Type.Array(WelcomeStartSchema)),
+  /** letter 那一条下面的来信卡：点了打开那封信。别的角色没有这一项；旧客户端缓存里也没有。 */
+  letter: Type.Optional(Type.Object({ spaceId: IdSchema, title: Type.String() }, STRICT)),
   createdAt: IsoTimeSchema,
 }, STRICT);
 export type LineMessageView = Static<typeof LineMessageViewSchema>;

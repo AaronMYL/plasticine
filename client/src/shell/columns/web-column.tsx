@@ -1,12 +1,15 @@
-// 网页栏目的第二栏：竖排标签（《优化清单》第 2 条，11-07 设计稿 Web；参考 Arc、Edge）。从上到下：搜标签、置顶（一排
-// 图标，四个一行）、分组（组标题点了整组收起展开，有高度动画）、今天打开的；最底下「新标签」。
+// 网页栏目的第二栏：竖排标签（《优化清单》第 2 条，11-07 设计稿 Web；参考 Arc、Edge）。从上到下：搜标签、书签一节
+// （第 8 批第 1 条，11-09：书签和标签分开，web-bookmarks.tsx）、一道细线、置顶（一排图标，四个一行）、分组（组标题点了
+// 整组收起展开，有高度动画）、今天打开的；最底下「新标签」。
 // 一行：网站首字母小方块 + 标题，当前那一个是 --bg 底加细线、行尾 ×。拖动排序、拖进分组、拖到置顶（web-tab-drag.ts），
-// 右键出菜单（web-tab-menu.tsx）。搜标签时下面换成一张平的结果：开着的标签、关掉的（点了重开）。
+// 右键出菜单（web-tab-menu.tsx）。搜标签时下面换成一张平的结果：开着的标签、书签、关掉的（点了重开）。
 
 import { useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useLive } from '../../live.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import type { ArchivedTab, WebTab, WebTabGroup } from '../../state/web-tabs.ts';
+import { bookmarkTitle, openTabFor, webBookmarks } from '../../views/bookmarks/bookmark-address.ts';
 import { Collapse } from '../collapse.tsx';
 import { FlipList } from '../flip-list.tsx';
 import { hueVar } from '../hue.tsx';
@@ -15,6 +18,7 @@ import { pointAnchor, type PopoverAnchor } from '../popover.tsx';
 import { SiteIcon } from '../site-icon.tsx';
 import { ColumnFoot, ColumnLabel } from './column.tsx';
 import { ColumnCollapseButton } from './column-toggle.tsx';
+import { BookmarkButton, useOpenBookmark, WebBookmarks } from './web-bookmarks.tsx';
 import { useTabDrag } from './web-tab-drag.ts';
 import './web-column.css';
 import { GroupMenu, TabMenu } from './web-tab-menu.tsx';
@@ -46,6 +50,8 @@ export interface WebColumnProps {
 export function WebColumn(props: WebColumnProps): ReactNode {
   const { webTabs } = useClientState();
   const state = useStore(webTabs.store);
+  const bookmarks = webBookmarks(useStore(useLive().bookmarks.data).bookmarks);
+  const openBookmark = useOpenBookmark();
   const root = useRef<HTMLDivElement>(null);
   const drag = useTabDrag(root, webTabs);
   const [query, setQuery] = useState('');
@@ -101,6 +107,8 @@ export function WebColumn(props: WebColumnProps): ReactNode {
   const needle = query.trim().toLowerCase();
   const hits = needle === '' ? []
     : state.tabs.filter((tab) => `${tab.title} ${tab.url}`.toLowerCase().includes(needle));
+  const marked = needle === '' ? [] : bookmarks.filter((bookmark) => `${bookmarkTitle(bookmark)} ${bookmark.target}`
+    .toLowerCase().includes(needle));
   const gone = needle === '' ? [] : state.archived.filter((entry) => `${entry.title} ${entry.url}`.toLowerCase()
     .includes(needle)).slice(0, 20);
   return (
@@ -118,8 +126,19 @@ export function WebColumn(props: WebColumnProps): ReactNode {
       </div>
       {needle !== '' ? (
         <div className="column-scroll">
-          {hits.length === 0 && gone.length === 0 ? <p className="column-note">没找到</p> : null}
+          {hits.length === 0 && marked.length === 0 && gone.length === 0 ? <p className="column-note">没找到</p> : null}
           <ul className="web-tabs">{hits.map((tab) => row(tab.id, false))}</ul>
+          {marked.length === 0 ? null : <>
+            <ColumnLabel>书签</ColumnLabel>
+            <ul className="web-bookmarks-list" aria-label="书签">
+              {marked.map((bookmark) => (
+                <li key={bookmark.id} className="web-bookmark-item">
+                  <BookmarkButton bookmark={bookmark} tab={openTabFor(state.tabs, bookmark.target)}
+                    onOpen={() => openBookmark(bookmark)} />
+                </li>
+              ))}
+            </ul>
+          </>}
           {gone.length === 0 ? null : <>
             <ColumnLabel>关掉的</ColumnLabel>
             <ul className="web-tabs">
@@ -136,6 +155,7 @@ export function WebColumn(props: WebColumnProps): ReactNode {
         </div>
       ) : (
         <div className="column-scroll">
+          <WebBookmarks />
           {state.pinned.length === 0 && drag.dragging === null ? null : (
             <ul className="web-pins" data-drop-pins="" aria-label="置顶"
               data-drop-zone={drag.target?.zone === 'pins'}>

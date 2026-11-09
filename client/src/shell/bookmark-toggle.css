@@ -1,0 +1,29 @@
+/* 地址框里右端的书签按钮（bookmark-toggle.tsx，第 8 批第 1 条，设计稿 Bookmarks）：24 见方，空心 --fg2，收藏了实心 --fg；
+ * 设计稿圆角 6，按方向 I 的圆角档用 4。 */
+.web-address-bookmark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 -4px 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg2);
+  cursor: pointer;
+}
+
+.web-address-bookmark:hover {
+  color: var(--fg);
+}
+
+.web-address-bookmark[aria-pressed='true'] {
+  color: var(--fg);
+}
+
+.web-address-bookmark:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}

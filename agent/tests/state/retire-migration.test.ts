@@ -118,7 +118,8 @@ test('0059–0062：旧对话进主线、关切成待办、产出成笔记，退
         '0094-feed-translations', '0095-video-works', '0098-erase-deleted-memory',
         '0103-archive-self-change-memory', '0104-plasticine-project-goal', '0106-calendar-snapshots',
         '0109-web-tabs', '0110-favicons', '0111-owner-account', '0112-device-local',
-        '0113-feed-source-removed', '0120-note-suggest-thinking']);
+        '0113-feed-source-removed', '0120-note-suggest-thinking',
+        '0121-bookmarks-apart', '0122-space-pages']);
       const said = [1, 2, 3].map((seq) => state.lineMessages.said(`line:line-main:${seq}`));
       assert.deepEqual(said.map((line) => [line?.role, line?.text]), [
         ['user', '帮我看看这周的安排［附件：「周报.pdf」；id：att-1；正文用 attachment_text 读］'],

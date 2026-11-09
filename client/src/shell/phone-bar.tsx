@@ -17,10 +17,13 @@ export interface PhoneBarProps {
   onTab: (tab: PhoneTabId) => void;
 }
 
-/** 手机上整屏给这一页、不画底栏：读书、消息里点开的那一条、工作详情、项目和记忆的只读详情。 */
+/**
+ * 手机上整屏给这一页、不画底栏：读书、打开的报告和来信（第 8 批第 6 条，设计稿 Phone-Report / Phone-Letter：只有返回）、
+ * 消息里点开的那一条、工作详情、项目和记忆的只读详情。
+ */
 export function phoneFullPage(route: Route): boolean {
   if (route.view === 'projects' || route.view === 'memory' || route.view === 'work') return true;
-  if (route.view === 'books' && route.bookId != null) {
+  if (route.view === 'books' && (route.bookId != null || route.spaceId != null)) {
     return true;
   }
   return route.view === 'messages' && (route.contactId != null || route.contactPane === 'requests');

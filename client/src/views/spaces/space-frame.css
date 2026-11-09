@@ -1,0 +1,69 @@
+/* 空间网页（第 8 批第 6 条，设计稿 Report / Report-Edit / Letter / Phone-*）：整页是一个沙盒 iframe，自己滚；来信的
+   信纸色 --bubble 铺满。标题栏右边：「✦ 让 Plasticine 改」「回信」是次按钮，✎ 按下是 --tint2 底，「完成」是主按钮。 */
+
+.space-page[data-genre='report'],
+.space-page[data-genre='letter'] {
+  overflow: hidden;
+}
+
+.space-frame {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: var(--bg);
+}
+
+.space-page[data-genre='letter'],
+.space-page[data-genre='letter'] .space-frame {
+  background: var(--bubble);
+}
+
+.space-ask {
+  gap: 6px;
+  margin-right: 6px;
+}
+
+.space-done {
+  margin-left: 6px;
+}
+
+.space-edit-toggle[aria-pressed='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.space-rename {
+  flex: none;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* 手机（设计稿 Phone-Report / Phone-Letter）：返回、标题、✦ 和 ⋯，没有底栏。 */
+.space-phone-top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 52px;
+  padding: 0 8px;
+}
+
+.space-phone-top .icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.space-phone-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

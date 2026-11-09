@@ -9,8 +9,9 @@ export function issueDate(issue: Pick<IssueBrief, 'createdAt'>, timeZone?: strin
   return `${value('month')}月${value('day')}日`;
 }
 
-/** 第几期；个人回顾是日报 / 周报。 */
-export function issueLabel(issue: Pick<IssueBrief, 'edition' | 'issueNumber'>): string {
+/** 第几期；个人回顾是来信（11-09 起）、旧版式是日报 / 周报。 */
+export function issueLabel(issue: Pick<IssueBrief, 'edition' | 'issueNumber' | 'genre'>): string {
+  if (issue.genre === 'letter') return '来信';
   if (issue.edition === 'daily') return '日报';
   if (issue.edition === 'weekly') return '周报';
   return `第 ${issue.issueNumber} 期`;
