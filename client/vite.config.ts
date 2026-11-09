@@ -20,11 +20,14 @@ export default defineConfig(({ mode }) => {
     define: { __PLASTICINE_BUILD_ID__: JSON.stringify(buildId),
       __PLASTICINE_BUILT_AT__: JSON.stringify(builtAt) },
     build: { rollupOptions: { input: { main: new URL('./index.html', import.meta.url).pathname,
-      download: new URL('./download.html', import.meta.url).pathname } } },
+      download: new URL('./download.html', import.meta.url).pathname,
+      site: new URL('./site.html', import.meta.url).pathname } } },
     experimental: {
       renderBuiltUrl(filename, context) {
-        // 下载页由中继独立服务；共享 chunk 的相对 import、CSS 的相对字体仍在这个资源前缀下。
-        if (context.hostType === 'html' && context.hostId === 'download.html') return `/download/ui/${filename}`;
+        // 下载页和官网由中继独立服务；共享 chunk 的相对 import、CSS 的相对字体仍在这个资源前缀下。
+        if (context.hostType === 'html' && (context.hostId === 'download.html' || context.hostId === 'site.html')) {
+          return `/download/ui/${filename}`;
+        }
         if (context.hostType === 'css') return { relative: true };
         return undefined;
       },
