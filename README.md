@@ -4,6 +4,7 @@
 
 A personal AI workspace that runs on your own computer or server. Chat, notes, tasks, memory, contacts and messages
 live in your own instance. Mac and Windows get a desktop client; phones use the web app. The UI is Chinese for now.
+Free for personal and noncommercial use under PolyForm Noncommercial 1.0.0; commercial use needs a separate license.
 
 > 早期版本，一份 Plasticine 只有一个主人。欢迎来改，见 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [悬赏](BOUNTIES.md)。
 
@@ -107,4 +108,5 @@ Cyber Hunter 的中心中继是独立服务，不在这个仓库里（见 [docs/
 
 ## 许可证
 
-[AGPL-3.0](LICENSE)。可以自由使用、修改、自己部署；把改过的版本做成网络服务给别人用，要按 AGPL 公开改动。
+[PolyForm Noncommercial 1.0.0](LICENSE)：个人和非营利用途可以免费使用、修改、自己部署、转发（转发时附上协议）。
+商业用途要另外授权，请到 GitHub 联系 [@AaronMYL](https://github.com/AaronMYL)。2026-11-09 以前的版本是按 AGPL-3.0 发的。
