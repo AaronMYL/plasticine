@@ -12,6 +12,7 @@ import { useClientState } from '../state/context.tsx';
 import { LoginView } from '../views/login/login-view.tsx';
 import { suggestedDeviceName } from '../views/onboard/onboard-parts.tsx';
 import { SetupView } from '../views/onboard/setup-view.tsx';
+import { WindowDragStrip } from './window-drag-strip.tsx';
 import { hostLocalGrant } from './host.ts';
 
 type Gate =
@@ -121,10 +122,10 @@ export function SessionGate({ children }: { children: ReactNode }): ReactNode {
     );
   }
   if (gate.status === 'setup') {
-    return <SetupView onSignedIn={onSignedIn} />;
+    return <><WindowDragStrip /><SetupView onSignedIn={onSignedIn} /></>;
   }
   if (gate.status === 'signed-out') {
-    return <LoginView account={gate.account} onSignedIn={onSignedIn} />;
+    return <><WindowDragStrip /><LoginView account={gate.account} onSignedIn={onSignedIn} /></>;
   }
   return children;
 }

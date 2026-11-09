@@ -16,6 +16,23 @@ body,
   margin: 0;
 }
 
+/*
+ * 桌面客户端（Electron）：每一页都至少报一块拖动区域。Chromium 只在区域「变了」时才告诉窗口，新页面一块都没有就不报，
+ * 窗口还按上一页（开始页）的拖动区域截鼠标：Windows 上第一次建账号、连模型那几页点不动，只能按 Tab（11-09）。
+ * 根上标 no-drag 不影响别处：标题栏的 drag、按钮的 no-drag 在文档里排在后面，照样生效。
+ */
+html {
+  -webkit-app-region: no-drag;
+}
+
+/* 桌面客户端里没有标题栏的那几页（建账号、登录、连模型）：最上面一条能拖窗口，和标题栏一样高。 */
+.window-drag-strip {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 44px;
+  -webkit-app-region: drag;
+}
+
 body {
   background: var(--bg);
   color: var(--fg);

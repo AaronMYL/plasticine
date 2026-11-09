@@ -10,6 +10,7 @@ import { useLive } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { TooltipLayer } from '../../shell/tooltip.tsx';
+import { WindowDragStrip } from '../../shell/window-drag-strip.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { Spinner } from '../lines/line-parts.tsx';
 import { useFirstRun } from '../onboard/first-run.ts';
@@ -111,7 +112,7 @@ export function ConnectGate({ children }: { children: ReactNode }): ReactNode {
   }, [nothing]);
   // 读到「一家都没连」的那一次渲染就给连接页（不等 effect），免得后面的门先挂上一下。
   if (connecting || nothing) {
-    return <ConnectPage onReady={() => setConnecting(false)} />;
+    return <><WindowDragStrip /><ConnectPage onReady={() => setConnecting(false)} /></>;
   }
   // 第一次的流程里，没读完连接状态前不先放后面的第 3 步出来（不然第 2 步还没出就跳过去了）。
   if (firstRun && !data.loaded && data.error === null) {

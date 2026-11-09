@@ -22,11 +22,11 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--sans);
     font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
-  /* 空白处能拖窗口；Mac 交通灯在左上，Windows 的窗口按钮（titleBarOverlay，138 × 32）在右上：内容只在中间，
-     上下各留出顶栏那么高，窄窗口也不压着它们。 */
-  body { display: flex; align-items: center; justify-content: center; padding: 48px 24px;
-    -webkit-app-region: drag; user-select: none; }
-  main { -webkit-app-region: no-drag; }
+  /* 最上面一条（和标题栏一样高）能拖窗口；Mac 交通灯在左上，Windows 的窗口按钮（titleBarOverlay，138 × 32）在右上：
+     内容只在中间，上下各留出顶栏那么高，窄窗口也不压着它们。拖动区只放顶上这一条（11-09）：以前整个空白处都能拖，
+     换到界面以后 Windows 上还按这一页的区域截鼠标，建账号那页点不动。 */
+  body { display: flex; align-items: center; justify-content: center; padding: 48px 24px; user-select: none; }
+  .drag { position: fixed; inset: 0 0 auto; height: 44px; -webkit-app-region: drag; }
   section { display: flex; flex-direction: column; gap: 20px; width: 400px; max-width: 100%;
     animation: enter 180ms ease-out; }
   section.wide { width: 640px; }
@@ -84,6 +84,7 @@
 </style>
 </head>
 <body>
+<div class="drag" aria-hidden="true"></div>
 <template id="brand">
   <div class="brand"><svg width="26" height="26" viewBox="0 0 16 16" aria-hidden="true"><path class="mark-blob"
     d="M15.17 8.10 C15.12 8.66 15.00 9.23 14.85 9.76 C14.69 10.29 14.48 10.80 14.24 11.28 C14.00 11.77 13.72 12.23
