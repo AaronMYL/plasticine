@@ -336,3 +336,9 @@
     font-size: 16px;
   }
 }
+
+/* 不是第一次用时，连接页最下面能先不连、回到 Plasticine（11-09）。 */
+.ob-later {
+  align-self: center;
+  margin-top: 16px;
+}

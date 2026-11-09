@@ -56,6 +56,29 @@ describe('连接模型', () => {
       .find((item) => item.id === 'openai')?.connected).toBeNull());
   });
 
+  it('用着的时候一家都断开了：连接页能「稍后再连」回去，不会困在这页（11-09）', async () => {
+    await renderApp({ hash: '#/settings/ai' });
+    const connected = await screen.findByRole('list', { name: '连着的提供商' });
+    const chatgpt = within(connected).getByRole('listitem', { name: 'ChatGPT' });
+    fireEvent.click(within(chatgpt).getByRole('button', { name: '管理 ChatGPT' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '断开' }));
+    const confirm = screen.getByRole('alertdialog', { name: '断开 ChatGPT' });
+    fireEvent.click(within(confirm).getByRole('button', { name: '断开' }));
+    const page = await screen.findByRole('main', { name: '连接模型' });
+    fireEvent.click(within(page).getByRole('button', { name: '稍后再连' }));
+    await waitFor(() => expect(screen.queryByRole('main', { name: '连接模型' })).toBeNull());
+  });
+
+  it('连着但一个模型都没启用：不挡在连接页，照常进（设置 · AI 里再选）', async () => {
+    const app = await renderApp({ hash: '#/today' });
+    const value = await app.api.modelProviders.list();
+    await app.api.modelProviders.saveConfig({ requestId: 'test-none-enabled', version: value.version, purposes: [],
+      enabled: value.providers.filter((item) => item.connected !== null)
+        .map((item) => ({ provider: item.id, models: [] })) });
+    expect(await screen.findByRole('heading', { name: HOME_HEADING })).toBeTruthy();
+    expect(screen.queryByRole('main', { name: '连接模型' })).toBeNull();
+  });
+
   it('填 key 连上的那家只露 key 的最后 4 位', async () => {
     const app = await renderApp({ hash: '#/settings/ai' });
     await app.api.modelProviders.setKey('deepseek', 'r-key', 'sk-test-value-7q2w');

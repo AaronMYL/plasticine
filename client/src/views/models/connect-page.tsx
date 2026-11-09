@@ -5,7 +5,7 @@
 // 读不到连接状态时不挡（照常进），各处自己报错。
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { ModelProviderView } from '../../api/shared.ts';
+import { DEFAULT_THINKING, type ModelProviderView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
@@ -43,7 +43,16 @@ function LoginWatcher({ provider, onDone, onCancel, cancelRef }: { provider: Mod
   );
 }
 
-export function ConnectPage({ onReady }: { onReady: () => void }): ReactNode {
+/** 连上以后还没有能用的默认模型（这家的模型一个都没启用）：先用这家的第一个，免得进去了也用不了。 */
+async function ensureDefault(live: ReturnType<typeof useLive>, provider: ModelProviderView): Promise<void> {
+  const value = live.models.store.get().value;
+  const model = value?.providers.find((item) => item.id === provider.id)?.models[0] ?? provider.models[0];
+  if (value === null || value.effective !== null || model === undefined) return;
+  await live.models.choose({ provider: provider.id, model: model.id, thinking: DEFAULT_THINKING });
+}
+
+export function ConnectPage({ onReady, onClose }: { onReady: () => void; onClose?: (() => void) | undefined }):
+  ReactNode {
   const live = useLive();
   const data = useStore(live.models.store);
   const firstRun = useFirstRun();
@@ -82,11 +91,16 @@ export function ConnectPage({ onReady }: { onReady: () => void }): ReactNode {
             <ProviderList providers={providers} onAction={pick} compact pending={pending} />
             {loggingIn === null ? null : <LoginWatcher key={loggingIn.id} provider={loggingIn} onDone={done}
               onCancel={back} cancelRef={cancelRef} />}
+            {onClose === undefined || loggingIn !== null ? null : (
+              <button type="button" className="text-button text-button-quiet ob-later" onClick={onClose}>稍后再连</button>
+            )}
           </>
         ) : null}
         {step.kind === 'key' ? <KeyForm provider={step.provider} onDone={() => setStep({ kind: 'done',
           provider: step.provider })} onBack={back} /> : null}
-        {step.kind === 'done' ? <Connected provider={step.provider} onStart={onReady} onAnother={back}
+        {step.kind === 'done' ? <Connected provider={step.provider} onAnother={back} onStart={() => {
+          void ensureDefault(live, step.provider).finally(onReady);
+        }}
           startLabel={firstRun ? '下一步' : '开始用'} /> : null}
       </div>
       <TooltipLayer />
@@ -94,25 +108,35 @@ export function ConnectPage({ onReady }: { onReady: () => void }): ReactNode {
   );
 }
 
-/** 一家都没连上时先连模型；连上了（或读不到连接状态）照常进。连上之后点「开始用」才进，免得一闪就跳走。 */
+/**
+ * 一家都没连上时先连模型；连上了（或读不到连接状态）照常进。连上之后点「开始用」才进，免得一闪就跳走。
+ * 只看「有没有一家连着」，不看默认模型能不能用：连着却没启用模型，是设置 · AI 里的事，连接页解决不了，挡住就出不来了
+ * （11-09 他在设置里添加提供商后被挡在这页，重启也出不来）。不是第一次用的时候，右上角能关掉先进去。
+ */
 export function ConnectGate({ children }: { children: ReactNode }): ReactNode {
   const live = useLive();
   const data = useStore(live.models.store);
   const firstRun = useFirstRun();
   const [connecting, setConnecting] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   useEffect(() => {
     void live.models.reload();
   }, [live.models]);
   const value = data.value;
-  const nothing = value !== null && value.providers.length > 0 && value.effective === null;
+  const nothing = value !== null && value.providers.length > 0
+    && value.providers.every((provider) => provider.connected === null);
   useEffect(() => {
     if (nothing) {
       setConnecting(true);
     }
   }, [nothing]);
   // 读到「一家都没连」的那一次渲染就给连接页（不等 effect），免得后面的门先挂上一下。
-  if (connecting || nothing) {
-    return <><WindowDragStrip /><ConnectPage onReady={() => setConnecting(false)} /></>;
+  if (!dismissed && (connecting || nothing)) {
+    const leave = firstRun ? undefined : () => {
+      setDismissed(true);
+      setConnecting(false);
+    };
+    return <><WindowDragStrip /><ConnectPage onReady={() => setConnecting(false)} onClose={leave} /></>;
   }
   // 第一次的流程里，没读完连接状态前不先放后面的第 3 步出来（不然第 2 步还没出就跳过去了）。
   if (firstRun && !data.loaded && data.error === null) {
