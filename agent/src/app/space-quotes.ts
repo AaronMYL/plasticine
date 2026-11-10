@@ -18,9 +18,11 @@ export function resolveSpaceQuote(state: StateService, reference: SpaceQuoteRefe
   const selected = normalizeSpaceSelection(anchor.text);
   const rest = paragraphs.slice(anchor.paragraph - 1).map((paragraph) => paragraph.text).join(' ');
   const at = rest.indexOf(selected);
-  if (selected === '' || first === undefined || first.sectionId !== anchor.sectionId || at < 0 || at >= first.text.length) {
+  if (selected === '' || first === undefined || first.sectionId !== anchor.sectionId
+    || at < 0 || at >= first.text.length) {
     throw new ApiError(409, 'space_quote_changed', '引用与该版本的原文位置对不上，请重新选中文字。');
   }
   const kind = revision.genre === 'letter' ? '来信' : '报告';
-  return { label: `${kind} · ${revision.title} · 第 ${anchor.paragraph} 段`, text: anchor.text, spaceReference: reference };
+  return { label: `${kind} · ${revision.title} · 第 ${anchor.paragraph} 段`, text: anchor.text,
+    spaceReference: reference };
 }

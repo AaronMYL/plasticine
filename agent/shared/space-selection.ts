@@ -14,7 +14,8 @@ export function spaceParagraphs(html: string): SpaceParagraph[] {
     if (SKIP.has(node.name)) { return; }
     const section = node.name === 'section' ? attribute(node, 'id') ?? sectionId : sectionId;
     if (TAGS.has(node.name)) {
-      paragraphs.push({ sectionId: section, paragraph: paragraphs.length + 1, text: normalizeSpaceSelection(textOf(node)) });
+      paragraphs.push({ sectionId: section, paragraph: paragraphs.length + 1,
+        text: normalizeSpaceSelection(textOf(node)) });
       return;
     }
     for (const child of node.children) { if (child.kind === 'element') walk(child, section); }

@@ -8,7 +8,8 @@ import { useEffect } from 'react';
 import type { ClientState } from '../state/context.tsx';
 
 export type UnsavedState = Pick<ClientState, 'noteDrafts' | 'conversationUi' | 'outbox' | 'noteOps'> &
-  Partial<Pick<ClientState, 'actionOps' | 'inlineDrafts' | 'editDrafts' | 'signedOps' | 'attachments' | 'conversations'>>;
+  Partial<Pick<ClientState, 'actionOps' | 'inlineDrafts' | 'editDrafts' | 'signedOps'
+    | 'attachments' | 'conversations'>>;
 
 export function hasUnsavedWork(state: UnsavedState): boolean {
   const composer = state.conversationUi.store.get();

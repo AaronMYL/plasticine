@@ -10,7 +10,8 @@ const NullableDate = Type.Union([IsoTimeSchema, Type.Null()]);
 const MateInput = Type.Object({ ...MateDraftSchema.properties, lineId: IdSchema }, { additionalProperties: false });
 const MatePatch = Type.Partial(Type.Object({ ...MateDraftSchema.properties, disabledAt: NullableDate },
   { additionalProperties: false }));
-const GroupInput = Type.Object({ ...MateGroupDraftSchema.properties, lineId: IdSchema }, { additionalProperties: false });
+const GroupInput = Type.Object({ ...MateGroupDraftSchema.properties, lineId: IdSchema },
+  { additionalProperties: false });
 const GroupPatch = Type.Partial(MateGroupDraftSchema);
 
 export function createMateStores(context: StoreContext) {

@@ -71,7 +71,8 @@ export function annotationView(annotation: BookAnnotation): BookAnnotationView {
   };
 }
 
-export function insightView(book: BookRecord, kind: BookInsightKind, row: BookInsight | undefined, spaceId: string | null = null): BookInsightView {
+export function insightView(book: BookRecord, kind: BookInsightKind, row: BookInsight | undefined,
+  spaceId: string | null = null): BookInsightView {
   if (row === undefined) {
     return { kind, status: 'none', outline: null, keyPoints: null, dismissedPointIds: [], error: null,
       generatedAt: null, stale: false };

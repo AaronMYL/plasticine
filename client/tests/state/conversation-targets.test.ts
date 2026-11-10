@@ -52,7 +52,8 @@ it('队友草稿也参与离开提醒，确认保存后刷新仍回到原来的�
   const { hasUnsavedWork } = await import('../../src/shell/unsaved-guard.ts');
   const data = new Map<string, string>();
   const storage = { getItem: (key: string) => data.get(key) ?? null,
-    setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
+    setItem: (key: string, value: string) => { data.set(key, value); },
+    removeItem: (key: string) => { data.delete(key); } };
   const first = createClientState({ storage });
   first.conversations.forLine('mate-persist').ui.setDraft('下次继续检查');
   expect(hasUnsavedWork(first)).toBe(true);

@@ -332,7 +332,8 @@ export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
         : context.db.transaction(() => commit(current, { deletedAt: null }, '恢复笔记'));
     },
     folders: createNoteFolders(context, (from, to) => {
-      const rows = context.db.all('SELECT id FROM notes WHERE folder = $folder AND purged_at IS NULL', { folder: from });
+      const rows = context.db.all('SELECT id FROM notes WHERE folder = $folder AND purged_at IS NULL',
+        { folder: from });
       for (const row of rows) { commit(require(String(row['id'])), { folder: to }, '移动文件夹里的笔记'); }
     }),
     importDetails: createNoteImportDetails(context, require),

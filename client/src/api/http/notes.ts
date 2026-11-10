@@ -51,7 +51,8 @@ export class HttpNotes implements NotesApi {
       schema: BatchResponseSchema, what: '批量处理笔记', lostAs: 'uncertain' });
     this.local.emit({ type: 'note.invalidated', noteId: 'folders' });
     for (const item of result.results) if (item.ok) this.local.emit({
-      type: input.action === 'purge' || input.action === 'trash' ? 'note.deleted' : 'note.invalidated', noteId: item.id });
+      type: input.action === 'purge' || input.action === 'trash' ? 'note.deleted' : 'note.invalidated',
+      noteId: item.id });
     return result;
   }
 

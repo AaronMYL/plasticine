@@ -58,7 +58,8 @@ export function createLibraryPurge(context: StoreContext, notes: NoteBodies, boo
     const params = id === undefined ? { exclude: exclude ?? '' } : { id };
     return [
       ...db.all(`SELECT doc, html FROM spaces WHERE ${where}`, params),
-      ...db.all(`SELECT doc, html FROM space_revisions WHERE space_id IN (SELECT id FROM spaces WHERE ${where})`, params),
+      ...db.all(`SELECT doc, html FROM space_revisions
+        WHERE space_id IN (SELECT id FROM spaces WHERE ${where})`, params),
     ].map((row) => `${String(row['doc'] ?? '')}\n${String(row['html'] ?? '')}`).join('\n');
   }
 

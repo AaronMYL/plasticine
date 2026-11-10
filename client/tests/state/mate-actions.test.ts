@@ -9,7 +9,8 @@ import { MateActions } from '../../src/views/mates/mate-actions.ts';
 it('创建结果不确定后重载仍用原请求核实，不因换了表单内容建第二位', async () => {
   const data = new Map<string, string>();
   const storage = { getItem: (key: string) => data.get(key) ?? null,
-    setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
+    setItem: (key: string, value: string) => { data.set(key, value); },
+    removeItem: (key: string) => { data.delete(key); } };
   const fake = createFakeApi({ seed: false, streamStepMs: 0 });
   fake.control.session.signInForDevelopment('测试机');
   const hub = new EventsHub(fake.api.events);

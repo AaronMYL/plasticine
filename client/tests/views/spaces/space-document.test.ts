@@ -24,7 +24,8 @@ describe('报告', () => {
     const prepared = prepareSpace({ html, genre: 'report', title: '报告', dateLabel: '' });
     const numbered = [...frameBody(prepared.body).querySelectorAll<HTMLElement>('[data-qp]')];
     expect(numbered.map((element) => ({ paragraph: Number(element.dataset.qp),
-      sectionId: element.closest('section[id]')?.id ?? null, text: element.textContent }))).toEqual(spaceParagraphs(html));
+      sectionId: element.closest('section[id]')?.id ?? null, text: element.textContent })))
+      .toEqual(spaceParagraphs(html));
   });
   it('能改的字编号，图表和数字条不编；结论大标题在最上，3 节以上配目录（data-toc 是目录里的名字）', () => {
     const prepared = prepareSpace({ html: REPORT, genre: 'report', title: '周报', dateLabel: '' });

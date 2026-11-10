@@ -41,7 +41,9 @@ export class FakeMates implements MatesApi {
     const at = this.deps.now().toISOString();
     const mate = { ...draft, id, lineId, version: 1, createdAt: at, updatedAt: at, disabledAt: null };
     this.rows.set(id, mate);
-    if (previousLineId === undefined) this.deps.lines.put(this.deps.lines.blank(lineId, 'side', draft.name, { mateId: id }));
+    if (previousLineId === undefined) {
+      this.deps.lines.put(this.deps.lines.blank(lineId, 'side', draft.name, { mateId: id }));
+    }
     else this.deps.lines.change(lineId, { mateId: id, title: draft.name });
     return structuredClone(mate);
   }
@@ -125,7 +127,9 @@ export class FakeMates implements MatesApi {
     this.deps.session.require();
     return this.deps.receipts.run('save', input.requestId, 'POST /v2/mates/legacy/convert', () => {
       const line = this.deps.lines.find(input.lineId);
-      if (line === undefined || line.kind !== 'side' || line.mateId != null || line.mateGroupId != null) throw missing();
+      if (line === undefined || line.kind !== 'side' || line.mateId != null || line.mateGroupId != null) {
+        throw missing();
+      }
       if (input.action === 'mate') {
         if (input.draft === undefined) throw invalid('请先确认队友的名字和职责。');
         return { lineId: line.id, mate: this.add(input.draft, line.id) };

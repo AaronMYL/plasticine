@@ -24,7 +24,8 @@ import { NOTE_IMAGE_MAX_BYTES } from './notes-workspace.ts';
 const STRICT = { additionalProperties: false };
 
 export const WEB_PAGE_TOOLS = [
-  'find', 'zoom', 'capture', 'capture_full', 'print', 'circle', 'thumbnail', 'downloads', 'perceive', 'extract_marks', 'extract_images',
+  'find', 'zoom', 'capture', 'capture_full', 'print', 'circle', 'thumbnail', 'downloads', 'perceive',
+  'extract_marks', 'extract_images',
 ] as const;
 export type WebPageToolName = (typeof WEB_PAGE_TOOLS)[number];
 

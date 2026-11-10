@@ -123,7 +123,11 @@ test('视频共用的流式公网读取保持字节上限和逐跳防护', async
     const spec = { accept: '*/*', types: null, maxBytes: 700 * 1024, timeoutMs: 2000, userAgent: 'test' };
     let chunks = 0;
     const bytes = await fetcher.read(`${served.url}/huge-stream`, spec, new AbortController().signal,
-      async (data) => { let size = 0; for await (const chunk of data) { chunks += 1; size += chunk.length; } return size; });
+      async (data) => {
+        let size = 0;
+        for await (const chunk of data) { chunks += 1; size += chunk.length; }
+        return size;
+      });
     assert.equal(bytes, 600 * 1024);
     assert.ok(chunks > 1);
     await rejects(fetcher.read(`${served.url}/huge-stream`, { ...spec, maxBytes: 50 },

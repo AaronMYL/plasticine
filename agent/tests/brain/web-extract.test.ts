@@ -9,7 +9,8 @@ beforeEach(async () => { t = await openTestState(); });
 afterEach(async () => { await t.cleanup(); });
 const input = { url: 'https://example.com/walk#section', title: '城市散步',
   text: '导航\n城市散步\n先沿河走，再进公园。\n广告推荐内容。\n回程走另一条路。',
-  totalChars: 42, truncated: false, images: [{ url: 'https://example.com/river.png', alt: '河边小路', afterText: '先沿河走，再进公园。' }] };
+  totalChars: 42, truncated: false,
+  images: [{ url: 'https://example.com/river.png', alt: '河边小路', afterText: '先沿河走，再进公园。' }] };
 const answer = JSON.stringify({ keptBlocks: [0, 2], points: [{ text: '沿河进入公园', block: 0, quote: '先沿河走，再进公园。' }] });
 const signal = () => new AbortController().signal;
 

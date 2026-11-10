@@ -10,7 +10,8 @@ const INDEX = 'plasticine.line-composers';
 function lineStorage(storage: KeyValueStorage | null, lineId: string): KeyValueStorage | null {
   if (storage === null) return null;
   const prefix = `${INDEX}:${encodeURIComponent(lineId)}:`;
-  return { getItem: (key) => storage.getItem(prefix + key), setItem: (key, value) => storage.setItem(prefix + key, value),
+  return { getItem: (key) => storage.getItem(prefix + key),
+    setItem: (key, value) => storage.setItem(prefix + key, value),
     removeItem: (key) => storage.removeItem(prefix + key) };
 }
 
@@ -20,7 +21,8 @@ export class ConversationRegistry {
   private readonly entries = new Map<string, LineComposerState>();
   private readonly ops: ActionOps;
   private readonly storage: KeyValueStorage | null;
-  constructor(ui: ConversationUi, attachments: AttachmentDrafts, ops: ActionOps, storage: KeyValueStorage | null = null) {
+  constructor(ui: ConversationUi, attachments: AttachmentDrafts, ops: ActionOps,
+    storage: KeyValueStorage | null = null) {
     this.ops = ops;
     this.storage = storage;
     this.watch(MAIN_LINE_ALIAS, { ui, attachments });
