@@ -12,7 +12,7 @@ import { PlasticineMark } from './plasticine-mark.tsx';
 import { MenuItem, Popover, anchorOf, type PopoverAnchor } from './popover.tsx';
 import { RAIL_GROUPS, SECTIONS, type SectionId } from './sections.ts';
 
-export type NewKind = 'side' | 'note' | 'tab' | 'ask';
+export type NewKind = 'mate' | 'note' | 'tab' | 'ask';
 
 /** 连接不好时头像角上那个灯悬停写的字（连着时不画灯）。 */
 const CONNECTION_TEXT: Readonly<Record<ConnectionStatus, string>> = {
@@ -38,7 +38,7 @@ export interface RailProps {
 const NEW_ITEMS: ReadonlyArray<{ kind: NewKind; label: string; icon: 'conversation' | 'notes' | 'globe' | 'sparkle' }>
   = [
     { kind: 'ask', label: '跟 Plasticine 说', icon: 'sparkle' },
-    { kind: 'side', label: '新旁聊', icon: 'conversation' },
+    { kind: 'mate', label: '添加队友', icon: 'conversation' },
     { kind: 'note', label: '新笔记', icon: 'notes' },
     { kind: 'tab', label: '新标签', icon: 'globe' },
   ];

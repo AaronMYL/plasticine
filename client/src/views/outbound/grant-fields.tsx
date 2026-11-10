@@ -46,7 +46,8 @@ export function GrantFields({ value, onChange, choices, disabled = false, lockAc
       {value.actor === MAIN_ACTOR ? 'P' : actorLabel(value.actor, actors).slice(0, 1)}</span>
       {actorLabel(value.actor, actors)}</span>, <label>发送者<select className="field-input" aria-label="发送者"
         value={value.actor} disabled={disabled} onChange={(event) => patch({ actor: event.target.value })}>
-        {actors.map((actor) => <option key={actor.id} value={actor.id}>{actor.label}</option>)}
+        {actors.filter((actor) => !actor.disabled || actor.id === value.actor).map((actor) =>
+          <option key={actor.id} value={actor.id} disabled={actor.disabled}>{actor.label}</option>)}
       </select></label>)}
     {row('account', '平台账号', `${channelLabel(value.channel)} · ${value.account}`,
       <><label>渠道<input className="field-input" aria-label="渠道" value={value.channel} disabled={disabled}

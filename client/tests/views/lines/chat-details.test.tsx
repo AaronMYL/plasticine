@@ -126,14 +126,13 @@ describe('主线的对话', () => {
 });
 
 describe('旁聊', () => {
-  it('从第二栏顶上开一条新旁聊：换到旁聊，输入框写「在旁聊里接着说」，发出第一句起标题', async () => {
-    await openThread();
+  it('第二栏的新建入口是创建队友，不再直接建立空对话', async () => {
+    const app = await openThread();
     fireEvent.click(within(screen.getByRole('complementary', { name: 'Plasticine' }))
-      .getByRole('button', { name: '新旁聊' }));
-    const box = await screen.findByPlaceholderText('在旁聊里接着说');
-    expect(box).toBeTruthy();
-    send('Arc 的竖排标签怎么做');
-    expect(await screen.findByRole('heading', { name: 'Arc 的竖排标签怎么做' })).toBeTruthy();
+      .getByRole('button', { name: '添加队友' }));
+    expect(screen.getByRole('dialog', { name: '创建队友' })).toBeTruthy();
+    expect((await app.api.mates.list()).legacyChats).toEqual([]);
+    expect(screen.queryByRole('button', { name: '新旁聊' })).toBeNull();
   });
 
   it('从信息流那一条开的旁聊：顶上是那一条（来源、标题、摘要）', async () => {
@@ -143,7 +142,7 @@ describe('旁聊', () => {
     app.control.lines.put({ ...opened.line, topic: { kind: 'feed', ref: 'f1', title: '睡眠中的记忆重放第一次在人脑里被直接测到',
       source: 'bioRxiv', at: '2026-11-05T02:00:00.000Z', excerpt: '颅内电极记录 18 名受试者' } });
     window.location.hash = `#/plasticine/side/${opened.line.id}`;
-    const topic = await screen.findByRole('article', { name: '旁聊围绕的那一条' });
+    const topic = await screen.findByRole('article', { name: '对话来源' });
     expect(within(topic).getByText('睡眠中的记忆重放第一次在人脑里被直接测到')).toBeTruthy();
     expect(within(topic).getByText(/bioRxiv/)).toBeTruthy();
     expect(within(topic).getByText('颅内电极记录 18 名受试者')).toBeTruthy();

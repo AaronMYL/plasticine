@@ -1,4 +1,5 @@
 // 手机从引用和搜索承接同一对象；复制、返回与继续讨论都保留对象身份和阅读位置。
+import { currentComposer } from '../conversation/current-composer.ts';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { Quote } from '../../api/types.ts';
 import { quoteLimitMessage } from '../../api/shared.ts';
@@ -25,7 +26,8 @@ export interface PhoneContentProps {
 
 export function PhoneContent({ route, children, quote = null, ready = true, onBack, navigate }: PhoneContentProps)
   : ReactNode {
-  const { conversationUi, shellPrefs } = useClientState();
+  const targetState = useClientState();
+  const { shellPrefs } = targetState;
   const openPanel = useOpenPanel();
   const history = useRoute();
   const nav = useNavHistory();
@@ -49,9 +51,9 @@ export function PhoneContent({ route, children, quote = null, ready = true, onBa
   };
   const mention = (): void => {
     if (quote === null) return;
-    const limit = quoteLimitMessage([...conversationUi.store.get().quotes, quote]);
+    const limit = quoteLimitMessage([...currentComposer(targetState).ui.store.get().quotes, quote]);
     if (limit !== null) { setError(limit); return; }
-    conversationUi.addQuote(quote);
+    currentComposer(targetState).ui.addQuote(quote);
     shellPrefs.setPhoneChatOpen(true);
   };
   return (

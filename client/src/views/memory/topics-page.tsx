@@ -14,7 +14,7 @@ import type { HueName } from '../../shell/hue.tsx';
 import { AiMark } from '../../shell/glyph.tsx';
 import { Icon, type IconName } from '../../shell/icons.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
-import type { Route } from '../../shell/routes.ts';
+import { mainLineRoute, type Route } from '../../shell/routes.ts';
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
 import { MemorySearch } from './memory-search.tsx';
@@ -155,7 +155,7 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
   const searching = query.trim() !== '';
   return (
     <div className="page memory-topics">
-      <PageHeader title="记忆" phoneSearch={false}
+      <PageHeader title="记忆" phoneSearch={false} onBack={() => navigate(mainLineRoute())}
         controls={<MemorySearch.Field value={query} onChange={setQuery} />} />
       {data.error === null ? null : <p className="block-empty is-error" role="alert">{data.error}</p>}
       {searching ? <MemorySearch.Results query={query} navigate={navigate} /> : list === null

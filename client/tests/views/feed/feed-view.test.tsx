@@ -147,14 +147,13 @@ describe('信息流页', () => {
     expect(app.control.feed.find('f_news')).toMatchObject({ reaction: 'dislike', saved: true });
   });
 
-  it('卡底「讨论」开一条围绕这一条的旁聊（第 17 条），开好了直接过去', async () => {
+  it('卡底讨论把条目放入当前对话框，保留当前页面', async () => {
     const app = await renderApp({ hash: '#/feed', setup: seed });
     await settle();
     fireEvent.click(within(card('多家厂商发布端侧大模型')).getByRole('button', { name: '讨论' }));
-    await waitFor(() => expect(window.location.hash).toMatch(/^#\/plasticine\/side\//));
-    const side = (await app.api.lines.list({ kind: 'side' })).lines[0];
-    expect(side?.title).toBe('讨论：多家厂商发布端侧大模型');
-    expect(side?.topic?.ref).toBe('f_news');
+    expect(window.location.hash).toBe('#/feed');
+    expect(app.state.conversationUi.store.get().quotes[0]?.sourceId).toBe('feed:f_news');
+    expect((await app.api.mates.list()).legacyChats).toEqual([]);
   });
 
   it('关注点的设置：关注点带档位，点「偏少」就改成少', async () => {

@@ -246,7 +246,7 @@ describe('Plasticine 栏目', () => {
   it('主线：对话框和圆球都不出；在记录里找点了才出搜索框；第二栏是主线、旁聊和记忆', async () => {
     await open('#/plasticine');
     const column = screen.getByRole('complementary', { name: 'Plasticine' });
-    expect(within(column).getByRole('link', { name: /^主线/ }).getAttribute('aria-current')).toBe('page');
+    expect(within(column).getByRole('link', { name: 'Plasticine 主线' }).getAttribute('aria-current')).toBe('page');
     expect(within(column).getByRole('link', { name: /^记忆/ })).toBeTruthy();
     const main = screen.getByRole('main');
     expect(within(main).getByRole('heading', { name: '主线' })).toBeTruthy();
@@ -259,15 +259,16 @@ describe('Plasticine 栏目', () => {
     expect(within(main).getByRole('textbox', { name: '在记录里找' })).toBe(document.activeElement);
   });
 
-  it('新旁聊从第二栏顶上开，开好了第二栏里多一条、主区是它；点开一个人，对话框回来', async () => {
+  it('添加队友打开独立表单；切到联系人仍可打开对话框', async () => {
     await open('#/plasticine');
-    const column = (): HTMLElement => screen.getByRole('complementary', { name: 'Plasticine' });
-    fireEvent.click(within(column()).getByRole('button', { name: '新旁聊' }));
-    await waitFor(() => expect(window.location.hash).toMatch(/^#\/plasticine\/side\//));
-    await waitFor(() => expect(within(column()).getAllByRole('link').length).toBeGreaterThan(2));
+    const column = screen.getByRole('complementary', { name: 'Plasticine' });
+    fireEvent.click(within(column).getByRole('button', { name: '添加队友' }));
+    expect(screen.getByRole('dialog', { name: '创建队友' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '关掉创建队友' }));
     act(() => { window.location.hash = '#/messages/c_linyi'; });
     await waitFor(() => expect(screen.getByRole('complementary', { name: '对话框' })).toBeTruthy());
   });
+
 });
 
 describe('消息 · 任务卡', () => {

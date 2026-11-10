@@ -1,0 +1,83 @@
+.mates-roster { display: flex; flex: 1; flex-direction: column; min-height: 0; height: 100%; }
+.mates-roster .column-item { min-height: 46px; }
+.mates-section-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 12px 4px; }
+.mates-section-head h3 { margin: 0; font-size: 12px; font-weight: 500; color: var(--fg2); }
+.mate-avatar { flex: none; font-size: 13px; font-weight: 600; }
+.mate-avatar-stack { display: inline-flex; align-items: center; padding-right: 2px; }
+.mate-avatar-stack .mate-avatar + .mate-avatar { margin-left: -12px; border: 2px solid var(--bg); }
+.mate-working { display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--hue-teal); }
+.mate-state { font-size: 11px; color: var(--fg3); }
+.mates-legacy { padding-top: 24px; }
+.mates-legacy > .text-button { margin-left: 12px; }
+.mates-roster-phone { background: var(--bg); padding: 0 16px; }
+.mates-phone-head { padding: 24px 8px 16px; }
+.mates-phone-head h1 { margin: 0; font-size: 24px; font-weight: 600; }
+.mates-roster-phone .column-item { min-height: 64px; gap: 12px; border-bottom: 1px solid var(--line); }
+.mates-roster-phone .column-item[aria-current='page'] { background: transparent; }
+.mates-roster-phone .column-item-text { font-size: 15px; }
+.mates-roster-phone .column-item-sub { padding-top: 4px; font-size: 12px; }
+.mates-roster-phone .column-foot { display: flex; border-top: 0; padding: 16px 0; }
+.mates-roster-phone .column-foot .column-item { flex: 1; justify-content: center; border-bottom: 0; }
+.mate-editor-layer { position: fixed; inset: 0; z-index: 70; }
+.mate-editor-sheet.sheet-panel { top: 10%; bottom: auto; right: calc(50% - 240px); width: 480px; max-height: 80dvh; }
+.mate-form { display: flex; flex-direction: column; gap: 20px; padding: 20px; }
+.mate-form fieldset { display: flex; flex-direction: column; gap: 20px; margin: 0; padding: 0; border: 0; }
+.mate-form label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--fg2); }
+.mate-form input:not([type='checkbox']), .mate-form textarea, .mate-form select { width: 100%; min-width: 0;
+  border: 1px solid var(--line2); border-radius: 8px; padding: 10px 12px; background: var(--bg); color: var(--fg);
+  font: inherit; font-size: 14px; }
+.mate-form textarea { resize: vertical; }
+.mate-form-identity { display: flex; gap: 16px; align-items: center; }
+.mate-form-identity label { flex: 1; min-width: 0; }
+.mate-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.mate-form-caption { margin: 0; color: var(--fg2); font-size: 12px; }
+.mate-form .mate-check { flex-direction: row; align-items: center; gap: 12px; color: var(--fg); }
+.mate-check input { accent-color: var(--accent); }
+.mate-conversation-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mate-conversation-name h2 { margin: 0; font-size: 15px; line-height: 24px; }
+.mate-conversation-name p { margin: 0; font-size: 12px; color: var(--fg2); }
+.mate-chat-body { display: flex; flex: 1; min-height: 0; position: relative; }
+.mate-chat-body > .conv { min-width: 0; }
+.mate-work-panel { flex: 0 0 280px; overflow-y: auto; padding: 20px 16px; border-left: 1px solid var(--line); }
+.mate-work-panel h3 { margin: 0 0 16px; font-size: 13px; font-weight: 500; color: var(--fg2); }
+.mate-work-person { display: flex; gap: 10px; align-items: center; padding: 12px 0; }
+.mate-work-person strong { font-size: 13px; font-weight: 500; }
+.mate-work-person p { margin: 4px 0 0; color: var(--fg2); font-size: 12px; }
+.mate-work-panel .line-card { margin-bottom: 12px; }
+@media (max-width: 600px) {
+  .mate-form { padding: 16px; }
+  .mate-work-panel { position: absolute; inset: 0; z-index: 5; background: var(--bg); border-left: 0; }
+}
+.dock-target-head { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.dock-target-button { display: flex; align-items: center; gap: 8px; border: 0; padding: 4px 6px;
+  border-radius: 8px; background: transparent; color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
+.dock-target-button:hover { background: var(--tint); }
+.dock-target-button span:not(.mate-avatar) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock-writer { font-size: 11px; color: var(--fg2); white-space: nowrap; }
+.dock-target-error { max-width: 260px; padding: 8px 12px; font-size: 12px; color: var(--err); }
+.mate-report-author { display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  color: var(--fg2); font-size: 12px; }
+.mate-mention-menu { position: absolute; bottom: calc(100% - 8px); left: 0; right: 0; z-index: 8;
+  max-height: 240px; overflow-y: auto; padding: 6px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--layer-float); box-shadow: var(--lift); animation: sheet-in 180ms ease-out; }
+.mate-mention-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--fg); font: inherit; font-size: 13px;
+  text-align: left; cursor: pointer; }
+.mate-mention-menu button[aria-selected='true'] { background: var(--tint); }
+.mate-mention-menu small { display: block; margin-top: 3px; color: var(--fg2); font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .mate-mention-menu { animation: none; } }
+
+.line-input-box { position: relative; }
+.mate-handoff { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: var(--fg2); margin: 8px 0; }
+.mate-handoff-goal { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 4px; }
+
+.mate-group-count { color: var(--fg2); font-size: 12px; margin-right: 12px; }
+
+.mate-handoff > span:not(:last-child) { flex: none; white-space: nowrap; }
+
+.dock-target-section { margin: 12px 10px 4px; font-size: 11px; color: var(--fg3); }
+.dock-target-item { min-height: 38px; min-width: 240px; gap: 10px; }
+
+.mates-soul-route { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.mates-soul-route > .soul-page { flex: 1; height: auto; min-height: 0; }
+.mates-soul-back { display: flex; align-items: center; height: 44px; flex: none; padding: 0 12px; }

@@ -1,7 +1,7 @@
 import type { OutboundGrant, OutboundGrantInput, OutboundLog, OutboundScope } from '../../api/shared.ts';
 
 export const MAIN_ACTOR = 'line-main';
-export interface ActorChoice { id: string; label: string }
+export interface ActorChoice { id: string; label: string; disabled?: boolean }
 export interface BindingChoice { id: string; kind: 'line' | 'schedule' | 'project'; label: string }
 export const SCOPE_LABELS = { once: '仅这一次', task: '这件事期间', always: '一直允许' } as const;
 export const LOG_LABELS: Record<OutboundLog['status'], string> = {

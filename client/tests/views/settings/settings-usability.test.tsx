@@ -61,9 +61,8 @@ it('信息流卡片的操作是有名字的图标按钮，tooltip 就是名字�
   }
   expect(within(row).getByRole('button', { name: '收藏' }).getAttribute('data-tip')).not.toContain('书签');
   fireEvent.click(within(row).getByRole('button', { name: '讨论' }));
-  await waitFor(() => expect(window.location.hash).toMatch(/^#\/plasticine\/side\//));
-  const sides = (await app.api.lines.list({ kind: 'side' })).lines;
-  expect(sides[0]?.topic?.ref).toBe('ui-actions');
+  expect(window.location.hash).toBe('#/feed');
+  expect(app.state.conversationUi.store.get().quotes[0]?.sourceId).toBe('feed:ui-actions');
 });
 
 // 2026-11-08 第 7 批：「日常」那一栏删了（十件事、离开多久算回来、每天回看 11-06 起没有代码在读）；旧链接落到通用的时区。

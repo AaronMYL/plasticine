@@ -12,12 +12,16 @@ export function usePageTitle(): (route: Route) => string {
   const live = useLive();
   const topics = useStore(live.memoryTopics.data);
   useStore(live.bookmarks.data);
+  const roster = useStore(live.mates.data);
   const contacts = useStore(live.contacts.list.data);
   return (route) => {
     if (route.view === 'plasticine' && route.lineId != null) {
-      return live.lines.lineOf(route.lineId)?.title ?? '旁聊';
+      return live.lines.lineOf(route.lineId)?.title ?? '对话';
     }
     if (route.view === 'plasticine') {
+      if (route.plasticineSoul === true) return 'Soul';
+      if (route.mateId != null) return roster.mates.find((mate) => mate.id === route.mateId)?.name ?? '队友';
+      if (route.mateGroupId != null) return roster.groups.find((group) => group.id === route.mateGroupId)?.name ?? '群组';
       return '主线';
     }
     if (route.view === 'notes' && route.noteId !== null) {

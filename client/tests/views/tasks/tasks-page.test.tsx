@@ -77,7 +77,8 @@ describe('任务栏目', () => {
     expect(within(running).getByText('读到第 9 / 14 篇')).toBeTruthy();
     const recent = screen.getByRole('region', { name: '刚做完' });
     expect(within(recent).getByText('没做成：当时还不能新建定时任务')).toBeTruthy();
-    fireEvent.click(within(screen.getByRole('region', { name: '队友' })).getByRole('button', { name: '队友：回顾' }));
+    fireEvent.click(within(screen.getByRole('region', { name: 'Plasticine' }))
+      .getByRole('button', { name: 'Plasticine：回顾' }));
     const sheet = await screen.findByRole('dialog', { name: '回顾' });
     expect(within(sheet).getByText('日报')).toBeTruthy();
     fireEvent.click(within(sheet).getByRole('button', { name: '叫停' }));

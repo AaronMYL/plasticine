@@ -3,10 +3,12 @@
 // Enter 发送、Shift+Enter 换行，中文输入法选字时的 Enter 不发送；手机上回车换行，点发送键发。
 // 草稿、引用片、附件在 state/（对话框收起、换容器、切页回来字都在）。引用片照旧写成引用块放在正文前面。
 
+import { useMateMentions } from '../mates/mate-mentions.tsx';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { LINE_MESSAGE_MAX_CHARS, quoteLimitMessage, type QueuedMessageView } from '../../api/shared.ts';
+import { useClientState } from '../../state/context.tsx';
 import { useLive } from '../../live.tsx';
 import { QuotePreview } from '../../primitives/message/quote-preview.tsx';
 import { Icon } from '../../shell/icons.tsx';
@@ -68,7 +70,7 @@ export interface LineComposerProps {
   lineId: string;
   /** 对话框里（不是消息里那一整页）才有「问这一页」。 */
   askPage: boolean;
-  /** 旁聊：模型按钮改的是旁聊用途（side），占位字写「在旁聊里接着说」。 */
+  /** 非主线的对话；旧记录仍按 side 用途，新队友按自己的配置。 */
   side?: boolean;
 }
 
@@ -84,6 +86,7 @@ function ReplyChip({ author, text, onCancel }: { author: string; text: string; o
 }
 
 export function LineComposer({ lineId, askPage, side = false }: LineComposerProps): ReactNode {
+  const state = useClientState();
   const live = useLive();
   const api = useApi();
   const attachments = useComposerAttachments();
@@ -94,6 +97,15 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
   const ready = drafts.filter((item) => !item.canceled);
   const phone = useViewportWidth() < PHONE_BELOW;
   const input = useRef<HTMLTextAreaElement>(null);
+  const mentions = useMateMentions({ lineId, draft, input, change: (value) => {
+    if (askPage) state.dockTargets.protectCurrent();
+    conversationUi.setDraft(value);
+  } });
+  const roster = useStore(live.mates.data);
+  const mate = roster.mates.find((item) => item.lineId === lineId);
+  const disabledMate = mate?.disabledAt != null;
+  const purpose = mate !== undefined ? mate.purpose ?? 'main'
+    : thread.line?.mateGroupId != null ? 'main' : side ? 'side' : 'main';
   const composing = useRef(false);
   const shortcutId = useId();
   const page = usePageContext(askPage);
@@ -122,7 +134,7 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
     window.addEventListener(FOCUS_COMPOSER_EVENT, focus);
     return () => window.removeEventListener(FOCUS_COMPOSER_EVENT, focus);
   }, []);
-  const canSend = !preparing && !page.blocked && quoteLimit === null && attachments.ready()
+  const canSend = !disabledMate && !preparing && !page.blocked && quoteLimit === null && attachments.ready()
     && (draft.trim() !== '' || quotes.length > 0 || ready.length > 0);
 
   const send = (): void => {
@@ -210,9 +222,14 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
         )}
         <AttachmentChips />
         {askPage ? <PageSource context={page} /> : null}
+        {disabledMate ? <p className="line-note">这位队友已停用，记录仍可查看。</p> : null}
+        {mentions.popup}
         <textarea ref={input} className="line-input" aria-label="问一句" aria-describedby={shortcutId}
-          placeholder={side ? '在旁聊里接着说' : '回复 Plasticine'} rows={1} value={draft}
-          onChange={(event) => conversationUi.setDraft(event.target.value)}
+          aria-controls={mentions.listId}
+          aria-activedescendant={mentions.selectedId} disabled={disabledMate}
+          placeholder={side ? '接着说…' : '回复 Plasticine'} rows={1} value={draft}
+          onChange={(event) => { if (askPage) state.dockTargets.protectCurrent();
+            conversationUi.setDraft(event.target.value); mentions.update(event.target.selectionStart); }}
           onPaste={(event) => {
             const files = Array.from(event.clipboardData.files);
             if (files.length > 0) {
@@ -222,10 +239,10 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
           }}
           onCompositionStart={() => { composing.current = true; }}
           onCompositionEnd={() => { composing.current = false; }}
-          onKeyDown={onKeyDown} />
+          onKeyDown={(event) => { if (!mentions.keyDown(event)) onKeyDown(event); }} />
         <div className="line-input-tools">
           <AttachmentComposer />
-          <ModelPicker purpose={side ? 'side' : 'main'} />
+          <ModelPicker purpose={purpose} />
           <span className="line-input-spacer" />
           {askPage ? <AskPageToggle context={page} /> : null}
           {working ? <StopButton onStop={stop} busy={stopping} large={phone} /> : null}

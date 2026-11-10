@@ -14,7 +14,7 @@ export const PALETTE_GROUPS = [
 export type PaletteGroup = (typeof PALETTE_GROUPS)[number];
 
 export const GROUP_LABELS: Readonly<Record<PaletteGroup, string>> = {
-  space: '空间', side: '旁聊', tab: '标签', bookmark: '书签', note: '笔记', message: '对话', memory: '记忆',
+  space: '空间', side: '队友与群组', tab: '标签', bookmark: '书签', note: '笔记', message: '对话', memory: '记忆',
   feed: '信息流', book: '图书', ask: '让 Plasticine 做',
 };
 

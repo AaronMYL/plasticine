@@ -34,7 +34,7 @@ const SEARCH_DELAY_MS = 150;
 /** 一次要多少条（分组后每组只列几条）。 */
 const SEARCH_LIMIT = 30;
 
-const SCOPE_NOTE = '查标签、书签、旁聊、空间、笔记、和 Plasticine 的对话（主线、旁聊、后台线）、记忆、信息流和图书；'
+const SCOPE_NOTE = '查标签、书签、队友与群组、空间、笔记、对话、记忆、信息流和图书；'
   + '已删除的内容和「不感兴趣」的信息流不查。';
 
 const LEADS: Readonly<Record<Exclude<PaletteGroup, 'tab' | 'bookmark' | 'side' | 'ask'>,

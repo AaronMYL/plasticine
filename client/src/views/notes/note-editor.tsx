@@ -2,6 +2,7 @@
 // 「引用到对话」把选中的字（没选就整篇）放进右侧对话栏的输入框，不切页（《UI 方案》第 9 节）。
 // 删除的 request_id 存在 state/note-ops.ts：回执丢了点「再核实」用同一个标识，服务端回放同一个结果。
 
+import { currentComposer } from '../conversation/current-composer.ts';
 import { AiMark } from '../../shell/glyph.tsx';
 import { isAiFolder, isAiNote } from './ai-folder.ts';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -75,7 +76,8 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
   const telemetry = useTelemetry();
   const timeZone = useTimeZone();
   const openPanel = useOpenPanel();
-  const { conversationUi, noteOps, shellPrefs, notesUi } = useClientState();
+  const targetState = useClientState();
+  const { noteOps, shellPrefs, notesUi } = targetState;
   const { route } = useRoute();
   const saver = useSaver(note);
   const saveState = useStore(saver.state);
@@ -141,14 +143,19 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
     const { from, to } = range ?? editor.state.selection;
     const selected = editor.state.doc.textBetween(from, to, '\n');
     const hasSelection = selected.trim() !== '';
+    const quoteTarget = targetState.dockTargets.store.get().lineId;
+    const composer = currentComposer(targetState);
     setQuoteStatus('正在确认引用版本…');
     await saver.flush();
     if (editor.isDestroyed) return;
+    if (targetState.dockTargets.store.get().lineId !== quoteTarget) {
+      setQuoteStatus('对话对象变了，请重新引用。'); return;
+    }
     if (!saver.readyForRefresh() || !document.eq(editor.state.doc)) {
       setQuoteStatus('正文仍在修改或尚未保存，处理保存状态后再引用。'); return;
     }
     try {
-      conversationUi.addQuote(buildNoteQuote(saver.current(), !hasSelection ? {}
+      composer.ui.addQuote(buildNoteQuote(saver.current(), !hasSelection ? {}
         : { selection: selected, selectionKey: `${from}_${to}` }));
     } catch (cause) { setQuoteStatus(errorText(cause)); return; }
     setQuoteStatus(null);

@@ -4,6 +4,7 @@
 // 四色高亮 · 批注 · 复制），点高亮改它；滚动模式下主区够宽时批注和 Plasticine 标的重点排在页边，否则（和翻页时）
 // 高亮后面一个小角标。进度：翻页时翻完一页记一次，滚动时停下记；服务端停下 2 秒存一次、切走立刻存。
 
+import { currentComposer } from '../conversation/current-composer.ts';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties,
   type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
@@ -105,7 +106,8 @@ export function Reader(props: ReaderProps): ReactNode {
 function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book: BookView }): ReactNode {
   const api = useApi();
   const { chapters, hub } = useLive();
-  const { conversationUi, shellPrefs } = useClientState();
+  const targetState = useClientState();
+  const { shellPrefs } = targetState;
   const annotations = useAnnotations(book.id);
   const keyPoints = useInsight(book.id, 'key_points');
   const deviceLabel = useMemo(currentDeviceLabel, []);
@@ -367,7 +369,8 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
 
   const quoteRange = (from: number, to: number, chapterAt = chapterIndex, text = chapterText.slice(from, to)): void => {
     try {
-      conversationUi.addQuote(buildBookQuote({ bookId: book.id, bookTitle: book.title, chapter: chapterAt,
+      currentComposer(targetState).ui.addQuote(buildBookQuote({ bookId: book.id, bookTitle: book.title,
+        chapter: chapterAt,
         chapterTitle: book.toc[chapterAt]?.title ?? '', start: from, end: to, text }));
       openConversation(shellPrefs, phone);
     } catch (cause) {

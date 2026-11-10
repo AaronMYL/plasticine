@@ -1,11 +1,11 @@
-// Plasticine 栏目的主区（11-07 设计稿 Plasticine-Main / Side / Phone-Plasticine）：主线（#/plasticine）或一条旁聊
-// （#/plasticine/side/<线>）。顶上一行：标题（「主线」或旁聊的标题），右边「在记录里找」（点了在下面出搜索框）和 ⋯；
-// 中间是记录，底下是输入框（这一页本身就是对话，没有「问这一页」；对话框和圆球这时不出）。
-// 电脑上切旁聊、开新旁聊、记忆都在第二栏（plasticine-column.tsx）；手机没有第二栏，顶上点「主线 ⌄」切到旁聊、开新旁聊，
-// 右边是记忆和新旁聊（设计稿 Phone-Plasticine）。
+// Plasticine 主区：电脑默认主线，手机先显示名单；队友与群组分别进入长期对话。
+// 原对话地址继续可读，Soul 是同一栏目里的规则页。
 
+import { SoulPage } from './soul-page.tsx';
+import { PendingOps, useOp } from '../pending/pending-ops.tsx';
+import { MATE_OP_PREFIXES } from '../mates/mate-actions.ts';
 import { useState, type ReactNode } from 'react';
-import { MAIN_LINE_ALIAS, type LineView } from '../../api/shared.ts';
+import { MAIN_LINE_ALIAS } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { Popover, MenuItem, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
@@ -14,10 +14,15 @@ import { useOpenPanel } from '../../shell/panel.ts';
 import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { TitlebarActions, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { mainLineRoute, sideRoute, type Route } from '../../shell/routes.ts';
+import { mainLineRoute, soulRoute, type Route } from '../../shell/routes.ts';
 import { Conversation } from '../conversation/conversation.tsx';
 import { SideUiProvider } from '../lines/conversation-ui-context.tsx';
 import { LineConversation } from '../lines/line-conversation.tsx';
+import { MatesRoster } from '../mates/mates-roster.tsx';
+import { MateEditor, GroupEditor } from '../mates/mate-editor.tsx';
+import { MateAvatar, GroupAvatar } from '../mates/mate-avatar.tsx';
+import { MateWorkPanel } from '../mates/mate-work-panel.tsx';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { messageAuthor } from '../lines/line-origin.ts';
 import './plasticine.css';
 
@@ -61,100 +66,81 @@ function LineSearch({ lineId }: { lineId: string }): ReactNode {
   );
 }
 
-/** 手机顶上「主线 ⌄」：主线、旁聊一条一行（当前的打勾），最下面「新旁聊」。 */
-function ChatSwitch({ current, title, navigate }: { current: string | null; title: string;
-  navigate: (route: Route) => void }): ReactNode {
-  const live = useLive();
-  const list = useStore(live.lines.list);
-  const [menu, setMenu] = useState<PopoverAnchor | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const sides = list.lines.filter((line): line is LineView => line.kind === 'side');
-  const go = (route: Route): void => {
-    setMenu(null);
-    navigate(route);
-  };
-  const create = (): void => {
-    setMenu(null);
-    void live.lines.openSide({}).then((opened) => {
-      if (typeof opened === 'string') setError(opened);
-      else navigate(sideRoute(opened.id));
-    });
-  };
-  return (
-    <>
-      <button type="button" className="thread-switch" aria-label={`${title}，切换对话`} aria-expanded={menu !== null}
-        onClick={(event) => setMenu(anchorOf(event.currentTarget))}>
-        <PlasticineMark size={18} />
-        <span className="thread-switch-title">{title}</span>
-        <Icon name="chevron-down" size={12} />
-      </button>
-      {error === null ? null : <span className="thread-switch-error" role="alert">{error}</span>}
-      {menu === null ? null : (
-        <Popover anchor={menu} role="menu" align="start" label="切换对话" onClose={() => setMenu(null)}>
-          <MenuItem label="主线" checked={current === null} onSelect={() => go(mainLineRoute())} />
-          {sides.map((line) => (
-            <MenuItem key={line.id} label={line.title} checked={current === line.id}
-              onSelect={() => go(sideRoute(line.id))} />
-          ))}
-          <MenuItem icon="plus" label="新旁聊" onSelect={create} />
-        </Popover>
-      )}
-    </>
-  );
-}
-
-/** 手机顶上的 +（设计稿 Phone-Plasticine）：开一条新旁聊。电脑上在第二栏顶上。 */
-function NewSideButton({ navigate }: { navigate: (route: Route) => void }): ReactNode {
-  const live = useLive();
-  return <IconButton icon="plus" size={20} label="新旁聊" onClick={() => {
-    void live.lines.openSide({}).then((opened) => {
-      if (typeof opened !== 'string') navigate(sideRoute(opened.id));
-    });
-  }} />;
-}
-
 export interface PlasticinePageProps {
   route: Route;
   phone: boolean;
   navigate: (route: Route) => void;
 }
 
-export function PlasticinePage({ route, phone, navigate }: PlasticinePageProps): ReactNode {
+export function PlasticinePage(props: PlasticinePageProps): ReactNode {
+  if (props.route.plasticineSoul === true) {
+    return <div className="mates-soul-route">{props.phone ? <header className="mates-soul-back">
+      <IconButton icon="back" label="返回队友列表" onClick={() => props.navigate(mainLineRoute())} />
+    </header> : null}<SoulPage {...(props.route.mateId == null ? {} : { mateId: props.route.mateId })} /></div>;
+  }
+  return <PlasticineChatPage {...props} />;
+}
+
+function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): ReactNode {
   const [finding, setFinding] = useState(false);
   const [menu, setMenu] = useState<PopoverAnchor | null>(null);
   const openPanel = useOpenPanel();
   const live = useLive();
-  const sideId = route.view === 'plasticine' ? route.lineId ?? null : null;
+  const roster = useStore(live.mates.data);
+  const mate = roster.mates.find((item) => item.id === route.mateId
+    || (route.lineId != null && item.lineId === route.lineId));
+  const mateOp = useOp(`mates:update:${mate?.id ?? ''}`);
+  const group = roster.groups.find((item) => item.id === route.mateGroupId
+    || (route.lineId != null && item.lineId === route.lineId));
+  const sideId = mate?.lineId ?? group?.lineId ?? route.lineId ?? null;
+  const [editing, setEditing] = useState(false);
+  const [disabling, setDisabling] = useState(false);
+  const [division, setDivision] = useState(false);
   const side = useStore(live.lines.thread(sideId ?? MAIN_LINE_ALIAS)).line;
-  const title = sideId === null ? '主线' : side?.title ?? '旁聊';
+  const title = mate?.name ?? group?.name ?? (sideId === null ? '主线' : side?.title ?? '对话');
   const topic = sideId === null ? null : side?.topic ?? null;
   const iconSize = phone ? 20 : 16;
   // 桌面客户端里页名在标题栏里、这几个按钮放进标题栏右边（11-08），主区不再画这条顶栏。
   const titled = useInTitlebar();
   const tools = <>
+    {titled && group !== undefined ? <span className="mate-group-count">你和 {group.mateIds.length} 位队友</span> : null}
     {topic?.kind === 'feed' ? <IconButton icon="external" size={iconSize} label="去信息流里的原条目"
       onClick={() => navigate({ view: 'feed', noteId: null, feedItemId: topic.ref })} /> : null}
     {phone ? null : <IconButton icon="search" size={iconSize} label="在记录里找" aria-pressed={finding}
       onClick={() => setFinding((value) => !value)} />}
-    {phone ? <IconButton icon="memory" size={iconSize} label="记忆"
-      onClick={() => navigate({ view: 'memory', noteId: null })} /> : null}
-    {phone ? <NewSideButton navigate={navigate} /> : null}
-    {phone ? null : (
+    {group === undefined ? null : <button type="button" className="text-button"
+      aria-pressed={division} onClick={() => setDivision((value) => !value)}>分工</button>}
+    {(
       <IconButton icon="more" size={iconSize} label="更多" aria-expanded={menu !== null}
         onClick={(event) => setMenu(anchorOf(event.currentTarget))} />
     )}
   </>;
+  if (phone && sideId === null && route.plasticineMain !== true && route.messageId == null
+    && route.mateId == null && route.mateGroupId == null) {
+    return <MatesRoster route={route} navigate={navigate} phone />;
+  }
+  if ((route.mateId != null && mate === undefined) || (route.mateGroupId != null && group === undefined)) {
+    return <p className="block-empty">{roster.status === 'ready' ? '这位队友或群组暂时找不到。' : '正在读…'}</p>;
+  }
   return (
     <div className="messages-plasticine" data-phone={phone} data-side={sideId === null ? undefined : 'true'}>
       {titled ? <TitlebarActions>{tools}</TitlebarActions> : (
         <header className="messages-thread-head">
-          {phone ? <ChatSwitch current={sideId} title={title} navigate={navigate} />
-            : <h2 className="messages-thread-name"><span className="messages-thread-title">{title}</span></h2>}
+          {phone ? <IconButton icon="back" label="返回队友列表" onClick={() => navigate(mainLineRoute())} /> : null}
+          <div className="mate-conversation-name">
+            {mate !== undefined ? <MateAvatar mate={mate} /> : group !== undefined
+              ? <GroupAvatar mates={roster.mates.filter((item) => group.mateIds.includes(item.id))} />
+              : <PlasticineMark size={20} />}
+            <div><h2>{title}</h2>{group === undefined ? null : <p>你和 {group.mateIds.length} 位队友</p>}</div>
+          </div>
           <span className="messages-thread-spacer" />
           {tools}
         </header>
       )}
+      {phone ? <PendingOps label="队友待核实的操作" prefixes={MATE_OP_PREFIXES} visible={() => false}
+        onRetry={(key) => { void live.mateActions.retry(key); }} /> : null}
       {finding ? <LineSearch lineId={sideId ?? MAIN_LINE_ALIAS} /> : null}
+      <div className="mate-chat-body">
       {sideId === null ? <Conversation container="page" /> : (
         <div className="conv conv-page" data-container="page">
           <SideUiProvider lineId={sideId}>
@@ -162,8 +148,28 @@ export function PlasticinePage({ route, phone, navigate }: PlasticinePageProps):
           </SideUiProvider>
         </div>
       )}
+      {group !== undefined && division ? <MateWorkPanel group={group} /> : null}
+      </div>
+      {editing && mate !== undefined ? <MateEditor mate={mate} phone={phone} navigate={navigate}
+        onClose={() => setEditing(false)} /> : null}
+      {editing && group !== undefined ? <GroupEditor group={group} phone={phone} navigate={navigate}
+        onClose={() => setEditing(false)} /> : null}
+      {disabling && mate !== undefined ? <ConfirmDialog title={mate.disabledAt === null ? '停用这位队友？' : '重新启用队友？'}
+        body={mate.disabledAt === null ? '聊天记录会保留，停用后不再接收新任务。' : '这位队友将恢复接收任务。'}
+        busy={mateOp?.status === 'running'} error={mateOp?.error ?? null}
+        confirmLabel={mate.disabledAt === null ? '确认停用' : '重新启用'} onCancel={() => setDisabling(false)}
+        onConfirm={() => { void live.mateActions.update(mate, { disabled: mate.disabledAt === null }).then((result) => {
+          if (result !== null) setDisabling(false);
+        }); }} /> : null}
       {menu === null ? null : (
         <Popover anchor={menu} role="menu" align="end" label="对话的更多操作" onClose={() => setMenu(null)}>
+          {mate === undefined && group === undefined ? null : <MenuItem icon="edit"
+            label={mate === undefined ? '编辑群组' : '编辑队友'}
+            onSelect={() => { setMenu(null); setEditing(true); }} />}
+          {mate === undefined ? null : <MenuItem icon="sparkle" label="编辑 Soul"
+            onSelect={() => { setMenu(null); navigate(soulRoute(mate.id)); }} />}
+          {mate === undefined ? null : <MenuItem label={mate.disabledAt === null ? '停用队友' : '重新启用'}
+            onSelect={() => { setMenu(null); setDisabling(true); }} />}
           {sideId === null ? null : <MenuItem icon="back" label="回到主线" onSelect={() => {
             setMenu(null);
             navigate(mainLineRoute());

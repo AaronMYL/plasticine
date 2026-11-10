@@ -1,3 +1,4 @@
+import { currentComposer } from './current-composer.ts';
 import { useState, type ReactNode } from 'react';
 import { useClientState } from '../../state/context.tsx';
 import { PHONE_BELOW } from '../../shell/layout.ts';
@@ -17,11 +18,13 @@ export interface MentionTarget {
  * （2026-11-04 第 2 批：次要操作收进行尾 ⋯）。
  */
 export function useMention(): (target: MentionTarget) => void {
-  const { conversationUi, shellPrefs } = useClientState();
+  const targetState = useClientState();
+  const { shellPrefs } = targetState;
   const phone = useViewportWidth() < PHONE_BELOW;
   return (target) => {
     const ref = `${target.type}:${target.id}${target.version === undefined ? '' : `@${target.version}`}`;
-    conversationUi.addQuote({ id: `mention:${ref}`, kind: target.type === 'message' ? 'message' : 'object',
+    currentComposer(targetState).ui.addQuote({ id: `mention:${ref}`,
+      kind: target.type === 'message' ? 'message' : 'object',
       sourceId: ref, label: target.label, text: `[${ref}]\n${target.text}` });
     if (phone) { shellPrefs.setPhoneChatOpen(true); }
     else { shellPrefs.setChatOpen(true); }

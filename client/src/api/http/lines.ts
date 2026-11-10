@@ -97,12 +97,12 @@ export class HttpLines implements LinesApi {
 
   openSide(body: OpenSideRequest) {
     return this.transport.request({ method: 'POST', path: SIDE_PATH, body,
-      schema: LineResponseSchema, what: '开旁聊', lostAs: 'uncertain' });
+      schema: LineResponseSchema, what: '打开对话', lostAs: 'uncertain' });
   }
 
   chats(signal?: AbortSignal) {
     return this.transport.request({ method: 'GET', path: CHATS_PATH, schema: ChatsResponseSchema,
-      what: '读旁聊列表', lostAs: 'failed', signal });
+      what: '读取对话列表', lostAs: 'failed', signal });
   }
 }
 

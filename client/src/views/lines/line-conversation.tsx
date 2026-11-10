@@ -6,6 +6,7 @@
 // 想了 / 做了几步，子代理的步骤在它的卡里）；消息之间按时间分隔；悬停一条出表情、回复、更多；往上翻着时来了新消息出
 // 「n 条新消息」；旁聊顶上是它围绕的那一条。
 
+import { MateHandoff } from '../mates/mate-handoff.tsx';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LineView } from '../../api/shared.ts';
 import type { AskView } from '../../api/types.ts';
@@ -13,7 +14,7 @@ import { splitQuotes } from '../../api/quote-text.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { UserMessage } from '../../primitives/message/index.tsx';
 import { Markdown } from '../../primitives/message/markdown.tsx';
-import { QuoteSelection } from '../../primitives/message/quote-selection.tsx';
+import { MateReport } from '../mates/mate-report.tsx';
 import { sideRoute } from '../../shell/routes.ts';
 import { useRoute } from '../../shell/use-route.ts';
 import { useStore } from '../../state/use-store.ts';
@@ -114,18 +115,12 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
       return <TurnView lineId={lineId} turn={item} running={running} cutOff={settled && item.endedOnTool} quiet
         streaming={running ? streaming : ''} onQuote={(seq, text) => onQuote(seq, text, 'Plasticine')} />;
     case 'report':
-      return <MessageRow seq={item.message.seq} author="Plasticine" text={item.message.text}>
-        <div className="line-answer" data-message-seq={item.message.seq}>
-          <QuoteSelection onQuote={(text) => onQuote(item.message.seq, text, 'Plasticine')}>
-            <MessageContent text={item.message.text} />
-          </QuoteSelection>
-          <MessageAttachments ids={item.message.attachments} />
-        </div>
-      </MessageRow>;
+      return <MateReport message={item.message} onQuote={onQuote} />;
     case 'side':
       return <SideLink lineId={item.lineId} title={item.title} />;
     case 'child':
-      return <LineCard line={item.line} stopped={item.line.outcome === 'stopped'} />;
+      return <>{item.line.mateId == null ? null : <MateHandoff line={item.line} />}
+        <LineCard line={item.line} stopped={item.line.outcome === 'stopped'} /></>;
     case 'welcome':
       return <WelcomeMessage lineId={lineId} message={item.message} />;
     case 'letter':
@@ -149,7 +144,7 @@ function SideLink({ lineId, title }: { lineId: string; title: string }): ReactNo
   return (
     <button type="button" className="line-side-link" onClick={() => navigate(sideRoute(lineId))}>
       <Icon name="thread" size={14} />
-      <span className="line-side-kind">旁聊</span>
+      <span className="line-side-kind">对话</span>
       <span className="line-side-title">{title}</span>
       <Icon name="chevron-right" size={12} />
     </button>
@@ -168,7 +163,6 @@ function NewMessages({ count, onJump }: { count: number; onJump: () => void }): 
 function useActionsFor(line: LineView | null, lineId: string): ThreadActions {
   const live = useLive();
   const ui = useConversationUi();
-  const { navigate } = useRoute();
   const data = useStore(live.lines.thread(lineId));
   const id = line?.id ?? lineId;
   return {
@@ -179,11 +173,7 @@ function useActionsFor(line: LineView | null, lineId: string): ThreadActions {
       window.dispatchEvent(new Event(FOCUS_COMPOSER_EVENT));
     },
     react: (seq, emoji, on) => void live.lines.react(lineId, seq, emoji, on),
-    sideFrom: line?.kind !== 'main' ? undefined : (seq) => {
-      void live.lines.openSide({ from: { kind: 'message', lineId: id, seq } }).then((opened) => {
-        if (typeof opened !== 'string') navigate(sideRoute(opened.id));
-      });
-    },
+
   };
 }
 

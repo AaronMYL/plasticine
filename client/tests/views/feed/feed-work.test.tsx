@@ -72,7 +72,7 @@ describe('信息流工作链', () => {
     expect(post.mock.calls[0]?.[1].requestId).toBe(post.mock.calls[1]?.[1].requestId);
     // 第 17 条：「讨论」开一条围绕这一条的旁聊（不再引到主线的输入框）。
     fireEvent.click(within(await row()).getByRole('button', { name: '讨论' }));
-    await waitFor(async () => expect((await app.api.lines.list({ kind: 'side' })).lines[0]?.topic?.ref).toBe('f1'));
+    expect(app.state.conversationUi.store.get().quotes[0]?.sourceId).toBe('feed:f1');
   });
 
   it('旧评论含双方原话且未完成回复保留原因；失败后只重试对应回复', async () => {

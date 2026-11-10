@@ -2,6 +2,7 @@
 // 网页工具条上就不出「文A」。原生层的事件经 window.__plasticineTranslateEvent 进来；设置页存了翻译设置会发
 // TRANSLATE_SETTINGS_CHANGED，这里重新读一遍。
 
+import { currentComposer } from '../views/conversation/current-composer.ts';
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useApi } from '../api/context.tsx';
 import type { PlasticineMacTranslate } from '../api/shared.ts';
@@ -43,18 +44,19 @@ export function WebTranslateProvider({ children, bridge = nativeTranslate() }: {
 }): ReactNode {
   const api = useApi();
   const telemetry = useTelemetry();
-  const { conversationUi } = useClientState();
+  const targetState = useClientState();
   const translator = useMemo(() => (bridge === null ? null : new WebTranslator({
     api: api.translate,
     bridge,
     telemetry,
     ask: (quote) => {
       const source = Array.from(quote.source).slice(0, 40).join('');
-      conversationUi.addQuote({ id: `quote_paragraph_${quote.url}#${source}`, kind: 'object', sourceId: quote.url,
+      currentComposer(targetState).ui.addQuote({ id: `quote_paragraph_${quote.url}#${source}`, kind: 'object',
+        sourceId: quote.url,
         label: `「${quote.title === '' ? quote.url : quote.title}」的一段`, text: paragraphQuoteText(quote) });
       window.__plasticineFocusComposer?.();
     },
-  })), [api, bridge, telemetry, conversationUi]);
+  })), [api, bridge, telemetry, targetState]);
   useEffect(() => {
     if (translator === null) {
       return undefined;

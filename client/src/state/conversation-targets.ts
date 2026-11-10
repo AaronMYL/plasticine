@@ -8,6 +8,9 @@ export interface DockTarget { lineId: string; pageKey: string; pageKind: string;
 /** 记住每类页面手选的对象；作者是默认值，晚到的作者信息不能覆盖本页的手选。 */
 export class DockTargets {
   readonly store = new Store<DockTarget>({ lineId: MAIN_LINE_ALIAS, pageKey: '', pageKind: '', fromWriter: false });
+  readonly error = new Store<string | null>(null);
+  setError(message: string): void { this.error.set(message); }
+  protectCurrent(): void { this.manualPage = this.store.get().pageKey; }
   private readonly choices = new Map<string, string>();
   private readonly storage: KeyValueStorage | null;
   private manualPage: string | null = null;
@@ -25,13 +28,13 @@ export class DockTargets {
   }
   enterPage(pageKey: string, pageKind: string, writerLineId: string | null, available: ReadonlySet<string>): void {
     const current = this.store.get();
-    if (pageKey !== current.pageKey) this.manualPage = null;
+    if (pageKey !== current.pageKey) { this.manualPage = null; this.error.set(null); }
     const manual = this.manualPage === pageKey && available.has(current.lineId);
     const writer = writerLineId !== null && available.has(writerLineId) ? writerLineId : null;
     const remembered = this.choices.get(pageKind);
     const fallback = remembered !== undefined && available.has(remembered) ? remembered : MAIN_LINE_ALIAS;
     const lineId = manual ? current.lineId : writer ?? fallback;
-    const fromWriter = !manual && writer !== null;
+    const fromWriter = manual ? current.fromWriter : writer !== null;
     if (current.lineId !== lineId || current.pageKey !== pageKey || current.pageKind !== pageKind
       || current.fromWriter !== fromWriter) this.store.set({ lineId, pageKey, pageKind, fromWriter });
   }

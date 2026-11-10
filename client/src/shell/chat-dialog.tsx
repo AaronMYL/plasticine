@@ -2,8 +2,7 @@
 // 缩小是右下角 48px 圆球（角标是「等你 n」）；展开是右下角约 420×640 的浮窗：按住顶栏拖动、拖左边 / 上边 / 左上角
 // 调大小，位置和大小记在本机（shell-prefs.ts）。手机上展开是全屏。展开时从圆球的位置「长」成浮窗（clip-path 形变，
 // 260ms），收起时反过来缩回圆球。
-// 2026-11-04 第 2 批（用户定）：对话框跟着当前标签——顶栏写当前标签（图标 + 标题）；「事」不在界面出现，顶上没有事的线、
-// 事列表，也没有关切条和任务折叠那一行。里面就是和 Plasticine 的这一段对话；「问这一页」是输入框里发送左边的开关。
+// 顶栏切换主线、队友或群组；每条对话保留各自的草稿和附件。「问这一页」仍跟随当前页面。
 // 滚动位置、草稿、引用片在 state/ 里，收起再展开、切标签都不变。
 
 import {
@@ -18,7 +17,7 @@ import {
 } from 'react';
 import { clampChatFrame, type ChatFrame } from '../state/shell-prefs.ts';
 import { Conversation } from '../views/conversation/conversation.tsx';
-import { useCurrentTab } from './current-tab-context.ts';
+import { DockTargetSelector } from '../views/mates/dock-target.tsx';
 import { Icon } from './icons.tsx';
 import { IconButton } from './icon-button.tsx';
 import { EASE_OUT, MOTION, canAnimate, play, playThen } from './motion.ts';
@@ -80,19 +79,6 @@ export interface ChatDialogProps {
   frame: ChatFrame;
   onCollapse: () => void;
   onFrame: (frame: ChatFrame) => void;
-}
-
-/** 顶栏：当前标签的图标和标题（没有当前标签时写「Plasticine」），右边缩小。 */
-function ChatHeadTitle(): ReactNode {
-  const tab = useCurrentTab();
-  const icon = tab === null ? 'conversation' : tab.icon ?? (tab.kind === 'web' ? 'globe' : 'file');
-  const title = tab === null || tab.title === '' ? 'Plasticine' : tab.title;
-  return (
-    <p className="chat-head-tab" title={title}>
-      <Icon name={icon} size={14} />
-      <span className="chat-head-title">{title}</span>
-    </p>
-  );
 }
 
 export function ChatDialog(props: ChatDialogProps): ReactNode {
@@ -195,7 +181,7 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
         </>
       )}
       <header className="chat-head" onPointerDown={(event) => begin('move', event)} {...handlers}>
-        <ChatHeadTitle />
+        <DockTargetSelector />
         <IconButton icon={fullscreen ? 'close' : 'collapse'} className="chat-collapse"
           label={fullscreen ? '关上对话' : '缩小对话框'} onClick={collapse} />
       </header>

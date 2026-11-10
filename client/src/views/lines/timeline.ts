@@ -215,7 +215,7 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
       const side = byId.get(message.childLineId);
       turn = null;
       items.push({ kind: 'side', key: `side-${message.seq}`, lineId: message.childLineId, message,
-        title: side?.title ?? message.say?.replace(/^挪到旁聊：/, '') ?? '旁聊' });
+        title: side?.title ?? message.say?.replace(/^挪到旁聊：/, '') ?? '对话' });
     }
     if (message.role === 'toolResult') {
       const id = message.toolCallId;

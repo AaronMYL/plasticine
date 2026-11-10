@@ -1,6 +1,6 @@
 // 信息流的一张卡（第 3 批，用户 11-04 定的瀑布流）：头部是来源——X 用发帖人的头像、订阅和新闻用站点首字方块——名字、
 // 账号 / 站点和时间常显；命中关注点的带陶土橙点 + 关注点名；X 的帖子没有标题，正文就是帖子；有图的大卡、没图的短卡。
-// 卡底 赞 · 收藏 · 讨论（开一条旁聊，第 17 条） · 不感兴趣 · 打开原文，都是有名字的图标按钮，tooltip 就是名字；赞和收藏按下时图标
+// 卡底 赞 · 收藏 · 讨论（引用到当前对话框） · 不感兴趣 · 打开原文，都是有名字的图标按钮，tooltip 就是名字；赞和收藏按下时图标
 // 实心。11-04 他定：整张卡不挂浮框（划过就冒太吵）——来自哪一路由头像 / 站点方块 + 名字说清；挑这条的理由（新闻才有）
 // 收进头部一个 ⓘ 按钮的 tooltip。点了「不感兴趣」，落定后整张卡就地收成一条矮的占位（照 X 的「不再推荐 · 撤销」），
 // 高度平滑过渡；点「撤销」恢复原卡。焦点跟着走：收起时到「撤销」，恢复时回「不感兴趣」。
@@ -18,8 +18,7 @@ import { InfoTip } from '../../shell/info-tip.tsx';
 import { useHeightMorph } from '../../shell/motion.ts';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { usePhone } from '../../shell/use-viewport-width.ts';
-import { sideRoute } from '../../shell/routes.ts';
-import { useRoute } from '../../shell/use-route.ts';
+import { useMention } from '../conversation/mention-button.tsx';
 import { when } from '../notes/note-time.ts';
 import { DouyinMark, FeedChartView, FeedText, FeedVideoBody, videoMeta } from './feed-body.tsx';
 import { RedditMark } from './feed-source-list.tsx';
@@ -153,12 +152,9 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
   // 手机（设计稿 Phone-Feed）写「1 小时前」，电脑照旧写钟点。
   const phone = usePhone();
   const actions = live.feedActions;
-  // 「讨论」开一条围绕这一条的旁聊（《优化清单》第 17 条）：带上这一条的内容，开好了直接过去。
-  const { navigate } = useRoute();
+  const mention = useMention();
   const discuss = (itemId: string): void => {
-    void live.lines.openSide({ from: { kind: 'feed', itemId } }).then((opened) => {
-      if (typeof opened !== 'string') navigate(sideRoute(opened.id));
-    });
+    mention({ type: 'feed', id: itemId, label: item.title, text: item.summary });
   };
   const source = sourceOf(item);
   const hit = item.concernId !== null;

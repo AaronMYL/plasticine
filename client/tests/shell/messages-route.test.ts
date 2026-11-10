@@ -10,7 +10,8 @@ import { MORE_ITEMS, PHONE_TABS, RAIL_GROUPS, SECTIONS, phoneTabOf, sectionOf } 
 describe('地址和栏目', () => {
   it('主线、旁聊、消息、网页标签来回都对得上', () => {
     const mail = `#/messages/${encodeURIComponent('mail:noreply@aliyun.com')}`;
-    for (const hash of ['#/plasticine', '#/plasticine/line%3Al1%3A3', '#/plasticine/side/l2', '#/messages',
+    for (const hash of ['#/plasticine', '#/plasticine/main', '#/plasticine/mate/m1', '#/plasticine/group/g1',
+      '#/plasticine/soul', '#/plasticine/soul/m1', '#/plasticine/line%3Al1%3A3', '#/plasticine/side/l2', '#/messages',
       '#/messages/c_linyi', '#/messages/c_linyi/profile', '#/messages/requests', mail, '#/web', '#/web/t1',
       '#/books/space', '#/books/space/s1']) {
       expect(routeHash(parseHash(hash))).toBe(hash);
@@ -22,10 +23,10 @@ describe('地址和栏目', () => {
   });
 
   it('旧的对话、消息里的 Plasticine、旁聊链接都到 Plasticine 栏目；书签和新标签页到网页', () => {
-    expect(routeHash(parseHash('#/conversation'))).toBe('#/plasticine');
+    expect(routeHash(parseHash('#/conversation'))).toBe('#/plasticine/main');
     expect(routeHash(parseHash('#/conversation/msg_9'))).toBe('#/plasticine/msg_9');
-    expect(routeHash(parseHash('#/conversation/matters/m_1'))).toBe('#/plasticine');
-    expect(routeHash(parseHash('#/messages/plasticine'))).toBe('#/plasticine');
+    expect(routeHash(parseHash('#/conversation/matters/m_1'))).toBe('#/plasticine/main');
+    expect(routeHash(parseHash('#/messages/plasticine'))).toBe('#/plasticine/main');
     expect(routeHash(parseHash('#/messages/plasticine/msg_1'))).toBe('#/plasticine/msg_1');
     expect(routeHash(parseHash('#/messages/plasticine/side/l2'))).toBe('#/plasticine/side/l2');
     expect(routeHash(parseHash('#/bookmarks'))).toBe('#/web');

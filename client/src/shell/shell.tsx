@@ -6,6 +6,9 @@
 // 网页标签在桌面客户端里真开（host.ts 的原生网页标签，use-native-web-tabs.ts）：中间区由原生网页画，垫在主网页下面；
 // 网页版里点标签在新窗口打开。主区里的浮层一次只开一个，遮罩只盖主区。壳不含业务：数据都在视图和 state/ 里。
 
+import { MateEditor } from '../views/mates/mate-editor.tsx';
+import { currentComposer } from '../views/conversation/current-composer.ts';
+import { DockTargetSync } from '../views/mates/dock-target.tsx';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
   from 'react';
 import { useLive } from '../live.tsx';
@@ -41,7 +44,7 @@ import { usePageTitle } from './page-title.ts';
 import { PanelContext, panelTitle, type Panel } from './panel.ts';
 import { MoreDrawer, PhoneBar, phoneFullPage } from './phone-bar.tsx';
 import { Rail, type NewKind } from './rail.tsx';
-import { HOME, parseHash, routeHash, sideRoute, type Route, type ViewId } from './routes.ts';
+import { HOME, parseHash, routeHash, type Route, type ViewId } from './routes.ts';
 import { MainErrorBoundary } from './main-error-boundary.tsx';
 import {
   MORE_ITEMS, SECTIONS, hasColumn, sectionOf, type MoreItemId, type PhoneTabId, type SectionId,
@@ -114,13 +117,15 @@ export function Shell(): ReactNode {
   const { route: linked, navigate } = useRoute();
   const width = useViewportWidth();
   const phone = width < PHONE_BELOW;
-  const { shellPrefs, webTabs, pageSteps, conversationUi } = useClientState();
+  const targetState = useClientState();
+  const { shellPrefs, webTabs, pageSteps } = targetState;
   const prefs = useStore(shellPrefs.store);
   const webState = useStore(webTabs.store);
   const [webBridge] = useState(hostWebTabs);
   const desktopTabs = webBridge !== null;
   const windowChrome = useWindowChrome();
   const [panel, setPanel] = useState<SheetPanel | null>(null);
+  const [newMate, setNewMate] = useState(false);
   const [palette, setPalette] = useState(false);
   const [more, setMore] = useState(false);
   const toggleColumnRef = useRef<(() => void) | null>(null);
@@ -368,7 +373,7 @@ export function Shell(): ReactNode {
     } else if (target.kind === 'bookmark') {
       openBookmark(webTabs, tabActions.openWeb, { title: target.title, target: target.url });
     } else {
-      conversationUi.setDraft(target.text);
+      currentComposer(targetState).ui.setDraft(target.text);
       expandChat();
     }
   };
@@ -376,11 +381,7 @@ export function Shell(): ReactNode {
     if (kind === 'ask') expandChat();
     else if (kind === 'note') go({ view: 'notes', noteId: 'new' });
     else if (kind === 'tab') go({ view: 'web', noteId: null, webTabId: null });
-    else {
-      void live.lines.openSide({}).then((opened) => {
-        if (typeof opened !== 'string') go(sideRoute(opened.id));
-      });
-    }
+    else setNewMate(true);
   };
   const phoneTab = (tab: PhoneTabId): void => {
     if (tab === 'more') setMore(true);
@@ -404,8 +405,10 @@ export function Shell(): ReactNode {
     <NativeWebTabsContext.Provider value={nativeTabs}>
     <WebTranslateProvider>
     <CurrentTabContext.Provider value={current}>
+    <DockTargetSync />
     <PanelContext.Provider value={openPanel}>
     <TitlebarProvider state={titlebar}>
+      {newMate ? <MateEditor phone={phone} navigate={go} onClose={() => setNewMate(false)} /> : null}
       <div className="shell" data-phone={layout.phone} data-section={section}
         data-native-web={webTab !== null && nativeTabs?.showing === true ? 'true' : undefined}
         data-titled={titled ? '' : undefined}

@@ -1,6 +1,6 @@
 // 一条消息上能做的事（《优化清单》第 17 条借鉴 Muse，设计稿 Plasticine-Main）：鼠标停在一条消息上出现表情、回复、
 // 更多三个按钮；表情就是给那一条加一个反应（存下来，显示在那条下面，点了拿掉）；回复把那一条放到输入框上面；
-// 更多里是复制和「挪到旁聊」。对话以外（工作详情里的回答）没有这个上下文，照旧只画正文。
+// 更多里可以复制全文。对话以外（工作详情里的回答）没有这个上下文，照旧只画正文。
 // 复制的是这一条的全文（回复引用的才是第一行摘要）；写进剪贴板后「更多」那颗换成勾、读屏念「已复制到剪贴板」，
 // 和气泡上原来的复制同一个回执样子（copy-message.tsx），停一会儿再换回来；写不进就就地一行原因。
 
@@ -14,8 +14,6 @@ export interface ThreadActions {
   message(seq: number): LineMessageView | undefined;
   reply(seq: number, author: string, text: string): void;
   react(seq: number, emoji: string, on: boolean): void;
-  /** 把这一条拎出去开一条旁聊；主线以外（已经在旁聊里）没有。 */
-  sideFrom?: ((seq: number) => void) | undefined;
 }
 
 const ThreadActionsContext = createContext<ThreadActions | null>(null);
@@ -104,12 +102,7 @@ function HoverBar({ actions, seq, author, text, reactions }: { actions: ThreadAc
             close();
             void copy();
           }} />
-          {actions.sideFrom === undefined ? null : (
-            <MenuItem icon="thread" label="挪到旁聊" onSelect={() => {
-              close();
-              actions.sideFrom?.(seq);
-            }} />
-          )}
+
         </Popover>
       ) : null}
     </div>

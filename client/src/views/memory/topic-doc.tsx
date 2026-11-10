@@ -5,6 +5,7 @@
 // 迁来的行出处是那条约定，「约定 ›」已经说了来源，不再挂「约定」标签。
 // 第 16、19 条（11-06）：行里的 [[名字]] 是双链，点了打开那一篇；页头能改这一篇的档位（公开 / 合作 / 朋友 / 私密）。
 
+import { currentComposer } from '../conversation/current-composer.ts';
 import { useEffect, type ReactNode } from 'react';
 import { HARD_LINES_HEADING, HARD_LINES_NOTE, TIER_LABELS, TIERS } from '../../api/shared.ts';
 import type { MemoryDocLine, MemoryLineSource, MemoryTopicDoc, MemoryTopicView } from '../../api/shared.ts';
@@ -116,7 +117,8 @@ function HardLines({ lines }: { lines: readonly string[] }): ReactNode {
 
 function Body({ doc, navigate, now, phone = false }: { doc: MemoryTopicDoc; navigate: (route: Route) => void;
   now: Date; phone?: boolean; }): ReactNode {
-  const { conversationUi, shellPrefs } = useClientState();
+  const targetState = useClientState();
+  const { shellPrefs } = targetState;
   const look = topicLook(doc.topic);
   const lines = doc.sections.reduce((sum, section) => sum + section.lines.length, 0);
   return (
@@ -132,7 +134,7 @@ function Body({ doc, navigate, now, phone = false }: { doc: MemoryTopicDoc; navi
             </button>
           )}
           <button type="button" className="chip-button" onClick={() => {
-            conversationUi.addQuote(memoryTopicQuote(doc));
+            currentComposer(targetState).ui.addQuote(memoryTopicQuote(doc));
             shellPrefs.setChatOpen(true);
           }}>在对话里提</button>
         </span>

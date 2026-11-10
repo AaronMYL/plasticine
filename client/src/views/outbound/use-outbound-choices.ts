@@ -1,3 +1,5 @@
+import { useLive } from '../../live.tsx';
+import { useStore } from '../../state/use-store.ts';
 import { useEffect, useState } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
@@ -13,6 +15,7 @@ export interface OutboundChoices {
 
 export function useOutboundChoices(): OutboundChoices {
   const api = useApi();
+  const roster = useStore(useLive().mates.data);
   const [choices, setChoices] = useState<OutboundChoices>({ bindings: [],
     actors: [{ id: MAIN_ACTOR, label: 'Plasticine（主线）' }], people: new Map(), loading: true, error: null });
   useEffect(() => {
@@ -39,5 +42,8 @@ export function useOutboundChoices(): OutboundChoices {
     });
     return () => controller.abort();
   }, [api]);
-  return choices;
+  return { ...choices, error: choices.error ?? roster.error,
+    actors: [{ id: MAIN_ACTOR, label: 'Plasticine（主线）' }, ...roster.mates.map((mate) => ({
+      id: mate.id, label: mate.name + (mate.disabledAt === null ? '' : '（已停用）'), disabled: mate.disabledAt !== null,
+    }))] };
 }

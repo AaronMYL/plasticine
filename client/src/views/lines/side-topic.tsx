@@ -17,7 +17,7 @@ export function SideTopic({ topic }: { topic: LineTopic }): ReactNode {
     : ['主线里的一句'];
   const excerpt = topic.excerpt.split('\n').filter((line) => !line.startsWith('原文：')).join('\n');
   return (
-    <article className="line-topic" aria-label="旁聊围绕的那一条">
+    <article className="line-topic" aria-label="对话来源">
       <div className="line-topic-meta text-meta">
         <HueTile icon={topic.kind === 'feed' ? 'feed' : 'conversation'} hue="sky" size={20} />
         <span>{meta.filter((part) => part !== null).join(' · ')}</span>

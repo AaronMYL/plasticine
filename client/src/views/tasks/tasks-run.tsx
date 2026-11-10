@@ -1,6 +1,9 @@
 // 任务栏目「在做」（设计稿 Tasks-Run）：正在跑的线一行一条（动态符号 · 标题 + 项目点 · 在做的那一步 · 已用多久 · 停 · ›）；
 // 队友（第 5 条：每件长期的事一个看得见的执行者，点开看它管什么、能叫停）；刚做完（做成 / 没做成 + 原因）。
 
+import { useStore } from '../../state/use-store.ts';
+import { mateRoute, routeHash } from '../../shell/routes.ts';
+import { MateAvatar } from '../mates/mate-avatar.tsx';
 import type { CSSProperties, ReactNode } from 'react';
 import type { LineView, TaskProjectView, TeammateView } from '../../api/shared.ts';
 import { useTimeZone } from '../../live.tsx';
@@ -49,7 +52,7 @@ function RunRow({ line, project, now }: { line: LineView; project: TaskProjectVi
 function Mate({ mate, onOpen }: { mate: TeammateView; onOpen: (mate: TeammateView) => void }): ReactNode {
   return (
     <li>
-      <button type="button" className="tasks-mate" aria-label={`队友：${mate.name}`} onClick={() => onOpen(mate)}>
+      <button type="button" className="tasks-mate" aria-label={`Plasticine：${mate.name}`} onClick={() => onOpen(mate)}>
         <span className="tasks-mate-face" style={{ '--tile-hue': hueVar(mate.hue) } as CSSProperties}
           aria-hidden="true"><Icon name={timedIcon(mate.icon)} size={17} /></span>
         <span className="tasks-mate-text">
@@ -93,8 +96,9 @@ export interface TasksRunProps {
 
 export function TasksRun({ running, recent, teammates, projects, onMate }: TasksRunProps): ReactNode {
   const now = useNow(running.length > 0);
+  const roster = useStore(useLive().mates.data);
   const projectOf = (id: string | null): TaskProjectView | undefined => projects.find((item) => item.id === id);
-  if (running.length === 0 && recent.length === 0 && teammates.length === 0) {
+  if (running.length === 0 && recent.length === 0 && teammates.length === 0 && roster.mates.length === 0) {
     return <p className="tasks-empty">没有在做的事。</p>;
   }
   return (
@@ -104,9 +108,16 @@ export function TasksRun({ running, recent, teammates, projects, onMate }: Tasks
           {running.map((line) => <RunRow key={line.id} line={line} project={projectOf(line.projectId)} now={now} />)}
         </ul>
       )}
+      {roster.mates.length === 0 ? null : <section className="tasks-section" aria-label="队友">
+        <h2 className="tasks-section-title">队友</h2><ul className="tasks-mates">{roster.mates.map((mate) => (
+          <li key={mate.id}><a className="tasks-mate" href={routeHash(mateRoute(mate.id))}>
+            <MateAvatar mate={mate} size={32} /><span className="tasks-mate-text">
+              <span className="tasks-mate-name">{mate.name}</span><span className="tasks-row-meta">
+                {mate.disabledAt === null ? mate.role : '已停用'}</span></span></a></li>
+        ))}</ul></section>}
       {teammates.length === 0 ? null : (
-        <section className="tasks-section" aria-label="队友">
-          <h2 className="tasks-section-title">队友</h2>
+        <section className="tasks-section" aria-label="Plasticine">
+          <h2 className="tasks-section-title">Plasticine</h2>
           <ul className="tasks-mates">{teammates.map((mate) => <Mate key={mate.id} mate={mate} onOpen={onMate} />)}</ul>
         </section>
       )}

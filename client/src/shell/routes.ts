@@ -42,6 +42,10 @@ export const VIEW_IDS = [
 export type ViewId = (typeof VIEW_IDS)[number];
 
 export interface Route {
+  mateId?: string | null;
+  mateGroupId?: string | null;
+  plasticineMain?: boolean;
+  plasticineSoul?: boolean;
   lineId?: string | null;
   taskId?: string | null;
   groupTaskId?: string | null;
@@ -171,10 +175,7 @@ export function phonePageAvailable(route: Route): boolean {
   if (PHONE_VIEWS.has(route.view)) return true;
   if (route.view === 'tools') return route.tool === '文件';
   if (route.view === 'projects') return route.projectId != null;
-  if (route.view === 'memory') {
-    return route.topicId != null || route.memoryDream === true || route.termId !== undefined
-      || route.objectType !== undefined;
-  }
+  if (route.view === 'memory') return true;
   return false;
 }
 
@@ -247,7 +248,7 @@ export function parseHash(hash: string): Route {
   }
   if (view === 'conversation') {
     // 「事」不在界面出现（2026-11-04）：事的线的旧链接也回到主线。
-    return plasticineRoute(id === 'matters' ? undefined : id, undefined);
+    return id === undefined || id === 'matters' ? mainChatRoute() : plasticineRoute(id, undefined);
   }
   if (view === 'notes' && id !== undefined) {
     return notesRoute(id);
@@ -327,6 +328,15 @@ export function mainLineRoute(messageId: string | null = null): Route {
     : { view: 'plasticine', noteId: null, messageId };
 }
 
+export function mainChatRoute(): Route { return { view: 'plasticine', noteId: null, plasticineMain: true }; }
+export function mateRoute(mateId: string): Route { return { view: 'plasticine', noteId: null, mateId }; }
+export function mateGroupRoute(mateGroupId: string): Route {
+  return { view: 'plasticine', noteId: null, mateGroupId };
+}
+export function soulRoute(mateId: string | null = null): Route {
+  return { view: 'plasticine', noteId: null, plasticineSoul: true, mateId };
+}
+
 /** 一条旁聊（#/plasticine/side/<线 id>）。 */
 export function sideRoute(lineId: string): Route {
   return { view: 'plasticine', noteId: null, lineId };
@@ -339,6 +349,11 @@ export function webRoute(webTabId: string | null): Route {
 
 /** #/plasticine[/<消息引用>]、#/plasticine/side/<线>。 */
 function plasticineRoute(id: string | undefined, sub: string | undefined): Route {
+  const target = sub === undefined ? null : decodedOrNull(sub);
+  if (id === 'main') return mainChatRoute();
+  if (id === 'soul') return soulRoute(target);
+  if (id === 'mate' && target !== null) return mateRoute(target);
+  if (id === 'group' && target !== null) return mateGroupRoute(target);
   if (id === SIDE_SEGMENT) {
     const sideId = sub === undefined ? null : decodedOrNull(sub);
     return sideId === null ? mainLineRoute() : sideRoute(sideId);
@@ -354,7 +369,8 @@ function contactsRoute(id: string | undefined, sub: string | undefined, third?: 
   }
   const contactId = id === undefined ? null : decodedOrNull(id);
   if (contactId === LEGACY_PLASTICINE_THREAD) {
-    return sub === SIDE_SEGMENT ? plasticineRoute(SIDE_SEGMENT, third) : plasticineRoute(sub, undefined);
+    return sub === SIDE_SEGMENT ? plasticineRoute(SIDE_SEGMENT, third)
+      : sub === undefined ? mainChatRoute() : plasticineRoute(sub, undefined);
   }
   if (contactId !== null && sub === 'profile') {
     return messagesRoute(contactId, 'profile');
@@ -416,6 +432,11 @@ function retiredRoute(view: string | undefined, id: string | undefined): Route |
 
 export function routeHash(route: Route): string {
   if (route.view === 'plasticine') {
+    if (route.plasticineSoul === true) return `#/plasticine/soul${route.mateId == null ? ''
+      : '/' + encodeURIComponent(route.mateId)}`;
+    if (route.mateId != null) return `#/plasticine/mate/${encodeURIComponent(route.mateId)}`;
+    if (route.mateGroupId != null) return `#/plasticine/group/${encodeURIComponent(route.mateGroupId)}`;
+    if (route.plasticineMain === true) return '#/plasticine/main';
     if (route.lineId != null) return `#/plasticine/${SIDE_SEGMENT}/${encodeURIComponent(route.lineId)}`;
     return route.messageId == null ? '#/plasticine' : `#/plasticine/${encodeURIComponent(route.messageId)}`;
   }
@@ -444,7 +465,7 @@ export function routeHash(route: Route): string {
     return contactsHash(route);
   }
   if (route.view === 'conversation') {
-    return routeHash(mainLineRoute(route.messageId ?? null));
+    return routeHash(route.messageId == null ? mainChatRoute() : mainLineRoute(route.messageId));
   }
   if (route.view === 'feed' && route.feedItemId != null) {
     return `#/feed/${encodeURIComponent(route.feedItemId)}`;
