@@ -17,7 +17,8 @@ function Changes({ result, onClose }: { result: SpaceToolResult; onClose: () => 
   const phone = useViewportWidth() < PHONE_BELOW;
   const read = useCallback(async (signal: AbortSignal) => {
     const after = (await api.spaces.versions(result.id, result.version, signal)).selected;
-    const before = result.version < 2 ? null : (await api.spaces.versions(result.id, result.version - 1, signal)).selected;
+    const before = result.version < 2 ? null
+      : (await api.spaces.versions(result.id, result.version - 1, signal)).selected;
     const oldText = spaceParagraphs(before?.html ?? '').map((paragraph) => paragraph.text);
     const newText = spaceParagraphs(after?.html ?? '').map((paragraph) => paragraph.text);
     return Array.from({ length: Math.max(oldText.length, newText.length) }, (_, index) => ({

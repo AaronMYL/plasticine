@@ -14,6 +14,7 @@ import { SpaceFrame } from '../spaces/space-frame.tsx';
 import { spaceRoute } from '../spaces/space-links.ts';
 import { letterDate } from '../spaces/space-time.ts';
 import { useLinkedSpace } from '../spaces/use-linked-space.ts';
+import { useSpaceQuote } from '../spaces/space-quote.ts';
 import '../spaces/space-frame.css';
 import './douyin-page.css';
 
@@ -28,6 +29,7 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
   const live = useLive();
   const mention = useMention();
   const { value: space, error, reload } = useLinkedSpace(work.spaceId ?? null);
+  const quote = useSpaceQuote(space);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const process = async (): Promise<void> => {
@@ -54,7 +56,7 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
     </header>
     {error !== null ? <p className="block-empty is-error" role="alert">{error}{' '}
       <button type="button" className="text-button" onClick={reload}>重新读取</button></p>
-      : space?.html != null ? <SpaceFrame className="space-frame" label={space.title} mode="page"
+      : space?.html != null ? <SpaceFrame className="space-frame" label={space.title} mode="page" onQuote={quote}
         space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
           dateLabel: letterDate(space.createdAt) }} />
         : <div className="dy-unprocessed"><h2>{work.title}</h2>

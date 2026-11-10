@@ -5,6 +5,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { SpaceFrame } from '../spaces/space-frame.tsx';
 import { letterDate } from '../spaces/space-time.ts';
 import { useLinkedSpace } from '../spaces/use-linked-space.ts';
+import { useSpaceQuote } from '../spaces/space-quote.ts';
 import '../spaces/space-frame.css';
 
 const KIND_NAMES: Readonly<Record<BookInsightKind, string>> = { outline: '大纲', key_points: '重点' };
@@ -21,6 +22,7 @@ export interface InsightStateProps {
 function InsightContent(props: InsightStateProps & { currentChapter?: number; tools?: ReactNode;
   onPosition: (chapter: number, offset: number) => void }): ReactNode {
   const { value: space, error, reload } = useLinkedSpace(props.insight?.spaceId ?? null);
+  const quote = useSpaceQuote(space);
   const name = KIND_NAMES[props.kind];
   const status = props.insight?.status;
   const failure = props.loadError ?? props.actionError ?? error;
@@ -39,7 +41,7 @@ function InsightContent(props: InsightStateProps & { currentChapter?: number; to
   } else if (status === 'ready' && props.insight?.spaceId == null) {
     body = <p className="block-empty">这份图书笔记已不在资料库中。</p>;
   } else if (space?.html != null) {
-    body = <SpaceFrame className="space-frame bk-insight-frame" label={space.title} mode="page"
+    body = <SpaceFrame className="space-frame bk-insight-frame" label={space.title} mode="page" onQuote={quote}
       space={{ html: space.html, title: space.title, genre: space.genre ?? 'report',
         dateLabel: letterDate(space.createdAt) }}
       {...(props.currentChapter === undefined ? {} : { bookPosition: {
