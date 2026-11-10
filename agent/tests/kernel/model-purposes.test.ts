@@ -30,9 +30,10 @@ async function setup() {
   return { kernel, fakes, state: handle.state };
 }
 
-test('27 个实际用途分别解析：模型和思考各自继承，改主对话不改全局', async () => {
+test('28 个实际用途分别解析：模型和思考各自继承，改主对话不改全局', async () => {
   const { kernel } = await setup();
-  assert.equal(MODEL_PURPOSES.length, 27);
+  assert.equal(MODEL_PURPOSES.length, 28);
+  assert.ok(MODEL_PURPOSES.some((entry) => entry.id === 'web_extract' && entry.label === '网页提取'));
   kernel.configure({ version: kernel.settings().version, purposes: [
     { purpose: 'main', chosen: { model: { provider: 'fake-key', model: 'key-model' }, thinking: null } },
     { purpose: 'note_polish', chosen: { model: null, thinking: 'high' } },
@@ -136,9 +137,9 @@ test('八种笔记动作实际分别选模型，用户高思考不会被动作�
     purpose: `note_${action}`, chosen: { model: { provider: 'fake-key', model: 'key-model' }, thinking: 'high' },
   })) });
   const seen: Array<[string, unknown]> = [];
-  fakes.keyOnly.appendResponses(actions.map(() => (_context, options, _state, model) => {
+  fakes.keyOnly.appendResponses(actions.map((action) => (_context, options, _state, model) => {
     seen.push([model.id, options?.reasoning]);
-    return fauxAssistantMessage('修改后的文字');
+    return fauxAssistantMessage(action === 'interject' ? '[]' : '修改后的文字');
   }));
   const notes = new NoteAssistant(kernelText(kernel));
   for (const action of actions) {

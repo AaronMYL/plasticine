@@ -27,6 +27,10 @@ final class WebPageToolTests: XCTestCase {
         XCTAssertEqual(try tool(["kind": "print"]), .print)
         XCTAssertEqual(try tool(["kind": "downloads"]), .downloads)
         XCTAssertEqual(try tool(["kind": "perceive"]), .perceive)
+        XCTAssertEqual(try tool(["kind": "extract_images"]), .extractImages)
+        XCTAssertEqual(try tool(["kind": "extract_marks", "points": []]),
+                       .extractMarks(points: [], focus: nil, color: nil))
+        XCTAssertThrowsError(try tool(["kind": "extract_marks", "points": [["quote": "", "context": ""]]]))
         XCTAssertThrowsError(try tool(["kind": "find", "query": ""]))
         XCTAssertThrowsError(try tool(["kind": "find", "query": String(repeating: "字", count: 501)]))
         XCTAssertThrowsError(try tool(["kind": "zoom", "factor": 4]))
@@ -50,7 +54,7 @@ final class WebPageToolTests: XCTestCase {
         let source = BridgeScript.source(version: "0.5.0", chrome: WindowChromeState(trafficLightInset: 78,
                                                                                       fullScreen: false))
         XCTAssertTrue(source.contains(#"tools: Object.freeze(["find","zoom","capture","capture_full","print","circle","#
-                                      + #""thumbnail","downloads","perceive"])"#))
+                                      + #""thumbnail","downloads","perceive","extract_images","extract_marks"])"#))
         XCTAssertTrue(source.contains("tool(tabId, tool) { return tabs({ type: 'tool', tabId, tool }); }"))
     }
 }

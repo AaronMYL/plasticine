@@ -75,3 +75,9 @@ test('设置整份存、整份读；坏文件挪走留着，不覆盖', (t) => {
   assert.equal(readFileSync(join(dir, kept), 'utf8'), '{坏了');
   assert.equal(logs.length, 1);
 });
+
+test('测试覆盖目录隔离客户端配置、凭证、回执、更新、日志和本机服务', () => {
+  const paths = desktopPaths('darwin', { home: '/Users/demo', userData: '/tmp/plasticine-test-only' });
+  for (const path of Object.values(paths)) assert.ok(path.startsWith('/tmp/plasticine-test-only'));
+  assert.notEqual(paths.credentials, paths.legacyCredentials);
+});

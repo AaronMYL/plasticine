@@ -11,6 +11,14 @@ struct WebPageToolEnvelope: Decodable, Equatable {
     let backwards: Bool?
     let factor: Double?
     let scope: String?
+    let points: [WebExtractMark]?
+    let focus: Int?
+    let color: String?
+}
+
+struct WebExtractMark: Codable, Equatable {
+    let quote: String
+    let context: String
 }
 
 enum WebPageTool: Equatable {
@@ -25,10 +33,12 @@ enum WebPageTool: Equatable {
     case downloads
     // 第 3 批「问这一页 → 感知整页」：页面结构 + 带编号的元素（page-operate.swift）。
     case perceive
+    case extractImages
+    case extractMarks(points: [WebExtractMark], focus: Int?, color: String?)
 
     /// 这台 Mac 会做的几样，报给网页界面（注入脚本的 webTabs.tools）；和 WEB_PAGE_TOOLS 的名字一致。
     static let supported = ["find", "zoom", "capture", "capture_full", "print", "circle", "thumbnail", "downloads",
-                            "perceive"]
+                            "perceive", "extract_images", "extract_marks"]
     // 和 web-page-tools.ts 的 WEB_FIND_MAX_CHARS、WEB_ZOOM_MIN / MAX、WEB_THUMBNAIL_WIDTH、WEB_IMAGE_MAX_BYTES、
     // WEB_CIRCLE_TEXT_MAX_CHARS 一致。
     static let maxFindChars = 500
@@ -64,6 +74,15 @@ enum WebPageTool: Equatable {
         case "thumbnail": return .thumbnail
         case "downloads": return .downloads
         case "perceive": return .perceive
+        case "extract_images": return .extractImages
+        case "extract_marks":
+            guard let points = envelope.points, points.count <= 12,
+                  points.allSatisfy({ !$0.quote.isEmpty && $0.quote.count <= 1000 && $0.context.count <= 60_000 }),
+                  envelope.focus.map({ (0...11).contains($0) }) ?? true,
+                  (envelope.color?.count ?? 0) <= 150 else {
+                throw WebTabProtocolError.malformed("网页重点格式不对")
+            }
+            return .extractMarks(points: points, focus: envelope.focus, color: envelope.color)
         default: throw WebTabProtocolError.malformed("不认识的工具")
         }
     }

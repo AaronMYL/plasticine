@@ -53,6 +53,7 @@ export const MODEL_PURPOSES = [
   { id: 'memory_compact', label: '记忆合并压缩', group: 'misc', fallback: 'default' },
   { id: 'payment_read', label: '付款截图识别', group: 'misc', fallback: 'default' },
   // 第 6 批第 9 条：视频解析（预览、逐字稿总结、图文读图），对话、后台线和抖音收藏共用。
+  { id: 'web_extract', label: '网页提取', group: 'misc', fallback: 'default' },
   { id: 'video_digest', label: '视频解析', group: 'misc', fallback: 'default' },
 ] as const satisfies readonly PurposeEntry[];
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createServer, type IncomingHttpHeaders, type Server } from 'node:http';
 import { test } from 'node:test';
 import { LinkPreviewFetcher } from '../../src/cloud-tools/link-preview-fetch.ts';
-import { PublicFetchError } from '../../src/cloud-tools/public-fetch.ts';
+import { PublicFetchError, PublicFetcher } from '../../src/cloud-tools/public-fetch.ts';
 import { isPrivateHost } from '../../src/cloud-tools/urls.ts';
 
 async function server() {
@@ -113,5 +113,22 @@ test('非HTML、声明或流式超大页面拒绝，连接与DNS解析都受超�
     await rejects(fetcher.get(`${served.url}/slow`, signal), 'timeout');
     const stuck = new LinkPreviewFetcher({ timeoutMs: 40, resolve: () => new Promise(() => undefined) });
     await rejects(stuck.get('https://page.test/', signal), 'timeout');
+  } finally { close(served.app); }
+});
+
+test('视频共用的流式公网读取保持字节上限和逐跳防护', async () => {
+  const served = await server();
+  try {
+    const fetcher = new PublicFetcher(options());
+    const spec = { accept: '*/*', types: null, maxBytes: 700 * 1024, timeoutMs: 2000, userAgent: 'test' };
+    let chunks = 0;
+    const bytes = await fetcher.read(`${served.url}/huge-stream`, spec, new AbortController().signal,
+      async (data) => { let size = 0; for await (const chunk of data) { chunks += 1; size += chunk.length; } return size; });
+    assert.equal(bytes, 600 * 1024);
+    assert.ok(chunks > 1);
+    await rejects(fetcher.read(`${served.url}/huge-stream`, { ...spec, maxBytes: 50 },
+      new AbortController().signal, async (data) => { for await (const _chunk of data) { /* 消费到限额 */ } }), 'too_large');
+    await rejects(fetcher.read(`${served.url}/inside`, spec, new AbortController().signal,
+      async () => undefined), 'refused');
   } finally { close(served.app); }
 });

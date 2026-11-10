@@ -4,6 +4,7 @@
 
 import type {
   AddMoneyAccountRequest,
+  WebExtractInput, WebExtractView, WebArchiveRequest, WebArchiveView,
   BrowserActionRequest,
   BrowserActionResponse,
   BrowserViewDto,
@@ -92,6 +93,8 @@ export interface FilesApi {
 }
 
 export interface BrowserApi {
+  extract(input: WebExtractInput, signal?: AbortSignal): Promise<WebExtractView>;
+  archive(input: WebArchiveRequest, signal?: AbortSignal): Promise<WebArchiveView>;
   stream(query: BrowserStreamQuery, event: (event: BrowserStreamEvent) => void, error: () => void): () => void;
   ack(input: BrowserAck): Promise<void>;
   tab(input: BrowserTabRequest): Promise<BrowserViewDto>;

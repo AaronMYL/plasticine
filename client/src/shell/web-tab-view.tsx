@@ -26,6 +26,9 @@ import { WebMoreMenu } from './web-more-menu.tsx';
 import { hostLogins } from './host.ts';
 import { openLoginImport } from '../views/settings/login-import-request.ts';
 import { useWebPageActions, type WebPageActions } from './web-page-actions.ts';
+import { useWebExtract } from './use-web-extract.ts';
+import { WebExtractPanel } from './web-extract-panel.tsx';
+import './web-extract.css';
 import { WebReader } from './web-reader.tsx';
 import { WebToolbar, type WebPopoverKind } from './web-toolbar.tsx';
 
@@ -152,6 +155,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
   const nav = native?.nav[tab.id];
   const url = nav?.url === undefined || nav.url === '' ? tab.url : nav.url;
   const title = nav?.title === undefined || nav.title === '' ? tab.title : nav.title;
+  const extract = useWebExtract(tab.id, url, native);
   const actions = useWebPageActions({ tabId: tab.id, url, title }, native, web);
   const frameRef = useFrameReport(reading ? null : native?.setFrame ?? null);
   const openOutside = (): void => {
@@ -223,7 +227,9 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
     <div className="web-tab" aria-label={`网页：${tab.title}`}>
       <WebToolbar tab={tab} url={url} title={title} native={native} leading={leading} open={openKind}
         onToggle={popovers.toggle} circling={actions.circling} onCircle={actions.circle}
-        onBookmarkError={actions.report} />
+        onBookmarkError={actions.report}
+        {...(native?.tools.has('extract_marks') !== true || !native.tools.has('extract_images') ? {} : {
+          onExtract: () => { setReading(false); extract.toggle(); }, extracting: extract.open })} />
       {/* 查找条和那一句浮在网页右上角，不把网页往下推（不跳布局）；盖在原生网页上，报成 hitRegions。 */}
       {(finding && native !== null) || actions.notice !== null ? (
         <div className="web-floats" data-phone={phone} {...{ [HIT_REGION_ATTRIBUTE]: 'web-floats' }}>
@@ -232,7 +238,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
           <NoticeRow actions={actions} web={web} />
         </div>
       ) : null}
-      <div className="web-frame" ref={frameRef}>
+      <div className="web-content"><div className="web-frame" ref={frameRef}>
         {native === null ? (
           <p className="banner web-note">
             <span className="banner-text">网页在桌面客户端里打开；这里在新窗口打开。</span>
@@ -240,6 +246,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
           </p>
         ) : reading ? <WebReader tabId={tab.id} url={url} onExit={() => setReading(false)} /> : null}
       </div>
+      <WebExtractPanel extract={extract} /></div>
       {open?.kind === 'bookmarks' ? <WebBookmarksPopover anchor={open.anchor} onClose={popovers.close} /> : null}
       {open?.kind === 'history' && native !== null ? (
         <WebHistoryPopover anchor={open.anchor} history={native.history} now={now} onClose={popovers.close}

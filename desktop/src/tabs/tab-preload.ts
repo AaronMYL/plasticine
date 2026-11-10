@@ -2,6 +2,7 @@
 // 主进程经 tab:call 叫这里做事（翻译、圈一块、问这一页、DOM 动作），这里经 tab:reply 回；翻译脚本自己发的消息走
 // tab:translate。用户在标签里按下鼠标报 tab:pointer（界面收起非模态浮层）。
 
+import { extractPage, type ExtractPageCommand } from '../../../client/src/mac/extract-page.ts';
 import { ipcRenderer } from 'electron';
 import { circlePage, pageOperate } from 'plasticine:page-scripts';
 import type { TranslateDelivery, TranslatePageConfig } from '../../../agent/shared/api/mac-translate.ts';
@@ -33,6 +34,8 @@ declare global {
 async function run(call: Call): Promise<unknown> {
   const args = call.args;
   switch (call.op) {
+    case 'extract':
+      return extractPage(document, args.command as ExtractPageCommand);
     case 'snapshot':
       return visibleText(document, WEB_PAGE_TEXT_MAX_CHARS);
     case 'read':

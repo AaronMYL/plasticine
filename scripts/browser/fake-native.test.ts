@@ -122,3 +122,13 @@ test('协议外的调用逐条说出原因：同步缺字段、未知命令、�
   }
   assert.equal(nativeCallProblem({ channel: 'plasticineTranslate', method: 'configure', args: ['t1', null] }), null);
 });
+
+test('网页提取的假桥返回图片数组并接收高亮和定位，不冒充实际DOM定位', async () => {
+  const host = install('mac');
+  const tabs = host.plasticineDesktop!.webTabs;
+  assert.deepEqual(JSON.parse(JSON.stringify(await tabs['tool']?.('t1', { kind: 'extract_images' }))), []);
+  const result = await tabs['tool']?.('t1', { kind: 'extract_marks',
+    points: [{ quote: '正文', context: '正文' }], focus: 0 });
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), { marked: 1 });
+  assert.deepEqual(Array.from(host.__plasticineFakeNative.calls).map(nativeCallProblem), [null, null]);
+});

@@ -61,6 +61,9 @@ export async function runTool(tabs: TabViews, tabId: string, tool: WebPageTool):
   }
   const contents = tab.view.webContents;
   switch (tool.kind) {
+    case 'extract_marks':
+    case 'extract_images':
+      return tabs.call(tabId, 'extract', { command: tool });
     case 'find':
       return find(contents, tool.query, tool.backwards);
     case 'find_clear':

@@ -7,6 +7,7 @@
 import type { ReactNode } from 'react';
 import type { WebTab } from '../state/web-tabs.ts';
 import { BookmarkToggle } from './bookmark-toggle.tsx';
+import { Icon } from './icons.tsx';
 import { IconButton } from './icon-button.tsx';
 import { TranslateButton } from './translate-button.tsx';
 import type { NativeWebTabs } from './use-native-web-tabs.ts';
@@ -28,6 +29,8 @@ export interface WebToolbarProps {
   onCircle: () => void;
   /** 书签按钮没成：工具条下面说一句。 */
   onBookmarkError: (text: string) => void;
+  onExtract?: () => void;
+  extracting?: boolean;
 }
 
 export function WebToolbar(props: WebToolbarProps): ReactNode {
@@ -59,6 +62,8 @@ export function WebToolbar(props: WebToolbarProps): ReactNode {
       <WebAddress tab={tab} url={url} native={native} leading={props.leading}
         trailing={<BookmarkToggle url={url} title={props.title} onError={props.onBookmarkError} />} />
       {native === null ? null : <TranslateButton tabId={tab.id} url={url} />}
+      {props.onExtract === undefined ? null : <button type="button" className="secondary-button web-extract-toggle"
+        aria-pressed={props.extracting ?? false} onClick={props.onExtract}><Icon name="edit" />提取</button>}
       <IconButton icon="more" className="web-more" label="更多" {...pressed('more')}
         onClick={(event) => props.onToggle('more', event.currentTarget)} />
     </div>

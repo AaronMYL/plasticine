@@ -37,12 +37,12 @@ function issueOf(kernel: KernelModels, purpose: string): string | null | undefin
   return kernel.settings().purposes.find((item) => item.purpose === purpose)?.issue;
 }
 
-test('登记了旁聊、心跳、做梦、回顾、研究员、视频解析，共 27 个用途', () => {
+test('登记了旁聊、心跳、做梦、回顾、研究员、视频解析，共 28 个用途', () => {
   const ids = MODEL_PURPOSES.map((item) => item.id);
   for (const id of ['side', 'heartbeat', 'dream', 'review', 'researcher']) {
     assert.ok((ids as string[]).includes(id), id);
   }
-  assert.equal(ids.length, 27);
+  assert.equal(ids.length, 28);
   assert.equal(new Set(ids).size, ids.length);
 });
 

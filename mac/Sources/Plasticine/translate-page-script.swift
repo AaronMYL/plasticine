@@ -5,6 +5,99 @@ enum TranslatePageScript {
     static let source = #"""
 (() => {
 if (window.__plasticineTranslator) return;
+// 与翻译一样在标签的独立脚本环境中执行；只标已读取的字，不运行网页指令。
+
+const MARK_ATTRIBUTE = 'data-plasticine-extract';
+const SKIP = 'script,style,noscript,textarea,input,select,[contenteditable="true"],nav,footer,aside';
+const MAX_IMAGES = 12;
+
+function normalized(value        )         { return value.replace(/\s+/g, ' ').trim(); }
+
+function clearMarks(doc          )       {
+  for (const mark of doc.querySelectorAll(`[${MARK_ATTRIBUTE}]`)) {
+    const parent = mark.parentNode;
+    mark.replaceWith(...mark.childNodes);
+    parent?.normalize();
+  }
+}
+
+function textMap(root         , doc          ) {
+  const walker = doc.createTreeWalker(root, 4);
+  const positions                                   = [];
+  let text = '';
+  let next             ;
+  while ((next = walker.nextNode()) !== null) {
+    const node = next        ;
+    if (node.parentElement?.closest(SKIP) !== null) continue;
+    for (let offset = 0; offset < node.data.length; offset += 1) {
+      const char = node.data[offset] ;
+      if (/\s/.test(char)) {
+        if (text === '' || text.endsWith(' ')) continue;
+        text += ' ';
+      } else text += char;
+      positions.push({ node, offset });
+    }
+  }
+  return { text, positions };
+}
+
+function markPoint(doc          , point             , index        , color        )                     {
+  const roots = [...doc.querySelectorAll('article p,main p,[role="main"] p,p,li,h1,h2,h3')];
+  const quote = normalized(point.quote);
+  const context = normalized(point.context);
+  for (const root of roots) {
+    if (root.closest(SKIP) !== null) continue;
+    const mapped = textMap(root, doc);
+    if (context !== '' && !mapped.text.includes(context)) continue;
+    const start = mapped.text.indexOf(quote);
+    if (start < 0) continue;
+    const entries = mapped.positions.slice(start, start + quote.length);
+    const nodes = new Map                                      ();
+    for (const entry of entries) {
+      const previous = nodes.get(entry.node);
+      nodes.set(entry.node, { start: previous?.start ?? entry.offset, end: entry.offset + 1 });
+    }
+    let first                     = null;
+    for (const [node, span] of nodes) {
+      const range = doc.createRange();
+      range.setStart(node, span.start);
+      range.setEnd(node, span.end);
+      const mark = doc.createElement('mark');
+      mark.setAttribute(MARK_ATTRIBUTE, String(index));
+      mark.style.backgroundColor = color;
+      mark.style.color = 'inherit';
+      range.surroundContents(mark);
+      first ??= mark;
+    }
+    return first;
+  }
+  return null;
+}
+
+function extractPage(doc          , command                    )          {
+  if (command.kind === 'extract_images') {
+    const root = doc.querySelector('article,main,[role="main"]') ?? doc.body;
+    const paragraphs = [...root.querySelectorAll('p,h1,h2,h3,li')];
+    return [...root.querySelectorAll('img')].filter((image) => image.closest(SKIP) === null
+      && (image.naturalWidth === 0 || image.naturalWidth >= 80)).flatMap((image) => {
+      const raw = image.currentSrc || image.src || image.dataset['src'] || '';
+      if (!/^https?:\/\//i.test(raw)) return [];
+      const before = paragraphs.filter((paragraph) => Boolean(paragraph.compareDocumentPosition(image) & 4)).at(-1);
+      return [{ url: raw, alt: (image.alt ?? '').slice(0, 500),
+        afterText: normalized(before?.textContent ?? '').slice(-1000) }];
+    }).slice(0, MAX_IMAGES);
+  }
+  clearMarks(doc);
+  let marked = 0;
+  for (const [index, point] of command.points.entries()) {
+    const mark = markPoint(doc, point, index, command.color ?? 'Mark');
+    if (mark === null) continue;
+    marked += 1;
+    if (command.focus === index) mark.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+  }
+  return { marked };
+}
+
 // 沉浸式翻译的切段规则（Mac 0.4.0，第 2 批）：哪些块能整段译、取出原文、判断是不是已经是目标语言。纯函数，只看 DOM，
 // 不改页面。translate-page.ts 用它；scripts/generate-translate-script.ts 把这几份去掉类型后拼成一段注入网页标签。
 // 自足：不引别的值（只能 import type）。
@@ -900,6 +993,7 @@ function browserHost(post                                       )               
     },
   };
 }
+window.__plasticineExtract = (command) => extractPage(document, command);
 window.__plasticineTranslator = installPageTranslator(browserHost((message) => {
   window.webkit.messageHandlers.plasticineTranslatePage.postMessage(message);
 }));

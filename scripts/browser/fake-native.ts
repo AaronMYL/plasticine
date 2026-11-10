@@ -83,12 +83,12 @@ interface FakeDocument {
   documentElement: { append(node: FakeCanvas): void };
 }
 
-type PaintPage = (host: FakeHost, frame: WebTabsSync['frame'], page: FakePage) => void;
+type PaintPage = (host: FakeHost, frame: WebTabsSync['frame'], page: FakePage, marks?: string[]) => void;
 
 // 原生网页标签垫在主网页下面，主网页在那一块透明（mac-bridge.ts，Mac 0.3.0 起）。这里在同一块画一页文章，
 // 截图里网页工具条下面才有东西。画在 canvas 上：文字不进 DOM，验收按文字找元素时不会误中；不接点击。
 // 同 installFakeNative 一样被 toString 注入，只能用参数和浏览器全局。
-function paintFakePage(host: FakeHost, frame: WebTabsSync['frame'], page: FakePage): void {
+function paintFakePage(host: FakeHost, frame: WebTabsSync['frame'], page: FakePage, marks: string[] = []): void {
   const id = '__plasticineFakeNativePage';
   const store = host as FakeHost & { [id]?: FakeCanvas };
   const document = host.document;
@@ -120,19 +120,25 @@ function paintFakePage(host: FakeHost, frame: WebTabsSync['frame'], page: FakePa
   let top = 56;
   const [site = '', title = '', meta = '', ...paragraphs] = page.text.split('\n');
   const write = (text: string, size: number, color: string, weight: string, gap: number): void => {
+    const highlighted = marks.some((quote) => text.includes(quote));
+    const lineAt = (line: string): void => {
+      if (highlighted) { context.fillStyle = '#f4e8c7';
+        context.fillRect(left, top - size, context.measureText(line).width, size * 1.3); }
+      context.fillStyle = color; context.fillText(line, left, top);
+    };
     context.font = `${weight} ${size}px ${font}`;
     context.fillStyle = color;
     let line = '';
     for (const char of text) {
       // 句读和后引号不放到行首（中文排版的避头），宁可这一行稍微超出一点。
       if (context.measureText(line + char).width > column && line !== '' && !'，。、；：？！」』）'.includes(char)) {
-        context.fillText(line, left, top);
+        lineAt(line);
         top += size * 1.7;
         line = '';
       }
       line += char;
     }
-    context.fillText(line, left, top);
+    lineAt(line);
     top += size * 1.7 + gap;
   };
   write(site, 13, '#8a8a85', '600', 18);
@@ -167,9 +173,17 @@ function installFakeNative(host: FakeHost, config: FakeNativeConfig, paint: Pain
     emit({ type: 'state', tabId, url, title, canGoBack: true, canGoForward: false, loading: false });
   };
   const known = new Set<string>();
+  let latestFrame: WebTabsSync['frame'] = null;
+  let highlights: string[] = [];
   let cancelCircle: (() => void) | null = null;
   const tool = (tabId: string, request: WebPageTool): Promise<unknown> => {
     note('plasticineTabs', 'tool', [tabId, request]);
+    if (request.kind === 'extract_images') return Promise.resolve([]);
+    if (request.kind === 'extract_marks') {
+      highlights = request.points.map((point) => point.quote);
+      paint(host, latestFrame, config.page, highlights);
+      return Promise.resolve({ marked: highlights.length });
+    }
     if (request.kind === 'find') {
       return Promise.resolve({ found: config.page.text.includes(request.query) });
     }
@@ -193,7 +207,8 @@ function installFakeNative(host: FakeHost, config: FakeNativeConfig, paint: Pain
   const webTabs = {
     sync(state) {
       note('plasticineTabs', 'sync', [state]);
-      paint(host, state.active === null ? null : state.frame, config.page);
+      latestFrame = state.active === null ? null : state.frame;
+      paint(host, latestFrame, config.page, highlights);
       for (const tab of state.tabs) {
         if (!known.has(tab.tabId)) {
           known.add(tab.tabId);

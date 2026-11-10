@@ -24,7 +24,7 @@ import { NOTE_IMAGE_MAX_BYTES } from './notes-workspace.ts';
 const STRICT = { additionalProperties: false };
 
 export const WEB_PAGE_TOOLS = [
-  'find', 'zoom', 'capture', 'capture_full', 'print', 'circle', 'thumbnail', 'downloads', 'perceive',
+  'find', 'zoom', 'capture', 'capture_full', 'print', 'circle', 'thumbnail', 'downloads', 'perceive', 'extract_marks', 'extract_images',
 ] as const;
 export type WebPageToolName = (typeof WEB_PAGE_TOOLS)[number];
 
@@ -40,7 +40,16 @@ export const WEB_IMAGE_MAX_BYTES = NOTE_IMAGE_MAX_BYTES;
 /** 悬停预览卡 280 宽，缩略图按两倍像素截。 */
 export const WEB_THUMBNAIL_WIDTH = 560;
 
+export const WebExtractMarkSchema = Type.Object({ quote: Type.String({ minLength: 1, maxLength: 1000 }),
+  context: Type.String({ maxLength: 60_000 }) }, STRICT);
+export const WebExtractToolSchema = Type.Union([
+  Type.Object({ kind: Type.Literal('extract_marks'), points: Type.Array(WebExtractMarkSchema, { maxItems: 12 }),
+    focus: Type.Optional(Type.Integer({ minimum: 0, maximum: 11 })),
+    color: Type.Optional(Type.String({ maxLength: 150 })) }, STRICT),
+  Type.Object({ kind: Type.Literal('extract_images') }, STRICT),
+]);
 export const WebPageToolSchema = Type.Union([
+  WebExtractToolSchema,
   Type.Object({ kind: Type.Literal('find'), query: Type.String({ minLength: 1, maxLength: WEB_FIND_MAX_CHARS }),
     backwards: Type.Boolean() }, STRICT),
   Type.Object({ kind: Type.Literal('find_clear') }, STRICT),

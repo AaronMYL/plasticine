@@ -12,6 +12,14 @@ extension WebTabs {
         guard let tab = self.tab(id) else { throw DeviceFailure.failed("这个网页标签已经关了。") }
         let view = tab.view
         switch tool {
+        case .extractImages:
+            return try await WebExtract.run(view, ["kind": "extract_images"])
+        case .extractMarks(let points, let focus, let color):
+            var command: [String: Any] = ["kind": "extract_marks",
+                "points": points.map { ["quote": $0.quote, "context": $0.context] }]
+            if let focus { command["focus"] = focus }
+            if let color { command["color"] = color }
+            return try await WebExtract.run(view, command)
         case .find(let query, let backwards):
             let configuration = WKFindConfiguration()
             configuration.backwards = backwards
@@ -143,5 +151,17 @@ enum WebCircle {
         }
         return ["text": WebPageTool.clipCircleText(picked.text), "url": String(picked.url.prefix(4_096)),
                 "title": String(picked.title.prefix(1_000))]
+    }
+}
+
+@MainActor
+enum WebExtract {
+    static func run(_ view: WKWebView, _ command: [String: Any]) async throws -> Any {
+        try await withCheckedThrowingContinuation { continuation in
+            view.callAsyncJavaScript("return window.__plasticineExtract(command);", arguments: ["command": command],
+                                     in: nil, in: WebTranslate.world) { result in
+                continuation.resume(with: result)
+            }
+        }
     }
 }

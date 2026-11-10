@@ -80,6 +80,10 @@ export class FakeSpaces {
     this.subs = subscriptionSeeds(now);
   }
 
+  findBySourceUrl(url: string, category: SeedSpace['category']): Pick<SeedSpace, 'id' | 'deletedAt'> | undefined {
+    return this.spaceRows.find((row) => row.sourceUrl === url && row.category === category);
+  }
+
   ensureGenerated(input: Pick<SeedSpace, 'id' | 'title' | 'html' | 'category' | 'sourceUrl' | 'bookId'>,
     rewrite = false): string {
     const current = this.spaceRows.find((row) => row.id === input.id);

@@ -29,6 +29,8 @@ export interface DesktopPaths {
 
 export interface PathEnvironment {
   home: string;
+  /** 显式的独立客户端目录：测试与预览的状态全部放在这里，不触碰正在使用的实例。 */
+  userData?: string;
   /** Windows 的 %LOCALAPPDATA%；别的系统不用。 */
   localAppData?: string;
 }
@@ -45,10 +47,11 @@ function rootOf(platform: ShellPlatform, environment: PathEnvironment): string {
 }
 
 export function desktopPaths(platform: ShellPlatform, environment: PathEnvironment): DesktopPaths {
-  const root = rootOf(platform, environment);
+  const root = environment.userData ?? rootOf(platform, environment);
   const path = platform === 'win32' ? win32.join : join;
-  const userData = path(root, 'Desktop');
-  const logs = platform === 'darwin' ? join(environment.home, 'Library', 'Logs', 'Plasticine') : path(root, 'logs');
+  const userData = environment.userData ?? path(root, 'Desktop');
+  const logs = platform === 'darwin' && environment.userData === undefined
+    ? join(environment.home, 'Library', 'Logs', 'Plasticine') : path(root, 'logs');
   return {
     root,
     userData,
@@ -56,7 +59,7 @@ export function desktopPaths(platform: ShellPlatform, environment: PathEnvironme
     logs,
     settingsFile: path(userData, 'settings.json'),
     credentials: path(userData, 'node-credential'),
-    legacyCredentials: path(root, 'node-credential'),
+    legacyCredentials: path(root, environment.userData === undefined ? 'node-credential' : 'legacy-node-credential'),
     actions: path(userData, 'actions'),
     updates: path(userData, 'updates'),
   };

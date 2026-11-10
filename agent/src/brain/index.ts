@@ -86,3 +86,4 @@ export { Dreamer, DreamOutputSchema } from './memory-dream.ts';
 export type { DreamInput, DreamReport, DreamSkills, DreamState } from './memory-dream.ts';
 
 export { publishBookSpace, backfillBookSpaces, bookSpaceSource } from './book-spaces.ts';
+export { extractWebPage, prepareWebArchive, publishWebArchive, assertWebArchiveDestination, WebExtractError } from './web-extract.ts';

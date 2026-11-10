@@ -2,6 +2,7 @@
 // 变成笔记的 Markdown、阅读模式把可见正文切成段。原生回的都是未校验的数据，先过 web-page-tools.ts 的 schema。
 
 import { Value } from 'typebox/value';
+import { readerBlocks } from '../../../agent/shared/web-reader.ts';
 import {
   WEB_CIRCLE_TEXT_MAX_CHARS,
   WebCircleResultSchema,
@@ -13,8 +14,7 @@ import type { Quote } from '../api/types.ts';
 
 /** 引用片上的名字最多这么多字（后面省略）：引用片一行写得下。 */
 const QUOTE_LABEL_CHARS = 24;
-/** 阅读模式里不超过这么多字、句末没有标点、后面跟着一段正文的一行当小标题（中文标题很少过 30 字）。 */
-const HEADING_MAX_CHARS = 30;
+
 
 /** 原生回的截图 → 一个图片文件；形状不对抛错。 */
 export function imageFile(result: unknown, name: string): File {
@@ -90,26 +90,4 @@ export function screenshotMarkdown(page: { title: string; url: string }, imageUr
   return `${noteHeader(page, at)}\n![截图](${imageUrl})\n`;
 }
 
-/** 阅读模式的一块：一段正文，或一个小标题。 */
-export interface ReaderBlock {
-  kind: 'paragraph' | 'heading';
-  text: string;
-}
-
-/**
- * 阅读模式的正文：可见正文按行切块，去掉空行和连着出现的重复行；正文里有和页面标题一样的一行时，从它后面开始
- * （前面多是站名、导航，标题另外排在最上面）；短、句末没标点、后面紧跟着正文（长或以句号收尾）的一行当小标题。
- * 只是把读到的字排整齐，不改写、不摘要。
- */
-export function readerBlocks(text: string, title = ''): ReaderBlock[] {
-  const all = text.split(/\n+/).map((line) => line.trim()).filter((line) => line !== '');
-  const titleAt = title.trim() === '' ? -1 : all.indexOf(title.trim());
-  const lines = titleAt < 0 ? all : all.slice(titleAt + 1);
-  const unique = lines.filter((line, index) => lines[index - 1] !== line);
-  return unique.map((line, index) => {
-    const next = unique[index + 1];
-    const heading = Array.from(line).length <= HEADING_MAX_CHARS && !/[。！？.!?；;，,：:]$/.test(line)
-      && next !== undefined && (Array.from(next).length > HEADING_MAX_CHARS || /[。！？.!?]$/.test(next));
-    return { kind: heading ? 'heading' : 'paragraph', text: line };
-  });
-}
+export { readerBlocks, type ReaderBlock } from '../../../agent/shared/web-reader.ts';

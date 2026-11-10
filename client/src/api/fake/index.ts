@@ -1,4 +1,5 @@
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
+import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
 import { renderVideoPage } from '../../../../agent/shared/video-space-page.ts';
 import { FakeSearch } from './fake-search.ts';
 import { FakeSystems } from './fake-systems.ts';
@@ -223,6 +224,14 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const spaces = new FakeSpaces({ session, receipts, now, bus, dream: () => memoryTopics.currentDream() });
   const nodes = new FakeNodes({ session, bus, receipts, faults, now });
   const m5b = createFakeM5b({ session, bus, receipts, notes, now });
+  m5b.control.browser.setArchive(async (page) => {
+    const existing = spaces.findBySourceUrl(page.url, 'webarchive');
+    if (existing?.deletedAt != null) throw new Error('这个网址的归档已删除，请先恢复。');
+    const id = spaces.ensureGenerated({ id: existing?.id ?? `web-${encodeURIComponent(page.url)}`,
+      title: page.title, category: 'webarchive', sourceUrl: page.url, bookId: null,
+      html: renderWebArchive(page, [], now()) }, true);
+    return { space: await spaces.spaces.get(id) };
+  });
   const moneyDrafts = new FakeMoneyDrafts({ session, bus, receipts, now, attachments, asks, money: m5b.control.money });
   const signed = new FakeSigned({ session, receipts, agreements, asks, notes, backups, memoryTopics,
     nodes, faults, moneyDrafts });

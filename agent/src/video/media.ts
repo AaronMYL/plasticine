@@ -8,7 +8,7 @@ import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import type { ReadableStream as WebReadableStream } from 'node:stream/web';
+import { PublicFetcher, type PublicRequest } from '../cloud-tools/index.ts';
 
 /** 一条视频最多下这么大：抖音 10 分钟 1080p 约 150 MB。 */
 export const VIDEO_DOWNLOAD_MAX_BYTES = 600 * 1024 * 1024;
@@ -29,63 +29,37 @@ export class MediaError extends Error {
   }
 }
 
-function headersFor(url: string): Record<string, string> {
+const mediaFetcher = new PublicFetcher();
+const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/avif']);
+const TEXT_DOWNLOAD_MAX_BYTES = 5 * 1024 * 1024;
+
+function specification(url: string, maxBytes: number, types: ReadonlySet<string> | null = null): PublicRequest {
   const host = new URL(url).hostname;
   const douyin = /(douyin|douyinvod|douyinpic|bytecdn|byteimg|amemv|snssdk|zjcdn)\./.test(host);
-  return { 'user-agent': BROWSER_AGENT, ...(douyin ? { referer: DOUYIN_REFERER } : {}) };
+  return { accept: '*/*', userAgent: BROWSER_AGENT, maxBytes, types, timeoutMs: DOWNLOAD_TIMEOUT_MS,
+    ...(douyin ? { referer: DOUYIN_REFERER } : {}) };
 }
 
-async function get(url: string, signal: AbortSignal): Promise<Response> {
-  let response: Response;
-  try {
-    response = await fetch(url, { headers: headersFor(url), redirect: 'follow',
-      signal: AbortSignal.any([signal, AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS)]) });
-  } catch (cause) {
-    throw new MediaError(`服务器连不上 ${new URL(url).hostname}。`, { cause });
-  }
-  if (!response.ok) {
-    const hint = response.status === 403 || response.status === 401 ? '（下载地址可能绑了登录或 IP）' : '';
-    throw new MediaError(`服务器上下载不了：${new URL(url).hostname} 回 ${response.status}${hint}。`);
-  }
-  return response;
-}
-
-/** 下到文件；超过上限就停。回下了多少字节。 */
+/** 大视频按块写入文件；DNS与每次重定向都由公网下载器校验。 */
 export async function downloadTo(url: string, file: string, signal: AbortSignal,
   maxBytes = VIDEO_DOWNLOAD_MAX_BYTES): Promise<number> {
-  const response = await get(url, signal);
-  const declared = Number(response.headers.get('content-length') ?? '0');
-  if (declared > maxBytes) {
-    throw new MediaError(`文件太大（${Math.round(declared / 1024 / 1024)} MB），超过上限。`);
-  }
-  if (response.body === null) {
-    throw new MediaError('下载回来是空的。');
-  }
-  let bytes = 0;
-  const limited = Readable.fromWeb(response.body as WebReadableStream<Uint8Array>).map((chunk: Buffer) => {
-    bytes += chunk.length;
-    if (bytes > maxBytes) {
-      throw new MediaError('文件太大，超过上限。');
-    }
-    return chunk;
+  return mediaFetcher.read(url, specification(url, maxBytes), signal, async (chunks) => {
+    let bytes = 0;
+    const counted = async function* () {
+      for await (const chunk of chunks) { bytes += chunk.length; yield chunk; }
+    };
+    await pipeline(Readable.from(counted()), createWriteStream(file), { signal });
+    return bytes;
   });
-  await pipeline(limited, createWriteStream(file), { signal });
-  return bytes;
 }
 
 export async function fetchText(url: string, signal: AbortSignal): Promise<string> {
-  const response = await get(url, signal);
-  return response.text();
+  return (await mediaFetcher.get(url, specification(url, TEXT_DOWNLOAD_MAX_BYTES), signal)).data.toString('utf8');
 }
 
 export async function fetchImage(url: string, signal: AbortSignal): Promise<{ data: string; mimeType: string }> {
-  const response = await get(url, signal);
-  const buffer = Buffer.from(await response.arrayBuffer());
-  if (buffer.length > IMAGE_DOWNLOAD_MAX_BYTES) {
-    throw new MediaError('图片太大。');
-  }
-  const type = response.headers.get('content-type')?.split(';')[0]?.trim() ?? '';
-  return { data: buffer.toString('base64'), mimeType: type.startsWith('image/') ? type : 'image/jpeg' };
+  const image = await mediaFetcher.get(url, specification(url, IMAGE_DOWNLOAD_MAX_BYTES, IMAGE_TYPES), signal);
+  return { data: image.data.toString('base64'), mimeType: image.type === 'image/jpg' ? 'image/jpeg' : image.type };
 }
 
 function run(command: string, args: readonly string[], signal: AbortSignal, timeoutMs: number): Promise<string> {

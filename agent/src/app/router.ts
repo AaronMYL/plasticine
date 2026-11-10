@@ -119,6 +119,8 @@ import { addBookmark, editBookmark, importBookmarks, listBookmarks, orderBookmar
 import { getFavicon, getWebTabs, mergeWebTabs, putFavicon, putWebTabs } from './web-tabs.ts';
 import { deleteBook, getBook, getBookAsset, getBookChapter, listBooks, renameBook, restoreBook, saveBookProgress,
   searchInBook, uploadBook } from './books.ts';
+import { WEB_EXTRACT_PATH, WEB_ARCHIVE_PATH } from '../../shared/api/web-extract.ts';
+import { extractBrowserPage, archiveBrowserPage } from './web-extract.ts';
 import { ackBrowser, streamBrowser } from './browser-stream.ts';
 import { actBrowser, getBrowser, getBrowserFrame, openBrowser, settleAction, tabBrowser } from './browser.ts';
 import { getSkill, listSkills, removeSkill } from './skills.ts';
@@ -243,6 +245,8 @@ export const ROUTES: readonly Route[] = [
   { method: 'PUT', path: TRANSLATE_SETTINGS_PATH, auth: true, handler: setTranslateSettings },
   { method: 'GET', path: TRANSLATE_MODEL_PATH, auth: true, handler: getTranslateModel },
   { method: 'PUT', path: TRANSLATE_MODEL_PATH, auth: true, handler: setTranslateModel },
+  { method: 'POST', path: WEB_EXTRACT_PATH, auth: true, handler: extractBrowserPage },
+  { method: 'POST', path: WEB_ARCHIVE_PATH, auth: true, handler: archiveBrowserPage },
   { method: 'POST', path: TRANSLATE_PATH, auth: true, handler: translatePage },
   // 附件（线里发的图和文件、记账截图）。
   { method: 'GET', path: '/v2/conversation/attachments/requests/:requestId', auth: true, handler: lookupAttachment },

@@ -5,6 +5,8 @@ import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
 import type { BrowserApi, NoteVersionsApi, ToolGroupsApi } from '../m5b-client.ts';
 import {
+  WEB_EXTRACT_PATH, WEB_ARCHIVE_PATH, WebExtractViewSchema, WebArchiveViewSchema,
+  type WebExtractInput, type WebExtractView, type WebArchiveRequest, type WebArchiveView,
   ACTIONS_PATH,
   ApiErrorSchema,
   BROWSER_ACTIONS_PATH,
@@ -59,6 +61,15 @@ export class HttpBrowser implements BrowserApi {
 
   constructor(transport: Transport) {
     this.transport = transport;
+  }
+
+  extract(input: WebExtractInput, signal?: AbortSignal): Promise<WebExtractView> {
+    return this.transport.request({ method: 'POST', path: WEB_EXTRACT_PATH, body: input,
+      schema: WebExtractViewSchema, signal, timeoutMs: 125_000, what: '提取网页重点', lostAs: 'failed' });
+  }
+  archive(input: WebArchiveRequest, signal?: AbortSignal): Promise<WebArchiveView> {
+    return this.transport.request({ method: 'POST', path: WEB_ARCHIVE_PATH, body: input,
+      schema: WebArchiveViewSchema, signal, timeoutMs: 125_000, what: '归档网页', lostAs: 'uncertain' });
   }
 
   stream(query: BrowserStreamQuery, event: (event: BrowserStreamEvent) => void, error: () => void): () => void {

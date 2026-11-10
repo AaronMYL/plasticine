@@ -120,4 +120,5 @@ export { SYNC_TIMEOUT_MS } from './mail.ts';
 export { ServerCommands } from './server-command.ts';
 export type { ServerCommandPage, ServerCommandResult } from './server-command.ts';
 export { LinkPreviewFetcher, type LinkPreviewFetchOptions } from './link-preview-fetch.ts';
-export { PublicFetchError } from './public-fetch.ts';
+export { PublicFetchError, PublicFetcher, publicUrl, type PublicResource, type PublicRequest } from './public-fetch.ts';
+export { MailImageError } from './mail-image-fetch.ts';

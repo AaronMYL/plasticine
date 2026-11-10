@@ -28,7 +28,8 @@ export interface PublicFetchOptions {
 }
 export interface PublicRequest {
   accept: string;
-  types: ReadonlySet<string>;
+  types: ReadonlySet<string> | null;
+  referer?: string;
   maxBytes: number;
   timeoutMs: number;
   userAgent: string;
@@ -72,8 +73,7 @@ function pinned(address: ResolvedAddress): LookupFunction {
   };
 }
 
-async function body(response: IncomingMessage, maxBytes: number): Promise<Buffer> {
-  const chunks: Buffer[] = [];
+async function* body(response: IncomingMessage, maxBytes: number): AsyncGenerator<Buffer> {
   let size = 0;
   try {
     if (Number(response.headers['content-length'] ?? '0') > maxBytes) {
@@ -83,9 +83,8 @@ async function body(response: IncomingMessage, maxBytes: number): Promise<Buffer
       const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
       size += bytes.length;
       if (size > maxBytes) throw new PublicFetchError('too_large', '远程内容太大，没有读取。');
-      chunks.push(bytes);
+      yield bytes;
     }
-    return Buffer.concat(chunks);
   } finally { response.destroy(); }
 }
 
@@ -114,13 +113,24 @@ export class PublicFetcher {
     const request = url.protocol === 'https:' ? httpsRequest : httpRequest;
     return new Promise((resolve, reject) => {
       const req = request(url, { method: 'GET', signal, lookup: pinned(address), agent: false,
-        headers: { accept: spec.accept, 'accept-encoding': 'identity', 'user-agent': spec.userAgent } }, resolve);
+        headers: { accept: spec.accept, 'accept-encoding': 'identity', 'user-agent': spec.userAgent,
+          ...(spec.referer === undefined ? {} : { referer: spec.referer }) } }, resolve);
       req.on('error', reject);
       req.end();
     });
   }
 
   async get(raw: string, spec: PublicRequest, signal: AbortSignal): Promise<PublicResource> {
+    return this.read(raw, spec, signal, async (chunks, metadata) => {
+      const buffers: Buffer[] = [];
+      for await (const chunk of chunks) buffers.push(chunk);
+      return { ...metadata, data: Buffer.concat(buffers) };
+    });
+  }
+
+  /** 大文件按块消费，仍共用逐跳校验、总时限和字节上限。 */
+  async read<T>(raw: string, spec: PublicRequest, signal: AbortSignal,
+    consume: (chunks: AsyncIterable<Buffer>, metadata: Omit<PublicResource, 'data'>) => Promise<T>): Promise<T> {
     const deadline = AbortSignal.any([signal, AbortSignal.timeout(spec.timeoutMs)]);
     let url = publicUrl(raw);
     try {
@@ -136,7 +146,7 @@ export class PublicFetcher {
         }
         const contentType = response.headers['content-type'] ?? '';
         const type = contentType.split(';')[0]?.trim().toLowerCase() ?? '';
-        if (status !== 200 || !spec.types.has(type)) {
+        if (status !== 200 || (spec.types !== null && !spec.types.has(type))) {
           response.destroy();
           throw new PublicFetchError(status === 200 ? 'content_type' : 'failed',
             status === 200 ? '远程内容类型不支持，没有读取。' : `远程服务器回了 ${status}。`);
@@ -145,7 +155,8 @@ export class PublicFetcher {
           response.destroy();
           throw new PublicFetchError('content_type', '远程服务器返回了压缩内容，没有读取。');
         }
-        return { url, type, contentType, data: await body(response, spec.maxBytes) };
+        try { return await consume(body(response, spec.maxBytes), { url, type, contentType }); }
+        finally { response.destroy(); }
       }
       throw new PublicFetchError('failed', '网页跳转过多或没有目标。');
     } catch (cause) {

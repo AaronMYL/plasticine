@@ -1,6 +1,8 @@
 // 与真实接口同形状的浏览器假实现；测试和截图可注入帧，不启动或连接浏览器。
+import { readerBlocks } from '../../../../agent/shared/web-reader.ts';
 import type { BrowserApi } from '../m5b-client.ts';
 import type {
+  WebExtractInput, WebExtractView, WebArchiveRequest, WebArchiveView,
   BrowserAck, BrowserActionRequest, BrowserActionResponse, BrowserFrame, BrowserStreamEvent, BrowserStreamQuery,
   BrowserTabRequest, BrowserViewDto, OpenBrowserRequest, SettleActionRequest, SettleActionResponse,
 } from '../shared.ts';
@@ -17,6 +19,31 @@ export class FakeBrowser implements BrowserApi {
   private next = 0;
 
   constructor(deps: FakeWorkspaceDeps) { this.deps = deps; }
+
+  private archiveWriter: ((page: WebArchiveRequest) => Promise<WebArchiveView>) | undefined;
+  private archiveResults = new Map<string, WebArchiveView>();
+  setArchive(writer: (page: WebArchiveRequest) => Promise<WebArchiveView>): void { this.archiveWriter = writer; }
+  async extract(input: WebExtractInput, signal?: AbortSignal): Promise<WebExtractView> {
+    this.deps.session.require();
+    signal?.throwIfAborted();
+    const blocks = readerBlocks(input.text, input.title).map((block, index) => ({ ...block, index }));
+    if (blocks.length === 0) throw new Error('这里读不到网页正文，不能提取或归档。');
+    const url = new URL(input.url); url.hash = '';
+    return { title: input.title, totalChars: input.totalChars, truncated: input.truncated,
+      url: url.href, blocks, images: input.images ?? [],
+      points: blocks.filter((block) => block.kind === 'paragraph').slice(0, 3)
+        .map((block) => ({ text: block.text.slice(0, 80), block: block.index, quote: block.text.slice(0, 200) })) };
+  }
+  async archive(input: WebArchiveRequest, signal?: AbortSignal): Promise<WebArchiveView> {
+    this.deps.session.require();
+    signal?.throwIfAborted();
+    const previous = this.archiveResults.get(input.requestId);
+    if (previous !== undefined) return previous;
+    if (this.archiveWriter === undefined) throw new Error('资料库还没有就绪。');
+    const result = await this.archiveWriter(input);
+    this.archiveResults.set(input.requestId, result);
+    return result;
+  }
 
   async get(): Promise<BrowserViewDto> {
     this.deps.session.require();

@@ -46,9 +46,10 @@ import { uiSession, webSession } from './web-session.ts';
 
 const platform = process.platform as ShellPlatform;
 const paths = desktopPaths(platform, { home: homedir(), ...(process.env.LOCALAPPDATA === undefined ? {}
-  : { localAppData: process.env.LOCALAPPDATA }) });
+  : { localAppData: process.env.LOCALAPPDATA }), ...(process.env.PLASTICINE_DESKTOP_USER_DATA === undefined ? {}
+  : { userData: process.env.PLASTICINE_DESKTOP_USER_DATA }) });
 app.setName('Plasticine');
-app.setPath('userData', process.env.PLASTICINE_DESKTOP_USER_DATA ?? paths.userData);
+app.setPath('userData', paths.userData);
 const log = logger(paths.logs);
 
 function confirmBox(window: MainWindow | null, message: string): Promise<boolean> {

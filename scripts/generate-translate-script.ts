@@ -7,7 +7,8 @@ import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-const SOURCES = ['translate-page-rules.ts', 'translate-page-look.ts', 'translate-page.ts', 'translate-page-host.ts']
+const SOURCES = ['extract-page.ts', 'translate-page-rules.ts', 'translate-page-look.ts',
+  'translate-page.ts', 'translate-page-host.ts']
   .map((name) => new URL(`../client/src/mac/${name}`, import.meta.url));
 
 /** 生成到哪、第二行注释写给谁用、要不要 public（包里的才要 public，App 从包外用）。 */
@@ -42,6 +43,7 @@ export function translateScript(): string {
     '(() => {',
     'if (window.__plasticineTranslator) return;',
     body,
+    'window.__plasticineExtract = (command) => extractPage(document, command);',
     'window.__plasticineTranslator = installPageTranslator(browserHost((message) => {',
     '  window.webkit.messageHandlers.plasticineTranslatePage.postMessage(message);',
     '}));',
