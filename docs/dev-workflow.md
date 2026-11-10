@@ -66,3 +66,9 @@
 - 设备能力按系统各写一份助手：Mac 是 `mac/` 里的 Swift 代码，Windows 在 `desktop/helpers/windows/`。
 - 改了 `desktop/` 先跑 `cd desktop && npm test`。冒烟脚本是 `desktop/build/smoke.ts`，CI 里会跑。
 - Xvfb 下可以起真窗口录屏：用 `ffmpeg -f x11grab -framerate 60` 逐帧看切换、闪烁这类问题。
+
+### 数据库副本演练
+
+带迁移的版本在构建前运行 `node scripts/rehearse-migrations.ts <源库路径> <全新演练目录>`。
+脚本只读源库，先做 SQLite 一致性备份，再在副本应用迁移；核对原表行数、外键、完整性和重复运行，
+结果写到副本目录的 `migration-report.json`。目标目录必须不存在，演练文件保留供核对。生产库的演练仍通过运维通道执行。

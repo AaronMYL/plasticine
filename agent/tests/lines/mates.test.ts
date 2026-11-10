@@ -23,6 +23,9 @@ test('队友保持独立对话，交接回发起处，停用后不接受新工�
     assert.equal(h.handle.state.lineMessages.after(other.lineId, 0).length, 0);
     mates.update(mate.id, { version: mate.version, disabled: true });
     assert.throws(() => mates.handoff({ mateId: mate.id, sourceLineId: 'main', goal: '整理背景' }), /停用/);
+    assert.throws(() => mates.handoff({ mateId: other.id, sourceLineId: mate.lineId, goal: '整理背景' }), /发起/);
+    h.kernel.archive(group.lineId);
+    assert.throws(() => mates.handoff({ mateId: other.id, sourceLineId: group.lineId, goal: '整理背景' }), /恢复/);
   } finally { await h.close(); }
 });
 

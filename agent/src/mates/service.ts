@@ -68,6 +68,10 @@ export class Mates {
     const mate = this.#state.mates.require(input.mateId);
     if (mate.disabledAt !== null) throw new LineError('conflict', '这位队友已停用。');
     const source = this.#kernel().line(input.sourceLineId);
+    if (source.archivedAt !== null) throw new LineError('conflict', '先恢复这条对话再交接。');
+    if (source.mateId != null && this.#state.mates.require(source.mateId).disabledAt !== null) {
+      throw new LineError('conflict', '发起交接的队友已停用。');
+    }
     const groupId = input.groupId ?? source.mateGroupId ?? null;
     const group = groupId === null ? null : this.#state.mateGroups.require(groupId);
     if (group !== null && (!group.mateIds.includes(mate.id)
