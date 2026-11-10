@@ -1,3 +1,6 @@
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
+import { libraryBatch } from '../bulk/bulk-api.ts';
 // 图书馆：页头「图书馆」（11-08 图书单独一栏后和第二栏第一行同名）+「n 本 · 在读 n · 标注 n」，排序（最近 / 书名 / 作者）和「导入书」；导入中的书一行一个状态；
 // 「在读」两列（封面、章、进度、上次在哪台设备读、接着读）；「全部」封面格子。整页可以把书拖进来。
 
@@ -125,9 +128,10 @@ interface GridItemProps {
   book: BookView;
   onOpen: () => void;
   onDeleted: () => void;
+  selection: BulkSelection;
 }
 
-function GridItem({ book, onOpen, onDeleted }: GridItemProps): ReactNode {
+function GridItem({ book, onOpen, onDeleted, selection }: GridItemProps): ReactNode {
   const api = useApi();
   const [menu, setMenu] = useState<'closed' | 'open'>('closed');
   const [renaming, setRenaming] = useState(false);
@@ -156,7 +160,10 @@ function GridItem({ book, onOpen, onDeleted }: GridItemProps): ReactNode {
   };
   return (
     <li className="bk-item" ref={item}>
-      <button type="button" className="bk-cover-button" aria-label={`打开《${book.title}》`} onClick={onOpen}>
+      {selection.active ? <span className="bulk-card-check"><BulkCheck selection={selection}
+        item={{ kind: 'book', id: book.id, title: book.title }} /></span> : null}
+      <button type="button" className="bk-cover-button" aria-label={`打开《${book.title}》`} onClick={() => selection.active
+        ? selection.toggle({ kind: 'book', id: book.id, title: book.title }) : onOpen()}>
         <BookCover book={book} />
       </button>
       {renaming ? <span className="bk-item-title">
@@ -212,6 +219,9 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
   };
   const sorted = books === null ? [] : sortBooks(books, sort);
   const reading = sorted.filter(isReading);
+  const bulkItems = sorted.map((book) => ({ kind: 'book' as const, id: book.id, title: book.title }));
+  const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
+    onChanged: () => { reload(); libraryChanged(); } });
   const now = new Date();
   const controls = phone ? (
     <IconButton icon="upload" label="导入书" size={17} onClick={() => picker.current?.click()} />
@@ -238,6 +248,8 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
       }}
       onDrop={onDrop}>
       <PageHeader title="图书馆" controls={controls} />
+      <BulkHeader selection={selection} items={bulkItems} />
+      <BulkFeedback selection={selection} />
       <input ref={picker} type="file" accept={ACCEPT} multiple hidden aria-label="选择要导入的书"
         onChange={(event) => {
           imports.importFiles([...event.target.files ?? []]);
@@ -246,7 +258,7 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
       <ImportRows rows={imports.rows} onRetry={imports.retry} onDismiss={imports.dismiss} />
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {books === null && error === null ? <p className="block-empty">正在读…</p> : null}
-      {reading.length === 0 ? null : (
+      {reading.length === 0 || selection.active ? null : (
         <section className="block" aria-label="在读">
           <div className="block-head"><h2 className="block-title">在读</h2>
             <span className="block-meta text-meta">{reading.length}</span></div>
@@ -262,13 +274,16 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
           {books.length === 0 ? <p className="block-empty">图书馆还是空的，点「导入书」或者把书拖进这页。</p> : (
             <ul className="bk-grid">
               {sorted.map((book) => (
-                <GridItem key={book.id} book={book} onOpen={() => open(book)} onDeleted={reload} />
+                <GridItem key={book.id} book={book} onOpen={() => open(book)} onDeleted={reload}
+                  selection={selection} />
               ))}
             </ul>
           )}
 
         </section>
       )}
+      <BulkBar selection={selection} folders={[...new Set((books ?? []).flatMap((book) =>
+        book.folder ? [book.folder] : []))]} />
     </div>
   );
 }

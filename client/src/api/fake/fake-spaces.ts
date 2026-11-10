@@ -111,6 +111,12 @@ export class FakeSpaces {
       : [{ id: row.id, title: row.title, deletedAt: row.deletedAt }]));
   }
 
+  purgeDeleted(id: string): void {
+    this.deps.session.require();
+    if (!this.deletedRows().some((row) => row.id === id)) throw notFound('最近删除里的这个空间');
+    this.spaceRows = this.spaceRows.filter((row) => row.id !== id);
+  }
+
   private space(id: string): SeedSpace {
     const found = this.live().find((row) => row.id === id);
     if (found === undefined) {

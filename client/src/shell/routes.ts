@@ -169,6 +169,7 @@ const PHONE_VIEWS: ReadonlySet<ViewId> = new Set<ViewId>(['today', 'plasticine',
 
 export function phonePageAvailable(route: Route): boolean {
   if (PHONE_VIEWS.has(route.view)) return true;
+  if (route.view === 'tools') return route.tool === '文件';
   if (route.view === 'projects') return route.projectId != null;
   if (route.view === 'memory') {
     return route.topicId != null || route.memoryDream === true || route.termId !== undefined

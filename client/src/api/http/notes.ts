@@ -1,3 +1,5 @@
+import { BatchResponseSchema, NOTES_BATCH_PATH, NOTES_EMPTY_PATH, type NotesBatchRequest,
+  type EmptyTrashRequest } from '../shared.ts';
 // /v2/notes 的真实现：服务端全文搜索和分页、读、新建、保存（带 version，409 带当前那一版）、软删与恢复。
 // 写成功后在本机报 note.* 事件；服务端的 note_invalidated 也会通过 SSE 同步到已打开的笔记。
 
@@ -42,6 +44,23 @@ export class HttpNotes implements NotesApi {
   constructor(transport: Transport, local: LocalEvents) {
     this.transport = transport;
     this.local = local;
+  }
+
+  async batch(input: NotesBatchRequest) {
+    const result = await this.transport.request({ method: 'POST', path: NOTES_BATCH_PATH, body: input,
+      schema: BatchResponseSchema, what: '批量处理笔记', lostAs: 'uncertain' });
+    this.local.emit({ type: 'note.invalidated', noteId: 'folders' });
+    for (const item of result.results) if (item.ok) this.local.emit({
+      type: input.action === 'purge' || input.action === 'trash' ? 'note.deleted' : 'note.invalidated', noteId: item.id });
+    return result;
+  }
+
+  async emptyTrash(input: EmptyTrashRequest) {
+    const result = await this.transport.request({ method: 'POST', path: NOTES_EMPTY_PATH, body: input,
+      schema: BatchResponseSchema, what: '清空最近删除', lostAs: 'uncertain' });
+    this.local.emit({ type: 'note.invalidated', noteId: 'folders' });
+    for (const item of result.results) if (item.ok) this.local.emit({ type: 'note.deleted', noteId: item.id });
+    return result;
   }
 
   async list(query: NoteSearch, signal?: AbortSignal): Promise<NoteMetaView[]> {

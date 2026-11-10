@@ -1,3 +1,4 @@
+import { BatchResponseSchema, LIBRARY_BATCH_PATH, LIBRARY_EMPTY_PATH } from '../shared.ts';
 // 空间与订阅的真实现（第 6、7 条）：按 shared/api/spaces.ts 的路径发请求、按同一份 schema 校验回答。
 
 import type { LibraryApi, SpacesApi, SubscriptionsApi } from '../spaces-client.ts';
@@ -78,6 +79,10 @@ export function createSpacesHttp(transport: Transport):
       what: '读回顾', lostAs: 'failed', signal }),
   };
   const library: LibraryApi = {
+    batch: (body) => transport.request({ method: 'POST', path: LIBRARY_BATCH_PATH, body,
+      schema: BatchResponseSchema, what: '批量处理资料', lostAs: 'uncertain' }),
+    emptyTrash: (body) => transport.request({ method: 'POST', path: LIBRARY_EMPTY_PATH, body,
+      schema: BatchResponseSchema, what: '清空最近删除', lostAs: 'uncertain' }),
     trash: (signal) => transport.request({ method: 'GET', path: LIBRARY_TRASH_PATH, schema: LibraryTrashResponseSchema,
       what: '读最近删除', lostAs: 'failed', signal }),
   };

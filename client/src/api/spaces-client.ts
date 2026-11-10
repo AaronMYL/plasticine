@@ -25,6 +25,8 @@ export interface SpaceListFilter {
 
 /** GET /v2/library/trash：资料库「最近删除」（空间、图书、文件）。 */
 export interface LibraryApi {
+  batch(input: import('./shared.ts').LibraryBatchRequest): Promise<import('./shared.ts').BatchResponse>;
+  emptyTrash(input: import('./shared.ts').EmptyTrashRequest): Promise<import('./shared.ts').BatchResponse>;
   trash(signal?: AbortSignal): Promise<LibraryTrashResponse>;
 }
 

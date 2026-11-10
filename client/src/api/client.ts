@@ -136,6 +136,8 @@ export interface DevicesApi {
 }
 
 export interface NotesApi {
+  batch(input: import('./shared.ts').NotesBatchRequest): Promise<import('./shared.ts').BatchResponse>;
+  emptyTrash(input: import('./shared.ts').EmptyTrashRequest): Promise<import('./shared.ts').BatchResponse>;
   folders(signal?: AbortSignal): Promise<import('./shared.ts').NoteFoldersView>;
   changeFolder(input: import('./shared.ts').NoteFolderCommand): Promise<import('./shared.ts').NoteFoldersView>;
   restore(id: string, requestId: string): Promise<NoteView>;

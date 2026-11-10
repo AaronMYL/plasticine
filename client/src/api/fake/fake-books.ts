@@ -180,6 +180,13 @@ export class FakeBooks implements BooksApi {
       : [{ id: book.view.id, title: book.view.title, deletedAt: book.deletedAt }]));
   }
 
+  purgeDeleted(id: string): void {
+    this.deps.session.require();
+    if (!this.deletedRows().some((row) => row.id === id)) throw invalid(404, 'not_found', '这本书不在最近删除里。');
+    this.books.delete(id);
+    this.emit(id, 'book');
+  }
+
   async rename(id: string, input: RenameBookRequest): Promise<BookView> {
     this.deps.session.require();
     const book = this.require(id);

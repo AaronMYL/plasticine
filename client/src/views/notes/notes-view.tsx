@@ -1,3 +1,6 @@
+import { BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection } from '../bulk/use-bulk-selection.ts';
+import { notesBatch } from '../bulk/bulk-api.ts';
 // 笔记页：文件夹 | 列表 | 正文；手机上一层一层进（列表 → 正文，带返回）。
 // 电脑上没选的时候默认打开列表第一篇；文件夹/列表可以独立收起，选择保留在 NotesUi。
 // 「新建」的 request_id 存在 state/note-ops.ts：回执丢了再点（或点「再核实」）用的是同一个，不会建出第二篇。
@@ -137,6 +140,9 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const { notes, error, retry } = useNoteList(query, collection);
+  const selection = useBulkSelection({ items: (notes ?? []).map((note) => ({ kind: 'note', id: note.id,
+    title: note.title || '未命名' })), run: (input) => notesBatch(api.notes, input),
+    empty: (input) => api.notes.emptyTrash(input), onChanged: retry, scope: JSON.stringify([query, collection]) });
   const invalid = invalidNoteId !== undefined;
   const selectedId = (noteId === 'new' ? null : noteId) ?? (invalid || noteId === 'new' ? null
     : reading === true && activeNoteId != null ? activeNoteId
@@ -157,8 +163,9 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
   const compact = layout === 'single';
   // 电脑上文件夹在笔记栏目的第二栏（11-07 两层侧栏），主区不再画。
   const showFolders = false;
-  const showNote = !compact || noteId !== null || automaticReading || (reading === true && selectedId !== null);
-  const showList = compact ? !showNote : !listHidden;
+  const showNote = selection.active ? !compact
+    : !compact || noteId !== null || automaticReading || (reading === true && selectedId !== null);
+  const showList = selection.active || (compact ? !showNote : !listHidden);
   const collectionLabel = collection.kind === 'folder' ? collection.name
     : collection.kind === 'deleted' ? '最近删除' : '全部';
 
@@ -249,7 +256,8 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
             notesUi.set({ activeNoteId: null, reading: false });
             navigate({ view: 'notes', noteId: null });
           }} /> : null}
-        <NoteList
+        <NoteList selection={selection} trash={collection.kind === 'deleted'} feedback={compact}
+          folders={[...new Set((notes ?? []).map((note) => note.folder))]}
           hidden={!showList}
           notes={notes}
           error={error}
@@ -264,9 +272,11 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
           onFolders={phone ? () => setFoldersOpen(true) : undefined}
         />
         <div className="notes-detail" hidden={!showNote}>
-            <OpenNotePane noteId={selectedId} onDeleted={() => {
+            {selection.active ? <div className="note-bulk-detail">
+              <h2>选了 {selection.selected.length} 篇笔记</h2><BulkFeedback selection={selection} />
+            </div> : <OpenNotePane noteId={selectedId} onDeleted={() => {
               if (selectedId !== null) afterDeleted(selectedId);
-            }} />
+            }} />}
         </div>
       </div>
     </div>

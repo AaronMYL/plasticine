@@ -1,5 +1,8 @@
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
+import { libraryBatch } from '../bulk/bulk-api.ts';
 // 「最近删除」（#/library/trash，2026-11-08 设计稿 Library-Trash）：删掉的空间、图书、文件混在一起，删的时间新的在前。
-// 每行：类型图标 · 名字 · 类型 · 删除时间 · 「还原」。还原后那一行淡出收起，资料库各处跟着重读。没有永久删除。
+// 每行：类型图标 · 名字 · 类型 · 删除时间 · 「还原」。还原后那一行淡出收起，资料库各处跟着重读。支持批量还原和明确确认后的永久删除。
 
 import { useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
@@ -43,8 +46,8 @@ function keyOf(item: LibraryTrashItem): string {
   return `${item.kind}:${item.id}`;
 }
 
-function TrashRow({ item, now, onRestore, onGone }: { item: LibraryTrashItem; now: Date;
-  onRestore: (item: LibraryTrashItem) => Promise<void>; onGone: () => void }): ReactNode {
+function TrashRow({ item, now, onRestore, onGone, selection }: { item: LibraryTrashItem; now: Date;
+  onRestore: (item: LibraryTrashItem) => Promise<void>; onGone: () => void; selection: BulkSelection }): ReactNode {
   const timeZone = useTimeZone();
   const row = useRef<HTMLLIElement>(null);
   const [busy, setBusy] = useState(false);
@@ -63,6 +66,7 @@ function TrashRow({ item, now, onRestore, onGone }: { item: LibraryTrashItem; no
   const label = KIND_LABELS[item.kind];
   return (
     <li ref={row} className="lib-trash-row">
+      <BulkCheck selection={selection} item={item} />
       <KindIcon kind={item.kind} />
       <span className="lib-trash-name">
         <span className="lib-trash-title">{item.title}</span>
@@ -71,8 +75,8 @@ function TrashRow({ item, now, onRestore, onGone }: { item: LibraryTrashItem; no
       <span className="lib-trash-kind text-meta">{label}</span>
       <time className="lib-trash-time text-meta" dateTime={item.deletedAt}>{deletedText(item.deletedAt, now,
         timeZone)}</time>
-      <button type="button" className="secondary-button button-small" disabled={busy}
-        aria-label={`还原${label}「${item.title}」`} onClick={restore}>还原</button>
+      {selection.active ? null : <button type="button" className="secondary-button button-small" disabled={busy}
+        aria-label={`还原${label}「${item.title}」`} onClick={restore}>还原</button>}
     </li>
   );
 }
@@ -98,21 +102,29 @@ export function TrashPage(): ReactNode {
     }
   };
   const items = (trash?.items ?? []).filter((item) => !gone.has(keyOf(item)));
+  const selection = useBulkSelection({ items, run: (input) => libraryBatch(api.library, input),
+    empty: (input) => api.library.emptyTrash(input), onChanged: () => {
+      libraryChanged(); void m5b.files.reset(); void m5b.trash.reload();
+    } });
   return (
     <div className="page lib-page lib-trash">
       <PageHeader title="最近删除" />
+      <BulkHeader selection={selection} items={items} trash />
+      <BulkFeedback selection={selection} />
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {trash === null && error === null ? <p className="block-empty" role="status">正在读…</p> : null}
       {trash !== null && items.length === 0 ? <p className="block-empty">没有删掉的东西。</p> : null}
       {items.length === 0 ? null : (
         <ul className="lib-trash-rows">
           {items.map((item) => <TrashRow key={keyOf(item)} item={item} now={now} onRestore={restore}
+            selection={selection}
             onGone={() => {
               setGone((previous) => new Set(previous).add(keyOf(item)));
               libraryChanged();
             }} />)}
         </ul>
       )}
+      <BulkBar selection={selection} trash />
     </div>
   );
 }

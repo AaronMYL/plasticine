@@ -157,6 +157,24 @@ export class FakeFiles implements FilesApi {
     });
   }
 
+  trashDetails(id: string): { kind: 'file' | 'folder'; fileCount: number } {
+    const held = this.bin.get(id);
+    if (held === undefined) throw notFound('回收里的这一项');
+    return { kind: held.entry.kind === 'directory' ? 'folder' : 'file', fileCount:
+      [...this.entries.values()].filter((entry) => entry.kind === 'file'
+        && entry.path.startsWith(`${held.originalPath}/`)).length };
+  }
+
+  purgeDeleted(id: string): void {
+    this.deps.session.require();
+    const held = this.bin.get(id);
+    if (held === undefined) throw notFound('回收里的这一项');
+    for (const path of this.entries.keys()) if (path.startsWith(`${held.originalPath}/`)) this.entries.delete(path);
+    for (const path of this.contents.keys()) if (path === held.originalPath
+      || path.startsWith(`${held.originalPath}/`)) this.contents.delete(path);
+    this.bin.delete(id);
+  }
+
   async trashed(): Promise<TrashListResponse> {
     this.deps.session.require();
     return { entries: [...this.bin.values()].map(({ entry: _entry, ...view }) => view) };

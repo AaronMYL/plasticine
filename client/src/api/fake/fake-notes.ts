@@ -1,3 +1,6 @@
+import { FakeBatchReceipts, fakeBatch, checkTrashCount } from './fake-batch.ts';
+import { createRequestId } from '../request-id.ts';
+import type { NotesBatchRequest, EmptyTrashRequest } from '../shared.ts';
 // 假的笔记：带版本保护（version 不符就 409 带当前那一版）、按 request_id 幂等、删除只是记下删除时间。
 // 笔记的形状是 shared/api 的 NoteView；搜索和真实现一样检查可读正文。
 
@@ -66,6 +69,41 @@ export class FakeNotes implements NotesApi {
 
   constructor(deps: FakeNotesDeps) {
     this.deps = deps;
+  }
+
+  private readonly batchReceipts = new FakeBatchReceipts();
+
+  async batch(input: NotesBatchRequest) {
+    this.deps.session.require();
+    return this.batchReceipts.run(input, () => fakeBatch(input.items, async (item) => this.find(item.id).title,
+      async (item) => {
+        const note = this.find(item.id);
+        const requestId = createRequestId();
+        switch (input.action) {
+          case 'move': return this.save(item.id, { requestId, version: note.version, folder: input.destination ?? '' });
+          case 'trash': return this.remove(item.id, requestId);
+          case 'restore': return this.restore(item.id, requestId);
+          case 'purge': return this.purgeDeleted(item.id);
+        }
+      }));
+  }
+
+  async emptyTrash(input: EmptyTrashRequest) {
+    this.deps.session.require();
+    return this.batchReceipts.run(input, async () => {
+      const rows = await this.list({ deletedOnly: true });
+      checkTrashCount(rows.length, input.expectCount);
+      return fakeBatch(rows.map((row) => ({ kind: 'note', id: row.id })), async (item) => this.find(item.id).title,
+        async (item) => this.purgeDeleted(item.id));
+    });
+  }
+
+  private purgeDeleted(id: string): void {
+    if (this.find(id).deletedAt === null) throw new Error('先移到最近删除，再永久删除。');
+    this.notes.delete(id);
+    this.history.delete(id);
+    this.importViews.delete(id);
+    this.deps.bus.emit({ type: 'note.deleted', noteId: id });
   }
 
   async list(query: NoteSearch): Promise<NoteMetaView[]> {

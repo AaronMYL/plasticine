@@ -1,3 +1,6 @@
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
+import { libraryBatch } from '../bulk/bulk-api.ts';
 // 资料库首页（#/library；旧地址 #/books/space 同一页）。第 8 批第 6 条（设计稿 Library-Spaces / Phone-Library，11-09）：
 // 空间是整页网页，第一屏是缩略图卡片——「最近」三张（手机上一排横滑），「全部」四列（手机两列）；卡片下面是标题、
 // 「报告 / 来信 · 时间」和 ⋯（改名、删除）。改名在卡片原处改；删除先问，删了进「最近删除」。
@@ -24,7 +27,7 @@ import { spaceRoute } from '../spaces/space-links.ts';
 import { SpaceThumb } from '../spaces/space-thumb.tsx';
 import { genreLabel, spaceWhen } from '../spaces/space-time.ts';
 import { useDeleteConfirm, useSpaceActions } from './library-actions.tsx';
-import { useLibraryRevision } from './library-signal.ts';
+import { libraryChanged, useLibraryRevision } from './library-signal.ts';
 import './library.css';
 import './library-grid.css';
 
@@ -57,15 +60,20 @@ interface CardProps {
   space: SpaceListItem;
   now: Date;
   onDelete: (space: SpaceListItem) => void;
+  selection: BulkSelection;
 }
 
-function SpaceCard({ space, now, onDelete }: CardProps): ReactNode {
+function SpaceCard({ space, now, onDelete, selection }: CardProps): ReactNode {
   const actions = useSpaceActions();
   const [renaming, setRenaming] = useState(false);
   const meta = `${genreLabel(space.genre)} · ${spaceWhen(space.updatedAt, now)}`;
   return (
     <li className="lib-card" data-genre={space.genre ?? 'legacy'}>
-      <a className="lib-card-link" href={routeHash(spaceRoute(space.id))} aria-label={space.title}
+      {selection.active ? <span className="bulk-card-check"><BulkCheck selection={selection}
+        item={{ kind: 'space', id: space.id, title: space.title }} /></span> : null}
+      <a onClick={(event) => { if (selection.active) { event.preventDefault();
+        selection.toggle({ kind: 'space', id: space.id, title: space.title }, event.shiftKey); } }}
+        className="lib-card-link" href={routeHash(spaceRoute(space.id))} aria-label={space.title}
         tabIndex={renaming ? -1 : undefined}>
         <SpaceThumb spaceId={space.id} version={space.version} />
       </a>
@@ -76,7 +84,7 @@ function SpaceCard({ space, now, onDelete }: CardProps): ReactNode {
         {space.title}</a>}
       <div className="lib-card-meta">
         <span className="text-meta">{meta}</span>
-        <RevealMore label={`「${space.title}」的更多操作`} actions={renaming ? [] : [
+        <RevealMore label={`「${space.title}」的更多操作`} actions={renaming || selection.active ? [] : [
           { icon: 'edit', label: '改名', onSelect: () => setRenaming(true) },
           { icon: 'trash', label: '删除', danger: true, onSelect: () => onDelete(space) },
         ]} />
@@ -126,6 +134,10 @@ function PhoneExtras({ navigate }: { navigate: (route: Route) => void }): ReactN
 
 export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (route: Route) => void }): ReactNode {
   const { spaces, error } = useAllSpaces();
+  const api = useApi();
+  const bulkItems = (spaces ?? []).map((space) => ({ kind: 'space' as const, id: space.id, title: space.title }));
+  const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
+    onChanged: libraryChanged });
   const actions = useSpaceActions();
   const confirm = useDeleteConfirm();
   const titled = useInTitlebar();
@@ -133,26 +145,30 @@ export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (ro
   const now = new Date();
   const remove = (space: SpaceListItem): void => confirm.ask(space.title, () => actions.remove(space.id));
   const cards = (list: readonly SpaceListItem[]): ReactNode[] => list.map((space) => (
-    <SpaceCard key={space.id} space={space} now={now} onDelete={remove} />));
+    <SpaceCard key={space.id} space={space} now={now} onDelete={remove} selection={selection} />));
   const ask = <IconButton icon="plus" label="新空间：跟 Plasticine 说"
     onClick={() => shellPrefs.setPhoneChatOpen(true)} />;
   return (
     <div className="page lib-page lib-grid-page" data-phone={phone}>
       {titled ? null : <PageHeader title="资料库" phoneSearch={false} phoneTools={ask} />}
+      <BulkHeader selection={selection} items={bulkItems} />
+      <BulkFeedback selection={selection} />
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {spaces === null && error === null ? <p className="block-empty" role="status">正在读…</p> : null}
       {spaces !== null && spaces.length === 0 ? <p className="block-empty">还没有空间。</p> : null}
       {spaces === null || spaces.length === 0 ? null : <>
-        <section aria-label="最近" className="lib-grid-sec">
+        {selection.active ? null : <section aria-label="最近" className="lib-grid-sec">
           <h2 className="lib-grid-head">最近</h2>
           <ul className="lib-cards lib-recent">{cards(spaces.slice(0, RECENT_COUNT))}</ul>
-        </section>
+        </section>}
         <section aria-label="全部" className="lib-grid-sec">
           <h2 className="lib-grid-head">全部<span className="lib-grid-count">{spaces.length}</span></h2>
           <ul className="lib-cards lib-all">{cards(spaces)}</ul>
         </section>
       </>}
       {phone ? <PhoneExtras navigate={navigate} /> : null}
+      <BulkBar selection={selection} folders={[...new Set((spaces ?? []).flatMap((space) =>
+        space.folder ? [space.folder] : []))]} />
       {confirm.dialog}
     </div>
   );

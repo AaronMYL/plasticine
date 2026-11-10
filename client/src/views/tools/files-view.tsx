@@ -1,3 +1,8 @@
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection } from '../bulk/use-bulk-selection.ts';
+import { libraryBatch } from '../bulk/bulk-api.ts';
+import { libraryChanged } from '../library/library-signal.ts';
+import { useLibraryTrash } from '../../shell/columns/library-subscriptions.tsx';
 // 文件（工具组的一项，《UI 方案》第 9 节）：状态目录里的工作目录。一层一层点进去；文件可以下载、上传（按类型和大小收，
 // 服务端再核）、新建文件夹；改名 / 移动、删除都要打一遍现在的名字（删除进回收，回收里能还原）。确认那一句和新名字存在
 // inline-drafts。读失败说原因并给「重新读取」。
@@ -43,6 +48,7 @@ function EntryActions({ entry, mode, onDone }: { entry: FileEntryView; mode: 'mo
     if (!done) {
       return;
     }
+    libraryChanged();
     inlineDrafts.clear(draftKey(entry, 'to'));
     inlineDrafts.clear(draftKey(entry, 'confirm'));
     onDone();
@@ -82,34 +88,29 @@ function EntryActions({ entry, mode, onDone }: { entry: FileEntryView; mode: 'mo
 }
 
 function Trash(): ReactNode {
-  const { m5b, m5bActions } = useLive();
-  const trash = useStore(m5b.trash.data);
-  useEffect(() => {
-    m5b.trash.open();
-  }, [m5b.trash]);
-  const entries = trash.value?.entries ?? [];
-  return (
-    <section className="block" aria-label="回收">
-      <div className="block-head">
-        <h3 className="block-title">回收</h3>
-        <span className="block-meta text-mono">{entries.length}</span>
-      </div>
-      <LoadNote resource={trash} what="回收" onRetry={() => void m5b.trash.reload()} />
-      {trash.status === 'ready' && entries.length === 0 ? <p className="block-empty">回收是空的。</p> : null}
-      <ul className="tool-list">
-        {entries.map((entry) => (
-          <li key={entry.id} className="tool-row file-row">
-            <span className="tool-row-main">{entry.originalPath}</span>
-            <span className="file-row-side">
-              <span className="tool-row-meta text-meta">{shortTime(entry.trashedAt)}</span>
-              <IconButton icon="undo" label="还原" title={`还原 ${entry.originalPath}`}
-                onClick={() => void m5bActions.restore(entry)} />
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
+  const api = useApi();
+  const { m5b } = useLive();
+  const { trash, error } = useLibraryTrash();
+  const entries = (trash?.items ?? []).filter((item) => item.kind === 'file' || item.kind === 'folder');
+  const changed = (): void => { libraryChanged(); void m5b.files.reset(); void m5b.trash.reload(); };
+  const selection = useBulkSelection({ items: entries, run: (input) => libraryBatch(api.library, input),
+    onChanged: changed });
+  return <section className="block" aria-label="回收">
+    <div className="block-head"><h3 className="block-title">最近删除</h3>
+      <span className="block-meta text-mono">{entries.length}</span></div>
+    <BulkHeader selection={selection} items={entries} trash allowEmpty={false} />
+    <BulkFeedback selection={selection} />
+    {error === null ? null : <p role="alert">{error}</p>}
+    {trash !== null && entries.length === 0 ? <p className="block-empty">回收是空的。</p> : null}
+    <ul className="tool-list">{entries.map((entry) => <li key={entry.id} className="tool-row file-row">
+      <BulkCheck selection={selection} item={entry} />
+      <span className="tool-row-main">{entry.originalPath}</span>
+      <span className="file-row-side"><span className="tool-row-meta text-meta">{shortTime(entry.deletedAt)}</span>
+        {selection.active ? null : <IconButton icon="undo" label="还原" title={`还原 ${entry.originalPath}`}
+          onClick={() => void selection.perform('restore', undefined, [entry])} />}</span>
+    </li>)}</ul>
+    <BulkBar selection={selection} trash />
+  </section>;
 }
 
 export function FilesView(): ReactNode {
@@ -135,6 +136,10 @@ export function FilesView(): ReactNode {
     void m5b.files.reset();
   };
   const listing = files.value;
+  const bulkItems = (listing?.entries ?? []).map((entry) => ({
+    kind: entry.kind === 'directory' ? 'folder' as const : 'file' as const, id: entry.path, title: entry.name }));
+  const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
+    scope: folder, onChanged: () => { void m5b.files.reset(); void m5b.trash.reload(); libraryChanged(); } });
   return (
     <div className="tool">
       <PendingOps
@@ -171,6 +176,8 @@ export function FilesView(): ReactNode {
           }}
         />
       </div>
+      <BulkHeader selection={selection} items={bulkItems} />
+      <BulkFeedback selection={selection} />
       <div className="tool-bar" aria-label="常用位置">
         {[['', '工作目录'], ['/', '服务器根目录'], ['/home', '用户目录'], ['/srv', '服务资料'], ['/var/log', '日志']]
           .map(([path = '', label]) => <button type="button" className="text-button" key={path}
@@ -215,7 +222,16 @@ export function FilesView(): ReactNode {
       {files.status === 'ready' && listing?.entries.length === 0 ? <p className="block-empty">这个文件夹是空的。</p> : null}
       <ul className="tool-list" aria-label="文件">
         {(listing?.entries ?? []).map((entry) => (
-          <li key={entry.path} className="tool-row file-row" aria-label={entry.name}>
+          <li key={entry.path} className="tool-row file-row" aria-label={entry.name} data-bulk={selection.active}
+            onClickCapture={(event) => {
+              if (selection.active && !(event.target instanceof HTMLInputElement)) {
+                event.preventDefault(); event.stopPropagation();
+                selection.toggle({ kind: entry.kind === 'directory' ? 'folder' : 'file',
+                  id: entry.path, title: entry.name }, event.shiftKey);
+              }
+            }}>
+            <BulkCheck selection={selection} item={{ kind: entry.kind === 'directory' ? 'folder' : 'file',
+              id: entry.path, title: entry.name }} />
             {entry.kind === 'directory' ? (
               <button type="button" className="text-button tool-row-main" onClick={() => go(entry.path)}>
                 <Icon name="folder" /> {entry.name}
@@ -232,10 +248,10 @@ export function FilesView(): ReactNode {
             <span className="file-row-side">
               <span className="tool-row-meta text-meta">{entry.kind === 'file' ? bytesText(entry.bytes) : '文件夹'}</span>
               <span className="tool-row-meta text-meta">{shortTime(entry.modifiedAt)}</span>
-              <IconButton icon="edit" label="改名" title={`改名 ${entry.name}`}
+              {selection.active ? null : <><IconButton icon="edit" label="改名" title={`改名 ${entry.name}`}
                 onClick={() => setEditing({ path: entry.path, mode: 'move' })} />
               <IconButton icon="trash" label="删除" title={`删除 ${entry.name}`}
-                onClick={() => setEditing({ path: entry.path, mode: 'trash' })} />
+                onClick={() => setEditing({ path: entry.path, mode: 'trash' })} /></>}
             </span>
             {editing?.path === entry.path ? (
               <EntryActions entry={entry} mode={editing.mode} onDone={() => setEditing(null)} />
@@ -243,7 +259,9 @@ export function FilesView(): ReactNode {
           </li>
         ))}
       </ul>
-      <Trash />
+      <BulkBar selection={selection} folders={(listing?.entries ?? []).filter((entry) =>
+        entry.kind === 'directory').map((entry) => entry.path)} />
+      {selection.active ? null : <Trash />}
     </div>
   );
 }
