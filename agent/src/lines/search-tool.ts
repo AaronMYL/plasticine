@@ -8,7 +8,8 @@ import { dayRange } from '../daily/index.ts';
 import type { StateService } from '../state/index.ts';
 import { DEFAULT_TIME_ZONE } from './kernel-types.ts';
 import { checkedArgs } from './tool-args.ts';
-import type { KernelTool } from './types.ts';
+import type { KernelTool, LineScope } from './types.ts';
+import { accessibleLine, type LineAccessState } from './access.ts';
 
 const TOOL_NAME = 'conversation_search';
 // 一次默认列这么多条：够挑出要的那句，不把整段历史塞回上下文。
@@ -20,7 +21,7 @@ const LINE_KIND_LABELS: Readonly<Record<IndexLineKind, string>> = {
   main: '主线', side: '旁聊', background: '后台线',
 };
 
-export type ConversationSearchState = Pick<StateService, 'search' | 'lines'>;
+export type ConversationSearchState = Pick<StateService, 'search'> & LineAccessState;
 
 /** 命中处前后一小段，压成一行。找不到命中位置（比如大小写折叠不同）就取开头。 */
 export function snippetAround(text: string, query: string): string {
@@ -46,11 +47,12 @@ function localStamp(iso: string): string {
   return `${part('year')}-${part('month')}-${part('day')} ${part('hour')}:${part('minute')}`;
 }
 
-function createConversationSearch(state: ConversationSearchState): AgentTool<typeof ConversationSearchParameters> {
+function createConversationSearch(state: ConversationSearchState, scope: LineScope)
+  : AgentTool<typeof ConversationSearchParameters> {
   return {
     name: TOOL_NAME,
     label: '翻对话',
-    description: 'Finds his and your own exact earlier words in every line (main, side, background), by keyword and '
+    description: 'Finds exact earlier words in conversations you can access, by keyword and '
       + 'optionally by day range (YYYY-MM-DD, his time zone) and line kind. Returns each hit\'s ref '
       + '(line:<line>:<seq>), time, line, and a short stretch of the original text around the hit, best match '
       + 'first. Use it when you need what was actually said rather than a summary. Tool results are not included.',
@@ -61,7 +63,8 @@ function createConversationSearch(state: ConversationSearchState): AgentTool<typ
       const before = args.to === undefined ? undefined : dayRange(args.to, DEFAULT_TIME_ZONE).end.toISOString();
       const hits = state.search.find({ q: args.query, kinds: ['message'],
         ...(args.lineKind === undefined ? {} : { lineKinds: [args.lineKind] }),
-        ...(from === undefined ? {} : { from }), ...(before === undefined ? {} : { before }) });
+        ...(from === undefined ? {} : { from }), ...(before === undefined ? {} : { before }) })
+        .filter((hit) => hit.lineId !== null && accessibleLine(state, scope, hit.lineId));
       if (hits.length === 0) {
         return { content: [{ type: 'text', text: `没找到含「${args.query}」的原话。` }], details: {} };
       }
@@ -88,6 +91,6 @@ export function conversationSearchTool(state: ConversationSearchState): KernelTo
     name: TOOL_NAME,
     say: (args) => (typeof args['query'] === 'string' ? `翻对话：${args['query']}` : '翻对话'),
     hardLine: () => null,
-    create: () => createConversationSearch(state),
+    create: (scope) => createConversationSearch(state, scope),
   };
 }

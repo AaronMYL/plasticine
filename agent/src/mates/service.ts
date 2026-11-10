@@ -143,8 +143,7 @@ export class Mates {
       if (main.status !== 'idle') throw new LineError('conflict', '等主线这一轮结束后再并入。');
       for (const row of this.#state.lineMessages.after(line.id, 0)) {
         this.#state.lineMessages.append(main.id, row.role, row.message, { ...row.meta,
-          ...(row.meta?.origin === undefined ? {} : { origin: { ...row.meta.origin,
-            ref: `line:${line.id}:${row.seq}` } }) }, row.createdAt);
+          origin: { kind: 'unknown', ...row.meta?.origin, ref: `line:${line.id}:${row.seq}` } }, row.createdAt);
       }
       this.#kernel().archive(line.id, after);
       return { lineId: main.id, mate: null };

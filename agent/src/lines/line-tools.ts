@@ -7,6 +7,7 @@ import { LINE_STATUSES, LINE_TITLE_MAX_CHARS, type LineMessageView, type LineVie
 import { clip } from './messages.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';
+import { accessibleLine, type LineAccessState } from './access.ts';
 
 // 读一条线时默认带最近这么多条：够看清它做到哪了，不把整条线搬进上下文。
 const READ_DEFAULT = 20;
@@ -143,13 +144,38 @@ function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
-export function lineTools(control: LineControl): KernelTool[] {
+function scopedControl(control: LineControl, state: LineAccessState, scope: LineScope): LineControl {
+  const requireAccess = (id: string, mode: 'read' | 'control'): void => {
+    if (!accessibleLine(state, scope, id, mode)) {
+      throw new Error(mode === 'read' ? '只能读取自己的对话、交接结果和所属群组的公共对话。'
+        : '只能给自己的对话和后台工作插话或叫停；跨队友协作请用 mate_handoff。');
+    }
+  };
+  return {
+    spawn: (...args) => control.spawn(...args),
+    list: (filter) => {
+      const source = state.lines.get(scope.lineId);
+      if (source !== undefined && source.mateId == null) return control.list(filter);
+      return control.list({ ...filter, limit: Number.MAX_SAFE_INTEGER })
+        .filter((line) => accessibleLine(state, scope, line.id)).slice(0, filter.limit);
+    },
+    read: (id, limit) => { requireAccess(id, 'read'); return control.read(id, limit); },
+    tell: (id, text) => { requireAccess(id, 'control'); return control.tell(id, text); },
+    halt: (id) => { requireAccess(id, 'control'); return control.halt(id); },
+  };
+}
+
+export function lineTools(control: LineControl, state: LineAccessState): KernelTool[] {
   return [
     { name: 'start_line', say: (args) => `开一条线：${text(args['title'])}`, hardLine: () => null,
       create: (scope) => startTool(control, scope) },
-    { name: 'list_lines', say: () => '看线列表', hardLine: () => null, create: () => listTool(control) },
-    { name: 'read_line', say: () => '读一条线', hardLine: () => null, create: () => readTool(control) },
-    { name: 'tell_line', say: () => '给一条线插话', hardLine: () => null, create: () => tellTool(control) },
-    { name: 'stop_line', say: () => '停一条线', hardLine: () => null, create: () => stopTool(control) },
+    { name: 'list_lines', say: () => '看线列表', hardLine: () => null,
+      create: (scope) => listTool(scopedControl(control, state, scope)) },
+    { name: 'read_line', say: () => '读一条线', hardLine: () => null,
+      create: (scope) => readTool(scopedControl(control, state, scope)) },
+    { name: 'tell_line', say: () => '给一条线插话', hardLine: () => null,
+      create: (scope) => tellTool(scopedControl(control, state, scope)) },
+    { name: 'stop_line', say: () => '停一条线', hardLine: () => null,
+      create: (scope) => stopTool(scopedControl(control, state, scope)) },
   ];
 }

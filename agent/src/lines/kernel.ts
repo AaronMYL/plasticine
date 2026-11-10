@@ -63,7 +63,8 @@ export class LineKernel implements LineControl, SideControl {
     const askHost = waitHost;
     const submits = options.submits === undefined ? [] : [pageSubmitAskTool(askHost, options.submits)];
     const asking = (options.askTools ?? []).map((make) => make(askHost));
-    this.#tools = [askUserTool(askHost), ...lineTools(this), outcomeTool(this.#state), readResultTool(this.#state),
+    this.#tools = [askUserTool(askHost), ...lineTools(this, this.#state),
+      outcomeTool(this.#state), readResultTool(this.#state),
       ...submits, ...asking, ...(options.tools ?? [])];
     this.#host = this.#runnerHost();
   }

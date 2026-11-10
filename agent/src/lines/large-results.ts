@@ -4,11 +4,11 @@
 import { Type } from 'typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import type { ToolResultMessage } from '@earendil-works/pi-ai';
-import type { StateService } from '../state/index.ts';
 import { lineRef } from '../state/index.ts';
+import { accessibleLine, type LineAccessState } from './access.ts';
 import { contentText } from './messages.ts';
 import { checkedArgs } from './tool-args.ts';
-import type { KernelTool } from './types.ts';
+import type { KernelTool, LineScope } from './types.ts';
 
 /** 结果超过这么多字就只放开头：约一两千 token，一页网页全文远超这个。 */
 export const LARGE_RESULT_CHARS = 8_000;
@@ -38,9 +38,9 @@ const ReadParameters = Type.Object({
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: RESULT_PAGE_CHARS })),
 }, { additionalProperties: false });
 
-export type ResultState = Pick<StateService, 'lineMessages'>;
+export type ResultState = LineAccessState;
 
-function createRead(state: ResultState): AgentTool<typeof ReadParameters> {
+function createRead(state: ResultState, scope: LineScope): AgentTool<typeof ReadParameters> {
   return {
     name: READ_RESULT_TOOL,
     label: '取一步结果的全文',
@@ -51,7 +51,7 @@ function createRead(state: ResultState): AgentTool<typeof ReadParameters> {
     async execute(_id, raw) {
       const args = checkedArgs(ReadParameters, raw, READ_RESULT_TOOL);
       const said = state.lineMessages.said(args.ref);
-      if (said === undefined || said.role !== 'toolResult') {
+      if (said === undefined || said.role !== 'toolResult' || !accessibleLine(state, scope, said.lineId)) {
         throw new Error(`没有这一步的结果：${args.ref}。用上下文里给的那个 ref。`);
       }
       const chars = Array.from(said.text);
@@ -66,5 +66,5 @@ function createRead(state: ResultState): AgentTool<typeof ReadParameters> {
 
 export function readResultTool(state: ResultState): KernelTool {
   return { name: READ_RESULT_TOOL, say: () => '翻出一步的全文', hardLine: () => null,
-    create: () => createRead(state) };
+    create: (scope) => createRead(state, scope) };
 }
