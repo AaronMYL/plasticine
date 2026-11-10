@@ -4,7 +4,7 @@
 // 新令牌；✎ 改字时让它进入可编辑，它交回「第几段改成了什么」，外面在没跑过脚本的原样上换好整页再交给 onEdit 去存；
 // 链接交给外面开（站外的在网页标签，站内的走路由）。
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Value } from 'typebox/value';
 import { useApi } from '../../api/context.tsx';
@@ -120,7 +120,8 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
     frame.current?.contentWindow?.postMessage({ pz: 'space', type: 'highlight', paragraph: highlightParagraph }, '*');
   }, [highlightParagraph]);
 
-  useEffect(() => {
+  // iframe 一出现就可能发消息；提交时先接好，不能等异步 effect 再接第一次点击。
+  useLayoutEffect(() => {
     const controller = new AbortController();
     const post = (message: Record<string, unknown>, transfer: Transferable[] = []): void => {
       frame.current?.contentWindow?.postMessage({ pz: 'space', ...message }, '*', transfer);
