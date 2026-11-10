@@ -110,7 +110,8 @@ test('翻译模型：读到跟默认走；选一个按版本存；旧版本 409�
 test('用途配置接口一次保存、按版本防覆盖并幂等；未知用途与重复用途不会改动配置', async () => {
   const { t, cookie } = await providerApp();
   const read = json(await call(t, 'GET', MODEL_PROVIDERS_PATH, { cookie })) as unknown as ListModelProvidersResponse;
-  assert.equal(read.purposes.length, 27);
+  assert.equal(read.purposes.length, 28);
+  assert.ok(read.purposes.some((entry) => entry.purpose === 'web_extract'));
   assert.ok(read.providers.every((item) => Array.isArray(item.enabled)));
   const body = { requestId: requestId(), version: read.version,
     enabled: [{ provider: 'fake-key', models: ['key-model'] }], purposes: [

@@ -47,9 +47,9 @@ describe('设置 · AI 模型选择', () => {
     expect(screen.queryByRole('button', { name: /^润色：/ })).toBeNull();
     fireEvent.click(notes);
     expect(screen.getByRole('button', { name: /^润色：/ }).getAttribute('data-quiet')).toBe('true');
-    expect(screen.queryByRole('button', { name: '旁聊：跟主线' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '主线和旁聊 · 2 项' }));
-    expect(screen.getByRole('button', { name: '旁聊：跟主线' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '队友：跟主线' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '主线和队友 · 2 项' }));
+    expect(screen.getByRole('button', { name: '队友：跟主线' })).toBeTruthy();
     fireEvent.change(screen.getByRole('searchbox', { name: '搜功能' }), { target: { value: '心跳' } });
     expect(screen.getByRole('button', { name: /^心跳：/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^默认：/ })).toBeNull();
