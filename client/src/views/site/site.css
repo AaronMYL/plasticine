@@ -130,13 +130,16 @@
 .ch-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .ch-item { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 12px; border-radius: 10px;
   background: var(--ch-s2); font-size: 14px; }
-.ch-item > span:first-of-type { flex: 1; }
+.ch-name { flex: 1; min-width: 0; }
+.ch-task-state, .ch-check { display: flex; flex: 0 0 14px; width: 14px; height: 14px; color: var(--ch-ok); }
+.ch-check-in { animation: ch-check-in 0.18s var(--ch-ease) both; }
 .ch-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px;
   background: rgba(211, 146, 116, 0.12); color: var(--ch-accent); font-size: 12px; white-space: nowrap; }
 .ch-chip-blue { background: rgba(159, 178, 208, 0.12); color: var(--ch-blue); }
 .ch-chip-ok { background: rgba(147, 194, 154, 0.12); color: var(--ch-ok); }
 .ch-chip-mute { background: var(--ch-s3); color: var(--ch-fg2); }
-.ch-spin { flex: none; width: 12px; height: 12px; box-sizing: border-box; border: 1.5px solid rgba(159, 178, 208, 0.3);
+.ch-spin { flex: 0 0 14px; width: 14px; height: 14px; box-sizing: border-box;
+  border: 1.5px solid rgba(159, 178, 208, 0.3);
   border-top-color: var(--ch-blue); border-radius: 50%; animation: ch-spin 0.9s linear infinite; }
 .ch-invite { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px;
   background: var(--ch-s2);
@@ -149,7 +152,7 @@
 .ch-result-head strong { font-size: 16px; font-weight: 600; }
 .ch-result dl { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px 12px; margin: 14px 0 0;
   font-size: 14px; }
-.ch-result dt { color: var(--ch-fg3); }
+.ch-result dt { display: flex; align-items: center; gap: 8px; color: var(--ch-fg3); }
 .ch-result dd { margin: 0; }
 .ch-steps { display: flex; gap: 12px; }
 .ch-step { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0;
@@ -275,6 +278,7 @@
 @keyframes ch-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes ch-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 @keyframes ch-spin { to { transform: rotate(360deg); } }
+@keyframes ch-check-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ch-blink { 50% { opacity: 0; } }
 @keyframes ch-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 

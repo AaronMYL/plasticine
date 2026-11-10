@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 const STEPS = ['提任务', '拆解', '邀请', '一起做', '汇总'] as const;
 const STEP_MS = 3200;
+/** 与第二段回复的入场延迟一致，回复出现时这一行完成。 */
+const PEER_REPLY_MS = 150;
 
 interface Task {
   name: string;
@@ -86,20 +88,41 @@ function Graph({ step }: { step: number }): ReactNode {
   );
 }
 
-function TaskList({ running }: { running: boolean }): ReactNode {
+function TaskStatus({ pending = false, fade = false }: { pending?: boolean; fade?: boolean }): ReactNode {
+  return <span className="ch-task-state" role="img" aria-label={pending ? '在做' : '做完了'}>
+    {pending ? <span className="ch-spin" /> : <span className={fade ? 'ch-check ch-check-in' : 'ch-check'}>
+      <Check /></span>}
+  </span>;
+}
+
+function TaskList({ active = false, complete = false }: { active?: boolean; complete?: boolean }): ReactNode {
   return (
     <ul className="ch-list">
       {TASKS.map((task, index) => (
         <li key={task.name} className="ch-item">
-          {running ? (index === 2 ? <span className="ch-spin" role="img" aria-label="在做" />
-            : <span style={{ color: 'var(--ch-ok)', display: 'flex' }} role="img" aria-label="做完了"><Check /></span>)
-            : null}
-          <span>{task.name}</span>
+          {active ? <TaskStatus pending={index === 2 && !complete} fade={index === 2 && complete} /> : null}
+          <span className="ch-name">{task.name}</span>
           <span className={task.peer ? 'ch-chip ch-chip-blue' : 'ch-chip'}>{task.who}</span>
         </li>
       ))}
     </ul>
   );
+}
+
+function WorkingStage(): ReactNode {
+  const [complete, setComplete] = useState(reducedMotion);
+  useEffect(() => {
+    if (complete) return undefined;
+    const timer = setTimeout(() => setComplete(true), PEER_REPLY_MS);
+    return () => clearTimeout(timer);
+  }, [complete]);
+  return <>
+    <div className="ch-rise"><TaskList active complete={complete} /></div>
+    <div className="ch-bubble ch-bubble-peer ch-rise" style={{ animationDelay: `${PEER_REPLY_MS}ms` }}>
+      <div className="ch-who">阿杰的 AI</div>他周六上午有事，11 点以后能出发。</div>
+    <div className="ch-bubble ch-bubble-ai ch-rise-3"><div className="ch-who">你的 AI</div>
+      {'那就订 11:30 的高铁，住处换到春熙路附近。'}</div>
+  </>;
 }
 
 function Stage({ step }: { step: number }): ReactNode {
@@ -113,7 +136,7 @@ function Stage({ step }: { step: number }): ReactNode {
       return <>
         <div className="ch-bubble ch-bubble-ai ch-rise"><div className="ch-who">你的 AI</div>
           {'拆成四件事。两件交给阿杰那边更合适：他的日程和他熟的路线。'}</div>
-        <div className="ch-rise-2"><TaskList running={false} /></div>
+        <div className="ch-rise-2"><TaskList /></div>
       </>;
     case 2:
       return <>
@@ -126,12 +149,7 @@ function Stage({ step }: { step: number }): ReactNode {
         <div className="ch-bubble ch-bubble-peer ch-rise-3"><div className="ch-who">阿杰的 AI</div>收到。我先看他这周六的安排。</div>
       </>;
     case 3:
-      return <>
-        <div className="ch-rise"><TaskList running /></div>
-        <div className="ch-bubble ch-bubble-peer ch-rise-2"><div className="ch-who">阿杰的 AI</div>他周六上午有事，11 点以后能出发。</div>
-        <div className="ch-bubble ch-bubble-ai ch-rise-3"><div className="ch-who">你的 AI</div>
-          {'那就订 11:30 的高铁，住处换到春熙路附近。'}</div>
-      </>;
+      return <WorkingStage />;
     default:
       return <>
         <div className="ch-result ch-rise">
@@ -139,10 +157,10 @@ function Stage({ step }: { step: number }): ReactNode {
             <strong>成都 · 周六到周日</strong><span className="ch-sub ch-mono">4/4 完成</span>
           </div>
           <dl>
-            <dt className="ch-mono">周六</dt><dd>11:30 出发 · 下午宽窄巷子 · 晚上玉林路</dd>
-            <dt className="ch-mono">住处</dt><dd>春熙路附近，两间</dd>
-            <dt className="ch-mono">周日</dt><dd>青城山，傍晚返程</dd>
-            <dt className="ch-mono">预算</dt><dd>每人 1,200 元以内</dd>
+            <dt className="ch-mono"><TaskStatus />周六</dt><dd>11:30 出发 · 下午宽窄巷子 · 晚上玉林路</dd>
+            <dt className="ch-mono"><TaskStatus />住处</dt><dd>春熙路附近，两间</dd>
+            <dt className="ch-mono"><TaskStatus />周日</dt><dd>青城山，傍晚返程</dd>
+            <dt className="ch-mono"><TaskStatus />预算</dt><dd>每人 1,200 元以内</dd>
           </dl>
         </div>
         <div className="ch-row ch-rise-2" style={{ gap: 8 }}>

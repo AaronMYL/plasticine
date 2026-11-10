@@ -2,7 +2,7 @@
 // 报告和来信在沙盒 iframe 里；标题栏「✦ 让 Plasticine 改」把这一页引用进对话；✎ 在页面上改字、自动存、Esc 或「完成」
 // 收起；来信是「回信」。还没重写成网页的旧版式照旧显示、只读；Plasticine 改过一期后的「以后都这样 / 撤销」。
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { phoneFullPage } from '../../../src/shell/phone-bar.tsx';
 import { parseHash } from '../../../src/shell/routes.ts';
 import { SPACE_SANDBOX } from '../../../src/views/spaces/space-frame.tsx';
@@ -12,8 +12,16 @@ const ISSUE = '#/books/space/sp_research_2';
 const REPORT = '#/books/space/sp_cog_1';
 const LETTER = '#/books/space/sp_letter_dream';
 
-async function open(hash = ISSUE, width = 1440) {
-  const app = await renderApp({ hash, width, setup: (fake) => fake.control.spaces.seed() });
+async function open(hash = ISSUE, width = 1440, recent = false) {
+  const app = await renderApp({ hash, width, setup: (fake) => {
+    fake.control.spaces.seed();
+    if (recent) {
+      const get = fake.api.spaces.get;
+      vi.spyOn(fake.api.spaces, 'get').mockImplementation(async (...args) => ({
+        ...await get(...args), updatedAt: new Date().toISOString(),
+      }));
+    }
+  } });
   if (hash === ISSUE) await screen.findByRole('heading', { level: 1, name: /睡眠中的记忆重放/ });
   return app;
 }
@@ -31,6 +39,8 @@ function fromFrame(element: HTMLIFrameElement, data: Record<string, unknown>): v
       source: element.contentWindow }));
   });
 }
+
+beforeEach(() => localStorage.clear());
 
 afterEach(() => {
   setViewportWidth(1440);
@@ -143,7 +153,7 @@ describe('旧版式（还没重写成网页）', () => {
   });
 
   it('Plasticine 改了这一期：页底一条；「以后都这样」写进订阅设置后那条收起，设置里记着第几期加的', async () => {
-    const app = await open();
+    const app = await open(ISSUE, 1440, true);
     const toast = screen.getByRole('status', { name: '' });
     expect(toast.textContent).toContain('这一期改好了：图从 4 张减到 1 张');
     await act(async () => fireEvent.click(within(toast).getByRole('button', { name: '以后都这样' })));
@@ -158,7 +168,7 @@ describe('旧版式（还没重写成网页）', () => {
   });
 
   it('「撤销」恢复上一版，那一条收起', async () => {
-    const app = await open();
+    const app = await open(ISSUE, 1440, true);
     await act(async () => fireEvent.click(screen.getByRole('button', { name: '撤销' })));
     await waitFor(() => expect(screen.queryByText(/这一期改好了/)).toBeNull());
     expect((await app.api.spaces.get('sp_research_2')).version).toBe(3);
