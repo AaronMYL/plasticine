@@ -52,7 +52,7 @@ function one(services: LibraryServices, item: BatchItem, request: BatchCommand):
     if (action === 'purge') { state.libraryPurge.space(item.id); return; }
     const space = state.spaces.require(item.id);
     switch (action) {
-      case 'move': throw new StateError('invalid_input', '这个空间还不能移到文件夹。');
+      case 'move': state.spaces.save(space.id, space.version, { folder: destination || null }, 'user'); break;
       case 'trash': state.spaces.markDeleted(space.id, space.version); break;
       case 'restore': state.spaces.restore(space.id); break;
     }
@@ -62,7 +62,7 @@ function one(services: LibraryServices, item: BatchItem, request: BatchCommand):
     if (action === 'purge') { state.libraryPurge.book(item.id); return; }
     const book = state.books.require(item.id);
     switch (action) {
-      case 'move': throw new StateError('invalid_input', '这本书还不能移到文件夹。');
+      case 'move': state.books.update(book.id, book.version, { folder: destination || null }); break;
       case 'trash': state.books.update(book.id, book.version, { deletedAt: new Date().toISOString() }); break;
       case 'restore': state.books.update(book.id, book.version, { deletedAt: null }); break;
     }

@@ -9,6 +9,10 @@ test('资料库批量回收逐项报告，重复请求不重复操作，清空�
   const cookie = await pair(app);
   const space = app.state.spaces.create({ title: '第一份报告', doc: EMPTY_SPACE_DOC, author: 'ai' });
   const path = '/v2/library/batch';
+  const moved = await call(app, 'POST', path, { cookie, body: { requestId: 'batch-move-1',
+    action: 'move', destination: '项目资料', items: [{ kind: 'space', id: space.id }] } });
+  assert.equal((json(moved)['results'] as { ok: boolean }[])[0]?.ok, true);
+  assert.equal(app.state.spaces.require(space.id).folder, '项目资料');
   const body = { requestId: 'batch-trash-1', action: 'trash',
     items: [{ kind: 'space', id: space.id }, { kind: 'space', id: 'missing-space' }] };
   assert.equal((await call(app, 'POST', path, { body })).status, 401);

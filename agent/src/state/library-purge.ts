@@ -101,7 +101,8 @@ export function createLibraryPurge(context: StoreContext, notes: NoteBodies, boo
       finish('spaces', id, () => {
         db.run('DELETE FROM space_revisions WHERE space_id = $id', { id });
         db.run('DELETE FROM space_rewrites WHERE space_id = $id', { id });
-        db.run(`UPDATE spaces SET title = '', html = NULL, doc = '{"stats":[],"blocks":[],"sources":[]}'
+        db.run(`UPDATE spaces SET title = '已永久删除', html = NULL, doc = '{"stats":[],"blocks":[],"sources":[]}',
+          folder = NULL
           WHERE id = $id`, { id });
       });
     },
@@ -116,7 +117,7 @@ export function createLibraryPurge(context: StoreContext, notes: NoteBodies, boo
         db.run('DELETE FROM book_progress WHERE book_id = $id', { id });
         db.run('DELETE FROM book_insights WHERE book_id = $id', { id });
         db.run(`UPDATE books SET title = '', author = NULL, language = NULL, file_name = '', source_sha256 = '',
-          cover_asset = NULL, toc = '[]', char_count = 0, legacy_payload = NULL WHERE id = $id`, { id });
+          cover_asset = NULL, toc = '[]', char_count = 0, legacy_payload = NULL, folder = NULL WHERE id = $id`, { id });
       });
     },
   };
