@@ -1,3 +1,4 @@
+import { FakeMates } from './fake-mates.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
 import { renderVideoPage } from '../../../../agent/shared/video-space-page.ts';
@@ -75,6 +76,7 @@ export interface FakeApiOptions {
 }
 
 export interface FakeControl {
+  mates: FakeMates;
   outbound: FakeOutbound;
   networkAttachments: FakeNetworkAttachments;
   /** 新内核（2026-11-05）：线和模型连接。 */
@@ -194,6 +196,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const notes = new FakeNotes({ session, bus, faults, now });
   const lines = new FakeLines({ session, bus, receipts, now, stepMs: options.streamStepMs,
     note: (noteId) => notes.peek(noteId), feedItem: (id) => feed.find(id) });
+  const mates = new FakeMates({ session, lines, receipts, now });
   // 本地开发时导入书、生成大纲各等一会儿，看得到「正在导入」「正在逐章归纳」；测试（streamStepMs 0）不等。
   const books = new FakeBooks({ session, bus, notes, now, messages: () => lines.messagesOf(MAIN_LINE_ID),
     workMs: options.streamStepMs > 0 ? BOOK_WORK_MS : 0,
@@ -299,7 +302,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     }
   }
   const api: PlasticineApi = {
-    outbound, networkAttachments,
+    mates, mateGroups: mates.groups, outbound, networkAttachments,
     lines,
     tasks,
     modelProviders,
@@ -348,7 +351,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   return {
     api,
     control: {
-      outbound, networkAttachments,
+      mates, outbound, networkAttachments,
       lines,
       tasks,
       modelProviders,

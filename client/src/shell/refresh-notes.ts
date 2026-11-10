@@ -4,14 +4,13 @@ import type { ClientState } from '../state/context.tsx';
 import { NoteSaver } from '../views/notes/note-saver.ts';
 export function refreshBlockers(state: ClientState): string[] {
   const blockers: string[] = [];
-  const composer = state.conversationUi.store.get();
-  if ((composer.draft !== '' || composer.quotes.length > 0) && !state.conversationUi.savedForRefresh()) {
+  if (state.conversations.hasDrafts()) {
     blockers.push('还有对话草稿或引用');
   }
   if (state.noteDrafts.hasAny()) {
     blockers.push('还有未保存笔记');
   }
-  if (state.attachments.hasAny()) {
+  if (state.conversations.hasAttachments()) {
     blockers.push('还有对话附件或未完成上传');
   }
   if (state.outbox.hasAny()) {
@@ -75,7 +74,7 @@ export async function saveNotesForRefresh(api: PlasticineApi, state: ClientState
     errors.push('保存期间有新输入，请再次确认刷新');
   }
   try {
-    state.conversationUi.saveForRefresh();
+    state.conversations.saveForRefresh();
   } catch {
     errors.push('对话草稿未保存，请检查浏览器存储后重试');
   }

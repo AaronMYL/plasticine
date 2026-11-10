@@ -47,3 +47,18 @@ it('作者队友优先于这类页面上次选择，没有作者时用记住的�
   targets.enterPage('space:2', 'library', 'mate-b', new Set([MAIN_LINE_ALIAS]));
   expect(targets.store.get().lineId).toBe(MAIN_LINE_ALIAS);
 });
+
+it('队友草稿也参与离开提醒，确认保存后刷新仍回到原来的那条线', async () => {
+  const { hasUnsavedWork } = await import('../../src/shell/unsaved-guard.ts');
+  const data = new Map<string, string>();
+  const storage = { getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => { data.set(key, value); }, removeItem: (key: string) => { data.delete(key); } };
+  const first = createClientState({ storage });
+  first.conversations.forLine('mate-persist').ui.setDraft('下次继续检查');
+  expect(hasUnsavedWork(first)).toBe(true);
+  first.conversations.saveForRefresh();
+  expect(hasUnsavedWork(first)).toBe(false);
+  const reloaded = createClientState({ storage });
+  expect(reloaded.conversations.forLine('mate-persist').ui.store.get().draft).toBe('下次继续检查');
+  expect(reloaded.conversationUi.store.get().draft).toBe('');
+});

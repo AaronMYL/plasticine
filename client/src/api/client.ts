@@ -350,6 +350,8 @@ export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
   tasks: import('./tasks-client.ts').TasksApi;
   search: SearchApi;
   systems: import('./systems-client.ts').SystemsApi;
+  mates: import('./mates-client.ts').MatesApi;
+  mateGroups: import('./mates-client.ts').MateGroupsApi;
   translate: TranslateApi;
   attachments: AttachmentsApi;
   links: { preview(url: string, signal?: AbortSignal): Promise<import('./shared.ts').LinkPreview> };

@@ -74,7 +74,7 @@ export function createClientState(options: ClientStateOptions = {}): ClientState
   return {
     attachments,
     conversationUi,
-    conversations: new ConversationRegistry(conversationUi, attachments, actionOps),
+    conversations: new ConversationRegistry(conversationUi, attachments, actionOps, storage),
     dockTargets: new DockTargets(options.noteCacheStorage === undefined ? storage : options.noteCacheStorage),
     outbox: new Outbox(storage),
     noteDrafts: new NoteDrafts(),

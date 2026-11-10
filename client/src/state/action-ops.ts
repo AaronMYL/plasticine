@@ -25,6 +25,7 @@ import {
   ClientUpdateDecisionSchema,
   CreateBackupRequestSchema, RestorePreviewRequestSchema, RestoreBackupRequestSchema,
 } from '../api/shared.ts';
+import { MATES_ACTION_REQUEST_SCHEMAS } from './mates-action-requests.ts';
 import { CONTACTS_ACTION_REQUEST_SCHEMAS } from './contacts-action-requests.ts';
 import { M4_ACTION_REQUEST_SCHEMAS } from './m4-action-requests.ts';
 import { M5_ACTION_REQUEST_SCHEMAS } from './m5-action-requests.ts';
@@ -59,6 +60,7 @@ export const ActionRequestSchema = Type.Union([
   ...M5_ACTION_REQUEST_SCHEMAS,
   ...M5B_ACTION_REQUEST_SCHEMAS,
   ...CONTACTS_ACTION_REQUEST_SCHEMAS,
+  ...MATES_ACTION_REQUEST_SCHEMAS,
 ]);
 export type ActionRequest = Static<typeof ActionRequestSchema>;
 

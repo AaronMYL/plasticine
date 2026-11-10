@@ -23,6 +23,8 @@ import { FeedActions } from './views/feed/feed-actions.ts';
 import { FeedStore } from './views/feed/feed-store.ts';
 import { DouyinStore } from './views/feed/douyin-store.ts';
 import { LinesStore } from './views/lines/line-store.ts';
+import { MatesStore } from './views/mates/mates-store.ts';
+import { MateActions } from './views/mates/mate-actions.ts';
 import { AgreementStore } from './views/memory/agreement-store.ts';
 import { CognitionActions, settleCognitionDraft } from './views/memory/cognition-actions.ts';
 import { ModelStore } from './views/models/model-store.ts';
@@ -43,6 +45,8 @@ export interface Live {
   hub: EventsHub;
   /** 新内核（2026-11-05）：主对话和后台线；要你定卡；模型连接。 */
   lines: LinesStore;
+  mates: MatesStore;
+  mateActions: MateActions;
   asks: AsksStore;
   models: ModelStore;
   /** 记忆页「约定」那一段（2026-11-03 起旧的原话 / 解释三栏去掉）。 */
@@ -118,12 +122,15 @@ function createLive(api: PlasticineApi, parts: ClientParts, push: PushSwitch): L
   const deviceWrites = new DeviceWrites({ api, devices, ops: actionOps, signedOps, signer,
     drafts: inlineDrafts, ui: parts.deviceUi });
   const feed = new FeedStore(api, hub, feedUi, timeZone.get());
+  const mates = new MatesStore(api, hub);
   const contacts = new ContactsStore(api, hub);
   const network = new NetworkStore(api, hub);
   return {
     timeZone,
     hub,
     lines: new LinesStore(api, hub),
+    mates,
+    mateActions: new MateActions(api, actionOps, mates),
     asks,
     models: new ModelStore(api),
     agreements,
@@ -159,6 +166,7 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
     const stopNotes = notesCache.connect(api.notes, live.hub);
     const stopChapters = live.chapters.connect(live.hub);
     live.lines.start();
+    live.mates.start();
     live.asks.start();
     live.agreements.start();
     live.bookmarks.start();
@@ -192,6 +200,7 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
       live.agreements.stop();
       live.asks.stop();
       live.lines.stop();
+      live.mates.stop();
     };
   }, [live, api, notesCache]);
   return <LiveContext.Provider value={live}>{children}</LiveContext.Provider>;

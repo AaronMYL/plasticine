@@ -56,6 +56,7 @@ export function ClientUpdateBanner(): ReactNode {
   const state = useClientState();
   const { value } = useClientUpdates();
   useStore(state.noteDrafts.store);
+  useStore(state.conversations.revision);
   useStore(state.conversationUi.store);
   useStore(state.attachments.store);
   useStore(state.inlineDrafts.store);
