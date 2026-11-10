@@ -25,7 +25,8 @@ import { routeHash, type Route } from '../../shell/routes.ts';
 import { useInTitlebar } from '../../shell/titlebar.tsx';
 import { spaceRoute } from '../spaces/space-links.ts';
 import { SpaceThumb } from '../spaces/space-thumb.tsx';
-import { genreLabel, spaceWhen } from '../spaces/space-time.ts';
+import { spaceWhen } from '../spaces/space-time.ts';
+import { groupSpaces, spaceCategoryLabel } from './space-categories.ts';
 import { useDeleteConfirm, useSpaceActions } from './library-actions.tsx';
 import { libraryChanged, useLibraryRevision } from './library-signal.ts';
 import './library.css';
@@ -43,7 +44,7 @@ function useAllSpaces(): { spaces: SpaceListItem[] | null; error: string | null 
   const [state, setState] = useState<{ spaces: SpaceListItem[] | null; error: string | null }>(
     { spaces: null, error: null });
   useEffect(() => live.hub.on((event) => {
-    if (event.type === 'resync') setRound((value) => value + 1);
+    if (event.type === 'resync' || event.type === 'space.changed') setRound((value) => value + 1);
   }), [live.hub]);
   useEffect(() => {
     const controller = new AbortController();
@@ -66,7 +67,7 @@ interface CardProps {
 function SpaceCard({ space, now, onDelete, selection }: CardProps): ReactNode {
   const actions = useSpaceActions();
   const [renaming, setRenaming] = useState(false);
-  const meta = `${genreLabel(space.genre)} · ${spaceWhen(space.updatedAt, now)}`;
+  const meta = `${spaceCategoryLabel(space)} · ${spaceWhen(space.updatedAt, now)}`;
   return (
     <li className="lib-card" data-genre={space.genre ?? 'legacy'}>
       {selection.active ? <span className="bulk-card-check"><BulkCheck selection={selection}
@@ -135,7 +136,9 @@ function PhoneExtras({ navigate }: { navigate: (route: Route) => void }): ReactN
 export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (route: Route) => void }): ReactNode {
   const { spaces, error } = useAllSpaces();
   const api = useApi();
-  const bulkItems = (spaces ?? []).map((space) => ({ kind: 'space' as const, id: space.id, title: space.title }));
+  const groups = groupSpaces(spaces ?? []);
+  const bulkItems = groups.flatMap((group) => group.spaces).map((space) => ({
+    kind: 'space' as const, id: space.id, title: space.title }));
   const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
     onChanged: libraryChanged });
   const actions = useSpaceActions();
@@ -163,7 +166,9 @@ export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (ro
         </section>}
         <section aria-label="全部" className="lib-grid-sec">
           <h2 className="lib-grid-head">全部<span className="lib-grid-count">{spaces.length}</span></h2>
-          <ul className="lib-cards lib-all">{cards(spaces)}</ul>
+          {groups.map((group) => <section key={group.category} className="lib-grid-sec"
+            aria-label={group.label}><h3 className="lib-category-head">{group.label}</h3>
+            <ul className="lib-cards lib-all">{cards(group.spaces)}</ul></section>)}
         </section>
       </>}
       {phone ? <PhoneExtras navigate={navigate} /> : null}

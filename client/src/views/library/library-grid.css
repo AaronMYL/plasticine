@@ -38,6 +38,8 @@
   line-height: 18px;
 }
 
+.lib-category-head { margin: 8px 0 0; font-size: 13px; font-weight: 500; line-height: 22px; color: var(--fg2); }
+
 .lib-cards {
   display: grid;
   margin: 0;

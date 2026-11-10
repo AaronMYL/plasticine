@@ -101,6 +101,7 @@ export class FakeSpaces {
       issueNumber: null, edition: null, doc, createdAt: this.deps.now().toISOString(),
       updatedAt: this.deps.now().toISOString(), revisions: [{ doc, genre: 'report', html: input.html,
         change: null, rule: null }] });
+    this.deps.bus?.emit({ type: 'space.changed', spaceId: input.id });
     return input.id;
   }
 

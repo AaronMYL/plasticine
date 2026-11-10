@@ -11,7 +11,10 @@ export interface Look {
   hue: HueName;
 }
 
-export function spaceLook(space: Pick<SpaceListItem, 'kind' | 'author'> & { genre?: SpaceListItem['genre'] }): Look {
+export function spaceLook(space: Pick<SpaceListItem, 'kind' | 'author'>
+  & { genre?: SpaceListItem['genre']; category?: SpaceListItem['category'] }): Look {
+  if (space.category === 'webarchive') return { icon: 'globe', hue: 'teal' };
+  if (space.category === 'booknote') return { icon: 'books', hue: 'ochre' };
   if (space.genre === 'letter') return { icon: 'mail', hue: 'ochre' };
   if (space.kind === 'research') return { icon: 'chart', hue: 'sky' };
   if (space.kind === 'review') return { icon: 'sparkle', hue: 'teal' };

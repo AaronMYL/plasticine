@@ -11,6 +11,7 @@ import { errorText } from '../../api/errors.ts';
 import type { FileEntryView, SpaceListItem } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { useLibraryRevision } from '../../views/library/library-signal.ts';
+import { groupSpaces } from '../../views/library/space-categories.ts';
 import { IconButton } from '../icon-button.tsx';
 import { Icon } from '../icons.tsx';
 import type { Route } from '../routes.ts';
@@ -33,7 +34,7 @@ export function useLibraryData(): LibraryData {
   const [round, setRound] = useState(0);
   const revision = useLibraryRevision();
   useEffect(() => live.hub.on((event) => {
-    if (event.type === 'resync') {
+    if (event.type === 'resync' || event.type === 'space.changed') {
       setRound((value) => value + 1);
     }
   }), [live.hub]);
@@ -69,10 +70,10 @@ export function LibraryColumn({ route, navigate, onAsk }: { route: Route; naviga
       <div className="column-scroll">
         {data.error === null ? null : <ColumnNote>{data.error}</ColumnNote>}
         <SubscriptionRows route={route} navigate={navigate} />
-        {data.spaces === null || data.spaces.length === 0 ? null : <>
-          <ColumnLabel>空间</ColumnLabel>
-          <SpaceRows spaces={data.spaces} current={spaceId} navigate={navigate} />
-        </>}
+        {groupSpaces(data.spaces ?? []).map((group) => <section key={group.category} aria-label={group.label}>
+          <ColumnLabel>{group.label}</ColumnLabel>
+          <SpaceRows spaces={group.spaces} current={spaceId} navigate={navigate} />
+        </section>)}
         {data.folders === null || data.folders.length === 0 ? null : <>
           <ColumnLabel>文件</ColumnLabel>
           {data.folders.map((folder) => (
