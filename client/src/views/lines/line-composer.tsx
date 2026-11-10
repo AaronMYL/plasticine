@@ -16,9 +16,8 @@ import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 import { useCurrentTab } from '../../shell/current-tab-context.ts';
 import { routeHash } from '../../shell/routes.ts';
 import { currentPageReference } from '../conversation/current-page-reference.ts';
-import { useClientState } from '../../state/context.tsx';
 import { splitReply } from '../../api/shared.ts';
-import { useConversationUi } from './conversation-ui-context.tsx';
+import { useComposerAttachments, useConversationUi } from './conversation-ui-context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { AttachmentChips, AttachmentComposer } from '../conversation/attachment-composer.tsx';
 import { AskPageToggle, PageSource, PAGE_UNREAD_NOTE, usePageContext }
@@ -87,7 +86,7 @@ function ReplyChip({ author, text, onCancel }: { author: string; text: string; o
 export function LineComposer({ lineId, askPage, side = false }: LineComposerProps): ReactNode {
   const live = useLive();
   const api = useApi();
-  const { attachments } = useClientState();
+  const attachments = useComposerAttachments();
   const conversationUi = useConversationUi();
   const thread = useStore(live.lines.thread(lineId));
   const { draft, quotes, reply } = useStore(conversationUi.store);

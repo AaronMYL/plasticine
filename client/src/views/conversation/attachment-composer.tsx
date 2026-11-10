@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { ATTACHMENT_ACCEPT } from '../../api/shared.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { useClientState } from '../../state/context.tsx';
+import { useComposerAttachments } from '../lines/conversation-ui-context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import './attachments.css';
 import { Sheet } from '../../primitives/sheet/index.tsx';
@@ -12,7 +12,7 @@ import { AttachmentDraftTile } from './attachment-draft-tile.tsx';
 
 export function AttachmentComposer(): ReactNode {
   const api = useApi();
-  const { attachments } = useClientState();
+  const attachments = useComposerAttachments();
   const input = useRef<HTMLInputElement>(null);
   const photo = useRef<HTMLInputElement>(null);
   const camera = useRef<HTMLInputElement>(null);
@@ -61,7 +61,7 @@ export function AttachmentComposer(): ReactNode {
 }
 
 export function AttachmentChips(): ReactNode {
-  const { attachments } = useClientState();
+  const attachments = useComposerAttachments();
   const rows = useStore(attachments.store).filter((row) => !row.canceled);
   const error = useStore(attachments.error);
   return (

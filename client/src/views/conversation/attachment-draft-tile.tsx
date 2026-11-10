@@ -5,13 +5,13 @@ import { fileSize } from '../../primitives/artifact-card/format.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import type { AttachmentDraft } from '../../state/attachment-drafts.ts';
-import { useClientState } from '../../state/context.tsx';
+import { useComposerAttachments } from '../lines/conversation-ui-context.tsx';
 
 const STATUS = { reading: '正在读文件', uploading: '正在上传', ready: '已就绪', failed: '未就绪' } as const;
 
 export function AttachmentDraftTile({ row }: { row: AttachmentDraft }): ReactNode {
   const api = useApi();
-  const { attachments } = useClientState();
+  const attachments = useComposerAttachments();
   const input = useRef<HTMLInputElement>(null);
   const image = (row.mimeType ?? row.meta?.mimeType ?? row.remote?.mimeType ?? '').startsWith('image/');
   const preview = attachments.preview(row.id) ?? (image && row.remote !== null

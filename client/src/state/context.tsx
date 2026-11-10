@@ -6,6 +6,8 @@ import { ActionOps } from './action-ops.ts';
 import { AttachmentDrafts } from './attachment-drafts.ts';
 import { ConcernsUi } from './concerns-ui.ts';
 import { ConversationUi } from './conversation-ui.ts';
+import { ConversationRegistry } from './conversation-registry.ts';
+import { DockTargets } from './conversation-targets.ts';
 import { DeviceUi } from './device-ui.ts';
 import { EditDrafts } from './edit-drafts.ts';
 import { FeedUi } from './feed-ui.ts';
@@ -27,6 +29,8 @@ import { PageSteps } from './page-steps.ts';
 export interface ClientState {
   attachments: AttachmentDrafts;
   conversationUi: ConversationUi;
+  conversations: ConversationRegistry;
+  dockTargets: DockTargets;
   outbox: Outbox;
   noteDrafts: NoteDrafts;
   noteOps: NoteOps;
@@ -65,9 +69,13 @@ export interface ClientStateOptions {
 export function createClientState(options: ClientStateOptions = {}): ClientState {
   const storage = options.storage ?? null;
   const actionOps = new ActionOps(storage);
+  const attachments = new AttachmentDrafts(storage, actionOps);
+  const conversationUi = new ConversationUi(storage);
   return {
-    attachments: new AttachmentDrafts(storage, actionOps),
-    conversationUi: new ConversationUi(storage),
+    attachments,
+    conversationUi,
+    conversations: new ConversationRegistry(conversationUi, attachments, actionOps),
+    dockTargets: new DockTargets(options.noteCacheStorage === undefined ? storage : options.noteCacheStorage),
     outbox: new Outbox(storage),
     noteDrafts: new NoteDrafts(),
     noteOps: new NoteOps(storage),
