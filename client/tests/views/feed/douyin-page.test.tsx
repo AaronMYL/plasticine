@@ -43,3 +43,18 @@ describe('抖音收藏空间阅读', () => {
     expect(screen.getByRole('region', { name: '抖音收藏列表' })).toBeTruthy();
   });
 });
+
+it('没有真实收藏时间只显示作者；有时间才出现收藏日期，不用同步时间补齐', async () => {
+  const app = await open();
+  const list = await app.api.feed.douyin({});
+  const missing = list.works.find((work) => work.collectedAt === null)!;
+  const dated = list.works.find((work) => work.collectedAt !== null)!;
+  const absentRow = await screen.findByRole('button', { name: new RegExp(`^${missing.title}`) });
+  const datedRow = await screen.findByRole('button', { name: new RegExp(`^${dated.title}`) });
+  expect(absentRow.textContent).toContain(missing.author);
+  expect(absentRow.textContent).not.toContain('收藏于');
+  expect(datedRow.textContent).toContain('收藏于');
+  const firstBefore = absentRow.textContent;
+  await act(async () => { await app.api.feed.douyinSync({ requestId: 'date-display-sync' }); });
+  await waitFor(() => expect(absentRow.textContent).toBe(firstBefore));
+});

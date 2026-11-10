@@ -178,5 +178,7 @@ test('空间元数据通过现有读写接口往返，单独移动文件夹保�
   assert.equal(json(saved)['sourceUrl'], 'https://example.com/reading#chapter');
   assert.equal(json(saved)['html'], HTML);
   const list = json(await call(app, 'GET', '/v2/spaces', { cookie }))['spaces'] as Record<string, unknown>[];
-  assert.equal(list.find((item) => item['id'] === space.id)?.['folder'], '研究');
+  const listed = list.find((item) => item['id'] === space.id)!;
+  assert.deepEqual([listed['title'], listed['category'], listed['sourceUrl'], listed['folder']],
+    ['示例网页', 'webarchive', 'https://example.com/reading#chapter', '研究']);
 });

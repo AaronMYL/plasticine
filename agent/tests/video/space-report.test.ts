@@ -105,3 +105,30 @@ test('报告收藏日期按用户时区显示，不把 UTC 日期当本地日期
   const page = publishVideoSpace(t.state, { ...work, collectedAt: '2026-11-10T18:00:00.000Z' })!;
   assert.match(page.html!, /收藏于 2026\/11\/11/);
 });
+
+test('报告资料库条目保留结论标题、来源和报告分类，正文修改和旧数据补页不覆盖它们', () => {
+  const work = summarized();
+  const created = publishVideoSpace(t.state, { ...work, collectSeq: null,
+    collectedAt: '2025-01-02T00:00:00.000Z' })!;
+  assert.equal(created.title, work.digest!.summary);
+  assert.equal(created.category, 'report');
+  assert.equal(created.sourceUrl, work.url);
+  assert.doesNotMatch(created.html!, /收藏于/, '旧未核实日期不能进入新补的报告');
+  const edited = writeSpace(t.state, { id: created.id, version: created.version, title: '用户改过的结论标题',
+    html: '<h1>保留来源信息的新正文。</h1>' }, 'user').space;
+  backfillVideoSpaces(t.state);
+  const listed = t.state.spaces.list({ standalone: true }).find((space) => space.id === created.id)!;
+  assert.deepEqual([listed.title, listed.sourceUrl, listed.category, listed.genre],
+    [edited.title, work.url, 'report', 'report']);
+});
+
+test('抖音信息流的发布时间不冒用收藏时间，到达时间保持本次处理时刻', async () => {
+  const { publishToFeed } = await import('../../src/video/feed-publish.ts');
+  const work = { ...summarized(), collectedAt: '2025-05-06T07:00:00.000Z' };
+  const arrived = new Date('2026-11-11T06:00:00.000Z');
+  const item = publishToFeed(t.state, work, arrived, 'Asia/Shanghai')!;
+  assert.equal(item.publishedAt, null);
+  assert.equal(item.arrivedAt, arrived.toISOString());
+  assert.equal(item.title, work.title);
+  assert.equal(t.state.feedSources.require(item.sourceId!).kind, 'douyin');
+});

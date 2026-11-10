@@ -27,7 +27,8 @@ export function publishToFeed(state: FeedPublishState, work: VideoWorkRow, now: 
       author: work.author === null ? null : work.author.slice(0, 200),
       dedupeKey: `douyin:${work.workId}`,
       day: localDay(now, timeZone),
-      publishedAt: work.collectedAt,
+      // 收藏时间不是作品发布时间；当前作品表没有可信的发布时间字段。
+      publishedAt: null,
       arrivedAt: now.toISOString(),
     });
     if (work.feedItemId !== item.id) {

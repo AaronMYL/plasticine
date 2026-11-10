@@ -471,3 +471,17 @@ test('命中关注点的排前面：同一天里从关注点来的在前，再�
   assert.deepEqual(t.state.feedItems.page({}, {}).map((item) => item.title)[0], '今天普通（晚）',
     '其他地方（回来时的汇总、关切线索）照旧按到达时间新的在前');
 });
+
+test('旧抖音条目里借用的收藏日期不再当发布时间返回，到达时间和来源保留', async () => {
+  const { feedItemView } = await import('../../src/app/daily-views.ts');
+  t = await startTestApp();
+  const source = t.state.feedSources.ensure({ kind: 'douyin', ref: 'douyin:favorites', label: '抖音收藏',
+    level: 'normal' });
+  const { item } = t.state.feedItems.add({ sourceId: source.id, origin: 'feed', title: '示例视频',
+    url: 'https://www.douyin.com/video/7300000000000000100', dedupeKey: 'douyin-time-fixture', day: '2026-11-11',
+    publishedAt: '2025-06-01T08:00:00.000Z', arrivedAt: '2026-11-11T04:00:00.000Z' });
+  const view = feedItemView(t.state, item, null);
+  assert.equal(view.publishedAt, null);
+  assert.equal(view.arrivedAt, item.arrivedAt);
+  assert.equal(view.sourceLabel, '抖音收藏');
+});

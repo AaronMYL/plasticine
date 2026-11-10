@@ -100,3 +100,25 @@ test('新全量先回传时旧任务不改它的排序，同一任务重取后�
   assert.deepEqual(page.works.map((work) => work.title), ['作品 2', '作品 1']);
   assert.equal(page.works[1]?.collectSeq, before - 1);
 });
+
+test('收藏时间只取报告里的真实字段；发布时间、同步钟和旧历史日期不替代它', () => {
+  const oldDate = '2025-04-03T08:00:00.000Z';
+  const trueDate = '2026-09-17T12:10:00.000Z';
+  const historical = t.state.videoWorks.upsert({ platform: 'douyin', ...listed(1),
+    url: 'https://www.douyin.com/video/7300000000000000001', collectedAt: oldDate }).work;
+  const service = favorites();
+  assert.equal(service.list({}, 10, 0).works[0]?.collectedAt, null, '旧字段没有收藏来源证明，读时隐藏');
+  service.sync(true);
+  const job = service.jobs()[0]!;
+  service.report({ requestId: 'date-provenance', jobId: job.id, list: { folders: [], works: [
+    { ...listed(1, 0), publishedAt: '2026-01-01T00:00:00.000Z', collectedAt: null },
+    { ...listed(2, 1), publishedAt: '2026-02-01T00:00:00.000Z', collectedAt: trueDate },
+  ], done: true } });
+  const list = service.list({}, 10, 0);
+  assert.deepEqual(list.works.map((work) => [work.workId, work.collectedAt]), [
+    [listed(1).workId, null], [listed(2).workId, trueDate],
+  ]);
+  assert.equal(t.state.videoWorks.require(historical.id).collectedAt, null, '全量核实时清掉历史替代日期');
+  assert.notEqual(list.works[1]?.collectedAt, list.sync.lastAt);
+  assert.notEqual(list.works[1]?.collectedAt, t.state.videoWorks.byWork('douyin', listed(2).workId)?.createdAt);
+});
