@@ -269,6 +269,11 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     push,
     memory,
     attachments,
+    links: { preview: async (address) => {
+      session.require();
+      const url = new URL(address);
+      return { url: url.href, site: url.hostname, title: url.hostname, description: '', image: null };
+    } },
     moneyDrafts,
     clientUpdates,
     backups,

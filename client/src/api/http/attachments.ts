@@ -14,7 +14,7 @@ export class HttpAttachments implements AttachmentsApi {
     this.transport = transport;
   }
 
-  upload(input: UploadAttachmentRequest, signal?: AbortSignal) {
+  upload(input: UploadAttachmentRequest, signal?: AbortSignal, onProgress?: (fraction: number) => void) {
     return this.transport.request({
       method: 'POST',
       path: ATTACHMENTS_PATH,
@@ -24,6 +24,7 @@ export class HttpAttachments implements AttachmentsApi {
       what: '上传附件',
       lostAs: 'uncertain',
       timeoutMs: 60_000,
+      ...(onProgress === undefined ? {} : { onUploadProgress: onProgress }),
     });
   }
 
@@ -40,6 +41,10 @@ export class HttpAttachments implements AttachmentsApi {
 
   contentUrl(id: string): string {
     return `${ATTACHMENTS_PATH}/${encodeURIComponent(id)}/content`;
+  }
+
+  content(id: string, signal?: AbortSignal): Promise<Blob> {
+    return this.transport.blob(this.contentUrl(id), signal);
   }
 
   text(id: string, signal?: AbortSignal) {

@@ -35,6 +35,8 @@ import { TurnView } from './turn-view.tsx';
 import { WelcomeMessage } from './welcome-message.tsx';
 import { LetterCard } from '../spaces/letter-card.tsx';
 import { WorkLineAction } from './work-status.tsx';
+import { MessageAttachments } from '../conversation/message-attachments.tsx';
+import { MessageContent } from '../conversation/message-content.tsx';
 import './lines.css';
 import './chat-details.css';
 
@@ -100,6 +102,8 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
       const { quotes, text } = splitQuotes(item.message.text, `line-${item.message.seq}`);
       return <MessageRow seq={item.message.seq} author="你" text={text}>
         <UserMessage text={text} quotes={quotes} state="sent" replyTo={item.message.replyTo}
+          content={<MessageContent text={text} markdown={false} />}
+          attachments={<MessageAttachments ids={item.message.attachments} />}
           onQuote={(selected) => onQuote(item.message.seq, selected, '你')} />
       </MessageRow>;
     }
@@ -113,8 +117,9 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
       return <MessageRow seq={item.message.seq} author="Plasticine" text={item.message.text}>
         <div className="line-answer" data-message-seq={item.message.seq}>
           <QuoteSelection onQuote={(text) => onQuote(item.message.seq, text, 'Plasticine')}>
-            <Markdown text={item.message.text} />
+            <MessageContent text={item.message.text} />
           </QuoteSelection>
+          <MessageAttachments ids={item.message.attachments} />
         </div>
       </MessageRow>;
     case 'side':
@@ -300,6 +305,8 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
           ) : null}
           {data.pending.map((item) => (
             <UserMessage key={item.requestId} text={item.text} quotes={[]} replyTo={item.replyTo}
+              content={<MessageContent text={item.text} markdown={false} />}
+              attachments={<MessageAttachments ids={item.attachments} />}
               state={item.status === 'failed' ? 'failed' : 'sending'} error={item.error}
               onResend={() => void live.lines.resend(lineId, item.requestId)}
               onDiscard={() => {

@@ -55,9 +55,11 @@ export interface MoneyDraftsApi {
 export interface AttachmentsApi {
   text(id: string, signal?: AbortSignal): Promise<import('./shared.ts').AttachmentTextView>;
   lookup(requestId: string, signal?: AbortSignal): Promise<AttachmentView | null>;
-  upload(input: UploadAttachmentRequest, signal?: AbortSignal): Promise<AttachmentView>;
+  upload(input: UploadAttachmentRequest, signal?: AbortSignal, onProgress?: (fraction: number) => void):
+    Promise<AttachmentView>;
   get(id: string, signal?: AbortSignal): Promise<AttachmentView>;
   contentUrl(id: string): string;
+  content(id: string, signal?: AbortSignal): Promise<Blob>;
 }
 import type {
   PushStatus,
@@ -345,6 +347,7 @@ export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
   systems: import('./systems-client.ts').SystemsApi;
   translate: TranslateApi;
   attachments: AttachmentsApi;
+  links: { preview(url: string, signal?: AbortSignal): Promise<import('./shared.ts').LinkPreview> };
   moneyDrafts: MoneyDraftsApi;
   clientUpdates: ClientUpdatesApi;
   backups: BackupsApi;

@@ -7,6 +7,8 @@ import { MessageWidgets } from '../../primitives/message/widgets/index.tsx';
 import { FoldRow, StateRow, StepList } from './line-parts.tsx';
 import { MessageRow } from './thread-actions.tsx';
 import type { Turn, TurnPart, TurnStep } from './timeline.ts';
+import { MessageAttachments } from '../conversation/message-attachments.tsx';
+import { MessageContent } from '../conversation/message-content.tsx';
 
 function Thinking({ part }: { part: Extract<TurnPart, { kind: 'thinking' }> }): ReactNode {
   const [open, setOpen] = useState(false);
@@ -60,8 +62,9 @@ function Part({ part, lineId, running, onQuote, onRetry }: Pick<TurnViewProps, '
       return <MessageRow seq={part.seq} author="Plasticine" text={part.text}>
         <div className="line-answer" data-message-seq={part.seq}>
           <QuoteSelection onQuote={onQuote === undefined ? undefined : (text) => onQuote(part.seq, text)}>
-            <Markdown text={part.text} />
+            <MessageContent text={part.text} />
           </QuoteSelection>
+          <MessageAttachments ids={part.attachments ?? []} />
         </div>
       </MessageRow>;
     case 'thinking': return <Thinking part={part} />;

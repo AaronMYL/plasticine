@@ -8,7 +8,7 @@ export class FakeAttachments implements AttachmentsApi {
   private readonly session: FakeSession;
   private readonly now: () => Date;
   private readonly rows = new Map<string, AttachmentView>();
-  private readonly content = new Map<string, string>();
+  private readonly contents = new Map<string, string>();
   private readonly requests = new Map<string, string>();
 
   constructor(session: FakeSession, now: () => Date) {
@@ -43,7 +43,7 @@ export class FakeAttachments implements AttachmentsApi {
       summary: null,
     };
     this.rows.set(id, row);
-    this.content.set(id, input.content);
+    this.contents.set(id, input.content);
     this.requests.set(input.requestId, id);
     return row;
   }
@@ -62,7 +62,7 @@ export class FakeAttachments implements AttachmentsApi {
   async text(id: string) {
     this.session.require();
     const row = this.require(id);
-    const encoded = this.content.get(id);
+    const encoded = this.contents.get(id);
     const text = row.status !== 'ready' || row.mimeType.startsWith('image/') || encoded === undefined ? null
       : new TextDecoder().decode(Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0)));
     return { text, characters: text === null ? 0 : Array.from(text).length, truncated: row.truncated };
@@ -83,12 +83,18 @@ export class FakeAttachments implements AttachmentsApi {
 
   contentUrl(id: string): string {
     const row = this.require(id);
-    return row.status !== 'ready' ? '' : `data:${row.mimeType};base64,${this.content.get(id) ?? ''}`;
+    return row.status !== 'ready' ? '' : `data:${row.mimeType};base64,${this.contents.get(id) ?? ''}`;
+  }
+
+  async content(id: string): Promise<Blob> {
+    const row = this.require(id);
+    const bytes = Uint8Array.from(atob(this.contents.get(id) ?? ''), (char) => char.charCodeAt(0));
+    return new Blob([bytes], { type: row.mimeType });
   }
 
   purge(id: string, summary: string): AttachmentView {
     const row = this.require(id);
-    this.content.delete(id);
+    this.contents.delete(id);
     const saved = { ...row, name: '已记账付款截图', status: 'deleted' as const, summary };
     this.rows.set(id, saved);
     return saved;

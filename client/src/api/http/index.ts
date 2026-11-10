@@ -36,6 +36,7 @@ import { HttpToday } from './today.ts';
 import { createThingsHttp } from './things.ts';
 import { createSpacesHttp } from './spaces.ts';
 import { Transport, type FetchLike } from './transport.ts';
+import { LINK_PREVIEW_PATH, LinkPreviewSchema } from '../shared.ts';
 
 export interface HttpApiOptions {
   fetch?: FetchLike;
@@ -77,6 +78,8 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     account: new HttpAccount(transport),
     devices: new HttpDevices(transport),
     attachments: new HttpAttachments(transport),
+    links: { preview: (url, signal) => transport.request({ method: 'GET', path: LINK_PREVIEW_PATH,
+      query: { url }, signal, schema: LinkPreviewSchema, what: '读链接预览', lostAs: 'failed' }) },
     moneyDrafts: new HttpMoneyDrafts(transport),
     clientUpdates: new HttpClientUpdates(transport),
     backups: new HttpBackups(transport),

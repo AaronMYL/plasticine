@@ -20,6 +20,7 @@ import {
 import type { ApiErrorKind } from '../errors.ts';
 import { ApiErrorSchema } from '../shared.ts';
 import { readEventStream } from './event-stream.ts';
+import { xhrUpload, type UploadLike } from './xhr-upload.ts';
 
 /**
  * 一次请求最多等这么久，超过就当没拿到回答。15 秒：一条消息的 202 和一篇笔记的保存都是本机 SQLite 写一次，
@@ -32,6 +33,7 @@ export interface ResponseLike {
   readonly status: number;
   text(): Promise<string>;
   readonly body?: ReadableStream<Uint8Array> | null;
+  blob?(): Promise<Blob>;
 }
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<ResponseLike>;
@@ -67,13 +69,17 @@ export interface RequestSpec<T extends TSchema> {
   signal?: AbortSignal | undefined;
   /** 这一次请求最多等多久；不给就是 Transport 的默认（上传大文件给得长一些）。 */
   timeoutMs?: number;
+  onUploadProgress?: (fraction: number) => void;
 }
 
 export interface TransportOptions {
   fetch: FetchLike;
   onUnauthorized: () => void;
   timeoutMs?: number;
+  upload?: UploadLike;
 }
+
+type RequestOptions = Omit<RequestSpec<TSchema>, 'schema'>;
 
 type ParsedBody = { ok: true; value: unknown } | { ok: false; reason: string };
 
@@ -128,11 +134,13 @@ export class Transport {
   private readonly fetch: FetchLike;
   private readonly onUnauthorized: () => void;
   private readonly timeoutMs: number;
+  private readonly upload: UploadLike;
 
   constructor(options: TransportOptions) {
     this.fetch = options.fetch;
     this.onUnauthorized = options.onUnauthorized;
     this.timeoutMs = options.timeoutMs ?? REQUEST_TIMEOUT_MS;
+    this.upload = options.upload ?? xhrUpload;
   }
 
   async request<T extends TSchema>(spec: RequestSpec<T>): Promise<Static<T>> {
@@ -149,6 +157,19 @@ export class Transport {
       return body.value;
     }
     throw this.failure(status, body, spec);
+  }
+
+  /** 读取已有附件原件；fetch 后 Blob 的预览不受下载响应头影响。 */
+  async blob(path: string, signal?: AbortSignal): Promise<Blob> {
+    const spec: RequestOptions = { method: 'GET', path, what: '读附件原件', lostAs: 'failed', signal };
+    const result = await this.exchange(spec, 'application/octet-stream', async (response) => {
+      if (response.status >= 200 && response.status < 300 && response.blob !== undefined) {
+        return { blob: await response.blob() };
+      }
+      return { status: response.status, text: await response.text() };
+    });
+    if (result.blob !== undefined) return result.blob;
+    throw this.failure(result.status, parseBody(result.text), spec);
   }
 
   /**
@@ -185,7 +206,7 @@ export class Transport {
   }
 
   /** 发出去并读完回答；计时从发出算到读完。调用方自己取消的照原样抛出，不算没拿到回答。 */
-  private async exchange<T extends TSchema, R>(spec: RequestSpec<T>, accept: string,
+  private async exchange<R>(spec: RequestOptions, accept: string,
     read: (response: ResponseLike) => Promise<R>): Promise<R> {
     const controller = new AbortController();
     let timedOut = false;
@@ -210,7 +231,10 @@ export class Transport {
       init.body = bodyText;
     }
     try {
-      return await read(await this.fetch(urlOf(spec.path, spec.query), init));
+      if (spec.signal?.aborted) controller.abort(spec.signal.reason);
+      const response = spec.onUploadProgress === undefined ? await this.fetch(urlOf(spec.path, spec.query), init)
+        : await this.upload(urlOf(spec.path, spec.query), init, spec.onUploadProgress);
+      return await read(response);
     } catch (cause) {
       if (spec.signal?.aborted === true) {
         throw cause;
@@ -222,14 +246,14 @@ export class Transport {
     }
   }
 
-  private lost<T extends TSchema>(spec: RequestSpec<T>, reason: string): ApiError {
+  private lost(spec: RequestOptions, reason: string): ApiError {
     if (spec.lostError !== undefined) {
       return spec.lostError(reason);
     }
     return spec.lostAs === 'uncertain' ? uncertainError(spec.what, reason) : networkError(spec.what, reason);
   }
 
-  private failure<T extends TSchema>(status: number, body: ParsedBody, spec: RequestSpec<T>): ApiError {
+  private failure(status: number, body: ParsedBody, spec: RequestOptions): ApiError {
     const value = body.ok ? body.value : undefined;
     const refined = spec.refine?.(status, value);
     if (refined !== undefined) {

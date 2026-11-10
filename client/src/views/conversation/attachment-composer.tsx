@@ -2,16 +2,13 @@ import { useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { ATTACHMENT_ACCEPT } from '../../api/shared.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { IconButton } from '../../shell/icon-button.tsx';
-import { fileSize } from '../../primitives/artifact-card/format.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import './attachments.css';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { PHONE_BELOW } from '../../shell/layout.ts';
 import { useViewportWidth } from '../../shell/use-viewport-width.ts';
-
-const STATUS = { reading: '正在读文件', uploading: '正在上传', ready: '已就绪', failed: '未就绪' } as const;
+import { AttachmentDraftTile } from './attachment-draft-tile.tsx';
 
 export function AttachmentComposer(): ReactNode {
   const api = useApi();
@@ -64,7 +61,6 @@ export function AttachmentComposer(): ReactNode {
 }
 
 export function AttachmentChips(): ReactNode {
-  const api = useApi();
   const { attachments } = useClientState();
   const rows = useStore(attachments.store).filter((row) => !row.canceled);
   const error = useStore(attachments.error);
@@ -73,30 +69,7 @@ export function AttachmentChips(): ReactNode {
       {error === null ? null : <p role="alert">{error}</p>}
       {rows.length === 0 ? null : (
         <div className="conv-attachments" aria-label="已选附件">
-          {rows.map((row) => (
-            <span key={row.id} className="conv-attachment-draft tag tag-neutral">
-              <span>{row.name}</span>
-              <span className={row.meta === null ? 'text-meta' : 'mono'}>
-                · {row.meta === null ? STATUS[row.status] : fileSize(row.meta.bytes)}
-              </span>
-              <span className={row.status === 'ready' ? 'sr-only' : undefined}>{STATUS[row.status]}</span>
-              {row.error === null ? null : <span role="alert">{row.error}</span>}
-              {row.status !== 'failed' || row.meta === null ? null : (
-                <button
-                  type="button"
-                  className="text-button"
-                  onClick={() => void attachments.retry(row.id, api.attachments)}
-                >
-                  核实 / 重试上传
-                </button>
-              )}
-                <IconButton
-                  icon="close"
-                  label={`移除附件 ${row.name}`}
-                  onClick={() => attachments.cancel(row.id)}
-                />
-            </span>
-          ))}
+          {rows.map((row) => <AttachmentDraftTile key={row.id} row={row} />)}
         </div>
       )}
     </>

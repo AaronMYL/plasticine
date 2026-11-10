@@ -16,6 +16,7 @@ export interface UserMessageProps {
   /** 你发的图片和部件（设计稿 2026-11-03）：排在气泡下面，图片一格一格。 */
   widgets?: ReactNode;
   text: string;
+  content?: ReactNode;
   quotes: QuoteChip[];
   state: UserState;
   error?: string | null | undefined;
@@ -45,9 +46,9 @@ function StatusLine(props: UserMessageProps): ReactNode {
   return (
     <div className="msg-user-status" role="status">
       <span className={isError ? 'msg-user-status-text is-error' : 'msg-user-status-text'}>
-        {USER_STATE_TEXT[props.state]}
+        {isError ? `没发出：${props.error ?? '连接中断'}` : USER_STATE_TEXT[props.state]}
       </span>
-      {props.error ? <span className="msg-user-status-reason">{props.error}</span> : null}
+      {props.error && !isError ? <span className="msg-user-status-reason">{props.error}</span> : null}
       {props.state === 'uncertain' && props.onVerify ? (
         <button type="button" className="msg-link" onClick={props.onVerify}>
           再核实
@@ -55,7 +56,7 @@ function StatusLine(props: UserMessageProps): ReactNode {
       ) : null}
       {(props.state === 'unsent' || props.state === 'failed') && props.onResend ? (
         <button type="button" className="msg-link" onClick={props.onResend}>
-          重发
+          {isError ? '重试' : '重发'}
         </button>
       ) : null}
       {(props.state === 'unsent' || props.state === 'failed') && props.onDiscard ? (
@@ -70,9 +71,10 @@ function StatusLine(props: UserMessageProps): ReactNode {
 }
 
 export function UserMessage(props: UserMessageProps): ReactNode {
-  const empty = props.text === '' && props.quotes.length === 0 && props.attachments == null;
+  const empty = props.text === '' && props.quotes.length === 0;
   return (
     <div className="msg msg-user" data-state={props.state}>
+      {props.attachments}
       {empty ? null : (
         <div className="msg-bubble">
           {props.replyTo == null ? null : (
@@ -88,8 +90,8 @@ export function UserMessage(props: UserMessageProps): ReactNode {
               ))}
             </div>
           ) : null}
-          <QuoteSelection onQuote={props.onQuote}><div className="msg-text">{props.text}</div></QuoteSelection>
-          {props.attachments}
+          <QuoteSelection onQuote={props.onQuote}>{props.content ?? <div className="msg-text">{props.text}</div>}
+          </QuoteSelection>
         </div>
       )}
       {props.widgets}

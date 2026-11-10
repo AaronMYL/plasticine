@@ -18,7 +18,7 @@ export interface TurnStep {
 }
 
 export type TurnPart =
-  | { kind: 'answer'; seq: number; text: string }
+  | { kind: 'answer'; seq: number; text: string; attachments?: string[] }
   | { kind: 'thinking'; seq: number; text: string; seconds: number | null }
   | { kind: 'steps'; seq: number; steps: TurnStep[] }
   | { kind: 'widgets'; seq: number; widgets: LineMessageView['widgets'] }
@@ -86,9 +86,10 @@ function emptyTurn(seq: number, startedAt: string | null): Turn {
 }
 
 function addAssistant(turn: Turn, message: LineMessageView): void {
-  if (message.stopReason !== 'error' && message.text.trim() !== '') {
+  if (message.stopReason !== 'error' && (message.text.trim() !== '' || message.attachments.length > 0)) {
     turn.answers.push(message.text);
-    turn.parts.push({ kind: 'answer', seq: message.seq, text: message.text });
+    turn.parts.push({ kind: 'answer', seq: message.seq, text: message.text,
+      ...(message.attachments.length === 0 ? {} : { attachments: message.attachments }) });
   }
   if (message.thinking !== null && message.thinking.trim() !== '') {
     turn.thinking = turn.thinking === '' ? message.thinking : `${turn.thinking}\n\n${message.thinking}`;
