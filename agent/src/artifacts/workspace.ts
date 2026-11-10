@@ -5,11 +5,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   realpathSync,
   renameSync,
+  rmSync,
   statSync,
   statfsSync,
   writeFileSync,
@@ -49,12 +51,18 @@ export interface TrashEntry {
   name: string;
   originalPath: string;
   trashedAt: string;
+  kind?: 'file' | 'folder';
+  fileCount?: number;
+  purgingAt?: string;
 }
 
 const TrashMetaSchema = Type.Object({
   name: Type.String({ minLength: 1 }),
   originalPath: Type.String({ minLength: 1 }),
   trashedAt: Type.String({ minLength: 1 }),
+  kind: Type.Optional(Type.Enum(['file', 'folder'])),
+  fileCount: Type.Optional(Type.Integer({ minimum: 0 })),
+  purgingAt: Type.Optional(Type.String({ minLength: 1 })),
 });
 
 function isMissing(error: unknown): boolean {
@@ -250,7 +258,8 @@ export class Workspace {
     return readdirSync(this.#trash)
       .filter((name) => name.endsWith('.json') && TRASH_ID.test(name.slice(0, -'.json'.length)))
       .map((name) => this.#trashEntry(name.slice(0, -'.json'.length)))
-      .filter((entry) => entry !== undefined && existsSync(join(this.#trash, entry.id, entry.name)))
+      .filter((entry) => entry !== undefined
+        && (entry.purgingAt !== undefined || existsSync(join(this.#trash, entry.id, entry.name))))
       .map((entry) => entry as TrashEntry)
       .sort((a, b) => b.trashedAt.localeCompare(a.trashedAt));
   }
@@ -261,6 +270,9 @@ export class Workspace {
     if (entry === undefined || held === undefined || !existsSync(held)) {
       throw new ArtifactError('not_found', '回收里没有这一项了。', 'id');
     }
+    if (entry.purgingAt !== undefined) {
+      throw new ArtifactError('conflict', '这一项已开始永久删除，请重试永久删除完成清理。', 'id');
+    }
     const target = this.#resolve(entry.originalPath);
     if (existsSync(target)) {
       throw new ArtifactError('conflict', `原来的位置已经有「${entry.name}」了，没有还原。`, 'id');
@@ -268,6 +280,44 @@ export class Workspace {
     mkdirSync(dirname(target), { recursive: true, mode: DIRECTORY_MODE });
     renameSync(held, target);
     return this.#entry(target);
+  }
+
+  /** 最近删除中的清空例外：只删除回收目录，不跟随目录里的符号链接。 */
+  purge(id: string): void {
+    if (!TRASH_ID.test(id)) { throw new ArtifactError('not_found', '回收里没有这一项了。', 'id'); }
+    const meta = join(this.#trash, `${id}.json`);
+    if (!existsSync(meta)) { throw new ArtifactError('not_found', '回收里没有这一项了。', 'id'); }
+    const raw: unknown = JSON.parse(readFileSync(meta, 'utf8'));
+    if (typeof raw === 'object' && raw !== null && 'purgedAt' in raw && typeof raw.purgedAt === 'string') { return; }
+    const entry = this.#trashEntry(id);
+    const held = join(this.#trash, id);
+    if (entry === undefined || (!existsSync(held) && entry.purgingAt === undefined)) {
+      throw new ArtifactError('not_found', '回收里没有这一项了。', 'id');
+    }
+    if (entry.purgingAt === undefined) {
+      const details = this.trashDetails(id);
+      writeFileSync(meta, JSON.stringify({ ...entry, ...details, purgingAt: this.#now().toISOString() }),
+        { mode: FILE_MODE });
+    }
+    rmSync(held, { recursive: true, force: true });
+    writeFileSync(meta, JSON.stringify({ id, trashedAt: entry.trashedAt, purgedAt: this.#now().toISOString() }),
+      { mode: FILE_MODE });
+  }
+
+  trashDetails(id: string): { kind: 'file' | 'folder'; fileCount: number } {
+    const entry = TRASH_ID.test(id) ? this.#trashEntry(id) : undefined;
+    if (entry === undefined || basename(entry.name) !== entry.name) {
+      throw new ArtifactError('not_found', '回收里没有这一项了。', 'id');
+    }
+    const held = join(this.#trash, id, entry.name);
+    if (entry.purgingAt !== undefined && entry.kind !== undefined && entry.fileCount !== undefined) {
+      return { kind: entry.kind, fileCount: entry.fileCount };
+    }
+    const count = (path: string): number => {
+      const stats = lstatSync(path);
+      return stats.isDirectory() ? readdirSync(path).reduce((total, name) => total + count(join(path, name)), 0) : 1;
+    };
+    return { kind: lstatSync(held).isDirectory() ? 'folder' : 'file', fileCount: count(held) };
   }
 
   #trashEntry(id: string): TrashEntry | undefined {

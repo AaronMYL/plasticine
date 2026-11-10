@@ -31,6 +31,7 @@ import { migration as feedSourceRemoved } from './0113-feed-source-removed.ts';
 import { migration as noteSuggestThinking } from './0120-note-suggest-thinking.ts';
 import { migration as bookmarksApart } from './0121-bookmarks-apart.ts';
 import { migration as videoCollectionOrder } from './0123-video-collection-order.ts';
+import { migration as libraryPurge } from './0125-library-purge.ts';
 import { migration as spacePages } from './0122-space-pages.ts';
 import { migration as objects } from './0001-objects.ts';
 import { migration as tasks } from './0002-tasks.ts';
@@ -194,6 +195,7 @@ export const MIGRATIONS: readonly Migration[] = [
   bookmarksApart,
   spacePages,
   videoCollectionOrder,
+  libraryPurge,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

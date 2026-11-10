@@ -21,7 +21,8 @@ export function createNoteFolders(
   }
   function sync(): void {
     db.run('INSERT OR IGNORE INTO note_folders (name, position) VALUES ($name, 0)', { name: DEFAULT_NOTE_FOLDER });
-    const rows = db.all('SELECT DISTINCT folder FROM notes WHERE moved_to_space_id IS NULL ORDER BY created_at, id');
+    const rows = db.all(`SELECT DISTINCT folder FROM notes
+      WHERE moved_to_space_id IS NULL AND purged_at IS NULL ORDER BY created_at, id`);
     for (const row of rows) {
       const name = String(row['folder']);
       if (name !== MERGED_NOTE_FOLDER) {
@@ -39,10 +40,10 @@ export function createNoteFolders(
   function list(): NoteFoldersView {
     const ordered = names();
     const counts = new Map(db.all(`SELECT folder, COUNT(*) AS count FROM notes
-      WHERE deleted_at IS NULL AND moved_to_space_id IS NULL GROUP BY folder`)
+      WHERE deleted_at IS NULL AND moved_to_space_id IS NULL AND purged_at IS NULL GROUP BY folder`)
       .map((row) => [String(row['folder']), Number(row['count'])]));
     const deleted = db.get(`SELECT COUNT(*) AS count FROM notes
-      WHERE deleted_at IS NOT NULL AND moved_to_space_id IS NULL`);
+      WHERE deleted_at IS NOT NULL AND moved_to_space_id IS NULL AND purged_at IS NULL`);
     return {
       folders: ordered.map((name) => ({ name, count: counts.get(name) ?? 0, fixed: name === DEFAULT_NOTE_FOLDER })),
       allCount: [...counts.values()].reduce((sum, value) => sum + value, 0),

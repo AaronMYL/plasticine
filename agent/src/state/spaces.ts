@@ -27,6 +27,7 @@ import { checked, RECORD_META_COLUMNS, type ColumnMap } from './codec.ts';
 import type { Row } from './db.ts';
 import { fromSqliteError, notFound, StateError, versionConflict } from './errors.ts';
 import { allPages, ObjectStore, type StoreContext, type StoreSpec } from './object-store.ts';
+import { isPurged, requireUnpurged } from './purged.ts';
 
 const SpacePatchSchema = Type.Partial(Type.Object({
   title: Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS }),
@@ -124,6 +125,7 @@ export function createSpaceStore(context: StoreContext) {
 
   function save(id: string, expectedVersion: number, input: SpaceSave, author: SpaceAuthor,
     note: RevisionNote = {}, restoredFrom: number | null = null): Space {
+    requireUnpurged(context, 'spaces', id);
     return context.db.transaction(() => {
       const current = spaces.require(id);
       if (current.deletedAt !== null) {
@@ -149,8 +151,8 @@ export function createSpaceStore(context: StoreContext) {
         return created;
       });
     },
-    get: (id: string): Space | undefined => spaces.get(id),
-    require: (id: string): Space => spaces.require(id),
+    get: (id: string): Space | undefined => isPurged(context, 'spaces', id) ? undefined : spaces.get(id),
+    require: (id: string): Space => { requireUnpurged(context, 'spaces', id); return spaces.require(id); },
     /** 没删的，最近改的在前。 */
     list(filter: SpaceListFilter = {}, page: Page = {}): Space[] {
       if (filter.subscriptionId !== undefined) {
@@ -162,7 +164,7 @@ export function createSpaceStore(context: StoreContext) {
       return spaces.select(where, {}, page, 'updated_at DESC, id DESC');
     },
     /** 删掉的（「最近删除」），删的时间新的在前。 */
-    deleted: (): Space[] => allPages((page) => spaces.select('deleted_at IS NOT NULL', {}, page,
+    deleted: (): Space[] => allPages((page) => spaces.select('deleted_at IS NOT NULL AND purged_at IS NULL', {}, page,
       'deleted_at DESC, id DESC')),
     /** 还没有网页版的（旧版式），先建的在前：一次性重写找它们。 */
     withoutPage: (): Space[] => allPages((page) => spaces.select('deleted_at IS NULL AND html IS NULL', {}, page,
@@ -181,6 +183,7 @@ export function createSpaceStore(context: StoreContext) {
     save,
     /** 撤销最近一版：把它前一版的正文和标题再存成新的一版。 */
     undo(id: string, expectedVersion: number, author: SpaceAuthor): Space {
+      requireUnpurged(context, 'spaces', id);
       return context.db.transaction(() => {
         const current = spaces.require(id);
         if (current.version !== expectedVersion) {
@@ -201,6 +204,7 @@ export function createSpaceStore(context: StoreContext) {
         { space: spaceId }).map(readRevision);
     },
     markDeleted(id: string, expectedVersion: number): Space {
+      requireUnpurged(context, 'spaces', id);
       const current = spaces.get(id);
       if (current === undefined) {
         throw notFound('spaces', id);
@@ -210,6 +214,7 @@ export function createSpaceStore(context: StoreContext) {
     },
     /** 从「最近删除」还原：清掉删除时间（版本加一）；本来就没删的原样返回。 */
     restore(id: string): Space {
+      requireUnpurged(context, 'spaces', id);
       const current = spaces.get(id);
       if (current === undefined) {
         throw notFound('spaces', id);

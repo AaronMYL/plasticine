@@ -30,7 +30,8 @@ Agent、界面、桌面客户端都在这里改、测、打包、发版。Cyber 
   - 新的线上格式放进 Apache-2.0 那边，网络之外的功能放 AGPL 这边。
 - **提交作者是 AaronMYL**：`git config user.name AaronMYL`，邮箱用 GitHub 给的 noreply 地址；提交里不写共同作者行。
 - **先问再做**：新增依赖、改数据库结构（新迁移）、改接口或线上格式、删除分支 / 标签 / Release，先问维护者。
-- **不删用户数据**：迁移只加不改，删除只记 `deleted_at` / `removed_at`；迁移号在 `agent/src/state/migrations/` 里顺延。
+- **不删用户数据**：迁移只加不改，删除只记 `deleted_at` / `removed_at`；例外是「最近删除」的清空和永久删除：
+  正文、修订和文件真删，只保留一行 `purged_at` 删除记录；迁移号在 `agent/src/state/migrations/` 里顺延。
 - **信息身份必须真实**：用户原话、系统处理、推测、现实结果分开记；系统不能冒充用户确认。
 - **只用可擦除的 TypeScript 语法**：Node 24 直接跑 `.ts`（类型剥离）。
   - 不用 `enum`、`namespace` 和参数属性；

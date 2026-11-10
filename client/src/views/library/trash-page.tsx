@@ -14,11 +14,14 @@ import { exitKeyframes, MOTION, playThen } from '../../shell/motion.ts';
 import { PageHeader } from '../../shell/page-header.tsx';
 import { libraryChanged } from './library-signal.ts';
 
-const KIND_LABELS: Readonly<Record<LibraryTrashKind, string>> = { space: '空间', book: '图书', file: '文件' };
+const KIND_LABELS: Readonly<Record<LibraryTrashKind, string>> = {
+  space: '空间', book: '图书', file: '文件', folder: '文件夹',
+};
 
 function KindIcon({ kind }: { kind: LibraryTrashKind }): ReactNode {
   if (kind === 'space') return <HueTile hue="sky" icon="file" size={22} />;
-  return <span className="lib-trash-icon"><Icon name={kind === 'book' ? 'books' : 'file'} size={16} /></span>;
+  const icon = kind === 'book' ? 'books' : kind === 'folder' ? 'folder' : 'file';
+  return <span className="lib-trash-icon"><Icon name={icon} size={16} /></span>;
 }
 
 /** 今天的写「今天 14:02」，别的写「11月6日」（按他所在的时区）。 */

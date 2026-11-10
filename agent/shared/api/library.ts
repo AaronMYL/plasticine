@@ -8,7 +8,7 @@ import { OrNull } from './lineage.ts';
 
 export const LIBRARY_TRASH_PATH = `${API_PREFIX}/library/trash`;
 
-export const LIBRARY_TRASH_KINDS = ['space', 'book', 'file'] as const;
+export const LIBRARY_TRASH_KINDS = ['space', 'book', 'file', 'folder'] as const;
 export type LibraryTrashKind = (typeof LIBRARY_TRASH_KINDS)[number];
 
 export const LibraryTrashItemSchema = Type.Object({
@@ -19,6 +19,7 @@ export const LibraryTrashItemSchema = Type.Object({
   deletedAt: IsoTimeSchema,
   /** 文件原来在哪（还原回那里）；空间和书是 null。 */
   originalPath: OrNull(Type.String()),
+  fileCount: Type.Optional(Type.Integer({ minimum: 0 })),
 }, { additionalProperties: false });
 export type LibraryTrashItem = Static<typeof LibraryTrashItemSchema>;
 

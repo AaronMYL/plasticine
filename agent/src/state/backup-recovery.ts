@@ -7,6 +7,7 @@ import { Database } from './db.ts';
 import { checked } from './codec.ts';
 import { privateDirectory, safeBackupPath, snapshotFiles, verifyBackupFiles, writePrivate } from './backup-files.ts';
 import { sanitizeRecoveredDatabase } from './backup-recovery-sanitize.ts';
+import { replayLibraryPurges } from './backup-recovery-purges.ts';
 interface Options {
   stateDirectory: string;
   backupId: string;
@@ -55,6 +56,7 @@ export function prepareOfflineRestore(options: Options): { restoredDirectory: st
     }
     const recovered = new Database(new DatabaseSync(join(restoredDirectory, 'plasticine.sqlite')), undefined);
     try {
+      replayLibraryPurges(recovered, original, restoredDirectory, at);
       const laterObjects = sanitizeRecoveredDatabase(recovered, original, restoredDirectory, at);
       if (
         recovered.get('PRAGMA integrity_check')?.['integrity_check'] !== 'ok' ||

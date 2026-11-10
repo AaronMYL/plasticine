@@ -103,7 +103,7 @@ export function snapshotFiles(
   try {
     const rows = snapshot
       .prepare(
-        'SELECT body_file, body_bytes, body_sha256 FROM notes UNION ' +
+        "SELECT body_file, body_bytes, body_sha256 FROM notes WHERE body_file != '' UNION " +
           'SELECT body_file, body_bytes, body_sha256 FROM note_versions',
       )
       .all();

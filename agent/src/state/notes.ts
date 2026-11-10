@@ -107,8 +107,11 @@ export interface NoteFilter {
 const MOVED_OUT = 'moved_to_space_id IS NULL';
 
 export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
+  // 单对象恢复会只读早于永久删除功能的快照，不能假定历史快照也有新列。
+  const unpurged = context.db.all('PRAGMA table_info(notes)').some((row) => row['name'] === 'purged_at')
+    ? 'purged_at IS NULL' : '1 = 1';
   function get(id: string): NoteRecord | undefined {
-    const row = context.db.get('SELECT * FROM notes WHERE id = $id', { id });
+    const row = context.db.get(`SELECT * FROM notes WHERE id = $id AND ${unpurged}`, { id });
     return row === undefined ? undefined : readRow(NoteRecordSchema, COLUMNS, row, 'notes');
   }
 
@@ -141,7 +144,7 @@ export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
     const values = checked(NoteInputSchema, input, 'invalid_input', '新建笔记');
     const extra = checked(NoteCreateOptionsSchema, options, 'invalid_input', '新建笔记的选项');
     const id = extra.id ?? context.newId();
-    if (get(id) !== undefined) {
+    if (context.db.get('SELECT id FROM notes WHERE id = $id', { id }) !== undefined) {
       throw new StateError('duplicate', `notes 里已经有 ${id}`, { field: 'id' });
     }
     const createdAt = extra.createdAt ?? context.now();
@@ -296,6 +299,7 @@ export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
     if (filter.deletedOnly === true) {
       clauses.splice(0, clauses.length, 'deleted_at IS NOT NULL', MOVED_OUT);
     }
+    clauses.push(unpurged);
     const params: Params = { limit, offset };
     if (filter.folder !== undefined) {
       clauses.push('folder = $folder');
@@ -328,7 +332,7 @@ export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
         : context.db.transaction(() => commit(current, { deletedAt: null }, '恢复笔记'));
     },
     folders: createNoteFolders(context, (from, to) => {
-      const rows = context.db.all('SELECT id FROM notes WHERE folder = $folder', { folder: from });
+      const rows = context.db.all('SELECT id FROM notes WHERE folder = $folder AND purged_at IS NULL', { folder: from });
       for (const row of rows) { commit(require(String(row['id'])), { folder: to }, '移动文件夹里的笔记'); }
     }),
     importDetails: createNoteImportDetails(context, require),
@@ -349,7 +353,7 @@ export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
     assetPath: bodies.assetPath.bind(bodies),
     /** 查找私密笔记当前正文和历史版本里的图片引用。 */
     privateAssetNotes(name: string, origin?: string): string[] {
-      const rows = context.db.all('SELECT id FROM notes WHERE private = 1');
+      const rows = context.db.all('SELECT id FROM notes WHERE private = 1 AND purged_at IS NULL');
       return rows.map((row) => String(row['id'])).filter((id) => {
         const files = new Set([require(id).bodyFile, ...versions(id).map((version) => version.bodyFile)]);
         return [...files].some((file) => {

@@ -57,6 +57,7 @@ const EVENTS = {
   sse_failed: '事件推送失败，已关闭对应连接',
   after_commit_failed: '请求已提交，后续动作失败',
   request_failed: '请求处理失败',
+  library_batch_item_failed: '批量处理中的一项没有完成，结果保留供重试',
   error_response_failed: '错误响应未发出，连接已断开',
   memory_curation_failed: '记忆整理这一次没做成，原因已记在整理作业里，稍后重试',
   translate_output_invalid: '网页翻译：模型回的不是约定的 JSON，这一批记为没译成',

@@ -1,7 +1,7 @@
 // 书的文件（用户 2026-11-01 定「图书」）：books/<书 id>/ 下放原文件、转好的章节 content.json 和插图 assets/。
 // 先写进同级的临时目录再整体改名，崩在半路也只会留下一个没人引用的临时目录，不会有半本书。这里不删任何文件。
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Type, type Static } from 'typebox';
@@ -61,6 +61,12 @@ export class BookFiles {
       throw new StateError('invalid_input', `书的编号 ${bookId} 不能用作目录名`, { field: 'id' });
     }
     return join(this.directory, bookId);
+  }
+
+  /** 只由已确认的最近删除清空调用，文件删成功后才清缓存。 */
+  purge(bookId: string): void {
+    rmSync(this.folderFor(bookId), { recursive: true, force: true });
+    this.#cache.delete(bookId);
   }
 
   /** 整本写进临时目录再改名；目录已存在说明这本书已经存过，拒绝覆盖。 */

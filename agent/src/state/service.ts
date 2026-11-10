@@ -63,6 +63,7 @@ import { createScheduleStores } from './schedules.ts';
 import { createSessionStore } from './sessions.ts';
 import { createSpaceRewriteStore } from './space-rewrites.ts';
 import { createSpaceStore } from './spaces.ts';
+import { createLibraryPurge } from './library-purge.ts';
 import { createSubscriptionStore } from './subscriptions.ts';
 import { createSuggestionStore } from './suggestions.ts';
 import { createTimedSlotStore } from './timed-slots.ts';
@@ -232,10 +233,12 @@ export function openState(options: OpenStateOptions) {
     throw error;
   }
   const notesDirectory = notesDirectoryFor(options);
+  const bookFiles = new BookFiles(booksDirectoryFor(options));
   return {
     ...buildStores(context, noteBodies, index,
       options.path === MEMORY_DATABASE ? undefined : join(dirname(options.path), 'attachments')),
-    ...createBookStores(context, new BookFiles(booksDirectoryFor(options))),
+    ...createBookStores(context, bookFiles),
+    libraryPurge: createLibraryPurge(context, noteBodies, bookFiles),
     backups: createBackupStore(context, {
       ...(options.path === MEMORY_DATABASE ? {} : { directory: join(dirname(options.path), 'backups') }),
       ...(notesDirectory === undefined ? {} : { notesDirectory }),

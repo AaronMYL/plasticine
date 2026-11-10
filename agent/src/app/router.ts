@@ -93,6 +93,9 @@ import { REVIEW_PATH, SPACES_PATH, SUBSCRIPTIONS_PATH } from '../../shared/api/s
 import { deleteSpace, getSpace, listSpaces, restoreSpace, saveSpace, undoSpace } from './spaces.ts';
 import { LIBRARY_TRASH_PATH } from '../../shared/api/library.ts';
 import { listLibraryTrash } from './library-trash.ts';
+import { LIBRARY_BATCH_PATH, LIBRARY_EMPTY_PATH, NOTES_BATCH_PATH, NOTES_EMPTY_PATH }
+  from '../../shared/api/library-batch.ts';
+import { batchLibrary, batchNotes, emptyLibrary, emptyNotes } from './library-batch.ts';
 import { adoptSubscriptionRule, getReviewSummary, getSubscription, listSubscriptions, runSubscriptionNow,
   updateSubscription } from './subscriptions.ts';
 import { TRANSLATE_MODEL_PATH, TRANSLATE_PATH, TRANSLATE_SETTINGS_PATH } from '../../shared/api/translate.ts';
@@ -341,6 +344,10 @@ export const ROUTES: readonly Route[] = [
   { method: 'DELETE', path: `${SPACES_PATH}/:id`, auth: true, handler: deleteSpace },
   { method: 'POST', path: `${SPACES_PATH}/:id/restore`, auth: true, handler: restoreSpace },
   { method: 'GET', path: LIBRARY_TRASH_PATH, auth: true, handler: listLibraryTrash },
+  { method: 'POST', path: LIBRARY_BATCH_PATH, auth: true, handler: batchLibrary },
+  { method: 'POST', path: LIBRARY_EMPTY_PATH, auth: true, handler: emptyLibrary },
+  { method: 'POST', path: NOTES_BATCH_PATH, auth: true, handler: batchNotes },
+  { method: 'POST', path: NOTES_EMPTY_PATH, auth: true, handler: emptyNotes },
   { method: 'GET', path: SUBSCRIPTIONS_PATH, auth: true, handler: listSubscriptions },
   { method: 'GET', path: `${SUBSCRIPTIONS_PATH}/:id`, auth: true, handler: getSubscription },
   { method: 'PUT', path: `${SUBSCRIPTIONS_PATH}/:id`, auth: true, handler: updateSubscription },

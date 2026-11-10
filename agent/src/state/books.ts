@@ -20,11 +20,13 @@ import {
   type BookInsightInput,
   type BookInsightKind,
   type BookInput,
+  type BookPatch,
   type BookProgress,
   type BookProgressInput,
   type BookRecord,
 } from '../../shared/state.ts';
 import type { BookFiles } from './book-files.ts';
+import { isPurged, requireUnpurged } from './purged.ts';
 import { OBJECT_META_COLUMNS, type ColumnMap } from './codec.ts';
 import { allPages, ObjectStore, type StoreContext, type StoreSpec } from './object-store.ts';
 
@@ -123,9 +125,12 @@ const LIVE = 'deleted_at IS NULL';
 function createBookRecords(context: StoreContext) {
   const store = new ObjectStore(context, BOOK_SPEC);
   return {
-    get: store.get.bind(store),
-    require: store.require.bind(store),
-    update: store.update.bind(store),
+    get: (id: string): BookRecord | undefined => isPurged(context, 'books', id) ? undefined : store.get(id),
+    require: (id: string): BookRecord => { requireUnpurged(context, 'books', id); return store.require(id); },
+    update: (id: string, version: number, patch: BookPatch): BookRecord => {
+      requireUnpurged(context, 'books', id);
+      return store.update(id, version, patch);
+    },
     /** id 由调用方先定：书的文件按它落盘之后才建这一行。 */
     create: (input: BookInput, id?: string): BookRecord =>
       store.create(input, undefined, id === undefined ? {} : { id }),
@@ -137,10 +142,10 @@ function createBookRecords(context: StoreContext) {
       store.select(`${LIVE} AND source_sha256 = $sha`, { sha: sha256 }, { limit: 1 })[0],
     /** 同一个文件删过的那本（最近删的）：重新上传时还原它，标注才回得来。 */
     findDeletedBySource: (sha256: string): BookRecord | undefined =>
-      store.select('deleted_at IS NOT NULL AND source_sha256 = $sha', { sha: sha256 }, { limit: 1 },
+      store.select('deleted_at IS NOT NULL AND purged_at IS NULL AND source_sha256 = $sha', { sha: sha256 }, { limit: 1 },
         'deleted_at DESC, id')[0],
     /** 删掉的（「最近删除」），删的时间新的在前。 */
-    deleted: (): BookRecord[] => allPages((page) => store.select('deleted_at IS NOT NULL', {}, page,
+    deleted: (): BookRecord[] => allPages((page) => store.select('deleted_at IS NOT NULL AND purged_at IS NULL', {}, page,
       'deleted_at DESC, id')),
   };
 }

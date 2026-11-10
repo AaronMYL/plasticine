@@ -48,7 +48,8 @@ export function backupObjectAccess(context: StoreContext, notesDirectory: string
       for (const [kind, table] of Object.entries(BACKUP_TABLES)) {
         for (const row of context.db.all(`SELECT id, version FROM ${table} ORDER BY id`)) {
           const id = String(row['id']);
-          const note = kind === 'note' ? notes.require(id) : null;
+          const note = kind === 'note' ? notes.get(id) : null;
+          if (kind === 'note' && note === undefined) { continue; }
           result.push({
             kind: kind as BackupObjectKind,
             id,

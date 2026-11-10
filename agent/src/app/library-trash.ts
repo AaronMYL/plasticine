@@ -11,9 +11,9 @@ export function listLibraryTrash(context: RequestContext): Reply {
     title: space.title, deletedAt: space.deletedAt ?? space.updatedAt, originalPath: null }));
   const books: LibraryTrashItem[] = state.books.deleted().map((book) => ({ kind: 'book', id: book.id,
     title: book.title, deletedAt: book.deletedAt ?? book.updatedAt, originalPath: null }));
-  const files: LibraryTrashItem[] = m5b.artifacts.workspace.trashed().map((entry) => ({ kind: 'file', id: entry.id,
-    title: entry.name, deletedAt: entry.trashedAt,
-    originalPath: entry.originalPath }));
+  const files: LibraryTrashItem[] = m5b.artifacts.workspace.trashed().map((entry) => ({
+    ...m5b.artifacts.workspace.trashDetails(entry.id), id: entry.id, title: entry.name,
+    deletedAt: entry.trashedAt, originalPath: entry.originalPath }));
   const items = [...spaces, ...books, ...files].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
   const body: LibraryTrashResponse = { items };
   return { status: 200, body };
