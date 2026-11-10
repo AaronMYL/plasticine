@@ -6,11 +6,9 @@ A personal AI workspace that runs on your own computer or server. Chat, notes, t
 live in your own instance. Mac and Windows get a desktop client; phones use the web app. The UI is Chinese for now.
 Licensed under AGPL-3.0; `agent/protocol/` and the wire-format files in `agent/shared/` are Apache-2.0. Commercial use is welcome.
 
-> 早期版本，一份 Plasticine 只有一个主人。欢迎来改，见 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [悬赏](BOUNTIES.md)。
-
 ## 下载安装
 
-下载页：<https://cyberhunter.top/download>。安装包都在本仓库的 [Releases](https://github.com/AaronMYL/plasticine/releases)，每一版都留着，遇到问题可以装回旧版。
+下载页：<https://cyberhunter.top/download>。安装包都在本仓库的 [Releases](https://github.com/AaronMYL/plasticine/releases)。
 
 | 平台 | 装 | 第一次打开 |
 |---|---|---|
