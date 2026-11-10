@@ -1,7 +1,7 @@
-// 主线和旁聊按天分段（《优化清单》第 17 条，11-06 他定：主线不再拿压缩当记忆）。
+// 主线和队友对话按天分段（《优化清单》第 17 条，11-06 他定：主线不再拿压缩当记忆）。
 // - 新的一天第一轮开跑时（不在一轮中间）定下今天从第几条起：上一轮回答之后进来的那些（他的话、贴回的结果、通知）。
 // - 给模型的上下文 = 系统提示（记忆库 + 前一天的要点）+ 今天的摘要（压缩过才有）+ 今天的原话；不背几个月的摘要链。
-// - 当天太长才压缩，次数有上限；到上限后不再写摘要，只留今天最近的原话，更早的靠「翻对话」，话题岔开时提议开旁聊。
+// - 当天太长才压缩，次数有上限；到上限后不再写摘要，只留今天最近的原话，更早的靠「翻对话」，需要分工时交给现有队友或后台线。
 // 后台线（子代理）是一件事一个上下文，不分段，照旧用线上的 summary。
 
 import type { LineDayRow, LineRow, StateService } from '../state/index.ts';
@@ -90,7 +90,8 @@ export function daySection(state: Pick<StateService, 'lineDays'>, line: LineRow)
   }
   if (window.day.compactions >= MAX_DAY_COMPACTIONS) {
     parts.push(`今天已经压缩过 ${window.day.compactions} 次，到了上限：之后只留今天最近的原话，更早的用 `
-      + 'conversation_search 翻；话题岔开了就提议他开一条旁聊（open_side_chat）。');
+      + 'conversation_search 翻；需要分工时用 mate_list 查看现有队友，按职责用 mate_handoff 交接；'
+      + '没有合适队友的工作用 start_line 开后台线。');
   }
   return parts.join('\n');
 }

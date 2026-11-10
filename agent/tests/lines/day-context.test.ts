@@ -94,7 +94,11 @@ test(`当天压缩到上限（${MAX_DAY_COMPACTIONS} 次）：不再写摘要，
   const context = await turn(h, `第二句：${LONG.repeat(15)}`, '答二');
   assert.ok(!said(context).some((text) => text.startsWith('第一句')), '早先的原话不再送');
   assert.ok(said(context).some((text) => text.includes('今天的摘要')), '已有的摘要还在');
-  assert.ok(systemText(context).includes(`压缩过 ${MAX_DAY_COMPACTIONS} 次`));
+  const prompt = systemText(context);
+  assert.ok(prompt.includes(`压缩过 ${MAX_DAY_COMPACTIONS} 次`));
+  assert.doesNotMatch(prompt, /open_side_chat|旁聊/);
+  assert.match(prompt, /mate_list.*mate_handoff/);
+  assert.match(prompt, /没有合适队友.*start_line/);
   const after = h.handle.state.lineDays.latest(MAIN_LINE_ID);
   assert.equal(after?.compactions, MAX_DAY_COMPACTIONS, '没有再写摘要');
   assert.ok((after?.summarySeq ?? 0) >= 2, '窗口往后挪了');
