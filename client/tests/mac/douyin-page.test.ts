@@ -29,6 +29,25 @@ describe('抖音收藏的取数脚本', () => {
       .toEqual({ id: '123', name: '学习', count: 12 });
   });
 
+  it('收藏时间缺失时保持空，发布时间单独保留', () => {
+    const work = listedWork({ ...AWEME, collect_time: undefined }, null, 7);
+    expect(work?.collectedAt).toBeNull();
+    expect(work?.publishedAt).toBe(new Date(AWEME.create_time * 1000).toISOString());
+    expect(work?.listPosition).toBe(7);
+  });
+
+  it('全量回填忽略已知作品，超过旧的 50 页限制仍取到末页并带全局位置', async () => {
+    const call: DouyinCall = async (path, params) => {
+      if (path.includes('collects/list')) { return { collects_list: [] }; }
+      const page = Number(params['cursor']);
+      return { aweme_list: [{ ...AWEME, aweme_id: String(7300000000000000001n + BigInt(page)) }],
+        has_more: page < 60 ? 1 : 0, cursor: String(page + 1) };
+    };
+    const result = await listFavorites(call, [AWEME.aweme_id], true);
+    expect(result.works).toHaveLength(61);
+    expect(result.works.map((work) => work.listPosition)).toEqual(Array.from({ length: 61 }, (_, i) => i));
+  });
+
   it('作品详情：取最高码率的无水印地址；图文取每张图；格式过 schema', () => {
     const video = resolvedWork({ aweme_detail: AWEME });
     expect(Value.Check(DouyinResolvedSchema, video)).toBe(true);

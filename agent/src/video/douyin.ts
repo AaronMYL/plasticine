@@ -36,18 +36,20 @@ export function workUrl(workId: string, kind: 'video' | 'images' | null): string
 
 export function videoWorkView(work: VideoWorkRow): VideoWorkView {
   return { id: work.id, platform: work.platform, workId: work.workId, url: work.url, kind: work.kind,
-    title: work.title, author: work.author, collectedAt: work.collectedAt, durationSeconds: work.durationSeconds,
+    title: work.title, author: work.author, collectedAt: work.collectSeq === null ? null : work.collectedAt,
+    durationSeconds: work.durationSeconds,
     folderIds: work.folderIds, stage: work.stage, want: work.want, run: work.run, error: work.error,
     feedItemId: work.feedItemId, version: work.version };
 }
 
 export class DouyinFavorites {
   readonly #state: DouyinState;
-  readonly #worker: VideoWorker;
+  readonly #worker: Pick<VideoWorker, 'kick' | 'macFailed' | 'resolved'>;
   readonly #now: () => Date;
   readonly #changed: () => void;
 
-  constructor(options: { state: DouyinState; worker: VideoWorker; now: () => Date; changed?: () => void }) {
+  constructor(options: { state: DouyinState; worker: Pick<VideoWorker, 'kick' | 'macFailed' | 'resolved'>;
+    now: () => Date; changed?: () => void }) {
     this.#state = options.state;
     this.#worker = options.worker;
     this.#now = options.now;
@@ -73,8 +75,8 @@ export class DouyinFavorites {
   }
 
   /** 排一次同步（同一件没了结就不另排）。 */
-  sync(): DouyinSyncView {
-    this.#state.videoMacJobs.queue('list', null);
+  sync(full = false): DouyinSyncView {
+    this.#state.videoMacJobs.queue('list', null, full || this.#state.videoWorks.needsOrderBackfill());
     return this.syncView();
   }
 
@@ -111,7 +113,8 @@ export class DouyinFavorites {
     }
     return taken.flatMap((job): DouyinJob[] => {
       if (job.kind === 'list') {
-        return [{ id: job.id, kind: 'list', sinceIds: this.#state.videoWorks.newestWorkIds('douyin', SINCE_IDS_MAX) }];
+        return [{ id: job.id, kind: 'list', full: job.full,
+          sinceIds: job.full ? [] : this.#state.videoWorks.newestWorkIds('douyin', SINCE_IDS_MAX) }];
       }
       const work = job.workId === null ? undefined : this.#state.videoWorks.byWork('douyin', job.workId);
       if (work === undefined) {
@@ -128,16 +131,19 @@ export class DouyinFavorites {
    */
   report(report: DouyinReport): { accepted: boolean; added: number } {
     const job = this.#state.videoMacJobs.get(report.jobId);
-    if (job === undefined) {
+    if (job === undefined || job.state === 'done' || job.state === 'failed') {
       return { accepted: false, added: 0 };
     }
     let added = 0;
-    if (report.list !== undefined) {
+    if (report.list !== undefined && job.kind === 'list') {
       this.#state.videoFolders.upsert('douyin', report.list.folders);
       for (const listed of report.list.works) {
         const { created } = this.#state.videoWorks.upsert({ platform: 'douyin', workId: listed.workId,
           url: workUrl(listed.workId, listed.kind), title: listed.title || listed.caption.slice(0, 80) || '（无标题）',
-          caption: listed.caption, author: listed.author, kind: listed.kind, collectedAt: listed.collectedAt,
+          caption: listed.caption, author: listed.author, kind: listed.kind,
+          collectedAt: listed.listPosition === undefined ? null : listed.collectedAt,
+          ...(listed.listPosition === undefined || job.sequenceBase === null ? {}
+            : { collectSeq: job.sequenceBase - listed.listPosition, collectSeqBase: job.sequenceBase }),
           durationSeconds: listed.durationSeconds, folderIds: listed.folderIds });
         added += created ? 1 : 0;
       }
@@ -156,7 +162,7 @@ export class DouyinFavorites {
       if (open) {
         this.#state.videoMacJobs.finish(job.id, null);
       }
-    } else if (report.list?.done === true && open) {
+    } else if (report.list?.done === true && job.kind === 'list' && open) {
       this.#state.videoMacJobs.finish(job.id, null);
     }
     this.#changed();

@@ -175,8 +175,8 @@ export class FeedRunner {
     try {
       if (job.kind === 'list') {
         const list = await window.webContents.executeJavaScript(
-          `window.__plasticineDouyin.list(${JSON.stringify(job.sinceIds)})`) as Omit<NonNullable<DouyinReport['list']>,
-          'done'>;
+          `window.__plasticineDouyin.list(${JSON.stringify(job.sinceIds)}, ${job.full === true})`) as
+          Omit<NonNullable<DouyinReport['list']>, 'done'>;
         const reports: DouyinReport[] = [];
         for (let start = 0; start === 0 || start < list.works.length; start += DOUYIN_WORKS_PER_REPORT_MAX) {
           const works = list.works.slice(start, start + DOUYIN_WORKS_PER_REPORT_MAX);

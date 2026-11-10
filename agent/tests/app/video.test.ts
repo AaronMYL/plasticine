@@ -57,16 +57,19 @@ test('抖音收藏：同步排给 Mac；Mac 凭节点凭证取活、交回标题
   t = await startTestApp();
   const cookie = await pair(t);
   assert.equal((await call(t, 'GET', '/v2/nodes/douyin')).status, 401);
-  const sync = await call(t, 'POST', '/v2/video/douyin/sync', { cookie, body: { requestId: 'douyin-sync-01' } });
+  const sync = await call(t, 'POST', '/v2/video/douyin/sync',
+    { cookie, body: { requestId: 'douyin-sync-01', full: true } });
   assert.equal(sync.status, 202, JSON.stringify(sync.body));
   assert.equal((json(sync)['sync'] as { state: string }).state, 'waiting_mac');
   const headers = { authorization: `Bearer ${await pairedNode(t, cookie)}` };
   const jobs = await call(t, 'GET', '/v2/nodes/douyin', { headers });
   assert.ok(Value.Check(DouyinJobsResponseSchema, jobs.body));
-  const [job] = json(jobs)['jobs'] as { id: string; kind: string }[];
+  const [job] = json(jobs)['jobs'] as { id: string; kind: string; full?: boolean }[];
   assert.equal(job?.kind, 'list');
+  assert.equal(job?.full, true);
   const work = { workId: '7300000000000000001', title: '普通人做指数定投的三个误区', caption: '', author: '理财小课堂',
-    kind: 'video', durationSeconds: 222, collectedAt: '2026-11-06T08:00:00.000Z', folderIds: [] };
+    kind: 'video', durationSeconds: 222, publishedAt: null, listPosition: 0,
+    collectedAt: '2026-11-06T08:00:00.000Z', folderIds: [] };
   assert.equal((await call(t, 'POST', '/v2/nodes/douyin', { headers, body: { requestId: 'douyin-list-01',
     jobId: job!.id, list: { folders: [], works: [{ ...work, workId: '../1' }], done: true } } })).status, 400);
   const report = await call(t, 'POST', '/v2/nodes/douyin', { headers, body: { requestId: 'douyin-list-01',

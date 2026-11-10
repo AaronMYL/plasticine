@@ -6,7 +6,7 @@
 // 收藏夹里的作品 /aweme/v1/web/collects/video/list/、作品详情 /aweme/v1/web/aweme/detail/。只读，不点、不改任何东西。
 //
 //   list：先翻收藏夹，再按收藏时间翻收藏作品（新的在前），翻到 sinceIds 里的（上次同步过的）就停；只要标题、作者、
-//         收藏时间、链接这些，不取下载地址。
+//         收藏时间、列表位置、链接这些，不取下载地址；full 全量回填时不在 sinceIds 停下。
 //   resolve：取一条作品的下载地址（无水印的视频地址、图文的图片、自带字幕）。地址可能绑登录或 IP，服务器上下载不了就记原因。
 //
 // 第四段 Electron 壳实现原生那一侧：载入页面、注入这段、按 jobs 调 installDouyinReader 的方法、把结果 POST 回去。
@@ -21,8 +21,8 @@ const CAPTION_MAX = 5_000;
 const IMAGES_MAX = 40;
 /** 一页要几条：网页版自己翻收藏也是这么多。 */
 const PAGE_COUNT = 18;
-/** 一次同步最多翻这么多页（约 900 条）：他 1000 多条收藏，第一次同步分两次也够了；平时翻到上次的就停。 */
-const PAGES_MAX = 50;
+/** 防止接口异常无限翻页；到达上限仍有下一页时明确报错，不把截断列表当全量结果。 */
+const PAGES_MAX = 1_000;
 /** 抖音图文作品的 aweme_type。 */
 const IMAGE_POST_TYPES = new Set([2, 68, 150]);
 /** 网页版的固定参数（TikTokDownloader 的 PARAMS 里同样这些）。 */
@@ -87,7 +87,7 @@ function isoOf(seconds: unknown): string | null {
 }
 
 /** 收藏列表里的一条 → 交给服务端的样子。认不出作品 ID 的给 null。 */
-export function listedWork(raw: unknown, folderId: string | null): DouyinListedWork | null {
+export function listedWork(raw: unknown, folderId: string | null, listPosition = 0): DouyinListedWork | null {
   const aweme = object(raw);
   const workId = workIdOf(aweme);
   if (workId === null) { return null; }
@@ -101,8 +101,9 @@ export function listedWork(raw: unknown, folderId: string | null): DouyinListedW
     author: author === '' ? null : author.slice(0, 200),
     kind: kindOf(aweme),
     durationSeconds: durationOf(aweme),
-    // 收藏时间：列表里有 collect_time 就用，没有用作品发布时间。
-    collectedAt: isoOf(aweme['collect_time'] ?? aweme['create_time']),
+    collectedAt: isoOf(aweme['collect_time']),
+    publishedAt: isoOf(aweme['create_time']),
+    listPosition,
     folderIds: folderId === null ? [] : [folderId],
   };
 }
@@ -198,12 +199,16 @@ async function pages(call: DouyinCall, path: string, base: Readonly<Record<strin
       take(aweme);
     }
     if (Number(body['has_more']) !== 1 || list.length === 0) { return; }
-    cursor = String(body['cursor'] ?? body['max_cursor'] ?? '0');
+    const nextCursor = String(body['cursor'] ?? body['max_cursor'] ?? '0');
+    if (nextCursor === cursor) { throw new Error('layout_changed'); }
+    cursor = nextCursor;
   }
+  throw new Error('layout_changed');
 }
 
 /** 翻收藏夹和收藏作品：翻到 sinceIds 里的就停。同一条在收藏夹里也在总收藏里，按作品 ID 合并收藏夹。 */
-export async function listFavorites(call: DouyinCall, sinceIds: readonly string[]): Promise<DouyinListResult> {
+export async function listFavorites(call: DouyinCall, sinceIds: readonly string[], full = false):
+  Promise<DouyinListResult> {
   const known = new Set(sinceIds);
   const works = new Map<string, DouyinListedWork>();
   const folders: DouyinFolderView[] = [];
@@ -213,14 +218,15 @@ export async function listFavorites(call: DouyinCall, sinceIds: readonly string[
     const folder = folderOf(raw);
     if (folder !== null) { folders.push(folder); }
   }
+  let listPosition = 0;
   const add = (folderId: string | null) => (aweme: unknown): void => {
-    const work = listedWork(aweme, folderId);
+    const work = listedWork(aweme, folderId, listPosition++);
     if (work === null) { return; }
     const existing = works.get(work.workId);
     works.set(work.workId, existing === undefined ? work
       : { ...existing, folderIds: [...new Set([...existing.folderIds, ...work.folderIds])] });
   };
-  const seen = (aweme: unknown): boolean => known.has(workIdOf(object(aweme)) ?? '');
+  const seen = (aweme: unknown): boolean => !full && known.has(workIdOf(object(aweme)) ?? '');
   await pages(call, '/aweme/v1/web/aweme/listcollection/', {}, 'POST', seen, add(null));
   for (const folder of folders) {
     await pages(call, '/aweme/v1/web/collects/video/list/', { collects_id: folder.id }, 'GET', seen, add(folder.id));
@@ -239,12 +245,13 @@ export async function resolveWork(call: DouyinCall, workId: string): Promise<Dou
 }
 
 export interface DouyinReader {
-  list(sinceIds: readonly string[]): Promise<DouyinListResult>;
+  list(sinceIds: readonly string[], full?: boolean): Promise<DouyinListResult>;
   resolve(workId: string): Promise<DouyinResolved>;
 }
 
 /** 装到 window 上给原生层调。 */
 export function installDouyinReader(win: Window & typeof globalThis): DouyinReader {
   const call = pageCall(win);
-  return { list: (sinceIds) => listFavorites(call, sinceIds), resolve: (workId) => resolveWork(call, workId) };
+  return { list: (sinceIds, full) => listFavorites(call, sinceIds, full),
+    resolve: (workId) => resolveWork(call, workId) };
 }

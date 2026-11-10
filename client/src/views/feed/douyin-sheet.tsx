@@ -47,7 +47,9 @@ function Row({ work, checked, onToggle }: { work: VideoWorkView; checked: boolea
   ReactNode {
   const timeZone = useTimeZone();
   const run = RUN_TEXT[work.run];
-  const meta = [work.author, dayText(work.collectedAt, timeZone), run].filter((part) => part !== null).join(' · ');
+  const collected = dayText(work.collectedAt, timeZone);
+  const meta = [work.author, collected === null ? null : `收藏于 ${collected}`, run]
+    .filter((part) => part !== null).join(' · ');
   return (
     <li className="douyin-row" data-run={work.run}>
       <label className="douyin-row-main">

@@ -108,7 +108,7 @@ export const DouyinFolderViewSchema = Type.Object({
 });
 export type DouyinFolderView = Static<typeof DouyinFolderViewSchema>;
 
-/** GET /v2/video/douyin?folder=&q=&limit=&offset= — 收藏，按收藏时间新的在前。 */
+/** GET /v2/video/douyin?folder=&q=&limit=&offset= — 收藏，按抖音收藏列表顺序。 */
 export const DouyinListQuerySchema = Type.Object({
   folder: Type.Optional(Type.String({ minLength: 1, maxLength: 60 })),
   q: Type.Optional(Type.String({ maxLength: 200 })),
@@ -139,7 +139,11 @@ export const DouyinListResponseSchema = Type.Object({
 export type DouyinListResponse = Static<typeof DouyinListResponseSchema>;
 
 /** POST /v2/video/douyin/sync → 202 { sync }：排一次同步，Mac 在线就去翻收藏列表。 */
-export const DouyinSyncRequestSchema = Type.Object({ requestId: RequestIdSchema }, { additionalProperties: false });
+export const DouyinSyncRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  /** 全量回填收藏顺序，不触发作品解析。 */
+  full: Type.Optional(Type.Boolean()),
+}, { additionalProperties: false });
 export type DouyinSyncRequest = Static<typeof DouyinSyncRequestSchema>;
 export const DouyinSyncResponseSchema = Type.Object({ sync: DouyinSyncViewSchema });
 export type DouyinSyncResponse = Static<typeof DouyinSyncResponseSchema>;
@@ -165,6 +169,7 @@ export const DouyinListJobSchema = Type.Object({
   id: IdSchema,
   kind: Type.Literal('list'),
   sinceIds: Type.Array(DouyinWorkIdSchema, { maxItems: 50 }),
+  full: Type.Optional(Type.Boolean()),
 }, { additionalProperties: false });
 /** 取一条作品的下载地址（视频地址、图文的图片、自带字幕）。 */
 export const DouyinResolveJobSchema = Type.Object({
@@ -187,8 +192,12 @@ export const DouyinListedWorkSchema = Type.Object({
   author: OrNull(Type.String({ maxLength: 200 })),
   kind: OrNull(Type.Enum(VIDEO_KINDS)),
   durationSeconds: OrNull(Type.Number({ minimum: 0 })),
-  /** 收藏时间拿不到时给作品发布时间，都没有就是 null。 */
+  /** 只有抖音明确返回的收藏时间；缺失时为 null。 */
   collectedAt: OrNull(IsoTimeSchema),
+  /** 作品发布时间，仅作来源信息，不能替代收藏时间。 */
+  publishedAt: Type.Optional(OrNull(IsoTimeSchema)),
+  /** 总收藏列表中从 0 开始的位置；分批报告保持同一位置。 */
+  listPosition: Type.Optional(Type.Integer({ minimum: 0, maximum: 999_999 })),
   folderIds: Type.Array(Type.String({ maxLength: 60 }), { maxItems: 50 }),
 }, { additionalProperties: false });
 export type DouyinListedWork = Static<typeof DouyinListedWorkSchema>;

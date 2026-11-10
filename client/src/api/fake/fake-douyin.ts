@@ -71,7 +71,8 @@ export class FakeDouyin {
     VideoWorkView {
     const workId = String(7_300_000_000_000_000_000n + BigInt(index));
     return { id: `video_fake_${index}`, platform: 'douyin', workId, url: `https://www.douyin.com/video/${workId}`,
-      kind: 'video', title, author, collectedAt: new Date(at).toISOString(), durationSeconds: 60 + index % 300,
+      kind: 'video', title, author, collectedAt: index === 0 ? null : new Date(at).toISOString(),
+      durationSeconds: 60 + index % 300,
       folderIds, stage: STAGES[stage - 1] ?? 'synced', want: stage > 1 ? 'full' : 'none', run: 'idle', error: null,
       feedItemId: null, version: 1 };
   }

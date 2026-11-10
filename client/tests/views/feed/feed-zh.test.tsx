@@ -84,6 +84,10 @@ describe('信息流的中文、小图表和抖音收藏', () => {
     const sheet = await screen.findByRole('dialog', { name: '抖音收藏' });
     const row = await within(sheet).findByRole('checkbox', { name: '选中 一口气看懂睡眠周期' });
     expect((row as HTMLInputElement).checked).toBe(false);
+    const noDate = within(sheet).getByRole('checkbox', { name: '选中 普通人做指数定投的三个误区' }).closest('li')!;
+    expect(noDate.querySelector('.douyin-row-meta')?.textContent).toBe('理财小课堂');
+    expect(row.closest('li')?.querySelector('.douyin-row-meta')?.textContent).toMatch(/科普君 · 收藏于 /);
+    expect(sheet.querySelector('.douyin-sync-meta')?.textContent).not.toContain('收藏于');
     expect(within(sheet).getByRole('img', { name: '已总结' })).toBeTruthy();
     expect(within(sheet).getByText(/还有/)).toBeTruthy();
     fireEvent.click(row);

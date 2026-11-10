@@ -42,7 +42,7 @@ test('状态只往前走：已总结的不能退回已预览', () => {
   assert.equal(t.state.videoWorks.require(a.id).preview?.points[0], 'p');
 });
 
-test('列表按收藏时间新的在前，可按收藏夹和标题、作者搜', () => {
+test('未回填顺序的旧作品保持入库顺序，可按收藏夹和标题、作者搜', () => {
   listed('7300000000000000001', '家常红烧肉', ['cook'], '2026-10-28T08:00:00.000Z');
   listed('7300000000000000002', '独立开发者怎么定价', [], '2026-10-30T08:00:00.000Z');
   const all = t.state.videoWorks.page({ platform: 'douyin' }, 10, 0);
@@ -64,4 +64,18 @@ test('Mac 的活：同一件不重复排；取走没交回的过时再给；交�
   t.state.videoMacJobs.finish(list.id, null);
   assert.notEqual(t.state.videoMacJobs.lastList().lastDoneAt, null);
   assert.equal(t.state.videoMacJobs.lastList().open, null);
+});
+
+
+test('收藏顺序优先于收藏日期，同步首条最大且新作品在旧作品前', () => {
+  const old = listed('7300000000000000001', '旧作品', [], '2026-11-09T00:00:00.000Z').work;
+  for (const [index, title] of ['新收藏甲', '新收藏乙'].entries()) {
+    t.state.videoWorks.upsert({ platform: 'douyin', workId: `730000000000000000${index + 2}`,
+      url: 'https://www.douyin.com/video/7300000000000000002', title,
+      collectedAt: index === 0 ? null : '2020-01-01T00:00:00.000Z', collectSeq: 100 - index });
+  }
+  const page = t.state.videoWorks.page({ platform: 'douyin' }, 10, 0);
+  assert.deepEqual(page.works.map((work) => work.title), ['新收藏甲', '新收藏乙', '旧作品']);
+  assert.equal(page.works[2]?.id, old.id);
+  assert.deepEqual(t.state.videoWorks.newestWorkIds('douyin', 2), ['7300000000000000002', '7300000000000000003']);
 });

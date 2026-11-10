@@ -42,7 +42,7 @@ export async function syncDouyin(context: RequestContext): Promise<Reply> {
   const raw = await readJsonBodyWithDigest(context.req);
   const body = checkInput(DouyinSyncRequestSchema, raw.value, '同步抖音收藏');
   return idempotent(context, body.requestId, (afterCommit) => {
-    const reply: DouyinSyncResponse = { sync: context.deps.video.douyin.sync() };
+    const reply: DouyinSyncResponse = { sync: context.deps.video.douyin.sync(body.full) };
     afterCommit(() => context.deps.hub.publish({ type: 'video_changed' }));
     return { status: 202, body: reply };
   }, { bodyDigest: raw.digest });

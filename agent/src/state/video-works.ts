@@ -33,6 +33,7 @@ export interface VideoWorkRow {
   caption: string;
   author: string | null;
   collectedAt: string | null;
+  collectSeq: number | null;
   durationSeconds: number | null;
   folderIds: string[];
   stage: VideoStage;
@@ -61,6 +62,8 @@ export interface NewVideoWork {
   author?: string | null;
   kind?: 'video' | 'images' | null;
   collectedAt?: string | null;
+  collectSeq?: number;
+  collectSeqBase?: number;
   durationSeconds?: number | null;
   folderIds?: string[];
 }
@@ -97,6 +100,8 @@ export interface MacJobRow {
   createdAt: string;
   takenAt: string | null;
   finishedAt: string | null;
+  full: boolean;
+  sequenceBase: number | null;
 }
 
 function nullableText(row: Row, key: string): string | null {
@@ -137,6 +142,7 @@ function decodeWork(row: Row): VideoWorkRow {
     caption: String(row['caption']),
     author: nullableText(row, 'author'),
     collectedAt: nullableText(row, 'collected_at'),
+    collectSeq: typeof row['collect_seq'] === 'number' ? row['collect_seq'] : null,
     durationSeconds: typeof duration === 'number' ? duration : null,
     folderIds: json(row, 'folder_ids', isStrings) ?? [],
     stage: VIDEO_STAGES.find((stage) => stage === row['stage']) ?? 'synced',
@@ -158,6 +164,20 @@ function decodeWork(row: Row): VideoWorkRow {
   };
 }
 
+/** list 任务复用 work_id 存取数上下文，resolve 任务仍存作品 ID；无需增加任务表字段。 */
+function listContext(row: Row): { full: boolean; sequenceBase: number | null } {
+  if (row['kind'] !== 'list' || row['work_id'] === null) { return { full: false, sequenceBase: null }; }
+  const value: unknown = JSON.parse(String(row['work_id']));
+  if (typeof value !== 'object' || value === null || !('full' in value) || !('sequenceBase' in value)
+    || typeof value.full !== 'boolean' || !Number.isSafeInteger(value.sequenceBase)) {
+    throw new StateError('corrupt_record', '翻收藏任务的顺序上下文无效。');
+  }
+  return { full: value.full, sequenceBase: Number(value.sequenceBase) };
+}
+
+/** 一次取数预留一百万个列表位置，与 DouyinListedWorkSchema 的上限一致。 */
+const COLLECTION_SEQUENCE_SPAN = 1_000_000;
+
 function decodeJob(row: Row): MacJobRow {
   const state = (['waiting', 'taken', 'done', 'failed'] as const).find((value) => value === row['state']);
   if (state === undefined) {
@@ -166,7 +186,8 @@ function decodeJob(row: Row): MacJobRow {
   return {
     id: String(row['id']),
     kind: row['kind'] === 'list' ? 'list' : 'resolve',
-    workId: nullableText(row, 'work_id'),
+    workId: row['kind'] === 'list' ? null : nullableText(row, 'work_id'),
+    ...listContext(row),
     state,
     error: nullableText(row, 'error'),
     createdAt: String(row['created_at']),
@@ -219,6 +240,13 @@ function createVideoWorkStore(context: StoreContext) {
     get,
     require,
     byWork,
+    needsOrderBackfill(): boolean {
+      return db.get(`SELECT id FROM video_works
+        WHERE platform = 'douyin' AND collect_seq IS NULL AND NOT EXISTS (
+          SELECT 1 FROM video_mac_jobs WHERE kind = 'list' AND state = 'done'
+            AND CASE WHEN json_valid(work_id) THEN json_extract(work_id, '$.full') END = 1
+        ) LIMIT 1`) !== undefined;
+    },
     /** 加一条；同一作品已经在了就补上新知道的标题、配文、收藏夹，不动它走到哪。返回 created。 */
     upsert(input: NewVideoWork): { work: VideoWorkRow; created: boolean } {
       return db.transaction(() => {
@@ -229,22 +257,27 @@ function createVideoWorkStore(context: StoreContext) {
           db.run(`UPDATE video_works SET title = $title,
             caption = CASE WHEN $caption = '' THEN caption ELSE $caption END,
             author = COALESCE($author, author), kind = COALESCE(kind, $kind),
-            collected_at = COALESCE(collected_at, $collected), duration_seconds = COALESCE(duration_seconds, $duration),
+            collected_at = CASE WHEN $base >= COALESCE(collect_seq, 0) THEN $collected
+              WHEN $seq IS NULL THEN COALESCE(collected_at, $collected) ELSE collected_at END,
+            collect_seq = CASE WHEN $base >= COALESCE(collect_seq, 0) THEN $seq ELSE collect_seq END,
+            duration_seconds = COALESCE(duration_seconds, $duration),
             folder_ids = $folders, updated_at = $at WHERE id = $id`, {
             id: existing.id, title: input.title || existing.title, caption: input.caption ?? '',
-            author: input.author ?? null, kind: input.kind ?? null, collected: input.collectedAt ?? null,
-            duration: input.durationSeconds ?? null, folders: JSON.stringify(folders), at,
+            author: input.author ?? null, kind: input.kind ?? null,
+            collected: input.collectedAt ?? null, seq: input.collectSeq ?? null,
+            base: input.collectSeqBase ?? input.collectSeq ?? null, duration: input.durationSeconds ?? null,
+            folders: JSON.stringify(folders), at,
           });
           return { work: require(existing.id), created: false };
         }
         const id = `video_${randomUUID()}`;
         db.run(`INSERT INTO video_works (id, created_at, updated_at, version, platform, work_id, url, kind, title,
-          caption, author, collected_at, duration_seconds, folder_ids, stage, want, run)
-          VALUES ($id, $at, $at, 1, $platform, $work, $url, $kind, $title, $caption, $author, $collected, $duration,
-          $folders, 'synced', 'none', 'idle')`, {
+          caption, author, collected_at, collect_seq, duration_seconds, folder_ids, stage, want, run)
+          VALUES ($id, $at, $at, 1, $platform, $work, $url, $kind, $title, $caption, $author, $collected, $seq,
+          $duration, $folders, 'synced', 'none', 'idle')`, {
           id, at, platform: input.platform, work: input.workId, url: input.url, kind: input.kind ?? null,
           title: input.title, caption: input.caption ?? '', author: input.author ?? null,
-          collected: input.collectedAt ?? null, duration: input.durationSeconds ?? null,
+          collected: input.collectedAt ?? null, seq: input.collectSeq ?? null, duration: input.durationSeconds ?? null,
           folders: JSON.stringify(input.folderIds ?? []),
         });
         return { work: require(id), created: true };
@@ -254,7 +287,7 @@ function createVideoWorkStore(context: StoreContext) {
       const { sql, params } = where(filter);
       const total = Number(db.get(`SELECT count(*) AS n FROM video_works WHERE ${sql}`, params)?.['n'] ?? 0);
       const rows = db.all(`SELECT * FROM video_works WHERE ${sql}
-        ORDER BY collected_at IS NULL, collected_at DESC, created_at DESC, id DESC LIMIT $limit OFFSET $offset`,
+        ORDER BY collect_seq DESC, created_at DESC, id DESC LIMIT $limit OFFSET $offset`,
       { ...params, limit, offset });
       return { works: rows.map(decodeWork), total };
     },
@@ -271,7 +304,7 @@ function createVideoWorkStore(context: StoreContext) {
     /** 已经同步过的最新几条（Mac 翻收藏翻到它们就停）。 */
     newestWorkIds(platform: VideoPlatform, limit: number): string[] {
       return db.all(`SELECT work_id FROM video_works WHERE platform = $platform
-        ORDER BY collected_at IS NULL, collected_at DESC, created_at DESC LIMIT $limit`, { platform, limit })
+        ORDER BY collect_seq DESC, created_at DESC LIMIT $limit`, { platform, limit })
         .map((row) => String(row['work_id']));
     },
     /**
@@ -365,6 +398,12 @@ function createVideoFolderStore(context: StoreContext) {
 
 function createMacJobStore(context: StoreContext) {
   const { db } = context;
+  const newListContext = (full: boolean): string => {
+    const latestWork = Number(db.get('SELECT MAX(collect_seq) AS n FROM video_works')?.['n'] ?? 0);
+    const latestJob = Number(db.get(`SELECT MAX(CASE WHEN json_valid(work_id)
+      THEN json_extract(work_id, '$.sequenceBase') END) AS n FROM video_mac_jobs WHERE kind = 'list'`)?.['n'] ?? 0);
+    return JSON.stringify({ full, sequenceBase: Math.max(latestWork, latestJob) + COLLECTION_SEQUENCE_SPAN });
+  };
   const get = (id: string): MacJobRow | undefined => {
     const row = db.get('SELECT * FROM video_mac_jobs WHERE id = $id', { id });
     return row === undefined ? undefined : decodeJob(row);
@@ -372,16 +411,16 @@ function createMacJobStore(context: StoreContext) {
   return {
     get,
     /** 排一件；同样的活（同一种、同一条作品）还没了结就不另排，回那一件。 */
-    queue(kind: 'list' | 'resolve', workId: string | null): MacJobRow {
+    queue(kind: 'list' | 'resolve', workId: string | null, full = false): MacJobRow {
       return db.transaction(() => {
-        const open = db.get(`SELECT * FROM video_mac_jobs WHERE kind = $kind AND work_id IS $work
-          AND state IN ('waiting', 'taken') ORDER BY created_at LIMIT 1`, { kind, work: workId });
-        if (open !== undefined) {
-          return decodeJob(open);
-        }
+        const open = db.all(`SELECT * FROM video_mac_jobs WHERE kind = $kind
+          AND ($kind = 'list' OR work_id IS $work) AND state IN ('waiting', 'taken') ORDER BY created_at`,
+        { kind, work: workId }).map(decodeJob).find((job) => kind !== 'list' || !full || job.full);
+        if (open !== undefined) { return open; }
         const id = `macjob_${randomUUID()}`;
+        const work = kind === 'list' ? newListContext(full) : workId;
         db.run(`INSERT INTO video_mac_jobs (id, kind, work_id, state, created_at)
-          VALUES ($id, $kind, $work, 'waiting', $at)`, { id, kind, work: workId, at: context.now() });
+          VALUES ($id, $kind, $work, 'waiting', $at)`, { id, kind, work, at: context.now() });
         return get(id)!;
       });
     },
@@ -392,6 +431,10 @@ function createMacJobStore(context: StoreContext) {
           OR (state = 'taken' AND taken_at < $stale) ORDER BY created_at LIMIT $limit`,
         { stale: staleBefore, limit }).map(decodeJob);
         for (const job of rows) {
+          if (job.kind === 'list' && job.sequenceBase === null) {
+            db.run('UPDATE video_mac_jobs SET work_id = $context WHERE id = $id',
+              { id: job.id, context: newListContext(true) });
+          }
           db.run("UPDATE video_mac_jobs SET state = 'taken', taken_at = $at WHERE id = $id",
             { id: job.id, at: context.now() });
         }
