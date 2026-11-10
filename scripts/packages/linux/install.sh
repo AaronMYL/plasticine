@@ -224,7 +224,7 @@ install() {
   wait_healthy
   port=$(configured_port)
   say ""
-  say "✓ Plasticine $(readlink "$APP/current" | sed 's#versions/##') 装好了，正在运行（只听 127.0.0.1:$port）"
+  say "✓ Plasticine $(readlink "$APP/current" | sed 's#versions/##') 装好了，正在运行（只听 127.0.0.1:${port}）"
   say ""
   print_setup_link "$port"
   say "  这台服务器没有图形界面的话，先在你电脑上运行："
@@ -253,7 +253,7 @@ uninstall() {
     fi
     say "Plasticine 和它的数据都删掉了。"
   else
-    say "Plasticine 已卸载。数据留在 $DATA，设置在 $CONF；连数据一起删：加 --uninstall --purge 再运行一次。"
+    say "Plasticine 已卸载。数据留在 ${DATA}，设置在 ${CONF}；连数据一起删：加 --uninstall --purge 再运行一次。"
   fi
 }
 

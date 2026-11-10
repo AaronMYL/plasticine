@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { macSwapScript, windowsInstallScript } from '../src/updates/update-scripts.ts';
@@ -28,10 +28,10 @@ function layout(dir: string, healthy: boolean) {
 
 test('Mac：只换 Contents、Plasticine.app 文件夹不动；新版起来了就留着，旧的进上一版', (t) => {
   const { app, file, dir } = layout(tempDir(t), true);
-  const folder = execFileSync('stat', ['-c', '%i', app]).toString();
+  const folder = statSync(app).ino;
   execFileSync('/bin/sh', [file]);
   assert.equal(readFileSync(join(app, 'Contents', 'version'), 'utf8'), 'new');
-  assert.equal(execFileSync('stat', ['-c', '%i', app]).toString(), folder);
+  assert.equal(statSync(app).ino, folder);
   assert.equal(readFileSync(join(dir, 'previous', 'Plasticine.app', 'Contents', 'version'), 'utf8'), 'old');
   assert.equal(existsSync(join(dir, 'rolled-back.json')), false);
 });

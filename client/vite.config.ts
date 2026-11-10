@@ -3,6 +3,7 @@
 // `VITE_PLASTICINE_API=http npm run dev` talks to a local server with same-origin cookies and SSE.
 
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { clientManifest } from './build-manifest.ts';
@@ -19,9 +20,9 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), clientManifest(buildId, builtAt)],
     define: { __PLASTICINE_BUILD_ID__: JSON.stringify(buildId),
       __PLASTICINE_BUILT_AT__: JSON.stringify(builtAt) },
-    build: { rollupOptions: { input: { main: new URL('./index.html', import.meta.url).pathname,
-      download: new URL('./download.html', import.meta.url).pathname,
-      site: new URL('./site.html', import.meta.url).pathname } } },
+    build: { rollupOptions: { input: { main: fileURLToPath(new URL('./index.html', import.meta.url)),
+      download: fileURLToPath(new URL('./download.html', import.meta.url)),
+      site: fileURLToPath(new URL('./site.html', import.meta.url)) } } },
     experimental: {
       renderBuiltUrl(filename, context) {
         // 下载页和官网由中继独立服务；共享 chunk 的相对 import、CSS 的相对字体仍在这个资源前缀下。
