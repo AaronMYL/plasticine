@@ -3,10 +3,46 @@ import { test } from 'node:test';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai';
 import type { MateDraft } from '../../shared/api/mates.ts';
 import { Mates } from '../../src/mates/service.ts';
-import { deferred, slowTool, startKernel, until } from './helpers.ts';
+import { mateTools } from '../../src/mates/tools.ts';
+import { openTestState } from '../state/helpers.ts';
+import { deferred, scriptByLine, slowTool, startKernel, until } from './helpers.ts';
 
 const draft: MateDraft = { name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky',
   soul: '先查原始资料。', purpose: null };
+
+test('主线自动分派的队友晚完成也继续汇总；用户叫停后只收结果', async () => {
+  for (const paused of [false, true]) {
+    const handle = await openTestState();
+    const gate = deferred<string>();
+    const started: string[] = [];
+    const mates = new Mates(handle.state, () => h.kernel);
+    const h = await startKernel({ handle, tools: [...mateTools(mates), slowTool(() => gate.promise, started)] });
+    try {
+      const mate = mates.create(draft);
+      scriptByLine(h, {
+        这是主对话: [
+          fauxAssistantMessage([fauxToolCall('mate_handoff', { mateId: mate.id, goal: '收集材料' },
+            { id: 'handoff-material' })], { stopReason: 'toolUse' }),
+          fauxAssistantMessage('材料回来后一起整理。'), fauxAssistantMessage('综合资料，结论已经整理好了。'),
+        ],
+        '标题「资料研究员 · 收集材料」': [
+          fauxAssistantMessage([fauxToolCall('slow', { what: '材料' }, { id: 'slow-material' })],
+            { stopReason: 'toolUse' }), fauxAssistantMessage('材料原文和来源。'),
+        ],
+      });
+      h.kernel.send('main', { text: '请安排队友查材料，回来后汇总。' });
+      await until(() => started.length === 1 && h.kernel.view('main').status === 'idle',
+        '主线结束而队友仍在做');
+      if (paused) h.kernel.halt('main');
+      gate.resolve('材料齐了');
+      await h.kernel.settled();
+      assert.equal(h.kernel.view('main').lastAnswer,
+        paused ? '材料回来后一起整理。' : '综合资料，结论已经整理好了。');
+      assert.equal(h.kernel.view('main').status, paused ? 'paused' : 'idle');
+      assert.equal(h.kernel.read('main', 30).messages.filter((message) => message.role === 'lineReport').length, 1);
+    } finally { gate.resolve('结束'); await h.close(); }
+  }
+});
 
 test('队友保持独立对话，交接回发起处，停用后不接受新工作', async () => {
   const h = await startKernel({ noModel: true });

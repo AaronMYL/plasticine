@@ -64,7 +64,7 @@ export class Mates {
   }
 
   handoff(input: Omit<MateHandoffRequest, 'requestId'>, after: After = immediate,
-    attachments: readonly string[] = []) {
+    attachments: readonly string[] = [], options: { resumeParent?: boolean } = {}) {
     const mate = this.#state.mates.require(input.mateId);
     if (mate.disabledAt !== null) throw new LineError('conflict', '这位队友已停用。');
     const source = this.#kernel().line(input.sourceLineId);
@@ -81,6 +81,7 @@ export class Mates {
     const latest = this.#state.lineMessages.last(source.id);
     return this.#kernel().open({ title: `${mate.name} · ${input.goal.slice(0, 50)}`, goal: input.goal,
       parentLineId: group?.lineId ?? source.id, projectId: source.projectId,
+      resumeParent: options.resumeParent ?? false,
       mateId: mate.id, mateGroupId: groupId, purpose: mate.purpose ?? 'main', attachments,
       origin: { kind: 'delegation', ref: `line:${source.id}:${latest?.seq ?? 0}` } }, after);
   }

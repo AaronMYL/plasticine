@@ -175,10 +175,11 @@ test('服务端拼入的引文不算用户自己说的话', async () => {
     fauxAssistantMessage([fauxToolCall('remember', { text: '喜欢绿色', quote: '喜欢绿色' }, { id: 'remember' })],
       { stopReason: 'toolUse' }), fauxAssistantMessage('这段引文没有记成你的偏好。'),
   ]);
+  const before = t.state.memoryDocs.lines.allLive();
   t.app.deps.lines!.send('main', { text: '帮我总结。\n引用材料：喜欢绿色。',
     origin: { kind: 'user', userText: '帮我总结。' } });
   await t.app.deps.lines!.settled();
   const result = t.app.deps.lines!.read('main', 20).messages.find((row) => row.role === 'toolResult');
   assert.equal(result?.ok, false);
-  assert.equal(t.state.memoryDocs.lines.allLive().length, 0);
+  assert.deepEqual(t.state.memoryDocs.lines.allLive(), before);
 });

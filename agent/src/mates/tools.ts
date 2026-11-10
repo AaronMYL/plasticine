@@ -20,7 +20,8 @@ export function mateTools(mates: Mates): KernelTool[] {
           + '群组里只能交给本组成员。包括要点、上下文、交付要求；等待结果时可继续交流。',
         async execute(_id, raw) {
           const input = checkedArgs(Handoff, raw, 'mate_handoff');
-          return result({ line: mates.handoff({ ...input, sourceLineId: scope.lineId }) });
+          return result({ line: mates.handoff({ ...input, sourceLineId: scope.lineId }, undefined, [],
+            { resumeParent: true }) });
         } }) },
     { name: 'mate_create', say: (args) => `建立队友「${String(args['name'] ?? '')}」`,
       lineKinds: ['main', 'side'], hardLine: () => 'permission',
