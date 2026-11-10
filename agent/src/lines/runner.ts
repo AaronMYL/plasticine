@@ -19,7 +19,7 @@ import { answerText, convertToLlm, messageView, resultSummary, userMessage, type
 import { buildTranscript, continuable, danglingCalls } from './transcript.ts';
 import { sleepFor, type KernelTool, type Later, type LineScope, type ModelChoice, type ModelSource,
   type ToolArgs } from './types.ts';
-import { seesImages, withImages, type ImagesOf } from './images.ts';
+import { seesImages, withImages, withContextImages, type ImagesOf } from './images.ts';
 import { NO_ACTIVITY, queuedView, type Activity } from './views.ts';
 
 export type DriveOutcome = 'done' | 'stopped' | 'failed' | 'paused' | 'shutdown';
@@ -45,6 +45,7 @@ export interface RunnerHost {
   attachments(ids: readonly string[]): AttachmentNote[];
   /** 这些附件里的图（给能看图的模型）。 */
   images: ImagesOf;
+  contextImages?: (lineId: string) => import('@earendil-works/pi-ai').ImageContent[];
   now(): Date;
   later: Later;
   /** 改线的状态并推 line_changed（kernel 做，带上实时状态那一行）。 */
@@ -363,8 +364,10 @@ export class LineRunner {
     const line = this.#host.state.lines.require(this.lineId);
     const transcript = buildTranscript(this.#host.state, line, this.#host.prompt(line), this.#toolset.tools,
       this.#seqOf);
-    return this.#choice !== null && seesImages(this.#choice.model)
-      ? withImages(transcript, this.#host.images, this.#seqOf) : transcript;
+    const vision = this.#choice !== null && seesImages(this.#choice.model);
+    const images = line.sealedPrompt === null ? [] : this.#host.contextImages?.(this.lineId) ?? [];
+    const scoped = withContextImages(transcript, images, vision, this.#seqOf);
+    return vision && line.sealedPrompt === null ? withImages(scoped, this.#host.images, this.#seqOf) : scoped;
   }
 
   async #transform(messages: AgentMessage[], signal?: AbortSignal): Promise<AgentMessage[]> {

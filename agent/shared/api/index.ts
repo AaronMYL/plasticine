@@ -91,3 +91,4 @@ export * from './library-batch.ts';
 export * from './link-preview.ts';
 export * from './mates.ts';
 export * from './web-extract.ts';
+export * from '../network-attachments.ts';

@@ -186,6 +186,7 @@ export function requireGroup(context: Pick<NetworkContext, 'state'>, groupId: st
 }
 
 export interface GroupPost {
+  attachmentIds?: string[];
   kind: 'text' | 'ask_ai' | 'ai_text';
   text: string;
   target: string | null;
@@ -204,17 +205,24 @@ export function postGroupMessage(context: NetworkContext, changes: Changes, grou
       return earlier;
     }
   }
+  const attachments = context.state.networkAttachments.outgoing(post.attachmentIds ?? [], identity.accountId);
+  if (post.text.trim() === '' && attachments.length === 0) {
+    throw new NetworkError('invalid_input', '写一句话或添加附件再发送。');
+  }
   const at = context.now().toISOString();
   const messageId = context.newId();
   const message = context.state.groupMessages.create({ groupId: group.id, messageId,
     authorAccountId: identity.accountId, author: post.author, kind: post.kind, text: post.text,
     targetAccountId: post.target, exchangeId: post.exchangeId, sentAt: at, requestId: post.requestId, readAt: at });
   const payload: Plaintext<'group_message'> = { groupId: group.id, messageId, kind: post.kind, text: post.text,
-    target: post.target, exchangeId: post.exchangeId };
+    target: post.target, exchangeId: post.exchangeId, ...(attachments.length === 0 ? {} : { attachments }) };
+  const recipients: string[] = [];
   fanOut(context, group, (contact) => {
+    recipients.push(contact.accountId);
     enqueue(context, contact, { kind: 'group_message', author: post.author, text: post.text, payload,
       groupId: group.id });
   });
+  context.state.networkAttachments.bind(post.attachmentIds ?? [], group.id, message.id, true, recipients);
   touch(context, group, at);
   afterGroup(context, changes, group.id, [message.id]);
   return message;
@@ -312,6 +320,7 @@ export function receiveGroupMessage(context: NetworkContext, sender: Contact, pa
   const message = state.groupMessages.create({ groupId: group.id, messageId: payload.messageId,
     authorAccountId: sender.accountId, author: payload.kind === 'ai_text' ? 'their_ai' : 'them', kind: payload.kind,
     text: payload.text, targetAccountId: payload.target, exchangeId: payload.exchangeId, sentAt: at });
+  state.networkAttachments.receive(payload.attachments ?? [], sender.accountId, group.id, message.id, true);
   touch(context, group, at);
   const asksMe = payload.kind === 'ask_ai' && payload.target === identity.accountId;
   return { groupId: group.id, messageIds: [message.id], question: asksMe ? message.id : null };

@@ -9,6 +9,7 @@ import { createApiRequestLog } from './api-requests.ts';
 import { createAskStore } from './asks.ts';
 import { createFeedTranslationStore } from './feed-translations.ts';
 import { createVideoStores } from './video-works.ts';
+import { createNetworkAttachmentStore } from './network-attachments.ts';
 import { createAttachmentStore } from './attachments.ts';
 import { createBackupStore } from './backups.ts';
 import { BookFiles } from './book-files.ts';
@@ -130,6 +131,7 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     agreements: createAgreementStore(context),
     termDecodings: createTermDecodings(context),
     attachments: createAttachmentStore(context, attachmentDirectory),
+    networkAttachments: createNetworkAttachmentStore(context),
     moneyDrafts: createMoneyDraftStore(context),
     clientUpdates: createClientUpdateStore(context),
     // 旧的记忆条目（只读，后台整理进主题文档）。

@@ -2,6 +2,8 @@
 // app/ 的接口只通过这里；没加入网络时同步循环不跑，联系人接口回「还没加入」。
 
 import { randomUUID } from 'node:crypto';
+import { tunnelHost } from '../../shared/tunnel-wire.ts';
+import { NetworkAttachments } from './attachments.ts';
 import type { NetInvite } from '../../shared/net-wire.ts';
 import type { NetworkTaskExecution } from '../../shared/api/contacts.ts';
 import type { HandleAvailability } from '../../shared/api/account.ts';
@@ -90,6 +92,7 @@ function checkVersion(task: NetworkTask, version: number): void {
 }
 
 export class NetworkService {
+  readonly attachments: NetworkAttachments;
   readonly #options: NetworkServiceOptions;
   readonly #context: NetworkContext;
   readonly #outbox: Outbox;
@@ -100,6 +103,8 @@ export class NetworkService {
 
   constructor(options: NetworkServiceOptions) {
     this.#options = options;
+    this.attachments = new NetworkAttachments(options.state, options.now,
+      (handle) => this.publicHost(handle), options.fetch ?? fetch);
     this.#context = {
       state: options.state,
       now: options.now,
@@ -111,6 +116,7 @@ export class NetworkService {
       relay: () => this.#client(this.relayUrl()),
       kickOutbox: () => this.#sync.kick(),
       responder: options.responder,
+      prepareAttachments: (id) => this.attachments.prepare(id),
     };
     this.#outbox = new Outbox(this.#context);
     this.#responder = new Responder(this.#context);
@@ -257,7 +263,7 @@ export class NetworkService {
   /** 朋友加我、手机打开用的名字：<handle>.<中继主域名>（自己走回环时用对外的那个中继地址）。 */
   publicHost(handle: string): string {
     const relay = isLoopback(this.relayUrl()) ? this.#options.publicRelayUrl ?? DEFAULT_RELAY_URL : this.relayUrl();
-    return `${handle}.${new URL(relay).hostname}`;
+    return tunnelHost(handle, new URL(relay).hostname);
   }
 
   // ---------- 联系人 ----------
@@ -309,6 +315,39 @@ export class NetworkService {
     return message;
   }
 
+  retryMessage(threadId: string, messageId: string): ContactMessage | GroupMessage {
+    const context = this.#context;
+    const identity = requireIdentity(context);
+    const group = context.state.groupMessages.get(messageId);
+    const message = group ?? context.state.contactMessages.require(messageId);
+    if (group !== undefined) requireGroup(context, threadId);
+    else {
+      const contact = requireContact(context, threadId);
+      if (contact.state === 'blocked' || contact.safetyChanged) {
+        throw new NetworkError('conflict', '联系人已被拉黑或安全码待核对，这次没有重发。');
+      }
+    }
+    const outgoing = group === undefined ? [message as ContactMessage]
+      : context.state.contactMessages.forGroupMessage(group.groupId, group.messageId);
+    if (group === undefined ? (message as ContactMessage).contactId !== threadId
+        || (message as ContactMessage).direction !== 'out'
+      : group.groupId !== threadId || group.authorAccountId !== identity.accountId) {
+      throw new NetworkError('not_found', '没有这条可重试的消息。');
+    }
+    context.desk.commit((changes) => {
+      for (const row of outgoing) {
+        if (row.status !== 'failed') continue;
+        context.state.contactMessages.update(row.id, row.version,
+          { status: 'sending', attempts: 0, error: null, nextAttemptAt: null });
+      }
+      changes.afterCommit(() => {
+        context.kickOutbox();
+        context.changed(group === undefined ? changeOf(threadId, [messageId]) : groupChange(threadId, [messageId]));
+      });
+    });
+    return group ?? context.state.contactMessages.require(messageId);
+  }
+
   // ---------- 头像 ----------
 
   /** 改网络上的名字，发给每个好友（主人账号改名时一起改，app/account.ts）。 */
@@ -352,7 +391,9 @@ export class NetworkService {
   }
 
   /** 在群里说一句；aiOf = 问谁的 Plasticine（账号 id，可以是自己）。 */
-  postToGroup(groupId: string, input: { text: string; aiOf: string | null; requestId: string }): GroupMessage {
+  postToGroup(groupId: string, input: { text: string; aiOf: string | null; requestId: string;
+    attachmentIds?: string[] })
+    : GroupMessage {
     const context = this.#context;
     const identity = requireIdentity(context);
     const group = requireGroup(context, groupId);
@@ -362,7 +403,8 @@ export class NetworkService {
     const message = context.desk.commit((changes) => {
       const exchangeId = input.aiOf === null ? null : context.newId();
       const posted = postGroupMessage(context, changes, group, { kind: input.aiOf === null ? 'text' : 'ask_ai',
-        text: input.text, target: input.aiOf, exchangeId, author: 'me', requestId: input.requestId });
+        text: input.text, target: input.aiOf, exchangeId, author: 'me', requestId: input.requestId,
+        ...(input.attachmentIds === undefined ? {} : { attachmentIds: input.attachmentIds }) });
       if (posted === null) {
         throw new NetworkError('conflict', '这句没发出去。');
       }

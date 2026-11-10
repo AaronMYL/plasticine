@@ -120,6 +120,9 @@ export class SyncLoop {
       for (const change of outcome.changes) {
         this.#context.changed(change);
       }
+      for (const questionId of [...outcome.groupQuestions, ...outcome.questions]) {
+        await this.#context.prepareAttachments?.(questionId);
+      }
       for (const questionId of outcome.groupQuestions) {
         this.#answer(questionId, () => this.#responder.askedInGroup(questionId));
       }

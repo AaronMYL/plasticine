@@ -171,6 +171,7 @@ export function confirmSafety(context: NetworkContext, contactId: string, versio
 }
 
 export interface SendInput {
+  attachmentIds?: string[];
   text: string;
   /** person = 给人；ai = 问对方的 Plasticine；mine = @ 自己的 Plasticine（它接着照对面能听到的档位答）。 */
   target: 'person' | 'ai' | 'mine';
@@ -181,7 +182,9 @@ export interface SendInput {
 export function sendMessage(context: NetworkContext, contactId: string, input: SendInput): ContactMessage {
   const earlier = context.state.contactMessages.byRequest(input.requestId);
   if (earlier !== undefined) {
-    if (earlier.contactId !== contactId || earlier.text !== input.text) {
+    if (earlier.contactId !== contactId || earlier.text !== input.text
+      || JSON.stringify(context.state.networkAttachments.forMessage(earlier.id).map((row) => row.id))
+        !== JSON.stringify(input.attachmentIds ?? [])) {
       throw new NetworkError('conflict', '这个 requestId 已经用在另一句话上了，这次没有发。', 'requestId');
     }
     return earlier;
@@ -194,6 +197,12 @@ export function sendMessage(context: NetworkContext, contactId: string, input: S
   if (contact.safetyChanged) {
     throw new NetworkError('safety_changed', '对方的安全码变了。先在资料里核对安全码，再发。');
   }
+  const attachments = context.state.networkAttachments.outgoing(input.attachmentIds ?? [],
+    requireIdentity(context).accountId);
+  if (input.text.trim() === '' && attachments.length === 0) {
+    throw new NetworkError('invalid_input', '写一句话或添加附件再发送。');
+  }
+  const media = attachments.length === 0 ? {} : { attachments };
   return context.desk.commit((changes) => {
     const current = requireContact(context, contactId);
     const ready = current.state === 'request'
@@ -203,10 +212,12 @@ export function sendMessage(context: NetworkContext, contactId: string, input: S
     const exchangeId = context.newId();
     const message = input.target === 'ai'
       ? enqueue(context, ready, { kind: 'ask_ai', author: 'me', text: input.text, requestId: input.requestId,
-        exchangeId, payload: { text: input.text, exchangeId, fromAi: false } })
+        exchangeId, payload: { text: input.text, exchangeId, fromAi: false, ...media } })
       : enqueue(context, ready, { kind: 'text', author: 'me', text: input.text, requestId: input.requestId,
         ...(input.target === 'mine' ? { exchangeId } : {}),
-        payload: { text: input.text, replyTo: null, ...(input.target === 'mine' ? { toOwnAi: true } : {}) } });
+        payload: { text: input.text, replyTo: null, ...media,
+          ...(input.target === 'mine' ? { toOwnAi: true } : {}) } });
+    context.state.networkAttachments.bind(input.attachmentIds ?? [], contactId, message.id, false, [ready.accountId]);
     changes.afterCommit(() => {
       context.kickOutbox();
       context.changed(changeOf(contactId, [message.id]));

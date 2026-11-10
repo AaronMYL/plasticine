@@ -3,7 +3,8 @@ import type { AgentToolResult } from '@earendil-works/pi-agent-core';
 import { OutboundCardSchema, OutboundResultSchema, type OutboundCard, type OutboundGrantInput,
   type OutboundSpec } from '../../shared/outbound.ts';
 import type { Ask } from '../../shared/state.ts';
-import { OutboundAuthorizer, settleNetworkOutbound, type OutboundContext } from '../outbound/index.ts';
+import { OutboundAuthorizer, settleNetworkOutbound, settleMessageOutbound, type OutboundContext }
+  from '../outbound/index.ts';
 import { MAIN_LINE_ID } from '../state/index.ts';
 import type { GateState } from './hard-line.ts';
 import type { KernelTool, LineScope } from './types.ts';
@@ -69,6 +70,10 @@ export class OutboundGate {
       this.authorizer.finish(lineId, toolCallId, declared);
       if (declared.sourceRef?.startsWith('network-task:') === true) {
         settleNetworkOutbound(this.#state, declared.sourceRef.slice('network-task:'.length));
+      }
+      if (declared.sourceRef?.startsWith('network-message:') === true
+        || declared.sourceRef?.startsWith('network-group-message:') === true) {
+        settleMessageOutbound(this.#state, declared.sourceRef);
       }
       return;
     }

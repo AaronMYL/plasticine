@@ -1,3 +1,4 @@
+import type { ImageContent } from '@earendil-works/pi-ai';
 // 新内核门面用到的类型和常量：装配选项、拒绝的错误、发消息的结果。
 
 import type { LineInputOrigin, LineMessageView, LineStreamEvent, LineView, QueuedMessageView }
@@ -17,13 +18,15 @@ export const MAX_BACKGROUND_LINES = 3;
 export const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
 
 export type KernelState = Pick<StateService, 'lines' | 'lineMessages' | 'lineDays' | 'lineQueue' | 'lineApprovals'
-  | 'mates' | 'mateGroups' | 'outboundGrants' | 'outboundLog' | 'schedules' | 'contactMessages'
+  | 'mates' | 'mateGroups' | 'outboundGrants' | 'outboundLog' | 'schedules' | 'contactMessages' | 'groupMessages'
   | 'asks' | 'transaction' | 'memoryDocs' | 'memoryJournal' | 'projects' | 'attachments'>;
 
 export type Compactor = NonNullable<RunnerHost['compact']>;
 
 export interface KernelOptions {
   state: KernelState;
+  /** 封闭聊天线的图片只读入口，按线身份解析，不写入全局附件或消息。 */
+  contextImages?: (lineId: string) => ImageContent[];
   desk: AskDesk;
   models: ModelSource;
   publish(event: LineStreamEvent): void;

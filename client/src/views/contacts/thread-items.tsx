@@ -9,6 +9,7 @@ import { useTimeZone } from '../../live.tsx';
 import { AiMark } from '../../shell/glyph.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import type { Route } from '../../shell/routes.ts';
+import { ContactMessageMedia } from './contact-message-media.tsx';
 import { ContactAvatar, FaceAvatar } from './contact-avatar.tsx';
 import { GroupTaskCard } from './group-task-card.tsx';
 import { dayKey, dayLabel } from './contact-time.ts';
@@ -81,6 +82,9 @@ function GroupThem({ message }: { message: ContactMessageView }): ReactNode {
 
 export function ThreadMessage({ message, contact }: { message: ContactMessageView; contact: ContactRow })
   : ReactNode {
+  if ((message.attachments?.length ?? 0) > 0 || message.status === 'failed') {
+    return <ContactMessageMedia contact={contact} message={message} text={<Text message={message} />} />;
+  }
   const group = contact.kind === 'group';
   if (group && (message.author === 'them' || message.author === 'their_ai')) {
     return <GroupThem message={message} />;
@@ -103,7 +107,6 @@ export function ThreadMessage({ message, contact }: { message: ContactMessageVie
       return (
         <div className="cm-line" data-side="me" data-status={message.status}>
           <div className="cm-bubble"><Text message={message} /></div>
-          {message.status === 'failed' ? <span className="cm-failed" role="alert">没发出去</span> : null}
         </div>
       );
   }

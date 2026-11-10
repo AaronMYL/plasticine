@@ -15,6 +15,8 @@ import { AiMark } from '../../shell/glyph.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { useOp } from '../pending/pending-ops.tsx';
+import { NetworkAttachmentDrafts, useNetworkAttachmentDrafts } from './network-attachment-drafts.tsx';
+import './network-attachments.css';
 import { FaceAvatar } from './contact-avatar.tsx';
 
 /** 输入框最多长到这么高（px），再多就在框里滚。 */
@@ -93,6 +95,9 @@ function MentionMenu({ choices, active, onPick }: { choices: readonly MentionCho
 
 export function ContactComposer({ contact, suggestion, phone, onNewTask }: ContactComposerProps): ReactNode {
   const { contactActions } = useLive();
+  const attachments = useNetworkAttachmentDrafts(contact.id);
+  const files = useRef<HTMLInputElement>(null);
+  const supportsFiles = contact.kind === 'person' || contact.kind === 'group';
   const { inlineDrafts, actionOps } = useClientState();
   const drafts = useStore(inlineDrafts.store);
   const key = contactOpKey(contact.id, 'send');
@@ -127,11 +132,12 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
     requestAnimationFrame(() => element?.focus());
   };
   const send = async (): Promise<void> => {
+    if (locked || !attachments.ready) return;
     const kind = target?.target?.kind ?? null;
     const aiOf = contact.kind === 'group' ? target?.target?.aiOf ?? null : null;
-    const sent = await contactActions.send(contact, kind === null ? 'person' : kind, aiOf);
+    const sent = await contactActions.send(contact, kind === null ? 'person' : kind, aiOf, attachments.ids);
     if (sent) {
-      setTarget(null);
+      setTarget(null); attachments.clear();
       requestAnimationFrame(grow);
     }
   };
@@ -175,12 +181,23 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
       void send();
     }
   };
+  const sendDisabled = locked || !attachments.ready || text.trim() === '' && attachments.ids.length === 0;
   const label = target === null ? `发给${contact.name}` : `问${target.label}`;
   return (
-    <div className="contact-composer" data-phone={phone}>
+    <div className="contact-composer" data-phone={phone} data-has-media={attachments.rows.length > 0}
+      onDragOver={(event) => { if (supportsFiles && !locked) event.preventDefault(); }} onDrop={(event) => {
+        if (!supportsFiles || locked) return;
+        event.preventDefault(); attachments.add(Array.from(event.dataTransfer.files));
+      }}>
+      <div className="contact-compose-surface">
+      <NetworkAttachmentDrafts drafts={attachments} disabled={locked} />
+      <input type="file" multiple hidden ref={files} aria-label="选择消息附件" disabled={locked}
+        onChange={(event) => { attachments.add(Array.from(event.target.files ?? [])); event.target.value = ''; }} />
       <div className="contact-composer-row">
         {phone && onNewTask !== null ? <IconButton icon="plus" label="发任务" onClick={onNewTask} /> : null}
         <div className="contact-composer-box" data-ai={target !== null}>
+          {supportsFiles ? <IconButton icon="paperclip" label="添加附件" disabled={locked}
+            onClick={() => files.current?.click()} /> : null}
           {menu !== null && choices.length > 0 ? <MentionMenu choices={choices} active={menu} onPick={pick} /> : null}
           {target === null ? null : (
             <span className="composer-mention">@<AiMark label={target.label} />{target.label}</span>
@@ -192,16 +209,23 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
               setMenu(startsMention(event.target.value, event.target.selectionStart) ? 0 : null);
               grow();
             }}
+            onPaste={(event) => {
+              if (!supportsFiles || locked || event.clipboardData.files.length === 0) return;
+              event.preventDefault(); attachments.add(Array.from(event.clipboardData.files));
+            }}
             onBlur={() => setMenu(null)}
             onKeyDown={onKey} />
           {offered !== null && !phone ? <span className="contact-composer-key mono" aria-hidden="true">Tab</span>
             : null}
-          {phone ? null : <SendButton disabled={locked || text.trim() === ''} onSend={() => void send()} />}
+          {phone ? null : <SendButton disabled={sendDisabled} onSend={() => void send()} />}
         </div>
-        {phone ? <SendButton disabled={locked || text.trim() === ''} onSend={() => void send()} /> : null}
+        {phone ? <SendButton disabled={sendDisabled} onSend={() => void send()} /> : null}
+      </div>
       </div>
       {op === undefined || op.status === 'running' ? null : (
-        <OpLine op={op} onRetry={(retryKey) => void contactActions.retry(retryKey)}
+        <OpLine op={op} onRetry={(retryKey) => { void contactActions.retry(retryKey).then(() => {
+          if (actionOps.get(retryKey) === undefined) attachments.clear();
+        }); }}
           onDismiss={(dismissKey) => actionOps.dismiss(dismissKey)} />
       )}
     </div>

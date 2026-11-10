@@ -123,8 +123,14 @@ export async function sendContactMessage(context: RequestContext): Promise<Reply
   const body = checkInput(SendContactMessageRequestSchema, await readJsonBody(context.req), '发一句');
   const { deps } = context;
   const id = param(context, 'id');
+  if (body.text.trim() === '' && (body.attachmentIds?.length ?? 0) === 0) {
+    throw new ApiError(400, 'invalid_request', '写一句话或添加附件再发送。');
+  }
   const inbox = parseInboxContact(id);
   if (inbox !== null) {
+    if ((body.attachmentIds?.length ?? 0) > 0) {
+      throw new ApiError(400, 'invalid_request', '邮件回复暂不支持消息附件。');
+    }
     return idempotentAsync(context, body.requestId, async () => ({ status: 201, body: {
       message: await replyToInboxContact(deps.m5b.inbox, deps.state, inbox,
         { text: body.text, requestId: body.requestId, deviceId: auth.device.id }) } }));
@@ -134,14 +140,16 @@ export async function sendContactMessage(context: RequestContext): Promise<Reply
     requireGroupRow(deps, id);
     return idempotent(context, body.requestId, () => {
       const message = network.postToGroup(id, { text: body.text, aiOf: body.aiOf ?? null,
-        requestId: body.requestId });
+        requestId: body.requestId,
+        ...(body.attachmentIds === undefined ? {} : { attachmentIds: body.attachmentIds }) });
       return { status: 201, body: { message: groupMessageView(deps.state, message) } };
     });
   }
   return idempotent(context, body.requestId, () => {
     const message = network.sendMessage(id, { text: body.text, target: body.target ?? 'person',
-      requestId: body.requestId });
-    return { status: 201, body: { message: messageView(message, chatNames(deps.state, id)) } };
+      requestId: body.requestId,
+        ...(body.attachmentIds === undefined ? {} : { attachmentIds: body.attachmentIds }) });
+    return { status: 201, body: { message: messageView(message, chatNames(deps.state, id), deps.state) } };
   });
 }
 

@@ -99,18 +99,20 @@ export class ContactActions {
    * 发输入框里那一句：target ai = 问对方的 Plasticine，mine = @ 我自己的；群里 aiOf = 问谁的 Plasticine（账号 id）。
    * 邮件联系人由服务端回最近一封。
    */
-  async send(contact: ContactRow, target: 'person' | 'ai' | 'mine', aiOf: string | null = null): Promise<boolean> {
+  async send(contact: ContactRow, target: 'person' | 'ai' | 'mine', aiOf: string | null = null,
+    attachmentIds: string[] = []): Promise<boolean> {
     const key = contactOpKey(contact.id, 'send');
     const text = this.deps.drafts.get(key).trim();
-    if (text === '') {
+    if (text === '' && attachmentIds.length === 0) {
       return false;
     }
+    const media = attachmentIds.length === 0 ? {} : { attachmentIds };
     const asking = target !== 'person' || aiOf !== null;
     return this.run(key, asking ? '问 Plasticine' : '发送', contact.name, (requestId) => ({
       kind: 'contact_send',
       contactId: contact.id,
-      body: aiOf !== null ? { requestId, text, aiOf } : target === 'person' ? { requestId, text }
-        : { requestId, text, target },
+      body: aiOf !== null ? { requestId, text, aiOf, ...media } : target === 'person' ? { requestId, text, ...media }
+        : { requestId, text, target, ...media },
     }));
   }
 

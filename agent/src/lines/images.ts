@@ -54,3 +54,21 @@ export function imagesOf(state: Pick<StateService, 'attachments'>, ids: readonly
     }
   });
 }
+
+
+/** 封闭聊天的图只装进本轮模型上下文；原消息、数据库和界面记录都不写入图片字节。 */
+export function withContextImages(messages: AgentMessage[], images: readonly ImageContent[], vision: boolean,
+  seqOf: WeakMap<object, number>): AgentMessage[] {
+  if (images.length === 0) return messages;
+  const index = messages.findLastIndex((message) => message.role === 'user');
+  const current = messages[index];
+  if (current?.role !== 'user') return messages;
+  const content = typeof current.content === 'string' ? [{ type: 'text' as const, text: current.content }]
+    : current.content;
+  const next: UserMessage = { ...current, content: [...content, ...(vision ? images : [
+    { type: 'text' as const, text: '图片读取状态：当前模型未收到图片输入。' },
+  ])] };
+  const seq = seqOf.get(current);
+  if (seq !== undefined) seqOf.set(next, seq);
+  return messages.map((message, position) => position === index ? next : message);
+}

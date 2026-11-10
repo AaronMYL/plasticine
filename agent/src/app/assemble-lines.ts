@@ -48,6 +48,7 @@ export interface LineParts {
   reported?: KernelOptions['reported'];
   lineChanged?: (lineId: string) => void;
   skillsContext?: (lineId: string) => string;
+  contextImages?: KernelOptions['contextImages'];
   /** 要出卡等他答的业务工具（起草定时卡，tasks/）。 */
   askTools?: KernelOptions['askTools'];
 }
@@ -120,6 +121,7 @@ export function assembleLines(assembly: LineAssembly, parts: LineParts): LineKer
     ...(parts.turnEnded === undefined ? {} : { turnEnded: parts.turnEnded }),
     ...(parts.reported === undefined ? {} : { reported: parts.reported }),
     ...(parts.skillsContext === undefined ? {} : { skillsContext: parts.skillsContext }),
+    ...(parts.contextImages === undefined ? {} : { contextImages: parts.contextImages }),
     ...(parts.askTools === undefined ? {} : { askTools: parts.askTools }),
   });
 }

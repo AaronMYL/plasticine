@@ -65,6 +65,7 @@ import { assembleLines, type LineAssembly } from './assemble-lines.ts';
 import { publicUrlSource } from './public-url.ts';
 import { publishNetworkChange } from './contact-streams.ts';
 import { taskCardTool } from './task-card-tool.ts';
+import { messageTools } from './message-tools.ts';
 import { linePort } from './subscriptions.ts';
 import { ensureReviewSubscription, SampleCards, subsTools } from '../subs/index.ts';
 import { libraryTools } from '../library/index.ts';
@@ -313,8 +314,9 @@ export function assembleApp(options: AssembleOptions): App {
   const lines = assembleLines(options.lines, { state, desk, hub, now, publicUrl,
     skillsContext: (lineId) => skills.context(`line:${lineId}`),
     lineChanged: (lineId) => network.lineChanged(lineId),
+    contextImages: (lineId) => network.attachments.contextImages(lineId),
     tools: [...mateTools(new Mates(state, () => late.get())), taskCardTool(state, network),
-      ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
+      ...messageTools(state, network), ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
       ...libraryTools({ state, workspace: m5b.artifacts.workspace },
         (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。

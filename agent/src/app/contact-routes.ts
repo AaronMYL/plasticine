@@ -1,3 +1,6 @@
+import { NETWORK_ATTACHMENTS_PATH, PEER_ATTACHMENTS_PATH } from '../../shared/network-attachments.ts';
+import { uploadNetworkAttachment, peerAttachment, networkAttachmentContent, retryNetworkMessage }
+  from './network-attachments.ts';
 // 第 113 条的路由条目（router.ts 摊进 ROUTES）：联系人、网络账号、跨用户任务、对外可见。都要设备会话，只有邮件图片代理
 // （/v2/mail-image）不要：显示邮件的沙箱 iframe 带不了 cookie，凭服务端签的短期签名（mail-view.ts）。
 // 中继自己的 /v2/net/* 不在这里：中继是独立的服务（network-relay/main.ts），账号签名，不走会话。
@@ -29,6 +32,11 @@ import { cancelNetworkTask, createNetworkInvite, decideNetworkTask, deliverNetwo
 import { confirmVisibility, getVisibility, setVisibilityMark } from './visibility.ts';
 
 export const CONTACT_ROUTES: readonly Route[] = [
+  { method: 'POST', path: NETWORK_ATTACHMENTS_PATH, auth: true, handler: uploadNetworkAttachment },
+  { method: 'GET', path: `${PEER_ATTACHMENTS_PATH}/:attachmentId`, auth: false, handler: peerAttachment },
+  { method: 'GET', path: `${CONTACTS_PATH}/:id/messages/:messageId/attachments/:attachmentId/content`,
+    auth: true, handler: networkAttachmentContent },
+  { method: 'POST', path: `${CONTACTS_PATH}/:id/messages/:messageId/retry`, auth: true, handler: retryNetworkMessage },
   { method: 'GET', path: CONTACTS_PATH, auth: true, handler: listContacts },
   { method: 'POST', path: CONTACTS_ADD_PATH, auth: true, handler: addContact },
   { method: 'GET', path: CONTACT_LOOKUP_PATH, auth: true, handler: lookupContact },

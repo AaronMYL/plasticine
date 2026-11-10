@@ -1,3 +1,4 @@
+import type { NetworkAttachmentView } from '../shared.ts';
 // 假的群聊（2026-11-05 群聊）：群和一对一走同一套联系人接口（id 以 grp- 开头），由假联系人转到这里。群里一句话带说话
 // 的人；@ 某人的 Plasticine 过一会儿由它回一句（本地开发）；群任务卡指给某人或全群谁先接谁做，「我来接」「让 Plasticine
 // 接」立刻接到（假的没有别人抢）。变了推 contact.item 和 contacts.changed，和真服务端一样。
@@ -37,6 +38,7 @@ export interface GroupRecord {
 }
 
 export interface FakeGroupsDeps {
+  attachments?: (ids: readonly string[], thread: string, message: string) => NetworkAttachmentView[];
   session: FakeSession;
   bus: FakeEventBus;
   receipts: FakeReceipts;
@@ -137,6 +139,7 @@ export class FakeGroups implements GroupTasksApi {
     const target = input.aiOf === undefined ? null : record.members.find((member) => member.accountId === input.aiOf);
     const message = this.message(record, 'me', input.text, this.deps.me(),
       target === null || target === undefined ? null : { name: target.name, self: target.self });
+    message.attachments = this.deps.attachments?.(input.attachmentIds ?? [], id, message.id) ?? [];
     this.post(record, message);
     if (target !== null && target !== undefined) {
       this.deps.later(() => this.post(record, this.message(record, target.self ? 'my_ai' : 'their_ai',

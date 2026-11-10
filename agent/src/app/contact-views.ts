@@ -46,7 +46,7 @@ function mentionOf(message: ContactMessage, names: ChatNames | undefined): { nam
   return null;
 }
 
-export function messageView(message: ContactMessage, names?: ChatNames): ContactMessageView {
+export function messageView(message: ContactMessage, names?: ChatNames, state?: StateService): ContactMessageView {
   return {
     id: message.id,
     author: message.author,
@@ -57,6 +57,8 @@ export function messageView(message: ContactMessage, names?: ChatNames): Contact
     exchangeId: message.exchangeId,
     taskId: message.taskId,
     mention: mentionOf(message, names),
+    ...(state === undefined ? {} : { attachments: state.networkAttachments.forMessage(message.id) }),
+    ...(message.error === null ? {} : { error: message.error }),
   };
 }
 
@@ -187,7 +189,7 @@ function itemOf(state: StateService, message: ContactMessage, activity?: TaskAct
     return task === undefined ? null : { type: 'task', at: message.sentAt,
       task: networkTaskView(task, activity, execution) };
   }
-  return { type: 'message', message: messageView(message, chatNames(state, message.contactId)) };
+  return { type: 'message', message: messageView(message, chatNames(state, message.contactId), state) };
 }
 
 /** 有 AI 发问的那几段沟通：对方或我的 Plasticine 自己问的（ask_ai 的 fromAi、ai_text 的 askerIsAi）。 */

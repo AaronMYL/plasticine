@@ -46,6 +46,7 @@ export interface NetworkLines {
 }
 
 export interface NetworkContext {
+  prepareAttachments?: (messageId: string) => Promise<void>;
   state: StateService;
   now: () => Date;
   newId: () => string;

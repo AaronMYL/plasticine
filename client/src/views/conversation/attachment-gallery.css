@@ -35,3 +35,7 @@
 .attachment-pdf-pages nav { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 12px; }
 .attachment-text-preview { align-self: stretch; width: 100%; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere;
   font: inherit; }
+
+.attachment-download { display: flex; flex-direction: column; align-items: flex-end; max-width: 180px; }
+
+.attachment-download-error { font-size: 12px; line-height: 18px; color: var(--err); }

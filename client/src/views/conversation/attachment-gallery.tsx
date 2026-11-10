@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { fileSize } from '../../primitives/artifact-card/format.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
+import { AttachmentDownload } from './attachment-download.tsx';
 import { AttachmentFilePreview } from './attachment-file-preview.tsx';
 import './attachment-gallery.css';
 
@@ -13,7 +14,17 @@ export interface AttachmentMedia {
   mimeType: string;
   bytes: number;
   url: string;
+  thumbnailUrl?: string;
   loadContent?: (signal: AbortSignal) => Promise<Blob>;
+}
+
+function PreviewImage({ item }: { item: AttachmentMedia }): ReactNode {
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  return failed ? <div role="alert"><p>图片未能读取。</p>
+    <button type="button" className="secondary-button" onClick={() => { setFailed(false); setAttempt(attempt + 1); }}>
+      重试读取</button></div> : <img key={attempt} className="attachment-viewer-image" src={item.url}
+      alt={item.name} draggable={false} onError={() => setFailed(true)} />;
 }
 
 const SWIPE_CLOSE_PX = 80;
@@ -47,7 +58,7 @@ function Preview({ items, initial, onClose }: { items: readonly AttachmentMedia[
     }}>
     <header className="attachment-viewer-head"><span>{item.name}</span>
       <span className="text-meta">{fileSize(item.bytes)}</span>
-      <a href={item.url} download={item.name} className="text-button">下载</a>
+      <AttachmentDownload key={item.id} item={item} />
       <IconButton icon="close" label="关闭预览" onClick={onClose} /></header>
     <div className="attachment-viewer-body" onTouchStart={(event) => {
       const touch = event.touches[0];
@@ -58,7 +69,7 @@ function Preview({ items, initial, onClose }: { items: readonly AttachmentMedia[
         && Math.abs(touch.clientX - start.current.x) < SWIPE_CLOSE_PX) onClose();
       start.current = null;
     }}>
-      {image ? <img className="attachment-viewer-image" src={item.url} alt={item.name} draggable={false} />
+      {image ? <PreviewImage key={item.id} item={item} />
         : <AttachmentFilePreview item={item} />}
     </div>
     {items.length < 2 ? null : <nav className="attachment-viewer-nav" aria-label="附件切换">
@@ -81,7 +92,7 @@ export function AttachmentGallery({ items }: { items: readonly AttachmentMedia[]
     {images.length === 0 ? null : <div className="attachment-image-grid" data-count={images.length}>
       {images.map((item) => <button key={item.id} type="button" className="attachment-image"
         aria-label={`查看图片 ${item.name}`} onClick={() => setSelected(item)}>
-        <img src={item.url} alt={item.name} loading="lazy" /></button>)}
+        <img src={item.thumbnailUrl ?? item.url} alt={item.name} loading="lazy" /></button>)}
     </div>}
     {files.map((item) => <button key={item.id} type="button" className="attachment-file"
       aria-label={`预览文件 ${item.name}`} onClick={() => setSelected(item)}>

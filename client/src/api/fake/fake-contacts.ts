@@ -1,3 +1,4 @@
+import type { NetworkAttachmentView } from '../shared.ts';
 // 假联系人（第 113 条）：网络上的人在这里存着（聊天、任务卡、代你说过、安全码），邮件和系统来源从假站内信归并出来。
 // 写操作按 requestId 幂等（FakeReceipts），变了推 contact.item（那一项的新样子）和 contacts.changed（等你数、未读数），
 // 和真服务端的两种 SSE 一样。本地开发时对方的 Plasticine 会过一会儿回一句、接下发出去的任务（replyMs > 0）；测试里
@@ -51,6 +52,7 @@ import type { FakeSession } from './fake-session.ts';
 import type { FakeReceipts } from './receipts.ts';
 
 export interface FakeContactsDeps {
+  attachments?: (ids: readonly string[], thread: string, message: string) => NetworkAttachmentView[];
   session: FakeSession;
   bus: FakeEventBus;
   receipts: FakeReceipts;
@@ -94,7 +96,8 @@ export class FakeContacts implements ContactsApi {
     this.deps = deps;
     this.groupChats = new FakeGroups({ session: deps.session, bus: deps.bus, receipts: deps.receipts, now: deps.now,
       me: () => this.me, friend: (id) => this.face(id), emitTotals: () => this.emitTotals(),
-      later: (work) => this.later(work) });
+      later: (work) => this.later(work),
+      ...(deps.attachments === undefined ? {} : { attachments: deps.attachments }) });
   }
 
   /** 好友在群里的样子（建群、拉人用）。 */
@@ -185,6 +188,16 @@ export class FakeContacts implements ContactsApi {
     this.mailHtml.set(mailId, html);
   }
 
+  retryMessage(thread: string, id: string): ContactMessageView {
+    const entries = this.people.get(thread)?.entries ?? this.groupChats.records.get(thread)?.entries ?? [];
+    const entry = entries.find((item) => item.type === 'message' && item.message.id === id);
+    if (entry?.type !== 'message' || entry.message.author !== 'me') throw notFound('这条消息');
+    const message = { ...entry.message, status: 'sent' as const, error: null };
+    entry.message = message;
+    this.deps.bus.emit({ type: 'contact.item', contactId: thread, item: { type: 'message', message } });
+    return message;
+  }
+
   async send(id: string, input: SendContactMessageRequest): Promise<ContactMessageView> {
     this.deps.session.require();
     return this.deps.receipts.run('contacts', input.requestId, `POST /v2/contacts/${id}/messages`, () => {
@@ -212,10 +225,12 @@ export class FakeContacts implements ContactsApi {
         taskId: null,
         mention: toAi ? { name: record.name, self: false } : mine ? { name: this.me.name, self: true } : null,
       };
+      message.attachments = this.deps.attachments?.(input.attachmentIds ?? [], id, message.id) ?? [];
       record.suggestion = null;
       this.post(record.id, message);
       if (mine) {
-        this.later(() => this.post(record.id, { ...message, id: `cm_mine_${message.id}`, author: 'my_ai',
+        this.later(() => this.post(record.id, { ...message, id: `cm_mine_${message.id}`,
+          author: 'my_ai', attachments: [],
           text: `我只用${record.name}能听的资料回答：这件事资料里没有。`, at: this.deps.now().toISOString(), toAi: false,
           mention: null }));
       }
@@ -223,7 +238,7 @@ export class FakeContacts implements ContactsApi {
         this.later(() => this.post(record.id, {
           ...message,
           id: `cm_ai_${message.id}`,
-          author: 'their_ai',
+          author: 'their_ai', attachments: [],
           text: `我看了${record.name}标给你能听的材料，这件事要问一下${record.name}本人，问到了回你。`,
           at: this.deps.now().toISOString(),
           toAi: false,

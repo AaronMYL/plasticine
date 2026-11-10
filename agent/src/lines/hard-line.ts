@@ -33,6 +33,7 @@ const DEFAULT_CONSEQUENCES: Readonly<Record<HardLineKind, string>> = {
 };
 
 export type GateState = Pick<StateService, 'lineApprovals' | 'asks' | 'transaction' | 'outboundGrants' | 'outboundLog'
+  | 'groupMessages'
   | 'lines' | 'projects' | 'schedules' | 'contactMessages'>;
 
 export interface GateHost {

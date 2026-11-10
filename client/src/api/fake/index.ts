@@ -1,6 +1,8 @@
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
 import { renderVideoPage } from '../../../../agent/shared/video-space-page.ts';
+import { seedNetworkAttachmentScene } from './network-attachments-seed.ts';
+import { FakeNetworkAttachments } from './fake-network-attachments.ts';
 import { FakeSearch } from './fake-search.ts';
 import { FakeSystems } from './fake-systems.ts';
 import { FakeOutbound } from './fake-outbound.ts';
@@ -74,6 +76,7 @@ export interface FakeApiOptions {
 
 export interface FakeControl {
   outbound: FakeOutbound;
+  networkAttachments: FakeNetworkAttachments;
   /** 新内核（2026-11-05）：线和模型连接。 */
   lines: FakeLines;
   /** 任务栏目（《优化清单》第 3、4、5 条）。 */
@@ -237,8 +240,11 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     nodes, faults, moneyDrafts });
   signed.setToolGroups(m5b.control.toolGroups);
   const systems = new FakeSystems(session);
+  const networkAttachments = new FakeNetworkAttachments(session, receipts,
+    (thread, message) => contacts.retryMessage(thread, message));
   const contacts = new FakeContacts({ session, bus, receipts, inbox: m5b.control.inbox, now,
-    replyMs: options.streamStepMs > 0 ? CONTACT_REPLY_MS : 0 });
+    replyMs: options.streamStepMs > 0 ? CONTACT_REPLY_MS : 0,
+    attachments: (ids, thread, message) => networkAttachments.bind(ids, thread, message) });
   const networkTasks = new FakeNetworkTasks({ session, receipts, contacts, lines, now });
   const network = new FakeNetwork({ session, receipts, now });
   const account = new FakeAccount({ session, network, lines: () => lines, now });
@@ -287,9 +293,13 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     }
     const cyberHunter = projects.names().find((item) => item.name === 'Cyber Hunter')?.id ?? null;
     seedNewKernel({ lines, modelProviders, asks, contacts, outbound, projectId: cyberHunter }, now());
+    if (typeof window !== 'undefined'
+      && new URLSearchParams(window.location.search).get('scene') === 'network-attachments') {
+      seedNetworkAttachmentScene(contacts, networkAttachments, now());
+    }
   }
   const api: PlasticineApi = {
-    outbound,
+    outbound, networkAttachments,
     lines,
     tasks,
     modelProviders,
@@ -338,7 +348,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   return {
     api,
     control: {
-      outbound,
+      outbound, networkAttachments,
       lines,
       tasks,
       modelProviders,

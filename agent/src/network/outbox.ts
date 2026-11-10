@@ -10,7 +10,7 @@ import { errorCategory, safeLog } from '../shared-log.ts';
 import { changeOf, groupChange, requireIdentity, signerOf, touchContact, type NetworkContext } from './context.ts';
 import { sealEnvelope } from '../../protocol/crypto.ts';
 import { RelayCallError } from '../../protocol/relay-client.ts';
-import { settleNetworkOutbound } from '../outbound/index.ts';
+import { settleNetworkOutbound, settleMessageOutbound } from '../outbound/index.ts';
 
 /** 5 秒起、每次翻倍、最长 10 分钟，8 次（合起来二十来分钟）：对方中继重启、网络抖一下都等得过去。 */
 export const OUTBOX_MAX_ATTEMPTS = 8;
@@ -194,7 +194,12 @@ export class Outbox {
       ...(attempts === undefined ? {} : { attempts }) });
     if (message.taskId !== null) { settleNetworkOutbound(state, message.taskId); }
     const tasks = message.taskId === null ? [] : [message.taskId];
+    const wireId = message.payload?.['messageId'];
+    const groupMessage = message.groupId !== null && message.kind === 'group_message' && typeof wireId === 'string'
+      ? state.groupMessages.byMessageId(message.groupId, wireId) : undefined;
+    settleMessageOutbound(state, `network-message:${message.id}`);
+    if (groupMessage !== undefined) settleMessageOutbound(state, `network-group-message:${groupMessage.id}`);
     this.#context.changed(message.groupId === null ? changeOf(message.contactId, [message.id], tasks)
-      : groupChange(message.groupId, [], tasks));
+      : groupChange(message.groupId, groupMessage === undefined ? [] : [groupMessage.id], tasks));
   }
 }

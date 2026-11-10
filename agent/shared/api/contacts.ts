@@ -4,6 +4,7 @@
 // 同一段 AI↔AI 沟通在服务端收成一项 exchange。任务卡、交付记录、分身说过的话都挂在联系人上。
 
 import { Type, type Static } from 'typebox';
+import { NetworkAttachmentViewSchema } from '../network-attachments.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { OrNull } from './lineage.ts';
 import { LineViewSchema } from './lines.ts';
@@ -136,6 +137,8 @@ export const NetworkTaskViewSchema = Type.Object({
 export type NetworkTaskView = Static<typeof NetworkTaskViewSchema>;
 
 export const ContactMessageViewSchema = Type.Object({
+  attachments: Type.Optional(Type.Array(NetworkAttachmentViewSchema)),
+  error: Type.Optional(OrNull(Type.String())),
   id: IdSchema,
   author: Type.Enum(MESSAGE_AUTHORS),
   text: Type.String(),
@@ -247,7 +250,8 @@ export type ContactDetail = Static<typeof ContactDetailSchema>;
 
 export const SendContactMessageRequestSchema = Type.Object({
   requestId: RequestIdSchema,
-  text: Type.String({ minLength: 1, maxLength: CONTACT_TEXT_MAX_CHARS }),
+  text: Type.String({ maxLength: CONTACT_TEXT_MAX_CHARS }),
+  attachmentIds: Type.Optional(Type.Array(IdSchema, { maxItems: 5, uniqueItems: true })),
   /** 一对一：给人；ai = 问对方的 Plasticine；mine = @ 我自己的（照对方能听到的档位答）。 */
   target: Type.Optional(Type.Union([Type.Literal('person'), Type.Literal('ai'), Type.Literal('mine')])),
   /** 群里：问谁的 Plasticine（成员的账号 id，可以是我自己的）。 */

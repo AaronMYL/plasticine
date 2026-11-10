@@ -5,6 +5,7 @@
 // 二进制一律 base64url（不带 =）：出口清洗只碰带 // 的文字，base64 的 / 可能连成 //，base64url 不会。
 
 import { Type, type Static } from 'typebox';
+import { NetworkAttachmentListSchema } from './network-attachments.ts';
 import { TASK_DECISIONS, TASK_VERDICTS } from './api/contacts.ts';
 import { OrNull as Nullable } from './api/lineage.ts';
 
@@ -188,17 +189,20 @@ export const PLAINTEXT_SCHEMAS = {
     avatar: Type.Optional(Avatar),
   }, STRICT),
   text: Type.Object({
-    text: Text(MESSAGE_MAX),
+    text: Type.String({ maxLength: MESSAGE_MAX }),
+    attachments: Type.Optional(NetworkAttachmentListSchema),
     replyTo: Nullable(NetIdSchema),
     /** 这句是 @ 发件人自己的 Plasticine 说的（它接着用 ai_text 回）。 */
     toOwnAi: Type.Optional(Type.Boolean()),
   }, STRICT),
   ai_text: Type.Object({
-    text: Text(MESSAGE_MAX),
+    text: Type.String({ maxLength: MESSAGE_MAX }),
+    attachments: Type.Optional(NetworkAttachmentListSchema),
     exchangeId: NetIdSchema,
     askerIsAi: Type.Boolean(),
   }, STRICT),
-  ask_ai: Type.Object({ text: Text(MESSAGE_MAX), exchangeId: NetIdSchema, fromAi: Type.Boolean() }, STRICT),
+  ask_ai: Type.Object({ text: Type.String({ maxLength: MESSAGE_MAX }), exchangeId: NetIdSchema,
+    fromAi: Type.Boolean(), attachments: Type.Optional(NetworkAttachmentListSchema) }, STRICT),
   task_offer: Type.Object({
     taskId: NetIdSchema,
     title: Text(120),
@@ -234,7 +238,8 @@ export const PLAINTEXT_SCHEMAS = {
     groupId: NetIdSchema,
     messageId: NetIdSchema,
     kind: Type.Union([Type.Literal('text'), Type.Literal('ask_ai'), Type.Literal('ai_text')]),
-    text: Text(MESSAGE_MAX),
+    text: Type.String({ maxLength: MESSAGE_MAX }),
+    attachments: Type.Optional(NetworkAttachmentListSchema),
     /** ask_ai：问谁的 Plasticine；ai_text：谁的 Plasticine 在答。 */
     target: Nullable(NetIdSchema),
     exchangeId: Nullable(NetIdSchema),

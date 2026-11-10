@@ -92,6 +92,7 @@ export class LineKernel implements LineControl, SideControl {
       sayOf,
       attachments: (ids) => this.#notes(ids),
       images: (ids) => imagesOf(this.#state, ids),
+      ...(this.#options.contextImages === undefined ? {} : { contextImages: this.#options.contextImages }),
       now: this.#now,
       later: this.#later,
       setStatus: (lineId, status, patch) => this.#setStatus(lineId, status, patch),

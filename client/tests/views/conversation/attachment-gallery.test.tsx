@@ -37,3 +37,25 @@ describe('消息附件画廊', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
+
+it('缩略图用于聊天网格，原件用于大图；大图失败可以原址重试', () => {
+  render(<AttachmentGallery items={[{ ...images[0]!, thumbnailUrl: 'https://example.test/thumb.png' }]} />);
+  expect(screen.getByRole('img').getAttribute('src')).toBe('https://example.test/thumb.png');
+  fireEvent.click(screen.getByRole('button', { name: '查看图片 草图1.png' }));
+  const dialog = within(screen.getByRole('dialog'));
+  const original = dialog.getByRole('img');
+  expect(original.getAttribute('src')).toBe(images[0]!.url);
+  fireEvent.error(original);
+  expect(dialog.getByText('图片未能读取。')).toBeTruthy();
+  fireEvent.click(dialog.getByRole('button', { name: '重试读取' }));
+  expect(dialog.getByRole('img').getAttribute('src')).toBe(images[0]!.url);
+});
+
+it('二进制文件不渲染成乱码，保留下载入口', () => {
+  render(<AttachmentGallery items={[{ id: 'archive-file', name: '资料.zip', mimeType: 'application/zip',
+    bytes: 200, url: 'https://example.test/archive.zip' }]} />);
+  fireEvent.click(screen.getByRole('button', { name: '预览文件 资料.zip' }));
+  const dialog = within(screen.getByRole('dialog'));
+  expect(dialog.getByText('这类文件可以下载后打开。')).toBeTruthy();
+  expect(dialog.getByRole('link', { name: '下载' }).getAttribute('download')).toBe('资料.zip');
+});

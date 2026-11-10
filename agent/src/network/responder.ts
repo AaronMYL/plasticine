@@ -186,7 +186,9 @@ export class Responder {
   }
 
   #chatLines(contactId: string): ProxyLine[] {
-    return this.#context.state.contactMessages.recent(contactId, RESPONDER_CONTEXT_LINES).map(lineOf)
+    return this.#context.state.contactMessages.recent(contactId, RESPONDER_CONTEXT_LINES).map((message) =>
+      lineOf({ ...message, text: [message.text, this.#context.state.networkAttachments.contextText(message.id)]
+        .filter(Boolean).join('\n') }))
       .filter((line): line is ProxyLine => line !== null);
   }
 
@@ -195,7 +197,8 @@ export class Responder {
       const mine = message.authorAccountId === me;
       const ai = message.kind === 'ai_text';
       const speaker: ProxyLine['speaker'] = mine ? (ai ? 'my_ai' : 'me') : (ai ? 'their_ai' : 'them');
-      return { speaker, text: message.text };
+      return { speaker, text: [message.text, this.#context.state.networkAttachments.contextText(message.id)]
+        .filter(Boolean).join('\n') };
     });
   }
 

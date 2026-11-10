@@ -51,7 +51,7 @@ function pdfText(data: Buffer, signal: AbortSignal): Promise<{ text: string; tru
   });
 }
 
-function imageMatches(type: AttachmentMime, data: Buffer): boolean {
+export function imageMatches(type: AttachmentMime, data: Buffer): boolean {
   if (type === 'image/png') {
     return (
       data.length >= 24 &&

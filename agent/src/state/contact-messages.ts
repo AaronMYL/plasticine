@@ -60,6 +60,10 @@ export function createContactMessageStore(context: StoreContext) {
     create: (input: ContactMessageInput): ContactMessage => store.create(input),
     update: (id: string, version: number, patch: ContactMessagePatch): ContactMessage =>
       store.update(id, version, patch),
+    forGroupMessage: (groupId: string, messageId: string): ContactMessage[] => store.select(
+      "group_id=$groupId AND kind='group_message' AND direction='out' "
+        + "AND json_extract(payload,'$.messageId')=$messageId",
+      { groupId, messageId }),
     byEnvelope: (envelopeId: string) => one('envelope_id = $envelope_id', { envelope_id: envelopeId }),
     byRequest: (requestId: string) => one('request_id = $request_id', { request_id: requestId }),
     /** 一页，最新的在前；`before` 是 sent_at（不含）。 */

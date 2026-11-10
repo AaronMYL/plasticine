@@ -1,3 +1,4 @@
+import type { NetworkAttachmentsApi } from './network-attachments-client.ts';
 // 客户端用到的接口函数签名（前缀 /v2/，《实施方案》第 5 节）。http/ 的真实现和 fake/ 的内存实现都满足它；
 // 组件不直接 fetch，只经 useApi() 拿到这个对象。请求和响应的形状都是 agent/shared/api 里的。
 
@@ -340,6 +341,7 @@ export interface SearchApi {
 }
 
 export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
+  networkAttachments: NetworkAttachmentsApi;
   outbound: import('./outbound-client.ts').OutboundApi;
   /** 新内核（2026-11-05）：线和模型连接。 */
   lines: import('./lines-client.ts').LinesApi;

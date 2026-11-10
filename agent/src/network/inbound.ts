@@ -48,17 +48,21 @@ const HELLO_TEXT = '想加你为联系人';
 // 记成来源的几类：人写的话、问我的 Plasticine、别人的 Plasticine 说的话、发来的任务。
 const SOURCE_KINDS: readonly EnvelopeKind[] = ['hello', 'text', 'ai_text', 'ask_ai', 'task_offer'];
 
+function hasMessage(value: { text: string; attachments?: readonly unknown[] }): boolean {
+  return value.text.trim() !== '' || (value.attachments?.length ?? 0) > 0;
+}
+
 /** 对过格式的明文，按 kind 收窄类型。 */
 function parsePlaintext(kind: EnvelopeKind, value: unknown): AnyPlaintext | null {
   switch (kind) {
     case 'hello':
       return Value.Check(PLAINTEXT_SCHEMAS.hello, value) ? { kind, body: value } : null;
     case 'text':
-      return Value.Check(PLAINTEXT_SCHEMAS.text, value) ? { kind, body: value } : null;
+      return Value.Check(PLAINTEXT_SCHEMAS.text, value) && hasMessage(value) ? { kind, body: value } : null;
     case 'ai_text':
-      return Value.Check(PLAINTEXT_SCHEMAS.ai_text, value) ? { kind, body: value } : null;
+      return Value.Check(PLAINTEXT_SCHEMAS.ai_text, value) && hasMessage(value) ? { kind, body: value } : null;
     case 'ask_ai':
-      return Value.Check(PLAINTEXT_SCHEMAS.ask_ai, value) ? { kind, body: value } : null;
+      return Value.Check(PLAINTEXT_SCHEMAS.ask_ai, value) && hasMessage(value) ? { kind, body: value } : null;
     case 'task_offer':
       return Value.Check(PLAINTEXT_SCHEMAS.task_offer, value) ? { kind, body: value } : null;
     case 'task_reply':
@@ -74,7 +78,7 @@ function parsePlaintext(kind: EnvelopeKind, value: unknown): AnyPlaintext | null
     case 'group_update':
       return Value.Check(PLAINTEXT_SCHEMAS.group_update, value) ? { kind, body: value } : null;
     case 'group_message':
-      return Value.Check(PLAINTEXT_SCHEMAS.group_message, value) ? { kind, body: value } : null;
+      return Value.Check(PLAINTEXT_SCHEMAS.group_message, value) && hasMessage(value) ? { kind, body: value } : null;
     case 'group_task':
       return Value.Check(PLAINTEXT_SCHEMAS.group_task, value) ? { kind, body: value } : null;
     case 'task_claim':
@@ -245,6 +249,10 @@ export class Inbound {
     const message = state.contactMessages.create({ contactId: contact.id, direction: 'in',
       ...content, sentAt, status: 'sent', envelopeId: envelope.id, groupId,
       ...(envelope.kind === 'read' || quiet ? { readAt: at } : {}) });
+    if (plaintext.kind === 'text' || plaintext.kind === 'ask_ai' || plaintext.kind === 'ai_text') {
+      state.networkAttachments.receive(plaintext.body.attachments ?? [], contact.accountId,
+        contact.id, message.id, false);
+    }
     contact = state.contacts.require(contact.id);
     if (sentAt > contact.lastAt && envelope.kind !== 'read' && !quiet && groupId === null) {
       contact = state.contacts.update(contact.id, contact.version, { lastAt: sentAt });

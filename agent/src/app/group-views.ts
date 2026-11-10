@@ -108,6 +108,10 @@ export function groupTaskView(state: StateService, task: GroupTask, activity?: T
 
 export function groupMessageView(state: StateService, message: GroupMessage): ContactMessageView {
   const identity = state.networkIdentity.get();
+  const outgoing = state.contactMessages.forGroupMessage(message.groupId, message.messageId);
+  const failed = outgoing.find((row) => row.status === 'failed');
+  const status = outgoing.some((row) => row.status === 'sending') ? 'sending'
+    : failed === undefined ? 'sent' : 'failed';
   const target = message.targetAccountId;
   const mention = message.kind === 'ask_ai' && target !== null
     ? { name: faceOf(state, target).name, self: target === identity?.accountId } : null;
@@ -116,12 +120,14 @@ export function groupMessageView(state: StateService, message: GroupMessage): Co
     author: message.author,
     text: message.text,
     at: message.sentAt,
-    status: 'sent',
+    status,
+    ...(failed === undefined ? {} : { error: failed.error ?? '部分对象未收到，请重试。' }),
     toAi: message.kind === 'ask_ai',
     exchangeId: message.exchangeId,
     taskId: message.taskId,
     mention,
     sender: message.author === 'system' ? null : faceOf(state, message.authorAccountId),
+    attachments: state.networkAttachments.forMessage(message.id),
   };
 }
 

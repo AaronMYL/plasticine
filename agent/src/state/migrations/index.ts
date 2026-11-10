@@ -1,3 +1,4 @@
+import { migration as networkAttachments } from './0127-network-attachments.ts';
 // The ordered list of schema migrations. Append only: a shipped migration is never edited or removed.
 
 import { migration as lineArchive } from './0066-line-archive.ts';
@@ -202,6 +203,7 @@ export const MIGRATIONS: readonly Migration[] = [
   contentMetadata,
   libraryPurge,
   outboundGrants,
+  networkAttachments,
   mates,
   spaceWriter,
 ];
