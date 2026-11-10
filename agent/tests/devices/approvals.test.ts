@@ -2,6 +2,7 @@
 // 2026-11-05 Harness 重做后没有任务在等：交回线由 approvals.onResult 接到新内核的 tell 上。
 
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, test } from 'node:test';
 import { DEFAULT_DEVICE_LIMITS, DeviceService, ACTION_TTL_MS, type ApprovedResult }
   from '../../src/devices/index.ts';
@@ -50,6 +51,22 @@ function approve(input: ReturnType<typeof request>) {
 }
 
 const signal = (): AbortSignal => new AbortController().signal;
+
+test('复合编号的审批、派发、回执和工具重放绑定同一安全编号', async () => {
+  const input = { ...request(), actionId: 'call_approval|fc_fixture' };
+  const safeId = `a-${createHash('sha256').update(input.actionId).digest('hex').slice(0, 40)}`;
+  const ask = approve(input);
+  assert.equal(ask.actionId, `device-approval:${safeId}`);
+  assert.equal(ask.context?.actionId, safeId);
+  assert.equal(ask.context?.originalActionId, input.actionId);
+  assert.equal(service.approvals!.request(input).id, ask.id);
+  assert.equal((await service.nextAction(nodeId, 0, signal()))?.id, safeId);
+  service.reportResult(nodeId, safeId, { status: 'executed', result: {} });
+  assert.equal(reported.length, 1);
+  assert.equal(service.actions.replayable(input), true);
+  assert.equal((await service.actions.perform(input)).reused, true);
+  assert.equal(await service.nextAction(nodeId, 0, signal()), null);
+});
 
 test('工具门槛出删除授权卡，签名后执行一次，结果交回发起它的线，同一动作再来就复用结果', async () => {
   const input = request();

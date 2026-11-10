@@ -25,6 +25,7 @@ import { classifyLane } from './lanes.ts';
 import { submitHoldForRun, submitRefusal, type SubmitHold } from './page-submits.ts';
 import { choosePlace, type PlaceChoice } from './route.ts';
 import { TransportError, type NodeTransport } from './transport.ts';
+import { dispatchEnvelope, normalizeActionRequest } from './action-id.ts';
 
 export type ActionState = Pick<StateService, 'nodes' | 'nodeActions' | 'asks' | 'transaction' | 'lines'
   | 'schedules' | 'scheduleSends'>;
@@ -38,6 +39,8 @@ export const IDLE_SINK: DeviceSink = { nodeChanged: () => undefined, actionRecor
 
 export interface ActionRequest {
   actionId: string;
+  /** 本地追溯用的原工具编号；设备只收到规范化后的 actionId。 */
+  originalActionId?: string;
   nodeId: string;
   action: DeviceActionParams;
   origin: NodeAction['origin'];
@@ -133,7 +136,7 @@ export class DeviceActions {
 
   /** A completed or in-flight action is read back, even if today's limits or heartbeat changed. */
   replayable(request: ActionRequest): boolean {
-    const row = this.#state.nodeActions.byActionId(request.actionId);
+    const row = this.#existing(normalizeActionRequest(request));
     return row !== undefined && row.nodeId === request.nodeId && row.paramsDigest === argsDigest(request.action)
       && !this.#mayRunAgain(row);
   }
@@ -161,6 +164,7 @@ export class DeviceActions {
   }
 
   async perform(request: ActionRequest): Promise<ActionOutcome> {
+    request = normalizeActionRequest(request);
     const prepared = this.#prepare(request);
     if (!prepared.send) { return outcomeOf(prepared.row, prepared.reused); }
     const node = this.#state.nodes.require(request.nodeId);
@@ -219,13 +223,21 @@ export class DeviceActions {
     if (!confirmation.deviceId || !Number.isFinite(Date.parse(confirmation.confirmedAt))) {
       throw new DeviceError('invalid_input', '动作缺少本人确认，请在已配对的页面确认。');
     }
-    return this.#prepare(request, confirmation).row;
+    return this.#prepare(normalizeActionRequest(request), confirmation).row;
+  }
+
+  #existing(request: ActionRequest): NodeAction | undefined {
+    const legacy = request.originalActionId === undefined ? undefined
+      : this.#state.nodeActions.byActionId(request.originalActionId);
+    // 历史记录可能已经执行或仍未取得回执；换编号不能把同一步变成新动作重发。
+    if (legacy !== undefined && !this.#mayRunAgain(legacy)) { return legacy; }
+    return this.#state.nodeActions.byActionId(request.actionId);
   }
 
   #prepare(request: ActionRequest,
     confirmation?: DeviceConfirmation): { row: NodeAction; send: boolean; reused: boolean } {
     const digest = argsDigest(request.action);
-    const existing = this.#state.nodeActions.byActionId(request.actionId);
+    const existing = this.#existing(request);
     if (existing !== undefined) {
       if (existing.paramsDigest !== digest || existing.nodeId !== request.nodeId) {
         const message = `动作标识 ${request.actionId} 已经用在另一个设备动作上了，这次没有执行。`;
@@ -298,7 +310,10 @@ export class DeviceActions {
   }
 
   async #send(row: NodeAction, node: DeviceNode, request: ActionRequest): Promise<NodeAction> {
-    const envelope = row.envelope as NodeActionEnvelope;
+    const envelope = dispatchEnvelope(row.envelope);
+    if (envelope === null) {
+      return this.#finish(row, { status: 'refused', refusalLayer: 'params', reason: '动作参数无法恢复，请重新发起。' });
+    }
     try {
       const report: unknown = await this.#transport.send(envelope, request.signal ?? new AbortController().signal);
       if (!Value.Check(NodeActionReportSchema, report) || report.actionId !== row.actionId) {
@@ -341,6 +356,8 @@ export class DeviceActions {
     const state = this.#state;
     const at = this.#now().toISOString();
     const facts = factsOf(request.action);
+    const stored = envelope === undefined ? null : { ...envelope,
+      ...(request.originalActionId === undefined ? {} : { originalActionId: request.originalActionId }) };
     const row = state.transaction(() => {
       const written = existing === undefined
         ? state.nodeActions.record({
@@ -354,13 +371,13 @@ export class DeviceActions {
           requestedAt: at,
           taskId: request.taskId ?? null,
           runId: request.runId ?? null,
-          envelope: envelope ?? null,
+          envelope: stored,
           deadline: envelope?.expiresAt ?? null,
           purpose: request.purpose ?? null,
           ...patch,
         })
         : state.nodeActions.update(existing.id, existing.version, { ...patch, result: null, executedAt: null,
-          deliveredAt: null, reportDigest: null, envelope: envelope ?? null, deadline: envelope?.expiresAt ?? null });
+          deliveredAt: null, reportDigest: null, envelope: stored, deadline: envelope?.expiresAt ?? null });
       return written;
     });
     if (publish) { this.#sink.actionRecorded(row); }

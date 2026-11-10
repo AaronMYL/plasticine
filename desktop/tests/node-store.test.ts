@@ -33,6 +33,16 @@ test('做到一半被关掉的动作：下次报结果待核实，不再做一�
   assert.throws(() => reopened.begin('../x', 'file_read'), /文件名/);
 });
 
+test('动作记录仍严格限制编号字符和长度，不为复合编号放宽文件名校验', (t) => {
+  const journal = new ActionJournal(tempDir(t), 'https://example.com/', 'fixture-node');
+  for (const id of ['call_fixture|fc_fixture', 'x'.repeat(201), '../outside', '']) {
+    assert.throws(() => journal.seen(id), /文件名/);
+    assert.throws(() => journal.begin(id, 'file_read'), /文件名/);
+  }
+  journal.begin('a'.repeat(200), 'file_read');
+  assert.equal(journal.seen('a'.repeat(200)), true);
+});
+
 test('凭证加密存，文件 0600；Swift 版的明文凭证搬一次，旧文件不删', (t) => {
   const dir = tempDir(t);
   const legacy = join(dir, 'legacy');

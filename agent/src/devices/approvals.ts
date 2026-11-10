@@ -11,8 +11,10 @@ import type { StateService } from '../state/index.ts';
 import type { ActionRequest, DeviceActions } from './actions.ts';
 import { factsOf } from './limits.ts';
 import { classifyLane } from './lanes.ts';
+import { normalizeActionRequest } from './action-id.ts';
 
 const Context = Type.Object({ nodeId: Type.String(), actionId: Type.String(), action: DeviceActionParamsSchema,
+  originalActionId: Type.Optional(Type.String()),
   purpose: Type.Optional(Type.Union([Type.String(), Type.Null()])) });
 
 const LINE_RUN_PREFIX = 'line:';
@@ -37,7 +39,7 @@ function resultText(row: NodeAction): string {
     return `${head}做完了。结果：${clipped}${clipped.length < result.length ? '……（完整结果在设备动作记录里）' : ''}`;
   }
   if (row.status === 'unknown') {
-    return `${head}发出去了，但没拿到回执：结果不明，先核实，不要重发。`;
+    return `${head}结果不明：${row.reason ?? '发出去了，但没拿到回执；先核实，不要重发。'}`;
   }
   if (row.status === 'dry_run') {
     return `${head}在开发期干跑里只记下了，没有真的做。`;
@@ -93,6 +95,7 @@ export class DeviceApprovals {
   }
 
   request(request: ActionRequest): Ask {
+    request = normalizeActionRequest(request);
     const node = this.#state.nodes.require(request.nodeId);
     const lane = classifyLane(request.action, request.purpose ?? '');
     return this.#desk.commit((changes) => this.#desk.raise(changes, { kind: 'approve', purpose: 'device_action',
@@ -104,6 +107,7 @@ export class DeviceApprovals {
       options: [{ id: 'allow', label: '授权这一次' }, { id: 'deny', label: '不执行' }],
       actionId: `device-approval:${request.actionId}`, taskId: null, runId: request.runId ?? null,
       context: { nodeId: request.nodeId, actionId: request.actionId, action: request.action,
+        ...(request.originalActionId === undefined ? {} : { originalActionId: request.originalActionId }),
         purpose: request.purpose ?? null },
     }));
   }

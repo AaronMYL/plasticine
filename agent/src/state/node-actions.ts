@@ -61,6 +61,15 @@ export function createNodeActionStore(context: StoreContext) {
       return context.db.all("SELECT id FROM node_actions WHERE status IN ('queued', 'sent') " +
         'ORDER BY requested_at ASC, id ASC').map((row) => store.require(String(row['id'])));
     },
+    /** 未回执的动作之后，同一设备已交过其他回执；由 devices 按等待时间决定何时提醒。 */
+    unreportedWithLaterReceipt(): NodeAction[] {
+      return context.db.all(`SELECT missing.id FROM node_actions missing
+        WHERE missing.status IN ('sent', 'unknown') AND missing.report_digest IS NULL
+          AND EXISTS (SELECT 1 FROM node_actions later WHERE later.node_id = missing.node_id
+            AND later.id != missing.id AND later.report_digest IS NOT NULL
+            AND later.executed_at > COALESCE(missing.delivered_at, missing.requested_at))`)
+        .map((row) => store.require(String(row['id'])));
+    },
     update: (id: string, expectedVersion: number, patch: NodeActionPatch): NodeAction =>
       store.update(id, expectedVersion, patch),
     /** How many actions of this class went out to the node since `since` (the per-hour limit). */

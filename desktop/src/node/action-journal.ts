@@ -27,6 +27,8 @@ export const INTERRUPTED: NodeActionResultRequest = {
 
 const SAFE_ID = /^[A-Za-z0-9_.:-]{1,200}$/;
 
+export class InvalidActionId extends Error {}
+
 export class ActionJournal {
   private readonly directory: string;
   private readonly now: () => Date;
@@ -92,7 +94,7 @@ export class ActionJournal {
 
   private file(id: string): string {
     if (!SAFE_ID.test(id)) {
-      throw new Error('动作 id 里有不能当文件名的字符。');
+      throw new InvalidActionId('动作 id 里有不能当文件名的字符。');
     }
     return join(this.directory, `${id}.json`);
   }

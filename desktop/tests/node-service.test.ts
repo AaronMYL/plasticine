@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
@@ -71,13 +72,14 @@ async function fakeServer(): Promise<FakeServer> {
     close: () => new Promise<void>((resolve) => { server.closeAllConnections(); server.close(() => resolve()); }) });
 }
 
-function service(dir: string, executed: string[]): NodeService {
+function service(dir: string, executed: string[],
+  journal = (server: string, nodeId: string) => new ActionJournal(join(dir, 'actions'), server, nodeId)): NodeService {
   const credentials = new CredentialStore(join(dir, 'cred'), null, { available: () => true,
     encrypt: (text) => Buffer.from(text), decrypt: (data) => data.toString() });
   return new NodeService({
     api: (server) => new NodeApi(server, fetch),
     credentials,
-    journal: (server, nodeId) => new ActionJournal(join(dir, 'actions'), server, nodeId),
+    journal,
     runner: {
       capabilities: async () => ['file_read', 'tab_list'],
       execute: async (action) => {
@@ -149,6 +151,88 @@ test('本体不认凭证了（401）：停下来显示要重新配对', async (t
   const status = await until(node, (value) => value.state === 'repair');
   assert.match(status.problem ?? '', /重新配对/);
   assert.equal(node.credential(), null);
+});
+
+test('非法动作编号交回 refused，继续接下一步，不执行也不破坏回执记录', { timeout: 3_000 }, async (t) => {
+  const server = await fakeServer();
+  const executed: string[] = [];
+  const node = service(tempDir(t), executed);
+  t.after(async () => { node.stop(); await server.close(); });
+  node.useServer(server.url);
+  await until(node, (status) => status.state === 'unpaired');
+  const invalidIds = ['call_fixture|fc_fixture', 'x'.repeat(201), '../outside'];
+  for (const id of [...invalidIds, 'valid-next']) {
+    server.queue.push({ id, kind: 'file_read', params: { path: '~/a' }, deadline: '2099-01-01T00:00:00.000Z' });
+  }
+  await node.pair('ABCD-1234');
+  const deadline = Date.now() + 1_500;
+  while (server.results.length < invalidIds.length + 1 && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.equal(server.results.length, invalidIds.length + 1);
+  assert.deepEqual(executed, ['valid-next']);
+  for (const [index, id] of invalidIds.entries()) {
+    assert.deepEqual(server.results[index], { id,
+      body: { status: 'refused', refusalLayer: 'device', error: '动作编号不合规，这一步没有执行。' } });
+  }
+});
+
+test('回执开始记录失败也交回 refused，不让动作成为无回执的空洞', async (t) => {
+  const server = await fakeServer();
+  const executed: string[] = [];
+  class BrokenJournal extends ActionJournal {
+    override begin(): void { throw new Error('测试回执存储失败'); }
+  }
+  const dir = tempDir(t);
+  const node = service(dir, executed, (origin, nodeId) => new BrokenJournal(dir, origin, nodeId));
+  t.after(async () => { node.stop(); await server.close(); });
+  node.useServer(server.url);
+  await until(node, (status) => status.state === 'unpaired');
+  server.queue.push({ id: 'begin-failure', kind: 'file_read', params: { path: '~/a' },
+    deadline: '2099-01-01T00:00:00.000Z' });
+  await node.pair('ABCD-1234');
+  const deadline = Date.now() + 1_500;
+  while (server.results.length === 0 && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.deepEqual(executed, []);
+  assert.deepEqual(server.results, [{ id: 'begin-failure',
+    body: { status: 'refused', refusalLayer: 'device',
+      error: '这台电脑无法保存动作回执，这一步没有执行。请检查存储空间或回执记录。' } }]);
+});
+
+test('复合与超长编号映射后可保存回执，重启重放也只执行一次', async (t) => {
+  const server = await fakeServer();
+  const dir = tempDir(t);
+  const executed: string[] = [];
+  let node = service(dir, executed);
+  t.after(async () => { node.stop(); await server.close(); });
+  node.useServer(server.url);
+  await until(node, (status) => status.state === 'unpaired');
+  const actions = ['call_fixture|fc_fixture', `call_${'x'.repeat(250)}`].map((original) => ({
+    id: `a-${createHash('sha256').update(original).digest('hex').slice(0, 40)}`,
+    kind: 'file_read', params: { path: '~/a' }, deadline: '2099-01-01T00:00:00.000Z',
+  }));
+  server.queue.push(...actions, ...actions);
+  await node.pair('ABCD-1234');
+  const deadline = Date.now() + 1_500;
+  while ((server.results.length < 2 || server.queue.length > 0) && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.equal(server.queue.length, 0);
+  assert.deepEqual(executed, actions.map((action) => action.id));
+  node.stop();
+  node = service(dir, executed);
+  server.queue.push(...actions);
+  node.useServer(server.url);
+  await until(node, (status) => status.state === 'online');
+  const restartedDeadline = Date.now() + 1_500;
+  while (server.queue.length > 0 && Date.now() < restartedDeadline) {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  assert.equal(server.queue.length, 0);
+  assert.deepEqual(executed, actions.map((action) => action.id));
+  assert.equal(server.results.length, 2);
 });
 
 test('远程只认 https；这台电脑上的本体可以是 http', () => {

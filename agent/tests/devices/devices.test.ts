@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { DeviceActionParams, NodeActionEnvelope, NodeActionReport } from '../../shared/api/index.ts';
@@ -8,6 +9,7 @@ import {
   DeviceError,
   DeviceService,
   TransportError,
+  type ActionRequest,
   type NodeTransport,
 } from '../../src/devices/index.ts';
 import { device, openTestState, type TestState } from '../state/helpers.ts';
@@ -97,6 +99,43 @@ function withRoots(overrides: Partial<DeviceLimits['classes']> = {}): DeviceLimi
 }
 
 const READ: DeviceActionParams = { kind: 'file_read', path: '~/Documents/Plasticine/笔记.md' };
+
+test('复合和超长动作编号稳定映射为安全编号，原编号可追溯，重放不重复执行', async () => {
+  const devices = service();
+  const { node } = paired(devices, withRoots());
+  for (const original of ['call_fixture|fc_fixture', `call_${'x'.repeat(250)}`]) {
+    const expected = `a-${createHash('sha256').update(original).digest('hex').slice(0, 40)}`;
+    const request: ActionRequest = { actionId: original, nodeId: node.id, action: READ, origin: 'brain' };
+    const first = await devices.actions.perform(request);
+    assert.equal(first.actionId, expected);
+    assert.equal(first.status, 'executed');
+    assert.equal(devices.actions.replayable(request), true);
+    const saved = t.state.nodeActions.byActionId(expected);
+    assert.equal(Reflect.get(saved?.envelope as object, 'originalActionId'), original);
+    assert.equal((await devices.actions.perform(request)).reused, true);
+    assert.equal(sent.filter((item) => item.actionId === expected).length, 1);
+    assert.equal(Reflect.has(sent.at(-1)!, 'originalActionId'), false, '追溯字段不进入设备协议');
+  }
+});
+
+test('旧复合编号的结果不明动作仍复用原记录，不生成安全编号重发', async () => {
+  const devices = service();
+  const { node } = paired(devices, withRoots());
+  const original = 'call_legacy|fc_legacy';
+  const seed = await devices.actions.perform({ actionId: 'legacy-seed', nodeId: node.id,
+    action: READ, origin: 'brain' });
+  const saved = t.state.nodeActions.byActionId(seed.actionId)!;
+  t.state.nodeActions.record({ actionId: original, nodeId: node.id, kind: saved.kind,
+    actionClass: saved.actionClass, target: saved.target, paramsDigest: saved.paramsDigest,
+    status: 'unknown', origin: 'brain', requestedAt: new Date(clock).toISOString() });
+  const request = { actionId: original, nodeId: node.id, action: READ, origin: 'brain' as const };
+  assert.equal(devices.actions.replayable(request), true);
+  const outcome = await devices.actions.perform(request);
+  assert.equal(outcome.actionId, original);
+  assert.equal(outcome.status, 'unknown');
+  assert.equal(outcome.reused, true);
+  assert.equal(sent.length, 1);
+});
 
 test('配对：码换长期凭证，库里只存散列，凭证和码的明文都不在库文件里', async () => {
   const devices = service();

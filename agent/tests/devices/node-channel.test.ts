@@ -38,6 +38,76 @@ function perform(id = 'read-one') {
     action: { kind: 'file_read', path: '~/Documents/笔记.md' } });
 }
 
+test('超过两分钟且同设备后续有回执，明确说明设备没接这一步且绝不重发', async () => {
+  const first = perform('missing-receipt');
+  await service.nextAction(nodeId, 0, signal());
+  now += 60_000;
+  const second = perform('later-receipt');
+  await service.nextAction(nodeId, 0, signal());
+  service.reportResult(nodeId, 'later-receipt', { status: 'failed', error: '测试失败回执' });
+  await second;
+  service.channel.sweep();
+  assert.equal(t.state.nodeActions.byActionId('missing-receipt')?.status, 'sent');
+  now += 60_001;
+  service.channel.sweep();
+  const row = t.state.nodeActions.byActionId('missing-receipt')!;
+  assert.equal(row.status, 'unknown');
+  assert.match(row.reason ?? '', /设备没接这一步/);
+  assert.match((await first).reason ?? '', /后续.*回执/);
+  const replay = await perform('missing-receipt');
+  assert.equal(replay.reused, true);
+  assert.match(replay.reason ?? '', /设备没接这一步/);
+  assert.equal(await service.nextAction(nodeId, 0, signal()), null);
+  service.reportResult(nodeId, 'missing-receipt', { status: 'failed', error: '迟到的真实回执' });
+  assert.equal(t.state.nodeActions.byActionId('missing-receipt')?.reason, '迟到的真实回执');
+});
+
+test('只有过时回执，不把结果不明改成设备没接这一步', async () => {
+  const first = perform('earlier');
+  await service.nextAction(nodeId, 0, signal());
+  service.reportResult(nodeId, 'earlier', { status: 'failed', error: '此前回执' });
+  await first;
+  now += 1;
+  const pending = perform('still-waiting');
+  await service.nextAction(nodeId, 0, signal());
+  now += 120_001;
+  service.channel.sweep();
+  assert.equal(t.state.nodeActions.byActionId('still-waiting')?.status, 'sent');
+  service.stop();
+  await pending;
+});
+
+test('重启后的旧结果不明动作不重发，仅同设备后续回执能补上明确原因', async () => {
+  const pending = perform('old-unknown');
+  await service.nextAction(nodeId, 0, signal());
+  service.stop();
+  await pending;
+  service = new DeviceService({ state: t.state, now: () => new Date(now), dryRun: false });
+  assert.equal(t.state.nodeActions.byActionId('old-unknown')?.status, 'unknown');
+  now += 120_001;
+  const issuer = t.state.devices.list()[0]!;
+  const code = service.issueCode(issuer.id);
+  const other = service.pair(service.findCode(code.code)!, { requestId: 'pair-other-test', code: code.code,
+    name: '另一台测试电脑', platform: 'windows', appVersion: '1', protocolVersion: 1,
+    capabilities: ['file_read'] }).node;
+  const otherDone = service.actions.perform({ actionId: 'other-receipt', nodeId: other.id, origin: 'brain',
+    action: { kind: 'file_read', path: '~/Documents/笔记.md' } });
+  await service.nextAction(other.id, 0, signal());
+  service.reportResult(other.id, 'other-receipt', { status: 'failed', error: '另一台设备的回执' });
+  await otherDone;
+  assert.doesNotMatch(t.state.nodeActions.byActionId('old-unknown')?.reason ?? '', /设备没接这一步/);
+  await service.nextAction(nodeId, 0, signal());
+  const later = perform('same-device-receipt');
+  assert.equal((await service.nextAction(nodeId, 0, signal()))?.id, 'same-device-receipt');
+  service.reportResult(nodeId, 'same-device-receipt', { status: 'failed', error: '同设备的真实回执' });
+  await later;
+  const replay = await perform('old-unknown');
+  assert.equal(replay.reused, true);
+  assert.equal(replay.status, 'unknown');
+  assert.match(replay.reason ?? '', /设备没接这一步/);
+  assert.equal(await service.nextAction(nodeId, 0, signal()), null);
+});
+
 test('长轮询在动作入队后唤醒：字段原样、取走才标 sent，同一动作只发一次', async () => {
   const poll = service.nextAction(nodeId, 25, signal());
   const done = perform();

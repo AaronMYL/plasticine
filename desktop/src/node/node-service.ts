@@ -5,7 +5,7 @@
 import type { NodeActionResultRequest, NodeWireAction } from '../../../agent/shared/api/index.ts';
 import type { DeviceServiceStatus } from '../../../agent/shared/api/desktop-bridge.ts';
 import { DEVICE_ACTION_KINDS, type DeviceActionKind, type DeviceLimits } from '../../../agent/shared/state.ts';
-import type { ActionJournal } from './action-journal.ts';
+import { InvalidActionId, type ActionJournal } from './action-journal.ts';
 import type { CredentialStore } from './credential-store.ts';
 import { NodeUnauthorized, type NodeApi, type NodeIdentity } from './node-api.ts';
 
@@ -182,8 +182,17 @@ export class NodeService {
         journal.uploaded(unsent.id);
       }
       const action = await api.next(credential, signal);
-      if (action !== null && !journal.seen(action.id)) {
-        journal.begin(action.id, action.kind);
+      if (action !== null) {
+        try {
+          if (journal.seen(action.id)) { continue; }
+          journal.begin(action.id, action.kind);
+        } catch (error) {
+          this.deps.log(`设备动作回执记录失败：${error instanceof Error ? error.message : String(error)}`);
+          await api.result(credential, action.id, { status: 'refused', refusalLayer: 'device',
+            error: error instanceof InvalidActionId ? '动作编号不合规，这一步没有执行。'
+              : '这台电脑无法保存动作回执，这一步没有执行。请检查存储空间或回执记录。' });
+          continue;
+        }
         const limits = this.limitsValue;
         const result = limits === null ? { status: 'refused' as const, refusalLayer: 'device' as const,
           error: '还没拿到设备上限，这一步没做。' } : await this.deps.runner.execute(action, limits);

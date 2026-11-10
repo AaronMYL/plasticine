@@ -4,13 +4,14 @@
 
 import { Value } from 'typebox/value';
 import {
-  DEVICE_RESULT_SCHEMAS, NodeActionEnvelopeSchema, NodeActionResultRequestSchema,
+  DEVICE_RESULT_SCHEMAS, NodeActionResultRequestSchema,
   type NodeActionEnvelope, type NodeActionReport, type NodeActionResultRequest, type NodeWireAction,
 } from '../../shared/api/index.ts';
 import type { NodeAction, NodeActionPatch } from '../../shared/state.ts';
 import { argsDigest } from '../system/index.ts';
 import type { StateService } from '../state/index.ts';
 import { DeviceError } from './errors.ts';
+import { dispatchEnvelope } from './action-id.ts';
 
 export class TransportError extends Error {
   /** True when the envelope may have reached the node: the action may have happened. */
@@ -42,6 +43,10 @@ export const UNCONNECTED_TRANSPORT: NodeTransport = {
 type ChannelState = Pick<StateService, 'nodes' | 'nodeActions' | 'transaction'>;
 const UNKNOWN = '动作已发出，但没有收到结果；结果不明，请先核实，不再发送。';
 const UNAVAILABLE = '节点不可用：期限内没有取走动作，这次没有执行。请检查节点连接后再试。';
+// 同设备已继续交回其他结果，缺失回执满两分钟就结束工具等待，不再占满十分钟期限。
+const MISSING_RECEIPT_MS = 2 * 60_000;
+const MISSING_RECEIPT = '设备没接这一步：等待已超过两分钟，同设备后续动作已有回执，'
+  + '但这一步没有执行回执，结果仍待核实；不再重发，请检查设备动作记录。';
 
 /** Durable outbox: only taking an action changes queued to sent, before the HTTP response is written. */
 export class PollingNodeTransport implements NodeTransport {
@@ -174,7 +179,7 @@ export class PollingNodeTransport implements NodeTransport {
       refusalLayer: body.status === 'refused' ? 'device' : null,
       executedAt: this.#now().toISOString(), reportDigest: digest });
     for (const check of [...this.#reports]) { check(); }
-    this.#schedule();
+    this.sweep();
   }
 
   sweep(): void {
@@ -182,6 +187,13 @@ export class PollingNodeTransport implements NodeTransport {
     const now = this.#now().getTime();
     for (const row of this.#state.nodeActions.pending()) {
       if (row.deadline !== null && Date.parse(row.deadline) <= now) { this.#expire(row); }
+    }
+    for (const row of this.#state.nodeActions.unreportedWithLaterReceipt()) {
+      const sentAt = Date.parse(row.deliveredAt ?? row.requestedAt);
+      if (now - sentAt >= MISSING_RECEIPT_MS && row.reason !== MISSING_RECEIPT) {
+        this.#update(row, { status: 'unknown', reason: MISSING_RECEIPT });
+        for (const check of [...this.#reports]) { check(); }
+      }
     }
     this.#schedule();
   }
@@ -197,13 +209,14 @@ export class PollingNodeTransport implements NodeTransport {
     this.sweep();
     const row = this.#state.nodeActions.pending().find((item) => item.nodeId === nodeId && item.status === 'queued');
     if (row === undefined) { return null; }
-    if (!Value.Check(NodeActionEnvelopeSchema, row.envelope)) {
+    const envelope = dispatchEnvelope(row.envelope);
+    if (envelope === null) {
       this.#update(row, { status: 'refused', refusalLayer: 'params', reason: '动作参数无法恢复，请重新发起。' });
       return this.#take(nodeId);
     }
-    const { kind, ...params } = row.envelope.action;
+    const { kind, ...params } = envelope.action;
     this.#update(row, { status: 'sent', deliveredAt: this.#now().toISOString() });
-    return { id: row.actionId, kind, params, deadline: row.envelope.expiresAt };
+    return { id: row.actionId, kind, params, deadline: envelope.expiresAt };
   }
 
   #expire(row: NodeAction): void {
@@ -217,6 +230,11 @@ export class PollingNodeTransport implements NodeTransport {
     clearTimeout(this.#timer);
     const deadlines = this.#state.nodeActions.pending().flatMap((row) =>
       row.deadline === null ? [] : [Date.parse(row.deadline)]);
+    for (const row of this.#state.nodeActions.unreportedWithLaterReceipt()) {
+      if (row.reason !== MISSING_RECEIPT) {
+        deadlines.push(Date.parse(row.deliveredAt ?? row.requestedAt) + MISSING_RECEIPT_MS);
+      }
+    }
     if (deadlines.length === 0) { return; }
     this.#timer = setTimeout(() => this.sweep(), Math.max(1, Math.min(...deadlines) - this.#now().getTime()));
     this.#timer.unref();
