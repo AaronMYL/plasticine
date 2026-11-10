@@ -37,35 +37,19 @@ function requestId(): string {
   return `side-request-${String(counter).padStart(4, '0')}`;
 }
 
-test('信息流条目点「讨论」开旁聊：带上那一条，第二栏列出它；同一个请求重发不开第二条', async () => {
+test('旧创建入口停止接受新对话，旧记录仍可读取', async () => {
   const { t, cookie } = await sideApp();
   assert.equal((await call(t, 'POST', SIDE_PATH, { body: { requestId: requestId() } })).status, 401);
-  const feed = t.state.feedSources.create({ kind: 'interest', label: '神经科学', level: 'normal' });
-  const item = t.state.feedItems.add({ sourceId: feed.id, origin: 'feed', title: '睡眠中的记忆重放第一次在人脑里被直接测到',
-    site: 'bioRxiv', summary: '颅内电极记录 18 名受试者', day: '2026-11-05',
-    arrivedAt: t.clock.now().toISOString(), dedupeKey: 'replay' }).item;
-  const body = { requestId: requestId(), from: { kind: 'feed', itemId: item.id } };
-  const opened = await call(t, 'POST', SIDE_PATH, { cookie, body });
-  assert.equal(opened.status, 200);
-  const line = json(opened)['line'] as { id: string; kind: string; title: string; topic: { excerpt: string } };
-  assert.equal(line.kind, 'side');
-  assert.equal(line.title, '讨论：睡眠中的记忆重放第一次在人脑里被直接测到');
-  assert.equal(line.topic.excerpt, '颅内电极记录 18 名受试者');
-  const again = await call(t, 'POST', SIDE_PATH, { cookie, body });
-  assert.equal((json(again)['line'] as { id: string }).id, line.id);
+  assert.equal((await call(t, 'POST', SIDE_PATH, { cookie,
+    body: { requestId: requestId() } })).status, 410);
+  const old = t.app.deps.lines.openSide({ title: '旧记录', topic: null });
   const chats = await call(t, 'GET', CHATS_PATH, { cookie });
-  assert.equal(chats.status, 200);
   assert.ok(Value.Check(ChatsResponseSchema, chats.body));
-  assert.deepEqual((json(chats)['sides'] as { id: string }[]).map((side) => side.id), [line.id]);
-  const missing = await call(t, 'POST', SIDE_PATH, { cookie, body: { requestId: requestId(),
-    from: { kind: 'feed', itemId: 'feed_none' } } });
-  assert.equal(missing.status, 404);
+  assert.equal(chats.body.sides[0]?.id, old.id);
 });
 
-test('空白旁聊；回复某一条；表情加上又拿掉', async () => {
+test('回复某一条；表情加上又拿掉', async () => {
   const { t, cookie, faux } = await sideApp();
-  const blank = json(await call(t, 'POST', SIDE_PATH, { cookie, body: { requestId: requestId() } }));
-  assert.equal((blank['line'] as { title: string }).title, '新旁聊');
   faux.appendResponses([fauxAssistantMessage('收入门槛今年改成按月算了。'), fauxAssistantMessage('那就按月平均。')]);
   await call(t, 'POST', lineMessagesPath('main'), { cookie, body: { requestId: requestId(), text: '签证' } });
   await t.app.deps.lines?.settled();

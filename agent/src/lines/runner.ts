@@ -38,6 +38,7 @@ export interface RunnerHost {
   models: ModelSource;
   toolset(scope: LineScope): Toolset;
   prompt(line: LineRow): string;
+  purpose?(line: LineRow): ModelPurpose;
   publish(event: LineStreamEvent): void;
   gate: HardLineGate;
   sayOf: SayOf;
@@ -73,7 +74,6 @@ export class LineRunner {
   readonly #host: RunnerHost;
   readonly #agent: Agent;
   #scope: LineScope;
-  readonly #modelPurpose: ModelPurpose;
   #toolset: Toolset = { tools: [], meta: () => undefined };
   #drive: Promise<void> | null = null;
   #control: AbortController | null = null;
@@ -98,8 +98,6 @@ export class LineRunner {
     this.lineId = line.id;
     this.#host = host;
     this.#scope = { lineId: line.id, kind: line.kind, projectId: line.projectId };
-    this.#modelPurpose = line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind);
-    if (line.sealedPrompt !== null) this.#modelPurpose = 'network_reply';
     this.#agent = new Agent({
       streamFn: host.models.streamFn,
       convertToLlm,
@@ -238,7 +236,11 @@ export class LineRunner {
   async #loop(mode: DriveMode): Promise<DriveOutcome> {
     let resume = mode === 'resume';
     for (;;) {
-      const choice = this.#host.models.current(this.#modelPurpose);
+      const line = this.#host.state.lines.require(this.lineId);
+      const purpose = this.#host.purpose?.(line)
+        ?? (line.sealedPrompt !== null ? 'network_reply'
+          : line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind));
+      const choice = this.#host.models.current(purpose);
       if (choice === undefined) {
         return this.#fail(NO_MODEL_REASON);
       }
@@ -351,7 +353,8 @@ export class LineRunner {
 
   #refreshTools(): void {
     const line = this.#host.state.lines.require(this.lineId);
-    this.#scope = { lineId: line.id, kind: line.kind, projectId: line.projectId };
+    this.#scope = { lineId: line.id, kind: line.kind, projectId: line.projectId,
+      ...(line.mateId == null ? {} : { actorId: line.mateId }) };
     this.#toolset = this.#host.toolset(this.#scope);
   }
 

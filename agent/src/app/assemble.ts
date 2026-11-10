@@ -45,6 +45,8 @@ import { bookmarkTrigger, contactTrigger, deviceTrigger, ensureIntake, feedTrigg
 import { kernelText, type Illustrator, type TextModels } from '../kernel/index.ts';
 import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
 import { MoneyDraftDesk } from '../life/index.ts';
+import { Mates } from '../mates/service.ts';
+import { mateTools } from '../mates/tools.ts';
 import type { LineKernel } from '../lines/index.ts';
 import { DEFAULT_RELAY_URL, NetworkService, TunnelService, type TunnelServiceOptions } from '../network/index.ts';
 import { ServerCommands, type CloudTransports } from '../cloud-tools/index.ts';
@@ -311,7 +313,8 @@ export function assembleApp(options: AssembleOptions): App {
   const lines = assembleLines(options.lines, { state, desk, hub, now, publicUrl,
     skillsContext: (lineId) => skills.context(`line:${lineId}`),
     lineChanged: (lineId) => network.lineChanged(lineId),
-    tools: [taskCardTool(state, network), ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
+    tools: [...mateTools(new Mates(state, () => late.get())), taskCardTool(state, network),
+      ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
       ...libraryTools({ state, workspace: m5b.artifacts.workspace },
         (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。

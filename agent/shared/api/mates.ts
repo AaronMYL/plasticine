@@ -3,6 +3,7 @@ import { IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { MODEL_PURPOSE_IDS } from './model-purposes.ts';
 import { PROJECT_HUES } from './project-tag.ts';
 import { RECORD_META } from '../state-common.ts';
+import { LineViewSchema } from './lines.ts';
 
 const STRICT = { additionalProperties: false };
 const NullableId = Type.Union([IdSchema, Type.Null()]);
@@ -26,11 +27,13 @@ export type MateGroupDraft = Static<typeof MateGroupDraftSchema>;
 export const MateGroupViewSchema = Type.Object({ ...RECORD_META, ...MateGroupDraftSchema.properties,
   lineId: IdSchema }, STRICT);
 export type MateGroupView = Static<typeof MateGroupViewSchema>;
-export const LegacyChatSchema = Type.Object({ lineId: IdSchema, title: Type.String(), updatedAt: IsoTimeSchema }, STRICT);
+export const LegacyChatSchema = Type.Object({ lineId: IdSchema, title: Type.String(),
+  updatedAt: IsoTimeSchema }, STRICT);
 export const MateListResponseSchema = Type.Object({ mates: Type.Array(MateViewSchema),
   groups: Type.Array(MateGroupViewSchema), legacyChats: Type.Array(LegacyChatSchema) }, STRICT);
 export type MateListResponse = Static<typeof MateListResponseSchema>;
-export const CreateMateRequestSchema = Type.Object({ requestId: RequestIdSchema, ...MateDraftSchema.properties }, STRICT);
+export const CreateMateRequestSchema = Type.Object({ requestId: RequestIdSchema,
+  ...MateDraftSchema.properties }, STRICT);
 export type CreateMateRequest = Static<typeof CreateMateRequestSchema>;
 export const UpdateMateRequestSchema = Type.Object({ requestId: RequestIdSchema, version: Type.Integer({ minimum: 1 }),
   ...Type.Partial(MateDraftSchema).properties, disabled: Type.Optional(Type.Boolean()) }, STRICT);
@@ -45,6 +48,8 @@ export const MateHandoffRequestSchema = Type.Object({ requestId: RequestIdSchema
   sourceLineId: IdSchema, goal: Type.String({ minLength: 1, maxLength: 20_000 }),
   groupId: Type.Optional(NullableId) }, STRICT);
 export type MateHandoffRequest = Static<typeof MateHandoffRequestSchema>;
+export const MateHandoffResponseSchema = Type.Object({ line: LineViewSchema }, STRICT);
+export type MateHandoffResponse = Static<typeof MateHandoffResponseSchema>;
 export const LegacyChatProposalSchema = Type.Object({ lineId: IdSchema, title: Type.String(),
   recommendation: Type.Enum(['mate', 'merge']), reason: Type.String(), draft: MateDraftSchema }, STRICT);
 export type LegacyChatProposal = Static<typeof LegacyChatProposalSchema>;
@@ -52,3 +57,6 @@ export const LegacyChatPrepareRequestSchema = Type.Object({ lineId: IdSchema }, 
 export const LegacyChatConvertRequestSchema = Type.Object({ requestId: RequestIdSchema,
   lineId: IdSchema, action: Type.Enum(['mate', 'merge']), draft: Type.Optional(MateDraftSchema) }, STRICT);
 export type LegacyChatConvertRequest = Static<typeof LegacyChatConvertRequestSchema>;
+export const LegacyChatConvertResponseSchema = Type.Object({ lineId: IdSchema,
+  mate: Type.Union([MateViewSchema, Type.Null()]) }, STRICT);
+export type LegacyChatConvertResponse = Static<typeof LegacyChatConvertResponseSchema>;

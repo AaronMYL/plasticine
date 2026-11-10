@@ -10,7 +10,7 @@ export const MODEL_PURPOSE_FALLBACKS = ['default', 'main', 'cheap'] as const;
 export type ModelPurposeFallback = (typeof MODEL_PURPOSE_FALLBACKS)[number];
 
 export const MODEL_PURPOSE_GROUPS = {
-  chat: '主线和旁聊',
+  chat: '主线和队友',
   notes: '笔记',
   books: '图书',
   misc: '信息流、记忆、记账',
@@ -27,7 +27,7 @@ interface PurposeEntry {
 
 export const MODEL_PURPOSES = [
   { id: 'main', label: '主线', group: 'chat', fallback: 'default' },
-  { id: 'side', label: '旁聊', group: 'chat', fallback: 'main' },
+  { id: 'side', label: '队友', group: 'chat', fallback: 'main' },
   { id: 'agent', label: '后台线（子代理）', group: null, fallback: 'default' },
   { id: 'heartbeat', label: '心跳', group: null, fallback: 'cheap' },
   { id: 'dream', label: '做梦', group: null, fallback: 'cheap' },

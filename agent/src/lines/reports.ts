@@ -23,14 +23,17 @@ export type ReportState = Pick<StateService, 'lineMessages'>;
 
 export function lineReport(state: ReportState, line: LineRow, outcome: ReportOutcome, at: Date, notice?: string)
   : LineReportMessage {
-  const conclusion = conclusionOf(state, line) ?? firstParagraph(lineResult(state, line.id) ?? '');
+  const conclusion = line.mateId == null
+    ? conclusionOf(state, line) ?? firstParagraph(lineResult(state, line.id) ?? '')
+    : lineResult(state, line.id) ?? conclusionOf(state, line) ?? '';
   let text = notice ?? conclusion;
   if (notice === undefined && outcome === 'failed') {
     text = `${line.failure ?? '没做完'}${conclusion === '' ? '' : `\n\n${conclusion}`}`;
   }
   const unmet = outcome === 'done' ? unmetReason(state, line) : null;
   return { role: 'lineReport', lineId: line.id, title: line.title, outcome,
-    text: text === '' ? '（它没有留下结果）' : text, timestamp: at.getTime(), ...(unmet === null ? {} : { unmet }) };
+    text: text === '' ? 'Plasticine 没有留下结果。' : text,
+    timestamp: at.getTime(), ...(unmet === null ? {} : { unmet }) };
 }
 
 /** 「模型额度用完了，11/5 21:00 后接着做。」按他的时区写时间。 */

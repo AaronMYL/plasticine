@@ -68,7 +68,7 @@ test('开旁聊：带着信息流那一条；第二栏列出主线（带一行�
   }]);
   h.kernel.send(side.id, { text: '18 个人的样本够吗？' });
   await h.kernel.settled();
-  assert.ok(system.includes('这是一条旁聊'));
+  assert.ok(system.includes('这是一条独立对话'));
   assert.ok(system.includes('颅内电极记录 18 名受试者'));
   assert.equal(h.kernel.view(side.id).topic?.source, 'bioRxiv');
   const chats = h.kernel.chats();
@@ -86,20 +86,16 @@ test('空白旁聊发出第一句后用那句话起标题', async () => {
   assert.equal(h.kernel.view(side.id).title, 'Arc 的竖排标签怎么做');
 });
 
-test('Plasticine 提议挪到旁聊：主线里那一步带着旁聊的 id，旁聊带着要点', async () => {
+test('模型不再能调用旧的开对话工具', async () => {
   const h = await harness();
   h.respond([
-    fauxAssistantMessage([fauxToolCall('open_side_chat', { title: 'Cyber Hunter 赏金从哪来',
-      brief: '他想先弄清赏金的来源：平台抽成还是发布者预存' }, { id: 'side' })], { stopReason: 'toolUse' }),
-    fauxAssistantMessage('这个话题挪到旁聊里慢慢聊。'),
+    fauxAssistantMessage([fauxToolCall('open_side_chat', { title: '旧工具请求', brief: '测试' },
+      { id: 'side' })], { stopReason: 'toolUse' }), fauxAssistantMessage('请从队友花名册选择。'),
   ]);
-  h.kernel.send('main', { text: '对了赏金从哪来' });
+  h.kernel.send('main', { text: '建立一个队友' });
   await h.kernel.settled();
-  const step = h.kernel.read('main', 20).messages.find((message) => message.role === 'toolResult');
-  const side = h.kernel.list({ kind: 'side', limit: 5 })[0];
-  assert.equal(step?.childLineId, side?.id);
-  assert.equal(side?.topic?.kind, 'message');
-  assert.equal(side?.topic?.excerpt, '他想先弄清赏金的来源：平台抽成还是发布者预存');
+  assert.equal(h.kernel.list({ kind: 'side', limit: 5 }).length, 0);
+  assert.equal(h.kernel.read('main', 20).messages.find((message) => message.role === 'toolResult')?.ok, false);
 });
 
 test('回复某一条：模型读到回的是哪一句，界面拆出「回复 Plasticine：……」，原话不带记号', async () => {

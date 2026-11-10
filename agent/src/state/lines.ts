@@ -347,14 +347,15 @@ function createLineMessageTable(context: StoreContext) {
   const { db } = context;
   return {
     /** 追加一条，seq 接在这条线最后一条后面。 */
-    append(lineId: string, role: string, message: unknown, meta: LineMessageMeta | null = null): LineMessageRow {
+    append(lineId: string, role: string, message: unknown, meta: LineMessageMeta | null = null,
+      createdAt?: string): LineMessageRow {
       return db.transaction(() => {
         const last = db.get('SELECT MAX(seq) AS seq FROM line_messages WHERE line_id = $lineId', { lineId });
         const seq = Number(last?.['seq'] ?? 0) + 1;
         db.run(`INSERT INTO line_messages (line_id, seq, role, message, meta, created_at)
           VALUES ($lineId, $seq, $role, $message, $meta, $at)`,
         { lineId, seq, role, message: JSON.stringify(message), meta: meta === null ? null : JSON.stringify(meta),
-          at: context.now() });
+          at: createdAt ?? context.now() });
         db.run('UPDATE lines SET updated_at = $at WHERE id = $lineId', { lineId, at: context.now() });
         context.index?.changed('message', lineRef(lineId, seq));
         return messageOf(db.get('SELECT * FROM line_messages WHERE line_id = $lineId AND seq = $seq',

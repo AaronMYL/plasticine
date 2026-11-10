@@ -2,17 +2,13 @@
 // （open_side_chat）；信息流条目点「讨论」开一条围绕那一条的。旁聊和主线同一套（按天分段、记忆库兜底、能翻原话、
 // 活交给子代理），模型用途是 side。这里还有第二栏的列表（主线置顶 + 最新一行状态、旁聊列表）、表情和「回复某一条」。
 
-import { Type } from 'typebox';
-import type { AgentTool } from '@earendil-works/pi-agent-core';
-import { BLANK_SIDE_TITLE, LINE_TITLE_MAX_CHARS, SIDE_TOPIC_EXCERPT_MAX_CHARS, type ChatsResponse, type LineTopic,
+import { BLANK_SIDE_TITLE, LINE_TITLE_MAX_CHARS, type ChatsResponse, type LineTopic,
   type LineView } from '../../shared/api/lines.ts';
 import { replyExcerpt, splitReply, type LineReply } from '../../shared/line-reply.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import { lineRef } from '../state/index.ts';
 import { LineError } from './kernel-types.ts';
 import { clip } from './messages.ts';
-import { checkedArgs } from './tool-args.ts';
-import type { KernelTool, LineScope } from './types.ts';
 
 export const OPEN_SIDE_TOOL = 'open_side_chat';
 // 第二栏的旁聊最多列这么多（更早的在归档里）。
@@ -79,36 +75,6 @@ export function chats(main: LineView, background: readonly LineView[], sides: re
 
 export interface SideControl {
   openSide(input: { title: string; topic: LineTopic | null }): LineView;
-}
-
-const OpenParameters = Type.Object({
-  title: Type.String({ minLength: 1, maxLength: LINE_TITLE_MAX_CHARS, description: 'Short Chinese title' }),
-  brief: Type.String({ minLength: 1, maxLength: SIDE_TOPIC_EXCERPT_MAX_CHARS,
-    description: 'What this side chat is about and what was said so far, so it can start without the main line' }),
-}, { additionalProperties: false });
-
-function createOpen(control: SideControl, state: SideState, scope: LineScope): AgentTool<typeof OpenParameters> {
-  return {
-    name: OPEN_SIDE_TOOL,
-    label: '挪到旁聊',
-    description: '话题从主线岔开、要聊很久时，把它挪到一条旁聊：带上标题和到现在为止的要点。主线里会出现一行入口，'
-      + '他点了就过去接着聊。只在他同意或明显合适时用，然后在主线里一句话告诉他。',
-    parameters: OpenParameters,
-    async execute(_id, raw) {
-      const args = checkedArgs(OpenParameters, raw, OPEN_SIDE_TOOL);
-      const from = state.lineMessages.last(scope.lineId, 'assistant')?.seq;
-      const topic: LineTopic = { kind: 'message', ref: lineRef(scope.lineId, from ?? 1), title: args.title,
-        source: null, at: null, excerpt: args.brief };
-      const side = control.openSide({ title: args.title, topic });
-      return { content: [{ type: 'text', text: `开好了旁聊「${side.title}」（${side.id}）。` }],
-        details: { childLineId: side.id } };
-    },
-  };
-}
-
-export function openSideTool(control: SideControl, state: SideState): KernelTool {
-  return { name: OPEN_SIDE_TOOL, say: (args) => `挪到旁聊：${typeof args['title'] === 'string' ? args['title'] : ''}`,
-    hardLine: () => null, lineKinds: ['main'], create: (scope) => createOpen(control, state, scope) };
 }
 
 /** 空白的旁聊（标题还是「新旁聊」）发出第一句后换标题。 */

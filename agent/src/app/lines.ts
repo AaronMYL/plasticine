@@ -11,6 +11,7 @@ import {
 } from '../../shared/api/index.ts';
 import { LineError, type LineKernel } from '../lines/index.ts';
 import { lineDetails } from '../lines/details.ts';
+import { matesFor } from './mates.ts';
 import { ApiError } from './api-error.ts';
 import { resolveConversationQuotes } from './conversation-quotes.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';
@@ -88,14 +89,12 @@ export async function sendLineMessage(context: RequestContext): Promise<Reply> {
     if (text.trim() === '' && (input.attachments?.length ?? 0) === 0) {
       throw new ApiError(400, 'invalid_request', '消息是空的。', { field: 'text' });
     }
-    return {
-      status: 200,
-      body: lineCall(() => lines.send(id, { text, origin: auth.actor === 'system'
-        ? { kind: 'system', ref: auth.device.id } : { kind: 'user', userText: input.text },
-        ...(input.replyTo === undefined ? {} : { replyTo: input.replyTo.seq }),
-        ...(input.attachments === undefined ? {}
-        : { attachments: input.attachments }) }, afterCommit)),
-    };
+    const message = { text, origin: auth.actor === 'system'
+      ? { kind: 'system' as const, ref: auth.device.id } : { kind: 'user' as const, userText: input.text },
+    ...(input.replyTo === undefined ? {} : { replyTo: input.replyTo.seq }),
+    ...(input.attachments === undefined ? {} : { attachments: input.attachments }) };
+    return { status: 200, body: lineCall(() => matesFor(context).route(id, message, afterCommit)
+      ?? lines.send(id, message, afterCommit)) };
   });
 }
 

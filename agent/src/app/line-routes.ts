@@ -3,6 +3,7 @@
 
 import { CHATS_PATH, LINES_PATH, MODEL_CONFIG_PATH, MODEL_DEFAULT_PATH, MODEL_PROVIDERS_PATH, SIDE_PATH }
   from '../../shared/api/index.ts';
+import { MATE_ROUTES } from './mates.ts';
 import type { Route } from './context.ts';
 import { listChats, openSideChat, reactLineMessage } from './side-chats.ts';
 import { answerLineWidget } from './line-widgets.ts';
@@ -16,6 +17,7 @@ const PROVIDER = `${MODEL_PROVIDERS_PATH}/:id`;
 const LOGIN = `${PROVIDER}/login/:loginId`;
 
 export const LINE_ROUTES: readonly Route[] = [
+  ...MATE_ROUTES,
   { method: 'GET', path: LINES_PATH, auth: true, handler: listLines },
   // 写在 :id 前面：chats、side 不是线的 id。
   { method: 'GET', path: CHATS_PATH, auth: true, handler: listChats },

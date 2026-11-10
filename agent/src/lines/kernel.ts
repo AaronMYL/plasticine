@@ -29,7 +29,7 @@ import { realLater, type KernelTool, type Later, type LineScope } from './types.
 import { lineView, NO_ACTIVITY, pageMessages, queuedView } from './views.ts';
 import { rollDay } from './day-context.ts';
 import { readResultTool } from './large-results.ts';
-import { chats, openSideTool, replyFor, retitled, SIDES_LIMIT, toggleReaction, type SideControl }
+import { chats, replyFor, retitled, SIDES_LIMIT, toggleReaction, type SideControl }
   from './side-chats.ts';
 import type { WelcomeStart } from '../../shared/welcome-start.ts';
 import { replyMarker } from '../../shared/line-reply.ts';
@@ -64,7 +64,7 @@ export class LineKernel implements LineControl, SideControl {
     const submits = options.submits === undefined ? [] : [pageSubmitAskTool(askHost, options.submits)];
     const asking = (options.askTools ?? []).map((make) => make(askHost));
     this.#tools = [askUserTool(askHost), ...lineTools(this), outcomeTool(this.#state), readResultTool(this.#state),
-      openSideTool(this, this.#state), ...submits, ...asking, ...(options.tools ?? [])];
+      ...submits, ...asking, ...(options.tools ?? [])];
     this.#host = this.#runnerHost();
   }
 
@@ -80,6 +80,9 @@ export class LineKernel implements LineControl, SideControl {
             && (tool.lineKinds === undefined || tool.lineKinds.includes(scope.kind))).map((tool) => tool.create(scope)),
         meta: (name) => meta.get(name),
       }),
+      purpose: (line) => line.sealedPrompt !== null ? 'network_reply'
+        : line.mateId != null ? this.#state.mates.require(line.mateId).purpose ?? 'main'
+          : line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind),
       prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.()),
         productMap(this.#tools.filter((tool) => (tool.enabled?.() ?? true)
           && (tool.lineKinds === undefined || tool.lineKinds.includes(line.kind)))),
@@ -205,6 +208,7 @@ export class LineKernel implements LineControl, SideControl {
   /** 线空闲：这句话开一轮。线在跑（或在等、暂停、后台线已满）：进排队，这一轮结束后按顺序发出。 */
   send(lineId: string, input: SendInput, after: After = NOW): SendResult {
     let line = this.#unarchived(lineId);
+    this.#requireMate(line);
     const attachments = [...(input.attachments ?? [])];
     const origin = input.origin ?? { kind: 'user' as const, userText: input.text };
     const notes = this.#notes(attachments, true);
@@ -217,7 +221,7 @@ export class LineKernel implements LineControl, SideControl {
     }
     if (this.#busy(line)) {
       const item = this.#state.lineQueue.add(line.id, input.text, attachments, origin);
-      if (line.status === 'idle' && line.kind === 'background') {
+      if (line.status === 'idle' && workerLine(line)) {
         this.#state.lines.update(line.id, { status: 'queued' });
       }
       after(() => this.#publishQueue(line.id));
@@ -235,6 +239,30 @@ export class LineKernel implements LineControl, SideControl {
       this.#launch(line.id, 'continue');
     });
     return { outcome: 'started', line: this.view(line.id), message: view, queued: null };
+  }
+
+  /** 点名时保留用户原话，不另启动总管回答；队友结果随后回到这条线。 */
+  record(lineId: string, input: SendInput, after: After = NOW): SendResult {
+    const line = this.#unarchived(lineId);
+    this.#requireMate(line);
+    const notes = this.#notes(input.attachments ?? [], true);
+    const message = userMessage(input.text, notes, this.#now().getTime());
+    const row = this.#state.lineMessages.append(line.id, 'user', message,
+      { origin: input.origin ?? { kind: 'user', userText: input.text } });
+    const view = messageView(row, this.#host.sayOf);
+    after(() => this.#options.publish({ type: 'line_message', message: view }));
+    return { outcome: 'started', line: this.view(line.id), message: view, queued: null };
+  }
+
+  #requireMate(line: LineRow): void {
+    if (line.mateId != null && this.#state.mates.require(line.mateId).disabledAt !== null) {
+      throw new LineError('conflict', '这位队友已停用。');
+    }
+  }
+
+  /** 队友资料变化复用线事件，让其他设备重读花名册。 */
+  changed(lineId: string, after: After = NOW): void {
+    after(() => this.#publishLine(lineId));
   }
 
   /** 一条存下的消息改过之后（部件作答写回）：给界面的样子，提交后推给界面。 */
@@ -398,15 +426,22 @@ export class LineKernel implements LineControl, SideControl {
    * 可以放进外面的事务；推事件、开跑放在 after。
    */
   open(input: OpenLine, after: After = NOW): LineView {
-    if (input.parentLineId !== null) this.#unarchived(input.parentLineId);
+    const parent = input.parentLineId === null ? null : this.#unarchived(input.parentLineId);
+    const mateId = input.mateId ?? parent?.mateId ?? null;
+    if (mateId !== null && this.#state.mates.require(mateId).disabledAt !== null) {
+      throw new LineError('conflict', '这位队友已停用。');
+    }
+    this.#notes(input.attachments ?? [], true);
     if (input.projectId !== null && this.#state.projects.get(input.projectId) === undefined) {
       throw new LineError('invalid', `没有这个项目：${input.projectId}。`, '先用 list_projects 查项目 id。');
     }
     const line = this.#state.transaction(() => {
       const created = this.#state.lines.create({ kind: 'background', parentLineId: input.parentLineId,
         projectId: input.projectId, title: input.title, sealedPrompt: input.sealedPrompt ?? null,
-        resumeParent: input.resumeParent ?? false, modelPurpose: input.purpose ?? null });
-      this.#state.lineQueue.add(created.id, input.goal, [], input.origin ?? { kind: 'delegation' });
+        resumeParent: input.resumeParent ?? false, modelPurpose: input.purpose ?? null,
+        mateId, mateGroupId: input.mateGroupId ?? parent?.mateGroupId ?? null });
+      this.#state.lineQueue.add(created.id, input.goal, [...(input.attachments ?? [])],
+        input.origin ?? { kind: 'delegation' });
       return this.#state.lines.update(created.id, { status: 'queued' });
     });
     after(() => {
@@ -495,10 +530,14 @@ export class LineKernel implements LineControl, SideControl {
     }
     const line = this.#state.lines.require(lineId);
     if (line.archivedAt !== null) return false;
+    if (line.mateId != null && this.#state.mates.require(line.mateId).disabledAt !== null) {
+      this.#setStatus(lineId, 'paused', { pauseReason: 'user', failure: null });
+      return false;
+    }
     if (line.status === 'paused' && (line.pauseReason === 'user' || line.pauseReason === 'output_limit')) {
       return false;
     }
-    if (line.kind === 'background' && this.#activeBackground() >= this.#max) {
+    if (workerLine(line) && this.#activeBackground() >= this.#max) {
       this.#setStatus(lineId, 'queued', { pauseReason: null, pausedUntil: null });
       return false;
     }
@@ -525,13 +564,13 @@ export class LineKernel implements LineControl, SideControl {
     if (['queued', 'running', 'waiting', 'paused'].includes(line.status)) {
       return true;
     }
-    return line.kind === 'background' && this.#activeBackground(line.id) >= this.#max;
+    return workerLine(line) && this.#activeBackground(line.id) >= this.#max;
   }
 
   #activeBackground(except?: string): number {
     let count = 0;
     for (const [lineId, runner] of this.#runners) {
-      if (lineId !== except && runner.busy() && this.#state.lines.get(lineId)?.kind === 'background') {
+      if (lineId !== except && runner.busy() && workerLine(this.#state.lines.get(lineId))) {
         count += 1;
       }
     }
@@ -591,7 +630,7 @@ export class LineKernel implements LineControl, SideControl {
     if (line.status === 'paused' || line.status === 'failed' || line.status === 'waiting') {
       return false;
     }
-    if (line.kind === 'background' && this.#activeBackground() >= this.#max) {
+    if (workerLine(line) && this.#activeBackground() >= this.#max) {
       this.#setStatus(lineId, 'queued');
       return false;
     }
@@ -609,7 +648,7 @@ export class LineKernel implements LineControl, SideControl {
         return;
       }
       const line = this.#state.lines.get(lineId);
-      if (line?.kind !== 'background' || line.archivedAt !== null
+      if (line === undefined || !workerLine(line) || line.archivedAt !== null
         || (line.status !== 'idle' && line.status !== 'queued')) {
         continue;
       }
@@ -766,4 +805,9 @@ export class LineKernel implements LineControl, SideControl {
     this.#publishLine(lineId);
     return view;
   }
+}
+
+/** 队友回合和所有后台线共用三个执行位置。 */
+function workerLine(line: LineRow | undefined): boolean {
+  return line !== undefined && (line.kind === 'background' || line.mateId != null);
 }

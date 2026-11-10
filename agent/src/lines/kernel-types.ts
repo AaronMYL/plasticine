@@ -17,7 +17,7 @@ export const MAX_BACKGROUND_LINES = 3;
 export const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
 
 export type KernelState = Pick<StateService, 'lines' | 'lineMessages' | 'lineDays' | 'lineQueue' | 'lineApprovals'
-  | 'outboundGrants' | 'outboundLog' | 'schedules' | 'contactMessages'
+  | 'mates' | 'mateGroups' | 'outboundGrants' | 'outboundLog' | 'schedules' | 'contactMessages'
   | 'asks' | 'transaction' | 'memoryDocs' | 'memoryJournal' | 'projects' | 'attachments'>;
 
 export type Compactor = NonNullable<RunnerHost['compact']>;
@@ -61,6 +61,9 @@ export interface KernelOptions {
 
 /** 开一条后台线：开它的线（主对话、跨用户任务没有发起的线是 null）、属于哪个项目、标题和要做什么。 */
 export interface OpenLine {
+  mateId?: string | null;
+  mateGroupId?: string | null;
+  attachments?: readonly string[];
   title: string;
   goal: string;
   projectId: string | null;
