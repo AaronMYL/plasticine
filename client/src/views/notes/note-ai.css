@@ -145,12 +145,29 @@
 /* 补充建议：画在当前段落下方留出的空里（note-suggestions.tsx 用装饰给段落加下边距），不在顶部工具栏。 */
 .note-suggestion {
   position: absolute;
-  display: flex;
-  align-items: flex-start;
-  gap: 4px 8px;
   padding-left: 12px;
   border-left: 1px solid var(--fg3);
+  font-size: 14px;
+  line-height: 22px;
 }
+.note-suggestion header { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.note-suggestion ul { list-style: none; padding: 0; margin: 8px 0; }
+.note-suggestion li { display: flex; align-items: baseline; gap: 8px; padding: 8px; border-radius: 8px; }
+.note-suggestion li:hover { background: var(--tint); }
+.note-suggestion li > span:nth-child(2), .note-suggestion-draft > span { flex: 1; min-width: 0; }
+.note-suggestion-kind { flex: none; padding: 0 4px; border-radius: 4px; font-size: 11px; }
+.note-suggestion-kind[data-kind='structure'] { color: var(--hue-sky);
+  background: color-mix(in srgb, var(--hue-sky) 12%, transparent); }
+.note-suggestion-kind[data-kind='supplement'] { color: var(--hue-teal);
+  background: color-mix(in srgb, var(--hue-teal) 12%, transparent); }
+.note-suggestion-kind[data-kind='example'] { color: var(--hue-ochre);
+  background: color-mix(in srgb, var(--hue-ochre) 12%, transparent); }
+.note-suggestion-kind[data-kind='contact'] { color: var(--hue-rose);
+  background: color-mix(in srgb, var(--hue-rose) 12%, transparent); }
+.note-suggestion-draft { display: flex; align-items: baseline; gap: 8px; background: var(--tint2);
+  border-radius: 8px; padding: 8px 12px; margin-top: 16px; }
+.note-suggestion-draft > span { white-space: pre-wrap; overflow-wrap: anywhere; }
+.note-suggestion button { flex: none; white-space: nowrap; }
 
 .note-suggestion p {
   flex: 0 1 auto;

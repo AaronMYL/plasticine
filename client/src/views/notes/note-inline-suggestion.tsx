@@ -6,13 +6,19 @@ import type { Editor } from '@tiptap/core';
 import type { Node as DocumentNode } from '@tiptap/pm/model';
 import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent,
   type ReactNode } from 'react';
+import type { NoteSupplement } from '../../api/shared.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { editorDom, useEditorDom } from './editor-dom.ts';
 import { baseMargin, setSuggestionSpace, suggestionSpaces, type SuggestionKind } from './note-suggestion-space.ts';
 
 /** 补充建议放在当前段落下方，和上下段各留这么多空。 */
 const INTERJECT_GAP = 8;
-export interface Suggestion { text: string; position: number; kind: SuggestionKind; doc: DocumentNode }
+export interface Suggestion {
+  text: string; position: number; kind: SuggestionKind; doc: DocumentNode;
+  items?: NoteSupplement[];
+  range?: { from: number; to: number };
+}
+const TYPE_NAMES = { structure: '结构', supplement: '补充', example: '举例', contact: '联系人' } as const;
 interface SuggestionLayout {
   body: Element; top: number; left: number; width: number; indent: number; line: number; margin: number;
   font: CSSProperties;
@@ -67,10 +73,11 @@ function sameLayout(a: SuggestionLayout | null, b: SuggestionLayout): boolean {
  * 另一条建议出现或撤下会改段落的边距：跟着编辑器的每次变化重量一遍，量出来一样就不重画。
  */
 export function InlineSuggestion({ editor, suggestion, onAdopt, onDismiss }: {
-  editor: Editor; suggestion: Suggestion; onAdopt: () => void; onDismiss: () => void;
+  editor: Editor; suggestion: Suggestion; onAdopt: (item?: NoteSupplement) => void; onDismiss: () => void;
 }): ReactNode {
   const [layout, setLayout] = useState<SuggestionLayout | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const [draft, setDraft] = useState<NoteSupplement | null>(null);
   const interject = suggestion.kind === 'interject';
   const dom = useEditorDom(editor);
   useLayoutEffect(() => {
@@ -95,20 +102,29 @@ export function InlineSuggestion({ editor, suggestion, onAdopt, onDismiss }: {
     const height = box.current.getBoundingClientRect().height;
     const space = Math.max(0, Math.ceil(interject ? height + INTERJECT_GAP * 2 : height - layout.line));
     setSuggestionSpace(editor, suggestion.kind, { position: suggestion.position, space, margin: layout.margin });
-  }, [editor, layout, suggestion, interject]);
+  }, [editor, layout, suggestion, interject, draft]);
   useLayoutEffect(() => () => setSuggestionSpace(editor, suggestion.kind, null), [editor, suggestion.kind]);
   if (layout === null) { return null; }
   const place = { left: layout.left, width: layout.width, top: layout.top };
   if (interject) {
     return createPortal(<div ref={box} className="note-suggestion" role="group" aria-label="补充建议" style={place}>
-      <p {...keepFocus} onClick={onAdopt}>{suggestion.text}</p>
-      <button type="button" className="text-button" {...keepFocus} onClick={onAdopt}>加上</button>
-      <IconButton icon="close" label="不用" {...keepFocus} onClick={onDismiss} />
+      <header><span>✦ 补充建议</span><IconButton icon="close" label="不用" {...keepFocus}
+        onClick={onDismiss} /></header>
+      <ul>{(suggestion.items ?? []).map((item, index) => <li key={index}>
+        <span className="note-suggestion-kind" data-kind={item.kind}>{TYPE_NAMES[item.kind]}</span>
+        <span>{item.text}</span><button type="button" className="text-button" {...keepFocus}
+          onClick={() => item.kind === 'structure' ? onAdopt(item) : setDraft(item)}>加上</button>
+      </li>)}</ul>
+      {draft === null ? null : <div className="note-suggestion-draft" role="group" aria-label="补充草稿">
+        <span>{draft.draft}</span><button type="button" className="text-button" {...keepFocus}
+          onClick={() => onAdopt(draft)}>留下</button>
+        <button type="button" className="text-button" {...keepFocus} onClick={() => setDraft(null)}>撤销</button>
+      </div>}
     </div>, layout.body);
   }
   return createPortal(<div ref={box} className="note-ghost-line"
     style={{ ...layout.font, ...place, textIndent: layout.indent }}>
-    <span className="note-ghost" role="button" aria-label="采用续写" {...keepFocus} onClick={onAdopt}>
+    <span className="note-ghost" role="button" aria-label="采用续写" {...keepFocus} onClick={() => onAdopt()}>
       {suggestion.text}</span><kbd className="note-ghost-key">Tab</kbd>
   </div>, layout.body);
 }

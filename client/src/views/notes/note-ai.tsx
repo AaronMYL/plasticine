@@ -15,7 +15,7 @@ import { editorDom } from './editor-dom.ts';
 import { PHONE_BELOW } from '../../shell/layout.ts';
 import { noteExtensions } from './editor-extensions.ts';
 import { placeSelectionTools, SELECTION_TOOLS_GAP } from './note-selection-place.ts';
-import { NoteSuggestions } from './note-suggestions.tsx';
+import { NoteSuggestions, type ManualSupplement } from './note-suggestions.tsx';
 import type { NoteProposal } from './note-review.tsx';
 import './note-ai.css';
 
@@ -53,6 +53,7 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
   const api = useApi();
   const { notesUi } = useClientState();
   const { predict, interject } = useStore(notesUi.store);
+  const [supplement, setSupplement] = useState<ManualSupplement | null>(null);
   const [selection, setSelection] = useState<NoteRange | null>(null);
   const [bubble, setBubble] = useState<{ left: number; top: number; width: number } | null>(null);
   const [target, setTarget] = useState<DraftTarget | null>(null);
@@ -182,16 +183,16 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
       ]}>
         <Icon name="sparkles" />AI<Icon name="chevron-down" size={14} />
       </DropdownMenu>
-      {/* 11-04 重做悬停：「续写建议」怎么采用（Tab）看名字猜不到，放进 ⓘ；「补充建议」名字自己说清了，不再解释。 */}
+      {/* 11-04 重做悬停：「续写」怎么采用（Tab）看名字猜不到，放进 ⓘ；「补充建议」名字自己说清了，不再解释。 */}
       <span className="note-toggle-named">
         <label className="note-toggle">
-          <input type="checkbox" checked={predict}
-            onChange={(event) => notesUi.set({ predict: event.target.checked })} />续写建议
+          <input type="checkbox" role="switch" checked={predict}
+            onChange={(event) => notesUi.set({ predict: event.target.checked })} />续写
         </label>
-        <InfoTip label="「续写建议」的说明" text="停笔后显示续写候选，Tab 或点击采用" side="bottom" />
+        <InfoTip label="「续写」的说明" text="停笔后显示续写候选，Tab 或点击采用" side="bottom" />
       </span>
       <label className="note-toggle">
-        <input type="checkbox" checked={interject}
+        <input type="checkbox" role="switch" checked={interject}
           onChange={(event) => notesUi.set({ interject: event.target.checked })} />补充建议
       </label>
       {busy ? <><span role="status" className="note-status">{busyLabel}</span>
@@ -223,6 +224,9 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
           onClick={() => { onQuote(selection); setSelection(null); }} />
         <button type="button" className="text-button" disabled={disabled}
           onMouseDown={(event) => event.preventDefault()} onClick={() => quick('polish', selection)}>润色</button>
+        <button type="button" className="text-button" disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()} onClick={() => setSupplement((old) => ({
+            ...selection, seq: (old?.seq ?? 0) + 1 }))}>补充建议</button>
         <button type="button" className="text-button" disabled={disabled} aria-label="按要求修改选段"
           onMouseDown={(event) => event.preventDefault()} onClick={() => openPrompt(selection)}>
           <Icon name="sparkles" />修改要求
@@ -235,7 +239,15 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
         </DropdownMenu>
       </div>, document.body)}
     <NoteSuggestions editor={editor} noteId={noteId} predict={predict} interject={interject}
-      paused={busy || pending || target !== null} onError={setAutomaticError} />
+      paused={busy || pending || target !== null} onError={setAutomaticError} manual={supplement}
+      onStructure={(text, range) => {
+        const base = editor.getMarkdown();
+        const clone = new Editor({ extensions: noteExtensions(), content: editor.getJSON() });
+        try {
+          clone.commands.insertContentAt(range, text, { contentType: 'markdown' });
+          onProposal({ base, candidate: clone.getMarkdown(), label: '结构建议' });
+        } finally { clone.destroy(); }
+      }} />
     {visibleError === null ? null : <div className="note-ai-error">
       <p className="note-error" role="alert">{visibleError}</p>
       {error === null || lastRequest.current === null || target !== null ? null :

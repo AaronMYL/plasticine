@@ -166,7 +166,7 @@ export function createApp(options: AppOptions): App {
     state: options.state,
     text: options.text,
     bookInsights,
-    noteAssistant: new NoteAssistant(options.text),
+    noteAssistant: new NoteAssistant(options.text, options.state),
     translator,
     moneyDrafts: options.moneyDrafts,
     paymentReader: options.paymentReader,

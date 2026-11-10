@@ -53,7 +53,8 @@ test('续写会看到光标后的文字并避免重复，自定义要求为空�
 });
 
 test('续写和接话共用较小预算（续写不截字数），长选段和全文按完整目标长度分配生成预算', async () => {
-  const model = scriptedText(['建议']);
+  const model = scriptedText([async (request) => ({ text: request.purpose === 'note_interject' ? '[]' : '建议',
+    complete: true })]);
   const assistant = new NoteAssistant(model.models);
   const signal = new AbortController().signal;
   await assistant.suggest({ action: 'predict', markdown: '正在写作的文字' }, signal);
@@ -78,7 +79,7 @@ test('没有合适续写可以静默返回，超过目标长度或不完整的�
 });
 
 test('补充看光标附近：带上光标前后两段并说明光标在两段之间，长笔记不再只看整篇最后一段', async () => {
-  const model = scriptedText(['要不要先列出证据？']);
+  const model = scriptedText(['[]']);
   const assistant = new NoteAssistant(model.models);
   const before = `${'很早的背景。'.repeat(2000)}光标前正在写的一段`;
   const after = `光标后已经写好的结论${'后文。'.repeat(3000)}`;
@@ -96,7 +97,8 @@ test('补充看光标附近：带上光标前后两段并说明光标在两段�
 });
 
 test('老客户端的补充只带整篇时照旧取最后一段，续写也标出光标前后', async () => {
-  const model = scriptedText(['建议']);
+  const model = scriptedText([async (request) => ({ text: request.purpose === 'note_interject' ? '[]' : '建议',
+    complete: true })]);
   const assistant = new NoteAssistant(model.models);
   const signal = new AbortController().signal;
   await assistant.suggest({ action: 'interject', markdown: `${'开头'.repeat(5000)}整篇最后一句` }, signal);
@@ -109,7 +111,7 @@ test('老客户端的补充只带整篇时照旧取最后一段，续写也标�
 });
 
 test('续写边生成边送：增量去掉和光标前重复的开头再交出，最终文字和送出的一致；补充不流式', async () => {
-  const model = scriptedText(['想去公园散步，顺便把这件事想清楚。', '要不要先列证据？']);
+  const model = scriptedText(['想去公园散步，顺便把这件事想清楚。', '[]']);
   const assistant = new NoteAssistant(model.models);
   const deltas: string[] = [];
   const result = await assistant.suggest({ action: 'predict', markdown: '我今天想去', before: '我今天想去', after: '' },
@@ -121,7 +123,7 @@ test('续写边生成边送：增量去掉和光标前重复的开头再交出�
   const interject: string[] = [];
   const answer = await assistant.suggest({ action: 'interject', markdown: '前文' }, new AbortController().signal,
     (delta) => interject.push(delta));
-  assert.equal(answer.markdown, '要不要先列证据？');
+  assert.deepEqual(answer.suggestions, []);
   assert.deepEqual(interject, []);
 });
 
@@ -153,4 +155,15 @@ test('续写生成到一半失败或被叫停：照常报错，已经送出的�
   await assert.rejects(assistant.suggest({ action: 'predict', markdown: '前文' }, abort.signal,
     (delta) => deltas.push(delta)), /abort/i);
   assert.deepEqual(deltas, ['，先写', '，再写']);
+});
+
+test('结构化补充把建议与草稿分开返回，选段和前后文照实交给模型', async () => {
+  const suggestions = [{ kind: 'supplement', text: '补一个待核实的时间', draft: '具体时间：[待确认]。' }];
+  const model = scriptedText([JSON.stringify(suggestions)]);
+  const result = await new NoteAssistant(model.models).suggest({ action: 'interject', markdown: '整篇原文',
+    selected: '选中的这一段', before: '前文', after: '后文' }, new AbortController().signal);
+  assert.deepEqual(result.suggestions, suggestions);
+  assert.equal(result.markdown, '');
+  assert.match(model.requests[0]!.system, /最多4条/);
+  assert.match(JSON.stringify(model.requests[0]!.messages), /选中的这一段/);
 });

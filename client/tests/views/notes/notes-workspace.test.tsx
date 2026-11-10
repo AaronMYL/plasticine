@@ -229,7 +229,7 @@ describe('笔记协作与导入', () => {
     const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', '# 思路\n\n正在想一件事情') });
     const noteEditor = await editor();
     act(() => noteEditor.commands.focus('end'));
-    expect((screen.getByRole('checkbox', { name: '续写建议' }) as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByRole('switch', { name: '续写' }) as HTMLInputElement).checked).toBe(true);
     await waitFor(() => expect(document.querySelector('.note-ghost')?.textContent).toBe('，再想一步。'), { timeout: 3000 });
     fireEvent.keyDown(noteEditor.view.dom, { key: 'Tab' });
     expect(noteEditor.getText()).toContain('再想一步');
@@ -247,23 +247,25 @@ describe('笔记协作与导入', () => {
     await act(async () => finish?.({ markdown: '过时建议', label: '续写' }));
     expect(noteEditor.getText()).not.toContain('过时建议');
     expect(document.querySelector('.note-ghost')).toBeNull();
-    fireEvent.click(screen.getByRole('checkbox', { name: '续写建议' }));
+    fireEvent.click(screen.getByRole('switch', { name: '续写' }));
   });
 
-  it('接话只在写了一段后停顿出现，不用不落笔，加上才写入', async () => {
+  it('补充只在停笔后出现，加上先预览、留下才写入', async () => {
     await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', '# 研究') });
     const noteEditor = await editor();
-    fireEvent.click(screen.getByRole('checkbox', { name: '补充建议' }));
+    fireEvent.click(screen.getByRole('switch', { name: '补充建议' }));
     act(() => noteEditor.chain().focus('end').insertContent('思考内容'.repeat(25)).run());
     expect(document.querySelector('.note-suggestion')).toBeNull();
     await waitFor(() => expect(document.querySelector('.note-body .note-suggestion')).not.toBeNull(),
       { timeout: 5000 });
     expect(document.querySelector('.note-command-bar .note-suggestion')).toBeNull();
     expect(screen.queryByText('Plasticine 想接一句')).toBeNull();
-    expect(noteEditor.getText()).not.toContain('下一步需要什么证据');
+    expect(noteEditor.getText()).not.toContain('具体时间：');
     const suggestion = document.querySelector<HTMLElement>('.note-body .note-suggestion')!;
-    fireEvent.click(within(suggestion).getByRole('button', { name: '加上' }));
-    expect(noteEditor.getText()).toContain('下一步需要什么证据');
+    fireEvent.click(within(suggestion).getAllByRole('button', { name: '加上' })[1]!);
+    expect(noteEditor.getText()).not.toContain('具体时间：');
+    fireEvent.click(screen.getByRole('button', { name: '留下' }));
+    expect(noteEditor.getText()).toContain('具体时间：[待确认]。');
   });
 
   it('导入三版按原文对照，合并原版与结果互链；缺失来源不会制造链接', async () => {

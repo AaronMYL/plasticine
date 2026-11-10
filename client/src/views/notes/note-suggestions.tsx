@@ -14,7 +14,7 @@ import { flushSync } from 'react-dom';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { NOTE_ASSIST_CONTEXT_CHARS, NOTE_PREDICT_BEFORE_CHARS, NOTE_PREDICT_AFTER_CHARS,
-  type NoteAssistRequest } from '../../api/shared.ts';
+  type NoteAssistRequest, type NoteSupplement } from '../../api/shared.ts';
 import { useEditorDom } from './editor-dom.ts';
 import { InlineSuggestion, type Suggestion } from './note-inline-suggestion.tsx';
 import { followTyping, ghostPosition, remaining, startPrediction, withDelta, withFinal,
@@ -91,16 +91,20 @@ class GivenParagraphs {
   }
 }
 
-export function NoteSuggestions({ editor, noteId, predict, interject, paused, onError }: {
+export interface ManualSupplement { seq: number; from: number; to: number }
+
+export function NoteSuggestions({ editor, noteId, predict, interject, paused, onError, manual, onStructure }: {
   editor: Editor; noteId: string; predict: boolean; interject: boolean; paused: boolean;
   onError: (message: string | null) => void;
+  manual?: ManualSupplement | null;
+  onStructure?: (text: string, range: { from: number; to: number }) => void;
 }): ReactNode {
   const api = useApi();
   const [shown, setShown] = useState<Shown>(NOTHING_SHOWN);
   const shownRef = useRef<Shown>(NOTHING_SHOWN);
   const composing = useRef(false);
-  const latest = useRef({ onError });
-  latest.current = { onError };
+  const latest = useRef({ onError, onStructure });
+  latest.current = { onError, onStructure };
   const live = useRef<LivePrediction | null>(null);
   const requests = useRef<{ predict: AbortController | null; interject: InterjectRequest | null }>(
     { predict: null, interject: null });
@@ -142,16 +146,26 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
   };
   const current = (value: Suggestion): boolean => !editor.isDestroyed && editor.isEditable
     && !composing.current && !editor.view.composing && editor.state.doc === value.doc
-    && editor.state.selection.empty && editor.state.selection.from === value.position;
-  const adopt = (kind: SuggestionKind): void => {
+    && (value.range === undefined ? editor.state.selection.empty && editor.state.selection.from === value.position
+      : editor.state.selection.from === value.range.from && editor.state.selection.to === value.range.to);
+  const adopt = (kind: SuggestionKind, item?: NoteSupplement): void => {
     const value = shownRef.current[kind];
     if (value === null || !current(value)) { drop(kind); return; }
+    if (kind === 'interject' && item === undefined) return;
     // 采用会改正文，另一条的位置随之作废，两条一起撤下。
     dropAll();
     if (value.kind === 'predict') {
       editor.chain().focus().insertContentAt(value.position, { type: 'text', text: value.text }).run();
-    } else {
-      editor.chain().focus().insertContentAt(value.position, value.text, { contentType: 'markdown' }).run();
+    } else if (item !== undefined) {
+      const at = editor.state.doc.resolve(value.position);
+      if (item.kind === 'structure') {
+        latest.current.onStructure?.(item.draft, value.range ?? { from: at.start(), to: at.end() });
+        return;
+      }
+      const ref = item.reference;
+      const link = ref === undefined ? '' : `\n\n[${ref.label.replace(/[\[\]]/g, '')}]`
+        + `(#/${ref.kind === 'note' ? 'notes' : 'messages'}/${encodeURIComponent(ref.id)})`;
+      editor.chain().focus().insertContentAt(at.after(), `${item.draft}${link}`, { contentType: 'markdown' }).run();
       // 加上的是 Plasticine 的话，不再对着它补充。
       given.current.paragraphs.add(editor.state.selection.$from.parent.textContent);
     }
@@ -167,9 +181,9 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
         || (visible.predict === null && visible.interject === null)) {
         return false;
       }
-      if (event.key === 'Tab') {
+      if (event.key === 'Tab' && visible.predict !== null) {
         event.preventDefault();
-        handlers.current.adopt(visible.predict === null ? 'interject' : 'predict');
+        handlers.current.adopt('predict');
         return true;
       }
       if (event.key === 'Escape') { handlers.current.dropAll(); return true; }
@@ -177,6 +191,28 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     }), (plugin, plugins) => [plugin, ...plugins]);
     return () => unregisterSuggestionSpace(editor);
   }, [editor]);
+
+  useEffect(() => {
+    if (manual == null || paused) return undefined;
+    dropAll();
+    const controller = new AbortController();
+    const doc = editor.state.doc;
+    const { from, to } = manual;
+    const before = doc.textBetween(Math.max(0, from - NOTE_ASSIST_CONTEXT_CHARS), from, '\n');
+    const after = doc.textBetween(to, Math.min(doc.content.size, to + NOTE_ASSIST_CONTEXT_CHARS), '\n');
+    const selected = doc.textBetween(from, to, '\n');
+    void api.notes.assist(noteId, { action: 'interject', markdown: editor.getMarkdown(), selected, before, after },
+      controller.signal).then((view) => {
+      if (controller.signal.aborted || editor.isDestroyed || editor.state.doc !== doc) return;
+      const candidate: Suggestion = { text: '', items: view.suggestions ?? [], kind: 'interject',
+        doc, position: to, range: { from, to } };
+      if (candidate.items!.length > 0 && current(candidate)) show('interject', candidate);
+      latest.current.onError(null);
+    }, (cause: unknown) => {
+      if (!controller.signal.aborted) latest.current.onError(errorText(cause));
+    });
+    return () => controller.abort();
+  }, [api, editor, noteId, manual?.seq]);
 
   const dom = useEditorDom(editor);
   useEffect(() => {
@@ -246,8 +282,8 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
         requests.current.interject = null;
         latest.current.onError(null);
         const candidate: Suggestion = { text: value.markdown, kind: 'interject', position: pending.position,
-          doc: pending.doc };
-        if (value.markdown.trim() === '') { return; }
+          doc: pending.doc, items: value.suggestions ?? [] };
+        if (candidate.items?.length === 0) { return; }
         if (current(candidate)) {
           show('interject', candidate);
         } else {
@@ -346,6 +382,6 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
   return SUGGESTION_KINDS.map((kind) => {
     const value = shown[kind];
     return value === null ? null : <InlineSuggestion key={kind} editor={editor} suggestion={value}
-      onAdopt={() => adopt(kind)} onDismiss={() => drop(kind)} />;
+      onAdopt={(item) => adopt(kind, item)} onDismiss={() => drop(kind)} />;
   });
 }

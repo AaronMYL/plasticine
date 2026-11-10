@@ -59,7 +59,20 @@ export function noteAssistTimeoutMs(input: Pick<NoteAssistRequest, 'action' | 's
   if (input.action === 'interject' || input.selected !== undefined) { return 90_000; }
   return 150_000;
 }
-export const NoteAssistViewSchema = Type.Object({ markdown: Type.String(), label: Type.String() });
+export const NoteSupplementReferenceSchema = Type.Object({ kind: Type.Enum(['contact', 'note']),
+  id: Type.String({ minLength: 1 }), label: Type.String({ minLength: 1, maxLength: 120 }) },
+{ additionalProperties: false });
+export type NoteSupplementReference = Static<typeof NoteSupplementReferenceSchema>;
+export const NoteSupplementsSchema = Type.Array(Type.Object({
+  kind: Type.Enum(['structure', 'supplement', 'example', 'contact']),
+  text: Type.String({ minLength: 1, maxLength: 120 }),
+  draft: Type.String({ minLength: 1, maxLength: 12_000 }),
+  reference: Type.Optional(NoteSupplementReferenceSchema),
+}, { additionalProperties: false }), { maxItems: 4 });
+export type NoteSupplement = Static<typeof NoteSupplementsSchema>[number];
+
+export const NoteAssistViewSchema = Type.Object({ markdown: Type.String(), label: Type.String(),
+  suggestions: Type.Optional(NoteSupplementsSchema) });
 export type NoteAssistView = Static<typeof NoteAssistViewSchema>;
 /**
  * stream: true 的回答，和 /v2/events、浏览器画面一样是 SSE（一条一行 `data: <JSON>`）：

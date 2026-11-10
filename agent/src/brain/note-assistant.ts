@@ -3,18 +3,20 @@ import { NOTE_ASSIST_CONTEXT_CHARS, NOTE_PREDICT_BEFORE_CHARS, NOTE_PREDICT_AFTE
   type NoteAssistRequest, type NoteAssistView }
   from '../../shared/api/notes-workspace.ts';
 import type { TextDeltas, TextModels } from '../kernel/index.ts';
+import type { StateService } from '../state/index.ts';
+import { NOTE_SUPPLEMENTS_PROMPT, parseNoteSupplements } from './note-supplements.ts';
+import { noteSupplementReferences } from './note-supplement-context.ts';
 import { PredictText } from './note-overlap.ts';
 
 const LABELS: Record<NoteAssistRequest['action'], string> = {
-  predict: '续写', interject: 'Plasticine 想接一句', polish: '润色', organize: '整理',
+  predict: '续写', interject: '补充建议', polish: '润色', organize: '整理',
   correct: '纠偏', format: '排版', chart: '图表化', custom: '按要求修改',
 };
 const INSTRUCTIONS: Record<NoteAssistRequest['action'], string> = {
   // 不设字数：写到这句或这一段自然停下的地方为止，半句截断比多给几个字更难用（2026-11-03 用户反馈）。
   predict: '在光标处自然续写，写到这句或这一段自然停下的地方为止，不要停在半句；只输出新增文字；'
     + '结合光标后的内容衔接，不要重复前后文或解释。拿不准就输出空。',
-  interject: '在用户停笔思考时给一个有用的补充：提出问题、补充下一步或整理思路，最多80个字。'
-    + '只输出建议新增的文字。没有值得补充的内容就输出空，不为接话而打断。',
+  interject: NOTE_SUPPLEMENTS_PROMPT,
   polish: '润色文字，让表达更清楚，保留作者事实、观点、语气和自创用词，不编造信息。输出修改后的完整目标文字。',
   organize: '整理段落和结构，保留全部事实与不同判断。输出修改后的完整目标文字。',
   correct: '校对语音输入的同音错字、漏字、断句和标点，保留原意、说法和Markdown结构，不增删观点。输出完整目标文字。',
@@ -56,8 +58,11 @@ function outputBudget(action: NoteAssistRequest['action'], length: number): numb
 export class NoteAssistant {
   readonly #models: TextModels;
 
-  constructor(models: TextModels) {
+  readonly #state: StateService | undefined;
+
+  constructor(models: TextModels, state?: StateService) {
     this.#models = models;
+    this.#state = state;
   }
 
   /**
@@ -81,7 +86,9 @@ export class NoteAssistant {
       after: (input.after ?? '').slice(0, NOTE_ASSIST_CONTEXT_CHARS),
     };
     const cursor = cursorContext(input);
-    const payload = brief ? cursor : { scope, text, instruction: input.instruction ?? '', context };
+    const references = input.action === 'interject' ? noteSupplementReferences(this.#state, input) : [];
+    const payload = input.action === 'interject' ? { ...cursor, selected: input.selected, references }
+      : brief ? cursor : { scope, text, instruction: input.instruction ?? '', context };
     const shaping = input.action === 'predict' ? new PredictText(cursor.before, cursor.after) : null;
     const deltas = shaping === null || onText === undefined ? undefined : (delta: string): void => {
       const fresh = shaping.push(delta);
@@ -112,6 +119,9 @@ export class NoteAssistant {
       throw new Error('笔记建议还没有完整生成，请重试；正文没有改动。');
     }
     const raw = answer.text;
+    if (input.action === 'interject') {
+      return { label: LABELS.interject, markdown: '', suggestions: parseNoteSupplements(raw, references) };
+    }
     const markdown = shaping !== null ? shaping.finish(raw)
       : raw.trim().replace(/^```(?:markdown|md)\s*\n([\s\S]*?)\n```$/, '$1');
     if (markdown.trim() === '' && !brief) {

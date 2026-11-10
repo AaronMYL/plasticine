@@ -5,7 +5,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { Editor } from '@tiptap/core';
 import { describe, expect, it, vi } from 'vitest';
-import type { NoteAssistRequest } from '../../../src/api/shared.ts';
+import type { NoteAssistRequest, NoteAssistView } from '../../../src/api/shared.ts';
 import { NOTE_INTERJECT_PAUSE_MS, NOTE_PREDICT_PAUSE_MS } from '../../../src/views/notes/note-suggestions.tsx';
 import { renderApp, seedNote, settle } from '../../helpers.tsx';
 
@@ -14,6 +14,11 @@ const INTERJECT_WAIT_MS = NOTE_INTERJECT_PAUSE_MS + 1500;
 const PREDICT_WAIT_MS = NOTE_PREDICT_PAUSE_MS + 1500;
 const TEST_TIMEOUT_MS = 30_000;
 const PARAGRAPH = '我正在把一段经历记下来，想分清实际发生的事和自己的解释。'.repeat(4);
+
+function supplements(text: string): NoteAssistView {
+  return { markdown: '', label: '补充建议', suggestions: text === '' ? []
+    : [{ kind: 'supplement', text, draft: text }] };
+}
 
 async function noteEditor(): Promise<Editor> {
   return waitFor(() => {
@@ -31,13 +36,13 @@ function interjection(): Element | null {
   return document.querySelector('.note-body .note-suggestion');
 }
 
-function toggle(name: '续写建议' | '补充建议'): void {
-  fireEvent.click(screen.getByRole('checkbox', { name }));
+function toggle(name: '续写' | '补充建议'): void {
+  fireEvent.click(screen.getByRole('switch', { name }));
 }
 
 function turnOff(): void {
-  for (const name of ['续写建议', '补充建议']) {
-    const box = screen.getByRole<HTMLInputElement>('checkbox', { name });
+  for (const name of ['续写', '补充建议']) {
+    const box = screen.getByRole<HTMLInputElement>('switch', { name });
     if (box.checked) { fireEvent.click(box); }
   }
 }
@@ -48,7 +53,7 @@ describe('续写和补充都开', () => {
     const editor = await noteEditor();
     const assist = vi.spyOn(app.api.notes, 'assist').mockImplementation(async (_id, input) => (
       input.action === 'predict' ? { markdown: '，续写的一句。', label: '续写' }
-        : { markdown: '要不要补一条证据？', label: 'Plasticine 想接一句' }));
+        : supplements('要不要补一条证据？')));
     toggle('补充建议');
     act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
     await waitFor(() => expect(ghost()).not.toBeNull(), { timeout: PREDICT_WAIT_MS });
@@ -70,7 +75,7 @@ describe('续写和补充都开', () => {
     const editor = await noteEditor();
     const slow = Promise.withResolvers<void>();
     vi.spyOn(app.api.notes, 'assist').mockImplementation(async (_id, input) => {
-      if (input.action === 'interject') { return { markdown: '补一句。', label: 'Plasticine 想接一句' }; }
+      if (input.action === 'interject') { return supplements('补一句。'); }
       await slow.promise;
       return { markdown: '，续写。', label: '续写' };
     });
@@ -82,6 +87,7 @@ describe('续写和补充都开', () => {
     await waitFor(() => expect(ghost()).not.toBeNull());
     expect(interjection()).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '加上' }));
+    fireEvent.click(screen.getByRole('button', { name: '留下' }));
     expect(editor.getText()).toContain('补一句。');
     expect(editor.getText()).not.toContain('，续写。');
     act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
@@ -105,7 +111,7 @@ describe('续写和补充都开', () => {
       requests.push(input);
       return { markdown: '', label: '建议' };
     });
-    toggle('续写建议');
+    toggle('续写');
     toggle('补充建议');
     let end = 0;
     editor.state.doc.forEach((node, offset) => {
@@ -132,9 +138,9 @@ describe('补充每段只给一次', () => {
     const asked: string[] = [];
     vi.spyOn(app.api.notes, 'assist').mockImplementation(async (_id, input) => {
       asked.push(input.before ?? '');
-      return { markdown: asked.length === 3 ? '换了一段，要不要先列证据？' : '', label: 'Plasticine 想接一句' };
+      return supplements(asked.length === 3 ? '换了一段，要不要先列证据？' : '');
     });
-    toggle('续写建议');
+    toggle('续写');
     toggle('补充建议');
     act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
     await waitFor(() => expect(asked.length).toBe(1), { timeout: INTERJECT_WAIT_MS });
@@ -167,9 +173,9 @@ describe('补充每段只给一次', () => {
       if (signals.length === 1) {
         await new Promise((_resolve, reject) => signal?.addEventListener('abort', () => reject(signal.reason)));
       }
-      return { markdown: '这回给出来了。', label: 'Plasticine 想接一句' };
+      return supplements('这回给出来了。');
     });
-    toggle('续写建议');
+    toggle('续写');
     toggle('补充建议');
     act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
     await waitFor(() => expect(signals.length).toBe(1), { timeout: INTERJECT_WAIT_MS });
