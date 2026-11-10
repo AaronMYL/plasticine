@@ -19,6 +19,7 @@ import { scheduleCard } from './schedule-rows.ts';
 import type { ScheduleDesk } from './schedules.ts';
 import { grantSend } from './send-permit.ts';
 import type { SuggestionDesk } from './suggestions.ts';
+import { canManageSchedule } from './schedule-owner.ts';
 
 export const SCHEDULE_CARD_CONTEXT_KEY = 'schedule';
 const CONFIRM = 'confirm';
@@ -118,6 +119,10 @@ function proposeTool(parts: TaskToolParts, host: AskToolHost, scope: LineScope)
     replay: 'safe',
     async execute(toolCallId, raw, signal) {
       const args = checkedArgs(ProposeParameters, raw, 'schedule_propose');
+      if (args.replacesId !== undefined
+        && !canManageSchedule(state, scope.lineId, schedules.require(args.replacesId))) {
+        throw new Error('只能修改自己负责的定时工作；跨队友协作请用 mate_handoff。');
+      }
       const projectId = args.projectId ?? scope.projectId ?? STANDING_PROJECT_IDS.personal;
       const project = state.projects.get(projectId);
       if (project === undefined) {
@@ -154,7 +159,7 @@ function proposeTool(parts: TaskToolParts, host: AskToolHost, scope: LineScope)
   };
 }
 
-function listTool(parts: TaskToolParts): AgentTool<typeof ListParameters> {
+function listTool(parts: TaskToolParts, scope: LineScope): AgentTool<typeof ListParameters> {
   return {
     name: 'schedule_list',
     label: '看定时任务',
@@ -164,12 +169,13 @@ function listTool(parts: TaskToolParts): AgentTool<typeof ListParameters> {
     async execute() {
       const zone = parts.schedules.timeZone();
       return json({ timeZone: zone,
-        schedules: parts.state.schedules.listed().slice(0, LIST_MAX).map((row) => brief(row, zone)) });
+        schedules: parts.state.schedules.listed().filter((row) => canManageSchedule(parts.state, scope.lineId, row))
+          .slice(0, LIST_MAX).map((row) => brief(row, zone)) });
     },
   };
 }
 
-function changeTool(parts: TaskToolParts): AgentTool<typeof ChangeParameters> {
+function changeTool(parts: TaskToolParts, scope: LineScope): AgentTool<typeof ChangeParameters> {
   return {
     name: 'schedule_change',
     label: '停开定时任务',
@@ -178,6 +184,9 @@ function changeTool(parts: TaskToolParts): AgentTool<typeof ChangeParameters> {
     async execute(_id, raw) {
       const args = checkedArgs(ChangeParameters, raw, 'schedule_change');
       const current = parts.schedules.require(args.scheduleId);
+      if (!canManageSchedule(parts.state, scope.lineId, current)) {
+        throw new Error('只能停开自己负责的定时工作。');
+      }
       if (args.action === 'resume' && current.outward !== null) {
         throw new Error('以他名义发出的定时卡要他自己在任务栏目「定时」里打开开关。');
       }
@@ -234,10 +243,11 @@ export function scheduleProposeTool(parts: TaskToolParts): (host: AskToolHost) =
 
 export function taskTools(parts: TaskToolParts): KernelTool[] {
   return [
-    { name: 'schedule_list', say: () => '看定时任务', hardLine: () => null, create: () => listTool(parts) },
+    { name: 'schedule_list', say: () => '看定时任务', hardLine: () => null,
+      create: (scope) => listTool(parts, scope) },
     { name: 'schedule_change', say: (args) => (args['action'] === 'remove' ? '删一个定时任务'
       : args['action'] === 'resume' ? '恢复一个定时任务' : '停一个定时任务'), hardLine: () => null,
-    create: () => changeTool(parts) },
+    create: (scope) => changeTool(parts, scope) },
     { name: 'schedule_send', say: (args) => `照卡发给${text(args['recipient'])}`, hardLine: () => null,
       lineKinds: ['background'], create: (scope) => sendTool(parts, scope) },
     { name: 'suggest', say: (args) => `提一条建议：${text(args['title'])}`, hardLine: () => null,

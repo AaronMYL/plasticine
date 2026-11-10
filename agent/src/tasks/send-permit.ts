@@ -14,7 +14,7 @@ import { argsDigest } from '../system/index.ts';
 import { contentAllowed, siteAllowed } from './schedule-text.ts';
 
 export type PermitState = Pick<StateService, 'schedules' | 'scheduleSends' | 'nodeActions' | 'asks'
-  | 'outboundGrants' | 'outboundLog' | 'transaction'>;
+  | 'outboundGrants' | 'outboundLog' | 'lines' | 'mates' | 'transaction'>;
 
 export interface PermitRequest {
   lineId: string;
@@ -36,6 +36,12 @@ export class PermitRefused extends Error {
 /** 核过就记一行放行并返回它；不在卡的范围里抛 PermitRefused。同一次调用重跑认回同一行。 */
 export function grantSend(state: PermitState, request: PermitRequest,
   scheduleOfLine: (lineId: string) => string | undefined): ScheduleSend {
+  const line = state.lines.get(request.lineId);
+  if (line === undefined) throw new PermitRefused('执行线不存在。');
+  const actor = line.mateId ?? MAIN_LINE_ID;
+  if (line.mateId != null && state.mates.require(line.mateId).disabledAt !== null) {
+    throw new PermitRefused('负责这项定时工作的队友已停用。');
+  }
   const existing = state.scheduleSends.forCall(request.lineId, request.toolCallId);
   if (existing !== undefined) {
     return existing;
@@ -85,11 +91,11 @@ export function grantSend(state: PermitState, request: PermitRequest,
     throw new PermitRefused('输入框里填的和要发的内容不一样。');
   }
   const grant = ensureScheduleGrant(state, schedule);
-  if (grant === null || !grant.enabled || grant.revokedAt !== null) {
+  if (grant === null || grant.actor !== actor || !grant.enabled || grant.revokedAt !== null) {
     throw new PermitRefused('这张定时卡的对外授权已停用或撤销。');
   }
   return state.transaction(() => {
-    const log = state.outboundGrants.claim(grant, { actor: MAIN_LINE_ID, lineId: request.lineId,
+    const log = state.outboundGrants.claim(grant, { actor, lineId: request.lineId,
       toolCallId: request.toolCallId, toolName: 'schedule_send', argsDigest: argsDigest({ ...request }) }, {
       channel: grant.channel, account: grant.account, category: grant.category, recipients: [recipient],
       content: request.content.trim(),

@@ -1,17 +1,19 @@
 import type { NodeAction, Schedule } from '../../shared/state.ts';
-import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
+import type { StateService } from '../state/index.ts';
+import { scheduleActor, type ScheduleOwnerState } from '../tasks/schedule-owner.ts';
 
-type ScheduleGrantState = Pick<StateService, 'outboundGrants' | 'asks'>;
+type ScheduleGrantState = Pick<StateService, 'outboundGrants'> & ScheduleOwnerState;
 
 /** 旧定时卡没有账号身份；这份授权只留给原任务的逐项核验入口。 */
 export function ensureScheduleGrant(state: ScheduleGrantState, schedule: Schedule) {
+  const actor = scheduleActor(state, schedule);
   const existing = state.outboundGrants.bySchedule(schedule.id);
-  if (existing !== undefined) { return existing; }
+  if (existing !== undefined) { return existing.actor === actor ? existing : null; }
   const outward = schedule.outward;
   const ask = schedule.confirmAskId === null ? undefined : state.asks.get(schedule.confirmAskId);
   if (outward === null || schedule.confirmedAt === null || schedule.confirmedByDeviceId === null
     || ask?.status !== 'answered' || ask.answeredByDeviceId !== schedule.confirmedByDeviceId) { return null; }
-  return state.outboundGrants.create({ actor: MAIN_LINE_ID, channel: outward.channel,
+  return state.outboundGrants.create({ actor, channel: outward.channel,
     account: `legacy-schedule:${schedule.id}`, recipientMode: 'list', recipients: outward.recipients,
     category: outward.content.kind, fixedTexts: outward.content.kind === 'fixed' ? outward.content.texts : null,
     scope: { kind: 'task', binding: { kind: 'schedule', id: schedule.id } }, expiresAt: null },

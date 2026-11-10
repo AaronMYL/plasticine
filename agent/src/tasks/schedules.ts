@@ -11,6 +11,8 @@ import { cadenceLabel, latestDue, nextRun } from './cadence.ts';
 import { scheduleTimeZone } from './time-zone.ts';
 import { outwardBrief } from './schedule-text.ts';
 import { ensureScheduleGrant } from '../outbound/index.ts';
+import { MAIN_LINE_ID } from '../state/index.ts';
+import { scheduleActor, SCHEDULE_OWNER_CONTEXT_KEY } from './schedule-owner.ts';
 
 /** 每分钟看一眼有没有到点的：卡上的钟点精确到分钟。 */
 export const SCHEDULE_TICK_MS = 60_000;
@@ -20,12 +22,13 @@ const NOTE_MAX_CHARS = 80;
 const BUSY: ReadonlySet<LineView['status']> = new Set(['running', 'queued', 'waiting']);
 
 export type ScheduleState = Pick<StateService, 'schedules' | 'scheduleSends' | 'dailySettings' | 'deviceTimeZones'
-  | 'outboundGrants' | 'asks'
+  | 'outboundGrants' | 'asks' | 'lines' | 'mates'
   | 'projects' | 'transaction'>;
 
 /** 定时线怎么动线（lines/ 的 LineKernel，assemble 接上）。 */
 export interface ScheduleLines {
-  open(input: { title: string; goal: string; projectId: string | null; origin: LineInputOrigin }): string;
+  open(input: { title: string; goal: string; projectId: string | null; origin: LineInputOrigin;
+    mateId?: string }): string;
   send(lineId: string, text: string, origin: LineInputOrigin): void;
   view(lineId: string): LineView | null;
   halt(lineId: string): void;
@@ -163,6 +166,10 @@ export class ScheduleDesk {
     }
     const now = this.#options.now();
     const confirmed = this.#state.transaction(() => {
+      const actor = scheduleActor(this.#state, schedule);
+      const confirmation = this.#state.asks.require(ask.id);
+      this.#state.asks.update(confirmation.id, confirmation.version,
+        { context: { ...confirmation.context, [SCHEDULE_OWNER_CONTEXT_KEY]: actor } });
       let lineId: string | null = schedule.lineId;
       if (schedule.replacesId !== null) {
         const old = this.require(schedule.replacesId);
@@ -288,6 +295,13 @@ export class ScheduleDesk {
     }
     const due = latestDue(schedule.cadence, new Date(schedule.nextAt), now, zone);
     const next = nextRun(schedule.cadence, now, zone).toISOString();
+    const actor = scheduleActor(this.#state, schedule);
+    if (actor !== MAIN_LINE_ID && this.#state.mates.require(actor).disabledAt !== null) {
+      this.#state.schedules.update(schedule.id, schedule.version, { nextAt: next,
+        lastNote: '负责这项定时工作的队友已停用，这一次没有执行' });
+      this.#changed();
+      return;
+    }
     const lines = this.#options.lines();
     const view = schedule.lineId === null ? null : lines.view(schedule.lineId);
     if (view !== null && BUSY.has(view.status)) {
@@ -303,7 +317,8 @@ export class ScheduleDesk {
       lastRunAt: due.toISOString(), lastOutcome: null, lastNote: null });
     let lineId = recorded.lineId;
     if (lineId === null || view === null) {
-      lineId = lines.open({ title: schedule.title, goal: text, projectId: schedule.projectId, origin });
+      lineId = lines.open({ title: schedule.title, goal: text, projectId: schedule.projectId, origin,
+        ...(actor === MAIN_LINE_ID ? {} : { mateId: actor }) });
       this.#state.schedules.update(recorded.id, recorded.version, { lineId });
     } else {
       lines.send(lineId, text, origin);

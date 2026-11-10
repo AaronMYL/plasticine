@@ -12,6 +12,7 @@ import { autoOnlyPermissionGate, createDeviceActionGate, createDeviceActionTool,
 import { DeviceService, submitRefusal, type NodeTransport } from '../../src/devices/index.ts';
 import { adaptLegacyTool, legacySayings } from '../../src/lines/index.ts';
 import { MAIN_LINE_ID } from '../../src/state/index.ts';
+import { Mates } from '../../src/mates/service.ts';
 import { contentAllowed, siteAllowed, Tasks } from '../../src/tasks/index.ts';
 import { startKernel, until, type Harness } from '../lines/helpers.ts';
 
@@ -111,8 +112,11 @@ async function rig(): Promise<Rig> {
   return { h, tasks, service, nodeId, sent };
 }
 
-test('续火花：起草 → 他确认 → 到点照卡发给名单里的人；名单外照拦；每次都记哪张卡、哪次确认', async () => {
+async function scheduleRoundTrip(asMate: boolean) {
   const { h, tasks, nodeId, sent } = await rig();
+  const mate = asMate ? new Mates(h.handle.state, () => h.kernel).create({ name: '联络队友', role: '按名单联络',
+    avatar: '联', hue: 'sky', soul: '只按确认的名单和原文发送。', purpose: null }) : null;
+  const source = mate?.lineId ?? MAIN_LINE_ALIAS;
   // 2026-11-05T08:00Z 是北京时间 16:00：今天 15:00 过了，第一次是明天 15:00。
   h.respond([
     fauxAssistantMessage([fauxToolCall('schedule_propose', { title: '抖音续火花',
@@ -122,7 +126,7 @@ test('续火花：起草 → 他确认 → 到点照卡发给名单里的人；�
         contentLabel: '每人一个表情，每天随机换' } }, { id: 'p1' })], { stopReason: 'toolUse' }),
     (context) => fauxAssistantMessage(`好：${lastResult(context).slice(0, 30)}`),
   ]);
-  h.kernel.send(MAIN_LINE_ALIAS, { text: '帮我加一个定时任务，每天下午 3 点，抖音聊天里面，帮我给 8 个人续火花' });
+  h.kernel.send(source, { text: '帮我加一个定时任务，每天下午 3 点，抖音聊天里面，帮我给 8 个人续火花' });
   await until(() => h.handle.state.asks.open().length === 1, '对话里出定时卡');
   const card = h.handle.state.asks.open()[0]!;
   assert.equal(card.kind, 'approve');
@@ -137,13 +141,13 @@ test('续火花：起草 → 他确认 → 到点照卡发给名单里的人；�
   const draft = h.handle.state.schedules.listed()[0]!;
   assert.equal(draft.status, 'draft');
   h.desk.answer({ askId: card.id, optionId: 'confirm', answerer: { deviceId: 'device-mac' } });
-  await until(() => h.kernel.view(MAIN_LINE_ALIAS).status === 'idle', '主对话接着说完');
+  await until(() => h.kernel.view(source).status === 'idle', '发起对话接着说完');
   const schedule = h.handle.state.schedules.require(draft.id);
   assert.equal(schedule.status, 'active');
   assert.equal(schedule.confirmAskId, card.id);
   assert.equal(schedule.confirmedByDeviceId, 'device-mac');
   assert.equal(schedule.nextAt, '2026-11-06T07:00:00.000Z');
-  const main = h.kernel.read(MAIN_LINE_ALIAS, 50).messages;
+  const main = h.kernel.read(source, 50).messages;
   assert.match(main.at(-1)?.text ?? '', /他确认了/);
 
   let permit = '';
@@ -193,11 +197,14 @@ test('续火花：起草 → 他确认 → 到点照卡发给名单里的人；�
   assert.equal(audit[0]?.runAt, '2026-11-06T07:00:00.000Z');
   assert.equal(audit[0]?.pageUrl, CHAT);
   const grant = h.handle.state.outboundGrants.bySchedule(schedule.id)!;
+  assert.equal(grant.actor, mate?.id ?? MAIN_LINE_ID);
   assert.equal(grant.legacyScheduleId, schedule.id);
   assert.deepEqual(grant.scope, { kind: 'task', binding: { kind: 'schedule', id: schedule.id } });
   const outbound = h.handle.state.outboundLog.list(grant.id);
   assert.equal(outbound.length, 1);
   assert.equal(outbound[0]?.status, 'completed');
+  assert.equal(outbound[0]?.actor, mate?.id ?? MAIN_LINE_ID);
+  assert.equal(h.handle.state.lines.require(lineId).mateId, mate?.id ?? null);
   assert.equal(outbound[0]?.content, audit[0]?.content);
   const after = h.handle.state.schedules.require(schedule.id);
   assert.equal(after.lastOutcome, 'done');
@@ -218,7 +225,10 @@ test('续火花：起草 → 他确认 → 到点照卡发给名单里的人；�
     { deviceId: 'device-mac', confirmedAt: h.clock.now().toISOString() });
   const revoked = submitRefusal(h.handle.state, { nodeId, runId: `line:${lineId}`, action: released });
   assert.match(revoked?.reason ?? '', /授权已停用或撤销/);
-});
+}
+
+test('续火花：确认后照卡发给名单里的人；名单外照拦；每次记录主线身份和原确认', () => scheduleRoundTrip(false));
+test('队友照卡发送从确认到设备回执都保持队友身份，不记成主线发送', () => scheduleRoundTrip(true));
 
 test('照卡发送的内容规则：表情卡只认纯表情（含抖音表情码），固定内容只认原样；网站认子域名', () => {
   assert.equal(contentAllowed({ kind: 'emoji' }, '🔥'), true);
