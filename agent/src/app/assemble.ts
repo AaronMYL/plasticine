@@ -1,3 +1,4 @@
+import type { LinkPreviewFetchOptions } from '../cloud-tools/index.ts';
 // The wiring of the whole service in one place, used by main.ts and by the tests alike. 2026-11-05 Harness 重做：对话就是
 // 新内核的主线（lines/），要花时间的事开后台线；旧的对话轮、任务、事、自迭代、验收和它们的扫描都删了。这里装：卡桌和
 // 它的推送、设备服务、云端工具与站内信、记账、信息流、图书、记忆整理、联系人与网络、进门的规则（命中开后台线）、
@@ -108,6 +109,7 @@ export interface AssembleOptions {
   cloudTransports?: Partial<CloudTransports>;
   /** 邮件图片代理怎么解析和核地址（测试给固定表）。 */
   mailImages?: MailImageFetchOptions;
+  linkPreviews?: LinkPreviewFetchOptions;
   /** 网站图标代取怎么解析和核地址（测试给固定表）。 */
   favicons?: FaviconFetchOptions;
   /** Check credential files for 0600 even on Windows (tests). */
@@ -224,6 +226,7 @@ export function assembleApp(options: AssembleOptions): App {
     ...(options.cloudTransports === undefined ? {} : { transports: options.cloudTransports }),
     ...(options.checkCredentialMode === undefined ? {} : { checkCredentialMode: options.checkCredentialMode }),
     ...(options.mailImages === undefined ? {} : { mailImages: options.mailImages }),
+    ...(options.linkPreviews === undefined ? {} : { linkPreviews: options.linkPreviews }),
     ...(options.favicons === undefined ? {} : { favicons: options.favicons }),
     onMail: (message) => record(mailTrigger(message, { knownSender: state.inboxReplies.sentTo(message.fromAddress) })),
   });

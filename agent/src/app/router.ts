@@ -1,3 +1,4 @@
+import { getLinkPreview } from './link-preview.ts';
 // The route table (plasticine-code: 路由表一个文件). Every /v2 route, its method, whether it needs a session, and the
 // resource file that handles it. Order matters only where two patterns could match the same path.
 // 2026-11-05 Harness 重做：对话、任务、事、自迭代、启用、度量、遥测、关切、判断 / 预测、采访、≠、专注、提醒 / 日历、成果、
@@ -235,6 +236,7 @@ export const ROUTES: readonly Route[] = [
   // 附件（线里发的图和文件、记账截图）。
   { method: 'GET', path: '/v2/conversation/attachments/requests/:requestId', auth: true, handler: lookupAttachment },
   { method: 'POST', path: '/v2/conversation/attachments', auth: true, handler: uploadAttachment },
+  { method: 'GET', path: '/v2/link-preview', auth: true, handler: getLinkPreview },
   { method: 'GET', path: '/v2/conversation/attachments/:id', auth: true, handler: getAttachment },
   { method: 'GET', path: '/v2/conversation/attachments/:id/content', auth: true, handler: getAttachmentContent },
   { method: 'GET', path: '/v2/conversation/attachments/:id/text', auth: true, handler: getAttachmentText },

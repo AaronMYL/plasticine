@@ -87,3 +87,4 @@ export * from '../conversation-quotes.ts';
 export * from './spaces.ts';
 export * from './library.ts';
 export * from './library-batch.ts';
+export * from './link-preview.ts';

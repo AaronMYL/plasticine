@@ -119,3 +119,5 @@ export type CloudTools = ReturnType<typeof createCloudTools>;
 export { SYNC_TIMEOUT_MS } from './mail.ts';
 export { ServerCommands } from './server-command.ts';
 export type { ServerCommandPage, ServerCommandResult } from './server-command.ts';
+export { LinkPreviewFetcher, type LinkPreviewFetchOptions } from './link-preview-fetch.ts';
+export { PublicFetchError } from './public-fetch.ts';

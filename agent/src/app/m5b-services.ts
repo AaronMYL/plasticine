@@ -1,3 +1,4 @@
+import { LinkPreviewFetcher, type LinkPreviewFetchOptions } from '../cloud-tools/index.ts';
 // M5 乙路的服务装在一处：记账（life/）、云端工具（cloud-tools/）、文件页（artifacts/）、站内信（daily/inbox.ts）、通知信，
 // 以及它们给线的工具（按工具组开关，开关在 tool_groups，用户确认字段）和外环的定时扫描（收信）。
 // assemble.ts 只调这里的 createM5bServices，不碰各模块内部。
@@ -35,6 +36,7 @@ export interface M5bServices {
   inbox: InboxDesk;
   /** 邮件按原样显示：远程图的代理地址签名和取图（2026-11-04 用户定：服务器代为加载）。 */
   mailImages: MailImages;
+  linkPreviews: LinkPreviewFetcher;
   /** 网站图标（11-08）：本体代取、存进库里。 */
   favicons: FaviconCache;
   dryRun: boolean;
@@ -52,6 +54,7 @@ export interface M5bOptions {
   onMail?: (message: InboxMessage) => void;
   /** 邮件图片代理怎么解析和核地址（测试换成固定表；默认系统 DNS + 拒绝内网）。 */
   mailImages?: MailImageFetchOptions;
+  linkPreviews?: LinkPreviewFetchOptions;
   /** 网站图标代取怎么解析和核地址（测试换成固定表；默认同邮件图片）。 */
   favicons?: FaviconFetchOptions;
   internalCookies?: () => InternalBrowserCookie[];
@@ -91,6 +94,7 @@ export function createM5bServices(options: M5bOptions): M5bServices {
     inbox,
     mailImages: { signer: new MailImageSigner(stateDirectory, now),
       fetcher: new MailImageFetcher(options.mailImages ?? {}) },
+    linkPreviews: new LinkPreviewFetcher(options.linkPreviews),
     favicons: new FaviconCache({ store: state.favicons, fetcher: new FaviconFetcher(options.favicons ?? {}), now }),
     dryRun,
     stateDirectory,

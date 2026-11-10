@@ -36,7 +36,7 @@ function privateIPv6(host: string): boolean {
     const low = Number.parseInt(mapped[2], 16);
     return privateIPv4([high >> 8, high & 255, low >> 8, low & 255].join('.'));
   }
-  return /^(fc|fd|fe8|fe9|fea|feb)/.test(bare);
+  return /^(fc|fd|fe8|fe9|fea|feb|ff)/.test(bare);
 }
 
 /** Whether a host name or address is only meaningful inside this machine or a private network. */
