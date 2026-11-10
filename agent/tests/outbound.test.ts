@@ -55,8 +55,8 @@ test('只裁掉链接里的可疑部分，大小写、端口、路径编码和�
   const tail = '/文%2f章/../页?ID=7&tag=%e4%b8%ad&tag=two+words';
   for (const head of ['HTTPS://', '//', 'ftp://']) {
     assert.equal(cleanOutboundText(`${head}u:p@News.Example:443${tail}&token=abc#fragment`),
-      `${head}News.Example:443${tail}`);
-    assert.equal(cleanOutboundText(`${head}News.Example:443#fragment`), `${head}News.Example:443`);
+      `${head}News.Example:443${tail}#fragment`);
+    assert.equal(cleanOutboundText(`${head}News.Example:443#fragment`), `${head}News.Example:443#fragment`);
   }
   for (const value of UNSAFE_QUERY_VALUES) {
     const raw = `//News.Example/a?ID=7&next=${encodeURIComponent(value)}&tag=%e4%b8%ad`;
@@ -64,11 +64,27 @@ test('只裁掉链接里的可疑部分，大小写、端口、路径编码和�
   }
 });
 
-test('解析失败也保留用户文字，只去掉 userinfo、可疑查询参数和片段', () => {
+test('解析失败也保留用户文字和锚点，只去掉 userinfo 与可疑查询参数', () => {
   for (const host of ['[invalid', 'x.example:bad', '%invalid']) {
     const safe = `https://${host}/文章?ID=7&tag=%e4%b8%ad`;
     assert.equal(cleanOutboundText(`链接 "${safe}"`), `链接 "${safe}"`);
     const raw = `https://u:p@${host}/文章?ID=7&token=abc&tag=%e4%b8%ad#fragment`;
-    assert.equal(cleanOutboundText(`链接 "${raw}"`), `链接 "${safe}"`);
+    assert.equal(cleanOutboundText(`链接 "${raw}"`), `链接 "${safe}#fragment"`);
   }
+});
+
+test('出站链接保留站内空间路由、普通锚点和无凭据的片段参数', () => {
+  for (const fragment of ['#/books/space/space-1', '#section', '#page=2&view=wide', '#keyword=paper']) {
+    const url = `https://example.com/${fragment}`;
+    assert.equal(cleanOutboundText(`[打开](${url})`), `[打开](${url})`);
+  }
+});
+
+test('片段参数含敏感键时整段清除，查询清洗仍保留安全的空间路由', () => {
+  for (const key of ['access_token', 'id_token', 'token', 'code', 'state', 'key', 'secret', 'password',
+    'SESSION_ID', 'access%5Ftoken']) {
+    assert.equal(cleanOutboundText(`https://example.com/#page=2&${key}=synthetic`), 'https://example.com/');
+  }
+  assert.equal(cleanOutboundText('https://user:pass@example.com/?page=2&token=synthetic#/books/space/space-1'),
+    'https://example.com/?page=2#/books/space/space-1');
 });

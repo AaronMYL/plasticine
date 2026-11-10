@@ -32,7 +32,7 @@ export { InboxDesk, INBOX_PAGE_DEFAULT, PREVIEW_MAX_CHARS, previewOf, replyActio
 export type { InboxDeskOptions, InboxFlags, InboxSink } from './inbox.ts';
 export { InterestDesk } from './interests.ts';
 export type { InterestState } from './interests.ts';
-export { cleanUrl, cleanUrlQuery, siteOf } from './urls.ts';
+export { cleanUrl, cleanUrlQuery, isCredentialParam, siteOf } from './urls.ts';
 export { cleanLinkData, cleanLinkText, cleanSite, cleanSourceLinks, safeUrl } from './link-data.ts';
 
 export interface DailyOptions {
