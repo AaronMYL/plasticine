@@ -76,3 +76,18 @@ test('同一次调用已有拒绝或参数冲突，后来的长期授权不能�
   assert.equal(result?.block, true);
   assert.equal(state.outboundLog.list().length, 0);
 });
+
+test('工具结果缺失时即使没有错误标志，也只能记结果待核实', async () => {
+  const h = await harness([]);
+  const state = h.handle.state;
+  const grant = state.outboundGrants.create(input,
+    { deviceId: 'fixture-device', confirmedAt: h.clock.now().toISOString() });
+  const log = state.outboundGrants.claim(grant, { actor: MAIN_LINE_ID, lineId: MAIN_LINE_ID,
+    toolCallId: 'missing-result', toolName: 'send_mail', argsDigest: 'a'.repeat(64) }, {
+    channel: input.channel, account: input.account, recipients: ['Fixture'], category: 'reply', content: '你好',
+  })!;
+  const gate = new HardLineGate({ state, desk: h.desk, waits: new AnswerWaits(), now: h.clock.now,
+    waiting: () => undefined, shuttingDown: () => false });
+  gate.settled(MAIN_LINE_ID, 'missing-result', mailTool([]), undefined, false);
+  assert.equal(state.outboundLog.get(log.id)?.status, 'unknown');
+});

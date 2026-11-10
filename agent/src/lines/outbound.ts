@@ -73,7 +73,7 @@ export class OutboundGate {
       return;
     }
     this.authorizer.finish(lineId, toolCallId, {
-      status: isError ? 'unknown' : 'completed',
+      status: isError || result === undefined ? 'unknown' : 'completed',
       summary: clip(resultSummary(result) ?? '工具没有返回可核对的结果。', 4_000), sourceRef: null,
     });
   }
