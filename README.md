@@ -109,9 +109,5 @@ Cyber Hunter 的中心中继是独立服务，不在这个仓库里（见 [docs/
 
 ## 许可证
 
-- Plasticine 按 [AGPL-3.0](LICENSE) 开源。个人、公司都可以免费使用、修改、拿来做生意；
-  把改过的版本发给别人，或者放到网上给别人用，要按 AGPL 把对应的源码给他们。
-- `agent/protocol/`，和 `agent/shared/` 里开头标了 Apache-2.0 的文件（线上格式和它们用到的类型），按 [Apache-2.0](LICENSES/Apache-2.0.txt)：拿去接自己的服务、写别的客户端都行，不要求公开源码。
-- 「Plasticine」「Cyber Hunter」的名字和图标不在代码许可里，见 [TRADEMARKS.md](TRADEMARKS.md)。
-
-版权 © AaronMYL。2026-11-09 当天有几个版本按 PolyForm Noncommercial 1.0.0 发布，之后改回 AGPL-3.0。
+- Plasticine 按 [AGPL-3.0](LICENSE) 开源。
+版权 © AaronMYL。
