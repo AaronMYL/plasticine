@@ -24,7 +24,7 @@ import {
   type DouyinSyncResponse,
   type FeedNavResponse,
 } from '../shared.ts';
-import { FakeDouyin } from './fake-douyin.ts';
+import { FakeDouyin, type FakeDouyinDeps } from './fake-douyin.ts';
 import { FakeFeedSources } from './fake-feed-sources.ts';
 import { ApiError, ConflictError } from '../errors.ts';
 import { COGNITION_PAGE_DEFAULT, FEED_LIST_ORIGINS, FEED_ORIGIN_LABELS } from '../shared.ts';
@@ -58,6 +58,7 @@ export type FeedItemSeed = Pick<FeedItemView, 'id' | 'title'> & Partial<FeedItem
 export type FeedSourceSeed = Pick<FeedSourceView, 'id' | 'kind' | 'label'> & Partial<FeedSourceView>;
 
 export interface FakeFeedDeps {
+  publishWork?: NonNullable<FakeDouyinDeps['publishWork']>;
   session: FakeSession;
   bus: FakeEventBus;
   receipts: FakeReceipts;

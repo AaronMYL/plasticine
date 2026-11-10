@@ -29,6 +29,8 @@ export class ServerEventMapper {
         return [{ type: 'tasks.changed' }];
       case 'calendar_changed':
         return [{ type: 'calendar.changed' }];
+      case 'space_changed':
+        return [{ type: 'space.changed', spaceId: event.spaceId }];
       case 'video_changed':
         return [{ type: 'video.changed' }];
       case 'web_tabs_changed':

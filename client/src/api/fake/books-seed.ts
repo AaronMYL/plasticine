@@ -168,6 +168,7 @@ export const SEED_ANNOTATIONS: SeedAnnotation[] = [
 export const SEED_OUTLINE: { bookId: string; outline: BookOutline } = {
   bookId: FUSHENG_ID,
   outline: {
+    summary: '把寻常日子写下来，才留得住共同生活的乐趣。',
     note: '按全书 4 卷（后两卷存疑，不计）逐卷归纳，再合成',
     parts: [
       { chapter: 0, title: '闺房记乐', summary: '和芸从订婚到婚后的日常，写夫妻之乐。',

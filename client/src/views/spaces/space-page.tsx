@@ -19,6 +19,7 @@ import { useRoute } from '../../shell/use-route.ts';
 import { useMention } from '../conversation/mention-button.tsx';
 import { useDeleteConfirm, useSpaceActions } from '../library/library-actions.tsx';
 import { FOCUS_COMPOSER_EVENT } from '../lines/line-composer.tsx';
+import { useLinkedSpace } from './use-linked-space.ts';
 import { useRead } from '../memory/use-read.ts';
 import { SpaceFrame } from './space-frame.tsx';
 import { LegacySpace } from './space-legacy.tsx';
@@ -64,9 +65,9 @@ function useEscape(on: boolean, close: () => void): void {
 
 export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNode {
   const api = useApi();
-  const read = useCallback((signal: AbortSignal) => api.spaces.get(spaceId, signal), [api, spaceId]);
-  const { value, error, reload } = useRead(read);
+  const { value, error, reload } = useLinkedSpace(spaceId);
   const [saved, setSaved] = useState<SpaceView | null>(null);
+  useEffect(() => { if (error !== null) setSaved(null); }, [error]);
   const [editing, setEditing] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [renaming, setRenaming] = useState(false);

@@ -64,3 +64,22 @@ test('移到最近删除的图书笔记不会被旧内容转换重新创建', ()
   assert.equal(backfillBookSpaces(t.state), 0);
   assert.deepEqual(t.state.spaces.forBook(b.id), []);
 });
+
+test('永久清空图书笔记后，启动转换和定时补页都保留删除结果', () => {
+  const b = book();
+  const row = t.state.bookInsights.create({ bookId: b.id, kind: 'outline', status: 'ready',
+    sourceSha256: b.sourceSha256 });
+  const ready = t.state.bookInsights.update(row.id, row.version, { content: { note: '',
+    parts: [{ chapter: 0, title: '理解团队', summary: '把每个人的职责说清楚。', points: [] }] } });
+  const page = publishBookSpace(t.state, b, ready)!;
+  t.state.spaces.markDeleted(page.id, page.version);
+  t.state.libraryPurge.space(page.id);
+  assert.equal(t.state.spaces.get(page.id), undefined);
+  assert.equal(backfillBookSpaces(t.state), 0);
+  assert.equal(publishBookSpace(t.state, b, ready), null);
+  assert.deepEqual(t.state.spaces.forBook(b.id), []);
+  assert.deepEqual(t.state.spaces.revisions(page.id), []);
+  const tombstone = t.state.spaces.findBySourceUrl(`book:${b.id}:outline`, 'booknote', true)!;
+  assert.equal(tombstone.id, page.id);
+  assert.equal(tombstone.html, null);
+});

@@ -49,6 +49,7 @@ export interface FakeBooksDeps {
   messages: () => LineMessageView[];
   /** 上传和生成大纲各等多久才完成；测试用 0，本地开发给一点时间看「正在导入」「正在逐章归纳」。 */
   workMs: number;
+  publishInsight?: (book: BookView, insight: BookInsightView, rewrite: boolean) => string;
 }
 
 interface FakeBook {
@@ -341,7 +342,7 @@ export class FakeBooks implements BooksApi {
   async insight(id: string, kind: BookInsightKind): Promise<BookInsightView> {
     this.deps.session.require();
     this.require(id);
-    return this.insightView(kind, this.insights.get(`${id}:${kind}`));
+    return this.linkedInsight(id, kind, this.insights.get(`${id}:${kind}`));
   }
 
   async generateInsight(id: string, input: GenerateBookInsightRequest): Promise<BookInsightView> {
@@ -350,7 +351,7 @@ export class FakeBooks implements BooksApi {
     const key = `${id}:${input.kind}`;
     const current = this.insights.get(key);
     if (current?.status === 'generating' || current?.status === 'ready' && input.force !== true) {
-      return this.insightView(input.kind, current);
+      return this.linkedInsight(id, input.kind, current);
     }
     const generating: InsightRow = { kind: input.kind, status: 'generating', outline: current?.outline ?? null,
       keyPoints: current?.keyPoints ?? null, dismissedPointIds: current?.dismissedPointIds ?? [], error: null,
@@ -365,6 +366,7 @@ export class FakeBooks implements BooksApi {
       const ready = template === undefined ? generatedInsight(input.kind, plainChapters(book.chapters), at)
         : { ...template, generatedAt: at, dismissedPointIds: [] };
       this.insights.set(key, error === null ? ready : { ...generating, status: 'failed', error });
+      if (error === null) this.linkedInsight(id, input.kind, ready, true);
       this.emit(id, 'insights');
     };
     setTimeout(finish, this.deps.workMs);
@@ -383,7 +385,7 @@ export class FakeBooks implements BooksApi {
       this.insights.set(key, { ...current, dismissedPointIds: [...current.dismissedPointIds, input.pointId] });
       this.emit(id, 'insights');
     }
-    return this.insightView('key_points', this.insights.get(key));
+    return this.linkedInsight(id, 'key_points', this.insights.get(key), true);
   }
 
   async discussions(id: string): Promise<{ discussions: BookDiscussion[] }> {
@@ -474,6 +476,13 @@ export class FakeBooks implements BooksApi {
   private liveAnnotations(bookId: string): BookAnnotationView[] {
     return [...this.annotationRows.values()].filter((row) => row.bookId === bookId)
       .sort((a, b) => a.chapter - b.chapter || a.start - b.start);
+  }
+
+  private linkedInsight(id: string, kind: BookInsightKind, row: InsightRow | undefined,
+    rewrite = false): BookInsightView {
+    const view = this.insightView(kind, row);
+    return { ...view, spaceId: view.status === 'ready'
+      ? this.deps.publishInsight?.(this.require(id).view, view, rewrite) ?? null : null };
   }
 
   private insightView(kind: BookInsightKind, row: InsightRow | undefined): BookInsightView {

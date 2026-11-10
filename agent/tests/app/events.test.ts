@@ -185,3 +185,21 @@ test('没有会话订阅 401', async () => {
   assert.equal(reply.status, 401);
   assert.equal(json(reply)['code'], 'unauthorized');
 });
+
+test('空间正文改版和永久删除只广播空间身份，阅读端据此重读最新版', async () => {
+  const { writeSpace } = await import('../../src/subs/index.ts');
+  t = await startTestApp();
+  const cookie = await pair(t);
+  const events = await subscribe(t, cookie);
+  await events.next('ready');
+  const first = writeSpace(t.state, { title: '示例空间', genre: 'report',
+    html: '<h1>这是一份用来检查实时更新的示例空间。</h1>' }, 'ai').space;
+  assert.deepEqual((await events.next('space_changed')).event, { type: 'space_changed', spaceId: first.id });
+  const next = writeSpace(t.state, { id: first.id, version: first.version, title: first.title,
+    html: '<h1>这份空间已经更新，阅读端应当重新读它。</h1>' }, 'ai').space;
+  assert.deepEqual((await events.next('space_changed')).event, { type: 'space_changed', spaceId: next.id });
+  t.state.spaces.markDeleted(next.id, next.version);
+  await events.next('space_changed');
+  t.state.libraryPurge.space(next.id);
+  assert.deepEqual((await events.next('space_changed')).event, { type: 'space_changed', spaceId: next.id });
+});

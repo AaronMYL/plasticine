@@ -21,12 +21,14 @@ import type {
   UndoSpaceRequest,
   UpdateSubscriptionRequest,
 } from '../shared.ts';
+import type { FakeEventBus } from './event-bus.ts';
 import type { FakeReceipts } from './receipts.ts';
 import type { FakeSession } from './fake-session.ts';
 import { REVIEW_ID, SEED_ASSETS, spaceSeeds, subscriptionSeeds, type SeedSpace } from './spaces-seed.ts';
 
 export interface FakeSpacesDeps {
   session: FakeSession;
+  bus?: FakeEventBus;
   receipts: FakeReceipts;
   now: () => Date;
   /** 首页回顾里「昨晚整理了几条」读记忆页那一次整理。 */
@@ -76,6 +78,26 @@ export class FakeSpaces {
     const now = this.deps.now();
     this.spaceRows = spaceSeeds(now);
     this.subs = subscriptionSeeds(now);
+  }
+
+  ensureGenerated(input: Pick<SeedSpace, 'id' | 'title' | 'html' | 'category' | 'sourceUrl' | 'bookId'>,
+    rewrite = false): string {
+    const current = this.spaceRows.find((row) => row.id === input.id);
+    if (current !== undefined) {
+      if (rewrite && current.deletedAt == null) {
+        Object.assign(current, input, { updatedAt: this.deps.now().toISOString() });
+        current.revisions.push({ doc: current.doc, genre: current.genre, html: current.html,
+          change: null, rule: null });
+        this.deps.bus?.emit({ type: 'space.changed', spaceId: current.id });
+      }
+      return current.id;
+    }
+    const doc = { stats: [], blocks: [], sources: [] };
+    this.spaceRows.push({ ...input, kind: 'space', genre: 'report', author: 'ai', subscriptionId: null,
+      issueNumber: null, edition: null, doc, createdAt: this.deps.now().toISOString(),
+      updatedAt: this.deps.now().toISOString(), revisions: [{ doc, genre: 'report', html: input.html,
+        change: null, rule: null }] });
+    return input.id;
   }
 
   /** 没删的。 */
@@ -191,6 +213,7 @@ export class FakeSpaces {
         row.author = 'user';
         row.updatedAt = this.deps.now().toISOString();
         row.revisions.push({ doc: row.doc, genre: row.genre, html: row.html, change: null, rule: null });
+        this.deps.bus?.emit({ type: 'space.changed', spaceId: row.id });
         return this.view(row);
       });
     },
@@ -207,6 +230,7 @@ export class FakeSpaces {
         row.genre = previous.genre;
         row.revisions.push({ ...previous, doc: structuredClone(previous.doc), change: null, rule: null });
         row.updatedAt = this.deps.now().toISOString();
+        this.deps.bus?.emit({ type: 'space.changed', spaceId: row.id });
         return this.view(row);
       });
     },
@@ -229,6 +253,7 @@ export class FakeSpaces {
           throw notFound('这个空间');
         }
         row.deletedAt = null;
+        this.deps.bus?.emit({ type: 'space.changed', spaceId: row.id });
         return this.view(row);
       });
     },

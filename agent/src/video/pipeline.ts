@@ -15,7 +15,7 @@ import type { DigestInput, VideoDigester } from './digest.ts';
 import type { WebVideo } from './media.ts';
 import { parseSubtitle, transcriptText, type TranscriptLine } from './subtitles.ts';
 import type { Transcriber } from './transcriber.ts';
-import { outlineTime } from './space-report.ts';
+import { outlineTime } from '../../shared/video-space-page.ts';
 
 /** 下载、抽音频、读字幕这些碰网络和文件的事，测试给假的。 */
 export interface VideoMedia {

@@ -18,6 +18,7 @@ import { applySpaceEdit, prepareSpace, type PreparedSpace } from './space-docume
 import { spaceFontFaces } from './space-fonts.ts';
 import { linkRoute } from './space-links.ts';
 import type { SpaceFrameMode } from './space-runtime.ts';
+import { bookSpacePosition, type BookSpacePosition } from './book-link.ts';
 import { useSpaceTheme } from './space-theme.ts';
 import type { SpaceQuoteAnchor } from './space-quote.ts';
 import '../../primitives/message/quote-selection.css';
@@ -38,6 +39,8 @@ export interface SpaceFrameProps {
   /** 读屏名字。 */
   label: string;
   editing?: boolean;
+  bookPosition?: Pick<BookSpacePosition, 'bookId' | 'chapter'>;
+  onBookJump?: (position: BookSpacePosition) => void;
   /** 改了一段：整页片段（不带编号），交去存一版。 */
   onEdit?: (html: string) => void;
   /** 在页面里按了 Esc（改字时）。 */
@@ -64,7 +67,7 @@ function replayKey(message: Record<string, unknown>): void {
 }
 
 export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEscape, className, onQuote,
-  highlightParagraph }: SpaceFrameProps)
+  highlightParagraph, bookPosition, onBookJump }: SpaceFrameProps)
   : ReactNode {
   const api = useApi();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -92,8 +95,8 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
     [html, genre, title, dateLabel]);
   const srcDoc = useMemo(() => composeSpaceDocument({ body: prepared.body, genre, mode,
     tokens: themeRef.current.tokens, dark: themeRef.current.dark }), [prepared, genre, mode]);
-  const handlers = useRef({ onEdit, onEscape, editing, onQuote, highlightParagraph });
-  handlers.current = { onEdit, onEscape, editing, onQuote, highlightParagraph };
+  const handlers = useRef({ onEdit, onEscape, editing, onQuote, highlightParagraph, onBookJump, bookPosition });
+  handlers.current = { onEdit, onEscape, editing, onQuote, highlightParagraph, onBookJump, bookPosition };
 
   useEffect(() => {
     const close = (event: Event): void => {
@@ -128,6 +131,9 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
       if (served) return;
       served = true;
       post({ type: 'theme', vars: themeRef.current.tokens, dark: themeRef.current.dark });
+      if (handlers.current.bookPosition !== undefined) {
+        post({ type: 'book-position', ...handlers.current.bookPosition });
+      }
       if (mode === 'page' && handlers.current.editing) post({ type: 'edit', on: true });
       if (handlers.current.highlightParagraph !== undefined) {
         post({ type: 'highlight', paragraph: handlers.current.highlightParagraph });
@@ -155,7 +161,14 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
         pushHash(String(message['hash']));
       } else if (message['type'] === 'link') {
         const kind = String(message['kind']);
-        if (isLinkKind(kind)) pushHash(routeHash(linkRoute({ kind, id: String(message['id']) })));
+        if (kind === 'book') {
+          const position = bookSpacePosition(String(message['id']));
+          if (position !== null) {
+            if (handlers.current.onBookJump !== undefined) handlers.current.onBookJump(position);
+            else pushHash(routeHash({ view: 'books', noteId: null, bookId: position.bookId,
+              bookPosition: { chapter: position.chapter, offset: position.offset } }));
+          }
+        } else if (isLinkKind(kind)) pushHash(routeHash(linkRoute({ kind, id: String(message['id']) })));
       } else if (message['type'] === 'edited') {
         const html = applySpaceEdit(prepared, Number(message['index']), String(message['html']));
         displayed.current = html;
@@ -187,6 +200,12 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
       window.removeEventListener('message', listen);
     };
   }, [api, mode, prepared]);
+
+  useEffect(() => {
+    if (bookPosition !== undefined) {
+      frame.current?.contentWindow?.postMessage({ pz: 'space', type: 'book-position', ...bookPosition }, '*');
+    }
+  }, [bookPosition?.bookId, bookPosition?.chapter, srcDoc]);
 
   useEffect(() => {
     const message = { pz: 'space', type: 'theme', vars: theme.tokens, dark: theme.dark };

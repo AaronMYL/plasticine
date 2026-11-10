@@ -1,4 +1,4 @@
-// 「<书名> · 标注与讨论」浮层（原语 7：电脑上浮在主区里，手机是底部抽屉）。分段控件四段：标注 n / 讨论 n / 大纲 / 重点。
+// 图书笔记：电脑右侧停靠，手机底部抽屉；保留大纲、重点、标注与讨论四个入口。
 // 标注和重点由阅读页传进来（正文上也要用）；讨论和大纲打开浮层时才读。
 
 import { useState, type ReactNode } from 'react';
@@ -7,6 +7,7 @@ import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { BookAnnotationView, BookDiscussion, BookInsightKind, BookInsightView, BookKeyPoint,
   BookView } from '../../api/shared.ts';
+import { IconButton } from '../../shell/icon-button.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { AnnotationsTab } from './annotations-tab.tsx';
 import { DiscussionsTab } from './discussions-tab.tsx';
@@ -76,10 +77,10 @@ export function BookSheet(props: BookSheetProps): ReactNode {
     }
   };
   const tabs: { id: SheetTab; label: string }[] = [
-    { id: 'annotations', label: `标注 ${props.annotations.length}` },
-    { id: 'discussions', label: discussions.value === null ? '讨论' : `讨论 ${discussions.value.length}` },
     { id: 'outline', label: '大纲' },
     { id: 'key_points', label: '重点' },
+    { id: 'annotations', label: `标注 ${props.annotations.length}` },
+    { id: 'discussions', label: discussions.value === null ? '讨论' : `讨论 ${discussions.value.length}` },
   ];
   const body = ((): ReactNode => {
     switch (props.tab) {
@@ -94,30 +95,29 @@ export function BookSheet(props: BookSheetProps): ReactNode {
           onOpen={props.onOpenMessage}
           onJump={(discussion) => props.onJump({ chapter: discussion.chapter, start: discussion.start })} />;
       case 'outline':
-        return <OutlineTab kind="outline" insight={outline.value} loadError={outline.error}
+        return <OutlineTab bookId={book.id} kind="outline" insight={outline.value} loadError={outline.error}
           actionError={insights.errors.outline ?? null} toc={book.toc} currentChapter={props.currentChapter}
           now={props.now} onGenerate={(force) => insights.generate('outline', force, outline.reload)}
-          onJump={(chapter) => props.onJump({ chapter, start: 0 })} />;
+          onJump={(chapter, offset) => props.onJump({ chapter, start: offset ?? 0 })} />;
       case 'key_points':
-        return <KeyPointsTab kind="key_points" insight={props.keyPoints.value} loadError={props.keyPoints.error}
+        return <KeyPointsTab bookId={book.id} kind="key_points" insight={props.keyPoints.value}
+          loadError={props.keyPoints.error}
           actionError={insights.errors.key_points ?? null} toc={book.toc} annotations={props.annotations}
           shown={props.keyPointsShown} now={props.now} onShownChange={props.onKeyPointsShown}
           onGenerate={(force) => insights.generate('key_points', force, props.keyPoints.reload)}
-          onJump={jumpToPoint} />;
+          onJump={jumpToPoint} onPosition={(chapter, offset) => props.onJump({ chapter, start: offset })} />;
     }
   })();
-  return (
-    <Sheet open={props.open} variant={props.phone ? 'drawer' : 'panel'} title={`${book.title} · 标注与讨论`}
-      onClose={props.onClose}>
-      <div className="bk-sheet">
-        <div className="segmented bk-sheet-tabs" role="group" aria-label="标注与讨论的分页">
-          {tabs.map((tab) => (
-            <button key={tab.id} type="button" className="segmented-item" aria-pressed={props.tab === tab.id}
-              onClick={() => props.onTab(tab.id)}>{tab.label}</button>
-          ))}
-        </div>
-        {body}
-      </div>
-    </Sheet>
-  );
+  const content = <div className="bk-sheet bk-insight-sheet">
+    <header className="bk-insight-head">
+      <div className="segmented bk-sheet-tabs" role="group" aria-label="图书笔记的分页">
+      {tabs.map((tab) => <button key={tab.id} type="button" className="segmented-item"
+        aria-pressed={props.tab === tab.id} onClick={() => props.onTab(tab.id)}>{tab.label}</button>)}
+    </div>{props.phone ? null : <IconButton icon="close" label="收起图书笔记" onClick={props.onClose} />}</header>
+    {body}
+  </div>;
+  if (!props.phone) return props.open
+    ? <aside className="bk-content-dock" aria-label="图书笔记">{content}</aside> : null;
+  return <Sheet open={props.open} variant="drawer" title={`${book.title} · 图书笔记`}
+    className="bk-insight-drawer" onClose={props.onClose}>{content}</Sheet>;
 }

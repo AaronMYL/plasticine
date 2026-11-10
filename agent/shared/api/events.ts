@@ -15,6 +15,7 @@ export const EVENTS_PATH = `${API_PREFIX}/events`;
 export const ReadyEventSchema = Type.Object({ type: Type.Literal('ready'), resync: Type.Boolean() });
 
 export const ServerEventSchema = Type.Union([
+  Type.Object({ type: Type.Literal('space_changed'), spaceId: IdSchema }),
   Type.Object({ type: Type.Literal('note_invalidated'), noteId: IdSchema }),
   Type.Object({ type: Type.Literal('project_invalidated'), projectId: IdSchema }),
   // 图书：书的列表或某本书的元数据、标注、进度、大纲重点变了；界面按 bookId 重新拉对应那一块。

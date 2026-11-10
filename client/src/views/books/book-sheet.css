@@ -346,3 +346,36 @@
 .sheet-drawer .bk-sheet-tabs .segmented-item {
   flex: 1;
 }
+
+
+/* 图书笔记是阅读区右侧的同一份空间；手机沿用抽屉。 */
+.bk-reader[data-insight-open='true'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 42%);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+.bk-reader[data-insight-open='true'] > .bk-bar { grid-column: 1; grid-row: 1; }
+.bk-reader[data-insight-open='true'] > .bk-banner { grid-column: 1; grid-row: 2; }
+.bk-reader[data-insight-open='true'] > .bk-page { grid-column: 1; grid-row: 3; }
+.bk-reader[data-insight-open='true'] > .bk-foot { grid-column: 1; grid-row: 4; }
+.bk-content-dock {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--line);
+  background: var(--bg);
+}
+.bk-insight-sheet { height: 100%; min-height: 0; gap: 0; overflow: auto; }
+.bk-insight-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+  border-bottom: 1px solid var(--line); }
+.bk-insight-head .bk-sheet-tabs { flex: 1; }
+.bk-insight-content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.bk-insight-tools { display: flex; align-items: center; padding: 8px 16px; gap: 8px; }
+.bk-insight-tools .grow { flex: 1; }
+.bk-insight-frame { min-height: 240px; }
+.bk-insight-drawer .bk-insight-sheet { height: 70dvh; }
+@media (min-width: 768px) and (max-width: 1100px) {
+  .bk-reader[data-insight-open='true'] { display: flex; }
+  .bk-content-dock { position: absolute; z-index: 2; inset: 0 0 0 auto; width: min(90%, 480px); }
+}

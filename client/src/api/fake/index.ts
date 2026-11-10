@@ -1,3 +1,5 @@
+import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
+import { renderVideoPage } from '../../../../agent/shared/video-space-page.ts';
 import { FakeSearch } from './fake-search.ts';
 import { FakeSystems } from './fake-systems.ts';
 import { FakeOutbound } from './fake-outbound.ts';
@@ -190,7 +192,13 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     note: (noteId) => notes.peek(noteId), feedItem: (id) => feed.find(id) });
   // 本地开发时导入书、生成大纲各等一会儿，看得到「正在导入」「正在逐章归纳」；测试（streamStepMs 0）不等。
   const books = new FakeBooks({ session, bus, notes, now, messages: () => lines.messagesOf(MAIN_LINE_ID),
-    workMs: options.streamStepMs > 0 ? BOOK_WORK_MS : 0 });
+    workMs: options.streamStepMs > 0 ? BOOK_WORK_MS : 0,
+    publishInsight: (book, insight, rewrite) => spaces.ensureGenerated({ id: `space-${book.id}-${insight.kind}`,
+      title: `${book.title} · ${insight.kind === 'outline' ? '大纲' : '重点'}`, category: 'booknote',
+      bookId: book.id, sourceUrl: `book:${book.id}:${insight.kind}`,
+      html: renderBookPage({ bookId: book.id, toc: book.toc, currentChapter: book.progress?.chapter ?? null,
+        dismissedPointIds: insight.dismissedPointIds, ...(insight.outline === null ? {} : { outline: insight.outline }),
+        ...(insight.keyPoints === null ? {} : { keyPoints: insight.keyPoints }) }) }, rewrite) });
   const asks = new FakeAsks({ session, bus, receipts, lines: () => lines, now,
     authorize: (card, selected, option) => outbound.authorize(card, selected, option) });
   const clientUpdates = new FakeClientUpdates(session, bus);
@@ -200,12 +208,19 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const memory = new FakeMemory({ session, bus, receipts, agreements, now });
   const deviceKeys = new FakeDeviceKeys({ session, faults, now });
   const projects = new FakeProjects({ session, bus, receipts, lines: () => lines.all(), now });
-  const feed = new FakeFeed({ session, bus, receipts, now });
+  const feed = new FakeFeed({ session, bus, receipts, now,
+    publishWork: (work) => spaces.ensureGenerated({ id: `space-${work.id}`, title: work.title,
+      category: 'report', sourceUrl: work.url, bookId: null,
+      html: renderVideoPage({ ...work, collectSeq: 1, transcript: '[00:00] 定投需要稳定的节奏。\n[00:30] 留意回撤和风险。',
+        digest: { summary: '稳定地投入，比猜准下一次涨跌更重要。',
+          outline: ['[00:00] 为什么要定投', '[00:30] 回撤与风险', '[01:20] 保持节奏'],
+          points: ['先了解自己能承受的回撤。', '不要因为短期波动频繁改变计划。'],
+          related: ['可以把执行记录和每月计划放在一起。'] } }) }) });
   const bookmarks = new FakeBookmarks({ session, receipts, now, bus, projects: () => projects.names() });
   const webTabs = new FakeWebTabs({ session, receipts, bus });
   const today = new FakeToday({ session, receipts });
   const memoryTopics = new FakeMemoryTopics({ session, receipts, now });
-  const spaces = new FakeSpaces({ session, receipts, now, dream: () => memoryTopics.currentDream() });
+  const spaces = new FakeSpaces({ session, receipts, now, bus, dream: () => memoryTopics.currentDream() });
   const nodes = new FakeNodes({ session, bus, receipts, faults, now });
   const m5b = createFakeM5b({ session, bus, receipts, notes, now });
   const moneyDrafts = new FakeMoneyDrafts({ session, bus, receipts, now, attachments, asks, money: m5b.control.money });

@@ -222,7 +222,7 @@ describe('阅读页 · 选中一段', () => {
 describe('阅读页 · 标注与讨论', () => {
   async function openSheet(tab: string): Promise<HTMLElement> {
     fireEvent.click(screen.getByRole('button', { name: /标注与讨论，/ }));
-    const sheet = await screen.findByRole('dialog', { name: '浮生六记 · 标注与讨论' });
+    const sheet = await screen.findByRole('complementary', { name: '图书笔记' });
     fireEvent.click(within(sheet).getByRole('button', { name: new RegExp(`^${tab}`) }));
     return sheet;
   }
@@ -259,31 +259,46 @@ describe('阅读页 · 标注与讨论', () => {
     await waitFor(() => expect(window.location.hash).toMatch(/^#\/plasticine\/line%3Aline-main%3A\d+$/));
   });
 
-  it('重点：出处写「卷一 · n% · 有原文 n 处」或「推断 · 没有直接原文」，全程写 Plasticine 不写「它」', async () => {
+  it('重点在同一份空间里显示分类和原文位置，仍能控制正文高亮', async () => {
     await reader();
     const sheet = await openSheet('重点');
-    expect(within(sheet).getByText(/^Plasticine 写的/)).toBeTruthy();
-    expect(sheet.textContent).toMatch(/卷一 · \d+% · 有原文 1 处/);
-    expect(sheet.textContent).toContain('推断 · 没有直接原文');
-    expect(sheet.textContent).not.toContain('它');
+    const frame = await within(sheet).findByTitle('浮生六记 · 重点');
+    expect(frame.getAttribute('srcdoc')).toContain('原文要点');
+    expect(frame.getAttribute('srcdoc')).toContain('data-link="book:book_fusheng:');
     const toggle = within(sheet).getByRole('checkbox', { name: '在原文里标出' });
     fireEvent.click(toggle);
     expect(document.querySelectorAll('.bk-content .bk-ai')).toHaveLength(0);
     expect(window.localStorage.getItem(`plasticine.books.key-points.${BOOK}`)).toBe('0');
   });
 
-  it('大纲：正在读的这一章那一段标「你在这」', async () => {
+  it('大纲使用富页面，显示章节比例和当前章标记', async () => {
     await reader();
     const sheet = await openSheet('大纲');
-    expect(within(sheet).getByText('闺房记乐').closest('button')?.getAttribute('aria-current')).toBe('true');
-    expect(sheet.textContent).toContain('你在这');
+    const frame = await within(sheet).findByTitle('浮生六记 · 大纲');
+    expect(frame.getAttribute('srcdoc')).toContain('各部分字数比例');
+    expect(frame.getAttribute('srcdoc')).toContain('读到这里');
+  });
+
+  it('空间回原文跳到对应章和字，右侧大纲保持打开并同步当前章', async () => {
+    await reader();
+    const sheet = await openSheet('大纲');
+    const frame = await within(sheet).findByTitle('浮生六记 · 大纲') as HTMLIFrameElement;
+    const sent: unknown[] = [];
+    vi.spyOn(frame.contentWindow!, 'postMessage').mockImplementation((message: unknown) => { sent.push(message); });
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { source: frame.contentWindow,
+        data: { pz: 'space', type: 'link', kind: 'book', id: 'book_fusheng:1:7' } }));
+    });
+    await waitFor(() => expect(document.querySelector('.bk-bar-title')?.textContent).toContain('闲情记趣'));
+    expect(screen.getByRole('complementary', { name: '图书笔记' })).toBeTruthy();
+    expect(sent).toContainEqual({ pz: 'space', type: 'book-position', bookId: 'book_fusheng', chapter: 1 });
   });
 
   it('没有大纲的书：生成 → 「Plasticine 正在逐章归纳…」→ 失败写服务端的原因和「再试一次」', async () => {
     const app = await reader({ hash: '#/books/book_cihua' });
     app.control.books.failNextInsight('模型这会儿连不上');
     fireEvent.click(screen.getByRole('button', { name: /标注与讨论，/ }));
-    const sheet = await screen.findByRole('dialog', { name: '人间词话 · 标注与讨论' });
+    const sheet = await screen.findByRole('complementary', { name: '图书笔记' });
     fireEvent.click(within(sheet).getByRole('button', { name: '大纲' }));
     await act(async () => {
       fireEvent.click(await within(sheet).findByRole('button', { name: '生成大纲' }));

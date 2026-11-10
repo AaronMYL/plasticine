@@ -324,7 +324,7 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
   }, [paged, root, paginator]);
 
   const jumpTo = useCallback((jump: Jump): void => {
-    setPanel(null);
+    if (phone || (panel !== 'insights' && panel !== 'annotations')) setPanel(null);
     setPopover(null);
     setBanner(null);
     pending.current = jump.start;
@@ -339,7 +339,7 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
       flashTarget.current = jump;
       setJumpCount((count) => count + 1);
     }
-  }, [chapterIndex, root, place, chapters, book.id]);
+  }, [chapterIndex, root, place, chapters, book.id, phone, panel]);
 
   // 跳到的那一段闪一下：要等那一章的正文到了才知道这句话到哪结束。
   useEffect(() => {
@@ -438,7 +438,8 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
   );
 
   return (
-    <div className={phone ? 'bk-reader bk-phone-reader' : 'bk-reader'} data-margins={showMargins}>
+    <div className={phone ? 'bk-reader bk-phone-reader' : 'bk-reader'} data-margins={showMargins}
+      data-insight-open={!phone && (panel === 'insights' || panel === 'annotations') || undefined}>
       <ReaderBar title={book.title} author={book.author} chapterTitle={chapterTitle} phone={phone}
         annotationCount={annotations.value?.length ?? book.annotationCount}
         onBack={() => navigate({ view: 'books', noteId: null })} onOpen={openPanel} />

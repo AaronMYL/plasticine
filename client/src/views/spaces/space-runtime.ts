@@ -36,6 +36,7 @@ export type SpaceFrameIn =
   | { pz: 'space'; type: 'edit'; on: boolean }
   | { pz: 'space'; type: 'clear-selection' }
   | { pz: 'space'; type: 'highlight'; paragraph: number }
+  | { pz: 'space'; type: 'book-position'; bookId: string; chapter: number }
   /** 外面挂上监听晚了（页面先载完了）：再说一遍「准备好了」。 */
   | { pz: 'space'; type: 'hello' };
 
@@ -218,6 +219,14 @@ export function spaceRuntime(mode: SpaceFrameMode): void {
         String(Reflect.get(data, 'mime')));
     } else if (type === 'theme') {
       applyTheme(Reflect.get(data, 'vars') as Record<string, string>, Reflect.get(data, 'dark') === true);
+    } else if (type === 'book-position') {
+      const root = document.querySelector<HTMLElement>('[data-book-id]');
+      if (root !== null && root.dataset['bookId'] === Reflect.get(data, 'bookId')) {
+        root.querySelectorAll<HTMLElement>('[data-book-chapter]').forEach((row) => {
+          row.querySelector('.bn-current')?.toggleAttribute('hidden',
+            Number(row.dataset['bookChapter']) !== Reflect.get(data, 'chapter'));
+        });
+      }
     } else if (type === 'edit') setEditing(Reflect.get(data, 'on') === true);
     else if (type === 'clear-selection') window.getSelection()?.removeAllRanges();
     else if (type === 'highlight') {

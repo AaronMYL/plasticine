@@ -11,6 +11,8 @@ import { Store } from '../../state/store.ts';
 
 /** 一页读多少条（一屏七八条，往下滚再读）。 */
 export const DOUYIN_PAGE = 50;
+/** 和 DouyinListQuerySchema 的单页上限保持一致。 */
+const DOUYIN_PAGE_MAX = 200;
 
 export interface DouyinState {
   status: 'idle' | 'loading' | 'ready';
@@ -33,6 +35,7 @@ export class DouyinStore {
   readonly #api: PlasticineApi;
   readonly #hub: EventsHub;
   #stop: (() => void) | null = null;
+  #opens = 0;
   #controller: AbortController | null = null;
 
   constructor(api: PlasticineApi, hub: EventsHub) {
@@ -42,6 +45,7 @@ export class DouyinStore {
 
   /** 打开清单：读第一页，开着时跟着服务端的变化重读。 */
   open(): void {
+    this.#opens += 1;
     this.#stop ??= this.#hub.on((event) => {
       if (event.type === 'video.changed') {
         void this.load(false);
@@ -51,6 +55,8 @@ export class DouyinStore {
   }
 
   close(): void {
+    this.#opens = Math.max(0, this.#opens - 1);
+    if (this.#opens > 0) return;
     this.#stop?.();
     this.#stop = null;
     this.#controller?.abort();
@@ -63,9 +69,19 @@ export class DouyinStore {
     const { folder, query, works } = this.state.get();
     this.state.set((state) => ({ ...state, status: fresh ? 'loading' : state.status, error: null }));
     try {
-      const limit = fresh ? DOUYIN_PAGE : Math.max(DOUYIN_PAGE, works.length);
-      const data = await this.#api.feed.douyin({ limit, offset: 0, ...(folder === null ? {} : { folder }),
-        ...(query.trim() === '' ? {} : { q: query.trim() }) }, controller.signal);
+      const wanted = fresh ? DOUYIN_PAGE : Math.max(DOUYIN_PAGE, works.length);
+      const filter = { ...(folder === null ? {} : { folder }), ...(query.trim() === '' ? {} : { q: query.trim() }) };
+      let data = await this.#api.feed.douyin({ ...filter, limit: Math.min(wanted, DOUYIN_PAGE_MAX), offset: 0 },
+        controller.signal);
+      const refreshed = [...data.works];
+      while (data.nextOffset !== null && refreshed.length < wanted && !controller.signal.aborted) {
+        data = await this.#api.feed.douyin({ ...filter, offset: data.nextOffset,
+          limit: Math.min(wanted - refreshed.length, DOUYIN_PAGE_MAX) }, controller.signal);
+        refreshed.push(...data.works);
+        if (data.works.length === 0) break;
+      }
+      if (controller.signal.aborted) return;
+      data = { ...data, works: refreshed };
       this.state.set((state) => ({
         ...state, status: 'ready', data, works: data.works,
         selected: fresh && state.selected.size === 0

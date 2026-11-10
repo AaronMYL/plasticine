@@ -17,7 +17,8 @@ function assetNames(text: string): Set<string> {
 }
 
 /** 真正抹除集中在状态服务里；删除失败保留回收记录，让同一操作可以重试。 */
-export function createLibraryPurge(context: StoreContext, notes: NoteBodies, books: BookFiles) {
+export function createLibraryPurge(context: StoreContext, notes: NoteBodies, books: BookFiles,
+  spaceChanged: (id: string) => void = () => undefined) {
   const { db } = context;
   function pending(table: Table, id: string): boolean {
     const row = db.get(`SELECT deleted_at, purged_at FROM ${table} WHERE id = $id`, { id });
@@ -105,6 +106,7 @@ export function createLibraryPurge(context: StoreContext, notes: NoteBodies, boo
           folder = NULL
           WHERE id = $id`, { id });
       });
+      spaceChanged(id);
     },
     book(id: string): void {
       if (!pending('books', id)) { return; }

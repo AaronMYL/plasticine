@@ -20,7 +20,8 @@ const CSS = `.bn{max-width:800px;margin:auto;padding:24px 20px 48px;font-size:14
 padding:16px 0;border-bottom:1px solid var(--line)}.bn-index{font-family:var(--mono);color:var(--fg3)}
 .bn-summary{color:var(--fg2);margin:6px 0}.bn-back{font-size:12px;color:var(--fg2);text-underline-offset:4px}
 .bn-current{font-size:12px;color:var(--fg2);font-weight:400;margin-left:8px}.bn-current::before{content:'●';
-color:var(--fg3);margin-right:6px}.bn-current[hidden]{display:none}.bn-point{padding:16px 0;border-bottom:1px solid var(--line)}
+color:var(--fg3);margin-right:6px}.bn-current[hidden]{display:none}
+.bn-point{padding:16px 0;border-bottom:1px solid var(--line)}
 .bn-category{font-size:11px;padding:2px 6px;border-radius:4px;background:var(--tint2);color:var(--fg2)}
 .bn-point p{margin:8px 0}.bn-point blockquote{border-left:1px solid var(--line2);margin:12px 0;
 padding-left:12px;

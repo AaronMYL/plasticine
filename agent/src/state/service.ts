@@ -236,11 +236,12 @@ export function openState(options: OpenStateOptions) {
   }
   const notesDirectory = notesDirectoryFor(options);
   const bookFiles = new BookFiles(booksDirectoryFor(options));
+  const stores = buildStores(context, noteBodies, index,
+    options.path === MEMORY_DATABASE ? undefined : join(dirname(options.path), 'attachments'));
   return {
-    ...buildStores(context, noteBodies, index,
-      options.path === MEMORY_DATABASE ? undefined : join(dirname(options.path), 'attachments')),
+    ...stores,
     ...createBookStores(context, bookFiles),
-    libraryPurge: createLibraryPurge(context, noteBodies, bookFiles),
+    libraryPurge: createLibraryPurge(context, noteBodies, bookFiles, stores.spaces.changed),
     backups: createBackupStore(context, {
       ...(options.path === MEMORY_DATABASE ? {} : { directory: join(dirname(options.path), 'backups') }),
       ...(notesDirectory === undefined ? {} : { notesDirectory }),

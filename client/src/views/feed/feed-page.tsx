@@ -23,6 +23,7 @@ import { PendingOps } from '../pending/pending-ops.tsx';
 import { FeedCard } from './feed-card.tsx';
 import { feedText } from './feed-text.ts';
 import { cardHeight, COLUMN_GAP_PX, columnCount, layoutColumns } from './feed-masonry.ts';
+import { DouyinPage } from './douyin-page.tsx';
 import { DouyinSheet } from './douyin-sheet.tsx';
 import { FeedAdd } from './feed-add.tsx';
 import { useFeedNav } from './feed-nav-data.ts';
@@ -165,7 +166,7 @@ function FeedListPage(): ReactNode {
   const empty = ui.sourceId === null ? EMPTY_TEXT[segment] ?? EMPTY_TEXT['all'] : EMPTY_SOURCE;
   const settings = ui.settingsSource;
   return (
-    <div className="page feed">
+    <div className={`page feed${segment === 'douyin' ? ' page-fill feed-douyin' : ''}`}>
       {phone ? (
         <PageHeader title="信息流" phoneSearch={false} phoneTools={(
           <IconButton icon="filter" label="筛选" size={17} aria-haspopup="dialog" aria-expanded={filtering}
@@ -190,7 +191,8 @@ function FeedListPage(): ReactNode {
           </button>
         </p>
       )}
-      <section className="feed-board" aria-label="条目">
+      {segment === 'douyin' ? <DouyinPage phone={phone} onSelect={() => setDouyin(true)} />
+        : <section className="feed-board" aria-label="条目">
         {loading ? <p className="block-empty">正在读信息流…</p> : null}
         {data.status === 'ready' && data.items.length === 0 ? <p className="block-empty">{empty}</p>
           : null}
@@ -210,7 +212,7 @@ function FeedListPage(): ReactNode {
             {data.loadingMore ? '正在读…' : `再读 ${COGNITION_PAGE_DEFAULT} 条`}
           </button>
         )}
-      </section>
+      </section>}
       <Sheet open={filtering} variant="drawer" className="sheet-fit" title="筛选"
         onClose={() => setFiltering(false)}>
         <PhoneFilter segment={segment} onShow={(next) => {

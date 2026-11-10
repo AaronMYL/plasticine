@@ -20,6 +20,7 @@ export interface FakeDouyinDeps {
   bus: FakeEventBus;
   receipts: FakeReceipts;
   now: () => Date;
+  publishWork?: (work: VideoWorkView) => string;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -86,6 +87,9 @@ export class FakeDouyin {
     const limit = query.limit ?? PAGE_DEFAULT;
     const offset = query.offset ?? 0;
     const works = matched.slice(offset, offset + limit);
+    for (const work of works) {
+      if (work.stage === 'summarized') work.spaceId = this.deps.publishWork?.(work) ?? null;
+    }
     return { works: structuredClone(works), total: matched.length,
       nextOffset: offset + works.length < matched.length ? offset + works.length : null,
       folders: DOUYIN_FOLDERS, sync: this.sync, macOnline: true };

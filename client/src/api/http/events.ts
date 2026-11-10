@@ -36,6 +36,7 @@ const STREAM_EVENT_TYPES: Readonly<Record<EveryStreamEvent['type'], true>> = {
   tasks_changed: true,
   calendar_changed: true,
   video_changed: true,
+  space_changed: true,
   web_tabs_changed: true,
   bookmarks_changed: true,
   note_invalidated: true,

@@ -65,6 +65,7 @@ export function createVideo(options: VideoOptions) {
   const tempRoot = join(options.stateDirectory, 'video-work');
   mkdirSync(tempRoot, { recursive: true, mode: 0o700 });
   const changed = options.changed ?? (() => undefined);
+  const backfill = (): void => { if (backfillVideoSpaces(options.state) > 0) changed(); };
   const worker = new VideoWorker({
     state: options.state,
     slots: options.slots,
@@ -86,9 +87,9 @@ export function createVideo(options: VideoOptions) {
     worker,
     douyin,
     tool: videoParseTool(options.state, worker),
-    start: () => { backfillVideoSpaces(options.state); worker.start(); },
+    start: () => { backfill(); worker.start(); },
     stop: () => worker.stop(),
-    scans: [{ name: '视频解析', run: () => { backfillVideoSpaces(options.state); worker.kick(); } }],
+    scans: [{ name: '视频解析', run: () => { backfill(); worker.kick(); } }],
   };
 }
 

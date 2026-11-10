@@ -118,6 +118,10 @@ function readRevision(row: Row): SpaceRevision {
 
 export function createSpaceStore(context: StoreContext) {
   const spaces = new ObjectStore(context, SPEC);
+  const listeners = new Set<(id: string) => void>();
+  const changed = (id: string): void => {
+    queueMicrotask(() => { for (const listener of listeners) listener(id); });
+  };
 
   function addRevision(space: Space, note: RevisionNote, restoredFrom: number | null): void {
     try {
@@ -155,16 +159,23 @@ export function createSpaceStore(context: StoreContext) {
         ...(input.html === undefined ? {} : { html: input.html }) });
       if (updated.version !== expectedVersion) {
         addRevision(updated, note, restoredFrom);
+        changed(updated.id);
       }
       return updated;
     });
   }
 
   return {
+    changed,
+    subscribe(listener: (id: string) => void): () => void {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
     create(input: SpaceInput, note: RevisionNote = {}, options: { id?: string } = {}): Space {
       return context.db.transaction(() => {
         const created = spaces.create(input, undefined, options.id === undefined ? {} : { id: options.id });
         addRevision(created, note, null);
+        changed(created.id);
         return created;
       });
     },
@@ -234,8 +245,10 @@ export function createSpaceStore(context: StoreContext) {
       if (current === undefined) {
         throw notFound('spaces', id);
       }
-      return current.deletedAt !== null ? current
-        : spaces.update(id, expectedVersion, { deletedAt: context.now() });
+      if (current.deletedAt !== null) return current;
+      const next = spaces.update(id, expectedVersion, { deletedAt: context.now() });
+      changed(id);
+      return next;
     },
     /** 从「最近删除」还原：清掉删除时间（版本加一）；本来就没删的原样返回。 */
     restore(id: string): Space {
@@ -244,7 +257,10 @@ export function createSpaceStore(context: StoreContext) {
       if (current === undefined) {
         throw notFound('spaces', id);
       }
-      return current.deletedAt === null ? current : spaces.update(id, current.version, { deletedAt: null });
+      if (current.deletedAt === null) return current;
+      const next = spaces.update(id, current.version, { deletedAt: null });
+      changed(id);
+      return next;
     },
   };
 }

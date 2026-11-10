@@ -86,3 +86,22 @@ test('视频解析把大纲关键帧存成资产并关联空间，重试已总�
   assert.equal(done.digest?.images?.length, 2);
   assert.match(t.state.spaces.require(done.spaceId!).html ?? '', /\/v2\/notes\/assets\/[a-f0-9]+\.png/);
 });
+
+test('永久清空视频报告后，保留关联不再补出第二份空间', () => {
+  const work = summarized();
+  const space = publishVideoSpace(t.state, work)!;
+  t.state.spaces.markDeleted(space.id, space.version);
+  t.state.libraryPurge.space(space.id);
+  assert.equal(backfillVideoSpaces(t.state), 0);
+  assert.equal(publishVideoSpace(t.state, t.state.videoWorks.require(work.id)), null);
+  assert.equal(t.state.videoWorks.require(work.id).spaceId, space.id);
+  assert.equal(t.state.spaces.get(space.id), undefined);
+  assert.deepEqual(t.state.spaces.list(), []);
+});
+
+
+test('报告收藏日期按用户时区显示，不把 UTC 日期当本地日期', () => {
+  const work = summarized();
+  const page = publishVideoSpace(t.state, { ...work, collectedAt: '2026-11-10T18:00:00.000Z' })!;
+  assert.match(page.html!, /收藏于 2026\/11\/11/);
+});

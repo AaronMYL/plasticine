@@ -147,6 +147,7 @@ function modelName(options: AppOptions): string {
 export function createApp(options: AppOptions): App {
   const now = options.now ?? (() => new Date());
   const hub = options.hub ?? new EventHub();
+  const stopSpaceEvents = options.state.spaces.subscribe((spaceId) => hub.publish({ type: 'space_changed', spaceId }));
   const bookInsights = new BookInsightService({
     state: options.state,
     now,
@@ -263,6 +264,7 @@ export function createApp(options: AppOptions): App {
       stopping ??= (async () => {
         const wasListening = server.listening;
         server.close();
+        stopSpaceEvents();
         options.scans.stop();
         options.tasks.stop();
         options.devices.stop();

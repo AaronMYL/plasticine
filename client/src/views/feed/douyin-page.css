@@ -1,0 +1,29 @@
+.feed.feed-douyin { height: 100%; min-height: 0; padding: 0; gap: 0; max-width: none; overflow: hidden; }
+.dy-page { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(240px, 32%) minmax(0, 1fr); }
+.dy-index { min-width: 0; min-height: 0; display: flex; flex-direction: column; border-right: 1px solid var(--line); }
+.dy-index-head, .dy-detail-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+  min-height: 64px; border-bottom: 1px solid var(--line); }
+.dy-index-head > span:first-child { flex: 1; font-size: 13px; }
+.dy-index-scroll { flex: 1; overflow: auto; min-height: 0; }
+.dy-works { list-style: none; padding: 0; margin: 0; }
+.dy-work { display: flex; width: 100%; align-items: center; gap: 12px; text-align: left; padding: 16px;
+  border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--fg); }
+.dy-work[aria-current='true'] { background: var(--tint2); }
+.dy-work > span:first-child { flex: 1; min-width: 0; }
+.dy-work strong { display: block; font-size: 14px; line-height: 22px; font-weight: 500; }
+.dy-work-meta { display: block; color: var(--fg2); font-size: 12px; line-height: 18px; margin-top: 4px; }
+.dy-work-state { color: var(--fg3); }
+.dy-work-state[aria-label='已总结'] { color: var(--ok); }
+.dy-detail { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.dy-version { flex: 1; color: var(--fg2); font-size: 12px; }
+.dy-unprocessed { padding: 32px; }
+.dy-unprocessed h2 { margin: 0 0 24px; font-size: 20px; }
+.dy-more { margin: 16px; }
+.dy-page[data-phone='true'] { display: flex; flex-direction: column; }
+.dy-page[data-phone='true'] .dy-index { flex: 1; border-right: 0; }
+.dy-page[data-phone='true'] .dy-detail { display: none; }
+.dy-page[data-phone='true'][data-detail='true'] .dy-index { display: none; }
+.dy-page[data-phone='true'][data-detail='true'] .dy-detail { display: flex; flex: 1; }
+.dy-page[data-phone='true'] .dy-detail-head { gap: 8px; padding: 8px; min-height: 52px; }
+
+.feed-douyin > .page-head { padding: 16px; margin: 0; }
