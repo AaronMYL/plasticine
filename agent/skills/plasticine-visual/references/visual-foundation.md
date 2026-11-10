@@ -98,6 +98,82 @@
 
 液态玻璃不作为设计语言：侧栏、手机标签栏、浮层都是 `--bg` 实底，浮起靠 `--lift`，不用 `backdrop-filter`。没有真插画就留白，不画占位团块，不用渐变底。需要强调的区块用粗一点的标题（600）和留白，不用底色铺满、不用实心强调色。
 
+## 官网独立令牌（11-11 登记）
+
+官网沿用已确认的夜色设计。以下令牌只在 `tokens.css` 的 `.site-body, .ch` 作用域定义，
+只准 `client/src/views/site/` 使用；不覆盖 Plasticine 应用的方向 I。数值保持官网原样，正本在 `tokens.css`。
+检查器逐项登记名字：官网也不能现写颜色、使用未登记的阴影或字号；应用不能借这些令牌扩大字阶或阴影范围。
+
+| 令牌 | 值 |
+|---|---|
+| `--ch-bg` | `#141210` |
+| `--ch-s1` | `#1c1916` |
+| `--ch-s2` | `#24201c` |
+| `--ch-s3` | `#2e2924` |
+| `--ch-line` | `rgba(245, 236, 226, 0.09)` |
+| `--ch-line2` | `rgba(245, 236, 226, 0.18)` |
+| `--ch-fg` | `#f5f1ec` |
+| `--ch-fg2` | `#bdb4aa` |
+| `--ch-fg3` | `#948b81` |
+| `--ch-accent` | `#d39274` |
+| `--ch-blue` | `#9fb2d0` |
+| `--ch-ok` | `#93c29a` |
+| `--ch-ease` | `cubic-bezier(0.2, 0.8, 0.2, 1)` |
+| `--ch-link` | `#e0a184` |
+| `--ch-link-hover` | `#f0bca2` |
+| `--ch-header` | `rgba(20, 18, 16, 0.78)` |
+| `--ch-button-ink` | `#1a1310` |
+| `--ch-action-hover` | `#3a332d` |
+| `--ch-accent-wash-strong` | `rgba(211, 146, 116, 0.18)` |
+| `--ch-pill-bg` | `rgba(20, 18, 16, 0.6)` |
+| `--ch-mask` | `#000` |
+| `--ch-glow` | `rgba(211, 146, 116, 0.16)` |
+| `--ch-panel-end` | `#181513` |
+| `--ch-peer-avatar` | `#263042` |
+| `--ch-mine-bg` | `#2b2320` |
+| `--ch-peer-bg` | `#1f2530` |
+| `--ch-link-active` | `rgba(211, 146, 116, 0.5)` |
+| `--ch-link-mine` | `rgba(211, 146, 116, 0.6)` |
+| `--ch-link-peer` | `rgba(159, 178, 208, 0.6)` |
+| `--ch-flow` | `#f3c2a9` |
+| `--ch-stage-bg` | `rgba(20, 18, 16, 0.55)` |
+| `--ch-accent-wash` | `rgba(211, 146, 116, 0.12)` |
+| `--ch-blue-wash` | `rgba(159, 178, 208, 0.12)` |
+| `--ch-ok-wash` | `rgba(147, 194, 154, 0.12)` |
+| `--ch-blue-line` | `rgba(159, 178, 208, 0.3)` |
+| `--ch-accent-line` | `rgba(211, 146, 116, 0.45)` |
+| `--ch-mark` | `rgba(211, 146, 116, 0.22)` |
+| `--ch-paper` | `#f7f1e8` |
+| `--ch-ink` | `#2a2622` |
+| `--ch-ink2` | `#6e655c` |
+| `--ch-highlight` | `rgba(204, 168, 82, 0.4)` |
+| `--ch-accent-line-strong` | `rgba(211, 146, 116, 0.55)` |
+| `--ch-paper-meta` | `#6b635b` |
+| `--ch-error` | `#e8a493` |
+| `--ch-report-accent` | `#a1674e` |
+| `--ch-size-hero` | `52px` |
+| `--ch-size-lead` | `17px` |
+| `--ch-size-section` | `40px` |
+| `--ch-size-figure` | `26px` |
+| `--ch-size-window` | `20px` |
+| `--ch-size-hero-phone` | `36px` |
+| `--ch-size-section-phone` | `28px` |
+| `--ch-size-card` | `18px` |
+| `--ch-shadow-button` | `0 8px 28px rgba(211, 146, 116, 0.28)` |
+| `--ch-shadow-panel` | `inset 0 0 0 1px var(--ch-line), 0 30px 80px rgba(0, 0, 0, 0.45)` |
+| `--ch-shadow-node` | `inset 0 0 0 1px rgba(211, 146, 116, 0.45)` |
+| `--ch-shadow-node-peer` | `inset 0 0 0 1px rgba(159, 178, 208, 0.45)` |
+| `--ch-shadow-node-active` | `inset 0 0 0 1px var(--ch-accent), 0 0 0 6px rgba(211, 146, 116, 0.1), 0 0 24px rgba(211, 146, 116, 0.35)` |
+| `--ch-shadow-node-peer-active` | `inset 0 0 0 1px var(--ch-blue), 0 0 0 6px rgba(159, 178, 208, 0.1), 0 0 24px rgba(159, 178, 208, 0.35)` |
+| `--ch-shadow-bubble` | `inset 0 0 0 1px rgba(211, 146, 116, 0.25)` |
+| `--ch-shadow-bubble-peer` | `inset 0 0 0 1px rgba(159, 178, 208, 0.25)` |
+| `--ch-shadow-invite` | `inset 0 0 0 1px rgba(159, 178, 208, 0.3)` |
+| `--ch-shadow-window` | `inset 0 0 0 1px var(--ch-line), 0 24px 60px rgba(0, 0, 0, 0.4)` |
+| `--ch-shadow-book` | `0 12px 30px rgba(0, 0, 0, 0.35)` |
+| `--ch-shadow-archive` | `inset 0 0 0 1px rgba(211, 146, 116, 0.35)` |
+
+官网的示例联系人头像可用装饰字「杰」，完整名字「阿杰」在旁边；只登记官网两个现有组件，不放宽应用的中文命名规则。
+
 ## 响应式取舍
 
 依据空间、输入方式和任务决定布局，不凭设备标签作一刀切禁令。当前壳、对话容器与对象页的响应式行为见 views.md。

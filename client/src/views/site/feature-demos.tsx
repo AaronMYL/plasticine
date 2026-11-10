@@ -140,7 +140,7 @@ function LibraryDemo(): ReactNode {
       <Choices items={[['weekly', '周报'], ['letter', '来信'], ['report', '报告']] as const} value={kind} onPick={setKind} />
       {kind === 'weekly' ? (
         <div className="ch-weekly ch-rise">
-          <div className="ch-result-head"><strong style={{ fontSize: 18 }}>本周</strong>
+          <div className="ch-result-head"><strong style={{ fontSize: 'var(--ch-size-card)' }}>本周</strong>
             <span className="ch-sub ch-mono">11.03 – 11.09</span></div>
           <div className="ch-row" style={{ gap: 28, alignItems: 'flex-end', marginTop: 18 }}>
             <div className="ch-bars" aria-hidden="true">{BAR_HEIGHTS.map((height, index) => (
@@ -166,7 +166,7 @@ function LibraryDemo(): ReactNode {
           <div style={{ fontSize: 22, fontWeight: 600, marginTop: 4 }}>成都两日 · 花费复盘</div>
           <div className="ch-figures">
             <div><div className="ch-figure ch-mono">1,086</div><div className="ch-figure-label">每人花费（元）</div></div>
-            <div><div className="ch-figure ch-mono" style={{ color: '#a1674e' }}>−9%</div>
+            <div><div className="ch-figure ch-mono" style={{ color: 'var(--ch-report-accent)' }}>−9%</div>
               <div className="ch-figure-label">比预算省下</div></div>
             <div><div className="ch-figure ch-mono">38%</div><div className="ch-figure-label">住处占比</div></div>
           </div>
@@ -187,7 +187,7 @@ function BrowserDemo(): ReactNode {
       <div className="ch-address ch-mono">example.com/chengdu-weekend</div>
       <div className="ch-split" style={{ gap: 14 }}>
         <div className="ch-col" style={{ gap: 10, fontSize: 14, lineHeight: 1.7, color: 'var(--ch-fg2)' }}>
-          <div style={{ fontSize: 17, color: 'var(--ch-fg)', fontWeight: 600 }}>成都周末怎么玩</div>
+          <div style={{ fontSize: 'var(--ch-size-lead)', color: 'var(--ch-fg)', fontWeight: 600 }}>成都周末怎么玩</div>
           <div><span className={marked}>青城山建议早上进山，下午人少但索道排队长。</span></div>
           <div>市区交通以地铁为主，打车高峰较慢。</div>
           <div><span className={marked}>玉林路晚上的小酒馆，周末要提前到。</span></div>

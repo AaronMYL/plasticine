@@ -114,3 +114,26 @@ test('现有界面整份当成新增也过得了检查器（规则和方向 I �
   }
   assert.deepEqual(checkTokens(parseDiff(diff)), []);
 });
+
+
+test('官网只用登记的独立令牌，应用不能借官网令牌绕过字阶或阴影规则', () => {
+  const approved = [
+    '.ch { color: var(--ch-bg); }',
+    '.ch-panel { box-shadow: var(--ch-shadow-panel); }',
+    '.ch-h1 { font-size: var(--ch-size-hero); }',
+  ];
+  assert.deepEqual(checkTokens(parseDiff(addedDiff('client/src/views/site/site.css', approved))), []);
+  const app = checkTokens(parseDiff(addedDiff('client/src/views/home/home.css', approved)));
+  assert.ok(app.some((item) => item.kind === 'color'));
+  assert.ok(app.some((item) => item.kind === 'shadow'));
+  assert.ok(app.some((item) => item.kind === 'font_size'));
+  const site = checkTokens(parseDiff(addedDiff('client/src/views/site/site.css', [
+    '.ch { color: #ff0000; }',
+    '.ch { color: var(--ch-unregistered); }',
+    '.ch { font-size: var(--ch-size-unregistered); }',
+    '.ch { box-shadow: var(--ch-shadow-unregistered); }',
+    '.ch { font-size: 52px; }',
+    '.ch { box-shadow: 0 8px 24px var(--ch-bg); }',
+  ])));
+  for (const line of [1, 2, 3, 4, 5, 6]) assert.ok(site.some((item) => item.line === line));
+});

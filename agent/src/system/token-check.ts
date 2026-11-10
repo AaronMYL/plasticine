@@ -88,6 +88,31 @@ export const DESIGN_TOKENS: readonly string[] = [
   'page-gap',
 ];
 
+/** 官网独立令牌仅供 client/src/views/site/ 使用；不放开普通应用的字号和阴影。 */
+export const SITE_TOKENS: readonly string[] = [
+  'ch-bg', 'ch-s1', 'ch-s2', 'ch-s3', 'ch-line', 'ch-line2', 'ch-fg', 'ch-fg2', 'ch-fg3', 'ch-accent', 'ch-blue',
+  'ch-ok', 'ch-ease', 'ch-link', 'ch-link-hover', 'ch-header', 'ch-button-ink', 'ch-action-hover',
+  'ch-accent-wash-strong', 'ch-pill-bg', 'ch-mask', 'ch-glow', 'ch-panel-end', 'ch-peer-avatar', 'ch-mine-bg',
+  'ch-peer-bg', 'ch-link-active', 'ch-link-mine', 'ch-link-peer', 'ch-flow', 'ch-stage-bg', 'ch-accent-wash',
+  'ch-blue-wash', 'ch-ok-wash', 'ch-blue-line', 'ch-accent-line', 'ch-mark', 'ch-paper', 'ch-ink', 'ch-ink2',
+  'ch-highlight', 'ch-accent-line-strong', 'ch-paper-meta', 'ch-error', 'ch-report-accent', 'ch-size-hero',
+  'ch-size-lead', 'ch-size-section', 'ch-size-figure', 'ch-size-window', 'ch-size-hero-phone',
+  'ch-size-section-phone', 'ch-size-card', 'ch-shadow-button', 'ch-shadow-panel', 'ch-shadow-node',
+  'ch-shadow-node-peer', 'ch-shadow-node-active', 'ch-shadow-node-peer-active', 'ch-shadow-bubble',
+  'ch-shadow-bubble-peer', 'ch-shadow-invite', 'ch-shadow-window', 'ch-shadow-book', 'ch-shadow-archive',
+];
+
+export const SITE_FONT_TOKENS: readonly string[] = [
+  'ch-size-hero', 'ch-size-lead', 'ch-size-section', 'ch-size-figure', 'ch-size-window', 'ch-size-hero-phone',
+  'ch-size-section-phone', 'ch-size-card',
+];
+
+export const SITE_SHADOW_TOKENS: readonly string[] = [
+  'ch-shadow-button', 'ch-shadow-panel', 'ch-shadow-node', 'ch-shadow-node-peer', 'ch-shadow-node-active',
+  'ch-shadow-node-peer-active', 'ch-shadow-bubble', 'ch-shadow-bubble-peer', 'ch-shadow-invite',
+  'ch-shadow-window', 'ch-shadow-book', 'ch-shadow-archive',
+];
+
 /** 元素上就地设成某个 --hue-* 的变量（shell/hue.tsx）：用它们等于用类别色令牌。 */
 // 第 111 条：分组的组色（顶栏小签、组色线）、项目 chip 的圆点、书签小方块、新标签页分节的圆点、换色的色块，
 // 都由 hueVar 就地设成某个 --hue-*。
@@ -151,8 +176,9 @@ function violation(kind: TokenViolation['kind'], file: string, line: number, tex
   return { kind, file, line, text: text.trim() };
 }
 
-function knownVariable(name: string): boolean {
-  return DESIGN_TOKENS.includes(name) || ELEMENT_HUE_VARIABLES.includes(name) || name === HUE_TEMPLATE;
+function knownVariable(name: string, site = false): boolean {
+  return DESIGN_TOKENS.includes(name) || ELEMENT_HUE_VARIABLES.includes(name) || name === HUE_TEMPLATE
+    || (site && SITE_TOKENS.includes(name));
 }
 
 const LENGTH = String.raw`(-?[0-9.]+(?:px)?)`;
@@ -160,21 +186,22 @@ const HAIRLINE = new RegExp(String.raw`^inset ${LENGTH} ${LENGTH} 0(?: ([0-9.]+(
   + String.raw`(var\(--([a-z0-9-]+)\)|currentColor)$`);
 
 /** 一段 inset、不模糊的细线 / 色条 / 描边环：偏移和扩展都 ≤ 3px，颜色是令牌或 currentColor。 */
-function hairlineAllowed(part: string): boolean {
+function hairlineAllowed(part: string, site: boolean): boolean {
   const match = HAIRLINE.exec(part.trim());
   if (match === null) {
     return false;
   }
   const sizes = [match[1], match[2], match[3] ?? '0'].map((size) => Math.abs(Number.parseFloat(size ?? '0')));
-  return sizes.every((size) => size <= 3) && (match[4] === 'currentColor' || knownVariable(match[5] ?? ''));
+  return sizes.every((size) => size <= 3) && (match[4] === 'currentColor' || knownVariable(match[5] ?? '', site));
 }
 
-function shadowAllowed(value: string): boolean {
+function shadowAllowed(value: string, site: boolean): boolean {
   const trimmed = value.trim().replace(/['"`,]+$/g, '').replace(/^['"`]/, '').trim();
-  if (trimmed === 'none' || trimmed === 'var(--lift)') {
+  if (trimmed === 'none' || trimmed === 'var(--lift)'
+    || (site && SITE_SHADOW_TOKENS.some((name) => trimmed === `var(--${name})`))) {
     return true;
   }
-  return trimmed.split(/,(?![^(]*\))/).every(hairlineAllowed);
+  return trimmed.split(/,(?![^(]*\))/).every((part) => hairlineAllowed(part, site));
 }
 
 function colorMixAllowed(code: string): boolean {
@@ -185,9 +212,10 @@ function colorMixAllowed(code: string): boolean {
   return (mix[1] ?? '').split(/,(?![^(]*\))/).every((part) => COLOR_MIX_PART.test(part.trim()));
 }
 
-function fontSizeAllowed(value: string): boolean {
+function fontSizeAllowed(value: string, site: boolean): boolean {
   const trimmed = value.trim().replace(/['"`]/g, '').replace(/\s*!important$/, '');
-  if (trimmed === 'inherit' || trimmed === 'var(--read-size)') {
+  if (trimmed === 'inherit' || trimmed === 'var(--read-size)'
+    || (site && SITE_FONT_TOKENS.some((name) => trimmed === `var(--${name})`))) {
     return true;
   }
   const px = /^(\d+)(?:px)?$/.exec(trimmed);
@@ -207,18 +235,21 @@ function fontShorthandAllowed(value: string): boolean {
 function lineViolations(path: string, line: number, text: string): TokenViolation[] {
   const found: TokenViolation[] = [];
   const isCss = path.endsWith('.css');
+  const site = path.startsWith('client/src/views/site/');
   // Comments explain rules and quote values (「--accent #CC7D5E」); only code counts.
   const trimmed = text.trimStart();
   if (trimmed.startsWith('*') || trimmed.startsWith('/*') || trimmed.startsWith('//')) {
     return found;
   }
   const code = isCss ? text.replace(/\/\*.*?\*\//g, '') : text.replace(/\/\/.*$/, '');
-  if ((isCss ? HEX : QUOTED_HEX).test(code) || COLOR_FUNCTION.test(code) || COLOR_NAMES.test(code)
+  // 变量名里的 blue 等词不是颜色字面量；变量是否登记仍由下面逐一核对。
+  const literalCode = code.replace(/var\(--[a-z0-9-]+\)/gi, '');
+  if ((isCss ? HEX : QUOTED_HEX).test(code) || COLOR_FUNCTION.test(code) || COLOR_NAMES.test(literalCode)
     || !colorMixAllowed(code)) {
     found.push(violation('color', path, line, text));
   }
   for (const match of code.matchAll(VARIABLE_USE)) {
-    if (!knownVariable(match[1] ?? '')) {
+    if (!knownVariable(match[1] ?? '', site)) {
       found.push(violation('color', path, line, `令牌表外的变量 --${match[1] ?? ''}：${text}`));
     }
   }
@@ -227,11 +258,11 @@ function lineViolations(path: string, line: number, text: string): TokenViolatio
     found.push(violation('token_value', path, line, `新令牌 --${definition[1] ?? ''}：${text}`));
   }
   const shadow = SHADOW.exec(code);
-  if ((shadow !== null && !shadowAllowed(shadow[1] ?? '')) || DROP_SHADOW.test(code)) {
+  if ((shadow !== null && !shadowAllowed(shadow[1] ?? '', site)) || DROP_SHADOW.test(code)) {
     found.push(violation('shadow', path, line, text));
   }
   const size = FONT_SIZE_CSS.exec(code) ?? FONT_SIZE_JS.exec(code);
-  if (size !== null && !fontSizeAllowed(size[1] ?? '')) {
+  if (size !== null && !fontSizeAllowed(size[1] ?? '', site)) {
     found.push(violation('font_size', path, line, text));
   }
   const shorthand = isCss ? FONT_SHORTHAND.exec(code) : null;
