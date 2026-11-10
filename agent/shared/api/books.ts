@@ -163,6 +163,7 @@ export const RestoreBookRequestSchema = Type.Object({ requestId: RequestIdSchema
 export type RestoreBookRequest = Static<typeof RestoreBookRequestSchema>;
 
 export const BookInsightViewSchema = Type.Object({
+  spaceId: Type.Optional(Type.Union([IdSchema, Type.Null()])),
   kind: Type.Enum(BOOK_INSIGHT_KINDS),
   status: Type.Union([Type.Enum(BOOK_INSIGHT_STATUSES), Type.Literal('none')]),
   outline: Type.Union([BookOutlineSchema, Type.Null()]),

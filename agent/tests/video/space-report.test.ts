@@ -36,9 +36,9 @@ test('旧总结补写一份报告空间，时间可点、逐字稿折叠，第�
 
 test('再次生成更新同一空间，单独改空间后关联仍指向新版', () => {
   const work = summarized();
-  const first = publishVideoSpace(t.state, work);
+  const first = publishVideoSpace(t.state, work)!;
   const second = publishVideoSpace(t.state, { ...t.state.videoWorks.require(work.id),
-    digest: { ...work.digest!, summary: '先把重要决定记下来，协作就能接续。' } });
+    digest: { ...work.digest!, summary: '先把重要决定记下来，协作就能接续。' } })!;
   assert.equal(second.id, first.id);
   assert.ok(second.version > first.version);
   const edited = writeSpace(t.state, { id: second.id, version: second.version, title: second.title,

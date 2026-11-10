@@ -168,6 +168,7 @@ export type BookAnchor = Static<typeof BookAnchorSchema>;
 
 export const BookOutlinePartSchema = Type.Object(
   {
+    offset: Type.Optional(Type.Integer({ minimum: 0 })),
     chapter: Type.Integer({ minimum: 0 }),
     title: Type.String({ minLength: 1, maxLength: 200 }),
     summary: Type.String({ maxLength: 600 }),
@@ -177,7 +178,9 @@ export const BookOutlinePartSchema = Type.Object(
 );
 export type BookOutlinePart = Static<typeof BookOutlinePartSchema>;
 export const BookOutlineSchema = Type.Object(
-  { note: Type.String({ maxLength: 400 }), parts: Type.Array(BookOutlinePartSchema, { minItems: 1, maxItems: 200 }) },
+  { summary: Type.Optional(Type.String({ maxLength: 400 })),
+    chapters: Type.Optional(Type.Array(BookOutlinePartSchema, { maxItems: 5000 })),
+    note: Type.String({ maxLength: 400 }), parts: Type.Array(BookOutlinePartSchema, { minItems: 1, maxItems: 200 }) },
   STRICT,
 );
 export type BookOutline = Static<typeof BookOutlineSchema>;
@@ -186,6 +189,7 @@ export type BookOutline = Static<typeof BookOutlineSchema>;
 export const KEY_POINT_BASES = ['quoted', 'inferred'] as const;
 export const BookKeyPointSchema = Type.Object(
   {
+    category: Type.Optional(Type.String({ minLength: 1, maxLength: 40 })),
     id: Type.String({ minLength: 1, maxLength: 40 }),
     text: Type.String({ minLength: 1, maxLength: 400 }),
     basis: Type.Enum(KEY_POINT_BASES),

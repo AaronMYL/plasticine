@@ -239,7 +239,12 @@ test('生成大纲：先逐章归纳再合成，做完存下来；格式不对�
     assert.equal(started.status, 202);
     assert.equal(json(started)['status'], 'generating');
     const ready = await waitInsight(app, cookie, id, 'outline');
-    assert.equal((ready['outline'] as Record<string, unknown>)['note'], '按卷归纳');
+    assert.equal((ready['outline'] as Record<string, unknown>)['note'], '');
+    assert.equal(typeof ready['spaceId'], 'string');
+    const page = app.state.spaces.require(String(ready['spaceId']));
+    assert.equal(page.bookId, id);
+    assert.equal(page.category, 'booknote');
+    assert.match(page.html!, /data-link="book:/);
     const points = await call(app, 'POST', `${PATH}/${id}/insights`, { cookie,
       body: { requestId: 'points-1', kind: 'key_points' } });
     assert.equal(points.status, 202);

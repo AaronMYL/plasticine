@@ -78,10 +78,11 @@ function reportHtml(work: VideoWorkRow): string {
     + `</summary>${transcript}</details></article>`;
 }
 
-export function publishVideoSpace(state: VideoSpaceState, work: VideoWorkRow): Space {
+export function publishVideoSpace(state: VideoSpaceState, work: VideoWorkRow): Space | null {
   if (work.digest === null) throw new Error('这条作品还没有总结，不能生成报告。');
   return state.transaction(() => {
     const linked = work.spaceId === null ? undefined : state.spaces.get(work.spaceId);
+    if (work.spaceId !== null && linked === undefined) return null;
     const existing = linked ?? state.spaces.findBySourceUrl(work.url, 'report');
     if (existing?.deletedAt !== undefined && existing.deletedAt !== null) return existing;
     const title = (work.digest!.summary || work.title).slice(0, 120);

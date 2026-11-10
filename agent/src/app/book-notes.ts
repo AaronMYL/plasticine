@@ -15,6 +15,7 @@ import { BOOK_INSIGHT_KINDS, DEFAULT_NOTE_FOLDER, type BookInsightKind } from '.
 import { bookDiscussions, bookNotesMarkdown } from '../reading/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { liveBook } from './books.ts';
+import { publishBookSpace } from '../brain/index.ts';
 import { annotationView, insightView } from './book-views.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
@@ -116,7 +117,9 @@ export function getBookInsight(context: RequestContext): Reply {
   const { state } = context.deps;
   const book = liveBook(state, param(context, 'id'));
   const kind = insightKind(param(context, 'kind'));
-  return { status: 200, body: insightView(book, kind, state.bookInsights.find(book.id, kind)) };
+  const row = state.bookInsights.find(book.id, kind);
+  const space = row === undefined ? null : publishBookSpace(state, book, row);
+  return { status: 200, body: insightView(book, kind, row, space?.id ?? null) };
 }
 
 /** POST /v2/books/:id/insights：开始生成大纲或重点，马上返回「正在生成」，做完经事件流通知。 */
@@ -128,7 +131,8 @@ export async function generateBookInsight(context: RequestContext): Promise<Repl
   return idempotent(context, body.requestId, () => {
     const row = context.deps.bookInsights.start(book, body.kind, body.force ?? false);
     publish(context, book.id, 'insights');
-    return { status: 202, body: insightView(book, body.kind, row) };
+    const space = publishBookSpace(state, book, row);
+    return { status: 202, body: insightView(book, body.kind, row, space?.id ?? null) };
   });
 }
 
@@ -147,7 +151,8 @@ export async function dismissKeyPoint(context: RequestContext): Promise<Reply> {
       : [...row.dismissedPointIds, body.pointId];
     const saved = state.bookInsights.update(row.id, row.version, { dismissedPointIds: dismissed });
     publish(context, book.id, 'insights');
-    return { status: 200, body: insightView(book, 'key_points', saved) };
+    const space = publishBookSpace(state, book, saved, true);
+    return { status: 200, body: insightView(book, 'key_points', saved, space?.id ?? null) };
   });
 }
 

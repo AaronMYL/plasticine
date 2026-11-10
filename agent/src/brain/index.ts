@@ -84,3 +84,5 @@ export { ToolFailure, ToolUncertain } from './tools/failure.ts';
 // 做梦：每晚整理记忆（《优化清单》第 10 条夜里那一半）。
 export { Dreamer, DreamOutputSchema } from './memory-dream.ts';
 export type { DreamInput, DreamReport, DreamSkills, DreamState } from './memory-dream.ts';
+
+export { publishBookSpace, backfillBookSpaces, bookSpaceSource } from './book-spaces.ts';

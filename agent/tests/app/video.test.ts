@@ -102,7 +102,7 @@ test('收藏关联同一份空间，资料库修改后读最新版本，不重�
     url: 'https://www.douyin.com/video/7300000000000000010', title: '示例收藏' }).work;
   const done = t.state.videoWorks.advance(work.id, { stage: 'summarized', transcript: '原逐字稿',
     digest: { summary: '给协作保留一份可以继续使用的记录。', outline: [], points: [], related: [] } });
-  const space = publishVideoSpace(t.state, done);
+  const space = publishVideoSpace(t.state, done)!;
   const list = json(await call(t, 'GET', '/v2/video/douyin', { cookie }))['works'] as Record<string, unknown>[];
   assert.equal(list[0]?.['spaceId'], space.id);
   const edited = writeSpace(t.state, { id: space.id, version: space.version, title: '最新的收藏总结',
