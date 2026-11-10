@@ -33,6 +33,9 @@ function messageSource(state: SourceState, ref: string): MemoryLineSource {
 }
 
 export function sourceOf(state: SourceState, anchor: MemoryAnchor): MemoryLineSource {
+  if (anchor.kind === 'system') {
+    return { kind: 'system', id: anchor.ref, label: '系统默认', at: EPOCH };
+  }
   if (anchor.kind === 'message') {
     return messageSource(state, anchor.ref);
   }

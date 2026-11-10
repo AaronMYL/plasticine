@@ -1,3 +1,4 @@
+export * from './soul.ts';
 // Request, response and event schemas of the /v2 API, one file per resource. The server validates against these;
 // the client imports the same types from here (plasticine-code 底线 4).
 

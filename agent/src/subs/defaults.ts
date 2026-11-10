@@ -5,7 +5,7 @@ import type { ResearchSettings, ReviewSettings, Subscription } from '../../share
 import type { StateService } from '../state/index.ts';
 
 /** 每期结构（11-06 定）。 */
-export const RESEARCH_SECTIONS = ['本周概览', '重点研究', '研究方法与局限', '和你兴趣相关的发现', '值得继续追踪的问题'];
+export const RESEARCH_SECTIONS = ['本周概览', '重点研究', '研究方法', '和你兴趣相关的发现', '值得继续追踪的问题'];
 
 export function researchDraft(input: Partial<Omit<ResearchSettings, 'kind' | 'rules'>>): ResearchSettings {
   return {

@@ -262,6 +262,13 @@ function createEventStore(context: StoreContext) {
       return context.db.all(sql, { kind, path: `$.${field}`, value })
         .map((row) => readRow(MemoryDocEventSchema, EVENT_COLUMNS, row, 'memory_doc_events'));
     },
+    /** Soul 的节分类附在事件上；同毫秒内按写入顺序取最后一次。 */
+    soulSection(lineId: string): string | undefined {
+      const row = context.db.get(`SELECT json_extract(detail, '$.soulSection') AS section
+        FROM memory_doc_events WHERE line_id = $line_id AND json_type(detail, '$.soulSection') = 'text'
+        ORDER BY rowid DESC LIMIT 1`, { line_id: lineId });
+      return typeof row?.['section'] === 'string' ? row['section'] : undefined;
+    },
     /** 最近的在前。 */
     recent(docId: string, limit: number): MemoryDocEvent[] {
       const sql = `SELECT * FROM memory_doc_events WHERE doc_id = $doc_id ORDER BY created_at DESC, id DESC

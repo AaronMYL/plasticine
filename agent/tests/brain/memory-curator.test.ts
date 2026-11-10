@@ -115,7 +115,7 @@ test('他明说记住的当场写进主题文档（下一轮就在上下文里�
   })]);
   instance.enqueueLineTurn('line-main');
   await instance.settled();
-  const lines = state.memoryDocs.lines.live(RULES_DOC_ID);
+  const lines = state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.basis !== 'system');
   assert.deepEqual(lines.map((line) => [line.text, line.anchors[0]?.ref]),
     [['发布不做预检，直接发', said], ['「橡皮泥」指的是 Plasticine', term]]);
   const remembered = state.memoryJournal.open();
@@ -139,7 +139,7 @@ test('他改口说的规矩改那一行：旧说法进归档、新行留「之�
     used: [] })]);
   instance.enqueueLineTurn('line-main');
   await instance.settled();
-  const [line] = state.memoryDocs.lines.live(RULES_DOC_ID);
+  const [line] = state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.basis !== 'system');
   assert.equal(line?.text, '发布不做预检，直接发');
   assert.equal(line?.previous, '发布前先跑预检');
   assert.deepEqual(state.memoryDocs.lines.archived(RULES_DOC_ID).map((row) => row.id), [before.id]);

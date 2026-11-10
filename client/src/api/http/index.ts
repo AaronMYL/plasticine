@@ -1,5 +1,6 @@
 import { createNetworkAttachmentsHttp } from './network-attachments.ts';
 import { createMatesHttp } from './mates.ts';
+import { createSoulHttp } from './soul.ts';
 import { HttpClientUpdates } from './client-updates.ts';
 import { HttpBackups } from './backups.ts';
 import { HttpSearch } from './search.ts';
@@ -71,6 +72,7 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     ...(options.now === undefined ? {} : { now: options.now }),
   });
   return {
+    soul: createSoulHttp(transport),
     outbound: createOutboundHttp(transport),
     networkAttachments: createNetworkAttachmentsHttp(transport),
     lines: new HttpLines(transport),

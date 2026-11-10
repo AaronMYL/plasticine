@@ -24,6 +24,7 @@ import './topics.css';
 
 const BASIS_TAG: Readonly<Record<MemoryDocLine['basis'], string | null>> = {
   quote: null,
+  system: '系统默认',
   agreement: null,
   inferred: '推断',
 };
@@ -31,6 +32,7 @@ const BASIS_TAG: Readonly<Record<MemoryDocLine['basis'], string | null>> = {
 /** 「回到原话」去哪：约定那一段里那一条、对话里那条消息、那篇笔记；图书先到图书馆。 */
 function sourceRoute(source: MemoryLineSource): Route {
   switch (source.kind) {
+    case 'system': return { view: 'memory', noteId: null };
     case 'agreement': return { view: 'memory', noteId: null, objectType: 'agreement', objectId: source.id };
     case 'message': return mainLineRoute(source.id);
     case 'note': return { view: 'notes', noteId: source.id };
@@ -85,7 +87,7 @@ function Line({ line, navigate }: { line: MemoryDocLine; navigate: (route: Route
         {tag === null ? null : <span className="tag tag-neutral doc-line-tag">{tag}</span>}
         {line.uncertainId === null ? null : <span className="tag tag-outline doc-line-tag">拿不准</span>}
       </span>
-      {source === undefined ? null : (
+      {source === undefined || source.kind === 'system' ? null : (
         <button type="button" className="text-button text-button-quiet doc-line-source"
           aria-label={`回到原话：${source.label}`}
           onClick={() => navigate(sourceRoute(source))}>

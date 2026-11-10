@@ -1,3 +1,4 @@
+import { SOUL_ROUTES } from './soul.ts';
 import { getLinkPreview } from './link-preview.ts';
 // The route table (plasticine-code: 路由表一个文件). Every /v2 route, its method, whether it needs a session, and the
 // resource file that handles it. Order matters only where two patterns could match the same path.
@@ -206,6 +207,7 @@ import { getTranslateModel, setTranslateModel } from './translate-model.ts';
 export const HEALTH_PATH = '/v2/health';
 
 export const ROUTES: readonly Route[] = [
+  ...SOUL_ROUTES,
   { method: 'GET', path: OUTBOUND_GRANTS_PATH, auth: true, handler: listOutboundGrants },
   { method: 'POST', path: OUTBOUND_GRANTS_PATH, auth: true, handler: createOutboundGrant },
   { method: 'PUT', path: `${OUTBOUND_GRANTS_PATH}/:id`, auth: true, handler: editOutboundGrant },

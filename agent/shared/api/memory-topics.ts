@@ -20,7 +20,7 @@ export type MemoryTopicKind = (typeof MEMORY_TOPIC_KINDS)[number];
 
 export const MEMORY_TOPIC_KIND_LABELS: Readonly<Record<MemoryTopicKind, string>> = {
   about_you: '关于你',
-  rules: '怎么替你做事',
+  rules: '主线的 Soul',
   person: '人物',
   project: '项目',
   topic: '话题',
@@ -82,10 +82,10 @@ export const MemoryTopicViewSchema = Type.Object({
 export type MemoryTopicView = Static<typeof MemoryTopicViewSchema>;
 
 /** 一行从哪来：原话（对话里的一条消息、笔记的一段）、约定，或者 Plasticine 推断。 */
-export const MEMORY_TOPIC_LINE_BASES = ['quote', 'agreement', 'inferred'] as const;
+export const MEMORY_TOPIC_LINE_BASES = ['quote', 'agreement', 'inferred', 'system'] as const;
 
 export const MemoryLineSourceSchema = Type.Object({
-  kind: Type.Union([Type.Literal('message'), Type.Literal('note'), Type.Literal('book'), Type.Literal('agreement')]),
+  kind: Type.Union([Type.Literal('message'), Type.Literal('note'), Type.Literal('book'), Type.Literal('agreement'), Type.Literal('system')]),
   id: IdSchema,
   /** 链上写的字，例如「10-26 对话」。 */
   label: Type.String({ minLength: 1 }),

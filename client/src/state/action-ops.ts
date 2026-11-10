@@ -9,6 +9,7 @@ import { Value } from 'typebox/value';
 import { ApiError, errorText, isUncertain, NOT_RECEIVED_CODE } from '../api/errors.ts';
 import {
   AnswerAskRequestSchema,
+  ChangeSoulRequestSchema,
   AskAboutRequestSchema,
   DeferAskRequestSchema,
   SaveNoteRequestSchema,
@@ -35,6 +36,7 @@ import { Store } from './store.ts';
 
 /** 一个写操作要发的东西：发往哪（任务 / 卡 / …）和请求体（里面带着标识）。M4、M5 的几种在 m4- / m5-action-requests.ts。 */
 export const ActionRequestSchema = Type.Union([
+  Type.Object({ kind: Type.Literal('soul_change'), body: ChangeSoulRequestSchema }),
   Type.Object({ kind: Type.Literal('backup_create'), body: CreateBackupRequestSchema }),
   Type.Object({ kind: Type.Literal('backup_preview'), backupId: Type.String(), body: RestorePreviewRequestSchema }),
   Type.Object({ kind: Type.Literal('backup_restore'), backupId: Type.String(), body: RestoreBackupRequestSchema }),

@@ -1,7 +1,7 @@
 // 记忆页改成「主题目录 + 拿不准的」（2026-11-02 第 102 条）：目录按 关于你 · 人 · 项目 · 话题，每个主题一句话；
 // 拿不准的最多摆 3 条，对 / 不对 / 改一句（用户确认字段，本人会话确认）；点开一份是活文档，每行链回原话。
-// 第 4 批（11-04）：约定栏换成「怎么替你做事」，和「关于你」排在目录最前面一组（不写组名），旧地址 #/memory/agreements 打开它。
-// 11-05：词表撤掉、并进「怎么替你做事」，页头的分段整个去掉（记忆页直接是文档目录）；旧地址 #/memory/terms 打开它。
+// 第 4 批（11-04）：约定栏换成「主线的 Soul」，和「关于你」排在目录最前面一组（不写组名），旧地址 #/memory/agreements 打开它。
+// 11-05：词表撤掉、并进「主线的 Soul」，页头的分段整个去掉（记忆页直接是文档目录）；旧地址 #/memory/terms 打开它。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -33,7 +33,7 @@ describe('记忆 · 主题目录', () => {
         'topics-topic', 'topics-skill']);
       const pinned = within(main()).getByRole('region', { name: '关于你和做事方式' });
       expect(within(pinned).getAllByRole('button').map((button) => button.textContent?.split(/身份|你明说/)[0]))
-        .toEqual(['关于你', '怎么替你做事']);
+        .toEqual(['关于你', '主线的 Soul']);
       expect(within(main()).getByRole('button', { name: /周屿.*Cyber Hunter 的合作者/ })).toBeTruthy();
     });
 
@@ -116,10 +116,10 @@ describe('记忆 · 主题目录', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/projects/project_hunter'));
   });
 
-  it('「怎么替你做事」：最前面是硬线（带锁、ⓘ 说明），下面是规矩，迁来的行出处是约定；旧地址 #/memory/agreements 打开它',
+  it('「主线的 Soul」：最前面是硬线（带锁、ⓘ 说明），下面是规矩，迁来的行出处是约定；旧地址 #/memory/agreements 打开它',
     async () => {
       await renderApp({ hash: '#/memory/agreements', setup: seed });
-      expect(await within(main()).findByRole('heading', { level: 1, name: '怎么替你做事' })).toBeTruthy();
+      expect(await within(main()).findByRole('heading', { level: 1, name: '主线的 Soul' })).toBeTruthy();
       const hard = within(main()).getByRole('region', { name: /^先问你/ });
       expect(within(hard).getAllByRole('listitem').map((item) => item.textContent))
         .toEqual(['花钱', '以本人名义对外答应或发出', '删除和其他做了就撤不回的', '权限变化', '必须本人做的']);
@@ -132,10 +132,10 @@ describe('记忆 · 主题目录', () => {
       expect(within(main()).queryByRole('navigation', { name: '记忆视图' })).toBeNull();
     });
 
-  it('词表撤掉（11-05）：旧地址 #/memory/terms 打开「怎么替你做事」；迁来的词义行出处写「词表」，点过去读原来那一条',
+  it('词表撤掉（11-05）：旧地址 #/memory/terms 打开「主线的 Soul」；迁来的词义行出处写「词表」，点过去读原来那一条',
     async () => {
       await renderApp({ hash: '#/memory/terms', setup: seed });
-      expect(await within(main()).findByRole('heading', { level: 1, name: '怎么替你做事' })).toBeTruthy();
+      expect(await within(main()).findByRole('heading', { level: 1, name: '主线的 Soul' })).toBeTruthy();
       const rules = within(main()).getByRole('region', { name: '规矩' });
       const term = within(rules).getByText(/「接上」指的是/).closest('li') as HTMLElement;
       fireEvent.click(within(term).getByRole('button', { name: '回到原话：词表' }));

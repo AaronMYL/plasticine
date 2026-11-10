@@ -1,7 +1,7 @@
-// 假记忆主题（设计稿 2026-11-02）：关于你、怎么替你做事、人、项目、话题各几页活文档，加上「拿不准的」几条。
+// 假记忆主题（设计稿 2026-11-02）：关于你、主线的 Soul、人、项目、话题各几页活文档，加上「拿不准的」几条。
 // 人名是虚构的示例；每行都带一条来源（链回原话 / 约定）。内容是示例，不是真数据。
-// 第 4 批：原来写在「关于你」里的「做事的规矩」挪进「怎么替你做事」（RULES_DOC_ID，和真服务端同一个标识）。
-// 11-05：词表并进「怎么替你做事」，原来「说话方式」里那两条词语约定挪过去，出处写「词表」。
+// 第 4 批：原来写在「关于你」里的「做事的规矩」挪进「主线的 Soul」（RULES_DOC_ID，和真服务端同一个标识）。
+// 11-05：词表并进「主线的 Soul」，原来「说话方式」里那两条词语约定挪过去，出处写「词表」。
 
 import type { MemoryDocLine, MemoryDocSection, MemoryTopicView, UncertainItem } from '../shared.ts';
 import { docLinkNames, RULES_DOC_ID } from '../shared.ts';
@@ -44,7 +44,7 @@ export function topicSeeds(now: Date): TopicSeed[] {
         ['用语音输入，错字多；可能改变意思的错字，先说出解出来的版本让你确认。', 'agreement', '约定 · 10-21', 12 * DAY],
       ] },
     ] },
-    { topic: topic({ id: RULES_DOC_ID, kind: 'rules', title: '怎么替你做事',
+    { topic: topic({ id: RULES_DOC_ID, kind: 'rules', title: '主线的 Soul',
       summary: '你明说的规矩；最前面是不管多有把握都先问你的几类事' }, now, 20), sections: [
       { heading: '规矩', lines: [
         ['要你定的事一律给选项，推荐的放第一个。', 'agreement', '约定', 12 * DAY],
@@ -121,7 +121,7 @@ export function sectionsOf(seed: TopicSeed, now: Date, idOf: (name: string) => s
     heading: section.heading,
     lines: section.lines.map(([text, basis, label, minutes, uncertain], lineIndex) => ({
       id: `${seed.topic.id}_s${sectionIndex}_l${lineIndex}`, text, basis,
-      sources: [{ kind: basis === 'agreement' ? 'agreement' : 'message',
+      sources: [{ kind: basis === 'system' ? 'system' : basis === 'agreement' ? 'agreement' : 'message',
         id: `src_${seed.topic.id}_${sectionIndex}_${lineIndex}`, label, at: minutesAgo(now, minutes) }],
       uncertainId: uncertain ?? null,
       links: docLinkNames(text).map((name) => ({ name, topicId: idOf(name) })),

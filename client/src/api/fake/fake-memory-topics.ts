@@ -17,6 +17,7 @@ import type {
   MemoryTopicListResponse,
   MemoryTopicView,
   RulesOfferItem,
+  SoulView,
   Tier,
   UncertainItem,
   UndoDreamChangeRequest,
@@ -52,6 +53,19 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
       lineCount: seed.sections.reduce((sum, section) => sum + section.lines.length, 0) } }));
     this.uncertain = uncertainSeeds(now);
     this.dreamView = dreamSeed(now);
+  }
+
+  applySoul(view: SoulView): void {
+    const existing = this.topics.find((row) => row.topic.id === RULES_DOC_ID);
+    if (existing === undefined) return;
+    existing.topic.title = view.title;
+    existing.topic.lineCount = view.lines.length;
+    existing.sections = ['speaking', 'doing', 'outbound'].map((section) => ({
+      heading: ({ speaking: '说话', doing: '做事', outbound: '对外' } as Record<string, string>)[section] ?? section,
+      lines: view.lines.filter((line) => line.section === section).map((line) => [line.text,
+        line.source === 'system' ? 'system' : 'quote', line.source === 'system' ? '系统默认' : '你改的',
+        Math.max(0, (this.deps.now().getTime() - Date.parse(line.at)) / 60_000)]),
+    }));
   }
 
   /** 最近一次整理（首页「回顾」读它数几条）；没有是 null。 */

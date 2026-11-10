@@ -23,8 +23,8 @@ test('每次请求带代码生成的总目录（按类型分组，每篇一行 �
   const live = state.projects.create({ name: 'Cyber Hunter' });
   const empty = state.projects.create({ name: '还没内容的项目' });
   const done = state.projects.create({ name: '旧项目', lifecycle: 'done' });
-  ensureMemoryDocs(state);
   assert.equal(memoryDocsSection(state), '', '一行都还没有时不占上下文');
+  ensureMemoryDocs(state);
   for (const project of [live, done]) {
     addLine(state, { docId: ensureProjectDoc(state, project).id, section: 'decision', text: '先做 15 天 All-in',
       basis: 'stated', anchors }, writer);
@@ -35,7 +35,7 @@ test('每次请求带代码生成的总目录（按类型分组，每篇一行 �
   addLine(state, { docId: person.id, text: '在做独立游戏', basis: 'stated', anchors }, writer);
   const section = memoryDocsSection(state);
   assert.match(section, /^## 记忆/);
-  assert.match(section, /### 目录\n关于你和做事方式：\n- 关于你：身份、住处、作息和长期偏好\n项目：\n/);
+  assert.match(section, /### 目录\n关于你和做事方式：\n- 关于你：身份、住处、作息和长期偏好\n- 主线的 Soul：[^\n]+\n项目：\n/);
   assert.match(section, /项目：\n- Cyber Hunter：定下的方向、决定、约束和进展；聊到「Cyber Hunter」时读\n人：\n- 小林：大学同学/);
   assert.doesNotMatch(section, /memdoc-project/, '目录里写名字，不写标识');
   assert.doesNotMatch(section, /旧项目/);
@@ -56,10 +56,13 @@ test('关于你超出预算时只装放得下的，写明还有几行没装', ()
   assert.ok(YOU_DOC_BUDGET_TOKENS < 20 * long.length);
 });
 
-test('「怎么替你做事」整份进上下文：硬线在最前面，规矩一行不截；一行都还没有时也带硬线（第 4 批）', () => {
+test('「主线的 Soul」整份进上下文：硬线在最前面，规矩一行不截；一行都还没有时也带硬线（第 4 批）', () => {
   ensureMemoryDocs(state);
+  for (const line of state.memoryDocs.lines.live(RULES_DOC_ID)) {
+    state.memoryDocs.lines.retire(line.id, line.version, 'no_longer_true');
+  }
   const empty = rulesDocSection(state);
-  assert.match(empty, /^## 怎么替你做事/);
+  assert.match(empty, /^## 主线的 Soul/);
   assert.match(empty, /花钱/);
   assert.match(empty, /以本人名义对外答应或发出/);
   assert.doesNotMatch(empty, /\[行:/);
@@ -71,7 +74,7 @@ test('「怎么替你做事」整份进上下文：硬线在最前面，规矩�
     assert.ok(section.includes(`[行:${line.id}]`), `第 ${line.position} 行没装`);
   }
   assert.ok(section.indexOf('花钱') < section.indexOf(`[行:${lines[0]?.id ?? ''}]`), '硬线在规矩前面');
-  assert.doesNotMatch(memoryDocsSection(state), /### 怎么替你做事/, '目录那一段不再重复正文');
+  assert.doesNotMatch(memoryDocsSection(state), /### 主线的 Soul/, '目录那一段不再重复正文');
 });
 
 test('搜记忆：跨文档按两字重合找在用的行，退休的不出现', () => {

@@ -1,4 +1,5 @@
 import { FakeMates } from './fake-mates.ts';
+import { FakeSoul } from './fake-soul.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
 import { renderVideoPage } from '../../../../agent/shared/video-space-page.ts';
@@ -227,6 +228,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const webTabs = new FakeWebTabs({ session, receipts, bus });
   const today = new FakeToday({ session, receipts });
   const memoryTopics = new FakeMemoryTopics({ session, receipts, now });
+  const soul = new FakeSoul(session, receipts, now, (view) => memoryTopics.applySoul(view));
   const spaces = new FakeSpaces({ session, receipts, now, bus, dream: () => memoryTopics.currentDream() });
   const nodes = new FakeNodes({ session, bus, receipts, faults, now });
   const m5b = createFakeM5b({ session, bus, receipts, notes, now });
@@ -302,7 +304,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     }
   }
   const api: PlasticineApi = {
-    mates, mateGroups: mates.groups, outbound, networkAttachments,
+    mates, mateGroups: mates.groups, soul, outbound, networkAttachments,
     lines,
     tasks,
     modelProviders,

@@ -26,8 +26,7 @@ export const REPORT_GUIDE = `报告（genre "report"）：按内容自由排版�
 </section>
 有 3 节以上带 id 的 section，右侧目录自动生成（data-toc 是目录里的名字，不写就用 h2）。现成的块：
 - 结论卡：<div class="cards2"><article class="rcard"><div class="tags"><span class="stt">标签</span></div>
-  <h3>一句话</h3><p class="tx">说明</p><dl class="vd"><dt><i class="i-ok"></i>支持</dt><dd>…</dd>
-  <dt><i class="i-no"></i>不能读成</dt><dd>…</dd></dl></article>…</div>（cards3 是三列）
+  <h3>一句话</h3><p class="tx">说明</p><dl class="vd"><dt>要点</dt><dd>…</dd></dl></article>…</div>（cards3 是三列）
 - 状态小签：<span class="stt"><span class="sq" style="--h:var(--hue-sky)"></span>已同行评审</span>；sq 加 pre 是斜纹
   （未评审 / 预印本），加 watch 是空心（待追踪）。
 - 能筛选的卡片：<div class="filt"><div class="seg"><button class="on" data-filter="*">全部<span class="c">4</span>

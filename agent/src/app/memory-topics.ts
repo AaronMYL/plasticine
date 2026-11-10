@@ -95,7 +95,8 @@ function lineView(state: StateService, line: MemoryLine, pending: ReadonlySet<st
   return {
     id: line.id,
     text: line.text,
-    basis: line.basis !== 'stated' ? 'inferred'
+    basis: line.anchors.every((anchor) => anchor.kind === 'system') ? 'system'
+      : line.basis !== 'stated' ? 'inferred'
       : line.anchors.some((anchor) => anchor.kind === 'agreement' || anchor.kind === 'term') ? 'agreement' : 'quote',
     sources: sourcesOf(state, line.anchors) as [MemoryLineSource, ...MemoryLineSource[]],
     uncertainId: line.inferenceId !== null && pending.has(line.inferenceId) ? line.inferenceId : null,

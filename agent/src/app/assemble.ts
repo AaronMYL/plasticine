@@ -1,3 +1,4 @@
+import { withMainSoul } from './soul-text.ts';
 import type { LinkPreviewFetchOptions } from '../cloud-tools/index.ts';
 // The wiring of the whole service in one place, used by main.ts and by the tests alike. 2026-11-05 Harness 重做：对话就是
 // 新内核的主线（lines/），要花时间的事开后台线；旧的对话轮、任务、事、自迭代、验收和它们的扫描都删了。这里装：卡桌和
@@ -6,6 +7,7 @@ import type { LinkPreviewFetchOptions } from '../cloud-tools/index.ts';
 
 import {
   autoOnlyPermissionGate,
+  ensureRulesDoc,
   createBookTools,
   createDeviceActionGate,
   createDeviceActionTool,
@@ -174,10 +176,11 @@ class LateLines {
 export function assembleApp(options: AssembleOptions): App {
   const { state } = options;
   const now = options.now ?? (() => new Date());
+  ensureRulesDoc(state);
   const hub = options.hub ?? new EventHub();
   // 第 7 条（11-07 定）：个人回顾是一个订阅，日报每天早上 8 点、周报周日晚上，按他所在地的时区；没有就建上。
   ensureReviewSubscription(state, state.dailySettings.read().settings.timeZone ?? BACKGROUND_TIME_ZONE);
-  const text = options.text ?? kernelText(options.lines.models, now);
+  const text = withMainSoul(options.text ?? kernelText(options.lines.models, now), state);
   const illustrator = options.illustrator !== undefined ? options.illustrator : illustratorOf(options.kernelModels);
   const server = new ServerCommands({ stateDirectory: options.stateDirectory, now });
   const skills = new SkillStore({ stateDirectory: options.stateDirectory, now,

@@ -1,3 +1,4 @@
+export { changeSoul, soulView } from './soul.ts';
 // brain/：留给新内核的业务工具（每个工具一个文件，参数 schema 来自 shared/）和几处旁路的模型活（笔记 AI、网页翻译、
 // 信息流选材与评论、图书大纲、记账截图、分身答话、记忆整理）。2026-11-05 Harness 重做：对话轮、任务轮、验收、诊断、
 // 回执审查和它们的上下文装配都删了，线的循环在 lines/，模型在 kernel/（旁路调用经 kernel/text.ts）。

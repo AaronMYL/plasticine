@@ -131,7 +131,7 @@ test('昨晚整理了什么：读最近一次；撤销新加删掉那一行，�
     assert.equal((await undo(json(undoneAdd))).status, 409, '撤销过的不能再撤销');
 
     assert.equal((await undo(changes[1] ?? {})).status, 200);
-    assert.deepEqual(state.memoryDocs.lines.live(RULES_DOC_ID).map((row) => row.text), ['重要的事再发邮件兜底']);
+    assert.deepEqual(state.memoryDocs.lines.live(RULES_DOC_ID).filter((row) => row.basis !== 'system').map((row) => row.text), ['重要的事再发邮件兜底']);
 
     const chose = await call(app, 'POST', `/v2/memory/dreams/changes/${String(changes[2]?.['id'])}/choose`,
       { cookie, body: { requestId: newRequestId(), version: changes[2]?.['version'], choice: 1 } });

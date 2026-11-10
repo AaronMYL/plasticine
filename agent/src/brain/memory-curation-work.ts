@@ -83,16 +83,17 @@ export function relatedLines(state: CurationState, docs: readonly MemoryDoc[], t
   const always = ALWAYS_SHOWN.map((id) => state.memoryDocs.docs.get(id)).filter((doc) => doc !== undefined)
     .map((doc) => ({ doc, lines: state.memoryDocs.lines.live(doc.id) }));
   const chosen = [...always, ...scored];
-  const result: Record<string, { id: string; section: string; text: string }[]> = {};
+  type MaterialLine = { id: string; section: string; text: string; basis: string; anchors: MemoryLine['anchors'] };
+  const result: Record<string, MaterialLine[]> = {};
   let used = 0;
   for (const { doc, lines } of chosen) {
-    const shown: { id: string; section: string; text: string }[] = [];
+    const shown: MaterialLine[] = [];
     for (const line of lines) {
       used += Array.from(line.text).length;
       if (used > MATERIAL_LINE_CHARS) {
         break;
       }
-      shown.push({ id: line.id, section: line.section, text: line.text });
+      shown.push({ id: line.id, section: line.section, text: line.text, basis: line.basis, anchors: line.anchors });
     }
     result[doc.id] = shown;
   }

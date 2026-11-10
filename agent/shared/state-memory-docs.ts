@@ -30,7 +30,7 @@ export const YOU_DOC_ID = 'memdoc-you';
 export const YOU_DOC_TITLE = '关于你';
 /** 「怎么替你做事」只有一份，标识固定。 */
 export const RULES_DOC_ID = 'memdoc-rules';
-export const RULES_DOC_TITLE = '怎么替你做事';
+export const RULES_DOC_TITLE = '主线的 Soul';
 /** 项目文档和项目一一对应，标识由项目标识推出。 */
 export function projectDocId(projectId: string): string {
   return `memdoc-project-${projectId}`;
@@ -48,8 +48,8 @@ export const MEMORY_DOC_COMPACT_RATIO = 0.85;
 /** 决定段只在项目文档里（项目档案的「决定」）；其余都是 note。 */
 export const MEMORY_LINE_SECTIONS = ['note', 'decision'] as const;
 export type MemoryLineSection = (typeof MEMORY_LINE_SECTIONS)[number];
-/** stated = 用户说的；confirmed_inference = Plasticine 推出来、用户在设备上确认过的。 */
-export const MEMORY_LINE_BASES = ['stated', 'confirmed_inference'] as const;
+/** stated = 用户说的；confirmed_inference = 用户确认过的推断；system = 产品默认规则。 */
+export const MEMORY_LINE_BASES = ['stated', 'confirmed_inference', 'system'] as const;
 export type MemoryLineBasis = (typeof MEMORY_LINE_BASES)[number];
 /** 行退休的原因：被新行替代、合并压缩、用户要忘掉、用户改写、用户说不再成立。 */
 export const MEMORY_LINE_RETIRE_REASONS = ['revised', 'merged', 'forgotten', 'edited', 'no_longer_true'] as const;
@@ -60,7 +60,7 @@ export type MemoryLineRetireReason = (typeof MEMORY_LINE_RETIRE_REASONS)[number]
  * 或一条约定（第 4 批：在用的约定整理进「怎么替你做事」，每行指回原来那条约定；约定表本身不动），
  * 或一条词表（2026-11-05：词表并进「怎么替你做事」，每行指回原来那条词表条目；词表本身不动、不删）。
  */
-export const MEMORY_ANCHOR_KINDS = ['message', 'note', 'memory_entry', 'user_edit', 'agreement', 'term'] as const;
+export const MEMORY_ANCHOR_KINDS = ['message', 'note', 'memory_entry', 'user_edit', 'agreement', 'term', 'system'] as const;
 export const MemoryAnchorSchema = Type.Object({ kind: Type.Enum(MEMORY_ANCHOR_KINDS), ref: IdSchema }, STRICT);
 export type MemoryAnchor = Static<typeof MemoryAnchorSchema>;
 const Anchors = Type.Array(MemoryAnchorSchema, { minItems: 1 });

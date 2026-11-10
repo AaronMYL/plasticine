@@ -1,3 +1,4 @@
+import { MAIN_SOUL_DEFAULTS } from '../../shared/soul.ts';
 // 记忆文档的写法（docs/specs/memory-docs.md 第 2 节）：后台整理、file_to_project 的决定、记忆页的用户改动都走这里，
 // 所以三处写出来的行和事件是同一个样子：加一行、改一行（新行替代旧行，旧文字存进「之前」）、退休一行、合并几行、
 // 提一条待确认推断、确认推断成行，每一步在 memory_doc_events 记一笔。每个函数自己一个事务（嵌套时是保存点）。
@@ -63,19 +64,27 @@ export function ensureYouDoc(state: DocState): MemoryDoc {
   });
 }
 
-const RULES_SUMMARY = '你明说的规矩；最前面是不管多有把握都先问你的几类事';
+const RULES_SUMMARY = '说话、做事和对外的规则；每条保留真实来源';
 const LEGACY_RULES_SUMMARY = '你要 Plasticine 怎么做事：你明说的规矩，每条链回原话；最前面是不管有没有把握都先问你的几类事。';
 
 /** 「怎么替你做事」一直在；没有就建（稳定标识，重复调用不重复建）。 */
 export function ensureRulesDoc(state: DocState): MemoryDoc {
   const existing = state.memoryDocs.docs.get(RULES_DOC_ID);
   if (existing !== undefined) {
-    return upgradeSummary(state, existing, LEGACY_RULES_SUMMARY, RULES_SUMMARY);
+    const current = upgradeSummary(state, existing, LEGACY_RULES_SUMMARY, RULES_SUMMARY);
+    return current.title === RULES_DOC_TITLE ? current
+      : state.memoryDocs.docs.update(current.id, current.version, { title: RULES_DOC_TITLE });
   }
   return state.transaction(() => {
     const doc = state.memoryDocs.docs.create({ kind: 'rules', title: RULES_DOC_TITLE, summary: RULES_SUMMARY,
       createdBy: 'system' }, { id: RULES_DOC_ID });
     docEvent(state, doc.id, null, 'doc_created', { actor: 'system', ref: null }, { title: doc.title });
+    for (const item of MAIN_SOUL_DEFAULTS) {
+      const line = state.memoryDocs.lines.add({ docId: doc.id, text: item.text, basis: 'system',
+        anchors: [{ kind: 'system', ref: `soul-default-${item.key}` }], writtenBy: 'system' });
+      docEvent(state, doc.id, line.id, 'line_added', { actor: 'system', ref: null },
+        { soulAction: 'add', soulSection: item.section });
+    }
     return doc;
   });
 }
@@ -179,7 +188,11 @@ export function mergeLines(state: DocState, lines: readonly MemoryLine[], text: 
     for (const line of lines) {
       state.memoryDocs.lines.retire(line.id, line.version, 'merged');
     }
-    const basis = lines.every((line) => line.basis === 'stated') ? 'stated' : 'confirmed_inference';
+    const hasSystem = lines.some((line) => line.basis === 'system');
+    const allSystem = lines.every((line) => line.basis === 'system');
+    if (hasSystem && !allSystem) throw new Error('系统默认规则和用户来源不能合并为同一行。');
+    const basis = allSystem ? 'system'
+      : lines.every((line) => line.basis === 'stated') ? 'stated' : 'confirmed_inference';
     const inferenceId = lines.find((line) => line.inferenceId !== null)?.inferenceId ?? null;
     const written = state.memoryDocs.lines.add({ docId: first.docId, section: first.section, text, basis,
       anchors: mergeAnchors([], lines.flatMap((line) => line.anchors)), previous: lines.map((line) => line.text)

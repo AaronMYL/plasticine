@@ -1,3 +1,5 @@
+import { SOUL_SECTIONS, SOUL_SECTION_LABELS } from '../../shared/api/soul.ts';
+import { soulSectionOf } from './soul.ts';
 // 记忆文档进上下文（docs/specs/memory-docs.md 第 4 节；《优化清单》第 16 条 11-06 改）：每轮固定只读总目录、「关于你」、
 // 「怎么替你做事」、当前项目的档案，加上白天的「今天的记录」；其余由模型按目录用 read_memory_doc 挑着读。
 // 总目录由代码生成，不让模型写：每篇一行（名字 + 开头那句简介），按类型分组。每次请求都从库里重读。
@@ -26,7 +28,7 @@ const GROUP_LABELS: Readonly<Record<MemoryDocKind, string>> = { you: '关于你�
   project: '项目', person: '人', topic: '话题', skill: '技能' };
 const KIND_ORDER: readonly MemoryDocKind[] = ['you', 'rules', 'project', 'person', 'topic', 'skill'];
 
-const HEADER = '## 记忆（按主题整理的长期记忆；每一行都来自用户原话，或用户确认过的推断）';
+const HEADER = '## 记忆（按主题整理；用户原话、已确认推断与系统默认分别保留来源）';
 const HINT = '目录里每篇一行：名字和「这篇讲什么、什么时候该读」。要用到某篇时用 read_memory_doc 按名字读整篇，'
   + '不知道在哪篇时用 search_memory 搜；他问以前怎么定的，search_memory 带 archive 搜归档。行里的 [[名字]] 指另一篇。'
   + '记下的事不要让用户重讲；和用户这次说的冲突时，以用户最新说的为准。';
@@ -34,9 +36,10 @@ const HINT = '目录里每篇一行：名字和「这篇讲什么、什么时候
 /** 一行在上下文里的样子：标识让整理时能对上「回复用到了哪几行」。 */
 export function lineText(line: MemoryLine): string {
   const decision = line.section === 'decision' ? '［决定］' : '';
+  const origin = line.anchors.every((anchor) => anchor.kind === 'system') ? '（系统默认）' : '';
   const inferred = line.basis === 'confirmed_inference' ? '（你推断、用户确认过）' : '';
   const before = line.previous === null ? '' : `（之前：${line.previous}）`;
-  return `- [行:${line.id}] ${decision}${line.text}${inferred}${before}`;
+  return `- [行:${line.id}] ${decision}${line.text}${origin}${inferred}${before}`;
 }
 
 function liveProjectIds(state: DocsState): Set<string> {
@@ -127,13 +130,13 @@ export function todaySection(state: TodayState): string {
 /** 按名字找一篇（目录里写的是名字）：先全同，再去掉空白和大小写；也认标识。 */
 export function findDoc(state: DocsState, nameOrId: string): MemoryDoc | undefined {
   const live = state.memoryDocs.docs.live();
-  const key = nameOrId.trim();
+  const key = nameOrId.trim() === '怎么替你做事' ? RULES_DOC_ID : nameOrId.trim();
   const loose = (text: string) => text.replace(/\s+/g, '').toLowerCase();
   return live.find((doc) => doc.id === key) ?? live.find((doc) => doc.title === key)
     ?? live.find((doc) => loose(doc.title) === loose(key));
 }
 
-const RULES_HEADER = '## 怎么替你做事（用户要 Plasticine 怎么做事；每一行都来自用户原话或他确认过的）';
+const RULES_HEADER = '## 主线的 Soul（所有队友共用；系统默认、用户原话和已确认推断按真实来源标记）';
 const RULES_HINT = '照这些规矩做事，不用再问他一遍；和他这次说的冲突时以最新的为准，后台整理会改那一行。';
 
 /**
@@ -142,8 +145,11 @@ const RULES_HINT = '照这些规矩做事，不用再问他一遍；和他这次
  */
 export function rulesDocSection(state: Pick<StateService, 'memoryDocs'>): string {
   const hard = `硬线（不管有没有把握都先问用户；代码里也拦着）：${hardLinesForModel().join('；')}。`;
-  const lines = state.memoryDocs.docs.get(RULES_DOC_ID) === undefined ? []
-    : state.memoryDocs.lines.live(RULES_DOC_ID).map(lineText);
+  const live = state.memoryDocs.docs.get(RULES_DOC_ID) === undefined ? [] : state.memoryDocs.lines.live(RULES_DOC_ID);
+  const lines = SOUL_SECTIONS.flatMap((section) => {
+    const group = live.filter((line) => soulSectionOf(state, line) === section);
+    return group.length === 0 ? [] : [`### ${SOUL_SECTION_LABELS[section]}`, ...group.map((line) => lineText({ ...line, previous: null }))];
+  });
   return [RULES_HEADER, RULES_HINT, hard, ...lines].join('\n');
 }
 
