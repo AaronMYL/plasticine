@@ -1,5 +1,6 @@
 import { FakeSearch } from './fake-search.ts';
 import { FakeSystems } from './fake-systems.ts';
+import { FakeOutbound } from './fake-outbound.ts';
 // 内存里的假接口：给测试和 `npm run dev` 用。行为照《实施方案》第 5 节的四条约定做（幂等、回执不确定、
 // 错误格式、401 事件），请求和回答的形状是 shared/api 的，这样界面在假实现上测过的状态，接真服务端时还成立。
 // 本人确认写操作核实配对会话，系统会话不能冒充本人；旧钥匙接口只作兼容。
@@ -48,6 +49,7 @@ import { FakeNetworkTasks } from './fake-network-tasks.ts';
 import { FakeLines, MAIN_LINE_ID } from './fake-lines.ts';
 import { FakeTasks } from './fake-tasks.ts';
 import { seedSampleScene, seedScheduleScene, seedTasks, seedTasksLines } from './tasks-seed.ts';
+import { seedOutboundScene } from './outbound-seed.ts';
 import { FakeModelProviders } from './fake-model-providers.ts';
 import { pieces } from './fake-line-script.ts';
 import { lineSceneOf, seedLines } from './lines-seed.ts';
@@ -68,6 +70,7 @@ export interface FakeApiOptions {
 }
 
 export interface FakeControl {
+  outbound: FakeOutbound;
   /** 新内核（2026-11-05）：线和模型连接。 */
   lines: FakeLines;
   /** 任务栏目（《优化清单》第 3、4、5 条）。 */
@@ -117,7 +120,7 @@ export interface FakeApi {
 
 /** 本地开发的线和模型连接：场景看地址里的 ?scene=（lines-seed.ts）；硬线卡答了，主对话接着跑。 */
 function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProviders; asks: FakeAsks;
-  contacts: FakeContacts;
+  contacts: FakeContacts; outbound: FakeOutbound;
   projectId: string | null }, now: Date): void {
   const { lines, modelProviders, asks } = deps;
   const search = typeof window === 'undefined' ? '' : window.location.search;
@@ -135,6 +138,12 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   }
   // ?scene=tasks：任务栏目稿子里的在做和刚做完；?scene=schedule：主线里那张抖音续火花的定时卡。
   const scene = new URLSearchParams(search).get('scene');
+  if (scene === 'outbound') {
+    deps.contacts.addPerson({ id: 'contact-fern', name: '小蕨', handle: 'fern-example' });
+    deps.contacts.addPerson({ id: 'contact-river', name: '河川', handle: 'river-example' });
+    seedOutboundScene(lines, deps.outbound, (seed) => asks.raise(seed), now);
+    return;
+  }
   if (scene === 'tasks') {
     seedTasksLines(lines, now, deps.projectId);
     return;
@@ -174,6 +183,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const faults = new FaultPlan();
   const session = new FakeSession(now);
   const receipts = new FakeReceipts(faults, () => session.currentSession()?.device.id ?? null);
+  const outbound = new FakeOutbound(session, receipts, now);
   const attachments = new FakeAttachments(session, now);
   const notes = new FakeNotes({ session, bus, faults, now });
   const lines = new FakeLines({ session, bus, receipts, now, stepMs: options.streamStepMs,
@@ -181,7 +191,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   // 本地开发时导入书、生成大纲各等一会儿，看得到「正在导入」「正在逐章归纳」；测试（streamStepMs 0）不等。
   const books = new FakeBooks({ session, bus, notes, now, messages: () => lines.messagesOf(MAIN_LINE_ID),
     workMs: options.streamStepMs > 0 ? BOOK_WORK_MS : 0 });
-  const asks = new FakeAsks({ session, bus, receipts, lines: () => lines, now });
+  const asks = new FakeAsks({ session, bus, receipts, lines: () => lines, now,
+    authorize: (card, selected, option) => outbound.authorize(card, selected, option) });
   const clientUpdates = new FakeClientUpdates(session, bus);
   const backups = new FakeBackups({ session, bus, notes, asks, receipts, now });
   const push = new FakePush({ session, receipts, now });
@@ -251,9 +262,10 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       seedNetworkScene({ contacts, network }, now(), netScene);
     }
     const cyberHunter = projects.names().find((item) => item.name === 'Cyber Hunter')?.id ?? null;
-    seedNewKernel({ lines, modelProviders, asks, contacts, projectId: cyberHunter }, now());
+    seedNewKernel({ lines, modelProviders, asks, contacts, outbound, projectId: cyberHunter }, now());
   }
   const api: PlasticineApi = {
+    outbound,
     lines,
     tasks,
     modelProviders,
@@ -302,6 +314,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   return {
     api,
     control: {
+      outbound,
       lines,
       tasks,
       modelProviders,

@@ -7,6 +7,7 @@ import { errorText, isUncertain } from '../../api/errors.ts';
 import type { EventsHub } from '../../api/events-hub.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { AskView } from '../../api/types.ts';
+import type { OutboundGrantInput } from '../../api/shared.ts';
 import { Store } from '../../state/store.ts';
 
 export interface AskWork {
@@ -29,6 +30,7 @@ export interface AsksData {
 export const EMPTY_ASKS: AsksData = { loaded: false, error: null, open: [], deferred: [], work: new Map() };
 
 export interface AnswerInput {
+  outboundGrant?: OutboundGrantInput;
   optionId?: string;
   text?: string;
 }
@@ -63,6 +65,7 @@ export class AsksStore {
   private readonly api: PlasticineApi;
   private readonly hub: EventsHub;
   private stopListening: (() => void) | null = null;
+  private readonly submissions = new Map<string, string>();
 
   constructor(api: PlasticineApi, hub: EventsHub) {
     this.api = api;
@@ -99,25 +102,32 @@ export class AsksStore {
   }
 
   answer(ask: AskView, input: AnswerInput): Promise<void> {
-    return this.run(ask, 'answer', (requestId) => this.api.asks.answer(ask.id, { requestId, ...input })
+    return this.run(ask, 'answer', JSON.stringify(input), (requestId) =>
+      this.api.asks.answer(ask.id, { requestId, ...input })
       .then((response) => response.ask));
   }
 
   defer(ask: AskView): Promise<void> {
-    return this.run(ask, 'defer', (requestId) => this.api.asks.defer(ask.id, { requestId })
+    return this.run(ask, 'defer', '', (requestId) => this.api.asks.defer(ask.id, { requestId })
       .then((response) => response.ask));
   }
 
-  private async run(ask: AskView, what: AskWork['what'], send: (requestId: string) => Promise<AskView>)
+  private async run(ask: AskView, what: AskWork['what'], content: string,
+    send: (requestId: string) => Promise<AskView>)
     : Promise<void> {
     const previous = this.store.get().work.get(ask.id);
     // 上一次同样的操作没拿到回执：用同一个标识再发，服务端认得出，不会做两次。
-    const requestId = previous !== undefined && previous.what === what ? previous.requestId : createRequestId();
+    if (previous?.busy === true) { return; }
+    const same = previous?.what === what && this.submissions.get(ask.id) === content;
+    const requestId = same ? previous.requestId : createRequestId();
+    this.submissions.set(ask.id, content);
     this.store.set((data) => withWork(data, ask.id, { requestId, what, busy: true, error: null }));
     try {
       const next = await send(requestId);
+      this.submissions.delete(ask.id);
       this.store.set((data) => withWork(place(data, next), ask.id, null));
     } catch (cause) {
+      if (!isUncertain(cause)) { this.submissions.delete(ask.id); }
       const error = isUncertain(cause) ? '没确定送到了没有：再点一次同样的，不会重复。' : errorText(cause);
       this.store.set((data) => withWork(data, ask.id, { requestId, what, busy: false, error }));
     }

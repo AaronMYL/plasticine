@@ -29,6 +29,7 @@ import { SystemSection } from './system-section.tsx';
 import { TimeZoneSection } from './time-zone-section.tsx';
 import { TranslateSettingsSection } from './translate-settings-section.tsx';
 import { VisibilitySection } from './visibility-section.tsx';
+import { OutboundSettings } from './outbound-settings.tsx';
 import './settings.css';
 import './network.css';
 
@@ -37,6 +38,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsSection, string>> 
   ai: 'AI',
   browser: '浏览器',
   account: '账号',
+  grants: '授权',
   system: '系统',
 };
 
@@ -151,6 +153,8 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
       </>;
     case 'system':
       return <SystemSection />;
+    case 'grants':
+      return <OutboundSettings />;
   }
 }
 

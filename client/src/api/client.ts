@@ -338,6 +338,7 @@ export interface SearchApi {
 }
 
 export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
+  outbound: import('./outbound-client.ts').OutboundApi;
   /** 新内核（2026-11-05）：线和模型连接。 */
   lines: import('./lines-client.ts').LinesApi;
   modelProviders: import('./lines-client.ts').ModelProvidersApi;

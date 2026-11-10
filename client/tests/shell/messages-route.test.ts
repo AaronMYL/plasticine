@@ -84,8 +84,8 @@ describe('地址和栏目', () => {
     expect(phoneTabOf(parseHash('#/memory'))).toBe('plasticine');
   });
 
-  it('设置五段（11-08 删「日常」）：通用 · AI · 浏览器 · 账号 · 系统；旧段名落到新段的对应处', () => {
-    expect(SETTINGS_SECTIONS).toEqual(['general', 'ai', 'browser', 'account', 'system']);
+  it('设置六段：通用 · AI · 浏览器 · 账号 · 授权 · 系统；旧段名落到新段的对应处', () => {
+    expect(SETTINGS_SECTIONS).toEqual(['general', 'ai', 'browser', 'account', 'grants', 'system']);
     expect(parseHash('#/settings/daily')).toEqual({ view: 'settings', noteId: null, settingsSection: 'general',
       settingsFocus: 'time-zone' });
     expect(routeHash(parseHash('#/settings/browser'))).toBe('#/settings/browser');

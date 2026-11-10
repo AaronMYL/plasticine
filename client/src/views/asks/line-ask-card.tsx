@@ -13,6 +13,7 @@ import { DeviceActionCard } from '../device/device-action-card.tsx';
 import { ScheduleAskCard } from './schedule-ask-card.tsx';
 import { SubscriptionAskCard } from './subscription-ask-card.tsx';
 import { TaskCardPreview } from './task-card-preview.tsx';
+import { OutboundAskCard } from './outbound-ask-card.tsx';
 import type { AskWork } from './asks-store.ts';
 import './line-ask-card.css';
 
@@ -99,6 +100,7 @@ function WriteAnswer({ busy, onSend }: { busy: boolean; onSend: (text: string) =
 }
 
 export function LineAskCard({ ask, thread }: { ask: AskView; thread?: string | null }): ReactNode {
+  if (ask.outbound !== undefined) { return <OutboundAskCard ask={ask} card={ask.outbound} />; }
   // 设备动作保留逐次确认卡，确认身份由本人会话给出。
   if (ask.deviceAction === true || ask.requiresSignature === true) {
     return <DeviceActionCard ask={ask} />;

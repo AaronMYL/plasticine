@@ -2,6 +2,8 @@ import { Type, type Static } from 'typebox';
 import { OutboundGrantInputSchema, OutboundGrantPatchSchema, OutboundGrantSchema, OutboundLogSchema }
   from '../outbound.ts';
 import { RequestIdSchema } from './common.ts';
+export type { OutboundCard, OutboundGrant, OutboundGrantInput, OutboundGrantPatch, OutboundLog, OutboundScope }
+  from '../outbound.ts';
 
 export const OUTBOUND_GRANTS_PATH = '/v2/outbound/grants';
 export const OUTBOUND_LOG_PATH = '/v2/outbound/log';

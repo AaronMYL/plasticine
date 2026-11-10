@@ -85,7 +85,7 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     const dialog = screen.getByRole('dialog', { name: '设置' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(within(dialog).getAllByRole('button').filter((button) => button.closest('nav') !== null)
-      .map((button) => button.textContent)).toEqual(['通用', 'AI', '浏览器', '账号', '系统']);
+      .map((button) => button.textContent)).toEqual(['通用', 'AI', '浏览器', '账号', '授权', '系统']);
     expect(window.location.hash).toBe('#/settings');
     fireEvent.click(within(dialog).getByRole('button', { name: '系统' }));
     await settle();

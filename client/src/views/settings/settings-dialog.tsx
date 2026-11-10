@@ -20,6 +20,7 @@ const SECTION_ICONS: Readonly<Record<SettingsSection, IconName>> = {
   ai: 'sparkle',
   browser: 'globe',
   account: 'person',
+  grants: 'lock',
   system: 'device',
 };
 

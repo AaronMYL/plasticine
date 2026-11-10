@@ -20,14 +20,16 @@ import type { FakeEventBus } from './event-bus.ts';
 import type { FakeSession } from './fake-session.ts';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 import type { FakeReceipts } from './receipts.ts';
+import type { OutboundCard, OutboundGrantInput } from '../shared.ts';
 
 export type AskSeed = Pick<AskView, 'id' | 'kind' | 'question'> &
   Partial<Pick<AskView, 'channel' | 'detail' | 'options' | 'lineId' | 'createdAt' | 'kindLabel'
     | 'moneyDraftId' | 'restorePreviewId' | 'deviceAction' | 'why' | 'channelReason' | 'collision'
     | 'requiresSignature' | 'basis' | 'rulesOffer' | 'taskCard' | 'networkTaskId' | 'scheduleCard'
-    | 'subscriptionCard'>>;
+    | 'subscriptionCard' | 'outbound'>>;
 
 export interface FakeAsksDeps {
+  authorize?(card: OutboundCard, selected: OutboundGrantInput, option: string): void;
   session: FakeSession;
   bus: FakeEventBus;
   receipts: FakeReceipts;
@@ -110,9 +112,13 @@ export class FakeAsks implements AsksApi {
         message: '请在对应的核对卡确认。' });
     }
     const scope = `POST /v2/asks/${id}/answer ${JSON.stringify(input)}`;
-    return this.deps.receipts.run('answer', input.requestId, scope, () =>
-      this.answerNow(id, input.optionId, input.text),
-    );
+    return this.deps.receipts.run('answer', input.requestId, scope, () => {
+      const ask = this.require(id);
+      if (ask.outbound !== undefined && input.optionId !== undefined) {
+        this.deps.authorize?.(ask.outbound, input.outboundGrant ?? ask.outbound.grant, input.optionId);
+      }
+      return this.answerNow(id, input.optionId, input.text);
+    });
   }
 
   async defer(id: string, input: DeferAskRequest): Promise<DeferAskResponse> {
