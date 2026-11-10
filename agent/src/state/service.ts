@@ -64,6 +64,7 @@ import { createScheduleStores } from './schedules.ts';
 import { createSessionStore } from './sessions.ts';
 import { createSpaceRewriteStore } from './space-rewrites.ts';
 import { createSpaceStore } from './spaces.ts';
+import { createMateStores } from './mates.ts';
 import { createLibraryPurge } from './library-purge.ts';
 import { createSubscriptionStore } from './subscriptions.ts';
 import { createSuggestionStore } from './suggestions.ts';
@@ -188,6 +189,7 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     ...createGroupStores(context),
     // 新内核（2026-11-05 Harness 重做）：线、线里的消息、排队、硬线的一次性批准、设置与模型凭证。
     ...createLineStores(context),
+    ...createMateStores(context),
     lineApprovals: createLineApprovalStore(context),
     ...createKernelSettingsStores(context),
     // 任务栏目（《优化清单》第 3、4 条）：定时线、照卡发送的记录、建议，和他设备当前的时区。

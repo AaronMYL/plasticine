@@ -10,6 +10,7 @@ import { migration as schedules } from './0079-schedules.ts';
 import { migration as scheduleSends } from './0080-schedule-sends.ts';
 import { migration as outboundGrants } from './0126-outbound-grants.ts';
 import { migration as spaceWriter } from './0129-space-writer.ts';
+import { migration as mates } from './0128-mates.ts';
 import { migration as suggestions } from './0081-suggestions.ts';
 import { migration as deviceTimeZones } from './0082-device-time-zones.ts';
 import { migration as spaces } from './0083-spaces.ts';
@@ -201,6 +202,7 @@ export const MIGRATIONS: readonly Migration[] = [
   contentMetadata,
   libraryPurge,
   outboundGrants,
+  mates,
   spaceWriter,
 ];
 

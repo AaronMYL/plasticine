@@ -78,6 +78,8 @@ export type LineTopic = Static<typeof LineTopicSchema>;
 export const SIDE_TOPIC_EXCERPT_MAX_CHARS = 4_000;
 
 export const LineViewSchema = Type.Object({
+  mateId: Type.Optional(Nullable(IdSchema)),
+  mateGroupId: Type.Optional(Nullable(IdSchema)),
   id: IdSchema,
   kind: LineKindSchema,
   parentLineId: Nullable(IdSchema),

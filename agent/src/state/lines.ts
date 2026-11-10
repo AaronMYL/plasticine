@@ -15,6 +15,8 @@ const MAIN_LINE_TITLE = '主对话';
 
 export interface LineRow {
   id: string;
+  mateId?: string | null;
+  mateGroupId?: string | null;
   kind: LineKind;
   parentLineId: string | null;
   projectId: string | null;
@@ -46,6 +48,8 @@ export interface LineRow {
 }
 
 export interface NewLine {
+  mateId?: string | null;
+  mateGroupId?: string | null;
   kind: 'background' | 'side';
   topic?: LineTopic | null;
   parentLineId: string | null;
@@ -57,7 +61,8 @@ export interface NewLine {
 }
 
 export type LinePatch = Partial<Pick<LineRow, 'status' | 'pausedUntil' | 'failure' | 'pauseNoticedAt' | 'summary'
-  | 'summarySeq' | 'title' | 'pauseReason' | 'archivedAt' | 'unmetReason' | 'verdictSeq' | 'conclusion'>>;
+  | 'summarySeq' | 'title' | 'pauseReason' | 'archivedAt' | 'unmetReason' | 'verdictSeq' | 'conclusion'
+  | 'mateId' | 'mateGroupId' | 'modelPurpose'>>;
 
 /** 消息旁边的记录（0063）：回答想了多久、工具结果那一句。 */
 export interface LineMessageMeta {
@@ -151,6 +156,8 @@ function nullableText(row: Row, key: string): string | null {
 function lineOf(row: Row): LineRow {
   return {
     id: text(row, 'id'),
+    mateId: nullableText(row, 'mate_id'),
+    mateGroupId: nullableText(row, 'mate_group_id'),
     kind: text(row, 'kind') as LineKind,
     parentLineId: nullableText(row, 'parent_line_id'),
     projectId: nullableText(row, 'project_id'),
@@ -229,6 +236,9 @@ function queuedOf(row: Row): QueuedRow {
 }
 
 const PATCH_COLUMNS: Readonly<Record<keyof LinePatch, string>> = {
+  mateId: 'mate_id',
+  mateGroupId: 'mate_group_id',
+  modelPurpose: 'model_purpose',
   status: 'status',
   pauseReason: 'pause_reason',
   archivedAt: 'archived_at',
@@ -299,13 +309,15 @@ function createLineTable(context: StoreContext) {
       const id = `line-${context.newId()}`;
       const at = context.now();
       db.run(`INSERT INTO lines (id, created_at, updated_at, kind, parent_line_id, project_id, title, status,
-        sealed_prompt, resume_parent, topic, model_purpose) VALUES ($id, $at, $at, $kind, $parent, $project, $title,
-          'idle', $sealed, $resumeParent, $topic, $purpose)`, {
+        sealed_prompt, resume_parent, topic, model_purpose, mate_id, mate_group_id)
+        VALUES ($id, $at, $at, $kind, $parent, $project, $title, 'idle', $sealed, $resumeParent, $topic, $purpose,
+          $mate, $mateGroup)`, {
         id, at, kind: input.kind, parent: input.parentLineId, project: input.projectId, title: input.title,
         sealed: input.sealedPrompt ?? null, topic: input.topic === undefined || input.topic === null ? null
           : JSON.stringify(input.topic),
         resumeParent: input.resumeParent === true ? 1 : 0,
         purpose: input.modelPurpose ?? null,
+        mate: input.mateId ?? null, mateGroup: input.mateGroupId ?? null,
       });
       return get(id)!;
     },

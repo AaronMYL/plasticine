@@ -65,6 +65,8 @@ export function lineView(state: ViewState, line: LineRow, activity: Activity): L
   const ended = outcome(state, line, queued);
   return {
     id: line.id,
+    mateId: line.mateId ?? null,
+    mateGroupId: line.mateGroupId ?? null,
     kind: line.kind,
     parentLineId: line.parentLineId,
     parentMessageSeq: parentMessageSeq(state, line),
