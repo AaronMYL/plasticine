@@ -182,12 +182,13 @@ export class FakeBooks implements BooksApi {
   async rename(id: string, input: RenameBookRequest): Promise<BookView> {
     this.deps.session.require();
     const book = this.require(id);
-    const title = input.title.trim();
+    const title = input.title?.trim() ?? book.view.title;
     if (title === '') {
       throw invalid(400, 'invalid_request', '书名不能是空的。');
     }
     if (!this.results.has(input.requestId)) {
-      book.view = { ...book.view, title, version: book.view.version + 1 };
+      book.view = { ...book.view, title, ...(input.folder === undefined ? {} : { folder: input.folder }),
+        version: book.view.version + 1 };
       this.results.set(input.requestId, true);
       this.emit(id, 'book');
     }

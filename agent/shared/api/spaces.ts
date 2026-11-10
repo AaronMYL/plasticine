@@ -14,6 +14,7 @@ import {
   SPACE_TITLE_MAX_CHARS,
   SPACE_AUTHORS,
   SpaceDocSchema,
+  SpaceMetadataSchema,
   SpaceStatSchema,
   SubscriptionSettingsSchema,
   SUBSCRIPTION_KINDS,
@@ -35,6 +36,7 @@ export const SPACE_KINDS = ['space', 'research', 'review'] as const;
 export type SpaceKind = (typeof SPACE_KINDS)[number];
 
 export const SpaceListItemSchema = Type.Object({
+  ...Type.Partial(SpaceMetadataSchema).properties,
   id: IdSchema,
   title: Type.String(),
   kind: Type.Enum(SPACE_KINDS),
@@ -64,6 +66,7 @@ export const SpaceChangeSchema = Type.Object({
 export type SpaceChange = Static<typeof SpaceChangeSchema>;
 
 export const SpaceViewSchema = Type.Object({
+  ...Type.Partial(SpaceMetadataSchema).properties,
   id: IdSchema,
   title: Type.String(),
   version: Type.Integer({ minimum: 1 }),
@@ -85,6 +88,7 @@ export type SpaceView = Static<typeof SpaceViewSchema>;
 
 /** PUT /v2/spaces/:id：改名只给 title；在页面上改字给 html（整页正文片段，服务端再清洗一遍）。 */
 export const SaveSpaceRequestSchema = Type.Object({
+  ...Type.Partial(SpaceMetadataSchema).properties,
   requestId: RequestIdSchema,
   version: Type.Integer({ minimum: 1 }),
   title: Type.Optional(Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS })),

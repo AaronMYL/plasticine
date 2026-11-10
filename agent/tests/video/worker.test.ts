@@ -15,6 +15,7 @@ import {
   type VideoDigester,
   type VideoMedia,
 } from '../../src/video/index.ts';
+import { publishVideoSpace } from '../../src/video/space-report.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 
 let t: TestState;
@@ -75,7 +76,9 @@ function setup(options: { transcriber?: boolean; slots?: () => number } = {}) {
   const worker = new VideoWorker({ state: t.state, slots: options.slots ?? (() => 3),
     summarized: (work) => summarized.push(work),
     ports: { media: parts.media, digester: parts.digester, transcriber: parts.transcriber, interests: () => ['理财'],
-      tempRoot: temp, now: () => Date.now() } });
+      tempRoot: temp, now: () => Date.now(),
+      saveImage: (image) => t.state.notes.writeAsset(Buffer.from(image.data, 'base64'), image.mimeType).name,
+      publish: (work) => { publishVideoSpace(t.state, work); } } });
   const douyin = new DouyinFavorites({ state: t.state, worker, now: () => new Date() });
   return { ...parts, worker, douyin, summarized };
 }
@@ -162,6 +165,9 @@ test('图文作品：读图里的文字，结合配文总结', async () => {
   assert.equal(done.transcript, '图1 定投三原则');
   assert.equal(s.calls.images, 2);
   assert.equal(done.kind, 'images');
+  assert.equal(done.digest?.images?.length, 2);
+  assert.ok(done.digest?.images?.every((image) => image.seconds === null));
+  assert.match(t.state.spaces.require(done.spaceId!).html ?? '', /原图 1/);
 });
 
 test('没装本地转写：记成没做成并写原因；Mac 没登录：等 Mac 的那条也记原因', async () => {

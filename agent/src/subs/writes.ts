@@ -9,6 +9,7 @@ import {
   type SpaceAuthor,
   type SpaceEdition,
   type SpaceGenre,
+  type SpaceMetadata,
   type Subscription,
   type SubscriptionRule,
   type SubscriptionSettings,
@@ -19,7 +20,7 @@ import { checkSpacePage, editSpaceHtml, type SpaceEdit } from './space-page.ts';
 
 export type SpaceState = Pick<StateService, 'spaces' | 'subscriptions' | 'transaction'>;
 
-export interface SpaceWrite {
+export interface SpaceWrite extends Partial<SpaceMetadata> {
   /** 改已有的空间时给 id 和刚读到的 version；不给就是新建。 */
   id?: string;
   version?: number;
@@ -48,6 +49,13 @@ interface Page {
   html: string;
 }
 
+function metadataOf(input: SpaceWrite): Partial<SpaceMetadata> {
+  return { ...(input.category === undefined ? {} : { category: input.category }),
+    ...(input.sourceUrl === undefined ? {} : { sourceUrl: input.sourceUrl }),
+    ...(input.bookId === undefined ? {} : { bookId: input.bookId }),
+    ...(input.folder === undefined ? {} : { folder: input.folder }) };
+}
+
 function newIssue(state: SpaceState, input: SpaceWrite, page: Page, author: SpaceAuthor): Space {
   const subscription = state.subscriptions.get(input.subscriptionId ?? '');
   if (subscription === undefined) {
@@ -60,7 +68,7 @@ function newIssue(state: SpaceState, input: SpaceWrite, page: Page, author: Spac
     throw new SubsError('invalid', '来信只给个人回顾的日报和周报；研究周报写成报告（genre report）。');
   }
   const space = state.spaces.create({ title: input.title, doc: EMPTY_SPACE_DOC, genre: page.genre, html: page.html,
-    author, subscriptionId: subscription.id,
+    author, category: page.genre, ...metadataOf(input), subscriptionId: subscription.id,
     issueNumber: state.spaces.nextIssueNumber(subscription.id),
     edition: subscription.kind === 'review' ? input.edition ?? null : null },
   { change: input.change ?? null, rule: input.rule ?? null });
@@ -85,14 +93,17 @@ function existing(state: SpaceState, input: SpaceWrite, author: SpaceAuthor): Sp
   const current = state.spaces.require(input.id);
   const note = { change: input.change ?? null, rule: input.rule ?? null };
   if (input.html === undefined) {
-    return { space: state.spaces.save(input.id, input.version, { title: input.title }, author, note), removed: [] };
+    const space = state.spaces.save(input.id, input.version,
+      { title: input.title, ...metadataOf(input) }, author, note);
+    return { space, removed: [] };
   }
   const genre = input.genre ?? current.genre ?? 'report';
   if (genre === 'letter' && !letterAllowed(state, current)) {
     throw new SubsError('invalid', '来信只给个人回顾的日报和周报；这一页写成报告（genre report）。');
   }
   const checked = checkSpacePage(genre, input.html);
-  const space = state.spaces.save(input.id, input.version, { title: input.title, genre, html: checked.html },
+  const space = state.spaces.save(input.id, input.version,
+    { title: input.title, genre, html: checked.html, ...metadataOf(input) },
     author, note);
   return { space, removed: checked.removed };
 }
@@ -115,7 +126,7 @@ export function writeSpace(state: SpaceState, input: SpaceWrite, author: SpaceAu
       throw new SubsError('invalid', '来信只给个人回顾的日报和周报；别的写成报告（genre report）。');
     }
     const space = state.spaces.create({ title: input.title, doc: EMPTY_SPACE_DOC, genre: page.genre,
-      html: page.html, author }, { change: input.change ?? null, rule: input.rule ?? null });
+      html: page.html, author, ...metadataOf(input) }, { change: input.change ?? null, rule: input.rule ?? null });
     return { space, removed: checked.removed };
   });
 }

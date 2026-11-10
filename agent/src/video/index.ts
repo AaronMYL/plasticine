@@ -9,12 +9,13 @@ import type { StateService, VideoWorkRow } from '../state/index.ts';
 import { safeLog } from '../shared-log.ts';
 import { createVideoDigester } from './digest.ts';
 import { DouyinFavorites } from './douyin.ts';
-import { downloadTo, extractAudio, fetchImage, fetchText, fetchWebVideo, readFileText } from './media.ts';
+import { downloadTo, extractAudio, extractFrame, fetchImage, fetchText, fetchWebVideo, readFileText } from './media.ts';
 import type { VideoMedia } from './pipeline.ts';
 import { seedVideoSkill, skillPrompt } from './skill.ts';
 import { videoParseTool } from './tool.ts';
 import type { Transcriber } from './transcriber.ts';
 import { VideoWorker } from './worker.ts';
+import { backfillVideoSpaces, publishVideoSpace } from './space-report.ts';
 
 export { DOUYIN_ERROR_TEXT, DouyinFavorites, MAC_JOB_STALE_MS, videoWorkView, workUrl } from './douyin.ts';
 export { DOUYIN_SOURCE, publishToFeed } from './feed-publish.ts';
@@ -33,6 +34,7 @@ export { limiter, TRANSCRIBE_AT_ONCE, VIDEO_RUNS_MAX, VideoWorker } from './work
 export const REAL_MEDIA: VideoMedia = {
   download: (url, file, signal) => downloadTo(url, file, signal),
   extractAudio,
+  extractFrame,
   fetchText,
   fetchImage,
   readText: readFileText,
@@ -68,6 +70,8 @@ export function createVideo(options: VideoOptions) {
     slots: options.slots,
     ports: {
       media: options.media ?? REAL_MEDIA,
+      saveImage: (image) => options.state.notes.writeAsset(Buffer.from(image.data, 'base64'), image.mimeType).name,
+      publish: (work) => { publishVideoSpace(options.state, work); },
       digester: createVideoDigester(options.text, skillPrompt(options.stateDirectory)),
       transcriber: options.transcriber,
       interests: options.interests,
@@ -82,9 +86,9 @@ export function createVideo(options: VideoOptions) {
     worker,
     douyin,
     tool: videoParseTool(options.state, worker),
-    start: () => worker.start(),
+    start: () => { backfillVideoSpaces(options.state); worker.start(); },
     stop: () => worker.stop(),
-    scans: [{ name: '视频解析', run: () => worker.kick() }],
+    scans: [{ name: '视频解析', run: () => { backfillVideoSpaces(options.state); worker.kick(); } }],
   };
 }
 

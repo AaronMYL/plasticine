@@ -47,6 +47,7 @@ export interface VideoWorkRow {
   resolved: DouyinResolved | null;
   timing: VideoTiming | null;
   feedItemId: string | null;
+  spaceId: string | null;
   attempts: number;
   createdAt: string;
   updatedAt: string;
@@ -83,6 +84,7 @@ export interface VideoAdvance {
   resolved?: DouyinResolved | null;
   timing?: VideoTiming;
   feedItemId?: string;
+  spaceId?: string;
 }
 
 export interface VideoPageFilter {
@@ -157,6 +159,7 @@ function decodeWork(row: Row): VideoWorkRow {
     resolved: json(row, 'resolved', isResolved),
     timing: json(row, 'timing', isTiming),
     feedItemId: nullableText(row, 'feed_item_id'),
+    spaceId: nullableText(row, 'space_id'),
     attempts: Number(row['attempts']),
     createdAt: String(row['created_at']),
     updatedAt: String(row['updated_at']),
@@ -240,6 +243,10 @@ function createVideoWorkStore(context: StoreContext) {
     get,
     require,
     byWork,
+    withoutSpace(limit: number): VideoWorkRow[] {
+      return db.all(`SELECT * FROM video_works WHERE stage = 'summarized' AND digest IS NOT NULL
+        AND space_id IS NULL ORDER BY created_at LIMIT $limit`, { limit }).map(decodeWork);
+    },
     needsOrderBackfill(): boolean {
       return db.get(`SELECT id FROM video_works
         WHERE platform = 'douyin' AND collect_seq IS NULL AND NOT EXISTS (
@@ -361,6 +368,7 @@ function createVideoWorkStore(context: StoreContext) {
           put('resolved', patch.resolved === null ? null : JSON.stringify(patch.resolved));
         }
         if (patch.timing !== undefined) { put('timing', JSON.stringify(patch.timing)); }
+        if (patch.spaceId !== undefined) { put('space_id', patch.spaceId); }
         if (patch.feedItemId !== undefined) { put('feed_item_id', patch.feedItemId); }
         if (patch.run === 'failed') { sets.push('attempts = attempts + 1'); }
         db.run(`UPDATE video_works SET ${sets.join(', ')} WHERE id = $id`, params);

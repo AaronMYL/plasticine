@@ -36,6 +36,7 @@ export type BookProgressView = Static<typeof BookProgressViewSchema>;
 export const BookViewSchema = Type.Object({
   id: IdSchema,
   title: Type.String(),
+  folder: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   author: Type.Union([Type.String(), Type.Null()]),
   format: Type.Enum(BOOK_FORMATS),
   fileName: Type.String(),
@@ -152,7 +153,8 @@ export type DeleteBookRequest = Static<typeof DeleteBookRequestSchema>;
 /** PATCH /v2/books/:id：改书名（资料库「最近删除」那一批，11-08）。 */
 export const RenameBookRequestSchema = Type.Object({
   requestId: RequestIdSchema,
-  title: Type.String({ minLength: 1, maxLength: BOOK_TITLE_MAX_CHARS }),
+  title: Type.Optional(Type.String({ minLength: 1, maxLength: BOOK_TITLE_MAX_CHARS })),
+  folder: Type.Optional(Type.Union([Type.String({ minLength: 1, maxLength: 200 }), Type.Null()])),
 }, { additionalProperties: false });
 export type RenameBookRequest = Static<typeof RenameBookRequestSchema>;
 

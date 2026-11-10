@@ -8,6 +8,10 @@ import { AIFEED_REPORT_HTML } from './spaces-aifeed-seed.ts';
 import { COG_REPORT_HTML, DREAM_ART_SVG, DREAM_LETTER_HTML } from './spaces-pages-seed.ts';
 
 export interface SeedSpace {
+  category?: 'report' | 'letter' | 'webarchive' | 'booknote';
+  sourceUrl?: string | null;
+  bookId?: string | null;
+  folder?: string | null;
   id: string;
   title: string;
   kind: SpaceKind;

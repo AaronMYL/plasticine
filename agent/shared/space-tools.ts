@@ -6,6 +6,7 @@ import {
   ResearchSettingsSchema,
   SubscriptionScheduleSchema,
   SPACE_EDITIONS,
+  SpaceMetadataSchema,
   SPACE_GENRES,
   SPACE_HTML_MAX_CHARS,
   SPACE_TITLE_MAX_CHARS,
@@ -18,6 +19,7 @@ const STRICT = { additionalProperties: false };
 const Title = Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS });
 
 export const SpaceWriteParameters = Type.Object({
+  ...Type.Partial(SpaceMetadataSchema).properties,
   id: Type.Optional(Type.String({ minLength: 1, description: 'Existing space to save a new version of' })),
   version: Type.Optional(Type.Integer({ minimum: 1, description: 'The version space_read returned' })),
   title: Title,

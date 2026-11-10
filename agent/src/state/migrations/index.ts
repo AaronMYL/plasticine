@@ -30,6 +30,7 @@ import { migration as deviceLocal } from './0112-device-local.ts';
 import { migration as feedSourceRemoved } from './0113-feed-source-removed.ts';
 import { migration as noteSuggestThinking } from './0120-note-suggest-thinking.ts';
 import { migration as bookmarksApart } from './0121-bookmarks-apart.ts';
+import { migration as contentMetadata } from './0124-content-metadata.ts';
 import { migration as videoCollectionOrder } from './0123-video-collection-order.ts';
 import { migration as libraryPurge } from './0125-library-purge.ts';
 import { migration as spacePages } from './0122-space-pages.ts';
@@ -195,6 +196,7 @@ export const MIGRATIONS: readonly Migration[] = [
   bookmarksApart,
   spacePages,
   videoCollectionOrder,
+  contentMetadata,
   libraryPurge,
 ];
 

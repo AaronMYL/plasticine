@@ -27,6 +27,7 @@ export function bookView(state: StateService, book: BookRecord): BookView {
   return {
     id: book.id,
     title: book.title,
+    folder: book.folder ?? null,
     author: book.author,
     format: book.format,
     fileName: book.fileName,

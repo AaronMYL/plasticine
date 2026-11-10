@@ -42,6 +42,7 @@ export type BookTocEntry = Static<typeof BookTocEntrySchema>;
 export const BookInputSchema = Type.Object(
   {
     title: Type.String({ minLength: 1, maxLength: BOOK_TITLE_MAX_CHARS }),
+    folder: Type.Optional(Nullable(Type.String({ minLength: 1, maxLength: 200 }))),
     author: Nullable(Type.String({ maxLength: BOOK_AUTHOR_MAX_CHARS })),
     language: Nullable(Type.String({ maxLength: 40 })),
     format: BookFormatSchema,
@@ -60,6 +61,7 @@ export type BookInput = Static<typeof BookInputSchema>;
 export const BookPatchSchema = Type.Partial(
   Type.Object({
     title: Type.String({ minLength: 1, maxLength: BOOK_TITLE_MAX_CHARS }),
+    folder: Type.Optional(Nullable(Type.String({ minLength: 1, maxLength: 200 }))),
     author: Nullable(Type.String({ maxLength: BOOK_AUTHOR_MAX_CHARS })),
     lastOpenedAt: Nullable(IsoTimeSchema),
     // 删书只打这个时间，原文件、标注都留着（不删任何现有数据）。

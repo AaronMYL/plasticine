@@ -11,6 +11,8 @@ import {
   SPACE_HTML_MAX_CHARS,
   SpaceDocSchema,
   SpaceInputSchema,
+  SpaceMetadataSchema,
+  type SpaceMetadata,
   SpaceRevisionSchema,
   SpaceSchema,
   SPACE_AUTHORS,
@@ -30,6 +32,7 @@ import { allPages, ObjectStore, type StoreContext, type StoreSpec } from './obje
 import { isPurged, requireUnpurged } from './purged.ts';
 
 const SpacePatchSchema = Type.Partial(Type.Object({
+  ...SpaceMetadataSchema.properties,
   title: Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS }),
   doc: SpaceDocSchema,
   genre: Nullable(Type.Enum(SPACE_GENRES)),
@@ -41,6 +44,10 @@ const SpacePatchSchema = Type.Partial(Type.Object({
 const COLUMNS: ColumnMap = {
   ...RECORD_META_COLUMNS,
   title: 'text',
+  category: 'text',
+  sourceUrl: 'text',
+  bookId: 'text',
+  folder: 'text',
   doc: 'json',
   genre: 'text',
   html: 'text',
@@ -59,7 +66,7 @@ const SPEC: StoreSpec<typeof SpaceSchema, typeof SpaceInputSchema, typeof SpaceP
   patch: SpacePatchSchema,
   columns: COLUMNS,
   defaults: { genre: null, html: null, subscriptionId: null, issueNumber: null, edition: null, sourceNoteId: null,
-    deletedAt: null },
+    deletedAt: null, category: 'report', sourceUrl: null, bookId: null, folder: null },
   searchSource: 'space',
 };
 
@@ -70,7 +77,7 @@ export interface RevisionNote {
 }
 
 /** 存一版：网页版给 genre 和 html；只改名就只给 title。doc 只在撤回到旧版时跟着回去。 */
-export interface SpaceSave {
+export interface SpaceSave extends Partial<SpaceMetadata> {
   title?: string;
   doc?: SpaceDoc;
   genre?: SpaceGenre | null;
@@ -81,6 +88,13 @@ export interface SpaceListFilter {
   subscriptionId?: string;
   /** 只要不属于订阅的（资料库第二栏「空间」一组）。 */
   standalone?: boolean;
+}
+
+function metadataOf(input: Partial<SpaceMetadata>): Partial<SpaceMetadata> {
+  return { ...(input.category === undefined ? {} : { category: input.category }),
+    ...(input.sourceUrl === undefined ? {} : { sourceUrl: input.sourceUrl }),
+    ...(input.bookId === undefined ? {} : { bookId: input.bookId }),
+    ...(input.folder === undefined ? {} : { folder: input.folder }) };
 }
 
 function readRevision(row: Row): SpaceRevision {
@@ -132,6 +146,7 @@ export function createSpaceStore(context: StoreContext) {
         throw new StateError('invalid_input', '这个空间已经删了，先在资料库「最近删除」里还原再改。');
       }
       const updated = spaces.update(id, expectedVersion, { author,
+        ...metadataOf(input),
         ...(input.title === undefined ? {} : { title: input.title }),
         ...(input.doc === undefined ? {} : { doc: input.doc }),
         ...(input.genre === undefined ? {} : { genre: input.genre }),
@@ -153,6 +168,13 @@ export function createSpaceStore(context: StoreContext) {
     },
     get: (id: string): Space | undefined => isPurged(context, 'spaces', id) ? undefined : spaces.get(id),
     require: (id: string): Space => { requireUnpurged(context, 'spaces', id); return spaces.require(id); },
+    findBySourceUrl(sourceUrl: string, category?: SpaceMetadata['category']): Space | undefined {
+      return spaces.select('deleted_at IS NULL AND source_url = $url'
+        + (category === undefined ? '' : ' AND category = $category'),
+      { url: sourceUrl, ...(category === undefined ? {} : { category }) }, { limit: 1 }, 'updated_at DESC')[0];
+    },
+    forBook: (bookId: string): Space[] => allPages((page) => spaces.select(
+      "deleted_at IS NULL AND category = 'booknote' AND book_id = $book", { book: bookId }, page)),
     /** 没删的，最近改的在前。 */
     list(filter: SpaceListFilter = {}, page: Page = {}): Space[] {
       if (filter.subscriptionId !== undefined) {

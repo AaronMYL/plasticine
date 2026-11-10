@@ -8,17 +8,19 @@
 
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { VIDEO_IMAGES_MAX, type DouyinResolved } from '../../shared/api/video.ts';
+import { VIDEO_IMAGES_MAX, type DouyinResolved, type VideoDigest } from '../../shared/api/video.ts';
 import type { TextImage } from '../kernel/index.ts';
 import type { VideoWorkRow, VideoWorkStore } from '../state/index.ts';
 import type { DigestInput, VideoDigester } from './digest.ts';
 import type { WebVideo } from './media.ts';
 import { parseSubtitle, transcriptText, type TranscriptLine } from './subtitles.ts';
 import type { Transcriber } from './transcriber.ts';
+import { outlineTime } from './space-report.ts';
 
 /** 下载、抽音频、读字幕这些碰网络和文件的事，测试给假的。 */
 export interface VideoMedia {
   download(url: string, file: string, signal: AbortSignal): Promise<number>;
+  extractFrame?(input: string, seconds: number, signal: AbortSignal): Promise<TextImage>;
   extractAudio(input: string, output: string, signal: AbortSignal): Promise<number | null>;
   fetchText(url: string, signal: AbortSignal): Promise<string>;
   fetchImage(url: string, signal: AbortSignal): Promise<TextImage>;
@@ -39,6 +41,8 @@ export interface PipelinePorts {
   askMac: (work: VideoWorkRow) => void;
   tempRoot: string;
   now: () => number;
+  saveImage?: (image: TextImage) => string;
+  publish?: (work: VideoWorkRow) => void;
 }
 
 /** 走到哪停下了：summarized 做完、waiting_mac 等 Mac 交下载地址。 */
@@ -52,48 +56,54 @@ function inputOf(work: VideoWorkRow, interests: readonly string[]): DigestInput 
 
 export async function advanceWork(id: string, ports: PipelinePorts, signal: AbortSignal): Promise<PipelineEnd> {
   let work = ports.works.require(id);
-  const interests = ports.interests();
   if (work.stage === 'summarized') {
+    if (work.spaceId === null) ports.publish?.(work);
     return 'summarized';
   }
-  if (work.stage !== 'transcribed') {
-    const ready = await transcribe(work, ports, signal);
-    if (ready === 'waiting_mac') {
-      return 'waiting_mac';
-    }
-    work = ports.works.require(id);
-  }
-  if (work.digest === null) {
-    const digest = await ports.digester.summarize({ ...inputOf(work, interests), transcript: work.transcript ?? '' },
-      signal);
-    ports.works.advance(id, { stage: 'summarized', digest });
-  } else {
-    ports.works.advance(id, { stage: 'summarized' });
-  }
-  return 'summarized';
-}
-
-async function transcribe(work: VideoWorkRow, ports: PipelinePorts, signal: AbortSignal):
-  Promise<'transcribed' | 'waiting_mac'> {
   const directory = await mkdtemp(join(ports.tempRoot, 'work-'));
   try {
-    if (work.platform === 'douyin') {
-      if (work.resolved === null) {
+    let media: string | null = null;
+    if (work.stage !== 'transcribed') {
+      if (work.platform === 'douyin' && work.resolved === null) {
         ports.askMac(work);
         return 'waiting_mac';
       }
-      await fromDouyin(work, work.resolved, directory, ports, signal);
-    } else {
-      await fromWeb(work, directory, ports, signal);
+      media = work.platform === 'douyin'
+        ? await fromDouyin(work, work.resolved!, directory, ports, signal)
+        : await fromWeb(work, directory, ports, signal);
+      work = ports.works.require(id);
     }
-    return 'transcribed';
+    const digest = work.digest ?? await ports.digester.summarize({ ...inputOf(work, ports.interests()),
+      transcript: work.transcript ?? '' }, signal);
+    const images = media === null ? digest.images : await keyFrames(work, digest, media, ports, signal);
+    ports.works.advance(id, { stage: 'summarized', digest: { ...digest,
+      ...(images === undefined ? {} : { images }) } });
+    ports.publish?.(ports.works.require(id));
+    return 'summarized';
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
 }
 
+/** 只从已经下载的原视频截帧；最多四张，沿用报告设计里的关键时刻。 */
+async function keyFrames(work: VideoWorkRow, digest: VideoDigest, file: string, ports: PipelinePorts,
+  signal: AbortSignal): Promise<VideoDigest['images']> {
+  if (ports.media.extractFrame === undefined || ports.saveImage === undefined) return undefined;
+  const positions = [...new Set(digest.outline.flatMap((line) => {
+    const time = outlineTime(line);
+    return time === null || (work.durationSeconds !== null && time.seconds >= work.durationSeconds)
+      ? [] : [time.seconds];
+  }))].slice(0, 4);
+  const images: NonNullable<VideoDigest['images']> = [];
+  for (const seconds of positions) {
+    const image = await ports.media.extractFrame(file, seconds, signal);
+    images.push({ asset: ports.saveImage(image), seconds });
+  }
+  return images;
+}
+
 async function fromDouyin(work: VideoWorkRow, resolved: DouyinResolved, directory: string, ports: PipelinePorts,
-  signal: AbortSignal): Promise<void> {
+  signal: AbortSignal): Promise<string | null> {
   const caption = resolved.caption === '' ? work.caption : resolved.caption;
   ports.works.advance(work.id, { kind: resolved.kind, caption, durationSeconds: resolved.durationSeconds });
   if (resolved.kind === 'images') {
@@ -104,8 +114,11 @@ async function fromDouyin(work: VideoWorkRow, resolved: DouyinResolved, director
     const read = await ports.digester.readImages({ ...inputOf({ ...work, caption }, ports.interests()), images },
       signal);
     const { transcript, ...digest } = read;
-    ports.works.advance(work.id, { stage: 'transcribed', transcript, transcriptSource: 'images', digest });
-    return;
+    const assets = ports.saveImage === undefined ? undefined
+      : images.map((image) => ({ asset: ports.saveImage!(image), seconds: null }));
+    ports.works.advance(work.id, { stage: 'transcribed', transcript, transcriptSource: 'images',
+      digest: { ...digest, ...(assets === undefined ? {} : { images: assets }) } });
+    return null;
   }
   if (resolved.videoUrl === null) {
     throw new Error('Mac 没取到这条的视频地址。');
@@ -114,10 +127,11 @@ async function fromDouyin(work: VideoWorkRow, resolved: DouyinResolved, director
   const file = join(directory, 'video.mp4');
   await ports.media.download(resolved.videoUrl, file, signal);
   await localTranscript(work, file, directory, ports, signal, ports.now() - started);
+  return file;
 }
 
 async function fromWeb(work: VideoWorkRow, directory: string, ports: PipelinePorts, signal: AbortSignal):
-  Promise<void> {
+  Promise<string | null> {
   const started = ports.now();
   const web = await ports.media.webVideo(work.url, directory, signal);
   const downloadMs = ports.now() - started;
@@ -128,13 +142,14 @@ async function fromWeb(work: VideoWorkRow, directory: string, ports: PipelinePor
     if (lines.length > 0) {
       ports.works.advance(work.id, { stage: 'transcribed', transcript: transcriptText(lines),
         transcriptSource: 'subtitle' });
-      return;
+      return web.video;
     }
   }
   if (web.video === null) {
     throw new Error('这个链接里没找到能下载的视频或音频。');
   }
   await localTranscript(work, web.video, directory, ports, signal, downloadMs);
+  return web.video;
 }
 
 async function localTranscript(work: VideoWorkRow, media: string, directory: string, ports: PipelinePorts,

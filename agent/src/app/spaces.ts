@@ -56,7 +56,11 @@ export async function saveSpace(context: RequestContext): Promise<Reply> {
   const space = requireSpace(state, param(context, 'id'));
   return idempotent(context, body.requestId, () => {
     const { space: saved } = writeSpace(state, { id: space.id, version: body.version, title: body.title ?? space.title,
-      ...(body.html === undefined ? {} : { html: body.html }) }, 'user');
+      ...(body.html === undefined ? {} : { html: body.html }),
+      ...(body.category === undefined ? {} : { category: body.category }),
+      ...(body.sourceUrl === undefined ? {} : { sourceUrl: body.sourceUrl }),
+      ...(body.bookId === undefined ? {} : { bookId: body.bookId }),
+      ...(body.folder === undefined ? {} : { folder: body.folder }) }, 'user');
     return { status: 200, body: spaceView(state, saved) };
   });
 }

@@ -120,7 +120,18 @@ export const EMPTY_SPACE_DOC: SpaceDoc = { stats: [], blocks: [], sources: [] };
 export const SPACE_EDITIONS = ['daily', 'weekly'] as const;
 export type SpaceEdition = (typeof SPACE_EDITIONS)[number];
 
+/** 资料库分类和来源，独立于报告 / 来信的显示体裁。 */
+export const SPACE_CATEGORIES = ['report', 'letter', 'webarchive', 'booknote'] as const;
+export const SpaceMetadataSchema = Type.Object({
+  category: Type.Enum(SPACE_CATEGORIES),
+  sourceUrl: Nullable(Type.String({ minLength: 1, maxLength: 2000, pattern: '^(https?://|#/|book:)' })),
+  bookId: Nullable(IdSchema),
+  folder: Nullable(Type.String({ minLength: 1, maxLength: 200 })),
+}, STRICT);
+export type SpaceMetadata = Static<typeof SpaceMetadataSchema>;
+
 export const SpaceInputSchema = Type.Object({
+  ...Type.Partial(SpaceMetadataSchema).properties,
   title: Type.String({ minLength: 1, maxLength: SPACE_TITLE_MAX_CHARS }),
   /** 旧版的结构化正文；网页版的空间是空的（EMPTY_SPACE_DOC）。 */
   doc: SpaceDocSchema,

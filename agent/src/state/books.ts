@@ -33,6 +33,7 @@ import { allPages, ObjectStore, type StoreContext, type StoreSpec } from './obje
 const BOOK_COLUMNS: ColumnMap = {
   ...OBJECT_META_COLUMNS,
   title: 'text',
+  folder: 'text',
   author: 'text',
   language: 'text',
   format: 'text',
@@ -52,7 +53,7 @@ const BOOK_SPEC: StoreSpec<typeof BookRecordSchema, typeof BookInputSchema, type
   input: BookInputSchema,
   patch: BookPatchSchema,
   columns: BOOK_COLUMNS,
-  defaults: { lastOpenedAt: null, deletedAt: null },
+  defaults: { lastOpenedAt: null, deletedAt: null, folder: null },
 };
 
 const PROGRESS_COLUMNS: ColumnMap = {

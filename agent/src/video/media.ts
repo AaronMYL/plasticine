@@ -4,7 +4,7 @@
 
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { mkdir, readdir, readFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -106,6 +106,19 @@ function run(command: string, args: readonly string[], signal: AbortSignal, time
       }
     });
   });
+}
+
+/** 从本次解析下载的文件截一张关键帧，不重新联网。 */
+export async function extractFrame(input: string, seconds: number, signal: AbortSignal):
+  Promise<{ data: string; mimeType: string }> {
+  const output = `${input}.frame.jpg`;
+  try {
+    await run('ffmpeg', ['-nostdin', '-loglevel', 'error', '-y', '-ss', String(seconds), '-i', input,
+      '-frames:v', '1', '-vf', 'scale=960:-2', '-q:v', '3', output], signal, FFMPEG_TIMEOUT_MS);
+    return { data: (await readFile(output)).toString('base64'), mimeType: 'image/jpeg' };
+  } finally {
+    await rm(output, { force: true });
+  }
 }
 
 /** 抽成 16kHz 单声道 16 位 wav（transcribe.py 要的样子）。回音频秒数（ffprobe 读不到就是 null）。 */

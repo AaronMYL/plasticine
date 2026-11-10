@@ -112,7 +112,9 @@ export class FakeSpaces {
     const lastChange = last === undefined || last.change === null || version === 1 ? null
       : { version, change: last.change, rule: last.rule,
         adopted: last.rule !== null && (sub?.settings.rules.some((rule) => rule.text === last.rule) ?? false) };
-    return { id: row.id, title: row.title, version, kind: row.kind, genre: row.genre, author: row.author,
+    return { id: row.id, title: row.title, category: row.category ?? row.genre ?? 'report',
+      sourceUrl: row.sourceUrl ?? null, bookId: row.bookId ?? null, folder: row.folder ?? null,
+      version, kind: row.kind, genre: row.genre, author: row.author,
       createdAt: row.createdAt, updatedAt: row.updatedAt, html: row.html,
       doc: structuredClone(row.doc), subscription: sub === undefined ? null
         : { id: sub.id, title: sub.title, version: sub.version },
@@ -151,7 +153,9 @@ export class FakeSpaces {
       this.deps.session.require();
       const rows = this.live().filter((row) => filter.standalone !== true || row.subscriptionId === null);
       return { spaces: rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((row) => ({
-        id: row.id, title: row.title, kind: row.kind, genre: row.genre, author: row.author,
+        id: row.id, title: row.title, category: row.category ?? row.genre ?? 'report',
+        sourceUrl: row.sourceUrl ?? null, bookId: row.bookId ?? null, folder: row.folder ?? null,
+        kind: row.kind, genre: row.genre, author: row.author,
         subscriptionId: row.subscriptionId, issueNumber: row.issueNumber, edition: row.edition,
         version: row.revisions.length, createdAt: row.createdAt, updatedAt: row.updatedAt })) };
     },
@@ -169,6 +173,9 @@ export class FakeSpaces {
         if (input.html !== undefined && row.html === null) {
           throw new ApiError({ kind: 'invalid', code: 'invalid_input', status: 400,
             message: '这一页还是旧版式，不能在页面上改字。' });
+        }
+        for (const key of ['category', 'sourceUrl', 'bookId', 'folder'] as const) {
+          if (input[key] !== undefined) Object.assign(row, { [key]: input[key] });
         }
         row.html = input.html ?? row.html;
         row.title = input.title ?? row.title;

@@ -27,7 +27,8 @@ function kindOf(state: ViewState, space: Space): SpaceKind {
 }
 
 export function spaceListItem(state: ViewState, space: Space): SpaceListItem {
-  return { id: space.id, title: space.title, kind: kindOf(state, space), genre: space.genre, author: space.author,
+  return { id: space.id, title: space.title, category: space.category, sourceUrl: space.sourceUrl,
+    bookId: space.bookId, folder: space.folder, kind: kindOf(state, space), genre: space.genre, author: space.author,
     subscriptionId: space.subscriptionId, issueNumber: space.issueNumber, edition: space.edition,
     version: space.version, createdAt: space.createdAt, updatedAt: space.updatedAt };
 }
@@ -45,7 +46,8 @@ function lastChange(state: ViewState, space: Space, subscription: Subscription |
 export function spaceView(state: ViewState, space: Space): SpaceView {
   const subscription = space.subscriptionId === null ? undefined : state.subscriptions.get(space.subscriptionId);
   return {
-    id: space.id, title: space.title, version: space.version, kind: kindOf(state, space), genre: space.genre,
+    id: space.id, title: space.title, category: space.category, sourceUrl: space.sourceUrl,
+    bookId: space.bookId, folder: space.folder, version: space.version, kind: kindOf(state, space), genre: space.genre,
     author: space.author, createdAt: space.createdAt, updatedAt: space.updatedAt, html: space.html, doc: space.doc,
     subscription: subscription === undefined ? null
       : { id: subscription.id, title: subscription.title, version: subscription.version },

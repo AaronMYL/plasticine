@@ -39,7 +39,7 @@ export function videoWorkView(work: VideoWorkRow): VideoWorkView {
     title: work.title, author: work.author, collectedAt: work.collectSeq === null ? null : work.collectedAt,
     durationSeconds: work.durationSeconds,
     folderIds: work.folderIds, stage: work.stage, want: work.want, run: work.run, error: work.error,
-    feedItemId: work.feedItemId, version: work.version };
+    feedItemId: work.feedItemId, spaceId: work.spaceId, version: work.version };
 }
 
 export class DouyinFavorites {

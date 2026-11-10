@@ -165,3 +165,18 @@ test('删空间进「最近删除」、能还原；列表可只要不属于订�
   assert.equal((await call(app, 'POST', '/v2/spaces/nope/restore', { cookie, body: {
     requestId: newRequestId() } })).status, 404);
 });
+
+test('空间元数据通过现有读写接口往返，单独移动文件夹保留正文和来源', async () => {
+  const { app, cookie } = await start();
+  const { space } = writeSpace(app.state, { title: '示例网页', ...PAGE, category: 'webarchive',
+    sourceUrl: 'https://example.com/reading#chapter', folder: '待看' }, 'ai');
+  const saved = await call(app, 'PUT', `/v2/spaces/${space.id}`, { cookie,
+    body: { requestId: newRequestId(), version: space.version, folder: '研究' } });
+  assert.equal(saved.status, 200);
+  assert.equal(json(saved)['category'], 'webarchive');
+  assert.equal(json(saved)['folder'], '研究');
+  assert.equal(json(saved)['sourceUrl'], 'https://example.com/reading#chapter');
+  assert.equal(json(saved)['html'], HTML);
+  const list = json(await call(app, 'GET', '/v2/spaces', { cookie }))['spaces'] as Record<string, unknown>[];
+  assert.equal(list.find((item) => item['id'] === space.id)?.['folder'], '研究');
+});

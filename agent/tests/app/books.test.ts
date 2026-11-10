@@ -322,3 +322,18 @@ test('改书名；删了进「最近删除」能还原，标注跟着回来；�
     await app.close();
   }
 });
+
+test('图书文件夹可单独通过现有更新接口修改，标题和正文保持', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const book = await addBook(app, cookie);
+    const saved = await call(app, 'PATCH', `${PATH}/${String(book['id'])}`, { cookie,
+      body: { requestId: 'move-book-metadata', folder: '阅读' } });
+    assert.equal(saved.status, 200);
+    assert.equal(json(saved)['folder'], '阅读');
+    assert.equal(json(saved)['title'], book['title']);
+    const read = json(await call(app, 'GET', `${PATH}/${String(book['id'])}`, { cookie }));
+    assert.equal(read['folder'], '阅读');
+  } finally { await app.close(); }
+});

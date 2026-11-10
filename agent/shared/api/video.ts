@@ -51,6 +51,11 @@ const LinkSchema = Type.String({ pattern: '^https://', maxLength: 4_000 });
 export const DouyinWorkIdSchema = Type.String({ pattern: '^[0-9]{6,30}$' });
 
 export const VideoDigestSchema = Type.Object({
+  /** 从原视频截取或图文下载的本地资产；由解析程序保存，不由模型编造。 */
+  images: Type.Optional(Type.Array(Type.Object({
+    asset: Type.String({ pattern: '^[a-f0-9]{64}\\.(png|jpg|gif|webp)$' }),
+    seconds: OrNull(Type.Number({ minimum: 0 })),
+  }, { additionalProperties: false }), { maxItems: VIDEO_IMAGES_MAX })),
   /** 一两句话说这条讲了什么。 */
   summary: Type.String({ maxLength: 2_000 }),
   /** 大纲：按顺序的几段。 */
@@ -97,6 +102,7 @@ export const VideoWorkViewSchema = Type.Object({
   /** 没做成的一句话原因。 */
   error: OrNull(Type.String()),
   feedItemId: OrNull(IdSchema),
+  spaceId: Type.Optional(OrNull(IdSchema)),
   version: Type.Integer({ minimum: 1 }),
 });
 export type VideoWorkView = Static<typeof VideoWorkViewSchema>;

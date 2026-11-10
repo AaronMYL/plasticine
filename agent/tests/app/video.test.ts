@@ -92,3 +92,23 @@ test('抖音收藏：同步排给 Mac；Mac 凭节点凭证取活、交回标题
     body: { requestId: 'douyin-proc-01', ids: [row!.id] } });
   assert.equal(json(again)['queued'], 1, '同一个 requestId 回原来的回执');
 });
+
+test('收藏关联同一份空间，资料库修改后读最新版本，不重做视频解析', async () => {
+  const { publishVideoSpace } = await import('../../src/video/space-report.ts');
+  const { writeSpace } = await import('../../src/subs/index.ts');
+  t = await startTestApp();
+  const cookie = await pair(t);
+  const work = t.state.videoWorks.upsert({ platform: 'douyin', workId: '7300000000000000010',
+    url: 'https://www.douyin.com/video/7300000000000000010', title: '示例收藏' }).work;
+  const done = t.state.videoWorks.advance(work.id, { stage: 'summarized', transcript: '原逐字稿',
+    digest: { summary: '给协作保留一份可以继续使用的记录。', outline: [], points: [], related: [] } });
+  const space = publishVideoSpace(t.state, done);
+  const list = json(await call(t, 'GET', '/v2/video/douyin', { cookie }))['works'] as Record<string, unknown>[];
+  assert.equal(list[0]?.['spaceId'], space.id);
+  const edited = writeSpace(t.state, { id: space.id, version: space.version, title: '最新的收藏总结',
+    html: '<h1>这是一份从资料库改好的最新收藏总结。</h1>' }, 'user').space;
+  const view = json(await call(t, 'GET', `/v2/spaces/${space.id}`, { cookie }));
+  assert.equal(view['version'], edited.version);
+  assert.equal(view['html'], edited.html);
+  assert.equal(t.state.videoWorks.require(work.id).transcript, '原逐字稿');
+});

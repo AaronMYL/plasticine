@@ -109,12 +109,13 @@ export async function renameBook(context: RequestContext): Promise<Reply> {
   const body = checkInput(RenameBookRequestSchema, await readJsonBody(context.req), '改书名');
   const { state } = context.deps;
   const book = liveBook(state, param(context, 'id'));
-  const title = body.title.trim();
+  const title = body.title?.trim() ?? book.title;
   if (title === '') {
     throw new ApiError(400, 'invalid_request', '书名不能是空的。', { field: 'title' });
   }
   return idempotent(context, body.requestId, () => {
-    const renamed = state.books.update(book.id, book.version, { title });
+    const renamed = state.books.update(book.id, book.version, { title,
+      ...(body.folder === undefined ? {} : { folder: body.folder }) });
     publishBook(context, book.id, 'book');
     return { status: 200, body: bookView(state, renamed) };
   });
