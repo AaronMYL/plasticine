@@ -71,6 +71,7 @@ export const SpaceChangeSchema = Type.Object({
 export type SpaceChange = Static<typeof SpaceChangeSchema>;
 
 export const SpaceViewSchema = Type.Object({
+  writerLineId: Type.Optional(OrNull(IdSchema)),
   ...Type.Partial(SpaceMetadataSchema).properties,
   id: IdSchema,
   title: Type.String(),

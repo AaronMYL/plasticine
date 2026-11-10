@@ -13,6 +13,9 @@ import { Icon } from '../../shell/icons.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { PHONE_BELOW } from '../../shell/layout.ts';
 import { useViewportWidth } from '../../shell/use-viewport-width.ts';
+import { useCurrentTab } from '../../shell/current-tab-context.ts';
+import { routeHash } from '../../shell/routes.ts';
+import { currentPageReference } from '../conversation/current-page-reference.ts';
 import { useClientState } from '../../state/context.tsx';
 import { splitReply } from '../../api/shared.ts';
 import { useConversationUi } from './conversation-ui-context.tsx';
@@ -95,6 +98,11 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
   const composing = useRef(false);
   const shortcutId = useId();
   const page = usePageContext(askPage);
+  const currentTab = useCurrentTab();
+  const sourceKey = JSON.stringify([currentTab?.id, currentTab?.url,
+    currentTab?.route == null ? null : routeHash(currentTab.route)]);
+  const tabRef = useRef(sourceKey);
+  tabRef.current = sourceKey;
   const sending = useRef(false);
   const mounted = useRef(true);
   const [preparing, setPreparing] = useState(false);
@@ -126,8 +134,12 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
     const original = { draft, quotes, reply, attachments: attachments.store.get() };
     const prepare = async (): Promise<void> => {
       try {
-        const pageQuote = askPage ? await page.quoteFor(original.quotes) : null;
+        const full = askPage ? await page.quoteFor(original.quotes) : null;
+        const pageQuote = full ?? (askPage ? await currentPageReference(currentTab, api) : null);
         if (!mounted.current) return;
+        if (tabRef.current !== sourceKey) {
+          throw new Error('当前页已经改变，请在新页面重新发送。');
+        }
         const current = conversationUi.store.get();
         if (current.draft !== original.draft || current.quotes !== original.quotes
           || attachments.store.get() !== original.attachments) {

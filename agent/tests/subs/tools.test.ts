@@ -97,11 +97,16 @@ test('space_edit 找原文换新文；space_read 给网页正文和体裁', asyn
   const edited = await call(tools, 'space_edit', { id, version: 1, change: '改了数字',
     edits: [{ old_text: '十四篇', new_text: '十五篇' }] });
   assert.equal(edited['version'], 2);
+  assert.equal(edited['title'], '核查');
+  assert.equal(edited['change'], '改了数字');
+  assert.equal(t.state.spaces.revision(id, 2)?.lineId, 'line-main');
+  t.state.spaces.save(id, 2, { title: '自己改的标题' }, 'user');
+  assert.equal(t.state.spaces.revision(id, 3)?.lineId, null);
   const read = await call(tools, 'space_read', { id });
   assert.equal(read['genre'], 'report');
   assert.match(String(read['html']), /十五篇/);
   assert.equal(read['doc'], undefined);
-  await assert.rejects(call(tools, 'space_edit', { id, version: 2, edits: [{ old_text: '十四篇', new_text: '' }] }),
+  await assert.rejects(call(tools, 'space_edit', { id, version: 3, edits: [{ old_text: '十四篇', new_text: '' }] }),
     /找不到/);
 });
 

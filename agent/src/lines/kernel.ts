@@ -21,6 +21,7 @@ import { isAssistant, messageView, userMessage, type AttachmentNote, type LineNo
   type ReportOutcome } from './messages.ts';
 import { pageSubmitAskTool } from './page-submit-tool.ts';
 import { linePrompt } from './prompt.ts';
+import { productMap } from './product-map.ts';
 import { lineReport, pauseNotice } from './reports.ts';
 import { lineResult } from './results.ts';
 import { LineRunner, type DriveMode, type DriveOutcome, type RunnerHost, type Toolset } from './runner.ts';
@@ -80,6 +81,8 @@ export class LineKernel implements LineControl, SideControl {
         meta: (name) => meta.get(name),
       }),
       prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.()),
+        productMap(this.#tools.filter((tool) => (tool.enabled?.() ?? true)
+          && (tool.lineKinds === undefined || tool.lineKinds.includes(line.kind)))),
         this.#options.skillsContext?.(line.id) ?? ''].filter((part) => part.trim() !== '').join('\n\n'),
       publish: (event) => this.#options.publish(event),
       gate: this.#gate,

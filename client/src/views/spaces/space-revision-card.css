@@ -1,0 +1,14 @@
+.space-revision-card {
+  display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 8px;
+}
+.space-revision-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px;
+  color: var(--fg2); background: var(--tint2); flex: none; }
+.space-revision-summary { display: flex; flex: 1; flex-direction: column; min-width: 0; font-size: 13px; }
+.space-revision-summary > span { overflow-wrap: anywhere; }
+.space-revision-card .text-button { flex: none; }
+.space-change-list { display: flex; flex-direction: column; gap: 16px; padding: 16px; }
+.space-change-row { border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+.space-change-row h3 { font-size: 13px; margin: 0 0 8px; }
+.space-change-row p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.space-change-row del { color: var(--fg2); }
+.space-change-row ins { background: var(--tint2); text-decoration: none; }

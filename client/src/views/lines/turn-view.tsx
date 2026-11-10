@@ -7,6 +7,7 @@ import { MessageWidgets } from '../../primitives/message/widgets/index.tsx';
 import { FoldRow, StateRow, StepList } from './line-parts.tsx';
 import { MessageRow } from './thread-actions.tsx';
 import type { Turn, TurnPart, TurnStep } from './timeline.ts';
+import { SpaceRevisionCard } from '../spaces/space-revision-card.tsx';
 import { MessageAttachments } from '../conversation/message-attachments.tsx';
 import { MessageContent } from '../conversation/message-content.tsx';
 
@@ -58,6 +59,7 @@ export interface TurnViewProps {
 function Part({ part, lineId, running, onQuote, onRetry }: Pick<TurnViewProps, 'lineId' | 'onQuote' | 'onRetry'>
   & { part: TurnPart; running: boolean }): ReactNode {
   switch (part.kind) {
+    case 'space': return <SpaceRevisionCard result={part.result} />;
     case 'answer':
       return <MessageRow seq={part.seq} author="Plasticine" text={part.text}>
         <div className="line-answer" data-message-seq={part.seq}>

@@ -6,6 +6,7 @@
 // 最合适的新页面——任务回首页（「在做」在那里），关切去项目，成果去笔记（成果迁进「Plasticine 写的」），判断去记忆。
 
 import type { IconName } from './icons.tsx';
+import { productLink } from '../../../agent/shared/product-links.ts';
 import { libraryHash, parseLibraryHash } from './library-routes.ts';
 import type { SettingsFocus } from './panel.ts';
 
@@ -418,7 +419,7 @@ export function routeHash(route: Route): string {
     return route.messageId == null ? '#/plasticine' : `#/plasticine/${encodeURIComponent(route.messageId)}`;
   }
   if (route.view === 'web') {
-    return route.webTabId == null ? '#/web' : `#/web/${encodeURIComponent(route.webTabId)}`;
+    return route.webTabId == null ? '#/web' : productLink('web', route.webTabId);
   }
   if (route.view === 'library') {
     return libraryHash(route);
@@ -457,7 +458,7 @@ export function routeHash(route: Route): string {
     return '#/memory/agreements';
   }
   if (route.view === 'projects' && route.projectId != null) {
-    return `#/projects/${encodeURIComponent(route.projectId)}`;
+    return productLink('project', route.projectId);
   }
   if (route.view === 'books' && route.spacesList === true) {
     return `#/books/${SPACE_SEGMENT}`;
@@ -465,11 +466,11 @@ export function routeHash(route: Route): string {
   if (route.view === 'books' && route.spaceId != null) {
     const position = route.spacePosition;
     const suffix = position === undefined ? '' : `/${position.version}/${position.paragraph}`;
-    return `#/books/${SPACE_SEGMENT}/${encodeURIComponent(route.spaceId)}${suffix}`;
+    return `${productLink('space', route.spaceId)}${suffix}`;
   }
   if (route.view === 'books' && route.bookId != null) {
     const position = route.bookPosition == null ? '' : `/${route.bookPosition.chapter}/${route.bookPosition.offset}`;
-    return `#/books/${encodeURIComponent(route.bookId)}${position}`;
+    return `${productLink('book', route.bookId)}${position}`;
   }
   if (route.objectId != null && route.objectType !== undefined) {
     const paths = { memory_entry: 'memory/entries', agreement: 'memory/agreements' };
@@ -479,7 +480,7 @@ export function routeHash(route: Route): string {
     return route.termId === null ? '#/memory/terms' : `#/memory/terms/${encodeURIComponent(route.termId)}`;
   }
   if (route.view === 'notes' && route.noteId !== null) {
-    return `#/notes/${encodeURIComponent(route.noteId)}`;
+    return productLink('note', route.noteId);
   }
   return `#/${route.view}`;
 }
@@ -491,7 +492,7 @@ function contactsHash(route: Route): string {
   if (route.contactId == null) {
     return '#/messages';
   }
-  const base = `#/messages/${encodeURIComponent(route.contactId)}`;
+  const base = productLink('contact', route.contactId);
   return route.contactPane === 'profile' ? `${base}/profile` : base;
 }
 

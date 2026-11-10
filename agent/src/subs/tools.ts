@@ -7,6 +7,7 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import type { TSchema } from 'typebox';
 import type { Space } from '../../shared/state.ts';
+import { productLink } from '../../shared/product-links.ts';
 import {
   SpaceEditParameters,
   SpaceListParameters,
@@ -41,7 +42,7 @@ const LIST_MAX = 30;
 const FALLBACK_TIME_ZONE = 'Asia/Shanghai';
 
 export function spacePath(id: string): string {
-  return `#/books/space/${encodeURIComponent(id)}`;
+  return productLink('space', id);
 }
 
 function reply(value: unknown): { content: { type: 'text'; text: string }[]; details: Record<string, never> } {
@@ -75,7 +76,7 @@ function text(args: ToolArgs, key: string, fallback: string): string {
 
 function written(result: SpaceWritten, art: Illustrated['outcome']): Record<string, unknown> {
   const { space, removed } = result;
-  return { id: space.id, version: space.version, genre: space.genre, issueNumber: space.issueNumber,
+  return { id: space.id, title: space.title, version: space.version, genre: space.genre, issueNumber: space.issueNumber,
     link: spacePath(space.id), ...(removed.length === 0 ? {} : { removed }),
     ...(art === null ? {} : 'asset' in art ? { illustration: '配好了' } : { illustration: `没配：${art.skipped}` }) };
 }
@@ -95,11 +96,11 @@ export function subsTools(state: ToolState, port: () => RunPort, now: () => Date
       name: 'space_write', label: '写空间', parameters: SpaceWriteParameters,
       say: (args) => `写空间《${text(args, 'title', '')}》`,
       description: WRITE_DESCRIPTION,
-      run: async (args, _scope, signal) => {
+      run: async (args, scope, signal) => {
         const art = args.genre === 'letter'
           ? await illustrate(args.html, { illustrator: pages.illustrator ?? null, save: saveAsset, signal })
           : { html: args.html, outcome: null };
-        const result = writeSpace(state, { ...args, html: art.html }, 'ai');
+        const result = writeSpace(state, { ...args, html: art.html, lineId: scope.lineId }, 'ai');
         const { space } = result;
         if (args.id === undefined && space.subscriptionId !== null) {
           issued?.(space.subscriptionId);
@@ -107,7 +108,7 @@ export function subsTools(state: ToolState, port: () => RunPort, now: () => Date
         if (args.id === undefined && space.genre === 'letter') {
           pages.lettered?.(space, args.say ?? `给你写了一封信：《${space.title}》。`);
         }
-        return written(result, art.outcome);
+        return { ...written(result, art.outcome), change: args.change ?? '写好了正文' };
       },
     }),
     tool({
@@ -115,9 +116,11 @@ export function subsTools(state: ToolState, port: () => RunPort, now: () => Date
       say: () => '改空间',
       description: '小改一页空间：先 space_read 拿到 html 和 version，每条 old_text 从当前 html 里原样照抄（含标签），'
         + '在全文里只能出现一次，换成 new_text；按顺序换，有一条对不上就整个不改。大改用 space_write 整页重写。',
-      run: ({ id, version, edits, change, rule }) => written(editSpace(state, { id, version,
+      run: ({ id, version, edits, change, rule }, scope) => ({ ...written(editSpace(state, { id, version,
+        lineId: scope.lineId,
         edits: edits.map((edit) => ({ oldText: edit.old_text, newText: edit.new_text })),
         ...(change === undefined ? {} : { change }), ...(rule === undefined ? {} : { rule }) }, 'ai'), null),
+        change: change ?? `改了 ${edits.length} 处` }),
     }),
     tool({
       name: 'space_read', label: '读空间', parameters: SpaceReadParameters,

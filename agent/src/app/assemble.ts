@@ -65,6 +65,7 @@ import { publishNetworkChange } from './contact-streams.ts';
 import { taskCardTool } from './task-card-tool.ts';
 import { linePort } from './subscriptions.ts';
 import { ensureReviewSubscription, SampleCards, subsTools } from '../subs/index.ts';
+import { libraryTools } from '../library/index.ts';
 import { scanDiskNotice } from './disk-notice.ts';
 import { reportAnnouncement } from './report-announcement.ts';
 import { EventHub } from './event-hub.ts';
@@ -311,6 +312,8 @@ export function assembleApp(options: AssembleOptions): App {
     skillsContext: (lineId) => skills.context(`line:${lineId}`),
     lineChanged: (lineId) => network.lineChanged(lineId),
     tools: [taskCardTool(state, network), ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
+      ...libraryTools({ state, workspace: m5b.artifacts.workspace },
+        (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。
       ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId), {
         illustrator,

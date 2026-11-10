@@ -36,7 +36,7 @@ export function SpaceVersions({ space, phone, onClose, onSelect, onChanged }: {
         撤销上次修改</button>}
       {value?.versions.map((revision) => <button type="button" className="space-version-row" key={revision.version}
         aria-label={`查看第 ${revision.version} 版`} onClick={() => onSelect(revision.version)}>
-        <span>第 {revision.version} 版</span>
+        <span>{`第 ${revision.version} 版`}</span>
         <span className="text-meta">{revision.change ?? (revision.author === 'ai' ? 'Plasticine 写的' : '修改正文')}</span>
       </button>)}
     </div>

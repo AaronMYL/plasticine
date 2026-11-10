@@ -3,6 +3,7 @@ import type { BatchItem, BatchRequest, BatchResponse } from '../../shared/api/li
 import { ArtifactError, type Workspace } from '../artifacts/index.ts';
 import { allPages, StateError, type StateService } from '../state/index.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
+export { libraryTools } from './tools.ts';
 
 export interface LibraryServices { state: StateService; workspace: Workspace }
 export interface BatchCommand {

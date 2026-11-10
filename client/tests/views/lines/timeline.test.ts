@@ -22,6 +22,15 @@ function line(fields: Partial<LineView>): LineView {
 }
 
 describe('线的记录排成对话', () => {
+  it('空间写入回执变成版本卡，失败回执不伪装成改好了', () => {
+    const result = { id: 'sp-one', title: '整理稿', version: 2, change: '补了第二段', genre: 'report' };
+    const good = msg({ role: 'toolResult', tool: 'space_edit', text: JSON.stringify(result), ok: true });
+    const failed = msg({ role: 'toolResult', tool: 'space_write', text: JSON.stringify(result), ok: false });
+    const timeline = buildTimeline({ lineId: 'line-main', messages: [good, failed], lines: [], summaries: new Map() });
+    expect(lastTurn(timeline)?.parts.filter((part) => part.kind === 'space')).toEqual([
+      { kind: 'space', seq: good.seq, result },
+    ]);
+  });
   it('两句话之间 Plasticine 的消息合成一轮：想了几秒、几步（结果一句）、回答', () => {
     seq = 0;
     const messages = [

@@ -4,11 +4,16 @@ import type { ClientState } from '../../state/context.tsx';
 import type { CurrentTab } from '../../shell/current-tab-context.ts';
 import { buildNoteQuote } from '../notes/note-quote.ts';
 import { currentPageQuote, type PageQuoteResult } from './ask-this-page.tsx';
+import { currentPageReference } from './current-page-reference.ts';
 
 export async function readPageContext(tab: CurrentTab, contactText: string | null, budget: number,
   api: PlasticineApi, state: ClientState, force = false): Promise<PageQuoteResult> {
   const noteId = tab.route?.view === 'notes' ? tab.route.noteId : null;
   if (noteId === null) {
+    if (tab.route?.spaceId != null || tab.route?.bookId != null) {
+      const quote = await currentPageReference(tab, api);
+      if (quote !== null) return { quote, title: quote.label, scope: '当前版本', failed: false };
+    }
     return currentPageQuote(tab, contactText, budget);
   }
   if (state.noteDrafts.get(noteId) !== undefined) {

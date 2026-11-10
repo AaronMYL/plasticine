@@ -21,6 +21,8 @@ import { checkSpacePage, editSpaceHtml, type SpaceEdit } from './space-page.ts';
 export type SpaceState = Pick<StateService, 'spaces' | 'subscriptions' | 'transaction'>;
 
 export interface SpaceWrite extends Partial<SpaceMetadata> {
+  /** 只由执行器写入，不作为模型参数。 */
+  lineId?: string;
   /** 改已有的空间时给 id 和刚读到的 version；不给就是新建。 */
   id?: string;
   version?: number;
@@ -71,7 +73,7 @@ function newIssue(state: SpaceState, input: SpaceWrite, page: Page, author: Spac
     author, category: page.genre, ...metadataOf(input), subscriptionId: subscription.id,
     issueNumber: state.spaces.nextIssueNumber(subscription.id),
     edition: subscription.kind === 'review' ? input.edition ?? null : null },
-  { change: input.change ?? null, rule: input.rule ?? null });
+  { change: input.change ?? null, rule: input.rule ?? null, lineId: input.lineId ?? null });
   // 草案出的第一期就是样刊：等他看过、按反馈调，再开定时。
   if (subscription.status === 'draft') {
     state.subscriptions.update(subscription.id, subscription.version, { status: 'sample' });
@@ -91,7 +93,7 @@ function existing(state: SpaceState, input: SpaceWrite, author: SpaceAuthor): Sp
     throw new SubsError('invalid', '改已有的空间要带刚读到的 version（先 space_read）。');
   }
   const current = state.spaces.require(input.id);
-  const note = { change: input.change ?? null, rule: input.rule ?? null };
+  const note = { change: input.change ?? null, rule: input.rule ?? null, lineId: input.lineId ?? null };
   if (input.html === undefined) {
     const space = state.spaces.save(input.id, input.version,
       { title: input.title, ...metadataOf(input) }, author, note);
@@ -126,14 +128,15 @@ export function writeSpace(state: SpaceState, input: SpaceWrite, author: SpaceAu
       throw new SubsError('invalid', '来信只给个人回顾的日报和周报；别的写成报告（genre report）。');
     }
     const space = state.spaces.create({ title: input.title, doc: EMPTY_SPACE_DOC, genre: page.genre,
-      html: page.html, author, ...metadataOf(input) }, { change: input.change ?? null, rule: input.rule ?? null });
+      html: page.html, author, ...metadataOf(input) },
+    { change: input.change ?? null, rule: input.rule ?? null, lineId: input.lineId ?? null });
     return { space, removed: checked.removed };
   });
 }
 
 /** 「找原文 → 换新文」改一页：在当前正文上换好，再按一版存（同样清洗、核对）。旧版式的空间先整页重写。 */
 export function editSpace(state: SpaceState, input: { id: string; version: number; edits: readonly SpaceEdit[];
-  change?: string; rule?: string }, author: SpaceAuthor): SpaceWritten {
+  change?: string; rule?: string; lineId?: string }, author: SpaceAuthor): SpaceWritten {
   const current = state.spaces.require(input.id);
   if (current.html === null) {
     throw new SubsError('invalid', '这一页还是旧版式，没有网页正文可改：用 space_write 带 genre 和 html 整页重写。');
@@ -143,6 +146,7 @@ export function editSpace(state: SpaceState, input: { id: string; version: numbe
   }
   const html = editSpaceHtml(current.html, input.edits);
   return writeSpace(state, { id: current.id, version: input.version, title: current.title, html,
+    ...(input.lineId === undefined ? {} : { lineId: input.lineId }),
     ...(input.change === undefined ? {} : { change: input.change }),
     ...(input.rule === undefined ? {} : { rule: input.rule }) }, author);
 }

@@ -9,6 +9,7 @@ import type { LineMessageView } from '../../shared/api/lines.ts';
 import type { WelcomeStart } from '../../shared/welcome-start.ts';
 import { splitReply } from '../../shared/line-reply.ts';
 import { MessageWidgetSchema, type MessageWidget } from '../../shared/api/message-widgets.ts';
+import { spaceToolResult } from '../../shared/space-result.ts';
 import type { LineMessageRow } from '../state/index.ts';
 
 export type ReportOutcome = 'done' | 'failed' | 'paused';
@@ -273,7 +274,9 @@ export function messageView(row: LineMessageRow, sayOf: SayOf, callArgs?: (toolC
     const args = callArgs?.(message.toolCallId);
     const say = typeof args === 'object' && args !== null ? sayOf(message.toolName, args as Record<string, unknown>)
       : sayOf(message.toolName, {});
-    const text = clip(contentText(message.content), RESULT_PREVIEW_CHARS);
+    const raw = contentText(message.content);
+    const space = message.isError ? null : spaceToolResult(message.toolName, raw);
+    const text = space === null ? clip(raw, RESULT_PREVIEW_CHARS) : JSON.stringify(space);
     return view({ role: 'toolResult', text, toolCallId: message.toolCallId, tool: message.toolName, say,
       ok: !message.isError, summary: row.meta?.summary ?? null, widgets: widgetsOf(message.details),
       childLineId: childOf(message.details) });

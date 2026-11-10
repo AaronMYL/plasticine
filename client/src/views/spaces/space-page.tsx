@@ -142,7 +142,7 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
     <div className="page page-fill space-page" data-phone={phone} data-genre={space.genre ?? 'legacy'}>
       {head}
       {position === undefined ? null : <div className="space-history-bar">
-        <span className="text-meta">第 {position.version} 版</span>
+        <span className="text-meta">{`第 ${position.version} 版`}</span>
         <button type="button" className="text-button" onClick={() => {
           reload();
           navigate(spaceRoute(space.id));

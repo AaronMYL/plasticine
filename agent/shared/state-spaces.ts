@@ -160,6 +160,7 @@ export type Space = Static<typeof SpaceSchema>;
  */
 export const SpaceRevisionSchema = Type.Object({
   spaceId: IdSchema,
+  lineId: Type.Optional(Nullable(IdSchema)),
   version: Type.Integer({ minimum: 1 }),
   doc: SpaceDocSchema,
   genre: Nullable(Type.Enum(SPACE_GENRES)),

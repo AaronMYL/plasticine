@@ -134,7 +134,7 @@ describe('和 Plasticine 的对话', () => {
       expect(user?.text).toContain('〔笔记引用〕');
     });
     const bubbles = await conv().findAllByText('按这一版回答');
-    expect(bubbles.some((bubble: HTMLElement) => bubble.closest('.msg-user')?.textContent?.includes('版本 3')))
+    expect(bubbles.some((bubble: HTMLElement) => bubble.closest('.msg-user')?.textContent?.includes('第 3 版')))
       .toBe(true);
     act(() => app.state.conversationUi.addQuote({ id: 'q-long', kind: 'message', sourceId: 'm-1', label: '长材料',
       text: '字'.repeat(120_001) }));

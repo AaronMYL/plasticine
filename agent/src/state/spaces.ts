@@ -72,6 +72,7 @@ const SPEC: StoreSpec<typeof SpaceSchema, typeof SpaceInputSchema, typeof SpaceP
 
 /** 这一版改了什么、Plasticine 提的「以后都这样」。 */
 export interface RevisionNote {
+  lineId?: string | null;
   change?: string | null;
   rule?: string | null;
 }
@@ -100,6 +101,7 @@ function metadataOf(input: Partial<SpaceMetadata>): Partial<SpaceMetadata> {
 function readRevision(row: Row): SpaceRevision {
   const value = {
     spaceId: row['space_id'],
+    lineId: row['line_id'] ?? null,
     version: row['version'],
     doc: JSON.parse(String(row['doc'])),
     genre: row['genre'] ?? null,
@@ -120,11 +122,11 @@ export function createSpaceStore(context: StoreContext) {
   function addRevision(space: Space, note: RevisionNote, restoredFrom: number | null): void {
     try {
       context.db.run(`INSERT INTO space_revisions (space_id, version, title, doc, genre, html, author, saved_at,
-        change, rule, restored_from) VALUES ($space, $version, $title, $doc, $genre, $html, $author, $at, $change,
-        $rule, $restored)`, {
+        change, rule, restored_from, line_id) VALUES ($space, $version, $title, $doc, $genre, $html, $author, $at,
+        $change, $rule, $restored, $line)`, {
         space: space.id, version: space.version, title: space.title, doc: JSON.stringify(space.doc),
         genre: space.genre, html: space.html, author: space.author, at: space.updatedAt, change: note.change ?? null,
-        rule: note.rule ?? null, restored: restoredFrom,
+        rule: note.rule ?? null, restored: restoredFrom, line: note.lineId ?? null,
       });
     } catch (error) {
       throw fromSqliteError(error, '记空间的一版');

@@ -2,6 +2,7 @@
 // 子线卡用稳定的 child id 和发起消息定位；回报是后来的一条正文，更新卡的状态而不搬走或重建那张卡。
 
 import type { LineMessageView, LineView } from '../../api/shared.ts';
+import { spaceToolResult, type SpaceToolResult } from '../../../../agent/shared/space-result.ts';
 
 /** 开后台线这一步由线卡片表示，不再在步骤里列一行。 */
 const CARD_TOOLS: ReadonlySet<string> = new Set(['start_line']);
@@ -18,6 +19,7 @@ export interface TurnStep {
 }
 
 export type TurnPart =
+  | { kind: 'space'; seq: number; result: SpaceToolResult }
   | { kind: 'answer'; seq: number; text: string; attachments?: string[] }
   | { kind: 'thinking'; seq: number; text: string; seconds: number | null }
   | { kind: 'steps'; seq: number; steps: TurnStep[] }
@@ -192,7 +194,8 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
       turn = null;
       const line = message.childLineId === null ? null : byId.get(message.childLineId) ?? null;
       items.push({ kind: 'report', key: `m-${message.seq}`, message, line });
-    } else if (message.role === 'assistant' || (message.role === 'toolResult' && message.widgets.length > 0)) {
+    } else if (message.role === 'assistant' || (message.role === 'toolResult'
+      && (message.widgets.length > 0 || (message.ok && spaceToolResult(message.tool, message.text) !== null)))) {
       if (turn === null) {
         turn = emptyTurn(message.seq, lastAt);
         items.push(turn);
@@ -203,6 +206,8 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
         for (const step of turn.steps) steps.set(step.toolCallId, step);
       } else {
         addWidgets(turn, message);
+        const result = message.ok ? spaceToolResult(message.tool, message.text) : null;
+        if (result !== null) turn.parts.push({ kind: 'space', seq: message.seq, result });
       }
       turn.endedOnTool = message.role === 'toolResult';
     }
