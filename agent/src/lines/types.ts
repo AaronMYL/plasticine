@@ -5,6 +5,8 @@ import type { Api, AssistantMessage, Context, Model } from '@earendil-works/pi-a
 import { HARD_LINES } from '../../shared/act-or-ask.ts';
 import type { LineKind } from '../../shared/api/lines.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
+import type { OutboundResult, OutboundSpec } from '../../shared/outbound.ts';
+import type { AgentToolResult } from '@earendil-works/pi-agent-core';
 
 /** 硬线的五类，和 shared/act-or-ask.ts 的 HARD_LINES 一一对上（顺序相同）。 */
 export const HARD_LINE_KINDS = ['spend', 'outward', 'irreversible', 'permission', 'in_person'] as const;
@@ -20,6 +22,8 @@ export const HARD_LINE_LABELS: Readonly<Record<HardLineKind, string>> = {
 
 /** 工具跑在哪条线上：它要用线的 id 出卡、开子线。 */
 export interface LineScope {
+  /** 主线拥有的后台线仍是主线；队友执行器必须带独立的 mate id。 */
+  actorId?: string;
   lineId: string;
   kind: LineKind;
   projectId: string | null;
@@ -35,6 +39,9 @@ export interface KernelTool {
   name: string;
   say(args: ToolArgs): string;
   hardLine(args: ToolArgs): HardLineKind | null;
+  outbound?(args: ToolArgs): OutboundSpec | null;
+  /** 只有工具自己的真实回执能声明 sent；通用成功只记工具完成。 */
+  outboundResult?(result: AgentToolResult<unknown>, isError: boolean): OutboundResult;
   /** 硬线卡上的后果提示（「发出后对方会收到，撤不回」）；不写用这一类硬线的默认说法。 */
   consequence?(args: ToolArgs): string;
   /** 硬线卡上同意那个按钮的字（「发出」）；不写是「同意这一次」。 */

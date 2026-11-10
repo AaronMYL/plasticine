@@ -192,6 +192,13 @@ test('续火花：起草 → 他确认 → 到点照卡发给名单里的人；�
   assert.equal(audit[0]?.recipient, '小林');
   assert.equal(audit[0]?.runAt, '2026-11-06T07:00:00.000Z');
   assert.equal(audit[0]?.pageUrl, CHAT);
+  const grant = h.handle.state.outboundGrants.bySchedule(schedule.id)!;
+  assert.equal(grant.legacyScheduleId, schedule.id);
+  assert.deepEqual(grant.scope, { kind: 'task', binding: { kind: 'schedule', id: schedule.id } });
+  const outbound = h.handle.state.outboundLog.list(grant.id);
+  assert.equal(outbound.length, 1);
+  assert.equal(outbound[0]?.status, 'completed');
+  assert.equal(outbound[0]?.content, audit[0]?.content);
   const after = h.handle.state.schedules.require(schedule.id);
   assert.equal(after.lastOutcome, 'done');
 
@@ -206,6 +213,11 @@ test('续火花：起草 → 他确认 → 到点照卡发给名单里的人；�
   tasks.schedules.setEnabled(schedule.id, false);
   const paused = submitRefusal(h.handle.state, { nodeId, runId: `line:${lineId}`, action: released });
   assert.match(paused?.reason ?? '', /停了、删了或改过/);
+  const currentGrant = h.handle.state.outboundGrants.require(grant.id);
+  h.handle.state.outboundGrants.revoke(grant.id, currentGrant.version,
+    { deviceId: 'device-mac', confirmedAt: h.clock.now().toISOString() });
+  const revoked = submitRefusal(h.handle.state, { nodeId, runId: `line:${lineId}`, action: released });
+  assert.match(revoked?.reason ?? '', /授权已停用或撤销/);
 });
 
 test('照卡发送的内容规则：表情卡只认纯表情（含抖音表情码），固定内容只认原样；网站认子域名', () => {

@@ -5,6 +5,8 @@ import { getLinkPreview } from './link-preview.ts';
 // 回来汇报和十件事、定时任务、旧的模型连接与模型偏好的接口都删了；对话走 /v2/lines，模型走 /v2/model-providers。
 
 import {
+  OUTBOUND_GRANTS_PATH,
+  OUTBOUND_LOG_PATH,
   ACCOUNT_HANDLES_PATH,
   ACCOUNT_PASSWORD_PATH,
   ACCOUNT_PATH,
@@ -90,6 +92,8 @@ import {
   TODAY_SETTINGS_PATH,
   TOOL_GROUPS_PATH,
 } from '../../shared/api/index.ts';
+import { createOutboundGrant, editOutboundGrant, getOutboundLog, listOutboundGrants, listOutboundLog,
+  revokeOutboundGrant } from './outbound-grants.ts';
 import { REVIEW_PATH, SPACES_PATH, SUBSCRIPTIONS_PATH } from '../../shared/api/spaces.ts';
 import { deleteSpace, getSpace, listSpaces, restoreSpace, saveSpace, undoSpace } from './spaces.ts';
 import { LIBRARY_TRASH_PATH } from '../../shared/api/library.ts';
@@ -199,6 +203,12 @@ import { getTranslateModel, setTranslateModel } from './translate-model.ts';
 export const HEALTH_PATH = '/v2/health';
 
 export const ROUTES: readonly Route[] = [
+  { method: 'GET', path: OUTBOUND_GRANTS_PATH, auth: true, handler: listOutboundGrants },
+  { method: 'POST', path: OUTBOUND_GRANTS_PATH, auth: true, handler: createOutboundGrant },
+  { method: 'PUT', path: `${OUTBOUND_GRANTS_PATH}/:id`, auth: true, handler: editOutboundGrant },
+  { method: 'POST', path: `${OUTBOUND_GRANTS_PATH}/:id/revoke`, auth: true, handler: revokeOutboundGrant },
+  { method: 'GET', path: OUTBOUND_LOG_PATH, auth: true, handler: listOutboundLog },
+  { method: 'GET', path: `${OUTBOUND_LOG_PATH}/:id`, auth: true, handler: getOutboundLog },
   // 第 113 条：联系人、网络账号、跨用户任务、对外可见（设备会话）。
   ...CONTACT_ROUTES,
   // 新内核（2026-11-05 Harness 重做）：线（主对话是主线）和模型连接。

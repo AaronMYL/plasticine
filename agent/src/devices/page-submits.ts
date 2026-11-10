@@ -48,7 +48,7 @@ export interface SubmitHold {
   actionId: string;
 }
 
-type SubmitState = Pick<StateService, 'asks' | 'nodeActions' | 'schedules' | 'scheduleSends'>;
+type SubmitState = Pick<StateService, 'asks' | 'nodeActions' | 'schedules' | 'scheduleSends' | 'outboundGrants'>;
 type TabAct = Extract<DeviceActionParams, { kind: 'tab_act' }>;
 
 function tabActOf(row: NodeAction): TabAct | null {
@@ -212,6 +212,10 @@ function permitRefusal(state: SubmitState, request: { nodeId: string; runId?: st
     return refuse('放行的是另一个标签、另一版页面或另一个元素：页面变了就重新感知，再照卡放行一次。');
   }
   const schedule = state.schedules.get(permit.scheduleId);
+  const grant = state.outboundGrants.bySchedule(permit.scheduleId);
+  if (grant !== undefined && (!grant.enabled || grant.revokedAt !== null)) {
+    return refuse('这张定时卡的对外授权已停用或撤销，不能再发送。');
+  }
   if (schedule?.status !== 'active' || schedule.confirmAskId !== permit.confirmAskId) {
     return refuse('这张定时卡已经停了、删了或改过（要他重新确认）：不能再照它发。');
   }

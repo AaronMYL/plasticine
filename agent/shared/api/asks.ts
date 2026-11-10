@@ -4,6 +4,7 @@
 // Every write carries the client's requestId (约定 1); the card's state reaches the other devices over /v2/events.
 
 import { Type, type Static } from 'typebox';
+import { OutboundCardSchema, OutboundGrantInputSchema } from '../outbound.ts';
 import { RulesOfferItemSchema } from './rules-doc.ts';
 import {
   ASK_KINDS,
@@ -57,6 +58,7 @@ export const TaskCardPreviewSchema = Type.Object({
 export type TaskCardPreview = Static<typeof TaskCardPreviewSchema>;
 
 export const AskViewSchema = Type.Object({
+  outbound: Type.Optional(OutboundCardSchema),
   /** 旧卡片的兼容标记；如今由本人会话确认，不再要求浏览器签名钥匙。 */
   requiresSignature: Type.Optional(Type.Boolean()),
   /** 起草好的任务卡（发任务卡那件工具的硬线卡）。 */
@@ -127,6 +129,7 @@ export const ASK_TEXT_MAX_CHARS = 2_000;
 export const AnswerAskRequestSchema = Type.Object(
   {
     requestId: RequestIdSchema,
+    outboundGrant: Type.Optional(OutboundGrantInputSchema),
     optionId: Type.Optional(Type.String({ minLength: 1, maxLength: 32 })),
     text: Type.Optional(Type.String({ minLength: 1, maxLength: ASK_TEXT_MAX_CHARS })),
   },

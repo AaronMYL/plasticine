@@ -3,6 +3,7 @@
 
 export * from './agreements.ts';
 export * from './asks.ts';
+export * from './outbound.ts';
 export * from './browser.ts';
 export * from './common.ts';
 export * from './contacts.ts';

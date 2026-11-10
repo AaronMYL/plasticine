@@ -102,6 +102,7 @@ export class LineKernel implements LineControl, SideControl {
 
   /** 服务启动：主线补齐；在跑 / 在等的线接着跑；暂停的到点再跑；排着队的发出去。 */
   start(): void {
+    this.#gate.recover();
     this.#state.lines.main();
     for (const line of this.#state.lines.withStatus(['running', 'waiting', 'queued']).reverse()) {
       if (line.status === 'queued' && this.#state.lineMessages.last(line.id) === undefined) {

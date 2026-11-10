@@ -458,6 +458,8 @@ export class LineRunner {
 
   #toolEnded(toolCallId: string, tool: string, result: AgentToolResult<unknown> | undefined, isError: boolean,
     durationMs: number | null): void {
+    const meta = this.#toolset.meta(tool);
+    if (meta !== undefined) { this.#host.gate.settled(this.lineId, toolCallId, meta, result, isError); }
     const say = this.#inFlight.get(toolCallId) ?? this.#host.sayOf(tool, {});
     this.#inFlight.delete(toolCallId);
     const summary = resultSummary(result);

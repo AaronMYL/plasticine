@@ -3,6 +3,8 @@
 // （只放行这一次、这组参数）。发给一个好友，或一个群（指给群里某人，或全群谁先接谁做）。
 
 import { Type } from 'typebox';
+import { Value } from 'typebox/value';
+import { OutboundResultSchema } from '../../shared/outbound.ts';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { checkedArgs, type KernelTool, type ToolArgs } from '../lines/index.ts';
 import type { NetworkService } from '../network/index.ts';
@@ -65,14 +67,15 @@ function create(state: StateService, network: NetworkService): AgentTool<typeof 
       const attachment = note === undefined || note.private ? null
         : `${note.title}\n\n${state.notes.readBody(note)}`.slice(0, ATTACHMENT_MAX_CHARS);
       const requestId = `card-${toolCallId}`.slice(0, 100);
-      if (found.kind === 'group') {
-        network.offerGroupTask(found.id, { title: args.title, goal: args.goal, deadline: args.deadline ?? null,
-          attachment, assignee: assigneeOf(state, found.id, args.assignee ?? null), requestId });
-      } else {
-        network.offerTask(found.id, { title: args.title, goal: args.goal, acceptance: null,
+      const task = found.kind === 'group'
+        ? network.offerGroupTask(found.id, { title: args.title, goal: args.goal, deadline: args.deadline ?? null,
+          attachment, assignee: assigneeOf(state, found.id, args.assignee ?? null), requestId })
+        : network.offerTask(found.id, { title: args.title, goal: args.goal, acceptance: null,
           deadline: args.deadline ?? null, attachment, requestId });
-      }
-      return { content: [{ type: 'text', text: `任务卡发给${found.name}了，等对方点头。` }], details: {} };
+      return { content: [{ type: 'text', text: `任务卡已进入发件箱，收件人是${found.name}。` }], details: {
+        outbound: { status: 'queued', summary: '任务卡已进入发件箱，发送结果以联系人消息记录为准。',
+          sourceRef: `network-task:${task.id}` },
+      } };
     },
   };
 }
@@ -83,6 +86,25 @@ export function taskCardTool(state: StateService, network: NetworkService): Kern
     name: 'send_task_card',
     say: (args) => `把任务卡发给${text(args, 'to') ?? '对方'}`,
     hardLine: () => 'outward',
+    outbound: (args) => {
+      const found = target(state, text(args, 'to') ?? '');
+      const identity = state.networkIdentity.get();
+      if (found === null || identity === undefined) { return null; }
+      const noteId = text(args, 'noteId');
+      const note = noteId === null ? undefined : state.notes.get(noteId);
+      const attachment = note === undefined || note.private ? null
+        : `${note.title}\n\n${state.notes.readBody(note)}`.slice(0, ATTACHMENT_MAX_CHARS);
+      return { channel: found.kind === 'group' ? 'cyberhunter.group' : 'cyberhunter.contact',
+        account: identity.accountId, recipients: [found.id], category: 'task_card',
+        content: JSON.stringify({ title: text(args, 'title'), goal: text(args, 'goal'),
+          deadline: text(args, 'deadline'), assignee: text(args, 'assignee'), attachment }) };
+    },
+    outboundResult: (result, isError) => {
+      const receipt: unknown = typeof result.details === 'object' && result.details !== null
+        ? Reflect.get(result.details, 'outbound') : undefined;
+      return !isError && Value.Check(OutboundResultSchema, receipt) ? receipt
+        : { status: 'unknown', summary: '任务卡调用未返回发送回执，请核对联系人消息记录。', sourceRef: null };
+    },
     approveLabel: () => '发出',
     consequence: (args) => {
       const found = target(state, text(args, 'to') ?? '');

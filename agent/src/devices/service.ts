@@ -8,6 +8,7 @@ import type {
 import type { DeviceConfirmation, DeviceLimits, DeviceNode, NodePairingCode } from '../../shared/state.ts';
 import { MAX_PAGE_SIZE, type StateService } from '../state/index.ts';
 import type { AskDesk } from '../attention/index.ts';
+import { settleScheduleSend } from '../outbound/index.ts';
 import { DeviceActions, IDLE_SINK, type DeviceSink } from './actions.ts';
 import { DeviceApprovals } from './approvals.ts';
 import {
@@ -63,17 +64,21 @@ export class DeviceService {
       options.state, options.desk, this.actions, () => this.channel.wake(),
     );
     this.channel.attach((row) => {
+      settleScheduleSend(options.state, row);
       this.#sink.actionRecorded(row);
       this.approvals?.settled(row);
       this.#settleRecovered(row.actionId);
     });
     // iPhone 排队的动作没有工具在等：回执到了照「接续」的路交回（第 102 条）。
     this.actions.onDetached((actionId) => { this.#recovered.add(actionId); });
+    this.actions.attach({ nodeChanged: (id) => this.#sink.nodeChanged(id), actionRecorded: (row) => {
+      settleScheduleSend(options.state, row);
+      this.#sink.actionRecorded(row);
+    } });
   }
 
   attach(sink: DeviceSink): void {
     this.#sink = sink;
-    this.actions.attach(sink);
   }
 
   nextAction(nodeId: string, wait: number, signal: AbortSignal): Promise<NodeWireAction | null> {

@@ -17,6 +17,7 @@ export const MAX_BACKGROUND_LINES = 3;
 export const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
 
 export type KernelState = Pick<StateService, 'lines' | 'lineMessages' | 'lineDays' | 'lineQueue' | 'lineApprovals'
+  | 'outboundGrants' | 'outboundLog' | 'schedules' | 'contactMessages'
   | 'asks' | 'transaction' | 'memoryDocs' | 'memoryJournal' | 'projects' | 'attachments'>;
 
 export type Compactor = NonNullable<RunnerHost['compact']>;

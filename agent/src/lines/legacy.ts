@@ -105,6 +105,7 @@ export function adaptLegacyTool(tool: Tool, meta: LegacyMeta, options: LegacyOpt
     name: tool.name,
     say: meta.say,
     hardLine: meta.hardLine ?? (() => null),
+    ...(tool.outbound === undefined ? {} : { outbound: (args: ToolArgs) => tool.outbound!(args) }),
     ...(meta.consequence === undefined ? {} : { consequence: meta.consequence }),
     ...(options.enabled === undefined ? {} : { enabled: () => options.enabled?.(tool.name) ?? true }),
     create: (scope) => legacyAgentTool(tool, meta, scope, options),

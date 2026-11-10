@@ -28,7 +28,7 @@ import { TransportError, type NodeTransport } from './transport.ts';
 import { dispatchEnvelope, normalizeActionRequest } from './action-id.ts';
 
 export type ActionState = Pick<StateService, 'nodes' | 'nodeActions' | 'asks' | 'transaction' | 'lines'
-  | 'schedules' | 'scheduleSends'>;
+  | 'schedules' | 'scheduleSends' | 'outboundGrants'>;
 
 export interface DeviceSink {
   nodeChanged(nodeId: string): void;

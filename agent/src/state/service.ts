@@ -50,6 +50,7 @@ import { createNetworkStores } from './network.ts';
 import { createNodeActionStore } from './node-actions.ts';
 import { createNodePairingCodeStore } from './node-pairing-codes.ts';
 import { createNodeStore } from './nodes.ts';
+import { createOutboundStores } from './outbound.ts';
 import { NoteBodies } from './note-bodies.ts';
 import { createNoteStore } from './notes.ts';
 import type { StoreContext } from './object-store.ts';
@@ -169,6 +170,7 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     nodes: createNodeStore(context),
     nodePairingCodes: createNodePairingCodeStore(context),
     nodeActions: createNodeActionStore(context),
+    ...createOutboundStores(context),
     // M5 乙路：记账、站内信、工具组。
     ...createMoneyStores(context),
     ...createInboxStores(context),

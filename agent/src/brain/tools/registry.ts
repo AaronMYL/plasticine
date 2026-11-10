@@ -6,6 +6,7 @@
 import type { Static, TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import type { ToolDefinition, ModelImage } from '../../../shared/model.ts';
+import type { OutboundSpec } from '../../../shared/outbound.ts';
 import {
   DEFAULT_MAX_RESULT_CHARS,
   ToolDescriptorSchema,
@@ -39,21 +40,27 @@ export interface ToolSpec<P extends TSchema> {
   timeoutMs: number;
   maxResultChars?: number;
   parameters: P;
+  outbound?(args: Static<P>): OutboundSpec | null;
   execute(args: Static<P>, context: ToolContext): Promise<string>;
 }
 
 /** A tool as the registry and dispatcher see it: defaults filled in, arguments checked again on the way in. */
 export interface Tool extends Omit<ToolDescriptor, 'parameters'> {
   parameters: TSchema;
+  outbound?(args: unknown): OutboundSpec | null;
   execute(args: unknown, context: ToolContext): Promise<string>;
 }
 
 export function defineTool<P extends TSchema>(spec: ToolSpec<P>): Tool {
-  const { execute, parallel, maxResultChars, ...rest } = spec;
+  const { execute, parallel, maxResultChars, outbound, ...rest } = spec;
   return {
     ...rest,
     parallel: parallel ?? false,
     maxResultChars: maxResultChars ?? DEFAULT_MAX_RESULT_CHARS,
+    ...(outbound === undefined ? {} : { outbound(args: unknown) {
+      if (!Value.Check(spec.parameters, args)) { throw new Error(`工具「${spec.name}」的对外参数格式不对`); }
+      return outbound(args);
+    } }),
     execute(args, context) {
       // dispatch.ts validates first and reports the errors to the model; this only stops a direct caller from
       // handing unchecked input to the tool.

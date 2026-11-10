@@ -8,10 +8,13 @@
 
 import type { ScheduleSend } from '../../shared/state.ts';
 import { submitHoldForRun, tabTrace } from '../devices/index.ts';
-import type { StateService } from '../state/index.ts';
+import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
+import { ensureScheduleGrant } from '../outbound/index.ts';
+import { argsDigest } from '../system/index.ts';
 import { contentAllowed, siteAllowed } from './schedule-text.ts';
 
-export type PermitState = Pick<StateService, 'schedules' | 'scheduleSends' | 'nodeActions' | 'asks'>;
+export type PermitState = Pick<StateService, 'schedules' | 'scheduleSends' | 'nodeActions' | 'asks'
+  | 'outboundGrants' | 'outboundLog' | 'transaction'>;
 
 export interface PermitRequest {
   lineId: string;
@@ -81,8 +84,20 @@ export function grantSend(state: PermitState, request: PermitRequest,
   if (trace.filled !== null && trace.filled.trim() !== request.content.trim()) {
     throw new PermitRefused('输入框里填的和要发的内容不一样。');
   }
-  return state.scheduleSends.create({ scheduleId: schedule.id, confirmAskId: schedule.confirmAskId,
-    confirmedByDeviceId: schedule.confirmedByDeviceId, lineId: request.lineId, runAt: schedule.lastRunAt,
+  const grant = ensureScheduleGrant(state, schedule);
+  if (grant === null || !grant.enabled || grant.revokedAt !== null) {
+    throw new PermitRefused('这张定时卡的对外授权已停用或撤销。');
+  }
+  return state.transaction(() => {
+    const log = state.outboundGrants.claim(grant, { actor: MAIN_LINE_ID, lineId: request.lineId,
+      toolCallId: request.toolCallId, toolName: 'schedule_send', argsDigest: argsDigest({ ...request }) }, {
+      channel: grant.channel, account: grant.account, category: grant.category, recipients: [recipient],
+      content: request.content.trim(),
+    });
+    if (log === null) { throw new PermitRefused('这张定时卡的对外授权已经变化，请重新核对。'); }
+    return state.scheduleSends.create({ scheduleId: schedule.id, confirmAskId: schedule.confirmAskId!,
+    confirmedByDeviceId: schedule.confirmedByDeviceId!, lineId: request.lineId, runAt: schedule.lastRunAt,
     toolCallId: request.toolCallId, recipient, content: request.content.trim(), nodeId: request.nodeId,
-    tabId: request.tabId, pageVersion: hold.version, n: hold.n, op: hold.op, pageUrl: trace.url });
+    tabId: request.tabId, pageVersion: hold.version, n: hold.n, op: hold.op, pageUrl: trace.url! });
+  });
 }

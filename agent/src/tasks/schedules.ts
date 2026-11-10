@@ -10,6 +10,7 @@ import type { StateService } from '../state/index.ts';
 import { cadenceLabel, latestDue, nextRun } from './cadence.ts';
 import { scheduleTimeZone } from './time-zone.ts';
 import { outwardBrief } from './schedule-text.ts';
+import { ensureScheduleGrant } from '../outbound/index.ts';
 
 /** 每分钟看一眼有没有到点的：卡上的钟点精确到分钟。 */
 export const SCHEDULE_TICK_MS = 60_000;
@@ -19,6 +20,7 @@ const NOTE_MAX_CHARS = 80;
 const BUSY: ReadonlySet<LineView['status']> = new Set(['running', 'queued', 'waiting']);
 
 export type ScheduleState = Pick<StateService, 'schedules' | 'scheduleSends' | 'dailySettings' | 'deviceTimeZones'
+  | 'outboundGrants' | 'asks'
   | 'projects' | 'transaction'>;
 
 /** 定时线怎么动线（lines/ 的 LineKernel，assemble 接上）。 */
@@ -167,9 +169,11 @@ export class ScheduleDesk {
         lineId = old.lineId;
         this.#state.schedules.update(old.id, old.version, { status: 'replaced', nextAt: null });
       }
-      return this.#state.schedules.update(schedule.id, schedule.version, { status: 'active', lineId,
+      const row = this.#state.schedules.update(schedule.id, schedule.version, { status: 'active', lineId,
         nextAt: nextRun(schedule.cadence, now, this.timeZone()).toISOString(), confirmAskId: ask.id,
         confirmedAt: ask.answeredAt, confirmedByDeviceId: ask.answeredByDeviceId });
+      ensureScheduleGrant(this.#state, row);
+      return row;
     });
     this.#changed();
     return confirmed;

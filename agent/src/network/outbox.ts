@@ -10,6 +10,7 @@ import { errorCategory, safeLog } from '../shared-log.ts';
 import { changeOf, groupChange, requireIdentity, signerOf, touchContact, type NetworkContext } from './context.ts';
 import { sealEnvelope } from '../../protocol/crypto.ts';
 import { RelayCallError } from '../../protocol/relay-client.ts';
+import { settleNetworkOutbound } from '../outbound/index.ts';
 
 /** 5 秒起、每次翻倍、最长 10 分钟，8 次（合起来二十来分钟）：对方中继重启、网络抖一下都等得过去。 */
 export const OUTBOX_MAX_ATTEMPTS = 8;
@@ -191,6 +192,7 @@ export class Outbox {
     const current = state.contactMessages.require(message.id);
     state.contactMessages.update(current.id, current.version, { status, error, nextAttemptAt: null,
       ...(attempts === undefined ? {} : { attempts }) });
+    if (message.taskId !== null) { settleNetworkOutbound(state, message.taskId); }
     const tasks = message.taskId === null ? [] : [message.taskId];
     this.#context.changed(message.groupId === null ? changeOf(message.contactId, [message.id], tasks)
       : groupChange(message.groupId, [], tasks));

@@ -22,6 +22,7 @@ import {
   type TaskCardPreview,
 } from '../../shared/api/index.ts';
 import { Value } from 'typebox/value';
+import { OutboundCardSchema } from '../../shared/outbound.ts';
 import type { Ask } from '../../shared/state.ts';
 import { MAIN_LINE_ID } from '../state/index.ts';
 import { ApiError, notFoundError, toApiError } from './api-error.ts';
@@ -74,6 +75,7 @@ export function askView(_state: unknown, ask: Ask): AskView {
   const subscriptionCard = subscriptionCardOf(ask);
   return {
     id: ask.id,
+    ...(Value.Check(OutboundCardSchema, ask.context?.outbound) ? { outbound: ask.context.outbound } : {}),
     ...(ask.purpose === 'network_task' && typeof ask.context?.['networkTaskId'] === 'string'
       ? { networkTaskId: ask.context['networkTaskId'] } : {}),
     ...(taskCard === null ? {} : { taskCard }),
@@ -143,6 +145,15 @@ export async function answerAsk(context: RequestContext): Promise<Reply> {
   const confirmation = needsConfirmation
     ? userConfirmation(context) : undefined;
   return idempotent(context, body.requestId, (afterCommit) => {
+    if (body.outboundGrant !== undefined) {
+      const card = current?.context?.outbound;
+      if (current?.purpose !== 'line_approval' || current.status !== 'open'
+        || !Value.Check(OutboundCardSchema, card) || body.outboundGrant.actor !== card.grant.actor) {
+        throw new ApiError(400, 'invalid_input', '这张卡不能修改这份对外授权。');
+      }
+      state.asks.update(current.id, current.version,
+        { context: { ...current.context, outbound: { ...card, grant: body.outboundGrant } } });
+    }
     if (current?.purpose === 'backup_restore') {
       throw new ApiError(403, 'confirmation_required', '请核对备份预览，再确认恢复。');
     }
