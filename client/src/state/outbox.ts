@@ -5,7 +5,7 @@
 import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import type { Quote } from '../api/types.ts';
-import { AttachmentViewSchema, BookQuoteReferenceSchema, NoteQuoteReferenceSchema,
+import { AttachmentViewSchema, BookQuoteReferenceSchema, NoteQuoteReferenceSchema, SpaceQuoteReferenceSchema,
   type AttachmentView } from '../api/shared.ts';
 import { Store } from './store.ts';
 
@@ -36,12 +36,13 @@ const RELOADED_WHILE_SENDING = '页面重新载入时这一条还在发送中，
 
 export const QuoteSchema = Type.Object({
   id: Type.String(),
-  kind: Type.Union([Type.Literal('note'), Type.Literal('book'), Type.Literal('message'), Type.Literal('object')]),
+  kind: Type.Enum(['note', 'book', 'space', 'message', 'object']),
   sourceId: Type.String(),
   label: Type.String(),
   text: Type.String(),
   noteReference: Type.Optional(NoteQuoteReferenceSchema),
   bookReference: Type.Optional(BookQuoteReferenceSchema),
+  spaceReference: Type.Optional(SpaceQuoteReferenceSchema),
 });
 
 const PendingSendSchema = Type.Object({

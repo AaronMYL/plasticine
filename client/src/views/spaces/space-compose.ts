@@ -50,7 +50,8 @@ export function composeSpaceDocument(input: ComposeInput): string {
   return '<!doctype html><html lang="zh-CN" class="pz-' + input.genre + '" style="color-scheme:' + scheme + '">'
     + `<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${SPACE_CSP}">`
     + '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer">'
-    + `<style>${tokenCss(input.tokens)}${BASE_CSS}${genreCss}${input.mode === 'thumb' ? THUMB_CSS : ''}</style>`
+    + `<style>${tokenCss(input.tokens)}${BASE_CSS}${genreCss}${input.mode === 'thumb' ? THUMB_CSS : ''}`
+    + '[data-pz-highlight]{background:var(--tint2);border-radius:8px;scroll-margin:48px}</style>'
     + `<script>(${spaceRuntime.toString()})(${JSON.stringify(input.mode)});</script>`
     + `</head><body class="${classes}">${input.body}</body></html>`;
 }

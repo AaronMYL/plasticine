@@ -4,9 +4,12 @@
 // 新令牌；✎ 改字时让它进入可编辑，它交回「第几段改成了什么」，外面在没跑过脚本的原样上换好整页再交给 onEdit 去存；
 // 链接交给外面开（站外的在网页标签，站内的走路由）。
 
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { Value } from 'typebox/value';
 import { useApi } from '../../api/context.tsx';
-import { SPACE_LINK_KINDS, type SpaceGenre, type SpaceLink } from '../../api/shared.ts';
+import { SPACE_LINK_KINDS, SpaceQuoteAnchorSchema, type SpaceGenre, type SpaceLink } from '../../api/shared.ts';
+import { QuoteAction } from '../../primitives/message/quote-action.tsx';
 import { pushHash } from '../../shell/nav-history.ts';
 import { openExternal } from '../../shell/open-external.ts';
 import { routeHash } from '../../shell/routes.ts';
@@ -16,6 +19,8 @@ import { spaceFontFaces } from './space-fonts.ts';
 import { linkRoute } from './space-links.ts';
 import type { SpaceFrameMode } from './space-runtime.ts';
 import { useSpaceTheme } from './space-theme.ts';
+import type { SpaceQuoteAnchor } from './space-quote.ts';
+import '../../primitives/message/quote-selection.css';
 
 export const SPACE_SANDBOX = 'allow-scripts';
 
@@ -38,6 +43,8 @@ export interface SpaceFrameProps {
   /** 在页面里按了 Esc（改字时）。 */
   onEscape?: () => void;
   className?: string;
+  onQuote?: (anchor: SpaceQuoteAnchor) => void;
+  highlightParagraph?: number | undefined;
 }
 
 function isLinkKind(kind: string): kind is SpaceLink['kind'] {
@@ -56,10 +63,12 @@ function replayKey(message: Record<string, unknown>): void {
     bubbles: true, cancelable: true }));
 }
 
-export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEscape, className }: SpaceFrameProps)
+export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEscape, className, onQuote,
+  highlightParagraph }: SpaceFrameProps)
   : ReactNode {
   const api = useApi();
   const frame = useRef<HTMLIFrameElement>(null);
+  const [selection, setSelection] = useState<{ anchor: SpaceQuoteAnchor; left: number; top: number } | null>(null);
   const theme = useSpaceTheme();
   const themeRef = useRef(theme);
   themeRef.current = theme;
@@ -83,8 +92,30 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
     [html, genre, title, dateLabel]);
   const srcDoc = useMemo(() => composeSpaceDocument({ body: prepared.body, genre, mode,
     tokens: themeRef.current.tokens, dark: themeRef.current.dark }), [prepared, genre, mode]);
-  const handlers = useRef({ onEdit, onEscape, editing });
-  handlers.current = { onEdit, onEscape, editing };
+  const handlers = useRef({ onEdit, onEscape, editing, onQuote, highlightParagraph });
+  handlers.current = { onEdit, onEscape, editing, onQuote, highlightParagraph };
+
+  useEffect(() => {
+    const close = (event: Event): void => {
+      if (event.target instanceof Element && event.target.closest('.quote-action') !== null) return;
+      setSelection(null);
+    };
+    window.addEventListener('pointerdown', close);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('pointerdown', close);
+      window.removeEventListener('resize', close);
+    };
+  }, []);
+
+  useEffect(() => {
+    setSelection(null);
+  }, [editing, prepared]);
+
+  useEffect(() => {
+    if (highlightParagraph === undefined) return;
+    frame.current?.contentWindow?.postMessage({ pz: 'space', type: 'highlight', paragraph: highlightParagraph }, '*');
+  }, [highlightParagraph]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -98,6 +129,9 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
       served = true;
       post({ type: 'theme', vars: themeRef.current.tokens, dark: themeRef.current.dark });
       if (mode === 'page' && handlers.current.editing) post({ type: 'edit', on: true });
+      if (handlers.current.highlightParagraph !== undefined) {
+        post({ type: 'highlight', paragraph: handlers.current.highlightParagraph });
+      }
       void spaceFontFaces(String(message['wenkai'] ?? '')).then((faces) => {
         if (!controller.signal.aborted) post({ type: 'fonts', faces });
       });
@@ -130,6 +164,19 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
         handlers.current.onEscape?.();
       } else if (message['type'] === 'key') {
         replayKey(message);
+      } else if (message['type'] === 'selection') {
+        const anchor = { text: message['text'], sectionId: message['sectionId'], paragraph: message['paragraph'] };
+        const rect = frame.current?.getBoundingClientRect();
+        if (rect === undefined || handlers.current.onQuote === undefined
+          || !Value.Check(SpaceQuoteAnchorSchema, anchor)) {
+          setSelection(null);
+        } else {
+          const x = Number(message['left']);
+          const y = Number(message['top']);
+          if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+          setSelection({ anchor, left: Math.max(8, Math.min(rect.left + x, innerWidth - 150)),
+            top: Math.max(8, Math.min(rect.top + y - 40, innerHeight - 48)) });
+        }
       }
     };
     window.addEventListener('message', listen);
@@ -154,8 +201,16 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
   }, [editing, mode, srcDoc]);
 
   return (
-    <iframe ref={frame} className={className} title={label} sandbox={SPACE_SANDBOX} srcDoc={srcDoc}
+    <><iframe ref={frame} className={className} title={label} sandbox={SPACE_SANDBOX} srcDoc={srcDoc}
       onLoad={() => frame.current?.contentWindow?.postMessage({ pz: 'space', type: 'hello' }, '*')}
       referrerPolicy="no-referrer" {...(mode === 'thumb' ? { tabIndex: -1, 'aria-hidden': true } : {})} />
+      {createPortal(<QuoteAction fixed position={onQuote === undefined ? null : selection}
+          onQuote={() => {
+            if (selection === null || onQuote === undefined) return;
+            onQuote(selection.anchor);
+            setSelection(null);
+            frame.current?.contentWindow?.postMessage({ pz: 'space', type: 'clear-selection' }, '*');
+          }} />, document.body)}
+    </>
   );
 }

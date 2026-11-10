@@ -29,6 +29,8 @@ import { letterDate } from './space-time.ts';
 import { ChangeToast } from './space-toast.tsx';
 import { SpaceTools } from './space-tools.tsx';
 import { SubscriptionSheet } from './subscription-sheet.tsx';
+import { useSpaceQuote } from './space-quote.ts';
+import { SpaceVersions } from './space-versions.tsx';
 import type { Route } from '../../shell/routes.ts';
 import './spaces.css';
 import './space-frame.css';
@@ -68,12 +70,21 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   const [editing, setEditing] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [versionsOpen, setVersionsOpen] = useState(false);
   const actions = useSpaceActions();
   const confirm = useDeleteConfirm();
   const mention = useMention();
-  const { canGoBack, goBack } = useRoute();
+  const { route, canGoBack, goBack } = useRoute();
   const titled = useInTitlebar();
-  const space = saved !== null && saved.version >= (value?.version ?? 0) ? saved : value;
+  const current = saved !== null && saved.version >= (value?.version ?? 0) ? saved : value;
+  const position = route.spaceId === spaceId ? route.spacePosition : undefined;
+  const readRevision = useCallback(async (signal: AbortSignal) => position === undefined ? null
+    : (await api.spaces.versions(spaceId, position.version, signal)).selected, [api, spaceId, position?.version]);
+  const history = useRead(readRevision);
+  const revision = history.value;
+  const space = position === undefined ? current : revision?.version === position.version && current !== null
+    ? { ...current, ...revision, id: current.id, lastChange: null } : null;
+  const quoteSpace = useSpaceQuote(space);
   const saver = useSpaceSaver(space, setSaved);
   const stopEditing = useCallback(() => setEditing(false), []);
   useEscape(editing, stopEditing);
@@ -83,9 +94,10 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   }, [value?.id]);
   if (space === null) {
     return <div className="page space-page">
-      {error === null ? <p className="block-empty" role="status">正在读…</p>
-        : <p className="block-empty is-error" role="alert">{error}{' '}
-          <button type="button" className="text-button" onClick={reload}>重新读取</button></p>}
+      {error === null && history.error === null ? <p className="block-empty" role="status">正在读…</p>
+        : <p className="block-empty is-error" role="alert">{error ?? history.error}{' '}
+          <button type="button" className="text-button" onClick={() => { reload(); history.reload(); }}>
+            重新读取</button></p>}
     </div>;
   }
   const changed = (next: SpaceView | null): void => {
@@ -103,7 +115,8 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
       text: space.genre === 'letter' ? `回信：《${space.title}》` : `改这一页：《${space.title}》` });
     requestAnimationFrame(() => window.dispatchEvent(new Event(FOCUS_COMPOSER_EVENT)));
   };
-  const tools = <SpaceTools space={space} phone={phone} editing={editing} onAsk={ask} onEdit={setEditing}
+  const tools = position !== undefined ? null : <SpaceTools space={space} phone={phone} editing={editing}
+    onAsk={ask} onEdit={setEditing} onVersions={() => setVersionsOpen(true)}
     onRename={() => setRenaming(true)} onSettings={() => setSheet(true)}
     onDelete={() => confirm.ask(space.title, () => actions.remove(space.id), leave)} />;
   const back = (): void => (canGoBack ? goBack() : leave());
@@ -128,6 +141,12 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   return (
     <div className="page page-fill space-page" data-phone={phone} data-genre={space.genre ?? 'legacy'}>
       {head}
+      {position === undefined ? null : <div className="space-history-bar">
+        <span className="text-meta">第 {position.version} 版</span>
+        <button type="button" className="text-button" onClick={() => {
+          reload();
+          navigate(spaceRoute(space.id));
+        }}>回到最新版</button></div>}
       {renaming ? <div className="space-rename">
         <RenameField value={space.title} label={`「${space.title}」的新名字`}
           onSave={(title) => actions.rename(space.id, title).then(() => {
@@ -137,7 +156,9 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
       </div> : null}
       {confirm.dialog}
       {space.html === null ? <LegacySpace space={space} phone={phone} /> : (
-        <SpaceFrame className="space-frame" mode="page" label={space.title} editing={editing}
+        <SpaceFrame className="space-frame" mode="page" label={space.title}
+          editing={position === undefined && editing} onQuote={quoteSpace}
+          highlightParagraph={position?.paragraph}
           space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
             dateLabel: letterDate(space.createdAt) }} onEdit={saver.save} onEscape={stopEditing} />
       )}
@@ -150,8 +171,14 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
           }}>重新读取</button>
         </div>
       )}
-      {editing || saver.error !== null ? null
+      {editing || position !== undefined || saver.error !== null ? null
         : <ChangeToast key={`${space.id}:${space.version}`} space={space} onChanged={changed} />}
+      {!versionsOpen || current === null ? null : <SpaceVersions space={current} phone={phone}
+        onClose={() => setVersionsOpen(false)} onChanged={changed} onSelect={(version) => {
+          setVersionsOpen(false);
+          setEditing(false);
+          navigate({ ...spaceRoute(space.id), spacePosition: { version, paragraph: 1 } });
+        }} />}
       {space.subscription === null ? null : (
         <SubscriptionSheet open={sheet} subscriptionId={space.subscription.id} phone={phone}
           onClose={() => {

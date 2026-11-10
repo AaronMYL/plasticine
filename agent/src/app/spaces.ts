@@ -13,7 +13,7 @@ import {
 import type { Space } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { writeSpace } from '../subs/index.ts';
-import { notFoundError } from './api-error.ts';
+import { ApiError, notFoundError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';
@@ -46,6 +46,20 @@ export function getSpace(context: RequestContext): Reply {
   requireAuth(context);
   const { state } = context.deps;
   return { status: 200, body: spaceView(state, requireSpace(state, param(context, 'id'))) };
+}
+
+export function getSpaceVersions(context: RequestContext): Reply {
+  requireAuth(context);
+  const { state } = context.deps;
+  const space = requireSpace(state, param(context, 'id'));
+  const raw = context.url.searchParams.get('version');
+  if (raw !== null && (!/^[1-9]\d*$/.test(raw) || !Number.isSafeInteger(Number(raw)))) {
+    throw new ApiError(400, 'invalid_request', '版本号不正确，请从版本记录里重新选择。');
+  }
+  const selected = raw === null ? null : state.spaces.revision(space.id, Number(raw));
+  if (selected === undefined) { throw notFoundError('没有这一版空间。'); }
+  const versions = state.spaces.revisions(space.id).map(({ doc: _doc, html: _html, ...info }) => info);
+  return { status: 200, body: { versions, selected } };
 }
 
 /** PUT /v2/spaces/:id：他在页面上直接改字（给 html），或改名（只给 title）。 */

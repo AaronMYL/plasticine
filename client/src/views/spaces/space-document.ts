@@ -8,6 +8,7 @@
 
 import type { SpaceDoc, SpaceGenre } from '../../api/shared.ts';
 import { plasticineMarkSvg } from '../../shell/plasticine-mark.tsx';
+import { SPACE_PARAGRAPH_SELECTOR } from '../../../../agent/shared/space-selection.ts';
 
 /** 能在页面上直接改的字。 */
 const EDITABLE = 'p, h1, h2, h3, h4, h5, li, td, th, dt, dd, figcaption, blockquote, .lst > div > span, .chain > span';
@@ -88,6 +89,11 @@ function letterBody(frame: Document, input: PrepareInput): string {
 export function prepareSpace(input: PrepareInput): PreparedSpace {
   const pristine = parse(input.html);
   const editable = numberEditable(pristine);
+  let paragraph = 1;
+  for (const element of pristine.body.querySelectorAll<HTMLElement>(SPACE_PARAGRAPH_SELECTOR)) {
+    if (element.closest(SKIP) !== null || element.parentElement?.closest('[data-qp]') !== null) continue;
+    element.dataset['qp'] = String(paragraph++);
+  }
   const frame = parse(pristine.body.innerHTML);
   for (const element of frame.body.querySelectorAll(FIXED)) {
     if (element.parentElement?.closest(FIXED) === null) element.classList.add('pz-fixed');
@@ -117,6 +123,7 @@ export function applySpaceEdit(prepared: PreparedSpace, index: number, html: str
 export function spaceFragment(doc: Document): string {
   const copy = doc.body.cloneNode(true) as HTMLElement;
   copy.querySelectorAll('[data-e]').forEach((element) => element.removeAttribute('data-e'));
+  copy.querySelectorAll('[data-qp]').forEach((element) => element.removeAttribute('data-qp'));
   return copy.innerHTML;
 }
 

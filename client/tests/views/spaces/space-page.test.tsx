@@ -48,6 +48,37 @@ afterEach(() => {
 });
 
 describe('网页版的报告', () => {
+  it('仅接收本空间的有效选区，引用带版本、小节和跨段原文', async () => {
+    const app = await open(REPORT);
+    const page = await frame('认知科学与意识研究周报｜第1期：学会看见，与意识的因果解释');
+    fromFrame(page, { type: 'selection', text: '第一段\n第二段', sectionId: 'intro', paragraph: 2, left: 20, top: 80 });
+    fireEvent.click(screen.getByRole('button', { name: '引用到对话' }));
+    expect(app.state.conversationUi.store.get().quotes[0]?.spaceReference).toEqual({ spaceId: 'sp_cog_1', version: 1,
+      anchor: { text: '第一段\n第二段', sectionId: 'intro', paragraph: 2 } });
+    expect(screen.queryByRole('button', { name: '引用到对话' })).toBeNull();
+    fromFrame(page, { type: 'selection', text: '无效', sectionId: null, paragraph: -1, left: 0, top: 0 });
+    expect(screen.queryByRole('button', { name: '引用到对话' })).toBeNull();
+  });
+
+  it('版本记录一直可打开，旧版只读，撤销入口不依赖短暂提示', async () => {
+    const app = await open(REPORT);
+    const current = await app.api.spaces.get('sp_cog_1');
+    await app.api.spaces.save(current.id, { requestId: 'revision-test', version: 1, html: '<p>第二版正文</p>' });
+    fireEvent.click(screen.getByRole('button', { name: `「${current.title}」的更多操作` }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '版本记录' }));
+    const dialog = await screen.findByRole('dialog', { name: '版本记录' });
+    fireEvent.click(await within(dialog).findByRole('button', { name: '查看第 1 版' }));
+    await screen.findByRole('button', { name: '回到最新版' });
+    expect(screen.queryByRole('button', { name: '改字' })).toBeNull();
+    const page = await frame(current.title);
+    expect(page.getAttribute('srcdoc')).toContain('学会识别会改变神经表征');
+    fireEvent.click(screen.getByRole('button', { name: '回到最新版' }));
+    await screen.findByRole('button', { name: '改字' });
+    fireEvent.click(screen.getByRole('button', { name: `「${current.title}」的更多操作` }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '版本记录' }));
+    fireEvent.click(await screen.findByRole('button', { name: '撤销上次修改' }));
+    await waitFor(async () => expect((await app.api.spaces.get(current.id)).version).toBe(3));
+  });
   it('整页在沙盒 iframe 里（只给 allow-scripts）；标题栏右边是「让 Plasticine 改」、✎、⋯', async () => {
     await open(REPORT);
     const page = await frame('认知科学与意识研究周报｜第1期：学会看见，与意识的因果解释');

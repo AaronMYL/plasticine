@@ -82,6 +82,8 @@ export interface Route {
    * 先挂在图书（以后的资料库）下面。
    */
   spaceId?: string | null;
+  /** 引用的原始版本和段落，后续修改不改变来源。 */
+  spacePosition?: { version: number; paragraph: number };
   /** 空间的列表（#/books/space，手机「更多 · 空间」；电脑上空间列在资料库的第二栏）。 */
   spacesList?: boolean;
   /** 资料库里打开的订阅（#/library/sub/<id>）。 */
@@ -261,7 +263,11 @@ export function parseHash(hash: string): Route {
     return { view, noteId: null, bookId: null, spaceId: null, spacesList: true };
   }
   if (view === 'books' && id === SPACE_SEGMENT && sub !== undefined) {
-    return { view, noteId: null, bookId: null, spaceId: decodedOrNull(sub) };
+    const version = Number(parts[3]);
+    const paragraph = Number(parts[4]);
+    const position = Number.isSafeInteger(version) && version > 0 && Number.isSafeInteger(paragraph) && paragraph > 0
+      ? { spacePosition: { version, paragraph } } : {};
+    return { view, noteId: null, bookId: null, spaceId: decodedOrNull(sub), ...position };
   }
   if (view === 'books' && id !== undefined) { return booksRoute(id, sub, parts[3]); }
   if (view === 'feed' && id !== undefined) { return { view, noteId: null, feedItemId: decodedOrNull(id) }; }
@@ -457,7 +463,9 @@ export function routeHash(route: Route): string {
     return `#/books/${SPACE_SEGMENT}`;
   }
   if (route.view === 'books' && route.spaceId != null) {
-    return `#/books/${SPACE_SEGMENT}/${encodeURIComponent(route.spaceId)}`;
+    const position = route.spacePosition;
+    const suffix = position === undefined ? '' : `/${position.version}/${position.paragraph}`;
+    return `#/books/${SPACE_SEGMENT}/${encodeURIComponent(route.spaceId)}${suffix}`;
   }
   if (route.view === 'books' && route.bookId != null) {
     const position = route.bookPosition == null ? '' : `/${route.bookPosition.chapter}/${route.bookPosition.offset}`;

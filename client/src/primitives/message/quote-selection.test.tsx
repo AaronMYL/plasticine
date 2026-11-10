@@ -14,13 +14,13 @@ it('键盘选区也能引用，取消选择后移除过时操作', () => {
   range.setEnd(text.firstChild!, 6);
   selection.addRange(range);
   fireEvent.keyUp(text, { key: 'ArrowRight', shiftKey: true });
-  fireEvent.click(screen.getByRole('button', { name: '引用选中文字' }));
+  fireEvent.click(screen.getByRole('button', { name: '引用到对话' }));
   expect(quote).toHaveBeenCalledWith('的一部分');
   selection.addRange(range);
   fireEvent.keyUp(text, { key: 'ArrowRight', shiftKey: true });
   selection.removeAllRanges();
   fireEvent(document, new Event('selectionchange'));
-  expect(screen.queryByRole('button', { name: '引用选中文字' })).toBeNull();
+  expect(screen.queryByRole('button', { name: '引用到对话' })).toBeNull();
 });
 
 it('手机先结束触摸再出现原生选区时也能引用单个汉字', () => {
@@ -33,6 +33,6 @@ it('手机先结束触摸再出现原生选区时也能引用单个汉字', () =
   range.setEnd(text.firstChild!, 1);
   window.getSelection()!.addRange(range);
   fireEvent(document, new Event('selectionchange'));
-  fireEvent.click(screen.getByRole('button', { name: '引用选中文字' }));
+  fireEvent.click(screen.getByRole('button', { name: '引用到对话' }));
   expect(quote).toHaveBeenCalledWith('文');
 });

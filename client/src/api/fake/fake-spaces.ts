@@ -149,6 +149,15 @@ export class FakeSpaces {
   }
 
   readonly spaces: SpacesApi = {
+    versions: async (id, version) => {
+      this.deps.session.require();
+      const row = this.space(id);
+      const revisions = row.revisions.map((revision, index) => ({ ...revision, spaceId: id, version: index + 1,
+        title: row.title, author: row.author, savedAt: row.updatedAt, restoredFrom: null }));
+      const selected = version === undefined ? null : revisions.find((revision) => revision.version === version);
+      if (selected === undefined) throw notFound('这一版空间');
+      return { selected, versions: revisions.toReversed().map(({ doc: _doc, html: _html, ...info }) => info) };
+    },
     list: async (_signal?: AbortSignal, filter: SpaceListFilter = {}): Promise<SpaceListResponse> => {
       this.deps.session.require();
       const rows = this.live().filter((row) => filter.standalone !== true || row.subscriptionId === null);

@@ -19,6 +19,7 @@ export interface SpaceToolsProps {
   onRename: () => void;
   onSettings: () => void;
   onDelete: () => void;
+  onVersions?: () => void;
 }
 
 function moreActions(props: SpaceToolsProps, letter: boolean): RevealAction[] {
@@ -30,6 +31,9 @@ function moreActions(props: SpaceToolsProps, letter: boolean): RevealAction[] {
     actions.push({ icon: 'edit', label: '改字', onSelect: () => props.onEdit(true) });
   }
   actions.push({ icon: 'edit', label: '改名', onSelect: props.onRename });
+  if (props.onVersions !== undefined) {
+    actions.push({ icon: 'clock', label: '版本记录', onSelect: props.onVersions });
+  }
   if (space.subscription !== null) actions.push({ icon: 'sliders', label: '订阅设置', onSelect: props.onSettings });
   actions.push({ icon: 'trash', label: '删除', danger: true, onSelect: props.onDelete });
   return actions;

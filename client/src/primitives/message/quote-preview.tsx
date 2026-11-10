@@ -2,6 +2,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import type { QuoteChip } from '../../api/types.ts';
 import { quoteCharacters } from '../../api/shared.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
+import { Icon } from '../../shell/icons.tsx';
 import { routeHash, type Route } from '../../shell/routes.ts';
 import { useRoute } from '../../shell/use-route.ts';
 import './quote-preview.css';
@@ -13,18 +14,14 @@ function shortBookLabel(label: string): string {
 }
 
 function detailText(quote: QuoteChip, scope: string): string {
-  if (quote.kind === 'message') return '引用对话中的原文。';
-  if (quote.bookReference !== undefined) {
-    return '引用书里的一段原文。下方是提供给对话的实际文字。';
-  }
   const reference = quote.noteReference;
-  return reference === undefined ? '这份引用只包含下方文字，未记录全文范围或笔记版本。'
-    : `引用笔记版本 ${reference.version} 的${scope}。下方是提供给对话的实际文字。`;
+  return reference === undefined ? scope : `第 ${reference.version} 版 · ${scope}`;
 }
 
 /** 待发与历史都展开实际快照；不重新读笔记，避免把后来改过的正文冒充当时的引用。书引用另有「回到原文」。 */
 export function QuotePreview({ quote, onRemove }: { quote: QuoteChip; onRemove?: () => void }): ReactNode {
   const { navigate } = useRoute();
+  const space = quote.spaceReference;
   const reference = quote.noteReference;
   const book = quote.bookReference;
   const scope = quote.kind === 'message' ? '选文' : book !== undefined || reference?.scope === 'selection' ? '选段'
@@ -39,13 +36,29 @@ export function QuotePreview({ quote, onRemove }: { quote: QuoteChip; onRemove?:
       navigate(source);
     }
   };
+  if (space !== undefined) {
+    const route: Route = { view: 'books', noteId: null, bookId: null, spaceId: space.spaceId,
+      spacePosition: { version: space.version, paragraph: space.anchor.paragraph } };
+    return <div className="quote-preview quote-preview-excerpt">
+      <Icon name="quote" size={14} />
+      <a className="quote-preview-body" href={routeHash(route)} onClick={(event) => {
+        event.preventDefault();
+        navigate(route);
+      }}><span className="quote-preview-label">{quote.label}</span>
+        <span className="quote-preview-text">{quote.text}</span></a>
+      {onRemove === undefined ? null : <IconButton icon="close" label={`去掉引用：${quote.label}`}
+        className="quote-preview-remove" onClick={onRemove} />}
+    </div>;
+  }
   return (
-    <div className="quote-preview">
+    <div className="quote-preview quote-preview-excerpt">
+      <Icon name="quote" size={14} />
       <details>
         <summary aria-label={`查看引用内容：${label}，${scope}，${characters} 字`}>
           <span className="quote-preview-label">{label}</span>
           <span className="quote-preview-scope">{scope} · {characters} 字</span>
           {source === null ? <span className="quote-preview-toggle">查看内容</span> : null}
+          <span className="quote-preview-text">{quote.text}</span>
         </summary>
         <div className="quote-preview-detail">
           <p>{detailText(quote, scope)}</p>

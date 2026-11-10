@@ -74,7 +74,7 @@ describe('新对话的来源和选文引用', () => {
     const input = screen.getByRole('textbox', { name: '问一句' });
     fireEvent.change(input, { target: { value: '继续解释这一句' } });
     select(await screen.findByText('线索触发注意力。'), 0, 4);
-    fireEvent.click(screen.getByRole('button', { name: '引用选中文字' }));
+    fireEvent.click(screen.getByRole('button', { name: '引用到对话' }));
     expect(app.state.conversationUi.store.get().draft).toBe('继续解释这一句');
     expect(app.state.conversationUi.store.get().quotes[0]).toMatchObject({ kind: 'message', text: '线索触发' });
     expect(document.activeElement).toBe(input);
@@ -93,9 +93,9 @@ describe('新对话的来源和选文引用', () => {
     const app = await open();
     act(() => app.state.conversationUi.setDraft('原草稿'));
     select(await screen.findByText('愿意长期读书。'), 2, 6);
-    fireEvent.click(screen.getByRole('button', { name: '引用选中文字' }));
+    fireEvent.click(screen.getByRole('button', { name: '引用到对话' }));
     select(await screen.findByText('核实后的摘要。'), 0, 3);
-    fireEvent.click(screen.getByRole('button', { name: '引用选中文字' }));
+    fireEvent.click(screen.getByRole('button', { name: '引用到对话' }));
     expect(app.state.conversationUi.store.get().quotes.map((quote) => quote.text)).toEqual(['长期读书', '核实后']);
     fireEvent.click(screen.getAllByRole('button', { name: /去掉引用/ })[0]!);
     expect(app.state.conversationUi.store.get().quotes.map((quote) => quote.text)).toEqual(['核实后']);

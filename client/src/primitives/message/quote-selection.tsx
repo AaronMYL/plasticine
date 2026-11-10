@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Icon } from '../../shell/icons.tsx';
+import { QuoteAction } from './quote-action.tsx';
 import './quote-selection.css';
 
 interface SelectedText {
@@ -57,17 +57,11 @@ export function QuoteSelection({ children, onQuote }: {
   return <div ref={ref} className="msg-selection-source" onMouseUp={readSelection}
     onTouchEnd={readSelection} onKeyUp={readSelection}>
     {children}
-    {selected === null || onQuote === undefined ? null : <button
-      type="button" className="msg-chip msg-selection"
-      style={{ left: selected.left, top: selected.top }}
-      onPointerDown={(event) => event.preventDefault()} onMouseDown={(event) => event.preventDefault()}
-      onClick={() => {
+    <QuoteAction position={onQuote === undefined ? null : selected} onQuote={() => {
+        if (selected === null || onQuote === undefined) return;
         onQuote(selected.text);
         setSelected(null);
         window.getSelection()?.removeAllRanges();
-      }}>
-      <Icon name="quote" size={14} />
-      引用选中文字
-    </button>}
+      }} />
   </div>;
 }

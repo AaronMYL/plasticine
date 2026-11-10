@@ -2,6 +2,21 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { QuotePreview } from '../../src/primitives/message/quote-preview.tsx';
 import { UserMessage } from '../../src/primitives/message/user-message.tsx';
+import { parseHash, routeHash } from '../../src/shell/routes.ts';
+
+it('空间引用保留摘录，来源精确跳回当时的版本和段落', () => {
+  const quote = { id: 's', kind: 'space' as const, label: '来信 · 一封来信 · 第 2 段', text: '保留下来的原文',
+    spaceReference: { spaceId: 'sp old', version: 3, anchor: { sectionId: 'part', paragraph: 2,
+      text: '保留下来的原文' } } };
+  render(<QuotePreview quote={quote} />);
+  expect(screen.getByText(quote.text)).toBeTruthy();
+  const link = screen.getByRole('link', { name: /来信 · 一封来信 · 第 2 段/ });
+  expect(link.getAttribute('href')).toBe('#/books/space/sp%20old/3/2');
+  const route = parseHash(link.getAttribute('href')!);
+  expect(route.spacePosition).toEqual({ version: 3, paragraph: 2 });
+  expect(routeHash(route)).toBe(link.getAttribute('href'));
+  expect(parseHash('#/books/space/sp/0/-1').spacePosition).toBeUndefined();
+});
 
 it('引用片显示全文与真实字符数，展开查看完整快照，移除也有清晰名称', () => {
   const text = `${'字'.repeat(700)}😀最后一句`;
@@ -12,7 +27,7 @@ it('引用片显示全文与真实字符数，展开查看完整快照，移除�
   fireEvent.click(summary);
   expect(summary.closest('details')?.open).toBe(true);
   expect(screen.getByLabelText('实际引用内容').textContent).toBe(text);
-  expect(screen.getByText(/引用笔记版本 3 的全文/)).toBeTruthy();
+  expect(screen.getByText('第 3 版 · 全文')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '去掉引用：长笔记' }));
   expect(remove).toHaveBeenCalledOnce();
 });
@@ -20,7 +35,7 @@ it('引用片显示全文与真实字符数，展开查看完整快照，移除�
 it('旧引用明确显示摘要范围，不能被误认成全文', () => {
   render(<QuotePreview quote={{ id: 'old', label: '旧笔记', text: '旧有内容' }} />);
   fireEvent.click(screen.getByLabelText('查看引用内容：旧笔记，摘要，4 字'));
-  expect(screen.getByText(/未记录全文范围或笔记版本/)).toBeTruthy();
+  expect(screen.getByText('摘要')).toBeTruthy();
   expect(screen.getByLabelText('实际引用内容').textContent).toBe('旧有内容');
 });
 

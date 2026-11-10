@@ -10,6 +10,16 @@ export const QUOTE_HEAD = '> 〔引用〕';
 export const NOTE_QUOTE_META_HEAD = '> 〔笔记引用〕';
 // 书里划的一段：带书、章和位置，聊天里点引用片能回到原文那一句；这本书的「讨论」也靠它归档。
 export const BOOK_QUOTE_META_HEAD = '> 〔书引用〕';
+export const SPACE_QUOTE_META_HEAD = '> 〔空间引用〕';
+
+export const SpaceQuoteAnchorSchema = Type.Object({
+  sectionId: Type.Union([Type.String({ maxLength: 200 }), Type.Null()]),
+  paragraph: Type.Integer({ minimum: 1 }),
+  text: Type.String({ minLength: 1, maxLength: CONVERSATION_QUOTE_MAX_CHARS * 2 }),
+}, { additionalProperties: false });
+export const SpaceQuoteReferenceSchema = Type.Object({ spaceId: IdSchema,
+  version: Type.Integer({ minimum: 1 }), anchor: SpaceQuoteAnchorSchema }, { additionalProperties: false });
+export type SpaceQuoteReference = Static<typeof SpaceQuoteReferenceSchema>;
 
 const NoteVersionFields = { noteId: IdSchema, version: Type.Integer({ minimum: 1 }) };
 export const NoteQuoteReferenceSchema = Type.Union([
@@ -31,6 +41,8 @@ export const BookQuoteReferenceSchema = Type.Object({
 export type BookQuoteReference = Static<typeof BookQuoteReferenceSchema>;
 
 export const ConversationQuoteInputSchema = Type.Union([
+  Type.Object({ kind: Type.Literal('space'), spaceReference: SpaceQuoteReferenceSchema },
+    { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('book'), bookReference: BookQuoteReferenceSchema },
     { additionalProperties: false }),
   Type.Object({ kind: Type.Literal('note'), noteReference: NoteQuoteReferenceSchema },
@@ -53,7 +65,17 @@ export interface ResolvedConversationQuote {
   text: string;
   noteReference?: NoteQuoteReference;
   bookReference?: BookQuoteReference;
+  spaceReference?: SpaceQuoteReference;
 }
+
+const SpaceQuoteMetadataSchema = Type.Object({
+  spaceId: IdSchema, version: Type.Integer({ minimum: 1 }),
+  sectionId: Type.Union([Type.String({ maxLength: 200 }), Type.Null()]),
+  paragraph: Type.Integer({ minimum: 1 }),
+  characters: Type.Integer({ minimum: 0, maximum: CONVERSATION_QUOTE_MAX_CHARS }),
+  lines: Type.Integer({ minimum: 1, maximum: CONVERSATION_QUOTE_MAX_CHARS + 1 }),
+}, { additionalProperties: false });
+export type SpaceQuoteMetadata = Static<typeof SpaceQuoteMetadataSchema>;
 
 const BookQuoteMetadataSchema = Type.Object({
   bookId: IdSchema,
@@ -102,6 +124,15 @@ function bookQuoteBlock(quote: ResolvedConversationQuote, reference: BookQuoteRe
 }
 
 function resolvedQuoteBlock(quote: ResolvedConversationQuote): string {
+  if (quote.spaceReference !== undefined) {
+    const { spaceId, version, anchor: { sectionId, paragraph } } = quote.spaceReference;
+    const lines = quote.text.split('\n');
+    const metadata: SpaceQuoteMetadata = { spaceId, version, sectionId, paragraph,
+      characters: quoteCharacters(quote.text), lines: lines.length };
+    return [`${QUOTE_HEAD}${quote.label.replace(/[\r\n]+/g, ' ')}`,
+      `${SPACE_QUOTE_META_HEAD}${JSON.stringify(metadata)}`,
+      ...lines.map((line) => line === '' ? '>' : `> ${line}`)].join('\n');
+  }
   if (quote.bookReference !== undefined) { return bookQuoteBlock(quote, quote.bookReference); }
   if (quote.noteReference === undefined) { return textQuoteBlock(quote); }
   const { noteId, version, scope } = quote.noteReference;
@@ -136,6 +167,17 @@ export function bookQuoteMetadata(line: string | undefined): BookQuoteMetadata |
   try {
     const value: unknown = JSON.parse(line.slice(BOOK_QUOTE_META_HEAD.length));
     return Value.Check(BookQuoteMetadataSchema, value) ? value : null;
+  } catch (error) {
+    if (error instanceof SyntaxError) { return null; }
+    throw error;
+  }
+}
+
+export function spaceQuoteMetadata(line: string | undefined): SpaceQuoteMetadata | null {
+  if (line?.startsWith(SPACE_QUOTE_META_HEAD) !== true) { return null; }
+  try {
+    const value: unknown = JSON.parse(line.slice(SPACE_QUOTE_META_HEAD.length));
+    return Value.Check(SpaceQuoteMetadataSchema, value) ? value : null;
   } catch (error) {
     if (error instanceof SyntaxError) { return null; }
     throw error;

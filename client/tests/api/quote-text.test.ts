@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { splitQuotes, withQuotes } from '../../src/api/quote-text.ts';
+import { lineQuoteInputs, splitQuotes, withQuotes } from '../../src/api/quote-text.ts';
 import { quoteCharacters, withResolvedQuotes } from '../../src/api/shared.ts';
 
 describe('引用片随正文走', () => {
+  it('空间引用保留版本、小节和段落，发送与历史引用片往返一致', () => {
+    const text = '第一段\n第二段';
+    const spaceReference = { spaceId: 'space-quote', version: 2,
+      anchor: { sectionId: 'methods', paragraph: 3, text } };
+    const quote = { id: 'q1', kind: 'space' as const, sourceId: 'space-quote',
+      label: '报告 · 阅读报告 · 第 3 段', text, spaceReference };
+    expect(lineQuoteInputs([quote])).toEqual([{ kind: 'space', spaceReference }]);
+    const content = withResolvedQuotes('展开这段', [quote]);
+    expect(splitQuotes(content, 'm').quotes[0]?.spaceReference).toEqual(spaceReference);
+    expect(splitQuotes(content, 'm').text).toBe('展开这段');
+  });
   it('引用片写进正文开头，存下后拆回来一样（多行、空行都在）', () => {
     const quotes = [
       { label: '《读书摘记》', text: '第一行\n\n第三行' },

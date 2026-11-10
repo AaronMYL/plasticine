@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { composeSpaceDocument, SPACE_CSP } from '../../../src/views/spaces/space-compose.ts';
 import { applySpaceEdit, legacyPreviewHtml, prepareSpace } from '../../../src/views/spaces/space-document.ts';
+import { spaceParagraphs } from '../../../../agent/shared/space-selection.ts';
 
 const REPORT = '<header class="rp-hero"><h1 class="rp-h1">学会识别会改变神经表征。</h1>'
   + '<div class="rp-stats"><div class="rp-stat"><div class="v"><b>2</b></div><div class="l">原文深读</div></div></div>'
@@ -18,6 +19,13 @@ function frameBody(html: string): Document {
 }
 
 describe('报告', () => {
+  it('引用段落编号与服务端原文一致，嵌套段落不会重复编号', () => {
+    const html = '<section id="one"><h2>标题</h2><p>一<b>段</b></p><blockquote><p>引文</p></blockquote></section>';
+    const prepared = prepareSpace({ html, genre: 'report', title: '报告', dateLabel: '' });
+    const numbered = [...frameBody(prepared.body).querySelectorAll<HTMLElement>('[data-qp]')];
+    expect(numbered.map((element) => ({ paragraph: Number(element.dataset.qp),
+      sectionId: element.closest('section[id]')?.id ?? null, text: element.textContent }))).toEqual(spaceParagraphs(html));
+  });
   it('能改的字编号，图表和数字条不编；结论大标题在最上，3 节以上配目录（data-toc 是目录里的名字）', () => {
     const prepared = prepareSpace({ html: REPORT, genre: 'report', title: '周报', dateLabel: '' });
     const doc = frameBody(prepared.body);

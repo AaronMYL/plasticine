@@ -9,7 +9,7 @@
 
 import type { Quote, QuoteChip } from './types.ts';
 import { QUOTE_HEAD, bookQuoteMetadata, noteQuoteMetadata, quoteCharacters, textQuoteBlock, withResolvedQuotes,
-  type ConversationQuoteInput } from './shared.ts';
+  spaceQuoteMetadata, type ConversationQuoteInput } from './shared.ts';
 
 const QUOTE_LINE = '>';
 
@@ -28,6 +28,7 @@ export function lineMessageText(text: string, quotes: readonly Quote[]): string 
 }
 
 function quoteInput(quote: Quote): ConversationQuoteInput {
+  if (quote.spaceReference !== undefined) { return { kind: 'space', spaceReference: quote.spaceReference }; }
   if (quote.bookReference !== undefined) {
     return { kind: 'book', bookReference: quote.bookReference };
   }
@@ -54,6 +55,20 @@ export function splitQuotes(content: string, idPrefix: string): { quotes: QuoteC
   while (lines[at]?.startsWith(QUOTE_HEAD) === true) {
     const label = (lines[at] ?? '').slice(QUOTE_HEAD.length);
     at += 1;
+    const space = spaceQuoteMetadata(lines[at]);
+    if (space !== null) {
+      const selected = lines.slice(at + 1, at + 1 + space.lines);
+      const text = selected.map(unquote).join('\n');
+      if (selected.length === space.lines && selected.every((line) => line.startsWith(QUOTE_LINE))
+        && quoteCharacters(text) === space.characters) {
+        const { spaceId, version, sectionId, paragraph } = space;
+        quotes.push({ id: `${idPrefix}_q${quotes.length}`, label, text,
+          spaceReference: { spaceId, version, anchor: { sectionId, paragraph, text } } });
+        at += space.lines + 1;
+        if (lines[at] === '') { at += 1; }
+        continue;
+      }
+    }
     const book = bookQuoteMetadata(lines[at]);
     if (book !== null) {
       const selected = lines.slice(at + 1, at + 1 + book.lines);

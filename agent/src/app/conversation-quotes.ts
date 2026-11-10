@@ -3,6 +3,7 @@ import { quoteLimitMessage, withResolvedQuotes, type BookQuoteReference, type Co
 import { digestOf, titleOf, type StateService } from '../state/index.ts';
 import type { NoteRecord } from '../../shared/state.ts';
 import { ApiError } from './api-error.ts';
+import { resolveSpaceQuote } from './space-quotes.ts';
 
 function readQuotedVersion(state: StateService, note: NoteRecord, version: number): string {
   try {
@@ -50,6 +51,7 @@ function resolveBookQuote(state: StateService, reference: BookQuoteReference): R
 function resolveQuote(state: StateService, quote: ConversationQuoteInput): ResolvedConversationQuote {
   if (quote.kind === 'text') { return { label: quote.label, text: quote.text }; }
   if (quote.kind === 'book') { return resolveBookQuote(state, quote.bookReference); }
+  if (quote.kind === 'space') { return resolveSpaceQuote(state, quote.spaceReference); }
   const reference = quote.noteReference;
   const note = state.notes.get(reference.noteId);
   if (note === undefined || note.deletedAt !== null) {

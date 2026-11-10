@@ -66,6 +66,10 @@ interface Run {
 
 /** 假的服务端不核对笔记和书的版本：书和笔记的选段带着原文，直接用；整篇笔记读现在那一版。 */
 function resolveQuote(quote: ConversationQuoteInput, note: FakeLinesDeps['note']): ResolvedConversationQuote {
+  if (quote.kind === 'space') {
+    return { label: `空间 · 第 ${quote.spaceReference.anchor.paragraph} 段`,
+      text: quote.spaceReference.anchor.text, spaceReference: quote.spaceReference };
+  }
   if (quote.kind === 'text') {
     return { label: quote.label, text: quote.text };
   }

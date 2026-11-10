@@ -98,6 +98,7 @@ import { REVIEW_PATH, SPACES_PATH, SUBSCRIPTIONS_PATH } from '../../shared/api/s
 import { deleteSpace, getSpace, listSpaces, restoreSpace, saveSpace, undoSpace } from './spaces.ts';
 import { LIBRARY_TRASH_PATH } from '../../shared/api/library.ts';
 import { listLibraryTrash } from './library-trash.ts';
+import { getSpaceVersions } from './spaces.ts';
 import { LIBRARY_BATCH_PATH, LIBRARY_EMPTY_PATH, NOTES_BATCH_PATH, NOTES_EMPTY_PATH }
   from '../../shared/api/library-batch.ts';
 import { batchLibrary, batchNotes, emptyLibrary, emptyNotes } from './library-batch.ts';
@@ -351,6 +352,7 @@ export const ROUTES: readonly Route[] = [
   // 第 6、7 条（11-06）：空间、订阅（研究周报、个人回顾）、首页「回顾」。
   { method: 'GET', path: SPACES_PATH, auth: true, handler: listSpaces },
   { method: 'GET', path: `${SPACES_PATH}/:id`, auth: true, handler: getSpace },
+  { method: 'GET', path: `${SPACES_PATH}/:id/versions`, auth: true, handler: getSpaceVersions },
   { method: 'PUT', path: `${SPACES_PATH}/:id`, auth: true, handler: saveSpace },
   { method: 'POST', path: `${SPACES_PATH}/:id/undo`, auth: true, handler: undoSpace },
   { method: 'DELETE', path: `${SPACES_PATH}/:id`, auth: true, handler: deleteSpace },

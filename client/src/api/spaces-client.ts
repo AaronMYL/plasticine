@@ -12,6 +12,7 @@ import type {
   SpaceListResponse,
   LibraryTrashResponse,
   SpaceView,
+  SpaceVersionsResponse,
   SubscriptionListResponse,
   SubscriptionView,
   UndoSpaceRequest,
@@ -31,6 +32,7 @@ export interface SpacesApi {
   /** GET /v2/spaces：全部没删的（⌘K 用）；standalone 只要不属于订阅的（资料库第二栏「空间」）。 */
   list(signal?: AbortSignal, filter?: SpaceListFilter): Promise<SpaceListResponse>;
   get(id: string, signal?: AbortSignal): Promise<SpaceView>;
+  versions(id: string, version?: number, signal?: AbortSignal): Promise<SpaceVersionsResponse>;
   /** PUT /v2/spaces/:id：改名（只给 title）或在页面上改字（给 html），带 version，旧了 409。 */
   save(id: string, input: SaveSpaceRequest): Promise<SpaceView>;
   /** POST /v2/spaces/:id/undo：撤回最近一版。 */

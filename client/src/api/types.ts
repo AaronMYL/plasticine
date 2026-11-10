@@ -19,6 +19,7 @@ import type {
   NoteMetaView,
   BookQuoteReference,
   NoteQuoteReference,
+  SpaceQuoteReference,
 } from './shared.ts';
 
 // M5 甲路：执行节点、设备动作。
@@ -115,7 +116,7 @@ export type {
 export interface Quote {
   id: string;
   /** 从哪里来：笔记 / 书 / 消息 / 页面对象。 */
-  kind: 'note' | 'book' | 'message' | 'object';
+  kind: 'note' | 'book' | 'space' | 'message' | 'object';
   /** 来源对象的 id（笔记 id、消息 id）。 */
   sourceId: string;
   /** 界面上显示的来源名，例如笔记标题。 */
@@ -124,10 +125,11 @@ export interface Quote {
   noteReference?: NoteQuoteReference;
   /** 书里划的一段：服务端按位置从章节原文重取一遍，对得上才发；聊天里的引用片靠它「回到原文」。 */
   bookReference?: BookQuoteReference;
+  spaceReference?: SpaceQuoteReference;
 }
 
 /** 气泡上方显示的一段引用：从正文拆出来的只剩这几样。 */
-export type QuoteChip = Pick<Quote, 'id' | 'label' | 'text' | 'noteReference' | 'bookReference'>
+export type QuoteChip = Pick<Quote, 'id' | 'label' | 'text' | 'noteReference' | 'bookReference' | 'spaceReference'>
   & Partial<Pick<Quote, 'kind'>>;
 
 /** 服务端按正文搜索并分页；文件夹与回收站共用此查询。 */

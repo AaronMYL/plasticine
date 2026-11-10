@@ -15,6 +15,7 @@ import {
   SPACE_AUTHORS,
   SpaceDocSchema,
   SpaceMetadataSchema,
+  SpaceRevisionSchema,
   SpaceStatSchema,
   SubscriptionSettingsSchema,
   SUBSCRIPTION_KINDS,
@@ -54,6 +55,10 @@ export const SpaceListItemSchema = Type.Object({
 export type SpaceListItem = Static<typeof SpaceListItemSchema>;
 export const SpaceListResponseSchema = Type.Object({ spaces: Type.Array(SpaceListItemSchema) }, STRICT);
 export type SpaceListResponse = Static<typeof SpaceListResponseSchema>;
+export const SpaceVersionInfoSchema = Type.Omit(SpaceRevisionSchema, ['doc', 'html']);
+export const SpaceVersionsResponseSchema = Type.Object({ versions: Type.Array(SpaceVersionInfoSchema),
+  selected: OrNull(SpaceRevisionSchema) }, STRICT);
+export type SpaceVersionsResponse = Static<typeof SpaceVersionsResponseSchema>;
 
 /** 最近一版是 Plasticine 改的、带着「改了什么」：页底那条「这一期改好了…… 以后都这样 / 撤销」。 */
 export const SpaceChangeSchema = Type.Object({
