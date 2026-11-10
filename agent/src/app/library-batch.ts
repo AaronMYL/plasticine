@@ -3,7 +3,7 @@ import { BatchResponseSchema, EmptyTrashRequestSchema, LibraryBatchRequestSchema
 import { runLibraryBatch, trashItems, type LibraryServices } from '../library/index.ts';
 import { argsDigest } from '../system/index.ts';
 import { ApiError } from './api-error.ts';
-import { requireAuth, type RequestContext, type Reply } from './context.ts';
+import { requireAuth, requireUserAuth, type RequestContext, type Reply } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';
 import { checkInput } from './validate.ts';
@@ -21,6 +21,7 @@ async function batch(context: RequestContext, notes: boolean): Promise<Reply> {
   const raw = await readJsonBody(context.req);
   const input = notes ? checkInput(NotesBatchRequestSchema, raw, '批量处理笔记')
     : checkInput(LibraryBatchRequestSchema, raw, '批量处理资料');
+  if (input.action === 'purge') { requireUserAuth(context); }
   return idempotent(context, input.requestId, (afterCommit) => {
     const body = checkInput(BatchResponseSchema, runLibraryBatch(services(context), input), '批量处理结果');
     afterCommit(() => changed(context, notes));
@@ -29,7 +30,7 @@ async function batch(context: RequestContext, notes: boolean): Promise<Reply> {
 }
 
 async function empty(context: RequestContext, notes: boolean): Promise<Reply> {
-  requireAuth(context);
+  requireUserAuth(context);
   const input = checkInput(EmptyTrashRequestSchema, await readJsonBody(context.req), '清空最近删除');
   return idempotent(context, input.requestId, (afterCommit) => {
     const deps = services(context);

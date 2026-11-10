@@ -2,19 +2,13 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { BookFiles } from './book-files.ts';
 import { StateError, notFound } from './errors.ts';
-import { ASSET_NAME_PATTERN, type NoteBodies } from './note-bodies.ts';
+import type { NoteBodies } from './note-bodies.ts';
 import type { StoreContext } from './object-store.ts';
+import { noteAssetRefs } from './note-asset-refs.ts';
+import { spaceAssetRefs } from './library-assets.ts';
+import { legacyNoteHistory } from './note-import-details.ts';
 
 type Table = 'notes' | 'spaces' | 'books';
-
-function assetNames(text: string): Set<string> {
-  const result = new Set<string>();
-  for (const match of text.matchAll(/(?:\/v[12]\/notes\/assets\/|assets\/)([A-Za-z0-9_.-]+)/g)) {
-    const name = match[1] ?? '';
-    if (ASSET_NAME_PATTERN.test(name)) { result.add(name); }
-  }
-  return result;
-}
 
 /** 真正抹除集中在状态服务里；删除失败保留回收记录，让同一操作可以重试。 */
 export function createLibraryPurge(context: StoreContext, notes: NoteBodies, books: BookFiles,
@@ -46,28 +40,38 @@ export function createLibraryPurge(context: StoreContext, notes: NoteBodies, boo
     return join(notes.directory, file);
   }
 
-  function contentOf(files: readonly string[]): string {
-    return files.map((file) => {
+  function noteAssets(files: readonly string[]): Set<string> {
+    return new Set(files.flatMap((file) => {
       const path = bodyPath(file);
-      return existsSync(path) ? readFileSync(path, 'utf8') : '';
-    }).join('\n');
+      return existsSync(path) ? [...noteAssetRefs(readFileSync(path, 'utf8'))] : [];
+    }));
   }
 
-  function spaceContent(id?: string, exclude?: string): string {
+  function legacyAssets(id?: string, exclude?: string): Set<string> {
     const where = id === undefined ? 'purged_at IS NULL AND id != $exclude' : 'id = $id';
     const params = id === undefined ? { exclude: exclude ?? '' } : { id };
-    return [
+    const rows = db.all(`SELECT legacy_payload FROM notes WHERE ${where} AND legacy_payload IS NOT NULL`, params);
+    return new Set(rows.flatMap((row) => legacyNoteHistory(JSON.parse(String(row['legacy_payload'])))
+      .flatMap((markdown) => [...noteAssetRefs(markdown)])));
+  }
+
+  function spaceAssets(id?: string, exclude?: string): Set<string> {
+    const where = id === undefined ? 'purged_at IS NULL AND id != $exclude' : 'id = $id';
+    const params = id === undefined ? { exclude: exclude ?? '' } : { id };
+    const rows = [
       ...db.all(`SELECT doc, html FROM spaces WHERE ${where}`, params),
       ...db.all(`SELECT doc, html FROM space_revisions
         WHERE space_id IN (SELECT id FROM spaces WHERE ${where})`, params),
-    ].map((row) => `${String(row['doc'] ?? '')}\n${String(row['html'] ?? '')}`).join('\n');
+    ];
+    return new Set(rows.flatMap((row) => [...spaceAssetRefs(String(row['doc']), String(row['html'] ?? ''))]));
   }
 
   function pruneAssets(candidates: ReadonlySet<string>, table: Table, id: string): void {
     if (candidates.size === 0) { return; }
     const otherNotes = noteFiles(undefined, table === 'notes' ? id : undefined);
-    const otherSpaces = spaceContent(undefined, table === 'spaces' ? id : undefined);
-    const used = assetNames(`${contentOf(otherNotes)}\n${otherSpaces}`);
+    const otherSpaces = spaceAssets(undefined, table === 'spaces' ? id : undefined);
+    const used = new Set([...noteAssets(otherNotes), ...otherSpaces,
+      ...legacyAssets(undefined, table === 'notes' ? id : undefined)]);
     for (const name of candidates) {
       if (!used.has(name)) { rmSync(notes.assetPath(name), { force: true }); }
     }
@@ -87,7 +91,7 @@ export function createLibraryPurge(context: StoreContext, notes: NoteBodies, boo
     note(id: string): void {
       if (!pending('notes', id)) { return; }
       const files = noteFiles(id);
-      const assets = assetNames(contentOf(files));
+      const assets = new Set([...noteAssets(files), ...legacyAssets(id)]);
       pruneAssets(assets, 'notes', id);
       for (const file of files) { rmSync(bodyPath(file), { force: true }); }
       finish('notes', id, () => {
@@ -98,7 +102,7 @@ export function createLibraryPurge(context: StoreContext, notes: NoteBodies, boo
     },
     space(id: string): void {
       if (!pending('spaces', id)) { return; }
-      const assets = assetNames(spaceContent(id));
+      const assets = spaceAssets(id);
       pruneAssets(assets, 'spaces', id);
       finish('spaces', id, () => {
         db.run('DELETE FROM space_revisions WHERE space_id = $id', { id });

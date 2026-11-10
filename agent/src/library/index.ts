@@ -25,9 +25,12 @@ export function trashItems({ state, workspace }: LibraryServices, notes = false)
 function titleOf(services: LibraryServices, item: BatchItem, action: BatchRequest['action']): string {
   const { state, workspace } = services;
   switch (item.kind) {
-    case 'note': return state.notes.require(item.id).title;
-    case 'space': return state.spaces.require(item.id).title;
-    case 'book': return state.books.require(item.id).title;
+    case 'note': return action === 'purge' ? state.notes.get(item.id)?.title ?? item.id
+      : state.notes.require(item.id).title;
+    case 'space': return action === 'purge' ? state.spaces.get(item.id)?.title ?? item.id
+      : state.spaces.require(item.id).title;
+    case 'book': return action === 'purge' ? state.books.get(item.id)?.title ?? item.id
+      : state.books.require(item.id).title;
     case 'file': case 'folder': return action === 'restore' || action === 'purge'
       ? workspace.trashed().find((entry) => entry.id === item.id)?.name ?? item.id : workspace.stat(item.id).name;
   }

@@ -1,7 +1,7 @@
 import { ASSET_NAME_PATTERN } from './note-bodies.ts';
 
 /** 只认本站资源路径；文件名是一个解码后的路径段，不能靠子串认领图片。 */
-function assetName(source: string, origin?: string): string | null {
+export function noteAssetName(source: string, origin?: string): string | null {
   let path = source.replaceAll('&amp;', '&');
   if (/^(?:[a-z][\w+.-]*:|\/\/)/i.test(path)) {
     if (origin === undefined) {
@@ -58,7 +58,7 @@ export function noteAssetRefs(markdown: string, origin?: string): Set<string> {
     sources.push(match[1] ?? match[2] ?? match[3] ?? '');
   }
   return new Set(sources.flatMap((source) => {
-    const name = assetName(source, origin);
+    const name = noteAssetName(source, origin);
     return name === null ? [] : [name];
   }));
 }

@@ -28,7 +28,9 @@ export function libraryTools(services: LibraryServices, changed: (id: string) =>
     return note;
   };
   const batch = (args: ReturnType<typeof checkedArgs<typeof LibraryBatchParameters>>) => {
-    for (const item of args.items) if (item.kind === 'note') access(item.id);
+    for (const item of args.items) {
+      if (item.kind === 'note' && (args.action !== 'purge' || state.notes.get(item.id) !== undefined)) access(item.id);
+    }
     const result = runLibraryBatch(services, args);
     for (const item of result.results) if (item.ok && item.kind === 'note') changed(item.id);
     return result;

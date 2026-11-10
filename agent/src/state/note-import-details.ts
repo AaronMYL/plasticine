@@ -16,6 +16,12 @@ const LegacyNoteSchema = Type.Object({
 });
 const MODES = [['import', 'original'], ['proofread', 'corrected'], ['polish', 'polished']] as const;
 
+/** 永久删除核对所有保留的旧修订，不能漏掉只在导入原版中出现的图片。 */
+export function legacyNoteHistory(payload: unknown): string[] {
+  return Value.Check(Type.Object({ note: LegacyNoteSchema }), payload)
+    ? (payload.note.history ?? []).map((entry) => entry.markdown) : [];
+}
+
 export function createNoteImportDetails(context: StoreContext, require: (id: string) => NoteRecord) {
   const mapping = createLegacyIdMap(context);
   return {

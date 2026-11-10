@@ -42,6 +42,7 @@ test('模型操作复用资料库回收，只有永久删除要确认；新笔�
     assert.match(tool('library_batch').consequence!(args), /永久删除 1 项/);
     await run('library_batch', args);
     assert.equal(state.notes.get(id), undefined);
+    assert.equal((await run('library_batch', args, 'retry-purge'))['succeeded'], 1);
     await assert.rejects(run('note_create', input), /已经有/);
   } finally { await fixture.cleanup(); }
 });
