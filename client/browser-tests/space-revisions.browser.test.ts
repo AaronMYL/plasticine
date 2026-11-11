@@ -17,7 +17,10 @@ for (const client of ['mac', 'phone'] as const) {
           edits: [{ old_text: '这周读完两本书', new_text: '这周读完三本书' }] }, { id: 'edit-progress-fixture' })],
         { stopReason: 'toolUse' }), fauxAssistantMessage('已在《阅读进展》里改好。'),
       ]);
-      if (client === 'phone') await click(page, 'Plasticine 主线');
+      if (client === 'phone') {
+        await until(page, `(() => { const link = document.querySelector('a[aria-label="Plasticine 主线"]');
+          link?.click(); return link !== null; })()`, '打开主线');
+      }
       await fill(page, 'textarea[aria-label="问一句"]', '把读完的数量改成三本');
       await click(page, '发送');
       await until(page, `document.querySelector('.space-revision-card')`, '保存后的版本卡');

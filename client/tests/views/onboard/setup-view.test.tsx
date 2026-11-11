@@ -65,7 +65,7 @@ describe('建账号', () => {
     expect(within(connect).getByRole('img', { name: '第 2 步，共 3 步' })).toBeTruthy();
     expect(setup.mock.calls[0]?.[0]).toMatchObject({ displayName: 'Alex', handle: 'alex' });
     expect(setup.mock.calls[0]?.[1]).toBe(FAKE_LOCAL_TOKEN);
-    expect(window.location.hash).toBe('#/plasticine');
+    expect(window.location.hash).toBe('#/plasticine/main');
     expect(desktop.showWelcome).not.toHaveBeenCalled();
   });
 

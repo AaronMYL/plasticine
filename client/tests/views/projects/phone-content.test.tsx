@@ -41,7 +41,7 @@ describe('手机内容承接', () => {
 
   it('记忆主题深链可读原文和来源，继续对话时带上实际小节内容', async () => {
     const app = await renderApp({ width: 390, hash: '#/memory/topics/memdoc-rules', seed: true });
-    await screen.findByRole('heading', { name: '怎么替你做事' });
+    await screen.findByRole('heading', { name: '主线的 Soul' });
     expect(await screen.findByText('要你定的事一律给选项，推荐的放第一个。')).toBeTruthy();
     expect(screen.queryByRole('button', { name: '确认生效' })).toBeNull();
     expect(screen.getAllByRole('button', { name: /回到原话/ }).length).toBeGreaterThan(0);
@@ -56,7 +56,7 @@ describe('手机内容承接', () => {
     } });
     expect(await screen.findByRole('alert')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '重新读取' }));
-    await screen.findByRole('heading', { name: '怎么替你做事' });
+    await screen.findByRole('heading', { name: '主线的 Soul' });
     expect(app.api.memoryTopics.get).toHaveBeenCalledTimes(2);
   });
 

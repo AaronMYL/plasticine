@@ -29,7 +29,7 @@ describe('在手机上也能用', () => {
     expect(within(page).getByText('手机扫码，输入密码')).toBeTruthy();
     fireEvent.click(within(page).getByRole('button', { name: '进入 Plasticine' }));
     expect(await screen.findByRole('article', { name: 'Plasticine 的欢迎' })).toBeTruthy();
-    expect(window.location.hash).toBe('#/plasticine');
+    expect(window.location.hash).toBe('#/plasticine/main');
     expect(inFirstRun()).toBe(false);
   });
 
@@ -38,7 +38,7 @@ describe('在手机上也能用', () => {
     await renderApp({ hash: '#/today', setup: (fake) => fake.control.account.postWelcome() });
     expect(await screen.findByRole('article', { name: 'Plasticine 的欢迎' })).toBeTruthy();
     expect(screen.queryByRole('main', { name: '在手机上也能用' })).toBeNull();
-    expect(window.location.hash).toBe('#/plasticine');
+    expect(window.location.hash).toBe('#/plasticine/main');
   });
 
   it('从建账号一路走到主线：建账号 → 连模型（填 key）→ 手机 → 主线打招呼', async () => {
@@ -82,11 +82,13 @@ describe('第一次进主线', () => {
     expect(send.mock.calls[0]?.[1].text).toBe(WELCOME_STARTS[1]?.prompt);
   });
 
-  it('手机上一样有欢迎和开始', async () => {
+  it('手机首次引导结束直接进入欢迎主线；三种开始照常可用', async () => {
+    startFirstRun();
     setViewportWidth(390);
     await renderApp({ width: 390, hash: '#/plasticine', setup: (fake) => fake.control.account.postWelcome() });
     const welcome = await screen.findByRole('article', { name: 'Plasticine 的欢迎' });
     expect(within(welcome).getAllByRole('button')).toHaveLength(3);
+    expect(window.location.hash).toBe('#/plasticine/main');
   });
 
   it('主线里有欢迎消息时，首页不再出「有什么想一起做的？」', async () => {

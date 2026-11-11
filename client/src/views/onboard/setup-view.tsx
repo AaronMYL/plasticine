@@ -8,6 +8,7 @@ import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { DISPLAY_NAME_MAX_CHARS, PASSWORD_MIN_CHARS, type SessionView } from '../../api/shared.ts';
 import { hostLocalGrant } from '../../shell/host.ts';
+import { mainChatRoute, routeHash } from '../../shell/routes.ts';
 import { TooltipLayer } from '../../shell/tooltip.tsx';
 import { startFirstRun } from './first-run.ts';
 import { HandleField, handleBlocks, normalizeHandle, useHandleCheck } from './handle-field.tsx';
@@ -15,7 +16,7 @@ import { ChangePlace, PasswordField, Stepper, suggestedDeviceName } from './onbo
 
 const SETUP_PREFIX = '#/setup';
 /** 建完落在主线（设计稿 First-Main）。 */
-export const MAIN_LINE_HASH = '#/plasticine';
+export const MAIN_LINE_HASH = routeHash(mainChatRoute());
 
 /** 地址里 #/setup?t=… 的建账号令牌；没有是 null。只在内存里用，建完就从地址里拿掉。 */
 export function setupTokenOf(hash: string = window.location.hash): string | null {

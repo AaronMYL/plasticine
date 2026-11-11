@@ -195,7 +195,7 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
 
   it('Plasticine 栏目本身就是对话：不显示对话框，也不显示圆球（旧地址 #/conversation 也到这里）', async () => {
     await renderApp({ hash: '#/conversation' });
-    await waitFor(() => expect(window.location.hash).toBe('#/plasticine'));
+    await waitFor(() => expect(window.location.hash).toBe('#/plasticine/main'));
     expect(screen.queryByRole('complementary', { name: '对话框' })).toBeNull();
     expect(screen.queryByRole('button', { name: /展开对话框/ })).toBeNull();
     expect(document.querySelector('[data-container="page"]')).not.toBeNull();

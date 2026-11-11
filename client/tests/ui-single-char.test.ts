@@ -28,6 +28,8 @@ const ALLOWED: Readonly<Record<string, readonly string[]>> = {
   // 提供商列表里头像方块上的一个字、抖音卡的来源方块（装饰，读屏不念，名字在旁边）。
   'client/src/views/models/model-store.ts': ['通', '智'],
   'client/src/views/feed/feed-body.tsx': ['抖'],
+  // 队友设计稿的单字头像默认值；名字和职责另有完整表单标签。
+  'client/src/views/mates/mate-editor.tsx': ['友'],
   // 官网示例联系人的装饰头像，完整名字「阿杰」在旁边。
   'client/src/views/site/collab-demo.tsx': ['杰'],
   'client/src/views/site/site-page.tsx': ['杰'],
