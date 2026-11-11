@@ -28,6 +28,17 @@ it('群任务发布和领取幂等，限定组内队友、原目标和同一条�
   await expect(fake.api.mates.handoff({ ...input, requestId: createRequestId(), mateId: two.id }))
     .rejects.toMatchObject({ status: 409 });
   expect((await fake.api.mateGroups.listTasks(group.id)).lines).toHaveLength(1);
+  const archived = await fake.api.mateGroups.createTask(group.id,
+    { requestId: createRequestId(), text: '归档前的目标' });
+  fake.control.lines.change(archived.line.id, { archivedAt: new Date().toISOString() });
+  await expect(fake.api.mates.handoff({ ...input, requestId: createRequestId(), sourceLineId: archived.line.id,
+    goal: '归档前的目标' })).rejects.toMatchObject({ status: 409 });
+  const withdrawn = await fake.api.mateGroups.createTask(group.id,
+    { requestId: createRequestId(), text: '撤回前的目标' });
+  const queue = (await fake.api.lines.read(withdrawn.line.id, {})).queue[0]!;
+  await fake.api.lines.withdraw(withdrawn.line.id, queue.id, { requestId: createRequestId() });
+  await expect(fake.api.mates.handoff({ ...input, requestId: createRequestId(), sourceLineId: withdrawn.line.id,
+    goal: '撤回前的目标' })).rejects.toMatchObject({ status: 409 });
 });
 
 it('群任务 HTTP 使用已批准的共享请求和响应格式', async () => {

@@ -132,10 +132,11 @@ export class FakeMates implements MatesApi {
   };
   async handoff(input: MateHandoffRequest) {
     this.deps.session.require();
+    const task = this.tasks.get(input.sourceLineId);
+    const goal = task === undefined ? undefined : (await this.deps.lines.read(input.sourceLineId, {})).queue[0]?.text;
     return this.deps.receipts.run('create', input.requestId, 'POST /v2/mates/handoff', () => {
       const mate = this.rows.get(input.mateId);
       if (mate === undefined || mate.disabledAt !== null) throw missing();
-      const task = this.tasks.get(input.sourceLineId);
       if (task !== undefined) {
         const group = this.groupRows.get(task.groupId);
         if (input.groupId !== task.groupId || !group?.mateIds.includes(mate.id)) {
@@ -143,7 +144,8 @@ export class FakeMates implements MatesApi {
         }
         if (input.goal !== task.goal) throw invalid('请保留任务的原始目标。');
         const current = this.deps.lines.find(input.sourceLineId);
-        if (current?.mateId != null || current?.status !== 'paused') throw conflict();
+        if (current?.mateId != null || current?.status !== 'paused' || current.archivedAt != null
+          || goal !== task.goal) throw conflict();
         return { line: this.deps.lines.change(input.sourceLineId, { mateId: mate.id, status: 'queued' }) };
       }
       const line = this.deps.lines.blank(`handoff-${++this.serial}`, 'background', input.goal, {

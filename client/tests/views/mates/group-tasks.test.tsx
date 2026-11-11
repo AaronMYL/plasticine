@@ -76,3 +76,27 @@ it('待领任务的原目标未读到时不调用交接接口', async () => {
   expect((await within(card).findByRole('alert')).textContent).toContain('任务原文');
   expect(claim).not.toHaveBeenCalled();
 });
+
+it('领取后 SSE 未到，任务 GET 的新状态也同步更新聊天和分工卡', async () => {
+  const app = await setup();
+  const { line } = await act(() => app.api.mateGroups.createTask(app.group.id,
+    { requestId: createRequestId(), text: '核对来源' }));
+  await screen.findByRole('article', { name: '任务：核对来源' });
+  fireEvent.click(screen.getByRole('button', { name: '分工' }));
+  await waitFor(() => expect(screen.getAllByRole('article', { name: '任务：核对来源' })).toHaveLength(2));
+  const next: LineView = { ...line, mateId: app.first.id, status: 'queued',
+    updatedAt: new Date(Date.parse(line.updatedAt) + 1_000).toISOString() };
+  let claimed = false;
+  vi.spyOn(app.api.mates, 'handoff').mockImplementation(async () => { claimed = true; return { line: next }; });
+  vi.spyOn(app.api.mateGroups, 'listTasks').mockImplementation(async () => ({ lines: [claimed ? next : line] }));
+  const panel = screen.getByRole('complementary', { name: '群组分工' });
+  fireEvent.click(within(panel).getByRole('button', { name: '选择领取队友' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '研究员领取' }));
+  await waitFor(() => {
+    for (const card of screen.getAllByRole('article', { name: '任务：核对来源' })) {
+      expect(within(card).getByText('研究员接了')).toBeTruthy();
+      expect(within(card).queryByRole('button', { name: '选择领取队友' })).toBeNull();
+    }
+  });
+  expect(app.control.lines.find(line.id)?.mateId).toBeNull();
+});

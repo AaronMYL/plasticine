@@ -4,6 +4,7 @@ import type { MateGroupView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { LineCard } from '../lines/line-card.tsx';
+import { newerLine } from '../lines/line-store.ts';
 import { MateAvatar } from './mate-avatar.tsx';
 import { MateGroupTaskCard } from './mate-group-task-card.tsx';
 import { MateGroupTaskEditor } from './mate-group-task-editor.tsx';
@@ -23,7 +24,7 @@ export function MateWorkPanel({ group, phone = false }: { group: MateGroupView; 
       <button type="button" className="text-button" onClick={() => { void live.mates.reloadTasks(group.id); }}>
         重新读取</button></p>}
     <div className="mate-work-tasks">{tasks.lines.map((task) => <MateGroupTaskCard key={task.id}
-      line={list.lines.find((item) => item.id === task.id) ?? task} />)}</div>
+      line={newerLine(list.lines.find((item) => item.id === task.id) ?? null, task)} />)}</div>
     <h3>队友分工</h3>
     {group.mateIds.map((id) => {
       const mate = roster.mates.find((candidate) => candidate.id === id);
