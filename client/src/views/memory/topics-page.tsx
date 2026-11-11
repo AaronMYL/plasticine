@@ -5,7 +5,7 @@
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { FlipList } from '../../shell/flip-list.tsx';
-import { useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { MEMORY_TOPIC_GROUP_LABELS, TIER_LABELS } from '../../api/shared.ts';
 import type { MemoryDreamSummary, MemoryTopicKind, MemoryTopicView, UncertainItem } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
@@ -20,6 +20,7 @@ import { conflictsRoute, mainLineRoute, type Route } from '../../shell/routes.ts
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
 import { MemorySearch } from './memory-search.tsx';
+import { MemoryOverview, TeammatesBlock } from './memory-overview.tsx';
 import { uncertainKey } from './topics-store.ts';
 import './topics.css';
 
@@ -173,6 +174,7 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
       {searching ? <MemorySearch.Results query={query} navigate={navigate} /> : list === null
         ? <PageLoading /> : (
           <>
+            <MemoryOverview navigate={navigate} />
             <ConflictsEntry navigate={navigate} />
             {list.dream === null ? null : <DreamEntry dream={list.dream} navigate={navigate} />}
             {uncertain.length === 0 ? null : (
@@ -186,8 +188,9 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
                 </FlipList>
               </section>
             )}
-            {list.groups.map((group) => (
-              <section key={group.kind} className="block memory-block topic-group"
+            {list.groups.map((group) => (<Fragment key={group.kind}>
+              {group.kind === 'topic' ? <TeammatesBlock navigate={navigate} /> : null}
+              <section className="block memory-block topic-group"
                 aria-labelledby={`topics-${group.kind}`}>
                 <div className="memory-block-head">
                   <h2 id={`topics-${group.kind}`} className="block-title">{MEMORY_TOPIC_GROUP_LABELS[group.kind]}</h2>
@@ -197,7 +200,8 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
                   {group.topics.map((topic) => <TopicRow key={topic.id} topic={topic} navigate={navigate} />)}
                 </FlipList>
               </section>
-            ))}
+            </Fragment>))}
+            {list.groups.some((group) => group.kind === 'topic') ? null : <TeammatesBlock navigate={navigate} />}
           </>
         )}
     </div>

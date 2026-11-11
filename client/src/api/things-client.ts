@@ -4,6 +4,8 @@
 // 第 10、16 条（11-06）：搜记忆（带归档）和「昨晚整理了什么」（服务端 agent/src/app/memory-library.ts）。
 // 请求和回答的形状都是 agent/shared/api/ 里的，这里不另写一份。
 
+import type { AddMemoryLineRequest, ApplyCleanupRequest, ApplyCleanupResponse, EditMemoryLineRequest,
+  LatestCleanupResponse, MoveMemoryLineRequest, RetireMemoryLineRequest, StartCleanupRequest } from './shared.ts';
 import type {
   ChooseDreamChangeRequest,
   MemoryDreamChangeView,
@@ -27,6 +29,21 @@ export interface MemoryTopicsApi {
   undoDream(id: string, input: UndoDreamChangeRequest): Promise<MemoryDreamChangeView>;
   /** POST /v2/memory/dreams/changes/:id/choose */
   chooseDream(id: string, input: ChooseDreamChangeRequest): Promise<MemoryDreamChangeView>;
+  // ---- 11-11 记忆页能改、删、加、挪，和全量整理（shared/api/memory-manage.ts） ----
+  /** POST /v2/memory/docs/:docId/lines */
+  addLine(docId: string, input: AddMemoryLineRequest): Promise<void>;
+  /** PUT /v2/memory/docs/:docId/lines/:lineId */
+  editLine(docId: string, lineId: string, input: EditMemoryLineRequest): Promise<void>;
+  /** POST /v2/memory/docs/:docId/lines/:lineId/retire */
+  retireLine(docId: string, lineId: string, input: RetireMemoryLineRequest): Promise<void>;
+  /** POST /v2/memory/docs/:docId/lines/:lineId/move */
+  moveLine(docId: string, lineId: string, input: MoveMemoryLineRequest): Promise<void>;
+  /** GET /v2/memory/cleanups/latest */
+  cleanup(signal?: AbortSignal): Promise<LatestCleanupResponse>;
+  /** POST /v2/memory/cleanups */
+  startCleanup(input: StartCleanupRequest): Promise<void>;
+  /** POST /v2/memory/cleanups/:id/apply */
+  applyCleanup(id: string, input: ApplyCleanupRequest): Promise<ApplyCleanupResponse>;
 }
 
 export interface ThingsApi {

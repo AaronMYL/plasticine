@@ -66,6 +66,7 @@ import { createSessionStore } from './sessions.ts';
 import { createSpaceRewriteStore } from './space-rewrites.ts';
 import { createSpaceStore } from './spaces.ts';
 import { createMateStores } from './mates.ts';
+import { createMemoryCleanupStore } from './memory-cleanups.ts';
 import { createMemoryConflictStore } from './memory-conflicts.ts';
 import { createLibraryPurge } from './library-purge.ts';
 import { createSubscriptionStore } from './subscriptions.ts';
@@ -140,6 +141,7 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     // 记忆文档（用户 2026-11-02 定）：按主题整理的活文档，和后台整理的队列、推断、迁移进度。
     memoryDocs: createMemoryDocStores(context),
     memoryConflicts: createMemoryConflictStore(context),
+    memoryCleanups: createMemoryCleanupStore(context),
     memoryCuration: createMemoryCurationStores(context),
     // 第 10、16 条（11-06 定）：白天只记的「今天的记录」，和夜里整理的「昨晚整理了什么」。
     memoryJournal: createMemoryJournalStore(context),

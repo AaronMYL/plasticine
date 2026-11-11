@@ -12,6 +12,8 @@
 //                                            还没补格式的旧邮件从 Gmail「所有邮件」只读地找回整封、原地补（默认 30 封，
 //                                            最多 200）；结果报找到 / 没找到 / 出错和还剩几封，还剩的换个操作号再跑
 //   rules.rewrite --plan <方案.json> --because "用户原话" [--op-id 号]
+//   memory.move --plan <[{lineId,version,toDocId}]> --because "用户原话"   把几行记忆挪到别的文档
+//   memory.cleanup.add --plan <[{toDocId,text}]> --because "用户原话"     整理清单里新加几条，等用户勾选
 //                                            整理「规则」：一行换成几行或挪进归档（brain/rules-rewrite.ts）
 //   db.read "SELECT …"                       只读打开数据库查一句（不经服务，库以只读方式打开）
 //
@@ -116,7 +118,11 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
     ...(values.code === undefined ? {} : { code: values.code }),
     ...(values.mode === undefined ? {} : { mode: values.mode as RuleMode }),
     ...(limit === undefined ? {} : { limit }),
-    ...(values.plan === undefined ? {} : { plan: readPlan(values.plan) }),
+    ...(values.plan === undefined ? {} : command === 'memory.move'
+      ? { moves: readPlan(values.plan) as unknown as NonNullable<MaintenanceRequest['moves']> }
+      : command === 'memory.cleanup.add'
+        ? { adds: readPlan(values.plan) as unknown as NonNullable<MaintenanceRequest['adds']> }
+        : { plan: readPlan(values.plan) }),
   };
   return { kind: 'socket', stateDir, request };
 }

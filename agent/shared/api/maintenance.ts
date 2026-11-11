@@ -17,10 +17,30 @@ export const MAINTENANCE_OPS = [
   'mail.refetch',
   // 11-11：Aaron 让 Claude 整理「规则」——一行拆成几行、改成平常话、过时的挪进归档；每行留原来的来源。
   'rules.rewrite',
+  // 11-11 记忆改版：Aaron 让把「个人」项目的记忆并进「关于你」（memory.move），把 Claude 记得的他的情况放进整理清单
+  // 等他勾选（memory.cleanup.add）。
+  'memory.move',
+  'memory.cleanup.add',
 ] as const;
 export type MaintenanceOp = (typeof MAINTENANCE_OPS)[number];
 
-export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['rules.mode', 'mail.refetch', 'rules.rewrite'];
+export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['rules.mode', 'mail.refetch', 'rules.rewrite',
+  'memory.move', 'memory.cleanup.add'];
+
+/** memory.move 的一项：这一行挪到 toDocId。 */
+export const MemoryMoveItemSchema = Type.Object({
+  lineId: Type.String({ minLength: 1, maxLength: 80 }),
+  version: Type.Integer({ minimum: 1 }),
+  toDocId: Type.String({ minLength: 1, maxLength: 80 }),
+}, { additionalProperties: false });
+export type MemoryMoveItem = Static<typeof MemoryMoveItemSchema>;
+
+/** memory.cleanup.add 的一项：清单里新加一条（不注明来处）。 */
+export const MemoryCleanupAddSchema = Type.Object({
+  toDocId: Type.String({ minLength: 1, maxLength: 80 }),
+  text: Type.String({ minLength: 1, maxLength: 600 }),
+}, { additionalProperties: false });
+export type MemoryCleanupAdd = Static<typeof MemoryCleanupAddSchema>;
 
 /** rules.rewrite 的一项：这一行换成 into 里的几行（空 = 不再成立，挪进归档）。 */
 export const RulesRewriteItemSchema = Type.Object({
@@ -49,6 +69,10 @@ export const MaintenanceRequestSchema = Type.Object(
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: MAIL_REFETCH_MAX_LIMIT })),
     /** rules.rewrite 的整理方案。 */
     plan: Type.Optional(Type.Array(RulesRewriteItemSchema, { minItems: 1, maxItems: 100 })),
+    /** memory.move 挪哪几行。 */
+    moves: Type.Optional(Type.Array(MemoryMoveItemSchema, { minItems: 1, maxItems: 200 })),
+    /** memory.cleanup.add 新加哪几条。 */
+    adds: Type.Optional(Type.Array(MemoryCleanupAddSchema, { minItems: 1, maxItems: 200 })),
   },
   { additionalProperties: false },
 );

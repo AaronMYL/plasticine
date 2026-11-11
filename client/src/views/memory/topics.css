@@ -453,3 +453,61 @@
     flex-basis: 100%;
   }
 }
+
+/* ---------- 11-11 记忆改版：就地改、加一条 ---------- */
+
+.line-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.line-editor textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.line-editor-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.line-editor-actions .is-error {
+  margin-right: auto;
+}
+
+.doc-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 总览（11-11）：上下细线，标题行右边「全量整理」。 */
+.memory-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.memory-overview-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memory-overview-spacer {
+  flex: 1;
+}
+
+.memory-overview-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 24px;
+}

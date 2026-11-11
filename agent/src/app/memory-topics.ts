@@ -94,6 +94,7 @@ function dreamSummary(state: StateService): MemoryDreamSummary | null {
 function lineView(state: StateService, line: MemoryLine, pending: ReadonlySet<string>): MemoryDocLine {
   return {
     id: line.id,
+    version: line.version,
     text: line.text,
     basis: line.anchors.every((anchor) => anchor.kind === 'system') ? 'system'
       : line.basis !== 'stated' ? 'inferred'

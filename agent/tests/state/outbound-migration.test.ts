@@ -34,7 +34,7 @@ test('旧确认只迁成原定时任务专用授权，历史放行保留待核�
     const before = db.all('SELECT * FROM schedule_sends');
     assert.deepEqual(migrate(db, MIGRATIONS, () => at), ['0126-outbound-grants',
       '0127-network-attachments', '0128-mates', '0129-space-writer', '0130-memory-scope',
-      '0131-video-cover']);
+      '0131-video-cover', '0132-memory-cleanups']);
     const { outboundGrants, outboundLog } = createOutboundStores(context);
     const grant = outboundGrants.bySchedule(draft.id)!;
     assert.deepEqual(grant.scope, { kind: 'task', binding: { kind: 'schedule', id: draft.id } });

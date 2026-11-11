@@ -7,6 +7,14 @@ import type { MemoryTopicsApi } from '../things-client.ts';
 import { ApiError } from '../errors.ts';
 import { groupMemoryTopics, hardLines, RULES_DOC_ID } from '../shared.ts';
 import type {
+  AddMemoryLineRequest,
+  ApplyCleanupRequest,
+  ApplyCleanupResponse,
+  EditMemoryLineRequest,
+  LatestCleanupResponse,
+  MoveMemoryLineRequest,
+  RetireMemoryLineRequest,
+  StartCleanupRequest,
   AnswerUncertainRequest,
   ChooseDreamChangeRequest,
   MemoryDreamChangeView,
@@ -26,6 +34,7 @@ import type { FakeReceipts } from './receipts.ts';
 import type { FakeSession } from './fake-session.ts';
 import { dreamSeed } from './memory-dream-seed.ts';
 import { sectionsOf, topicSeeds, uncertainSeeds, type TopicSeed } from './memory-topics-seed.ts';
+import { FakeMemoryEdits } from './fake-memory-edits.ts';
 
 export interface FakeMemoryTopicsDeps {
   session: FakeSession;
@@ -42,6 +51,8 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
   private topics: TopicSeed[] = [];
   private uncertain: UncertainItem[] = [];
   private dreamView: MemoryDreamView | null = null;
+  /** 11-11：改、删、加、挪和全量整理。 */
+  readonly edits = new FakeMemoryEdits(() => this.topics, () => this.deps.now());
 
   constructor(deps: FakeMemoryTopicsDeps) {
     this.deps = deps;
@@ -53,6 +64,7 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
       lineCount: seed.sections.reduce((sum, section) => sum + section.lines.length, 0) } }));
     this.uncertain = uncertainSeeds(now);
     this.dreamView = dreamSeed(now);
+    this.edits.label();
   }
 
   applySoul(view: SoulView): void {
@@ -115,12 +127,52 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
     }
     const open = new Set(this.uncertain.filter((item) => item.status === 'open').map((item) => item.id));
     const idOf = (name: string) => this.topics.find((candidate) => candidate.topic.title === name)?.topic.id ?? null;
-    const sections = sectionsOf(seed, this.deps.now(), idOf).map((section) => ({ ...section,
+    const sections = sectionsOf(seed, this.deps.now(), idOf, this.edits.metaOf).map((section) => ({ ...section,
       lines: section.lines.map((line) => ({ ...line,
         uncertainId: line.uncertainId !== null && open.has(line.uncertainId) ? line.uncertainId : null })) }));
     return { topic: { ...seed.topic, uncertainCount: sections.flatMap((section) => section.lines)
       .filter((line) => line.uncertainId !== null).length }, sections, composedAt: seed.topic.updatedAt, version: 1,
     ...(id === RULES_DOC_ID ? { hardLines: [...hardLines()] } : {}) };
+  }
+
+  async addLine(docId: string, input: AddMemoryLineRequest): Promise<void> {
+    this.deps.session.require();
+    await this.deps.receipts.run('save', input.requestId, `memory-add:${docId}`,
+      () => this.edits.add(docId, input.text));
+  }
+
+  async editLine(docId: string, lineId: string, input: EditMemoryLineRequest): Promise<void> {
+    this.deps.session.require();
+    await this.deps.receipts.run('save', input.requestId, `memory-edit:${lineId}`,
+      () => this.edits.edit(docId, lineId, input.version, input.text));
+  }
+
+  async retireLine(docId: string, lineId: string, input: RetireMemoryLineRequest): Promise<void> {
+    this.deps.session.require();
+    await this.deps.receipts.run('save', input.requestId, `memory-retire:${lineId}`,
+      () => this.edits.retire(docId, lineId, input.version));
+  }
+
+  async moveLine(docId: string, lineId: string, input: MoveMemoryLineRequest): Promise<void> {
+    this.deps.session.require();
+    await this.deps.receipts.run('save', input.requestId, `memory-move:${lineId}`,
+      () => this.edits.move(docId, lineId, input.version, input.toDocId));
+  }
+
+  async cleanup(): Promise<LatestCleanupResponse> {
+    this.deps.session.require();
+    return this.edits.latest();
+  }
+
+  async startCleanup(input: StartCleanupRequest): Promise<void> {
+    this.deps.session.require();
+    await this.deps.receipts.run('save', input.requestId, 'memory-cleanup', () => this.edits.start());
+  }
+
+  async applyCleanup(id: string, input: ApplyCleanupRequest): Promise<ApplyCleanupResponse> {
+    this.deps.session.require();
+    return this.deps.receipts.run('save', input.requestId, `memory-cleanup:${id}`,
+      () => this.edits.apply(id, input.version, input.itemIds));
   }
 
   /** 「全部写入」卡答了（fake-asks 的 onAnswer）：没去掉的几条接在规矩后面。 */

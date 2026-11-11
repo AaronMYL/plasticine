@@ -13,6 +13,7 @@ import { migration as outboundGrants } from './0126-outbound-grants.ts';
 import { migration as spaceWriter } from './0129-space-writer.ts';
 import { migration as memoryScope } from './0130-memory-scope.ts';
 import { migration as videoCover } from './0131-video-cover.ts';
+import { migration as memoryCleanups } from './0132-memory-cleanups.ts';
 import { migration as mates } from './0128-mates.ts';
 import { migration as suggestions } from './0081-suggestions.ts';
 import { migration as deviceTimeZones } from './0082-device-time-zones.ts';
@@ -210,6 +211,7 @@ export const MIGRATIONS: readonly Migration[] = [
   spaceWriter,
   memoryScope,
   videoCover,
+  memoryCleanups,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

@@ -1,0 +1,64 @@
+/* 全量整理清单（11-11 记忆改版）：一条一行，细线分隔；勾在左边，改法小签 + 原来的行（要变的划掉）+ 变成什么 + 原因。 */
+
+.cleanup-filter {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.cleanup-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cleanup-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.cleanup-item input {
+  margin-top: 4px;
+}
+
+.cleanup-item-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.cleanup-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cleanup-meta {
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.cleanup-item input {
+  accent-color: var(--fg);
+}
+
+.cleanup-line [data-struck] {
+  color: var(--fg2);
+  text-decoration: line-through;
+  text-decoration-color: var(--fg3);
+}
+
+.cleanup-to {
+  color: var(--fg);
+}

@@ -207,7 +207,7 @@ export function rejectMemoryInference(context: RequestContext): Promise<Reply> {
 }
 
 /** 路径里的那一行：要在这份文档里、版本对得上、还在用。 */
-function requireLiveLine(state: ViewState, docId: string, lineId: string, version: number): MemoryLine {
+export function requireLiveLine(state: ViewState, docId: string, lineId: string, version: number): MemoryLine {
   const line = state.memoryDocs.lines.get(lineId);
   if (line === undefined || line.docId !== docId) {
     throw notFoundError('这份文档里的这一行');

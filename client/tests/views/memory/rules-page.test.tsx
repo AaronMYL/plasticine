@@ -4,10 +4,13 @@ import { seedMemoryScene } from '../../../src/api/fake/memory-scene-seed.ts';
 import { NOW, renderApp } from '../../helpers.tsx';
 
 describe('记忆里的规则和说法冲突（11-11）', () => {
-  it('规则按范围筛；点一条看来源和范围，改成所有队友共用', async () => {
+  it('规则默认只列共用的；按范围筛；点一条看来源和范围，改成所有队友共用', async () => {
     const app = await renderApp({ hash: '#/memory/rules', setup: ({ control }) => {
       seedMemoryScene({ mates: control.mates, soul: control.soul }, NOW);
     } });
+    await screen.findByRole('group', { name: '适用范围' });
+    expect(screen.queryByRole('button', { name: /报告里的数字都带来源链接。/ })).toBeNull();
+    fireEvent.click(within(screen.getByRole('group', { name: '适用范围' })).getByRole('button', { name: /全部/ }));
     const row = await screen.findByRole('button', { name: /报告里的数字都带来源链接。/ });
     expect(within(row).getByText('只对研究员')).toBeTruthy();
     fireEvent.click(within(screen.getByRole('group', { name: '适用范围' })).getByRole('button', { name: /UI 设计师/ }));

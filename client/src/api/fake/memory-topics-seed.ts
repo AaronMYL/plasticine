@@ -7,7 +7,7 @@ import type { MemoryDocLine, MemoryDocSection, MemoryTopicView, UncertainItem } 
 import { docLinkNames, RULES_DOC_ID } from '../shared.ts';
 import { DESIGN_PROJECTS, minutesAgo } from './design-projects.ts';
 
-type LineSeed = [
+export type LineSeed = [
   text: string, basis: MemoryDocLine['basis'], source: string, minutesBefore: number, uncertain?: string,
 ];
 
@@ -114,17 +114,21 @@ export function uncertainSeeds(now: Date): UncertainItem[] {
   ];
 }
 
-export function sectionsOf(seed: TopicSeed, now: Date, idOf: (name: string) => string | null = () => null):
-  MemoryDocSection[] {
+export function sectionsOf(seed: TopicSeed, now: Date, idOf: (name: string) => string | null = () => null,
+  meta: (line: LineSeed) => { id: string; version: number } | undefined = () => undefined): MemoryDocSection[] {
   return seed.sections.map((section, sectionIndex) => ({
     id: `${seed.topic.id}_s${sectionIndex}`,
     heading: section.heading,
-    lines: section.lines.map(([text, basis, label, minutes, uncertain], lineIndex) => ({
-      id: `${seed.topic.id}_s${sectionIndex}_l${lineIndex}`, text, basis,
+    lines: section.lines.map((line, lineIndex) => {
+      const [text, basis, label, minutes, uncertain] = line;
+      return {
+      id: meta(line)?.id ?? `${seed.topic.id}_s${sectionIndex}_l${lineIndex}`, version: meta(line)?.version ?? 1, text,
+      basis,
       sources: [{ kind: basis === 'system' ? 'system' : basis === 'agreement' ? 'agreement' : 'message',
         id: `src_${seed.topic.id}_${sectionIndex}_${lineIndex}`, label, at: minutesAgo(now, minutes) }],
       uncertainId: uncertain ?? null,
       links: docLinkNames(text).map((name) => ({ name, topicId: idOf(name) })),
-    })),
+      };
+    }),
   }));
 }

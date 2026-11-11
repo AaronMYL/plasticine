@@ -13,7 +13,9 @@ import {
 import type { RuleMode } from '../../shared/state.ts';
 import { CloudToolError, type RefetchReport } from '../cloud-tools/index.ts';
 import { rewriteRules } from '../brain/rules-rewrite.ts';
-import type { StateService } from '../state/index.ts';
+import { addClaudeItems, moveLine } from '../brain/memory-cleanup.ts';
+import type { MemoryMoveItem } from '../../shared/api/maintenance.ts';
+import { StateError, type StateService } from '../state/index.ts';
 
 export interface MaintenanceDeps {
   state: StateService;
@@ -102,12 +104,40 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
     }
     return rewriteRules(deps.state, request.plan, `maintenance:${request.operationId}`, quote);
   }
+  if (request.op === 'memory.move') {
+    if (request.moves === undefined) {
+      throw new MaintenanceFailure('invalid_input', '「memory.move」要给 --plan（挪哪几行）。');
+    }
+    return moveMemoryLines(deps.state, request.moves, `maintenance:${request.operationId}`);
+  }
+  if (request.op === 'memory.cleanup.add') {
+    if (request.adds === undefined) {
+      throw new MaintenanceFailure('invalid_input', '「memory.cleanup.add」要给 --plan（新加哪几条）。');
+    }
+    const cleanup = addClaudeItems(deps.state, request.adds.map((add) => ({ ...add, reason: '' })));
+    return { cleanupId: cleanup.id, added: request.adds.length };
+  }
   throw new MaintenanceFailure('invalid_input', `不认识的写操作「${request.op}」。`);
+}
+
+/** memory.move：一行一行挪；有一行已经改过（版本对不上）整批不动。 */
+function moveMemoryLines(state: StateService, moves: readonly MemoryMoveItem[], ref: string): { moved: number } {
+  return state.transaction(() => {
+    for (const move of moves) {
+      const line = state.memoryDocs.lines.require(move.lineId);
+      if (line.retiredAt !== null || line.version !== move.version) {
+        throw new StateError('version_conflict', `记忆 ${move.lineId} 已经改过，这次没有挪。`);
+      }
+      moveLine(state, line, move.toDocId, { actor: 'system', ref });
+    }
+    return { moved: moves.length };
+  });
 }
 
 function record(state: StateService, request: MaintenanceRequest, quote: string, result: unknown): void {
   const args = { code: request.code ?? null, mode: request.mode ?? null, limit: request.limit ?? null,
-    plan: request.plan ?? null };
+    plan: request.plan ?? null, ...(request.moves === undefined ? {} : { moves: request.moves }),
+    ...(request.adds === undefined ? {} : { adds: request.adds }) };
   state.maintenanceOperations.record({ id: request.operationId, op: request.op, args, because: quote, result });
 }
 

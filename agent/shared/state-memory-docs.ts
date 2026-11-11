@@ -338,3 +338,44 @@ export const MemoryConflictPatchSchema = Type.Partial(Type.Object({
   resolvedAt: Nullable(IsoTimeSchema),
 }), STRICT);
 export type MemoryConflictPatch = Static<typeof MemoryConflictPatchSchema>;
+
+/**
+ * 全量整理（11-11 Aaron：记忆页加「全量整理」，先出改动清单、勾选后才改）：一次整理一行。items 是清单：
+ * merge 几行合成一行（text）；move 一行挪到别的文档（toDocId）；archive 过时的进归档；rewrite 改写说法（text）；
+ * add 新加一行（toDocId、text；从 Claude 记得的情况带进来的 origin = claude）。applied：null 还没定，true 采用了，
+ * false 没采用。overview 是这次写的一段总览。
+ */
+export const MEMORY_CLEANUP_STATUSES = ['running', 'ready', 'failed', 'done'] as const;
+export const MEMORY_CLEANUP_ITEM_KINDS = ['merge', 'move', 'archive', 'rewrite', 'add'] as const;
+export type MemoryCleanupItemKind = (typeof MEMORY_CLEANUP_ITEM_KINDS)[number];
+export const MemoryCleanupItemSchema = Type.Object({
+  id: Type.String({ minLength: 1, maxLength: 40 }),
+  kind: Type.Enum(MEMORY_CLEANUP_ITEM_KINDS),
+  lineIds: Type.Array(IdSchema, { maxItems: 8 }),
+  toDocId: Nullable(IdSchema),
+  text: Nullable(Type.String({ minLength: 1, maxLength: 600 })),
+  reason: Type.String({ maxLength: 200 }),
+  origin: Type.Enum(['model', 'claude']),
+  applied: Nullable(Type.Boolean()),
+}, STRICT);
+export type MemoryCleanupItem = Static<typeof MemoryCleanupItemSchema>;
+export const MemoryCleanupSchema = Type.Object({
+  id: IdSchema,
+  version: Type.Integer({ minimum: 1 }),
+  createdAt: IsoTimeSchema,
+  updatedAt: IsoTimeSchema,
+  status: Type.Enum(MEMORY_CLEANUP_STATUSES),
+  error: Nullable(Type.String()),
+  overview: Nullable(Type.String({ maxLength: 800 })),
+  items: Type.Array(MemoryCleanupItemSchema, { maxItems: 400 }),
+  finishedAt: Nullable(IsoTimeSchema),
+}, STRICT);
+export type MemoryCleanup = Static<typeof MemoryCleanupSchema>;
+export const MemoryCleanupPatchSchema = Type.Partial(Type.Object({
+  status: Type.Enum(MEMORY_CLEANUP_STATUSES),
+  error: Nullable(Type.String()),
+  overview: Nullable(Type.String({ maxLength: 800 })),
+  items: Type.Array(MemoryCleanupItemSchema, { maxItems: 400 }),
+  finishedAt: Nullable(IsoTimeSchema),
+}), STRICT);
+export type MemoryCleanupPatch = Static<typeof MemoryCleanupPatchSchema>;

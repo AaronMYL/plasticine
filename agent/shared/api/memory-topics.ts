@@ -29,12 +29,13 @@ export const MEMORY_TOPIC_KIND_LABELS: Readonly<Record<MemoryTopicKind, string>>
 
 /** 目录里每种文档排进哪一组：「怎么替你做事」和「关于你」同一组。 */
 export const MEMORY_TOPIC_GROUP_OF: Readonly<Record<MemoryTopicKind, MemoryTopicKind>> = {
-  about_you: 'about_you', rules: 'about_you', person: 'person', project: 'project', topic: 'topic', skill: 'skill' };
+  about_you: 'about_you', rules: 'about_you', person: 'person', project: 'project', topic: 'topic', skill: 'topic' };
 
-/** 组名：「关于你」那一组叫「关于你和做事方式」（设计稿）。 */
+/** 组名（11-11 记忆改版）：关于你和规则一组叫「你」；话题和技能并成「其他」。 */
 export const MEMORY_TOPIC_GROUP_LABELS: Readonly<Record<MemoryTopicKind, string>> = {
   ...MEMORY_TOPIC_KIND_LABELS,
-  about_you: '关于你和规则',
+  about_you: '你',
+  topic: '其他',
 };
 
 /** 双链（第 16 条）：一篇提到另一篇时写 [[名字]]。按出现的先后，同名只算一次。 */
@@ -96,6 +97,8 @@ export type MemoryLineSource = Static<typeof MemoryLineSourceSchema>;
 
 export const MemoryDocLineSchema = Type.Object({
   id: IdSchema,
+  /** 改、删、挪时带上（11-11 记忆页能改）。 */
+  version: Type.Integer({ minimum: 1 }),
   text: Type.String({ minLength: 1 }),
   basis: Type.Enum(MEMORY_TOPIC_LINE_BASES),
   /** 每行链回原话：至少一条来源；推断的行链回它所依据的原话。 */

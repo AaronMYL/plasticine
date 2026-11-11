@@ -18,7 +18,7 @@ function main(): HTMLElement {
 }
 
 describe('记忆 · 主题目录', () => {
-  it('默认是主题目录（设计稿 11-06）：昨晚整理的入口、拿不准的（最多 3 条），再按 关于你和规则 · 项目 · 人 · 话题 · 技能 分组',
+  it('默认是主题目录（设计稿 11-06）：昨晚整理的入口、拿不准的（最多 3 条），再按 你 · 项目 · 人物 · 其他 分组，总览在最前',
     async () => {
       await renderApp({ hash: '#/memory', setup: seed });
       expect(within(main()).getByRole('heading', { level: 1, name: '记忆' })).toBeTruthy();
@@ -28,10 +28,12 @@ describe('记忆 · 主题目录', () => {
         .toBeTruthy();
       const uncertain = within(main()).getByRole('region', { name: '拿不准的' });
       expect(within(uncertain).getAllByRole('button', { name: '没错' }).length).toBeLessThanOrEqual(3);
-      const regions = within(main()).getAllByRole('region').map((region) => region.getAttribute('aria-labelledby'));
+      expect(within(main()).getByRole('region', { name: '总览' })).toBeTruthy();
+      const regions = within(main()).getAllByRole('region').map((region) => region.getAttribute('aria-labelledby'))
+        .filter((id) => id !== null);
       expect(regions).toEqual(['memory-uncertain', 'topics-about_you', 'topics-project', 'topics-person',
-        'topics-topic', 'topics-skill']);
-      const pinned = within(main()).getByRole('region', { name: '关于你和规则' });
+        'topics-topic']);
+      const pinned = within(main()).getByRole('region', { name: '你' });
       expect(within(pinned).getAllByRole('button').map((button) => button.textContent?.split(/身份|你明说/)[0]))
         .toEqual(['关于你', '规则']);
       expect(within(main()).getByRole('button', { name: /周屿.*Cyber Hunter 的合作者/ })).toBeTruthy();
@@ -44,7 +46,7 @@ describe('记忆 · 主题目录', () => {
     expect(within(hunter).getByText('公开')).toBeTruthy();
     const personal = within(projects).getByRole('button', { name: /个人/ });
     expect(within(personal).queryByLabelText(/^档位：/)).toBeNull();
-    const skills = within(main()).getByRole('region', { name: '技能' });
+    const skills = within(main()).getByRole('region', { name: '其他' });
     expect(within(skills).getByText('超出上限')).toBeTruthy();
   });
 

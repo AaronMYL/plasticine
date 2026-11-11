@@ -76,6 +76,8 @@ export interface Route {
   memoryRules?: boolean;
   /** 说法冲突（#/memory/conflicts，11-11）。 */
   memoryConflicts?: boolean;
+  /** 全量整理的清单（#/memory/cleanup，11-11）。 */
+  memoryCleanup?: boolean;
   /**
    * 设置弹框开在哪一段（#/settings/<段>，2026-11-05 起设置不占标签：这种地址只用来开弹框，壳认到就开、地址换回当前标签的）。
    * 旧段名（feed、network…）和旧地址 #/device 都映射到新的五段，见 settingsLink。
@@ -286,6 +288,7 @@ export function parseHash(hash: string): Route {
   }
   if (view === 'memory' && id === 'rules') return soulRoute(sub === undefined ? null : decodedOrNull(sub));
   if (view === 'memory' && id === 'conflicts') return conflictsRoute();
+  if (view === 'memory' && id === 'cleanup') return cleanupRoute();
   if (view === 'projects') {
     return { view, noteId: null, projectId: id === undefined ? null : decodedOrNull(id) };
   }
@@ -342,6 +345,10 @@ export function mateGroupRoute(mateGroupId: string): Route {
 /** 记忆里的「规则」（原 Soul，11-11）；带队友时先筛出只对它的。 */
 export function soulRoute(mateId: string | null = null): Route {
   return { view: 'memory', noteId: null, memoryRules: true, mateId };
+}
+
+export function cleanupRoute(): Route {
+  return { view: 'memory', noteId: null, memoryCleanup: true };
 }
 
 export function conflictsRoute(): Route {
@@ -489,6 +496,7 @@ export function routeHash(route: Route): string {
     return `#/memory/rules${route.mateId == null ? '' : '/' + encodeURIComponent(route.mateId)}`;
   }
   if (route.view === 'memory' && route.memoryConflicts === true) return '#/memory/conflicts';
+  if (route.view === 'memory' && route.memoryCleanup === true) return '#/memory/cleanup';
   if (route.view === 'memory' && route.objectType === 'agreement' && route.objectId == null) {
     return '#/memory/agreements';
   }

@@ -37,7 +37,7 @@ export function RulesPage({ mateId, phone, navigate, onBack }: RulesPageProps): 
   const soul = useSoul();
   const conflicts = useConflicts();
   const mates = useStore(useLive().mates.data).mates;
-  const [filter, setFilter] = useState<Filter>(mateId ?? 'all');
+  const [filter, setFilter] = useState<Filter>(mateId ?? 'shared');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [history, setHistory] = useState(false);

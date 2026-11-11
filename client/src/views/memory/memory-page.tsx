@@ -12,6 +12,7 @@ import { PhoneContent } from '../reading/phone-content.tsx';
 import { RULES_DOC_ID } from '../../api/shared.ts';
 import type { Route } from '../../shell/routes.ts';
 import { PageHeader } from '../../shell/page-header.tsx';
+import { CleanupPage } from './cleanup-page.tsx';
 import { ConflictsPage } from './conflicts-page.tsx';
 import { DreamPage } from './dream-page.tsx';
 import { RulesPage } from './rules-page.tsx';
@@ -56,6 +57,7 @@ export function MemoryPage(props: MemoryPageProps): ReactNode {
     return <DreamPage navigate={navigate} onBack={onBack} />;
   }
   if (route.memoryConflicts === true) return <ConflictsPage navigate={navigate} onBack={onBack} />;
+  if (route.memoryCleanup === true) return <CleanupPage onBack={onBack} />;
   // 规则（原 Soul，11-11）：#/memory/rules、目录里那一行、旧的约定和词表地址都到这里。
   if (route.memoryRules === true || route.topicId === RULES_DOC_ID || route.termId === null
     || (route.objectType === 'agreement' && route.objectId == null)) {

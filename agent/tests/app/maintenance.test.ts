@@ -7,7 +7,7 @@ import { MaintenanceFailure, performMaintenance, runMaintenance } from '../../sr
 import { CloudToolError, type RefetchReport } from '../../src/cloud-tools/index.ts';
 import { ensureIntake } from '../../src/intake/index.ts';
 import { openState, type StateService } from '../../src/state/index.ts';
-import { RULES_DOC_ID } from '../../shared/state.ts';
+import { RULES_DOC_ID, YOU_DOC_ID } from '../../shared/state.ts';
 import { addLine, ensureMemoryDocs } from '../../src/brain/memory-doc-writes.ts';
 
 let h: { state: StateService };
@@ -158,4 +158,20 @@ test('整理规则：一行拆成几行，照抄来源和范围、存原文；�
   assert.notEqual(h.state.memoryDocs.lines.require(stale.id).archivedAt, null, '进归档，不是删除');
   assert.equal(runMaintenance(deps(), request).replayed, true);
   assert.equal(h.state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.supersedes.includes(old.id)).length, 1);
+});
+
+test('memory.move 把几行挪到别的文档；memory.cleanup.add 放进整理清单等勾选，不注明来处', () => {
+  ensureMemoryDocs(h.state);
+  const doc = h.state.memoryDocs.docs.create({ kind: 'topic', title: '生活', summary: '', createdBy: 'user' });
+  const line = addLine(h.state, { docId: doc.id, text: '房租每月 5 号交', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'msg-1' }] }, { actor: 'brain', ref: 'run' });
+  runMaintenance(deps(), { operationId: 'move-personal-1', op: 'memory.move', because: '直接挪好',
+    moves: [{ lineId: line.id, version: line.version, toDocId: YOU_DOC_ID }] });
+  assert.ok(h.state.memoryDocs.lines.live(YOU_DOC_ID).some((item) => item.text === '房租每月 5 号交'));
+  assert.notEqual(h.state.memoryDocs.lines.require(line.id).archivedAt, null);
+  runMaintenance(deps(), { operationId: 'claude-adds-1', op: 'memory.cleanup.add', because: '把你的记忆也整理进去',
+    adds: [{ toDocId: YOU_DOC_ID, text: '住在成都。' }] });
+  const item = h.state.memoryCleanups.latest()?.items[0];
+  assert.equal(item?.kind, 'add');
+  assert.equal(item?.reason, '');
 });

@@ -1,13 +1,14 @@
 // 一份记忆主题文档（2026-11-02 第 102 条）：活文档，按小节排；每行右边链回原话（对话里那条、笔记那一段、那条约定），
 // Plasticine 推断出来的行标「推断」，还在「拿不准的」里的行标「拿不准」。项目那页就是项目档案，顶上有「打开项目」。
-// 只读：改记忆走对话（「在对话里提」把这一页带进输入框）。
+// 11-11 记忆改版：每行行尾 ⋯ 能改（就地输入框）、挪到别的页、删除；页头「加一条」（line-actions.tsx）。
+// 「在对话里提」照旧能把这一页带进输入框。规则页（RULES_DOC_ID）有自己的改法，这里不画 ⋯。
 // 第 4 批：「怎么替你做事」那份最前面是硬线（不管有没有把握都先问你的几类事），一行一个、带锁；下面是规矩。
 // 迁来的行出处是那条约定，「约定 ›」已经说了来源，不再挂「约定」标签。
 // 第 16、19 条（11-06）：行里的 [[名字]] 是双链，点了打开那一篇；页头能改这一篇的档位（公开 / 合作 / 朋友 / 私密）。
 
 import { currentComposer } from '../conversation/current-composer.ts';
-import { useEffect, type ReactNode } from 'react';
-import { HARD_LINES_HEADING, HARD_LINES_NOTE, TIER_LABELS, TIERS } from '../../api/shared.ts';
+import { useEffect, useState, type ReactNode } from 'react';
+import { HARD_LINES_HEADING, HARD_LINES_NOTE, RULES_DOC_ID, TIER_LABELS, TIERS } from '../../api/shared.ts';
 import type { MemoryDocLine, MemoryLineSource, MemoryTopicDoc, MemoryTopicView } from '../../api/shared.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
@@ -21,6 +22,9 @@ import { relativeTime } from '../../shell/relative-time.ts';
 import { topicLook } from './topics-page.tsx';
 import { PhoneContent } from '../reading/phone-content.tsx';
 import { memoryTopicQuote } from '../reading/content-quotes.ts';
+import { LineActions, LineEditor } from './line-actions.tsx';
+import { useMemoryEdits } from './use-memory-edits.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import './topics.css';
 
 const BASIS_TAG: Readonly<Record<MemoryDocLine['basis'], string | null>> = {
@@ -78,9 +82,23 @@ function TierControl({ topic }: { topic: MemoryTopicView }): ReactNode {
   );
 }
 
-function Line({ line, navigate }: { line: MemoryDocLine; navigate: (route: Route) => void }): ReactNode {
+function Line({ line, docId, navigate }: { line: MemoryDocLine; docId: string; navigate: (route: Route) => void }):
+  ReactNode {
+  const edits = useMemoryEdits();
+  const [editing, setEditing] = useState(false);
   const source = line.sources[0];
   const tag = BASIS_TAG[line.basis];
+  const editable = docId !== RULES_DOC_ID;
+  if (editing) {
+    return <li className="doc-line is-editing">
+      <LineEditor initial={line.text} label="改这一条" onCancel={() => setEditing(false)}
+        onSave={async (text) => {
+          const problem = await edits.edit(docId, line, text);
+          if (problem === null) setEditing(false);
+          return problem;
+        }} />
+    </li>;
+  }
   return (
     <li className="doc-line" data-basis={line.basis}>
       <span className="doc-line-text">
@@ -95,8 +113,25 @@ function Line({ line, navigate }: { line: MemoryDocLine; navigate: (route: Route
           {source.label} ›
         </button>
       )}
+      {editable ? <LineActions docId={docId} line={line} onEdit={() => setEditing(true)} /> : null}
     </li>
   );
+}
+
+/** 页底「加一条」：点开是输入框，存了接在最后一节。 */
+function AddLine({ docId }: { docId: string }): ReactNode {
+  const edits = useMemoryEdits();
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return <button type="button" className="secondary-button button-small doc-add" onClick={() => setOpen(true)}>
+      <Icon name="plus" size={14} />加一条</button>;
+  }
+  return <LineEditor initial="" label="加一条记忆" onCancel={() => setOpen(false)}
+    onSave={async (text) => {
+      const problem = await edits.add(docId, text);
+      if (problem === null) setOpen(false);
+      return problem;
+    }} />;
 }
 
 /** 硬线：一行一个，带锁；没有出处、不能改（代码里拦着）。 */
@@ -148,10 +183,11 @@ function Body({ doc, navigate, now, phone = false }: { doc: MemoryTopicDoc; navi
         <section key={section.id} className="doc-section" aria-labelledby={section.id}>
           <h2 id={section.id} className="doc-section-title">{section.heading}</h2>
           <ul className="doc-lines">
-            {section.lines.map((line) => <Line key={line.id} line={line} navigate={navigate} />)}
+            {section.lines.map((line) => <Line key={line.id} line={line} docId={doc.topic.id} navigate={navigate} />)}
           </ul>
         </section>
       ))}
+      {doc.topic.id === RULES_DOC_ID ? null : <AddLine docId={doc.topic.id} />}
     </>
   );
 }
@@ -168,7 +204,7 @@ export function TopicDocPage({ topicId, navigate, now = new Date(), phone = fals
   const status = error !== null ? <p className="block-empty is-error" role="alert">
     {error} <button type="button" className="text-button"
       onClick={() => void live.memoryTopics.openDoc(topicId)}>再读一次</button>
-  </p> : doc === null ? <p className="block-empty" role="status">正在读…</p> : null;
+  </p> : doc === null ? <PageLoading /> : null;
   if (phone) {
     const target = route ?? { view: 'memory', noteId: null, topicId };
     const look = doc === null ? null : topicLook(doc.topic);
@@ -176,7 +212,7 @@ export function TopicDocPage({ topicId, navigate, now = new Date(), phone = fals
       quote={doc === null ? null : memoryTopicQuote(doc)}>
       <header className="phone-read-title">
         {look === null ? null : <HueTile hue={look.hue} icon={look.icon} size={32} />}
-        <h1>{doc?.topic.title ?? '记忆'}</h1><span className="tag tag-neutral">只读</span>
+        <h1>{doc?.topic.title ?? '记忆'}</h1>
       </header>
       {status}
       {doc === null ? null : <Body doc={doc} navigate={navigate} now={now} phone />}
