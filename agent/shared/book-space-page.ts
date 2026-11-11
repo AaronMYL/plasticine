@@ -9,7 +9,18 @@ export interface BookPageInput {
   outline?: BookOutline;
   keyPoints?: BookKeyPoints;
   dismissedPointIds?: readonly string[];
+  /** 你的高亮和批注（11-11 设计稿「P4 读书笔记」）：开头一行个数，每章下面最多两句摘句。 */
+  marks?: BookPageMarks;
 }
+
+export interface BookPageMarks {
+  highlights: number;
+  notes: number;
+  quotes: readonly { chapter: number; quote: string }[];
+}
+
+/** 每章下面最多放几句摘句。 */
+const QUOTES_PER_CHAPTER = 2;
 
 const LEGACY_CSS = `.bn{max-width:800px;margin:auto;padding:24px 20px 48px;font-size:14px;line-height:1.7}
 .bn h1{font-size:17px;line-height:1.65;font-weight:600;margin:0 0 20px}.bn h2{font-size:15px;font-weight:600}
@@ -27,7 +38,9 @@ color:var(--fg3);margin-right:6px}.bn-current[hidden]{display:none}
 padding-left:12px;
 color:var(--fg2);font-size:13px}@media(max-width:480px){.bn{padding:20px 16px 40px}}`;
 // 11-11 第 11 批设计稿「P4 读书笔记」：去掉各部分字数比例的色条和图例，其余不变。旧版样式和正文留着只为认出旧生成页。
-const CSS = LEGACY_CSS.replace(/\.bn-bar\{[^\n]*\n\.bn-legend\{[^\n]*\n\.bn-legend i\{[^\n]*\n/u, '');
+const CSS = LEGACY_CSS.replace(/\.bn-bar\{[^\n]*\n\.bn-legend\{[^\n]*\n\.bn-legend i\{[^\n]*\n/u, '')
+  + '\n.bn-marks{display:flex;gap:16px;flex-wrap:wrap;margin:-8px 0 16px;font-size:12px;color:var(--fg2)}'
+  + '\n.bn-quote{border-left:1px solid var(--line2);margin:8px 0;padding-left:12px;color:var(--fg2);font-size:13px}';
 const HUES = ['sky', 'teal', 'ochre', 'rose', 'sage', 'slate'] as const;
 
 function link(bookId: string, chapter: number, offset = 0): string {
@@ -52,18 +65,31 @@ export function renderBookPage(input: BookPageInput, options: { legacy?: boolean
       + `background:${color(index)}"></span>`).join('');
     const legend = groups.map((part, index) => `<span><i style="background:${color(index)}"></i>`
       + `${text(part.title)}</span>`).join('');
-    const chapters = outline.chapters ?? groups;
-    const rows = chapters.filter((part) => part.chapter < toc.length).map((part) => {
+    const chapters = (outline.chapters ?? groups).filter((part) => part.chapter < toc.length);
+    const marks = legacy ? undefined : input.marks;
+    const quotesOf = (index: number): string => {
+      if (marks === undefined) return '';
+      const from = chapters[index]!.chapter;
+      const to = chapters[index + 1]?.chapter ?? toc.length;
+      return marks.quotes.filter((item) => item.chapter >= from && item.chapter < to).slice(0, QUOTES_PER_CHAPTER)
+        .map((item) => `<blockquote class="bn-quote">${text(item.quote)}</blockquote>`).join('');
+    };
+    const rows = chapters.map((part, index) => {
       const current = part.chapter === input.currentChapter;
       return `<li class="bn-row" data-book-chapter="${part.chapter}"><span class="bn-index">`
         + `${String(part.chapter + 1).padStart(2, '0')}</span><div><h2>${text(part.title)}`
         + `<span class="bn-current"${current ? '' : ' hidden'}>读到这里</span></h2>`
-        + `<p class="bn-summary">${text(part.summary)}</p>${link(bookId, part.chapter, part.offset ?? 0)}</div></li>`;
+        + `<p class="bn-summary">${text(part.summary)}</p>${quotesOf(index)}`
+        + `${link(bookId, part.chapter, part.offset ?? 0)}</div></li>`;
     }).join('');
+    const counts = marks === undefined ? '' : `<p class="bn-marks"><span>${chapters.length} 章</span>`
+      + `<span>高亮 ${marks.highlights} 处</span><span>批注 ${marks.notes} 条</span>`
+      + `<a class="bn-back" data-link="book:${attr(encodeURIComponent(bookId))}:${input.currentChapter ?? 0}:0"`
+      + ' href="#">打开图书</a></p>';
     const heading = outline.summary?.trim() ? `一句话：${text(outline.summary)}` : '图书大纲';
     body = legacy ? `<h1>${heading}</h1><div class="bn-bar" role="img" aria-label="各部分字数比例">`
       + `${bar}</div><div class="bn-legend">${legend}</div><ol class="bn-list">${rows}</ol>`
-      : `<h1>${heading}</h1><ol class="bn-list">${rows}</ol>`;
+      : `<h1>${heading}</h1>${counts}<ol class="bn-list">${rows}</ol>`;
   } else {
     const points = (input.keyPoints?.points ?? []).filter((point) => !input.dismissedPointIds?.includes(point.id));
     body = `<h1>值得记住的 ${points.length} 个重点</h1>${points.map((point) => {

@@ -1,6 +1,6 @@
 // 图书笔记复用已生成的结构化内容，一种 insight 固定对应一个空间，编辑后的页面不被读取操作覆盖。
 import { Value } from 'typebox/value';
-import { renderBookPage } from '../../shared/book-space-page.ts';
+import { renderBookPage, type BookPageMarks } from '../../shared/book-space-page.ts';
 import { BookKeyPointsSchema, BookOutlineSchema, type BookInsight, type BookInsightKind, type BookRecord,
   type Space } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
@@ -15,10 +15,24 @@ export interface BookSummarySpaceSnapshot {
   generated: boolean;
 }
 
-/** 阅读进度由页面打开时决定，不能用现在的章号把原模板误判为用户编辑。 */
+/**
+ * 比对是不是原样的自动生成页时去掉会自己变的部分：阅读进度（页面打开时决定）、样式（模板改版）、高亮个数和摘句（随你的
+ * 高亮变），免得把原模板误判成用户编辑。
+ */
 function withoutReadingPosition(html: string): string {
   return html.replace(/<span class="bn-current"(?: hidden)?>读到这里<\/span>/gu,
-    '<span class="bn-current" hidden>读到这里</span>');
+    '<span class="bn-current" hidden>读到这里</span>')
+    .replace(/^<style>[\s\S]*?<\/style>/u, '')
+    .replace(/<p class="bn-marks">[\s\S]*?<\/p>/gu, '')
+    .replace(/<blockquote class="bn-quote">[\s\S]*?<\/blockquote>/gu, '');
+}
+
+/** 你在这本书上的高亮和批注：个数和摘句（按章、按位置排）。 */
+export function bookMarks(state: StateService, bookId: string): BookPageMarks {
+  const annotations = state.bookAnnotations.forBook(bookId)
+    .sort((a, b) => a.chapter - b.chapter || a.start - b.start);
+  return { highlights: annotations.length, notes: annotations.filter((item) => (item.note ?? '').trim() !== '').length,
+    quotes: annotations.map((item) => ({ chapter: item.chapter, quote: item.quote })) };
 }
 
 export function bookSummarySpaceSnapshot(state: StateService, book: BookRecord, row: BookInsight,
@@ -71,7 +85,9 @@ export function publishBookSpace(state: StateService, book: BookRecord, row: Boo
     const title = `${book.title} · ${row.kind === 'outline' ? '大纲' : '重点'}`.slice(0, 120);
     const html = renderBookPage({ bookId: book.id, toc: book.toc,
       currentChapter: state.bookProgress.get(book.id)?.chapter ?? null, dismissedPointIds: row.dismissedPointIds,
+      ...(row.kind === 'outline' ? { marks: bookMarks(state, book.id) } : {}),
       ...(outline === undefined ? {} : { outline }), ...(keyPoints === undefined ? {} : { keyPoints }) });
+    if (existing !== undefined && existing.html === html && existing.title === title) return existing;
     return writeSpace(state, { title, html, genre: 'report', category: 'booknote', sourceUrl, bookId: book.id,
       folder: existing?.folder ?? book.folder ?? null,
       ...(existing === undefined ? {} : { id: existing.id, version: existing.version }) }, 'ai').space;
@@ -91,16 +107,25 @@ export function backfillBookSpaces(state: StateService): number {
   return created;
 }
 
-/** 11-11 版式升级：还是自动生成、没被改过的旧大纲页（带色条）换成新版式；改过的不动。返回换了几页。 */
+/** 11-11 版式升级：还是自动生成、没被改过的旧大纲页（带色条、没有高亮个数）换成新版式；改过的不动。返回换了几页。 */
 export function upgradeBookOutlineLayouts(state: StateService): number {
   let upgraded = 0;
   for (const book of state.books.live()) {
     const row = state.bookInsights.find(book.id, 'outline');
     const space = state.spaces.findBySourceUrl(bookSpaceSource(book.id, 'outline'), 'booknote', true);
     if (row === undefined || space === undefined || space.deletedAt !== null
-      || !(space.html ?? '').includes('class="bn-bar"')) continue;
+      || (space.html ?? '').includes('class="bn-marks"')) continue;
     const snapshot = bookSummarySpaceSnapshot(state, book, row, space);
     if (snapshot.generated && publishBookSpace(state, book, row, true) !== null) upgraded += 1;
   }
   return upgraded;
+}
+
+/** 高亮或批注变了：还是自动生成、没被改过的大纲页跟着换个数和摘句；改过的不动。 */
+export function refreshBookOutlineMarks(state: StateService, book: BookRecord): Space | null {
+  const row = state.bookInsights.find(book.id, 'outline');
+  const space = state.spaces.findBySourceUrl(bookSpaceSource(book.id, 'outline'), 'booknote', true);
+  if (row === undefined || space === undefined || space.deletedAt !== null) return null;
+  if (!bookSummarySpaceSnapshot(state, book, row, space).generated) return null;
+  return publishBookSpace(state, book, row, true);
 }

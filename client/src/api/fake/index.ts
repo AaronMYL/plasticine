@@ -210,7 +210,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       title: `${book.title} · ${insight.kind === 'outline' ? '大纲' : '重点'}`, category: 'booknote',
       bookId: book.id, sourceUrl: `book:${book.id}:${insight.kind}`,
       html: renderBookPage({ bookId: book.id, toc: book.toc, currentChapter: book.progress?.chapter ?? null,
-        dismissedPointIds: insight.dismissedPointIds, ...(insight.outline === null ? {} : { outline: insight.outline }),
+        dismissedPointIds: insight.dismissedPointIds,
+        ...(insight.outline === null ? {} : { outline: insight.outline, marks: books.marksOf(book.id) }),
         ...(insight.keyPoints === null ? {} : { keyPoints: insight.keyPoints }) }) }, rewrite) });
   const asks = new FakeAsks({ session, bus, receipts, lines: () => lines, now,
     authorize: (card, selected, option) => outbound.authorize(card, selected, option) });

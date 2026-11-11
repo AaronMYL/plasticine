@@ -4,7 +4,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { renderBookPage } from '../../shared/book-space-page.ts';
 import type { BookOutline } from '../../shared/state.ts';
 import { BookInsightService } from '../../src/brain/book-insights.ts';
-import { publishBookSpace, upgradeBookOutlineLayouts } from '../../src/brain/book-spaces.ts';
+import { publishBookSpace, refreshBookOutlineMarks, upgradeBookOutlineLayouts } from '../../src/brain/book-spaces.ts';
 import type { TextModels } from '../../src/kernel/index.ts';
 import { writeSpace } from '../../src/subs/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
@@ -78,7 +78,7 @@ test('旧大纲只补一次全书短总述，保留章节位置和原空间，�
   assert.equal(t.state.spaces.forBook(book.id).length, 1);
 });
 
-test('已有完整短总述直接复用，服务启动不调用模型', async () => {
+test('已有完整短总述直接复用，服务启动不调用模型；页面只换成带高亮个数的新版式', async () => {
   const { book, insight, page } = fixture(SUMMARY);
   const runner = service(async () => { throw new Error('不应调用'); });
   runner.instance.recoverInterrupted();
@@ -86,7 +86,10 @@ test('已有完整短总述直接复用，服务启动不调用模型', async ()
   await sleep(20);
   assert.equal(runner.calls.length, 0);
   assert.equal(t.state.bookInsights.get(insight.id)!.version, insight.version);
-  assert.equal(t.state.spaces.require(page.id).html, page.html);
+  const html = t.state.spaces.require(page.id).html!;
+  assert.match(html, /<p class="bn-marks">.*高亮 0 处/u);
+  assert.equal(html.replace(/<p class="bn-marks">.*?<\/p>/u, '').replace(/^<style>[\s\S]*?<\/style>/u, ''),
+    page.html!.replace(/^<style>[\s\S]*?<\/style>/u, '').replace('<span class="bn-current">', '<span class="bn-current" hidden>'));
 });
 
 for (const summary of ['长'.repeat(70), '协作与判断']) {
@@ -243,5 +246,28 @@ test('11-11 版式升级：自动生成的旧大纲页（带色条）换成新�
       outline: other.content }, { legacy: true }).replace('<ol class="bn-list">', '<p>我补的</p><ol class="bn-list">') },
     'user').space;
   assert.equal(upgradeBookOutlineLayouts(t.state), 0);
+  assert.equal(t.state.spaces.require(page.id).html, edited.html);
+});
+
+test('读书笔记带你的高亮：开头写章数、高亮和批注个数，每章下面最多两句摘句；高亮变了跟着换，改过的页不动', () => {
+  const { book } = fixture(SUMMARY);
+  upgradeBookOutlineLayouts(t.state);
+  const mark = (chapter: number, start: number, quote: string, note: string | null = null) =>
+    t.state.bookAnnotations.create({ bookId: book.id, chapter, start, end: start + quote.length, quote, prefix: '',
+      suffix: '', color: 'ochre', note, origin: 'user', deviceLabel: null });
+  mark(0, 1, '第一句摘句');
+  mark(0, 9, '第二句摘句', '我的批注');
+  mark(0, 20, '第三句不显示');
+  mark(1, 3, '第二章的摘句');
+  const page = refreshBookOutlineMarks(t.state, book)!;
+  assert.match(page.html!, /2 章<\/span><span>高亮 4 处<\/span><span>批注 1 条/u);
+  assert.match(page.html!, /data-book-chapter="0">[\s\S]*第一句摘句[\s\S]*第二句摘句[\s\S]*data-book-chapter="1"/u);
+  assert.doesNotMatch(page.html!, /第三句不显示/u);
+  assert.match(page.html!, /<blockquote class="bn-quote">第二章的摘句<\/blockquote>/u);
+  assert.equal(refreshBookOutlineMarks(t.state, book)!.version, page.version);
+  const edited = writeSpace(t.state, { id: page.id, version: page.version, title: page.title,
+    html: page.html!.replace('<ol class="bn-list">', '<p>我补的</p><ol class="bn-list">') }, 'user').space;
+  mark(1, 30, '新的一句');
+  assert.equal(refreshBookOutlineMarks(t.state, book), null);
   assert.equal(t.state.spaces.require(page.id).html, edited.html);
 });

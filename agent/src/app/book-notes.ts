@@ -15,7 +15,7 @@ import { BOOK_INSIGHT_KINDS, DEFAULT_NOTE_FOLDER, type BookInsightKind } from '.
 import { bookDiscussions, bookNotesMarkdown } from '../reading/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { liveBook } from './books.ts';
-import { publishBookSpace } from '../brain/index.ts';
+import { publishBookSpace, refreshBookOutlineMarks } from '../brain/index.ts';
 import { annotationView, insightView } from './book-views.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
@@ -68,6 +68,7 @@ export async function createBookAnnotation(context: RequestContext): Promise<Rep
       deviceLabel: body.deviceLabel ?? null,
     });
     publish(context, book.id, 'annotations');
+    refreshBookOutlineMarks(state, book);
     return { status: 201, body: annotationView(created) };
   });
 }
@@ -88,6 +89,7 @@ export async function updateBookAnnotation(context: RequestContext): Promise<Rep
       ...(body.note === undefined ? {} : { note: body.note }),
     });
     publish(context, book.id, 'annotations');
+    refreshBookOutlineMarks(state, book);
     return { status: 200, body: annotationView(saved) };
   });
 }
@@ -106,6 +108,7 @@ export async function deleteBookAnnotation(context: RequestContext): Promise<Rep
     if (annotation.deletedAt === null) {
       state.bookAnnotations.update(annotation.id, annotation.version, { deletedAt: now().toISOString() });
       publish(context, book.id, 'annotations');
+      refreshBookOutlineMarks(state, book);
     }
     return { status: 200, body: { deleted: true } };
   });

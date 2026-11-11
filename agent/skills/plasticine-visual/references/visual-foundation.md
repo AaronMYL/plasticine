@@ -49,6 +49,7 @@
 | `--err` | #A9483A（5.42:1） | #E08A7A（5.31:1） | 卡住、出错；唯一可以写字的状态色 |
 | `--scrim` | rgba(42,32,24,.2) | rgba(12,9,7,.45) | 浮层、抽屉、设置弹框背后的遮罩 |
 | `--lift` | 0 0 0 1px var(--line2), 0 8px 24px rgba(60,40,24,.1) | 0 0 0 1px var(--line2), 0 12px 32px rgba(12,9,7,.4) | 唯一的阴影，只给浮起物：Sheet、设置弹框、浮动圆球、手机对话圆钮、底部抽屉、弹出菜单 |
+| `--hue-ochre` `--hue-teal` `--hue-sky` `--hue-rose` `--hue-olive` `--hue-slate` `--hue-plum` `--hue-indigo` | 项目 / 队友 / 网页分组的八色（11-11 加 plum、indigo），值见 tokens.css | 同左，深色更亮 | 只染头像底、圆点、细条和色块；名字统一用 `shell/hue.tsx` 的 `HUE_NAMES` |
 | `--hl-ochre` `--hl-sage` `--hl-slate` `--hl-rose` | 赭黄 / 灰绿 / 灰蓝 / 灰粉，半透明（值见 tokens.css） | 同左，深色略亮 | 只给图书的高亮文字底和标注列表左边那条线（第 100 条，本人 2026-11-01 定「多色」）；不做别的强调 |
 | `--read-size` `--read-leading` | 16px / 28px | 同左 | 图书正文的字号和行距，读者用「Aa」就地调（第 100 条）；别处不用 |
 | `--mail-paper` | #FFFFFF | 同左（深色也是白纸） | 邮件正文阅读区的底（2026-11-04「邮件按原样排版」）：邮件照白底设计；别处不用 |

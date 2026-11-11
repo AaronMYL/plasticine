@@ -6,7 +6,8 @@ import { Type, type Static } from 'typebox';
 import { IdSchema } from './common.ts';
 
 /** 项目颜色只在这六档里挑；陶土橙留给「等你」，不给项目。 */
-export const PROJECT_HUES = ['ochre', 'teal', 'sky', 'rose', 'olive', 'slate'] as const;
+// 11-11 第 11 批加 plum、indigo，凑成八色（Aaron 同意）。
+export const PROJECT_HUES = ['ochre', 'teal', 'sky', 'rose', 'olive', 'slate', 'plum', 'indigo'] as const;
 export type ProjectHue = (typeof PROJECT_HUES)[number];
 
 export const ProjectTagSchema = Type.Object({

@@ -8,6 +8,11 @@ import './hue.css';
 
 export type HueName = ProjectHue | 'clay' | 'sage' | 'err' | 'ink';
 
+/** 八色的中文名：色块的读屏名字、浮框都用这一份。 */
+export const HUE_NAMES: Readonly<Record<ProjectHue, string>> = {
+  ochre: '赭黄', teal: '青绿', sky: '天蓝', rose: '玫红', olive: '橄榄', slate: '石板', plum: '梅紫', indigo: '靛蓝',
+};
+
 /** 首页卡的类别 → 颜色和图标。项目卡、事的卡跟着项目自己的颜色走（见 cardHue）。 */
 export const KIND_STYLE: Readonly<Record<HomeCardKind, { hue: HueName; icon: IconName }>> = {
   decide: { hue: 'clay', icon: 'check' },

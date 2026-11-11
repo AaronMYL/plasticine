@@ -58,6 +58,8 @@ export const DESIGN_TOKENS: readonly string[] = [
   'hue-rose',
   'hue-olive',
   'hue-slate',
+  'hue-plum',
+  'hue-indigo',
   'hue-sage',
   'hue-err',
   'hue-ink',

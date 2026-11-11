@@ -480,6 +480,13 @@ export class FakeBooks implements BooksApi {
     return { book: this.viewOf(book), duplicate: false };
   }
 
+  /** 读书笔记页开头的个数和每章摘句（和服务端 bookMarks 一样算）。 */
+  marksOf(bookId: string): { highlights: number; notes: number; quotes: { chapter: number; quote: string }[] } {
+    const rows = this.liveAnnotations(bookId);
+    return { highlights: rows.length, notes: rows.filter((row) => (row.note ?? '').trim() !== '').length,
+      quotes: rows.map((row) => ({ chapter: row.chapter, quote: row.quote })) };
+  }
+
   private liveAnnotations(bookId: string): BookAnnotationView[] {
     return [...this.annotationRows.values()].filter((row) => row.bookId === bookId)
       .sort((a, b) => a.chapter - b.chapter || a.start - b.start);

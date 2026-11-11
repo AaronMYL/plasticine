@@ -4,6 +4,7 @@ import { MODEL_PURPOSES, PROJECT_HUES, type MateDraft, type MateView, type MateG
   type MateGroupDraft } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { HueSwatches } from '../../primitives/hue-swatches/index.tsx';
+import { HUE_NAMES } from '../../shell/hue.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
 import { isOpenOp } from '../../state/action-ops.ts';
@@ -45,7 +46,7 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
           <label>头像文字<input value={draft.avatar} maxLength={8}
             onChange={(event) => patch('avatar', event.target.value)} /></label>
           <div className="mate-form-hue"><span className="mate-form-label">颜色</span>
-            <HueSwatches label="颜色" hues={PROJECT_HUES} names={HUE_LABELS} value={draft.hue}
+            <HueSwatches label="颜色" hues={PROJECT_HUES} names={HUE_NAMES} value={draft.hue}
               onChange={(hue) => patch('hue', hue)} /></div></div>
         <label>名字<input required minLength={2} maxLength={40} autoFocus value={draft.name}
           onChange={(event) => patch('name', event.target.value)} /></label>
@@ -70,9 +71,6 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
     </form>
   </Sheet></div>, document.body);
 }
-const HUE_LABELS: Record<MateDraft['hue'], string> = {
-  rose: '玫瑰', sky: '天空', teal: '青绿', ochre: '赭黄', olive: '橄榄', slate: '石板',
-};
 
 export function GroupEditor({ group, phone, onClose, navigate }: Props & { group?: MateGroupView }): ReactNode {
   const live = useLive();

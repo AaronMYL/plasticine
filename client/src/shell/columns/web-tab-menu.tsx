@@ -2,14 +2,14 @@
 // 组标题的菜单：改名、换颜色、解散分组（标签回到今天，一个不丢）。
 
 import { useState, type ReactNode } from 'react';
-import { PROJECT_HUES, type ProjectHue } from '../../api/shared.ts';
+import { PROJECT_HUES } from '../../api/shared.ts';
+import { HueSwatches } from '../../primitives/hue-swatches/index.tsx';
+import { HUE_NAMES } from '../hue.tsx';
 import type { WebTabsStore } from '../../state/web-tabs.ts';
 import { placeOf } from '../../state/web-tabs.ts';
 import { MenuItem, MenuSeparator, Popover, type PopoverAnchor } from '../popover.tsx';
 
-const HUE_NAMES: Readonly<Record<ProjectHue, string>> = {
-  ochre: '赭黄', teal: '青绿', sky: '天蓝', rose: '玫红', olive: '橄榄', slate: '石板',
-};
+
 
 export function TabMenu({ tabs, tabId, anchor, onClose, onCloseTab, onNewGroup }: { tabs: WebTabsStore;
   tabId: string; anchor: PopoverAnchor; onClose: () => void; onCloseTab: (id: string) => void;
@@ -56,12 +56,9 @@ export function GroupMenu({ tabs, groupId, anchor, onClose }: { tabs: WebTabsSto
         <input id="web-group-name" className="field-input" value={name} autoFocus maxLength={60}
           onChange={(event) => setName(event.target.value)} onBlur={() => tabs.renameGroup(groupId, name)} />
       </form>
-      <div className="web-group-hues" role="group" aria-label="颜色">
-        {PROJECT_HUES.map((hue) => (
-          <button key={hue} type="button" className="web-group-hue" aria-label={HUE_NAMES[hue]}
-            aria-pressed={group.hue === hue} style={{ background: `var(--hue-${hue})` }}
-            onClick={() => tabs.recolorGroup(groupId, hue)} />
-        ))}
+      <div className="web-group-hues">
+        <HueSwatches label="颜色" hues={PROJECT_HUES} names={HUE_NAMES} value={group.hue}
+          onChange={(hue) => tabs.recolorGroup(groupId, hue)} />
       </div>
       <MenuSeparator />
       <MenuItem icon="close" label="解散分组" title="组里的标签回到「今天」" onSelect={() => {
