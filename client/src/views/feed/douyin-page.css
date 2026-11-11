@@ -27,3 +27,4 @@
 .dy-page[data-phone='true'] .dy-detail-head { gap: 8px; padding: 8px; min-height: 52px; }
 
 .feed-douyin > .page-head { padding: 16px; margin: 0; }
+.feed-douyin > .feed-top { margin: 0; }

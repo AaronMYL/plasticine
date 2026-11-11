@@ -56,8 +56,8 @@ export function renderBookPage(input: BookPageInput): string {
         + `<span class="bn-current"${current ? '' : ' hidden'}>读到这里</span></h2>`
         + `<p class="bn-summary">${text(part.summary)}</p>${link(bookId, part.chapter, part.offset ?? 0)}</div></li>`;
     }).join('');
-    const summary = outline.summary || groups.map((part) => part.summary).filter(Boolean).join(' ').slice(0, 400);
-    body = `<h1>一句话：${text(summary)}</h1><div class="bn-bar" role="img" aria-label="各部分字数比例">`
+    const heading = outline.summary?.trim() ? `一句话：${text(outline.summary)}` : '图书大纲';
+    body = `<h1>${heading}</h1><div class="bn-bar" role="img" aria-label="各部分字数比例">`
       + `${bar}</div><div class="bn-legend">${legend}</div><ol class="bn-list">${rows}</ol>`;
   } else {
     const points = (input.keyPoints?.points ?? []).filter((point) => !input.dismissedPointIds?.includes(point.id));

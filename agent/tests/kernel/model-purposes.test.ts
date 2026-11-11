@@ -244,7 +244,8 @@ test('图书三阶段实际按各用途执行；归纳缓存随思考和模型�
       return fauxAssistantMessage('{"chapters":[{"index":0,"summary":"章摘要","points":[],"quotes":["原文"]}]}');
     }
     if (prompt.includes('写大纲')) {
-      return fauxAssistantMessage('{"note":"大纲","parts":[{"chapter":0,"title":"章","summary":"摘要","points":[]}]}');
+      return fauxAssistantMessage('{"summary":"本书围绕示例原文展开讲述，让读者通过章节要点理解内容并回看对应原文。",'
+        + '"note":"大纲","parts":[{"chapter":0,"title":"章","summary":"摘要","points":[]}]}');
     }
     return fauxAssistantMessage('{"points":[{"text":"重点","quotes":[{"chapter":0,"text":"原文"}]}]}');
   };

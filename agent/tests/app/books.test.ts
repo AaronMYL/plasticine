@@ -221,7 +221,8 @@ test('生成大纲：先逐章归纳再合成，做完存下来；格式不对�
     { index: 1, summary: '写夫妻之乐。', points: ['为什么写'], quotes: ['事如春梦了无痕'] },
     { index: 2, summary: '童年的观察。', points: [], quotes: ['明察秋毫'] },
   ] });
-  const outline = JSON.stringify({ note: '按卷归纳', parts: [
+  const outline = JSON.stringify({ summary: '本书以夫妻生活与童年观察串起日常回忆，呈现平凡生活中的情感和趣味。',
+    note: '按卷归纳', parts: [
     { chapter: 1, title: '闺房记乐', summary: '夫妻之乐', points: ['为什么写'] },
     { chapter: 2, title: '闲情记趣', summary: '童年', points: [] },
   ] });
@@ -271,6 +272,39 @@ test('模型回答不是 JSON 时，大纲标成失败并写明原因', async ()
     await call(app, 'POST', `${PATH}/${id}/insights`, { cookie, body: { requestId: 'outline-bad', kind: 'outline' } });
     const failed = await waitInsight(app, cookie, id, 'outline', 'failed');
     assert.match(String(failed['error']), /JSON/);
+  } finally {
+    await app.close();
+  }
+});
+
+test('现有生成接口只给旧 ready 大纲补总述，重复请求不再调用模型', async () => {
+  const summary = '本书以夫妻生活与童年观察串起日常回忆，呈现平凡生活中的情感和趣味。';
+  const app = await startTestApp([JSON.stringify({ summary })], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const book = app.state.books.require(id);
+    const row = app.state.bookInsights.create({ bookId: id, kind: 'outline', status: 'ready',
+      sourceSha256: book.sourceSha256 });
+    const parts = [{ chapter: 1, offset: 7, title: '闺房记乐', summary: '夫妻之乐。', points: [] },
+      { chapter: 2, offset: 9, title: '闲情记趣', summary: '童年观察。', points: [] }];
+    app.state.bookInsights.update(row.id, row.version, { content: { note: '按卷归纳', parts } });
+    const before = json(await call(app, 'GET', `${PATH}/${id}/insights/outline`, { cookie }));
+    const response = await call(app, 'POST', `${PATH}/${id}/insights`, { cookie,
+      body: { requestId: 'complete-old-outline', kind: 'outline', force: false } });
+    assert.equal(response.status, 202);
+    const limit = Date.now() + 5000;
+    while ((app.state.bookInsights.get(row.id)?.content as { summary?: string })?.summary !== summary) {
+      assert.ok(Date.now() < limit, '应在五秒内补好总述');
+      await sleep(10);
+    }
+    const after = json(await call(app, 'GET', `${PATH}/${id}/insights/outline`, { cookie }));
+    assert.equal(after['spaceId'], before['spaceId']);
+    assert.deepEqual((after['outline'] as { parts: unknown })['parts'], parts);
+    assert.deepEqual(app.requests.map((request) => request.purpose), ['book_outline']);
+    await call(app, 'POST', `${PATH}/${id}/insights`, { cookie,
+      body: { requestId: 'complete-old-outline-again', kind: 'outline', force: false } });
+    assert.equal(app.requests.length, 1);
   } finally {
     await app.close();
   }
