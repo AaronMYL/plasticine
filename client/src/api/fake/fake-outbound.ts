@@ -92,7 +92,7 @@ export class FakeOutbound implements OutboundApi {
     const row = this.rows.get(id);
     if (row === undefined) { throw this.invalid('没有这条对外授权。'); }
     if (version !== undefined && row.version !== version) {
-      throw new ConflictError(row, '授权在别处改过，请重新读取后再改。', '重新读取授权。');
+      throw new ConflictError(row, '授权在别处改过，请再读一次后再改。', '再读一次授权。');
     }
     return row;
   }

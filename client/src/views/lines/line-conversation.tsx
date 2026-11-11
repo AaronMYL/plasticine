@@ -271,7 +271,7 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
             <p className="line-note is-error" role="alert">
               {data.error}{' '}
               <button type="button" className="text-button" onClick={() => void live.lines.loadLatest(lineId)}>
-                重新读取
+                再读一次
               </button>
             </p>
           )}

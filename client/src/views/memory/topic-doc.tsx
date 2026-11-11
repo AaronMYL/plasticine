@@ -167,7 +167,7 @@ export function TopicDocPage({ topicId, navigate, now = new Date(), phone = fals
   const error = data.docErrors.get(topicId) ?? null;
   const status = error !== null ? <p className="block-empty is-error" role="alert">
     {error} <button type="button" className="text-button"
-      onClick={() => void live.memoryTopics.openDoc(topicId)}>重新读取</button>
+      onClick={() => void live.memoryTopics.openDoc(topicId)}>再读一次</button>
   </p> : doc === null ? <p className="block-empty" role="status">正在读…</p> : null;
   if (phone) {
     const target = route ?? { view: 'memory', noteId: null, topicId };

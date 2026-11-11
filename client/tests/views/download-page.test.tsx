@@ -1,6 +1,6 @@
 // 下载页（11-08 设计稿 Download / Phone-Download）：读 /download/desktop.json 认出系统——Mac 主按钮直接下 dmg、Windows 下安装程序；
 // 次级链接：另一个系统、装在服务器上（点开显示 Linux 命令和复制）、已经有 Plasticine？去登录；手机上先在电脑上装好，
-// 「已经有了，去登录」填 @账号或地址跳过去。读不到清单不编地址，给重新读取。
+// 「已经有了，去登录」填 @账号或地址跳过去。读不到清单不编地址，给再读一次。
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -79,7 +79,7 @@ describe('下载页', () => {
     expect(navigate).toHaveBeenCalledWith('https://alex-li.cyberhunter.top/#/login');
   });
 
-  it('读不到清单：不编下载地址，给重新读取；再读到了就有按钮', async () => {
+  it('读不到清单：不编下载地址，给再读一次；再读到了就有按钮', async () => {
     let fail = true;
     const fetcher = vi.fn(async (input: RequestInfo | URL) => (fail ? new Response('', { status: 503 })
       : respond(String(input))));
@@ -87,7 +87,7 @@ describe('下载页', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('没读到安装包');
     expect(screen.queryByRole('link', { name: '下载 Mac 版' })).toBeNull();
     fail = false;
-    fireEvent.click(screen.getByRole('button', { name: '重新读取' }));
+    fireEvent.click(screen.getByRole('button', { name: '再读一次' }));
     expect(await screen.findByRole('link', { name: '下载 Mac 版' })).toBeTruthy();
   });
 

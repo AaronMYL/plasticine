@@ -123,6 +123,20 @@ describe('和 Plasticine 的对话', () => {
     await waitFor(async () => expect((await app.api.asks.get('ask-hard')).status).toBe('answered'));
   });
 
+  it('后台任务等你定：要你定卡就地画在对话里的任务卡里，能直接答（11-11）', async () => {
+    const app = await openThread(({ control }) => {
+      control.lines.put(control.lines.blank('clean', 'background', '修复删除记忆后名称残留',
+        { parentLineId: MAIN_LINE_ID, status: 'waiting' }));
+      control.asks.raise({ id: 'ask-clean', kind: 'approve', lineId: 'clean', question: '要把两份空记忆的名称也清掉吗？',
+        options: [{ id: 'allow', label: '彻底清掉', recommended: true, description: null },
+          { id: 'deny', label: '暂不清除', recommended: false, description: null }] });
+    });
+    const task = await screen.findByRole('article', { name: '线：修复删除记忆后名称残留' });
+    const card = await within(task).findByRole('region', { name: /要把两份空记忆的名称也清掉吗/ });
+    fireEvent.click(within(card).getByRole('button', { name: '彻底清掉（推荐）' }));
+    await waitFor(async () => expect((await app.api.asks.get('ask-clean')).status).toBe('answered'));
+  });
+
   it('笔记引用连版本写进消息：读回来是引用片、写明第几版；引用合计超过上限先说，不发', async () => {
     const app = await openThread();
     act(() => app.state.conversationUi.addQuote({ id: 'q-note', kind: 'note', sourceId: 'note-1', label: '《读书摘记》',

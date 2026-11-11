@@ -27,7 +27,7 @@ it('队友资料随line_changed更新，停止后晚到的请求不覆盖已卸�
   } finally { store.stop(); hub.stop(); }
 });
 
-it('群任务列表随事件更新，停启后重新读取并保持真实任务身份', async () => {
+it('群任务列表随事件更新，停启后再读一次并保持真实任务身份', async () => {
   const fake = createFakeApi({ seed: false, streamStepMs: 0 });
   fake.control.session.signInForDevelopment('测试机');
   const make = (name: string) => fake.api.mates.create({ requestId: createRequestId(), name,

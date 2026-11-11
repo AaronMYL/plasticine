@@ -78,7 +78,8 @@ export class DouyinFavorites {
 
   /** 排一次同步（同一件没了结就不另排）。 */
   sync(full = false): DouyinSyncView {
-    this.#state.videoMacJobs.queue('list', null, full || this.#state.videoWorks.needsOrderBackfill());
+    this.#state.videoMacJobs.queue('list', null, full || this.#state.videoWorks.needsOrderBackfill()
+      || this.#state.videoWorks.needsCoverBackfill());
     return this.syncView();
   }
 

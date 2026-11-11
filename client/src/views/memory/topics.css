@@ -60,11 +60,12 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  margin-top: -4px;
-  padding: 12px 14px;
+  min-height: 48px;
+  padding: 0 8px;
   border: 0;
-  border-radius: 8px;
-  background: var(--tint);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
   color: var(--fg);
   font-size: 14px;
   line-height: 22px;
@@ -74,7 +75,7 @@
 }
 
 .dream-entry:hover {
-  background: var(--tint2);
+  background: var(--tint);
 }
 
 .dream-entry:focus-visible {
@@ -439,5 +440,16 @@
 @media (max-width: 767px) {
   .doc-tier {
     margin-bottom: 16px;
+  }
+}
+
+/* 手机上一句话占满一行，「没错 / 不对」放在下面，不把字挤成一列。 */
+@media (max-width: 767px) {
+  .uncertain-main {
+    flex-wrap: wrap;
+  }
+
+  .uncertain-text {
+    flex-basis: 100%;
   }
 }

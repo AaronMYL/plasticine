@@ -29,7 +29,7 @@ function Changes({ result, onClose }: { result: SpaceToolResult; onClose: () => 
   return <Sheet open title={`第 ${result.version} 版的修改`} variant={phone ? 'drawer' : 'panel'} onClose={onClose}>
     <div className="space-change-list">
       {error === null ? null : <p role="alert">{error}
-        <button className="text-button" type="button" onClick={reload}>重新读取</button></p>}
+        <button className="text-button" type="button" onClick={reload}>再读一次</button></p>}
       {value?.map((entry) => <section className="space-change-row" key={entry.paragraph}>
         <h3>{`第 ${entry.paragraph} 段`}</h3>
         {entry.before === '' ? null : <p><del>{entry.before}</del></p>}

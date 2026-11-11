@@ -12,6 +12,7 @@ import { actorLabel, categoryLabel, channelLabel, grantEnded, grantInput, LOG_LA
 import { useOutboundChoices } from '../outbound/use-outbound-choices.ts';
 import { useSettingsDraft } from './settings-dialog-context.ts';
 import { SectionHead } from './section-head.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 interface Edit { row: OutboundGrant; draft: OutboundGrantInput }
 
@@ -67,9 +68,9 @@ export function OutboundSettings(): ReactNode {
   };
   return <div className="outbound-settings">
     <section className="block" aria-label="对外授权">
-      <SectionHead title="对外授权"><IconButton icon="refresh" label="重新读取授权" disabled={busy}
+      <SectionHead title="对外授权"><IconButton icon="refresh" label="再读一次授权" disabled={busy}
         onClick={() => setRevision((value) => value + 1)} /></SectionHead>
-      {!loaded ? <p className="block-empty">正在读取授权…</p> : null}
+      {!loaded ? <PageLoading rows={3} dense /> : null}
       {loaded && grants.length === 0 && error === null ? <p className="block-empty">还没有对外授权</p> : null}
       <div className="outbound-grants">
         {grants.map((row) => {

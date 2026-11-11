@@ -8,6 +8,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { SectionHead } from './section-head.tsx';
 import { SkillReader } from './skill-reader.tsx';
 import './skills.css';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const PAGE_SIZE = 20;
 const SKILLS_NOTE = '技能是做事的方法。Plasticine 会按任务选用，也可以把反复有效的做法整理成新技能。'
@@ -71,7 +72,7 @@ export function SkillsSection(): ReactNode {
         value={draft} onChange={(event) => setDraft(event.target.value)} />
     </form> : null}
     {error ? <p className="block-empty is-error" role="alert">读取技能失败，请刷新目录后再看。</p>
-      : view === null ? <p className="block-empty">正在读取技能目录…</p>
+      : view === null ? <PageLoading rows={3} dense />
       : view.skills.length === 0 ? <p className="block-empty">还没有匹配的技能。</p> : null}
     <ul className="skill-rows" aria-label="技能目录">
       {/* 11-04 重做悬停：技能名（英文短名）看不出做什么，说明是必要的，常显成名字下面一行小字。 */}

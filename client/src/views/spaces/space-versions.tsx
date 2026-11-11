@@ -31,7 +31,7 @@ export function SpaceVersions({ space, phone, onClose, onSelect, onChanged }: {
   return <Sheet open title="版本记录" variant={phone ? 'drawer' : 'panel'} onClose={onClose}>
     <div className="space-version-list">
       {error === null && failure === null ? null : <p role="alert" className="is-error">{failure ?? error}
-        <button className="text-button" type="button" onClick={reload}>重新读取</button></p>}
+        <button className="text-button" type="button" onClick={reload}>再读一次</button></p>}
       {latest < 2 ? null : <button type="button" className="text-button" disabled={busy} onClick={undo}>
         撤销上次修改</button>}
       {value?.versions.map((revision) => <button type="button" className="space-version-row" key={revision.version}

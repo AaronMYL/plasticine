@@ -15,7 +15,7 @@ function GroupLineCard({ line, groupId }: { line: LineView; groupId: string }): 
   if (tasks.status !== 'ready') return <div className="line-card">
     <span>{line.title}</span>{tasks.error === null ? null : <p className="line-note is-error" role="alert">
       {tasks.error}<button type="button" className="text-button"
-        onClick={() => { void live.mates.reloadTasks(groupId); }}>重新读取</button></p>}</div>;
+        onClick={() => { void live.mates.reloadTasks(groupId); }}>再读一次</button></p>}</div>;
   return <OrdinaryLineCard line={line} />;
 }
 

@@ -66,7 +66,7 @@ export function PhoneNotesHome({ onCollection, onOpen }: {
       </ul>
       {error === null || notes !== null ? null : (
         <p className="block-empty is-error" role="alert">
-          {error}{' '}<button type="button" className="text-button" onClick={retry}>重新读取列表</button>
+          {error}{' '}<button type="button" className="text-button" onClick={retry}>再读一次列表</button>
         </p>
       )}
       {recent.length === 0 ? null : (

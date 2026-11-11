@@ -257,6 +257,18 @@ function createVideoWorkStore(context: StoreContext) {
             AND CASE WHEN json_valid(work_id) THEN json_extract(work_id, '$.full') END = 1
         ) LIMIT 1`) !== undefined;
     },
+    /**
+     * 封面是 0131 才开始记的（11-11）：旧作品没有封面、加列以后又还没做完过一次全量翻收藏，下一次同步就全量翻一遍补上。
+     * 做完一次就不再全量（抖音不再返回的旧作品一直没有封面，不能让它每次都全量）。
+     */
+    needsCoverBackfill(): boolean {
+      return db.get(`SELECT id FROM video_works
+        WHERE platform = 'douyin' AND cover_url IS NULL AND NOT EXISTS (
+          SELECT 1 FROM video_mac_jobs WHERE kind = 'list' AND state = 'done'
+            AND CASE WHEN json_valid(work_id) THEN json_extract(work_id, '$.full') END = 1
+            AND finished_at >= (SELECT applied_at FROM schema_migrations WHERE id = '0131-video-cover')
+        ) LIMIT 1`) !== undefined;
+    },
     /** 加一条；同一作品已经在了就补上新知道的标题、配文、收藏夹，不动它走到哪。返回 created。 */
     upsert(input: NewVideoWork): { work: VideoWorkRow; created: boolean } {
       return db.transaction(() => {

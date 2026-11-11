@@ -23,12 +23,12 @@ it('页面崩溃只显示该区错误，重试可以恢复，外部对话仍可�
 
 it('外观在本设备记住，跟随系统取消固定主题', () => {
   const view = render(<AppearanceSection />);
-  fireEvent.change(screen.getByLabelText('外观'), { target: { value: 'dark' } });
+  fireEvent.click(screen.getByRole('button', { name: '深色' }));
   expect(document.documentElement.dataset.theme).toBe('dark');
   view.unmount();
   render(<AppearanceSection />);
-  expect(screen.getByLabelText('外观')).toHaveProperty('value', 'dark');
-  fireEvent.change(screen.getByLabelText('外观'), { target: { value: 'system' } });
+  expect(screen.getByRole('button', { name: '深色' }).getAttribute('aria-pressed')).toBe('true');
+  fireEvent.click(screen.getByRole('button', { name: '跟随系统' }));
   expect(document.documentElement.dataset.theme).toBeUndefined();
 });
 

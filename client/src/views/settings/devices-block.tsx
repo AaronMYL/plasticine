@@ -11,6 +11,7 @@ import { relativeTime } from '../../shell/relative-time.ts';
 import { SectionHead } from './section-head.tsx';
 import './account-profile.css';
 import { Failure, useRead } from './system-read.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 type Confirm = { kind: 'logout' } | { kind: 'revoke'; device: DeviceView };
 
@@ -47,7 +48,7 @@ export function Devices(): ReactNode {
   return (
     <section className="block" aria-labelledby="settings-devices">
       <SectionHead id="settings-devices" title="登录着的设备" />
-      {devices.value === null && devices.error === null ? <p className="block-empty" role="status">正在读…</p> : null}
+      {devices.value === null && devices.error === null ? <PageLoading rows={2} dense /> : null}
       {devices.error === null ? null : <Failure error={devices.error} onReload={devices.reload} />}
       <ul className="system-rows account-devices" aria-label="登录着的设备">
         {rows.map((device) => (

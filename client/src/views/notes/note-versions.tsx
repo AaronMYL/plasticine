@@ -109,7 +109,7 @@ export function NoteVersions({
           <p role="alert" className="is-error">
             {error}
             <button type="button" className="text-button" onClick={() => setRefresh((value) => value + 1)}>
-              重新读取
+              再读一次
             </button>
           </p>
         )}

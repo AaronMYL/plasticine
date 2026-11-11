@@ -55,7 +55,7 @@ describe('手机内容承接', () => {
       vi.spyOn(api.memoryTopics, 'get').mockRejectedValueOnce(new Error('读取中断，请重试'));
     } });
     expect(await screen.findByRole('alert')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '重新读取' }));
+    fireEvent.click(screen.getByRole('button', { name: '再读一次' }));
     await screen.findByRole('heading', { name: '周屿' });
     expect(app.api.memoryTopics.get).toHaveBeenCalledTimes(2);
   });

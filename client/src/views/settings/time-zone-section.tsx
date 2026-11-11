@@ -1,5 +1,5 @@
 // 设置 · 通用里的「时区」（2026-11-08 第 7 批：从删掉的「日常」一栏挪过来，放在外观后面）。选法、预览在 TimeZoneField；
-// 改了先进草稿（切页、刷新都在），出现「保存」才提交；保存没了结时输入锁住，只给「再核实」「重发」。读失败给「重新读取」。
+// 改了先进草稿（切页、刷新都在），出现「保存」才提交；保存没了结时输入锁住，只给「再核实」「重发」。读失败给「再读一次」。
 
 import { useEffect, type ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
@@ -11,6 +11,7 @@ import { useStore } from '../../state/use-store.ts';
 import { useOp } from '../pending/pending-ops.tsx';
 import { TimeZoneField } from './time-zone-field.tsx';
 import { useSettingsDraft } from './settings-dialog-context.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export function TimeZoneSection(): ReactNode {
   const live = useLive();
@@ -29,12 +30,12 @@ export function TimeZoneSection(): ReactNode {
   useSettingsDraft(!locked && changed, () => settings.discard());
   return (
     <div className="block settings-time-zone-block">
-      {data.status === 'loading' || data.status === 'idle' ? <p className="block-empty">正在读时区…</p> : null}
+      {data.status === 'loading' || data.status === 'idle' ? <PageLoading rows={1} dense /> : null}
       {data.error === null ? null : (
         <p className="block-empty is-error" role="alert">
           {data.error}{' '}
           <button type="button" className="text-button" onClick={() => void settings.reload()}>
-            重新读取
+            再读一次
           </button>
         </p>
       )}

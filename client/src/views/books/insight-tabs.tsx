@@ -29,7 +29,7 @@ function InsightContent(props: InsightStateProps & { currentChapter?: number; to
   let body: ReactNode;
   if (failure !== null) {
     body = <p className="block-empty is-error" role="alert">{failure}{' '}
-      <button type="button" className="text-button" onClick={reload}>重新读取</button></p>;
+      <button type="button" className="text-button" onClick={reload}>再读一次</button></p>;
   } else if (status === 'generating') {
     body = <p className="bk-generating" role="status">Plasticine 正在逐章归纳…</p>;
   } else if (status === 'failed') {

@@ -39,15 +39,15 @@ describe('设置 · 浏览器 · 网页翻译', () => {
     expect(changed).toBe(1);
   });
 
-  it('别处先改过：保存报冲突、草稿留着，重新读取后才换成新的', async () => {
+  it('别处先改过：保存报冲突、草稿留着，再读一次后才换成新的', async () => {
     const { app, section } = await openSection();
     fireEvent.click(within(section).getByRole('switch', { name: '用词表' }));
     const current = await app.api.translate.settings();
     await app.api.translate.saveSettings({ ...current, target: 'en' });
     fireEvent.click(within(section).getByRole('button', { name: '保存网页翻译' }));
-    expect((await within(section).findByRole('alert')).textContent).toContain('重新读取');
+    expect((await within(section).findByRole('alert')).textContent).toContain('再读一次');
     expect((within(section).getByRole('switch', { name: '用词表' }) as HTMLInputElement).checked).toBe(false);
-    fireEvent.click(within(section).getByRole('button', { name: '重新读取网页翻译设置' }));
+    fireEvent.click(within(section).getByRole('button', { name: '再读一次网页翻译设置' }));
     await waitFor(() => expect((within(section).getByRole('combobox', { name: '翻译成' }) as HTMLSelectElement).value)
       .toBe('en'));
   });

@@ -5,7 +5,7 @@ import { libraryChanged } from '../library/library-signal.ts';
 import { useLibraryTrash } from '../../shell/columns/library-subscriptions.tsx';
 // 文件（工具组的一项，《UI 方案》第 9 节）：状态目录里的工作目录。一层一层点进去；文件可以下载、上传（按类型和大小收，
 // 服务端再核）、新建文件夹；改名 / 移动、删除都要打一遍现在的名字（删除进回收，回收里能还原）。确认那一句和新名字存在
-// inline-drafts。读失败说原因并给「重新读取」。
+// inline-drafts。读失败说原因并给「再读一次」。
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';

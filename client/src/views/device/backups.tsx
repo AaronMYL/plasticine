@@ -122,7 +122,7 @@ export function Backups({ trigger = false }: { trigger?: boolean }): ReactNode {
         <p role="alert">
           {error}{' '}
           <button className="text-button" type="button" onClick={refresh}>
-            重新读取
+            再读一次
           </button>
         </p>
       )}

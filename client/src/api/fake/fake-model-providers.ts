@@ -149,7 +149,7 @@ export class FakeModelProviders implements ModelProvidersApi {
   async saveConfig(body: SaveModelConfigRequest): Promise<ListModelProvidersResponse> {
     this.session.require();
     if (body.version !== this.version) {
-      throw new ApiError({ kind: 'conflict', code: 'conflict', message: '模型设置刚在别处改过，重新读取后再保存。' });
+      throw new ApiError({ kind: 'conflict', code: 'conflict', message: '模型设置刚在别处改过，再读一次后再保存。' });
     }
     const resolver = this.resolver();
     const enabled = new Map(Object.entries(resolver.enabled));

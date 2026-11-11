@@ -66,7 +66,7 @@ export function NoteList(props: NoteListProps): ReactNode {
         <p className="block-empty is-error" role="alert">
           {props.error}
           {props.onRetry === undefined ? null : <button type="button" className="text-button"
-            onClick={props.onRetry}>重新读取列表</button>}
+            onClick={props.onRetry}>再读一次列表</button>}
         </p>
       )}
       {props.notes === null && props.error === null ? <PageLoading dense /> : null}

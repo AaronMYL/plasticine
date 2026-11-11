@@ -11,6 +11,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { clockTime } from './contact-time.ts';
 import { MailBody } from './mail-body.tsx';
 import './mail.css';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 type Loaded = { status: 'loading' } | { status: 'ready'; body: MailBodyResponse } | { status: 'failed'; error: string };
 
@@ -40,7 +41,7 @@ export function MailReading({ contactId, message }: { contactId: string; message
     return () => controller.abort();
   }, [api, contactId, message.id]);
   if (loaded.status === 'loading') {
-    return <p className="block-empty mail-wait">正在读这封邮件…</p>;
+    return <PageLoading rows={4} />;
   }
   if (loaded.status === 'failed') {
     return <p className="block-empty is-error" role="alert">{loaded.error}</p>;

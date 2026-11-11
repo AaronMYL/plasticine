@@ -1,6 +1,6 @@
 // 后台线在对话里的卡（2026-11-05 设计稿 Steps，11-07 第 17 条改）：在做 = 动态符号 · 标题 · 停止，下面一行实时状态；
 // 做完 = 勾 · 标题 ·「做了 n 步 ›」；跑完了但线说没做成 = 叉 + 一行红字原因（走查 11-07）（点开才读那条线的步骤），结果（普通文字）贴在卡下面；
-// 等你 = 陶土橙点 + 「等你定」；暂停 = 两竖 + 几点接着做；出错 = 红叉 + 原因 + 重试；被叫停 = 两竖 + 「停下了」。
+// 等你 = 陶土橙点 + 那张要你定卡就地展开（能直接答）；暂停 = 两竖 + 几点接着做；出错 = 红叉 + 原因 + 重试；被叫停 = 两竖 + 「停下了」。
 
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import type { LineView } from '../../api/shared.ts';
@@ -8,6 +8,7 @@ import { useLive, useTimeZone } from '../../live.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { useStore } from '../../state/use-store.ts';
 import { Icon } from '../../shell/icons.tsx';
+import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { StepList } from './line-parts.tsx';
 import { DeletedTask, TaskMenu } from './task-menu.tsx';
 import { unmetReason, unmetText, WorkLineAction, WorkStatusGlyph, workStatusText } from './work-status.tsx';
@@ -55,6 +56,9 @@ export function LineCard({ line, result, stopped = false }: { line: LineView; re
   const unmet = unmetReason(line);
   const second = stopped ? '停下了' : done ? null : workStatusText(line, timeZone);
   const [deleted, setDeleted] = useState(false);
+  // 等你定的线：那张要你定卡就地画在卡里，在对话里也能直接答（11-11 Aaron：只能去任务「等你」里处理）。
+  const asks = useStore(useLive().asks.store);
+  const ask = line.status === 'waiting' ? asks.open.find((item) => item.lineId === line.id) ?? null : null;
   if (line.archivedAt != null) {
     return deleted ? <DeletedTask line={line} onUndone={() => setDeleted(false)} /> : null;
   }
@@ -72,7 +76,9 @@ export function LineCard({ line, result, stopped = false }: { line: LineView; re
         </div>
         {unmet === null || stopped ? null
           : <p className="line-card-status" data-status="unmet">{unmetText(unmet)}</p>}
-        {second === null ? null : <p className="line-card-status" data-status={line.status}>{second}</p>}
+        {second === null || ask !== null ? null
+          : <p className="line-card-status" data-status={line.status}>{second}</p>}
+        {ask === null ? null : <div className="line-card-ask"><LineAskCard ask={ask} /></div>}
         {done && !folded ? <DoneList lineId={line.id} listId={listId} /> : null}
         {error === null ? null : <p className="line-card-note is-error" role="alert">{error}</p>}
       </article>

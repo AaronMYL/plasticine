@@ -1,4 +1,4 @@
-// 设置 · 系统各块共用：读一样东西（可轮询），读失败就地说原因并给「重新读取」。
+// 设置 · 系统各块共用：读一样东西（可轮询），读失败就地说原因并给「再读一次」。
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { errorText } from '../../api/errors.ts';
@@ -34,7 +34,7 @@ export function useRead<T>(read: (signal: AbortSignal) => Promise<T>, deps: read
 export function Failure({ error, onReload }: { error: string; onReload: () => void }): ReactNode {
   return (
     <p className="block-empty is-error" role="alert">
-      {error}{' '}<button type="button" className="text-button" onClick={onReload}>重新读取</button>
+      {error}{' '}<button type="button" className="text-button" onClick={onReload}>再读一次</button>
     </p>
   );
 }

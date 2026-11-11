@@ -22,7 +22,7 @@ export function MateWorkPanel({ group, phone = false }: { group: MateGroupView; 
       onClick={() => setCreating(true)}>发布任务</button></div>
     {tasks.error === null ? null : <p className="line-note is-error" role="alert">{tasks.error}
       <button type="button" className="text-button" onClick={() => { void live.mates.reloadTasks(group.id); }}>
-        重新读取</button></p>}
+        再读一次</button></p>}
     <div className="mate-work-tasks">{tasks.lines.map((task) => <MateGroupTaskCard key={task.id}
       line={newerLine(list.lines.find((item) => item.id === task.id) ?? null, task)} />)}</div>
     <h3>队友分工</h3>

@@ -48,7 +48,7 @@ export class FakeTranslate implements TranslateApi {
   async saveSettings(body: SetTranslateSettings): Promise<TranslateSettingsView> {
     this.session.require();
     if (body.version !== this.stored.version) {
-      throw new ApiError({ kind: 'conflict', code: 'version_conflict', message: '翻译设置已在另一处更新，请重新读取。' });
+      throw new ApiError({ kind: 'conflict', code: 'version_conflict', message: '翻译设置已在另一处更新，请再读一次。' });
     }
     const sites = [...new Set(body.alwaysSites.map((site) => site.toLowerCase().replace(/^www\./, '')))];
     this.stored = { ...body, alwaysSites: sites, version: body.version + 1 };

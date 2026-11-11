@@ -68,7 +68,7 @@ export function SubscriptionPage({ subscriptionId, phone, navigate }: Subscripti
     return <div className="page lib-page">
       {error === null ? <PageLoading page />
         : <p className="block-empty is-error" role="alert">{error}{' '}
-          <button type="button" className="text-button" onClick={reload}>重新读取</button></p>}
+          <button type="button" className="text-button" onClick={reload}>再读一次</button></p>}
     </div>;
   }
   const view = value;

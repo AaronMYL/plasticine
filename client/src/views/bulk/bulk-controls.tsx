@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
+import { RevealMore } from '../../shell/reveal-more.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { bulkKey, type BulkItem, type BulkSelection } from './use-bulk-selection.ts';
 import './bulk.css';
@@ -35,8 +36,8 @@ export function BulkHeader({ selection, items, trash = false, allowEmpty = true,
       checked={items.length > 0 && selection.selected.length === items.length} disabled={selection.busy}
       onChange={selection.all} />全选</label><span className="text-meta">已选 {selection.selected.length}</span>
       <button type="button" className="text-button" disabled={selection.busy} onClick={selection.finish}>完成</button>
-    </> : <button type="button" className="secondary-button" disabled={items.length === 0}
-      onClick={selection.start}>选择</button>}
+    </> : <RevealMore label="更多操作" actions={[{ icon: 'check', label: '选择', disabled: items.length === 0,
+      onSelect: () => selection.start() }]} />}
     {trash && allowEmpty ? <button type="button" className="secondary-button bulk-danger"
       disabled={items.length === 0 || selection.busy} onClick={() => setPurging([...items])}>
       <Icon name="trash" size={14} />清空</button> : null}

@@ -69,7 +69,7 @@ describe('统一工作详情', () => {
     expect(within(detail).getByText('最后一段不会被预览长度截掉。')).toBeTruthy();
     expect(input.value).toBe('这句还没发出');
     api.lines.details = read;
-    fireEvent.click(within(detail).getByRole('button', { name: '重试' }));
+    fireEvent.click(within(detail).getByRole('button', { name: '再读一次' }));
     await waitFor(() => expect(within(detail).queryByText('刷新失败，保留上次内容')).toBeNull());
     expect(input.value).toBe('这句还没发出');
   });

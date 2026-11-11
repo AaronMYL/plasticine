@@ -2,12 +2,18 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { expect, it } from 'vitest';
 import { renderApp, seedNote } from '../../helpers.tsx';
 
+/** 「选择」收在页头的 ⋯ 里（11-11 页面规范）。 */
+async function startSelecting(): Promise<void> {
+  fireEvent.click((await screen.findAllByRole('button', { name: '更多操作' }))[0]!);
+  fireEvent.click(await screen.findByRole('menuitem', { name: '选择' }));
+}
+
 it('笔记多选会替换阅读区，移动后列表与最近删除数量同步', async () => {
   const app = await renderApp({ hash: '#/notes', setup: (fake) => {
     seedNote(fake, 'a', '# 第一篇', { folder: '笔记' });
     seedNote(fake, 'b', '# 第二篇', { folder: '笔记' });
   } });
-  fireEvent.click(await screen.findByRole('button', { name: '选择' }));
+  await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: '全选' }));
   expect(screen.getByRole('heading', { name: '选了 2 篇笔记' })).toBeTruthy();
   expect(document.querySelector('.note-row[aria-current="true"]')).toBeNull();
@@ -29,14 +35,14 @@ it('笔记多选会替换阅读区，移动后列表与最近删除数量同步'
 it('资料库选择空间删除后刷新列表和最近删除，批量还原后即时移出回收', async () => {
   const app = await renderApp({ hash: '#/library', setup: (fake) => fake.control.spaces.seed() });
   const row = (await app.api.spaces.list()).spaces[0]!;
-  fireEvent.click(await screen.findByRole('button', { name: '选择' }));
+  await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: `选择${row.title}` }));
   fireEvent.click(screen.getByRole('button', { name: '删除' }));
   fireEvent.click(screen.getByRole('button', { name: '删除 1 项' }));
   await waitFor(() => expect(screen.queryByRole('checkbox', { name: `选择${row.title}` })).toBeNull());
   expect((await app.api.library.trash()).items.some((item) => item.id === row.id)).toBe(true);
   await act(async () => { window.location.hash = '#/library/trash'; });
-  fireEvent.click(await screen.findByRole('button', { name: '选择' }));
+  await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: `选择${row.title}` }));
   fireEvent.click(screen.getByRole('button', { name: '还原' }));
   await waitFor(() => expect(screen.queryByRole('checkbox', { name: `选择${row.title}` })).toBeNull());
@@ -49,7 +55,7 @@ it('文件页多选发送文件与文件夹身份，删除后刷新到最近删�
     fake.control.m5b.files.seed('报告/摘要.md');
     fake.control.m5b.files.seed('说明.txt');
   } });
-  fireEvent.click((await screen.findAllByRole('button', { name: '选择' }))[0]!);
+  await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: '全选' }));
   fireEvent.click(screen.getByRole('button', { name: '删除' }));
   fireEvent.click(screen.getByRole('button', { name: '删除 2 项' }));
@@ -63,7 +69,7 @@ it('图书馆批量删除与数量同步，选择时只保留一份书目', asyn
     seedBooks(fake.control.books, fake.control.lines, new Date('2026-10-27T02:00:00Z'));
   } });
   const books = (await app.api.books.list()).books;
-  fireEvent.click(await screen.findByRole('button', { name: '选择' }));
+  await startSelecting();
   expect(screen.queryByRole('region', { name: '在读' })).toBeNull();
   fireEvent.click(screen.getByRole('checkbox', { name: `选择${books[0]!.title}` }));
   fireEvent.click(screen.getByRole('button', { name: '删除' }));
@@ -76,7 +82,7 @@ it('手机仅放行文件工具，能进行批量选择，其他工具保持原�
   await renderApp({ width: 390, hash: '#/tools/files', setup: (fake) => {
     fake.control.m5b.files.seed('示例.txt');
   } });
-  fireEvent.click((await screen.findAllByRole('button', { name: '选择' }))[0]!);
+  await startSelecting();
   expect(screen.getByRole('checkbox', { name: '选择示例.txt' })).toBeTruthy();
   expect(screen.queryByText('工具暂时不能在手机打开。')).toBeNull();
   await act(async () => { window.location.hash = '#/tools/money'; });

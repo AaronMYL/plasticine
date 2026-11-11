@@ -1,6 +1,6 @@
 // 关注点的编辑器（第 7 批第 10 条起是第二栏「按关注点的新闻」那一行 ⋯ 里的「设置…」）：加关注点；关注点 · 不要的各一组，
 // 每个来源一行：名字、查询词、档位（偏多 / 正常 / 偏少 / 关掉，分段控件；关掉不删）；最后是最近来源的网站和条数。
-// 加订阅、Reddit、X、抖音收藏都在第二栏的「加来源」里，不在这里。读失败给「重新读取」。
+// 加订阅、Reddit、X、抖音收藏都在第二栏的「加来源」里，不在这里。读失败给「再读一次」。
 
 import type { ReactNode } from 'react';
 import type { FeedSourceView } from '../../api/types.ts';
@@ -93,7 +93,7 @@ export function FeedSources(): ReactNode {
         <p className="block-empty is-error" role="alert">
           {data.error}{' '}
           <button type="button" className="text-button" onClick={() => void live.feed.loadSources()}>
-            重新读取
+            再读一次
           </button>
         </p>
       )}

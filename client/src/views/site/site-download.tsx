@@ -76,7 +76,7 @@ function DesktopCard({ name, kind, asset, mine, load, onRetry }: { name: string;
       <div className="ch-card-head"><strong>{name}</strong>
         <span className="ch-sub ch-mono">{asset === null ? kind : `${kind} · ${size(asset)}`}</span></div>
       {load === 'failed' ? <p className="ch-error" role="alert">没读到安装包。{' '}
-        <button type="button" className="ch-act" onClick={onRetry}>重新读取</button></p>
+        <button type="button" className="ch-act" onClick={onRetry}>再读一次</button></p>
         : asset === null ? <button type="button" className="ch-btn ch-btn-ghost" disabled>
           {load === 'loading' ? '正在读…' : `${name} 版还没有`}</button>
           : <a className={mine ? 'ch-btn ch-btn-primary' : 'ch-btn ch-btn-ghost'} href={asset.url}>下载 {name} 版</a>}
@@ -97,7 +97,7 @@ function ServerCard(): ReactNode {
     <div className="ch-card">
       <div className="ch-card-head"><strong>服务器</strong><span className="ch-sub ch-mono">Linux</span></div>
       {command.kind === 'failed' ? <p className="ch-error" role="alert">没读到安装命令。{' '}
-        <button type="button" className="ch-act" onClick={retry}>重新读取</button></p> : (
+        <button type="button" className="ch-act" onClick={retry}>再读一次</button></p> : (
         <div className="ch-command">
           <code className="ch-mono">{command.kind === 'ready' ? command.value : '正在读…'}</code>
           <button type="button" className="ch-act" disabled={command.kind !== 'ready'}

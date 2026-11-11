@@ -235,7 +235,7 @@
 }
 
 /* 外观：段标题就是它的名字，选择框按内容宽，不拉满一行。 */
-.settings-appearance { align-self: flex-start; width: auto; min-width: 200px; }
+.settings-appearance { align-self: flex-start; }
 
 /* 设置 · 系统（2026-11-05 设计稿 Settings-System）：版本一行在描边框里；运行情况两列；设备、备份一行一条，行底 1px --line。 */
 .system-update {

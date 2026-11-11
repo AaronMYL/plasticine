@@ -143,3 +143,15 @@ test('短标题：太长截到 40 字加省略号；只有话题时用原文', (
   assert.equal(shortVideoTitle('#只有话题'), '');
   assert.equal(shortVideoTitle('第一行标题\n第二行'), '第一行标题');
 });
+
+test('加封面以后第一次同步全量翻一遍补封面，做完就回到增量', () => {
+  t.state.videoWorks.upsert({ ...listed(1), platform: 'douyin', url: 'https://www.douyin.com/video/1' });
+  const service = favorites();
+  service.sync(false);
+  const first = service.jobs()[0]!;
+  assert.equal(first.kind === 'list' && first.full, true);
+  service.report({ requestId: 'cover-full', jobId: first.id, list: { folders: [], works: [], done: true } });
+  service.sync(false);
+  const second = service.jobs()[0]!;
+  assert.equal(second.kind === 'list' && second.full, false);
+});

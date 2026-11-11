@@ -1,6 +1,6 @@
 // 记账（工具组的浮层，《UI 方案》第 9 节；账本 / 资产 / 统计照旧版三页）：顶上是还没了结的记账操作；「记一笔」的字存在
 // inline-drafts（切页、刷新不丢），没了结时不让写新的一笔；账本按天、资产按账户、统计按周 / 月 / 年。金额都是整数分，
-// 显示时才换成元。读失败说原因并给「重新读取」。
+// 显示时才换成元。读失败说原因并给「再读一次」。
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';

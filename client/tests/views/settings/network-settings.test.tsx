@@ -108,7 +108,7 @@ describe('设置 · 通知记录', () => {
     await settle();
   });
 
-  it('通知记录读失败：说原因并给「重新读取」，不显示成空（原站内信浮层的同一条，第 113 条挪到这里）', async () => {
+  it('通知记录读失败：说原因并给「再读一次」，不显示成空（原站内信浮层的同一条，第 113 条挪到这里）', async () => {
     const failing = { on: true };
     await renderApp({ hash: '#/settings/notices', setup: (fake) => {
       seed(fake);
@@ -123,7 +123,7 @@ describe('设置 · 通知记录', () => {
     const alert = await within(pane()).findByRole('alert');
     expect(within(pane()).queryByText('还没有通知')).toBeNull();
     failing.on = false;
-    fireEvent.click(within(alert).getByRole('button', { name: '重新读取' }));
+    fireEvent.click(within(alert).getByRole('button', { name: '再读一次' }));
     expect(await within(pane()).findByRole('list', { name: '通知' })).toBeTruthy();
   });
 });

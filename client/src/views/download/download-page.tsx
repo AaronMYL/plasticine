@@ -57,7 +57,7 @@ function ServerInstall({ fetcher, manifestUrl }: { fetcher: typeof fetch; manife
   }
   if (command.kind === 'failed') {
     return <p className="download-error" role="alert">没读到安装命令。
-      <button type="button" className="text-button" onClick={retry}>重新读取</button></p>;
+      <button type="button" className="text-button" onClick={retry}>再读一次</button></p>;
   }
   const copy = (): void => {
     navigator.clipboard.writeText(command.value).then(() => setCopied(true), (cause: unknown) => {
@@ -108,7 +108,7 @@ function DesktopButton({ platform, desktop, onRetry }: { platform: 'mac' | 'wind
   const name = platform === 'mac' ? 'Mac' : 'Windows';
   if (desktop.kind === 'failed') {
     return <p className="download-error" role="alert">没读到安装包。
-      <button type="button" className="text-button" onClick={onRetry}>重新读取</button></p>;
+      <button type="button" className="text-button" onClick={onRetry}>再读一次</button></p>;
   }
   const asset = desktop.kind === 'ready' ? desktop.value[platform] : null;
   const detail = platform === 'mac' ? 'Apple 芯片和 Intel 都能用' : '64 位';

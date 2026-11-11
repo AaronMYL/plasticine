@@ -113,7 +113,7 @@ export function BackupRestoreCard({ id }: { id: string }): ReactNode {
         <p role="alert">
           {error}
           <button type="button" className="text-button" onClick={refresh}>
-            重新读取预览
+            再读一次预览
           </button>
         </p>
       )}

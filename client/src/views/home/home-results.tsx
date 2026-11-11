@@ -58,7 +58,7 @@ export function HomeNew({ now }: { now: Date }): ReactNode {
       </div> : null}
       {data.error === null ? null : <div className="home-results-error" role="alert">
         <span>{results.length > 0 ? '刷新失败，保留上次结果' : '暂时读不到工作结果'}</span>
-        <button type="button" className="text-button" disabled={retrying} onClick={retry}>重试</button>
+        <button type="button" className="text-button" disabled={retrying} onClick={retry}>再读一次</button>
       </div>}
       <ul className="home-list">
         {(all ? results : results.slice(0, 4)).map((line) => <li key={line.id}>

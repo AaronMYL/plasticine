@@ -15,6 +15,7 @@ import { WorkProcess, WorkRequest, WorkResults } from './work-content.tsx';
 import { WorkLineAction, WorkStatusGlyph, workStatusText } from './work-status.tsx';
 import { WorkSupplement } from './work-supplement.tsx';
 import { useWorkDetails } from './use-work-details.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export interface LineWorkDetailProps {
   lineId: string;
@@ -44,7 +45,7 @@ export function LineWorkDetail({ lineId, navigate, task, before, actions, hideCo
   if (line === null) return <div className="work-placeholder" role={detail.error === null ? 'status' : 'alert'}>
     <p>{detail.error ?? '正在读工作…'}</p>
     {detail.error === null ? null : <button type="button" className="secondary-button"
-      onClick={() => void detail.refresh()}>重试</button>}
+      onClick={() => void detail.refresh()}>再读一次</button>}
   </div>;
   const elapsed = !manual && line.status === 'running' ? lineElapsed(line, now) : null;
   const results = detail.data?.results ?? [];
@@ -83,9 +84,9 @@ export function LineWorkDetail({ lineId, navigate, task, before, actions, hideCo
       {manual ? actions : null}
       {detail.error === null ? null : <div className="work-error" role="alert">
         <span>{detail.data === null ? detail.error : '刷新失败，保留上次内容'}</span>
-        <button type="button" className="text-button" onClick={() => void detail.refresh()}>重试</button>
+        <button type="button" className="text-button" onClick={() => void detail.refresh()}>再读一次</button>
       </div>}
-      {detail.loading && detail.data === null ? <p className="work-state-note" role="status">正在读工作内容…</p> : null}
+      {detail.loading && detail.data === null ? <PageLoading rows={4} /> : null}
       <WorkRequest request={request} />
       {manual ? null : asks.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}
       {!manual && line.status === 'running' && detail.thread.live?.text ? <section className="work-section">

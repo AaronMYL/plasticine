@@ -127,7 +127,7 @@ describe('首页「现在」', () => {
     expect(await screen.findByText('刷新失败，保留上次结果')).toBeTruthy();
     expect(screen.getByText('已经完成的调研')).toBeTruthy();
     fail = false;
-    fireEvent.click(within(screen.getByRole('region', { name: '新的' })).getByRole('button', { name: '重试' }));
+    fireEvent.click(within(screen.getByRole('region', { name: '新的' })).getByRole('button', { name: '再读一次' }));
     await waitFor(() => expect(screen.queryByText('刷新失败，保留上次结果')).toBeNull());
   });
 
@@ -137,8 +137,8 @@ describe('首页「现在」', () => {
     const recent = await screen.findByRole('region', { name: '新的' });
     expect(await within(recent).findByText('刷新失败，保留上次结果')).toBeTruthy();
     expect(within(recent).getByText('杭州周末带父母去的三个地方')).toBeTruthy();
-    fireEvent.click(within(recent).getByRole('button', { name: '重试' }));
-    await waitFor(() => expect(within(recent).getByRole('button', { name: '重试' }).hasAttribute('disabled'))
+    fireEvent.click(within(recent).getByRole('button', { name: '再读一次' }));
+    await waitFor(() => expect(within(recent).getByRole('button', { name: '再读一次' }).hasAttribute('disabled'))
       .toBe(false));
     expect(within(recent).getByText('刷新失败，保留上次结果')).toBeTruthy();
   });

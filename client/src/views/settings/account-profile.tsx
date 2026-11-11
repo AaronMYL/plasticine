@@ -21,6 +21,7 @@ import { useOp } from '../pending/pending-ops.tsx';
 import { joinDraftKey } from './network-store.ts';
 import { useSettingsDraft } from './settings-dialog-context.ts';
 import './account-profile.css';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const AVATAR_SIZE = 28;
 
@@ -181,7 +182,7 @@ export function AccountProfile(): ReactNode {
   };
   return (
     <section className="block account-profile" aria-label="名字和密码">
-      {state === null && error === null ? <p className="block-empty" role="status">正在读…</p> : null}
+      {state === null && error === null ? <PageLoading rows={3} dense /> : null}
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {state === null ? null : <ul className="system-rows">
         <li className="system-row account-row">

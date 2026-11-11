@@ -25,7 +25,7 @@ function Work({ projectId, navigate }: { projectId: string; navigate: (route: Ro
   return <section className="phone-read-section" aria-label="项目工作">
     <h2>工作</h2>
     {data.error === null ? null : <p className="block-empty is-error" role="alert">{data.error}
-      <button type="button" className="text-button" onClick={() => void live.lines.loadList()}>重新读取</button>
+      <button type="button" className="text-button" onClick={() => void live.lines.loadList()}>再读一次</button>
     </p>}
     <ul className="phone-read-list">{lines.map((line) => <li key={line.id}>
       <button type="button" className="phone-read-row" aria-label={`查看工作：${line.title}`}
@@ -88,7 +88,7 @@ export function PhoneProject({ projectId, navigate, onBack }: {
       <h1>{detail?.project.name ?? '项目'}</h1><span className="tag tag-neutral">只读</span>
     </header>
     {error === null ? null : <p className="block-empty is-error" role="alert">
-      {error} <button type="button" className="text-button" onClick={reload}>重新读取</button>
+      {error} <button type="button" className="text-button" onClick={reload}>再读一次</button>
     </p>}
     {detail === null ? error === null ? <PageLoading page /> : null
       : <Body detail={detail} navigate={navigate} />}

@@ -57,7 +57,7 @@ export class FakeAgreements implements AgreementsApi {
     }
     const current = this.require(id);
     if (current.version !== input.version) {
-      throw new ConflictError(current, '词语已经改过，请重新读取后再保存。', undefined);
+      throw new ConflictError(current, '词语已经改过，请再读一次后再保存。', undefined);
     }
     const { requestId, version: _version, ...proposedTerm } = input;
     const row = this.changeElsewhere(id, { proposedTerm, proposedDiff: `+ ${proposedTerm.text}` });

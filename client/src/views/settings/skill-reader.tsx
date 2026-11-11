@@ -46,7 +46,7 @@ export function SkillReader({ descriptor }: { descriptor: SkillDescriptor }): Re
     </select>
     {busy ? <p className="tool-sub">正在读取方法…</p> : null}
     {error ? <p className="block-empty is-error" role="alert">读取技能失败。{' '}
-      <button type="button" className="text-button" onClick={() => setRefresh((value) => value + 1)}>重新读取</button>
+      <button type="button" className="text-button" onClick={() => setRefresh((value) => value + 1)}>再读一次</button>
     </p> : null}
     <div className="skill-method"><Markdown text={methodText(text, path, page?.nextOffset === null)} /></div>
     {page?.nextOffset !== null && page?.nextOffset !== undefined ? <button type="button" className="text-button"

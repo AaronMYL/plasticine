@@ -57,7 +57,7 @@ function OpenNotePane({ noteId, onDeleted }: { noteId: string | null; onDeleted:
         <p className="block-empty is-error" role="alert">
           {open.error}
           <button type="button" className="text-button" onClick={() => setRefresh((value) => value + 1)}>
-            重新读取笔记
+            再读一次笔记
           </button>
         </p>
       ) : null}

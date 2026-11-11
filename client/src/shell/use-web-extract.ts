@@ -45,7 +45,7 @@ export function useWebExtract(tabId: string, url: string, native: NativeWebTabs 
       const snapshot = await readPageSnapshot(tabId);
       if (snapshot === null || snapshot.text.trim() === '') throw new Error('这里读不到网页正文，不能提取或归档。');
       const images = await current.current?.tool(tabId, { kind: 'extract_images' });
-      if (!Value.Check(WebExtractImagesSchema, images)) throw new Error('网页图片格式不对，请重新读取。');
+      if (!Value.Check(WebExtractImagesSchema, images)) throw new Error('网页图片格式不对，请再读一次。');
       const result = await api.browser.extract({ url: snapshot.url, title: snapshot.title, text: snapshot.text,
         totalChars: snapshot.totalChars, truncated: snapshot.truncated, images }, controller.signal);
       if (!controller.signal.aborted) setPage(result);

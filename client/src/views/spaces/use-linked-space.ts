@@ -4,7 +4,7 @@ import { errorText } from '../../api/errors.ts';
 import type { SpaceView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 
-/** 所有嵌入入口读取同一份空间；失效事件只有身份，正文总是重新读取最新版本。 */
+/** 所有嵌入入口读取同一份空间；失效事件只有身份，正文总是再读一次最新版本。 */
 export function useLinkedSpace(spaceId: string | null) {
   const api = useApi();
   const live = useLive();

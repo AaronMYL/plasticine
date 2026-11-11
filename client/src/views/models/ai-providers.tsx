@@ -123,7 +123,7 @@ export function AiProviders(): ReactNode {
       </div>
       {data.error === null ? null : (
         <p className="block-empty is-error" role="alert">{data.error}{' '}
-          <button type="button" className="text-button" onClick={() => void live.models.reload()}>重新读取</button>
+          <button type="button" className="text-button" onClick={() => void live.models.reload()}>再读一次</button>
         </p>
       )}
       {adding ? (

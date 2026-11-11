@@ -1,5 +1,5 @@
 // M5 乙路的页面在整个应用里：结果不明的写操作页顶单列、「再核实」原样重发；表单的字按 id 存 sessionStorage，刷新还在；
-// 读失败说原因并给「重新读取」；文件删除要打一遍名字、进回收能还原；工具开关由本人会话确认；对话里的成果卡片点开在主区，
+// 读失败说原因并给「再读一次」；文件删除要打一遍名字、进回收能还原；工具开关由本人会话确认；对话里的成果卡片点开在主区，
 // 核实之后卡和页都换成核实过的那一版。站内信浮层和铃第 113 条去掉了（邮件并进联系人，见 views/contacts；Plasticine 通知
 // 进「设置 · 通知记录」，见 views/settings/network-settings.test.tsx）。
 
@@ -160,7 +160,7 @@ describe('记账', () => {
     expect(within(again).getByLabelText('商户')).toHaveProperty('value', '菜场');
   });
 
-  it('账本读失败：说原因并给「重新读取」，不显示成「还没有记账」', async () => {
+  it('账本读失败：说原因并给「再读一次」，不显示成「还没有记账」', async () => {
     const app = await renderApp({
       setup: (fake: FakeApi) => {
         vi.spyOn(fake.api.money, 'month').mockRejectedValueOnce(unavailable());
@@ -169,9 +169,9 @@ describe('记账', () => {
     await settle();
     const sheet = openTool('记账');
     const alert = await within(sheet).findByRole('alert');
-    expect(alert.textContent).toContain('重新读取');
+    expect(alert.textContent).toContain('再读一次');
     expect(within(sheet).queryByText('这个月还没有记账。')).toBeNull();
-    fireEvent.click(within(alert).getByRole('button', { name: '重新读取' }));
+    fireEvent.click(within(alert).getByRole('button', { name: '再读一次' }));
     await within(sheet).findByText('这个月还没有记账。');
     expect(app.api.money.month).toHaveBeenCalledTimes(2);
   });

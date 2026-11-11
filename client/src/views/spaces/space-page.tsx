@@ -35,6 +35,7 @@ import { SpaceVersions } from './space-versions.tsx';
 import type { Route } from '../../shell/routes.ts';
 import './spaces.css';
 import './space-frame.css';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export interface SpacePageProps {
   spaceId: string;
@@ -95,10 +96,10 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   }, [value?.id]);
   if (space === null) {
     return <div className="page space-page">
-      {error === null && history.error === null ? <p className="block-empty" role="status">正在读…</p>
+      {error === null && history.error === null ? <PageLoading rows={6} />
         : <p className="block-empty is-error" role="alert">{error ?? history.error}{' '}
           <button type="button" className="text-button" onClick={() => { reload(); history.reload(); }}>
-            重新读取</button></p>}
+            再读一次</button></p>}
     </div>;
   }
   const changed = (next: SpaceView | null): void => {
@@ -169,7 +170,7 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
           <button type="button" className="text-button" onClick={() => {
             setSaved(null);
             reload();
-          }}>重新读取</button>
+          }}>再读一次</button>
         </div>
       )}
       {editing || position !== undefined || saver.error !== null ? null

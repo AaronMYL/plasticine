@@ -236,7 +236,7 @@ export function ProjectDetailPage({ projectId, navigate }: {
       <div className="page proj-page proj-detail">
         {error === null ? <PageLoading page /> : (
           <p className="proj-error" role="alert">
-            {error} <button type="button" className="text-button" onClick={reload}>重新读取</button>
+            {error} <button type="button" className="text-button" onClick={reload}>再读一次</button>
           </p>
         )}
       </div>

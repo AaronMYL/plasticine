@@ -58,7 +58,7 @@ describe('发送前的当前页来源', () => {
     } });
     await waitFor(() => expect(app.api.notes.get).toHaveBeenCalledTimes(1));
     await act(async () => { rejectReads.shift()!(); });
-    await screen.findByRole('button', { name: '重新读取笔记' });
+    await screen.findByRole('button', { name: '再读一次笔记' });
     fireEvent.click(screen.getByRole('button', { name: '问这一页' }));
     await waitFor(() => expect(app.api.notes.get).toHaveBeenCalledTimes(2));
     await act(async () => { rejectReads.shift()!(); });
@@ -143,7 +143,7 @@ describe('发送前的当前页来源', () => {
     expect((screen.getByRole('textbox', { name: '问一句' }) as HTMLTextAreaElement).value).toBe('按这个页面整理');
   });
 
-  it('发送时重新读取期间改了草稿，不清空新文字也不发送旧问题', async () => {
+  it('发送时再读一次期间改了草稿，不清空新文字也不发送旧问题', async () => {
     const snapshot = vi.fn(() => Promise.resolve(SNAPSHOT));
     const app = await webPage(snapshot);
     await within(screen.getByRole('group', { name: '当前页来源' })).findByText('可见正文');

@@ -77,7 +77,7 @@ export function TranslateSettingsSection(): ReactNode {
     <section className="block settings-ai-choice translate-settings" aria-label="网页翻译"
       data-settings-focus="translate" tabIndex={-1}>
       <SectionHead title="网页翻译" tip={TRANSLATE_NOTE}>
-        <IconButton icon="refresh" label="重新读取网页翻译设置" disabled={busy} onClick={() => {
+        <IconButton icon="refresh" label="再读一次网页翻译设置" disabled={busy} onClick={() => {
           setDraft(null);
           setError(null);
           setMessage(null);

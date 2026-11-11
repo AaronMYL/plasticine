@@ -40,7 +40,7 @@ export function restoreNotes(storage: KeyValueStorage | null, owner: string, now
       .slice(0, NOTE_CACHE_MAX_STORED),
     list: value.list !== null && current(value.list.cachedAt) ? value.list : null };
   } catch (cause) {
-    console.warn('笔记缓存未能恢复，将重新读取正文。', cause);
+    console.warn('笔记缓存未能恢复，将再读一次正文。', cause);
     clearStoredNotes(storage);
     return empty;
   }

@@ -16,7 +16,7 @@ const PREFIX = 'feed:subscription:';
 function pending(raw: string | undefined): AddSubscriptionRequest | null {
   if (raw === undefined) { return null; }
   const value: unknown = JSON.parse(raw);
-  if (!Value.Check(AddSubscriptionRequestSchema, value)) { throw new Error('订阅草稿格式不对，请保留草稿后重新读取。'); }
+  if (!Value.Check(AddSubscriptionRequestSchema, value)) { throw new Error('订阅草稿格式不对，请保留草稿后再读一次。'); }
   return value;
 }
 

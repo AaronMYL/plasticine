@@ -33,11 +33,11 @@ it('首次正文和列表读取失败各自重试，旧内容不会被误报为�
     vi.spyOn(fake.api.notes, 'get').mockRejectedValueOnce(new Error('正文暂时断开'));
     vi.spyOn(fake.api.notes, 'list').mockRejectedValueOnce(new Error('列表暂时断开'));
   } });
-  fireEvent.click(await screen.findByRole('button', { name: '重新读取笔记' }));
+  fireEvent.click(await screen.findByRole('button', { name: '再读一次笔记' }));
   await waitFor(() => expect(document.querySelector('.ProseMirror')?.textContent).toContain('重试以后读到的笔记'));
   fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
   expect(screen.queryByText('还没有笔记。')).toBeNull();
-  fireEvent.click(await screen.findByRole('button', { name: '重新读取列表' }));
+  fireEvent.click(await screen.findByRole('button', { name: '再读一次列表' }));
   expect(await screen.findByRole('button', { name: /重试以后读到的笔记/ })).toBeTruthy();
 });
 
