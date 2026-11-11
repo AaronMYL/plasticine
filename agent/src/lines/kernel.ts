@@ -34,6 +34,7 @@ import { chats, replyFor, retitled, SIDES_LIMIT, toggleReaction, type SideContro
 import type { WelcomeStart } from '../../shared/welcome-start.ts';
 import { replyMarker } from '../../shared/line-reply.ts';
 import { AnswerWaits } from './waits.ts';
+import { requireClaimedGroupTask, unclaimedGroupTask } from './group-task-guard.ts';
 
 export class LineKernel implements LineControl, SideControl {
   readonly #options: KernelOptions;
@@ -210,6 +211,7 @@ export class LineKernel implements LineControl, SideControl {
   /** 线空闲：这句话开一轮。线在跑（或在等、暂停、后台线已满）：进排队，这一轮结束后按顺序发出。 */
   send(lineId: string, input: SendInput, after: After = NOW): SendResult {
     let line = this.#unarchived(lineId);
+    requireClaimedGroupTask(this.#state, line);
     this.#requireMate(line);
     const attachments = [...(input.attachments ?? [])];
     const origin = input.origin ?? { kind: 'user' as const, userText: input.text };
@@ -296,6 +298,8 @@ export class LineKernel implements LineControl, SideControl {
   /** 立即发送：线在跑就插进这一轮（steer）；线空着就用这一条开一轮。 */
   sendNow(lineId: string, queueId: string, after: After = NOW): { line: LineView; item: QueuedMessageView } {
     const line = this.#unarchived(lineId);
+    requireClaimedGroupTask(this.#state, line);
+    this.#requireMate(line);
     const item = this.#queued(line, queueId);
     const runner = this.#runners.get(line.id);
     if (runner?.busy() === true) {
@@ -328,6 +332,8 @@ export class LineKernel implements LineControl, SideControl {
   /** 重试：失败或暂停的线从库里接着跑（停在一组工具中间的先补上）。 */
   retry(lineId: string, after: After = NOW): LineView {
     const line = this.#unarchived(lineId);
+    requireClaimedGroupTask(this.#state, line);
+    this.#requireMate(line);
     if (line.status !== 'failed' && line.status !== 'paused') {
       throw new LineError('conflict', '这条线没有失败，也没有暂停，不用重试。');
     }
@@ -532,6 +538,10 @@ export class LineKernel implements LineControl, SideControl {
     }
     const line = this.#state.lines.require(lineId);
     if (line.archivedAt !== null) return false;
+    if (unclaimedGroupTask(this.#state, line)) {
+      this.#setStatus(lineId, 'paused', { pauseReason: 'user', failure: null });
+      return false;
+    }
     if (line.mateId != null && this.#state.mates.require(line.mateId).disabledAt !== null) {
       this.#setStatus(lineId, 'paused', { pauseReason: 'user', failure: null });
       return false;
@@ -626,6 +636,7 @@ export class LineKernel implements LineControl, SideControl {
     const items = this.#state.lineQueue.queued(lineId);
     const line = this.#state.lines.require(lineId);
     if (line.archivedAt !== null) return false;
+    if (unclaimedGroupTask(this.#state, line)) return false;
     if (items.length === 0 || this.#runners.get(lineId)?.busy() === true || this.#stopping) {
       return false;
     }

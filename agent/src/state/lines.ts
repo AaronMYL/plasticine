@@ -8,6 +8,7 @@ import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
 import type { Row } from './db.ts';
 import { StateError } from './errors.ts';
 import { createLineDayStore } from './line-days.ts';
+import { MateGroupTaskMetaSchema, type MateGroupTaskMeta } from './mate-group-task-meta.ts';
 import type { StoreContext } from './object-store.ts';
 
 export const MAIN_LINE_ID = 'line-main';
@@ -66,6 +67,7 @@ export type LinePatch = Partial<Pick<LineRow, 'status' | 'pausedUntil' | 'failur
 
 /** 消息旁边的记录（0063）：回答想了多久、工具结果那一句。 */
 export interface LineMessageMeta {
+  mateGroupTask?: MateGroupTaskMeta;
   thinkingMs?: number;
   summary?: string;
   origin?: LineInputOrigin;
@@ -202,7 +204,9 @@ function metaOf(value: unknown): LineMessageMeta | null {
   const summary: unknown = Reflect.get(parsed, 'summary');
   const origin: unknown = Reflect.get(parsed, 'origin');
   const reactions: unknown = Reflect.get(parsed, 'reactions');
+  const mateGroupTask: unknown = Reflect.get(parsed, 'mateGroupTask');
   return { ...(typeof thinkingMs === 'number' ? { thinkingMs } : {}),
+    ...(Value.Check(MateGroupTaskMetaSchema, mateGroupTask) ? { mateGroupTask } : {}),
     ...(typeof summary === 'string' ? { summary } : {}),
     ...(Array.isArray(reactions) ? { reactions: reactions.filter((item) => typeof item === 'string') } : {}),
     ...(Value.Check(LineInputOriginSchema, origin) ? { origin } : {}) };

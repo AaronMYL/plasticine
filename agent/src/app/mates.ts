@@ -8,6 +8,7 @@ import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';
 import { lineCall } from './lines.ts';
 import { checkInput } from './validate.ts';
+import { MATE_GROUP_TASK_ROUTES } from './mate-group-tasks.ts';
 
 export function matesFor(context: RequestContext): Mates {
   return new Mates(context.deps.state, () => context.deps.lines);
@@ -17,6 +18,7 @@ function digest(value: unknown) {
 }
 
 export const MATE_ROUTES: readonly Route[] = [
+  ...MATE_GROUP_TASK_ROUTES,
   { method: 'GET', path: MATES_PATH, auth: true, handler(context) {
     requireAuth(context);
     return { status: 200, body: matesFor(context).list() };
