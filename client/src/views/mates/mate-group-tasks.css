@@ -1,0 +1,15 @@
+.mate-group-task { flex: none; width: 100%; }
+.mate-group-task .nt-card-title { margin: 0; color: var(--fg); }
+.mate-task-lead { display: grid; place-items: center; flex: none; width: 14px; height: 14px; align-self: center; }
+.mate-group-task .gt-state { flex: 0 1 auto; text-align: right; overflow-wrap: anywhere; }
+.mate-group-task .gt-claimer { min-width: 0; overflow-wrap: anywhere; }
+.mate-work-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.mate-work-panel .mate-work-heading h3 { margin: 0; }
+.mate-work-tasks { display: flex; flex-direction: column; gap: 12px; margin: 16px 0 24px; }
+.mate-work-tasks:empty { margin: 0; }
+.mate-work-panel .mate-group-task h3 { margin: 0; font-size: 15px; font-weight: 600; }
+
+@media (min-width: 768px) {
+  .mate-work-panel .gt-claimed { display: grid; grid-template-columns: 20px minmax(0, 1fr); }
+  .mate-work-panel .gt-state { grid-column: 2; justify-self: start; text-align: left; }
+}

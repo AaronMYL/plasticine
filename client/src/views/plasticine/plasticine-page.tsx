@@ -148,7 +148,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
           </SideUiProvider>
         </div>
       )}
-      {group !== undefined && division ? <MateWorkPanel group={group} /> : null}
+      {group !== undefined && division ? <MateWorkPanel group={group} phone={phone} /> : null}
       </div>
       {editing && mate !== undefined ? <MateEditor mate={mate} phone={phone} navigate={navigate}
         onClose={() => setEditing(false)} /> : null}

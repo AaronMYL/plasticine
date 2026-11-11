@@ -6,7 +6,7 @@
 // 想了 / 做了几步，子代理的步骤在它的卡里）；消息之间按时间分隔；悬停一条出表情、回复、更多；往上翻着时来了新消息出
 // 「n 条新消息」；旁聊顶上是它围绕的那一条。
 
-import { MateHandoff } from '../mates/mate-handoff.tsx';
+import { MateLineCard } from '../mates/mate-line-card.tsx';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LineView } from '../../api/shared.ts';
 import type { AskView } from '../../api/types.ts';
@@ -24,7 +24,6 @@ import { SideTopic } from './side-topic.tsx';
 import { MessageRow, ThreadActionsProvider, type ThreadActions } from './thread-actions.tsx';
 import { timeBreaks } from './time-breaks.ts';
 import { LineAskCard } from '../asks/line-ask-card.tsx';
-import { LineCard } from './line-card.tsx';
 import { FOCUS_COMPOSER_EVENT, LineComposer } from './line-composer.tsx';
 import { LineInputRecord } from './line-input-record.tsx';
 import { messageAuthor } from './line-origin.ts';
@@ -119,8 +118,7 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
     case 'side':
       return <SideLink lineId={item.lineId} title={item.title} />;
     case 'child':
-      return <>{item.line.mateId == null ? null : <MateHandoff line={item.line} />}
-        <LineCard line={item.line} stopped={item.line.outcome === 'stopped'} /></>;
+      return <MateLineCard line={item.line} />;
     case 'welcome':
       return <WelcomeMessage lineId={lineId} message={item.message} />;
     case 'letter':

@@ -319,8 +319,8 @@ export class FakeLines implements LinesApi {
 
   /** 种子：在这条线的排队里放一条。 */
   seedQueued(lineId: string, text: string, status: 'queued' | 'inserted' = 'queued',
-    origin: LineInputOrigin = { kind: 'user', userText: text }): QueuedMessageView {
-    const item = this.enqueue(lineId, text, [], origin);
+    origin: LineInputOrigin = { kind: 'user', userText: text }, attachments: string[] = []): QueuedMessageView {
+    const item = this.enqueue(lineId, text, attachments, origin);
     if (status === 'queued') {
       return item;
     }

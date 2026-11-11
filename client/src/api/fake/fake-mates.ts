@@ -1,7 +1,7 @@
 import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
-import { MateDraftSchema, MateGroupDraftSchema } from '../shared.ts';
+import { MateDraftSchema, MateGroupDraftSchema, SendLineMessageRequestSchema } from '../shared.ts';
 import type { MateDraft, MateView, MateGroupView, MateGroupDraft, CreateMateRequest, UpdateMateRequest,
   MateHandoffRequest, LegacyChatConvertRequest, LegacyChatProposal } from '../shared.ts';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
@@ -17,6 +17,7 @@ const conflict = () => new ApiError({ kind: 'conflict', status: 409, code: 'vers
 export class FakeMates implements MatesApi {
   private readonly rows = new Map<string, MateView>();
   private readonly groupRows = new Map<string, MateGroupView>();
+  private readonly tasks = new Map<string, { groupId: string; goal: string }>();
   private readonly deps: Deps;
   private serial = 0;
   constructor(deps: Deps) { this.deps = deps; }
@@ -76,6 +77,32 @@ export class FakeMates implements MatesApi {
     }
   }
   readonly groups: MateGroupsApi = {
+    listTasks: async (id) => {
+      this.deps.session.require();
+      if (!this.groupRows.has(id)) throw missing();
+      return { lines: structuredClone(this.deps.lines.allLines().filter((line) =>
+        this.tasks.get(line.id)?.groupId === id && line.archivedAt == null)) };
+    },
+    createTask: async (id, input) => {
+      this.deps.session.require();
+      return this.deps.receipts.run('create', input.requestId, `POST /v2/mate-groups/${id}/tasks`, () => {
+        const group = this.groupRows.get(id);
+        if (group === undefined) throw missing();
+        if (!Value.Check(SendLineMessageRequestSchema, input) || input.text.trim() === '') {
+          throw invalid('请填写任务内容。');
+        }
+        if (input.replyTo !== undefined || (input.quotes?.length ?? 0) > 0) {
+          throw invalid('请把任务目标写在正文里。');
+        }
+        const lineId = `mate-task-${++this.serial}`;
+        this.tasks.set(lineId, { groupId: id, goal: input.text });
+        this.deps.lines.put(this.deps.lines.blank(lineId, 'background', input.text.split('\n')[0]!.slice(0, 60),
+          { mateId: null, mateGroupId: id, parentLineId: group.lineId, status: 'paused' }));
+        this.deps.lines.seedQueued(lineId, input.text, 'queued', { kind: 'user', userText: input.text },
+          input.attachments ?? []);
+        return { line: structuredClone(this.deps.lines.find(lineId)!) };
+      });
+    },
     create: async ({ requestId, ...draft }) => {
       this.deps.session.require();
       return this.deps.receipts.run('create', requestId, 'POST /v2/mate-groups', () => {
@@ -108,6 +135,17 @@ export class FakeMates implements MatesApi {
     return this.deps.receipts.run('create', input.requestId, 'POST /v2/mates/handoff', () => {
       const mate = this.rows.get(input.mateId);
       if (mate === undefined || mate.disabledAt !== null) throw missing();
+      const task = this.tasks.get(input.sourceLineId);
+      if (task !== undefined) {
+        const group = this.groupRows.get(task.groupId);
+        if (input.groupId !== task.groupId || !group?.mateIds.includes(mate.id)) {
+          throw invalid('请从群组内的队友中选择。');
+        }
+        if (input.goal !== task.goal) throw invalid('请保留任务的原始目标。');
+        const current = this.deps.lines.find(input.sourceLineId);
+        if (current?.mateId != null || current?.status !== 'paused') throw conflict();
+        return { line: this.deps.lines.change(input.sourceLineId, { mateId: mate.id, status: 'queued' }) };
+      }
       const line = this.deps.lines.blank(`handoff-${++this.serial}`, 'background', input.goal, {
         mateId: mate.id, mateGroupId: input.groupId ?? null, status: 'queued',
         parentLineId: input.groupId == null ? input.sourceLineId : this.groupRows.get(input.groupId)?.lineId ?? null });

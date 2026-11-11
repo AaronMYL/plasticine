@@ -1,7 +1,7 @@
 import type { PlasticineApi } from '../../api/client.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { MateDraft, MateGroupDraft, MateView, MateGroupView, LegacyChatConvertRequest,
-  LegacyChatConvertResponse, MateHandoffResponse, UpdateMateRequest } from '../../api/shared.ts';
+  LegacyChatConvertResponse, MateHandoffResponse, UpdateMateRequest, LineView } from '../../api/shared.ts';
 import type { ActionOps, ActionRequest } from '../../state/action-ops.ts';
 import type { MatesStore } from './mates-store.ts';
 
@@ -34,6 +34,15 @@ export class MateActions {
       (requestId) => ({ kind: 'mate_group_update', groupId: group.id,
         body: { requestId, version: group.version, ...patch } }));
   }
+  createTask(groupId: string, text: string): Promise<Result | null> {
+    return this.begin(`mate-groups:task:create:${groupId}`, '发布群任务', text.split('\n')[0] ?? text,
+      (requestId) => ({ kind: 'mate_group_task_create', groupId, body: { requestId, text } }));
+  }
+  claimTask(line: LineView, mateId: string, goal: string): Promise<Result | null> {
+    return this.begin(`mate-groups:task:claim:${line.id}`, '领取群任务', line.title,
+      (requestId) => ({ kind: 'mate_handoff', body: { requestId, sourceLineId: line.id, mateId, goal,
+        ...(line.mateGroupId == null ? {} : { groupId: line.mateGroupId }) } }));
+  }
   convert(input: Omit<LegacyChatConvertRequest, 'requestId'>, title: string): Promise<Result | null> {
     return this.begin(`mates:convert:${input.lineId}`, '整理原来的对话', title,
       (requestId) => ({ kind: 'mate_legacy_convert', body: { requestId, ...input } }));
@@ -54,6 +63,9 @@ export class MateActions {
       const result = await this.transmit(request);
       this.ops.succeed(key);
       await this.directory.reload();
+      const groupId = request.kind === 'mate_group_task_create' ? request.groupId
+        : request.kind === 'mate_handoff' ? request.body.groupId : undefined;
+      if (groupId != null) await this.directory.reloadTasks(groupId);
       return result;
     } catch (cause) {
       this.ops.fail(key, cause);
@@ -66,6 +78,7 @@ export class MateActions {
       case 'mate_update': return this.api.mates.update(request.mateId, request.body);
       case 'mate_group_create': return this.api.mateGroups.create(request.body);
       case 'mate_group_update': return this.api.mateGroups.update(request.groupId, request.body);
+      case 'mate_group_task_create': return this.api.mateGroups.createTask(request.groupId, request.body);
       case 'mate_handoff': return this.api.mates.handoff(request.body);
       case 'mate_legacy_convert': return this.api.mates.convertLegacy(request.body);
       default: throw new Error('这不是队友操作，请回原来的页面核实。');

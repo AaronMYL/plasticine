@@ -1,6 +1,7 @@
 import type { CreateMateRequest, UpdateMateRequest, MateView, MateListResponse, MateGroupView,
   CreateMateGroupRequest, UpdateMateGroupRequest, MateHandoffRequest, MateHandoffResponse,
-  LegacyChatProposal, LegacyChatConvertRequest, LegacyChatConvertResponse } from './shared.ts';
+  LegacyChatProposal, LegacyChatConvertRequest, LegacyChatConvertResponse, ListLinesResponse,
+  SendLineMessageRequest } from './shared.ts';
 
 export interface MatesApi {
   list(signal?: AbortSignal): Promise<MateListResponse>;
@@ -14,4 +15,6 @@ export interface MatesApi {
 export interface MateGroupsApi {
   create(input: CreateMateGroupRequest): Promise<MateGroupView>;
   update(id: string, input: UpdateMateGroupRequest): Promise<MateGroupView>;
+  listTasks(id: string, signal?: AbortSignal): Promise<ListLinesResponse>;
+  createTask(id: string, input: SendLineMessageRequest): Promise<MateHandoffResponse>;
 }

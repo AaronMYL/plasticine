@@ -1,6 +1,7 @@
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
 import { MATES_PATH, MATE_GROUPS_PATH, MateViewSchema, MateGroupViewSchema, MateListResponseSchema,
-  MateHandoffResponseSchema, LegacyChatProposalSchema, LegacyChatConvertResponseSchema } from '../shared.ts';
+  MateHandoffResponseSchema, LegacyChatProposalSchema, LegacyChatConvertResponseSchema,
+  ListLinesResponseSchema } from '../shared.ts';
 import type { Transport } from './transport.ts';
 
 export function createMatesHttp(transport: Transport): { mates: MatesApi; mateGroups: MateGroupsApi } {
@@ -22,6 +23,12 @@ export function createMatesHttp(transport: Transport): { mates: MatesApi; mateGr
         schema: LegacyChatConvertResponseSchema, what: '转换原来的对话', lostAs: 'uncertain' }),
     },
     mateGroups: {
+      listTasks: (id, signal) => transport.request({ method: 'GET',
+        path: `${MATE_GROUPS_PATH}/${encodeURIComponent(id)}/tasks`, schema: ListLinesResponseSchema,
+        signal, what: '读取群任务', lostAs: 'failed' }),
+      createTask: (id, body) => transport.request({ method: 'POST',
+        path: `${MATE_GROUPS_PATH}/${encodeURIComponent(id)}/tasks`, body, schema: MateHandoffResponseSchema,
+        what: '发布群任务', lostAs: 'uncertain' }),
       create: (body) => transport.request({ method: 'POST', path: MATE_GROUPS_PATH, body, schema: MateGroupViewSchema,
         what: '创建队友群组', lostAs: 'uncertain' }),
       update: (id, body) => transport.request({ method: 'PATCH', path: `${MATE_GROUPS_PATH}/${encodeURIComponent(id)}`,
