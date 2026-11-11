@@ -77,4 +77,3 @@ export function renderVideoPage(work: VideoPageWork, timeZone = 'Asia/Shanghai')
     + `${(work.transcript ?? '').length.toLocaleString('zh-CN')} 字`
     + `</summary>${transcript}</details></article>`;
 }
-

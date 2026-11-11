@@ -60,7 +60,9 @@ export type MemoryLineRetireReason = (typeof MEMORY_LINE_RETIRE_REASONS)[number]
  * 或一条约定（第 4 批：在用的约定整理进「怎么替你做事」，每行指回原来那条约定；约定表本身不动），
  * 或一条词表（2026-11-05：词表并进「怎么替你做事」，每行指回原来那条词表条目；词表本身不动、不删）。
  */
-export const MEMORY_ANCHOR_KINDS = ['message', 'note', 'memory_entry', 'user_edit', 'agreement', 'term', 'system'] as const;
+export const MEMORY_ANCHOR_KINDS = [
+  'message', 'note', 'memory_entry', 'user_edit', 'agreement', 'term', 'system',
+] as const;
 export const MemoryAnchorSchema = Type.Object({ kind: Type.Enum(MEMORY_ANCHOR_KINDS), ref: IdSchema }, STRICT);
 export type MemoryAnchor = Static<typeof MemoryAnchorSchema>;
 const Anchors = Type.Array(MemoryAnchorSchema, { minItems: 1 });

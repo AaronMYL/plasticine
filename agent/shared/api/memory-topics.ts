@@ -85,7 +85,8 @@ export type MemoryTopicView = Static<typeof MemoryTopicViewSchema>;
 export const MEMORY_TOPIC_LINE_BASES = ['quote', 'agreement', 'inferred', 'system'] as const;
 
 export const MemoryLineSourceSchema = Type.Object({
-  kind: Type.Union([Type.Literal('message'), Type.Literal('note'), Type.Literal('book'), Type.Literal('agreement'), Type.Literal('system')]),
+  kind: Type.Union([Type.Literal('message'), Type.Literal('note'), Type.Literal('book'),
+    Type.Literal('agreement'), Type.Literal('system')]),
   id: IdSchema,
   /** 链上写的字，例如「10-26 对话」。 */
   label: Type.String({ minLength: 1 }),

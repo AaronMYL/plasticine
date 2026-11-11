@@ -148,7 +148,8 @@ export function rulesDocSection(state: Pick<StateService, 'memoryDocs'>): string
   const live = state.memoryDocs.docs.get(RULES_DOC_ID) === undefined ? [] : state.memoryDocs.lines.live(RULES_DOC_ID);
   const lines = SOUL_SECTIONS.flatMap((section) => {
     const group = live.filter((line) => soulSectionOf(state, line) === section);
-    return group.length === 0 ? [] : [`### ${SOUL_SECTION_LABELS[section]}`, ...group.map((line) => lineText({ ...line, previous: null }))];
+    return group.length === 0 ? [] : [`### ${SOUL_SECTION_LABELS[section]}`,
+      ...group.map((line) => lineText({ ...line, previous: null }))];
   });
   return [RULES_HEADER, RULES_HINT, hard, ...lines].join('\n');
 }
