@@ -37,7 +37,8 @@ export function workUrl(workId: string, kind: 'video' | 'images' | null): string
 
 export function videoWorkView(work: VideoWorkRow): VideoWorkView {
   return { id: work.id, platform: work.platform, workId: work.workId, url: work.url, kind: work.kind,
-    title: shortVideoTitle(work.title) || work.title, author: work.author, collectedAt: work.collectSeq === null ? null : work.collectedAt,
+    title: shortVideoTitle(work.title) || work.title, author: work.author,
+    collectedAt: work.collectSeq === null ? null : work.collectedAt,
     durationSeconds: work.durationSeconds, coverUrl: work.coverUrl,
     folderIds: work.folderIds, stage: work.stage, want: work.want, run: work.run, error: work.error,
     feedItemId: work.feedItemId, spaceId: work.spaceId, version: work.version };
