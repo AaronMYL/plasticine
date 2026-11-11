@@ -7,7 +7,7 @@ import { SUGGESTION_ICONS, SUGGESTION_SOURCES } from '../state-tasks.ts';
 import { AskViewSchema } from './asks.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema, TimeZoneSchema } from './common.ts';
 import { OrNull } from './lineage.ts';
-import { LineViewSchema } from './lines.ts';
+import { LineViewSchema, type LineView } from './lines.ts';
 import { PROJECT_HUES } from './project-tag.ts';
 
 const STRICT = { additionalProperties: false };
@@ -21,8 +21,26 @@ export const SUGGESTIONS_PATH = `${TASKS_PATH}/suggestions`;
 /** 设备报自己现在的时区（11-07 定：定时按他设备当前的时区算）。 */
 export const DEVICE_TIME_ZONE_PATH = `${TASKS_PATH}/time-zone`;
 
-/** 「刚做完」最多列这么多条：只是回头看一眼，完整的在对话和工作详情里。 */
-export const TASKS_RECENT_MAX = 5;
+/** 「已结束」最多列这么多条：完整的在对话和工作详情里。 */
+export const TASKS_ENDED_MAX = 50;
+/** 「最近删除」最多列这么多条。 */
+export const TASKS_DELETED_MAX = 50;
+
+type TaskLine = Pick<LineView, 'status' | 'pauseReason' | 'outcome' | 'archivedAt'>;
+
+/** 进行中（11-11）：在跑、排队、在等，和暂停着的；停止的、删除的不算。 */
+export function taskInProgress(line: TaskLine): boolean {
+  if (line.archivedAt != null) return false;
+  if (line.status === 'paused') return line.pauseReason !== 'stopped';
+  return line.status === 'running' || line.status === 'queued' || line.status === 'waiting';
+}
+
+/** 已结束：这一轮有了结果（做完、没做成、出错）或他停止了。 */
+export function taskEnded(line: TaskLine): boolean {
+  if (line.archivedAt != null) return false;
+  if (line.status === 'paused') return line.pauseReason === 'stopped';
+  return (line.status === 'idle' || line.status === 'failed') && line.outcome !== null;
+}
 
 /** 定时一行是谁家的：定时线（本线）、订阅、回顾（日报周报）、做梦、心跳（后面的线登记进来）。 */
 export const TIMED_SOURCES = ['schedule', 'subscription', 'review', 'dream', 'heartbeat'] as const;
@@ -97,6 +115,8 @@ export type SuggestionView = Static<typeof SuggestionViewSchema>;
 export const TaskCountsSchema = Type.Object({
   running: Type.Integer({ minimum: 0 }),
   waiting: Type.Integer({ minimum: 0 }),
+  ended: Type.Integer({ minimum: 0 }),
+  deleted: Type.Integer({ minimum: 0 }),
   timed: Type.Integer({ minimum: 0 }),
   ideas: Type.Integer({ minimum: 0 }),
 }, STRICT);
@@ -117,12 +137,14 @@ export type TasksBoardQuery = Static<typeof TasksBoardQuerySchema>;
 export const TasksBoardResponseSchema = Type.Object({
   projectId: OrNull(IdSchema),
   counts: TaskCountsSchema,
-  /** 在做：正在跑（和排着队）的后台线。 */
+  /** 进行中（11-11）：在跑、排队、在等、暂停着的后台线（停止的不算）。 */
   running: Type.Array(LineViewSchema),
   /** 等你：等他决定的卡。 */
   waiting: Type.Array(AskViewSchema),
-  /** 刚做完：最近停下的后台线（做成 / 没做成 + 原因）。 */
-  recent: Type.Array(LineViewSchema),
+  /** 已结束：做完、没做成、出错、他停止的，新的在前。 */
+  ended: Type.Array(LineViewSchema),
+  /** 最近删除：删掉的后台线，能恢复。 */
+  deleted: Type.Array(LineViewSchema),
   timed: Type.Array(TimedRowViewSchema),
   ideas: Type.Array(SuggestionViewSchema),
   teammates: Type.Array(TeammateViewSchema),

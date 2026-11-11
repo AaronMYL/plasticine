@@ -21,7 +21,7 @@ export function unmetText(reason: string): string {
 }
 
 export function workStatusText(line: WorkExecution, timeZone?: string): string {
-  if (line.archivedAt != null) return '已归档';
+  if (line.archivedAt != null) return '已删除';
   switch (line.status) {
     case 'queued': return '排队中';
     case 'running': return activityText({ activity: line.activity ?? null });
@@ -30,12 +30,13 @@ export function workStatusText(line: WorkExecution, timeZone?: string): string {
     case 'failed': return line.failure ?? '这次没有完成';
     case 'idle': return line.queued ? '修改待处理' : line.outcome === 'done'
       ? (line.unmet == null ? '已完成' : unmetText(line.unmet))
-      : line.outcome === 'stopped' ? '已停下' : line.outcome === 'incomplete' ? '输出未完' : '待继续';
+      : line.outcome === 'stopped' ? '已停止' : line.outcome === 'incomplete' ? '输出未完' : '待继续';
   }
 }
 
 export function WorkStatusGlyph({ line }: { line: WorkExecution }): ReactNode {
-  if (line.archivedAt != null) return <StatusGlyph status="pause" label="已归档" />;
+  if (line.archivedAt != null) return <StatusGlyph status="pause" label="已删除" />;
+  if (line.pauseReason === 'stopped') return <StatusGlyph status="idle" label="已停止" />;
   if (line.status === 'running') return <Spinner />;
   if (line.status === 'queued') return <Icon name="clock" size={14} />;
   if (line.status === 'waiting') return <StatusGlyph status="wait" label="等你决定" />;
@@ -53,14 +54,15 @@ export function WorkLineAction({ line, onError, primary = false }:
   const live = useLive();
   const [busy, setBusy] = useState(false);
   const pause = line.status === 'running' || line.status === 'queued' || line.status === 'waiting';
-  const canRetry = line.status === 'failed' || line.status === 'paused' || line.outcome === 'incomplete';
+  const canRetry = (line.status === 'failed' || line.status === 'paused' || line.outcome === 'incomplete')
+    && line.pauseReason !== 'stopped';
   if (line.archivedAt != null || (!pause && !canRetry)) return null;
   const label = pause ? '暂停' : line.pauseReason === 'output_limit' ? '继续生成'
     : line.status === 'failed' ? '重试' : line.pauseReason === 'quota' ? '现在重试' : '继续';
   const run = (): void => {
     setBusy(true);
     onError(null);
-    void (pause ? live.lines.stopLine(line.id) : live.lines.retry(line.id)).then((error) => {
+    void (pause ? live.lines.pause(line.id) : live.lines.resume(line.id)).then((error) => {
       setBusy(false);
       onError(error);
     });

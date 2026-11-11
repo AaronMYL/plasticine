@@ -7,9 +7,9 @@ import type { LineView } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { useStore } from '../../state/use-store.ts';
-import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { StepList } from './line-parts.tsx';
+import { DeletedTask, TaskMenu } from './task-menu.tsx';
 import { unmetReason, unmetText, WorkLineAction, WorkStatusGlyph, workStatusText } from './work-status.tsx';
 import { buildTimeline, type TurnStep } from './timeline.ts';
 
@@ -48,14 +48,16 @@ export function LineCard({ line, result, stopped = false }: { line: LineView; re
   stopped?: boolean }): ReactNode {
   const open = useOpenPanel();
   const timeZone = useTimeZone();
-  const live = useLive();
   const [error, setError] = useState<string | null>(null);
   const [folded, setFolded] = useState(true);
   const listId = useId();
   const done = line.status === 'idle' && line.outcome === 'done' && line.queued === 0 && !stopped;
   const unmet = unmetReason(line);
   const second = stopped ? '停下了' : done ? null : workStatusText(line, timeZone);
-  const running = line.status === 'running' && !stopped;
+  const [deleted, setDeleted] = useState(false);
+  if (line.archivedAt != null) {
+    return deleted ? <DeletedTask line={line} onUndone={() => setDeleted(false)} /> : null;
+  }
   return (
     <div className="line-card-wrap">
       <article className="line-card" data-status={line.status} aria-label={`线：${line.title}`}>
@@ -65,10 +67,8 @@ export function LineCard({ line, result, stopped = false }: { line: LineView; re
             onClick={() => open({ kind: 'work', lineId: line.id })}>{line.title}</button>
           {done ? <DoneFold lineId={line.id} open={!folded} listId={listId}
             onToggle={() => setFolded((value) => !value)} /> : null}
-          {running ? (
-            <IconButton icon="stop" size={14} label="暂停" className="line-card-stop"
-              onClick={() => void live.lines.stopLine(line.id).then(setError)} />
-          ) : <WorkLineAction line={line} onError={setError} />}
+          <WorkLineAction line={line} onError={setError} />
+          <TaskMenu line={line} onError={setError} onDeleted={() => setDeleted(true)} />
         </div>
         {unmet === null || stopped ? null
           : <p className="line-card-status" data-status="unmet">{unmetText(unmet)}</p>}

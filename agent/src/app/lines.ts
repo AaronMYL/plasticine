@@ -118,18 +118,23 @@ export function sendQueuedNow(context: RequestContext): Promise<Reply> {
   return command(context, (lines, after) => lines.sendNow(param(context, 'id'), param(context, 'queueId'), after));
 }
 
-/** POST /v2/lines/:id/stop */
-export function stopLine(context: RequestContext): Promise<Reply> {
+/** POST /v2/lines/:id/pause：停下，进度保留，能继续。 */
+export function pauseLine(context: RequestContext): Promise<Reply> {
   return command(context, (lines, after) => ({ line: lines.halt(param(context, 'id'), after) }));
 }
 
-/** POST /v2/lines/:id/retry */
-export function retryLine(context: RequestContext): Promise<Reply> {
+/** POST /v2/lines/:id/resume：暂停的、出错的接着做。 */
+export function resumeLine(context: RequestContext): Promise<Reply> {
   return command(context, (lines, after) => ({ line: lines.retry(param(context, 'id'), after) }));
 }
 
-/** 归档与恢复复用命令幂等及配对会话，不永久删除历史。 */
-export function archiveLine(context: RequestContext): Promise<Reply> {
+/** POST /v2/lines/:id/stop：不再继续，记录保留。 */
+export function stopLine(context: RequestContext): Promise<Reply> {
+  return command(context, (lines, after) => ({ line: lines.end(param(context, 'id'), after) }));
+}
+
+/** POST /v2/lines/:id/delete：还在做的先停止，再移进最近删除；不永久删除历史。 */
+export function deleteLine(context: RequestContext): Promise<Reply> {
   return command(context, (lines, after) => ({ line: lines.archive(param(context, 'id'), after) }));
 }
 

@@ -108,7 +108,8 @@ export interface Route {
 }
 
 /** 任务栏目的四段（《优化清单》第 3 条）：在做、等你、定时、建议。项目那一块是项目页。 */
-export const TASKS_SECTIONS = ['run', 'wait', 'timed', 'ideas'] as const;
+/** 任务栏目的几段（11-11）：进行中、等你、定时、建议、已结束；最近删除在第二栏底下。 */
+export const TASKS_SECTIONS = ['run', 'wait', 'timed', 'ideas', 'ended', 'deleted'] as const;
 export type TasksSection = (typeof TASKS_SECTIONS)[number];
 
 /** 2026-11-05 网络：加好友、新建群聊、邀请朋友加入网络也是右边整块（手机上一整页），各有地址。 */

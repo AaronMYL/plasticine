@@ -33,7 +33,7 @@ test('后台线暂停：队列保留，不自行开下一轮；明确继续后�
   await h.kernel.settled();
   assert.equal(h.kernel.view(line.id).status, 'paused');
   assert.equal(h.kernel.view(line.id).pauseReason, 'user');
-  assert.equal(h.kernel.view(line.id).outcome, 'stopped');
+  assert.equal(h.kernel.view(line.id).outcome, null, '暂停不是结束');
   assert.equal(h.handle.state.lineQueue.get(queued.queued?.id ?? '')?.status, 'queued');
   assert.equal(h.clock.pending(), 0, '用户暂停不能安排自动恢复');
   h.respond([fauxAssistantMessage('两部分都做完了。')]);

@@ -80,14 +80,29 @@ export class HttpLines implements LinesApi {
       schema: AnswerLineWidgetResponseSchema, what: '作答', lostAs: 'uncertain' });
   }
 
-  stop(lineId: string, body: LineCommandRequest) {
-    return this.transport.request({ method: 'POST', path: `${linePath(lineId)}/stop`, body,
-      schema: LineResponseSchema, what: '停止', lostAs: 'uncertain' });
+  pause(lineId: string, body: LineCommandRequest) {
+    return this.command(lineId, 'pause', body, '暂停');
   }
 
-  retry(lineId: string, body: LineCommandRequest) {
-    return this.transport.request({ method: 'POST', path: `${linePath(lineId)}/retry`, body,
-      schema: LineResponseSchema, what: '重试', lostAs: 'uncertain' });
+  resume(lineId: string, body: LineCommandRequest) {
+    return this.command(lineId, 'resume', body, '继续');
+  }
+
+  stop(lineId: string, body: LineCommandRequest) {
+    return this.command(lineId, 'stop', body, '停止');
+  }
+
+  remove(lineId: string, body: LineCommandRequest) {
+    return this.command(lineId, 'delete', body, '删除');
+  }
+
+  restore(lineId: string, body: LineCommandRequest) {
+    return this.command(lineId, 'restore', body, '恢复');
+  }
+
+  private command(lineId: string, action: string, body: LineCommandRequest, what: string) {
+    return this.transport.request({ method: 'POST', path: `${linePath(lineId)}/${action}`, body,
+      schema: LineResponseSchema, what, lostAs: 'uncertain' });
   }
 
   react(lineId: string, body: ReactLineMessageRequest) {

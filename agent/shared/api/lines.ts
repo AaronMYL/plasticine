@@ -34,7 +34,8 @@ export const LINE_STATUSES = ['queued', 'running', 'idle', 'waiting', 'paused', 
 export const LineStatusSchema = Type.Enum(LINE_STATUSES);
 export type LineStatus = Static<typeof LineStatusSchema>;
 
-export const LinePauseReasonSchema = Type.Enum(['user', 'quota', 'output_limit']);
+/** user：他暂停的，能继续；stopped：他停止的，不再继续（11-11）；quota、output_limit：额度或长度，系统接着做。 */
+export const LinePauseReasonSchema = Type.Enum(['user', 'stopped', 'quota', 'output_limit']);
 export type LinePauseReason = Static<typeof LinePauseReasonSchema>;
 export const LineOutcomeSchema = Type.Enum(['done', 'stopped', 'incomplete', 'failed']);
 export type LineOutcome = Static<typeof LineOutcomeSchema>;

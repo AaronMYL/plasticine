@@ -5,7 +5,10 @@ import type { TasksApi } from '../tasks-client.ts';
 import { ApiError } from '../errors.ts';
 import {
   STANDING_PROJECT_IDS,
-  TASKS_RECENT_MAX,
+  TASKS_DELETED_MAX,
+  TASKS_ENDED_MAX,
+  taskEnded,
+  taskInProgress,
   type DeviceTimeZoneRequest,
   type HeartbeatSayRequest,
   type UpdateHeartbeatRequest,
@@ -73,7 +76,7 @@ export class FakeTasks implements TasksApi {
 
   async board(query: TasksBoardQuery): Promise<TasksBoardResponse> {
     this.deps.session.require();
-    const lines = this.deps.lines.all().filter((line) => line.kind === 'background' && line.archivedAt == null);
+    const lines = this.deps.lines.all().filter((line) => line.kind === 'background');
     const board = await this.deps.asks.list();
     const waiting = board.current === null ? board.queue : [board.current, ...board.queue];
     const all = this.parts(lines, waiting);
@@ -84,7 +87,8 @@ export class FakeTasks implements TasksApi {
       counts: counts(parts),
       running: parts.running,
       waiting: parts.waiting,
-      recent: parts.recent.slice(0, TASKS_RECENT_MAX),
+      ended: parts.ended.slice(0, TASKS_ENDED_MAX),
+      deleted: parts.deleted.slice(0, TASKS_DELETED_MAX),
       timed: parts.timed,
       ideas: parts.ideas,
       teammates: parts.teammates,
@@ -190,11 +194,13 @@ export class FakeTasks implements TasksApi {
 
   private parts(lines: LineView[], waiting: AskView[]) {
     const timedLines = new Set(this.timed.map((row) => row.lineId));
+    const newest = (a: LineView, b: LineView): number => b.updatedAt.localeCompare(a.updatedAt);
     return {
-      running: lines.filter((line) => line.status === 'running' || line.status === 'queued'),
+      running: lines.filter(taskInProgress),
       waiting,
-      recent: lines.filter((line) => (line.status === 'idle' || line.status === 'failed') && line.outcome !== null
-        && !timedLines.has(line.id)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+      ended: lines.filter((line) => taskEnded(line) && !timedLines.has(line.id)).sort(newest),
+      deleted: lines.filter((line) => line.archivedAt != null)
+        .sort((a, b) => (b.archivedAt ?? '').localeCompare(a.archivedAt ?? '')),
       timed: this.timed,
       ideas: this.ideas,
       teammates: this.mates,
@@ -209,7 +215,8 @@ export class FakeTasks implements TasksApi {
       ...all,
       running: all.running.filter((line) => personal(line.projectId) === projectId),
       waiting: all.waiting.filter((ask) => ask.lineId !== null && all.lineProject.get(ask.lineId) === projectId),
-      recent: all.recent.filter((line) => personal(line.projectId) === projectId),
+      ended: all.ended.filter((line) => personal(line.projectId) === projectId),
+      deleted: all.deleted.filter((line) => personal(line.projectId) === projectId),
       timed,
       ideas: all.ideas.filter((idea) => personal(idea.projectId) === projectId),
       teammates: all.teammates.filter((mate) => mates.has(mate.id)),
@@ -229,7 +236,8 @@ export class FakeTasks implements TasksApi {
   }
 }
 
-function counts(parts: { running: unknown[]; waiting: unknown[]; timed: unknown[]; ideas: unknown[] }): TaskCounts {
-  return { running: parts.running.length, waiting: parts.waiting.length, timed: parts.timed.length,
-    ideas: parts.ideas.length };
+function counts(parts: { running: unknown[]; waiting: unknown[]; ended: unknown[]; deleted: unknown[];
+  timed: unknown[]; ideas: unknown[] }): TaskCounts {
+  return { running: parts.running.length, waiting: parts.waiting.length, ended: parts.ended.length,
+    deleted: parts.deleted.length, timed: parts.timed.length, ideas: parts.ideas.length };
 }

@@ -179,7 +179,7 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   seedLines({ lines, projectId: deps.projectId, raiseAsk: (seed) => {
     asks.raise(seed);
     asks.onAnswer(seed.id, (option) => {
-      lines.resume(MAIN_LINE_ID, option === 'allow'
+      lines.resumeWith(MAIN_LINE_ID, option === 'allow'
         ? { thinking: [], steps: [{ tool: 'mail_send', say: '发出回复', result: '已发出' }], answer: pieces('发出去了。') }
         : { thinking: [], steps: [], answer: pieces('好，先不发。') });
     });

@@ -39,6 +39,7 @@ export function lineElapsed(line: Pick<LineView, 'activeSince'>, now: number): s
 /** 线停住时的一句：额度用完写几点接着做，别的照服务端那句。 */
 export function pausedText(line: Pick<LineView, 'pausedUntil' | 'failure' | 'pauseReason'>, timeZone?: string): string {
   if (line.pauseReason === 'user') return '已暂停';
+  if (line.pauseReason === 'stopped') return '已停止';
   if (line.pauseReason === 'output_limit') return '输出未完';
   if (line.pauseReason === 'quota' && line.pausedUntil !== null) {
     return `额度用完，${formatClock(line.pausedUntil, false, timeZone)} 后接着做`;

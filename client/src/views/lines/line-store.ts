@@ -196,8 +196,25 @@ export class LinesStore {
     return this.command(lineId, () => this.api.lines.sendNow(lineId, queueId, { requestId: createRequestId() }));
   }
 
-  async stopLine(lineId: string): Promise<string | null> {
+  /** 任务四个动作（11-11）和从最近删除恢复：成了回 null，没成回一句原因。 */
+  async pause(lineId: string): Promise<string | null> {
+    return this.command(lineId, () => this.api.lines.pause(lineId, { requestId: createRequestId() }));
+  }
+
+  async resume(lineId: string): Promise<string | null> {
+    return this.command(lineId, () => this.api.lines.resume(lineId, { requestId: createRequestId() }));
+  }
+
+  async end(lineId: string): Promise<string | null> {
     return this.command(lineId, () => this.api.lines.stop(lineId, { requestId: createRequestId() }));
+  }
+
+  async remove(lineId: string): Promise<string | null> {
+    return this.command(lineId, () => this.api.lines.remove(lineId, { requestId: createRequestId() }));
+  }
+
+  async restore(lineId: string): Promise<string | null> {
+    return this.command(lineId, () => this.api.lines.restore(lineId, { requestId: createRequestId() }));
   }
 
   /** 给一条消息加上或拿掉一个表情：成了回 null，没成回一句原因。 */
@@ -221,10 +238,6 @@ export class LinesStore {
     } catch (cause) {
       return errorText(cause);
     }
-  }
-
-  async retry(lineId: string): Promise<string | null> {
-    return this.command(lineId, () => this.api.lines.retry(lineId, { requestId: createRequestId() }));
   }
 
   private async deliver(lineId: string, requestId: string): Promise<boolean> {

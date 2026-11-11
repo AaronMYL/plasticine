@@ -81,14 +81,31 @@ test('恢复只重新显示且保持暂停：撤回的旧输入不复活，明�
   assert.equal(h.kernel.view(id).status, 'idle');
 });
 
-test('不归档主对话、未暂停工作或仍在等待回答的线', async () => {
+test('主对话不能删除；还在做的删除时当场停下、排着的撤回，恢复后是暂停', async () => {
   const h = await harness();
   assert.throws(() => h.kernel.archive('main'), /主对话/);
   const line = h.kernel.open({ title: '排队工作', goal: '做事', parentLineId: null, projectId: null }, () => undefined);
-  assert.throws(() => h.kernel.archive(line.id), /暂停/);
-  h.handle.state.lines.update(line.id, { status: 'waiting' });
-  assert.throws(() => h.kernel.archive(line.id), /暂停/);
-  assert.equal(h.kernel.view(line.id).archivedAt, null);
+  h.kernel.archive(line.id);
+  const view = h.kernel.view(line.id);
+  assert.notEqual(view.archivedAt, null);
+  assert.equal(view.status, 'paused');
+  assert.equal(h.kernel.read(line.id, 50).queue.length, 0);
+  h.kernel.restore(line.id);
+  assert.equal(h.kernel.view(line.id).pauseReason, 'user');
+});
+
+test('停止：不能再继续、不能再发消息；删除再恢复仍是停止', async () => {
+  const h = await harness();
+  const line = h.kernel.open({ title: '整理账单', goal: '做事', parentLineId: null, projectId: null }, () => undefined);
+  h.kernel.end(line.id);
+  assert.equal(h.kernel.view(line.id).outcome, 'stopped');
+  assert.equal(h.kernel.read(line.id, 50).queue.length, 0);
+  assert.throws(() => h.kernel.retry(line.id), /已经停止/);
+  assert.throws(() => h.kernel.send(line.id, { text: '再做' }), /已经停止/);
+  assert.throws(() => h.kernel.end('main'), /主对话/);
+  h.kernel.archive(line.id);
+  h.kernel.restore(line.id);
+  assert.equal(h.kernel.view(line.id).pauseReason, 'stopped');
 });
 
 test('归档撤回和状态在同一事务，回滚不会丢失排队消息', async () => {

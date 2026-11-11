@@ -43,10 +43,10 @@ describe('假的线', () => {
     expect((await api.lines.read('main', {})).queue.map((item) => item.text)).toEqual(['第一条', '第二条']);
     await api.lines.withdraw('main', second.queued!.id, { requestId: 'w-1' });
     expect((await api.lines.read('main', {})).line.queued).toBe(1);
-    const stopped = await api.lines.stop('main', { requestId: 's-1' });
+    const stopped = await api.lines.pause('main', { requestId: 's-1' });
     expect(stopped.line.status).toBe('paused');
     expect(stopped.line.pauseReason).toBe('user');
-    await api.lines.retry('main', { requestId: 'n-1' });
+    await api.lines.resume('main', { requestId: 'n-1' });
     await flush();
     const page = await api.lines.read('main', {});
     expect(page.queue).toEqual([]);

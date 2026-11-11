@@ -7,8 +7,8 @@ import { MATE_ROUTES } from './mates.ts';
 import type { Route } from './context.ts';
 import { listChats, openSideChat, reactLineMessage } from './side-chats.ts';
 import { answerLineWidget } from './line-widgets.ts';
-import { archiveLine, restoreLine, listLines, readLine, readLineDetails, retryLine, sendLineMessage, sendQueuedNow,
-  stopLine, withdrawQueued }
+import { deleteLine, pauseLine, restoreLine, listLines, readLine, readLineDetails, resumeLine, sendLineMessage,
+  sendQueuedNow, stopLine, withdrawQueued }
   from './lines.ts';
 import { cancelProviderLogin, completeProviderLogin, getProviderLogin, listModelProviders, logoutProvider,
   saveModelConfig, setDefaultModel, setProviderKey, startProviderLogin } from './model-providers.ts';
@@ -29,9 +29,11 @@ export const LINE_ROUTES: readonly Route[] = [
   { method: 'POST', path: `${LINES_PATH}/:id/queue/:queueId/withdraw`, auth: true, handler: withdrawQueued },
   { method: 'POST', path: `${LINES_PATH}/:id/queue/:queueId/send-now`, auth: true, handler: sendQueuedNow },
   { method: 'POST', path: `${LINES_PATH}/:id/widgets`, auth: true, handler: answerLineWidget },
+  // 任务四个动作（11-11）：暂停、继续、停止、删除；删除的从最近删除恢复。
+  { method: 'POST', path: `${LINES_PATH}/:id/pause`, auth: true, handler: pauseLine },
+  { method: 'POST', path: `${LINES_PATH}/:id/resume`, auth: true, handler: resumeLine },
   { method: 'POST', path: `${LINES_PATH}/:id/stop`, auth: true, handler: stopLine },
-  { method: 'POST', path: `${LINES_PATH}/:id/retry`, auth: true, handler: retryLine },
-  { method: 'POST', path: `${LINES_PATH}/:id/archive`, auth: true, handler: archiveLine },
+  { method: 'POST', path: `${LINES_PATH}/:id/delete`, auth: true, handler: deleteLine },
   { method: 'POST', path: `${LINES_PATH}/:id/restore`, auth: true, handler: restoreLine },
   { method: 'GET', path: MODEL_PROVIDERS_PATH, auth: true, handler: listModelProviders },
   { method: 'POST', path: `${PROVIDER}/login`, auth: true, handler: startProviderLogin },

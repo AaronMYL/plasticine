@@ -44,7 +44,7 @@ test('群任务接口沿用线 schema，未登录不可读写，发布重放和�
   const listed = await call(app, 'GET', path, { cookie });
   assert.ok(Value.Check(ListLinesResponseSchema, listed.body));
   assert.deepEqual(listed.body.lines.map((line) => line.id), [task.id]);
-  assert.equal((await call(app, 'POST', `/v2/lines/${task.id}/retry`, { cookie,
+  assert.equal((await call(app, 'POST', `/v2/lines/${task.id}/resume`, { cookie,
     body: { requestId: 'group-task-no-retry' } })).status, 409);
   app.app.deps.lines.archive(task.id);
   assert.equal((await call(app, 'POST', path, { cookie, body })).status, 201);

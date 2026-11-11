@@ -95,7 +95,7 @@ it('已打开的详情收到归档后保留成果，但不再提供继续和发�
   await act(async () => {
     control.lines.change('work-one', { archivedAt: NOW.toISOString() });
   });
-  expect(await within(detail).findByText('已归档')).toBeTruthy();
+  expect(await within(detail).findByText('已删除')).toBeTruthy();
   expect(within(detail).queryByRole('button', { name: '继续' })).toBeNull();
   expect(within(detail).queryByRole('textbox', { name: '补充这件事' })).toBeNull();
   expect(within(detail).getByText('最后一段不会被预览长度截掉。')).toBeTruthy();

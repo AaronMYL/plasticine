@@ -36,6 +36,11 @@ import { replyMarker } from '../../shared/line-reply.ts';
 import { AnswerWaits } from './waits.ts';
 import { requireClaimedGroupTask, unclaimedGroupTask } from './group-task-guard.ts';
 
+/** 他暂停或停止的、长度截断的：不自己接着跑，等他明确继续（停止的不能继续）。 */
+function heldByUser(line: LineRow): boolean {
+  return line.pauseReason === 'user' || line.pauseReason === 'stopped' || line.pauseReason === 'output_limit';
+}
+
 export class LineKernel implements LineControl, SideControl {
   readonly #options: KernelOptions;
   readonly #state: KernelState;
@@ -211,6 +216,7 @@ export class LineKernel implements LineControl, SideControl {
   /** 线空闲：这句话开一轮。线在跑（或在等、暂停、后台线已满）：进排队，这一轮结束后按顺序发出。 */
   send(lineId: string, input: SendInput, after: After = NOW): SendResult {
     let line = this.#unarchived(lineId);
+    if (line.pauseReason === 'stopped') throw new LineError('conflict', '这件事已经停止，不能再发消息。');
     requireClaimedGroupTask(this.#state, line);
     this.#requireMate(line);
     const attachments = [...(input.attachments ?? [])];
@@ -330,6 +336,24 @@ export class LineKernel implements LineControl, SideControl {
     return this.view(line.id);
   }
 
+  /** 停止（11-11）：不再继续，记录保留；排着的消息撤回。主对话不能停止。 */
+  end(lineId: string, after: After = NOW): LineView {
+    const line = this.line(lineId);
+    if (line.kind === 'main') throw new LineError('conflict', '主对话不能停止。');
+    this.#cancelTimer(line.id);
+    this.#state.transaction(() => {
+      for (const item of this.#state.lineQueue.queued(line.id)) this.#state.lineQueue.withdraw(item.id);
+      this.#state.lines.update(line.id, { status: 'paused', pauseReason: 'stopped', pausedUntil: null, failure: null });
+    });
+    const runner = this.#runners.get(line.id);
+    after(() => {
+      this.#publishLine(line.id);
+      this.#publishQueue(line.id);
+      runner?.abort('user');
+    });
+    return this.view(line.id);
+  }
+
   /** 重试：失败或暂停的线从库里接着跑（停在一组工具中间的先补上）。 */
   retry(lineId: string, after: After = NOW): LineView {
     const line = this.#unarchived(lineId);
@@ -337,6 +361,9 @@ export class LineKernel implements LineControl, SideControl {
     this.#requireMate(line);
     if (line.status !== 'failed' && line.status !== 'paused') {
       throw new LineError('conflict', '这条线没有失败，也没有暂停，不用重试。');
+    }
+    if (line.pauseReason === 'stopped') {
+      throw new LineError('conflict', '这件事已经停止，不能再继续。');
     }
     if (this.#runners.get(line.id)?.busy() === true) {
       throw new LineError('conflict', '这条线正在停下，稍后再继续。');
@@ -362,17 +389,18 @@ export class LineKernel implements LineControl, SideControl {
     const line = this.line(lineId);
     if (line.kind === 'main') throw new LineError('conflict', '主对话不能归档。');
     if (line.archivedAt !== null) return this.view(line.id);
-    if (this.#runners.get(line.id)?.busy() === true || !['paused', 'idle', 'failed'].includes(line.status)) {
-      throw new LineError('conflict', '请先暂停这条工作，等停下后再归档。');
-    }
+    // 删除（11-11）：还在做的当场停下，排着的撤回；停止过的仍是停止，别的恢复后是暂停、能继续。
+    const runner = this.#runners.get(line.id);
     this.#state.transaction(() => {
       for (const item of this.#state.lineQueue.queued(line.id)) this.#state.lineQueue.withdraw(item.id);
       this.#state.lines.update(line.id, { archivedAt: this.#now().toISOString(), status: 'paused',
-        pauseReason: 'user', pausedUntil: null });
+        pauseReason: line.pauseReason === 'stopped' ? 'stopped' : 'user', pausedUntil: null });
     });
     after(() => {
       this.#cancelTimer(line.id);
+      this.#publishLine(line.id);
       this.#publishQueue(line.id);
+      runner?.abort('user');
     });
     return this.view(line.id);
   }
@@ -381,7 +409,8 @@ export class LineKernel implements LineControl, SideControl {
   restore(lineId: string, after: After = NOW): LineView {
     const line = this.line(lineId);
     if (line.archivedAt === null) return this.view(line.id);
-    this.#state.lines.update(line.id, { archivedAt: null, status: 'paused', pauseReason: 'user', pausedUntil: null });
+    this.#state.lines.update(line.id, { archivedAt: null, status: 'paused',
+      pauseReason: line.pauseReason === 'stopped' ? 'stopped' : 'user', pausedUntil: null });
     after(() => this.#publishLine(line.id));
     return this.view(line.id);
   }
@@ -547,7 +576,7 @@ export class LineKernel implements LineControl, SideControl {
       this.#setStatus(lineId, 'paused', { pauseReason: 'user', failure: null });
       return false;
     }
-    if (line.status === 'paused' && (line.pauseReason === 'user' || line.pauseReason === 'output_limit')) {
+    if (line.status === 'paused' && heldByUser(line)) {
       return false;
     }
     if (workerLine(line) && this.#activeBackground() >= this.#max) {
@@ -771,7 +800,7 @@ export class LineKernel implements LineControl, SideControl {
 
   #schedulePause(line: LineRow): void {
     this.#cancelTimer(line.id);
-    if (line.archivedAt !== null || line.pauseReason === 'user' || line.pauseReason === 'output_limit') {
+    if (line.archivedAt !== null || heldByUser(line)) {
       return;
     }
     const until = line.pausedUntil === null ? this.#now().getTime() : Date.parse(line.pausedUntil);

@@ -8,7 +8,10 @@ import {
   type Ask,
 } from '../../shared/state.ts';
 import {
-  TASKS_RECENT_MAX,
+  TASKS_DELETED_MAX,
+  taskEnded,
+  taskInProgress,
+  TASKS_ENDED_MAX,
   type LineView,
   type SuggestionView,
   type TaskCounts,
@@ -23,8 +26,7 @@ import { projectHue } from './project-tag.ts';
 
 // 后台线一次最多读这么多条来分在做 / 刚做完：「刚做完」只要最近几条，在做最多 3 条在跑加排队的。
 const LINES_SCAN = 200;
-const RUNNING: ReadonlySet<LineView['status']> = new Set(['running', 'queued']);
-const ENDED: ReadonlySet<LineView['status']> = new Set(['idle', 'failed']);
+
 
 export function suggestionView(suggestion: Suggestion): SuggestionView {
   return { id: suggestion.id, title: suggestion.title, why: suggestion.why, icon: suggestion.icon,
@@ -34,7 +36,8 @@ export function suggestionView(suggestion: Suggestion): SuggestionView {
 interface Parts {
   running: LineView[];
   waiting: Ask[];
-  recent: LineView[];
+  ended: LineView[];
+  deleted: LineView[];
   timed: TimedRowView[];
   ideas: Suggestion[];
   teammates: TeammateView[];
@@ -51,9 +54,12 @@ function collect(deps: AppDeps): Parts & { lineProject: Map<string, string | nul
   const timedLines = new Set(timed.map((row) => row.lineId).filter((id): id is string => id !== null));
   const board = deps.desk.board();
   const waiting = board.current === null ? board.queue : [board.current, ...board.queue];
-  const recent = lines.filter((line) => ENDED.has(line.status) && line.outcome !== null && !timedLines.has(line.id))
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  return { lineProject, running: lines.filter((line) => RUNNING.has(line.status)), waiting, recent, timed,
+  const newest = (a: LineView, b: LineView): number => b.updatedAt.localeCompare(a.updatedAt);
+  const done = lines.filter((line) => taskEnded(line) && !timedLines.has(line.id)).sort(newest);
+  const deleted = deps.lines.list({ kind: 'background', includeArchived: true, limit: LINES_SCAN })
+    .filter((line) => line.archivedAt != null).sort((a, b) => (b.archivedAt ?? '').localeCompare(a.archivedAt ?? ''));
+  for (const line of deleted) lineProject.set(line.id, line.projectId);
+  return { lineProject, running: lines.filter(taskInProgress), waiting, ended: done, deleted, timed,
     ideas: deps.tasks.suggestions.open(), teammates: deps.tasks.timed.teammates() };
 }
 
@@ -67,7 +73,8 @@ function forProject(parts: Parts & { lineProject: Map<string, string | null> }, 
   return {
     running: parts.running.filter((line) => personal(line.projectId) === projectId),
     waiting: parts.waiting.filter((ask) => askProject(ask) === projectId),
-    recent: parts.recent.filter((line) => personal(line.projectId) === projectId),
+    ended: parts.ended.filter((line) => personal(line.projectId) === projectId),
+    deleted: parts.deleted.filter((line) => personal(line.projectId) === projectId),
     timed,
     ideas: parts.ideas.filter((idea) => personal(idea.projectId) === projectId),
     teammates: parts.teammates.filter((mate) => mates.has(mate.id)),
@@ -75,7 +82,8 @@ function forProject(parts: Parts & { lineProject: Map<string, string | null> }, 
 }
 
 function counts(parts: Parts): TaskCounts {
-  return { running: parts.running.length, waiting: parts.waiting.length, timed: parts.timed.length,
+  return { running: parts.running.length, waiting: parts.waiting.length, ended: parts.ended.length,
+    deleted: parts.deleted.length, timed: parts.timed.length,
     ideas: parts.ideas.length };
 }
 
@@ -91,7 +99,8 @@ export function tasksBoard(deps: AppDeps, projectId: string | null): TasksBoardR
     counts: counts(parts),
     running: parts.running,
     waiting: parts.waiting.map((ask) => askView(deps.state, ask)),
-    recent: parts.recent.slice(0, TASKS_RECENT_MAX),
+    ended: parts.ended.slice(0, TASKS_ENDED_MAX),
+    deleted: parts.deleted.slice(0, TASKS_DELETED_MAX),
     timed: parts.timed,
     ideas: parts.ideas.map(suggestionView),
     teammates: parts.teammates,

@@ -28,7 +28,7 @@ function outcome(state: ViewState, line: LineRow, queued: number): LineOutcome |
     return 'failed';
   }
   if (line.status === 'paused') {
-    return line.pauseReason === 'user' ? 'stopped' : line.pauseReason === 'output_limit' ? 'incomplete' : null;
+    return line.pauseReason === 'stopped' ? 'stopped' : line.pauseReason === 'output_limit' ? 'incomplete' : null;
   }
   if (line.status !== 'idle' || queued > 0) {
     return null;

@@ -65,7 +65,7 @@ describe('任务栏目', () => {
       .toEqual(['idea-biorxiv']));
   });
 
-  it('在做：线、队友、刚做完（没做成写原因）；点队友能叫停', async () => {
+  it('进行中：线、队友；已结束里没做成写原因；点队友能叫停', async () => {
     const app = await renderApp({ hash: '#/tasks', setup: ({ control }) => {
       seedTasks(control.tasks, NOW);
       control.lines.put(control.lines.blank('line-weekly', 'background', '研究周报 · 第 3 期', { status: 'running',
@@ -73,10 +73,9 @@ describe('任务栏目', () => {
       control.lines.put(control.lines.blank('line-spark', 'background', '设置每日续火花', { status: 'idle',
         outcome: 'done', unmet: '当时还不能新建定时任务' }));
     } });
-    const running = await screen.findByRole('list', { name: '在做' });
+    const running = await screen.findByRole('list', { name: '进行中' });
     expect(within(running).getByText('读到第 9 / 14 篇')).toBeTruthy();
-    const recent = screen.getByRole('region', { name: '刚做完' });
-    expect(within(recent).getByText('没做成：当时还不能新建定时任务')).toBeTruthy();
+    expect(within(running).queryByText('设置每日续火花')).toBeNull();
     fireEvent.click(within(screen.getByRole('region', { name: 'Plasticine' }))
       .getByRole('button', { name: 'Plasticine：回顾' }));
     const sheet = await screen.findByRole('dialog', { name: '回顾' });
@@ -86,6 +85,32 @@ describe('任务栏目', () => {
       const board = await app.api.tasks.board({});
       expect(board.timed.filter((row) => row.teammateId === 'review').every((row) => !row.enabled)).toBe(true);
     });
+  });
+
+  it('四个动作：暂停后能继续；停止要确认、进已结束；删除就地撤销，最近删除里能恢复', async () => {
+    const app = await renderApp({ hash: '#/tasks', setup: ({ control }) => {
+      control.lines.put(control.lines.blank('line-bills', 'background', '整理 11 月账单', { status: 'running',
+        activity: '读第 3 张账单', activeSince: NOW.toISOString() }));
+      control.lines.put(control.lines.blank('line-blog', 'background', '翻译博客', { status: 'paused',
+        pauseReason: 'user' }));
+    } });
+    const running = await screen.findByRole('list', { name: '进行中' });
+    expect(within(running).getByRole('button', { name: '继续' })).toBeTruthy();
+    fireEvent.click(within(running).getByRole('button', { name: '更多操作：整理 11 月账单' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '停止…' }));
+    const dialog = await screen.findByRole('alertdialog');
+    expect(within(dialog).getByText('停止后不能再继续。做过的过程和结果保留在「已结束」里。')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: '停止' }));
+    await waitFor(async () => {
+      const board = await app.api.tasks.board({});
+      expect(board.ended.map((line) => line.id)).toContain('line-bills');
+    });
+    fireEvent.click(within(running).getByRole('button', { name: '更多操作：翻译博客' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '删除' }));
+    expect(await screen.findByText('已删除「翻译博客」')).toBeTruthy();
+    expect((await app.api.tasks.board({})).deleted.map((line) => line.id)).toEqual(['line-blog']);
+    fireEvent.click(screen.getByRole('button', { name: '撤销' }));
+    await waitFor(async () => expect((await app.api.tasks.board({})).deleted).toEqual([]));
   });
 
   it('对话里的定时卡：名单、发什么、什么时候、后果常显；点确认就答了这张卡', async () => {

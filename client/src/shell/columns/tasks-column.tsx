@@ -8,15 +8,18 @@ import { StatusGlyph } from '../glyph.tsx';
 import { hueVar } from '../hue.tsx';
 import { Icon, type IconName } from '../icons.tsx';
 import { TASKS_SECTIONS, type Route, type TasksSection } from '../routes.ts';
-import { ColumnCount, ColumnHead, ColumnLabel, ColumnLink, ColumnNote } from './column.tsx';
+import { ColumnCount, ColumnFoot, ColumnHead, ColumnLabel, ColumnLink, ColumnNote } from './column.tsx';
 
 const ROWS: Readonly<Record<TasksSection, { label: string; count: keyof TaskCounts; lead: 'run' | 'wait' | IconName }>>
   = {
-    run: { label: '在做', count: 'running', lead: 'run' },
+    run: { label: '进行中', count: 'running', lead: 'run' },
     wait: { label: '等你', count: 'waiting', lead: 'wait' },
     timed: { label: '定时', count: 'timed', lead: 'clock' },
     ideas: { label: '建议', count: 'ideas', lead: 'bulb' },
+    ended: { label: '已结束', count: 'ended', lead: 'check' },
+    deleted: { label: '最近删除', count: 'deleted', lead: 'trash' },
   };
+const MAIN_SECTIONS = TASKS_SECTIONS.filter((item) => item !== 'deleted');
 
 function Lead({ lead }: { lead: 'run' | 'wait' | IconName }): ReactNode {
   if (lead === 'run' || lead === 'wait') {
@@ -33,10 +36,10 @@ export function TasksColumn({ route, navigate }: { route: Route; navigate: (rout
     <>
       <ColumnHead title="任务" />
       <div className="column-scroll">
-        {TASKS_SECTIONS.map((item) => (
+        {MAIN_SECTIONS.map((item) => (
           <ColumnLink key={item} route={{ view: 'tasks', noteId: null, tasksSection: item }}
             current={section === item} navigate={navigate} lead={<Lead lead={ROWS[item].lead} />}
-            trail={<ColumnCount value={board?.counts[ROWS[item].count] ?? null} />}>
+            trail={item === 'ended' ? null : <ColumnCount value={board?.counts[ROWS[item].count] ?? null} />}>
             {ROWS[item].label}
           </ColumnLink>
         ))}
@@ -52,6 +55,11 @@ export function TasksColumn({ route, navigate }: { route: Route; navigate: (rout
           ))}
         </>}
       </div>
+      <ColumnFoot>
+        <ColumnLink route={{ view: 'tasks', noteId: null, tasksSection: 'deleted' }} current={section === 'deleted'}
+          navigate={navigate} lead={<Icon name="trash" size={16} />}
+          trail={<ColumnCount value={board?.counts.deleted ?? null} />}>最近删除</ColumnLink>
+      </ColumnFoot>
     </>
   );
 }

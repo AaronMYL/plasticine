@@ -189,7 +189,7 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
 
   const stop = (): void => {
     setStopping(true);
-    void live.lines.stopLine(lineId).finally(() => setStopping(false));
+    void live.lines.pause(lineId).finally(() => setStopping(false));
   };
 
   return (

@@ -46,10 +46,16 @@ export interface LinesApi {
   sendNow(lineId: string, queueId: string, body: LineCommandRequest): Promise<LineQueueResponse>;
   /** POST /v2/lines/:id/widgets：答回答下面的一个卡片小部件。 */
   answerWidget(lineId: string, body: AnswerLineWidgetRequest): Promise<AnswerLineWidgetResponse>;
-  /** POST /v2/lines/:id/stop */
+  /** POST /v2/lines/:id/pause：停下，进度保留，能继续。 */
+  pause(lineId: string, body: LineCommandRequest): Promise<LineResponse>;
+  /** POST /v2/lines/:id/resume：暂停的、出错的接着做。 */
+  resume(lineId: string, body: LineCommandRequest): Promise<LineResponse>;
+  /** POST /v2/lines/:id/stop：不再继续，记录保留。 */
   stop(lineId: string, body: LineCommandRequest): Promise<LineResponse>;
-  /** POST /v2/lines/:id/retry：failed 的线再试一次。 */
-  retry(lineId: string, body: LineCommandRequest): Promise<LineResponse>;
+  /** POST /v2/lines/:id/delete：移进最近删除（还在做的先停下）。 */
+  remove(lineId: string, body: LineCommandRequest): Promise<LineResponse>;
+  /** POST /v2/lines/:id/restore：从最近删除拿回来。 */
+  restore(lineId: string, body: LineCommandRequest): Promise<LineResponse>;
   /** POST /v2/lines/:id/reactions：给一条消息加上或拿掉一个表情。 */
   react(lineId: string, body: ReactLineMessageRequest): Promise<ReactLineMessageResponse>;
   /** POST /v2/lines/side：开一条旁聊。 */

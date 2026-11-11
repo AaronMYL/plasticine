@@ -9,7 +9,7 @@ import { routeHash, TASKS_SECTIONS, type Route, type TasksSection } from '../../
 import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { registerHeartbeatSheet } from './heartbeat-sheet.tsx';
 import { TasksIdeas } from './tasks-ideas.tsx';
-import { TasksRun } from './tasks-run.tsx';
+import { TaskLines, TasksRun } from './tasks-run.tsx';
 import { TasksTimed } from './tasks-timed.tsx';
 import { TimedSheet, type OpenSheet } from './timed-sheet.tsx';
 import { useTaskActions, useTasksBoard } from './use-tasks-board.ts';
@@ -19,13 +19,18 @@ import './tasks.css';
 registerHeartbeatSheet();
 
 export const SECTION_TITLES: Readonly<Record<TasksSection, string>> = {
-  run: '在做',
+  run: '进行中',
   wait: '等你',
   timed: '定时',
   ideas: '建议',
+  ended: '已结束',
+  deleted: '最近删除',
 };
 
-const COUNT_KEYS = { run: 'running', wait: 'waiting', timed: 'timed', ideas: 'ideas' } as const;
+const COUNT_KEYS = { run: 'running', wait: 'waiting', timed: 'timed', ideas: 'ideas', ended: 'ended',
+  deleted: 'deleted' } as const;
+/** 数字只给要处理的几段；已结束、最近删除不写个数。 */
+const COUNTED: ReadonlySet<TasksSection> = new Set(['run', 'wait', 'timed', 'ideas']);
 
 export interface TasksPageProps {
   section: TasksSection;
@@ -44,7 +49,7 @@ function Sections({ section, counts, navigate }: { section: TasksSection;
             navigate({ view: 'tasks', noteId: null, tasksSection: item });
           }}>
           {SECTION_TITLES[item]}
-          {counts === null || counts[COUNT_KEYS[item]] === 0 ? null
+          {counts === null || !COUNTED.has(item) || counts[COUNT_KEYS[item]] === 0 ? null
             : <span className="seg-count">{counts[COUNT_KEYS[item]]}</span>}
         </a>
       ))}
@@ -82,8 +87,12 @@ export function TasksPage({ section, phone, navigate }: TasksPageProps): ReactNo
         <button type="button" className="text-button" onClick={reload}>再读一次</button></p>}
       {board === null ? null : (
         <div className="tasks-body">
-          {section === 'run' ? <TasksRun running={board.running} recent={board.recent} teammates={board.teammates}
+          {section === 'run' ? <TasksRun running={board.running} teammates={board.teammates}
             projects={board.projects} onMate={openMate} /> : null}
+          {section === 'ended' ? (board.ended.length === 0 ? <p className="tasks-empty">还没有结束的事。</p>
+            : <TaskLines lines={board.ended} projects={board.projects} label="已结束" now={Date.now()} />) : null}
+          {section === 'deleted' ? (board.deleted.length === 0 ? <p className="tasks-empty">最近没有删除的事。</p>
+            : <TaskLines lines={board.deleted} projects={board.projects} label="最近删除" now={Date.now()} />) : null}
           {section === 'wait' ? (board.waiting.length === 0 ? <p className="tasks-empty">没有等你的事。</p> : (
             <div className="tasks-waiting">{board.waiting.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}</div>
           )) : null}

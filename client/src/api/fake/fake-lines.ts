@@ -83,6 +83,10 @@ function resolveQuote(quote: ConversationQuoteInput, note: FakeLinesDeps['note']
     noteReference: reference };
 }
 
+function conflict(message: string): ApiError {
+  return new ApiError({ kind: 'failed', code: 'conflict', status: 409, message });
+}
+
 function notFound(): ApiError {
   return new ApiError({ kind: 'invalid', code: 'not_found', status: 404, message: '没有这条线。' });
 }
@@ -210,10 +214,46 @@ export class FakeLines implements LinesApi {
     });
   }
 
+  async pause(lineId: string, body: LineCommandRequest): Promise<LineResponse> {
+    return this.halt(lineId, body, 'pause');
+  }
+
   async stop(lineId: string, body: LineCommandRequest): Promise<LineResponse> {
+    if (this.require(lineId).kind === 'main') throw conflict('主对话不能停止。');
+    return this.halt(lineId, body, 'stop');
+  }
+
+  async remove(lineId: string, body: LineCommandRequest): Promise<LineResponse> {
     this.deps.session.require();
     const line = this.require(lineId);
-    return this.deps.receipts.run('command', body.requestId, `POST /v2/lines/${line.id}/stop`, () => {
+    if (line.kind === 'main') throw conflict('主对话不能删除。');
+    return this.deps.receipts.run('command', body.requestId, `POST /v2/lines/${line.id}/delete`, () => {
+      this.cancelRun(line.id);
+      return { line: this.change(line.id, { archivedAt: this.now(), status: 'paused', activity: null,
+        activeSince: null, pauseReason: line.pauseReason === 'stopped' ? 'stopped' : 'user',
+        outcome: line.pauseReason === 'stopped' ? 'stopped' : null }) };
+    });
+  }
+
+  async restore(lineId: string, body: LineCommandRequest): Promise<LineResponse> {
+    this.deps.session.require();
+    const line = this.require(lineId);
+    return this.deps.receipts.run('command', body.requestId, `POST /v2/lines/${line.id}/restore`,
+      () => ({ line: this.change(line.id, { archivedAt: null }) }));
+  }
+
+  private cancelRun(lineId: string): void {
+    const run = this.runs.get(lineId);
+    if (run !== undefined) {
+      run.cancelled = true;
+      this.runs.delete(lineId);
+    }
+  }
+
+  private async halt(lineId: string, body: LineCommandRequest, action: 'pause' | 'stop'): Promise<LineResponse> {
+    this.deps.session.require();
+    const line = this.require(lineId);
+    return this.deps.receipts.run('command', body.requestId, `POST /v2/lines/${line.id}/${action}`, () => {
       const run = this.runs.get(line.id);
       if (run !== undefined) {
         run.cancelled = true;
@@ -222,15 +262,17 @@ export class FakeLines implements LinesApi {
       if (line.status !== 'idle') {
         this.append(line.id, this.assistant(line.id, { text: '', stopReason: 'aborted' }));
       }
-      return { line: this.change(line.id, { status: 'paused', pauseReason: 'user', outcome: 'stopped',
-        activity: null, activeSince: null, failure: null, pausedUntil: null }) };
+      const stopped = action === 'stop';
+      return { line: this.change(line.id, { status: 'paused', pauseReason: stopped ? 'stopped' : 'user',
+        outcome: stopped ? 'stopped' : null, activity: null, activeSince: null, failure: null, pausedUntil: null }) };
     });
   }
 
-  async retry(lineId: string, body: LineCommandRequest): Promise<LineResponse> {
+  async resume(lineId: string, body: LineCommandRequest): Promise<LineResponse> {
     this.deps.session.require();
     const line = this.require(lineId);
-    return this.deps.receipts.run('command', body.requestId, `POST /v2/lines/${line.id}/retry`, () => {
+    if (line.pauseReason === 'stopped') throw conflict('这件事已经停止，不能再继续。');
+    return this.deps.receipts.run('command', body.requestId, `POST /v2/lines/${line.id}/resume`, () => {
       const last = [...(this.messages.get(line.id) ?? [])].reverse().find((message) => message.role === 'user');
       this.change(line.id, { status: 'running', pauseReason: null, outcome: null, pausedUntil: null,
         failure: null, activeSince: this.now(), activity: null });
@@ -358,7 +400,7 @@ export class FakeLines implements LinesApi {
   }
 
   /** 硬线卡答了：这一轮接着跑（同意 → 做完这一步，不同意 → 把「他没同意」交回去）。 */
-  resume(lineId: string, script: LineScript): void {
+  resumeWith(lineId: string, script: LineScript): void {
     this.change(lineId, { status: 'running', activeSince: this.now() });
     void this.play(lineId, script);
   }

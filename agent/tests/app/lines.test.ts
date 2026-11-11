@@ -127,14 +127,14 @@ test('在跑时发消息进排队，立即发送、撤回、叫停都走接口�
   const now = await call(t, 'POST', `${lineQueuePath('main', item.id)}/send-now`, { cookie,
     body: { requestId: requestId() } });
   assert.equal(now.status, 200);
-  const stopped = await call(t, 'POST', `${linePath('main')}/stop`, { cookie, body: { requestId: requestId() } });
+  const stopped = await call(t, 'POST', `${linePath('main')}/pause`, { cookie, body: { requestId: requestId() } });
   assert.equal(stopped.status, 200);
   await settled(t);
   const read = json(await call(t, 'GET', linePath('main'), { cookie }));
   assert.equal((read['line'] as { status: string }).status, 'paused');
   assert.equal((read['line'] as { pauseReason: string }).pauseReason, 'user');
   faux.appendResponses([fauxAssistantMessage('继续完成。')]);
-  const retry = await call(t, 'POST', `${linePath('main')}/retry`, { cookie, body: { requestId: requestId() } });
+  const retry = await call(t, 'POST', `${linePath('main')}/resume`, { cookie, body: { requestId: requestId() } });
   assert.equal(retry.status, 200, '暂停的线可明确继续');
   await settled(t);
   const missing = await call(t, 'GET', linePath('line-nope'), { cookie });
@@ -224,7 +224,7 @@ test('归档接口须登录并幂等，默认列表隐藏但可读取和恢复�
   const kernel = t.app.deps.lines!;
   const line = kernel.open({ title: '已取消', goal: '保留原话', parentLineId: null, projectId: null }, () => undefined);
   kernel.halt(line.id);
-  const path = `${linePath(line.id)}/archive`;
+  const path = `${linePath(line.id)}/delete`;
   const body = { requestId: requestId() };
   assert.equal((await call(t, 'POST', path, { body })).status, 401);
   const first = await call(t, 'POST', path, { cookie, body });
@@ -238,7 +238,7 @@ test('归档接口须登录并幂等，默认列表隐藏但可读取和恢复�
   assert.ok(Value.Check(ListLinesResponseSchema, all));
   assert.ok(all.lines.some((item) => item.id === line.id && item.archivedAt != null));
   assert.equal((await call(t, 'GET', linePath(line.id), { cookie })).status, 200);
-  assert.equal((await call(t, 'POST', `${linePath(line.id)}/retry`, {
+  assert.equal((await call(t, 'POST', `${linePath(line.id)}/resume`, {
     cookie, body: { requestId: requestId() },
   })).status, 409);
   assert.equal((await call(t, 'POST', lineMessagesPath(line.id), {
