@@ -49,7 +49,7 @@ export function HomeNew({ now }: { now: Date }): ReactNode {
   return (
     <section className="home-section" aria-label="新的" aria-busy={!data.loaded || retrying}>
       <h2 className="home-section-title">新的
-        <span className="home-section-count">{results.length + reviewCount}</span>
+        {data.loaded ? <span className="home-section-count">{results.length + reviewCount}</span> : null}
         {results.length > 4 ? <button type="button" className="text-button home-results-all"
           onClick={() => setAll((value) => !value)}>{all ? '收起' : '全部'}</button> : null}
       </h2>
