@@ -35,7 +35,7 @@ function line(app: TestApp, docId: string, text: string, ref: string): MemoryLin
 
 type Row = Record<string, unknown>;
 
-test('目录：按类型分组（关于你和做事方式在前、项目、人、技能），档位默认私密、定过的照定的；超上限标出来；没有整理不给入口',
+test('目录：按类型分组（你在前、项目、人物、其他：话题和技能并在一起），档位默认私密、定过的照定的；超上限标出来；没有整理不给入口',
   async () => {
     const { app, cookie } = await start();
     const ref = said(app, '小林是我大学同学');
@@ -49,7 +49,7 @@ test('目录：按类型分组（关于你和做事方式在前、项目、人�
     app.state.visibilityMarks.put('memory_topic', skill.id, 0, { proposed: 'public', confirmed: false });
     const body = json(await call(app, 'GET', '/v2/memory/topics', { cookie }));
     const groups = body['groups'] as { kind: string; topics: Row[] }[];
-    assert.deepEqual(groups.map((group) => group.kind), ['about_you', 'project', 'person', 'skill']);
+    assert.deepEqual(groups.map((group) => group.kind), ['about_you', 'project', 'person', 'topic']);
     const topics = groups.flatMap((group) => group.topics);
     const find = (id: string) => topics.find((topic) => topic['id'] === id);
     assert.equal(find(person.id)?.['tier'], 'friend');

@@ -164,6 +164,10 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
     void live.memoryTopics.open();
   }, [live.memoryTopics]);
   const list = data.list;
+  // 空的一页不在目录里出现（11-11：「个人」项目的记忆并进了关于你，人物页等勾了才有内容）；关于你和规则总在。
+  const groups = (list?.groups ?? []).map((group) => ({ ...group, topics: group.topics.filter((topic) =>
+    topic.lineCount > 0 || topic.kind === 'about_you' || topic.kind === 'rules') }))
+    .filter((group) => group.topics.length > 0);
   const uncertain = list?.uncertain.slice(0, UNCERTAIN_SHOWN_MAX) ?? [];
   const searching = query.trim() !== '';
   return (
@@ -188,7 +192,7 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
                 </FlipList>
               </section>
             )}
-            {list.groups.map((group) => (<Fragment key={group.kind}>
+            {groups.map((group) => (<Fragment key={group.kind}>
               {group.kind === 'topic' ? <TeammatesBlock navigate={navigate} /> : null}
               <section className="block memory-block topic-group"
                 aria-labelledby={`topics-${group.kind}`}>
@@ -201,7 +205,7 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
                 </FlipList>
               </section>
             </Fragment>))}
-            {list.groups.some((group) => group.kind === 'topic') ? null : <TeammatesBlock navigate={navigate} />}
+            {groups.some((group) => group.kind === 'topic') ? null : <TeammatesBlock navigate={navigate} />}
           </>
         )}
     </div>

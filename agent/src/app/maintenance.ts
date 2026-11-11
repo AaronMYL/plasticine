@@ -114,10 +114,20 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
     if (request.adds === undefined) {
       throw new MaintenanceFailure('invalid_input', '「memory.cleanup.add」要给 --plan（新加哪几条）。');
     }
-    const cleanup = addClaudeItems(deps.state, request.adds.map((add) => ({ ...add, reason: '' })));
+    const cleanup = addClaudeItems(deps.state, request.adds.map((add) => ({ toDocId: targetDoc(deps.state, add),
+      text: add.text, reason: '' })));
     return { cleanupId: cleanup.id, added: request.adds.length };
   }
   throw new MaintenanceFailure('invalid_input', `不认识的写操作「${request.op}」。`);
+}
+
+/** 新加的一条放进哪一页：给了文档就是它；给了人名就是这个人那一页（没有就建一页，空页在目录里不显示）。 */
+function targetDoc(state: StateService, add: { toDocId?: string | undefined; person?: string | undefined }): string {
+  if (add.toDocId !== undefined) return add.toDocId;
+  const name = add.person?.trim() ?? '';
+  if (name === '') throw new MaintenanceFailure('invalid_input', '新加的一条要给 toDocId 或 person。');
+  const found = state.memoryDocs.docs.live().find((doc) => doc.kind === 'person' && doc.title === name);
+  return (found ?? state.memoryDocs.docs.create({ kind: 'person', title: name, summary: '', createdBy: 'user' })).id;
 }
 
 /** memory.move：一行一行挪；有一行已经改过（版本对不上）整批不动。 */

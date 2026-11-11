@@ -57,7 +57,7 @@ export function LineActions({ docId, line, onEdit }: { docId: string; line: Memo
   return (
     <>
       <RevealMore label={`「${short}」的更多操作`} actions={[
-        { icon: 'edit', label: '改', onSelect: onEdit },
+        { icon: 'edit', label: '修改', onSelect: onEdit },
         { icon: 'folder', label: '挪到…', disabled: targets.length === 0, onSelect: (anchor) => setMoving(anchor) },
         { icon: 'trash', label: '删除', danger: true, onSelect: () => setDeleting(true) },
       ]} />

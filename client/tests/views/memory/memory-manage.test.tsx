@@ -28,7 +28,7 @@ describe('一页记忆：改、删、挪、加', () => {
     const before = await lineTexts(app, 't_you');
     const first = before[0]!;
     await menu(new RegExp(`^「${Array.from(first).slice(0, 12).join('').replace(/[()[\]?.*+^$|\\]/g, '\\$&')}」的更多操作`));
-    fireEvent.click(await screen.findByRole('menuitem', { name: '改' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '修改' }));
     const box = within(main()).getByRole('textbox', { name: '改这一条' });
     fireEvent.change(box, { target: { value: '住在成都，晚上写代码。' } });
     fireEvent.click(within(main()).getByRole('button', { name: '保存' }));

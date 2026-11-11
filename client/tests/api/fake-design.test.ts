@@ -13,7 +13,7 @@ describe('记忆主题', () => {
     async () => {
       const fake = seeded();
       const list = await fake.api.memoryTopics.list();
-      expect(list.groups.map((group) => group.kind)).toEqual(['about_you', 'project', 'person', 'topic', 'skill']);
+      expect(list.groups.map((group) => group.kind)).toEqual(['about_you', 'project', 'person', 'topic']);
       const doc = await fake.api.memoryTopics.get('t_you');
       expect(doc.sections.flatMap((section) => section.lines).every((line) => line.sources.length > 0)).toBe(true);
       const item = list.uncertain[0]!;

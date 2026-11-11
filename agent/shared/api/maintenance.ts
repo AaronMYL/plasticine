@@ -35,9 +35,10 @@ export const MemoryMoveItemSchema = Type.Object({
 }, { additionalProperties: false });
 export type MemoryMoveItem = Static<typeof MemoryMoveItemSchema>;
 
-/** memory.cleanup.add 的一项：清单里新加一条（不注明来处）。 */
+/** memory.cleanup.add 的一项：清单里新加一条（不注明来处）。给 person（人名）时加进这个人的那一页，没有就建一页。 */
 export const MemoryCleanupAddSchema = Type.Object({
-  toDocId: Type.String({ minLength: 1, maxLength: 80 }),
+  toDocId: Type.Optional(Type.String({ minLength: 1, maxLength: 80 })),
+  person: Type.Optional(Type.String({ minLength: 1, maxLength: 40 })),
   text: Type.String({ minLength: 1, maxLength: 600 }),
 }, { additionalProperties: false });
 export type MemoryCleanupAdd = Static<typeof MemoryCleanupAddSchema>;

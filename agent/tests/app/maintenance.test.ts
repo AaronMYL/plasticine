@@ -170,8 +170,11 @@ test('memory.move 把几行挪到别的文档；memory.cleanup.add 放进整理�
   assert.ok(h.state.memoryDocs.lines.live(YOU_DOC_ID).some((item) => item.text === '房租每月 5 号交'));
   assert.notEqual(h.state.memoryDocs.lines.require(line.id).archivedAt, null);
   runMaintenance(deps(), { operationId: 'claude-adds-1', op: 'memory.cleanup.add', because: '把你的记忆也整理进去',
-    adds: [{ toDocId: YOU_DOC_ID, text: '住在成都。' }] });
-  const item = h.state.memoryCleanups.latest()?.items[0];
+    adds: [{ toDocId: YOU_DOC_ID, text: '住在成都。' }, { person: '林一', text: '邻居，常一起吃饭。' }] });
+  const [item, person] = h.state.memoryCleanups.latest()?.items ?? [];
   assert.equal(item?.kind, 'add');
   assert.equal(item?.reason, '');
+  const page = h.state.memoryDocs.docs.live().find((candidate) => candidate.kind === 'person'
+    && candidate.title === '林一');
+  assert.equal(person?.toDocId, page?.id);
 });
