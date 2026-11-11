@@ -49,6 +49,8 @@ import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
 import { MoneyDraftDesk } from '../life/index.ts';
 import { Mates } from '../mates/service.ts';
 import { mateTools } from '../mates/tools.ts';
+import { MateGroupTasks } from '../mates/group-tasks.ts';
+import { mateGroupTaskTools } from '../mates/group-task-tools.ts';
 import type { LineKernel } from '../lines/index.ts';
 import { DEFAULT_RELAY_URL, NetworkService, TunnelService, type TunnelServiceOptions } from '../network/index.ts';
 import { ServerCommands, type CloudTransports } from '../cloud-tools/index.ts';
@@ -318,7 +320,8 @@ export function assembleApp(options: AssembleOptions): App {
     skillsContext: (lineId) => skills.context(`line:${lineId}`),
     lineChanged: (lineId) => network.lineChanged(lineId),
     contextImages: (lineId) => network.attachments.contextImages(lineId),
-    tools: [...mateTools(new Mates(state, () => late.get())), taskCardTool(state, network),
+    tools: [...mateTools(new Mates(state, () => late.get())),
+      ...mateGroupTaskTools(new MateGroupTasks(state, () => late.get())), taskCardTool(state, network),
       ...messageTools(state, network), ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
       ...libraryTools({ state, workspace: m5b.artifacts.workspace },
         (noteId) => hub.publish({ type: 'note_invalidated', noteId })),

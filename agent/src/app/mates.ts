@@ -34,7 +34,7 @@ export const MATE_ROUTES: readonly Route[] = [
     requireUserAuth(context);
     const input = checkInput(MateHandoffRequestSchema, await readJsonBody(context.req), '交接');
     return idempotent(context, input.requestId, (after) => ({ status: 200,
-      body: { line: lineCall(() => matesFor(context).handoff(input, after)) } }), digest(input));
+      body: { line: lineCall(() => matesFor(context).handoff(input, after, [], { claimTask: true })) } }), digest(input));
   } },
   { method: 'POST', path: `${MATES_PATH}/legacy/prepare`, auth: true, async handler(context) {
     requireAuth(context);
