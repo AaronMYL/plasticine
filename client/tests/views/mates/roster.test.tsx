@@ -13,9 +13,14 @@ it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', a
   const editor = screen.getByRole('dialog', { name: '创建队友' });
   fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '资料研究员' } });
   fireEvent.change(within(editor).getByLabelText('职责'), { target: { value: '核对来源和整理资料' } });
+  const colors = within(editor).getByRole('radiogroup', { name: '颜色' });
+  const picked = within(colors).getAllByRole('radio')[2]!;
+  fireEvent.click(picked);
+  expect(picked.getAttribute('aria-checked')).toBe('true');
   fireEvent.click(within(editor).getByRole('button', { name: '创建队友' }));
   await waitFor(async () => expect((await app.api.mates.list()).mates).toHaveLength(1));
   const first = (await app.api.mates.list()).mates[0]!;
+  expect(first.hue).toBe('sky');
   await waitFor(() => expect(window.location.hash).toBe(`#/plasticine/mate/${first.id}`));
   await act(async () => { await make(app, '编辑队友'); });
   fireEvent.click(await screen.findByRole('button', { name: '创建队友群组' }));

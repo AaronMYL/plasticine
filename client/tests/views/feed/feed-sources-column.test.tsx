@@ -8,7 +8,7 @@ import type { FakeApi } from '../../../src/api/fake/index.ts';
 import { renderApp, settle } from '../../helpers.tsx';
 
 function column(): HTMLElement {
-  return screen.getByRole('complementary', { name: '信息流' });
+  return screen.getByRole('complementary', { name: '阅读' });
 }
 
 function sources(): HTMLElement {

@@ -10,8 +10,8 @@ describe('首页「现在」', () => {
   it('全空时有一个直接开始的输入框，发出后进入对话继续接结果', async () => {
     await renderApp({ hash: '#/today' });
     expect(await screen.findByRole('heading', { name: HOME_HEADING })).toBeTruthy();
-    expect(screen.queryByRole('region', { name: '等你' })).toBeNull();
-    expect(screen.queryByRole('region', { name: '在做' })).toBeNull();
+    expect(screen.queryByRole('region', { name: '要你处理' })).toBeNull();
+    expect(screen.queryByRole('region', { name: '进行中' })).toBeNull();
     const start = await screen.findByRole('textbox', { name: '想一起做什么' });
     fireEvent.change(start, { target: { value: '帮我查一下安装来源' } });
     fireEvent.click(screen.getByRole('button', { name: '开始聊' }));
@@ -24,13 +24,13 @@ describe('首页「现在」', () => {
         detail: '发出后对方会收到，撤不回', options: [{ id: 'allow', label: '发出', recommended: true,
           description: null }, { id: 'deny', label: '先不', recommended: false, description: null }] });
     } });
-    const waiting = await screen.findByRole('region', { name: '等你' });
+    const waiting = await screen.findByRole('region', { name: '要你处理' });
     expect(within(waiting).getByText('1')).toBeTruthy();
     fireEvent.click(within(waiting).getByRole('button', { name: '去看' }));
     const card = within(waiting).getByRole('region', { name: /要把这封回复发给 Bolt 吗/ });
     fireEvent.click(within(card).getByRole('button', { name: '发出（推荐）' }));
     await waitFor(async () => expect((await app.api.asks.get('ask-1')).status).toBe('answered'));
-    await waitFor(() => expect(screen.queryByRole('region', { name: '等你' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('region', { name: '要你处理' })).toBeNull());
   });
 
   it('在做：点暂停会留下可继续的工作，停在卡上的线不重复列', async () => {
@@ -40,7 +40,7 @@ describe('首页「现在」', () => {
         activity: '读官方发布页…', activeSince: at }));
       control.lines.put(control.lines.blank('line-b', 'background', '回 Bolt', { status: 'waiting' }));
     } });
-    const doing = await screen.findByRole('region', { name: '在做' });
+    const doing = await screen.findByRole('region', { name: '进行中' });
     expect(within(doing).getByText('查安装来源')).toBeTruthy();
     expect(within(doing).getByText('读官方发布页…')).toBeTruthy();
     expect(within(doing).queryByText('回 Bolt')).toBeNull();
@@ -48,6 +48,18 @@ describe('首页「现在」', () => {
     await waitFor(() => expect(app.control.lines.find('line-a')?.pauseReason).toBe('user'));
     expect(await within(doing).findByRole('button', { name: '继续' })).toBeTruthy();
     expect(within(doing).getByText('已暂停')).toBeTruthy();
+  });
+
+  it('两栏：问候下面写几件要你定、几件在进行；进行中带「全部任务」，点了去任务', async () => {
+    await renderApp({ hash: '#/today', setup: ({ control }) => {
+      control.lines.put(control.lines.blank('line-a', 'background', '查安装来源', { status: 'running',
+        activeSince: new Date().toISOString() }));
+    } });
+    const doing = await screen.findByRole('region', { name: '进行中' });
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('1 件在进行');
+    expect(doing.closest('.home-main')).not.toBeNull();
+    fireEvent.click(within(doing).getByRole('button', { name: '全部任务' }));
+    await waitFor(() => expect(window.location.hash).toMatch(/^#\/tasks/));
   });
 
   it('在做的顺序：在跑的在前，主对话、旁聊和做完的不列', () => {
@@ -72,7 +84,7 @@ describe('首页「现在」', () => {
         control.lines.put(control.lines.blank(id, 'background', title, { status, outcome, lastAnswer: '已有的结果' }));
       }
     } });
-    const recent = await screen.findByRole('region', { name: '最近结果' });
+    const recent = await screen.findByRole('region', { name: '新的' });
     expect(within(recent).getByText('完整调研结果')).toBeTruthy();
     expect(within(recent).queryByText('排队返工')).toBeNull();
     expect(within(recent).queryByText('已暂停的旧稿')).toBeNull();
@@ -86,7 +98,7 @@ describe('首页「现在」', () => {
       control.lines.put(control.lines.blank('unmet', 'background', '设置每日续火花', { outcome: 'done',
         unmet: '当时还不能新建定时任务' }));
     } });
-    const recent = await screen.findByRole('region', { name: '最近结果' });
+    const recent = await screen.findByRole('region', { name: '新的' });
     const ok = within(recent).getByRole('button', { name: /刷新信息流/ });
     expect(within(ok).getByRole('img', { name: '已完成' })).toBeTruthy();
     const unmet = within(recent).getByRole('button', { name: /设置每日续火花/ });
@@ -107,7 +119,7 @@ describe('首页「现在」', () => {
         return list(query);
       };
     } });
-    expect(screen.getByRole('status', { name: '正在读最近结果' })).toBeTruthy();
+    expect(screen.getByRole('status', { name: '正在读新的' })).toBeTruthy();
     await act(async () => release?.());
     expect(await screen.findByText('已经完成的调研')).toBeTruthy();
     fail = true;
@@ -115,14 +127,14 @@ describe('首页「现在」', () => {
     expect(await screen.findByText('刷新失败，保留上次结果')).toBeTruthy();
     expect(screen.getByText('已经完成的调研')).toBeTruthy();
     fail = false;
-    fireEvent.click(within(screen.getByRole('region', { name: '最近结果' })).getByRole('button', { name: '重试' }));
+    fireEvent.click(within(screen.getByRole('region', { name: '新的' })).getByRole('button', { name: '重试' }));
     await waitFor(() => expect(screen.queryByText('刷新失败，保留上次结果')).toBeNull());
   });
 
   it('错误验收场景在自动重读后仍保留故障与已到达的结果，重试可再次发起读取', async () => {
     await renderApp({ setup: ({ control }) => seedWorkScene({ lines: control.lines, asks: control.asks,
       contacts: control.contacts, projectId: null }, NOW, 'error') });
-    const recent = await screen.findByRole('region', { name: '最近结果' });
+    const recent = await screen.findByRole('region', { name: '新的' });
     expect(await within(recent).findByText('刷新失败，保留上次结果')).toBeTruthy();
     expect(within(recent).getByText('杭州周末带父母去的三个地方')).toBeTruthy();
     fireEvent.click(within(recent).getByRole('button', { name: '重试' }));

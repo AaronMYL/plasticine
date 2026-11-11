@@ -29,8 +29,10 @@ export function bookSummarySpaceSnapshot(state: StateService, book: BookRecord, 
   // 只认旧生成器的精确产物。保留旧回退算法仅用于识别，绝不再把它展示成总述。
   const legacySummary = outline.summary || [...outline.parts].filter((part) => part.chapter < book.toc.length)
     .sort((a, b) => a.chapter - b.chapter).map((part) => part.summary).filter(Boolean).join(' ').slice(0, 400);
-  const expected = [renderBookPage(input), renderBookPage({ ...input, outline: { ...outline,
-    summary: legacySummary } })].map(withoutReadingPosition);
+  const inputs = [input, { ...input, outline: { ...outline, summary: legacySummary } }];
+  // 11-11 以前的版式带色条：同样算自动生成的，好换成新版式。
+  const expected = inputs.flatMap((item) => [renderBookPage(item), renderBookPage(item, { legacy: true })])
+    .map(withoutReadingPosition);
   const revision = state.spaces.revision(space.id, space.version);
   const generated = space.author === 'ai' && space.category === 'booknote' && space.bookId === book.id
     && space.title === `${book.title} · 大纲`.slice(0, 120)
@@ -87,4 +89,18 @@ export function backfillBookSpaces(state: StateService): number {
     }
   }
   return created;
+}
+
+/** 11-11 版式升级：还是自动生成、没被改过的旧大纲页（带色条）换成新版式；改过的不动。返回换了几页。 */
+export function upgradeBookOutlineLayouts(state: StateService): number {
+  let upgraded = 0;
+  for (const book of state.books.live()) {
+    const row = state.bookInsights.find(book.id, 'outline');
+    const space = state.spaces.findBySourceUrl(bookSpaceSource(book.id, 'outline'), 'booknote', true);
+    if (row === undefined || space === undefined || space.deletedAt !== null
+      || !(space.html ?? '').includes('class="bn-bar"')) continue;
+    const snapshot = bookSummarySpaceSnapshot(state, book, row, space);
+    if (snapshot.generated && publishBookSpace(state, book, row, true) !== null) upgraded += 1;
+  }
+  return upgraded;
 }

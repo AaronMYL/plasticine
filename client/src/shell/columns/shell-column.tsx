@@ -7,11 +7,10 @@ import type { ArchivedTab } from '../../state/web-tabs.ts';
 import { EASE_OUT, MOTION, play } from '../motion.ts';
 import type { Route } from '../routes.ts';
 import { SECTIONS, type SectionId } from '../sections.ts';
-import { BooksColumn } from './books-column.tsx';
-import { FeedColumn } from './feed-column.tsx';
 import { LibraryColumn } from './library-column.tsx';
 import { MessagesColumn } from './messages-column.tsx';
 import { NotesColumn } from './notes-column.tsx';
+import { ReadingColumn } from './reading-column.tsx';
 import { PlasticineColumn } from './plasticine-column.tsx';
 import { TasksColumn } from './tasks-column.tsx';
 import { WebColumn } from './web-column.tsx';
@@ -48,9 +47,8 @@ function Body(props: ShellColumnProps): ReactNode {
     case 'web':
       return <WebColumn currentId={props.webId} onOpen={props.onOpenTab} onClose={props.onCloseTab}
         onReopen={props.onReopen} onNew={() => navigate({ view: 'web', noteId: null, webTabId: null })} />;
-    case 'feed': return <FeedColumn route={route} navigate={navigate} />;
+    case 'reading': return <ReadingColumn route={route} navigate={navigate} />;
     case 'notes': return <NotesColumn navigate={navigate} />;
-    case 'books': return <BooksColumn route={route} navigate={navigate} />;
     case 'library': return <LibraryColumn route={route} navigate={navigate} onAsk={props.onAsk} />;
     case 'now': return null;
   }

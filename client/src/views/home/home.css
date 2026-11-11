@@ -1,14 +1,67 @@
-/* 首页「现在」（2026-11-05 设计稿 Home / Phone-Home）：单列最宽 880，块间 28；每块一个 15/24 小节标题，行与行之间
-   1px --line，没有卡片。电脑上「今天」和「信息流」左右两栏（间距 48）。 */
+/* 首页（2026-11-05 设计稿 Home / Phone-Home；11-11 第 11 批改两栏）：电脑左栏要你处理 / 进行中 / 新的，右边 300 宽
+   窄栏今天 / 接着读 / 信息流，两栏间距 40；手机一列。块间 28；每块一个 15/24 小节标题，行与行之间 1px --line，没有卡片。 */
 
 .home {
   display: flex;
   flex-direction: column;
   gap: 28px;
-  width: min(880px, 100%);
+  width: min(1120px, 100%);
   box-sizing: border-box;
   margin: 0 auto;
-  padding: 24px 32px 48px;
+  padding: 24px 40px 48px;
+}
+
+.home[data-device='phone'] {
+  padding: 16px 16px 48px;
+}
+
+.home-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 40px;
+}
+
+.home-main,
+.home-side {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .home-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.home-section-more {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* 右边窄栏里的「接着读」：一行一项，不是格子。 */
+.home-side .home-continue {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.home-side .home-continue-item {
+  flex-direction: row;
+  align-items: center;
+  min-height: 40px;
+}
+
+.home-side .home-continue-title {
+  flex: 1;
+  min-width: 0;
+  -webkit-line-clamp: 1;
+}
+
+.home-side .home-continue-meta {
+  margin-top: 0;
 }
 
 .home-greeting {
@@ -19,9 +72,10 @@
 
 .home-greeting h1 {
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex: 1;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 0;
   margin: 0;
   font-size: 24px;
   line-height: 32px;
@@ -30,6 +84,8 @@
 
 .home-date {
   color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
   font-weight: 400;
 }
 
@@ -397,7 +453,8 @@
 }
 
 @media (max-width: 1100px) {
-  .home-continue {
+  .home-main .home-continue,
+  .home-cols .home-continue {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

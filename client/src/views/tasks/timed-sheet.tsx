@@ -73,7 +73,7 @@ function MateBody({ mate, rows, actions }: { mate: TeammateView; rows: TimedRowV
   const busy = actions.busy === mate.id;
   return (
     <div className="tasks-sheet-body">
-      <Field label="在做">{mate.now === '' ? '—' : mate.now}</Field>
+      <Field label="进行中">{mate.now === '' ? '—' : mate.now}</Field>
       <Field label="管着">
         <ul className="tasks-sheet-list">
           {rows.map((row) => <li key={row.id}>{row.title}<span className="tasks-row-meta">{row.summary}</span></li>)}

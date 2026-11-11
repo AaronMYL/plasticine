@@ -4,7 +4,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { renderBookPage } from '../../shared/book-space-page.ts';
 import type { BookOutline } from '../../shared/state.ts';
 import { BookInsightService } from '../../src/brain/book-insights.ts';
-import { publishBookSpace } from '../../src/brain/book-spaces.ts';
+import { publishBookSpace, upgradeBookOutlineLayouts } from '../../src/brain/book-spaces.ts';
 import type { TextModels } from '../../src/kernel/index.ts';
 import { writeSpace } from '../../src/subs/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
@@ -186,7 +186,7 @@ test('缺少总述时不把逐章摘要拼成假的一句话，章节和回原�
 test('其他模型改写过的空间即使作者仍是 AI，也不按旧模板覆盖', async () => {
   const { book, page } = fixture();
   const edited = writeSpace(t.state, { id: page.id, version: page.version, title: page.title,
-    html: page.html!.replace('各部分字数比例', '重新整理的章节比例') }, 'ai').space;
+    html: page.html!.replace('<ol class="bn-list">', '<p>重新整理的章节</p><ol class="bn-list">') }, 'ai').space;
   const runner = service(async () => JSON.stringify({ summary: SUMMARY }));
   runner.instance.start(book, 'outline', false);
   await runner.finished();
@@ -222,3 +222,26 @@ for (const purge of [false, true]) {
     if (purge) assert.equal(tombstone.html, null);
   });
 }
+
+test('11-11 版式升级：自动生成的旧大纲页（带色条）换成新版式，改过的旧页不动', () => {
+  const { book, content } = fixture(SUMMARY);
+  const old = t.state.spaces.findBySourceUrl(`book:${book.id}:outline`, 'booknote', true)!;
+  const legacy = writeSpace(t.state, { id: old.id, version: old.version, title: old.title,
+    html: renderBookPage({ bookId: book.id, toc: book.toc, currentChapter: null, outline: content },
+      { legacy: true }) }, 'ai').space;
+  assert.match(legacy.html!, /各部分字数比例/);
+  assert.equal(upgradeBookOutlineLayouts(t.state), 1);
+  const upgraded = t.state.spaces.require(old.id);
+  assert.doesNotMatch(upgraded.html!, /bn-bar/);
+  assert.match(upgraded.html!, /data-book-chapter="1"/);
+  assert.equal(upgradeBookOutlineLayouts(t.state), 0);
+
+  const other = fixture(SUMMARY);
+  const page = t.state.spaces.findBySourceUrl(`book:${other.book.id}:outline`, 'booknote', true)!;
+  const edited = writeSpace(t.state, { id: page.id, version: page.version, title: page.title,
+    html: renderBookPage({ bookId: other.book.id, toc: other.book.toc, currentChapter: null,
+      outline: other.content }, { legacy: true }).replace('<ol class="bn-list">', '<p>我补的</p><ol class="bn-list">') },
+    'user').space;
+  assert.equal(upgradeBookOutlineLayouts(t.state), 0);
+  assert.equal(t.state.spaces.require(page.id).html, edited.html);
+});

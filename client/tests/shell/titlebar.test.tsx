@@ -73,7 +73,7 @@ describe('桌面客户端的标题栏', () => {
     desktop({ trafficLightInset: 96, fullScreen: false });
     const { view: { container } } = await renderApp({ hash: '#/feed' });
     expect(container.querySelector('.feed-top')).toBeNull();
-    expect(within(titlebar()).getByText('全部')).toBeTruthy();
+    expect(within(titlebar()).getByText('信息流')).toBeTruthy();
   });
 
   it('空间页（第 8 批第 6 条）：「让 Plasticine 改」、✎ 改字、⋯ 在标题栏右边；来信是「回信」', async () => {

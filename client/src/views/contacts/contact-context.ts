@@ -43,7 +43,7 @@ export function contactQuoteText(contact: ContactRow, items: readonly ContactThr
       continue;
     }
     const { task } = item;
-    const head = task.waiting ? '等你' : '在做';
+    const head = task.waiting ? '等你' : '进行中';
     const from = task.direction === 'in' ? `${contact.name}发来` : '我发出';
     const deadline = task.deadline === null ? '' : `，期限 ${when(task.deadline)}`;
     lines.push(`${head}：${task.title}（${from}${deadline}）`, `  要做到：${task.goal}`, `  验收：${task.acceptance}`);

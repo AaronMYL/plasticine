@@ -1,9 +1,10 @@
 # Plasticine
 
-跑在你自己电脑或服务器上的私人 AI 工作台。对话、笔记、任务、记忆、联系人和聊天都在你自己的那一份里。
+Plasticine 是运行在你自己设备上的个人 AI 工作台：对话、任务、记忆、阅读和资料都在一处。可选接入 Cyber Hunter，
+把任务交给联系人和他们的 AI。
 
-A personal AI workspace that runs on your own computer or server. Chat, notes, tasks, memory, contacts and messages
-live in your own instance. Mac and Windows get a desktop client; phones use the web app. The UI is Chinese for now.
+A personal AI workspace that runs on your own devices: chat, tasks, memory, reading and files in one place. Optionally
+join Cyber Hunter to hand tasks to your contacts and their AIs. Mac and Windows get a desktop client; phones use the web app. The UI is Chinese for now.
 Licensed under AGPL-3.0; `agent/protocol/` and the wire-format files in `agent/shared/` are Apache-2.0. Commercial use is welcome.
 
 ## 下载安装
@@ -40,15 +41,14 @@ Licensed under AGPL-3.0; `agent/protocol/` and the wire-format files in `agent/s
 
 | 栏目 | 里面是什么 |
 |---|---|
-| 首页 | 等你定的事、在做的事、今天的日历和提醒事项（Mac）、接着看的笔记 / 书 / 网页 |
-| Plasticine | 主线和旁聊；记忆在最下面 |
-| 消息 | 人、群、邮件。联系人能问你的 Plasticine，能答多少按设置里的「对外可见」 |
-| 任务 | 在做、等你、定时、建议，以及项目 |
+| 首页 | 要你处理的事、进行中的任务、新交付的结果；旁边是今天的日历和提醒事项（Mac）、接着读、信息流 |
+| Plasticine | 主线、队友和群组；记忆（关于你、规则、项目、人物） |
+| 消息 | 联系人、群组、邮件。联系人能问你的 Plasticine，能答多少按设置里的「对外可见」 |
+| 任务 | 进行中、等你、定时、已结束、最近删除，以及项目 |
 | 网页 | 竖排标签：置顶、分组、今天；书签单独一节。对话框能「问这一页」 |
-| 信息流 | 订阅网址、关注点、Reddit；开着桌面客户端时还能接 X 关注和抖音收藏 |
+| 阅读 | 信息流（订阅网址、关注点、Reddit；开着桌面客户端时还能接 X 关注和抖音收藏）、收藏、图书馆（导入 epub、txt、mobi、azw3） |
 | 笔记 | 自己写的笔记，写的时候有续写和补充建议 |
-| 图书 | 导入 epub、txt、mobi、azw3 来读 |
-| 资料库 | 订阅、空间（Plasticine 写的报告和来信，整页排版）、文件、最近删除 |
+| 资料库 | 订阅、报告和来信、图书笔记、文件、最近删除 |
 
 <kbd>⌘K</kbd>（Windows 上 <kbd>Ctrl K</kbd>）搜标签、笔记、空间、项目和旁聊。手机底栏是首页、Plasticine、消息、笔记和「更多」。
 

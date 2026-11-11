@@ -9,7 +9,7 @@ async function row(): Promise<HTMLElement> { return screen.findByRole('listitem'
 
 /** 第二栏「来源」里的「收藏」（11-07 两层侧栏）。 */
 function savedSegment(): HTMLElement {
-  return within(screen.getByRole('complementary', { name: '信息流' })).getByRole('button', { name: /^收藏/ });
+  return within(screen.getByRole('complementary', { name: '阅读' })).getByRole('button', { name: /^收藏/ });
 }
 
 /** 第 3 批：卡底只留四个按钮，记想法在这一条的直达页（#/feed/<id>）。 */
@@ -45,7 +45,7 @@ describe('信息流工作链', () => {
     fireEvent.click(within(await row()).getByRole('button', { name: '已收藏' }));
     await waitFor(() => expect(screen.queryByRole('listitem', { name: '隔离消息' })).toBeNull());
     expect(screen.getByText('还没有收藏。')).toBeTruthy();
-    fireEvent.click(within(screen.getByRole('complementary', { name: '信息流' })).getByRole('button', { name: /^全部/ }));
+    fireEvent.click(within(screen.getByRole('complementary', { name: '阅读' })).getByRole('button', { name: /^信息流/ }));
     await screen.findByRole('listitem', { name: '另一条' });
     expect(within(await row()).getByRole('button', { name: '收藏' }).getAttribute('aria-pressed')).toBe('false');
   });

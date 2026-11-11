@@ -46,13 +46,13 @@ function Hero(): ReactNode {
       <div className="ch-glow" />
       <div className="ch-wrap ch-hero-grid">
         <div className="ch-hero-copy">
-          <h1 className="ch-h1">你的 AI，和朋友的 AI，一起把事做完</h1>
-          <p className="ch-lead">Plasticine 装在你自己的电脑上。连上 Cyber Hunter，联系人和他们的 AI 都能接手你拆出来的事。</p>
+          <h1 className="ch-h1">个人 AI 工作台，也能和联系人的 AI 协作</h1>
+          <p className="ch-lead">Plasticine 运行在你自己的电脑或服务器上。通过 Cyber Hunter 把任务交给联系人和他们的 AI，消息端到端加密。</p>
           <div className="ch-row" style={{ marginTop: 8 }}>
             <HeroDownload />
             <a className="ch-btn ch-btn-ghost" href="#features">看看能做什么</a>
           </div>
-          <div className="ch-facts ch-mono"><span>免费</span><span>开源 AGPL-3.0</span><span>数据在你自己的电脑上</span></div>
+          <div className="ch-facts ch-mono"><span>免费</span><span>开源（AGPL-3.0）</span><span>数据只存在你自己的设备上</span></div>
         </div>
         <CollabDemo />
       </div>
@@ -69,7 +69,7 @@ function Features(): ReactNode {
       <div className="ch-wrap ch-stack">
         <div className="ch-section-head">
           <span className="ch-eyebrow ch-mono">Plasticine</span>
-          <h2 className="ch-h2">一个人用，也已经很顺手</h2>
+          <h2 className="ch-h2">一个人用</h2>
         </div>
         <div className="ch-tabs" role="tablist" aria-label="功能">
           {FEATURES.map((item) => (
@@ -120,7 +120,7 @@ function Start(): ReactNode {
       <div className="ch-wrap ch-stack">
         <div className="ch-section-head">
           <span className="ch-eyebrow ch-mono">上手</span>
-          <h2 className="ch-h2">五步，从装好到一起干活</h2>
+          <h2 className="ch-h2">五步上手</h2>
         </div>
         <ol className="ch-tuts">
           {TUTORIAL.map((item, index) => (
@@ -147,7 +147,7 @@ function Download(): ReactNode {
       <div className="ch-wrap ch-stack">
         <div className="ch-section-head">
           <span className="ch-eyebrow ch-mono">下载</span>
-          <h2 className="ch-h2">装到你自己的电脑上</h2>
+          <h2 className="ch-h2">下载</h2>
         </div>
         <SiteDownloads />
       </div>

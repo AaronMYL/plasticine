@@ -26,11 +26,11 @@ function titles(): (string | null)[] {
 }
 
 /** 看哪一路在第二栏选（第 7 批第 10 条）：全部 · 收藏 · 每个来源一行（X 关注、抖音收藏、按关注点的新闻、每个订阅）。 */
-const SOURCES: Readonly<Record<string, string>> = { 全部: '全部', X: 'X 关注', 订阅: '慢工博客', 新闻: '按关注点的新闻',
+const SOURCES: Readonly<Record<string, string>> = { 全部: '信息流', X: 'X 关注', 订阅: '慢工博客', 新闻: '按关注点的新闻',
   抖音: '抖音收藏', 收藏: '收藏' };
 
 function column(): HTMLElement {
-  return screen.getByRole('complementary', { name: '信息流' });
+  return screen.getByRole('complementary', { name: '阅读' });
 }
 
 function segment(name: string): HTMLElement {
@@ -196,7 +196,7 @@ describe('信息流页', () => {
     expect(write.mock.calls[1]?.[1].requestId).toBe(write.mock.calls[0]?.[1].requestId);
   });
 
-  it('读信息流失败：说出原因并给「重新读取」，点了卡片就出来', async () => {
+  it('读信息流失败：说出原因并给「再读一次」，点了卡片就出来', async () => {
     await renderApp({
       hash: '#/feed',
       setup: (fake) => {
@@ -207,7 +207,7 @@ describe('信息流页', () => {
     await settle();
     const alert = within(main()).getByRole('alert');
     expect(alert.textContent).toContain('读信息流：连不上服务。');
-    fireEvent.click(within(alert).getByRole('button', { name: '重新读取' }));
+    fireEvent.click(within(alert).getByRole('button', { name: '再读一次' }));
     await waitFor(() => expect(card('本地优先软件的同步难题')).toBeTruthy());
     expect(within(main()).queryByRole('alert')).toBeNull();
   });

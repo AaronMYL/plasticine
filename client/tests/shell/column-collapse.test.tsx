@@ -27,7 +27,7 @@ describe('第二栏收起', () => {
     act(() => {
       window.location.hash = '#/feed';
     });
-    await waitFor(() => expect(column().getAttribute('data-section')).toBe('feed'));
+    await waitFor(() => expect(column().getAttribute('data-section')).toBe('reading'));
     expect(column().hasAttribute('data-collapsed')).toBe(false);
     act(() => {
       window.location.hash = '#/notes';

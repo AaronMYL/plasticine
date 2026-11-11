@@ -1,11 +1,10 @@
-// 信息流页（第 3 批，用户 11-04 定；11-07 设计稿 Feed）：瀑布流卡片——有图的大卡、没图的短卡，电脑两三列按宽度、手机
-// 一列；命中关注点的排前面。看哪一路（全部 · 收藏 · 每个来源）在第二栏选（feed-column.tsx），主区顶上一行写这一路的
+// 信息流页（第 3 批，用户 11-04 定；11-07 设计稿 Feed；11-11 第 11 批改成单列）：一列条目，命中关注点的排前面。
+// 看哪一路（信息流 · 收藏 · 每个来源）在阅读第二栏选（reading-column.tsx），主区顶上一行写这一路的
 // 名字。第 7 批第 10 条：来源都在第二栏管——+ 开「加来源」，每行 ⋯ 的「设置…」开这个来源的设置（这两个浮层挂在这页），
-// 抖音收藏的勾选清单在第二栏里再点一下「抖音收藏」或它的 ⋯。读失败就地说原因并给「重新读取」，手里有一份就照常显示那
-// 一份。瀑布流按每条原样估高分列，卡片收成「不感兴趣 · 撤销」的占位时列不重排，只是那一列下面的卡平滑上移。手机没有
-// 第二栏：页头「筛选」抽屉里是同一份来源列表和 ⋯。
+// 抖音收藏的勾选清单在第二栏里再点一下「抖音收藏」或它的 ⋯。读失败就地说原因并给「再读一次」，手里有一份就照常显示那
+// 一份。手机没有第二栏：页头标题「阅读」，下面分段切信息流和图书馆，「筛选」抽屉里是同一份来源列表和 ⋯。
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { COGNITION_PAGE_DEFAULT, type FeedNavSource } from '../../api/shared.ts';
 import type { FeedItemView } from '../../api/types.ts';
 import { useLive } from '../../live.tsx';
@@ -21,8 +20,6 @@ import { useRoute } from '../../shell/use-route.ts';
 import { usePhone } from '../../shell/use-viewport-width.ts';
 import { PendingOps } from '../pending/pending-ops.tsx';
 import { FeedCard } from './feed-card.tsx';
-import { feedText } from './feed-text.ts';
-import { cardHeight, COLUMN_GAP_PX, columnCount, layoutColumns } from './feed-masonry.ts';
 import { DouyinPage } from './douyin-page.tsx';
 import { DouyinSheet } from './douyin-sheet.tsx';
 import { FeedAdd } from './feed-add.tsx';
@@ -32,9 +29,10 @@ import { FeedSourceSettings } from './feed-source-settings.tsx';
 import { FeedTarget } from './feed-target.tsx';
 import './feed.css';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { ReadingTabs } from './reading-tabs.tsx';
 
 const SEGMENT_LABELS: Readonly<Record<Exclude<FeedSegment, `source:${string}`>, string>> = {
-  all: '全部',
+  all: '信息流',
   saved: '收藏',
   x: 'X 关注',
   rss: 'RSS',
@@ -42,11 +40,6 @@ const SEGMENT_LABELS: Readonly<Record<Exclude<FeedSegment, `source:${string}`>, 
   douyin: '抖音收藏',
   reddit: 'Reddit',
 };
-
-// 估高（feed.css）：「展开 / 译自…」那一行 18 + 间距 10；小图表 64 + 说明 18 + 间距 18；抖音的一条要点约一行半。
-const TOOLS_ROW_PX = 28;
-const CHART_PX = 100;
-const POINT_CHARS = 30;
 
 const EMPTY_TEXT: Readonly<Record<string, string>> = {
   all: '还没有内容。点第二栏顶上的 + 加个来源，有了就出现在这里。',
@@ -77,46 +70,11 @@ function PhoneFilter({ segment, onShow, onAdd, onSettings, onDouyin }: { segment
   );
 }
 
-/** 主区内容宽度：分几列看它（展开对话、拖宽聊天栏都会变）。jsdom 和第一次量之前是 0，按一列排。 */
-function useWidth(): { ref: RefObject<HTMLDivElement | null>; width: number } {
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (element === null) { return undefined; }
-    setWidth(element.getBoundingClientRect().width);
-    if (typeof ResizeObserver === 'undefined') { return undefined; }
-    const observer = new ResizeObserver((entries) => setWidth(entries[0]?.contentRect.width ?? 0));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, width };
-}
-
-function Masonry({ items, dismissed }: { items: readonly FeedItemView[]; dismissed: ReadonlySet<string> }): ReactNode {
-  const phone = usePhone();
-  const { ref, width } = useWidth();
-  const count = phone ? 1 : columnCount(width);
-  const columnWidth = count === 1 ? width : (width - COLUMN_GAP_PX * (count - 1)) / count;
-  const columns = useMemo(() => layoutColumns(items, count, (item) => {
-    const text = feedText(item);
-    const tools = text.expandable || text.from !== null ? TOOLS_ROW_PX : 0;
-    const points = (item.video?.points.length ?? 0) + (item.video?.related.length ?? 0);
-    return cardHeight({
-      textChars: points > 0 ? points * POINT_CHARS : Array.from(text.lead).length,
-      title: item.kind !== 'x', hit: item.concernId !== null,
-      imageRatio: item.image === null ? undefined : item.image.ratio,
-      extraPx: tools + (item.chart == null ? 0 : CHART_PX),
-    }, columnWidth);
-  }), [items, count, columnWidth]);
+function Stream({ items, dismissed }: { items: readonly FeedItemView[]; dismissed: ReadonlySet<string> }): ReactNode {
   return (
-    <div ref={ref} className="feed-masonry" role="list" data-columns={count}>
-      {columns.map((column, index) => (
-        <div key={index} className="feed-column" role="none">
-          {column.map((item) => (
-            <FeedCard key={item.id} item={item} collapsed={item.reaction === 'dislike' && dismissed.has(item.id)} />
-          ))}
-        </div>
+    <div className="feed-stream" role="list">
+      {items.map((item) => (
+        <FeedCard key={item.id} item={item} collapsed={item.reaction === 'dislike' && dismissed.has(item.id)} />
       ))}
     </div>
   );
@@ -169,10 +127,13 @@ function FeedListPage(): ReactNode {
   return (
     <div className={`page feed${segment === 'douyin' ? ' page-fill feed-douyin' : ''}`}>
       {phone ? (
-        <PageHeader title="信息流" phoneSearch={false} phoneTools={(
-          <IconButton icon="filter" label="筛选" size={17} aria-haspopup="dialog" aria-expanded={filtering}
-            aria-pressed={segment !== 'all'} onClick={() => setFiltering(true)} />
-        )} />
+        <>
+          <PageHeader title="阅读" phoneSearch={false} phoneTools={(
+            <IconButton icon="filter" label="筛选" size={17} aria-haspopup="dialog" aria-expanded={filtering}
+              aria-pressed={segment !== 'all'} onClick={() => setFiltering(true)} />
+          )} />
+          <ReadingTabs current="feed" />
+        </>
       ) : titled ? (label === '' ? null : <TitlebarTitle text={label} />) : (
         <header className="feed-top">
           <h2 className="feed-top-title">{label}</h2>
@@ -188,7 +149,7 @@ function FeedListPage(): ReactNode {
         <p className="block-empty is-error" role="alert">
           {data.error}{' '}
           <button type="button" className="text-button" onClick={() => void live.feed.reload()}>
-            重新读取
+            再读一次
           </button>
         </p>
       )}
@@ -197,7 +158,7 @@ function FeedListPage(): ReactNode {
         {loading ? <PageLoading /> : null}
         {data.status === 'ready' && data.items.length === 0 ? <p className="block-empty">{empty}</p>
           : null}
-        <Masonry items={data.items} dismissed={ui.dismissedIds} />
+        <Stream items={data.items} dismissed={ui.dismissedIds} />
         {data.moreError === null ? null : (
           <p className="block-empty is-error" role="alert">
             {data.moreError}

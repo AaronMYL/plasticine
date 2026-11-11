@@ -21,7 +21,7 @@ it('加来源里只填网址就能加订阅；失败保留地址并显示服务�
     'https://news.example.test');
   fireEvent.click(within(form).getByRole('button', { name: '添加' }));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: '加来源' })).toBeNull());
-  const column = screen.getByRole('complementary', { name: '信息流' });
+  const column = screen.getByRole('complementary', { name: '阅读' });
   expect(await within(column).findByRole('button', { name: /^news\.example\.test/ })).toBeTruthy();
   expect(subscribe.mock.calls[0]?.[0]).toMatchObject({ url: 'https://news.example.test' });
   expect(subscribe.mock.calls[1]?.[0].requestId).toBe(subscribe.mock.calls[0]?.[0].requestId);

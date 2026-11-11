@@ -20,7 +20,7 @@ describe('信息流 · 加来源 Sheet', () => {
     await renderApp({ hash: '#/feed', setup: seed });
     await settle();
     expect(within(main()).queryByRole('region', { name: '加来源' })).toBeNull();
-    const open = within(screen.getByRole('complementary', { name: '信息流' })).getByRole('button', { name: '加来源' });
+    const open = within(screen.getByRole('complementary', { name: '阅读' })).getByRole('button', { name: '加来源' });
     expect(open.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(open);
     const sheet = within(main()).getByRole('dialog', { name: '加来源' });

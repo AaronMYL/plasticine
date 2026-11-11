@@ -49,6 +49,10 @@ export interface FeedSourceListProps {
   onShow: (segment: FeedSegment) => void;
   onSettings: (row: FeedNavSource) => void;
   onDouyin: () => void;
+  /** 第一行的名字：阅读第二栏写「信息流」，手机筛选抽屉写「全部」。 */
+  allLabel?: string;
+  /** 插在「收藏」和「来源」之间（阅读第二栏放图书馆）。 */
+  between?: ReactNode;
 }
 
 export function FeedSourceList(props: FeedSourceListProps): ReactNode {
@@ -59,7 +63,7 @@ export function FeedSourceList(props: FeedSourceListProps): ReactNode {
     <>
       <button type="button" className="column-item" aria-current={current('all')} onClick={() => props.onShow('all')}>
         <span className="column-item-lead"><Icon name="feed" size={16} /></span>
-        <span className="column-item-text">全部</span>
+        <span className="column-item-text">{props.allLabel ?? '全部'}</span>
         <span className="column-item-trail"><ColumnCount value={props.nav?.all ?? null} label="条新的" /></span>
       </button>
       <button type="button" className="column-item" aria-current={current('saved')}
@@ -67,6 +71,7 @@ export function FeedSourceList(props: FeedSourceListProps): ReactNode {
         <span className="column-item-lead"><Icon name="star" size={16} /></span>
         <span className="column-item-text">收藏</span>
       </button>
+      {props.between}
       {props.nav === null ? null : <>
         <ColumnLabel>来源</ColumnLabel>
         <ul className="feed-srcs" aria-label="来源">

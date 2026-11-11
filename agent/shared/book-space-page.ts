@@ -11,7 +11,7 @@ export interface BookPageInput {
   dismissedPointIds?: readonly string[];
 }
 
-const CSS = `.bn{max-width:800px;margin:auto;padding:24px 20px 48px;font-size:14px;line-height:1.7}
+const LEGACY_CSS = `.bn{max-width:800px;margin:auto;padding:24px 20px 48px;font-size:14px;line-height:1.7}
 .bn h1{font-size:17px;line-height:1.65;font-weight:600;margin:0 0 20px}.bn h2{font-size:15px;font-weight:600}
 .bn-bar{display:flex;height:8px;gap:2px;border-radius:4px;overflow:hidden}.bn-bar span{min-width:2px}
 .bn-legend{display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 24px;font-size:12px;color:var(--fg2)}
@@ -26,6 +26,8 @@ color:var(--fg3);margin-right:6px}.bn-current[hidden]{display:none}
 .bn-point p{margin:8px 0}.bn-point blockquote{border-left:1px solid var(--line2);margin:12px 0;
 padding-left:12px;
 color:var(--fg2);font-size:13px}@media(max-width:480px){.bn{padding:20px 16px 40px}}`;
+// 11-11 第 11 批设计稿「P4 读书笔记」：去掉各部分字数比例的色条和图例，其余不变。旧版样式和正文留着只为认出旧生成页。
+const CSS = LEGACY_CSS.replace(/\.bn-bar\{[^\n]*\n\.bn-legend\{[^\n]*\n\.bn-legend i\{[^\n]*\n/u, '');
 const HUES = ['sky', 'teal', 'ochre', 'rose', 'sage', 'slate'] as const;
 
 function link(bookId: string, chapter: number, offset = 0): string {
@@ -33,7 +35,9 @@ function link(bookId: string, chapter: number, offset = 0): string {
     + ' href="#">↗ 回到原文这一段</a>';
 }
 
-export function renderBookPage(input: BookPageInput): string {
+/** legacy：照 11-11 以前的样子画（带色条），只用来认出旧版自动生成的页面，不再写出去。 */
+export function renderBookPage(input: BookPageInput, options: { legacy?: boolean } = {}): string {
+  const legacy = options.legacy === true;
   const { bookId, toc, outline } = input;
   let body: string;
   if (outline !== undefined) {
@@ -57,8 +61,9 @@ export function renderBookPage(input: BookPageInput): string {
         + `<p class="bn-summary">${text(part.summary)}</p>${link(bookId, part.chapter, part.offset ?? 0)}</div></li>`;
     }).join('');
     const heading = outline.summary?.trim() ? `一句话：${text(outline.summary)}` : '图书大纲';
-    body = `<h1>${heading}</h1><div class="bn-bar" role="img" aria-label="各部分字数比例">`
-      + `${bar}</div><div class="bn-legend">${legend}</div><ol class="bn-list">${rows}</ol>`;
+    body = legacy ? `<h1>${heading}</h1><div class="bn-bar" role="img" aria-label="各部分字数比例">`
+      + `${bar}</div><div class="bn-legend">${legend}</div><ol class="bn-list">${rows}</ol>`
+      : `<h1>${heading}</h1><ol class="bn-list">${rows}</ol>`;
   } else {
     const points = (input.keyPoints?.points ?? []).filter((point) => !input.dismissedPointIds?.includes(point.id));
     body = `<h1>值得记住的 ${points.length} 个重点</h1>${points.map((point) => {
@@ -69,5 +74,6 @@ export function renderBookPage(input: BookPageInput): string {
         .join('')}</section>`;
     }).join('')}`;
   }
-  return `<style>${CSS}</style><article class="bn" data-book-id="${attr(bookId)}">${body}</article>`;
+  return `<style>${legacy ? LEGACY_CSS : CSS}</style>`
+    + `<article class="bn" data-book-id="${attr(bookId)}">${body}</article>`;
 }

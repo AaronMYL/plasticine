@@ -30,7 +30,7 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     await renderApp();
     const groups = [...rail().querySelectorAll('.rail-group')].map((group) => within(group as HTMLElement)
       .getAllByRole('button').map((button) => button.getAttribute('aria-label')));
-    expect(groups).toEqual([['首页', 'Plasticine', '消息', '任务'], ['网页', '信息流'], ['笔记', '图书', '资料库']]);
+    expect(groups).toEqual([['首页', 'Plasticine', '消息', '任务'], ['网页', '阅读'], ['笔记', '资料库']]);
     expect(within(rail()).getByRole('button', { name: '搜索和切换' })).toBeTruthy();
     expect(within(rail()).getByRole('button', { name: '新建…' })).toBeTruthy();
     expect(within(rail()).getByRole('button', { name: '设置 · 我' }).querySelector('.rail-avatar')?.textContent)
@@ -64,7 +64,7 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     await renderApp();
     navTo('笔记');
     await settle();
-    navTo('信息流');
+    navTo('阅读');
     await settle();
     expect(window.location.hash).toBe('#/feed');
     fireEvent.keyDown(window, { key: '[', metaKey: true });
@@ -156,7 +156,7 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
     act(() => {
       app.state.conversationUi.addQuote({ id: 'q1', kind: 'note', sourceId: 'n1', label: '《摘记》', text: '一段' });
     });
-    for (const label of ['任务', '笔记', '图书', '资料库', '首页']) {
+    for (const label of ['任务', '笔记', '阅读', '资料库', '首页']) {
       navTo(label);
       await settle();
     }
@@ -230,15 +230,16 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
   });
 });
 
-describe('壳 · 图书单独一栏（第 7 批设计稿 Books）', () => {
-  it('图书第二栏：「图书馆」带总数，下面「在读」最近读的在前、行尾进度；资料库第二栏不再列图书', async () => {
+describe('壳 · 阅读栏（第 11 批，信息流和图书并成阅读）', () => {
+  it('阅读第二栏：信息流、收藏，「图书馆」下面全部图书带总数、在读的书最近读的在前、行尾进度；资料库第二栏不再列图书', async () => {
     await renderApp({ seed: true, hash: '#/books' });
     await settle();
-    const column = await screen.findByRole('complementary', { name: '图书' });
-    const library = within(column).getByRole('link', { name: /^图书馆/ });
+    const column = await screen.findByRole('complementary', { name: '阅读' });
+    const library = within(column).getByRole('link', { name: /^全部图书/ });
     expect(library.getAttribute('aria-current')).toBe('page');
     await waitFor(() => expect(library.querySelector('.column-count')?.textContent).toBe('5'));
-    expect(within(column).getByRole('heading', { name: '在读' })).toBeTruthy();
+    expect(within(column).getByRole('heading', { name: '图书馆' })).toBeTruthy();
+    expect(within(column).getByRole('button', { name: /^信息流/ })).toBeTruthy();
     const reading = within(column).getAllByRole('link').slice(1).map((link) => link.textContent);
     expect(reading[0]).toMatch(/^浮生六记\d+%$/);
     expect(reading.some((text) => text?.startsWith('庄子'))).toBe(false);
@@ -246,7 +247,7 @@ describe('壳 · 图书单独一栏（第 7 批设计稿 Books）', () => {
     fireEvent.click(within(column).getByRole('link', { name: /^浮生六记/ }));
     await settle();
     expect(window.location.hash).toMatch(/^#\/books\/[^/]+/);
-    expect(within(rail()).getByRole('button', { name: '图书' }).getAttribute('aria-current')).toBe('page');
+    expect(within(rail()).getByRole('button', { name: '阅读' }).getAttribute('aria-current')).toBe('page');
     navTo('资料库');
     await settle();
     expect(window.location.hash).toBe('#/library');

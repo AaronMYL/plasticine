@@ -1,6 +1,6 @@
 // 资料库栏目的第二栏（11-07 设计稿 Library-Space，11-08 Library-Subscription）：「订阅」（个人回顾、研究周报，带往期数，
 // library-subscriptions.tsx）、「空间」（不属于订阅的报告、核查、整理稿，类别色图标块；行尾 ⋯ 改名 / 打开 / 删除，
-// library-space-rows.tsx）、「文件」（工作目录最上一层的文件夹），底部「最近删除」。图书 11-08 起单独一栏（books-column.tsx）。
+// library-space-rows.tsx）、「文件」（工作目录最上一层的文件夹），底部「最近删除」。图书 11-11 起在阅读栏（reading-column.tsx）。
 // 顶上 +：新空间跟 Plasticine 说（对话框展开）。
 // 数据：GET /v2/subscriptions、GET /v2/spaces?standalone=true、GET /v2/files、GET /v2/library/trash。
 // 手机上没有第二栏，「更多 · 资料库」打开资料库首页（#/library）。

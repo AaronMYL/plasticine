@@ -75,13 +75,13 @@ describe('订阅设置', () => {
   });
 });
 
-describe('首页「回顾」', () => {
+describe('首页「新的」里的回顾', () => {
   it('最近一封来信的题目、昨晚整理了几条；点了进那封信', async () => {
     await renderApp({ setup: (fake) => {
       fake.control.spaces.seed();
       fake.control.memoryTopics.seed();
     } });
-    const section = await screen.findByRole('region', { name: '回顾' });
+    const section = await screen.findByRole('region', { name: '新的' });
     expect(within(section).getByText('来信：做梦，有了一组数字')).toBeTruthy();
     expect(within(section).getByText(/昨晚整理了 \d+ 条记忆/)).toBeTruthy();
     fireEvent.click(within(section).getByRole('button', { name: /来信：/ }));
@@ -91,7 +91,7 @@ describe('首页「回顾」', () => {
   it('没有回顾也没有整理：整节不出现', async () => {
     await renderApp();
     await screen.findByRole('heading', { level: 1 });
-    expect(screen.queryByRole('region', { name: '回顾' })).toBeNull();
+    expect(screen.queryByRole('region', { name: '新的' })).toBeNull();
   });
 });
 

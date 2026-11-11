@@ -17,7 +17,7 @@ import type { StateService } from '../state/index.ts';
 import { chapterPlainText } from '../reading/index.ts';
 import { digestBook, type BookDigest, type DigestChapter } from './book-digest.ts';
 import { askJson, type BookModel } from './book-model.ts';
-import { backfillBookSpaces, bookSummarySpaceSnapshot, publishBookSpace, publishBookSummary,
+import { backfillBookSpaces, bookSummarySpaceSnapshot, upgradeBookOutlineLayouts, publishBookSpace, publishBookSummary,
   type BookSummarySpaceSnapshot } from './book-spaces.ts';
 import { completeBookOutlineSummary } from './book-outline-summary.ts';
 
@@ -91,6 +91,7 @@ export class BookInsightService {
         generatedAt: now().toISOString() });
     }
     backfillBookSpaces(state);
+    upgradeBookOutlineLayouts(state);
   }
 
   /** 开始生成；已经在做就回那一行，已经做好且书没换文件、也没要求重做时不重做。 */

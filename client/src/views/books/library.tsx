@@ -12,6 +12,7 @@ import { BOOK_FILE_EXTENSIONS, type BookView } from '../../api/shared.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
+import { ReadingTabs } from '../feed/reading-tabs.tsx';
 import { useDismiss } from '../../shell/use-dismiss.ts';
 import { RenameField } from '../../shell/rename-field.tsx';
 import { useDeleteConfirm } from '../library/library-actions.tsx';
@@ -222,7 +223,8 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
         }
       }}
       onDrop={onDrop}>
-      <PageHeader title="图书馆" controls={controls} />
+      <PageHeader title={phone ? '阅读' : '图书馆'} controls={controls} />
+      <ReadingTabs current="books" />
       <BulkHeader selection={selection} items={bulkItems} />
       <BulkFeedback selection={selection} />
       <input ref={picker} type="file" accept={ACCEPT} multiple hidden aria-label="选择要导入的书"

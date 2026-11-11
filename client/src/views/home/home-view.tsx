@@ -1,12 +1,9 @@
-// 首页（2026-11-05 设计稿 Home / Phone-Home）。从上到下：
-//   日期问候一行   「11月5日 星期四  晚上好，Alex」（名字取网络显示名，取不到不带），没有副标题；
-//   等你 n         开着的要你定卡，一行一件（home-now.tsx）；
-//   在做           在跑的后台线，一行一条实时状态，能叫停（home-now.tsx）；
-//   今天           他 Mac 上的 Apple 日历和提醒事项（第 15 条，设计稿 Main / Phone-Now）；
-//   回顾           最近一期个人回顾的一句、昨晚整理了几条（home-review.tsx，第 7 条）；
-//   接着看         最近的笔记 / 书 / 网页（手机上没有：书和网页标签手机上都不出现）；
-//   信息流         头条 3 条，只在电脑上（手机的信息流在底栏）。
-// 单列最宽 880，块之间只靠间距和小节标题区分；空的块不出现，全空时给直接开始的输入框。
+// 首页（2026-11-05 设计稿 Home / Phone-Home；11-11 第 11 批设计稿「P1 首页」改成两栏）：
+//   问候一行       「早上好，Alex」，下面一小行日期和「n 件要你定，n 件在进行」（名字取网络显示名，取不到不带）；
+//   左栏           要你处理 n（开着的要你定卡）→ 进行中 n（在跑、暂停、出错的后台线）→ 新的（最近交付、回顾、昨晚整理）；
+//   右边窄栏       今天（日历和提醒）、接着读（最近的笔记 / 书 / 网页）、信息流（头条几条）。
+// 手机一列：要你处理 → 进行中 → 今天 → 新的（接着读和信息流不出，手机在底栏和「更多」里）。
+// 块之间只靠间距和小节标题区分；空的块不出现，全空时给直接开始的输入框。
 
 import { useEffect, type ReactNode } from 'react';
 import { useLive, useTimeZone } from '../../live.tsx';
@@ -18,12 +15,21 @@ import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 import { useStore } from '../../state/use-store.ts';
 import { greetingOf } from './greeting.ts';
 import { ContinueBlock, FeedHeadlines, TodayBlock } from './home-blocks.tsx';
-import { HomeDoing, HomeWaiting } from './home-now.tsx';
-import { HomeResults } from './home-results.tsx';
-import { HomeReview } from './home-review.tsx';
+import { doingLines, HomeDoing, HomeWaiting } from './home-now.tsx';
+import { HomeNew } from './home-results.tsx';
 import { HomeStart } from './home-start.tsx';
 import './home.css';
 import './home-work.css';
+
+/** 「1 件要你定，2 件在进行」：两样都没有就空。 */
+function useSummary(): string {
+  const live = useLive();
+  const asks = useStore(live.asks.store);
+  const list = useStore(live.lines.list);
+  const doing = doingLines(list.lines).length;
+  return [asks.open.length > 0 ? `${asks.open.length} 件要你定` : '', doing > 0 ? `${doing} 件在进行` : '']
+    .filter((part) => part !== '').join('，');
+}
 
 /** 日期问候一行。手机上日期一小行、问候大一行，右边查找和头像（点了开设置）。 */
 function Greeting({ now, phone }: { now: Date; phone: boolean }): ReactNode {
@@ -35,16 +41,16 @@ function Greeting({ now, phone }: { now: Date; phone: boolean }): ReactNode {
   const name = account?.displayName ?? null;
   const avatar = account?.avatar ?? null;
   const { date, hello } = greetingOf(now, name, timeZone);
+  const summary = useSummary();
+  // 日期在 DOM 里排前面（读屏先念日期），画在问候下面一小行。
+  const title = <h1><span className="home-date">{summary === '' ? date : `${date} · ${summary}`}</span>
+    <span>{hello}</span></h1>;
   if (!phone) {
-    return (
-      <header className="home-greeting">
-        <h1><span className="home-date">{date}</span><span>{hello}</span></h1>
-      </header>
-    );
+    return <header className="home-greeting">{title}</header>;
   }
   return (
     <header className="home-greeting" data-phone="true">
-      <h1><span className="home-date">{date}</span><span>{hello}</span></h1>
+      {title}
       <div className="home-greeting-tools">
         <IconButton icon="search" label="查找内容" size={18} onClick={() => openPanel({ kind: 'search' })} />
         <button type="button" className="avatar home-avatar" aria-label={`设置 · ${name ?? DEFAULT_ACCOUNT_NAME}`}
@@ -59,17 +65,34 @@ function Greeting({ now, phone }: { now: Date; phone: boolean }): ReactNode {
 
 export function HomeView({ now = new Date() }: { now?: Date }): ReactNode {
   const phone = useViewportWidth() < PHONE_BELOW;
+  if (phone) {
+    return (
+      <div className="page home" data-device="phone">
+        <Greeting now={now} phone />
+        <HomeWaiting phone />
+        <HomeDoing phone />
+        <TodayBlock now={now} phone />
+        <HomeNew now={now} />
+        <HomeStart phone />
+      </div>
+    );
+  }
   return (
-    <div className="page home" data-device={phone ? 'phone' : 'desktop'}>
-      <Greeting now={now} phone={phone} />
-      <HomeWaiting phone={phone} />
-      <HomeDoing phone={phone} />
-      <TodayBlock now={now} phone={phone} />
-      <HomeResults now={now} />
-      <HomeReview />
-      <HomeStart phone={phone} />
-      {phone ? null : <ContinueBlock now={now} />}
-      <FeedHeadlines now={now} phone={phone} />
+    <div className="page home" data-device="desktop">
+      <Greeting now={now} phone={false} />
+      <div className="home-cols">
+        <div className="home-main">
+          <HomeWaiting phone={false} />
+          <HomeDoing phone={false} />
+          <HomeNew now={now} />
+          <HomeStart phone={false} />
+        </div>
+        <div className="home-side">
+          <TodayBlock now={now} phone={false} />
+          <ContinueBlock now={now} />
+          <FeedHeadlines now={now} phone={false} />
+        </div>
+      </div>
     </div>
   );
 }

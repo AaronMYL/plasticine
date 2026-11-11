@@ -1,4 +1,5 @@
-// 首页留住最近交付；刷新失败保留已有结果，加载中不把空白伪装成「什么都没有」。
+// 首页「新的」（11-11 第 11 批）：最近交付的工作、最近一期回顾、昨晚整理的记忆。刷新失败保留已有结果，加载中不把空白
+// 伪装成「什么都没有」。
 
 import { useState, type ReactNode } from 'react';
 import type { LineView } from '../../api/shared.ts';
@@ -9,6 +10,7 @@ import { useOpenPanel } from '../../shell/panel.ts';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { useStore } from '../../state/use-store.ts';
 import { unmetReason, unmetText } from '../lines/work-status.tsx';
+import { ReviewRows, useHomeReview } from './home-review.tsx';
 
 export function recentResults(lines: readonly LineView[]): LineView[] {
   return lines.filter((line) => line.kind === 'background' && line.status === 'idle'
@@ -30,25 +32,28 @@ function ResultRow({ line, now, onOpen }: { line: LineView; now: Date; onOpen: (
   );
 }
 
-export function HomeResults({ now }: { now: Date }): ReactNode {
+export function HomeNew({ now }: { now: Date }): ReactNode {
   const live = useLive();
   const open = useOpenPanel();
   const data = useStore(live.lines.list);
   const [all, setAll] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const review = useHomeReview();
   const results = recentResults(data.lines);
-  if (data.loaded && data.error === null && results.length === 0) return null;
+  if (data.loaded && data.error === null && results.length === 0 && review === null) return null;
+  const reviewCount = review === null ? 0 : (review.latest === null ? 0 : 1) + (review.dream === null ? 0 : 1);
   const retry = (): void => {
     setRetrying(true);
     void live.lines.loadList().finally(() => setRetrying(false));
   };
   return (
-    <section className="home-section" aria-label="最近结果" aria-busy={!data.loaded || retrying}>
-      <h2 className="home-section-title">最近结果
+    <section className="home-section" aria-label="新的" aria-busy={!data.loaded || retrying}>
+      <h2 className="home-section-title">新的
+        <span className="home-section-count">{results.length + reviewCount}</span>
         {results.length > 4 ? <button type="button" className="text-button home-results-all"
           onClick={() => setAll((value) => !value)}>{all ? '收起' : '全部'}</button> : null}
       </h2>
-      {!data.loaded ? <div className="home-results-loading" role="status" aria-label="正在读最近结果">
+      {!data.loaded ? <div className="home-results-loading" role="status" aria-label="正在读新的">
         <span /><span />
       </div> : null}
       {data.error === null ? null : <div className="home-results-error" role="alert">
@@ -59,6 +64,7 @@ export function HomeResults({ now }: { now: Date }): ReactNode {
         {(all ? results : results.slice(0, 4)).map((line) => <li key={line.id}>
           <ResultRow line={line} now={now} onOpen={() => open({ kind: 'work', lineId: line.id })} />
         </li>)}
+        {review === null ? null : <ReviewRows value={review} />}
       </ul>
     </section>
   );

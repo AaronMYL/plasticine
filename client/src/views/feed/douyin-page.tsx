@@ -5,6 +5,7 @@ import { createRequestId } from '../../api/request-id.ts';
 import type { VideoWorkView } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
+import { Icon } from '../../shell/icons.tsx';
 import { openExternal } from '../../shell/open-external.ts';
 import { pushHash } from '../../shell/nav-history.ts';
 import { routeHash } from '../../shell/routes.ts';
@@ -22,6 +23,23 @@ function meta(work: VideoWorkView, timeZone: string): string {
   const date = work.collectedAt === null ? null : `收藏于 ${new Intl.DateTimeFormat('zh-CN',
     { timeZone, month: 'numeric', day: 'numeric' }).format(new Date(work.collectedAt))}`;
   return [work.author, date].filter(Boolean).join(' · ');
+}
+
+/** 整理到哪了（11-11 第 11 批设计稿「P3 抖音」）：已整理 = 有总结；在整理 = 排着或在跑；其余没整理。 */
+export type DouyinPhase = 'todo' | 'running' | 'done';
+export const PHASE_LABELS: Readonly<Record<DouyinPhase, string>> = { todo: '没整理', running: '在整理', done: '已整理' };
+export function phaseOf(work: VideoWorkView): DouyinPhase {
+  if (work.stage === 'summarized') return 'done';
+  return ['queued', 'running', 'waiting_mac'].includes(work.run) ? 'running' : 'todo';
+}
+type Filter = 'all' | 'todo' | 'done';
+const FILTER_LABELS: Readonly<Record<Filter, string>> = { all: '全部', todo: '没整理', done: '已整理' };
+
+/** 时长 1:05 这样写；不知道就空。 */
+export function durationText(seconds: number | null): string {
+  if (seconds === null) return '';
+  const total = Math.round(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
 function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; back: () => void }): ReactNode {
@@ -55,7 +73,7 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
       </>}
     </header>
     {error !== null ? <p className="block-empty is-error" role="alert">{error}{' '}
-      <button type="button" className="text-button" onClick={reload}>重新读取</button></p>
+      <button type="button" className="text-button" onClick={reload}>再读一次</button></p>
       : space?.html != null ? <SpaceFrame className="space-frame" label={space.title} mode="page" onQuote={quote}
         space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
           dateLabel: letterDate(space.createdAt) }} />
@@ -69,36 +87,104 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
   </section>;
 }
 
+function WorkRow({ work, timeZone, current, picking, picked, onOpen, onPick }: { work: VideoWorkView;
+  timeZone: string; current: boolean; picking: boolean; picked: boolean; onOpen: () => void;
+  onPick: (on: boolean) => void }): ReactNode {
+  const phase = phaseOf(work);
+  const length = durationText(work.durationSeconds);
+  const body = <>
+    <span className="dy-work-thumb" aria-hidden="true"><Icon name="play" size={16} />
+      {length === '' ? null : <span className="dy-work-length">{length}</span>}</span>
+    <span className="dy-work-text"><strong>{work.title}</strong>
+      <span className="dy-work-meta">{meta(work, timeZone)}</span></span>
+    {phase === 'todo' ? null : <span className="dy-work-phase" data-phase={phase}>{PHASE_LABELS[phase]}</span>}
+  </>;
+  if (picking) {
+    return <label className="dy-work" data-picked={picked || undefined}>
+      <input type="checkbox" checked={picked} disabled={phase !== 'todo'} aria-label={`选「${work.title}」`}
+        onChange={(event) => onPick(event.target.checked)} />
+      {body}
+    </label>;
+  }
+  return <button type="button" className="dy-work" aria-current={current ? 'true' : undefined} onClick={onOpen}>
+    {body}
+  </button>;
+}
+
 export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () => void }): ReactNode {
+  const api = useApi();
   const { douyin: store } = useLive();
   const state = useStore(store.state);
   const timeZone = useTimeZone();
   const [selected, setSelected] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [picking, setPicking] = useState(false);
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [running, setRunning] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
   const current = state.works.find((work) => work.id === selected) ?? null;
   useEffect(() => { store.open(); return () => store.close(); }, [store]);
   useEffect(() => {
     if (!phone && current === null && state.works[0] !== undefined) setSelected(state.works[0].id);
   }, [phone, current, state.works]);
+  const counts: Record<Filter, number> = { all: state.works.length,
+    todo: state.works.filter((work) => phaseOf(work) !== 'done').length,
+    done: state.works.filter((work) => phaseOf(work) === 'done').length };
+  const shown = state.works.filter((work) => filter === 'all' || (filter === 'done') === (phaseOf(work) === 'done'));
+  const stopPicking = (): void => {
+    setPicking(false);
+    setPicked(new Set());
+  };
+  const processPicked = async (): Promise<void> => {
+    setRunning(true);
+    setProblem(null);
+    try {
+      await api.feed.douyinProcess({ requestId: createRequestId(), ids: [...picked] });
+      await store.load(false);
+      stopPicking();
+    } catch (cause) { setProblem(errorText(cause)); }
+    finally { setRunning(false); }
+  };
   return <div className="dy-page" data-phone={phone} data-detail={phone && current !== null || undefined}>
     <section className="dy-index" aria-label="抖音收藏列表">
-      <header className="dy-index-head"><span>按收藏时间</span>
-        <IconButton icon="check" label="选择收藏" onClick={onSelect} />
-        <button type="button" className="secondary-button button-small" disabled={state.busy === 'sync'
-          || state.data?.sync.state === 'waiting_mac' || state.data?.sync.state === 'running'}
-          onClick={() => void store.sync()}>同步</button></header>
+      <header className="dy-index-head">
+        <div className="segmented" role="group" aria-label="整理到哪了">
+          {(Object.keys(FILTER_LABELS) as Filter[]).map((key) => (
+            <button key={key} type="button" className="segmented-item" aria-pressed={filter === key}
+              onClick={() => setFilter(key)}>
+              {FILTER_LABELS[key]} <span className="dy-count">{counts[key]}</span>
+            </button>
+          ))}
+        </div>
+        <span className="dy-index-tools">
+          <button type="button" className="text-button" aria-pressed={picking}
+            onClick={() => picking ? stopPicking() : setPicking(true)}>{picking ? '取消' : '整理几条'}</button>
+          <IconButton icon="check" label="选要同步的收藏" onClick={onSelect} />
+          <button type="button" className="secondary-button button-small" disabled={state.busy === 'sync'
+            || state.data?.sync.state === 'waiting_mac' || state.data?.sync.state === 'running'}
+            onClick={() => void store.sync()}>同步</button>
+        </span>
+      </header>
       {state.error ?? state.data?.sync.error ? <p className="block-empty is-error" role="alert">
         {state.error ?? state.data?.sync.error}</p> : null}
       <div className="dy-index-scroll"><ul className="dy-works">
-        {state.works.map((work) => <li key={work.id}><button type="button" className="dy-work"
-          aria-current={work.id === selected ? 'true' : undefined} onClick={() => setSelected(work.id)}>
-          <span><strong>{work.title}</strong><span className="dy-work-meta">{meta(work, timeZone)}</span></span>
-          <span className="dy-work-state" role="img" aria-label={work.stage === 'summarized' ? '已总结' : '待处理'}>
-            {work.stage === 'summarized' ? '✓' : '○'}</span>
-        </button></li>)}
+        {shown.map((work) => <li key={work.id}><WorkRow work={work} timeZone={timeZone}
+          current={work.id === selected} picking={picking} picked={picked.has(work.id)}
+          onOpen={() => setSelected(work.id)} onPick={(on) => setPicked((old) => {
+            const next = new Set(old);
+            if (on) next.add(work.id); else next.delete(work.id);
+            return next;
+          })} /></li>)}
       </ul>{state.data?.nextOffset != null ? <button type="button" className="text-button dy-more"
         disabled={state.busy === 'more'} onClick={() => void store.more()}>更多收藏</button> : null}
       {state.works.length === 0 ? <p className="block-empty">{state.status === 'loading' ? '正在读收藏…' : '还没有同步收藏'}</p>
         : null}</div>
+      {picking ? <footer className="dy-pick-bar">
+        <span>{picked.size === 0 ? '勾选没整理的' : `选了 ${picked.size} 条`}</span>
+        {problem === null ? null : <span className="is-error" role="alert">{problem}</span>}
+        <button type="button" className="primary-button button-small" disabled={picked.size === 0 || running}
+          onClick={() => void processPicked()}>{`整理这 ${picked.size} 条`}</button>
+      </footer> : null}
     </section>
     {current === null ? null : <Detail key={current.id} work={current} phone={phone} back={() => setSelected(null)} />}
   </div>;

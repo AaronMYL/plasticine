@@ -8,7 +8,7 @@ async function open(width = 1440) {
   const app = await renderApp({ hash: '#/feed', width });
   if (width < 768) fireEvent.click(screen.getByRole('button', { name: '筛选' }));
   const area = width < 768 ? await screen.findByRole('dialog', { name: '筛选' })
-    : screen.getByRole('complementary', { name: '信息流' });
+    : screen.getByRole('complementary', { name: '阅读' });
   fireEvent.click(await within(area).findByRole('button', { name: /^抖音收藏/ }));
   return app;
 }
@@ -57,4 +57,26 @@ it('没有真实收藏时间只显示作者；有时间才出现收藏日期，�
   const firstBefore = absentRow.textContent;
   await act(async () => { await app.api.feed.douyinSync({ requestId: 'date-display-sync' }); });
   await waitFor(() => expect(absentRow.textContent).toBe(firstBefore));
+});
+
+describe('抖音收藏整理', () => {
+  it('分段按整理到哪了筛；「整理几条」勾选没整理的，一次交出去', async () => {
+    const app = await open();
+    const process = vi.spyOn(app.api.feed, 'douyinProcess');
+    const list = await screen.findByRole('region', { name: '抖音收藏列表' });
+    await within(list).findByRole('button', { name: new RegExp(`^${TITLE}`) });
+    const works = (await app.api.feed.douyin({})).works;
+    const todo = works.filter((work) => work.stage !== 'summarized' && !['queued', 'running', 'waiting_mac']
+      .includes(work.run));
+    const filters = within(list).getByRole('group', { name: '整理到哪了' });
+    fireEvent.click(within(filters).getByRole('button', { name: /^已整理/ }));
+    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(
+      works.filter((work) => work.stage === 'summarized').length));
+    fireEvent.click(within(filters).getByRole('button', { name: /^全部/ }));
+    fireEvent.click(within(list).getByRole('button', { name: '整理几条' }));
+    if (todo.length === 0) return;
+    fireEvent.click(within(list).getByRole('checkbox', { name: `选「${todo[0]!.title}」` }));
+    fireEvent.click(within(list).getByRole('button', { name: '整理这 1 条' }));
+    await waitFor(() => expect(process).toHaveBeenCalledWith(expect.objectContaining({ ids: [todo[0]!.id] })));
+  });
 });

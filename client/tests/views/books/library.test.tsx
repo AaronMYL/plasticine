@@ -76,11 +76,11 @@ describe('图书馆', () => {
     expect(screen.queryByText(/正在导入/)).toBeNull();
   });
 
-  it('图书第二栏栏头「导入书」：在读书时选了文件，回到图书馆导入，进度和结果都在图书馆页上', async () => {
+  it('阅读第二栏栏头「导入书」：在读书时选了文件，回到图书馆导入，进度和结果都在图书馆页上', async () => {
     await renderApp({ hash: '#/books/book_fusheng', setup: (fake) => seedBooks(fake.control.books, fake.control.lines,
       NOW) });
-    const column = await screen.findByRole('complementary', { name: '图书' });
-    const input = within(column).getByLabelText('从图书栏选择要导入的书') as HTMLInputElement;
+    const column = await screen.findByRole('complementary', { name: '阅读' });
+    const input = within(column).getByLabelText('从阅读栏选择要导入的书') as HTMLInputElement;
     const file = new File(['第一行\n\n第二行'], '栏里导的书.txt', { type: 'text/plain' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });

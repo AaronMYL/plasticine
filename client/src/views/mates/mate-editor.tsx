@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { MODEL_PURPOSES, PROJECT_HUES, type MateDraft, type MateView, type MateGroupView,
   type MateGroupDraft } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
+import { HueSwatches } from '../../primitives/hue-swatches/index.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
 import { isOpenOp } from '../../state/action-ops.ts';
@@ -43,16 +44,16 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
         <div className="mate-form-identity"><MateAvatar mate={draft} size={44} />
           <label>头像文字<input value={draft.avatar} maxLength={8}
             onChange={(event) => patch('avatar', event.target.value)} /></label>
-          <label>颜色<select value={draft.hue} onChange={(event) => patch('hue', event.target.value as MateDraft['hue'])}>
-            {PROJECT_HUES.map((hue) => <option key={hue} value={hue}>{HUE_LABELS[hue]}</option>)}
-          </select></label></div>
+          <div className="mate-form-hue"><span className="mate-form-label">颜色</span>
+            <HueSwatches label="颜色" hues={PROJECT_HUES} names={HUE_LABELS} value={draft.hue}
+              onChange={(hue) => patch('hue', hue)} /></div></div>
         <label>名字<input required minLength={2} maxLength={40} autoFocus value={draft.name}
           onChange={(event) => patch('name', event.target.value)} /></label>
         <label>职责<textarea required minLength={2} maxLength={160} rows={3} value={draft.role}
           onChange={(event) => patch('role', event.target.value)} /></label>
         <label>模型配置<select value={draft.purpose ?? ''}
           onChange={(event) => patch('purpose', (event.target.value || null) as MateDraft['purpose'])}>
-          <option value="">跟随主线</option>
+          <option value="">跟主线</option>
           {MODEL_PURPOSES.map((purpose) => <option key={purpose.id} value={purpose.id}>{purpose.label}</option>)}
         </select></label>
       </fieldset>

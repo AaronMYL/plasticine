@@ -27,7 +27,9 @@
   border: 1px solid var(--line2); border-radius: 8px; padding: 10px 12px; background: var(--bg); color: var(--fg);
   font: inherit; font-size: 14px; }
 .mate-form textarea { resize: vertical; }
-.mate-form-identity { display: flex; gap: 16px; align-items: center; }
+.mate-form-identity { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.mate-form-hue { display: flex; flex-basis: 100%; flex-direction: column; gap: 8px; }
+.mate-form-label { font-size: 13px; color: var(--fg2); }
 .mate-form-identity label { flex: 1; min-width: 0; }
 .mate-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .mate-form-caption { margin: 0; color: var(--fg2); font-size: 12px; }

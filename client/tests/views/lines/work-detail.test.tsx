@@ -23,7 +23,7 @@ function seed(fake: FakeApi, extra: Partial<LineView> = {}): void {
 
 async function open(extra: Partial<LineView> = {}, width = 1440) {
   const app = await renderApp({ width, setup: (fake) => seed(fake, extra) });
-  const doing = await screen.findByRole('region', { name: '在做' });
+  const doing = await screen.findByRole('region', { name: '进行中' });
   fireEvent.click(within(doing).getByRole('button', { name: /查看工作：检查安装来源/ }));
   const detail = await screen.findByRole('dialog', { name: '工作详情' });
   await within(detail).findByRole('heading', { name: '检查安装来源' });

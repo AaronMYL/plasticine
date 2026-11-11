@@ -2,18 +2,16 @@
  * 信息流页（第 3 批，用户 11-04 定）：瀑布流卡片。卡片 12 圆角、1px --line2 内描边、无阴影；头部 28 的来源标记（X 头像
  * 正圆、订阅和新闻站点首字 8 圆角方块）；命中关注点一个陶土橙点 + 关注点名；标题 15/24·600、正文 14/22；配图 8 圆角铺满
  * 卡片内宽；卡底 赞 · 收藏 · 问 · 不感兴趣 · 原文 五个图标按钮；
- * 不感兴趣落定后收成一行可撤销的占位。分列见 feed-masonry.ts（电脑两三列按宽度、手机一列）。
+ * 不感兴趣落定后收成一行可撤销的占位。11-11 第 11 批改成单列：版心 720，条目平铺、细线分隔，不再是卡片瀑布流。
  */
 
 .feed {
   gap: 24px;
 }
 
-/* 瀑布流要宽：三列各 300 起，页面列放宽到 1240；浮动对话覆盖其上。 */
-@media (min-width: 768px) {
-  .page.feed:not(.page-fill) {
-    max-width: calc(1240px + 64px);
-  }
+/* 单列，和文档页一样的版心。 */
+.page.feed:not(.page-fill) {
+  max-width: calc(720px + 80px);
 }
 
 .feed-list,
@@ -30,27 +28,17 @@
   gap: 16px;
 }
 
-.feed-masonry {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.feed-column {
-  flex: 1;
-  min-width: 0;
+.feed-stream {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
 .feed-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 14px 16px 12px;
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 1px var(--line2);
+  padding: 16px 0 12px;
+  border-bottom: 1px solid var(--line2);
   min-width: 0;
 }
 
@@ -208,7 +196,7 @@
 .feed-card-image {
   display: block;
   width: 100%;
-  max-height: 520px;
+  max-height: 280px;
   border-radius: 8px;
   object-fit: cover;
   background: var(--tint2);

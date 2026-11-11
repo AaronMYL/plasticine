@@ -1,8 +1,8 @@
-// 首页「现在」的前两块（2026-11-05 设计稿 Home）：
-//   等你 n  全站唯一列出等你的地方：一行一件，图标块 · 一句 ·「去看」· ⋯（先不）。「去看」在这一行下面就地摊开那张卡
+// 首页的前两块（2026-11-05 设计稿 Home；11-11 第 11 批改名「要你处理」「进行中」）：
+//   要你处理 n  全站唯一列出等你的地方：一行一件，图标块 · 一句 ·「去看」· ⋯（先不）。「去看」在这一行下面就地摊开那张卡
 //           （后台线出的卡不在主对话里，就地答最直接）；
-//   在做    在跑的后台线：动态符号 · 标题 · 实时状态 · 已用时间 · 停止；暂停 / 出错的线也在这里，各写一句。
-//           停在要你定卡上的线不在这里（那张卡在「等你」里，一件事只列一处）。
+//   进行中  在跑的后台线：动态符号 · 标题 · 实时状态 · 已用时间 · 停止；暂停 / 出错的线也在这里，各写一句。
+//           停在要你定卡上的线不在这里（那张卡在「要你处理」里，一件事只列一处）。
 
 import { useState, type ReactNode } from 'react';
 import type { LineView } from '../../api/shared.ts';
@@ -10,6 +10,7 @@ import type { AskView } from '../../api/types.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { AskTag } from '../../primitives/ask-card/index.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
+import { useTabActions } from '../../shell/tabs-context.ts';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { LineAskCard } from '../asks/line-ask-card.tsx';
@@ -47,8 +48,8 @@ export function HomeWaiting({ phone }: { phone: boolean }): ReactNode {
     return null;
   }
   return (
-    <section className="home-section" aria-label="等你">
-      <h2 className="home-section-title">等你<span className="home-section-count">{data.open.length}</span></h2>
+    <section className="home-section" aria-label="要你处理">
+      <h2 className="home-section-title">要你处理<span className="home-section-count">{data.open.length}</span></h2>
       <ul className="home-list">
         {data.open.map((ask) => <WaitRow key={ask.id} ask={ask} phone={phone} />)}
       </ul>
@@ -94,6 +95,7 @@ export function DoingRow({ line, phone, now }: { line: LineView; phone: boolean;
 
 export function HomeDoing({ phone }: { phone: boolean }): ReactNode {
   const live = useLive();
+  const tabs = useTabActions();
   const list = useStore(live.lines.list);
   const doing = doingLines(list.lines);
   const now = useNow(doing.some((line) => line.status === 'running'));
@@ -101,8 +103,10 @@ export function HomeDoing({ phone }: { phone: boolean }): ReactNode {
     return null;
   }
   return (
-    <section className="home-section" aria-label="在做">
-      <h2 className="home-section-title">在做</h2>
+    <section className="home-section" aria-label="进行中">
+      <h2 className="home-section-title">进行中<span className="home-section-count">{doing.length}</span>
+        <button type="button" className="text-button home-section-more"
+          onClick={() => tabs.focusSection('tasks')}>全部任务</button></h2>
       <ul className="home-list">
         {doing.map((line) => <DoingRow key={line.id} line={line} phone={phone} now={now} />)}
       </ul>

@@ -51,7 +51,7 @@ export function LineWorkDetail({ lineId, navigate, task, before, actions, hideCo
   const project = detail.data?.project;
   const request = task === undefined ? detail.data?.request ?? null : { text: task.goal, source: null };
   const revision = task?.direction === 'in' && task.doer === 'ai' && task.state === 'rejected';
-  let stateText = line.status === 'running' ? '在做' : workStatusText(line, timeZone);
+  let stateText = line.status === 'running' ? '进行中' : workStatusText(line, timeZone);
   let stateGlyph = <WorkStatusGlyph line={line} />;
   if (revision) {
     stateText = '等你决定下一步';

@@ -67,8 +67,8 @@ export function ContinueBlock({ now }: { now: Date }): ReactNode {
     }
   };
   return (
-    <section className="home-section" aria-label="接着看">
-      <h2 className="home-section-title">接着看</h2>
+    <section className="home-section" aria-label="接着读">
+      <h2 className="home-section-title">接着读</h2>
       <ul className="home-continue">
         {items.map((item) => {
           const look = CONTINUE_LOOK[item.kind];
@@ -158,7 +158,7 @@ export function FeedBlock({ items, now }: { items: readonly FeedItemView[]; now:
   return (
     <section className="home-section" aria-label="信息流">
       <h2 className="home-section-title">
-        <button type="button" className="home-section-link" onClick={() => tabs.focusSection('feed')}>
+        <button type="button" className="home-section-link" onClick={() => tabs.focusSection('reading')}>
           信息流<Icon name="chevron-right" size={14} />
         </button>
       </h2>

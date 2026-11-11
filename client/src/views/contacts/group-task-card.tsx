@@ -20,8 +20,8 @@ import './contact-task.css';
 
 const STATE_WORDS: Readonly<Record<GroupTaskView['state'], string>> = {
   open: '还没人接',
-  claimed: '在做',
-  in_progress: '在做',
+  claimed: '进行中',
+  in_progress: '进行中',
   delivered: '交付了',
   passed: '收到了',
   rejected: '再改改',

@@ -271,11 +271,12 @@ describe('阅读页 · 标注与讨论', () => {
     expect(window.localStorage.getItem(`plasticine.books.key-points.${BOOK}`)).toBe('0');
   });
 
-  it('大纲使用富页面，显示章节比例和当前章标记', async () => {
+  it('大纲使用富页面：逐章摘要和当前章标记，不画字数比例色条（11-11）', async () => {
     await reader();
     const sheet = await openSheet('大纲');
     const frame = await within(sheet).findByTitle('浮生六记 · 大纲');
-    expect(frame.getAttribute('srcdoc')).toContain('各部分字数比例');
+    expect(frame.getAttribute('srcdoc')).not.toContain('各部分字数比例');
+    expect(frame.getAttribute('srcdoc')).toContain('class="bn-list"');
     expect(frame.getAttribute('srcdoc')).toContain('读到这里');
   });
 

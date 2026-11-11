@@ -13,7 +13,7 @@ function book() {
     toc: [{ title: '理解团队', chars: 100 }, { title: '责任清楚', chars: 200 }], charCount: 300 });
 }
 
-test('旧图书大纲重建一次，保留关联，章节比例来自字数，回原文保留位置', () => {
+test('旧图书大纲重建一次，保留关联，不画字数比例色条，回原文保留位置', () => {
   const b = book();
   const row = t.state.bookInsights.create({ bookId: b.id, kind: 'outline', status: 'ready',
     sourceSha256: b.sourceSha256 });
@@ -27,7 +27,7 @@ test('旧图书大纲重建一次，保留关联，章节比例来自字数，�
   assert.equal(page.sourceUrl, `book:${b.id}:outline`);
   assert.match(page.html!, /data-link="book:[^\"]+:1:7"/);
   assert.match(page.html!, /data-book-chapter="1"/);
-  assert.match(page.html!, /33\.33/);
+  assert.doesNotMatch(page.html!, /bn-bar/);
   assert.doesNotMatch(page.html!, /旧的归纳说明/);
   assert.equal(backfillBookSpaces(t.state), 0);
   const next = publishBookSpace(t.state, b, insight, true)!;
