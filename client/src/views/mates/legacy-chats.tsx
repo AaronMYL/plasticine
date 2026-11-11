@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
@@ -14,6 +14,8 @@ export function LegacyChats({ phone, navigate, onClose }: { phone: boolean; navi
   onClose: () => void }): ReactNode {
   const api = useApi();
   const live = useLive();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const roster = useStore(live.mates.data);
   const [proposal, setProposal] = useState<LegacyChatProposal | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export function LegacyChats({ phone, navigate, onClose }: { phone: boolean; navi
     const result = await live.mateActions.convert({ lineId: proposal.lineId, action,
       ...(action === 'mate' ? { draft: proposal.draft } : {}) }, proposal.title);
     setBusy(false);
-    if (result !== null && 'mate' in result) {
+    if (mounted.current && result !== null && 'mate' in result) {
       onClose(); navigate(result.mate === null ? mainChatRoute() : mateRoute(result.mate.id));
     }
   };
@@ -56,7 +58,7 @@ export function LegacyChats({ phone, navigate, onClose }: { phone: boolean; navi
       <PendingOps label="对话整理结果" prefixes={['mates:convert:']} visible={() => false}
         onRetry={(key) => {
           void live.mateActions.retry(key).then((result) => {
-            if (result !== null && 'mate' in result) {
+            if (mounted.current && result !== null && 'mate' in result) {
               onClose(); navigate(result.mate === null ? mainChatRoute() : mateRoute(result.mate.id));
             }
           });

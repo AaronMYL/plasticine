@@ -98,7 +98,8 @@ function Trash(): ReactNode {
   return <section className="block" aria-label="回收">
     <div className="block-head"><h3 className="block-title">最近删除</h3>
       <span className="block-meta text-mono">{entries.length}</span></div>
-    <BulkHeader selection={selection} items={entries} trash allowEmpty={false} />
+    <BulkHeader selection={selection} items={entries} trash
+      onEmpty={(confirmed) => { void selection.perform('purge', undefined, [...confirmed]); }} />
     <BulkFeedback selection={selection} />
     {error === null ? null : <p role="alert">{error}</p>}
     {trash !== null && entries.length === 0 ? <p className="block-empty">回收是空的。</p> : null}

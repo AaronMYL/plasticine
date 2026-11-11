@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { MODEL_PURPOSES, PROJECT_HUES, type MateDraft, type MateView, type MateGroupView,
   type MateGroupDraft } from '../../api/shared.ts';
@@ -17,6 +17,8 @@ type Props = { phone: boolean; onClose: () => void; navigate: (route: Route) => 
 
 export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: MateView }): ReactNode {
   const live = useLive();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const state = useClientState();
   const key = mate === undefined ? 'mates:create' : `mates:update:${mate.id}`;
   const op = useOp(key);
@@ -31,7 +33,7 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
     const body: MateDraft = { name: draft.name.trim(), avatar: draft.avatar.trim() || draft.name.slice(0, 1),
       hue: draft.hue, role: draft.role.trim(), soul: draft.soul, purpose: draft.purpose };
     const result = mate === undefined ? await live.mateActions.create(body) : await live.mateActions.update(mate, body);
-    if (result !== null && 'role' in result) { onClose(); navigate(mateRoute(result.id)); }
+    if (mounted.current && result !== null && 'role' in result) { onClose(); navigate(mateRoute(result.id)); }
   };
   const title = mate === undefined ? '创建队友' : '编辑队友';
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
@@ -56,7 +58,7 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
       </fieldset>
       {op === undefined ? null : <OpLine op={op} onRetry={() => {
         void live.mateActions.retry(key).then((result) => {
-          if (result !== null && 'role' in result) { onClose(); navigate(mateRoute(result.id)); }
+          if (mounted.current && result !== null && 'role' in result) { onClose(); navigate(mateRoute(result.id)); }
         });
       }}
         onDismiss={() => state.actionOps.dismiss(key)} />}
@@ -73,6 +75,8 @@ const HUE_LABELS: Record<MateDraft['hue'], string> = {
 
 export function GroupEditor({ group, phone, onClose, navigate }: Props & { group?: MateGroupView }): ReactNode {
   const live = useLive();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const state = useClientState();
   const roster = useStore(live.mates.data);
   const key = group === undefined ? 'mate-groups:create' : `mate-groups:update:${group.id}`;
@@ -85,7 +89,7 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
     const body = { name: draft.name.trim(), mateIds: [...draft.mateIds] };
     const result = group === undefined ? await live.mateActions.createGroup(body)
       : await live.mateActions.updateGroup(group, body);
-    if (result !== null && 'mateIds' in result) { onClose(); navigate(mateGroupRoute(result.id)); }
+    if (mounted.current && result !== null && 'mateIds' in result) { onClose(); navigate(mateGroupRoute(result.id)); }
   };
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
     title={group === undefined ? '创建群组' : '编辑群组'} onClose={onClose} className="mate-editor-sheet">
@@ -103,7 +107,9 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
       </fieldset>
       {op === undefined ? null : <OpLine op={op} onRetry={() => {
         void live.mateActions.retry(key).then((result) => {
-          if (result !== null && 'mateIds' in result) { onClose(); navigate(mateGroupRoute(result.id)); }
+          if (mounted.current && result !== null && 'mateIds' in result) {
+            onClose(); navigate(mateGroupRoute(result.id));
+          }
         });
       }}
         onDismiss={() => state.actionOps.dismiss(key)} />}

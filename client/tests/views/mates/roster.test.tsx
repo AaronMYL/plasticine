@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { renderApp } from '../../helpers.tsx';
 import { createRequestId } from '../../../src/api/request-id.ts';
 import type { FakeApi } from '../../../src/api/fake/index.ts';
@@ -55,4 +55,22 @@ it('Soul 入口打开主线与队友规则页', async () => {
   expect(window.location.hash).toBe('#/plasticine/soul');
   expect(screen.getByRole('button', { name: '返回队友列表' })).toBeTruthy();
   expect(screen.queryByRole('textbox', { name: '问一句' })).toBeNull();
+});
+
+it('创建队友发出后关闭表单，晚到回执不会把用户从当前页面拉走', async () => {
+  const app = await renderApp({ hash: '#/plasticine' });
+  const original = app.api.mates.create.bind(app.api.mates);
+  let release: (() => void) | undefined;
+  const waiting = new Promise<void>((resolve) => { release = resolve; });
+  vi.spyOn(app.api.mates, 'create').mockImplementation(async (body) => { await waiting; return original(body); });
+  fireEvent.click(await screen.findByRole('button', { name: '添加队友' }));
+  const editor = screen.getByRole('dialog', { name: '创建队友' });
+  fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '校稿队友' } });
+  fireEvent.change(within(editor).getByLabelText('职责'), { target: { value: '核对文字' } });
+  fireEvent.click(within(editor).getByRole('button', { name: '创建队友' }));
+  fireEvent.click(within(editor).getByRole('button', { name: '关掉创建队友' }));
+  act(() => { window.location.hash = '#/notes'; });
+  await act(async () => { release?.(); });
+  await waitFor(async () => expect((await app.api.mates.list()).mates).toHaveLength(1));
+  expect(window.location.hash).toBe('#/notes');
 });

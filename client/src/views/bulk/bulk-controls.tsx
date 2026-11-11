@@ -22,8 +22,10 @@ export function BulkCheck({ selection, item }: { selection: BulkSelection; item:
     onClick={(event) => { event.stopPropagation(); selection.toggle(item, event.shiftKey); }} /> : null;
 }
 
-export function BulkHeader({ selection, items, trash = false, allowEmpty = true }: { selection: BulkSelection;
-  items: readonly BulkItem[]; trash?: boolean; allowEmpty?: boolean }): ReactNode {
+export function BulkHeader({ selection, items, trash = false, allowEmpty = true, onEmpty }: {
+  selection: BulkSelection; items: readonly BulkItem[]; trash?: boolean; allowEmpty?: boolean;
+  onEmpty?: (confirmed: readonly BulkItem[]) => void;
+}): ReactNode {
   const all = useRef<HTMLInputElement>(null);
   const [purging, setPurging] = useState<readonly BulkItem[] | null>(null);
   useEffect(() => { if (all.current !== null) all.current.indeterminate = selection.selected.length > 0
@@ -43,7 +45,8 @@ export function BulkHeader({ selection, items, trash = false, allowEmpty = true 
       onCancel={() => setPurging(null)} onConfirm={() => {
         const count = purging.length;
         setPurging(null);
-        void selection.empty(count);
+        if (onEmpty !== undefined) onEmpty(purging);
+        else void selection.empty(count);
       }} />}
   </div>;
 }
