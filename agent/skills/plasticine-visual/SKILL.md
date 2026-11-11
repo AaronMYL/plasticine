@@ -113,6 +113,7 @@ description: 为 Plasticine 设计、评审或实现中文阅读、信息层级�
 
 ## 按任务读取参考
 
+- 任何界面改动先读 [页面规范](references/page-spec.md)：模板、页头、间距、组件、加载、动效、文案，以及已定稿的页面。
 - 页面结构、字体、密度、颜色与方向 I 令牌：读 [视觉基础](references/visual-foundation.md)。
 - 原话、观察、判断、约定、来源、任务状态的呈现：读 [信息语义](references/information-semantics.md)。
 - 某个视图长什么样（壳、首页、消息、工作详情、项目、主题记忆、阅读、设备）：读 [视图骨架](references/views.md)。
