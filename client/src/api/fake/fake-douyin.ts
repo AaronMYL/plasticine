@@ -13,6 +13,7 @@ import type {
 } from '../shared.ts';
 import type { FakeEventBus } from './event-bus.ts';
 import type { FakeSession } from './fake-session.ts';
+import { picture } from './feed-seed.ts';
 import type { FakeReceipts } from './receipts.ts';
 
 export interface FakeDouyinDeps {
@@ -46,6 +47,10 @@ export const DOUYIN_FOLDERS = [
   { id: 'f_food', name: '做饭', count: 57 },
 ];
 
+const COVERS: readonly (readonly [string, string, string])[] = [
+  ['#e7e3da', '#cfc8b8', '#cc7d5e'], ['#dfe4dc', '#b9c4b4', '#587559'], ['#e4e2ea', '#c9c5d4', '#5a6b85'],
+];
+
 export class FakeDouyin {
   private readonly deps: FakeDouyinDeps;
   private readonly works: VideoWorkView[] = [];
@@ -74,6 +79,8 @@ export class FakeDouyin {
     return { id: `video_fake_${index}`, platform: 'douyin', workId, url: `https://www.douyin.com/video/${workId}`,
       kind: 'video', title, author, collectedAt: index === 0 ? null : new Date(at).toISOString(),
       durationSeconds: 60 + index % 300,
+      // 前几条有封面（竖版），后面的没有，看得到两种样子。
+      coverUrl: index < 6 ? picture(4 / 3, COVERS[index % COVERS.length]!) : null,
       folderIds, stage: STAGES[stage - 1] ?? 'synced', want: stage > 1 ? 'full' : 'none', run: 'idle', error: null,
       feedItemId: null, version: 1 };
   }

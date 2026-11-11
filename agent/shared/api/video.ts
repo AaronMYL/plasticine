@@ -85,6 +85,17 @@ export const VideoTimingSchema = Type.Object({
 }, { additionalProperties: false });
 export type VideoTiming = Static<typeof VideoTimingSchema>;
 
+/** 列表里一行放得下的标题：去掉话题标签，取第一句，最长 40 字（11-11 Aaron：标题太长把列表撑乱了）。 */
+export const VIDEO_SHORT_TITLE_CHARS = 40;
+export function shortVideoTitle(text: string): string {
+  const line = (text.split('\n').find((part) => part.replace(/#\S+/gu, '').trim() !== '') ?? '')
+    .replace(/#\S+/gu, '').replace(/\s+/gu, ' ').trim();
+  const sentence = line.match(/^.+?[。！？!?]/u)?.[0] ?? line;
+  const chars = Array.from(sentence.length >= 4 ? sentence : line);
+  return chars.length > VIDEO_SHORT_TITLE_CHARS ? `${chars.slice(0, VIDEO_SHORT_TITLE_CHARS - 1).join('')}…`
+    : chars.join('');
+}
+
 export const VideoWorkViewSchema = Type.Object({
   id: IdSchema,
   platform: Type.Enum(VIDEO_PLATFORMS),
@@ -95,6 +106,8 @@ export const VideoWorkViewSchema = Type.Object({
   author: OrNull(Type.String()),
   collectedAt: OrNull(IsoTimeSchema),
   durationSeconds: OrNull(Type.Number({ minimum: 0 })),
+  /** 抖音给的封面地址（11-11）；没同步到或地址失效时界面画播放符号。 */
+  coverUrl: OrNull(Type.String()),
   folderIds: Type.Array(Type.String()),
   stage: Type.Enum(VIDEO_STAGES),
   want: Type.Enum(VIDEO_WANTS),
@@ -202,6 +215,8 @@ export const DouyinListedWorkSchema = Type.Object({
   collectedAt: OrNull(IsoTimeSchema),
   /** 作品发布时间，仅作来源信息，不能替代收藏时间。 */
   publishedAt: Type.Optional(OrNull(IsoTimeSchema)),
+  /** 封面图地址（抖音 CDN，会过期；每次同步刷新）。 */
+  coverUrl: Type.Optional(OrNull(LinkSchema)),
   /** 总收藏列表中从 0 开始的位置；分批报告保持同一位置。 */
   listPosition: Type.Optional(Type.Integer({ minimum: 0, maximum: 999_999 })),
   folderIds: Type.Array(Type.String({ maxLength: 60 }), { maxItems: 50 }),

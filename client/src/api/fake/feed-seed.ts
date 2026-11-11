@@ -7,7 +7,7 @@ import { DOUYIN_SOURCE_ID, NEWS_SOURCE_ID, X_SOURCE_ID, type FakeFeed } from './
 const HOUR_MS = 60 * 60 * 1000;
 
 /** 一张「照片」：几块平涂的色块，比例按 ratio（高 / 宽）。 */
-function picture(ratio: number, colors: readonly [string, string, string]): string {
+export function picture(ratio: number, colors: readonly [string, string, string]): string {
   const width = 600;
   const height = Math.round(width * ratio);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`

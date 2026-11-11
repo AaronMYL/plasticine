@@ -35,6 +35,7 @@ export interface VideoWorkRow {
   collectedAt: string | null;
   collectSeq: number | null;
   durationSeconds: number | null;
+  coverUrl: string | null;
   folderIds: string[];
   stage: VideoStage;
   want: 'none' | 'full';
@@ -66,6 +67,7 @@ export interface NewVideoWork {
   collectSeq?: number;
   collectSeqBase?: number;
   durationSeconds?: number | null;
+  coverUrl?: string | null;
   folderIds?: string[];
 }
 
@@ -146,6 +148,7 @@ function decodeWork(row: Row): VideoWorkRow {
     collectedAt: nullableText(row, 'collected_at'),
     collectSeq: typeof row['collect_seq'] === 'number' ? row['collect_seq'] : null,
     durationSeconds: typeof duration === 'number' ? duration : null,
+    coverUrl: nullableText(row, 'cover_url'),
     folderIds: json(row, 'folder_ids', isStrings) ?? [],
     stage: VIDEO_STAGES.find((stage) => stage === row['stage']) ?? 'synced',
     want: row['want'] === 'full' ? 'full' : 'none',
@@ -268,24 +271,25 @@ function createVideoWorkStore(context: StoreContext) {
               WHEN $seq IS NULL THEN COALESCE(collected_at, $collected) ELSE collected_at END,
             collect_seq = CASE WHEN $base >= COALESCE(collect_seq, 0) THEN $seq ELSE collect_seq END,
             duration_seconds = COALESCE(duration_seconds, $duration),
+            cover_url = COALESCE($cover, cover_url),
             folder_ids = $folders, updated_at = $at WHERE id = $id`, {
             id: existing.id, title: input.title || existing.title, caption: input.caption ?? '',
             author: input.author ?? null, kind: input.kind ?? null,
             collected: input.collectedAt ?? null, seq: input.collectSeq ?? null,
             base: input.collectSeqBase ?? input.collectSeq ?? null, duration: input.durationSeconds ?? null,
-            folders: JSON.stringify(folders), at,
+            cover: input.coverUrl ?? null, folders: JSON.stringify(folders), at,
           });
           return { work: require(existing.id), created: false };
         }
         const id = `video_${randomUUID()}`;
         db.run(`INSERT INTO video_works (id, created_at, updated_at, version, platform, work_id, url, kind, title,
-          caption, author, collected_at, collect_seq, duration_seconds, folder_ids, stage, want, run)
+          caption, author, collected_at, collect_seq, duration_seconds, cover_url, folder_ids, stage, want, run)
           VALUES ($id, $at, $at, 1, $platform, $work, $url, $kind, $title, $caption, $author, $collected, $seq,
-          $duration, $folders, 'synced', 'none', 'idle')`, {
+          $duration, $cover, $folders, 'synced', 'none', 'idle')`, {
           id, at, platform: input.platform, work: input.workId, url: input.url, kind: input.kind ?? null,
           title: input.title, caption: input.caption ?? '', author: input.author ?? null,
           collected: input.collectedAt ?? null, seq: input.collectSeq ?? null, duration: input.durationSeconds ?? null,
-          folders: JSON.stringify(input.folderIds ?? []),
+          cover: input.coverUrl ?? null, folders: JSON.stringify(input.folderIds ?? []),
         });
         return { work: require(id), created: true };
       });

@@ -92,8 +92,12 @@ function WorkRow({ work, timeZone, current, picking, picked, onOpen, onPick }: {
   onPick: (on: boolean) => void }): ReactNode {
   const phase = phaseOf(work);
   const length = durationText(work.durationSeconds);
+  const [broken, setBroken] = useState(false);
+  const cover = work.coverUrl !== null && !broken ? work.coverUrl : null;
   const body = <>
-    <span className="dy-work-thumb" aria-hidden="true"><Icon name="play" size={16} />
+    <span className="dy-work-thumb" aria-hidden="true">
+      {cover === null ? <Icon name="play" size={16} />
+        : <img src={cover} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />}
       {length === '' ? null : <span className="dy-work-length">{length}</span>}</span>
     <span className="dy-work-text"><strong>{work.title}</strong>
       <span className="dy-work-meta">{meta(work, timeZone)}</span></span>

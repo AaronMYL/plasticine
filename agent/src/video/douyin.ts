@@ -4,6 +4,7 @@
 
 import {
   NODE_ONLINE_MS,
+  shortVideoTitle,
   type DouyinFolderView,
   type DouyinJob,
   type DouyinListResponse,
@@ -36,8 +37,8 @@ export function workUrl(workId: string, kind: 'video' | 'images' | null): string
 
 export function videoWorkView(work: VideoWorkRow): VideoWorkView {
   return { id: work.id, platform: work.platform, workId: work.workId, url: work.url, kind: work.kind,
-    title: work.title, author: work.author, collectedAt: work.collectSeq === null ? null : work.collectedAt,
-    durationSeconds: work.durationSeconds,
+    title: shortVideoTitle(work.title) || work.title, author: work.author, collectedAt: work.collectSeq === null ? null : work.collectedAt,
+    durationSeconds: work.durationSeconds, coverUrl: work.coverUrl,
     folderIds: work.folderIds, stage: work.stage, want: work.want, run: work.run, error: work.error,
     feedItemId: work.feedItemId, spaceId: work.spaceId, version: work.version };
 }
@@ -139,12 +140,12 @@ export class DouyinFavorites {
       this.#state.videoFolders.upsert('douyin', report.list.folders);
       for (const listed of report.list.works) {
         const { created } = this.#state.videoWorks.upsert({ platform: 'douyin', workId: listed.workId,
-          url: workUrl(listed.workId, listed.kind), title: listed.title || listed.caption.slice(0, 80) || '（无标题）',
+          url: workUrl(listed.workId, listed.kind), title: shortVideoTitle(listed.title || listed.caption) || '（无标题）',
           caption: listed.caption, author: listed.author, kind: listed.kind,
           collectedAt: listed.listPosition === undefined ? null : listed.collectedAt,
           ...(listed.listPosition === undefined || job.sequenceBase === null ? {}
             : { collectSeq: job.sequenceBase - listed.listPosition, collectSeqBase: job.sequenceBase }),
-          durationSeconds: listed.durationSeconds, folderIds: listed.folderIds });
+          durationSeconds: listed.durationSeconds, coverUrl: listed.coverUrl ?? null, folderIds: listed.folderIds });
         added += created ? 1 : 0;
       }
     }

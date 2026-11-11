@@ -79,4 +79,15 @@ describe('抖音收藏整理', () => {
     fireEvent.click(within(list).getByRole('button', { name: '整理这 1 条' }));
     await waitFor(() => expect(process).toHaveBeenCalledWith(expect.objectContaining({ ids: [todo[0]!.id] })));
   });
+
+  it('有封面画封面，封面打不开退回播放符号；标题最多两行', async () => {
+    await open();
+    const list = await screen.findByRole('region', { name: '抖音收藏列表' });
+    const row = await within(list).findByRole('button', { name: new RegExp(`^${TITLE}`) });
+    const image = row.querySelector('.dy-work-thumb img');
+    expect(image).not.toBeNull();
+    fireEvent.error(image!);
+    await waitFor(() => expect(row.querySelector('.dy-work-thumb img')).toBeNull());
+    expect(row.querySelector('.dy-work-thumb svg')).not.toBeNull();
+  });
 });

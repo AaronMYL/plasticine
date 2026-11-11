@@ -16,7 +16,7 @@ test('收藏顺序迁移只加列，原作品、日期、阶段和转写结果�
     const before = db.get("SELECT * FROM video_works WHERE id = 'video-1'");
     migrate(db, MIGRATIONS, steppingClock());
     assert.deepEqual({ ...db.get("SELECT * FROM video_works WHERE id = 'video-1'") },
-      { ...before, collect_seq: null, space_id: null });
+      { ...before, collect_seq: null, space_id: null, cover_url: null });
     assert.deepEqual(db.all('PRAGMA foreign_key_check'), []);
     assert.equal(db.get('PRAGMA integrity_check')?.['integrity_check'], 'ok');
   } finally { db.close(); }

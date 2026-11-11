@@ -92,6 +92,7 @@ export function listedWork(raw: unknown, folderId: string | null, listPosition =
   const workId = workIdOf(aweme);
   if (workId === null) { return null; }
   const caption = text(aweme['desc']).trim();
+  // 标题由服务端截成一行放得下的样子（shared/api/video.ts 的 shortVideoTitle）。
   const title = text(aweme['preview_title']).trim() || caption.split('\n')[0]?.replace(/#\S+/g, '').trim() || '';
   const author = text(object(aweme['author'])['nickname']).trim();
   return {
@@ -101,6 +102,8 @@ export function listedWork(raw: unknown, folderId: string | null, listPosition =
     author: author === '' ? null : author.slice(0, 200),
     kind: kindOf(aweme),
     durationSeconds: durationOf(aweme),
+    coverUrl: firstUrl(object(aweme['video'])['cover']) ?? firstUrl(object(aweme['video'])['origin_cover'])
+      ?? firstUrl(object(array(aweme['images'])[0])),
     collectedAt: isoOf(aweme['collect_time']),
     publishedAt: isoOf(aweme['create_time']),
     listPosition,

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import type { DouyinListedWork } from '../../shared/api/video.ts';
+import { shortVideoTitle, type DouyinListedWork } from '../../shared/api/video.ts';
 import { DouyinFavorites } from '../../src/video/douyin.ts';
 import { openState } from '../../src/state/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
@@ -121,4 +121,25 @@ test('收藏时间只取报告里的真实字段；发布时间、同步钟和�
   assert.equal(t.state.videoWorks.require(historical.id).collectedAt, null, '全量核实时清掉历史替代日期');
   assert.notEqual(list.works[1]?.collectedAt, list.sync.lastAt);
   assert.notEqual(list.works[1]?.collectedAt, t.state.videoWorks.byWork('douyin', listed(2).workId)?.createdAt);
+});
+
+test('封面和短标题（11-11）：同步记下封面、下次同步换新地址；长描述只取第一句、去掉话题', () => {
+  const service = favorites();
+  service.sync(true);
+  const job = service.jobs()[0]!;
+  const long = '普通人做指数定投的三个误区，第一个就是跌了就停。后面还有很长的一段解释 #理财 #定投';
+  service.report({ requestId: 'cover-1', jobId: job.id, list: { folders: [], done: false, works: [
+    { ...listed(1), title: '', caption: long, coverUrl: 'https://p3.example.com/cover-a.jpg' }] } });
+  const [work] = service.list({}, 50, 0).works;
+  assert.equal(work!.coverUrl, 'https://p3.example.com/cover-a.jpg');
+  assert.equal(work!.title, '普通人做指数定投的三个误区，第一个就是跌了就停。');
+  service.report({ requestId: 'cover-2', jobId: job.id, list: { folders: [], done: true, works: [
+    { ...listed(1), coverUrl: 'https://p3.example.com/cover-b.jpg' }] } });
+  assert.equal(service.list({}, 50, 0).works[0]!.coverUrl, 'https://p3.example.com/cover-b.jpg');
+});
+
+test('短标题：太长截到 40 字加省略号；只有话题时用原文', () => {
+  assert.equal(shortVideoTitle('一'.repeat(60)), `${'一'.repeat(39)}…`);
+  assert.equal(shortVideoTitle('#只有话题'), '');
+  assert.equal(shortVideoTitle('第一行标题\n第二行'), '第一行标题');
 });
