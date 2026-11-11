@@ -9,7 +9,7 @@ async function open(width = 1440) {
   if (width < 768) fireEvent.click(screen.getByRole('button', { name: '筛选' }));
   const area = width < 768 ? await screen.findByRole('dialog', { name: '筛选' })
     : screen.getByRole('complementary', { name: '信息流' });
-  fireEvent.click(within(area).getByRole('button', { name: /^抖音收藏/ }));
+  fireEvent.click(await within(area).findByRole('button', { name: /^抖音收藏/ }));
   return app;
 }
 
