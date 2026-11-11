@@ -45,7 +45,6 @@ export interface Route {
   mateId?: string | null;
   mateGroupId?: string | null;
   plasticineMain?: boolean;
-  plasticineSoul?: boolean;
   lineId?: string | null;
   taskId?: string | null;
   groupTaskId?: string | null;
@@ -73,6 +72,10 @@ export interface Route {
   topicId?: string | null;
   /** 「昨晚整理了什么」（#/memory/dream，第 10、16 条）。 */
   memoryDream?: boolean;
+  /** 记忆里的「规则」（#/memory/rules[/<队友>]，11-11 原 Soul 并进来）；带队友时只看只对它的。 */
+  memoryRules?: boolean;
+  /** 说法冲突（#/memory/conflicts，11-11）。 */
+  memoryConflicts?: boolean;
   /**
    * 设置弹框开在哪一段（#/settings/<段>，2026-11-05 起设置不占标签：这种地址只用来开弹框，壳认到就开、地址换回当前标签的）。
    * 旧段名（feed、network…）和旧地址 #/device 都映射到新的五段，见 settingsLink。
@@ -281,6 +284,8 @@ export function parseHash(hash: string): Route {
   if (view === 'memory' && id === 'dream') {
     return { view, noteId: null, memoryDream: true };
   }
+  if (view === 'memory' && id === 'rules') return soulRoute(sub === undefined ? null : decodedOrNull(sub));
+  if (view === 'memory' && id === 'conflicts') return conflictsRoute();
   if (view === 'projects') {
     return { view, noteId: null, projectId: id === undefined ? null : decodedOrNull(id) };
   }
@@ -334,8 +339,13 @@ export function mateRoute(mateId: string): Route { return { view: 'plasticine', 
 export function mateGroupRoute(mateGroupId: string): Route {
   return { view: 'plasticine', noteId: null, mateGroupId };
 }
+/** 记忆里的「规则」（原 Soul，11-11）；带队友时先筛出只对它的。 */
 export function soulRoute(mateId: string | null = null): Route {
-  return { view: 'plasticine', noteId: null, plasticineSoul: true, mateId };
+  return { view: 'memory', noteId: null, memoryRules: true, mateId };
+}
+
+export function conflictsRoute(): Route {
+  return { view: 'memory', noteId: null, memoryConflicts: true };
 }
 
 /** 一条旁聊（#/plasticine/side/<线 id>）。 */
@@ -433,8 +443,6 @@ function retiredRoute(view: string | undefined, id: string | undefined): Route |
 
 export function routeHash(route: Route): string {
   if (route.view === 'plasticine') {
-    if (route.plasticineSoul === true) return `#/plasticine/soul${route.mateId == null ? ''
-      : '/' + encodeURIComponent(route.mateId)}`;
     if (route.mateId != null) return `#/plasticine/mate/${encodeURIComponent(route.mateId)}`;
     if (route.mateGroupId != null) return `#/plasticine/group/${encodeURIComponent(route.mateGroupId)}`;
     if (route.plasticineMain === true) return '#/plasticine/main';
@@ -477,6 +485,10 @@ export function routeHash(route: Route): string {
   if (route.view === 'memory' && route.memoryDream === true) {
     return '#/memory/dream';
   }
+  if (route.view === 'memory' && route.memoryRules === true) {
+    return `#/memory/rules${route.mateId == null ? '' : '/' + encodeURIComponent(route.mateId)}`;
+  }
+  if (route.view === 'memory' && route.memoryConflicts === true) return '#/memory/conflicts';
   if (route.view === 'memory' && route.objectType === 'agreement' && route.objectId == null) {
     return '#/memory/agreements';
   }

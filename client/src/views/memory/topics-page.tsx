@@ -13,8 +13,10 @@ import { useStore } from '../../state/use-store.ts';
 import type { HueName } from '../../shell/hue.tsx';
 import { AiMark } from '../../shell/glyph.tsx';
 import { Icon, type IconName } from '../../shell/icons.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { useConflicts } from './use-conflicts.ts';
 import { PageHeader } from '../../shell/page-header.tsx';
-import { mainLineRoute, type Route } from '../../shell/routes.ts';
+import { conflictsRoute, mainLineRoute, type Route } from '../../shell/routes.ts';
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
 import { MemorySearch } from './memory-search.tsx';
@@ -143,6 +145,16 @@ function DreamEntry({ dream, navigate }: { dream: MemoryDreamSummary; navigate: 
   );
 }
 
+/** 说法冲突的提示条（11-11）：有没定的才出现，点了去冲突页。 */
+function ConflictsEntry({ navigate }: { navigate: (route: Route) => void }): ReactNode {
+  const count = useConflicts().data?.conflicts.length ?? 0;
+  if (count === 0) return null;
+  return <button type="button" className="memory-conflicts" onClick={() => navigate(conflictsRoute())}>
+    <Icon name="alert" size={16} /><span className="memory-conflicts-text">{count} 处说法冲突，要你选以哪条为准</span>
+    <span className="topic-row-chevron" aria-hidden="true"><Icon name="chevron-right" size={14} /></span>
+  </button>;
+}
+
 export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now?: Date }): ReactNode {
   const live = useLive();
   const data = useStore(live.memoryTopics.data);
@@ -159,8 +171,9 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
         controls={<MemorySearch.Field value={query} onChange={setQuery} />} />
       {data.error === null ? null : <p className="block-empty is-error" role="alert">{data.error}</p>}
       {searching ? <MemorySearch.Results query={query} navigate={navigate} /> : list === null
-        ? <p className="block-empty">正在读…</p> : (
+        ? <PageLoading /> : (
           <>
+            <ConflictsEntry navigate={navigate} />
             {list.dream === null ? null : <DreamEntry dream={list.dream} navigate={navigate} />}
             {uncertain.length === 0 ? null : (
               <section className="block memory-block" aria-labelledby="memory-uncertain">

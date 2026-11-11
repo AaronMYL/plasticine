@@ -34,7 +34,7 @@ describe('记忆页没有旧版记忆', () => {
     await renderApp({ hash: '#/memory/board', setup: (fake) => fake.control.memoryTopics.seed() });
     await settle();
     expect(within(main()).queryByRole('navigation', { name: '记忆视图' })).toBeNull();
-    expect(await within(main()).findByRole('region', { name: '关于你和做事方式' })).toBeTruthy();
+    expect(await within(main()).findByRole('region', { name: '关于你和规则' })).toBeTruthy();
     expect(screen.queryByText('原话与约定')).toBeNull();
     expect(within(main()).queryByRole('region', { name: '原话' })).toBeNull();
     expect(within(main()).queryByRole('region', { name: '解释' })).toBeNull();

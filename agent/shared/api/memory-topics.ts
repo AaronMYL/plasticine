@@ -34,7 +34,7 @@ export const MEMORY_TOPIC_GROUP_OF: Readonly<Record<MemoryTopicKind, MemoryTopic
 /** 组名：「关于你」那一组叫「关于你和做事方式」（设计稿）。 */
 export const MEMORY_TOPIC_GROUP_LABELS: Readonly<Record<MemoryTopicKind, string>> = {
   ...MEMORY_TOPIC_KIND_LABELS,
-  about_you: '关于你和做事方式',
+  about_you: '关于你和规则',
 };
 
 /** 双链（第 16 条）：一篇提到另一篇时写 [[名字]]。按出现的先后，同名只算一次。 */

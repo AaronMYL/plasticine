@@ -40,23 +40,23 @@ describe('手机内容承接', () => {
   });
 
   it('记忆主题深链可读原文和来源，继续对话时带上实际小节内容', async () => {
-    const app = await renderApp({ width: 390, hash: '#/memory/topics/memdoc-rules', seed: true });
-    await screen.findByRole('heading', { name: '主线的 Soul' });
-    expect(await screen.findByText('要你定的事一律给选项，推荐的放第一个。')).toBeTruthy();
+    const app = await renderApp({ width: 390, hash: '#/memory/topics/t_zhouyu', seed: true });
+    await screen.findByRole('heading', { name: '周屿' });
+    expect(await screen.findByText('周四下午有空过稿。')).toBeTruthy();
     expect(screen.queryByRole('button', { name: '确认生效' })).toBeNull();
     expect(screen.getAllByRole('button', { name: /回到原话/ }).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: '在对话里提' }));
     await screen.findByRole('textbox', { name: '问一句' });
-    expect(app.state.conversationUi.store.get().quotes[0]?.text).toContain('推荐的放第一个');
+    expect(app.state.conversationUi.store.get().quotes[0]?.text).toContain('周四下午有空过稿');
   });
 
   it('读取记忆失败有重试，缺失对象不会被首页掩盖', async () => {
-    const app = await renderApp({ width: 390, hash: '#/memory/topics/memdoc-rules', seed: true, setup: ({ api }) => {
+    const app = await renderApp({ width: 390, hash: '#/memory/topics/t_zhouyu', seed: true, setup: ({ api }) => {
       vi.spyOn(api.memoryTopics, 'get').mockRejectedValueOnce(new Error('读取中断，请重试'));
     } });
     expect(await screen.findByRole('alert')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '重新读取' }));
-    await screen.findByRole('heading', { name: '主线的 Soul' });
+    await screen.findByRole('heading', { name: '周屿' });
     expect(app.api.memoryTopics.get).toHaveBeenCalledTimes(2);
   });
 

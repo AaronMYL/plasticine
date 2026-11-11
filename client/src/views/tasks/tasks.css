@@ -398,11 +398,20 @@
 .tasks-segmented {
   display: flex;
   width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
+.tasks-segmented::-webkit-scrollbar {
+  display: none;
+}
+
+/* 六段放不下 390 宽：每段按字宽，整条横着滑（11-11 加了已结束、最近删除）。 */
 .tasks-segmented .segmented-item {
   display: inline-flex;
-  flex: 1 1 0;
+  flex: 1 0 auto;
+  padding-inline: 10px;
+  white-space: nowrap;
   align-items: center;
   justify-content: center;
   color: var(--fg2);

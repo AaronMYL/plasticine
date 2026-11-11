@@ -22,7 +22,7 @@ export interface PhoneBarProps {
  * 消息里点开的那一条、工作详情、项目和记忆的只读详情。
  */
 export function phoneFullPage(route: Route): boolean {
-  if (route.view === 'plasticine' && (route.plasticineMain === true || route.plasticineSoul === true
+  if (route.view === 'plasticine' && (route.plasticineMain === true
     || route.mateId != null
     || route.mateGroupId != null || route.lineId != null || route.messageId != null)) return true;
   if (route.view === 'projects' || route.view === 'memory' || route.view === 'work') return true;

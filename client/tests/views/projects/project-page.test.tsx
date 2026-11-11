@@ -68,7 +68,7 @@ describe('项目页', () => {
     const partial = within(project).getByRole('button', { name: '查看工作：未写完的材料' });
     expect(within(partial).getByText('输出未完')).toBeTruthy();
     expect(within(within(project).getByRole('button', { name: '查看工作：停下的核对' }))
-      .getByText('已停下')).toBeTruthy();
+      .getByText('已停止')).toBeTruthy();
     expect(within(within(project).getByRole('button', { name: '查看工作：已交付的材料' }))
       .getByText('已完成')).toBeTruthy();
     fireEvent.click(partial);

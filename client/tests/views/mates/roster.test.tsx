@@ -48,13 +48,12 @@ it('手机名单的记忆入口打开目录并能返回', async () => {
   expect(await screen.findByRole('heading', { name: 'Plasticine' })).toBeTruthy();
 });
 
-it('Soul 入口打开主线与队友规则页', async () => {
+it('Soul 并进记忆的「规则」（11-11）：名单底下只有「记忆」；旧地址打开规则', async () => {
   await renderApp({ width: 390, hash: '#/plasticine' });
-  fireEvent.click(await screen.findByRole('link', { name: 'Soul' }));
-  expect(await screen.findByRole('heading', { name: '主线的 Soul' })).toBeTruthy();
-  expect(window.location.hash).toBe('#/plasticine/soul');
-  expect(screen.getByRole('button', { name: '返回队友列表' })).toBeTruthy();
-  expect(screen.queryByRole('textbox', { name: '问一句' })).toBeNull();
+  expect(await screen.findByRole('link', { name: '记忆' })).toBeTruthy();
+  expect(screen.queryByRole('link', { name: 'Soul' })).toBeNull();
+  window.location.hash = '#/plasticine/soul';
+  expect(await screen.findByRole('heading', { name: '规则' })).toBeTruthy();
 });
 
 it('创建队友发出后关闭表单，晚到回执不会把用户从当前页面拉走', async () => {

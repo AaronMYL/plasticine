@@ -100,7 +100,7 @@ function Line({ line, navigate }: { line: MemoryDocLine; navigate: (route: Route
 }
 
 /** 硬线：一行一个，带锁；没有出处、不能改（代码里拦着）。 */
-function HardLines({ lines }: { lines: readonly string[] }): ReactNode {
+export function HardLines({ lines }: { lines: readonly string[] }): ReactNode {
   return (
     <section className="doc-section doc-hard" aria-labelledby="doc-hard-title">
       <h2 id="doc-hard-title" className="doc-section-title">

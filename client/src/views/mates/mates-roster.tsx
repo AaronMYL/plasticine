@@ -4,7 +4,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { ColumnFoot, ColumnHead, ColumnLink, ColumnNote } from '../../shell/columns/column.tsx';
-import { mainChatRoute, mateGroupRoute, mateRoute, sideRoute, soulRoute, type Route } from '../../shell/routes.ts';
+import { mainChatRoute, mateGroupRoute, mateRoute, sideRoute, type Route } from '../../shell/routes.ts';
 import { useStore } from '../../state/use-store.ts';
 import { PendingOps } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from './mate-actions.ts';
@@ -20,8 +20,8 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
   const lines = useStore(live.lines.list);
   const [editor, setEditor] = useState<'mate' | 'group' | null>(null);
   const [legacy, setLegacy] = useState(false);
-  const root = route.view === 'plasticine' && route.mateId == null && route.mateGroupId == null && route.lineId == null
-    && route.plasticineSoul !== true;
+  const root = route.view === 'plasticine' && route.mateId == null && route.mateGroupId == null
+    && route.lineId == null;
   return <div className={`mates-roster${phone ? ' mates-roster-phone' : ''}`}>
     {phone ? <header className="mates-phone-head"><h1>Plasticine</h1></header> : <ColumnHead title="Plasticine" />}
     <div className="column-scroll">
@@ -35,7 +35,7 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
       {roster.mates.map((mate) => {
         const working = lines.lines.some((line) => line.mateId === mate.id && line.kind === 'background'
           && (line.status === 'running' || line.queued > 0));
-        return <ColumnLink key={mate.id} route={mateRoute(mate.id)} current={route.plasticineSoul !== true
+        return <ColumnLink key={mate.id} route={mateRoute(mate.id)} current={route.view === 'plasticine'
           && (route.mateId === mate.id || route.lineId === mate.lineId)}
           navigate={navigate} lead={<MateAvatar mate={mate} />} sub={mate.role}
           trail={mate.disabledAt !== null ? <span className="mate-state">已停用</span>
@@ -55,9 +55,7 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
       </div>}
     </div>
     <ColumnFoot><ColumnLink route={{ view: 'memory', noteId: null }} current={route.view === 'memory'}
-      navigate={navigate} lead={<Icon name="memory" size={18} />}>记忆</ColumnLink>
-      <ColumnLink route={soulRoute()} current={route.plasticineSoul === true} navigate={navigate}
-        lead={<Icon name="sparkle" size={18} />}>Soul</ColumnLink></ColumnFoot>
+      navigate={navigate} lead={<Icon name="memory" size={18} />}>记忆</ColumnLink></ColumnFoot>
     {editor === 'mate' ? <MateEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
     {editor === 'group' ? <GroupEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
     {legacy ? <LegacyChats phone={phone} navigate={navigate} onClose={() => setLegacy(false)} /> : null}

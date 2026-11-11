@@ -1,21 +1,13 @@
 // 队友的规则（11-11 第 11 批第二步，Aaron 同意迁移）：队友原来那段自由文字的 Soul 拆成「只对这位队友」的规则行，进记忆的
 // 「规则」；原字段停用、内容保留。建队友时带的那段话也照这样拆。每位队友只拆一次（事件里记一笔），之后在记忆页改。
 
-import { inferSoulSection } from '../../shared/soul.ts';
-import { MEMORY_LINE_MAX_CHARS, RULES_DOC_ID } from '../../shared/state.ts';
+import { inferSoulSection, ruleTexts } from '../../shared/soul.ts';
+import { RULES_DOC_ID } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { docEvent, ensureRulesDoc, type DocState } from './memory-doc-writes.ts';
 
 type MateRuleState = DocState & Pick<StateService, 'mates'>;
 const MARK = 'mateSoul';
-
-/** 一段自由文字拆成一条条规则：一行一条，去掉列表符号和标题，太长的截到一行的上限。 */
-export function ruleTexts(soul: string): string[] {
-  return soul.split(/\r?\n/u)
-    .map((line) => line.replace(/^\s*(?:[-*·•]|\d+[.、)])\s*/u, '').trim())
-    .filter((line) => line !== '' && !line.startsWith('#'))
-    .map((line) => Array.from(line).slice(0, MEMORY_LINE_MAX_CHARS).join(''));
-}
 
 /** 把一位队友的那段文字拆成只对它的规则（拆过的不再拆）；返回新写的行数。 */
 export function adoptMateSoul(state: MateRuleState, mateId: string, soul: string): number {

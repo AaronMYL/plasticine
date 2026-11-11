@@ -44,7 +44,7 @@ export function topicSeeds(now: Date): TopicSeed[] {
         ['用语音输入，错字多；可能改变意思的错字，先说出解出来的版本让你确认。', 'agreement', '约定 · 10-21', 12 * DAY],
       ] },
     ] },
-    { topic: topic({ id: RULES_DOC_ID, kind: 'rules', title: '主线的 Soul',
+    { topic: topic({ id: RULES_DOC_ID, kind: 'rules', title: '规则',
       summary: '你明说的规矩；最前面是不管多有把握都先问你的几类事' }, now, 20), sections: [
       { heading: '规矩', lines: [
         ['要你定的事一律给选项，推荐的放第一个。', 'agreement', '约定', 12 * DAY],

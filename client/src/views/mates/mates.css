@@ -78,6 +78,3 @@
 .dock-target-section { margin: 12px 10px 4px; font-size: 11px; color: var(--fg3); }
 .dock-target-item { min-height: 38px; min-width: 240px; gap: 10px; }
 
-.mates-soul-route { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.mates-soul-route > .soul-page { flex: 1; height: auto; min-height: 0; }
-.mates-soul-back { display: flex; align-items: center; height: 44px; flex: none; padding: 0 12px; }

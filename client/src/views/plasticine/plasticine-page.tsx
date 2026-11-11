@@ -1,7 +1,6 @@
 // Plasticine 主区：电脑默认主线，手机先显示名单；队友与群组分别进入长期对话。
 // 原对话地址继续可读，Soul 是同一栏目里的规则页。
 
-import { SoulPage } from './soul-page.tsx';
 import { PendingOps, useOp } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from '../mates/mate-actions.ts';
 import { useState, type ReactNode } from 'react';
@@ -73,11 +72,6 @@ export interface PlasticinePageProps {
 }
 
 export function PlasticinePage(props: PlasticinePageProps): ReactNode {
-  if (props.route.plasticineSoul === true) {
-    return <div className="mates-soul-route">{props.phone ? <header className="mates-soul-back">
-      <IconButton icon="back" label="返回队友列表" onClick={() => props.navigate(mainLineRoute())} />
-    </header> : null}<SoulPage {...(props.route.mateId == null ? {} : { mateId: props.route.mateId })} /></div>;
-  }
   return <PlasticineChatPage {...props} />;
 }
 
@@ -166,7 +160,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
           {mate === undefined && group === undefined ? null : <MenuItem icon="edit"
             label={mate === undefined ? '编辑群组' : '编辑队友'}
             onSelect={() => { setMenu(null); setEditing(true); }} />}
-          {mate === undefined ? null : <MenuItem icon="sparkle" label="编辑 Soul"
+          {mate === undefined ? null : <MenuItem icon="sparkle" label="只对它的规则"
             onSelect={() => { setMenu(null); navigate(soulRoute(mate.id)); }} />}
           {mate === undefined ? null : <MenuItem label={mate.disabledAt === null ? '停用队友' : '重新启用'}
             onSelect={() => { setMenu(null); setDisabling(true); }} />}

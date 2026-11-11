@@ -37,7 +37,7 @@ it('页里点链接走一步：⌘[ 后退回到原页和阅读位置', async ()
   const main = screen.getByRole('main');
   main.scrollTop = 240;
   fireEvent.scroll(main);
-    fireEvent.click(await within(main).findByRole('button', { name: /^主线的 Soul/ }));
+    fireEvent.click(await within(main).findByRole('button', { name: /^规则/ }));
   await waitFor(() => expect(window.location.hash).toBe('#/memory/topics/memdoc-rules'));
   fireEvent.keyDown(window, { key: '[', metaKey: true });
   await waitFor(() => expect(window.location.hash).toBe('#/memory'));

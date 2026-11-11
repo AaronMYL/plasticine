@@ -11,11 +11,12 @@ describe('地址和栏目', () => {
   it('主线、旁聊、消息、网页标签来回都对得上', () => {
     const mail = `#/messages/${encodeURIComponent('mail:noreply@aliyun.com')}`;
     for (const hash of ['#/plasticine', '#/plasticine/main', '#/plasticine/mate/m1', '#/plasticine/group/g1',
-      '#/plasticine/soul', '#/plasticine/soul/m1', '#/plasticine/line%3Al1%3A3', '#/plasticine/side/l2', '#/messages',
+      '#/memory/rules', '#/memory/rules/m1', '#/memory/conflicts', '#/plasticine/line%3Al1%3A3', '#/plasticine/side/l2', '#/messages',
       '#/messages/c_linyi', '#/messages/c_linyi/profile', '#/messages/requests', mail, '#/web', '#/web/t1',
       '#/books/space', '#/books/space/s1']) {
       expect(routeHash(parseHash(hash))).toBe(hash);
     }
+    expect(routeHash(parseHash('#/plasticine/soul/m1'))).toBe('#/memory/rules/m1');
     expect(parseHash('#/plasticine/side/l2')).toMatchObject({ view: 'plasticine', lineId: 'l2' });
     expect(parseHash('#/plasticine/msg_1')).toMatchObject({ view: 'plasticine', messageId: 'msg_1' });
     expect(parseHash('#/web/t1')).toMatchObject({ view: 'web', webTabId: 't1' });

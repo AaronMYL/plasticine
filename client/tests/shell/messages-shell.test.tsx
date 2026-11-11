@@ -87,7 +87,7 @@ describe('手机 · 底栏与消息的几页', () => {
     expect(await screen.findByRole('textbox', { name: '问一句' })).toBeTruthy();
     expect(phoneBar()).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '返回队友列表' }));
-    expect(await screen.findByRole('link', { name: 'Soul' })).toBeTruthy();
+    expect(await screen.findByRole('link', { name: '记忆' })).toBeTruthy();
   });
 
   it('聊天页顶上的 ✦ 打开对话（问我的 Plasticine）', async () => {

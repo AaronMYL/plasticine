@@ -16,3 +16,11 @@ export function inferSoulSection(text: string): SoulSection {
   if (/说话|回答|结论|措辞|中文|语气|免责声明|边界声明|不确定|段落|解释|文案/.test(text)) return 'speaking';
   return 'doing';
 }
+
+/** 队友那段自由文字拆成一条条规则（11-11）：一行一条，去掉列表符号和标题，太长的截到一行的上限（500 字）。 */
+export function ruleTexts(text: string): string[] {
+  return text.split(/\r?\n/u)
+    .map((line) => line.replace(/^\s*(?:[-*·•]|\d+[.、)])\s*/u, '').trim())
+    .filter((line) => line !== '' && !line.startsWith('#'))
+    .map((line) => Array.from(line).slice(0, 500).join(''));
+}

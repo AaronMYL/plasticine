@@ -18,7 +18,7 @@ function main(): HTMLElement {
 }
 
 describe('记忆 · 主题目录', () => {
-  it('默认是主题目录（设计稿 11-06）：昨晚整理的入口、拿不准的（最多 3 条），再按 关于你和做事方式 · 项目 · 人 · 话题 · 技能 分组',
+  it('默认是主题目录（设计稿 11-06）：昨晚整理的入口、拿不准的（最多 3 条），再按 关于你和规则 · 项目 · 人 · 话题 · 技能 分组',
     async () => {
       await renderApp({ hash: '#/memory', setup: seed });
       expect(within(main()).getByRole('heading', { level: 1, name: '记忆' })).toBeTruthy();
@@ -31,9 +31,9 @@ describe('记忆 · 主题目录', () => {
       const regions = within(main()).getAllByRole('region').map((region) => region.getAttribute('aria-labelledby'));
       expect(regions).toEqual(['memory-uncertain', 'topics-about_you', 'topics-project', 'topics-person',
         'topics-topic', 'topics-skill']);
-      const pinned = within(main()).getByRole('region', { name: '关于你和做事方式' });
+      const pinned = within(main()).getByRole('region', { name: '关于你和规则' });
       expect(within(pinned).getAllByRole('button').map((button) => button.textContent?.split(/身份|你明说/)[0]))
-        .toEqual(['关于你', '主线的 Soul']);
+        .toEqual(['关于你', '规则']);
       expect(within(main()).getByRole('button', { name: /周屿.*Cyber Hunter 的合作者/ })).toBeTruthy();
     });
 
@@ -116,30 +116,17 @@ describe('记忆 · 主题目录', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/projects/project_hunter'));
   });
 
-  it('「主线的 Soul」：最前面是硬线（带锁、ⓘ 说明），下面是规矩，迁来的行出处是约定；旧地址 #/memory/agreements 打开它',
+  it('规则（原「主线的 Soul」）：最前面是硬线（带锁、ⓘ 说明）；旧地址 #/memory/agreements、#/memory/terms 都打开它',
     async () => {
       await renderApp({ hash: '#/memory/agreements', setup: seed });
-      expect(await within(main()).findByRole('heading', { level: 1, name: '主线的 Soul' })).toBeTruthy();
+      expect(await within(main()).findByRole('heading', { level: 1, name: '规则' })).toBeTruthy();
       const hard = within(main()).getByRole('region', { name: /^先问你/ });
       expect(within(hard).getAllByRole('listitem').map((item) => item.textContent))
         .toEqual(['花钱', '以本人名义对外答应或发出', '删除和其他做了就撤不回的', '权限变化', '必须本人做的']);
       expect(within(hard).getByRole('button', { name: '先问你的说明' }).getAttribute('aria-description'))
         .toMatch(/不管有没有把握/);
-      const rules = within(main()).getByRole('region', { name: '规矩' });
-      const migrated = within(rules).getByText(/要你定的事一律给选项/).closest('li') as HTMLElement;
-      expect(within(migrated).queryByText('约定', { selector: '.tag' })).toBeNull();
-      expect(within(migrated).getByRole('button', { name: '回到原话：约定' })).toBeTruthy();
-      expect(within(main()).queryByRole('navigation', { name: '记忆视图' })).toBeNull();
-    });
-
-  it('词表撤掉（11-05）：旧地址 #/memory/terms 打开「主线的 Soul」；迁来的词义行出处写「词表」，点过去读原来那一条',
-    async () => {
-      await renderApp({ hash: '#/memory/terms', setup: seed });
-      expect(await within(main()).findByRole('heading', { level: 1, name: '主线的 Soul' })).toBeTruthy();
-      const rules = within(main()).getByRole('region', { name: '规矩' });
-      const term = within(rules).getByText(/「接上」指的是/).closest('li') as HTMLElement;
-      fireEvent.click(within(term).getByRole('button', { name: '回到原话：词表' }));
-      await waitFor(() => expect(window.location.hash).toMatch(/^#\/memory\/agreements\//));
+      window.location.hash = '#/memory/terms';
+      expect(await within(main()).findByRole('heading', { level: 1, name: '规则' })).toBeTruthy();
     });
 
   it('带 id 的旧词表链接 #/memory/terms/<id> 单独读那一条（只读引用页，不再有词表编辑）', async () => {

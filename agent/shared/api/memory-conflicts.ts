@@ -48,3 +48,4 @@ export type ResolveConflictRequest = Static<typeof ResolveConflictRequestSchema>
 export function memoryConflictPath(id: string): string {
   return `${MEMORY_CONFLICTS_PATH}/${encodeURIComponent(id)}`;
 }
+export { MEMORY_SOURCE_LABELS, MEMORY_SOURCES, type MemorySource } from '../memory-priority.ts';

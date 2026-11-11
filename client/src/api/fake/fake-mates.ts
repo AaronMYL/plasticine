@@ -8,7 +8,11 @@ import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeReceipts } from './receipts.ts';
 
-interface Deps { session: FakeSession; lines: FakeLines; receipts: FakeReceipts; now: () => Date }
+interface Deps {
+  session: FakeSession; lines: FakeLines; receipts: FakeReceipts; now: () => Date;
+  /** 建队友时那段文字拆成只对它的规则（11-11，假 Soul 接上）。 */
+  rules?: (mateId: string, soul: string) => void;
+}
 const invalid = (message: string) => new ApiError({ kind: 'invalid', status: 400, code: 'invalid_request', message });
 const missing = () => new ApiError({ kind: 'not_found', status: 404, code: 'not_found', message: '没有这位队友。' });
 const conflict = () => new ApiError({ kind: 'conflict', status: 409, code: 'version_conflict',
@@ -42,6 +46,7 @@ export class FakeMates implements MatesApi {
     const at = this.deps.now().toISOString();
     const mate = { ...draft, id, lineId, version: 1, createdAt: at, updatedAt: at, disabledAt: null };
     this.rows.set(id, mate);
+    this.deps.rules?.(id, draft.soul);
     if (previousLineId === undefined) {
       this.deps.lines.put(this.deps.lines.blank(lineId, 'side', draft.name, { mateId: id }));
     }
@@ -59,7 +64,7 @@ export class FakeMates implements MatesApi {
       if (current === undefined) throw missing();
       if (current.version !== input.version) throw conflict();
       const draft: MateDraft = { name: input.name ?? current.name, avatar: input.avatar ?? current.avatar,
-        hue: input.hue ?? current.hue, role: input.role ?? current.role, soul: input.soul ?? current.soul,
+        hue: input.hue ?? current.hue, role: input.role ?? current.role, soul: current.soul,
         purpose: input.purpose === undefined ? current.purpose : input.purpose };
       if (!Value.Check(MateDraftSchema, draft)) throw invalid('请核对名字、职责和 Soul。');
       const next = { ...current, ...draft, version: current.version + 1, updatedAt: this.deps.now().toISOString(),
