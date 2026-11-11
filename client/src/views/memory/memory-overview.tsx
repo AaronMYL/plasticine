@@ -1,5 +1,6 @@
 // 记忆首页的两块（11-11 记忆改版，设计稿「记忆首页」）：
 // - 总览：最近一次全量整理写的一段话，右边「全量整理」；正在整理时按钮换成一句状态；有清单没看就是「整理清单 n 条」入口。
+// 总览里还挂着「说法冲突」「昨晚整理」两个入口，连成一块，不在中间空一截。
 // - 队友：每位队友一行，点进去是只对它的规则（规则页按这位队友筛），共用的规则不再混在里面。
 
 import { useState, type ReactNode } from 'react';
@@ -11,8 +12,8 @@ import { useStore } from '../../state/use-store.ts';
 import { MateAvatar } from '../mates/mate-avatar.tsx';
 import { useCleanup } from './use-cleanup.ts';
 
-export function MemoryOverview({ navigate, now = new Date() }: { navigate: (route: Route) => void; now?: Date }):
-  ReactNode {
+export function MemoryOverview({ navigate, now = new Date(), children }:
+  { navigate: (route: Route) => void; now?: Date; children?: ReactNode }): ReactNode {
   const cleanup = useCleanup();
   const [error, setError] = useState<string | null>(null);
   const view = cleanup.data?.cleanup ?? null;
@@ -34,7 +35,7 @@ export function MemoryOverview({ navigate, now = new Date() }: { navigate: (rout
             });
           }}>全量整理</button>}
       </div>
-      {overview === null ? null : <p className="memory-overview-text">{overview.text}</p>}
+      {overview === null || overview.text.trim() === '' ? null : <p className="memory-overview-text">{overview.text}</p>}
       {error === null ? null : <p className="text-meta is-error" role="alert">{error}</p>}
       {pending === 0 ? null : (
         <button type="button" className="topic-row memory-overview-list" onClick={() => navigate(cleanupRoute())}>
@@ -42,6 +43,7 @@ export function MemoryOverview({ navigate, now = new Date() }: { navigate: (rout
           <span className="topic-row-chevron" aria-hidden="true"><Icon name="chevron-right" size={14} /></span>
         </button>
       )}
+      {children}
     </section>
   );
 }
@@ -63,7 +65,7 @@ export function TeammatesBlock({ navigate }: { navigate: (route: Route) => void 
               <MateAvatar mate={mate} size={20} />
               <span className="topic-row-text">
                 <span className="topic-row-title">{mate.name}</span>
-                <span className="topic-row-summary">{mate.role}；只对它的规则在这里</span>
+                <span className="topic-row-summary">{mate.role.replace(/[。；;.\s]+$/u, '')}；只对它的规则在这里</span>
               </span>
               <span className="topic-row-chevron" aria-hidden="true"><Icon name="chevron-right" size={14} /></span>
             </button>

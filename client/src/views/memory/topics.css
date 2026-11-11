@@ -496,6 +496,10 @@
   border-bottom: 1px solid var(--line);
 }
 
+.memory-overview > :last-child:not(.memory-overview-head) {
+  border-bottom: 0;
+}
+
 .memory-overview-head {
   display: flex;
   align-items: center;

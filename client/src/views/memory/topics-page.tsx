@@ -117,7 +117,7 @@ function TopicRow({ topic, navigate }: { topic: MemoryTopicView; navigate: (rout
         onClick={() => navigate({ view: 'memory', noteId: null, topicId: topic.id })}>
         <span className="topic-row-text">
           <span className="topic-row-title">{topic.title}</span>
-          <span className="topic-row-summary">{topic.summary}</span>
+          {topic.summary === topic.title ? null : <span className="topic-row-summary">{topic.summary}</span>}
         </span>
         {topic.overLimit ? <span className="topic-row-full text-meta">超出上限</span> : null}
         <TierTag topic={topic} />
@@ -178,9 +178,10 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
       {searching ? <MemorySearch.Results query={query} navigate={navigate} /> : list === null
         ? <PageLoading /> : (
           <>
-            <MemoryOverview navigate={navigate} />
-            <ConflictsEntry navigate={navigate} />
-            {list.dream === null ? null : <DreamEntry dream={list.dream} navigate={navigate} />}
+            <MemoryOverview navigate={navigate}>
+              <ConflictsEntry navigate={navigate} />
+              {list.dream === null ? null : <DreamEntry dream={list.dream} navigate={navigate} />}
+            </MemoryOverview>
             {uncertain.length === 0 ? null : (
               <section className="block memory-block" aria-labelledby="memory-uncertain">
                 <div className="memory-block-head">
