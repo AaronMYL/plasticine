@@ -101,13 +101,31 @@ export function chooseFollowing(doc: Document): boolean | null {
   return true;
 }
 
-/** 收一遍当前页面上的帖子，并进 seen（按帖子标识去重，翻页时同一条会出现好几次）。 */
-export function collectPosts(doc: Document, base: string, seen: Map<string, XTimelinePost>): number {
+/** 长帖在时间线上只露前一段，后面是「显示更多」（11-11 Aaron：信息流里不是完整的内容）。 */
+export function isTruncated(article: Element): boolean {
+  return article.querySelector('[data-testid="tweet-text-show-more-link"]') !== null;
+}
+
+/** 收一遍当前页面上的帖子，并进 seen（按帖子标识去重，翻页时同一条会出现好几次）；只露一段的记进 truncated。 */
+export function collectPosts(doc: Document, base: string, seen: Map<string, XTimelinePost>,
+  truncated: Set<string> = new Set()): number {
   for (const article of doc.querySelectorAll('article[data-testid="tweet"]')) {
     const post = readPost(article, base);
-    if (post !== null && !seen.has(post.id)) { seen.set(post.id, post); }
+    if (post === null || seen.has(post.id)) { continue; }
+    seen.set(post.id, post);
+    if (isTruncated(article)) { truncated.add(post.id); }
   }
   return seen.size;
+}
+
+/** 在帖子自己的页面上读全文：找时间链接指向这条的那一篇；还没载出来、仍只露一段时回 null。 */
+export function fullText(doc: Document, base: string, id: string): string | null {
+  for (const article of doc.querySelectorAll('article[data-testid="tweet"]')) {
+    const post = readPost(article, base);
+    if (post?.id !== id) { continue; }
+    return isTruncated(article) || post.text === '' ? null : post.text;
+  }
+  return null;
 }
 
 export interface XTimelineReader {
@@ -116,16 +134,26 @@ export interface XTimelineReader {
   collect(): number;
   scroll(): void;
   posts(): XTimelinePost[];
+  /** 只露一段的帖子标识，按出现先后。 */
+  truncated(): string[];
+  /** 在帖子页上读这一条的全文；读不到回 null。 */
+  fullText(id: string): string | null;
 }
 
-/** 装到 window 上给原生层一步步调：state → following → (collect → scroll) × n → posts。 */
+/**
+ * 装到 window 上给原生层一步步调：state → following → (collect → scroll) × n → posts、truncated；
+ * 再对只露一段的，一条条载入帖子页、调 fullText 换成全文（换页后脚本重新装，seen 不跨页）。
+ */
 export function installTimelineReader(win: Window): XTimelineReader {
   const seen = new Map<string, XTimelinePost>();
+  const truncated = new Set<string>();
   return {
     state: () => timelineState(win.document, win.location.href),
     following: () => chooseFollowing(win.document),
-    collect: () => collectPosts(win.document, win.location.href, seen),
+    collect: () => collectPosts(win.document, win.location.href, seen, truncated),
     scroll: () => win.scrollBy(0, win.innerHeight * 0.9),
     posts: () => [...seen.values()],
+    truncated: () => [...truncated],
+    fullText: (id) => fullText(win.document, win.location.href, id),
   };
 }

@@ -5,7 +5,7 @@ import WebKit
 // 协议见 agent/shared/api/feed-x.ts：每 10 分钟问服务端一次到没到（GET /v2/nodes/feed/x，节点 Bearer；来源关着、
 // 没到两小时都回 due = false）；到了就在一个看不见的网页视图里载入 x.com/home（和网页标签同一个网站数据存储，所以是同一份
 // 登录），在独立脚本世界里装上 XTimelineScript（client/src/mac/x-timeline-page.ts 生成），切到「关注」、往下翻几屏、
-// 收帖子，交给服务端（POST 同一地址）。没登录 / X 改版认不出 / 页面没打开，只交原因，设置里那一行写出来，不弹窗。
+// 收帖子；只露一段的长帖再载入帖子页补全文，交给服务端（POST 同一地址）。没登录 / X 改版认不出 / 页面没打开，只交原因，设置里那一行写出来，不弹窗。
 // 这台 Mac 没配对、设备服务暂停时不读。读完就把网页视图拆掉，不留在内存里。
 
 @MainActor
@@ -24,6 +24,9 @@ final class XTimelineReader: NSObject, WKNavigationDelegate {
     private static let switchWaitSeconds: Double = 4
     private static let scrollWaitSeconds: Double = 2.5
     private static let scrolls = 4
+    /// 长帖一次最多补这么多条全文（一条要载一页）；每条最多等这么多秒。
+    private static let expandMax = 8
+    private static let expandWaitSeconds = 10
 
     private let settings: AppSettings
 
@@ -160,12 +163,40 @@ final class XTimelineReader: NSObject, WKNavigationDelegate {
                 await pause(Self.scrollWaitSeconds)
             }
             _ = try await call(view, "return window.__plasticineXTimeline.collect();")
-            let posts = try await call(view, "return window.__plasticineXTimeline.posts();") as? [Any] ?? []
+            var posts = try await call(view, "return window.__plasticineXTimeline.posts();") as? [Any] ?? []
             if posts.isEmpty { return Self.failed(requestId, "layout_changed", "没认出帖子") }
+            let truncated = try await call(view, "return window.__plasticineXTimeline.truncated();") as? [String] ?? []
+            posts = await expand(view, posts, truncated)
             return ["requestId": requestId, "posts": posts, "error": NSNull()]
         } catch {
             return Self.failed(requestId, "layout_changed", error.localizedDescription)
         }
+    }
+
+    /// 长帖在时间线上只露一段（11-11 Aaron：信息流里不是完整的内容）：一条条载入帖子页、读全文换上；
+    /// 载不出、读不到的留着时间线上那一段。
+    private func expand(_ view: WKWebView, _ posts: [Any], _ truncated: [String]) async -> [Any] {
+        var result = posts
+        for id in truncated.prefix(Self.expandMax) {
+            guard let index = result.firstIndex(where: { ($0 as? [String: Any])?["id"] as? String == id }),
+                  var post = result[index] as? [String: Any],
+                  let handle = post["handle"] as? String,
+                  let url = URL(string: "https://x.com/\(handle)/status/\(id)") else { continue }
+            let short = (post["text"] as? String) ?? ""
+            if await load(view, url) != nil { continue }
+            for _ in 0..<Self.expandWaitSeconds {
+                let text = try? await view.callAsyncJavaScript(
+                    "return window.__plasticineXTimeline.fullText(id);", arguments: ["id": id], in: nil,
+                    contentWorld: Self.world) as? String
+                if let text, text.count > short.count {
+                    post["text"] = text
+                    result[index] = post
+                    break
+                }
+                await pause(1)
+            }
+        }
+        return result
     }
 
     private static func failed(_ requestId: String, _ code: String, _ detail: String?) -> [String: Any] {
@@ -216,11 +247,11 @@ final class XTimelineReader: NSObject, WKNavigationDelegate {
         window = nil
     }
 
-    /// 载入 x.com/home：载完回 nil，没载完回原因（超时、断网）。
-    private func load(_ view: WKWebView) async -> String? {
+    /// 载入一页（默认 x.com/home）：载完回 nil，没载完回原因（超时、断网）。
+    private func load(_ view: WKWebView, _ url: URL = XTimelineReader.homeURL) async -> String? {
         let token = UUID()
         loadToken = token
-        view.load(URLRequest(url: Self.homeURL))
+        view.load(URLRequest(url: url))
         return await withCheckedContinuation { continuation in
             loadWaiter = continuation
             Task { @MainActor [weak self] in

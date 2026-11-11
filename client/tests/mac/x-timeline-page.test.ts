@@ -4,12 +4,13 @@
 import { Value } from 'typebox/value';
 import { describe, expect, it } from 'vitest';
 import { XPostSchema } from '../../src/api/shared.ts';
-import { chooseFollowing, collectPosts, readPost, timelineState,
+import { chooseFollowing, collectPosts, fullText, readPost, timelineState,
   type XTimelinePost } from '../../src/mac/x-timeline-page.ts';
 
 const BASE = 'https://x.com/home';
 
-function tweet(options: { id: string; handle: string; name: string; text: string; photo?: string; ad?: boolean }) {
+function tweet(options: { id: string; handle: string; name: string; text: string; photo?: string; ad?: boolean;
+  more?: boolean }) {
   const time = options.ad === true ? '' : `<a href="/${options.handle}/status/${options.id}">`
     + `<time datetime="2026-11-04T06:58:00.000Z">1h</time></a>`;
   const photo = options.photo === undefined ? ''
@@ -18,7 +19,8 @@ function tweet(options: { id: string; handle: string; name: string; text: string
     <div data-testid="Tweet-User-Avatar"><img src="https://pbs.twimg.com/profile_images/1/${options.handle}.jpg"></div>
     <div data-testid="User-Name"><a href="/${options.handle}"><span>${options.name}</span></a>
       <a href="/${options.handle}"><span>@${options.handle}</span></a>${time}</div>
-    <div data-testid="tweetText"><span>${options.text}</span></div>${photo}
+    <div data-testid="tweetText"><span>${options.text}</span></div>${options.more === true
+      ? `<a data-testid="tweet-text-show-more-link" href="/${options.handle}/status/${options.id}">Show more</a>` : ''}${photo}
   </article>`;
 }
 
@@ -72,5 +74,21 @@ describe('X 时间线注入脚本', () => {
       + tweet({ id: '2', handle: 'linjian_dev', name: '林间', text: '第二条' }));
     expect(collectPosts(document, BASE, seen)).toBe(2);
     expect([...seen.values()].map((post) => post.text)).toEqual(['第一条', '第二条']);
+  });
+
+  it('长帖：时间线上只露一段的记下来；到帖子页上读这一条的全文，还只露一段时回 null', () => {
+    const seen = new Map<string, XTimelinePost>();
+    const truncated = new Set<string>();
+    page(tweet({ id: '1', handle: 'linjian_dev', name: '林间', text: '短的' })
+      + tweet({ id: '2', handle: 'linjian_dev', name: '林间', text: '长的前一段', more: true }));
+    collectPosts(document, BASE, seen, truncated);
+    expect([...truncated]).toEqual(['2']);
+    const status = 'https://x.com/linjian_dev/status/2';
+    page(tweet({ id: '2', handle: 'linjian_dev', name: '林间', text: '长的前一段', more: true }));
+    expect(fullText(document, status, '2')).toBeNull();
+    page(tweet({ id: '7', handle: 'other', name: '别人', text: '回复' })
+      + tweet({ id: '2', handle: 'linjian_dev', name: '林间', text: '长的前一段，后面还有很多' }));
+    expect(fullText(document, status, '2')).toBe('长的前一段，后面还有很多');
+    expect(fullText(document, status, '3')).toBeNull();
   });
 });

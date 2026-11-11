@@ -103,24 +103,52 @@ function chooseFollowing(doc          )                 {
   return true;
 }
 
-/** 收一遍当前页面上的帖子，并进 seen（按帖子标识去重，翻页时同一条会出现好几次）。 */
-function collectPosts(doc          , base        , seen                            )         {
+/** 长帖在时间线上只露前一段，后面是「显示更多」（11-11 Aaron：信息流里不是完整的内容）。 */
+function isTruncated(article         )          {
+  return article.querySelector('[data-testid="tweet-text-show-more-link"]') !== null;
+}
+
+/** 收一遍当前页面上的帖子，并进 seen（按帖子标识去重，翻页时同一条会出现好几次）；只露一段的记进 truncated。 */
+function collectPosts(doc          , base        , seen                            ,
+  truncated              = new Set())         {
   for (const article of doc.querySelectorAll('article[data-testid="tweet"]')) {
     const post = readPost(article, base);
-    if (post !== null && !seen.has(post.id)) { seen.set(post.id, post); }
+    if (post === null || seen.has(post.id)) { continue; }
+    seen.set(post.id, post);
+    if (isTruncated(article)) { truncated.add(post.id); }
   }
   return seen.size;
 }
 
-/** 装到 window 上给原生层一步步调：state → following → (collect → scroll) × n → posts。 */
+/** 在帖子自己的页面上读全文：找时间链接指向这条的那一篇；还没载出来、仍只露一段时回 null。 */
+function fullText(doc          , base        , id        )                {
+  for (const article of doc.querySelectorAll('article[data-testid="tweet"]')) {
+    const post = readPost(article, base);
+    if (post?.id !== id) { continue; }
+    return isTruncated(article) || post.text === '' ? null : post.text;
+  }
+  return null;
+}
+
+                      
+
+                             
+
+/**
+ * 装到 window 上给原生层一步步调：state → following → (collect → scroll) × n → posts、truncated；
+ * 再对只露一段的，一条条载入帖子页、调 fullText 换成全文（换页后脚本重新装，seen 不跨页）。
+ */
 function installTimelineReader(win        )                  {
   const seen = new Map                       ();
+  const truncated = new Set        ();
   return {
     state: () => timelineState(win.document, win.location.href),
     following: () => chooseFollowing(win.document),
-    collect: () => collectPosts(win.document, win.location.href, seen),
+    collect: () => collectPosts(win.document, win.location.href, seen, truncated),
     scroll: () => win.scrollBy(0, win.innerHeight * 0.9),
     posts: () => [...seen.values()],
+    truncated: () => [...truncated],
+    fullText: (id) => fullText(win.document, win.location.href, id),
   };
 }
 window.__plasticineXTimeline = installTimelineReader(window);

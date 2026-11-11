@@ -1,6 +1,6 @@
 // 信息流要这台电脑做的两样（用他在 Plasticine 浏览器里的登录；登录只在这台电脑上，不进本体）：
 // - X「关注」时间线（agent/shared/api/feed-x.ts，和 Mac 壳 x-timeline-reader.swift 同一套）：每 10 分钟问本体到没到，
-//   到了在一个看不见的窗口里载入 x.com/home，切到「关注」、往下翻几屏、收帖子交回。
+//   到了在一个看不见的窗口里载入 x.com/home，切到「关注」、往下翻几屏、收帖子；只露一段的长帖再载入帖子页补全文，交回。
 // - 抖音收藏和下载地址（docs/specs/video-parse.md）：每分钟领活，在看不见的窗口里载入 douyin.com，在网页自己的脚本世界
 //   （签名要页面自己的脚本加）里装上 douyin-page 的读取器，翻收藏 / 取地址，交回。
 // 没配对、设备服务暂停时不读；读完就把窗口拆掉。注入的脚本是 client/src/mac/x-timeline-page.ts、douyin-page.ts，
@@ -22,6 +22,9 @@ const X_TIMELINE_WAIT_MS = 20_000;
 const X_SWITCH_WAIT_MS = 4_000;
 const X_SCROLL_WAIT_MS = 2_500;
 const X_SCROLLS = 4;
+/** 长帖一次最多补这么多条全文（一条要载一页）；补全文时每条最多等这么久。 */
+const X_EXPAND_MAX = 8;
+const X_EXPAND_WAIT_MS = 10_000;
 /** X 的 isolated world 编号（和界面、标签的 preload 世界错开）。 */
 const X_WORLD = 1_017;
 
@@ -129,9 +132,37 @@ export class FeedRunner {
       }
       await run('window.__plasticineX.collect()');
       const posts = await run('window.__plasticineX.posts()') as XPost[];
+      const truncated = await run('window.__plasticineX.truncated()') as string[];
+      await this.expandX(window, run, posts, truncated);
       return report(posts, posts.length === 0 ? { code: 'layout_changed' } : null);
     } finally {
       window.destroy();
+    }
+  }
+
+  /**
+   * 长帖在时间线上只露一段（11-11 Aaron：信息流里不是完整的内容）：一条条载入帖子页、读全文换上；
+   * 载不出、读不到的留着时间线上那一段，不耽误这一轮交回。
+   */
+  private async expandX(window: BrowserWindow, run: (code: string) => Promise<unknown>, posts: XPost[],
+    truncated: string[]): Promise<void> {
+    for (const id of truncated.slice(0, X_EXPAND_MAX)) {
+      const post = posts.find((candidate) => candidate.id === id);
+      if (post === undefined) { continue; }
+      try {
+        await Promise.race([window.loadURL(`https://x.com/${post.handle}/status/${id}`), sleep(LOAD_TIMEOUT_MS)]);
+        await run(this.deps.pageScript('x-timeline'));
+        for (let waited = 0; waited < X_EXPAND_WAIT_MS; waited += 1_000) {
+          const text = await run(`window.__plasticineX.fullText(${JSON.stringify(id)})`);
+          if (typeof text === 'string' && text.length > post.text.length) {
+            post.text = text;
+            break;
+          }
+          await sleep(1_000);
+        }
+      } catch (error) {
+        this.deps.log(`X 长帖 ${id} 没补上全文：${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   }
 
