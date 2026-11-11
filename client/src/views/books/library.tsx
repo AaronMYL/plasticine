@@ -5,12 +5,10 @@ import { libraryBatch } from '../bulk/bulk-api.ts';
 // 「在读」两列（封面、章、进度、上次在哪台设备读、接着读）；「全部」封面格子。整页可以把书拖进来。
 
 import { StatusGlyph } from '../../shell/glyph.tsx';
-import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import { BOOK_FILE_EXTENSIONS, type BookView } from '../../api/shared.ts';
-import { useLive } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
@@ -24,6 +22,8 @@ import { chapterDotted, isReading, percentText, progressLabel, readingTime } fro
 import { sizeText, useBookImports, type ImportRow } from './book-import.ts';
 import { onQueuedBookImport } from './import-queue.ts';
 import { SORT_LABELS, sortBooks, type LibrarySort } from './library-sort.ts';
+import { useBooksList } from './use-books-list.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export interface LibraryProps {
   phone: boolean;
@@ -31,32 +31,7 @@ export interface LibraryProps {
 }
 
 function useLibrary(): { books: BookView[] | null; error: string | null; reload: () => void } {
-  const api = useApi();
-  const live = useLive();
-  const [books, setBooks] = useState<BookView[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [generation, setGeneration] = useState(0);
-  const reload = useCallback(() => setGeneration((count) => count + 1), []);
-  useEffect(() => {
-    const controller = new AbortController();
-    api.books.list(controller.signal).then((result) => {
-      if (!controller.signal.aborted) {
-        setBooks(result.books);
-        setError(null);
-      }
-    }, (cause: unknown) => {
-      if (!controller.signal.aborted) {
-        setError(errorText(cause));
-      }
-    });
-    return () => controller.abort();
-  }, [api, generation]);
-  useEffect(() => live.hub.on((event) => {
-    if (event.type === 'book.changed' && event.part !== 'insights' || event.type === 'resync') {
-      reload();
-    }
-  }), [live.hub, reload]);
-  return { books, error, reload };
+  return useBooksList();
 }
 
 function ImportRows({ rows, onRetry, onDismiss }: {
@@ -257,7 +232,7 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
         }} />
       <ImportRows rows={imports.rows} onRetry={imports.retry} onDismiss={imports.dismiss} />
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
-      {books === null && error === null ? <p className="block-empty">正在读…</p> : null}
+      {books === null && error === null ? <PageLoading page /> : null}
       {reading.length === 0 || selection.active ? null : (
         <section className="block" aria-label="在读">
           <div className="block-head"><h2 className="block-title">在读</h2>

@@ -3,7 +3,8 @@
 // 各工具的内容按打开懒加载（用户视角审查 2026-11-01 第 16 条 ④），首包不带它们；等的时候是一句「正在读…」。
 
 import { Suspense, type ReactNode } from 'react';
-import { LOADING_TEXT, lazyView } from '../../shell/lazy-view.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { lazyView } from '../../shell/lazy-view.ts';
 
 const FilesView = lazyView<Record<never, never>>(() => import('./files-view.tsx'), 'FilesView');
 const MoneyView = lazyView<{ entry?: { id: string; occurredAt: string } | undefined; date?: string | undefined }>(
@@ -32,7 +33,7 @@ function ToolContent({ name, moneyEntry, moneyDate }: ToolPanelProps): ReactNode
 
 export function ToolPanel(props: ToolPanelProps): ReactNode {
   return <>
-    <Suspense fallback={<p className="block-empty">{LOADING_TEXT}</p>}>
+    <Suspense fallback={<PageLoading />}>
       <ToolContent {...props} />
     </Suspense>
   </>;

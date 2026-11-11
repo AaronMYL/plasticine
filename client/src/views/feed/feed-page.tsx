@@ -31,6 +31,7 @@ import { FeedSourceList } from './feed-source-list.tsx';
 import { FeedSourceSettings } from './feed-source-settings.tsx';
 import { FeedTarget } from './feed-target.tsx';
 import './feed.css';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const SEGMENT_LABELS: Readonly<Record<Exclude<FeedSegment, `source:${string}`>, string>> = {
   all: '全部',
@@ -193,7 +194,7 @@ function FeedListPage(): ReactNode {
       )}
       {segment === 'douyin' ? <DouyinPage phone={phone} onSelect={() => setDouyin(true)} />
         : <section className="feed-board" aria-label="条目">
-        {loading ? <p className="block-empty">正在读信息流…</p> : null}
+        {loading ? <PageLoading /> : null}
         {data.status === 'ready' && data.items.length === 0 ? <p className="block-empty">{empty}</p>
           : null}
         <Masonry items={data.items} dismissed={ui.dismissedIds} />

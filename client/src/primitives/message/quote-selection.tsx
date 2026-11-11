@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { QuoteAction } from './quote-action.tsx';
 import './quote-selection.css';
+import { useQuoteHandler } from '../../shell/quote-registry.ts';
 
 interface SelectedText {
   text: string;
@@ -54,6 +55,12 @@ export function QuoteSelection({ children, onQuote }: {
     document.addEventListener('selectionchange', readSelection);
     return () => document.removeEventListener('selectionchange', readSelection);
   }, [onQuote, readSelection]);
+  useQuoteHandler(() => ref.current, onQuote === undefined ? null : (selection) => {
+    const text = selection.toString().trim();
+    if (text === '') return false;
+    onQuote(text);
+    return true;
+  });
   return <div ref={ref} className="msg-selection-source" onMouseUp={readSelection}
     onTouchEnd={readSelection} onKeyUp={readSelection}>
     {children}

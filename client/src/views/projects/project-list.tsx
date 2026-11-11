@@ -18,6 +18,7 @@ import { useStore } from '../../state/use-store.ts';
 import { ago, dueNote, HealthMark, NodeBar, shortDate, shownHealth } from './project-parts.tsx';
 
 import { useProjectRead } from './use-project-read.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const FILTERS = [
   { id: 'active', label: '进行' },
@@ -157,7 +158,7 @@ export function ProjectList({ navigate }: { navigate: (route: Route) => void }):
       )}
       <section className="block" aria-label="项目列表">
         {/* 2026-11-03：列头去掉，列里的东西自己说明是什么（分段条 = 待办，符号 = 在做的线 / 等你，日期 = 截止）。 */}
-        {loading && value === null ? <p className="block-empty">正在读取…</p> : null}
+        {loading && value === null ? <PageLoading dense /> : null}
         {value !== null && rows.length === 0 ? <p className="block-empty">这一栏没有项目。</p> : null}
         <FlipList className="proj-list" keys={rows.map((row) => row.id)}>
           {rows.map((row) => <Row key={row.id} row={row} open={open} />)}

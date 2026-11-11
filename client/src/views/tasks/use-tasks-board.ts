@@ -2,16 +2,14 @@
 // 线、卡变了（事件）隔一小会儿再读，一串连着来的只读一次。写操作（开关、删、叫停、建议三个动作）各带一个 requestId，
 // 成功后重读；没成的那一行就地写一句原因。
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { SuggestionAction, TasksBoardResponse } from '../../api/shared.ts';
 import type { LiveEvent } from '../../api/types.ts';
-import { useLive } from '../../live.tsx';
+import { useQuery } from '../../state/use-query.ts';
 
-/** 事件来了等这么久再读（同首页的 400ms）：一串连着来的只读一次。 */
-const RELOAD_DELAY_MS = 400;
 const RELOAD_ON: ReadonlySet<LiveEvent['type']> = new Set(['tasks.changed', 'line', 'ask.created', 'ask.answered',
   'ask.updated', 'resync', 'project.invalidated']);
 
@@ -23,44 +21,9 @@ export interface TasksBoardState {
 
 export function useTasksBoard(projectId: string | null): TasksBoardState {
   const api = useApi();
-  const live = useLive();
-  const [board, setBoard] = useState<TasksBoardResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [round, setRound] = useState(0);
-  const reload = useCallback(() => setRound((value) => value + 1), []);
-  useEffect(() => {
-    const controller = new AbortController();
-    api.tasks.board(projectId === null ? {} : { projectId }, controller.signal).then((next) => {
-      if (!controller.signal.aborted) {
-        setBoard(next);
-        setError(null);
-      }
-    }, (cause: unknown) => {
-      if (!controller.signal.aborted) {
-        setError(`任务没读到：${errorText(cause)}`);
-      }
-    });
-    return () => controller.abort();
-  }, [api, projectId, round]);
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const stop = live.hub.on((event) => {
-      if (!RELOAD_ON.has(event.type)) {
-        return;
-      }
-      if (timer !== null) {
-        clearTimeout(timer);
-      }
-      timer = setTimeout(() => setRound((value) => value + 1), RELOAD_DELAY_MS);
-    });
-    return () => {
-      stop();
-      if (timer !== null) {
-        clearTimeout(timer);
-      }
-    };
-  }, [live.hub]);
-  return { board, error, reload };
+  const query = useQuery(`tasks.board:${projectId ?? ''}`,
+    (signal) => api.tasks.board(projectId === null ? {} : { projectId }, signal), RELOAD_ON);
+  return { board: query.data, error: query.error === null ? null : `任务没读到：${query.error}`, reload: query.reload };
 }
 
 export interface TaskActions {

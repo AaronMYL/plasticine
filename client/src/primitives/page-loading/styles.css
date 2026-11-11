@@ -1,0 +1,44 @@
+/* 页面和区块的读取占位：200ms 后淡入，条和正文同高、同节奏；减少动效时不淡入也不闪。 */
+.pl-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  animation: pl-loading-in 180ms var(--ease-out) 200ms forwards;
+}
+
+.pl-loading.is-page {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.pl-loading.is-dense {
+  gap: 8px;
+}
+
+.pl-loading-bar {
+  display: block;
+  height: 12px;
+  margin: 5px 0;
+  border-radius: 4px;
+  background: var(--tint2);
+}
+
+.pl-loading.is-dense .pl-loading-bar {
+  height: 28px;
+  margin: 4px 0;
+  border-radius: 8px;
+  background: var(--tint);
+}
+
+@keyframes pl-loading-in {
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-loading {
+    animation: none;
+    opacity: 1;
+  }
+}

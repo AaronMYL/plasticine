@@ -16,6 +16,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { exitKeyframes, MOTION, playThen } from '../../shell/motion.ts';
 import { PageHeader } from '../../shell/page-header.tsx';
 import { libraryChanged } from './library-signal.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const KIND_LABELS: Readonly<Record<LibraryTrashKind, string>> = {
   space: '空间', book: '图书', file: '文件', folder: '文件夹',
@@ -112,7 +113,7 @@ export function TrashPage(): ReactNode {
       <BulkHeader selection={selection} items={items} trash />
       <BulkFeedback selection={selection} />
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
-      {trash === null && error === null ? <p className="block-empty" role="status">正在读…</p> : null}
+      {trash === null && error === null ? <PageLoading page /> : null}
       {trash !== null && items.length === 0 ? <p className="block-empty">没有删掉的东西。</p> : null}
       {items.length === 0 ? null : (
         <ul className="lib-trash-rows">

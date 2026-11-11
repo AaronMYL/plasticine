@@ -13,6 +13,7 @@ import { createBrowserPushDevice, type PushDevice } from './api/push-device.ts';
 import { apiMode } from './api/select-api.ts';
 import { App } from './app.tsx';
 import { installNativePointer } from './mac/native-pointer.ts';
+import { preloadLazyViews } from './shell/lazy-view.ts';
 import { createClientState } from './state/context.tsx';
 import { startFirstRun } from './views/onboard/first-run.ts';
 import type { KeyValueStorage } from './state/outbox.ts';
@@ -20,6 +21,21 @@ import { memorySink, Telemetry, type TelemetryRecord } from './telemetry.ts';
 
 /** 本地开发时流式回复每段间隔 60ms，看得出一段段长出来。 */
 const DEV_STREAM_STEP_MS = 60;
+/** 首屏画完、浏览器空下来以后再把其余页面的代码读进来：第一次切过去也不闪「读取中」。 */
+const PRELOAD_AFTER_MS = 1500;
+
+function preloadWhenIdle(): void {
+  const run = (): void => {
+    preloadLazyViews().catch((cause: unknown) => console.warn('预先读入页面代码没成功，切页时再读：', cause));
+  };
+  setTimeout(() => {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(run, { timeout: PRELOAD_AFTER_MS });
+    } else {
+      run();
+    }
+  }, PRELOAD_AFTER_MS);
+}
 
 const root = document.getElementById('root');
 if (root === null) {
@@ -93,6 +109,7 @@ function startApp(container: HTMLElement): void {
       />
     </StrictMode>,
   );
+  preloadWhenIdle();
 }
 
 startApp(root);

@@ -14,6 +14,7 @@ import { ProjectTasks } from '../tasks/project-tasks.tsx';
 import { useProjectRead } from './use-project-read.ts';
 import { briefRows } from './project-brief.ts';
 import { dueText, todosOf } from './project-todos.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 function Work({ projectId, navigate }: { projectId: string; navigate: (route: Route) => void }): ReactNode {
   const live = useLive();
@@ -89,7 +90,7 @@ export function PhoneProject({ projectId, navigate, onBack }: {
     {error === null ? null : <p className="block-empty is-error" role="alert">
       {error} <button type="button" className="text-button" onClick={reload}>重新读取</button>
     </p>}
-    {detail === null ? error === null ? <p className="block-empty" role="status">正在读取…</p> : null
+    {detail === null ? error === null ? <PageLoading page /> : null
       : <Body detail={detail} navigate={navigate} />}
   </PhoneContent>;
 }

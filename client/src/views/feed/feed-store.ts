@@ -62,6 +62,8 @@ export class FeedStore {
   private readonly loader: SnapshotLoader<FeedListResponse>;
   private readonly versions = new Map<string, number>();
   private readonly sourceRows = new Map<string, FeedSourceView>();
+  /** 各分段上次看到的样子：切回来先画它，后台再拉。 */
+  private readonly segmentCache = new Map<FeedSegment, FeedData>();
   private pageGeneration = 0;
   private sourcesGeneration = 0;
   private paginationDirty = false;
@@ -139,6 +141,7 @@ export class FeedStore {
     const opened = this.data.get().status !== 'idle';
     this.pageGeneration += 1;
     this.versions.clear();
+    this.segmentCache.clear();
     this.loader.stop();
     this.loader.restart();
     this.data.set(EMPTY_FEED);
@@ -150,6 +153,7 @@ export class FeedStore {
   /** 连不感兴趣的一起看 / 再藏起来：换了条件，整份重拉。 */
   setIncludeHidden(includeHidden: boolean): Promise<void> {
     this.settleDismissed();
+    this.segmentCache.clear();
     this.ui.setIncludeHidden(includeHidden);
     return this.reload();
   }
@@ -161,11 +165,18 @@ export class FeedStore {
     return this.reload();
   }
 
-  /** 第 3 批页头分段：换了就整份重拉。 */
+  /** 第 3 批页头分段：换了就整份重拉。上一段的条目不留在屏上：这一段看过就先画上次的，没看过就先出占位（11-11 第 1 条）。 */
   setSegment(segment: FeedSegment): Promise<void> {
-    if (this.ui.segment() === segment) { return Promise.resolve(); }
+    const previous = this.ui.segment();
+    if (previous === segment) { return Promise.resolve(); }
     this.settleDismissed();
+    const current = this.data.get();
+    if (current.status === 'ready') {
+      this.segmentCache.set(previous, { ...current, loadingMore: false, moreError: null });
+    }
     this.ui.setSegment(segment);
+    this.pageGeneration += 1;
+    this.data.set(this.segmentCache.get(segment) ?? { ...EMPTY_FEED, status: 'loading' });
     return this.reload();
   }
 

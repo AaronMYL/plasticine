@@ -492,8 +492,7 @@ textarea.field-input {
   color: var(--err);
 }
 
-.gate-note,
-.page-loading {
+.gate-note {
   padding: 24px 32px;
 }
 

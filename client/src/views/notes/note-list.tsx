@@ -10,6 +10,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { useRememberedScroll } from '../../state/use-remembered-scroll.ts';
 import { NoteActions } from './note-actions.tsx';
 import { groupByDay, when } from './note-time.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export interface NoteListProps {
   selection?: BulkSelection;
@@ -68,7 +69,7 @@ export function NoteList(props: NoteListProps): ReactNode {
             onClick={props.onRetry}>重新读取列表</button>}
         </p>
       )}
-      {props.notes === null && props.error === null ? <p className="block-empty">正在读…</p> : null}
+      {props.notes === null && props.error === null ? <PageLoading dense /> : null}
       {props.notes !== null && props.notes.length === 0 ? (
         <p className="block-empty">{props.query === '' ? '还没有笔记。' : '没有找到。'}</p>
       ) : null}

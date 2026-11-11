@@ -1,5 +1,5 @@
 // 按路由懒加载的视图（用户视角审查 2026-11-01 第 16 条 ④：生产首包一个 1.6 MB 的 chunk，TipTap 在今日页也要下载）。
-// React.lazy 只认默认导出，这里把命名导出包一层；fallback 是 block-empty 的一句「正在读…」（current-view / tool-panel）。
+// React.lazy 只认默认导出，这里把命名导出包一层；fallback 是 PageLoading 占位条（current-view / tool-panel）；入口空闲时会把它们全读进来。
 // 加载失败（多半是断网或更新后旧 chunk 没了）会抛到 MainErrorBoundary，那里有「回今日」。
 // 模块已经到手（预加载过，或之前打开过）时给 React 一个同步兑现的 thenable：React.lazy 看到它当场就是 Resolved，
 // 不再闪一下 fallback；测试里 preloadLazyViews() 之后渲染就和静态导入一样是同步的。
@@ -47,4 +47,3 @@ export async function preloadLazyViews(): Promise<void> {
   await Promise.all(loaders.map((load) => load()));
 }
 
-export const LOADING_TEXT = '正在读…';

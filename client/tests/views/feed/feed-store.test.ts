@@ -114,3 +114,30 @@ describe('刚点了「不感兴趣」的一条等撤销', () => {
     store.stop();
   });
 });
+
+describe('切分段不先露出上一段的条目（11-11 第 1 条）', () => {
+  it('没看过的分段先是读取中；看过的切回来先画上次的', async () => {
+    const { fake, store } = setup();
+    fake.control.feed.seedItem({ id: 'plain', title: '普通文章' });
+    fake.control.feed.seedItem({ id: 'kept', title: '收藏的文章', saved: true });
+    store.start();
+    store.open();
+    await waitFor(() => expect(store.data.get().items.map((item) => item.id).sort()).toEqual(['kept', 'plain']));
+    const gate = Promise.withResolvers<void>();
+    const list = fake.api.feed.list.bind(fake.api.feed);
+    vi.spyOn(fake.api.feed, 'list').mockImplementation(async (query, signal) => {
+      await gate.promise;
+      return list(query, signal);
+    });
+    const toSaved = store.setSegment('saved');
+    expect(store.data.get().status).toBe('loading');
+    expect(store.data.get().items).toEqual([]);
+    gate.resolve();
+    await toSaved;
+    expect(store.data.get().items.map((item) => item.id)).toEqual(['kept']);
+    const back = store.setSegment('all');
+    expect(store.data.get().items.map((item) => item.id).sort()).toEqual(['kept', 'plain']);
+    await back;
+    store.stop();
+  });
+});

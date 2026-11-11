@@ -51,6 +51,8 @@ export interface TabViewsDeps {
   translate(tab: Tab, message: unknown): void;
   /** 网站图标换了（page-favicon-updated 的候选地址，按优先顺序）。 */
   favicon(tab: Tab, urls: string[]): void;
+  /** 新标签建好：挂右键菜单和「引用到对话」快捷键。 */
+  attach?(contents: WebContents): void;
   log(line: string): void;
 }
 
@@ -311,6 +313,7 @@ export class TabViews {
   private watch(tab: Tab): void {
     const contents = tab.view.webContents;
     const report = (): void => this.state(tab);
+    this.deps.attach?.(contents);
     contents.on('did-start-loading', report);
     contents.on('did-stop-loading', report);
     contents.on('did-navigate', report);

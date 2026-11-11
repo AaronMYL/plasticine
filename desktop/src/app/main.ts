@@ -4,7 +4,7 @@
 
 import { homedir, hostname } from 'node:os';
 import { join } from 'node:path';
-import { app, dialog, Notification, powerMonitor, safeStorage, session, shell } from 'electron';
+import { app, dialog, Notification, powerMonitor, safeStorage, session, shell, type WebContents } from 'electron';
 import type { DesktopEvent } from '../../../agent/shared/api/desktop-bridge.ts';
 import { FeedRunner, readPageScript } from '../feeds/feed-runner.ts';
 import { HelperProcess } from '../helper/helper-process.ts';
@@ -28,6 +28,7 @@ import { resign, signedLocally } from '../updates/self-signing.ts';
 import { DEFAULT_RELEASE_URL, UpdateManager } from '../updates/update-manager.ts';
 import { enterLocal, localGrantFor, probePlace } from './account-client.ts';
 import { installMenu, installTray, type MenuActions, type MenuState } from './app-menu.ts';
+import { attachContextMenu, attachQuoteShortcut } from './context-menu.ts';
 import { registerBridge } from './bridge-ipc.ts';
 import { CHANNELS } from './channels.ts';
 import { desktopPaths, type ShellPlatform } from './desktop-paths.ts';
@@ -102,6 +103,10 @@ async function start(): Promise<void> {
   const events = new UiEvents(() => ui, () => place.onSite(), log);
   const helper = new HelperProcess({ spawn: () => spawnHelper(files.helper), roots: () => settings.get().roots, log });
   let translate: TabTranslate | null = null;
+  // 右键「引用到对话」（11-11 第 8 条）：界面里的选区由界面自己读；网页标签把字、地址、标题交过去。
+  const quoteFromTab = (contents: WebContents, text: string): void => events.send('__plasticineQuoteSelection',
+    { from: 'web', text, url: contents.getURL(), title: contents.getTitle() });
+  attachContextMenu(ui, () => main.window, () => events.send('__plasticineQuoteSelection', { from: 'ui' }));
   const favicons = new TabFavicons(web, (event) => events.send('__plasticineWebTabEvent', event), log);
   const tabs: TabViews = new TabViews({ window: main.window, ui: main.ui, session: web,
     preload: join(__dirname, 'preload-tab.cjs'), userAgent: tabAgent, log,
@@ -110,7 +115,11 @@ async function start(): Promise<void> {
     loaded: () => undefined,
     cursor: (type) => ui.send(CHANNELS.tabsCursor, type),
     translate: (tab, message) => translate?.message(tab, message),
-    favicon: (tab, urls) => favicons.update(tab, urls) });
+    favicon: (tab, urls) => favicons.update(tab, urls),
+    attach: (contents) => {
+      attachContextMenu(contents, () => main.window, quoteFromTab);
+      attachQuoteShortcut(contents, platform, quoteFromTab);
+    } });
   translate = new TabTranslate(tabs, (event) => events.send('__plasticineTranslateEvent', event), log);
   const tabTranslate = translate;
   const tabActions = new TabActions({ tabs, windowFocused: () => main.window.isFocused() && main.window.isVisible(),

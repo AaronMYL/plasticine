@@ -6,11 +6,11 @@ import { libraryBatch } from '../bulk/bulk-api.ts';
 // 「报告 / 来信 · 时间」和 ⋯（改名、删除）。改名在卡片原处改；删除先问，删了进「最近删除」。
 // 手机上没有第二栏，「全部」下面再列「订阅」和「最近删除」，从这里都能走到。
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import { errorText } from '../../api/errors.ts';
 import type { SpaceListItem } from '../../api/shared.ts';
-import { useLive } from '../../live.tsx';
+import { useQuery } from '../../state/use-query.ts';
+import type { LiveEvent } from '../../api/types.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useLibraryTrash, useSubscriptionList } from '../../shell/columns/library-subscriptions.tsx';
 import { subscriptionLook } from '../../shell/columns/space-look.ts';
@@ -28,33 +28,21 @@ import { SpaceThumb } from '../spaces/space-thumb.tsx';
 import { spaceWhen } from '../spaces/space-time.ts';
 import { groupSpaces, spaceCategoryLabel } from './space-categories.ts';
 import { useDeleteConfirm, useSpaceActions } from './library-actions.tsx';
-import { libraryChanged, useLibraryRevision } from './library-signal.ts';
+import { libraryChanged } from './library-signal.ts';
 import './library.css';
 import './library-grid.css';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 /** 「最近」放几张（设计稿：电脑一排三张）。 */
 const RECENT_COUNT = 3;
+const SPACE_EVENTS: ReadonlySet<LiveEvent['type']> = new Set(['space.changed']);
 
-/** 资料库首页要全部的空间（订阅的各期也在「全部」里）；资料库变了、重连了重读。 */
+/** 资料库首页要全部的空间（订阅的各期也在「全部」里），和别处共用一份缓存；空间变了重读。 */
 function useAllSpaces(): { spaces: SpaceListItem[] | null; error: string | null } {
   const api = useApi();
-  const live = useLive();
-  const revision = useLibraryRevision();
-  const [round, setRound] = useState(0);
-  const [state, setState] = useState<{ spaces: SpaceListItem[] | null; error: string | null }>(
-    { spaces: null, error: null });
-  useEffect(() => live.hub.on((event) => {
-    if (event.type === 'resync' || event.type === 'space.changed') setRound((value) => value + 1);
-  }), [live.hub]);
-  useEffect(() => {
-    const controller = new AbortController();
-    api.spaces.list(controller.signal).then((result) => setState({ spaces: result.spaces, error: null }),
-      (cause: unknown) => {
-        if (!controller.signal.aborted) setState((previous) => ({ ...previous, error: errorText(cause) }));
-      });
-    return () => controller.abort();
-  }, [api, round, revision]);
-  return state;
+  const query = useQuery('spaces.list', (signal) => api.spaces.list(signal).then((result) => result.spaces),
+    SPACE_EVENTS);
+  return { spaces: query.data, error: query.error };
 }
 
 interface CardProps {
@@ -157,7 +145,7 @@ export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (ro
       <BulkHeader selection={selection} items={bulkItems} />
       <BulkFeedback selection={selection} />
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
-      {spaces === null && error === null ? <p className="block-empty" role="status">正在读…</p> : null}
+      {spaces === null && error === null ? <PageLoading page /> : null}
       {spaces !== null && spaces.length === 0 ? <p className="block-empty">还没有空间。</p> : null}
       {spaces === null || spaces.length === 0 ? null : <>
         {selection.active ? null : <section aria-label="最近" className="lib-grid-sec">

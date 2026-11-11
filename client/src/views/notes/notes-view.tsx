@@ -26,6 +26,7 @@ import { useNotesLayout } from './use-notes-layout.ts';
 import './notes.css';
 import './notes-workspace.css';
 import { PhoneNotesHome } from './phone-notes-home.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export interface NotesViewProps {
   noteId: string | null;
@@ -51,7 +52,7 @@ function OpenNotePane({ noteId, onDeleted }: { noteId: string | null; onDeleted:
   return (
     <div className="note-pane" ref={ref} onScroll={onScroll}>
       {open.status === 'none' ? <p className="block-empty">选一篇，或新建一篇。</p> : null}
-      {open.status === 'loading' ? <p className="block-empty">正在读…</p> : null}
+      {open.status === 'loading' ? <PageLoading page /> : null}
       {open.status === 'failed' ? (
         <p className="block-empty is-error" role="alert">
           {open.error}

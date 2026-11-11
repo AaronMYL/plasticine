@@ -54,5 +54,5 @@ export const TAB_CHANNELS = {
 /** 壳 → 界面主世界的函数名（形状见各自的 shared 文件）；只调这几个。 */
 export const UI_EVENTS = ['__plasticineWebTabEvent', '__plasticineTranslateEvent', '__plasticineWindowChrome',
   '__plasticineWebMenu', '__plasticineDesktopEvent', '__plasticineNativePointer', '__plasticineFocusComposer',
-  '__plasticineAttachFiles', '__plasticineNewNote'] as const;
+  '__plasticineAttachFiles', '__plasticineNewNote', '__plasticineQuoteSelection'] as const;
 export type UiEvent = (typeof UI_EVENTS)[number];

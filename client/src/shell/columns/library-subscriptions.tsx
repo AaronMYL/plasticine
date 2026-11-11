@@ -2,12 +2,11 @@
 // 每个订阅一行（个人回顾、各个研究周报），行尾是往期数量；点进去是订阅页 #/library/sub/<id>。还只是草案、一期没出的不列。
 // 「最近删除」那一行贴在第二栏底部。
 
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import { errorText } from '../../api/errors.ts';
 import type { LibraryTrashResponse, SubscriptionListItem } from '../../api/shared.ts';
-import { useLive } from '../../live.tsx';
-import { useLibraryRevision } from '../../views/library/library-signal.ts';
+import { useQuery } from '../../state/use-query.ts';
+import type { LiveEvent } from '../../api/types.ts';
 import { HueTile } from '../hue.tsx';
 import { Icon } from '../icons.tsx';
 import { LIBRARY_TRASH, subscriptionRoute } from '../library-routes.ts';
@@ -20,41 +19,19 @@ export function listedSubscriptions(items: readonly SubscriptionListItem[]): Sub
   return items.filter((item) => item.issueCount > 0 || item.status !== 'draft');
 }
 
-/** 读一样资料库的东西：本机改名 / 删除 / 还原过、或者断线重连（resync）时重读。 */
-function useLibraryRead<T>(read: (signal: AbortSignal) => Promise<T>): { value: T | null; error: string | null } {
-  const live = useLive();
-  const revision = useLibraryRevision();
-  const [round, setRound] = useState(0);
-  const [value, setValue] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => live.hub.on((event) => {
-    if (event.type === 'resync' || event.type === 'book.changed') setRound((count) => count + 1);
-  }), [live.hub]);
-  useEffect(() => {
-    const controller = new AbortController();
-    read(controller.signal).then((result) => {
-      if (controller.signal.aborted) return;
-      setValue(result);
-      setError(null);
-    }, (cause: unknown) => {
-      if (!controller.signal.aborted) setError(errorText(cause));
-    });
-    return () => controller.abort();
-    // read 每次渲染都是新的：只按改动计数重读。
-  }, [revision, round]);
-  return { value, error };
-}
+const BOOK_EVENTS: ReadonlySet<LiveEvent['type']> = new Set(['book.changed']);
 
 export function useSubscriptionList(): { subscriptions: SubscriptionListItem[] | null; error: string | null } {
   const api = useApi();
-  const { value, error } = useLibraryRead((signal) => api.subscriptions.list(signal));
-  return { subscriptions: value === null ? null : listedSubscriptions(value.subscriptions), error };
+  const query = useQuery('subscriptions.list', (signal) => api.subscriptions.list(signal), BOOK_EVENTS);
+  return { subscriptions: query.data === null ? null : listedSubscriptions(query.data.subscriptions),
+    error: query.error };
 }
 
 export function useLibraryTrash(): { trash: LibraryTrashResponse | null; error: string | null } {
   const api = useApi();
-  const { value, error } = useLibraryRead((signal) => api.library.trash(signal));
-  return { trash: value, error };
+  const query = useQuery('library.trash', (signal) => api.library.trash(signal), BOOK_EVENTS);
+  return { trash: query.data, error: query.error };
 }
 
 export function SubscriptionRows({ route, navigate }: { route: Route; navigate: (route: Route) => void }): ReactNode {

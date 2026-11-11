@@ -23,6 +23,7 @@ import { spaceRoute } from '../spaces/space-links.ts';
 import { SubscriptionSheet } from '../spaces/subscription-sheet.tsx';
 import { libraryChanged, useLibraryRevision } from './library-signal.ts';
 import { issueRange, subscriptionLine } from './subscription-text.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export interface SubscriptionPageProps {
   subscriptionId: string;
@@ -65,7 +66,7 @@ export function SubscriptionPage({ subscriptionId, phone, navigate }: Subscripti
   const [note, setNote] = useState<{ text: string; failed: boolean } | null>(null);
   if (value === null) {
     return <div className="page lib-page">
-      {error === null ? <p className="block-empty" role="status">正在读…</p>
+      {error === null ? <PageLoading page />
         : <p className="block-empty is-error" role="alert">{error}{' '}
           <button type="button" className="text-button" onClick={reload}>重新读取</button></p>}
     </div>;

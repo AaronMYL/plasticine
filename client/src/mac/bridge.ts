@@ -19,6 +19,8 @@ declare global {
     __plasticineWebTabEvent?: (event: unknown) => void;
     /** 原生菜单的 ⌘F / ⌘P / ⌘Y（键盘在原生网页里时）交给网页界面（web-page-tools.ts 的 WebMenuCommand）。 */
     __plasticineWebMenu?: (command: unknown) => void;
+    /** 桌面壳右键「引用到对话」：{ from: 'ui' } 或网页标签里的 { from: 'web', text, url, title }。 */
+    __plasticineQuoteSelection?: (command: unknown) => void;
   }
 }
 

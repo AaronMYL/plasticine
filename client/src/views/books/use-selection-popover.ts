@@ -5,6 +5,7 @@ import { useEffect, type Dispatch, type RefObject, type SetStateAction } from 'r
 import type { PopoverState } from './popover-layer.tsx';
 import { rangeRects, rectIn } from './reading-scroll.ts';
 import { selectionOffsets } from './text-offsets.ts';
+import { useQuoteHandler } from '../../shell/quote-registry.ts';
 
 // 选区停下多久再弹菜单：拖着选的时候不跟着闪。
 const SELECTION_SETTLE_MS = 200;
@@ -36,4 +37,17 @@ export function useSelectionPopover(root: HTMLElement | null, overlay: RefObject
       document.removeEventListener('selectionchange', onSelection);
     };
   }, [root, overlay, setPopover]);
+}
+
+/** 右键「引用到对话」和 ⌘⇧L：选区落在正文里，按原文位置引用（能回到原文）。 */
+export function useSelectionQuote(root: HTMLElement | null, enabled: boolean,
+  setPopover: Dispatch<SetStateAction<PopoverState | null>>, quote: (start: number, end: number) => void): void {
+  useQuoteHandler(() => root, !enabled ? null : (selection) => {
+    const range = selection.rangeCount === 0 ? null : selection.getRangeAt(0);
+    const offsets = root === null || range === null ? null : selectionOffsets(root, range);
+    if (offsets === null) return false;
+    setPopover(null);
+    quote(offsets.start, offsets.end);
+    return true;
+  });
 }

@@ -5,12 +5,12 @@
 // 数据：GET /v2/subscriptions、GET /v2/spaces?standalone=true、GET /v2/files、GET /v2/library/trash。
 // 手机上没有第二栏，「更多 · 资料库」打开资料库首页（#/library）。
 
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import { errorText } from '../../api/errors.ts';
 import type { FileEntryView, SpaceListItem } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
-import { useLibraryRevision } from '../../views/library/library-signal.ts';
+import { useQuery } from '../../state/use-query.ts';
+import type { LiveEvent } from '../../api/types.ts';
 import { groupSpaces } from '../../views/library/space-categories.ts';
 import { IconButton } from '../icon-button.tsx';
 import { Icon } from '../icons.tsx';
@@ -27,29 +27,17 @@ export interface LibraryData {
   error: string | null;
 }
 
+const SPACE_EVENTS: ReadonlySet<LiveEvent['type']> = new Set(['space.changed']);
+const NO_EVENTS: ReadonlySet<LiveEvent['type']> = new Set();
+
+/** 第二栏：单独的空间（不属于订阅的）和文件夹；和资料库首页一样走共用缓存，回来直接画。 */
 export function useLibraryData(): LibraryData {
   const api = useApi();
-  const live = useLive();
-  const [data, setData] = useState<LibraryData>({ spaces: null, folders: null, error: null });
-  const [round, setRound] = useState(0);
-  const revision = useLibraryRevision();
-  useEffect(() => live.hub.on((event) => {
-    if (event.type === 'resync' || event.type === 'space.changed') {
-      setRound((value) => value + 1);
-    }
-  }), [live.hub]);
-  useEffect(() => {
-    const controller = new AbortController();
-    const fail = (cause: unknown): void => {
-      if (!controller.signal.aborted) setData((previous) => ({ ...previous, error: errorText(cause) }));
-    };
-    api.spaces.list(controller.signal, { standalone: true }).then((result) => setData((previous) => ({ ...previous,
-      spaces: result.spaces })), fail);
-    api.files.list('', controller.signal).then((result) => setData((previous) => ({ ...previous,
-      folders: result.entries.filter((entry) => entry.kind === 'directory') })), fail);
-    return () => controller.abort();
-  }, [api, round, revision]);
-  return data;
+  const spaces = useQuery('spaces.standalone',
+    (signal) => api.spaces.list(signal, { standalone: true }).then((result) => result.spaces), SPACE_EVENTS);
+  const folders = useQuery('library.folders', (signal) => api.files.list('', signal)
+    .then((result) => result.entries.filter((entry) => entry.kind === 'directory')), NO_EVENTS);
+  return { spaces: spaces.data, folders: folders.data, error: spaces.error ?? folders.error };
 }
 
 export function LibraryColumn({ route, navigate, onAsk }: { route: Route; navigate: (route: Route) => void;

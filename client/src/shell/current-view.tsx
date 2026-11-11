@@ -12,7 +12,8 @@ import { HomeView } from '../views/home/home-view.tsx';
 import { MessagesPage } from '../views/messages/messages-page.tsx';
 import { PlasticinePage } from '../views/plasticine/plasticine-page.tsx';
 import { TasksPage } from '../views/tasks/tasks-page.tsx';
-import { LOADING_TEXT, lazyView } from './lazy-view.ts';
+import { PageLoading } from '../primitives/page-loading/index.tsx';
+import { lazyView } from './lazy-view.ts';
 import { phonePageAvailable, type Route, type ToolName } from './routes.ts';
 import { PhoneUnavailable } from '../views/reading/phone-content.tsx';
 
@@ -25,7 +26,7 @@ import { WebStart } from '../views/web/web-start.tsx';
 const ToolPage = lazyView<{ tool: ToolName | null }>(() => import('../views/tools/tool-page.tsx'), 'ToolPage');
 
 function Loading(): ReactNode {
-  return <p className="block-empty page-loading">{LOADING_TEXT}</p>;
+  return <PageLoading page />;
 }
 
 export interface CurrentViewProps {

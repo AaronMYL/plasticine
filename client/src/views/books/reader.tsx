@@ -39,7 +39,7 @@ import { TocSheet } from './toc-sheet.tsx';
 import { TypographyMenu } from './typography-menu.tsx';
 import { useAnnotations, useBook, useInsight } from './use-book-data.ts';
 import { usePaged } from './use-paged.ts';
-import { useSelectionPopover } from './use-selection-popover.ts';
+import { useSelectionPopover, useSelectionQuote } from './use-selection-popover.ts';
 
 const HEADING_FIRST = /^<h[234]>/;
 
@@ -386,6 +386,7 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
       quoteRange(annotation.start, annotation.end, annotation.chapter, annotation.quote);
     }
   };
+  useSelectionQuote(root, chapter !== null, setPopover, quoteRange);
   const openAt = (element: HTMLElement): { top: number; bottom: number; left: number } =>
     overlay.current === null ? { top: 0, bottom: 0, left: 0 } : rectIn(overlay.current, elementRects(element));
   const changeMode = (next: ReadingMode): void => {

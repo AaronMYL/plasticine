@@ -38,6 +38,7 @@ import { locateContent } from '../../shell/locate-content.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 import { useRoute } from '../../shell/use-route.ts';
+import { useQuoteHandler } from '../../shell/quote-registry.ts';
 
 const STATUS_TEXT: Record<SaveStatus, string> = {
   saved: '已保存',
@@ -165,6 +166,11 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
     else { shellPrefs.setChatOpen(true); }
     requestAnimationFrame(() => window.dispatchEvent(new Event('plasticine:focus-composer')));
   };
+
+  useQuoteHandler(() => editor?.view.dom ?? null, editor === null ? null : () => {
+    void quoteToConversation();
+    return true;
+  });
 
   const remove = async (): Promise<void> => {
     if (await deleteNote(api, noteOps, note.id)) {

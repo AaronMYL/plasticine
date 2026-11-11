@@ -20,6 +20,7 @@ import { addTodo, dueText, setTodoDone, todosOf } from './project-todos.ts';
 import { useProjectRead } from './use-project-read.ts';
 import './project-detail.css';
 import { ProjectTasks } from '../tasks/project-tasks.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 function Head({ title, tail }: { title: string; tail?: ReactNode }): ReactNode {
   return (
@@ -233,7 +234,7 @@ export function ProjectDetailPage({ projectId, navigate }: {
   if (detail === null) {
     return (
       <div className="page proj-page proj-detail">
-        {error === null ? <p className="block-empty">正在读取…</p> : (
+        {error === null ? <PageLoading page /> : (
           <p className="proj-error" role="alert">
             {error} <button type="button" className="text-button" onClick={reload}>重新读取</button>
           </p>

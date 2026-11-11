@@ -73,6 +73,7 @@ import './columns/column.css';
 import './glyph.css';
 import './frame.css';
 import './client-update.css';
+import { useQuoteCommands } from './use-quote-commands.ts';
 
 type SheetPanel = Exclude<Panel, { kind: 'settings' } | { kind: 'search' }>;
 
@@ -286,6 +287,7 @@ export function Shell(): ReactNode {
     activeId: webTab?.id ?? null, covered: activePanel !== null || settings.showing || palette
       || (layout.phone && chatOpen), showTab, openPage: go, steps: pageSteps });
   const webChrome = useWebChrome(expandChat, useCallback((noteId: string) => go({ view: 'notes', noteId }), [go]));
+  useQuoteCommands(webChrome.quote);
   useIosAsk(() => {
     setPanel(null);
     expandChat();
