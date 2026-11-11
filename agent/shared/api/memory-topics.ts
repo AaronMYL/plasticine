@@ -20,7 +20,7 @@ export type MemoryTopicKind = (typeof MEMORY_TOPIC_KINDS)[number];
 
 export const MEMORY_TOPIC_KIND_LABELS: Readonly<Record<MemoryTopicKind, string>> = {
   about_you: '关于你',
-  rules: '主线的 Soul',
+  rules: '规则',
   person: '人物',
   project: '项目',
   topic: '话题',

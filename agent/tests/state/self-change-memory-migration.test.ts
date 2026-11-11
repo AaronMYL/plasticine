@@ -16,6 +16,12 @@ const MEMORY_ID = '0103-archive-self-change-memory';
 const BRIEF_ID = '0104-plasticine-project-goal';
 const anchors = [{ kind: 'message' as const, ref: 'line:main:1' }];
 
+/** 今天的记忆行存取带适用范围（0130）；在 0130 之前的库上用它写行，先补上这两列（之后的迁移不碰它们）。 */
+function withScopeColumns(db: { exec(sql: string): void }): void {
+  db.exec("ALTER TABLE memory_doc_lines ADD COLUMN scope_kind TEXT NOT NULL DEFAULT 'all'");
+  db.exec('ALTER TABLE memory_doc_lines ADD COLUMN scope_ref TEXT');
+}
+
 function contextOf(db: Database): StoreContext {
   let next = 0;
   return { db, now: steppingClock(), newId: () => `id-${(next += 1)}` };
@@ -23,6 +29,7 @@ function contextOf(db: Database): StoreContext {
 
 function before(db: Database, id: string): void {
   migrate(db, MIGRATIONS.filter((migration) => migration.id < id), steppingClock());
+  withScopeColumns(db);
 }
 
 test('两条迁移都登记了，都不是可以删东西的迁移', () => {
@@ -107,7 +114,8 @@ test('迁移 0103：只把在用的、命中规则的行挪进归档，记事件
     assert.equal(JSON.parse(String(events[0]?.['detail'])).reason, 'no_longer_true');
     assert.equal(db.get(`SELECT archived FROM search_docs WHERE ref = $ref`, { ref: selfRule.id })?.['archived'], 1);
 
-    assert.deepEqual(migrate(db, MIGRATIONS, steppingClock()).includes(MEMORY_ID), false, '重跑不再改');
+    assert.deepEqual(migrate(db, MIGRATIONS.filter((migration) => migration.id < '0130'), steppingClock())
+      .includes(MEMORY_ID), false, '重跑不再改');
   } finally {
     db.close();
   }

@@ -23,7 +23,7 @@ function line(id: string, docId: string, text: string): MemoryLine {
   return { id, docId, section: 'note', text, basis: 'stated', anchors: [{ kind: 'message', ref: 'old-msg' }],
     previous: null, supersedes: [], inferenceId: null, position: 0, writtenBy: 'brain', writtenRef: null,
     retiredAt: null, retiredReason: null, archivedAt: null, deletedAt: null, createdAt: AT, updatedAt: AT, version: 1,
-    migratedDefault: false, legacyPayload: null };
+    migratedDefault: false, legacyPayload: null, scopeKind: 'all', scopeRef: null };
 }
 
 function pending(docId: string, text: string): MemoryInference {

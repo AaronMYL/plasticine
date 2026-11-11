@@ -11,6 +11,7 @@ import { migration as schedules } from './0079-schedules.ts';
 import { migration as scheduleSends } from './0080-schedule-sends.ts';
 import { migration as outboundGrants } from './0126-outbound-grants.ts';
 import { migration as spaceWriter } from './0129-space-writer.ts';
+import { migration as memoryScope } from './0130-memory-scope.ts';
 import { migration as mates } from './0128-mates.ts';
 import { migration as suggestions } from './0081-suggestions.ts';
 import { migration as deviceTimeZones } from './0082-device-time-zones.ts';
@@ -206,6 +207,7 @@ export const MIGRATIONS: readonly Migration[] = [
   networkAttachments,
   mates,
   spaceWriter,
+  memoryScope,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

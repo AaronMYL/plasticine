@@ -28,6 +28,7 @@ export * from './money.ts';
 export * from './memory-events.ts';
 export * from './memory.ts';
 export * from './memory-docs.ts';
+export * from './memory-conflicts.ts';
 export * from './notes.ts';
 export * from './books.ts';
 export * from './bookmarks.ts';

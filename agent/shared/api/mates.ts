@@ -35,8 +35,9 @@ export type MateListResponse = Static<typeof MateListResponseSchema>;
 export const CreateMateRequestSchema = Type.Object({ requestId: RequestIdSchema,
   ...MateDraftSchema.properties }, STRICT);
 export type CreateMateRequest = Static<typeof CreateMateRequestSchema>;
+// soul 只在建队友时用（拆成只对它的规则，11-11）；之后的规矩在记忆页改，这里不再收。
 export const UpdateMateRequestSchema = Type.Object({ requestId: RequestIdSchema, version: Type.Integer({ minimum: 1 }),
-  ...Type.Partial(MateDraftSchema).properties, disabled: Type.Optional(Type.Boolean()) }, STRICT);
+  ...Type.Partial(Type.Omit(MateDraftSchema, ['soul'])).properties, disabled: Type.Optional(Type.Boolean()) }, STRICT);
 export type UpdateMateRequest = Static<typeof UpdateMateRequestSchema>;
 export const CreateMateGroupRequestSchema = Type.Object({ requestId: RequestIdSchema,
   ...MateGroupDraftSchema.properties }, STRICT);

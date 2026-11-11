@@ -136,22 +136,30 @@ export function findDoc(state: DocsState, nameOrId: string): MemoryDoc | undefin
     ?? live.find((doc) => loose(doc.title) === loose(key));
 }
 
-const RULES_HEADER = '## 主线的 Soul（所有队友共用；系统默认、用户原话和已确认推断按真实来源标记）';
+const RULES_HEADER = '## 规则（所有队友共用；系统默认、用户原话和已确认推断按真实来源标记）';
 const RULES_HINT = '照这些规矩做事，不用再问他一遍；和他这次说的冲突时以最新的为准，后台整理会改那一行。';
+const MATE_RULES_HINT = '下面几条只对你这位队友；和上面共用的规则冲突时，以这几条为准。';
 
-/**
- * 「怎么替你做事」整份（第 4 批）：硬线在最前面，然后是在用的每一行，不设预算、不截（文档本身有字数上限，满了合并）。
- * 一行都还没有时也带硬线。行带标识，整理和 ≠ 能对上是哪一行。
- */
-export function rulesDocSection(state: Pick<StateService, 'memoryDocs'>): string {
-  const hard = `硬线（不管有没有把握都先问用户；代码里也拦着）：${hardLinesForModel().join('；')}。`;
-  const live = state.memoryDocs.docs.get(RULES_DOC_ID) === undefined ? [] : state.memoryDocs.lines.live(RULES_DOC_ID);
-  const lines = SOUL_SECTIONS.flatMap((section) => {
-    const group = live.filter((line) => soulSectionOf(state, line) === section);
+function ruleGroups(state: Pick<StateService, 'memoryDocs'>, lines: readonly MemoryLine[]): string[] {
+  return SOUL_SECTIONS.flatMap((section) => {
+    const group = lines.filter((line) => soulSectionOf(state, line) === section);
     return group.length === 0 ? [] : [`### ${SOUL_SECTION_LABELS[section]}`,
       ...group.map((line) => lineText({ ...line, previous: null }))];
   });
-  return [RULES_HEADER, RULES_HINT, hard, ...lines].join('\n');
+}
+
+/**
+ * 规则整份（第 4 批；11-11 带范围）：硬线在最前面，然后是所有队友共用的每一行；正在替某位队友做事时，再加只对它的几行。
+ * 只对别的队友的不给。不设预算、不截（文档本身有字数上限，满了合并）。一行都还没有时也带硬线。行带标识，整理和 ≠ 能对上是哪一行。
+ */
+export function rulesDocSection(state: Pick<StateService, 'memoryDocs'>, mateId: string | null = null): string {
+  const hard = `硬线（不管有没有把握都先问用户；代码里也拦着）：${hardLinesForModel().join('；')}。`;
+  const live = state.memoryDocs.docs.get(RULES_DOC_ID) === undefined ? [] : state.memoryDocs.lines.live(RULES_DOC_ID);
+  const shared = live.filter((line) => line.scopeKind === 'all');
+  const own = mateId === null ? [] : live.filter((line) => line.scopeKind === 'mate' && line.scopeRef === mateId);
+  const parts = [RULES_HEADER, RULES_HINT, hard, ...ruleGroups(state, shared)];
+  if (own.length > 0) parts.push('## 只对你的规则', MATE_RULES_HINT, ...ruleGroups(state, own));
+  return parts.join('\n');
 }
 
 export interface MemoryLineHit {

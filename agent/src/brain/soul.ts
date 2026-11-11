@@ -1,4 +1,4 @@
-import { SOUL_SECTIONS, type ChangeSoulRequest, type SoulLine, type SoulSection, type SoulView }
+import { SOUL_SECTIONS, type ChangeSoulRequest, type SoulChange, type SoulLine, type SoulSection, type SoulView }
   from '../../shared/api/soul.ts';
 import { inferSoulSection } from '../../shared/soul.ts';
 import { RULES_DOC_ID, RULES_DOC_TITLE, type MemoryLine } from '../../shared/state.ts';
@@ -18,6 +18,7 @@ export function soulSectionOf(state: SoulState, line: MemoryLine): SoulSection {
 }
 
 export function soulSource(line: MemoryLine): SoulLine['source'] {
+  if (line.anchors.some((anchor) => anchor.kind === 'mate')) return 'mate';
   if (line.writtenBy === 'user') return 'user';
   if (line.anchors.every((anchor) => anchor.kind === 'system')) return 'system';
   return line.basis === 'confirmed_inference' ? 'inference' : 'conversation';
@@ -27,6 +28,8 @@ export function soulView(state: SoulState): SoulView {
   const lines = state.memoryDocs.lines.live(RULES_DOC_ID).map((line): SoulLine => ({
     id: line.id, version: line.version, text: line.text, section: soulSectionOf(state, line),
     source: soulSource(line), at: line.createdAt, sources: [],
+    scopeKind: line.scopeKind === 'mate' ? 'mate' as const : 'all' as const,
+    scopeRef: line.scopeKind === 'mate' ? line.scopeRef : null,
   }));
   const events = state.memoryDocs.events.recent(RULES_DOC_ID, HISTORY_LIMIT);
   const explicit = new Set(events.filter((event) => event.detail['soulAction'] !== undefined)
@@ -35,9 +38,9 @@ export function soulView(state: SoulState): SoulView {
     const fallback = event.kind === 'line_added' ? 'add'
       : event.kind === 'line_edited' || event.kind === 'line_revised' ? 'edit' : undefined;
     const action = event.detail['soulAction'] ?? (explicit.has(event.lineId) ? undefined : fallback);
-    if (event.lineId === null || !['add', 'edit', 'move', 'undo'].includes(String(action))) return [];
+    if (event.lineId === null || !['add', 'edit', 'move', 'undo', 'scope'].includes(String(action))) return [];
     const line = state.memoryDocs.lines.get(event.lineId);
-    return [{ id: event.id, lineId: event.lineId, action: action as 'add' | 'edit' | 'move' | 'undo',
+    return [{ id: event.id, lineId: event.lineId, action: action as SoulChange['action'],
       text: line?.text ?? '', at: event.createdAt,
       actor: event.actor === 'user' || event.actor === 'system' ? event.actor : 'brain' as const }];
   });
@@ -46,7 +49,7 @@ export function soulView(state: SoulState): SoulView {
 
 function requireCurrent(state: SoulState, id: string, version: number): MemoryLine {
   const line = state.memoryDocs.lines.require(id);
-  if (line.docId !== RULES_DOC_ID) throw new StateError('not_found', '这条规则不在主线的 Soul 中');
+  if (line.docId !== RULES_DOC_ID) throw new StateError('not_found', '这条规则不在记忆的「规则」里');
   if (line.retiredAt !== null || line.version !== version) {
     throw new StateError('version_conflict', '这条规则已改过或撤销，请刷新后再试。');
   }
@@ -59,7 +62,7 @@ export function changeSoul(state: DocState, input: ChangeSoulRequest, writer: Wr
     const anchor = { kind: 'user_edit' as const, ref: input.requestId };
     if (input.action === 'add') {
       const line = addLine(state, { docId: RULES_DOC_ID, text: input.text.trim(), basis: 'stated',
-        anchors: [anchor] }, writer);
+        anchors: [anchor], scopeKind: input.scopeKind ?? 'all', scopeRef: input.scopeRef ?? null }, writer);
       docEvent(state, RULES_DOC_ID, line.id, 'line_added', writer,
         { soulAction: 'add', soulSection: input.section });
     } else {
@@ -68,12 +71,21 @@ export function changeSoul(state: DocState, input: ChangeSoulRequest, writer: Wr
         const line = reviseLine(state, current, input.text.trim(), [anchor], writer, 'edited');
         docEvent(state, RULES_DOC_ID, line.id, 'line_edited', writer,
           { soulAction: 'edit', soulSection: input.section, replaced: current.id });
+      } else if (input.action === 'scope') {
+        // 范围不是内容：原地改，事件里记前后（11-11）。
+        const scopeRef = input.scopeKind === 'all' ? null : input.scopeRef;
+        if (input.scopeKind === 'mate' && scopeRef === null) throw new StateError('invalid_input', '要选一位队友。');
+        state.memoryDocs.lines.rescope(current.id, current.version, input.scopeKind, scopeRef);
+        docEvent(state, RULES_DOC_ID, current.id, 'line_edited', writer, { soulAction: 'scope',
+          before: { kind: current.scopeKind, ref: current.scopeRef },
+          after: { kind: input.scopeKind, ref: scopeRef } });
       } else if (input.action === 'move') {
         // 分类也是一次新版本，防另一台设备的迟到移动覆盖新选择。
         state.memoryDocs.lines.retire(current.id, current.version, 'edited');
         const line = state.memoryDocs.lines.add({ docId: RULES_DOC_ID, text: current.text, section: current.section,
           basis: current.basis, anchors: current.anchors, position: current.position, inferenceId: current.inferenceId,
-          supersedes: [current.id], writtenBy: current.writtenBy, writtenRef: current.writtenRef });
+          supersedes: [current.id], writtenBy: current.writtenBy, writtenRef: current.writtenRef,
+          scopeKind: current.scopeKind, scopeRef: current.scopeRef });
         docEvent(state, RULES_DOC_ID, line.id, 'line_edited', writer,
           { soulAction: 'move', soulSection: input.section, replaced: current.id });
       } else {
@@ -84,7 +96,8 @@ export function changeSoul(state: DocState, input: ChangeSoulRequest, writer: Wr
           const restored = state.memoryDocs.lines.add({ docId: RULES_DOC_ID, text: original.text,
             section: original.section, basis: original.basis, anchors: original.anchors,
             position: original.position, inferenceId: original.inferenceId, previous: current.text,
-            writtenBy: original.writtenBy, writtenRef: original.writtenRef });
+            writtenBy: original.writtenBy, writtenRef: original.writtenRef,
+            scopeKind: original.scopeKind, scopeRef: original.scopeRef });
           docEvent(state, RULES_DOC_ID, restored.id, 'line_added', writer,
             { soulSection: soulSectionOf(state, original), restoredFrom: original.id });
         }

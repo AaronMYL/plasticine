@@ -30,7 +30,7 @@ export const YOU_DOC_ID = 'memdoc-you';
 export const YOU_DOC_TITLE = '关于你';
 /** 「怎么替你做事」只有一份，标识固定。 */
 export const RULES_DOC_ID = 'memdoc-rules';
-export const RULES_DOC_TITLE = '主线的 Soul';
+export const RULES_DOC_TITLE = '规则';
 /** 项目文档和项目一一对应，标识由项目标识推出。 */
 export function projectDocId(projectId: string): string {
   return `memdoc-project-${projectId}`;
@@ -62,7 +62,16 @@ export type MemoryLineRetireReason = (typeof MEMORY_LINE_RETIRE_REASONS)[number]
  */
 export const MEMORY_ANCHOR_KINDS = [
   'message', 'note', 'memory_entry', 'user_edit', 'agreement', 'term', 'system',
+  // 11-11：队友原来那段自由文字的 Soul 拆成的规则，ref 是队友 id（来源写「队友设定」）。
+  'mate',
 ] as const;
+
+/**
+ * 适用范围（11-11 第 11 批第二步）：all 全部；mate 只对某位队友（ref = 队友 id）；project 某个项目（ref = 项目 id）；
+ * contact 某个联系人（ref = 联系人 id）。项目文档、人物文档的行范围跟着文档走，存的仍是 all。
+ */
+export const MEMORY_SCOPE_KINDS = ['all', 'mate', 'project', 'contact'] as const;
+export type MemoryScopeKind = (typeof MEMORY_SCOPE_KINDS)[number];
 export const MemoryAnchorSchema = Type.Object({ kind: Type.Enum(MEMORY_ANCHOR_KINDS), ref: IdSchema }, STRICT);
 export type MemoryAnchor = Static<typeof MemoryAnchorSchema>;
 const Anchors = Type.Array(MemoryAnchorSchema, { minItems: 1 });
@@ -110,6 +119,8 @@ export const MemoryLineInputSchema = Type.Object(
     position: Type.Optional(Type.Integer({ minimum: 0 })),
     writtenBy: ActorSchema,
     writtenRef: Type.Optional(Nullable(Type.String())),
+    scopeKind: Type.Optional(Type.Enum(MEMORY_SCOPE_KINDS)),
+    scopeRef: Type.Optional(Nullable(IdSchema)),
   },
   STRICT,
 );
@@ -119,6 +130,9 @@ export type MemoryLineInput = Static<typeof MemoryLineInputSchema>;
  * 过时的事实，archivedAt；不给模型看，问「以前怎么定的」能搜到，永久留着）→ 删除（他说「忘掉」，deletedAt；哪里都不再出现）。
  */
 export const MemoryLinePatchSchema = Type.Partial(Type.Object({
+  /** 范围不是内容：改范围原地改，事件里记一笔（11-11）。 */
+  scopeKind: Type.Enum(MEMORY_SCOPE_KINDS),
+  scopeRef: Nullable(IdSchema),
   retiredAt: IsoTimeSchema,
   retiredReason: Type.Enum(MEMORY_LINE_RETIRE_REASONS),
   archivedAt: IsoTimeSchema,
@@ -291,3 +305,36 @@ export const MemoryEntryMigrationSchema = Type.Object(
   STRICT,
 );
 export type MemoryEntryMigration = Static<typeof MemoryEntryMigrationSchema>;
+
+/** 说法冲突（11-11）：每晚整理时找出的两条（或几条）互相矛盾的现行行，Aaron 选以哪条为准。 */
+export const MEMORY_CONFLICT_STATUSES = ['open', 'resolved'] as const;
+/** kept：留下其中一条（其余退休）；both：都留（通常接着改范围）；neither：都不要了。 */
+export const MEMORY_CONFLICT_RESOLUTIONS = ['kept', 'both', 'neither'] as const;
+export type MemoryConflictResolution = (typeof MEMORY_CONFLICT_RESOLUTIONS)[number];
+export const MemoryConflictInputSchema = Type.Object({
+  title: Type.String({ minLength: 1, maxLength: 60 }),
+  lineIds: Type.Array(IdSchema, { minItems: 2, maxItems: 4, uniqueItems: true }),
+  foundBy: Type.Optional(Nullable(Type.String())),
+}, STRICT);
+export type MemoryConflictInput = Static<typeof MemoryConflictInputSchema>;
+export const MemoryConflictSchema = Type.Object({
+  id: IdSchema,
+  version: Type.Integer({ minimum: 1 }),
+  createdAt: IsoTimeSchema,
+  updatedAt: IsoTimeSchema,
+  title: Type.String(),
+  lineIds: Type.Array(IdSchema),
+  status: Type.Enum(MEMORY_CONFLICT_STATUSES),
+  resolution: Nullable(Type.Enum(MEMORY_CONFLICT_RESOLUTIONS)),
+  keptLineIds: Type.Array(IdSchema),
+  foundBy: Nullable(Type.String()),
+  resolvedAt: Nullable(IsoTimeSchema),
+}, STRICT);
+export type MemoryConflict = Static<typeof MemoryConflictSchema>;
+export const MemoryConflictPatchSchema = Type.Partial(Type.Object({
+  status: Type.Enum(MEMORY_CONFLICT_STATUSES),
+  resolution: Nullable(Type.Enum(MEMORY_CONFLICT_RESOLUTIONS)),
+  keptLineIds: Type.Array(IdSchema),
+  resolvedAt: Nullable(IsoTimeSchema),
+}), STRICT);
+export type MemoryConflictPatch = Static<typeof MemoryConflictPatchSchema>;

@@ -32,6 +32,12 @@ function staleIndexEntry(db: Database, ref: string, body: string): void {
   db.run(`INSERT INTO search_fts (rowid, title, body, detail) VALUES ($id, '关于你', $body, '记忆')`, { id, body });
 }
 
+/** 今天的记忆行存取带适用范围（0130）；在 0130 之前的库上用它写行，先补上这两列（之后的迁移不碰它们）。 */
+function withScopeColumns(db: { exec(sql: string): void }): void {
+  db.exec("ALTER TABLE memory_doc_lines ADD COLUMN scope_kind TEXT NOT NULL DEFAULT 'all'");
+  db.exec('ALTER TABLE memory_doc_lines ADD COLUMN scope_ref TEXT');
+}
+
 test('迁移 0098 可以删东西，登记在 0098–0099 号段', () => {
   const entry = MIGRATIONS.find((migration) => migration.id === ERASE_ID);
   assert.equal(entry?.destructive, true);
@@ -42,6 +48,7 @@ test('迁移 0098：只删 deleted_at 非空的记忆行和记录行，相关原
   try {
     const now = steppingClock();
     migrate(db, MIGRATIONS.filter((migration) => migration.id < ERASE_ID), now);
+    withScopeColumns(db);
     const s = stores(db);
     s.docs.docs.create({ kind: 'you', title: '关于你', summary: '身份、住处。', createdBy: 'system' },
       { id: YOU_DOC_ID });

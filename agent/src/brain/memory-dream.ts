@@ -16,6 +16,8 @@ import { askJson } from './book-model.ts';
 import { dreamSources, journalRef, rounds, transcripts, type Transcript } from './dream-material.ts';
 import { CurationOpSchema, planCuration, type CurationSource } from './memory-curation-ops.ts';
 import { applyPlan, directory, relatedLines, snapshot, touchedDocs, type WrittenOp } from './memory-curation-work.ts';
+import { errorCategory, safeLog } from '../shared-log.ts';
+import { findContradictions } from './memory-contradictions.ts';
 import { ensureMemoryDocs, type Writer } from './memory-doc-writes.ts';
 
 /** 一晚最多读这么多条消息（一天再忙也到不了；到了就是在刷，宁可留到下一晚）。 */
@@ -24,7 +26,7 @@ const DIGEST_MAX_CHARS = 1_000;
 const SKILL_MAX_CHARS = 8_000;
 
 export type DreamState = Pick<StateService, 'memoryDocs' | 'memoryCuration' | 'memoryDreams' | 'memoryJournal'
-  | 'projects' | 'transaction' | 'lineMessages' | 'lines' | 'lineDays' | 'memory'>;
+  | 'projects' | 'transaction' | 'lineMessages' | 'lines' | 'lineDays' | 'memory' | 'memoryConflicts'>;
 
 /** 做成的新做法写成技能（skills/ 的 SkillStore 包一层，assemble 接上）。 */
 export interface DreamSkills {
@@ -56,7 +58,7 @@ const SYSTEM = [
   '新旧冲突：后来的更正覆盖旧的，用 revise 改那一行（旧说法会连同日期和出处进归档）；过时的规矩、不再成立的事实用',
   'retire 挪进归档（不要写 forget）。分不清哪个对的，两条都留，写进 conflicts 交给他二选一。',
   'basis=system 的条目是产品默认，不是用户原话或确认推断；和用户来源分开，不合并。',
-  '某一次会话里随口一句推翻不了已定的决定（决定段、主线的 Soul里的规矩）：只有他明确改口才改。',
+  '某一次会话里随口一句推翻不了已定的决定（决定段、「规则」里的规矩）：只有他明确改口才改。',
   '「你可能喜欢 X」这类从行为里推出来的，只能 infer 并写清 why，他确认才算。',
   '操作写进 ops：{"op":"add","doc":文档标识,"section":"note","text":一行,"sources":[出处]}；',
   '{"op":"revise","line":行标识,"text":新的一行,"sources":[…]}；{"op":"retire","line":行标识,"sources":[…]}；',
@@ -152,6 +154,13 @@ export class Dreamer {
     // 技能是文件，不进库的事务：库里的整理落定以后再写，写坏了不连累记忆。
     if (report.dream !== null) {
       this.#writeSkills(report.dream, outputs.flatMap(({ output }) => output.skills ?? []));
+      // 整理落定以后再找说法冲突（11-11）：只记不改，找不成不连累这一晚的整理，下一晚再找。
+      try {
+        await findContradictions(state, this.#models, `dream:${report.dream.id}`, input.signal);
+      } catch (cause) {
+        input.signal.throwIfAborted();
+        safeLog('warn', 'memory_conflicts_failed', { category: errorCategory(cause) });
+      }
     }
     return report;
   }

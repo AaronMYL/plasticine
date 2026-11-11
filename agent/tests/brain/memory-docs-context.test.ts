@@ -35,7 +35,7 @@ test('每次请求带代码生成的总目录（按类型分组，每篇一行 �
   addLine(state, { docId: person.id, text: '在做独立游戏', basis: 'stated', anchors }, writer);
   const section = memoryDocsSection(state);
   assert.match(section, /^## 记忆/);
-  assert.match(section, /### 目录\n关于你和做事方式：\n- 关于你：身份、住处、作息和长期偏好\n- 主线的 Soul：[^\n]+\n项目：\n/);
+  assert.match(section, /### 目录\n关于你和做事方式：\n- 关于你：身份、住处、作息和长期偏好\n- 规则：[^\n]+\n项目：\n/);
   assert.match(section, /项目：\n- Cyber Hunter：定下的方向、决定、约束和进展；聊到「Cyber Hunter」时读\n人：\n- 小林：大学同学/);
   assert.doesNotMatch(section, /memdoc-project/, '目录里写名字，不写标识');
   assert.doesNotMatch(section, /旧项目/);
@@ -62,7 +62,7 @@ test('「主线的 Soul」整份进上下文：硬线在最前面，规矩一行
     state.memoryDocs.lines.retire(line.id, line.version, 'no_longer_true');
   }
   const empty = rulesDocSection(state);
-  assert.match(empty, /^## 主线的 Soul/);
+  assert.match(empty, /^## 规则/);
   assert.match(empty, /花钱/);
   assert.match(empty, /以本人名义对外答应或发出/);
   assert.doesNotMatch(empty, /\[行:/);
@@ -74,7 +74,7 @@ test('「主线的 Soul」整份进上下文：硬线在最前面，规矩一行
     assert.ok(section.includes(`[行:${line.id}]`), `第 ${line.position} 行没装`);
   }
   assert.ok(section.indexOf('花钱') < section.indexOf(`[行:${lines[0]?.id ?? ''}]`), '硬线在规矩前面');
-  assert.doesNotMatch(memoryDocsSection(state), /### 主线的 Soul/, '目录那一段不再重复正文');
+  assert.doesNotMatch(memoryDocsSection(state), /### 规则\n/, '目录那一段不再重复正文');
 });
 
 test('搜记忆：跨文档按两字重合找在用的行，退休的不出现', () => {

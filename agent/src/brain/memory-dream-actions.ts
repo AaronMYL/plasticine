@@ -32,7 +32,8 @@ export function canUndoChange(state: Pick<StateService, 'memoryDocs'>, change: M
 function restoreOld(state: DreamState, old: MemoryLine, replacing: MemoryLine, writer: Writer): MemoryLine {
   const restored = state.memoryDocs.lines.add({ docId: old.docId, section: old.section, text: old.text,
     basis: old.basis, anchors: old.anchors, previous: replacing.text, supersedes: [replacing.id],
-    inferenceId: old.inferenceId, position: replacing.position, writtenBy: writer.actor, writtenRef: writer.ref });
+    inferenceId: old.inferenceId, position: replacing.position, writtenBy: writer.actor, writtenRef: writer.ref,
+    scopeKind: old.scopeKind, scopeRef: old.scopeRef });
   docEvent(state, old.docId, restored.id, 'line_revised', writer, { replaced: replacing.id, restoredFrom: old.id });
   return restored;
 }

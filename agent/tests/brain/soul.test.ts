@@ -16,7 +16,7 @@ test('新安装的 Soul 默认按三节展示，来源为系统且只创建一�
   ensureRulesDoc(state);
   ensureRulesDoc(state);
   const view = soulView(state);
-  assert.equal(view.title, '主线的 Soul');
+  assert.equal(view.title, '规则');
   assert.equal(view.lines.length, 6);
   assert.deepEqual([...new Set(view.lines.map((line) => line.section))], ['speaking', 'doing', 'outbound']);
   assert.ok(view.lines.every((line) => line.source === 'system'));

@@ -22,6 +22,7 @@ import {
   type MemoryLine,
   type MemoryLineInput,
   type MemoryLineRetireReason,
+  type MemoryScopeKind,
 } from '../../shared/state.ts';
 import { checked, encodeRow, OBJECT_META_COLUMNS, readRow, type ColumnMap } from './codec.ts';
 import { fromSqliteError, StateError } from './errors.ts';
@@ -65,6 +66,8 @@ const LINE_COLUMNS: ColumnMap = {
   retiredReason: 'text',
   archivedAt: 'text',
   deletedAt: 'text',
+  scopeKind: 'text',
+  scopeRef: 'text',
 };
 
 const LINE_SPEC: StoreSpec<typeof MemoryLineSchema, typeof MemoryLineInputSchema, typeof MemoryLinePatchSchema> = {
@@ -75,7 +78,7 @@ const LINE_SPEC: StoreSpec<typeof MemoryLineSchema, typeof MemoryLineInputSchema
   patch: MemoryLinePatchSchema,
   columns: LINE_COLUMNS,
   defaults: { section: 'note', previous: null, supersedes: [], inferenceId: null, writtenRef: null, retiredAt: null,
-    retiredReason: null, archivedAt: null, deletedAt: null },
+    retiredReason: null, archivedAt: null, deletedAt: null, scopeKind: 'all', scopeRef: null },
 };
 
 const EVENT_COLUMNS: ColumnMap = {
@@ -173,6 +176,14 @@ function createLineStore(context: StoreContext) {
       const at = context.now();
       const layer = archivesOnRetire(reason) ? { archivedAt: at } : { deletedAt: at };
       return store.update(id, version, { retiredAt: at, retiredReason: reason, ...layer });
+    },
+    /** 改适用范围（11-11）：范围不是内容，现行的行原地改，版本加一。 */
+    rescope(id: string, version: number, scopeKind: MemoryScopeKind, scopeRef: string | null): MemoryLine {
+      const current = store.require(id);
+      if (current.retiredAt !== null) {
+        throw new StateError('version_conflict', '这一行已经退休', { currentVersion: current.version });
+      }
+      return store.update(id, version, { scopeKind, scopeRef: scopeKind === 'all' ? null : scopeRef });
     },
     /**
      * 他说「忘掉」（删前出过确认卡）：这几行不管在现行还是归档，都从库里真的删掉（11-07 他定），全文索引里的条目同一事务

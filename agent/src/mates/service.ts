@@ -6,10 +6,12 @@ import { LegacyChatProposalSchema, type LegacyChatConvertRequest, type LegacyCha
 import type { TextModels } from '../kernel/text.ts';
 import { LineError, type After, type LineKernel, type SendInput, type SendResult } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
+import { adoptMateSoul } from '../brain/mate-rules.ts';
 import { claimPendingGroupTask } from './group-tasks.ts';
 
 const immediate: After = (action) => action();
-type MateState = Pick<StateService, 'mates' | 'mateGroups' | 'lines' | 'lineMessages' | 'transaction'>;
+type MateState = Pick<StateService, 'mates' | 'mateGroups' | 'lines' | 'lineMessages' | 'transaction' | 'memoryDocs'
+  | 'memoryCuration' | 'projects'>;
 
 export class Mates {
   readonly #state: MateState;
@@ -33,6 +35,8 @@ export class Mates {
         : this.#kernel().view(this.#legacy(existingLineId).id);
       const mate = this.#state.mates.create({ ...draft, lineId: line.id });
       this.#state.lines.update(line.id, { mateId: mate.id, title: mate.name, modelPurpose: mate.purpose ?? 'main' });
+      // 建队友时写的那段规矩进记忆的「规则」，只对这位队友（11-11）；之后在记忆页改。
+      adoptMateSoul(this.#state, mate.id, draft.soul);
       return mate;
     });
   }

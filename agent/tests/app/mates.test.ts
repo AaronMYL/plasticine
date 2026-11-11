@@ -46,7 +46,7 @@ test('队友接口要求登录，创建重发不重复，改动确认内容拒�
   assert.ok(Value.Check(MateListResponseSchema, list.body));
   assert.equal(list.body.mates[0]?.lineId, mate.lineId);
   const changed = await call(app, 'PATCH', `/v2/mates/${mate.id}`, { cookie,
-    body: { requestId: 'mate-edit-fixture', version: mate.version, soul: '先列提纲。', disabled: true } });
+    body: { requestId: 'mate-edit-fixture', version: mate.version, role: '整理公开资料并列提纲', disabled: true } });
   assert.equal(changed.status, 200);
   assert.ok(Value.Check(MateViewSchema, changed.body));
   assert.notEqual(changed.body.disabledAt, null);

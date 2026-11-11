@@ -20,6 +20,7 @@ import {
   type MemoryLineBasis,
   type MemoryLineRetireReason,
   type MemoryLineSection,
+  type MemoryScopeKind,
   type Project,
 } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
@@ -139,13 +140,22 @@ export interface NewLine {
   anchors: MemoryAnchor[];
   inferenceId?: string;
   migrated?: boolean;
+  scopeKind?: MemoryScopeKind;
+  scopeRef?: string | null;
+}
+
+/** 一行的适用范围，改写、合并、恢复时照抄（11-11）。 */
+export function scopeOf(line: Pick<MemoryLine, 'scopeKind' | 'scopeRef'>):
+  { scopeKind: MemoryScopeKind; scopeRef: string | null } {
+  return { scopeKind: line.scopeKind, scopeRef: line.scopeRef };
 }
 
 export function addLine(state: DocState, line: NewLine, writer: Writer): MemoryLine {
   return state.transaction(() => {
     const written = state.memoryDocs.lines.add({ docId: line.docId, section: line.section ?? 'note', text: line.text,
       basis: line.basis, anchors: line.anchors, inferenceId: line.inferenceId ?? null, writtenBy: writer.actor,
-      writtenRef: writer.ref }, { migratedDefault: line.migrated ?? false });
+      writtenRef: writer.ref, scopeKind: line.scopeKind ?? 'all', scopeRef: line.scopeRef ?? null },
+    { migratedDefault: line.migrated ?? false });
     docEvent(state, line.docId, written.id, 'line_added', writer, { section: written.section, basis: written.basis });
     return written;
   });
@@ -162,7 +172,7 @@ export function reviseLine(state: DocState, old: MemoryLine, text: string, ancho
     const written = state.memoryDocs.lines.add({ docId: old.docId, section: old.section, text,
       basis: writer.actor === 'user' ? 'stated' : old.basis, anchors: mergeAnchors(old.anchors, anchors),
       previous: old.text, supersedes: [old.id], inferenceId: old.inferenceId, position: old.position,
-      writtenBy: writer.actor, writtenRef: writer.ref });
+      writtenBy: writer.actor, writtenRef: writer.ref, ...scopeOf(old) });
     const kind = reason === 'edited' ? 'line_edited' : 'line_revised';
     docEvent(state, old.docId, written.id, kind, writer, { replaced: old.id });
     return written;
@@ -197,7 +207,10 @@ export function mergeLines(state: DocState, lines: readonly MemoryLine[], text: 
     const written = state.memoryDocs.lines.add({ docId: first.docId, section: first.section, text, basis,
       anchors: mergeAnchors([], lines.flatMap((line) => line.anchors)), previous: lines.map((line) => line.text)
         .join(' / '), supersedes: lines.map((line) => line.id), inferenceId, position: first.position,
-      writtenBy: writer.actor, writtenRef: writer.ref });
+      writtenBy: writer.actor, writtenRef: writer.ref,
+      // 范围都一样才照抄；不一样的合成一行时取最宽的「全部」。
+      ...(lines.every((line) => line.scopeKind === first.scopeKind && line.scopeRef === first.scopeRef)
+        ? scopeOf(first) : { scopeKind: 'all' as const, scopeRef: null }) });
     docEvent(state, first.docId, written.id, 'lines_merged', writer, { merged: lines.map((line) => line.id) });
     return written;
   });

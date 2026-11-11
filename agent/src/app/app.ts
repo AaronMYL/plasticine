@@ -4,7 +4,7 @@
 // close the connections. Closing the library is the caller's last step.
 
 import { createServer, type Server } from 'node:http';
-import { BookInsightService, ensureDefaultProjects, ensureMemoryDocs, NoteAssistant, PageTranslator,
+import { adoptMateSouls, BookInsightService, ensureDefaultProjects, ensureMemoryDocs, NoteAssistant, PageTranslator,
   type GlossaryTerm, type MemoryCurator, type PaymentReader } from '../brain/index.ts';
 import type { AskDesk, Presenter, PushService, ScanScheduler } from '../attention/index.ts';
 import type { Daily } from '../daily/index.ts';
@@ -231,6 +231,8 @@ export function createApp(options: AppOptions): App {
       ensureDefaultProjects(options.state);
       // 记忆文档：「关于你」和每个项目的文档补齐；上次没做完的整理改回排队，扫描时接着做。
       ensureMemoryDocs(options.state);
+      // 11-11：队友原来的自由文字 Soul 拆成只对它的规则（拆过的不再拆）。
+      adoptMateSouls(options.state);
       options.memoryCurator.recover();
       // 第 113 条：加入了网络就开始收发；分身接着答重启前没答完的问题。
       options.network.start();

@@ -88,7 +88,7 @@ export function linePrompt(state: PromptState, line: LineRow, publicUrl?: string
   return [
     identitySection(publicUrl),
     ACT_OR_ASK_PROMPT,
-    rulesDocSection(state),
+    rulesDocSection(state, line.mateId ?? null),
     mateSection(state, line),
     memoryDocsSection(state),
     todaySection(state),
@@ -109,8 +109,8 @@ function mateSection(state: PromptState, line: LineRow): string {
   if (group !== undefined) parts.push(`当前群组：${group.name}。未点名时按职责判断由哪位队友回答，`
     + '用 mate_handoff 指派；交接保留目标和来源。');
   if (mate !== undefined) {
-    parts.push(`当前身份：${mate.name}。职责：${mate.role}`, '## 队友的 Soul', mate.soul,
-      '以上队友专属规则补充主线 Soul；有冲突时，以队友专属规则为准。');
+    // 队友专属的规则在「规则」那一段里（11-11：原来的自由文字 Soul 拆成了只对这位队友的规则）。
+    parts.push(`当前身份：${mate.name}。职责：${mate.role}`);
     if (line.id !== mate.lineId && state.lineMessages !== undefined) {
       const recent = state.lineMessages.page(mate.lineId, null, 8).rows;
       if (recent.length > 0) parts.push('## 这位队友最近的独立对话（保留原角色）',

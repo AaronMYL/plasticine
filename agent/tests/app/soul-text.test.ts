@@ -13,7 +13,7 @@ test('旁路模型每次请求重读主线 Soul，专用输出格式保留；封
     const text = withMainSoul(model.models, state);
     const request = { purpose: 'web_extract' as const, system: '只输出 JSON。', messages: [] };
     await text.ask(request, new AbortController().signal);
-    assert.match(model.requests[0]!.system, /## 主线的 Soul/);
+    assert.match(model.requests[0]!.system, /## 规则/);
     assert.ok(model.requests[0]!.system.endsWith('只输出 JSON。'));
     const first = soulView(state).lines[0]!;
     changeSoul(state, { action: 'edit', requestId: 'soul-text-change', id: first.id, version: first.version,
