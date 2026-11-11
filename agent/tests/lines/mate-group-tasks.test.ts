@@ -35,6 +35,7 @@ test('群任务创建后等待领取，重放不重复，普通暂停后台线�
     assert.equal(tasks.list(group.id).length, 1);
     assert.throws(() => h.kernel.retry(task.id), /领取/);
     assert.throws(() => h.kernel.send(task.id, { text: '绕过领取' }), /领取/);
+    assert.throws(() => h.kernel.record(task.id, { text: '@资料研究员 绕过领取' }), /领取/);
     const pending = h.kernel.read(task.id, 10).queue[0]!;
     assert.throws(() => h.kernel.sendNow(task.id, pending.id), /领取/);
     assert.equal(h.kernel.read(task.id, 10).queue.length, 1);

@@ -32,6 +32,13 @@ test('群任务接口沿用线 schema，未登录不可读写，发布重放和�
   const task = first.body.line;
   assert.equal(task.status, 'paused');
   assert.equal(task.mateId, null);
+  const before = app.state.lineMessages.after(task.id, 0).length;
+  const bypass = await call(app, 'POST', `/v2/lines/${task.id}/messages`, { cookie,
+    body: { requestId: 'group-task-no-at-bypass', text: `@${a.name} 直接开始执行` } });
+  assert.equal(bypass.status, 409, JSON.stringify(bypass.body));
+  assert.equal(app.state.lineMessages.after(task.id, 0).length, before);
+  assert.equal(app.app.deps.lines.read(task.id, 10).queue.length, 1);
+  assert.equal(app.state.lines.list({ kind: 'background', includeArchived: true, limit: 20 }).length, 1);
   assert.equal((await call(app, 'POST', path, { cookie, body })).status, 201);
   assert.equal((await call(app, 'POST', path, { cookie, body: { ...body, text: '换一个目标' } })).status, 409);
   const listed = await call(app, 'GET', path, { cookie });

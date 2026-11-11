@@ -248,6 +248,7 @@ export class LineKernel implements LineControl, SideControl {
   /** 点名时保留用户原话，不另启动总管回答；队友结果随后回到这条线。 */
   record(lineId: string, input: SendInput, after: After = NOW): SendResult {
     const line = this.#unarchived(lineId);
+    requireClaimedGroupTask(this.#state, line);
     this.#requireMate(line);
     const notes = this.#notes(input.attachments ?? [], true);
     const message = userMessage(input.text, notes, this.#now().getTime());
