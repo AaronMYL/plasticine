@@ -12,6 +12,7 @@ import {
 } from '../../shared/api/maintenance.ts';
 import type { RuleMode } from '../../shared/state.ts';
 import { CloudToolError, type RefetchReport } from '../cloud-tools/index.ts';
+import { rewriteRules } from '../brain/rules-rewrite.ts';
 import type { StateService } from '../state/index.ts';
 
 export interface MaintenanceDeps {
@@ -95,11 +96,18 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
   if (request.op === 'mail.refetch') {
     throw new MaintenanceFailure('invalid_input', '「mail.refetch」要连 Gmail，走 performMaintenance。');
   }
+  if (request.op === 'rules.rewrite') {
+    if (request.plan === undefined) {
+      throw new MaintenanceFailure('invalid_input', '「rules.rewrite」要给整理方案（--plan 一个 JSON 文件）。');
+    }
+    return rewriteRules(deps.state, request.plan, `maintenance:${request.operationId}`, quote);
+  }
   throw new MaintenanceFailure('invalid_input', `不认识的写操作「${request.op}」。`);
 }
 
 function record(state: StateService, request: MaintenanceRequest, quote: string, result: unknown): void {
-  const args = { code: request.code ?? null, mode: request.mode ?? null, limit: request.limit ?? null };
+  const args = { code: request.code ?? null, mode: request.mode ?? null, limit: request.limit ?? null,
+    plan: request.plan ?? null };
   state.maintenanceOperations.record({ id: request.operationId, op: request.op, args, because: quote, result });
 }
 

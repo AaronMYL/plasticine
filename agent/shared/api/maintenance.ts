@@ -4,6 +4,7 @@
 
 import { Type, type Static } from 'typebox';
 import { RULE_MODES } from '../state.ts';
+import { SOUL_SECTIONS } from './soul.ts';
 
 /**
  * 只读：status、rules.list；其余是写操作，要原话。2026-11-05 Harness 重做：任务没了，tasks.*（暂停 / 取消 / 归档）
@@ -14,10 +15,21 @@ export const MAINTENANCE_OPS = [
   'rules.list',
   'rules.mode',
   'mail.refetch',
+  // 11-11：Aaron 让 Claude 整理「规则」——一行拆成几行、改成平常话、过时的挪进归档；每行留原来的来源。
+  'rules.rewrite',
 ] as const;
 export type MaintenanceOp = (typeof MAINTENANCE_OPS)[number];
 
-export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['rules.mode', 'mail.refetch'];
+export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['rules.mode', 'mail.refetch', 'rules.rewrite'];
+
+/** rules.rewrite 的一项：这一行换成 into 里的几行（空 = 不再成立，挪进归档）。 */
+export const RulesRewriteItemSchema = Type.Object({
+  lineId: Type.String({ minLength: 1, maxLength: 80 }),
+  version: Type.Integer({ minimum: 1 }),
+  into: Type.Array(Type.Object({ text: Type.String({ minLength: 1, maxLength: 500 }),
+    section: Type.Enum(SOUL_SECTIONS) }, { additionalProperties: false }), { maxItems: 20 }),
+}, { additionalProperties: false });
+export type RulesRewriteItem = Static<typeof RulesRewriteItemSchema>;
 
 // mail.refetch（用户 2026-11-04 定：旧邮件从 Gmail 重新抓回补齐格式）：一次默认补 30 封、最多 200 封——一个运维 Issue
 // 的回执看得过来，也不在一条维护命令里占着服务太久；还剩的看结果里的 remaining，换个操作号再跑。
@@ -35,6 +47,8 @@ export const MaintenanceRequestSchema = Type.Object(
     mode: Type.Optional(Type.Enum(RULE_MODES)),
     /** mail.refetch 这次补几封。 */
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: MAIL_REFETCH_MAX_LIMIT })),
+    /** rules.rewrite 的整理方案。 */
+    plan: Type.Optional(Type.Array(RulesRewriteItemSchema, { minItems: 1, maxItems: 100 })),
   },
   { additionalProperties: false },
 );

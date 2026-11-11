@@ -7,6 +7,8 @@ import { MaintenanceFailure, performMaintenance, runMaintenance } from '../../sr
 import { CloudToolError, type RefetchReport } from '../../src/cloud-tools/index.ts';
 import { ensureIntake } from '../../src/intake/index.ts';
 import { openState, type StateService } from '../../src/state/index.ts';
+import { RULES_DOC_ID } from '../../shared/state.ts';
+import { addLine, ensureMemoryDocs } from '../../src/brain/memory-doc-writes.ts';
 
 let h: { state: StateService };
 
@@ -118,7 +120,7 @@ test('mail.refetch：要原话；结果记进操作记录，同一个操作号�
   assert.deepEqual(limits, [5, 30]);
   const recorded = h.state.maintenanceOperations.get('op-mail-1');
   assert.equal(recorded?.because, REFETCH_QUOTE);
-  assert.deepEqual(recorded?.args, { code: null, mode: null, limit: 5 });
+  assert.deepEqual(recorded?.args, { code: null, mode: null, limit: 5, plan: null });
 });
 
 test('mail.refetch：收信没接上或没装就说不能做（unavailable），不记操作；同步入口不收它', async () => {
@@ -135,4 +137,25 @@ test('mail.refetch：收信没接上或没装就说不能做（unavailable），
     MaintenanceFailure);
   const status = await performMaintenance(deps(), { operationId: 'op-status-2', op: 'status' });
   assert.equal(status.op, 'status');
+});
+
+test('整理规则：一行拆成几行，照抄来源和范围、存原文；过时的挪进归档；同一个操作号重放不再动', () => {
+  ensureMemoryDocs(h.state);
+  const old = addLine(h.state, { docId: RULES_DOC_ID, text: '- **先核实再回答。**\n- **邮件**：每天一封', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'msg-1' }] }, { actor: 'brain', ref: 'run' });
+  const stale = addLine(h.state, { docId: RULES_DOC_ID, text: '对话内容会发给模型公司', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'msg-2' }] }, { actor: 'brain', ref: 'run' });
+  const request = { operationId: 'op-rules-1', op: 'rules.rewrite' as const, because: '规则你帮我整理',
+    plan: [{ lineId: old.id, version: old.version, into: [{ text: '先核实再回答。', section: 'doing' as const }] },
+      { lineId: stale.id, version: stale.version, into: [] }] };
+  const first = runMaintenance(deps(), request);
+  assert.deepEqual(first.result, { rewritten: 1, retired: 1, added: 1 });
+  const live = h.state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.supersedes.includes(old.id));
+  assert.equal(live.length, 1);
+  assert.equal(live[0]?.previous, old.text);
+  assert.deepEqual(live[0]?.anchors, old.anchors);
+  assert.equal(live[0]?.basis, 'stated');
+  assert.notEqual(h.state.memoryDocs.lines.require(stale.id).archivedAt, null, '进归档，不是删除');
+  assert.equal(runMaintenance(deps(), request).replayed, true);
+  assert.equal(h.state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.supersedes.includes(old.id)).length, 1);
 });

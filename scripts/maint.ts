@@ -11,13 +11,15 @@
 //   mail.refetch [--limit 30] --because "用户原话" [--op-id 号]
 //                                            还没补格式的旧邮件从 Gmail「所有邮件」只读地找回整封、原地补（默认 30 封，
 //                                            最多 200）；结果报找到 / 没找到 / 出错和还剩几封，还剩的换个操作号再跑
+//   rules.rewrite --plan <方案.json> --because "用户原话" [--op-id 号]
+//                                            整理「规则」：一行换成几行或挪进归档（brain/rules-rewrite.ts）
 //   db.read "SELECT …"                       只读打开数据库查一句（不经服务，库以只读方式打开）
 //
 // 2026-11-05 Harness 重做：任务没了，tasks.* 删掉；judgments.*、rulesdoc.* 的一次性迁移早已做完，一起删了。
 // 写操作必须带 --because（用户的原话），经运行中的服务做（本机 socket），事件里记成 Claude 依原话做的；
 // 同一个 --op-id 重跑不会再动一次。
 
-import { realpathSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { request } from 'node:http';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -60,6 +62,18 @@ function newOperationId(now: Date): string {
   return `maint-${now.toISOString().replace(/[^0-9]/g, '').slice(0, 14)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** --plan：rules.rewrite 的整理方案，一个 JSON 文件（数组）。 */
+function readPlan(path: string): NonNullable<MaintenanceRequest['plan']> {
+  let value: unknown;
+  try {
+    value = JSON.parse(readFileSync(path, 'utf8'));
+  } catch (error) {
+    throw new MaintCliError(`--plan 读不成：${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!Array.isArray(value)) throw new MaintCliError('--plan 要是一个 JSON 数组。');
+  return value as NonNullable<MaintenanceRequest['plan']>;
+}
+
 /** 命令行参数 → 一条维护命令（或一句只读查询）。 */
 export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv = process.env,
   now: Date = new Date()): ParsedCommand {
@@ -73,6 +87,7 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
       'op-id': { type: 'string' },
       state: { type: 'string' },
       limit: { type: 'string' },
+      plan: { type: 'string' },
     },
   });
   const stateDir = values.state ?? env['PLASTICINE_STATE'] ?? DEFAULT_STATE;
@@ -101,6 +116,7 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
     ...(values.code === undefined ? {} : { code: values.code }),
     ...(values.mode === undefined ? {} : { mode: values.mode as RuleMode }),
     ...(limit === undefined ? {} : { limit }),
+    ...(values.plan === undefined ? {} : { plan: readPlan(values.plan) }),
   };
   return { kind: 'socket', stateDir, request };
 }
