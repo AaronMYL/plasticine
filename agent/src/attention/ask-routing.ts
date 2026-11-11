@@ -7,6 +7,9 @@ import type { Changes } from './changes.ts';
 
 export function routeAsks(routes: Partial<Record<AskPurpose, AskResolver>>, fallback: AskResolver): AskResolver {
   return {
+    deferred(changes, ask) {
+      (routes[ask.purpose] ?? fallback).deferred?.(changes, ask);
+    },
     validate(ask, at) {
       return (routes[ask.purpose] ?? fallback).validate?.(ask, at);
     },

@@ -9,7 +9,7 @@ import type { AskResolver } from '../attention/index.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import type { LinePatch, LineRow, QueuedRow } from '../state/index.ts';
 import { lineRef } from '../state/index.ts';
-import { askUserTool, questionResolver } from './ask-tools.ts';
+import { answerSentence, askUserTool, questionResolver } from './ask-tools.ts';
 import { HardLineGate } from './hard-line.ts';
 import { imagesOf } from './images.ts';
 import { DEFAULT_TIME_ZONE, LineError, MAX_BACKGROUND_LINES, NOW, type After, type KernelOptions, type KernelState,
@@ -721,6 +721,14 @@ export class LineKernel implements LineControl, SideControl {
     }
     const lineId = ask.context?.['lineId'];
     const line = typeof lineId === 'string' ? this.#state.lines.get(lineId) : undefined;
+    const callId = ask.context?.['toolCallId'];
+    if (line !== undefined && line.archivedAt === null && ask.purpose === 'line_question'
+      && ask.status === 'answered' && ask.answer !== null && ask.deferredAt !== null
+      && typeof callId === 'string' && this.#state.lineMessages.toolResult(line.id, callId) !== undefined) {
+      this.send(line.id, { text: `关于「${ask.question}」：${answerSentence(ask)}`,
+        origin: { kind: 'user', ref: `ask:${ask.id}`, userText: ask.answer.text ?? ask.answer.label } });
+      return;
+    }
     if (line?.status === 'waiting' && this.#runners.get(line.id)?.busy() !== true) {
       this.#launch(line.id, 'resume');
     }

@@ -157,3 +157,67 @@ test('问他（ask_user）：出一张卡、线进 waiting，他选的就是工�
   assert.equal(results[0]?.ok, false, '依据「有几种可能」只给一个选项：卡没出');
   assert.equal(allAsks(h).length, 1);
 });
+
+test('暂缓普通问题会释放主线，排队的新消息继续处理，但不会伪造答案', async () => {
+  const h = await harness([]);
+  h.respond([
+    fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: '现在继续处理吗？',
+      basis: 'inferred', options: [{ id: 'yes', label: '继续处理', recommended: true },
+        { id: 'no', label: '暂不处理' }] }, { id: 'deferred-question' })], { stopReason: 'toolUse' }),
+    fauxAssistantMessage('旧问题暂缓。'),
+    fauxAssistantMessage('收到新消息。'),
+  ]);
+  h.kernel.send('main', { text: '准备处理' });
+  await until(() => h.kernel.view('main').status === 'waiting', '等待普通问题');
+  const ask = openAsk(h);
+  h.kernel.send('main', { text: '任务已经做完，不用再做。' });
+  h.desk.defer(ask.id);
+  await until(() => h.kernel.view('main').status === 'idle', '暂缓后主线恢复空闲');
+  assert.equal(h.kernel.read('main', 50).queue.length, 0);
+  assert.ok(h.kernel.read('main', 50).messages.some(m => m.role === 'user' && m.text.includes('任务已经做完')));
+  const retained = h.handle.state.asks.get(ask.id);
+  assert.equal(retained?.status, 'open');
+  assert.notEqual(retained?.deferredAt, null);
+  assert.equal(retained?.answer, null);
+  assert.equal(retained?.answeredByDeviceId, null);
+});
+
+test('暂缓硬线批准不会放行外发，也不会伪造拒绝或同意', async () => {
+  const sent: string[] = [];
+  const h = await harness(sent);
+  h.respond([
+    fauxAssistantMessage([fauxToolCall('send_mail', MAIL, { id: 'defer-approval' })], { stopReason: 'toolUse' }),
+    fauxAssistantMessage('已停止。'),
+  ]);
+  h.kernel.send('main', { text: '准备发送' });
+  await until(() => h.kernel.view('main').status === 'waiting', '等待批准');
+  const ask = openAsk(h);
+  h.desk.defer(ask.id);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.kernel.view('main').status, 'waiting');
+  assert.deepEqual(sent, []);
+  assert.equal(h.handle.state.asks.get(ask.id)?.answer, null);
+  h.desk.answer({ askId: ask.id, optionId: 'deny', answerer: { deviceId: 'd' } });
+  await h.kernel.settled();
+  assert.deepEqual(sent, []);
+});
+
+test('暂缓的问题稍后作答仍送回原线，保留实际答案来源', async () => {
+  const h = await harness([]);
+  h.respond([
+    fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: '选周五吗？', basis: 'inferred',
+      options: [{ id: 'yes', label: '周五', recommended: true }, { id: 'no', label: '暂不安排' }] },
+    { id: 'answer-later' })], { stopReason: 'toolUse' }),
+    fauxAssistantMessage('先处理别的。'), fauxAssistantMessage('收到周五的答案。'),
+  ]);
+  h.kernel.send('main', { text: '安排时间' });
+  await until(() => h.kernel.view('main').status === 'waiting', '已提问');
+  const ask = openAsk(h);
+  h.desk.defer(ask.id);
+  await until(() => h.kernel.view('main').status === 'idle', '已释放等待');
+  h.desk.answer({ askId: ask.id, optionId: 'yes', text: '下午三点', answerer: { deviceId: 'd' } });
+  await h.kernel.settled();
+  assert.equal(h.kernel.view('main').lastAnswer, '收到周五的答案。');
+  assert.ok(h.kernel.read('main', 50).messages.some(m => m.origin?.ref === `ask:${ask.id}`
+    && m.origin.userText === '下午三点'));
+});

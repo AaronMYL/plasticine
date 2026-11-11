@@ -78,9 +78,12 @@ export function questionAnswerOrigin(state: Pick<StateService, 'asks'>, lineId: 
   return { kind: 'user', ref: `ask:${ask.id}`, userText };
 }
 
-/** 等这张卡答完；叫停时撤回卡。答了回卡的最新样子，撤回了就报错（工具结果里写清没等到）。 */
+/** 等这张卡答完；暂缓时结束本次等待但保留卡，叫停时撤回。没有答案时不冒充用户作答。 */
 export async function awaitAnswer(host: AskToolHost, lineId: string, ask: Ask,
   signal: AbortSignal | undefined): Promise<Ask> {
+  if (ask.deferredAt !== null && ask.status === 'open') {
+    throw new Error('用户暂缓了这个问题，尚未作答；不要执行依赖该答案的操作，可以继续处理其他消息。');
+  }
   if (ask.status === 'open') {
     host.waiting(lineId, true);
     try {
@@ -95,6 +98,9 @@ export async function awaitAnswer(host: AskToolHost, lineId: string, ask: Ask,
     }
   }
   const current = host.state.asks.get(ask.id) ?? ask;
+  if (current.deferredAt !== null && current.status === 'open') {
+    throw new Error('用户暂缓了这个问题，尚未作答；不要执行依赖该答案的操作，可以继续处理其他消息。');
+  }
   if (current.status !== 'answered') {
     throw new Error('这张卡撤回了，没有等到他的回答。');
   }
@@ -147,6 +153,9 @@ export function askUserTool(host: AskToolHost): KernelTool {
 /** 问他的卡答了：提交之后放开等它的那一处（没人等就由 kernel 接着跑这条线）。 */
 export function questionResolver(answered: (ask: Ask) => void): AskResolver {
   return {
+    deferred(changes, ask) {
+      changes.afterCommit(() => answered(ask));
+    },
     resolve(changes, ask) {
       changes.afterCommit(() => answered(ask));
     },

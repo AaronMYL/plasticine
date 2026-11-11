@@ -387,6 +387,13 @@ function createLineMessageTable(context: StoreContext) {
       const row = db.get('SELECT * FROM line_messages WHERE line_id = $lineId AND seq = $seq', { lineId, seq });
       return row === undefined ? undefined : messageOf(row);
     },
+    /** 已落库的工具结果；用于区分仍在等待的提问与已经暂缓返回的提问。 */
+    toolResult(lineId: string, toolCallId: string): LineMessageRow | undefined {
+      const row = db.get(`SELECT * FROM line_messages WHERE line_id = $lineId AND role = 'toolResult'
+        AND json_extract(message, '$.toolCallId') = $toolCallId ORDER BY seq DESC LIMIT 1`,
+      { lineId, toolCallId });
+      return row === undefined ? undefined : messageOf(row);
+    },
     first(lineId: string, role: string): LineMessageRow | undefined {
       const row = db.get(`SELECT * FROM line_messages WHERE line_id = $lineId AND role = $role
         ORDER BY seq LIMIT 1`, { lineId, role });

@@ -44,6 +44,8 @@ export interface Answerer {
 
 /** What answering a card sets off, run inside the same transaction as the answer. */
 export interface AskResolver {
+  /** 暂缓只释放可继续对话的等待，不产生用户答案或授权。 */
+  deferred?(changes: Changes, ask: Ask): void;
   /** An obsolete condition withdraws the card before any answer is written. */
   validate?(ask: Ask, at: string): AttentionError | undefined;
   resolve(changes: Changes, ask: Ask, answerer: Answerer, at: string): void;
@@ -237,6 +239,7 @@ export class AskDesk {
       }
       const deferred = this.#state.asks.update(ask.id, ask.version, { deferredAt: this.#now().toISOString() });
       changes.ask(ask.id, 'updated');
+      this.#resolver?.deferred?.(changes, deferred);
       return deferred;
     }, after);
   }
