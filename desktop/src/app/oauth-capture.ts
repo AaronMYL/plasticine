@@ -12,8 +12,8 @@ const DONE_PAGE = `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>已完成 · Plasticine</title>
 <style>
-:root{color-scheme:light dark;--bg:#fcf9f6;--fg:#2a2622;--fg2:#6b635b}
-@media (prefers-color-scheme: dark){:root{--bg:#2b2826;--fg:#f5f1ec;--fg2:#b8b0a7}}
+:root{color-scheme:light dark;--bg:#faf8f4;--fg:#1f1d1a;--fg2:#5a534b}
+@media (prefers-color-scheme: dark){:root{--bg:#1c1b19;--fg:#f2efea;--fg2:#bdb6ac}}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
 font:14px/22px Geist,'PingFang SC',MiSans,'Microsoft YaHei',system-ui,sans-serif}
 body{display:flex;align-items:center;justify-content:center}

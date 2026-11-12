@@ -39,6 +39,8 @@ export const ShotJobSchema = Type.Object({
   /** 加在网址根后面、hash 前面的查询，如 '?web=1'。 */
   query: Type.Optional(Type.String({ pattern: '^\\?[^#]*$' })),
   theme: Type.Optional(Type.Union([Type.Literal('light'), Type.Literal('dark')])),
+  /** 主题预设（设置 · 通用 · 外观）：不给就是默认的暖纸。 */
+  palette: Type.Optional(Type.Union([Type.Literal('graphite'), Type.Literal('pine'), Type.Literal('midnight')])),
   steps: Type.Optional(Type.Array(StepSchema)),
 }, { additionalProperties: false });
 export type ShotJob = Static<typeof ShotJobSchema>;
@@ -144,6 +146,9 @@ export async function shootJob(browser: LocalBrowser, base: string, output: stri
       { name: 'prefers-reduced-motion', value: 'reduce' },
     ] });
     await until(page, `(document.getElementById('root')?.childElementCount ?? 0) > 0`, '应用挂上');
+    if (job.palette !== undefined) {
+      await page.evaluate(`document.documentElement.dataset.palette = ${JSON.stringify(job.palette)}`);
+    }
     await page.evaluate('document.fonts.ready.then(() => true)');
     await pause(SETTLE_MS);
     for (const step of job.steps ?? []) {

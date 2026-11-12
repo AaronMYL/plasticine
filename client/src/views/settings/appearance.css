@@ -1,0 +1,67 @@
+/* 设置 · 通用 · 外观：四个主题小样一排，手机上两排。选中的那个描边加粗、名字加重（不只靠颜色）。 */
+.settings-palettes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.settings-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out);
+}
+
+.settings-palette:hover {
+  background: var(--tint);
+}
+
+.settings-palette[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px var(--fg);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.settings-palette-swatch {
+  position: relative;
+  display: flex;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.settings-palette-swatch > span {
+  flex: 1;
+}
+
+.settings-palette-swatch > i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@media (max-width: 520px) {
+  .settings-palettes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-palette {
+    min-height: 44px;
+  }
+}

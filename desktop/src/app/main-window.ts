@@ -11,7 +11,7 @@ import { macTrafficLights } from './traffic-lights.ts';
 const MIN_WIDTH = 900;
 const MIN_HEIGHT = 600;
 /** 方向 I 的底色（tokens.css 的 --bg，浅色 / 深色），窗口还没画出界面时用它，不闪白。 */
-const BACKGROUND = { light: '#FCF9F6', dark: '#2B2826' };
+const BACKGROUND = { light: '#FAF8F4', dark: '#1C1B19' };
 const SYMBOL = { light: '#2A2622', dark: '#F5F1EC' };
 
 export function windowOptions(platform: NodeJS.Platform, dark: boolean, systemVersion: string)

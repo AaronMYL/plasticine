@@ -30,7 +30,7 @@ describe('PWA 的 meta 和标题', () => {
     const parsed = new DOMParser().parseFromString(html, 'text/html');
     const colors = [...parsed.querySelectorAll('meta[name="theme-color"]')]
       .map((meta) => [meta.getAttribute('media'), meta.getAttribute('content')?.toUpperCase()]);
-    expect(colors).toEqual([['(prefers-color-scheme: light)', '#FCF9F6'], ['(prefers-color-scheme: dark)', '#2B2826']]);
+    expect(colors).toEqual([['(prefers-color-scheme: light)', '#FAF8F4'], ['(prefers-color-scheme: dark)', '#1C1B19']]);
     expect(parsed.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.getAttribute('content'))
       .toBe('default');
   });
@@ -39,14 +39,14 @@ describe('PWA 的 meta 和标题', () => {
     installMeta();
     saveAppearance('dark');
     expect(document.documentElement.dataset['theme']).toBe('dark');
-    expect(themeColors().map((meta) => meta.content?.toUpperCase())).toEqual(['#2B2826', '#2B2826']);
+    expect(themeColors().map((meta) => meta.content?.toUpperCase())).toEqual(['#1C1B19', '#1C1B19']);
     saveAppearance('light');
-    expect(themeColors().map((meta) => meta.content?.toUpperCase())).toEqual(['#FCF9F6', '#FCF9F6']);
+    expect(themeColors().map((meta) => meta.content?.toUpperCase())).toEqual(['#FAF8F4', '#FAF8F4']);
     saveAppearance('system');
     expect(document.documentElement.dataset['theme']).toBeUndefined();
     expect(themeColors()).toEqual([
-      { media: '(prefers-color-scheme: light)', content: '#FCF9F6' },
-      { media: '(prefers-color-scheme: dark)', content: '#2B2826' },
+      { media: '(prefers-color-scheme: light)', content: '#FAF8F4' },
+      { media: '(prefers-color-scheme: dark)', content: '#1C1B19' },
     ]);
   });
 

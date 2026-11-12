@@ -24,25 +24,25 @@
 :root {
   color-scheme: light;
   /*
-   * 浅色（2026-11-05 他定「照 0.2 老版暖米色」）：页面暖米 #FCF9F6、字是暖墨 #2A2622；细线、浅底都用暖墨 / 暖棕掺透明，
-   * 不再是冷灰。陶土 #A1674E 是老版的强调色（logo、停止按钮那一块）。
+   * 浅色「暖纸」（2026-11-05 他定「照 0.2 老版暖米色」；11-12 主题预设把字压深，小字也够 4.5:1）：页面暖米 #FAF8F4、
+   * 字是暖墨 #1F1D1A；细线、浅底都用暖墨掺透明，不是冷灰。陶土 #8F5238 是强调色（logo、停止按钮那一块）。
    */
-  --bg: #fcf9f6;
-  --fg: #2a2622;
-  --fg2: #6b635b;
-  --fg3: #a1988f;
-  --line: rgba(42, 38, 34, 0.07);
-  --line2: rgba(42, 38, 34, 0.16);
-  --tint: rgba(110, 74, 46, 0.045);
-  --tint2: rgba(110, 74, 46, 0.075);
-  --accent: #a1674e;
-  --run: #5a6b85;
-  --ok: #587559;
-  --err: #a9483a;
+  --bg: #faf8f4;
+  --fg: #1f1d1a;
+  --fg2: #5a534b;
+  --fg3: #6b645a;
+  --line: rgba(31, 29, 26, 0.08);
+  --line2: rgba(31, 29, 26, 0.18);
+  --tint: rgba(31, 29, 26, 0.045);
+  --tint2: rgba(31, 29, 26, 0.08);
+  --accent: #8f5238;
+  --run: #3f6491;
+  --ok: #3f7045;
+  --err: #a8402f;
   --scrim: rgba(42, 32, 24, 0.2);
   --lift: 0 0 0 1px var(--line2), 0 8px 24px rgba(60, 40, 24, 0.1);
   /* 你的消息气泡（老版 #F0EAE3）：比悬停底实、比选中底暖，单独一个令牌，不再借 --tint。 */
-  --bubble: #f0eae3;
+  --bubble: #eee8df;
 
   /*
    * 图书的高亮四色（本人 2026-11-01 定：多色高亮，赭黄 / 灰绿 / 灰蓝 / 灰粉，降饱和，只做文字底）。
@@ -86,12 +86,12 @@
    * 靠底色明暗分开，不靠描边堆。页面仍是 --bg；侧栏、标签栏比它暗一档、两档，对话框比它亮一档（再加 --lift）。
    * 次要字 --fg2 在侧栏上 ≥ 4.5:1；标签栏上未选标签的字用 --fg（--fg2 只给图标），见 tabs.css。
    */
-  --layer-side: #f3f0eb;
-  --layer-bar: #ebe6e0;
+  --layer-side: #f1eee8;
+  --layer-bar: #e3e0da;
   --layer-page: var(--bg);
   /* 页面正文列最宽多少（标题条同宽，在主区里居中；见 shell/base.css 的 .page）。 */
   --page-max: 880px;
-  --layer-float: #fefdfa;
+  --layer-float: #ffffff;
   /* 连接状态灯：绿 = 已连接，黄 = 连接中，红 = 未连接；只染 8px 的点（图形对比度 ≥ 3:1），旁边总有悬停文字和读屏文字。 */
   --signal-on: #3f8f55;
   --signal-wait: #a8770f;
@@ -117,21 +117,21 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #2b2826;
-    --fg: #f5f1ec;
-    --fg2: #b8b0a7;
-    --fg3: #8a827a;
-    --line: rgba(245, 236, 226, 0.07);
-    --line2: rgba(245, 236, 226, 0.16);
-    --tint: rgba(245, 236, 226, 0.045);
-    --tint2: rgba(245, 236, 226, 0.085);
-    --accent: #c98a6e;
-    --run: #9aaac4;
-    --ok: #95b096;
-    --err: #e08a7a;
+    --bg: #1c1b19;
+    --fg: #f2efea;
+    --fg2: #bdb6ac;
+    --fg3: #a39c92;
+    --line: rgba(242, 239, 234, 0.08);
+    --line2: rgba(242, 239, 234, 0.18);
+    --tint: rgba(242, 239, 234, 0.045);
+    --tint2: rgba(242, 239, 234, 0.08);
+    --accent: #de9a7a;
+    --run: #8fb4e3;
+    --ok: #8cc393;
+    --err: #ee9a8b;
     --scrim: rgba(12, 9, 7, 0.45);
     --lift: 0 0 0 1px var(--line2), 0 12px 32px rgba(12, 9, 7, 0.4);
-    --bubble: #3a3531;
+    --bubble: #33302c;
     --hl-ochre: rgba(214, 180, 98, 0.3);
     --hl-sage: rgba(149, 176, 150, 0.24);
     --hl-slate: rgba(154, 170, 196, 0.24);
@@ -149,9 +149,9 @@
     --hue-indigo: #a5afe6;
     --hue-sage: #95b096;
     --hue-wash: 20%;
-    --layer-side: #24211f;
-    --layer-bar: #1d1b19;
-    --layer-float: #37332f;
+    --layer-side: #151413;
+    --layer-bar: #10100f;
+    --layer-float: #262422;
     --signal-on: #6cc184;
     --signal-wait: #e5b852;
     --signal-off: #e5735b;
@@ -160,21 +160,21 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #2b2826;
-  --fg: #f5f1ec;
-  --fg2: #b8b0a7;
-  --fg3: #8a827a;
-  --line: rgba(245, 236, 226, 0.07);
-  --line2: rgba(245, 236, 226, 0.16);
-  --tint: rgba(245, 236, 226, 0.045);
-  --tint2: rgba(245, 236, 226, 0.085);
-  --accent: #c98a6e;
-  --run: #9aaac4;
-  --ok: #95b096;
-  --err: #e08a7a;
+  --bg: #1c1b19;
+  --fg: #f2efea;
+  --fg2: #bdb6ac;
+  --fg3: #a39c92;
+  --line: rgba(242, 239, 234, 0.08);
+  --line2: rgba(242, 239, 234, 0.18);
+  --tint: rgba(242, 239, 234, 0.045);
+  --tint2: rgba(242, 239, 234, 0.08);
+  --accent: #de9a7a;
+  --run: #8fb4e3;
+  --ok: #8cc393;
+  --err: #ee9a8b;
   --scrim: rgba(12, 9, 7, 0.45);
   --lift: 0 0 0 1px var(--line2), 0 12px 32px rgba(12, 9, 7, 0.4);
-  --bubble: #3a3531;
+  --bubble: #33302c;
   --hl-ochre: rgba(214, 180, 98, 0.3);
   --hl-sage: rgba(149, 176, 150, 0.24);
   --hl-slate: rgba(154, 170, 196, 0.24);
@@ -190,12 +190,197 @@
   --hue-indigo: #a5afe6;
   --hue-sage: #95b096;
   --hue-wash: 20%;
-  --layer-side: #24211f;
-  --layer-bar: #1d1b19;
-  --layer-float: #37332f;
+  --layer-side: #151413;
+  --layer-bar: #10100f;
+  --layer-float: #262422;
   --signal-on: #6cc184;
   --signal-wait: #e5b852;
   --signal-off: #e5735b;
+}
+
+/*
+ * 主题预设（11-12 全量优化，Aaron 定「四套都上，默认暖纸」）：暖纸是上面的默认值，另外三套写在 <html data-palette>，
+ * 每套有浅有深（跟随系统 / 固定浅 / 固定深照旧看 data-theme）。只换底、字、线、强调和状态这十六个令牌，
+ * 类别色、高亮色、动效、字体四套共用。正文和次要字在各自的底上对比度都 ≥ 4.5:1。
+ */
+/* 石墨 */
+:root[data-palette='graphite'] {
+  --bg: #ffffff;
+  --fg: #1d1d1f;
+  --fg2: #515154;
+  --fg3: #67676c;
+  --line: rgba(29, 29, 31, 0.08);
+  --line2: rgba(29, 29, 31, 0.18);
+  --tint: rgba(29, 29, 31, 0.045);
+  --tint2: rgba(29, 29, 31, 0.08);
+  --accent: #0a63c9;
+  --run: #0a63c9;
+  --ok: #2b7a3d;
+  --err: #c0392b;
+  --bubble: #ededf1;
+  --layer-side: #f5f5f7;
+  --layer-bar: #e6e6e8;
+  --layer-float: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='graphite']:not([data-theme='light']) {
+    --bg: #1c1c1e;
+    --fg: #f5f5f7;
+    --fg2: #b9b9c0;
+    --fg3: #a2a2a9;
+    --line: rgba(245, 245, 247, 0.08);
+    --line2: rgba(245, 245, 247, 0.18);
+    --tint: rgba(245, 245, 247, 0.045);
+    --tint2: rgba(245, 245, 247, 0.08);
+    --accent: #6cb1ff;
+    --run: #6cb1ff;
+    --ok: #7fd08f;
+    --err: #ff9a8e;
+    --bubble: #343438;
+    --layer-side: #141416;
+    --layer-bar: #101011;
+    --layer-float: #2a2a2d;
+  }
+}
+
+:root[data-palette='graphite'][data-theme='dark'] {
+  --bg: #1c1c1e;
+  --fg: #f5f5f7;
+  --fg2: #b9b9c0;
+  --fg3: #a2a2a9;
+  --line: rgba(245, 245, 247, 0.08);
+  --line2: rgba(245, 245, 247, 0.18);
+  --tint: rgba(245, 245, 247, 0.045);
+  --tint2: rgba(245, 245, 247, 0.08);
+  --accent: #6cb1ff;
+  --run: #6cb1ff;
+  --ok: #7fd08f;
+  --err: #ff9a8e;
+  --bubble: #343438;
+  --layer-side: #141416;
+  --layer-bar: #101011;
+  --layer-float: #2a2a2d;
+}
+
+/* 松林 */
+:root[data-palette='pine'] {
+  --bg: #f8f6ee;
+  --fg: #25302a;
+  --fg2: #515d56;
+  --fg3: #5a645d;
+  --line: rgba(37, 48, 42, 0.08);
+  --line2: rgba(37, 48, 42, 0.18);
+  --tint: rgba(37, 48, 42, 0.045);
+  --tint2: rgba(37, 48, 42, 0.08);
+  --accent: #3f6f52;
+  --run: #3a6a8c;
+  --ok: #3f6f52;
+  --err: #a8402f;
+  --bubble: #e6e3d3;
+  --layer-side: #eeebdf;
+  --layer-bar: #e0ddd2;
+  --layer-float: #fffef8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='pine']:not([data-theme='light']) {
+    --bg: #1e2421;
+    --fg: #ecefe6;
+    --fg2: #b4bcb1;
+    --fg3: #a0a99e;
+    --line: rgba(236, 239, 230, 0.08);
+    --line2: rgba(236, 239, 230, 0.18);
+    --tint: rgba(236, 239, 230, 0.045);
+    --tint2: rgba(236, 239, 230, 0.08);
+    --accent: #9ccfaa;
+    --run: #93bedc;
+    --ok: #9ccfaa;
+    --err: #ee9a8b;
+    --bubble: #323b35;
+    --layer-side: #171c19;
+    --layer-bar: #121614;
+    --layer-float: #28302b;
+  }
+}
+
+:root[data-palette='pine'][data-theme='dark'] {
+  --bg: #1e2421;
+  --fg: #ecefe6;
+  --fg2: #b4bcb1;
+  --fg3: #a0a99e;
+  --line: rgba(236, 239, 230, 0.08);
+  --line2: rgba(236, 239, 230, 0.18);
+  --tint: rgba(236, 239, 230, 0.045);
+  --tint2: rgba(236, 239, 230, 0.08);
+  --accent: #9ccfaa;
+  --run: #93bedc;
+  --ok: #9ccfaa;
+  --err: #ee9a8b;
+  --bubble: #323b35;
+  --layer-side: #171c19;
+  --layer-bar: #121614;
+  --layer-float: #28302b;
+}
+
+/* 午夜 */
+:root[data-palette='midnight'] {
+  --bg: #fafafd;
+  --fg: #1e1f2e;
+  --fg2: #4e5066;
+  --fg3: #62647b;
+  --line: rgba(30, 31, 46, 0.08);
+  --line2: rgba(30, 31, 46, 0.18);
+  --tint: rgba(30, 31, 46, 0.045);
+  --tint2: rgba(30, 31, 46, 0.08);
+  --accent: #5046c8;
+  --run: #3b62c4;
+  --ok: #2a6f43;
+  --err: #b93a3a;
+  --bubble: #e8e8f3;
+  --layer-side: #f0f0f7;
+  --layer-bar: #e2e2e8;
+  --layer-float: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='midnight']:not([data-theme='light']) {
+    --bg: #17182a;
+    --fg: #f0f0fa;
+    --fg2: #b5b7cf;
+    --fg3: #9d9fb8;
+    --line: rgba(240, 240, 250, 0.08);
+    --line2: rgba(240, 240, 250, 0.18);
+    --tint: rgba(240, 240, 250, 0.045);
+    --tint2: rgba(240, 240, 250, 0.08);
+    --accent: #a9a2ff;
+    --run: #9db7ff;
+    --ok: #8ad0a2;
+    --err: #ff9c9c;
+    --bubble: #2e3049;
+    --layer-side: #111222;
+    --layer-bar: #0d0e1b;
+    --layer-float: #22243a;
+  }
+}
+
+:root[data-palette='midnight'][data-theme='dark'] {
+  --bg: #17182a;
+  --fg: #f0f0fa;
+  --fg2: #b5b7cf;
+  --fg3: #9d9fb8;
+  --line: rgba(240, 240, 250, 0.08);
+  --line2: rgba(240, 240, 250, 0.18);
+  --tint: rgba(240, 240, 250, 0.045);
+  --tint2: rgba(240, 240, 250, 0.08);
+  --accent: #a9a2ff;
+  --run: #9db7ff;
+  --ok: #8ad0a2;
+  --err: #ff9c9c;
+  --bubble: #2e3049;
+  --layer-side: #111222;
+  --layer-bar: #0d0e1b;
+  --layer-float: #22243a;
 }
 
 /* 官网独立设计：沿用已确认的夜色官网，令牌只在官网容器内生效，不覆盖应用方向 I。 */
