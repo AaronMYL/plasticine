@@ -13,7 +13,11 @@ import { SETTINGS_SECTIONS, type SettingsSection } from '../../shell/routes.ts';
 import { SETTINGS_SECTION_LABELS, SettingsBody } from './settings-body.tsx';
 import { SettingsDrafts, SettingsDraftsContext, SettingsGoContext } from './settings-dialog-context.ts';
 import { useDialogFocus } from './settings-dialog-focus.ts';
+import { searchSettings } from './settings-index.ts';
 import './settings-dialog.css';
+
+/** 查找跳到的那一块闪多久。 */
+const FOUND_FLASH_MS = 1_600;
 
 const SECTION_ICONS: Readonly<Record<SettingsSection, IconName>> = {
   general: 'settings',
@@ -165,6 +169,36 @@ export function SettingsDialog({ request, leave, phone, onPlace, onClosed }: Set
     play(element.firstElementChild, FADE_IN, MOTION.fast);
   }, [place.section]);
 
+  // 查找（settings-index.ts）：点一条去那一段，再滚到那一块并闪一下。
+  const [query, setQuery] = useState('');
+  const [jump, setJump] = useState<{ section: SettingsSection; title: string } | null>(null);
+  const found = searchSettings(query);
+  useEffect(() => {
+    if (jump === null || jump.section !== place.section) {
+      return undefined;
+    }
+    let tries = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // 那一段的内容有的要读一下才出来：最多等一秒。
+    const locate = (): void => {
+      const heading = [...(pane.current?.querySelectorAll<HTMLElement>('h2, h3') ?? [])]
+        .find((element) => element.textContent?.trim() === jump.title);
+      const block = heading?.closest<HTMLElement>('section, .block') ?? heading;
+      if (block !== undefined && block !== null) {
+        block.scrollIntoView?.({ block: 'start', behavior: 'auto' });
+        block.setAttribute('data-found', 'true');
+        timer = setTimeout(() => block.removeAttribute('data-found'), FOUND_FLASH_MS);
+        setJump(null);
+      } else if ((tries += 1) < 10) {
+        timer = setTimeout(locate, 100);
+      } else {
+        setJump(null);
+      }
+    };
+    locate();
+    return () => clearTimeout(timer);
+  }, [jump, place.section]);
+
   const label = SETTINGS_SECTION_LABELS[place.section];
   return (
     <SettingsDraftsContext.Provider value={drafts}>
@@ -175,18 +209,43 @@ export function SettingsDialog({ request, leave, phone, onPlace, onClosed }: Set
           aria-labelledby={titleId} tabIndex={-1}>
           <nav className="settings-dialog-nav" aria-label="设置分类" inert={leaving !== null}>
             <h2 id={titleId} className="settings-dialog-title">设置</h2>
-            <ul className="settings-dialog-sections">
-              {SETTINGS_SECTIONS.map((section) => (
-                <li key={section}>
-                  <button type="button" className="settings-nav-item"
-                    aria-current={place.section === section ? 'page' : undefined}
-                    onClick={() => go(section)}>
-                    <Icon name={SECTION_ICONS[section]} />
-                    <span>{SETTINGS_SECTION_LABELS[section]}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <label className="settings-search">
+              <Icon name="search" size={14} />
+              <input type="search" aria-label="搜设置" placeholder="搜设置" value={query}
+                onChange={(event) => setQuery(event.target.value)} />
+            </label>
+            {query.trim() === '' ? null : (
+              <ul className="settings-dialog-sections settings-search-results" aria-label="找到的设置">
+                {found.length === 0 ? <li className="settings-search-empty">没有对得上的设置</li> : null}
+                {found.map((entry) => (
+                  <li key={`${entry.section}:${entry.title}`}>
+                    <button type="button" className="settings-nav-item settings-search-item" onClick={() => {
+                      setQuery('');
+                      setJump({ section: entry.section, title: entry.title });
+                      go(entry.section);
+                    }}>
+                      <Icon name={SECTION_ICONS[entry.section]} />
+                      <span>{entry.title}</span>
+                      <span className="settings-search-where">{SETTINGS_SECTION_LABELS[entry.section]}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {query.trim() !== '' ? null : (
+              <ul className="settings-dialog-sections">
+                {SETTINGS_SECTIONS.map((section) => (
+                  <li key={section}>
+                    <button type="button" className="settings-nav-item"
+                      aria-current={place.section === section ? 'page' : undefined}
+                      onClick={() => go(section)}>
+                      <Icon name={SECTION_ICONS[section]} />
+                      <span>{SETTINGS_SECTION_LABELS[section]}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </nav>
           <section className="settings-dialog-main" aria-label={label} inert={leaving !== null}>
             <header className="settings-dialog-head">

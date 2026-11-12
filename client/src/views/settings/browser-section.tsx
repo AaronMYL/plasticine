@@ -1,7 +1,7 @@
 // 设置 · 浏览器（2026-11-04 第 3 批，设计稿 Settings-Browser，他定：在 Plasticine 的浏览器里登录一次就记住；登录状态
 // 只在他的设备上，不进服务器；2026-11-05 第 6 条：全部不用钥匙串，只记登录状态、不存密码）。两节：
 // - 登录着的网站：这台 Mac 上 Plasticine 浏览器里有登录的网站（名字、域名、登录或导入的日子），行尾 ⋯ 退出这个网站。
-//   段头右边「只在这台 Mac」常显，为什么挂在锁图标按钮的浮框上（11-04：浮框只挂图标按钮）。
+//   段头右边「只在这台电脑」常显，为什么挂在锁图标按钮的浮框上（11-04：浮框只挂图标按钮）。
 // - 导入：从 Chrome 或 Safari 搬一次登录（login-import-sheet.tsx）。
 // 不是 Mac App（iPhone、网页版、旧 App）：登录不在这台设备上，整页一句话。
 
@@ -84,7 +84,7 @@ export function BrowserSection(): ReactNode {
             <button type="button" className="icon-button login-local-icon" aria-label={LOCAL_TIP} data-tip={LOCAL_TIP}>
               <Icon name="lock" size={13} />
             </button>
-            只在这台 Mac
+            只在这台电脑
           </span>
         </SectionHead>
         {problem === null ? null : <p className="settings-message" role="alert">{problem}</p>}

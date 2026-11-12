@@ -19,8 +19,8 @@ test('长报告只有段落：退回，说清缺什么、怎么排', () => {
 
 test('有页头、用了两种以上现成的块：照收；只有页头不够', () => {
   const hero = '<header class="rp-hero"><h1 class="rp-h1">结论</h1><div class="rp-stats"></div></header>';
-  const rich = `${hero}<section class="rp-sec">${PARAGRAPH.repeat(4)}<div class="cards2"><article class="rcard"></article>`
-    + '</div><table class="rt"></table></section>';
+  const rich = `${hero}<section class="rp-sec">${PARAGRAPH.repeat(4)}<div class="cards2">`
+    + '<article class="rcard"></article></div><table class="rt"></table></section>';
   assert.equal(reportTooPlain(rich), null);
   const onlyHero = `<header class="rp-hero"><h1 class="rp-h1">结论</h1></header>${PARAGRAPH.repeat(5)}`;
   assert.match(reportTooPlain(onlyHero) ?? '', /现在用到的块：一个都没有/);

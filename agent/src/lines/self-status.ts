@@ -94,6 +94,6 @@ export function statusSection(state: StatusState, current: LineRow, now: Date): 
     '「没做成」的不要放着：用 read_line 看它停在哪一步、为什么，能换办法就接着做（tell_line 让它继续，或另开一件说明换了什么办法），',
     '缺东西（电脑不在线、没登录、没权限、要他定）就明白告诉他缺什么。他问「在做什么」「做到哪了」，照这里和 list_lines 的实际情况答。',
   ];
-  return ['## 你现在的状态', ...work, ...(state.nodes === undefined ? [] : [computers(state.nodes.list({ limit: 50 }), now)]),
-    ...rules].join('\n');
+  const machines = state.nodes === undefined ? [] : [computers(state.nodes.list({ limit: 50 }), now)];
+  return ['## 你现在的状态', ...work, ...machines, ...rules].join('\n');
 }

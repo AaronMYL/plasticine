@@ -48,6 +48,7 @@ export interface AddressSuggestion {
 }
 
 const SUGGEST_MAX = 6;
+const SUGGEST_ICONS = { bookmark: 'bookmark', history: 'clock', go: 'search' } as const;
 
 /**
  * 打的字对得上的书签在前、去过的页在后（同一个网址只出一次），最后一条是照字面去的那一条：像网址就打开，不像就搜。
@@ -72,7 +73,9 @@ export function addressSuggestions(typed: string, bookmarks: readonly { title: s
     }
   };
   for (const bookmark of bookmarks) {
-    if (bookmark.target !== null && /^https?:/i.test(bookmark.target)) add('bookmark', bookmark.title, bookmark.target);
+    if (bookmark.target !== null && /^https?:/i.test(bookmark.target)) {
+      add('bookmark', bookmark.title, bookmark.target);
+    }
   }
   for (const visit of visits) add('history', visit.title, visit.url);
   const isUrl = typedUrl(text) !== null;
@@ -142,7 +145,7 @@ function AddressField(props: AddressFieldProps): ReactNode {
               aria-selected={index === picked} className="web-suggest-item"
               // 按下时不让输入框失焦（失焦会收起），松开再去。
               onMouseDown={(event) => event.preventDefault()} onClick={() => go(item.url)}>
-              <Icon name={item.kind === 'bookmark' ? 'bookmark' : item.kind === 'history' ? 'clock' : 'search'} size={14} />
+              <Icon name={SUGGEST_ICONS[item.kind]} size={14} />
               <span className="web-suggest-title">{item.title}</span>
               {item.kind === 'go' ? null : <span className="web-suggest-url">{hostOf(item.url)}</span>}
             </li>

@@ -13,7 +13,8 @@ describe('设置的用户操作路径', () => {
   it('Tab 只在弹框里转：最后一个往后回到第一个，Shift Tab 从第一个回到最后一个', async () => {
     await renderApp();
     const panel = await openSettings('通用');
-    const first = within(panel).getByRole('button', { name: '通用' });
+    // 弹框里第一个能停的是左栏顶上的查找框（11-12 加的）。
+    const first = within(panel).getByRole('searchbox', { name: '搜设置' });
     const close = within(panel).getByRole('button', { name: '关掉设置' });
     await within(panel).findByRole('region', { name: '提建议或反馈' });
     const controls = [...panel.querySelectorAll<HTMLElement>('button, input, select, textarea')]

@@ -39,7 +39,8 @@ describe('地址框的建议', () => {
   });
 
   it('最多六条', () => {
-    const many = Array.from({ length: 20 }, (_, index) => ({ title: `示例 ${index}`, url: `https://example.com/${index}` }));
+    const many = Array.from({ length: 20 }, (_, index) => ({ title: `示例 ${index}`,
+      url: `https://example.com/${index}` }));
     expect(addressSuggestions('示例', [], many)).toHaveLength(6);
   });
 });

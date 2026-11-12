@@ -1,4 +1,4 @@
-// 设置 · 浏览器（第 3 批，设计稿 Settings-Browser / Import）：「登录着的网站」只在这台 Mac（不进服务器），
+// 设置 · 浏览器（第 3 批，设计稿 Settings-Browser / Import）：「登录着的网站」只在这台电脑（不进服务器），
 // 「导入」从 Chrome 或 Safari 搬一次登录状态（11-05 第 6 条：全部不用钥匙串，不导密码）；Safari 要完全磁盘访问时如实说、
 // 给打开系统设置。
 // 不是 Mac App（iPhone、网页版）整页一句话。
@@ -57,7 +57,7 @@ describe('设置 · 浏览器', () => {
     expect(screen.queryByRole('button', { name: '导入…' })).toBeNull();
   });
 
-  it('列出登录着的网站：名字、域名、登录的日子；「只在这台 Mac」的说明进浮框', async () => {
+  it('列出登录着的网站：名字、域名、登录的日子；「只在这台电脑」的说明进浮框', async () => {
     fakeLogins();
     render(<BrowserSection />);
     const list = await screen.findByRole('list', { name: '登录着的网站' });
@@ -66,7 +66,7 @@ describe('设置 · 浏览器', () => {
       expect.stringContaining('x.com'), expect.stringContaining('github.com'),
       expect.stringContaining('console.cloud.tencent.com')]);
     expect(rows[0]!.textContent).toContain('11-02');
-    expect(screen.getByText('只在这台 Mac')).toBeTruthy();
+    expect(screen.getByText('只在这台电脑')).toBeTruthy();
     const lock = screen.getByRole('button', { name: '登录只存在这台电脑上，不进服务器' });
     expect(lock.getAttribute('data-tip')).toBe('登录只存在这台电脑上，不进服务器');
   });
