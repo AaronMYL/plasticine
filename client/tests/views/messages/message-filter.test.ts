@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { ContactRow } from '../../../src/api/shared.ts';
 import {
   FILTER_LABELS,
+  DEFAULT_MESSAGE_FILTER,
   MESSAGE_FILTERS,
   filterForContact,
   listedContacts,
@@ -32,8 +33,9 @@ const ROWS: ContactRow[] = [
 ];
 
 describe('消息列表的筛选', () => {
-  it('四段：全部 · 人 · 群 · 邮件，默认全部', () => {
-    expect(MESSAGE_FILTERS.map((filter) => FILTER_LABELS[filter])).toEqual(['全部', '联系人', '群组', '邮件']);
+  it('四段：联系人 · 群组 · 邮件 · 全部，默认联系人', () => {
+    expect(MESSAGE_FILTERS.map((filter) => FILTER_LABELS[filter])).toEqual(['联系人', '群组', '邮件', '全部']);
+    expect(DEFAULT_MESSAGE_FILTER).toBe('people');
   });
 
   it('人只有人，群只有群，邮件只有邮件；新请求那一行在全部和人里', () => {

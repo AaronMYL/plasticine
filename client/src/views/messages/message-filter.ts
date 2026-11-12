@@ -1,10 +1,12 @@
-// 消息第二栏的筛选（11-07 设计稿 Messages）：全部 · 人 · 群 · 邮件。消息里不再放 Plasticine（它有自己的栏目），
+// 消息第二栏的筛选（11-07 设计稿 Messages）：联系人 · 群组 · 邮件 · 全部。消息里不再放 Plasticine（它有自己的栏目），
 // 「AI 建议」那一段去掉（建议在任务栏目里）；系统来源（采访、反馈、Cyber Hunter）只在「全部」里。每一段里人和群在前、
 // 邮件和系统来源在后（中间一道线，不写段名），各自按最近一句排；请求和拉黑的不在列表里。
 
 import type { ContactRow } from '../../api/shared.ts';
 
-export const MESSAGE_FILTERS = ['all', 'people', 'groups', 'mail'] as const;
+// 11-12 全量优化（Aaron 定）：顺序 联系人 · 群组 · 邮件 · 全部，打开先看联系人（邮件和系统来源不抢位置）。
+export const MESSAGE_FILTERS = ['people', 'groups', 'mail', 'all'] as const;
+export const DEFAULT_MESSAGE_FILTER: MessageFilter = 'people';
 export type MessageFilter = (typeof MESSAGE_FILTERS)[number];
 
 export const FILTER_LABELS: Readonly<Record<MessageFilter, string>> = {

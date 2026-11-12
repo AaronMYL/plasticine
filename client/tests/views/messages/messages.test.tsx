@@ -25,7 +25,7 @@ function list(): HTMLElement {
   return screen.getByRole('complementary', { name: '消息' });
 }
 
-function rowNames(filter = '全部'): string[] {
+function rowNames(filter = '联系人'): string[] {
   return within(within(list()).getByRole('list', { name: filter })).getAllByRole('button')
     .filter((button) => button.classList.contains('contact-row'))
     .map((button) => button.getAttribute('aria-label')?.split('，')[0] ?? '');
@@ -40,12 +40,12 @@ function chat(name: string): HTMLElement {
 }
 
 describe('消息 · 列表', () => {
-  it('第二栏是消息列表：默认「全部」，人在前邮件在后；新请求一行带数；人是圆头像写首字；等你一个点；没有 Plasticine', async () => {
+  it('第二栏是消息列表：默认「联系人」；新请求一行带数；人是圆头像写首字；等你一个点；没有 Plasticine', async () => {
     await open('#/messages');
     await waitFor(() => expect(rowNames().slice(0, 4)).toEqual(['林一', '周可', '陈默', '阿杰']));
     expect(within(list()).queryByRole('button', { name: 'Plasticine' })).toBeNull();
     expect(within(list()).getByRole('button', { name: '新请求 1' })).toBeTruthy();
-    expect(filterButton('全部').getAttribute('aria-pressed')).toBe('true');
+    expect(filterButton('联系人').getAttribute('aria-pressed')).toBe('true');
     const lin = within(list()).getByRole('button', { name: '林一' });
     expect(lin.querySelector('.contact-avatar')?.textContent).toBe('林');
     const zhou = within(list()).getByRole('button', { name: '周可，等你' });
@@ -56,10 +56,10 @@ describe('消息 · 列表', () => {
     expect(await screen.findByRole('log', { name: '和林一的聊天记录' })).toBeTruthy();
   });
 
-  it('筛选：全部 · 人 · 群 · 邮件；没有 AI 建议；全部是人在前、邮件和系统来源在后中间一道线', async () => {
+  it('筛选：联系人 · 群组 · 邮件 · 全部；没有 AI 建议；全部是人在前、邮件和系统来源在后中间一道线', async () => {
     await open('#/messages');
     expect(within(within(list()).getByRole('group', { name: '筛选' })).getAllByRole('button')
-      .map((button) => button.textContent)).toEqual(['全部', '联系人', '群组', '邮件']);
+      .map((button) => button.textContent)).toEqual(['联系人', '群组', '邮件', '全部']);
     fireEvent.click(filterButton('邮件'));
     expect(rowNames('邮件')).toEqual(['阿里云']);
     const mail = within(list()).getByRole('button', { name: '阿里云，1 条没读' });

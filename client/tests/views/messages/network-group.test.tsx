@@ -33,6 +33,7 @@ function chat(name: string): HTMLElement {
 describe('群聊', () => {
   it('群在第二栏的列表里（全部、群两段），圆角方块拼成员；预览带说话的人', async () => {
     await open('#/messages');
+    fireEvent.click(within(list()).getByRole('button', { name: '群组' }));
     const row = await within(list()).findByRole('button', { name: /^杭州周末/ });
     expect(row.querySelector('.group-avatar')?.getAttribute('data-grid')).toBe('2');
     expect(row.textContent).toContain('周可：');
