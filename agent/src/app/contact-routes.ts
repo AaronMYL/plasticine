@@ -24,6 +24,8 @@ import {
 import { addContact, confirmContactSafety, createContactTask, decideContactRequest, getContact,
   listContactMessages, listContacts, lookupContact, readContact, sendContactMessage,
   setContactRelation } from './contacts.ts';
+import { reactToMessage, removeContactRoute, restoreContactRoute, setContactAlias, setContactPerson }
+  from './contact-edits.ts';
 import { cancelGroupTask, claimGroupTask, createGroup, getGroupTask, leaveGroup, updateGroup } from './groups.ts';
 import type { Route } from './context.ts';
 import { getContactMail, getMailImage } from './mail-view.ts';
@@ -47,6 +49,11 @@ export const CONTACT_ROUTES: readonly Route[] = [
   { method: 'GET', path: MAIL_IMAGE_PATH, auth: false, handler: getMailImage },
   { method: 'POST', path: `${CONTACTS_PATH}/:id/request`, auth: true, handler: decideContactRequest },
   { method: 'POST', path: `${CONTACTS_PATH}/:id/relation`, auth: true, handler: setContactRelation },
+  { method: 'POST', path: `${CONTACTS_PATH}/:id/alias`, auth: true, handler: setContactAlias },
+  { method: 'POST', path: `${CONTACTS_PATH}/:id/person`, auth: true, handler: setContactPerson },
+  { method: 'POST', path: `${CONTACTS_PATH}/:id/remove`, auth: true, handler: removeContactRoute },
+  { method: 'POST', path: `${CONTACTS_PATH}/:id/restore`, auth: true, handler: restoreContactRoute },
+  { method: 'POST', path: `${CONTACTS_PATH}/:id/messages/:messageId/reaction`, auth: true, handler: reactToMessage },
   { method: 'POST', path: `${CONTACTS_PATH}/:id/read`, auth: true, handler: readContact },
   { method: 'POST', path: `${CONTACTS_PATH}/:id/safety`, auth: true, handler: confirmContactSafety },
   { method: 'POST', path: `${CONTACTS_PATH}/:id/tasks`, auth: true, handler: createContactTask },

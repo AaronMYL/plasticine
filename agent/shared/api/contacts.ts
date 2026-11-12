@@ -86,6 +86,10 @@ export const ContactRowSchema = Type.Object({
   /** 群：前 9 个成员（拼头像）和人数。 */
   members: Type.Optional(Type.Array(MemberFaceSchema)),
   memberCount: Type.Optional(Type.Integer({ minimum: 0 })),
+  /** 第 12 批：对方主线 AI 的名字（没起是 null，界面写 Plasticine）。 */
+  aiName: Type.Optional(OrNull(Type.String())),
+  /** 第 12 批：删掉的时间（在「最近删除」里）。 */
+  removedAt: Type.Optional(OrNull(IsoTimeSchema)),
 });
 export type ContactRow = Static<typeof ContactRowSchema>;
 
@@ -159,6 +163,11 @@ export const ContactMessageViewSchema = Type.Object({
   mention: Type.Optional(OrNull(Type.Object({ name: Type.String(), self: Type.Boolean() }))),
   /** 群里：谁说的（人话是他，AI 的话是它的主人）。 */
   sender: Type.Optional(OrNull(MemberFaceSchema)),
+  /** 第 12 批：这句上的表情（mine = 我加过）。 */
+  reactions: Type.Optional(Type.Array(Type.Object({ emoji: Type.String(), mine: Type.Boolean(),
+    count: Type.Integer({ minimum: 1 }) }))),
+  /** 第 12 批：回的是哪一句（谁说的、那一句的开头）。 */
+  replyTo: Type.Optional(OrNull(Type.Object({ author: Type.String(), text: Type.String() }))),
 });
 export type ContactMessageView = Static<typeof ContactMessageViewSchema>;
 
@@ -234,8 +243,18 @@ export const DeliveryEntrySchema = Type.Object({
 });
 export type DeliveryEntry = Static<typeof DeliveryEntrySchema>;
 
+/** 第 12 批：资料栏「记忆」一节——绑的人物页、Plasticine 觉得可能是谁、那一页最近几行（谁说的）、能选的人物页。 */
+export const ContactMemorySchema = Type.Object({
+  doc: OrNull(Type.Object({ id: IdSchema, title: Type.String() })),
+  suggest: OrNull(Type.Object({ id: IdSchema, title: Type.String() })),
+  lines: Type.Array(Type.Object({ text: Type.String(), by: Type.String(), at: IsoTimeSchema })),
+  people: Type.Array(Type.Object({ id: IdSchema, title: Type.String(), linked: Type.Array(Type.String()) })),
+});
+export type ContactMemory = Static<typeof ContactMemorySchema>;
+
 export const ContactDetailSchema = Type.Object({
   contact: ContactRowSchema,
+  memory: Type.Optional(ContactMemorySchema),
   /** 单独调整的档位上限，没有就按 relation。 */
   tierCap: OrNull(Type.String()),
   deliveries: Type.Array(DeliveryEntrySchema),
@@ -256,8 +275,33 @@ export const SendContactMessageRequestSchema = Type.Object({
   target: Type.Optional(Type.Union([Type.Literal('person'), Type.Literal('ai'), Type.Literal('mine')])),
   /** 群里：问谁的 Plasticine（成员的账号 id，可以是我自己的）。 */
   aiOf: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
+  /** 第 12 批：回的是这个聊天里的哪一句（那一句的 id）。 */
+  replyToId: Type.Optional(IdSchema),
 });
 export const SendContactMessageResponseSchema = Type.Object({ message: ContactMessageViewSchema });
+
+/** 第 12 批：给一句话加 / 拿掉一个表情。 */
+export const ContactReactionRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  emoji: Type.Union(['👍', '❤️', '😂', '🎉', '🤔', '👀'].map((emoji) => Type.Literal(emoji))),
+  on: Type.Boolean(),
+});
+/** 第 12 批：改备注（null = 去掉）。 */
+export const ContactAliasRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  version: Type.Integer({ minimum: 1 }),
+  alias: OrNull(Type.String({ maxLength: 40 })),
+});
+/** 第 12 批：绑人物页（docId）、新建一页再绑（create = 页名）、解绑（docId = null）、答「不是」（dismiss）。 */
+export const ContactPersonRequestSchema = Type.Object({
+  requestId: RequestIdSchema,
+  version: Type.Integer({ minimum: 1 }),
+  docId: Type.Optional(OrNull(IdSchema)),
+  create: Type.Optional(Type.String({ minLength: 1, maxLength: 60 })),
+  dismiss: Type.Optional(Type.Boolean()),
+});
+/** 第 12 批：删除 / 恢复联系人。 */
+export const ContactRemoveRequestSchema = Type.Object({ requestId: RequestIdSchema });
 
 /** 加好友：@handle、handle.cyberhunter.top、https://handle.cyberhunter.top/add 这几种写法都认（服务端拆出 handle）。 */
 export const AddContactRequestSchema = Type.Object({

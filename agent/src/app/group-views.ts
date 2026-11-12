@@ -13,6 +13,7 @@ import {
 import type { Group, GroupMessage, GroupTask } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { networkTaskView, type TaskActivity, type TaskExecution } from './contact-views.ts';
+import { foldReactions, type ReactionView } from '../network/contact-edits.ts';
 
 /** 群头像拼前 9 个人（1 个 → 一张，2–4 → 2×2，5–9 → 3×3，界面画）。 */
 const FACES_SHOWN = 9;
@@ -106,7 +107,20 @@ export function groupTaskView(state: StateService, task: GroupTask, activity?: T
   };
 }
 
-export function groupMessageView(state: StateService, message: GroupMessage): ContactMessageView {
+/** 群里回的那一句：谁说的、开头。 */
+function groupReplyOf(state: StateService, message: GroupMessage): { author: string; text: string } | null {
+  const target = message.replyTo == null ? undefined : state.groupMessages.byMessageId(message.groupId, message.replyTo);
+  if (target === undefined) return null;
+  const me = state.networkIdentity.get()?.accountId;
+  return { author: target.authorAccountId === me ? '我' : faceOf(state, target.authorAccountId).name,
+    text: target.text.slice(0, 80) };
+}
+
+export function groupMessageView(state: StateService, message: GroupMessage,
+  reactions: ReadonlyMap<string, ReactionView[]> = foldReactions(state.contactMessages.groupReactions(message.groupId)))
+  : ContactMessageView {
+  const marks = reactions.get(message.messageId);
+  const reply = groupReplyOf(state, message);
   const identity = state.networkIdentity.get();
   const outgoing = state.contactMessages.forGroupMessage(message.groupId, message.messageId);
   const failed = outgoing.find((row) => row.status === 'failed');
@@ -128,18 +142,20 @@ export function groupMessageView(state: StateService, message: GroupMessage): Co
     mention,
     sender: message.author === 'system' ? null : faceOf(state, message.authorAccountId),
     attachments: state.networkAttachments.forMessage(message.id),
+    ...(marks === undefined || marks.length === 0 ? {} : { reactions: marks }),
+    ...(reply === null ? {} : { replyTo: reply }),
   };
 }
 
 export function groupItemOf(state: StateService, message: GroupMessage, activity?: TaskActivity,
-  execution?: TaskExecution):
+  execution?: TaskExecution, reactions?: ReadonlyMap<string, ReactionView[]>):
   ContactThreadItem | null {
   if (message.kind === 'task') {
     const task = message.taskId === null ? undefined : state.groupTasks.get(message.taskId);
     return task === undefined ? null : { type: 'group_task', at: message.sentAt,
       task: groupTaskView(state, task, activity, execution) };
   }
-  return { type: 'message', message: groupMessageView(state, message) };
+  return { type: 'message', message: groupMessageView(state, message, reactions) };
 }
 
 /** 一页群聊（旧的在前），`before` 往上翻。 */
@@ -149,6 +165,7 @@ export function groupThread(state: StateService, groupId: string, before: string
   const page = state.groupMessages.page(groupId, before, CONTACT_MESSAGES_PAGE).reverse();
   const oldest = page[0];
   const hasMore = oldest !== undefined && state.groupMessages.page(groupId, oldest.sentAt, 1).length > 0;
-  return { items: page.map((message) => groupItemOf(state, message, activity, execution))
+  const reactions = foldReactions(state.contactMessages.groupReactions(groupId));
+  return { items: page.map((message) => groupItemOf(state, message, activity, execution, reactions))
     .filter((item) => item !== null), hasMore };
 }

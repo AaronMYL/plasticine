@@ -83,11 +83,12 @@ export const MemoryTopicViewSchema = Type.Object({
 export type MemoryTopicView = Static<typeof MemoryTopicViewSchema>;
 
 /** 一行从哪来：原话（对话里的一条消息、笔记的一段）、约定，或者 Plasticine 推断。 */
-export const MEMORY_TOPIC_LINE_BASES = ['quote', 'agreement', 'inferred', 'system'] as const;
+// contact（第 12 批）：绑了人物页的联系人亲口说的，界面写「<人物页名字>说的」（by）。
+export const MEMORY_TOPIC_LINE_BASES = ['quote', 'agreement', 'inferred', 'system', 'contact'] as const;
 
 export const MemoryLineSourceSchema = Type.Object({
   kind: Type.Union([Type.Literal('message'), Type.Literal('note'), Type.Literal('book'),
-    Type.Literal('agreement'), Type.Literal('system')]),
+    Type.Literal('agreement'), Type.Literal('system'), Type.Literal('contact')]),
   id: IdSchema,
   /** 链上写的字，例如「10-26 对话」。 */
   label: Type.String({ minLength: 1 }),
@@ -101,6 +102,8 @@ export const MemoryDocLineSchema = Type.Object({
   version: Type.Integer({ minimum: 1 }),
   text: Type.String({ minLength: 1 }),
   basis: Type.Enum(MEMORY_TOPIC_LINE_BASES),
+  /** basis = contact 时是谁说的（人物页的名字）。 */
+  by: Type.Optional(Type.String()),
   /** 每行链回原话：至少一条来源；推断的行链回它所依据的原话。 */
   sources: Type.Array(MemoryLineSourceSchema, { minItems: 1 }),
   /** 这一行还在「拿不准的」里等确认时，对应那一条的 id。 */

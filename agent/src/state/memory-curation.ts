@@ -103,7 +103,7 @@ const PENDING_ENTRIES = `FROM memory_entries e WHERE e.created_at <= $cutoff
   AND NOT EXISTS (SELECT 1 FROM memory_entry_migrations m WHERE m.entry_id = e.id)`;
 
 // 排队的先后：对话轮之后的整理最要紧，其次合并压缩，迁移批次在空闲时做。
-const JOB_PRIORITY: Readonly<Record<MemoryJobKind, number>> = { turn: 0, compact: 1, migration: 2 };
+const JOB_PRIORITY: Readonly<Record<MemoryJobKind, number>> = { turn: 0, contact: 1, compact: 1, migration: 2 };
 
 /** 挪文档、撤回只对还没定的推断：用户已经确认或否掉的，系统不能再改它的去处和状态。 */
 function requirePending(current: MemoryInference, action: string): void {

@@ -8,6 +8,7 @@ import { changeOf, requireContact, requireIdentity, signerOf, type NetworkContex
 import { NetworkError } from './errors.ts';
 import { enqueue } from './outbox.ts';
 import { RelayCallError } from '../../protocol/relay-client.ts';
+import { contactMessageKey } from './contact-edits.ts';
 
 function relayError(error: unknown, notFound: string): never {
   if (error instanceof RelayCallError) {
@@ -176,6 +177,15 @@ export interface SendInput {
   /** person = 给人；ai = 问对方的 Plasticine；mine = @ 自己的 Plasticine（它接着照对面能听到的档位答）。 */
   target: 'person' | 'ai' | 'mine';
   requestId: string;
+  /** 回的是这个聊天里的哪一句（本机的消息 id）。 */
+  replyToId?: string;
+}
+
+/** 回的那一句在两端共用的 id（信封 id）；不是这个聊天里的、或不给，就是 null。 */
+function replyKey(context: NetworkContext, contactId: string, replyToId: string | undefined): string | null {
+  if (replyToId === undefined) return null;
+  const target = context.state.contactMessages.get(replyToId);
+  return target === undefined || target.contactId !== contactId ? null : contactMessageKey(target);
 }
 
 /** 发一句（进发件箱）。给还在请求里的人回话就是接受了他。 */
@@ -215,7 +225,7 @@ export function sendMessage(context: NetworkContext, contactId: string, input: S
         exchangeId, payload: { text: input.text, exchangeId, fromAi: false, ...media } })
       : enqueue(context, ready, { kind: 'text', author: 'me', text: input.text, requestId: input.requestId,
         ...(input.target === 'mine' ? { exchangeId } : {}),
-        payload: { text: input.text, replyTo: null, ...media,
+        payload: { text: input.text, replyTo: replyKey(context, contactId, input.replyToId), ...media,
           ...(input.target === 'mine' ? { toOwnAi: true } : {}) } });
     context.state.networkAttachments.bind(input.attachmentIds ?? [], contactId, message.id, false, [ready.accountId]);
     changes.afterCommit(() => {

@@ -47,7 +47,7 @@ const SPEC: StoreSpec<typeof ContactMessageSchema, typeof ContactMessageInputSch
 
 // 「已读到哪」、资料（头像）、群的发件箱和群里的往来、认领、撤回这类信不进一对一的聊天、不算未读（群里的画在群里）。
 const VISIBLE = `kind NOT IN ('read', 'profile', 'group_update', 'group_message', 'group_task', 'task_claim',
-  'task_cancel') AND group_id IS NULL`;
+  'task_cancel', 'reaction') AND group_id IS NULL`;
 const NEWEST_FIRST = 'sent_at DESC, created_at DESC, id DESC';
 
 export function createContactMessageStore(context: StoreContext) {
@@ -65,6 +65,14 @@ export function createContactMessageStore(context: StoreContext) {
         + "AND json_extract(payload,'$.messageId')=$messageId",
       { groupId, messageId }),
     byEnvelope: (envelopeId: string) => one('envelope_id = $envelope_id', { envelope_id: envelopeId }),
+    /** 一对一聊天里最近 500 封表情信（第 12 批），先来的在前。 */
+    reactions: (contactId: string): ContactMessage[] => store.select(
+      "contact_id = $contact_id AND kind = 'reaction' AND group_id IS NULL", { contact_id: contactId },
+      { limit: 500 }, NEWEST_FIRST).reverse(),
+    /** 群里的表情信，先来的在前。 */
+    groupReactions: (groupId: string): ContactMessage[] => store.select(
+      "group_id = $group_id AND kind = 'reaction'", { group_id: groupId }, { limit: 500 },
+      NEWEST_FIRST).reverse(),
     byRequest: (requestId: string) => one('request_id = $request_id', { request_id: requestId }),
     /** 一页，最新的在前；`before` 是 sent_at（不含）。 */
     page(contactId: string, before: string | undefined, limit: number): ContactMessage[] {

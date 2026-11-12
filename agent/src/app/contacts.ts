@@ -140,6 +140,7 @@ export async function sendContactMessage(context: RequestContext): Promise<Reply
     requireGroupRow(deps, id);
     return idempotent(context, body.requestId, () => {
       const message = network.postToGroup(id, { text: body.text, aiOf: body.aiOf ?? null,
+        ...(body.replyToId === undefined ? {} : { replyToId: body.replyToId }),
         requestId: body.requestId,
         ...(body.attachmentIds === undefined ? {} : { attachmentIds: body.attachmentIds }) });
       return { status: 201, body: { message: groupMessageView(deps.state, message) } };
@@ -147,6 +148,7 @@ export async function sendContactMessage(context: RequestContext): Promise<Reply
   }
   return idempotent(context, body.requestId, () => {
     const message = network.sendMessage(id, { text: body.text, target: body.target ?? 'person',
+      ...(body.replyToId === undefined ? {} : { replyToId: body.replyToId }),
       requestId: body.requestId,
         ...(body.attachmentIds === undefined ? {} : { attachmentIds: body.attachmentIds }) });
     return { status: 201, body: { message: messageView(message, chatNames(deps.state, id), deps.state) } };

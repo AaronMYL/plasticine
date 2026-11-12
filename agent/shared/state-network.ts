@@ -80,6 +80,15 @@ export const ContactPatchSchema = Type.Partial(Type.Object({
   lastAt: IsoTimeSchema,
   /** 对方经 hello / profile 发来的头像。 */
   avatar: Nullable(Type.String()),
+  /** 第 12 批：我给他起的备注（列表、聊天里显示它，没有就是他自己的名字）。 */
+  alias: Nullable(Type.String({ minLength: 1, maxLength: 40 })),
+  /** 绑的记忆人物页；Plasticine 问过、我答「不是」的时间（不再问）。 */
+  personDocId: Nullable(Type.String({ minLength: 1 })),
+  linkDismissedAt: Nullable(IsoTimeSchema),
+  /** 删掉的时间：不在列表里；对方再来信变成加好友请求。 */
+  removedAt: Nullable(IsoTimeSchema),
+  /** 对方主线 AI 的名字（hello / profile 带来）；没起是 null。 */
+  aiName: Nullable(Type.String({ minLength: 1, maxLength: 40 })),
 }), STRICT);
 export type ContactPatch = Static<typeof ContactPatchSchema>;
 export const ContactSchema = Type.Object({
@@ -89,6 +98,11 @@ export const ContactSchema = Type.Object({
   pendingSigningKey: Nullable(Type.String()),
   pendingEncryptionKey: Nullable(Type.String()),
   ignoredAt: Nullable(IsoTimeSchema),
+  alias: Nullable(Type.String()),
+  personDocId: Nullable(Type.String()),
+  linkDismissedAt: Nullable(IsoTimeSchema),
+  removedAt: Nullable(IsoTimeSchema),
+  aiName: Nullable(Type.String()),
 });
 export type Contact = Static<typeof ContactSchema>;
 
@@ -97,7 +111,7 @@ export type Contact = Static<typeof ContactSchema>;
 /** 信封的 kind，加上本机自己记的一条（验不过的信、自动停下的 AI↔AI 这类说明）。 */
 export const CONTACT_MESSAGE_KINDS = ['hello', 'text', 'ai_text', 'ask_ai', 'task_offer', 'task_reply',
   'task_delivery', 'task_verdict', 'read', 'system', 'profile', 'group_update', 'group_message', 'group_task',
-  'task_claim', 'task_cancel'] as const;
+  'task_claim', 'task_cancel', 'reaction'] as const;
 export type ContactMessageKind = (typeof CONTACT_MESSAGE_KINDS)[number];
 
 export const ContactMessageInputSchema = Type.Object({

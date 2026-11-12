@@ -9,6 +9,7 @@ import { RULES_DOC_ID, type MemoryEntry, type MemoryJob, type MemoryJobResult } 
 import { lineRef, type StateService } from '../state/index.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import { askJson, type BookModel } from './book-model.ts';
+import { contactJobKey, contactMemorySources, runContactJob } from './contact-memory.ts';
 import { CurationOutputSchema, planCuration, type CurationOutput, type CurationPlan } from './memory-curation-ops.ts';
 import {
   applyCompaction,
@@ -194,7 +195,17 @@ export class MemoryCurator {
     ensureMemoryDocs(this.#options.state);
     this.#retryFailed();
     this.#queueMigrationBatch();
+    this.#queueContactMessages();
     this.kick();
+  }
+
+  /** 绑了人物页的联系人最近说的话（第 12 批）：一句一份整理。 */
+  #queueContactMessages(): void {
+    const { state } = this.#options;
+    for (const { message, docId } of contactMemorySources(state, this.#options.now())) {
+      state.memoryCuration.jobs.enqueue({ key: contactJobKey(message.id), kind: 'contact', runId: null,
+        chatId: null, replyId: null, docId, sourceIds: [message.id] });
+    }
   }
 
   kick(): void {
@@ -270,6 +281,11 @@ export class MemoryCurator {
         return this.#compact(job);
       case 'migration':
         return this.#migrate(job);
+      case 'contact': {
+        const model = this.#options.model;
+        if (model === null) throw new Error('没有配置整理用的模型');
+        return runContactJob(this.#options.state, model, job, this.#controller.signal);
+      }
     }
   }
 

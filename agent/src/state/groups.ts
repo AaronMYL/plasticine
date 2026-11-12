@@ -54,6 +54,7 @@ const MESSAGE_COLUMNS: ColumnMap = {
   sentAt: 'text',
   requestId: 'text',
   readAt: 'text',
+  replyTo: 'text',
 };
 
 const MESSAGE_SPEC: StoreSpec<typeof GroupMessageSchema, typeof GroupMessageInputSchema,
@@ -63,7 +64,7 @@ const MESSAGE_SPEC: StoreSpec<typeof GroupMessageSchema, typeof GroupMessageInpu
   input: GroupMessageInputSchema,
   patch: GroupMessagePatchSchema,
   columns: MESSAGE_COLUMNS,
-  defaults: { targetAccountId: null, exchangeId: null, taskId: null, requestId: null, readAt: null },
+  defaults: { targetAccountId: null, exchangeId: null, taskId: null, requestId: null, readAt: null, replyTo: null },
 };
 
 const TASK_SPEC: StoreSpec<typeof GroupTaskSchema, typeof GroupTaskInputSchema, typeof GroupTaskPatchSchema> = {

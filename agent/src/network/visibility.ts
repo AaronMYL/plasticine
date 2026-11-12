@@ -27,7 +27,8 @@ export interface MaterialEntry {
   suggestion: Tier | null;
 }
 
-type MaterialState = Pick<StateService, 'memoryDocs' | 'projects' | 'notes' | 'visibilityMarks' | 'spaces'>;
+type MaterialState = Pick<StateService, 'memoryDocs' | 'projects' | 'notes' | 'visibilityMarks' | 'spaces'>
+  & Partial<Pick<StateService, 'contacts'>>;
 
 export function suggestTier(entry: { kind: 'memory_topic'; doc: MemoryDoc } | { kind: 'project'; project: Project }
   | { kind: 'note' }): Tier | null {
@@ -118,6 +119,10 @@ export function gatherMaterials(state: MaterialState, reach: readonly Tier[]): G
   let total = 0;
   for (const mark of state.visibilityMarks.all()) {
     if (mark.confirmedAt === null || !reach.includes(mark.tier) || mark.tier === 'private') {
+      continue;
+    }
+    // 第 12 批：绑了联系人的人物页（记着某个人的事）不管标成哪一档，都不拿去对外答。
+    if (mark.objectKind === 'memory_topic' && (state.contacts?.forPersonDoc(mark.objectId).length ?? 0) > 0) {
       continue;
     }
     const material = materialOf(state, mark.objectKind, mark.objectId);

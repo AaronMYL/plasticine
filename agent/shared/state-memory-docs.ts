@@ -49,7 +49,8 @@ export const MEMORY_DOC_COMPACT_RATIO = 0.85;
 export const MEMORY_LINE_SECTIONS = ['note', 'decision'] as const;
 export type MemoryLineSection = (typeof MEMORY_LINE_SECTIONS)[number];
 /** stated = 用户说的；confirmed_inference = 用户确认过的推断；system = 产品默认规则。 */
-export const MEMORY_LINE_BASES = ['stated', 'confirmed_inference', 'system'] as const;
+// contact_stated（第 12 批）：绑了人物页的联系人在聊天里亲口说的（界面写「<人物页名字>说的」）。
+export const MEMORY_LINE_BASES = ['stated', 'confirmed_inference', 'system', 'contact_stated'] as const;
 export type MemoryLineBasis = (typeof MEMORY_LINE_BASES)[number];
 /** 行退休的原因：被新行替代、合并压缩、用户要忘掉、用户改写、用户说不再成立。 */
 export const MEMORY_LINE_RETIRE_REASONS = ['revised', 'merged', 'forgotten', 'edited', 'no_longer_true'] as const;
@@ -64,6 +65,8 @@ export const MEMORY_ANCHOR_KINDS = [
   'message', 'note', 'memory_entry', 'user_edit', 'agreement', 'term', 'system',
   // 11-11：队友原来那段自由文字的 Soul 拆成的规则，ref 是队友 id（来源写「队友设定」）。
   'mate',
+  // 第 12 批：联系人说的那一句（ref 是 contact_messages 的 id）。
+  'contact_message',
 ] as const;
 
 /**
@@ -239,7 +242,7 @@ export const MemoryInferenceSchema = Type.Object({
 export type MemoryInference = Static<typeof MemoryInferenceSchema>;
 
 // 后台整理的作业：turn = 一个对话轮之后；compact = 一份文档快满了；migration = 旧条目一次性整理的一批。
-export const MEMORY_JOB_KINDS = ['turn', 'compact', 'migration'] as const;
+export const MEMORY_JOB_KINDS = ['turn', 'compact', 'migration', 'contact'] as const;
 export type MemoryJobKind = (typeof MEMORY_JOB_KINDS)[number];
 export const MEMORY_JOB_STATUSES = ['queued', 'running', 'done', 'failed'] as const;
 export type MemoryJobStatus = (typeof MEMORY_JOB_STATUSES)[number];

@@ -85,7 +85,16 @@ function parsePlaintext(kind: EnvelopeKind, value: unknown): AnyPlaintext | null
       return Value.Check(PLAINTEXT_SCHEMAS.task_claim, value) ? { kind, body: value } : null;
     case 'task_cancel':
       return Value.Check(PLAINTEXT_SCHEMAS.task_cancel, value) ? { kind, body: value } : null;
+    case 'reaction':
+      return Value.Check(PLAINTEXT_SCHEMAS.reaction, value) ? { kind, body: value } : null;
   }
+}
+
+/** 群里的表情：发件人确实在这个群里才算这个群的。 */
+function reactionGroup(state: NetworkContext['state'], sender: Contact, groupId: string | undefined): string | null {
+  if (groupId === undefined) return null;
+  const member = state.groupMembers.get(groupId, sender.accountId);
+  return member !== undefined && member.leftAt === null ? groupId : null;
 }
 
 function sameKeys(contact: Contact, account: NetAccount): boolean {
@@ -233,7 +242,8 @@ export class Inbound {
     sender: NetAccount | null, accounts: ReadonlyMap<string, NetAccount>): Applied | null {
     const { state, now } = this.#context;
     const at = now().toISOString();
-    const quiet = GROUP_KINDS.includes(envelope.kind) || envelope.kind === 'profile' || envelope.kind === 'task_cancel';
+    const quiet = GROUP_KINDS.includes(envelope.kind) || envelope.kind === 'profile' || envelope.kind === 'task_cancel'
+      || envelope.kind === 'reaction';
     let contact = known ?? (sender === null ? undefined : this.#stranger(sender, quiet, at));
     if (contact === undefined || contact.state === 'blocked') {
       return null;
@@ -245,7 +255,8 @@ export class Inbound {
     const content = this.#content(changes, contact, plaintext);
     const task = content.taskId === undefined ? undefined : state.networkTasks.get(content.taskId);
     // 交付和退回沿两端私信传输，仍属于原群任务；否则会把回音顶到一对一聊天里。
-    const groupId = group?.groupId ?? (task?.contactId === contact.id ? task.groupId : null);
+    const groupId = group?.groupId ?? (task?.contactId === contact.id ? task.groupId : null)
+      ?? (plaintext.kind === 'reaction' ? reactionGroup(state, contact, plaintext.body.groupId) : null);
     const message = state.contactMessages.create({ contactId: contact.id, direction: 'in',
       ...content, sentAt, status: 'sent', envelopeId: envelope.id, groupId,
       ...(envelope.kind === 'read' || quiet ? { readAt: at } : {}) });
@@ -302,12 +313,19 @@ export class Inbound {
       // 只在群里见过的人来加我：成了一条请求。
       const next = contact.state === 'pending' ? 'active' : contact.state === 'member' ? 'request' : contact.state;
       return state.contacts.update(contact.id, contact.version, { displayName: plaintext.body.displayName,
-        ignoredAt: null, state: next, lastAt: at,
-        ...(plaintext.body.avatar === undefined ? {} : { avatar: plaintext.body.avatar }) });
+        ignoredAt: null, state: contact.removedAt === null ? next : 'request', lastAt: at, removedAt: null,
+        ...(plaintext.body.avatar === undefined ? {} : { avatar: plaintext.body.avatar }),
+        ...(plaintext.body.aiName === undefined ? {} : { aiName: plaintext.body.aiName }) });
     }
     if (plaintext.kind === 'profile') {
       return state.contacts.update(contact.id, contact.version, { displayName: plaintext.body.displayName,
-        avatar: plaintext.body.avatar });
+        avatar: plaintext.body.avatar,
+        ...(plaintext.body.aiName === undefined ? {} : { aiName: plaintext.body.aiName }) });
+    }
+    // 删掉的人再来信：变成一条加好友请求（第 12 批）。
+    if (contact.removedAt !== null && ['text', 'ai_text', 'ask_ai', 'task_offer'].includes(plaintext.kind)) {
+      return state.contacts.update(contact.id, contact.version, { removedAt: null, state: 'request',
+        ignoredAt: null, relation: 'stranger' });
     }
     if (contact.state === 'pending' && ['text', 'ai_text', 'ask_ai', 'task_offer'].includes(plaintext.kind)) {
       return state.contacts.update(contact.id, contact.version, { state: 'active' });
@@ -357,6 +375,8 @@ export class Inbound {
       case 'group_task':
       case 'task_claim':
         return { author: 'them', kind, text: '', payload, taskId: plaintext.body.taskId };
+      case 'reaction':
+        return { author: 'them', kind, text: '', payload };
     }
   }
 }

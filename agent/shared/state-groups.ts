@@ -67,6 +67,8 @@ export const GroupMessageInputSchema = Type.Object({
   sentAt: IsoTimeSchema,
   requestId: Type.Optional(Nullable(Text)),
   readAt: Type.Optional(Nullable(IsoTimeSchema)),
+  /** 第 12 批：回的是群里哪一句（那一句的 messageId）。 */
+  replyTo: Type.Optional(Nullable(Text)),
 }, STRICT);
 export type GroupMessageInput = Static<typeof GroupMessageInputSchema>;
 export const GroupMessagePatchSchema = Type.Partial(Type.Object({ readAt: Nullable(IsoTimeSchema) }), STRICT);

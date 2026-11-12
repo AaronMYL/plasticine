@@ -37,7 +37,8 @@ const HINT = '目录里每篇一行：名字和「这篇讲什么、什么时候
 export function lineText(line: MemoryLine): string {
   const decision = line.section === 'decision' ? '［决定］' : '';
   const origin = line.anchors.every((anchor) => anchor.kind === 'system') ? '（系统默认）' : '';
-  const inferred = line.basis === 'confirmed_inference' ? '（你推断、用户确认过）' : '';
+  const inferred = line.basis === 'confirmed_inference' ? '（你推断、用户确认过）'
+    : line.basis === 'contact_stated' ? '（对方在聊天里自己说的）' : '';
   const before = line.previous === null ? '' : `（之前：${line.previous}）`;
   return `- [行:${line.id}] ${decision}${line.text}${origin}${inferred}${before}`;
 }

@@ -32,6 +32,9 @@ import { checkRelayUrl, DEFAULT_RELAY_URL, effectiveRelayUrl, RelayCallError, Re
 import { SyncLoop } from './sync.ts';
 import { cancelTask, decideTask, deliverFinishedLocal, deliverTask, networkTaskResolver, offerTask, stopLocalTask,
   verdictTask, type OfferInput, type TaskDecision, type TaskVerdict } from './tasks.ts';
+import { groupReplyKey, reactInGroup, reactToContact, removeContact, restoreContact, setAlias }
+  from './contact-edits.ts';
+import type { NET_REACTIONS } from '../../shared/net-wire.ts';
 
 /** 测试等线停下时最多绕这么多圈（一轮答完可能又开下一条线）。 */
 const SETTLE_ROUNDS_MAX = 20;
@@ -392,7 +395,7 @@ export class NetworkService {
 
   /** 在群里说一句；aiOf = 问谁的 Plasticine（账号 id，可以是自己）。 */
   postToGroup(groupId: string, input: { text: string; aiOf: string | null; requestId: string;
-    attachmentIds?: string[] })
+    attachmentIds?: string[]; replyToId?: string })
     : GroupMessage {
     const context = this.#context;
     const identity = requireIdentity(context);
@@ -404,6 +407,7 @@ export class NetworkService {
       const exchangeId = input.aiOf === null ? null : context.newId();
       const posted = postGroupMessage(context, changes, group, { kind: input.aiOf === null ? 'text' : 'ask_ai',
         text: input.text, target: input.aiOf, exchangeId, author: 'me', requestId: input.requestId,
+        replyTo: groupReplyKey(context, group.id, input.replyToId),
         ...(input.attachmentIds === undefined ? {} : { attachmentIds: input.attachmentIds }) });
       if (posted === null) {
         throw new NetworkError('conflict', '这句没发出去。');
@@ -414,6 +418,25 @@ export class NetworkService {
       this.#responder.askedInGroup(message.id);
     }
     return message;
+  }
+
+  /** 给一句话加 / 拿掉一个表情（第 12 批）：threadId 是联系人或群。 */
+  react(threadId: string, messageId: string, emoji: (typeof NET_REACTIONS)[number], on: boolean): void {
+    const group = this.#context.state.groupMessages.get(messageId);
+    if (group !== undefined) reactInGroup(this.#context, threadId, group, emoji, on);
+    else reactToContact(this.#context, threadId, messageId, emoji, on);
+  }
+
+  setAlias(contactId: string, version: number, alias: string | null): Contact {
+    return setAlias(this.#context, contactId, version, alias);
+  }
+
+  removeContact(contactId: string): Contact {
+    return removeContact(this.#context, contactId);
+  }
+
+  restoreContact(contactId: string): Contact {
+    return restoreContact(this.#context, contactId);
   }
 
   markGroupRead(groupId: string, upTo: string): number {

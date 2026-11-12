@@ -16,6 +16,8 @@ import {
 import { TIERS, type Tier } from '../../shared/api/visibility.ts';
 import type { Contact, ContactMessage, NetworkTask, SaidLog } from '../../shared/state.ts';
 import { safetyCode, taskStage, taskWaiting } from '../network/index.ts';
+import { contactMessageKey, foldReactions, type ReactionView } from '../network/contact-edits.ts';
+import { contactMemory } from './contact-memory-view.ts';
 import type { StateService } from '../state/index.ts';
 
 /** 资料栏「代你说过」最近 20 条（规格第 6 节）。 */
@@ -46,7 +48,20 @@ function mentionOf(message: ContactMessage, names: ChatNames | undefined): { nam
   return null;
 }
 
-export function messageView(message: ContactMessage, names?: ChatNames, state?: StateService): ContactMessageView {
+/** 回的那一句：一对一按信封 id 找；谁说的写名字（我写「我」）。 */
+function replyOf(state: StateService, message: ContactMessage, names: ChatNames | undefined):
+  { author: string; text: string } | null {
+  const key = message.kind === 'text' ? message.payload?.['replyTo'] : undefined;
+  const target = typeof key === 'string' ? state.contactMessages.byEnvelope(key) : undefined;
+  if (target === undefined) return null;
+  return { author: target.direction === 'out' ? '我' : names?.theirs ?? '对方', text: target.text.slice(0, 80) };
+}
+
+export function messageView(message: ContactMessage, names?: ChatNames, state?: StateService,
+  reactions?: ReadonlyMap<string, ReactionView[]>): ContactMessageView {
+  const key = contactMessageKey(message);
+  const marks = key === null ? undefined : reactions?.get(key);
+  const reply = state === undefined ? null : replyOf(state, message, names);
   return {
     id: message.id,
     author: message.author,
@@ -59,6 +74,8 @@ export function messageView(message: ContactMessage, names?: ChatNames, state?: 
     mention: mentionOf(message, names),
     ...(state === undefined ? {} : { attachments: state.networkAttachments.forMessage(message.id) }),
     ...(message.error === null ? {} : { error: message.error }),
+    ...(marks === undefined || marks.length === 0 ? {} : { reactions: marks }),
+    ...(reply === null ? {} : { replyTo: reply }),
   };
 }
 
@@ -66,7 +83,7 @@ export function chatNames(state: StateService, contactId: string): ChatNames | u
   const identity = state.networkIdentity.get();
   const contact = state.contacts.get(contactId);
   return identity === undefined || contact === undefined ? undefined
-    : { mine: identity.displayName, theirs: contact.displayName };
+    : { mine: identity.displayName, theirs: contact.alias ?? contact.displayName };
 }
 
 export type TaskActivity = (task: NetworkTask) => { text: string; since: string } | null;
@@ -119,7 +136,7 @@ export function personRow(state: StateService, contact: Contact): ContactRow {
   return {
     id: contact.id,
     kind: 'person',
-    name: contact.displayName,
+    name: contact.alias ?? contact.displayName,
     handle: contact.handle,
     address: null,
     relation: contact.relation,
@@ -130,6 +147,8 @@ export function personRow(state: StateService, contact: Contact): ContactRow {
     canSend: contact.state !== 'blocked' && !contact.safetyChanged,
     version: contact.version,
     avatar: contact.avatar,
+    aiName: contact.aiName,
+    removedAt: contact.removedAt,
   };
 }
 
@@ -179,8 +198,8 @@ export function foldExchanges(items: readonly ContactThreadItem[], aiExchanges: 
   return folded;
 }
 
-function itemOf(state: StateService, message: ContactMessage, activity?: TaskActivity, execution?: TaskExecution):
-  ContactThreadItem | null {
+function itemOf(state: StateService, message: ContactMessage, activity?: TaskActivity, execution?: TaskExecution,
+  reactions?: ReadonlyMap<string, ReactionView[]>): ContactThreadItem | null {
   if (TASK_ECHOES.has(message.kind)) {
     return null;
   }
@@ -189,7 +208,7 @@ function itemOf(state: StateService, message: ContactMessage, activity?: TaskAct
     return task === undefined ? null : { type: 'task', at: message.sentAt,
       task: networkTaskView(task, activity, execution) };
   }
-  return { type: 'message', message: messageView(message, chatNames(state, message.contactId), state) };
+  return { type: 'message', message: messageView(message, chatNames(state, message.contactId), state, reactions) };
 }
 
 /** 有 AI 发问的那几段沟通：对方或我的 Plasticine 自己问的（ask_ai 的 fromAi、ai_text 的 askerIsAi）。 */
@@ -216,7 +235,9 @@ export function personThread(state: StateService, contactId: string, before: str
   const page = state.contactMessages.page(contactId, before, CONTACT_MESSAGES_PAGE).reverse();
   const oldest = page[0];
   const hasMore = oldest !== undefined && state.contactMessages.page(contactId, oldest.sentAt, 1).length > 0;
-  const items = page.map((message) => itemOf(state, message, activity, execution)).filter((item) => item !== null);
+  const reactions = foldReactions(state.contactMessages.reactions(contactId));
+  const items = page.map((message) => itemOf(state, message, activity, execution, reactions))
+    .filter((item) => item !== null);
   return { items: foldExchanges(items, aiExchangesOf(page)), hasMore };
 }
 
@@ -255,6 +276,7 @@ export function personDetail(state: StateService, contact: Contact): ContactDeta
   const identity = state.networkIdentity.get();
   return {
     contact: personRow(state, contact),
+    memory: contactMemory(state, contact),
     tierCap: contact.tierCap,
     deliveries: state.networkTasks.forContact(contact.id).map(deliveryEntry),
     said: state.saidLog.recent(contact.id, SAID_SHOWN).map(saidEntry),

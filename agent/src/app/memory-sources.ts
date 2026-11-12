@@ -6,7 +6,8 @@ import type { MemoryAnchor } from '../../shared/state.ts';
 import { clip } from '../shared-text.ts';
 import type { StateService } from '../state/index.ts';
 
-export type SourceState = Pick<StateService, 'lineMessages' | 'lines' | 'notes' | 'agreements' | 'memory'>;
+export type SourceState = Pick<StateService, 'lineMessages' | 'lines' | 'notes' | 'agreements' | 'memory'
+  | 'contactMessages'>;
 
 const LABEL_CHARS = 20;
 const LINE_TITLE_CHARS = 12;
@@ -49,6 +50,12 @@ export function sourceOf(state: SourceState, anchor: MemoryAnchor): MemoryLineSo
     const agreement = state.agreements.get(anchor.ref);
     return { kind: 'agreement', id: anchor.ref, label: anchor.kind === 'term' ? '词表' : '约定',
       at: agreement?.createdAt ?? EPOCH };
+  }
+  if (anchor.kind === 'contact_message') {
+    // 第 12 批：联系人在聊天里说的那一句：点过去是和他的聊天。
+    const message = state.contactMessages.get(anchor.ref);
+    return { kind: 'contact', id: message?.contactId ?? anchor.ref,
+      label: message === undefined ? '聊天' : `聊天 · ${dayLabel(message.sentAt)}`, at: message?.sentAt ?? EPOCH };
   }
   if (anchor.kind === 'memory_entry') {
     // 迁移来的行链着整理前的那条原话：界面上直接链回它原来的消息或笔记，不再露出旧记忆条目（2026-11-03）。

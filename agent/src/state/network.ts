@@ -62,6 +62,11 @@ const CONTACT_COLUMNS: ColumnMap = {
   ignoredAt: 'text',
   lastAt: 'text',
   avatar: 'text',
+  alias: 'text',
+  personDocId: 'text',
+  linkDismissedAt: 'text',
+  removedAt: 'text',
+  aiName: 'text',
 };
 
 const CONTACT_SPEC: StoreSpec<typeof ContactSchema, typeof ContactInputSchema, typeof ContactPatchSchema> = {
@@ -71,7 +76,8 @@ const CONTACT_SPEC: StoreSpec<typeof ContactSchema, typeof ContactInputSchema, t
   patch: ContactPatchSchema,
   columns: CONTACT_COLUMNS,
   defaults: { relation: 'stranger', tierCap: null, safetyChanged: false, pendingSigningKey: null,
-    pendingEncryptionKey: null, ignoredAt: null, avatar: null },
+    pendingEncryptionKey: null, ignoredAt: null, avatar: null, alias: null, personDocId: null, linkDismissedAt: null,
+    removedAt: null, aiName: null },
 };
 
 export function createNetworkStores(context: StoreContext) {
@@ -94,9 +100,14 @@ export function createNetworkStores(context: StoreContext) {
       byAccount: (accountId: string): Contact | undefined =>
         contacts.select('account_id = $account_id', { account_id: accountId }, { limit: 1 })[0],
       /** 全部（列表、档位页的人数），最近说过话的在前；只在群里见过的（member）不算。 */
-      all: (): Contact[] => allPages((page) => contacts.select("state <> 'member'", {}, page, 'last_at DESC, id')),
+      all: (): Contact[] => allPages((page) => contacts.select("state <> 'member' AND removed_at IS NULL", {}, page,
+        'last_at DESC, id')),
+      /** 绑了这一页人物的联系人。 */
+      forPersonDoc: (docId: string): Contact[] => contacts.select('person_doc_id = $doc AND removed_at IS NULL',
+        { doc: docId }),
       /** 互加了的好友（发资料、头像给他们）。 */
-      active: (): Contact[] => allPages((page) => contacts.select("state = 'active'", {}, page, 'last_at DESC, id')),
+      active: (): Contact[] => allPages((page) => contacts.select("state = 'active' AND removed_at IS NULL", {}, page,
+        'last_at DESC, id')),
     },
   };
 }

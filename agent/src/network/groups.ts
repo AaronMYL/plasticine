@@ -46,7 +46,7 @@ function snapshot(context: NetworkContext, group: Group, op: 'sync' | 'leave'): 
 }
 
 /** 发给群里别的每个人（跳过自己、拉黑了的、没有钥匙的）。 */
-function fanOut(context: NetworkContext, group: Group, send: (contact: Contact) => void, extra: string[] = []): void {
+export function fanOut(context: NetworkContext, group: Group, send: (contact: Contact) => void, extra: string[] = []): void {
   const identity = requireIdentity(context);
   const accounts = new Set([...context.state.groupMembers.current(group.id).map((member) => member.accountId),
     ...extra]);
@@ -193,6 +193,8 @@ export interface GroupPost {
   exchangeId: string | null;
   author: MessageAuthor;
   requestId: string | null;
+  /** 回的是群里哪一句（那一句的 messageId）。 */
+  replyTo?: string | null;
 }
 
 /** 在群里说一句（自己记一行、给每个成员各一封）。同一个 requestId 再来拿回原来那句。 */
@@ -213,9 +215,11 @@ export function postGroupMessage(context: NetworkContext, changes: Changes, grou
   const messageId = context.newId();
   const message = context.state.groupMessages.create({ groupId: group.id, messageId,
     authorAccountId: identity.accountId, author: post.author, kind: post.kind, text: post.text,
-    targetAccountId: post.target, exchangeId: post.exchangeId, sentAt: at, requestId: post.requestId, readAt: at });
+    targetAccountId: post.target, exchangeId: post.exchangeId, sentAt: at, requestId: post.requestId, readAt: at,
+    replyTo: post.replyTo ?? null });
   const payload: Plaintext<'group_message'> = { groupId: group.id, messageId, kind: post.kind, text: post.text,
-    target: post.target, exchangeId: post.exchangeId, ...(attachments.length === 0 ? {} : { attachments }) };
+    target: post.target, exchangeId: post.exchangeId, ...(attachments.length === 0 ? {} : { attachments }),
+    ...(post.replyTo == null ? {} : { replyTo: post.replyTo }) };
   const recipients: string[] = [];
   fanOut(context, group, (contact) => {
     recipients.push(contact.accountId);
@@ -319,7 +323,8 @@ export function receiveGroupMessage(context: NetworkContext, sender: Contact, pa
   const at = context.now().toISOString();
   const message = state.groupMessages.create({ groupId: group.id, messageId: payload.messageId,
     authorAccountId: sender.accountId, author: payload.kind === 'ai_text' ? 'their_ai' : 'them', kind: payload.kind,
-    text: payload.text, targetAccountId: payload.target, exchangeId: payload.exchangeId, sentAt: at });
+    text: payload.text, targetAccountId: payload.target, exchangeId: payload.exchangeId, sentAt: at,
+    replyTo: payload.replyTo ?? null });
   state.networkAttachments.receive(payload.attachments ?? [], sender.accountId, group.id, message.id, true);
   touch(context, group, at);
   const asksMe = payload.kind === 'ask_ai' && payload.target === identity.accountId;

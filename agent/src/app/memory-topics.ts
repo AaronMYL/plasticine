@@ -97,11 +97,13 @@ function lineView(state: StateService, line: MemoryLine, pending: ReadonlySet<st
     version: line.version,
     text: line.text,
     basis: line.anchors.every((anchor) => anchor.kind === 'system') ? 'system'
+      : line.basis === 'contact_stated' ? 'contact'
       : line.basis !== 'stated' ? 'inferred'
       : line.anchors.some((anchor) => anchor.kind === 'agreement' || anchor.kind === 'term') ? 'agreement' : 'quote',
     sources: sourcesOf(state, line.anchors) as [MemoryLineSource, ...MemoryLineSource[]],
     uncertainId: line.inferenceId !== null && pending.has(line.inferenceId) ? line.inferenceId : null,
     links: linksOf(state, line.text),
+    ...(line.basis === 'contact_stated' ? { by: state.memoryDocs.docs.get(line.docId)?.title ?? '对方' } : {}),
   };
 }
 

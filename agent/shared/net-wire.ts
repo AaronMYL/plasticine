@@ -101,6 +101,8 @@ export const ENVELOPE_KINDS = [
   'hello', 'text', 'ai_text', 'ask_ai', 'task_offer', 'task_reply', 'task_delivery', 'task_verdict', 'read',
   // 2026-11-05 第二批：资料（头像）、群（发件方给每个成员各发一封）、群任务的认领、撤回任务。
   'profile', 'group_update', 'group_message', 'group_task', 'task_claim', 'task_cancel',
+  // 2026-11-12 第 12 批：给一句话加 / 拿掉一个表情（一对一和群里都用）。
+  'reaction',
 ] as const;
 export type EnvelopeKind = (typeof ENVELOPE_KINDS)[number];
 
@@ -182,11 +184,17 @@ const MemberSchema = Type.Object({
   displayName: Text(40),
 }, STRICT);
 
+/** 能加的表情（第 12 批）：和界面那一排一样。 */
+export const NET_REACTIONS = ['👍', '❤️', '😂', '🎉', '🤔', '👀'] as const;
+/** 主线 AI 的名字（第 12 批：用户自己起的，朋友那边也显示）；没起是 Plasticine。 */
+const AiName = Type.Optional(Nullable(Text(40)));
+
 export const PLAINTEXT_SCHEMAS = {
   hello: Type.Object({
     displayName: Text(40),
     note: Nullable(Type.String({ maxLength: 200 })),
     avatar: Type.Optional(Avatar),
+    aiName: AiName,
   }, STRICT),
   text: Type.Object({
     text: Type.String({ maxLength: MESSAGE_MAX }),
@@ -223,7 +231,7 @@ export const PLAINTEXT_SCHEMAS = {
     note: Type.String({ maxLength: 500 }),
   }, STRICT),
   read: Type.Object({ upTo: IsoTime }, STRICT),
-  profile: Type.Object({ displayName: Text(40), avatar: Avatar }, STRICT),
+  profile: Type.Object({ displayName: Text(40), avatar: Avatar, aiName: AiName }, STRICT),
   /** 群的样子（全量）：建群、加人、改名、换头像都发这一封给每个成员；leave = 发件人自己退出。 */
   group_update: Type.Object({
     groupId: NetIdSchema,
@@ -243,6 +251,8 @@ export const PLAINTEXT_SCHEMAS = {
     /** ask_ai：问谁的 Plasticine；ai_text：谁的 Plasticine 在答。 */
     target: Nullable(NetIdSchema),
     exchangeId: Nullable(NetIdSchema),
+    /** 回的是群里哪一句（那一句的 messageId）。 */
+    replyTo: Type.Optional(Nullable(NetIdSchema)),
   }, STRICT),
   /** 群任务卡：发出（offer）、谁接到了（claimed）、进度（state）、撤回（cancel）。都由发起人发给每个成员。 */
   group_task: Type.Object({
@@ -268,6 +278,16 @@ export const PLAINTEXT_SCHEMAS = {
   }, STRICT),
   /** 发起人撤回还没人点头的任务。 */
   task_cancel: Type.Object({ taskId: NetIdSchema }, STRICT),
+  /**
+   * 给一句话加（on）或拿掉一个表情。一对一里 messageId 是那封信的信封 id；群里是那一句的 messageId，带着 groupId
+   * （发件人给每个成员各发一封）。
+   */
+  reaction: Type.Object({
+    messageId: NetIdSchema,
+    emoji: Type.Enum(NET_REACTIONS),
+    on: Type.Boolean(),
+    groupId: Type.Optional(NetIdSchema),
+  }, STRICT),
 } as const;
 
 export type Plaintext<K extends EnvelopeKind> = Static<(typeof PLAINTEXT_SCHEMAS)[K]>;

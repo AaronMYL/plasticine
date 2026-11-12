@@ -17,7 +17,7 @@ import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { HueTile } from '../../shell/hue.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
-import { mainLineRoute, type Route } from '../../shell/routes.ts';
+import { mainLineRoute, messagesRoute, type Route } from '../../shell/routes.ts';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { topicLook } from './topics-page.tsx';
 import { PhoneContent } from '../reading/phone-content.tsx';
@@ -32,6 +32,7 @@ const BASIS_TAG: Readonly<Record<MemoryDocLine['basis'], string | null>> = {
   system: '系统默认',
   agreement: null,
   inferred: '推断',
+  contact: null,
 };
 
 /** 「回到原话」去哪：约定那一段里那一条、对话里那条消息、那篇笔记；图书先到图书馆。 */
@@ -42,6 +43,7 @@ function sourceRoute(source: MemoryLineSource): Route {
     case 'message': return mainLineRoute(source.id);
     case 'note': return { view: 'notes', noteId: source.id };
     case 'book': return { view: 'books', noteId: null, bookId: source.id };
+    case 'contact': return messagesRoute(source.id);
   }
 }
 
@@ -87,7 +89,7 @@ function Line({ line, docId, navigate }: { line: MemoryDocLine; docId: string; n
   const edits = useMemoryEdits();
   const [editing, setEditing] = useState(false);
   const source = line.sources[0];
-  const tag = BASIS_TAG[line.basis];
+  const tag = line.basis === 'contact' ? `${line.by ?? '对方'}说的` : BASIS_TAG[line.basis];
   const editable = docId !== RULES_DOC_ID;
   if (editing) {
     return <li className="doc-line is-editing">
