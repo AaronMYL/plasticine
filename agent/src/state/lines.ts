@@ -137,6 +137,8 @@ export interface QueuedRow {
 
 export interface LineListFilter {
   includeArchived?: boolean;
+  /** 只要给人看的线：封起来替别人答话的线（sealed_prompt）是内部过程，回答已经在聊天里，不算任务。 */
+  visibleOnly?: boolean;
   kind?: LineKind;
   statuses?: readonly LineStatus[];
   parentLineId?: string;
@@ -266,6 +268,9 @@ function createLineTable(context: StoreContext) {
   const list = (filter: LineListFilter = {}): LineRow[] => {
     const where: string[] = filter.includeArchived === true ? [] : ['archived_at IS NULL'];
     const params: Record<string, string | number> = { limit: filter.limit ?? LIST_DEFAULT };
+    if (filter.visibleOnly === true) {
+      where.push('sealed_prompt IS NULL');
+    }
     if (filter.kind !== undefined) {
       where.push('kind = $kind');
       params['kind'] = filter.kind;

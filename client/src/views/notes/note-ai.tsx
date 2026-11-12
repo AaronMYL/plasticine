@@ -12,6 +12,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { editorDom } from './editor-dom.ts';
+import { noteComposing } from './note-composition.ts';
 import { PHONE_BELOW } from '../../shell/layout.ts';
 import { noteExtensions } from './editor-extensions.ts';
 import { placeSelectionTools, SELECTION_TOOLS_GAP } from './note-selection-place.ts';
@@ -126,7 +127,7 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
     setBusy(false);
   };
   const openPrompt = (range: NoteRange | null): void => {
-    if (busy || pending || !editor.isEditable || editor.view.composing) { return; }
+    if (busy || pending || !editor.isEditable || noteComposing(editor)) { return; }
     setError(null);
     setTarget(capture(editor, range));
   };
@@ -135,7 +136,7 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
     await generateNow(action, draft, extra);
   };
   const generateNow = async (action: NoteAssistRequest['action'], draft: DraftTarget, extra = ''): Promise<void> => {
-    if (manual.current !== null || pending || !editor.isEditable || editor.view.composing) { return; }
+    if (manual.current !== null || pending || !editor.isEditable || noteComposing(editor)) { return; }
     if (action === 'custom' && extra.trim() === '') { return; }
     const controller = new AbortController();
     manual.current = controller;

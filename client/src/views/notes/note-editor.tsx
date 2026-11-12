@@ -19,6 +19,8 @@ import { useStore } from '../../state/use-store.ts';
 import { useTelemetry } from '../../telemetry.ts';
 import { noteExtensions } from './editor-extensions.ts';
 import { NoteSaver } from './note-saver.ts';
+import { noteComposing, trackComposition } from './note-composition.ts';
+import { useEditorDom } from './editor-dom.ts';
 import { useNoteSync } from './use-note-sync.ts';
 import { NoteReview, type NoteProposal } from './note-review.tsx';
 import { NoteFormat } from './note-format.tsx';
@@ -96,10 +98,11 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
   const commandBar = useRef<HTMLDivElement>(null);
   const scrollMargin = useScrollMargin();
 
-  const editor = useEditor({
-    extensions,
+  // 编辑器的配置只在建的时候定一次。TipTap 每次渲染都拿新配置和旧的逐项比，有一项不是同一个对象就 setOptions
+  // （view.setProps + view.updateState）；以前 editorProps 每次是新对象、content 跟着草稿变，等于每次渲染都重设，
+  // 输入法组字期间保存状态一变也会触发。之后的可编辑状态由下面的 setEditable 管。
+  const [initial] = useState(() => ({
     content: saver.initialMarkdown(),
-    contentType: 'markdown',
     editable: !note.readOnly && note.deletedAt === null,
     editorProps: {
       attributes: { class: 'note-prose', 'aria-label': '笔记正文', spellcheck: 'false' },
@@ -117,6 +120,13 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
         },
       },
     },
+  }));
+  const editor = useEditor({
+    extensions,
+    content: initial.content,
+    contentType: 'markdown',
+    editable: initial.editable,
+    editorProps: initial.editorProps,
     onUpdate: ({ editor: current, transaction }) => {
       // 选区/建议等元数据事务可能让 TrailingNode 补编辑用空段落；仅阅读不能因此改写原 Markdown。
       if (transaction.docChanged) saver.edit(current.getMarkdown());
@@ -128,14 +138,19 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
   const current = saver.current();
   const readOnly = current.readOnly || current.deletedAt !== null;
   useStickyTools(commandBar, scrollMargin, editor !== null && !readOnly);
-  useEffect(() => { editor?.setEditable(!readOnly, false); }, [editor, readOnly]);
+  useEffect(() => {
+    if (editor !== null && editor.isEditable === readOnly) { editor.setEditable(!readOnly, false); }
+  }, [editor, readOnly]);
+  const editorNode = useEditorDom(editor);
+  useEffect(() => (editor === null || editorNode === null ? undefined : trackComposition(editor, editorNode)),
+    [editor, editorNode]);
   // 刚新建的那一篇：编辑器一挂上就把焦点交给正文开头，之后再打开同一篇不抢焦点（审查第 3 条）。
   useEffect(() => {
     if (editor === null || readOnly || !notesUi.takeFresh(note.id)) { return; }
     editor.commands.focus('start');
   }, [editor, readOnly, notesUi, note.id]);
   const quoteToConversation = async (range?: NoteRange): Promise<void> => {
-    if (editor === null || editor.view.composing) {
+    if (editor === null || noteComposing(editor)) {
       return;
     }
     const document = editor.state.doc;
@@ -280,7 +295,7 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
           <button type="button" className="text-button" onClick={images.retry}>重试上传</button></p>}
       </>}
       {proposal === null ? null : <NoteReview key={`${proposal.label}:${proposal.candidate}`} proposal={proposal}
-        current={() => saver.initialMarkdown()} canAdopt={() => editor !== null && !editor.view.composing}
+        current={() => saver.initialMarkdown()} canAdopt={() => editor !== null && !noteComposing(editor)}
         onAdopt={(markdown) => {
           const before = Array.from(editor?.view.dom.children ?? []).map((node) => node.textContent);
           editor?.commands.setContent(markdown, { contentType: 'markdown' });

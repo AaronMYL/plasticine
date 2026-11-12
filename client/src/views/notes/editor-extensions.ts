@@ -8,10 +8,11 @@ import Image from '@tiptap/extension-image';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
 import { TableKit } from '@tiptap/extension-table';
 import { Placeholder } from '@tiptap/extensions';
-import { Markdown } from '@tiptap/markdown';
 import StarterKit from '@tiptap/starter-kit';
 import { cjkMarked } from '../../primitives/message/cjk-marked.ts';
 import { NoteCharts } from './note-chart.ts';
+import { NoteInputRules } from './note-input-rules.ts';
+import { NoteMarkdown, NoteMarkdownClipboard } from './note-markdown.ts';
 import { currentAssetUrl } from '../../api/shared.ts';
 
 const NoteImage = Image.extend({
@@ -26,7 +27,9 @@ export function noteExtensions(): AnyExtension[] {
   return [
     StarterKit.configure({ link: { openOnClick: false, autolink: true } }),
     // 中文标点后的 **…** 认成加粗（和对话同一个解析器）；不然存回去时星号被转义，原文变了。
-    Markdown.configure({ marked: cjkMarked }),
+    NoteMarkdown.configure({ marked: cjkMarked }),
+    NoteMarkdownClipboard,
+    NoteInputRules,
     NoteCharts,
     NoteImage.configure({ inline: false, allowBase64: false }),
     TableKit.configure({ table: { resizable: false } }),

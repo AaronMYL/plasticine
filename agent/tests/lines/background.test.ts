@@ -163,4 +163,90 @@ test('封起来的线（替别人答问题）：系统提示只用它自带的�
   await until(() => h.kernel.answer(line.id) !== null, '封起来的线答完');
   assert.match(h.kernel.answer(line.id) ?? '', /周六下午在家/);
   assert.equal(h.kernel.read('main', 50).messages.length, 0);
+  assert.deepEqual(h.kernel.list({ kind: 'background', limit: 10 }), [],
+    '替别人答话的线不进任务列表：回答在聊天里，这里只会看到一段 JSON');
+});
+
+test('等他回答的线让出执行位置：三条都停在卡上时，第四条照样开跑；答了以后各自接着做完', async () => {
+  const h = await harness();
+  const titles = ['甲', '乙', '丙'];
+  scriptByLine(h, {
+    ...Object.fromEntries(titles.map((title) => [`标题「${title}」`, [
+      fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: `${title}现在继续吗？`,
+        basis: 'missing', options: [{ id: 'yes', label: '继续', recommended: true }, { id: 'no', label: '先不' }] },
+      { id: `ask-${title}` })], { stopReason: 'toolUse' }),
+      fauxAssistantMessage(`${title}做完了`),
+    ]])),
+    '标题「丁」': [fauxAssistantMessage('丁做完了')],
+  });
+  const waiting = titles.map((title) => h.kernel.spawn('main', { title, goal: `做${title}`, projectId: null }));
+  await until(() => waiting.every((line) => h.kernel.view(line.id).status === 'waiting'), '三条都在等他');
+  const fourth = h.kernel.spawn('main', { title: '丁', goal: '做丁', projectId: null });
+  assert.equal(fourth.status, 'running', '等回答的线不占位置');
+  await until(() => h.kernel.view(fourth.id).lastAnswer === '丁做完了', '第四条做完');
+  assert.ok(waiting.every((line) => h.kernel.view(line.id).status === 'waiting'), '等着的三条原样等着');
+  for (const ask of h.handle.state.asks.open()) {
+    h.desk.answer({ askId: ask.id, optionId: 'yes', answerer: { deviceId: 'd' } });
+  }
+  await h.kernel.settled();
+  const done = h.kernel.list({ kind: 'background', limit: 10 }).map((line) => line.lastAnswer).sort();
+  assert.deepEqual(done, ['丁做完了', '丙做完了', '乙做完了', '甲做完了']);
+});
+
+test('排着队的线在别的线开始等他回答时接上，不用等谁做完', async () => {
+  const gates: Deferred<string>[] = [deferred(), deferred()];
+  let next = 0;
+  const h = await harness({ tools: [slowTool(() => gates[next++]?.promise ?? Promise.resolve('多余'))] });
+  scriptByLine(h, {
+    '标题「问」': [
+      fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: '现在继续吗？', basis: 'missing',
+        options: [{ id: 'yes', label: '继续', recommended: true }, { id: 'no', label: '先不' }] }, { id: 'ask-q' })],
+      { stopReason: 'toolUse' }),
+      fauxAssistantMessage('问做完了'),
+    ],
+    ...Object.fromEntries(['慢一', '慢二'].map((title) => [`标题「${title}」`, [
+      fauxAssistantMessage([fauxToolCall('slow', { what: title }, { id: `slow-${title}` })], { stopReason: 'toolUse' }),
+      fauxAssistantMessage(`${title}做完了`),
+    ]])),
+    '标题「后来的」': [fauxAssistantMessage('后来的做完了')],
+  });
+  const asking = h.kernel.spawn('main', { title: '问', goal: '做问', projectId: null });
+  h.kernel.spawn('main', { title: '慢一', goal: '做慢一', projectId: null });
+  h.kernel.spawn('main', { title: '慢二', goal: '做慢二', projectId: null });
+  const late = h.kernel.spawn('main', { title: '后来的', goal: '做后来的', projectId: null });
+  await until(() => h.kernel.view(asking.id).status === 'waiting', '第一条在等他');
+  await until(() => h.kernel.view(late.id).lastAnswer === '后来的做完了', '排队的那条接上并做完');
+  for (const gate of gates) {
+    gate.resolve('好');
+  }
+  for (const ask of h.handle.state.asks.open()) {
+    h.desk.answer({ askId: ask.id, optionId: 'yes', answerer: { deviceId: 'd' } });
+  }
+  await h.kernel.settled();
+});
+
+test('替别人答话的封闭线不排在长任务后面：三条慢任务占满时照样马上答', async () => {
+  const gates: Deferred<string>[] = [deferred(), deferred(), deferred()];
+  let next = 0;
+  const started: string[] = [];
+  const h = await harness({ tools: [slowTool(() => gates[next++]?.promise ?? Promise.resolve('多余'), started)] });
+  const titles = ['甲', '乙', '丙'];
+  scriptByLine(h, {
+    ...Object.fromEntries(titles.map((title) => [`标题「${title}」`, [
+      fauxAssistantMessage([fauxToolCall('slow', { what: title }, { id: `slow-${title}` })], { stopReason: 'toolUse' }),
+      fauxAssistantMessage(`${title}做完了`),
+    ]])),
+    '只替主人答这一个问题': [fauxAssistantMessage('{"answer":"在家","confident":true,"usedMaterialIds":[],"needsOwner":false}')],
+  });
+  for (const title of titles) {
+    h.kernel.spawn('main', { title, goal: `做${title}`, projectId: null });
+  }
+  await until(() => started.length === 3, '三条慢任务占满');
+  const reply = h.kernel.open({ title: '回 @xiaolin', goal: '他在家吗？', projectId: null, parentLineId: null,
+    sealedPrompt: '只替主人答这一个问题。' });
+  await until(() => h.kernel.answer(reply.id) !== null, '封闭线马上答完');
+  for (const gate of gates) {
+    gate.resolve('好');
+  }
+  await h.kernel.settled();
 });

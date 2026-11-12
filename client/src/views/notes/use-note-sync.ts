@@ -6,6 +6,7 @@ import type { NoteView } from '../../api/types.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { useEditorDom } from './editor-dom.ts';
+import { noteComposing } from './note-composition.ts';
 import type { NoteSaver } from './note-saver.ts';
 
 /** 等待 ProseMirror 提交组合输入的原生 DOM 更新，再尝试接入已确认的新版本。 */
@@ -27,7 +28,7 @@ export function useNoteSync(note: NoteView, saver: NoteSaver, editor: Editor | n
     if (editor === null || dom === null) { return; }
     let timer: ReturnType<typeof setTimeout> | null = null;
     const apply = (): void => {
-      if (editor.isDestroyed || editor.view.composing) { return; }
+      if (editor.isDestroyed || noteComposing(editor)) { return; }
       const newerAi = fresh.author === 'ai' && fresh.version > saver.current().version;
       if (saver.applyRemote(fresh)) {
         editor.commands.setContent(fresh.markdown, { contentType: 'markdown', emitUpdate: false });
@@ -37,7 +38,7 @@ export function useNoteSync(note: NoteView, saver: NoteSaver, editor: Editor | n
     const afterComposition = (): void => {
       const settle = (): void => {
         if (editor.isDestroyed) { return; }
-        if (editor.view.composing) { timer = setTimeout(settle, COMPOSITION_SETTLE_MS); }
+        if (noteComposing(editor)) { timer = setTimeout(settle, COMPOSITION_SETTLE_MS); }
         else { apply(); }
       };
       if (timer !== null) { clearTimeout(timer); }

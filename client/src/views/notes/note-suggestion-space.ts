@@ -7,6 +7,7 @@
 import type { Editor } from '@tiptap/core';
 import { Plugin, PluginKey, type EditorState, type Transaction } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
+import { noteComposing } from './note-composition.ts';
 
 export type SuggestionKind = 'predict' | 'interject';
 export const SUGGESTION_KINDS: readonly SuggestionKind[] = ['predict', 'interject'];
@@ -38,7 +39,7 @@ function sameSpace(a: SuggestionSpace | null, b: SuggestionSpace | null): boolea
 
 export function setSuggestionSpace(editor: Editor, kind: SuggestionKind, value: SuggestionSpace | null): void {
   if (editor.isDestroyed) { return; }
-  if (editor.view.composing) {
+  if (noteComposing(editor)) {
     waiting.set(editor, { ...waiting.get(editor), [kind]: value });
     return;
   }

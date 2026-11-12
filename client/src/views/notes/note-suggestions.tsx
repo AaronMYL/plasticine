@@ -16,6 +16,7 @@ import { errorText } from '../../api/errors.ts';
 import { NOTE_ASSIST_CONTEXT_CHARS, NOTE_PREDICT_BEFORE_CHARS, NOTE_PREDICT_AFTER_CHARS,
   type NoteAssistRequest, type NoteSupplement } from '../../api/shared.ts';
 import { useEditorDom } from './editor-dom.ts';
+import { noteComposing } from './note-composition.ts';
 import { InlineSuggestion, type Suggestion } from './note-inline-suggestion.tsx';
 import { followTyping, ghostPosition, remaining, startPrediction, withDelta, withFinal,
   type LivePrediction } from './note-predict-live.ts';
@@ -119,7 +120,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
   };
   /** 续写的灰字照 live 画；组字期间不碰（React 一重画就可能改装饰），组完再画。 */
   const showPrediction = (): void => {
-    if (composing.current || editor.view.composing) { return; }
+    if (composing.current || noteComposing(editor)) { return; }
     const value = live.current;
     const text = value === null ? '' : remaining(value);
     show('predict', value === null || text === '' ? null
@@ -145,7 +146,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     for (const kind of SUGGESTION_KINDS) { drop(kind); }
   };
   const current = (value: Suggestion): boolean => !editor.isDestroyed && editor.isEditable
-    && !composing.current && !editor.view.composing && editor.state.doc === value.doc
+    && !composing.current && !noteComposing(editor) && editor.state.doc === value.doc
     && (value.range === undefined ? editor.state.selection.empty && editor.state.selection.from === value.position
       : editor.state.selection.from === value.range.from && editor.state.selection.to === value.range.to);
   const adopt = (kind: SuggestionKind, item?: NoteSupplement): void => {
@@ -177,7 +178,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     // 排在所有扩展前面：编号 / 待办列表自己也认 Tab（缩进一级），有建议时 Tab 先给采用（2026-11-03 用户反馈）。
     editor.registerPlugin(suggestionSpacePlugin((_view, event) => {
       const visible = shownRef.current;
-      if (event.isComposing || composing.current || editor.view.composing
+      if (event.isComposing || composing.current || noteComposing(editor)
         || (visible.predict === null && visible.interject === null)) {
         return false;
       }
@@ -228,7 +229,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
       }
     };
     const eligible = (): boolean => !disposed && !paused && !editor.isDestroyed && editor.isEditable
-      && editor.isFocused && !composing.current && !editor.view.composing && editor.state.selection.empty
+      && editor.isFocused && !composing.current && !noteComposing(editor) && editor.state.selection.empty
       && editor.state.selection.$from.parent.isTextblock
       && editor.state.selection.$from.parent.type.name !== 'codeBlock'
       && editor.state.selection.$from.parentOffset === editor.state.selection.$from.parent.content.size;
@@ -309,7 +310,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     };
     /** 正文或光标变了：续写对得上就接着显示，对不上撤下；补充只认它出现时的那一版正文和光标。 */
     const sync = (): void => {
-      if (disposed || composing.current || editor.view.composing) { return; }
+      if (disposed || composing.current || noteComposing(editor)) { return; }
       const value = live.current;
       if (value !== null) {
         const next = followTyping(value, editor.state.doc, editor.state.selection);
@@ -337,7 +338,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     const endComposition = (): void => {
       const finish = (): void => {
         if (disposed || editor.isDestroyed) { return; }
-        if (editor.view.composing) { settled = setTimeout(finish, COMPOSITION_SETTLE_MS); return; }
+        if (noteComposing(editor)) { settled = setTimeout(finish, COMPOSITION_SETTLE_MS); return; }
         settled = null;
         composing.current = false;
         flushSuggestionSpace(editor);
