@@ -178,3 +178,31 @@ test('memory.move 把几行挪到别的文档；memory.cleanup.add 放进整理�
     && candidate.title === '林一');
   assert.equal(person?.toDocId, page?.id);
 });
+
+test('suggestions.dismiss：把还摆着的几条建议收起，结果里记下原来的状态；处理过的不动；有一条找不到整批不动', () => {
+  const make = (title: string) => h.state.suggestions.create({ title, why: '回顾里的一条', goal: title, projectId: null,
+    source: 'review', icon: 'sparkle', key: `review:test:${title}`, sourceRef: null });
+  const first = make('3．优先补读原文');
+  const second = make('最后，把纠正变成场景');
+  const started = make('已经开始做的');
+  h.state.suggestions.update(started.id, started.version, { status: 'started', actedAt: new Date().toISOString(),
+    actedByDeviceId: 'device-1' });
+  const request = { operationId: 'op-suggest-1', op: 'suggestions.dismiss' as const, because: '「建议」里 13 条半句话收起',
+    ids: [first.id, second.id, started.id] };
+  const done = runMaintenance(deps(), request);
+  assert.deepEqual(done.result, { dismissed: 2, skipped: 1, before: [
+    { id: first.id, title: '3．优先补读原文', status: 'open' },
+    { id: second.id, title: '最后，把纠正变成场景', status: 'open' },
+    { id: started.id, title: '已经开始做的', status: 'started' }] });
+  assert.equal(h.state.suggestions.get(first.id)?.status, 'dismissed');
+  assert.equal(h.state.suggestions.get(first.id)?.actedByDeviceId, 'maintenance:op-suggest-1');
+  assert.equal(h.state.suggestions.get(started.id)?.status, 'started');
+  assert.equal(runMaintenance(deps(), request).replayed, true);
+  const third = make('还摆着的一条');
+  const missing = failure(() => runMaintenance(deps(), { operationId: 'op-suggest-2', op: 'suggestions.dismiss',
+    because: '收起', ids: [third.id, 'no-such-id'] }));
+  assert.match(missing.message, /没有这条建议/);
+  assert.equal(h.state.suggestions.get(third.id)?.status, 'open');
+  assert.match(failure(() => runMaintenance(deps(), { operationId: 'op-suggest-3', op: 'suggestions.dismiss',
+    because: '收起' })).message, /--ids/);
+});

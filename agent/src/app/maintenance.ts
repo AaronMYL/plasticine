@@ -118,7 +118,36 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
       text: add.text, reason: '' })));
     return { cleanupId: cleanup.id, added: request.adds.length };
   }
+  if (request.op === 'suggestions.dismiss') {
+    if (request.ids === undefined) {
+      throw new MaintenanceFailure('invalid_input', '「suggestions.dismiss」要给 --ids（逗号隔开的建议 id）。');
+    }
+    return dismissSuggestions(deps.state, request.ids, `maintenance:${request.operationId}`);
+  }
   throw new MaintenanceFailure('invalid_input', `不认识的写操作「${request.op}」。`);
+}
+
+/**
+ * 收起几条建议（标成忽略，不删）：只动还摆着的；结果里记下每条原来的状态，要恢复照它改回去。
+ * 有一条找不到就整批不动。
+ */
+function dismissSuggestions(state: StateService, ids: readonly string[], ref: string) {
+  return state.transaction(() => {
+    const at = new Date().toISOString();
+    const rows = ids.map((id) => {
+      const suggestion = state.suggestions.get(id);
+      if (suggestion === undefined) {
+        throw new MaintenanceFailure('invalid_input', `没有这条建议：${id}。这次一条都没动。`);
+      }
+      return suggestion;
+    });
+    const before = rows.map((row) => ({ id: row.id, title: row.title, status: row.status }));
+    const open = rows.filter((row) => row.status === 'open');
+    for (const row of open) {
+      state.suggestions.update(row.id, row.version, { status: 'dismissed', actedAt: at, actedByDeviceId: ref });
+    }
+    return { dismissed: open.length, skipped: rows.length - open.length, before };
+  });
 }
 
 /** 新加的一条放进哪一页：给了文档就是它；给了人名就是这个人那一页（没有就建一页，空页在目录里不显示）。 */
@@ -147,7 +176,8 @@ function moveMemoryLines(state: StateService, moves: readonly MemoryMoveItem[], 
 function record(state: StateService, request: MaintenanceRequest, quote: string, result: unknown): void {
   const args = { code: request.code ?? null, mode: request.mode ?? null, limit: request.limit ?? null,
     plan: request.plan ?? null, ...(request.moves === undefined ? {} : { moves: request.moves }),
-    ...(request.adds === undefined ? {} : { adds: request.adds }) };
+    ...(request.adds === undefined ? {} : { adds: request.adds }),
+    ...(request.ids === undefined ? {} : { ids: request.ids }) };
   state.maintenanceOperations.record({ id: request.operationId, op: request.op, args, because: quote, result });
 }
 
