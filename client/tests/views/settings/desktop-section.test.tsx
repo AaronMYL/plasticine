@@ -33,6 +33,7 @@ function fakeShell(options: { server?: ServerStatus; update?: UpdateStatus; devi
     server: { status: vi.fn(async () => options.server ?? server()),
       choose: vi.fn(async (choice: ServerStatus['choice']) => server({ choice, loaded: '' })) },
     updates: { status: vi.fn(async () => options.update ?? update()), check: vi.fn(async () => update()),
+      download: vi.fn(async () => update({ state: 'ready', available: '2026.1109.10203' })),
       install: vi.fn(), rollback: vi.fn() },
     device: { status: vi.fn(async () => options.device ?? device()),
       pair: vi.fn(async () => device()), pause: vi.fn(async (paused: boolean) => device({ state: paused ? 'paused'
@@ -104,7 +105,7 @@ describe('设置 · 系统 · 桌面客户端', () => {
     const computer = await within(sheet).findByRole('region', { name: '这台电脑' });
     expect(await within(computer).findByText('2026.1109.10203')).toBeTruthy();
     fireEvent.click(await within(computer).findByRole('button', { name: '重新打开' }));
-    expect(shell.updates.install).toHaveBeenCalled();
+    await waitFor(() => expect(shell.updates.install).toHaveBeenCalled());
     const notifications = within(computer).getByRole('switch', { name: '系统通知' }) as HTMLInputElement;
     await waitFor(() => expect(notifications.checked).toBe(true));
     fireEvent.click(notifications);

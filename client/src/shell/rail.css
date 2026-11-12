@@ -131,3 +131,63 @@ img.rail-avatar {
     animation: none;
   }
 }
+
+/* 更新按钮（桌面客户端、查到新版才有，11-12）：出现时淡入、从下往上推开；有新版是陶土色。 */
+.rail-update {
+  animation: rail-update-in var(--motion-fast) var(--ease-out);
+}
+
+.rail-update[data-state='available'] {
+  color: var(--accent);
+}
+
+.rail-update-ring {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.rail-update-track {
+  stroke: var(--line2);
+}
+
+.rail-update-arc {
+  stroke: var(--accent);
+  transition: stroke-dasharray 200ms linear;
+}
+
+.rail-update-check {
+  stroke: var(--accent);
+  stroke-linejoin: round;
+  animation: rail-update-check var(--motion-fast) var(--ease-out);
+}
+
+.rail-update-dot {
+  background: var(--err);
+}
+
+@keyframes rail-update-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes rail-update-check {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+    transform-origin: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-update,
+  .rail-update-check {
+    animation: none;
+  }
+
+  .rail-update-arc {
+    transition: none;
+  }
+}

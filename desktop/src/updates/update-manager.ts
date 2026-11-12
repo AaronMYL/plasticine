@@ -1,5 +1,6 @@
-// 客户端自更新：从发布点（cyberhunter.top/download）的 desktop.json 查新版，下载、核对 SHA-256 和大小，下好了告诉他
-// （设置 · 系统「客户端」那一行、系统通知），他点「重新打开」才换；换版本和坏版本退回由 update-scripts.ts 的脚本在
+// 客户端自更新：从发布点（cyberhunter.top/download）的 desktop.json 查新版。查到只报 available（侧栏出更新按钮、
+// 设置 · 系统「客户端」那一行），他点了才下载、核对 SHA-256 和大小（边下边报进度，圆形进度用），下好由界面存好笔记
+// 再叫 install 换上（11-12 Aaron 定：点了才下、下完直接重开）；换版本和坏版本退回由 update-scripts.ts 的脚本在
 // 客户端退出后做。一步回退：Mac 换回「上一版」的 Contents，Windows 静默装回上一版的安装程序。每 6 小时自动查一次。
 // 旧的 Swift Mac App 不读 desktop.json，不会被换成 Electron 版（第 18 条：他手动装一次）。
 
@@ -35,7 +36,8 @@ export interface UpdateDeps {
   /** Mac：正在用的 Plasticine.app；Windows：主程序 .exe。 */
   installed: string;
   pid: number;
-  fetchBytes(url: string): Promise<Uint8Array>;
+  /** onProgress：已下了多少字节（下大文件时报，界面画进度）。 */
+  fetchBytes(url: string, onProgress?: (received: number) => void): Promise<Uint8Array>;
   /** Mac：用 ditto 解开 zip。 */
   extractZip(zip: string, into: string): Promise<void>;
   /** Mac：用本机证书重签并核对。 */
@@ -88,6 +90,9 @@ export class UpdateManager {
   private readonly deps: UpdateDeps;
   private stateValue: UpdateStatus['state'] = 'idle';
   private available: { version: string; file: string } | null = null;
+  /** 查到、还没下好的那一版。 */
+  private pending: { version: string; asset: ReleaseAsset; manifest: URL } | null = null;
+  private progress: { received: number; total: number } | null = null;
   private readonly listeners = new Set<(status: UpdateStatus) => void>();
   private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -97,8 +102,9 @@ export class UpdateManager {
 
   status(): UpdateStatus {
     const state = this.state();
-    return { version: this.deps.version, state: this.stateValue, available: this.available?.version ?? null,
-      previous: state.previous, checkedAt: state.checkedAt, problem: state.problem };
+    return { version: this.deps.version, state: this.stateValue,
+      available: this.available?.version ?? this.pending?.version ?? null,
+      previous: state.previous, checkedAt: state.checkedAt, problem: state.problem, progress: this.progress };
   }
 
   onChange(listener: (status: UpdateStatus) => void): () => void {
@@ -141,7 +147,7 @@ export class UpdateManager {
       this.save((state) => ({ ...state, problem: '开发版不自更新。' }));
       return this.status();
     }
-    if (this.stateValue === 'downloading' || this.stateValue === 'installing') {
+    if (this.stateValue === 'downloading' || this.stateValue === 'installing' || this.stateValue === 'ready') {
       return this.status();
     }
     this.set('checking');
@@ -156,12 +162,31 @@ export class UpdateManager {
         this.set('up_to_date');
         return this.status();
       }
-      this.set('downloading');
-      const file = await this.download(asset, location, version);
-      this.available = { version, file };
-      this.set('ready');
+      this.pending = { version, asset, manifest: location };
+      this.set('available');
     } catch (error) {
       this.fail(`查更新没成：${error instanceof Error ? error.message : String(error)}`);
+    }
+    return this.status();
+  }
+
+  /** 下查到的那一版（他点了侧栏的更新按钮或设置里的「下载并更新」）；没成留着那一版，再点重下。 */
+  async download(): Promise<UpdateStatus> {
+    const pending = this.pending;
+    if (pending === null || (this.stateValue !== 'available' && this.stateValue !== 'failed')) {
+      return this.status();
+    }
+    this.progress = { received: 0, total: pending.asset.size };
+    this.set('downloading');
+    try {
+      const file = await this.fetchAsset(pending.asset, pending.manifest, pending.version);
+      this.available = { version: pending.version, file };
+      this.pending = null;
+      this.progress = null;
+      this.set('ready');
+    } catch (error) {
+      this.progress = null;
+      this.fail(`更新没下成：${error instanceof Error ? error.message : String(error)}`);
     }
     return this.status();
   }
@@ -196,12 +221,19 @@ export class UpdateManager {
     return this.deps.packaged && this.deps.platform !== 'linux';
   }
 
-  private async download(asset: ReleaseAsset, manifest: URL, version: string): Promise<string> {
+  private async fetchAsset(asset: ReleaseAsset, manifest: URL, version: string): Promise<string> {
     const url = new URL(asset.url, manifest);
     if (url.protocol !== 'https:') {
       throw new Error('更新包的地址不是 https。');
     }
-    const bytes = await this.deps.fetchBytes(url.href);
+    let shown = 0;
+    const bytes = await this.deps.fetchBytes(url.href, (received) => {
+      // 每多 1% 报一次，不刷屏。
+      if (received - shown < asset.size / 100 && received < asset.size) return;
+      shown = received;
+      this.progress = { received: Math.min(received, asset.size), total: asset.size };
+      this.emit();
+    });
     const sha = createHash('sha256').update(bytes).digest('hex');
     if (bytes.length !== asset.size || sha !== asset.sha256) {
       throw new Error(`${asset.name} 的大小或 SHA-256 和发布清单对不上，没有装。`);

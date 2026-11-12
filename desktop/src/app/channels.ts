@@ -14,6 +14,7 @@ export const CHANNELS = {
   externalCancel: 'desktop:external-cancel',
   updateStatus: 'desktop:update-status',
   updateCheck: 'desktop:update-check',
+  updateDownload: 'desktop:update-download',
   updateInstall: 'desktop:update-install',
   updateRollback: 'desktop:update-rollback',
   deviceStatus: 'desktop:device-status',

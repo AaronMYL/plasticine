@@ -158,6 +158,7 @@ const bridge = {
   updates: {
     status: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.updateStatus),
     check: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.updateCheck),
+    download: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.updateDownload),
     install: (): void => ipcRenderer.send(CHANNELS.updateInstall),
     rollback: (): void => ipcRenderer.send(CHANNELS.updateRollback),
   },

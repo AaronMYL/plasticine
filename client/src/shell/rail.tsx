@@ -4,6 +4,7 @@
 // 「任务」有事等他时带一个陶土点（全站只这一个意思）。悬停浮出名字（悬停提示层，data-tip）。
 // Mac 客户端隐藏标题栏时交通灯落在图标栏顶上：壳告诉界面（host.ts 的窗口外观）才留出那一块；网页里不画假的灯。
 
+import { UpdateButton } from './update-button.tsx';
 import { useMainName } from '../views/mates/main-identity.tsx';
 import { useState, type ReactNode } from 'react';
 import type { ConnectionStatus } from '../api/types.ts';
@@ -72,6 +73,7 @@ export function Rail(props: RailProps): ReactNode {
         ))}
       </div>
       <div className="rail-foot">
+        <UpdateButton />
         <button type="button" className="rail-item" aria-label="搜索和切换" data-tip="搜索和切换 ⌘K"
           data-tip-side="right" onClick={props.onSearch}>
           <Icon name="search" size={18} />

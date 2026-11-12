@@ -1,5 +1,6 @@
 // 设置 · 系统 ·「这台电脑」（设计稿 Settings-System，第 14 条）：三行。
-//   客户端        版本号 + 检查更新；下好了换成「重新打开」（点了才换，客户端会重新打开）。
+//   客户端        版本号 + 检查更新；查到新版换成「下载并更新」（和侧栏更新按钮同一套：点了才下，下完存好笔记
+//                 直接重开，shell/desktop-update.ts）。
 //   系统通知      开关（关着时 Plasticine 不弹这台电脑的系统通知）。
 //   让 Plasticine 用这台电脑   文件、命令、截屏和点按、日历、提醒事项；开关：没配对时打开就领码、在这台电脑上配对，
 //                 配对过的开关就是暂停 / 接着用。截屏、辅助功能没给时下面一行「去授权」。
@@ -7,7 +8,9 @@
 
 import { useState, type ReactNode } from 'react';
 import type { DeviceServiceStatus, UpdateStatus } from '../../api/shared.ts';
+import { useApi } from '../../api/context.tsx';
 import { useLive } from '../../live.tsx';
+import { runDesktopUpdate, updateFraction } from '../../shell/desktop-update.ts';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { parseDevice, parseUpdate, type DesktopShell, type DesktopState } from './desktop-shell.ts';
@@ -22,7 +25,16 @@ const WORKING_LABELS: Readonly<Partial<Record<UpdateStatus['state'], string>>> =
 function UpdateRow({ shell, update, onUpdate }: { shell: DesktopShell; update: UpdateStatus | null;
   onUpdate: (update: UpdateStatus) => void }): ReactNode {
   const [error, setError] = useState<string | null>(null);
+  const api = useApi();
+  const clientState = useClientState();
   const state = update?.state ?? 'idle';
+  const install = (): void => {
+    if (update === null) return;
+    setError(null);
+    runDesktopUpdate(shell, api, clientState, update).then((outcome) => {
+      if (outcome.kind === 'blocked') setError(`先处理：${outcome.reasons.join('、')}`);
+    }, (cause: unknown) => setError(cause instanceof Error ? cause.message : '没更新成，稍后再试。'));
+  };
   const check = (): void => {
     setError(null);
     shell.updates.check().then((value) => onUpdate(parseUpdate(value)),
@@ -31,8 +43,13 @@ function UpdateRow({ shell, update, onUpdate }: { shell: DesktopShell; update: U
   const problem = error ?? (state === 'failed' ? update?.problem ?? null : null);
   let action: ReactNode;
   if (state === 'ready') {
-    action = <button type="button" className="primary-button button-small" onClick={() => shell.updates.install()}>
-      重新打开</button>;
+    action = <button type="button" className="primary-button button-small" onClick={install}>重新打开</button>;
+  } else if (state === 'available' || (state === 'failed' && update?.available != null)) {
+    action = <button type="button" className="primary-button button-small" onClick={install}>
+      {state === 'failed' ? '重新下载' : '下载并更新'}</button>;
+  } else if (state === 'downloading' && update !== null) {
+    action = <button type="button" className="secondary-button button-small" disabled>
+      在下载 {Math.round(updateFraction(update) * 100)}%</button>;
   } else {
     const working = state === 'checking' || state === 'downloading' || state === 'installing';
     action = <button type="button" className="secondary-button button-small" disabled={working} onClick={check}>
@@ -43,6 +60,8 @@ function UpdateRow({ shell, update, onUpdate }: { shell: DesktopShell; update: U
       <span className="desktop-row-title">客户端</span>
       {state === 'ready' && update?.available != null
         ? <span className="desktop-row-meta">新版本 <span className="mono">{update.available}</span> 已下好</span>
+        : (state === 'available' || state === 'downloading') && update?.available != null
+        ? <span className="desktop-row-meta">有新版本 <span className="mono">{update.available}</span></span>
         : <span className="desktop-row-meta mono">Plasticine {shell.version}</span>}
       {problem === null ? null : <InfoTip label="更新没成的原因" text={problem} />}
       {action}

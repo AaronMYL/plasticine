@@ -9,7 +9,7 @@ import { DesktopEventSchema, DeviceServiceStatusSchema, ServerStatusSchema, Upda
   type DesktopEvent, type DeviceServiceStatus, type PlasticineDesktopBridge, type ServerStatus,
   type UpdateStatus } from '../../api/shared.ts';
 
-const EVENT = 'plasticine:desktop';
+export const DESKTOP_EVENT = 'plasticine:desktop';
 
 type DesktopWindow = Window & {
   plasticineDesktop?: Partial<PlasticineDesktopBridge>;
@@ -34,11 +34,12 @@ export function computerName(shell: DesktopShell): string {
   return shell.platform === 'macos' ? '这台 Mac' : '这台电脑';
 }
 
-function listen(): void {
+/** 接上壳报的状态变化（几处共用，只挂一次）。 */
+export function listenDesktopEvents(): void {
   const host = window as DesktopWindow;
   host.__plasticineDesktopEvent ??= (event: unknown) => {
     if (Value.Check(DesktopEventSchema, event)) {
-      window.dispatchEvent(new CustomEvent<DesktopEvent>(EVENT, { detail: event }));
+      window.dispatchEvent(new CustomEvent<DesktopEvent>(DESKTOP_EVENT, { detail: event }));
     }
   };
 }
@@ -96,7 +97,7 @@ export function useDesktopState(shell: DesktopShell | null): [DesktopState, (cha
     shell.updates.status().then((value) => alive && change({ update: parseUpdate(value) }), fail);
     shell.device.status().then((value) => alive && change({ device: parseDevice(value) }), fail);
     shell.notifications.enabled().then((value) => alive && change({ notifications: value === true }), fail);
-    listen();
+    listenDesktopEvents();
     const receive = (event: Event): void => {
       const detail = (event as CustomEvent<DesktopEvent>).detail;
       if (detail.type === 'server') {
@@ -107,10 +108,10 @@ export function useDesktopState(shell: DesktopShell | null): [DesktopState, (cha
         change({ device: detail.status });
       }
     };
-    window.addEventListener(EVENT, receive);
+    window.addEventListener(DESKTOP_EVENT, receive);
     return () => {
       alive = false;
-      window.removeEventListener(EVENT, receive);
+      window.removeEventListener(DESKTOP_EVENT, receive);
     };
   }, [shell]);
   return [state, change];

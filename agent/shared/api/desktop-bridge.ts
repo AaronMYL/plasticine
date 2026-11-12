@@ -52,7 +52,8 @@ export const ServerStatusSchema = Type.Object({
 }, STRICT);
 export type ServerStatus = Static<typeof ServerStatusSchema>;
 
-export const UPDATE_STATES = ['idle', 'checking', 'downloading', 'ready', 'installing', 'failed',
+/** available：查到新版、还没下（11-12 Aaron 定：点了才下）；点了 downloading → ready → installing（客户端重开）。 */
+export const UPDATE_STATES = ['idle', 'checking', 'available', 'downloading', 'ready', 'installing', 'failed',
   'up_to_date'] as const;
 
 export const UpdateStatusSchema = Type.Object({
@@ -66,6 +67,9 @@ export const UpdateStatusSchema = Type.Object({
   checkedAt: Type.Union([IsoTimeSchema, Type.Null()]),
   /** 没装上、被退回时的一句原因（「这一版启动后没答上，已退回 2026.1107.…」）。 */
   problem: Type.Union([Type.String({ maxLength: 300 }), Type.Null()]),
+  /** 正在下的那一版下了多少（字节）；没在下是 null（侧栏更新按钮的圆形进度，11-12）。 */
+  progress: Type.Optional(Type.Union([Type.Object({ received: Type.Integer({ minimum: 0 }),
+    total: Type.Integer({ minimum: 0 }) }, STRICT), Type.Null()])),
 }, STRICT);
 export type UpdateStatus = Static<typeof UpdateStatusSchema>;
 
@@ -145,8 +149,10 @@ export interface PlasticineDesktopExternal {
 export interface PlasticineDesktopUpdates {
   /** 回 UpdateStatusSchema。 */
   status(): Promise<unknown>;
-  /** 马上查一次；有新版就下载、核对，回 UpdateStatusSchema（ready 时等界面点「重新打开」）。 */
+  /** 马上查一次；有新版只报 available，不下载（11-12），回 UpdateStatusSchema。 */
   check(): Promise<unknown>;
+  /** 下 available 的那一版并核对；下载中照常报进度。下好回 ready 的 UpdateStatusSchema，没成回 failed。 */
+  download(): Promise<unknown>;
   /** 装上已下好的新版并重新打开客户端。 */
   install(): void;
   /** 退回上一版并重新打开客户端。 */

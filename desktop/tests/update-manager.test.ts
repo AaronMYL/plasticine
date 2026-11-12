@@ -23,9 +23,12 @@ function manager(dir: string, text: string, change: Partial<UpdateDeps> = {}) {
   const updates = new UpdateManager({
     platform: 'darwin', version: '2026.1101.000000', packaged: true, releaseUrl: 'https://cyberhunter.top/download',
     directory: join(dir, 'updates'), installed: join(dir, 'Plasticine.app'), pid: 1,
-    fetchBytes: async (url) => {
+    fetchBytes: async (url, onProgress) => {
       fetched.push(url);
-      return url.endsWith('desktop.json') ? new TextEncoder().encode(text) : ZIP;
+      if (url.endsWith('desktop.json')) return new TextEncoder().encode(text);
+      onProgress?.(4);
+      onProgress?.(ZIP.length);
+      return ZIP;
     },
     extractZip: async (_zip, into) => {
       mkdirSync(join(into, 'Plasticine.app', 'Contents'), { recursive: true });
@@ -40,12 +43,19 @@ function manager(dir: string, text: string, change: Partial<UpdateDeps> = {}) {
   return { updates, launched, fetched, quits: () => quit };
 }
 
-test('有新版：读 desktop.json、按清单所在位置下载、核对后等他点重新打开', async (t) => {
+test('有新版：查到只报 available、不下载；点了才按清单所在位置下载、报进度、核对，再装上重开', async (t) => {
   const dir = tempDir(t);
   const { updates, fetched, launched, quits } = manager(dir, manifest('2026.1108.000000'));
-  const status = await updates.check();
+  const found = await updates.check();
+  assert.equal(found.state, 'available');
+  assert.equal(found.available, '2026.1108.0');
+  assert.deepEqual(fetched, ['https://cyberhunter.top/download/desktop.json']);
+  const seen: (number | undefined)[] = [];
+  updates.onChange((status) => { if (status.state === 'downloading') seen.push(status.progress?.received); });
+  const status = await updates.download();
   assert.equal(status.state, 'ready');
-  assert.equal(status.available, '2026.1108.0');
+  assert.equal(status.progress, null);
+  assert.deepEqual(seen.filter((value) => value !== undefined), [0, 4, ZIP.length]);
   assert.deepEqual(fetched, ['https://cyberhunter.top/download/desktop.json',
     'https://cyberhunter.top/download/2026.1108.000000/Plasticine-Desktop-mac-2026.1108.000000.zip']);
   updates.install();
@@ -69,8 +79,10 @@ test('一样新、被记成坏版本的不装；大小或摘要对不上不装',
   const same = manager(tempDir(t), manifest('2026.1101.000000'));
   assert.equal((await same.updates.check()).state, 'up_to_date');
   const bad = manager(tempDir(t), manifest('2026.1108.000000', 'b'.repeat(64)));
-  const status = await bad.updates.check();
+  assert.equal((await bad.updates.check()).state, 'available');
+  const status = await bad.updates.download();
   assert.equal(status.state, 'failed');
+  assert.equal(status.available, '2026.1108.0', '没下成还记着那一版，点了能重试');
   assert.match(status.problem ?? '', /SHA-256/);
 });
 

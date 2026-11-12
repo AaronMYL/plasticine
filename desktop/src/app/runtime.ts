@@ -116,12 +116,32 @@ export function runChecked(file: string, args: readonly string[]): Promise<void>
   });
 }
 
-export async function fetchBytes(url: string): Promise<Uint8Array> {
+/** onProgress：边下边报已下的字节数（更新包的圆形进度）；不给就一次读完。 */
+export async function fetchBytes(url: string, onProgress?: (received: number) => void): Promise<Uint8Array> {
   const response = await net.fetch(url, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`下载 ${new URL(url).pathname} 回了 ${response.status}`);
   }
-  return new Uint8Array(await response.arrayBuffer());
+  if (onProgress === undefined || response.body === null) {
+    return new Uint8Array(await response.arrayBuffer());
+  }
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  const reader = response.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress(received);
+  }
+  const bytes = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return bytes;
 }
 
 /** browser_read：读网址的文字（HTML 保留标记），最多 200 KiB；不是已登录浏览器的 DOM。 */

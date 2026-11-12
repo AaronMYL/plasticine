@@ -45,6 +45,7 @@ export interface ShellServices {
   cancelCapture(): void;
   updateStatus(): unknown;
   updateCheck(): Promise<unknown>;
+  updateDownload(): Promise<unknown>;
   updateInstall(): void;
   updateRollback(): void;
   deviceStatus(): unknown;
@@ -165,6 +166,7 @@ export function registerBridge(services: ShellServices): void {
   on(CHANNELS.externalCancel, () => services.cancelCapture());
   handle(CHANNELS.updateStatus, () => services.updateStatus());
   handle(CHANNELS.updateCheck, () => services.updateCheck());
+  handle(CHANNELS.updateDownload, () => services.updateDownload());
   on(CHANNELS.updateInstall, () => services.updateInstall());
   on(CHANNELS.updateRollback, () => services.updateRollback());
   handle(CHANNELS.deviceStatus, () => services.deviceStatus());

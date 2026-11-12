@@ -183,9 +183,12 @@ async function start(): Promise<void> {
     });
     notice.show();
   };
+  // 查到新版提醒一次（同一版不重复）；下载、重开由他点侧栏的更新按钮。
+  let announced: string | null = null;
   updates.onChange((status) => {
-    if (status.state === 'ready' && status.available !== null) {
-      notify('Plasticine 有新版本', `${status.available} 已下好，点这里重新打开就换上。`, '#/settings/system');
+    if (status.state === 'available' && status.available !== null && status.available !== announced) {
+      announced = status.available;
+      notify('Plasticine 有新版本', `${status.available} 可以更新了，点侧栏的更新按钮就下载并重新打开。`, '#/');
     }
   });
   // 进出全屏、最大化时报一次窗口外观；Windows 上带右上角窗口按钮的实际宽度（controlsRight，界面里按 Window
@@ -207,6 +210,7 @@ async function start(): Promise<void> {
     openExternal: (url) => void shell.openExternal(url),
     capture: (port, timeoutMs) => capture.capture(port, timeoutMs), cancelCapture: () => capture.cancel(),
     updateStatus: () => updates.status(), updateCheck: () => updates.check(),
+    updateDownload: () => updates.download(),
     updateInstall: () => updates.install(), updateRollback: () => updates.rollback(),
     deviceStatus: () => node.status(), devicePair: (request) => node.pair(request.code),
     devicePause: (paused) => {
