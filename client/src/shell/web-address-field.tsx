@@ -4,7 +4,11 @@
 
 import { useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { WebTab } from '../state/web-tabs.ts';
-import { addressToUrl, type NativeWebTabs } from './use-native-web-tabs.ts';
+import { useLive } from '../live.tsx';
+import { useStore } from '../state/use-store.ts';
+import { Icon } from './icons.tsx';
+import { readSearchEngine, SEARCH_ENGINE_LABELS } from './search-engine.ts';
+import { addressToUrl, typedUrl, type NativeWebTabs } from './use-native-web-tabs.ts';
 
 export function hostOf(url: string): string {
   try {
@@ -36,40 +40,115 @@ interface AddressFieldProps {
   onDone: () => void;
 }
 
+/** 边打边出的一条建议：去过的页、书签，最后一条总是「搜这几个字」或「打开这个网址」。 */
+export interface AddressSuggestion {
+  kind: 'bookmark' | 'history' | 'go';
+  title: string;
+  url: string;
+}
+
+const SUGGEST_MAX = 6;
+
+/**
+ * 打的字对得上的书签在前、去过的页在后（同一个网址只出一次），最后一条是照字面去的那一条：像网址就打开，不像就搜。
+ * 一个字都没打时不出。
+ */
+export function addressSuggestions(typed: string, bookmarks: readonly { title: string; target: string | null }[],
+  visits: readonly { title: string; url: string }[]): AddressSuggestion[] {
+  const text = typed.trim();
+  const direct = addressToUrl(text);
+  if (text === '' || direct === null) {
+    return [];
+  }
+  const needle = text.toLocaleLowerCase();
+  const hit = (title: string, url: string): boolean => title.toLocaleLowerCase().includes(needle)
+    || url.toLocaleLowerCase().includes(needle);
+  const seen = new Set<string>([direct]);
+  const found: AddressSuggestion[] = [];
+  const add = (kind: 'bookmark' | 'history', title: string, url: string): void => {
+    if (found.length < SUGGEST_MAX - 1 && !seen.has(url) && hit(title, url)) {
+      seen.add(url);
+      found.push({ kind, title: title.trim() === '' ? hostOf(url) : title, url });
+    }
+  };
+  for (const bookmark of bookmarks) {
+    if (bookmark.target !== null && /^https?:/i.test(bookmark.target)) add('bookmark', bookmark.title, bookmark.target);
+  }
+  for (const visit of visits) add('history', visit.title, visit.url);
+  const isUrl = typedUrl(text) !== null;
+  return [...found, { kind: 'go', title: isUrl ? `打开 ${text}` : `用${SEARCH_ENGINE_LABELS[readSearchEngine()]}搜「${text}」`,
+    url: direct }];
+}
+
 function AddressField(props: AddressFieldProps): ReactNode {
   const { tab, url, native, leading, onDone } = props;
   const [draft, setDraft] = useState<string | null>(null);
+  /** 方向键选中的那一条；-1 是没选（回车照打的字去）。 */
+  const [picked, setPicked] = useState(-1);
   const form = useRef<HTMLFormElement>(null);
   const input = useRef<HTMLInputElement>(null);
+  const bookmarks = useStore(useLive().bookmarks.data).bookmarks;
+  const visits = useStore(native.history.store);
+  const suggestions = draft === null ? [] : addressSuggestions(draft, bookmarks, visits);
   useLayoutEffect(() => {
     input.current?.focus();
     input.current?.select();
   }, []);
-  const submit = (event: FormEvent): void => {
-    event.preventDefault();
-    const typed = draft ?? url;
-    const next = addressToUrl(typed);
+  const go = (next: string | null): void => {
     setDraft(null);
     if (next !== null) {
       native.navigate(tab.id, next);
     }
     onDone();
   };
+  const submit = (event: FormEvent): void => {
+    event.preventDefault();
+    go(suggestions[picked]?.url ?? addressToUrl(draft ?? url));
+  };
   return (
     <form ref={form} className="web-address web-address-form" data-editing="true" onSubmit={submit}>
       {leading}
       <input ref={input} className="web-address-input" aria-label="网址" value={draft ?? url} spellCheck={false}
-        autoCapitalize="off" autoCorrect="off" enterKeyHint="go"
-        onChange={(event) => setDraft(event.target.value)} onBlur={() => {
+        autoCapitalize="off" autoCorrect="off" enterKeyHint="go" role="combobox" aria-autocomplete="list"
+        aria-expanded={suggestions.length > 0} aria-controls="web-address-suggestions"
+        aria-activedescendant={picked < 0 ? undefined : `web-address-suggestion-${picked}`}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          setPicked(-1);
+        }} onBlur={() => {
           setDraft(null);
           onDone();
         }}
         onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing) {
+            return;
+          }
           if (event.key === 'Escape') {
             setDraft(null);
             onDone();
+          } else if (suggestions.length > 0 && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+            event.preventDefault();
+            // 在「没选」（-1）和各条之间转圈：最后一条再往下回到没选，没选再往上到最后一条。
+            const last = suggestions.length - 1;
+            setPicked((current) => (event.key === 'ArrowDown' ? (current >= last ? -1 : current + 1)
+              : current <= -1 ? last : current - 1));
           }
         }} />
+      {suggestions.length === 0 ? null : (
+        <ul id="web-address-suggestions" className="web-suggest" role="listbox" aria-label="建议"
+          data-hit-region="web-suggest">
+          {suggestions.map((item, index) => (
+            <li key={`${item.kind}:${item.url}`} id={`web-address-suggestion-${index}`} role="option"
+              aria-selected={index === picked} className="web-suggest-item"
+              // 按下时不让输入框失焦（失焦会收起），松开再去。
+              onMouseDown={(event) => event.preventDefault()} onClick={() => go(item.url)}>
+              <Icon name={item.kind === 'bookmark' ? 'bookmark' : item.kind === 'history' ? 'clock' : 'search'} size={14} />
+              <span className="web-suggest-title">{item.title}</span>
+              {item.kind === 'go' ? null : <span className="web-suggest-url">{hostOf(item.url)}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
     </form>
   );
 }

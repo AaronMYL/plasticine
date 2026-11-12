@@ -20,6 +20,7 @@
 }
 
 .web-toolbar {
+  position: relative;
   box-sizing: border-box;
   height: 56px;
   gap: 4px;
@@ -523,4 +524,111 @@ button.web-address-host:focus-visible {
 .web-address-form .web-address-input:focus,
 .web-address-form .web-address-input:focus-visible {
   outline: none;
+}
+
+/* 地址框下面边打边出的建议（11-12）：贴着地址框、同宽；选中的一条铺底。画在原生网页上面，所以标了 hit-region。 */
+.web-address-form {
+  position: relative;
+}
+
+.web-suggest {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 45;
+  margin: 0;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  list-style: none;
+  animation: web-suggest-in var(--motion-fast) var(--ease-out);
+}
+
+.web-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.web-suggest-item > svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.web-suggest-item:hover,
+.web-suggest-item[aria-selected='true'] {
+  background: var(--tint2);
+}
+
+.web-suggest-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-suggest-url {
+  flex: none;
+  margin-left: auto;
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+@keyframes web-suggest-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* 载入中：工具条底边一条来回走的细线（11-12）；减少动态效果时是一条不动的线。 */
+.web-loading {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.web-loading::after {
+  display: block;
+  width: 30%;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--accent);
+  content: '';
+  animation: web-loading-run 1.1s var(--ease-in-out) infinite;
+}
+
+@keyframes web-loading-run {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-suggest {
+    animation: none;
+  }
+
+  .web-loading::after {
+    width: 100%;
+    animation: none;
+    opacity: 0.5;
+  }
 }

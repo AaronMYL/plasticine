@@ -24,6 +24,7 @@ import { ModelsSection } from '../models/models-section.tsx';
 import { NetworkSection } from './network-section.tsx';
 import { NoticesSection } from './notices-section.tsx';
 import type { PushSwitchStatus } from './push-switch.ts';
+import { SearchEngineSection } from './search-engine-section.tsx';
 import { SectionHead } from './section-head.tsx';
 import { SkillsSection } from './skills-section.tsx';
 import { WorkLimitSection } from './work-limit-section.tsx';
@@ -142,6 +143,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
       </>;
     case 'browser':
       return <>
+        <SearchEngineSection />
         <BrowserSection />
         <Spot name="translate"><TranslateSettingsSection /></Spot>
       </>;

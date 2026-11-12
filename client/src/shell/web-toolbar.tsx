@@ -66,6 +66,7 @@ export function WebToolbar(props: WebToolbarProps): ReactNode {
         aria-pressed={props.extracting ?? false} onClick={props.onExtract}><Icon name="edit" />提取</button>}
       <IconButton icon="more" className="web-more" label="更多" {...pressed('more')}
         onClick={(event) => props.onToggle('more', event.currentTarget)} />
+      {nav?.loading === true ? <span className="web-loading" role="progressbar" aria-label="正在载入" /> : null}
     </div>
   );
 }

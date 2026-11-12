@@ -186,6 +186,30 @@ describe('Mac 原生网页标签', () => {
     expect(window.location.hash).toBe(webHash(id));
   });
 
+  it('地址栏边打边出建议：去过的页能用方向键选中回车打开，最后一条是搜这几个字（11-12）', async () => {
+    const bridge = install();
+    const app = await renderApp();
+    let id = '';
+    act(() => {
+      const hash = webHash(app.state.webTabs.open('https://example.com/a', 'A', 'user'));
+      id = decodeURIComponent(hash.slice('#/web/'.length));
+      window.location.hash = hash;
+    });
+    emit({ type: 'state', tabId: id, url: 'https://docs.example.com/guide', title: '示例文档', canGoBack: false,
+      canGoForward: false, loading: false });
+    const main = screen.getByRole('main');
+    fireEvent.click(await within(main).findByRole('button', { name: /^网址/ }));
+    const address = within(main).getByRole('combobox', { name: '网址' });
+    expect(within(main).queryByRole('listbox', { name: '建议' })).toBeNull();
+    fireEvent.change(address, { target: { value: '示例' } });
+    const options = within(within(main).getByRole('listbox', { name: '建议' })).getAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['示例文档docs.example.com', '用必应搜「示例」']);
+    fireEvent.keyDown(address, { key: 'ArrowDown' });
+    expect(options[0]?.getAttribute('aria-selected')).toBe('true');
+    fireEvent.submit(address);
+    expect(bridge.navigate).toHaveBeenCalledWith(id, 'https://docs.example.com/guide');
+  });
+
   it('地址栏回车、前进后退、刷新、在系统浏览器打开都交给原生层', async () => {
     const bridge = install();
     const app = await renderApp();
@@ -197,12 +221,12 @@ describe('Mac 原生网页标签', () => {
     });
     const main = screen.getByRole('main');
     fireEvent.click(await within(main).findByRole('button', { name: /^网址/ }));
-    const address = within(main).getByRole('textbox', { name: '网址' }) as HTMLInputElement;
+    const address = within(main).getByRole('combobox', { name: '网址' }) as HTMLInputElement;
     expect(address.value).toBe('https://example.com/a');
     fireEvent.change(address, { target: { value: 'news.ycombinator.com' } });
     fireEvent.submit(address);
     expect(bridge.navigate).toHaveBeenCalledWith(id, 'https://news.ycombinator.com');
-    expect(within(main).queryByRole('textbox', { name: '网址' })).toBeNull();
+    expect(within(main).queryByRole('combobox', { name: '网址' })).toBeNull();
     fireEvent.click(within(main).getByRole('button', { name: '重新载入' }));
     fireEvent.click(within(main).getByRole('button', { name: '更多' }));
     fireEvent.click(screen.getByRole('menuitem', { name: '在浏览器打开' }));

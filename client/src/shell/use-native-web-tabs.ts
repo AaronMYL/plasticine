@@ -26,9 +26,8 @@ import type { WebTabsState, WebTabsStore } from '../state/web-tabs.ts';
 import { collectHitRegions, useHitRegions } from './hit-regions.ts';
 import { internalPage } from './internal-page.ts';
 import { parseHash, type Route } from './routes.ts';
+import { searchUrl } from './search-engine.ts';
 
-// 地址栏里打的不是网址时用的搜索：国内能直接打开。
-const SEARCH_URL = 'https://www.bing.com/search?q=';
 
 export interface WebTabNav {
   url: string;
@@ -297,5 +296,5 @@ export function addressToUrl(input: string): string | null {
   if (text === '') {
     return null;
   }
-  return typedUrl(text) ?? `${SEARCH_URL}${encodeURIComponent(text)}`;
+  return typedUrl(text) ?? searchUrl(text);
 }
