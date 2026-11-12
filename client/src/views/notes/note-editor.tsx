@@ -20,6 +20,8 @@ import { useTelemetry } from '../../telemetry.ts';
 import { noteExtensions } from './editor-extensions.ts';
 import { NoteSaver } from './note-saver.ts';
 import { noteComposing, trackComposition } from './note-composition.ts';
+import { inputDiagnostics, recordInput } from './note-input-log.ts';
+import { CLIENT_BUILD_ID } from '../../shell/client-update.tsx';
 import { useEditorDom } from './editor-dom.ts';
 import { useNoteSync } from './use-note-sync.ts';
 import { NoteReview, type NoteProposal } from './note-review.tsx';
@@ -142,8 +144,18 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
     if (editor !== null && editor.isEditable === readOnly) { editor.setEditable(!readOnly, false); }
   }, [editor, readOnly]);
   const editorNode = useEditorDom(editor);
-  useEffect(() => (editor === null || editorNode === null ? undefined : trackComposition(editor, editorNode)),
-    [editor, editorNode]);
+  useEffect(() => {
+    if (editor === null || editorNode === null) { return undefined; }
+    const stops = [trackComposition(editor, editorNode), recordInput(editor, editorNode)];
+    return () => { for (const stop of stops) { stop(); } };
+  }, [editor, editorNode]);
+  const copyDiagnostics = async (): Promise<void> => {
+    if (editor === null) { return; }
+    try {
+      await navigator.clipboard.writeText(inputDiagnostics(editor, CLIENT_BUILD_ID));
+      setQuoteStatus('输入诊断已复制，不含正文内容。');
+    } catch (cause) { setQuoteStatus(errorText(cause)); }
+  };
   // 刚新建的那一篇：编辑器一挂上就把焦点交给正文开头，之后再打开同一篇不抢焦点（审查第 3 条）。
   useEffect(() => {
     if (editor === null || readOnly || !notesUi.takeFresh(note.id)) { return; }
@@ -207,6 +219,7 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
 
   const actions = <NoteActions note={current} label="更多笔记操作" extra={[
     { label: '版本历史', icon: 'history', onSelect: () => setHistoryOpen(true) },
+    { label: '复制输入诊断', icon: 'copy', onSelect: () => void copyDiagnostics() },
     ...readOnly ? [] : [{ label: '删除笔记', icon: 'trash', onSelect: () => setConfirmDelete(true) } as const],
   ]} beforeChange={async () => {
     await saver.flush();

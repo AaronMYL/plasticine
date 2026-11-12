@@ -51,6 +51,18 @@
   flex-basis: 100%;
 }
 
+/* 工具栏上的两个开关（11-12 全量优化第 14 条）。 */
+.note-ai-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 2px;
+  color: var(--fg);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 .note-menu-button {
   display: inline-flex;
   align-items: center;
@@ -318,4 +330,53 @@
 @media (max-width: 767px) {
   .note-command-bar { overflow-x: auto; scrollbar-width: none; }
   .note-command-bar::-webkit-scrollbar { display: none; }
+}
+
+/*
+ * 11-12 全量优化第 14 条：续写、补充建议、整理放到工具栏外层以后一行放不下的时候——
+ * 电脑：格式和 AI 各是一组，整组换到下一行，组里面不拆开；
+ * 手机：格式一行（横着滑）加保存状态，AI 单独一行、常在。
+ */
+.note-command-bar .note-format-toolbar,
+.note-command-bar .note-ai-tools > .note-toolbar {
+  flex-wrap: nowrap;
+}
+.note-command-bar .note-format-toolbar,
+.note-command-bar .note-ai-tools {
+  flex: none;
+}
+.note-command-bar .note-ai-tools > .note-toolbar {
+  gap: 6px;
+}
+@media (min-width: 768px) {
+  .note-command-bar {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+}
+@media (max-width: 767px) {
+  .note-command-bar {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    overflow-x: visible;
+  }
+  .note-command-bar .note-format-toolbar {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .note-command-bar .note-format-toolbar::-webkit-scrollbar { display: none; }
+  .note-command-bar .note-format-toolbar > * { flex: none; }
+  .note-command-bar .note-ai-tools {
+    order: 3;
+    flex: 1 1 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .note-command-bar .note-ai-tools::-webkit-scrollbar { display: none; }
+  .note-ai-switch,
+  .note-ai-tools .chip-button {
+    min-height: 40px;
+  }
 }

@@ -101,6 +101,8 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
       setBubble({ width, ...place });
     };
     const select = (): void => {
+      // 有的输入法组字时把正在组的字选中：这不是人选的字，不出选段工具，也不去量位置。
+      if (noteComposing(editor)) { setSelection(null); setBubble(null); return; }
       const { from, to, empty } = editor.state.selection;
       setSelection(!empty && editor.state.doc.textBetween(from, to).trim() !== '' ? { from, to } : null);
       locate();
@@ -180,27 +182,34 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
   const quick = (action: NoteAssistRequest['action'], range: NoteRange | null): void => {
     void generate(action, capture(editor, range));
   };
-  const fullActions = [['polish', '润色'], ['organize', '整理'], ['correct', '检查与纠正'], ['format', '排版']] as const;
+  const moreActions = [['polish', '润色'], ['correct', '检查与纠正'], ['format', '排版']] as const;
   const selectedActions = [['correct', '检查与纠正'], ['format', '排版'], ['chart', '图表化']] as const;
   const disabled = busy || pending;
   const visibleError = error ?? automaticError;
 
   return <div className="note-ai-tools">
     <div className="note-toolbar">
-      {/* 11-12 第 6 条：「续写」「补充建议」两个开关收进 AI 下拉（开着行尾一个勾），工具栏只剩一行。 */}
-      <DropdownMenu label="AI 写作" className="note-menu-button" items={[
-        ...fullActions.map(([action, label]) => ({
+      {/* 11-12 全量优化第 14 条：用得最多的三样（续写、补充建议的开关和整理）直接放在工具栏上，其余收在「⋯」里。 */}
+      <label className="note-ai-switch">
+        <input type="checkbox" role="switch" checked={predict}
+          onChange={() => notesUi.set({ predict: !predict })} />续写
+      </label>
+      <label className="note-ai-switch">
+        <input type="checkbox" role="switch" checked={interject}
+          onChange={() => notesUi.set({ interject: !interject })} />补充建议
+      </label>
+      <button type="button" className="chip-button" disabled={disabled} aria-label="整理全文"
+        onClick={() => quick('organize', null)}>整理</button>
+      <DropdownMenu label="AI 写作" tip="更多 AI 操作" className="icon-button note-menu-button" items={[
+        ...moreActions.map(([action, label]) => ({
           label: `整篇${label}`, disabled, onSelect: () => quick(action, null),
         })),
         SEPARATOR,
         { label: '按要求修改全文', disabled, onSelect: () => openPrompt(null) },
         SEPARATOR,
-        { label: '续写', shortcut: 'Tab 采用', checked: predict, onSelect: () => notesUi.set({ predict: !predict }) },
-        { label: '补充建议', checked: interject, onSelect: () => notesUi.set({ interject: !interject }) },
-        SEPARATOR,
         { label: '笔记 AI 设置', icon: 'settings', onSelect: () => openPanel({ kind: 'settings', section: 'ai' }) },
       ]}>
-        <Icon name="sparkles" />AI<Icon name="chevron-down" size={14} />
+        <Icon name="sparkles" />
       </DropdownMenu>
       {busy ? <><span role="status" className="note-status">{busyLabel}</span>
         <IconButton icon="close" label="取消建议" onClick={cancel} /></> : null}
