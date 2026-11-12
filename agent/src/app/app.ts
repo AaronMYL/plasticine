@@ -45,6 +45,7 @@ import { createRequestHandler } from './server.ts';
 import { SourceLimiter } from './source-limiter.ts';
 import { askView } from './asks.ts';
 import { BrowserSessions } from './browser-sessions.ts';
+import { DevicePaths } from './device-paths.ts';
 
 export interface AppOptions {
   state: StateService;
@@ -162,8 +163,10 @@ export function createApp(options: AppOptions): App {
     glossary: () => glossaryTerms(options.state),
     now,
   });
+  const devicePaths = new DevicePaths();
   const deps: AppDeps = {
     state: options.state,
+    devicePaths,
     text: options.text,
     bookInsights,
     noteAssistant: new NoteAssistant(options.text, options.state),
@@ -237,7 +240,10 @@ export function createApp(options: AppOptions): App {
       // 第 113 条：加入了网络就开始收发；分身接着答重启前没答完的问题。
       options.network.start();
       // 隧道：解开的连接交给这个 HTTP 服务，和本机端口进来的一样处理。
-      options.tunnel?.start((socket) => server.emit('connection', socket));
+      options.tunnel?.start((socket) => {
+        deps.devicePaths.markTunnel(socket);
+        server.emit('connection', socket);
+      });
       // 新内核：在跑 / 在等的线接着跑，暂停的到点再跑，排着队的发出去。
       options.lines.start();
       // 定时线：先按现在的时区排好下一次（错过的补最近一次），再每分钟看一眼。

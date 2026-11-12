@@ -1,6 +1,8 @@
 #!/bin/sh
 # Plasticine Linux 安装（docs/install-packages.md）。在 VPS 上以 root 运行：
 #   curl -fsSL <发布点>/install.sh | sudo sh                         安装或升级（也升级 Node）
+#   curl -fsSL <发布点>/install.sh | sudo sh -s -- --handle=<@账号>   装好就以这个 @账号加入网络（不问）
+#   curl -fsSL <发布点>/install.sh | sudo sh -s -- --domain=<域名>    装好用自己的域名打开（不问）
 #   curl -fsSL <发布点>/install.sh | sudo sh -s -- --uninstall       卸载程序，数据留着
 #   curl -fsSL <发布点>/install.sh | sudo sh -s -- --uninstall --purge   连数据一起删
 # 装 Node 24 到 /opt/plasticine/node，服务包到 /opt/plasticine/versions/<版本>（current 指着在用的），
@@ -37,11 +39,15 @@ die() {
 
 ACTION="install"
 PURGE="false"
+HANDLE=""
+DOMAIN=""
 for arg in "$@"; do
   case "$arg" in
     --uninstall) ACTION="uninstall" ;;
     --purge) PURGE="true" ;;
-    *) die "不认识的参数 $arg（可用：--uninstall、--purge）" ;;
+    --handle=*) HANDLE="${arg#--handle=}" ;;
+    --domain=*) DOMAIN="${arg#--domain=}" ;;
+    *) die "不认识的参数 $arg（可用：--handle=、--domain=、--uninstall、--purge）" ;;
   esac
 done
 
@@ -201,13 +207,43 @@ as_service_user() {
   fi
 }
 
+# 11-12《首次使用解耦》：别的设备怎么打开。命令行没给就问一句（有终端时；curl | sh 时读 /dev/tty），
+# 填 @账号走 Cyber Hunter 网络，填带点的是自己的域名，直接回车两样都不要（以后在设置里起）。
+ask_access() {
+  [ -n "$HANDLE$DOMAIN" ] && return 0
+  # 测试前缀下不问（测试没有终端可答）。
+  [ -z "$PREFIX" ] || return 0
+  [ -r /dev/tty ] && [ -w /dev/tty ] || return 0
+  printf '%s\n%s' "别的设备怎么打开这份 Plasticine？" \
+    "  起一个 @账号（如 alex），或者填你自己的域名；直接回车先不设：" > /dev/tty
+  answer=""
+  read -r answer < /dev/tty || answer=""
+  case "$answer" in
+    "") ;;
+    *.*) DOMAIN="$answer" ;;
+    *) HANDLE="${answer#@}" ;;
+  esac
+}
+
 # 2026-11-08《首次使用流程》：还没有主人就打印一次性建账号链接（30 分钟、用一次）；已经有主人它自己说一句。
+# 带 @账号时命令先入网，退出码 10 = 新加入了：重启服务，隧道连上、证书自己去签。
 print_setup_link() {
   port=$1
   link_cli="$APP/current/agent/src/app/setup-link-cli.ts"
   [ -f "$link_cli" ] || return 0
-  as_service_user env PLASTICINE_STATE="$DATA/state" PLASTICINE_PORT="$port" "$APP/node/bin/node" "$link_cli" >&2 \
-    || say "建账号链接这次没生成出来；稍后运行 sudo plasticine setup-link 再拿一条。"
+  set -- env PLASTICINE_STATE="$DATA/state" PLASTICINE_PORT="$port" "$APP/node/bin/node" "$link_cli"
+  [ -n "$HANDLE" ] && set -- "$@" --handle "$HANDLE"
+  [ -n "$DOMAIN" ] && set -- "$@" --domain "$DOMAIN"
+  code=0
+  as_service_user "$@" >&2 || code=$?
+  case "$code" in
+    0) ;;
+    10)
+      systemctl restart plasticine.service
+      wait_healthy
+      ;;
+    *) say "建账号链接这次没生成出来；稍后运行 sudo plasticine setup-link 再拿一条。" ;;
+  esac
 }
 
 install() {
@@ -217,6 +253,7 @@ install() {
   mkdir -p "$APP/versions"
   WORK=$(mktemp -d "$APP/.install.XXXXXX")
   trap 'rm -rf "$WORK"' EXIT
+  ask_access
   install_node
   install_server
   prepare_user_and_data
@@ -227,8 +264,10 @@ install() {
   say "✓ Plasticine $(readlink "$APP/current" | sed 's#versions/##') 装好了，正在运行（只听 127.0.0.1:${port}）"
   say ""
   print_setup_link "$port"
-  say "  这台服务器没有图形界面的话，先在你电脑上运行："
-  say "  ssh -L $port:127.0.0.1:$port <用户>@<这台服务器>"
+  if [ -z "$HANDLE$DOMAIN" ]; then
+    say "  这台服务器没有图形界面的话，先在你电脑上运行："
+    say "  ssh -L $port:127.0.0.1:$port <用户>@<这台服务器>"
+  fi
   say ""
   say "以后："
   say "  plasticine password   重设密码"

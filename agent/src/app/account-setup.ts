@@ -40,6 +40,10 @@ async function joinNetwork(deps: AppDeps, body: AccountSetupRequest, name: strin
   try {
     const identity = await deps.network.join({ handle: body.handle, displayName: name, inviteCode: null,
       relayUrl: null });
+    // 装服务器时 setup-link --handle 先替他入了网（名字先用 @账号占着）：建账号时换成他填的名字。
+    if (identity.displayName !== name) {
+      deps.network.rename(name);
+    }
     return { joined: true, url: `https://${deps.network.publicHost(identity.handle)}`, problem: null };
   } catch (error) {
     safeLog('warn', 'account_network_join_failed', { category: errorCategory(error) });

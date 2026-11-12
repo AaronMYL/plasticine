@@ -38,6 +38,11 @@ import { PAGE_STEP_MAX_CHARS, PageActSchema } from './page-operate.ts';
 
 export const DEVICES_PATH = `${API_PREFIX}/devices`;
 
+/** 设备怎么连进来的：本机、直连（WebRTC）、经 Cyber Hunter 中继、自己的网址。 */
+export const DeviceViaSchema = Type.Union([Type.Literal('local'), Type.Literal('direct'), Type.Literal('relay'),
+  Type.Literal('web')]);
+export type DeviceVia = Static<typeof DeviceViaSchema>;
+
 export const DeviceViewSchema = Type.Object({
   id: IdSchema,
   name: DeviceNameSchema,
@@ -51,6 +56,8 @@ export const DeviceViewSchema = Type.Object({
    * 没有按 false。
    */
   local: Type.Optional(Type.Boolean()),
+  /** 这次服务启动以来最近一次怎么连进来的；还没来过是没有这一项。 */
+  via: Type.Optional(DeviceViaSchema),
 });
 export type DeviceView = Static<typeof DeviceViewSchema>;
 

@@ -19,7 +19,7 @@ function pane(): HTMLElement {
 }
 
 describe('设置 · 分段', () => {
-  it('六段：通用 · AI · 浏览器 · 账号 · 授权 · 系统；账号里是名字和密码、登录着的设备、头像、邀请朋友、对外可见、通知记录',
+  it('六段：通用 · AI · 浏览器 · 账号 · 授权 · 系统；账号里是名字和密码、在别的设备上用、登录着的设备、头像、邀请朋友、对外可见、通知记录',
     async () => {
     await renderApp({ hash: '#/settings', setup: seed });
     const nav = await within(await screen.findByRole('dialog', { name: '设置' }))
@@ -28,7 +28,7 @@ describe('设置 · 分段', () => {
       .toEqual(['通用', 'AI', '浏览器', '账号', '授权', '系统']);
     fireEvent.click(within(nav).getByRole('button', { name: '账号' }));
     const titles = within(pane()).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent);
-    expect(titles.slice(0, 5)).toEqual(['登录着的设备', '头像', '邀请朋友', '对外可见', '通知记录']);
+    expect(titles.slice(0, 6)).toEqual(['在别的设备上用', '登录着的设备', '头像', '邀请朋友', '对外可见', '通知记录']);
     expect(within(pane()).getByRole('region', { name: '名字和密码' })).toBeTruthy();
   });
 });

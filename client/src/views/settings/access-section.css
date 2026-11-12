@@ -1,0 +1,96 @@
+/* 设置 · 账号 ·「在别的设备上用」（11-12 设计稿 Devices）：后果一句常显 13/20 --fg2；分段切换；网络那边二维码 120 +
+   网址一行（等宽）和一句提示；自己的网址一栏输入 + 保存。 */
+
+.access-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.access-section .block-head {
+  margin-bottom: -10px;
+}
+
+.access-warning,
+.access-empty,
+.access-hint {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.access-modes {
+  align-self: flex-start;
+}
+
+.access-net {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  animation: access-in var(--motion-base) var(--ease-out);
+}
+
+.access-net .net-qr {
+  flex: none;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.access-net-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.access-url {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.access-url-text {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.access-own {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: access-in var(--motion-base) var(--ease-out);
+}
+
+.access-own-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.access-own-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.access-own-input {
+  flex: 1;
+  max-width: 360px;
+  min-width: 0;
+}
+
+@keyframes access-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .access-net,
+  .access-own { animation: none; }
+}

@@ -19,6 +19,8 @@ export const ACCOUNT_PASSWORD_PATH = `${ACCOUNT_PATH}/password`;
 export const ACCOUNT_HANDLES_PATH = `${ACCOUNT_PATH}/handles`;
 export const PASSWORD_SESSION_PATH = `${API_PREFIX}/session/password`;
 export const LOCAL_SESSION_PATH = `${API_PREFIX}/session/local`;
+/** GET / PUT（要登录）：「我自己的网址」——经自己的隧道或反向代理在别的设备上打开这份 Plasticine。 */
+export const ACCOUNT_OWN_URL_PATH = `${ACCOUNT_PATH}/own-url`;
 
 /** 壳给本机本体的令牌放在这个请求头里；只在 127.0.0.1 上认。 */
 export const LOCAL_TOKEN_HEADER = 'x-plasticine-local-token';
@@ -120,6 +122,18 @@ export type AccountPasswordResponse = Static<typeof AccountPasswordResponseSchem
 export const AccountPatchRequestSchema = Type.Object({ displayName: DisplayNameSchema },
   { additionalProperties: false });
 export type AccountPatchRequest = Static<typeof AccountPatchRequestSchema>;
+
+/**
+ * 「在别的设备上用」的自己的网址（11-12《首次使用解耦》）：只收 https、不带路径以外的东西；null = 没设。
+ * 设了以后 Plasticine 写给他的链接用这个网址。不进 GET /v2/account/state（那个不用登录）。
+ */
+export const OWN_URL_MAX_CHARS = 300;
+export const OwnUrlViewSchema = Type.Object({
+  ownUrl: Type.Union([Type.String({ maxLength: OWN_URL_MAX_CHARS }), Type.Null()]),
+}, { additionalProperties: false });
+export type OwnUrlView = Static<typeof OwnUrlViewSchema>;
+export const OwnUrlRequestSchema = OwnUrlViewSchema;
+export type OwnUrlRequest = OwnUrlView;
 
 /** 欢迎消息下面的「开始」（schema 在 shared/welcome-start.ts：线的视图也要用，放在不引别的文件的那一份里）。 */
 export { WelcomeStartSchema, type WelcomeStart } from '../welcome-start.ts';

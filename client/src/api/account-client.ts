@@ -9,6 +9,7 @@ import type {
   AccountSetupResponse,
   AccountState,
   HandleAvailability,
+  OwnUrlView,
   PasswordSessionRequest,
   SessionView,
 } from './shared.ts';
@@ -28,4 +29,8 @@ export interface AccountApi {
   setPassword(input: AccountPasswordRequest, localToken: string | null): Promise<AccountPasswordResponse>;
   /** PATCH /v2/account（要登录）：改名字。 */
   rename(displayName: string): Promise<AccountState>;
+  /** GET /v2/account/own-url（要登录）：「在别的设备上用」里自己的网址。 */
+  ownUrl(signal?: AbortSignal): Promise<OwnUrlView>;
+  /** PUT /v2/account/own-url（要登录）：存一个 https 网址，null 清掉。 */
+  setOwnUrl(ownUrl: string | null): Promise<OwnUrlView>;
 }

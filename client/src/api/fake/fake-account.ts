@@ -13,6 +13,7 @@ import type {
   AccountSetupResponse,
   AccountState,
   HandleAvailability,
+  OwnUrlView,
   PasswordSessionRequest,
   SessionView,
   WelcomeStart,
@@ -57,6 +58,7 @@ export class FakeAccount implements AccountApi {
   private passwordSetAt: string | null = null;
   private displayName = 'Alex';
   private failures = 0;
+  private own: string | null = null;
   private readonly deps: FakeAccountDeps;
 
   constructor(deps: FakeAccountDeps) {
@@ -167,6 +169,31 @@ export class FakeAccount implements AccountApi {
     this.displayName = displayName;
     this.deps.network.rename(displayName);
     return this.snapshot();
+  }
+
+  async ownUrl(): Promise<OwnUrlView> {
+    this.deps.session.require();
+    return { ownUrl: this.own };
+  }
+
+  async setOwnUrl(ownUrl: string | null): Promise<OwnUrlView> {
+    this.deps.session.require();
+    if (ownUrl === null || ownUrl.trim() === '') {
+      this.own = null;
+      return { ownUrl: null };
+    }
+    let url: URL | null = null;
+    try {
+      url = new URL(ownUrl.trim());
+    } catch {
+      url = null;
+    }
+    if (url === null || url.protocol !== 'https:' || url.pathname !== '/' || url.search !== '' || url.username !== '') {
+      throw new ApiError({ kind: 'invalid', code: 'invalid_request', status: 400, field: 'ownUrl',
+        message: '要填 https 开头的网址，不带路径、查询和登录信息，比如 https://plasticine.example.com。' });
+    }
+    this.own = url.origin;
+    return { ownUrl: this.own };
   }
 
   /** 服务端建账号时放的那条欢迎消息（本地开发的「第一次进主线」场景也用）。 */

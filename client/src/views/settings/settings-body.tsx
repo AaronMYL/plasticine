@@ -13,6 +13,7 @@ import type { SettingsFocus } from '../../shell/panel.ts';
 import type { SettingsSection } from '../../shell/routes.ts';
 import { TOOL_GROUPS_NOTE, ToolGroupsView } from '../tools/tool-groups-view.tsx';
 import { AccountProfile } from './account-profile.tsx';
+import { AccessSection } from './access-section.tsx';
 import { AvatarSection } from './avatar-section.tsx';
 import { AppearanceSection } from './appearance-section.tsx';
 import { BrowserSection } from './browser-section.tsx';
@@ -145,6 +146,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
     case 'account':
       return <>
         <AccountProfile />
+        <AccessSection />
         <Devices />
         <AvatarSection />
         <NetworkSection />

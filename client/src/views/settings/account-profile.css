@@ -28,6 +28,26 @@
   white-space: nowrap;
 }
 
+.account-device-via {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.account-device-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fg3);
+}
+
+.account-device-via[data-via='direct'] .account-device-dot { background: var(--ok); }
+.account-device-via[data-via='relay'] .account-device-dot { background: var(--run); }
+
 .account-devices .system-row > svg {
   flex: none;
   color: var(--fg2);

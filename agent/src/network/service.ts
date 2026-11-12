@@ -22,13 +22,13 @@ import { cancelGroupTask, claimGroupTask, offerGroupTask, type GroupTaskInput } 
 import { afterGroup, createGroup, leaveGroup, postGroupMessage, requireGroup, updateGroup, type CreateGroupInput,
   type UpdateGroupInput } from './groups.ts';
 import { broadcastProfile, refreshProfile, renameProfile } from './profile.ts';
-import { generateIdentityKeys } from '../../protocol/crypto.ts';
 import { NetworkError } from './errors.ts';
 import { Inbound } from './inbound.ts';
 import { Outbox } from './outbox.ts';
 import { Responder } from './responder.ts';
 import { checkRelayUrl, DEFAULT_RELAY_URL, effectiveRelayUrl, RelayCallError, RelayClient,
   type Signer } from '../../protocol/relay-client.ts';
+import { registerIdentity, relayFailure } from './register.ts';
 import { SyncLoop } from './sync.ts';
 import { cancelTask, decideTask, deliverFinishedLocal, deliverTask, networkTaskResolver, offerTask, stopLocalTask,
   verdictTask, type OfferInput, type TaskDecision, type TaskVerdict } from './tasks.ts';
@@ -78,14 +78,6 @@ export function isLoopback(url: string): boolean {
   } catch {
     return false;
   }
-}
-
-function relayFailure(error: unknown): never {
-  if (error instanceof RelayCallError) {
-    throw error.kind === 'refused' ? new NetworkError('relay_refused', error.message)
-      : new NetworkError('relay_unreachable', '连不上 Cyber Hunter 中继，这次没做成。核对中继地址，稍后再试。');
-  }
-  throw error;
 }
 
 function checkVersion(task: NetworkTask, version: number): void {
@@ -213,33 +205,26 @@ export class NetworkService {
   async join(input: JoinInput): Promise<NetworkIdentity> {
     const { state, now } = this.#options;
     const existing = state.networkIdentity.get();
-    if (existing !== undefined) {
-      if (existing.handle === input.handle) {
-        return existing;
-      }
+    if (existing !== undefined && existing.handle !== input.handle) {
       throw new NetworkError('already_joined', `这台 Plasticine 已经以 @${existing.handle} 加入网络了。`);
     }
     let relayUrl: string;
     try {
-      relayUrl = checkRelayUrl(input.relayUrl ?? this.#options.relayUrl);
+      relayUrl = checkRelayUrl(existing?.relayUrl ?? input.relayUrl ?? this.#options.relayUrl);
     } catch {
       throw new NetworkError('invalid_input', '中继地址要是 http(s) 地址。', 'relayUrl');
     }
-    const keys = generateIdentityKeys();
-    const { account, invitedBy } = await this.#client(relayUrl).registerFor({ handle: input.handle,
-      displayName: input.displayName,
-      signingKey: keys.signing.publicKey, encryptionKey: keys.encryption.publicKey,
-      ...(input.inviteCode === null || input.inviteCode.trim() === '' ? {} : { inviteCode: input.inviteCode }) },
-    keys.signing.privateKey).catch(relayFailure);
-    const identity = state.networkIdentity.create({ accountId: account.id, handle: account.handle,
-      displayName: account.displayName, relayUrl, signingPublicKey: keys.signing.publicKey,
-      signingPrivateKey: keys.signing.privateKey, encryptionPublicKey: keys.encryption.publicKey,
-      encryptionPrivateKey: keys.encryption.privateKey, joinedAt: now().toISOString() });
+    const { identity, invitedBy, fresh } = await registerIdentity(state, this.#client(relayUrl),
+      { handle: input.handle, displayName: input.displayName, inviteCode: input.inviteCode, relayUrl }, now());
+    if (!fresh) {
+      return identity;
+    }
     this.#sync.wake();
     this.#options.onJoined?.();
     if (invitedBy !== null) {
       // 用谁的邀请码进来的，就先给谁发一个好友请求（他那边是一条新请求，接受就互加了）。
-      await addContact(this.#context, { handle: invitedBy, note: '用你的邀请码加入了', requestId: `invited-${account.id}` })
+      await addContact(this.#context, { handle: invitedBy, note: '用你的邀请码加入了',
+        requestId: `invited-${identity.accountId}` })
         .catch((error: unknown) => {
           safeLog('warn', 'network_send_failed', { category: errorCategory(error) });
         });

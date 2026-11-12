@@ -13,7 +13,8 @@ import { deviceView } from './views.ts';
 export function listDevices(context: RequestContext): Reply {
   const auth = requireAuth(context);
   const devices = context.deps.state.devices.list({ limit: MAX_PAGE_SIZE });
-  const body: DeviceListResponse = { devices: devices.map((device) => deviceView(device, auth.device.id)) };
+  const body: DeviceListResponse = { devices: devices.map((device) => deviceView(device, auth.device.id,
+    context.deps.devicePaths.of(device.id))) };
   return { status: 200, body };
 }
 

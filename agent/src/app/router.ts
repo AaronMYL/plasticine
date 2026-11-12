@@ -11,6 +11,7 @@ import {
   OUTBOUND_GRANTS_PATH,
   OUTBOUND_LOG_PATH,
   ACCOUNT_HANDLES_PATH,
+  ACCOUNT_OWN_URL_PATH,
   ACCOUNT_PASSWORD_PATH,
   ACCOUNT_PATH,
   ACCOUNT_SETUP_PATH,
@@ -133,6 +134,7 @@ import type { HttpMethod, Route } from './context.ts';
 import { getDeviceKey, registerDeviceKey } from './device-keys.ts';
 import { listDevices, revokeDevice } from './devices.ts';
 import { getAccountState, handleAvailability, patchAccount, setAccountPassword } from './account.ts';
+import { getOwnUrl, putOwnUrl } from './own-url.ts';
 import { setupAccount } from './account-setup.ts';
 import { localLogin, passwordLogin } from './password-session.ts';
 import { streamEvents } from './events.ts';
@@ -233,6 +235,8 @@ export const ROUTES: readonly Route[] = [
   { method: 'GET', path: `${ACCOUNT_HANDLES_PATH}/:handle`, auth: false, handler: handleAvailability },
   { method: 'PUT', path: ACCOUNT_PASSWORD_PATH, auth: true, handler: setAccountPassword },
   { method: 'PATCH', path: ACCOUNT_PATH, auth: true, handler: patchAccount },
+  { method: 'GET', path: ACCOUNT_OWN_URL_PATH, auth: true, handler: getOwnUrl },
+  { method: 'PUT', path: ACCOUNT_OWN_URL_PATH, auth: true, handler: putOwnUrl },
   { method: 'POST', path: PASSWORD_SESSION_PATH, auth: false, handler: passwordLogin },
   { method: 'POST', path: LOCAL_SESSION_PATH, auth: false, handler: localLogin },
   { method: 'GET', path: SESSION_PATH, auth: true, handler: currentSession },

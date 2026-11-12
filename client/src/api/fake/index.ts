@@ -288,8 +288,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     moneyDrafts.seedWeek(4, 1);
     session.signInForDevelopment('本地开发');
     // 设置 · 账号「登录着的设备」：另外两台用 @账号和密码登录着（11-08 设计稿 Settings-Account）。
-    session.seedDevice('iPhone');
-    session.seedDevice('Windows 笔记本');
+    session.seedDevice('iPhone', 'direct');
+    session.seedDevice('Windows 笔记本', 'relay');
     seedNotes(notes, now());
     seedBooks(books, lines, now());
     seedCognition({ memory, agreements }, now());

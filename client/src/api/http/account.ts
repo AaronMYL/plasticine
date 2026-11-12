@@ -5,6 +5,7 @@ import { Type } from 'typebox';
 import type { AccountApi } from '../account-client.ts';
 import {
   ACCOUNT_HANDLES_PATH,
+  ACCOUNT_OWN_URL_PATH,
   ACCOUNT_PASSWORD_PATH,
   ACCOUNT_PATH,
   ACCOUNT_SETUP_PATH,
@@ -15,6 +16,7 @@ import {
   HandleAvailabilitySchema,
   LOCAL_SESSION_PATH,
   LOCAL_TOKEN_HEADER,
+  OwnUrlViewSchema,
   PASSWORD_SESSION_PATH,
   SessionViewSchema,
   type AccountPasswordRequest,
@@ -23,6 +25,7 @@ import {
   type AccountSetupResponse,
   type AccountState,
   type HandleAvailability,
+  type OwnUrlView,
   type PasswordSessionRequest,
   type SessionView,
 } from '../shared.ts';
@@ -76,5 +79,15 @@ export class HttpAccount implements AccountApi {
     await this.transport.request({ method: 'PATCH', path: ACCOUNT_PATH, body: { displayName },
       schema: AnyBodySchema, what: '改名字', lostAs: 'uncertain' });
     return this.state();
+  }
+
+  ownUrl(signal?: AbortSignal): Promise<OwnUrlView> {
+    return this.transport.request({ method: 'GET', path: ACCOUNT_OWN_URL_PATH, schema: OwnUrlViewSchema,
+      what: '读自己的网址', lostAs: 'failed', signal });
+  }
+
+  setOwnUrl(ownUrl: string | null): Promise<OwnUrlView> {
+    return this.transport.request({ method: 'PUT', path: ACCOUNT_OWN_URL_PATH, body: { ownUrl },
+      schema: OwnUrlViewSchema, what: '存网址', lostAs: 'uncertain' });
   }
 }

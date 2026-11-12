@@ -1,11 +1,12 @@
 // Stored rows → the API's views (shared/api). Only field selection and joins; no decisions.
 
-import type { DeviceView, NoteMetaView, NoteView } from '../../shared/api/index.ts';
+import type { DeviceVia, DeviceView, NoteMetaView, NoteView } from '../../shared/api/index.ts';
 import type { Device, NoteRecord } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 
-export function deviceView(device: Device, currentDeviceId: string | null): DeviceView {
+export function deviceView(device: Device, currentDeviceId: string | null, via?: DeviceVia): DeviceView {
   return {
+    ...(via === undefined ? {} : { via }),
     id: device.id,
     name: device.name,
     firstSeenAt: device.firstSeenAt,

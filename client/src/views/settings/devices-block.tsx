@@ -22,6 +22,11 @@ function deviceLabel(device: DeviceView): string {
   return device.local === true ? '这台电脑' : device.name;
 }
 
+/** 这台最近一次怎么连进来的（服务这次启动以来）。 */
+const VIA_LABEL: Readonly<Record<NonNullable<DeviceView['via']>, string>> = {
+  local: '本机', direct: '直连', relay: '经中继', web: '自己的网址',
+};
+
 function confirmText(confirm: Confirm): string {
   return confirm.kind === 'logout' ? '退出后要用 @账号和密码重新登录。'
     : `「${deviceLabel(confirm.device)}」会退出，要用 @账号和密码重新登录。`;
@@ -47,7 +52,8 @@ export function Devices(): ReactNode {
   };
   return (
     <section className="block" aria-labelledby="settings-devices">
-      <SectionHead id="settings-devices" title="登录着的设备" />
+      <SectionHead id="settings-devices" title="登录着的设备"
+        tip="经 Cyber Hunter 网络连进来的设备，能直连就直连，打不通走中继，自动切换。" />
       {devices.value === null && devices.error === null ? <PageLoading rows={2} dense /> : null}
       {devices.error === null ? null : <Failure error={devices.error} onReload={devices.reload} />}
       <ul className="system-rows account-devices" aria-label="登录着的设备">
@@ -58,6 +64,11 @@ export function Devices(): ReactNode {
               <span className="system-row-title">{deviceLabel(device)}</span>
               <span className="text-meta account-device-meta">{relativeTime(device.lastSeenAt, now)}</span>
             </span>
+            {device.via === undefined ? null : (
+              <span className="account-device-via" data-via={device.via}>
+                <span className="account-device-dot" aria-hidden="true" />{VIA_LABEL[device.via]}
+              </span>
+            )}
             {device.current ? <span className="system-row-meta">这台</span> : (
               <button type="button" className="secondary-button button-small" disabled={busy}
                 aria-label={`让「${deviceLabel(device)}」退出`}

@@ -26,6 +26,9 @@ async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse)
   if (match.route.auth && auth === null) {
     throw unauthorized();
   }
+  if (auth !== null) {
+    deps.devicePaths.see(auth.device.id, req);
+  }
   return match.route.handler({ req, res, url, params: match.params, auth, deps });
 }
 

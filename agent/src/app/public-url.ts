@@ -6,6 +6,7 @@ import { tunnelHost } from '../../shared/tunnel-wire.ts';
 import { DEFAULT_RELAY_URL, effectiveRelayUrl } from '../network/index.ts';
 import type { StateService } from '../state/index.ts';
 import { DEFAULT_PORT } from './config.ts';
+import { storedOwnUrl } from './own-url.ts';
 
 type Env = Record<string, string | undefined>;
 const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]'];
@@ -36,13 +37,20 @@ export function localPublicUrl(env: Env): string {
   return `http://127.0.0.1:${Number(env['PLASTICINE_PORT'] ?? DEFAULT_PORT)}`;
 }
 
-/** 环境变量 > @账号的网址 > 本机地址；每次调用现取。环境变量写错在装配时就报出来。 */
-export function publicUrlSource(state: Pick<StateService, 'networkIdentity'>, env: Env = process.env):
-  () => string {
+/**
+ * 环境变量 > 他在设置里存的自己的网址（own-url.ts）> @账号的网址 > 本机地址；每次调用现取。
+ * 环境变量写错在装配时就报出来。
+ */
+export function publicUrlSource(state: Pick<StateService, 'networkIdentity' | 'kernelSettings'>,
+  env: Env = process.env): () => string {
   const configured = configuredPublicUrl(env);
   return () => {
     if (configured !== null) {
       return configured;
+    }
+    const own = storedOwnUrl(state);
+    if (own !== null) {
+      return own;
     }
     const identity = state.networkIdentity.get();
     return identity === undefined ? localPublicUrl(env) : handlePublicUrl(identity.handle, identity.relayUrl, env);

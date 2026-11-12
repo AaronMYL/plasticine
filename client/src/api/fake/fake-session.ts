@@ -49,8 +49,12 @@ export class FakeSession implements SessionApi, DevicesApi {
   }
 
   /** 测试：再登记一台已登录的设备（不切换当前会话）。 */
-  seedDevice(deviceName: string): DeviceView {
-    return this.register(deviceName);
+  seedDevice(deviceName: string, via?: DeviceView['via']): DeviceView {
+    const device = this.register(deviceName);
+    if (via === undefined) return device;
+    const seen = { ...device, via };
+    this.devices.set(device.id, seen);
+    return seen;
   }
 
   /** 建账号、密码登录（fake-account.ts）：登记这台设备并换成它的会话。 */
@@ -120,7 +124,7 @@ export class FakeSession implements SessionApi, DevicesApi {
       lastSeenAt: at,
       revokedAt: null,
       current: false,
-      ...(local ? { local: true } : {}),
+      ...(local ? { local: true, via: 'local' as const } : {}),
     };
     this.devices.set(device.id, device);
     return device;
