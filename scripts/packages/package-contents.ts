@@ -8,7 +8,7 @@ import { SECRET_SHAPES } from '../scan-tests.ts';
 /**
  * 从提交里取的路径。scripts/maint.ts 是维护入口。
  * agent/skills 是写、审 Plasticine 自己代码的开发技能，不进包（《优化清单》第 1 条：装的是成品，上下文里没有「改自己」）；
- * 以后真有随程序发的内置技能放 agent/builtin-skills，再加进来。部署、发布脚本一律不进包。
+ * 随程序发的内置技能在 agent/builtin-skills（11-12 起有一份 plasticine-guide：答用户「怎么用」）。部署、发布脚本一律不进包。
  */
 export const INCLUDED_PATHS: readonly string[] = [
   'package.json',
@@ -18,6 +18,7 @@ export const INCLUDED_PATHS: readonly string[] = [
   'TRADEMARKS.md',
   'agent/package.json',
   'agent/src',
+  'agent/builtin-skills',
   'agent/protocol',
   'agent/shared',
   'client/package.json',

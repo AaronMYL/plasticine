@@ -91,7 +91,7 @@ export class LineKernel implements LineControl, SideControl {
       purpose: (line) => line.sealedPrompt !== null ? 'network_reply'
         : line.mateId != null ? this.#state.mates.require(line.mateId).purpose ?? 'main'
           : line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind),
-      prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.()),
+      prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.(), this.#now()),
         productMap(this.#tools.filter((tool) => (tool.enabled?.() ?? true)
           && (tool.lineKinds === undefined || tool.lineKinds.includes(line.kind)))),
         this.#options.skillsContext?.(line.id) ?? ''].filter((part) => part.trim() !== '').join('\n\n'),

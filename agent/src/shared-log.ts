@@ -67,6 +67,7 @@ const EVENTS = {
   error_response_failed: '错误响应未发出，连接已断开',
   memory_curation_failed: '记忆整理这一次没做成，原因已记在整理作业里，稍后重试',
   memory_conflicts_failed: '夜里找说法冲突这一次没做成，下一晚再找',
+  dream_suggest_failed: '做梦时想到的一件没了结的事没能放进建议，这一晚的记忆整理不受影响',
   translate_output_invalid: '网页翻译：模型回的不是约定的 JSON，这一批记为没译成',
   payment_attachment_purge_failed: '已确认截图的原件清理未完成，将在下一次扫描重试',
   backup_prune_failed: '本机备份保留期清理未完成，请核对权限和登记目录',

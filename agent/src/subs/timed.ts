@@ -322,7 +322,7 @@ export class SubscriptionTimed {
       return;
     }
     for (const item of followUps(issue)) {
-      suggest({ title: item.title, why: `回顾${EDITION_TITLE[edition]}里「值得跟进」的一条`, goal: item.goal, projectId: null,
+      suggest({ title: item.title, why: `来自回顾${EDITION_TITLE[edition]}《${issue.title}》`, goal: item.goal, projectId: null,
         source: 'review', icon: 'sparkle', key: item.key, sourceRef: `space:${issue.id}` });
     }
   }

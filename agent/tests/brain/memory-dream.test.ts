@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { YOU_DOC_ID } from '../../shared/state.ts';
-import { addLine, Dreamer, ensureMemoryDocs, type DreamSkills } from '../../src/brain/index.ts';
+import { addLine, Dreamer, ensureMemoryDocs, type DreamSkills, type DreamSuggest } from '../../src/brain/index.ts';
 import type { TextModels, TextRequest } from '../../src/kernel/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 
@@ -27,7 +27,8 @@ function reply(lineId: string, text: string): string {
   return `line:${lineId}:${row.seq}`;
 }
 
-function dreamer(answer: (request: TextRequest) => unknown, skills: DreamSkills | null = null) {
+function dreamer(answer: (request: TextRequest) => unknown, skills: DreamSkills | null = null,
+  suggest?: DreamSuggest) {
   const asked: TextRequest[] = [];
   const models: TextModels = {
     async ask(request) {
@@ -36,7 +37,8 @@ function dreamer(answer: (request: TextRequest) => unknown, skills: DreamSkills 
     },
   };
   const now = (): Date => new Date('2026-11-08T01:00:00Z');
-  return { asked, dreamer: new Dreamer({ state: t.state, models, skills, now }) };
+  return { asked, dreamer: new Dreamer({ state: t.state, models, skills, now,
+    ...(suggest === undefined ? {} : { suggest }) }) };
 }
 
 const input = { from: FROM, to: TO, today: '2026-11-08', fixSummaries: true, signal: AbortSignal.timeout(5000) };
@@ -125,4 +127,20 @@ test('做成的新做法写成技能（只新建，不改已有的）', async ()
   await d.dream(input);
   assert.equal(written.length, 1);
   assert.match(written[0] ?? '', /^release-check\n---\nname: release-check\ndescription: "发版前"/);
+});
+
+test('没了结的事进建议（11-12）：一晚最多三件，缺标题、理由或交代的不提，key 按标题算', async () => {
+  const main = t.state.lines.main();
+  const said = say(main.id, '回头帮我把访谈稿整理成要点');
+  const suggested: Parameters<DreamSuggest>[0][] = [];
+  const loop = (title: string, why = '11-07 说了回头做，之后没再提') => ({ title, why,
+    goal: `${title}：稿子在资料库里，整理成 10 条要点。`, sources: [said] });
+  const { dreamer: d } = dreamer(() => ({ openLoops: [loop('把访谈稿整理成要点'), loop('', '没有标题'),
+    loop('对比三家中继的价格'), loop('补完验收一节'), loop('第四件不该提')] }), null,
+  (input) => { suggested.push(input); });
+  await d.dream(input);
+  assert.deepEqual(suggested.map((item) => item.title), ['把访谈稿整理成要点', '对比三家中继的价格', '补完验收一节']);
+  assert.equal(suggested[0]?.key, 'dream:把访谈稿整理成要点');
+  assert.equal(suggested[0]?.sourceRef, said);
+  assert.match(suggested[0]?.goal ?? '', /整理成 10 条要点/);
 });

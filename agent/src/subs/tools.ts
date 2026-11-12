@@ -23,6 +23,7 @@ import type { StateService } from '../state/index.ts';
 import { researchDraft } from './defaults.ts';
 import { SubsError } from './errors.ts';
 import { illustrate, type Illustrated } from './illustrate.ts';
+import { reportTooPlain } from './page-richness.ts';
 import { runSubscription, type RunPort, type RunState } from './run.ts';
 import { LETTER_GUIDE, REPORT_GUIDE, SPACE_RULES } from './space-guide.ts';
 import { changeSubscription, editSpace, writeSpace, type SpaceWritten } from './writes.ts';
@@ -89,6 +90,8 @@ const WRITE_DESCRIPTION = 'Plasticine 写的东西（报告、周报、核查、
 export function subsTools(state: ToolState, port: () => RunPort, now: () => Date,
   issued?: (subscriptionId: string) => void, pages: SpacePageHooks = {}): KernelTool[] {
   const timeZone = (): string => state.dailySettings.read().settings.timeZone ?? FALLBACK_TIME_ZONE;
+  /** 这次进程里退回过一次的页（线 + 标题）：第二次交照收。 */
+  const bounced = new Set<string>();
   const saveAsset = pages.saveAsset
     ?? ((data: Buffer, mime: IllustrationMime) => state.notes.writeAsset(data, mime).name);
   return [
@@ -97,6 +100,16 @@ export function subsTools(state: ToolState, port: () => RunPort, now: () => Date
       say: (args) => `写空间《${text(args, 'title', '')}》`,
       description: WRITE_DESCRIPTION,
       run: async (args, scope, signal) => {
+        // 长报告写成一屏屏段落的，退回去重排一次（page-richness.ts）；同一页第二次交照收。
+        const plainKey = `${scope.lineId}:${args.id ?? args.title}`;
+        const before = args.id === undefined ? undefined : state.spaces.get(args.id);
+        const plain = (args.genre ?? before?.genre) === 'report'
+          && (args.category ?? before?.category) !== 'webarchive' && !bounced.has(plainKey)
+          ? reportTooPlain(args.html) : null;
+        if (plain !== null) {
+          bounced.add(plainKey);
+          throw new SubsError('invalid', plain);
+        }
         const art = args.genre === 'letter'
           ? await illustrate(args.html, { illustrator: pages.illustrator ?? null, save: saveAsset, signal })
           : { html: args.html, outcome: null };

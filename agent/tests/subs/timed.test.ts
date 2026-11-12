@@ -136,14 +136,20 @@ test('回顾写完：记上次；信里标了值得跟进的每一条出一张�
   timed.tick(now.at);
   writeSpace(t.state, { title: '悬赏规则定了', subscriptionId: REVIEW_SUBSCRIPTION_ID, edition: 'daily',
     genre: 'letter', html: '<p class="lt-lead">昨天定了悬赏规则，还差验收一节。</p><ul>'
-      + '<li data-follow>把<b>验收</b>一节写完</li><li data-follow>约赵一舟聊合作</li></ul>' }, 'ai');
+      + '<li data-follow>把<b>验收</b>一节写完</li><li data-follow>最后，约赵一舟聊合作</li>'
+      + '<li data-follow>另外：</li><li data-follow>3．补读两篇原文</li><li data-follow>第四条不该再提出来</li></ul>' },
+  'ai');
   lines.views.set('line-1', { status: 'idle', outcome: 'done', lastAnswer: '日报写好了' });
   timed.ended('line-1');
   const slot = t.state.timedSlots.require('review:daily');
   assert.equal(slot.lastOutcome, 'done');
+  // 11-12：标题去掉序号和「最后，」，半句话（「另外：」）不提，一期最多三条；交给后台线的话带上出自哪一期。
   assert.deepEqual(suggested.map((item) => [item.title, item.source]), [['把验收一节写完', 'review'],
-    ['约赵一舟聊合作', 'review']]);
+    ['约赵一舟聊合作', 'review'], ['补读两篇原文', 'review']]);
   assert.match(suggested[0]?.key ?? '', /^review:.+:1$/);
+  assert.match(suggested[2]?.key ?? '', /^review:.+:4$/);
+  assert.equal(suggested[0]?.why, '来自回顾日报《悬赏规则定了》');
+  assert.match(suggested[0]?.goal ?? '', /^回顾《悬赏规则定了》里「值得跟进」的一条：把验收一节写完\n先读这一期（space:.+）/);
 });
 
 test('两台设备时区来回切（11-12 漏发）：日报照北京 08:00 出，不被推到明天', () => {

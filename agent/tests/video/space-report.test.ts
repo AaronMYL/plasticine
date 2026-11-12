@@ -132,3 +132,23 @@ test('抖音信息流的发布时间不冒用收藏时间，到达时间保持�
   assert.equal(item.title, work.title);
   assert.equal(t.state.feedSources.require(item.sourceId!).kind, 'douyin');
 });
+
+test('总结是一整段时（11-12）：标题用作品自己的短标题，整段总结放在页头下面；旧的长标题启动时改掉', () => {
+  const long = '视频介绍了一种把多个角色化的助手编成一组协作的办法，每个助手有自己的职责和记忆，'
+    + '并演示了它们怎么在同一个任务里分工、交接和互相核对结果。';
+  const work = t.state.videoWorks.upsert({ platform: 'douyin', workId: '7300000000000000992',
+    url: 'https://www.douyin.com/video/7300000000000000992', title: '多助手协作演示 #效率 #工具', author: '示例作者',
+    collectSeq: 2, collectedAt: null, durationSeconds: 120 }).work;
+  const done = t.state.videoWorks.advance(work.id, { stage: 'summarized', transcript: '[00:00] 开场。',
+    digest: { summary: long, outline: ['[00:00] 开场'], points: ['分工要写清。'], related: [] } });
+  const space = publishVideoSpace(t.state, done)!;
+  assert.equal(space.title, '多助手协作演示');
+  assert.match(space.html ?? '', /<h1>多助手协作演示<\/h1><p class="vr-lead">视频介绍了一种/);
+  // 旧数据：标题是整段总结。启动时的补页把它换成短标题，第二次不再动。
+  const old = writeSpace(t.state, { id: space.id, version: space.version, title: long.slice(0, 120), genre: 'report',
+    category: 'report', sourceUrl: work.url, html: space.html ?? '' }, 'ai').space;
+  assert.ok(Array.from(old.title).length > 40);
+  assert.equal(backfillVideoSpaces(t.state), 1);
+  assert.equal(t.state.spaces.require(space.id).title, '多助手协作演示');
+  assert.equal(backfillVideoSpaces(t.state), 0);
+});

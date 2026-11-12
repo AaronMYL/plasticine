@@ -27,13 +27,25 @@ export interface CalendarPort {
 /** 两周没动静的项目（attention/ 的 ProjectWatch.stalled，原来「项目逾期、停滞」那条规则的另一半）。 */
 export type StalledPort = (now: Date) => { id: string; name: string }[];
 
+/**
+ * 没做成的后台任务（11-12 主动性一批）：出错停下的、做完了但自己说没做成的。不在他那张清单上、也删不掉——
+ * 事情没做成没人跟，是 Plasticine 自己的事，不该等他来发现。
+ */
+export type StuckPort = (since: Date) => { lineId: string; title: string; reason: string }[];
+
 export interface FactContext {
   state: FactState;
   now: Date;
   zone: string;
   calendar?: CalendarPort;
   stalled?: StalledPort;
+  stuck?: StuckPort;
 }
+
+/** 这一类事在材料里叫什么（模型按它判断，界面上的「上次看到了什么」也用它）。 */
+export const STUCK_ITEM = '没做成的后台任务';
+/** 心跳替没做成的任务开的跟进线，标题带这个头；它自己再没做成，心跳不再跟（只跟一次，免得一直转）。 */
+export const FOLLOW_UP_PREFIX = '跟进：';
 
 const WEEK_MS = 7 * DAY_WINDOW_MS;
 
@@ -83,9 +95,16 @@ function factsFor(item: HeartbeatItem, context: FactContext): HeartbeatFact[] {
   }
 }
 
-/** 这一跳看到的全部；清单里删掉的那一类不看。 */
+/** 没做成的后台任务：最近一天的，一件一个 key（同一件只算一次新变化）。 */
+function stuckFacts(context: FactContext): HeartbeatFact[] {
+  return (context.stuck?.(new Date(context.now.getTime() - DAY_WINDOW_MS)) ?? []).map((row) => ({
+    key: `stuck:${row.lineId}`, item: STUCK_ITEM,
+    text: clip(`后台任务「${row.title}」没做成（line:${row.lineId}）：${row.reason}`) }));
+}
+
+/** 这一跳看到的全部；清单里删掉的那一类不看。没做成的后台任务不看清单，总是看。 */
 export function collectFacts(items: readonly HeartbeatItem[], context: FactContext): HeartbeatFact[] {
-  return items.flatMap((item) => factsFor(item, context));
+  return [...items.flatMap((item) => factsFor(item, context)), ...stuckFacts(context)];
 }
 
 /** 比上一跳多出来的（上一跳没见过的 key）。 */

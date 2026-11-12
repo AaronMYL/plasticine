@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import type { NoticeInput } from '../attention/index.ts';
 import { Dreamer, type DreamSkills } from '../brain/index.ts';
 import { DreamNight } from '../dream/index.ts';
-import { Heartbeat, type CalendarPort } from '../heartbeat/index.ts';
+import { FOLLOW_UP_PREFIX, Heartbeat, type CalendarPort } from '../heartbeat/index.ts';
 import type { TextModels } from '../kernel/index.ts';
 import type { LineKernel } from '../lines/index.ts';
 import type { SkillStore } from '../skills/index.ts';
@@ -69,13 +69,24 @@ export function assembleTimed(parts: TimedParts): TimedAssembly {
       origin: { kind: 'trigger', ref: 'heartbeat' } }).id,
     suggest: (input) => tasks.suggestions.suggest(input),
     stalled: parts.stalled,
+    // 没做成的后台任务：出错停下的，和做完了但自己说没做成的；心跳开的跟进线自己再失败不再跟（免得一直转）。
+    stuck: (since) => state.lines.list({ kind: 'background', visibleOnly: true, limit: 200 })
+      .filter((line) => line.archivedAt === null && Date.parse(line.updatedAt) >= since.getTime()
+        && (line.status === 'failed' || (line.status === 'idle' && line.unmetReason !== null))
+        && !line.title.startsWith(FOLLOW_UP_PREFIX))
+      .map((line) => ({ lineId: line.id, title: line.title,
+        reason: line.failure ?? line.unmetReason ?? '原因没记下' })),
     catchUp: (at) => subscriptions.catchUp(at, CATCH_UP_GRACE_MS),
     ...(parts.calendar === undefined ? {} : { calendar: parts.calendar }),
     newId: () => `item-${randomUUID().slice(0, 8)}` });
   const text = parts.text;
   const dreamNight = new DreamNight({ state, now, zone, changed, limit: () => parts.lines().backgroundLimit(),
     dreamer: () => (text === null ? null : new Dreamer({ state, models: text, skills: dreamSkills(parts.skills),
-      now })) });
+      now,
+      // 做梦时发现的没了结的事进「任务 · 建议」，他点了才做（11-12 主动性一批）。
+      suggest: (loop) => {
+        tasks.suggestions.suggest({ ...loop, projectId: null, source: 'dream', icon: 'sparkle' });
+      } })) });
   for (const provider of [...subscriptions.providers(), heartbeat.provider(), dreamNight.provider()]) {
     tasks.timed.register(provider);
   }

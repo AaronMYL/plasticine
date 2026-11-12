@@ -5,7 +5,8 @@ export type VideoPageWork = Pick<VideoWorkView, 'platform' | 'title' | 'author' 
   & { digest: VideoDigest; transcript: string | null; collectSeq: number | null };
 
 const CSS = `.vr{max-width:960px;margin:auto;padding:32px 32px 64px;font-size:14px;line-height:1.65}
-.vr h1{font-size:28px;line-height:1.4;font-weight:600;margin:12px 0 24px}
+.vr h1{font-size:28px;line-height:1.4;font-weight:600;margin:12px 0 12px}
+.vr-lead{font-size:16px;line-height:1.75;color:var(--fg2);margin:0 0 24px;max-width:720px}
 .vr-meta{display:flex;gap:12px;flex-wrap:wrap;color:var(--fg2);font-size:12px}
 .vr-meta b{color:var(--fg);font-weight:500}.vr-frames{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .vr-frames figure{margin:0}.vr-frames img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:8px}
@@ -18,6 +19,23 @@ margin-top:24px}.vr-transcript{margin-top:24px}.vr-transcript summary{cursor:poi
 .vr-transcript p{white-space:pre-wrap;scroll-margin-top:24px}.vr-transcript time{color:var(--fg3);margin-right:12px}
 @media(max-width:600px){.vr{padding:24px 16px 48px}.vr h1{font-size:24px}.vr-cols{grid-template-columns:1fr;gap:16px}
 .vr-frames{grid-template-columns:repeat(2,1fr)}}`;
+
+/** 资料库列表和页头用的短标题（11-12：原来拿整段总结当标题，一百多字占三行）。 */
+export const VIDEO_TITLE_MAX = 40;
+
+/**
+ * 标题还是一句结论（11-10 定的「结论当标题」）：总结的第一句不超过 40 字就用它；总结是一整段时用作品自己的标题
+ * （去掉 #话题 和多余空白），都没有再截总结的第一句。
+ */
+export function videoTitle(work: { title: string; digest: { summary: string } | null }): string {
+  const own = work.title.replace(/#\S+/g, ' ').replace(/\s+/g, ' ').trim();
+  const summary = (work.digest?.summary ?? '').trim();
+  const first = /^[^。！？!?\n]*[。！？!?]?/.exec(summary)?.[0]?.trim() ?? '';
+  const fits = (value: string): boolean => value !== '' && Array.from(value).length <= VIDEO_TITLE_MAX;
+  if (fits(first)) return first;
+  const chars = Array.from(own !== '' ? own : first !== '' ? first : '视频总结');
+  return chars.length <= VIDEO_TITLE_MAX ? chars.join('') : `${chars.slice(0, VIDEO_TITLE_MAX - 1).join('')}…`;
+}
 
 export function outlineTime(line: string): { seconds: number; label: string; content: string } | null {
   const found = /^\s*\[?(?:(\d+):)?(\d{1,2}):(\d{2})\]?\s*(.*)$/.exec(line);
@@ -69,8 +87,8 @@ export function renderVideoPage(work: VideoPageWork, timeZone = 'Asia/Shanghai')
       : `<time>${text(time.label)}</time>${text(time.content)}`}</p>`;
   }).join('');
   return `<style>${CSS}</style><article class="vr"><header><div class="vr-meta"><b>`
-    + `${work.platform === 'douyin' ? '抖音收藏' : '视频总结'}</b>${metadata}</div><h1>${text(digest.summary
-      || work.title)}</h1></header>${frames === '' ? '' : `<div class="vr-frames">${frames}</div>`}`
+    + `${work.platform === 'douyin' ? '抖音收藏' : '视频总结'}</b>${metadata}</div><h1>${text(videoTitle(work))}</h1>${digest.summary.trim() === ''
+      || digest.summary.trim() === videoTitle(work) ? '' : `<p class="vr-lead">${text(digest.summary)}</p>`}</header>${frames === '' ? '' : `<div class="vr-frames">${frames}</div>`}`
     + `<div class="vr-cols"><section><h2>大纲</h2><ol class="vr-list">${outline}</ol></section>`
     + `<section><h2>核心观点</h2><ol class="vr-list">${points}</ol>${related}</section></div>`
     + `<details class="vr-transcript"><summary>逐字稿 `

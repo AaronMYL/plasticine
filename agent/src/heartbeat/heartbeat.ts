@@ -19,7 +19,8 @@ import type { StateService } from '../state/index.ts';
 import { slotLast, zonedClock, type SuggestionInputDraft, type TimedProvider } from '../tasks/index.ts';
 import { localDay } from '../daily/index.ts';
 import { applyEdit, ChecklistError, DEFAULT_CONFIG, readConfig, replaceItems } from './checklist.ts';
-import { collectFacts, freshFacts, type CalendarPort, type StalledPort } from './facts.ts';
+import { collectFacts, FOLLOW_UP_PREFIX, freshFacts, type CalendarPort, type StalledPort, type StuckPort }
+  from './facts.ts';
 import { EDIT_SYSTEM, EditOutputSchema, JUDGE_SYSTEM, judgeMaterial, JudgeOutputSchema, type JudgeOutput }
   from './judge.ts';
 
@@ -43,6 +44,8 @@ export interface HeartbeatOptions {
   suggest: (input: SuggestionInputDraft) => { created: boolean };
   calendar?: CalendarPort;
   stalled?: StalledPort;
+  /** 没做成的后台任务（出错停下、自己说没做成）：心跳替他跟。 */
+  stuck?: StuckPort;
   /** 定时的订阅和回顾里，本该出、过了一小时还没出的补一期；回补了哪几个（11-12：日报漏发心跳没发现）。 */
   catchUp?: (now: Date) => string[];
   changed?: () => void;
@@ -142,7 +145,8 @@ export class Heartbeat {
     const config = this.config();
     const facts = collectFacts(config.items, { state, now, zone,
       ...(this.#options.calendar === undefined ? {} : { calendar: this.#options.calendar }),
-      ...(this.#options.stalled === undefined ? {} : { stalled: this.#options.stalled }) });
+      ...(this.#options.stalled === undefined ? {} : { stalled: this.#options.stalled }),
+      ...(this.#options.stuck === undefined ? {} : { stuck: this.#options.stuck }) });
     const fresh = freshFacts(facts, seenOf(this.slot()));
     const seen = facts.map((fact) => fact.key);
     if (fresh.length === 0) {
@@ -200,7 +204,9 @@ export class Heartbeat {
       if (item.title.trim() === '' || item.goal.trim() === '') {
         continue;
       }
-      const lineId = this.#options.open({ title: clip(item.title, 120),
+      const follow = (item.refs ?? []).some((ref) => ref.startsWith('stuck:'))
+        && !item.title.startsWith(FOLLOW_UP_PREFIX);
+      const lineId = this.#options.open({ title: clip(`${follow ? FOLLOW_UP_PREFIX : ''}${item.title}`, 120),
         goal: `心跳看到：${this.#refsText(item.refs, fresh)}\n要做的事：${item.goal}` });
       did.push({ kind: 'start', text: clip(item.title, 300), ref: lineId });
     }

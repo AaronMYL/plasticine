@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, test } from 'node:test';
@@ -56,4 +56,21 @@ test('技能列表带模型读过几次；删一个装上的技能后目录里�
   const builtin = await call(app, 'DELETE', `${SKILLS_PATH}/reading-notes`, { cookie,
     body: { requestId: 'req-skill-2' } });
   assert.equal(builtin.status, 409);
+});
+
+test('随程序发的 plasticine-guide：目录里有，正文讲各栏目和设置在哪，不提已经删掉的功能当成有', async () => {
+  app = await startTestApp();
+  const cookie = await pair(app);
+  const listed = json(await call(app, 'GET', '/v2/skills?query=plasticine-guide', { cookie }));
+  assert.ok(Value.Check(SkillListResponseSchema, listed));
+  const guide = listed.skills.find((skill) => skill.name === 'plasticine-guide');
+  assert.equal(guide?.source.kind, 'builtin');
+  const body = json(await call(app, 'GET', '/v2/skills/plasticine-guide?limit=200', { cookie }));
+  assert.ok(Value.Check(SkillResponseSchema, body));
+  assert.match(body.skill.text, /Plasticine 怎么用/);
+  const text = readFileSync(new URL('../../builtin-skills/plasticine-guide/SKILL.md', import.meta.url), 'utf8');
+  for (const word of ['首页', '消息', '任务', '网页', '阅读', '笔记', '资料库', '设置 · AI', '同时做几件事', '外观']) {
+    assert.ok(text.includes(word), `说明里要有「${word}」`);
+  }
+  assert.match(text, /Plasticine 不做的[\s\S]*配对码登录/);
 });

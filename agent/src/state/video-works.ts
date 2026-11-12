@@ -250,6 +250,11 @@ function createVideoWorkStore(context: StoreContext) {
       return db.all(`SELECT * FROM video_works WHERE stage = 'summarized' AND digest IS NOT NULL
         AND space_id IS NULL ORDER BY created_at LIMIT $limit`, { limit }).map(decodeWork);
     },
+    /** 已经出了报告的作品（旧报告补版式、改标题用）。 */
+    withSpace(limit: number): VideoWorkRow[] {
+      return db.all(`SELECT * FROM video_works WHERE digest IS NOT NULL AND space_id IS NOT NULL
+        ORDER BY created_at DESC LIMIT $limit`, { limit }).map(decodeWork);
+    },
     needsOrderBackfill(): boolean {
       return db.get(`SELECT id FROM video_works
         WHERE platform = 'douyin' AND collect_seq IS NULL AND NOT EXISTS (

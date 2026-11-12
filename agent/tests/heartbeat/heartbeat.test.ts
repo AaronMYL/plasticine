@@ -22,7 +22,8 @@ interface World {
   clock: { at: Date };
 }
 
-function world(answers: string[], options: { noModel?: boolean; caught?: string[] } = {}): World {
+function world(answers: string[], options: { noModel?: boolean; caught?: string[];
+  stuck?: { lineId: string; title: string; reason: string }[] } = {}): World {
   const asked: TextRequest[] = [];
   const notices: NoticeInput[] = [];
   const opened: { title: string; goal: string }[] = [];
@@ -51,6 +52,7 @@ function world(answers: string[], options: { noModel?: boolean; caught?: string[
     },
     newId: () => `item-${(id += 1)}`,
     ...(options.caught === undefined ? {} : { catchUp: () => options.caught?.splice(0) ?? [] }),
+    ...(options.stuck === undefined ? {} : { stuck: () => options.stuck ?? [] }),
   });
   return { heartbeat, asked, notices, opened, suggested, clock };
 }
@@ -151,3 +153,21 @@ test('漏发的定时（11-12）：心跳补一期，主线发一句、「最近
   assert.equal(w.notices.length, 1);
 });
 
+
+test('没做成的后台任务（11-12）：不在清单上也看；模型开一件跟进（标题带「跟进：」），同一件下一跳不再叫模型', async () => {
+  const stuck = [{ lineId: 'line-a', title: '抓三篇原文', reason: '第二个来源超时' }];
+  const w = world([JSON.stringify({ start: [{ title: '换来源再抓三篇原文', refs: ['stuck:line-a'],
+    goal: '原来那件 line:line-a 因为第二个来源超时没成；这次换成官网的存档页。' }], note: '有一件没做成' })], { stuck });
+  w.heartbeat.update({ items: [] });
+  await w.heartbeat.beat(w.clock.at);
+  assert.equal(w.asked.length, 1);
+  const material = JSON.parse(w.asked[0]?.messages.at(-1)?.content as string) as { fresh: { key: string; item: string;
+    text: string }[] };
+  assert.deepEqual(material.fresh, [{ key: 'stuck:line-a', item: '没做成的后台任务',
+    text: '后台任务「抓三篇原文」没做成（line:line-a）：第二个来源超时' }]);
+  assert.equal(w.opened.length, 1);
+  assert.equal(w.opened[0]?.title, '跟进：换来源再抓三篇原文');
+  assert.match(w.opened[0]?.goal ?? '', /line:line-a/);
+  await w.heartbeat.beat(new Date(w.clock.at.getTime() + 30 * 60_000));
+  assert.equal(w.asked.length, 1);
+});

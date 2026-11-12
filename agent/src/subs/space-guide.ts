@@ -14,7 +14,8 @@ export const SPACE_RULES = [
 ].join('');
 
 /** 报告的版式和现成的类。 */
-export const REPORT_GUIDE = `报告（genre "report"）：按内容自由排版，用得上什么就用什么。结构：
+export const REPORT_GUIDE = `报告（genre "report"）：按内容自由排版，用得上什么就用什么。报告不是文字堆砌：先定这一页要让他
+一眼看到什么（结论、数、对比、先后），每一节按内容的形状选块，段落只用来把块连起来；长报告只有段落会被退回重排。结构：
 <header class="rp-hero">
   <p class="rp-kick"><b>出处 · 第 N 期</b><span>2026.11.02—11.08</span><span>标签</span></p>
   <h1 class="rp-h1">一句结论当大标题。</h1>
@@ -63,5 +64,11 @@ export const LETTER_GUIDE = `来信（genre "letter"）：信纸是固定的，�
 </figure>
 <p>正文段落，<b>最要紧的一句加粗</b>。</p> …
 <p>最后一段留一个下一步（谁、什么时候、做什么）。</p>
-插图：写一个 figure.lt-fig 带 data-illustrate，Plasticine 会照画面描述生成一张，标「Plasticine 生成」；出不了图就不配。
-整封信像写给一个人的信：不用小标题、不用列表堆砌、不用表格和图表。若下一步是你能替他开始做的，那一段加 data-follow。`;
+插图：写一个 figure.lt-fig 带 data-illustrate，Plasticine 会照画面描述生成一张，标「Plasticine 生成」。不确定能不能出图时，
+在同一个 figure 里自己画一张内联线稿垫着：<svg class="lt-draw" viewBox="0 0 600 300">…</svg>，只用线条和几块淡色
+（stroke="var(--fg3)"、fill="var(--tint2)"、点睛处 var(--accent)），画和这封信有关的一个具体物件或场景，不写字。
+让信里有他自己的东西（每封挑一两样，不要全用）：
+<blockquote class="lt-quote">他这几天说过的一句原话<cite>11 月 9 日 · 在主线里</cite></blockquote>
+<ul class="lt-notes"><li><b>周一</b><span>这封信里提到的一件具体的事</span></li>…</ul>（2–4 条，前面是日子、人名或一个词）
+<div class="lt-facts"><div><b>3</b><span>篇读完</span></div><div><b>2</b><span>件等你定</span></div></div>（2–3 个真实的数）
+整封信像写给一个人的信：不用小标题、不用表格和图表，除了上面这几样不堆列表。若下一步是你能替他开始做的，那一段加 data-follow。`;

@@ -29,6 +29,13 @@ export type DreamState = Pick<StateService, 'memoryDocs' | 'memoryCuration' | 'm
   | 'projects' | 'transaction' | 'lineMessages' | 'lines' | 'lineDays' | 'memory' | 'memoryConflicts'>;
 
 /** 做成的新做法写成技能（skills/ 的 SkillStore 包一层，assemble 接上）。 */
+/** 没了结的事提成建议（tasks 的 suggestions.suggest，assemble 接上）；同一个 key 不重复提。 */
+export type DreamSuggest = (input: { title: string; why: string; goal: string; key: string; sourceRef: string | null })
+  => void;
+
+/** 一晚最多提这么多件没了结的事。 */
+const OPEN_LOOPS_MAX = 3;
+
 export interface DreamSkills {
   exists(name: string): boolean;
   write(name: string, content: string, actionId: string): void;
@@ -45,6 +52,9 @@ export const DreamOutputSchema = Type.Object({
   digests: Type.Optional(Type.Array(Type.Object({ line: Type.String(), day: Type.String(), text: Type.String() }))),
   skills: Type.Optional(Type.Array(Type.Object({ name: Type.String(), description: Type.String(),
     body: Type.String() }))),
+  /** 没了结的事（11-12 主动性一批）：他说过要做、让 Plasticine 做但没做完、聊到一半停下的。进「任务 · 建议」。 */
+  openLoops: Type.Optional(Type.Array(Type.Object({ title: Type.String(), why: Type.String(), goal: Type.String(),
+    sources: Sources }))),
 });
 export type DreamOutput = Static<typeof DreamOutputSchema>;
 
@@ -71,7 +81,12 @@ const SYSTEM = [
   'digests：days 里每一天每条线写一段要点（{"line":线标识,"day":日子,"text":几句话}），第二天从它起步。',
   'skills：这段时间做成、以后还会用的新做法，写成技能（{"name":英文小写短横线名,"description":什么时候用,',
   '"body":Markdown 的步骤}）；没有就留空。一行讲一件事，不超过 500 字，中文。',
-  '只输出 JSON：{"ops":[…],"conflicts":[…],"deadEnds":[…],"digests":[…],"skills":[…]}。',
+  'openLoops：这段时间里没了结、值得接着做的事，最多三件，宁缺毋滥——他说过「回头」「之后」「明天」要做却没再提的，',
+  '让 Plasticine 做了但没做完或没做成的，聊到一半停下、差一步就有结果的。每件写 {"title":一句能单独看懂的话（不超过',
+  '30 字，说清做什么，不要「继续上次的事」这种），"why":为什么现在值得做（带上是哪天、因为什么停下的），"goal":点了开始',
+  '以后交给后台任务的完整说明（要做到什么程度、已有的进展和材料在哪），"sources":[出处]}。已经做完的、他明确说不要了的、',
+  '只是随口一提的不算。它们只是建议，他点了才做。',
+  '只输出 JSON：{"ops":[…],"conflicts":[…],"deadEnds":[…],"digests":[…],"skills":[…],"openLoops":[…]}。',
 ].join('\n');
 
 export interface DreamInput {
@@ -106,13 +121,34 @@ export class Dreamer {
   readonly #state: DreamState;
   readonly #models: TextModels;
   readonly #skills: DreamSkills | null;
+  readonly #suggest: DreamSuggest | null;
   readonly #now: () => Date;
 
-  constructor(options: { state: DreamState; models: TextModels; skills: DreamSkills | null; now: () => Date }) {
+  constructor(options: { state: DreamState; models: TextModels; skills: DreamSkills | null; now: () => Date;
+    suggest?: DreamSuggest }) {
     this.#state = options.state;
     this.#models = options.models;
     this.#skills = options.skills;
+    this.#suggest = options.suggest ?? null;
     this.#now = options.now;
+  }
+
+  /** 没了结的事进建议：标题、为什么、交代都要有；key 按标题算，同一件事第二晚再想到不重复提。 */
+  #suggestOpenLoops(loops: readonly NonNullable<DreamOutput['openLoops']>[number][]): void {
+    if (this.#suggest === null) {
+      return;
+    }
+    const usable = loops.map((loop) => ({ title: clip(loop.title, 60), why: clip(loop.why, 200),
+      goal: clip(loop.goal, 2_000), sourceRef: loop.sources?.[0] ?? null }))
+      .filter((loop) => loop.title !== '' && loop.why !== '' && loop.goal !== '');
+    for (const loop of usable.slice(0, OPEN_LOOPS_MAX)) {
+      try {
+        this.#suggest({ ...loop, key: `dream:${loop.title.replace(/\s+/g, '')}` });
+      } catch (cause) {
+        // 建议没提成不连累这一晚的整理（记忆已经落定）。
+        safeLog('warn', 'dream_suggest_failed', { category: errorCategory(cause) });
+      }
+    }
   }
 
   async dream(input: DreamInput): Promise<DreamReport> {
@@ -154,6 +190,7 @@ export class Dreamer {
     // 技能是文件，不进库的事务：库里的整理落定以后再写，写坏了不连累记忆。
     if (report.dream !== null) {
       this.#writeSkills(report.dream, outputs.flatMap(({ output }) => output.skills ?? []));
+      this.#suggestOpenLoops(outputs.flatMap(({ output }) => output.openLoops ?? []));
       // 整理落定以后再找说法冲突（11-11）：只记不改，找不成不连累这一晚的整理，下一晚再找。
       try {
         await findContradictions(state, this.#models, `dream:${report.dream.id}`, input.signal);
