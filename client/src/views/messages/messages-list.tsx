@@ -92,7 +92,7 @@ function Row({ row, current, phone, now, groupStart, onOpen, manage }: { row: Co
               </span>
             )}
             {row.unread > 0 ? <span className="contact-unread mono" aria-hidden="true">{row.unread}</span> : null}
-            {row.waiting ? <span className="dot dot-accent" aria-hidden="true" /> : null}
+            {row.waiting ? <span className="contact-wait" aria-hidden="true">等你</span> : null}
           </span>
         </span>
       </button>

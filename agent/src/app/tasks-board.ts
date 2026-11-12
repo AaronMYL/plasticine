@@ -53,7 +53,9 @@ function collect(deps: AppDeps): Parts & { lineProject: Map<string, string | nul
   const timed = deps.tasks.timed.rows();
   const timedLines = new Set(timed.map((row) => row.lineId).filter((id): id is string => id !== null));
   const board = deps.desk.board();
-  const waiting = board.current === null ? board.queue : [board.current, ...board.queue];
+  // 要确认怎么回别人的卡直接出在那段聊天里（11-12 全量优化第 5 条），不在「等你」里再列一遍。
+  const waiting = (board.current === null ? board.queue : [board.current, ...board.queue])
+    .filter((ask) => ask.purpose !== 'network_reply');
   const newest = (a: LineView, b: LineView): number => b.updatedAt.localeCompare(a.updatedAt);
   const done = lines.filter((line) => taskEnded(line) && !timedLines.has(line.id)).sort(newest);
   const deleted = deps.lines.list({ kind: 'background', includeArchived: true, limit: LINES_SCAN })

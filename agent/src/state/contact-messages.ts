@@ -114,7 +114,7 @@ export function createContactMessageStore(context: StoreContext) {
     forTask: (taskId: string): ContactMessage[] => allPages((page) =>
       store.select('task_id = $task_id', { task_id: taskId }, page, 'sent_at, created_at, id')),
     /**
-     * 进来的、问我的 Plasticine 的、`since` 以后还没处理的（分身既没直接回、也没说「我问一下主人」）：重启后接着答。
+     * 进来的、问我的 Plasticine 的、`since` 以后还没处理的（分身既没直接回、也没说「我问一下……」）：重启后接着答。
      * 处理过的那封回信 request_id 是 proxy:<问题 id> 或 proxy-hold:<问题 id>（network/proxy.ts）。
      */
     unansweredAsks(since: string): ContactMessage[] {

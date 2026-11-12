@@ -157,3 +157,36 @@ test('联系人说的关于自己的事：绑了人物页才排整理，写成�
   assert.deepEqual(line?.anchors, [{ kind: 'contact_message', ref: incomingId }]);
   assert.deepEqual(contactMemorySources(t.state, t.clock.now()), [], '排过的不再排');
 });
+
+// 11-12 全量优化第 5 条：确认卡在聊天里答。草稿改过再发，发出去的是改过的那一版；没改就是草稿原样；「不回」什么都不发。
+async function replyAsk(t: TestApp, contactId: string, questionId: string): Promise<string> {
+  return t.state.asks.create({
+    kind: 'confirm', purpose: 'network_reply', channel: 'popup', question: 'samwise 问你的 Plasticine：周五能交吗？',
+    options: [{ id: 'send', label: '这样回', description: null, recommended: true },
+      { id: 'self', label: '我自己回', description: null, recommended: false },
+      { id: 'none', label: '不回', description: null, recommended: false }],
+    context: { contactId, groupId: null, questionId, exchangeId: questionId, draft: '周五能交。', askerIsAi: false,
+      materials: [] },
+  }).id;
+}
+
+function aiLines(t: TestApp, contactId: string): string[] {
+  return t.state.contactMessages.recent(contactId, 50)
+    .filter((message: ContactMessage) => message.direction === 'out' && message.author === 'my_ai')
+    .map((message: ContactMessage) => message.text);
+}
+
+test('确认卡：改过草稿再发，发的是改过的那一版；没改发草稿；不回什么都不发', async () => {
+  const { t, cookie, contactId } = await joined();
+  const edited = await replyAsk(t, contactId, 'q-edited');
+  await post(t, cookie, `/v2/asks/${edited}/answer`, { optionId: 'send', text: '  周六上午交。 ' });
+  assert.deepEqual(aiLines(t, contactId), ['周六上午交。']);
+  const plain = await replyAsk(t, contactId, 'q-plain');
+  await post(t, cookie, `/v2/asks/${plain}/answer`, { optionId: 'send' });
+  assert.deepEqual(aiLines(t, contactId).sort(), ['周五能交。', '周六上午交。']);
+  const silent = await replyAsk(t, contactId, 'q-silent');
+  await post(t, cookie, `/v2/asks/${silent}/answer`, { optionId: 'none' });
+  assert.equal(aiLines(t, contactId).length, 2);
+  // 说出去的那一句记进「说过什么」，记的也是改过的那一版。
+  assert.ok(t.state.saidLog.recent(contactId, 10).some((row) => row.text === '周六上午交。'));
+});

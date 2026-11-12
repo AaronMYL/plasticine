@@ -95,7 +95,7 @@ function seedZhou(contacts: FakeContacts, now: Date): void {
   contacts.addPerson({ id, name: '周可', handle: 'zhouke', relation: 'stranger' });
   contacts.seedMessage(id, line('cm_zhou_1', 'them',
     '在 X 上看到你做的 Plasticine。我有 3 份用户访谈稿，想整理成要点，能接吗？', ago(now, 62 * MINUTE)));
-  contacts.seedMessage(id, line('cm_zhou_2', 'my_ai', '我问一下主人，点头了就开始。', ago(now, 61 * MINUTE)));
+  contacts.seedMessage(id, line('cm_zhou_2', 'my_ai', '我问一下 Alex。', ago(now, 61 * MINUTE)));
   contacts.seedTask(task({ id: 'nt_zhou_interviews', direction: 'in', contactId: id, title: '整理 3 份访谈稿的要点',
     goal: '把 3 份用户访谈稿的要点整理成一份', acceptance: '10 条要点，每条能点回原话', state: 'offered', stage: 1,
     waiting: true, deadline: dueIn(now, 2, 12), createdAt: ago(now, 60 * MINUTE), updatedAt: ago(now, 60 * MINUTE) }));

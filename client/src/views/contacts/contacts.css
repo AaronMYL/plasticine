@@ -497,3 +497,15 @@
 .contacts[data-phone='true'] .request-list {
   padding: 0 16px;
 }
+
+/* 这段聊天里有等我的事（要确认怎么回、要验收）：写字，不只靠一个色点。 */
+.contact-wait {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--tint2);
+  color: var(--fg);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+}

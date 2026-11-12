@@ -6,7 +6,7 @@
 // 我在聊天里 @ 自己的 Plasticine 也一样，按对面能听到的取（它的话对面看得到）。
 //
 // 线停下以后：
-// - 别人问我（answer）：说得准、不用主人拍板 → 直接回；否则先回一句「我问一下主人」，再出一张要你确认卡
+// - 别人问我（answer）：说得准、不用主人拍板 → 直接回；否则先回一句「我问一下 <我的名字>」，再出一张要你确认卡
 //   （这样回 / 我自己回 / 不回）。没连模型、线失败了也出卡（没有草稿）。
 // - 我 @ 自己的（self）：有回答就发出去（是他自己叫它答的）；没答成在聊天里记一句原因，不发。
 
@@ -31,7 +31,12 @@ export const MAX_AI_ROUNDS = 6;
 export const RESPONDER_CONTEXT_LINES = 20;
 /** 重启后只接着答一天以内的问题，太久的让主人自己看。 */
 const RECOVER_WINDOW_MS = 24 * 60 * 60 * 1000;
-export const HOLDING_LINE = '我问一下主人。';
+/** 拿不准时先回的那一句：说要问谁（账号上的名字），不说「主人」。 */
+export function holdingLine(ownerName: string): string {
+  const name = ownerName.trim();
+  // 英文名前面空一格，中文名紧挨着。
+  return name === '' ? '我先问一下，再回你。' : `我问一下${/^[\x21-\x7e]/.test(name) ? ' ' : ''}${name}。`;
+}
 const ROUNDS_NOTE = `AI 之间来回了 ${MAX_AI_ROUNDS} 轮，自动停了。`;
 const SELF_FAILED = '你的 Plasticine 这次没答成（没连模型，或者出错了），这句没发出去。';
 const TITLE_CHARS = 40;
@@ -320,7 +325,7 @@ export class Responder {
     });
   }
 
-  /** 发出一句 AI 的话（一对一的或群里的）；materials 为 null 是「我问一下主人」这种不算代说的话。 */
+  /** 发出一句 AI 的话（一对一的或群里的）；materials 为 null 是「我问一下……」这种不算代说的话。 */
   #send(changes: Changes, question: Question, text: string, requestId: string, materials: SaidMaterial[] | null):
     void {
     const context = this.#context;
@@ -351,7 +356,8 @@ export class Responder {
 
   #hold(changes: Changes, question: Question, draft: string | null, materials: SaidMaterial[]): void {
     const context = this.#context;
-    this.#send(changes, question, HOLDING_LINE, `proxy-hold:${question.questionId}`, null);
+    this.#send(changes, question, holdingLine(requireIdentity(context).displayName),
+      `proxy-hold:${question.questionId}`, null);
     const where = question.origin === 'group' && question.group !== null ? `在「${question.group.name}」里`
       : `@${question.contact?.handle ?? ''}`;
     const options = [
@@ -425,7 +431,9 @@ export class Responder {
         const question: Question = { origin: group === null ? 'contact' : 'group', mode: 'answer', contact, group,
           questionId, text: '', askerName: contact?.displayName ?? '', askerIsAi: ask.context?.['askerIsAi'] === true,
           exchangeId, reach: [], conversation: [] };
-        this.#send(changes, question, draft, `proxy-reply:${questionId}`, materials);
+        // 他在卡上改过字再发：发他改的那一版（没改就是草稿原样）。
+        const edited = ask.answer.text?.trim() ?? '';
+        this.#send(changes, question, edited === '' ? draft : edited, `proxy-reply:${questionId}`, materials);
       },
     };
   }

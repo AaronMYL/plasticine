@@ -498,3 +498,9 @@
   font-size: 12px;
   line-height: 18px;
 }
+
+/* 「去回」是带去那段聊天的链接，长得和旁边几行的按钮一样。 */
+.home-wait-row > a.primary-button {
+  flex: none;
+  text-decoration: none;
+}

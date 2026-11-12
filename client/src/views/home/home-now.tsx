@@ -11,6 +11,7 @@ import { useLive, useTimeZone } from '../../live.tsx';
 import { AskTag } from '../../primitives/ask-card/index.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
+import { messagesRoute, routeHash } from '../../shell/routes.ts';
 import { useTabActions } from '../../shell/tabs-context.ts';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { useStore } from '../../state/use-store.ts';
@@ -27,14 +28,17 @@ function WaitRow({ ask, phone }: { ask: AskView; phone: boolean }): ReactNode {
   const work = ask.networkTaskId !== undefined ? { kind: 'work' as const, taskId: ask.networkTaskId }
     : ask.lineId !== null && live.lines.lineOf(ask.lineId)?.kind === 'background'
       ? { kind: 'work' as const, lineId: ask.lineId } : null;
+  // 要确认怎么回别人的卡出在那段聊天里：这里只带过去，不再就地展开一张一样的卡。
+  const chat = ask.networkReply === undefined ? null : ask.networkReply.groupId ?? ask.networkReply.contactId;
   return (
     <li className="home-wait">
       <div className="home-row-line home-wait-row">
         <AskTag ask={ask} />
         <span className="home-wait-title">{ask.question}</span>
-        <button type="button" className={`${open ? 'secondary-button' : 'primary-button'} button-small`}
+        {chat !== null ? <a className="primary-button button-small" href={routeHash(messagesRoute(chat))}>去回</a>
+          : <button type="button" className={`${open ? 'secondary-button' : 'primary-button'} button-small`}
           aria-expanded={work === null ? open : undefined}
-          onClick={() => work === null ? setOpen((value) => !value) : openPanel(work)}>{open ? '收起' : '去看'}</button>
+          onClick={() => work === null ? setOpen((value) => !value) : openPanel(work)}>{open ? '收起' : '去看'}</button>}
         <RevealMore label={`「${ask.question}」的更多操作`}
           actions={[{ icon: 'clock', label: '先不', onSelect: () => void live.asks.defer(ask) }]} />
       </div>

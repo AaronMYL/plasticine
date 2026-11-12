@@ -26,7 +26,7 @@ export type AskSeed = Pick<AskView, 'id' | 'kind' | 'question'> &
   Partial<Pick<AskView, 'channel' | 'detail' | 'options' | 'lineId' | 'createdAt' | 'kindLabel'
     | 'moneyDraftId' | 'restorePreviewId' | 'deviceAction' | 'why' | 'channelReason' | 'collision'
     | 'requiresSignature' | 'basis' | 'rulesOffer' | 'taskCard' | 'networkTaskId' | 'scheduleCard'
-    | 'subscriptionCard' | 'outbound'>>;
+    | 'subscriptionCard' | 'outbound' | 'networkReply'>>;
 
 export interface FakeAsksDeps {
   authorize?(card: OutboundCard, selected: OutboundGrantInput, option: string): void;

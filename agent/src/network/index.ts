@@ -15,7 +15,7 @@ export type { NetworkChange } from './context.ts';
 export { DEFAULT_POLL_WAIT_SECONDS, isLoopback, NetworkService } from './service.ts';
 export type { JoinInput, NetworkServiceOptions } from './service.ts';
 export { OUTBOX_MAX_ATTEMPTS, OUTBOX_RETRY_BASE_MS, retryDelayMs } from './outbox.ts';
-export { HOLDING_LINE, MAX_AI_ROUNDS, parseAnswer, RESPONDER_CONTEXT_LINES } from './responder.ts';
+export { holdingLine, MAX_AI_ROUNDS, parseAnswer, RESPONDER_CONTEXT_LINES } from './responder.ts';
 export { groupReach } from './groups.ts';
 export type { CreateGroupInput, UpdateGroupInput } from './groups.ts';
 export type { GroupTaskInput } from './group-tasks.ts';

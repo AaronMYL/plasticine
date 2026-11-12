@@ -11,6 +11,7 @@ import {
 } from '../../shared/api/index.ts';
 import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import { fakeBrowser } from '../attention/helpers.ts';
+import { holdingLine } from '../../src/network/index.ts';
 import { call, json, openEvents, pair, startTestApp, type SseStream, type TestApp } from './helpers.ts';
 
 let t: TestApp | undefined;
@@ -204,4 +205,35 @@ test('推送接口：没登录 401；endpoint 不是 https 或钥匙不对 400',
     body: { requestId: 'req-push-0004', endpoint: 'https://push.example.com/x', keys: badKeys },
   });
   assert.equal(broken.status, 400);
+});
+
+test('要确认怎么回别人的卡：带上属于哪段聊天和草稿；不在任务「等你」里再列一遍', async () => {
+  t = await startTestApp([], { startTasks: false });
+  const cookie = await pair(t);
+  const reply = t.state.asks.create({
+    kind: 'confirm', purpose: 'network_reply', channel: 'popup', question: '周可问你的 Plasticine：能接吗？',
+    options: [{ id: 'send', label: '这样回', description: null, recommended: true },
+      { id: 'self', label: '我自己回', description: null, recommended: false },
+      { id: 'none', label: '不回', description: null, recommended: false }],
+    context: { contactId: 'contact-zhou', groupId: null, questionId: 'q-1', draft: '能接。', materials: [] },
+  });
+  const other = t.state.asks.create({
+    kind: 'decide', purpose: 'line_question', channel: 'popup', question: QUESTION, options: [],
+  });
+  const listed = await call(t, 'GET', '/v2/asks', { cookie });
+  assert.ok(Value.Check(AskListResponseSchema, listed.body));
+  const body = listed.body;
+  const views = new Map([...(body.current === null ? [] : [body.current]), ...body.queue].map((ask) => [ask.id, ask]));
+  assert.deepEqual(views.get(reply.id)?.networkReply,
+    { contactId: 'contact-zhou', groupId: null, questionId: 'q-1', draft: '能接。' });
+  assert.equal(views.get(other.id)?.networkReply, undefined);
+  const board = await call(t, 'GET', '/v2/tasks/board', { cookie });
+  assert.equal(board.status, 200);
+  assert.deepEqual((json(board)['waiting'] as AskView[]).map((ask) => ask.id), [other.id]);
+});
+
+test('拿不准时先回的那一句写的是账号上的名字，不写「主人」', () => {
+  assert.equal(holdingLine('小蕨'), '我问一下小蕨。');
+  assert.equal(holdingLine('Fern'), '我问一下 Fern。');
+  assert.equal(holdingLine('  '), '我先问一下，再回你。');
 });

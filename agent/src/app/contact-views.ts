@@ -166,7 +166,7 @@ function exchangeOf(run: readonly ContactMessageView[]): ContactThreadItem {
 
 /**
  * AI↔AI：同一个 exchangeId、连着的 AI 消息（两条起）收成一项；其余原样。只收有 AI 发问的那几段——人问对方的
- * Plasticine、它先说「我问一下主人」再回答，是人和 AI 的对话，照常一句一句摆。
+ * Plasticine、它先说「我问一下……」再回答，是人和 AI 的对话，照常一句一句摆。
  */
 export function foldExchanges(items: readonly ContactThreadItem[], aiExchanges: ReadonlySet<string>):
   ContactThreadItem[] {

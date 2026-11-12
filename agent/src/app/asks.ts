@@ -68,9 +68,21 @@ function subscriptionCardOf(ask: Ask): SubscriptionCardPreview | null {
     ? preview : null;
 }
 
+/** 要我确认怎么回别人的卡属于哪段聊天；别的卡是 null。 */
+function networkReplyOf(ask: Ask): NonNullable<AskView['networkReply']> | null {
+  const context = ask.context ?? {};
+  const questionId = context['questionId'];
+  if (ask.purpose !== 'network_reply' || typeof questionId !== 'string') {
+    return null;
+  }
+  const text = (key: string): string | null => (typeof context[key] === 'string' ? context[key] : null);
+  return { contactId: text('contactId'), groupId: text('groupId'), questionId, draft: text('draft') };
+}
+
 export function askView(_state: unknown, ask: Ask): AskView {
   const longOptions = ask.options.some((option) => option.description !== null);
   const taskCard = taskCardOf(ask);
+  const networkReply = networkReplyOf(ask);
   const scheduleCard = scheduleCardOf(ask);
   const subscriptionCard = subscriptionCardOf(ask);
   return {
@@ -78,6 +90,7 @@ export function askView(_state: unknown, ask: Ask): AskView {
     ...(Value.Check(OutboundCardSchema, ask.context?.outbound) ? { outbound: ask.context.outbound } : {}),
     ...(ask.purpose === 'network_task' && typeof ask.context?.['networkTaskId'] === 'string'
       ? { networkTaskId: ask.context['networkTaskId'] } : {}),
+    ...(networkReply === null ? {} : { networkReply }),
     ...(taskCard === null ? {} : { taskCard }),
     ...(scheduleCard === null ? {} : { scheduleCard }),
     ...(subscriptionCard === null ? {} : { subscriptionCard }),

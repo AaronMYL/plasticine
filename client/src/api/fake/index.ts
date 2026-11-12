@@ -165,6 +165,18 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
     seedScheduleScene(lines, (seed) => asks.raise(seed), now);
     return;
   }
+  // ?scene=reply：周可问了我的 Plasticine，它拿不准，确认卡出在和周可的聊天里（11-12 全量优化第 5 条）。
+  if (scene === 'reply') {
+    asks.raise({ id: 'ask_reply_zhou', kind: 'confirm', basis: 'inferred',
+      question: '周可 @zhouke 问你的 Plasticine：3 份访谈稿整理成要点，能接吗？',
+      detail: '原问题：3 份访谈稿整理成要点，能接吗？\n\n想这样回：能接。稿子发来后，周五前给你 10 条要点，每条都能点回原话。',
+      options: [{ id: 'send', label: '这样回', description: null, recommended: true },
+        { id: 'self', label: '我自己回', description: null, recommended: false },
+        { id: 'none', label: '不回', description: null, recommended: false }],
+      networkReply: { contactId: 'c_zhouke', groupId: null, questionId: 'q_zhou_1',
+        draft: '能接。稿子发来后，周五前给你 10 条要点，每条都能点回原话。' } });
+    return;
+  }
   // ?scene=sample：研究周报样刊出来、附「开启定时 / 再改改」卡（第 7 批第 14 条，设计稿 Chat-Sample）。
   if (scene === 'sample') {
     seedSampleScene(lines, (seed) => asks.raise(seed), now);

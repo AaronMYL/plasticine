@@ -49,7 +49,7 @@ describe('消息 · 列表', () => {
     const lin = within(list()).getByRole('button', { name: '林一' });
     expect(lin.querySelector('.contact-avatar')?.textContent).toBe('林');
     const zhou = within(list()).getByRole('button', { name: '周可，等你' });
-    expect(zhou.querySelector('.dot-accent')).not.toBeNull();
+    expect(within(zhou).getByText('等你')).toBeTruthy();
     // AI 说的最后一句前面一个 ✦。
     expect(within(lin).getByRole('img', { name: '林一的 Plasticine' })).toBeTruthy();
     // 没点过哪一条时主区打开列表里的第一条。

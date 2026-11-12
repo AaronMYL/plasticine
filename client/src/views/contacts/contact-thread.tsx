@@ -16,6 +16,7 @@ import { ContactComposer } from './contact-composer.tsx';
 import { ContactRequests } from './contact-requests.tsx';
 import { itemTime, joinItems } from './contacts-store.ts';
 import { GroupMenu } from './group-menu.tsx';
+import { ReplyConfirms, replyAsksOf } from './reply-confirm.tsx';
 import { TaskCompose } from './task-compose.tsx';
 import { ThreadItems } from './thread-items.tsx';
 import './contact-thread.css';
@@ -128,7 +129,7 @@ function useFollowBottom(count: number, contactId: string) {
 
 export function ContactThread(props: ContactThreadProps): ReactNode {
   const { contact, phone, now, navigate } = props;
-  const { contacts, contactActions } = useLive();
+  const { contacts, contactActions, asks } = useLive();
   const thread = contacts.thread(contact.id);
   const latest = useStore(thread.latest.data);
   const earlier = useStore(thread.earlier);
@@ -154,7 +155,9 @@ export function ContactThread(props: ContactThreadProps): ReactNode {
       void contactActions.markRead(contact, lastAt);
     }
   }, [contactActions, contact, lastAt]);
-  const { list, onScroll } = useFollowBottom(items.length, contact.id);
+  const replyCards = replyAsksOf(useStore(asks.store).open, contact).length;
+  const { list, onScroll } = useFollowBottom(items.length + replyCards, contact.id);
+  const root = useRef<HTMLDivElement>(null);
   const hasMore = earlier.hasMore ?? latest.value?.hasMore ?? false;
   const shown = query === null ? items : findItems(items, query);
   const loadEarlier = (): void => {
@@ -163,7 +166,7 @@ export function ContactThread(props: ContactThreadProps): ReactNode {
     }
   };
   return (
-    <div className="contact-thread" data-phone={phone}>
+    <div className="contact-thread" data-phone={phone} ref={root}>
       {phone ? <PhoneHead contact={contact} navigate={navigate} onNewTask={withCompose.onNewTask} />
         : <DesktopHead {...withCompose} composing={composing} finding={query !== null}
           onFind={() => setQuery((value) => (value === null ? '' : null))} />}
@@ -186,6 +189,10 @@ export function ContactThread(props: ContactThreadProps): ReactNode {
         {earlier.error === null ? null : <p className="block-empty is-error" role="alert">{earlier.error}</p>}
         <LoadNote resource={latest} what="聊天" onRetry={() => void thread.latest.reload()} />
         <ThreadItems items={shown} contact={contact} now={now} navigate={navigate} />
+        {query === null ? <ReplyConfirms contact={contact} onSelf={() => {
+          root.current?.querySelector<HTMLElement>('.contact-composer textarea, .contact-composer [contenteditable]')
+            ?.focus();
+        }} /> : null}
       </div>
       <ThreadFoot {...withCompose} suggestion={latest.value?.suggestion ?? null} />
       {composing && canSendTask(contact)
