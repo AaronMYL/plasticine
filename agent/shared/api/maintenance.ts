@@ -23,11 +23,13 @@ export const MAINTENANCE_OPS = [
   'memory.cleanup.add',
   // 11-12 全量优化：Aaron 同意把「建议」里堆着的半句话收起（忽略）；按 id 收，结果里记下收了哪几条、原来什么状态。
   'suggestions.dismiss',
+  // 11-12 全量优化：Aaron 同意把消息里「采访、巡查、反馈」这几行旧功能留下的归档（不删，还在收信的「已归档」里）。
+  'inbox.archive',
 ] as const;
 export type MaintenanceOp = (typeof MAINTENANCE_OPS)[number];
 
 export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['rules.mode', 'mail.refetch', 'rules.rewrite',
-  'memory.move', 'memory.cleanup.add', 'suggestions.dismiss'];
+  'memory.move', 'memory.cleanup.add', 'suggestions.dismiss', 'inbox.archive'];
 
 /** memory.move 的一项：这一行挪到 toDocId。 */
 export const MemoryMoveItemSchema = Type.Object({
@@ -76,6 +78,8 @@ export const MaintenanceRequestSchema = Type.Object(
     moves: Type.Optional(Type.Array(MemoryMoveItemSchema, { minItems: 1, maxItems: 200 })),
     /** suggestions.dismiss 收起哪几条建议。 */
     ids: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 80 }), { minItems: 1, maxItems: 100 })),
+    /** inbox.archive 归档哪几个系统来源的来信（巡查、反馈、采访）。 */
+    sources: Type.Optional(Type.Array(Type.Enum(['patrol', 'feedback', 'interview']), { minItems: 1, maxItems: 3 })),
     /** memory.cleanup.add 新加哪几条。 */
     adds: Type.Optional(Type.Array(MemoryCleanupAddSchema, { minItems: 1, maxItems: 200 })),
   },

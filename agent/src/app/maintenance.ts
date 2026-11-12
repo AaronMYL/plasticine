@@ -124,7 +124,38 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
     }
     return dismissSuggestions(deps.state, request.ids, `maintenance:${request.operationId}`);
   }
+  if (request.op === 'inbox.archive') {
+    if (request.sources === undefined) {
+      throw new MaintenanceFailure('invalid_input', '「inbox.archive」要给 --sources（patrol,feedback,interview 里的几个）。');
+    }
+    return archiveInbox(deps.state, request.sources);
+  }
   throw new MaintenanceFailure('invalid_input', `不认识的写操作「${request.op}」。`);
+}
+
+/** 一次最多归档这么多封（这几个来源是停用的旧功能留下的，量很小；真到了这个数说明弄错了，停下）。 */
+const ARCHIVE_MAX = 500;
+
+/**
+ * 把几个系统来源还没归档的来信归档（不删）：消息里那几行就不再出现，信还在「已归档」里。
+ * 结果里记下归档了哪几封，要恢复照它把 archivedAt 清掉。
+ */
+function archiveInbox(state: StateService, sources: readonly ('patrol' | 'feedback' | 'interview')[]) {
+  return state.transaction(() => {
+    const at = new Date().toISOString();
+    const archived: { id: string; source: string; title: string }[] = [];
+    for (const source of sources) {
+      const messages = state.inboxMessages.page({ box: source }, { limit: ARCHIVE_MAX });
+      if (state.inboxMessages.count({ box: source }) > ARCHIVE_MAX) {
+        throw new MaintenanceFailure('invalid_input', `「${source}」有 ${ARCHIVE_MAX} 封以上，不像旧功能留下的，这次没动。`);
+      }
+      for (const message of messages) {
+        state.inboxMessages.update(message.id, message.version, { archivedAt: at });
+        archived.push({ id: message.id, source, title: message.title });
+      }
+    }
+    return { archived: archived.length, messages: archived };
+  });
 }
 
 /**
@@ -177,7 +208,8 @@ function record(state: StateService, request: MaintenanceRequest, quote: string,
   const args = { code: request.code ?? null, mode: request.mode ?? null, limit: request.limit ?? null,
     plan: request.plan ?? null, ...(request.moves === undefined ? {} : { moves: request.moves }),
     ...(request.adds === undefined ? {} : { adds: request.adds }),
-    ...(request.ids === undefined ? {} : { ids: request.ids }) };
+    ...(request.ids === undefined ? {} : { ids: request.ids }),
+    ...(request.sources === undefined ? {} : { sources: request.sources }) };
   state.maintenanceOperations.record({ id: request.operationId, op: request.op, args, because: quote, result });
 }
 

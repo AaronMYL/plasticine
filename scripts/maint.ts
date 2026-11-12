@@ -15,6 +15,7 @@
 //   memory.move --plan <[{lineId,version,toDocId}]> --because "用户原话"   把几行记忆挪到别的文档
 //   memory.cleanup.add --plan <[{toDocId,text}]> --because "用户原话"     整理清单里新加几条，等用户勾选
 //   suggestions.dismiss --ids <id,id,…> --because "用户原话"            把几条建议收起（标成忽略，不删）
+//   inbox.archive --sources patrol,feedback,interview --because "用户原话"  这几个系统来源的来信归档（不删）
 //                                            整理「规则」：一行换成几行或挪进归档（brain/rules-rewrite.ts）
 //   db.read "SELECT …"                       只读打开数据库查一句（不经服务，库以只读方式打开）
 //
@@ -92,6 +93,7 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
       limit: { type: 'string' },
       plan: { type: 'string' },
       ids: { type: 'string' },
+      sources: { type: 'string' },
     },
   });
   const stateDir = values.state ?? env['PLASTICINE_STATE'] ?? DEFAULT_STATE;
@@ -120,6 +122,8 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
     ...(values.code === undefined ? {} : { code: values.code }),
     ...(values.mode === undefined ? {} : { mode: values.mode as RuleMode }),
     ...(limit === undefined ? {} : { limit }),
+    ...(values.sources === undefined ? {} : { sources: values.sources.split(',').map((source) => source.trim())
+      .filter((source) => source !== '') as NonNullable<MaintenanceRequest['sources']> }),
     ...(values.ids === undefined ? {}
       : { ids: values.ids.split(',').map((id) => id.trim()).filter((id) => id !== '') }),
     ...(values.plan === undefined ? {} : command === 'memory.move'

@@ -206,3 +206,22 @@ test('suggestions.dismiss：把还摆着的几条建议收起，结果里记下�
   assert.match(failure(() => runMaintenance(deps(), { operationId: 'op-suggest-3', op: 'suggestions.dismiss',
     because: '收起' })).message, /--ids/);
 });
+
+test('inbox.archive：把巡查、反馈、采访留下的来信归档（不删），邮件不动；结果里记下归档了哪几封', () => {
+  const add = (source: 'patrol' | 'feedback' | 'interview' | 'email', title: string) => h.state.inboxMessages.add({ source,
+    fromAddress: source === 'email' ? 'lin@example.test' : 'plasticine', fromName: null, title, body: title,
+    receivedAt: '2026-11-07T05:00:00.000Z', attachments: [] }).message;
+  const patrol = add('patrol', '首页头条可以换成「等你」的事');
+  const feedback = add('feedback', '按钮太小');
+  const mail = add('email', '周五下午有空');
+  const done = runMaintenance(deps(), { operationId: 'op-inbox-1', op: 'inbox.archive',
+    because: '消息里「采访、巡查、反馈」三行归档', sources: ['patrol', 'feedback', 'interview'] });
+  assert.deepEqual(done.result, { archived: 2, messages: [
+    { id: patrol.id, source: 'patrol', title: '首页头条可以换成「等你」的事' },
+    { id: feedback.id, source: 'feedback', title: '按钮太小' }] });
+  assert.notEqual(h.state.inboxMessages.require(patrol.id).archivedAt, null);
+  assert.equal(h.state.inboxMessages.require(mail.id).archivedAt, null);
+  assert.equal(h.state.inboxMessages.count({ box: 'patrol' }), 0);
+  assert.match(failure(() => runMaintenance(deps(), { operationId: 'op-inbox-2', op: 'inbox.archive',
+    because: '归档' })).message, /--sources/);
+});
