@@ -6,7 +6,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { PlasticineApi } from './api/client.ts';
 import { FakePushDevice } from './api/fake/fake-push-device.ts';
-import { accountSceneOf, sceneInFirstRun, seedAccountScene } from './api/fake/account-scenes.ts';
+import { accountSceneOf, seedAccountScene } from './api/fake/account-scenes.ts';
 import { createFakeApi } from './api/fake/index.ts';
 import { createHttpApi } from './api/http/index.ts';
 import { createBrowserPushDevice, type PushDevice } from './api/push-device.ts';
@@ -15,7 +15,6 @@ import { App } from './app.tsx';
 import { installNativePointer } from './mac/native-pointer.ts';
 import { preloadLazyViews } from './shell/lazy-view.ts';
 import { createClientState } from './state/context.tsx';
-import { startFirstRun } from './views/onboard/first-run.ts';
 import type { KeyValueStorage } from './state/outbox.ts';
 import { memorySink, Telemetry, type TelemetryRecord } from './telemetry.ts';
 
@@ -57,14 +56,11 @@ function chooseApi(): { api: PlasticineApi; pushDevice: PushDevice } {
     empty.control.session.signInForDevelopment('本地开发');
     return { api: empty.api, pushDevice: new FakePushDevice() };
   }
-  // ?account=：首次使用流程那几屏（建账号、登录、连模型、手机、第一次进主线、设密码），见 account-scenes.ts。
+  // ?account=：首次使用流程那几屏（建账号、登录、主线里连模型、连好以后、设密码），见 account-scenes.ts。
   const scene = accountSceneOf(window.location.search);
   if (scene !== null && scene !== 'setpw') {
     const fresh = createFakeApi({ seed: false, streamStepMs: DEV_STREAM_STEP_MS });
     seedAccountScene(fresh, scene);
-    if (sceneInFirstRun(scene)) {
-      startFirstRun();
-    }
     return { api: fresh.api, pushDevice: new FakePushDevice() };
   }
   const fake = createFakeApi({ seed: true, streamStepMs: DEV_STREAM_STEP_MS });

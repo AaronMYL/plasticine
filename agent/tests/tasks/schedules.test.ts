@@ -224,3 +224,24 @@ test('改一张卡：新卡确认后旧卡换掉，定时线接着用旧卡那�
   desk.tick();
   assert.deepEqual(lines.sent.map((item) => item.lineId), ['line-1']);
 });
+
+test('一家模型都没连：到点的卡和登记进来的定时都先不跑、不记失败；连上后下一分钟接着跑', () => {
+  const lines = new FakeLines();
+  let ready = false;
+  const after: Date[] = [];
+  const desk = new ScheduleDesk({ state: t.state, now: () => clock, lines: () => lines, ready: () => ready,
+    afterTick: (now) => after.push(now) });
+  const schedule = confirmed(desk);
+  clock = new Date('2026-11-07T14:00:10Z');
+  desk.tick();
+  assert.equal(lines.opened.length, 0);
+  assert.equal(after.length, 0);
+  const skipped = t.state.schedules.require(schedule.id);
+  assert.equal(skipped.lastRunAt, null);
+  assert.equal(skipped.lastOutcome, null);
+  ready = true;
+  clock = new Date('2026-11-07T14:01:10Z');
+  desk.tick();
+  assert.equal(lines.opened.length, 1);
+  assert.equal(after.length, 1);
+});

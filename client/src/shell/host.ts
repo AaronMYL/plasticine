@@ -4,6 +4,8 @@
 // 等它被 Electron 版换掉就删这一处。界面里别的地方不直接碰 window.plasticine*。没有壳（网页版、手机浏览器）时一律回
 // null，界面照网页的做法走。
 
+import { Value } from 'typebox/value';
+import { HostProfileSchema, type HostProfile } from '../api/shared.ts';
 import type {
   PlasticineDesktopExternal,
   PlasticineDesktopServer,
@@ -85,6 +87,24 @@ export async function hostLocalGrant(): Promise<string | null> {
     return typeof token === 'string' && token !== '' ? token : null;
   } catch (cause) {
     console.warn('桌面客户端没给本机令牌', cause);
+    return null;
+  }
+}
+
+/**
+ * 第一次的引导要的系统全名和笔记应用（11-12《首次使用解耦》）：只有桌面客户端载入本机本体时有；别的情况、旧壳、
+ * 读不出来都是 null（「叫你什么」留空、「开始」用默认的几个）。
+ */
+export async function hostProfile(): Promise<HostProfile | null> {
+  const server = extras()?.server;
+  if (server?.profile === undefined) {
+    return null;
+  }
+  try {
+    const value: unknown = await server.profile();
+    return Value.Check(HostProfileSchema, value) ? value : null;
+  } catch (cause) {
+    console.warn('桌面客户端没给系统全名和应用', cause);
     return null;
   }
 }

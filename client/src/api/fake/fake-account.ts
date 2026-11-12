@@ -34,13 +34,13 @@ const RESERVED = new Set(['admin', 'plasticine', 'www', 'relay']);
 
 /** 欢迎消息下面的三个开始（设计稿 First-Main）。 */
 export const WELCOME_STARTS: readonly WelcomeStart[] = [
-  { id: 'notes', label: '导入我的笔记', icon: 'notes', prompt: '帮我把现有的笔记导进来。' },
-  { id: 'feed', label: '订几个信息源', icon: 'feed', prompt: '帮我订几个值得看的信息源。' },
-  { id: 'chat', label: '先聊聊，认识一下', icon: 'conversation', prompt: '先聊聊吧，你想先了解我什么？' },
+  { id: 'import-notes', label: '导入我的笔记', icon: 'notes', prompt: '帮我把现有的笔记导进来。' },
+  { id: 'subscribe-feeds', label: '订几个信息源', icon: 'feed', prompt: '帮我订几个值得看的信息源。' },
+  { id: 'get-to-know', label: '先聊聊，认识一下', icon: 'conversation', prompt: '先聊聊吧，你想先了解我什么？' },
 ];
 
 export function welcomeText(name: string): string {
-  return `你好 ${name}，我是 Plasticine。你说一件事，我能查资料、整理笔记、替你盯着信息流，也能用这台电脑替你动手；`
+  return `你好 ${name}。你说一件事，我能查资料、整理笔记、替你盯着信息流，也能用这台电脑替你动手；`
     + '以你名义对外、花钱、删东西之前，都会先问你。\n\n想从哪儿开始？';
 }
 

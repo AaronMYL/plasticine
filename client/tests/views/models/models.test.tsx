@@ -1,4 +1,4 @@
-// 模型连接（2026-11-05 设计稿 Connect / Settings-AI）：一家都没连时先连模型；填 key 连上、「开始用」进门；订阅登录交回调地址；
+// 模型连接（2026-11-05 设计稿 Connect / Settings-AI；11-12 起一家都没连也不挡整窗）：订阅登录复制链接、贴回调地址；
 // 设置 · AI 里平级列出、断开先问一句。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -7,35 +7,22 @@ import { HOME_HEADING, renderApp } from '../../helpers.tsx';
 import { arrangeProviders, choiceLabel, providerName } from '../../../src/views/models/model-store.ts';
 
 describe('连接模型', () => {
-  it('一家都没连：整个窗口只有「连接模型」；填 key 连上后「开始用」进首页', async () => {
+  it('一家都没连：不挡整窗，首页照常进（11-12《首次使用解耦》，连模型在主线欢迎卡里、用到时再弹）', async () => {
     await renderApp({ hash: '#/today', modelConnected: false });
-    const page = await screen.findByRole('main', { name: '连接模型' });
-    expect(within(page).getByText('ChatGPT')).toBeTruthy();
-    const deepseek = within(page).getByRole('listitem', { name: 'DeepSeek' });
-    fireEvent.click(within(deepseek).getByRole('button', { name: '填 key' }));
-    fireEvent.change(screen.getByLabelText('API Key'), { target: { value: 'sk-test-12345678' } });
-    fireEvent.click(screen.getByRole('button', { name: '连接' }));
-    expect(await screen.findByRole('img', { name: '已连接' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '开始用' }));
     expect(await screen.findByRole('heading', { name: HOME_HEADING })).toBeTruthy();
+    expect(screen.queryByRole('main', { name: '连接模型' })).toBeNull();
   });
 
-  it('订阅登录（本机网页）：开授权页，那一行写「在浏览器里登录…」，本体自己收回调，不要贴地址', async () => {
-    const open = vi.spyOn(window, 'open').mockReturnValue(null);
-    await renderApp({ hash: '#/today', modelConnected: false });
-    const page = await screen.findByRole('main', { name: '连接模型' });
-    expect(within(page).getByRole('heading', { name: '连上一个模型' })).toBeTruthy();
-    const row = within(page).getByRole('listitem', { name: 'ChatGPT' });
-    fireEvent.click(within(row).getByRole('button', { name: '登录' }));
-    expect(await within(row).findByText('在浏览器里登录…')).toBeTruthy();
-    await waitFor(() => expect(open).toHaveBeenCalled());
-    expect(screen.queryByLabelText('回调地址')).toBeNull();
-    // 自动收不到时的退路（11-09）：点「粘贴回调地址」才出输入框，光标直接进去。
-    fireEvent.click(within(page).getByRole('button', { name: '粘贴回调地址' }));
-    const field = await within(page).findByLabelText('回调地址');
-    await waitFor(() => expect(document.activeElement).toBe(field));
-    fireEvent.click(within(row).getByRole('button', { name: '取消登录' }));
-    expect(within(row).getByRole('button', { name: '登录' })).toBeTruthy();
+  it('设置 · AI 里订阅登录：复制登录链接和贴回调地址都常显（Aaron：模型配置一定要有）', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    await renderApp({ hash: '#/settings/ai', modelConnected: false });
+    fireEvent.click(await screen.findByRole('button', { name: '添加提供商' }));
+    const adding = screen.getByRole('region', { name: '添加提供商' });
+    fireEvent.click(within(within(adding).getByRole('listitem', { name: 'ChatGPT' })).getByRole('button',
+      { name: '登录' }));
+    expect(await screen.findByRole('button', { name: '复制登录链接' })).toBeTruthy();
+    expect(screen.getByLabelText('回调地址')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '粘贴回调地址' })).toBeNull();
   });
 
   it('设置 · AI：连着的每家一行写订阅还是 key；没连的在「添加提供商」里平级列出；断开先问一句', async () => {
@@ -56,7 +43,7 @@ describe('连接模型', () => {
       .find((item) => item.id === 'openai')?.connected).toBeNull());
   });
 
-  it('用着的时候一家都断开了：连接页能「稍后再连」回去，不会困在这页（11-09）', async () => {
+  it('用着的时候一家都断开了：不挡整窗，还在设置里', async () => {
     await renderApp({ hash: '#/settings/ai' });
     const connected = await screen.findByRole('list', { name: '连着的提供商' });
     const chatgpt = within(connected).getByRole('listitem', { name: 'ChatGPT' });
@@ -64,9 +51,9 @@ describe('连接模型', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: '断开' }));
     const confirm = screen.getByRole('alertdialog', { name: '断开 ChatGPT' });
     fireEvent.click(within(confirm).getByRole('button', { name: '断开' }));
-    const page = await screen.findByRole('main', { name: '连接模型' });
-    fireEvent.click(within(page).getByRole('button', { name: '稍后再连' }));
-    await waitFor(() => expect(screen.queryByRole('main', { name: '连接模型' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    expect(screen.queryByRole('main', { name: '连接模型' })).toBeNull();
+    expect(screen.getByRole('button', { name: '添加提供商' })).toBeTruthy();
   });
 
   it('连着但一个模型都没启用：不挡在连接页，照常进（设置 · AI 里再选）', async () => {

@@ -322,3 +322,50 @@
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* 11-12《首次使用解耦》：连模型那张卡（欢迎卡、连模型小窗共用）。登录时列表下面常显复制链接、取消和贴回调。 */
+.connect-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.connect-login {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 用到模型时弹的连模型小窗：上面引着刚才那句。 */
+.connect-sheet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+}
+
+.connect-sheet.sheet-drawer .sheet-body {
+  padding: 12px 16px;
+}
+
+.connect-sheet-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.connect-sheet-note {
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.connect-sheet-quote {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--tint);
+  font-size: 14px;
+  line-height: 22px;
+  white-space: pre-wrap;
+}

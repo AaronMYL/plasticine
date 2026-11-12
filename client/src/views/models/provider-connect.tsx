@@ -2,7 +2,8 @@
 //   登录   use-provider-login.ts：开始订阅登录 → 在浏览器里打开授权页 →「在浏览器里登录 ChatGPT…」，隔一会儿问一次
 //          走到哪了；桌面客户端连远程实例时在本机等回调、自动完成；普通网页连远程实例时把地址栏里 localhost:1455
 //          开头的那串贴进来（说明在 ⓘ 里）。11-09 他要「回调复制粘贴地址的登录方式」：哪种情况都能改用复制登录链接、
-//          在任何浏览器（比如手机上）登录、再把回调地址贴回来——自动收不到时有一条退路；
+//          在任何浏览器（比如手机上）登录、再把回调地址贴回来——自动收不到时有一条退路；11-12 起复制链接和贴回调
+//          两样都常显（Aaron：模型配置一定要有复制登录链接和回调粘贴）；
 //   填 key  一个密码框 +「连接」；
 //   连上了  一个勾、「已连接」和哪一家；「开始用」「再连一家」。
 // 设置 · AI 里就地展开，第一次打开 / 重新登录的连接页里一张卡一步。
@@ -10,7 +11,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { ModelProviderView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
-import { Collapse } from '../../shell/collapse.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
@@ -21,7 +21,7 @@ import { useProviderLogin, type ProviderLogin } from './use-provider-login.ts';
 
 const CALLBACK_TIP = '在浏览器里登录完会跳到一个打不开的 127.0.0.1:1455 页面，把地址栏里那一整串贴到这里';
 
-function CopyLink({ url }: { url: string | null }): ReactNode {
+export function CopyLink({ url }: { url: string | null }): ReactNode {
   const [copied, setCopied] = useState(false);
   const copy = (): void => {
     if (url === null) return;
@@ -63,43 +63,10 @@ export function CallbackForm({ flow, focus = false }: { flow: ProviderLogin; foc
   );
 }
 
-/** 要不要一上来就摆出贴回调的输入框：本体收不到回调的两种（普通网页连远程实例、旧 Mac App）要；别的收起来。 */
-export function pasteFirst(flow: ProviderLogin): boolean {
-  return flow.route === 'paste' || flow.route === 'copy';
-}
-
-/**
- * 本来会自动完成的几种：收起的「粘贴回调地址」，点开才有输入框（自动收不到时的退路）。copy：旁边没有「复制登录链接」
- * 的地方（连接页那一行只有「在浏览器里登录…」）一起给，好拿去别的浏览器（比如手机上）登录。
- */
-export function PasteFallback({ flow, copy = false }: { flow: ProviderLogin; copy?: boolean }): ReactNode {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      {open ? null : (
-        <div className="connect-links">
-          <button type="button" className="text-button text-button-quiet" aria-expanded={false}
-            disabled={flow.login === null} onClick={() => setOpen(true)}>粘贴回调地址</button>
-          {copy ? <CopyLink url={flow.login?.url ?? null} /> : null}
-        </div>
-      )}
-      <Collapse open={open}>
-        {open ? (
-          <div className="connect-paste">
-            <div className="connect-rule" />
-            <CallbackForm flow={flow} focus />
-          </div>
-        ) : null}
-      </Collapse>
-    </>
-  );
-}
-
 export function LoginFlow({ provider, onDone, onCancel }: { provider: ModelProviderView; onDone: () => void;
   onCancel: () => void }): ReactNode {
   const flow = useProviderLogin(provider, onDone, onCancel);
   const name = providerName(provider);
-  const paste = pasteFirst(flow);
   return (
     <div className="connect-step">
       <div className="connect-wait-head">
@@ -114,7 +81,8 @@ export function LoginFlow({ provider, onDone, onCancel }: { provider: ModelProvi
         <CopyLink url={flow.login?.url ?? null} />
         <button type="button" className="text-button text-button-quiet" onClick={flow.cancel}>取消</button>
       </div>
-      {paste ? <><div className="connect-rule" /><CallbackForm flow={flow} /></> : <PasteFallback flow={flow} />}
+      <div className="connect-rule" />
+      <CallbackForm flow={flow} />
       {flow.error === null ? null : <p className="connect-error" role="alert">{flow.error}</p>}
     </div>
   );

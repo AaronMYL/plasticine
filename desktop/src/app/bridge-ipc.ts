@@ -40,6 +40,8 @@ export interface ShellServices {
   /** 本机令牌：frameUrl 是发起方主 frame 当前的地址，不是本机同源回 null（account-client.ts 的 localGrantFor）。 */
   localGrant(frameUrl: string): string | null;
   showWelcome(): void;
+  /** 第一次的引导要的系统全名和笔记应用（host-profile.ts）；frameUrl 不是本机同源回 null，规矩同 localGrant。 */
+  profile(frameUrl: string): Promise<unknown>;
   openExternal(url: string): void;
   capture(port: number, timeoutMs: number): Promise<string | null>;
   cancelCapture(): void;
@@ -153,6 +155,8 @@ export function registerBridge(services: ShellServices): void {
   ipcMain.handle(CHANNELS.serverLocalGrant, (event) => (trusted(services, event)
     ? services.localGrant(event.senderFrame?.url ?? '') : null));
   on(CHANNELS.serverWelcome, () => services.showWelcome());
+  ipcMain.handle(CHANNELS.serverProfile, (event) => (trusted(services, event)
+    ? services.profile(event.senderFrame?.url ?? '') : null));
   on(CHANNELS.externalOpen, (url) => {
     if (text(url, URL_MAX) && webAddress(url)) {
       services.openExternal(url);

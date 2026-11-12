@@ -9,11 +9,13 @@ import type { LineView } from '../../api/shared.ts';
 import type { AskView } from '../../api/types.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { AskTag } from '../../primitives/ask-card/index.tsx';
+import { Icon } from '../../shell/icons.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { useTabActions } from '../../shell/tabs-context.ts';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { LineAskCard } from '../asks/line-ask-card.tsx';
+import { ConnectSheet, useNoModel } from '../models/connect-sheet.tsx';
 import { lineElapsed, useNow } from '../lines/line-time.ts';
 import { WorkLineAction, WorkStatusGlyph, workStatusText } from '../lines/work-status.tsx';
 import './home.css';
@@ -41,16 +43,34 @@ function WaitRow({ ask, phone }: { ask: AskView; phone: boolean }): ReactNode {
   );
 }
 
+/** 一家模型都没连：定时的事都先不跑（服务端到点跳过），这里只出一条，点了就地连。 */
+function NoModelRow(): ReactNode {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className="home-wait">
+      <div className="home-row-line home-wait-row">
+        <span className="ask-glyph" data-urgent="true" aria-hidden="true"><Icon name="clock" size={13} /></span>
+        <span className="home-wait-title">连上模型后，定时的事才会跑</span>
+        <button type="button" className="primary-button button-small" onClick={() => setOpen(true)}>去连</button>
+      </div>
+      <ConnectSheet open={open} pendingText="" onConnected={() => setOpen(false)} onClose={() => setOpen(false)} />
+    </li>
+  );
+}
+
 export function HomeWaiting({ phone }: { phone: boolean }): ReactNode {
   const live = useLive();
   const data = useStore(live.asks.store);
-  if (data.open.length === 0) {
+  const noModel = useNoModel();
+  const count = data.open.length + (noModel ? 1 : 0);
+  if (count === 0) {
     return null;
   }
   return (
     <section className="home-section" aria-label="要你处理">
-      <h2 className="home-section-title">要你处理<span className="home-section-count">{data.open.length}</span></h2>
+      <h2 className="home-section-title">要你处理<span className="home-section-count">{count}</span></h2>
       <ul className="home-list">
+        {noModel ? <NoModelRow /> : null}
         {data.open.map((ask) => <WaitRow key={ask.id} ask={ask} phone={phone} />)}
       </ul>
     </section>

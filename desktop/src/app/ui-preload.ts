@@ -146,6 +146,7 @@ const bridge = {
       return typeof grant === 'string' ? grant : null;
     },
     showWelcome: (): void => ipcRenderer.send(CHANNELS.serverWelcome),
+    profile: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.serverProfile),
   } satisfies PlasticineDesktopServer,
   external: {
     open: (url: string): void => ipcRenderer.send(CHANNELS.externalOpen, url),

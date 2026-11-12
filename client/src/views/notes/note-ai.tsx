@@ -16,6 +16,7 @@ import { PHONE_BELOW } from '../../shell/layout.ts';
 import { noteExtensions } from './editor-extensions.ts';
 import { placeSelectionTools, SELECTION_TOOLS_GAP } from './note-selection-place.ts';
 import { NoteSuggestions, type ManualSupplement } from './note-suggestions.tsx';
+import { ConnectSheet, useNoModel } from '../models/connect-sheet.tsx';
 import type { NoteProposal } from './note-review.tsx';
 import './note-ai.css';
 import { useCloseOnContextMenu } from '../../shell/use-context-menu-close.ts';
@@ -65,6 +66,10 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
   const [busyLabel, setBusyLabel] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [automaticError, setAutomaticError] = useState<string | null>(null);
+  // 一家模型都没连：手动的改写先弹连模型，连上后接着做；自动续写、补充建议先不跑。
+  const noModel = useNoModel();
+  const [awaitModel, setAwaitModel] = useState<{ action: NoteAssistRequest['action']; draft: DraftTarget;
+    extra: string } | null>(null);
   const manual = useRef<AbortController | null>(null);
   const prompt = useRef<HTMLTextAreaElement>(null);
   const tools = useRef<HTMLDivElement>(null);
@@ -126,6 +131,10 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
     setTarget(capture(editor, range));
   };
   const generate = async (action: NoteAssistRequest['action'], draft: DraftTarget, extra = ''): Promise<void> => {
+    if (noModel && !(action === 'custom' && extra.trim() === '')) { setAwaitModel({ action, draft, extra }); return; }
+    await generateNow(action, draft, extra);
+  };
+  const generateNow = async (action: NoteAssistRequest['action'], draft: DraftTarget, extra = ''): Promise<void> => {
     if (manual.current !== null || pending || !editor.isEditable || editor.view.composing) { return; }
     if (action === 'custom' && extra.trim() === '') { return; }
     const controller = new AbortController();
@@ -236,7 +245,7 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
         </DropdownMenu>
       </div>, document.body)}
     <NoteSuggestions editor={editor} noteId={noteId} predict={predict} interject={interject}
-      paused={busy || pending || target !== null} onError={setAutomaticError} manual={supplement}
+      paused={busy || pending || target !== null || noModel} onError={setAutomaticError} manual={supplement}
       onStructure={(text, range) => {
         const base = editor.getMarkdown();
         const clone = new Editor({ extensions: noteExtensions(), content: editor.getJSON() });
@@ -244,6 +253,13 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
           clone.commands.insertContentAt(range, text, { contentType: 'markdown' });
           onProposal({ base, candidate: clone.getMarkdown(), label: '结构建议' });
         } finally { clone.destroy(); }
+      }} />
+    <ConnectSheet open={awaitModel !== null} pendingText="" onClose={() => setAwaitModel(null)}
+      onConnected={() => {
+        const next = awaitModel;
+        setAwaitModel(null);
+        // 连上那一刻 noModel 还没刷新：直接走请求。
+        if (next !== null) { void generateNow(next.action, next.draft, next.extra); }
       }} />
     {visibleError === null ? null : <div className="note-ai-error">
       <p className="note-error" role="alert">{visibleError}</p>

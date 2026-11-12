@@ -15,6 +15,7 @@ import { QuotePreview } from '../../primitives/message/quote-preview.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { PHONE_BELOW } from '../../shell/layout.ts';
+import { ConnectSheet, useNoModel } from '../models/connect-sheet.tsx';
 import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 import { useCurrentTab } from '../../shell/current-tab-context.ts';
 import { routeHash } from '../../shell/routes.ts';
@@ -120,6 +121,10 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
   const mounted = useRef(true);
   const [preparing, setPreparing] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  // 11-12：一家模型都没连时先弹连模型小窗，连上接着发（原话一直在输入框里）。
+  const noModel = useNoModel();
+  const [connecting, setConnecting] = useState(false);
+  const resend = useRef(false);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
@@ -141,6 +146,10 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
 
   const send = (): void => {
     if (!canSend || sending.current) return;
+    if (noModel) {
+      setConnecting(true);
+      return;
+    }
     sending.current = true;
     setPreparing(true);
     setSendError(null);
@@ -177,6 +186,12 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
     };
     void prepare();
   };
+
+  useEffect(() => {
+    if (!resend.current || noModel) return;
+    resend.current = false;
+    send();
+  });
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
     if (event.key !== 'Enter' || event.shiftKey || (phone && !event.metaKey && !event.ctrlKey)) {
@@ -257,6 +272,11 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
       <span id={shortcutId} className="sr-only">
         {phone ? '回车换行，点发送按钮发送。' : 'Enter 发送，Shift Enter 换行。'}
       </span>
+      <ConnectSheet open={connecting} pendingText={draft} onClose={() => setConnecting(false)}
+        onConnected={() => {
+          setConnecting(false);
+          resend.current = true;
+        }} />
     </form>
   );
 }

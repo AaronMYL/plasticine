@@ -7,7 +7,6 @@ import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { PASSWORD_MIN_CHARS, type AccountState } from '../../api/shared.ts';
 import { hostLocalGrant } from '../../shell/host.ts';
-import { inFirstRun } from './first-run.ts';
 import { PasswordField } from './onboard-parts.tsx';
 import './set-password.css';
 
@@ -79,7 +78,7 @@ export function SetPasswordPrompt({ now = Date.now }: { now?: () => number }): R
   const api = useApi();
   const [state, setState] = useState<AccountState | null>(null);
   useEffect(() => {
-    if (inFirstRun() || askedRecently(now())) return undefined;
+    if (askedRecently(now())) return undefined;
     const controller = new AbortController();
     api.account.state(controller.signal).then((value) => {
       if (!controller.signal.aborted && !value.passwordSet && value.setup === 'done') setState(value);

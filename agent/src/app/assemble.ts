@@ -303,7 +303,9 @@ export function assembleApp(options: AssembleOptions): App {
       notices.post(notice);
     },
     changed: () => hub.publish({ type: 'tasks_changed' }),
-    projectChanged: (projectId) => hub.publish({ type: 'project_invalidated', projectId }) });
+    projectChanged: (projectId) => hub.publish({ type: 'project_invalidated', projectId }),
+    // 《首次使用解耦》：一家模型都没连时，到点的事先跳过、不记失败；首页「要你处理」出一条去连。
+    ready: () => options.lines.models.current() !== undefined });
   // 第 15 条：Apple 日历和提醒事项。Mac 在线时同步进缓存，首页「今天」、心跳的冲突检查读缓存。
   const calendarZone = (): string => tasks.schedules.timeZone();
   const calendar = new CalendarSync({ state, devices: devices.actions, now, zone: calendarZone,

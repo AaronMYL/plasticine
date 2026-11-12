@@ -1,4 +1,4 @@
-// 首次使用流程几页共用的小件（11-08 设计稿）：三段进度、品牌一行、密码框（显示 / 隐藏）、「换一个地方」、
+// 首次使用流程几页共用的小件（11-08 设计稿）：品牌一行、密码框（显示 / 隐藏）、「换一个地方」、
 // 这台设备叫什么。
 
 import { useState, type ReactNode } from 'react';
@@ -8,14 +8,6 @@ import { Icon } from '../../shell/icons.tsx';
 import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { hostShowWelcome } from '../../shell/host.ts';
 import './onboard.css';
-
-export function Stepper({ at }: { at: 1 | 2 | 3 }): ReactNode {
-  return (
-    <div className="ob-steps" role="img" aria-label={`第 ${at} 步，共 3 步`}>
-      {[1, 2, 3].map((step) => <span key={step} data-done={step <= at} />)}
-    </div>
-  );
-}
 
 export function Brand(): ReactNode {
   return <div className="ob-brand"><PlasticineMark size={26} /><span>Plasticine</span></div>;

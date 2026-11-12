@@ -1,5 +1,6 @@
 // 有会话才进壳；任何请求拿到 401 就回到登录页（《实施方案》第 5 节约定 3）。
-// 11-08 首次使用流程：没登录时先读 /v2/account/state——还没有主人（setup = needed）直接到建账号页；
+// 11-08 首次使用流程：没登录时先读 /v2/account/state——还没有主人（setup = needed）直接到建账号（11-12 起是主线样子的
+// 一列，setup-view.tsx）；
 // 已经有主人的到登录页（@账号 + 密码）。桌面客户端里载入的是壳拉起的本机本体时，凭本机令牌直接登录，不问密码。
 // 读不到账号状态（旧服务端、断网）不挡：照样给登录页，登录时服务端自己说清。
 
@@ -17,7 +18,7 @@ import { hostLocalGrant } from './host.ts';
 
 type Gate =
   | { status: 'checking' }
-  | { status: 'setup' }
+  | { status: 'setup'; account: AccountState }
   | { status: 'signed-out'; account: AccountState | null }
   | { status: 'signed-in' }
   | { status: 'error'; error: string };
@@ -31,7 +32,7 @@ async function signedOutGate(api: PlasticineApi): Promise<Gate | SessionView> {
     console.warn('没读到账号状态，照样给登录页', cause);
   }
   if (account?.setup === 'needed') {
-    return { status: 'setup' };
+    return { status: 'setup', account };
   }
   const token = await hostLocalGrant();
   if (token !== null) {
@@ -122,7 +123,7 @@ export function SessionGate({ children }: { children: ReactNode }): ReactNode {
     );
   }
   if (gate.status === 'setup') {
-    return <><WindowDragStrip /><SetupView onSignedIn={onSignedIn} /></>;
+    return <><WindowDragStrip /><SetupView account={gate.account} onSignedIn={onSignedIn} /></>;
   }
   if (gate.status === 'signed-out') {
     return <><WindowDragStrip /><LoginView account={gate.account} onSignedIn={onSignedIn} /></>;

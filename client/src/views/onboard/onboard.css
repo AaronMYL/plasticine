@@ -51,23 +51,6 @@
   line-height: 22px;
 }
 
-/* 三段进度：短横，走过的 --fg、没走的 --line2。 */
-.ob-steps {
-  display: flex;
-  gap: 4px;
-}
-
-.ob-steps > span {
-  width: 22px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--line2);
-}
-
-.ob-steps > span[data-done='true'] {
-  background: var(--fg);
-}
-
 /* 字段：名字一行、框一行、框下面一行小字（地址、出错）。 */
 .ob-field {
   display: flex;
@@ -341,4 +324,94 @@
 .ob-later {
   align-self: center;
   margin-top: 16px;
+}
+
+/* 第一次打开、还没有账号（11-12《首次使用解耦》）：窗口只有中间一列，像主线；Plasticine 打招呼，下面一张描边的
+   「建账号」卡（不是白卡片：只有 1px --line2 描边和留白）。列宽同主线 640，手机上贴边留 20。 */
+.ob-chat {
+  align-items: stretch;
+}
+
+.ob-chat-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(640px, 100%);
+  margin: auto;
+}
+
+.ob-hello {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ob-hello-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.ob-hello p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.ob-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px 20px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  animation: ob-rise var(--motion-base, 240ms) var(--ease-out, ease-out);
+}
+
+.ob-card-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.ob-card-actions {
+  display: flex;
+  padding-top: 2px;
+}
+
+.ob-locked {
+  background: var(--tint);
+  box-shadow: none;
+  justify-content: space-between;
+  padding: 0 12px;
+  color: var(--fg2);
+}
+
+.ob-locked-value {
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+@keyframes ob-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 599px) {
+  .ob-chat {
+    padding: 32px 20px;
+  }
 }

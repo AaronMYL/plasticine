@@ -9,6 +9,7 @@ export const CHANNELS = {
   serverChoose: 'desktop:server-choose',
   serverLocalGrant: 'desktop:server-local-grant',
   serverWelcome: 'desktop:server-welcome',
+  serverProfile: 'desktop:server-profile',
   externalOpen: 'desktop:external-open',
   externalCapture: 'desktop:external-capture',
   externalCancel: 'desktop:external-cancel',

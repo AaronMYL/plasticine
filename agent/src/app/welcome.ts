@@ -13,8 +13,12 @@ export const WELCOME_STARTS: readonly WelcomeStart[] = [
     prompt: '我们先聊聊吧，你想先了解我哪些方面？' },
 ];
 
+/**
+ * 存进主线的那句话（模型读得到）：不写 AI 叫什么（建完账号可能马上改名，11-12 起名字在建账号卡里起）。界面上的欢迎卡
+ * 自己按账号、模型连没连拼那几句（client/src/views/lines/welcome-message.tsx），不显示这一句。
+ */
 export function welcomeText(name: string): string {
-  return `你好 ${name}，我是 Plasticine。你说一件事，我能查资料、整理笔记、替你盯着信息流，也能用这台电脑替你动手；`
+  return `你好 ${name}。你说一件事，我能查资料、整理笔记、替你盯着信息流，也能用这台电脑替你动手；`
     + '以你名义对外、花钱、删东西之前，都会先问你。\n\n想从哪儿开始？';
 }
 

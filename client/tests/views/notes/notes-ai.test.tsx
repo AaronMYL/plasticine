@@ -187,3 +187,21 @@ describe('笔记建议贴着正文', () => {
     toggleAi('续写');
   });
 });
+
+describe('没连模型时的笔记改写', () => {
+  it('先弹连模型，连上后接着润色', async () => {
+    const app = await renderApp({ hash: '#/notes/n1', modelConnected: false,
+      setup: (fake) => seedNote(fake, 'n1', '原文') });
+    await noteEditor();
+    const assist = vi.spyOn(app.api.notes, 'assist').mockResolvedValue({ markdown: '建议', label: '润色' });
+    fireEvent.click(screen.getByRole('button', { name: 'AI 写作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '整篇润色' }));
+    const sheet = await screen.findByRole('dialog', { name: '连上一个模型' });
+    expect(assist).not.toHaveBeenCalled();
+    fireEvent.click(within(within(sheet).getByRole('listitem', { name: 'DeepSeek' })).getByRole('button',
+      { name: '填 key' }));
+    fireEvent.change(screen.getByLabelText('API Key'), { target: { value: 'sk-test-12345678' } });
+    fireEvent.click(screen.getByRole('button', { name: '连接' }));
+    await waitFor(() => expect(assist).toHaveBeenCalledTimes(1));
+  });
+});

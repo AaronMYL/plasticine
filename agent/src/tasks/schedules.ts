@@ -51,6 +51,8 @@ export interface ScheduleDeskOptions {
   changed?: () => void;
   /** 每分钟看完定时卡之后（订阅、心跳、做梦这些登记进来的行用同一个计时器）。 */
   afterTick?: (now: Date) => void;
+  /** 有没有能用的模型；false 时到点的都先不跑、不记失败，连上后下一分钟接着跑。不给当作有。 */
+  ready?: () => boolean;
 }
 
 export class ScheduleError extends Error {
@@ -257,6 +259,9 @@ export class ScheduleDesk {
     if (zone !== this.#zone) {
       this.#rezone(now, zone);
       this.#zone = zone;
+    }
+    if (this.#options.ready?.() === false) {
+      return;
     }
     for (const schedule of this.#state.schedules.due(now.toISOString())) {
       try {

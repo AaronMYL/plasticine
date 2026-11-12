@@ -27,6 +27,7 @@ import { adoptLocalSigning } from '../updates/adopt-signing.ts';
 import { resign, signedLocally } from '../updates/self-signing.ts';
 import { DEFAULT_RELEASE_URL, UpdateManager } from '../updates/update-manager.ts';
 import { enterLocal, localGrantFor, probePlace } from './account-client.ts';
+import { readHostProfile } from './host-profile.ts';
 import { installMenu, installTray, type MenuActions, type MenuState } from './app-menu.ts';
 import { attachContextMenu, attachQuoteShortcut } from './context-menu.ts';
 import { registerBridge } from './bridge-ipc.ts';
@@ -207,6 +208,8 @@ async function start(): Promise<void> {
     serverStatus: () => place.status(), chooseServer: (choice) => place.choose(choice),
     localGrant: (frameUrl) => localGrantFor(frameUrl, local.token),
     showWelcome: () => void place.welcome(),
+    profile: (frameUrl) => (localGrantFor(frameUrl, local.token) === null ? Promise.resolve(null)
+      : readHostProfile()),
     openExternal: (url) => void shell.openExternal(url),
     capture: (port, timeoutMs) => capture.capture(port, timeoutMs), cancelCapture: () => capture.cancel(),
     updateStatus: () => updates.status(), updateCheck: () => updates.check(),

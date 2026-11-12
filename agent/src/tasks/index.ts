@@ -37,6 +37,8 @@ export interface TasksOptions {
   /** 任务栏目变了（定时、建议），界面重读。 */
   changed?: () => void;
   projectChanged?: (projectId: string) => void;
+  /** 有没有能用的模型：没有时定时卡和登记进来的定时（订阅、心跳、做梦）都先不跑。 */
+  ready?: () => boolean;
 }
 
 export class Tasks {
@@ -50,6 +52,7 @@ export class Tasks {
     this.schedules = new ScheduleDesk({ state: options.state, now: options.now, lines: options.scheduleLines,
       ...(options.notify === undefined ? {} : { notify: options.notify }),
       ...(options.changed === undefined ? {} : { changed: options.changed }),
+      ...(options.ready === undefined ? {} : { ready: options.ready }),
       afterTick: (now) => this.timed.tick(now) });
     this.suggestions = new SuggestionDesk({ state: options.state, lines: options.suggestionLines,
       ...(options.changed === undefined ? {} : { changed: options.changed }),

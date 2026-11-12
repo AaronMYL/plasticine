@@ -121,6 +121,20 @@ export type WebTabIconEvent = Static<typeof WebTabIconEventSchema>;
 export const DESKTOP_PERMISSIONS = ['screen', 'accessibility', 'calendar', 'reminders', 'notifications'] as const;
 export type DesktopPermission = (typeof DESKTOP_PERMISSIONS)[number];
 
+/**
+ * 第一次的引导里认哪几个笔记应用（2026-11-12《首次使用解耦》）：装了就推「导入 xx 笔记」。壳只回认出来的这几个，
+ * 不回别的应用名，也不读它们的内容。
+ */
+export const ONBOARDING_APPS = ['obsidian', 'notion', 'bear', 'evernote', 'logseq', 'apple-notes'] as const;
+export type OnboardingApp = (typeof ONBOARDING_APPS)[number];
+
+/** 这台电脑的系统全名（引导卡里「叫你什么」预填）和认出来的笔记应用。 */
+export const HostProfileSchema = Type.Object({
+  fullName: Type.Union([Type.String({ minLength: 1, maxLength: 100 }), Type.Null()]),
+  apps: Type.Array(Type.Enum(ONBOARDING_APPS), { maxItems: ONBOARDING_APPS.length }),
+}, STRICT);
+export type HostProfile = Static<typeof HostProfileSchema>;
+
 export interface PlasticineDesktopServer {
   /** 回 ServerStatusSchema（未校验）。 */
   status(): Promise<unknown>;
@@ -133,6 +147,8 @@ export interface PlasticineDesktopServer {
   localGrant(): Promise<string | null>;
   /** 回到开始页（「在哪里用 Plasticine？」二选一）：登录页的「换一个地方」、菜单「连接到…」都走这里。 */
   showWelcome(): void;
+  /** 第一次的引导用：回 HostProfileSchema（未校验）；界面载入的不是本机本体时回 null，和 localGrant 同一条规矩。 */
+  profile(): Promise<unknown>;
 }
 
 /**

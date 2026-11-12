@@ -2,6 +2,7 @@
 // 系统浏览器和本机等回调。装上 / 摘下都在这里，测完摘掉，别的测试照旧是普通网页。
 
 import { vi, type Mock } from 'vitest';
+import type { HostProfile } from '../../../src/api/shared.ts';
 import { FAKE_LOCAL_TOKEN } from '../../../src/api/fake/fake-account.ts';
 
 export interface FakeDesktop {
@@ -11,7 +12,8 @@ export interface FakeDesktop {
   cancelCapture: Mock<() => void>;
 }
 
-export function installDesktop(options: { localToken?: string | null; captured?: string | null } = {}): FakeDesktop {
+export function installDesktop(options: { localToken?: string | null; captured?: string | null;
+  profile?: HostProfile | null } = {}): FakeDesktop {
   const token = options.localToken === undefined ? FAKE_LOCAL_TOKEN : options.localToken;
   const desktop: FakeDesktop = {
     showWelcome: vi.fn(),
@@ -22,7 +24,8 @@ export function installDesktop(options: { localToken?: string | null; captured?:
   Object.assign(window, { plasticineDesktop: {
     version: '0.0.0',
     notify: vi.fn(),
-    server: { localGrant: async () => token, showWelcome: desktop.showWelcome },
+    server: { localGrant: async () => token, showWelcome: desktop.showWelcome,
+      profile: async () => options.profile ?? null },
     external: { open: desktop.open, capture: desktop.capture, cancelCapture: desktop.cancelCapture },
   } });
   return desktop;
