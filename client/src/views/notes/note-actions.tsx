@@ -29,12 +29,14 @@ export interface NoteExtraAction {
 
 // 笔记 ⋯（2026-11-05 第 3 条）：里面有改名输入框和文件夹选择，是一张小表单，用 Popover role="dialog"，关闭逻辑和
 // 下拉菜单是同一套（use-dismiss.ts）；表单里点、打字不收，点外面、Esc、切到网页、保存成功才收。
-export function NoteActions({ note, beforeChange, changed, extra = [], label = '笔记操作' }: {
+export function NoteActions({ note, beforeChange, changed, extra = [], label = '笔记操作', remove }: {
   note: NoteMetaView;
   label?: string;
   beforeChange?: () => Promise<NoteView | null>;
   changed?: (note: NoteView) => void;
   extra?: readonly NoteExtraAction[];
+  /** 列表里一行的「⋯」（右键同一个）：最后一项「删除笔记」，进最近删除、能恢复（11-12 第 2 条）。 */
+  remove?: (() => void) | undefined;
 }): ReactNode {
   const api = useApi();
   const { actionOps, notesCache } = useClientState();
@@ -94,7 +96,7 @@ export function NoteActions({ note, beforeChange, changed, extra = [], label = '
   const locked = busy || unresolved;
   const problem = error ?? operation?.error;
   return <>
-    <IconButton ref={button} icon="more" className="note-actions" label={label} aria-haspopup="dialog"
+    <IconButton ref={button} icon="more" className="note-actions" label={label} aria-haspopup="dialog" data-row-menu=""
       aria-expanded={open} data-open={open ? 'true' : undefined}
       onClick={() => { if (open) { hide(); } else { show(); } }} />
     {anchor === null ? null : <Popover anchor={anchor} role="dialog" align="end" label={label}
@@ -139,6 +141,13 @@ export function NoteActions({ note, beforeChange, changed, extra = [], label = '
         disabled={busy || operation?.status === 'running'} onClick={() => void mutate('pin')}>
         <Icon name="refresh" size={15} /><span className="popover-item-label">再核实原操作</span>
       </button>}
+      {remove === undefined || note.readOnly ? null : <>
+        <MenuSeparator />
+        <button type="button" className="popover-item is-danger" onClick={() => {
+          hide();
+          remove();
+        }}><Icon name="trash" size={15} /><span className="popover-item-label">删除笔记</span></button>
+      </>}
     </Popover>}
   </>;
 }

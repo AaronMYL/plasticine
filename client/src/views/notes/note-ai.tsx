@@ -18,6 +18,7 @@ import { placeSelectionTools, SELECTION_TOOLS_GAP } from './note-selection-place
 import { NoteSuggestions, type ManualSupplement } from './note-suggestions.tsx';
 import type { NoteProposal } from './note-review.tsx';
 import './note-ai.css';
+import { useCloseOnContextMenu } from '../../shell/use-context-menu-close.ts';
 
 export { NOTE_PREDICT_PAUSE_MS, NOTE_INTERJECT_PAUSE_MS } from './note-suggestions.tsx';
 export interface NoteRange { from: number; to: number }
@@ -55,6 +56,7 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
   const { predict, interject } = useStore(notesUi.store);
   const [supplement, setSupplement] = useState<ManualSupplement | null>(null);
   const [selection, setSelection] = useState<NoteRange | null>(null);
+  useCloseOnContextMenu(() => setSelection(null));
   const [bubble, setBubble] = useState<{ left: number; top: number; width: number } | null>(null);
   const [target, setTarget] = useState<DraftTarget | null>(null);
   const [instruction, setInstruction] = useState('');

@@ -1,19 +1,21 @@
-// 一条消息上能做的事（《优化清单》第 17 条借鉴 Muse，设计稿 Plasticine-Main）：鼠标停在一条消息上出现表情、回复、
-// 更多三个按钮；表情就是给那一条加一个反应（存下来，显示在那条下面，点了拿掉）；回复把那一条放到输入框上面；
-// 更多里可以复制全文。对话以外（工作详情里的回答）没有这个上下文，照旧只画正文。
+// 一条消息上能做的事：鼠标停在一条消息上出现「引用 · 更多」（11-12 第 1 条：「回复」并进「引用」，引整条；
+// 选中一段引那一段走 QuoteSelection）。表情只在人和人的聊天里有用：传了 react 才有表情按钮和表情（消息里用），
+// AI 对话不传（11-12 01:00 Aaron 定）。更多里可以复制全文。对话以外（工作详情里的回答）没有这个上下文，照旧只画正文。
 // 复制的是这一条的全文（回复引用的才是第一行摘要）；写进剪贴板后「更多」那颗换成勾、读屏念「已复制到剪贴板」，
 // 和气泡上原来的复制同一个回执样子（copy-message.tsx），停一会儿再换回来；写不进就就地一行原因。
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { LINE_REACTIONS, replyExcerpt, type LineMessageView } from '../../api/shared.ts';
+import { LINE_REACTIONS, type LineMessageView } from '../../api/shared.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { MenuItem, Popover, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 
 export interface ThreadActions {
   lineId: string;
   message(seq: number): LineMessageView | undefined;
-  reply(seq: number, author: string, text: string): void;
-  react(seq: number, emoji: string, on: boolean): void;
+  /** 引用整条：放进输入框上方的引用片。 */
+  quote(seq: number, author: string, text: string): void;
+  /** 加 / 拿掉一个表情；不传就没有表情（AI 对话）。 */
+  react?: ((seq: number, emoji: string, on: boolean) => void) | undefined;
 }
 
 const ThreadActionsContext = createContext<ThreadActions | null>(null);
@@ -24,7 +26,7 @@ export function useThreadActions(): ThreadActions | null {
   return useContext(ThreadActionsContext);
 }
 
-function Reactions({ actions, seq, reactions }: { actions: ThreadActions; seq: number;
+function Reactions({ react, seq, reactions }: { react: NonNullable<ThreadActions['react']>; seq: number;
   reactions: readonly string[] }): ReactNode {
   if (reactions.length === 0) {
     return null;
@@ -33,7 +35,7 @@ function Reactions({ actions, seq, reactions }: { actions: ThreadActions; seq: n
     <div className="line-reactions">
       {reactions.map((emoji) => (
         <button key={emoji} type="button" className="line-reaction" aria-label={`${emoji}，点了拿掉`}
-          onClick={() => actions.react(seq, emoji, false)}>{emoji}</button>
+          onClick={() => react(seq, emoji, false)}>{emoji}</button>
       ))}
     </div>
   );
@@ -67,10 +69,10 @@ function HoverBar({ actions, seq, author, text, reactions }: { actions: ThreadAc
   const open = menu !== null || copied !== 'idle';
   return (
     <div className="line-hoverbar" data-open={open ? 'true' : undefined}>
-      <IconButton icon="smile" size={14} label="表情" aria-expanded={menu?.kind === 'emoji'}
-        onClick={(event) => setMenu({ kind: 'emoji', anchor: anchorOf(event.currentTarget) })} />
-      <IconButton icon="reply" size={14} label="回复这条"
-        onClick={() => actions.reply(seq, author, replyExcerpt(text))} />
+      {actions.react === undefined ? null : <IconButton icon="smile" size={14} label="表情" data-message-action="react"
+        aria-expanded={menu?.kind === 'emoji'}
+        onClick={(event) => setMenu({ kind: 'emoji', anchor: anchorOf(event.currentTarget) })} />}
+      <IconButton icon="quote" size={14} label="引用这条" data-message-action="quote" onClick={() => actions.quote(seq, author, text)} />
       <IconButton icon={copied === 'copied' ? 'check' : 'more'} size={14}
         label={copied === 'copied' ? '已复制' : '更多'} aria-expanded={menu?.kind === 'more'}
         onClick={(event) => {
@@ -90,7 +92,7 @@ function HoverBar({ actions, seq, author, text, reactions }: { actions: ThreadAc
               <button key={emoji} type="button" role="menuitem" className="line-emoji" aria-label={emoji}
                 aria-pressed={reactions.includes(emoji)} onClick={() => {
                   close();
-                  actions.react(seq, emoji, !reactions.includes(emoji));
+                  actions.react?.(seq, emoji, !reactions.includes(emoji));
                 }}>{emoji}</button>
             ))}
           </div>
@@ -119,11 +121,12 @@ export function MessageRow({ seq, author, text, children }: { seq: number; autho
   if (actions === null) {
     return children;
   }
-  const reactions = actions.message(seq)?.reactions ?? [];
+  const reactions = actions.react === undefined ? [] : actions.message(seq)?.reactions ?? [];
   return (
-    <div className="line-msg" data-from={author === '你' ? 'me' : 'ai'}>
+    <div className="line-msg" data-from={author === '你' ? 'me' : 'ai'} data-context-message=""
+      data-message-text={text}>
       {children}
-      <Reactions actions={actions} seq={seq} reactions={reactions} />
+      {actions.react === undefined ? null : <Reactions react={actions.react} seq={seq} reactions={reactions} />}
       <HoverBar actions={actions} seq={seq} author={author} text={text} reactions={reactions} />
     </div>
   );

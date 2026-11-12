@@ -140,7 +140,7 @@ function SourceRow({ row, current, signedOut, onShow, onSettings, onDouyin }: So
   const menuLabel = `「${row.label}」的操作`;
   return (
     <li className="feed-src" data-paused={paused || undefined} data-open={open !== null || undefined}
-      data-login={signedOut || undefined}>
+      data-login={signedOut || undefined} data-context-row="">
       <button type="button" className="column-item feed-src-main" aria-current={current} onClick={onShow}>
         <span className="column-item-lead">{sourceLead(row)}</span>
         <span className="column-item-text">{row.label}</span>
@@ -151,7 +151,7 @@ function SourceRow({ row, current, signedOut, onShow, onSettings, onDouyin }: So
           <button type="button" className="feed-src-login" onClick={() => openLogin(row.kind as LoginKind)}
             aria-label={LOGIN_SITES[row.kind as LoginKind].login}>登录</button>
         ) : null}
-        <IconButton ref={more} icon="more" className="feed-src-more" label={menuLabel} size={16}
+        <IconButton ref={more} icon="more" className="feed-src-more" label={menuLabel} size={16} data-row-menu=""
           aria-haspopup="menu" aria-expanded={open !== null} onClick={toggle} />
       </span>
       {error === null ? null : <p className="feed-src-error" role="alert">{error}</p>}

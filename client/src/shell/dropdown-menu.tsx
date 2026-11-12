@@ -38,6 +38,8 @@ export interface DropdownMenuProps {
   tip?: string;
   /** 按下按钮不抢焦点：选段工具条里点「⋯」时保住编辑器里的选区。 */
   keepFocus?: boolean;
+  /** 是一行的「⋯」：右键这一行时在鼠标处打开它（context-menu.tsx）。 */
+  rowMenu?: boolean;
 }
 
 type Phase = { kind: 'closed' } | { kind: 'open' | 'leaving'; anchor: PopoverAnchor; keyboard: boolean };
@@ -65,6 +67,7 @@ export function DropdownMenu(props: DropdownMenuProps): ReactNode {
       <button ref={button} type="button" className={`dropdown-trigger ${props.className ?? ''}`.trim()}
         aria-label={props.label} aria-haspopup="menu" aria-expanded={open} disabled={props.disabled}
         data-open={open ? 'true' : undefined} data-tip={props.tip}
+        data-row-menu={props.rowMenu === true ? '' : undefined}
         onMouseDown={props.keepFocus === true ? (event) => event.preventDefault() : undefined}
         onKeyDown={keyOnButton}
         onClick={(event) => {

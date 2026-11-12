@@ -120,14 +120,13 @@
 .note-selection-tools {
   position: fixed;
   z-index: 20;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  background: var(--layer-float);
+  border-radius: 10px;
   box-shadow: var(--lift);
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 2px;
+  padding: 4px;
   max-width: calc(100vw - 16px);
 }
 

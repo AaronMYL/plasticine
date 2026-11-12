@@ -1,5 +1,5 @@
 // 《优化清单》第 17 条（11-07 设计稿 Plasticine-Main / Side）：消息之间按时间分隔、主线里不列工具步骤、悬停条
-// （表情 / 回复 / 更多）、回复某一条、「n 条新消息」、旁聊（开、切、带信息流那一条）、子代理卡「做了 n 步」。
+// （引用这条 / 更多）、「n 条新消息」、旁聊（开、切、带信息流那一条）、子代理卡「做了 n 步」。
 
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -53,20 +53,16 @@ describe('主线的对话', () => {
     expect(screen.queryByRole('button', { name: /想了/ })).toBeNull();
   });
 
-  it('悬停条：回复这一条，输入框上出「回复 Plasticine：……」，发出后气泡上带着它', async () => {
-    const app = await openThread();
+  it('悬停条只有「引用这条 · 更多」：引用整条放进输入框上方的引用片，没有「回复」和表情', async () => {
+    await openThread();
     send('它是什么时候装上的？谁装的？');
     const message = await settledAnswer();
-    const seq = Number(message.dataset['messageSeq']);
-    fireEvent.click(within(message.closest('.line-msg') as HTMLElement).getByRole('button', { name: '回复这条' }));
-    const chip = await screen.findByRole('group', { name: '正在回复' });
-    expect(chip.textContent).toContain('回复 Plasticine');
-    send('那它会自己联网吗');
-    await waitFor(async () => {
-      const read = await app.api.lines.read('main', {});
-      expect(read.messages.find((item) => item.text === '那它会自己联网吗')?.replyTo?.seq).toBe(seq);
-    });
-    expect(await conv().findByText(/回复 Plasticine：/)).toBeTruthy();
+    const row = message.closest('.line-msg') as HTMLElement;
+    expect(within(row).queryByRole('button', { name: '回复这条' })).toBeNull();
+    expect(within(row).queryByRole('button', { name: '表情' })).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: '引用这条' }));
+    const quotes = await screen.findByLabelText('引用片');
+    expect(quotes.textContent).toContain('Plasticine');
     expect(screen.queryByRole('group', { name: '正在回复' })).toBeNull();
   });
 
@@ -90,21 +86,6 @@ describe('主线的对话', () => {
     expect(await within(row).findByRole('button', { name: '已复制' })).toBeTruthy();
     expect(within(row).getByRole('status').textContent).toBe('已复制到剪贴板');
     expect(row.querySelector('.line-hoverbar')?.getAttribute('data-open')).toBe('true');
-  });
-
-  it('表情：点了加一个反应、存下来；再点那个反应拿掉', async () => {
-    const app = await openThread();
-    send('它是什么时候装上的？谁装的？');
-    const answer = await settledAnswer();
-    const row = answer.closest('.line-msg') as HTMLElement;
-    const seq = Number(answer.dataset['messageSeq']);
-    fireEvent.click(within(row).getByRole('button', { name: '表情' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: '👍' }));
-    const chip = await within(row).findByRole('button', { name: '👍，点了拿掉' });
-    await waitFor(async () => expect((await app.api.lines.read('main', {})).messages
-      .find((item) => item.seq === seq)?.reactions).toEqual(['👍']));
-    fireEvent.click(chip);
-    await waitFor(() => expect(within(row).queryByRole('button', { name: '👍，点了拿掉' })).toBeNull());
   });
 
   it('往上翻着看时来了新消息：出「n 条新消息」，点了回到最新', async () => {

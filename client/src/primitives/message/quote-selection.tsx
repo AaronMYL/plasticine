@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { QuoteAction } from './quote-action.tsx';
 import './quote-selection.css';
 import { useQuoteHandler } from '../../shell/quote-registry.ts';
+import { useCloseOnContextMenu } from '../../shell/use-context-menu-close.ts';
 
 interface SelectedText {
   text: string;
@@ -36,6 +37,7 @@ export function QuoteSelection({ children, onQuote }: {
 }): ReactNode {
   const ref = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<SelectedText | null>(null);
+  useCloseOnContextMenu(() => setSelected(null));
   const readSelection = useCallback((): void => {
     const selection = window.getSelection();
     const element = ref.current;
@@ -69,6 +71,10 @@ export function QuoteSelection({ children, onQuote }: {
         onQuote(selected.text);
         setSelected(null);
         window.getSelection()?.removeAllRanges();
+      }} onCopy={async () => {
+        if (selected === null) return;
+        await navigator.clipboard.writeText(selected.text);
+        setSelected(null);
       }} />
   </div>;
 }

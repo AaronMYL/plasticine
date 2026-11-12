@@ -71,7 +71,7 @@ export function TaskMenu({ line, onError, onDeleted }: TaskMenuProps): ReactNode
     });
   };
   return <>
-    <DropdownMenu label={`更多操作：${line.title}`} tip="更多操作" className="icon-button task-menu" align="end"
+    <DropdownMenu label={`更多操作：${line.title}`} tip="更多操作" className="icon-button task-menu" align="end" rowMenu
       items={items}><Icon name="more" size={16} /></DropdownMenu>
     {confirming ? <ConfirmDialog title={`停止「${line.title}」？`}
       body="停止后不能再继续。做过的过程和结果保留在「已结束」里。" confirmLabel="停止" busy={busy} error={stopError}

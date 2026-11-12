@@ -39,7 +39,7 @@ function TaskLine({ line, project, now, onDeleted }: { line: LineView; project: 
       : unmet !== null ? unmetText(unmet) : line.outcome === 'stopped' ? '已停止'
         : line.status === 'failed' ? line.failure ?? '这次没有完成' : line.lastAnswer ?? workStatusText(line, timeZone);
   return (
-    <li className="tasks-row tasks-run-row" data-phase={phase}>
+    <li className="tasks-row tasks-run-row" data-phase={phase} data-context-row="">
       <span className="tasks-lead">
         {line.status === 'running' ? <StatusGlyph status="run" /> : <WorkStatusGlyph line={line} />}
       </span>

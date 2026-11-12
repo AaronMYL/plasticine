@@ -10,8 +10,8 @@
   width: max-content;
   max-width: 100%;
   padding: 4px;
-  border-radius: 8px;
-  background: var(--bg);
+  border-radius: 10px;
+  background: var(--layer-float);
   box-shadow: var(--lift);
 }
 
@@ -23,9 +23,10 @@
 }
 
 .bk-pop-row > button {
-  padding: 6px 10px;
+  min-height: 28px;
+  padding: 0 9px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 6px;
   background: none;
   color: var(--fg);
   font: inherit;

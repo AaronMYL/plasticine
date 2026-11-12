@@ -73,6 +73,7 @@ import './columns/column.css';
 import './glyph.css';
 import './frame.css';
 import './client-update.css';
+import { ContextMenuLayer } from './context-menu.tsx';
 import { useQuoteCommands } from './use-quote-commands.ts';
 
 type SheetPanel = Exclude<Panel, { kind: 'settings' } | { kind: 'search' }>;
@@ -485,6 +486,7 @@ export function Shell(): ReactNode {
           : null}
         {settings.element}
         <TooltipLayer />
+        <ContextMenuLayer add={webChrome.quote} />
       </div>
     </TitlebarProvider>
     </PanelContext.Provider>

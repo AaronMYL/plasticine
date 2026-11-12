@@ -6,6 +6,7 @@ import type { PopoverState } from './popover-layer.tsx';
 import { rangeRects, rectIn } from './reading-scroll.ts';
 import { selectionOffsets } from './text-offsets.ts';
 import { useQuoteHandler } from '../../shell/quote-registry.ts';
+import { CONTEXT_MENU_EVENT } from '../../shell/use-context-menu-close.ts';
 
 // 选区停下多久再弹菜单：拖着选的时候不跟着闪。
 const SELECTION_SETTLE_MS = 200;
@@ -31,10 +32,17 @@ export function useSelectionPopover(root: HTMLElement | null, overlay: RefObject
         }
       }, SELECTION_SETTLE_MS);
     };
+    // 右键时收起选中后的菜单：同一时间只出一个浮层（11-12）。
+    const onMenu = (): void => {
+      clearTimeout(timer);
+      setPopover((current) => current?.kind === 'selection' ? null : current);
+    };
     document.addEventListener('selectionchange', onSelection);
+    window.addEventListener(CONTEXT_MENU_EVENT, onMenu);
     return () => {
       clearTimeout(timer);
       document.removeEventListener('selectionchange', onSelection);
+      window.removeEventListener(CONTEXT_MENU_EVENT, onMenu);
     };
   }, [root, overlay, setPopover]);
 }

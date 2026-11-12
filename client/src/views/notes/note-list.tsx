@@ -9,6 +9,9 @@ import type { NoteMetaView } from '../../api/types.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { useRememberedScroll } from '../../state/use-remembered-scroll.ts';
 import { NoteActions } from './note-actions.tsx';
+import { deleteNote } from './note-delete.ts';
+import { useApi } from '../../api/context.tsx';
+import { useClientState } from '../../state/context.tsx';
 import { groupByDay, when } from './note-time.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
@@ -36,6 +39,8 @@ export function NoteList(props: NoteListProps): ReactNode {
   // 列表读到之前只有「正在读…」，位置等列表到了再恢复。
   const { ref, onScroll } = useRememberedScroll<HTMLDivElement>('notes:list', props.notes !== null);
   const now = new Date();
+  const api = useApi();
+  const { noteOps } = useClientState();
   return (
     <div className="note-list" ref={ref} onScroll={onScroll} hidden={props.hidden}>
       <div className="note-list-head">
@@ -78,7 +83,7 @@ export function NoteList(props: NoteListProps): ReactNode {
           <h3 className="note-group">{group.label}</h3>
           <ul className="note-rows">
             {group.notes.map((note) => (
-              <li key={note.id} className="note-list-item" data-bulk={props.selection?.active}
+              <li key={note.id} className="note-list-item" data-bulk={props.selection?.active} data-context-row=""
                 data-selected={props.selection?.checked({ kind: 'note', id: note.id })}>
                 {props.selection === undefined ? null : <BulkCheck selection={props.selection}
                   item={{ kind: 'note', id: note.id, title: note.title || '未命名' }} />}
@@ -106,7 +111,8 @@ export function NoteList(props: NoteListProps): ReactNode {
                     {(note.mergedCount ?? 0) > 0 ? <span>合并 {note.mergedCount}</span> : null}
                   </span>
                 </button>
-                {props.selection?.active ? null : <NoteActions note={note} label={`《${note.title || '未命名'}》的操作`} />}
+                {props.selection?.active ? null : <NoteActions note={note} label={`《${note.title || '未命名'}》的操作`}
+                  remove={() => void deleteNote(api, noteOps, note.id)} />}
               </li>
             ))}
           </ul>

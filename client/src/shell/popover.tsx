@@ -23,7 +23,21 @@ export interface PopoverAnchor {
   bottom: number;
 }
 
+/** 右键一行时代点那一行的「⋯」（context-menu.tsx）：这一下打开的菜单摆在右键那一点，不摆在按钮下面。 */
+let pointed: { element: Element; anchor: PopoverAnchor } | null = null;
+
+/** 点一下这个按钮，它打开的弹层出现在 (x, y)。 */
+export function openAt(button: HTMLElement, x: number, y: number): void {
+  pointed = { element: button, anchor: pointAnchor(x, y) };
+  try {
+    button.click();
+  } finally {
+    pointed = null;
+  }
+}
+
 export function anchorOf(element: Element): PopoverAnchor {
+  if (pointed !== null && pointed.element === element) return pointed.anchor;
   const rect = element.getBoundingClientRect();
   return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
 }

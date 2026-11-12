@@ -22,6 +22,7 @@ import { bookSpacePosition, type BookSpacePosition } from './book-link.ts';
 import { useSpaceTheme } from './space-theme.ts';
 import type { SpaceQuoteAnchor } from './space-quote.ts';
 import '../../primitives/message/quote-selection.css';
+import { useCloseOnContextMenu } from '../../shell/use-context-menu-close.ts';
 
 export const SPACE_SANDBOX = 'allow-scripts';
 
@@ -72,6 +73,7 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
   const api = useApi();
   const frame = useRef<HTMLIFrameElement>(null);
   const [selection, setSelection] = useState<{ anchor: SpaceQuoteAnchor; left: number; top: number } | null>(null);
+  useCloseOnContextMenu(() => setSelection(null));
   const theme = useSpaceTheme();
   const themeRef = useRef(theme);
   themeRef.current = theme;

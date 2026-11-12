@@ -158,20 +158,14 @@ function NewMessages({ count, onJump }: { count: number; onJump: () => void }): 
   );
 }
 
-function useActionsFor(line: LineView | null, lineId: string): ThreadActions {
+/** AI 对话的悬停条：引用整条、更多；没有表情（11-12）。 */
+function useActionsFor(line: LineView | null, lineId: string, quote: QuoteMessage): ThreadActions {
   const live = useLive();
-  const ui = useConversationUi();
   const data = useStore(live.lines.thread(lineId));
-  const id = line?.id ?? lineId;
   return {
-    lineId: id,
+    lineId: line?.id ?? lineId,
     message: (seq) => data.messages.find((message) => message.seq === seq),
-    reply: (seq, author, text) => {
-      ui.setReply({ seq, author, text });
-      window.dispatchEvent(new Event(FOCUS_COMPOSER_EVENT));
-    },
-    react: (seq, emoji, on) => void live.lines.react(lineId, seq, emoji, on),
-
+    quote: (seq, author, text) => quote(seq, text, author),
   };
 }
 
@@ -208,7 +202,7 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
     conversationUi.addQuote({ id: `quote:${sourceId}:${text}`, kind: 'message', sourceId, label: author, text });
     window.dispatchEvent(new Event(FOCUS_COMPOSER_EVENT));
   };
-  const actions = useActionsFor(line, lineId);
+  const actions = useActionsFor(line, lineId, quote);
   // 只有建账号时那条欢迎（设计稿 First-Main）：从上往下排、不画时间分隔，像 Plasticine 先开口。
   const welcomeOnly = items.length === 1 && items[0]?.kind === 'welcome';
   const breaks = welcomeOnly ? [] : timeBreaks(items.map((item) => ({ at: itemTime(item) })), timeZone);
