@@ -393,7 +393,7 @@
 
 .cm-hoverbar {
   position: absolute;
-  top: -18px;
+  top: 2px;
   z-index: 2;
   display: flex;
   gap: 2px;
@@ -407,12 +407,13 @@
   transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
 }
 
+/* 悬停条站在气泡外侧（我的在左、对方的在右），不压住字。 */
 .cm-row[data-side='me'] > .cm-hoverbar {
-  right: 0;
+  right: calc(100% + 6px);
 }
 
 .cm-row[data-side='them'] > .cm-hoverbar {
-  left: 32px;
+  left: calc(100% + 6px);
 }
 
 .cm-row:hover > .cm-hoverbar,
@@ -480,4 +481,17 @@
     opacity: 0;
     transform: translateY(4px);
   }
+}
+
+/* 手机上点一下这句才出：放在气泡上方，不往屏幕外伸。 */
+.contacts[data-phone='true'] .cm-row > .cm-hoverbar {
+  top: -36px;
+}
+
+.contacts[data-phone='true'] .cm-row[data-side='me'] > .cm-hoverbar {
+  right: 0;
+}
+
+.contacts[data-phone='true'] .cm-row[data-side='them'] > .cm-hoverbar {
+  left: 32px;
 }

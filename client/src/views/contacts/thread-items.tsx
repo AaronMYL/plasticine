@@ -3,6 +3,7 @@
 // 换一天时正中一行等宽的「11-03 周二」。系统的一句（安全码变了、接上了）正中小字。
 // 邮件（2026-11-04 用户定）不进气泡：一封一个整宽阅读区（mail-item.tsx），最新的那封摊开。
 
+import { theirAi } from './contact-names.ts';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ContactMessageView, ContactRow, ContactThreadItem } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
@@ -22,10 +23,10 @@ import { TaskCard } from './task-card.tsx';
 
 const GROUP_AI_TIP = '群里只用对全群都能说的资料回答';
 
-function TheirAi({ message, name }: { message: ContactMessageView; name: string }): ReactNode {
+function TheirAi({ message, label }: { message: ContactMessageView; label: string }): ReactNode {
   return (
     <div className="cm-line" data-side="them" data-ai="true">
-      <span className="cm-ai-slot"><AiMark label={`${name}的 Plasticine`} /></span>
+      <span className="cm-ai-slot"><AiMark label={label} /></span>
       <p className="cm-ai-text">{message.text}</p>
     </div>
   );
@@ -71,7 +72,7 @@ function GroupThem({ message }: { message: ContactMessageView }): ReactNode {
     return <p className="cm-system">{message.text}</p>;
   }
   if (message.author === 'their_ai') {
-    return <TheirAi message={message} name={sender.name} />;
+    return <TheirAi message={message} label={`${sender.name}的 Plasticine`} />;
   }
   return (
     <div className="cm-group-line">
@@ -95,7 +96,7 @@ export function ThreadMessage({ message, contact }: { message: ContactMessageVie
   }
   switch (message.author) {
     case 'their_ai':
-      return <TheirAi message={message} name={contact.name} />;
+      return <TheirAi message={message} label={theirAi(contact)} />;
     case 'my_ai':
       return <MyAi message={message} group={group} />;
     case 'system':

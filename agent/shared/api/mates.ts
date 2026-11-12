@@ -29,8 +29,23 @@ export const MateGroupViewSchema = Type.Object({ ...RECORD_META, ...MateGroupDra
 export type MateGroupView = Static<typeof MateGroupViewSchema>;
 export const LegacyChatSchema = Type.Object({ lineId: IdSchema, title: Type.String(),
   updatedAt: IsoTimeSchema }, STRICT);
+/** 第 12 批：主线的名字、头像字、颜色（和编辑队友同一套，少「职责」）。头像字和颜色是 null 时画 Plasticine 的标。 */
+export const MAIN_PATH = '/v2/main';
+export const DEFAULT_MAIN_NAME = 'Plasticine';
+export const MainIdentitySchema = Type.Object({
+  name: Type.String({ minLength: 2, maxLength: 20 }),
+  avatar: Type.Union([Type.String({ minLength: 1, maxLength: 8 }), Type.Null()]),
+  hue: Type.Union([Type.Enum(PROJECT_HUES), Type.Null()]),
+}, STRICT);
+export type MainIdentity = Static<typeof MainIdentitySchema>;
+export const DEFAULT_MAIN: MainIdentity = { name: DEFAULT_MAIN_NAME, avatar: null, hue: null };
+export const UpdateMainRequestSchema = Type.Object({ requestId: RequestIdSchema,
+  ...MainIdentitySchema.properties }, STRICT);
+export type UpdateMainRequest = Static<typeof UpdateMainRequestSchema>;
+export const MainResponseSchema = Type.Object({ main: MainIdentitySchema }, STRICT);
 export const MateListResponseSchema = Type.Object({ mates: Type.Array(MateViewSchema),
-  groups: Type.Array(MateGroupViewSchema), legacyChats: Type.Array(LegacyChatSchema) }, STRICT);
+  groups: Type.Array(MateGroupViewSchema), legacyChats: Type.Array(LegacyChatSchema),
+  main: Type.Optional(MainIdentitySchema) }, STRICT);
 export type MateListResponse = Static<typeof MateListResponseSchema>;
 export const CreateMateRequestSchema = Type.Object({ requestId: RequestIdSchema,
   ...MateDraftSchema.properties }, STRICT);

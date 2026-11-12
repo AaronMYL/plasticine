@@ -227,6 +227,6 @@
   border-top: 1px solid var(--line);
 }
 
-.profile-remove {
+.profile-manage .profile-remove {
   color: var(--err);
 }

@@ -21,7 +21,7 @@ import { changeOf, groupChange, requireContact, requireIdentity, signerOf, type 
 import { cancelGroupTask, claimGroupTask, offerGroupTask, type GroupTaskInput } from './group-tasks.ts';
 import { afterGroup, createGroup, leaveGroup, postGroupMessage, requireGroup, updateGroup, type CreateGroupInput,
   type UpdateGroupInput } from './groups.ts';
-import { broadcastProfile, renameProfile } from './profile.ts';
+import { broadcastProfile, refreshProfile, renameProfile } from './profile.ts';
 import { generateIdentityKeys } from '../../protocol/crypto.ts';
 import { NetworkError } from './errors.ts';
 import { Inbound } from './inbound.ts';
@@ -356,6 +356,11 @@ export class NetworkService {
   /** 改网络上的名字，发给每个好友（主人账号改名时一起改，app/account.ts）。 */
   rename(displayName: string): NetworkIdentity {
     return renameProfile(this.#context, displayName);
+  }
+
+  /** 主线改了名字：再发一次资料给每个好友（第 12 批）。 */
+  refreshProfile(): NetworkIdentity {
+    return refreshProfile(this.#context);
   }
 
   /**

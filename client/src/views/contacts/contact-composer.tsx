@@ -3,6 +3,8 @@
 // 这句就是让那个 Plasticine 在这段聊天里回答；不 @ 就是和人说话。空着时灰字是「预测一句」候选（Tab 采用）。
 // Enter 发、Shift+Enter 换行、中文输入法选字时不发；小签在、字空着时按退格去掉小签。邮件联系人发 = 回最近一封。
 
+import { theirAi } from './contact-names.ts';
+import { useMainName } from '../mates/main-identity.tsx';
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { ContactRow } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
@@ -39,15 +41,15 @@ export interface MentionChoice {
   target: { kind: 'ai' | 'mine'; aiOf: string | null } | null;
 }
 
-/** 这段聊天里能 @ 谁。 */
-export function mentionChoices(contact: ContactRow): MentionChoice[] {
+/** 这段聊天里能 @ 谁。mainName：我的主线叫什么（第 12 批，能自己起名）。 */
+export function mentionChoices(contact: ContactRow, mainName = 'Plasticine'): MentionChoice[] {
   if (contact.kind === 'group') {
     const members = contact.members ?? [];
     const me = members.find((member) => member.self);
     return [
       ...members.filter((member) => !member.self).map((member): MentionChoice => ({ id: `ai:${member.accountId}`,
         label: `${member.name}的 Plasticine`, person: null, target: { kind: 'ai', aiOf: member.accountId } })),
-      ...(me === undefined ? [] : [{ id: 'mine', label: '我的 Plasticine', person: null,
+      ...(me === undefined ? [] : [{ id: 'mine', label: `我的 ${mainName}`, person: null,
         target: { kind: 'mine' as const, aiOf: me.accountId } }]),
     ];
   }
@@ -56,8 +58,8 @@ export function mentionChoices(contact: ContactRow): MentionChoice[] {
   }
   return [
     { id: 'person', label: contact.name, person: { name: contact.name, avatar: contact.avatar ?? null }, target: null },
-    { id: 'theirs', label: `${contact.name}的 Plasticine`, person: null, target: { kind: 'ai', aiOf: null } },
-    { id: 'mine', label: '我的 Plasticine', person: null, target: { kind: 'mine', aiOf: null } },
+    { id: 'theirs', label: theirAi(contact), person: null, target: { kind: 'ai', aiOf: null } },
+    { id: 'mine', label: `我的 ${mainName}`, person: null, target: { kind: 'mine', aiOf: null } },
   ];
 }
 
@@ -109,7 +111,7 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
   const text = drafts.get(key) ?? '';
   const locked = op !== undefined && isOpenOp(op);
   const offered = target !== null || text !== '' ? null : suggestion;
-  const choices = mentionChoices(contact);
+  const choices = mentionChoices(contact, useMainName());
   const reply = useContactReply(contact.id);
   useEffect(() => {
     if (reply !== null) input.current?.focus();
@@ -195,7 +197,7 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
   const sendDisabled = locked || !attachments.ready || text.trim() === '' && attachments.ids.length === 0;
   const label = target === null ? `发给${contact.name}` : `问${target.label}`;
   return (
-    <div className="contact-composer" data-phone={phone} data-has-media={attachments.rows.length > 0}
+    <div className="contact-composer" data-phone={phone} data-has-media={attachments.rows.length > 0 || reply !== null}
       onDragOver={(event) => { if (supportsFiles && !locked) event.preventDefault(); }} onDrop={(event) => {
         if (!supportsFiles || locked) return;
         event.preventDefault(); attachments.add(Array.from(event.dataTransfer.files));

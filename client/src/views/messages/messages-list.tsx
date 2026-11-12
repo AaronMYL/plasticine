@@ -3,6 +3,7 @@
 // 邮件：头像（人圆、群和邮件圆角方块）、名字、时间（等宽）、最后一句（对方或我的 AI 说的前面一个 ✦）、行尾未读数或
 // 等你点。按最近排，新的一句来了 FlipList 平移过去。Plasticine 不在这里（它有自己的栏目）。
 
+import { theirAi } from '../contacts/contact-names.ts';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ContactRow } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
@@ -84,7 +85,7 @@ function Row({ row, current, phone, now, groupStart, onOpen, manage }: { row: Co
           <span className="contact-row-bottom">
             {row.last === null ? <span className="contact-row-preview" /> : (
               <span id={previewId} className="contact-row-preview">
-                {byAi ? <AiMark label={row.last.author === 'my_ai' ? '你的 Plasticine' : `${row.name}的 Plasticine`} />
+                {byAi ? <AiMark label={row.last.author === 'my_ai' ? '你的 Plasticine' : theirAi(row)} />
                   : null}
                 {row.last.sender === undefined ? null : `${row.last.sender}：`}
                 {plainPreview(row.last.text)}

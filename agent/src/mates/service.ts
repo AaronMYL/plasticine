@@ -8,10 +8,11 @@ import { LineError, type After, type LineKernel, type SendInput, type SendResult
 import type { StateService } from '../state/index.ts';
 import { adoptMateSoul } from '../brain/mate-rules.ts';
 import { claimPendingGroupTask } from './group-tasks.ts';
+import { mainIdentity } from './main-identity.ts';
 
 const immediate: After = (action) => action();
 type MateState = Pick<StateService, 'mates' | 'mateGroups' | 'lines' | 'lineMessages' | 'transaction' | 'memoryDocs'
-  | 'memoryCuration' | 'projects'>;
+  | 'memoryCuration' | 'projects' | 'kernelSettings'>;
 
 export class Mates {
   readonly #state: MateState;
@@ -25,7 +26,8 @@ export class Mates {
     return { mates: this.#state.mates.all(), groups: this.#state.mateGroups.all(),
       legacyChats: this.#state.lines.list({ kind: 'side', limit: Number.MAX_SAFE_INTEGER })
         .filter((line) => line.mateId == null && line.mateGroupId == null)
-        .map((line) => ({ lineId: line.id, title: line.title, updatedAt: line.updatedAt })) };
+        .map((line) => ({ lineId: line.id, title: line.title, updatedAt: line.updatedAt })),
+      main: mainIdentity(this.#state) };
   }
 
   create(draft: MateDraft, after: After = immediate, existingLineId?: string): MateView {

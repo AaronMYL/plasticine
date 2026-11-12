@@ -8,8 +8,8 @@ import { useStore } from '../../state/use-store.ts';
 import { useCurrentTab } from '../../shell/current-tab-context.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { Popover, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
-import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { routeHash } from '../../shell/routes.ts';
+import { MainAvatar, useMainIdentity } from './main-identity.tsx';
 import { MateAvatar, GroupAvatar } from './mate-avatar.tsx';
 import './mates.css';
 
@@ -82,19 +82,20 @@ export function DockTargetSelector(): ReactNode {
   const mate = roster.mates.find((item) => item.lineId === target.lineId);
   const group = roster.groups.find((item) => item.lineId === target.lineId);
   const select = (lineId: string): void => { state.dockTargets.choose(lineId); setMenu(null); };
+  const main = useMainIdentity();
   return <div className="dock-target-head">
     <button type="button" className="dock-target-button" aria-label="切换对话对象" aria-expanded={menu !== null}
       onClick={(event) => setMenu(anchorOf(event.currentTarget))}>
       {mate !== undefined ? <MateAvatar mate={mate} size={24} /> : group !== undefined
         ? <GroupAvatar mates={roster.mates.filter((item) => group.mateIds.includes(item.id))} />
-        : <PlasticineMark size={22} />}
-      <span>{mate?.name ?? group?.name ?? 'Plasticine'}</span><Icon name="chevron-down" size={12} />
+        : <MainAvatar main={main} size={22} />}
+      <span>{mate?.name ?? group?.name ?? main.name}</span><Icon name="chevron-down" size={12} />
     </button>
     {target.fromWriter ? <span className="dock-writer">写过这一页</span> : null}
     {menu === null ? null : <Popover anchor={menu} role="menu" label="对话对象" align="start"
       onClose={() => setMenu(null)}>
-      <TargetItem label="Plasticine 主线" selected={target.lineId === MAIN_LINE_ALIAS}
-        lead={<PlasticineMark size={24} />} onSelect={() => select(MAIN_LINE_ALIAS)} />
+      <TargetItem label={`${main.name} 主线`} selected={target.lineId === MAIN_LINE_ALIAS}
+        lead={<MainAvatar main={main} size={24} />} onSelect={() => select(MAIN_LINE_ALIAS)} />
       <p className="dock-target-section">队友</p>
       {roster.mates.filter((item) => item.disabledAt === null).map((item) => <TargetItem key={item.id}
         label={item.name} selected={target.lineId === item.lineId} lead={<MateAvatar mate={item} size={24} />}

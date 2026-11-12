@@ -1,9 +1,10 @@
 import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
-import { MateDraftSchema, MateGroupDraftSchema, SendLineMessageRequestSchema } from '../shared.ts';
+import { DEFAULT_MAIN, MateDraftSchema, MateGroupDraftSchema, SendLineMessageRequestSchema } from '../shared.ts';
 import type { MateDraft, MateView, MateGroupView, MateGroupDraft, CreateMateRequest, UpdateMateRequest,
-  MateHandoffRequest, LegacyChatConvertRequest, LegacyChatProposal } from '../shared.ts';
+  MateHandoffRequest, LegacyChatConvertRequest, LegacyChatProposal, MainIdentity, UpdateMainRequest }
+  from '../shared.ts';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeReceipts } from './receipts.ts';
@@ -31,7 +32,18 @@ export class FakeMates implements MatesApi {
     return { mates: structuredClone([...this.rows.values()]), groups: structuredClone([...this.groupRows.values()]),
       legacyChats: this.deps.lines.allLines().filter((line) => line.kind === 'side' && line.mateId == null
         && line.mateGroupId == null && line.archivedAt == null)
-        .map((line) => ({ lineId: line.id, title: line.title, updatedAt: line.updatedAt })) };
+        .map((line) => ({ lineId: line.id, title: line.title, updatedAt: line.updatedAt })),
+      main: structuredClone(this.main) };
+  }
+  /** 主线的名字、头像字、颜色（第 12 批）。 */
+  main: MainIdentity = { ...DEFAULT_MAIN };
+  async updateMain(input: UpdateMainRequest): Promise<{ main: MainIdentity }> {
+    this.deps.session.require();
+    return this.deps.receipts.run('save', input.requestId, 'POST /v2/main', () => {
+      const avatar = input.avatar?.trim() ?? '';
+      this.main = { name: input.name.trim(), avatar: avatar === '' ? null : avatar, hue: input.hue };
+      return { main: structuredClone(this.main) };
+    });
   }
   async get(id: string): Promise<MateView> {
     this.deps.session.require();

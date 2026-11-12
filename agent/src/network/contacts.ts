@@ -6,6 +6,7 @@ import type { Tier } from '../../shared/api/visibility.ts';
 import type { Contact, ContactMessage, NetworkIdentity } from '../../shared/state.ts';
 import { changeOf, requireContact, requireIdentity, signerOf, type NetworkContext } from './context.ts';
 import { NetworkError } from './errors.ts';
+import { aiNameOf } from '../mates/main-identity.ts';
 import { enqueue } from './outbox.ts';
 import { RelayCallError } from '../../protocol/relay-client.ts';
 import { contactMessageKey } from './contact-edits.ts';
@@ -24,7 +25,8 @@ function relayError(error: unknown, notFound: string): never {
 function hello(context: NetworkContext, identity: NetworkIdentity, contact: Contact, note: string | null,
   requestId: string | null): ContactMessage {
   return enqueue(context, contact, { kind: 'hello', author: 'me', text: note ?? `加了 @${contact.handle}`,
-    payload: { displayName: identity.displayName, note, avatar: identity.avatar }, requestId });
+    payload: { displayName: identity.displayName, note, avatar: identity.avatar, aiName: aiNameOf(context.state) },
+    requestId });
 }
 
 const HANDLE = /^[a-z0-9_]{3,24}$/;

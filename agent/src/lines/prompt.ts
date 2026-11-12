@@ -8,17 +8,21 @@
 import { ACT_OR_ASK_PROMPT } from '../../shared/act-or-ask.ts';
 import { memoryDocsSection, rulesDocSection, todaySection } from '../brain/index.ts';
 import type { LineRow, StateService } from '../state/index.ts';
+import { DEFAULT_MAIN_NAME } from '../../shared/api/mates.ts';
+import { mainIdentity } from '../mates/main-identity.ts';
 import { daySection } from './day-context.ts';
 import { BACKGROUND_HANDOFF, SIDE_TOPIC_HINT, TALK_STYLE } from './talk-style.ts';
 
 export type PromptState = Pick<StateService, 'memoryDocs' | 'projects' | 'memoryJournal' | 'lineDays'>
-  & Partial<Pick<StateService, 'mates' | 'mateGroups' | 'lineMessages'>>;
+  & Partial<Pick<StateService, 'mates' | 'mateGroups' | 'lineMessages' | 'kernelSettings'>>;
 
 /** publicUrl：他打开 Plasticine 的网页地址（app/public-url.ts）；没给就不写（测试里的内核）。 */
-export function identitySection(publicUrl?: string): string {
+/** name：主线的名字（第 12 批，他可以自己起）；还叫 Plasticine 时照旧写。 */
+export function identitySection(publicUrl?: string, name: string = DEFAULT_MAIN_NAME): string {
   const where = publicUrl === undefined ? '' : `（网页 ${publicUrl}）`;
+  const who = name === DEFAULT_MAIN_NAME ? '你是 Plasticine' : `你叫${name}（他给你起的名字，自称用它），是 Plasticine`;
   return [
-    `你是 Plasticine，用户自己的 AI，运行在他自己的服务器上${where}。`,
+    `${who}，用户自己的 AI，运行在他自己的服务器上${where}。`,
     '主线是总管：按职责用 mate_handoff 交给队友，收齐结果后汇总；没有合适队友时用 start_line 开后台线。'
       + '队友有各自长期对话，共享记忆，谁开后台工作就交回给谁。队友回合和后台线合计最多三条，多出的排队。'
       + '用户在主线或群组中 @ 队友时已经直接指派，指定队友的回答会带身份送回，不重复派同一件工作。',
@@ -86,7 +90,8 @@ function lineSection(line: LineRow): string {
 
 export function linePrompt(state: PromptState, line: LineRow, publicUrl?: string): string {
   return [
-    identitySection(publicUrl),
+    identitySection(publicUrl, state.kernelSettings === undefined ? undefined
+      : mainIdentity({ kernelSettings: state.kernelSettings }).name),
     ACT_OR_ASK_PROMPT,
     rulesDocSection(state, line.mateId ?? null),
     mateSection(state, line),

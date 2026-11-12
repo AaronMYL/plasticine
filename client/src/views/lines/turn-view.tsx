@@ -1,5 +1,6 @@
 // Plasticine 的一轮：正文和过程按出现顺序画，过程从开始就有自己的位置，结束只更新内容。正文可选文引用。
 
+import { useMainName } from '../mates/main-identity.tsx';
 import { useId, useState, type ReactNode } from 'react';
 import { Markdown } from '../../primitives/message/markdown.tsx';
 import { QuoteSelection } from '../../primitives/message/quote-selection.tsx';
@@ -58,10 +59,11 @@ export interface TurnViewProps {
 
 function Part({ part, lineId, running, onQuote, onRetry }: Pick<TurnViewProps, 'lineId' | 'onQuote' | 'onRetry'>
   & { part: TurnPart; running: boolean }): ReactNode {
+  const mainName = useMainName();
   switch (part.kind) {
     case 'space': return <SpaceRevisionCard result={part.result} />;
     case 'answer':
-      return <MessageRow seq={part.seq} author="Plasticine" text={part.text}>
+      return <MessageRow seq={part.seq} author={mainName} text={part.text}>
         <div className="line-answer" data-message-seq={part.seq}>
           <QuoteSelection onQuote={onQuote === undefined ? undefined : (text) => onQuote(part.seq, text)}>
             <MessageContent text={part.text} />

@@ -1,7 +1,7 @@
 import type { CreateMateRequest, UpdateMateRequest, MateView, MateListResponse, MateGroupView,
   CreateMateGroupRequest, UpdateMateGroupRequest, MateHandoffRequest, MateHandoffResponse,
   LegacyChatProposal, LegacyChatConvertRequest, LegacyChatConvertResponse, ListLinesResponse,
-  SendLineMessageRequest } from './shared.ts';
+  SendLineMessageRequest, MainIdentity, UpdateMainRequest } from './shared.ts';
 
 export interface MatesApi {
   list(signal?: AbortSignal): Promise<MateListResponse>;
@@ -11,6 +11,8 @@ export interface MatesApi {
   handoff(input: MateHandoffRequest): Promise<MateHandoffResponse>;
   prepareLegacy(lineId: string): Promise<LegacyChatProposal>;
   convertLegacy(input: LegacyChatConvertRequest): Promise<LegacyChatConvertResponse>;
+  /** POST /v2/main：主线的名字、头像字、颜色（第 12 批）。 */
+  updateMain(input: UpdateMainRequest): Promise<{ main: MainIdentity }>;
 }
 export interface MateGroupsApi {
   create(input: CreateMateGroupRequest): Promise<MateGroupView>;

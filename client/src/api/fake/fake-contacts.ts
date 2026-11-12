@@ -237,7 +237,8 @@ export class FakeContacts implements ContactsApi {
         taskId: null,
         mention: toAi ? { name: record.name, self: false } : mine ? { name: this.me.name, self: true } : null,
         replyTo: input.replyToId === undefined ? null
-          : replyLine(messageIn(record.entries, input.replyToId), { me: this.me.name, them: record.alias ?? record.name }),
+          : replyLine(messageIn(record.entries, input.replyToId),
+            { me: this.me.name, them: record.alias ?? record.name }),
       };
       message.attachments = this.deps.attachments?.(input.attachmentIds ?? [], id, message.id) ?? [];
       record.suggestion = null;

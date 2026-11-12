@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
-import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { ColumnFoot, ColumnHead, ColumnLink, ColumnNote } from '../../shell/columns/column.tsx';
 import { mainChatRoute, mateGroupRoute, mateRoute, sideRoute, type Route } from '../../shell/routes.ts';
 import { useStore } from '../../state/use-store.ts';
@@ -10,6 +9,7 @@ import { PendingOps } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from './mate-actions.ts';
 import { MateAvatar, GroupAvatar } from './mate-avatar.tsx';
 import { MateEditor, GroupEditor } from './mate-editor.tsx';
+import { MainAvatar, MainEditor, useMainIdentity } from './main-identity.tsx';
 import { LegacyChats } from './legacy-chats.tsx';
 import './mates.css';
 
@@ -18,15 +18,19 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
   const live = useLive();
   const roster = useStore(live.mates.data);
   const lines = useStore(live.lines.list);
-  const [editor, setEditor] = useState<'mate' | 'group' | null>(null);
+  const [editor, setEditor] = useState<'mate' | 'group' | 'main' | null>(null);
+  const main = useMainIdentity();
   const [legacy, setLegacy] = useState(false);
   const root = route.view === 'plasticine' && route.mateId == null && route.mateGroupId == null
     && route.lineId == null;
   return <div className={`mates-roster${phone ? ' mates-roster-phone' : ''}`}>
-    {phone ? <header className="mates-phone-head"><h1>Plasticine</h1></header> : <ColumnHead title="Plasticine" />}
+    {phone ? <header className="mates-phone-head"><h1>{main.name}</h1></header> : <ColumnHead title={main.name} />}
     <div className="column-scroll">
-      <ColumnLink route={mainChatRoute()} current={root} navigate={navigate} label="Plasticine 主线"
-        lead={<PlasticineMark size={28} />} sub="主线">Plasticine</ColumnLink>
+      <div className="mates-main-row">
+        <ColumnLink route={mainChatRoute()} current={root} navigate={navigate} label={`${main.name} 主线`}
+          lead={<MainAvatar main={main} size={28} />} sub="主线">{main.name}</ColumnLink>
+        <IconButton icon="edit" className="mates-main-edit" label="编辑主线" onClick={() => setEditor('main')} />
+      </div>
       <PendingOps label="队友待核实的操作" prefixes={MATE_OP_PREFIXES} visible={() => false}
         onRetry={(key) => { void live.mateActions.retry(key); }} />
       {roster.error === null ? null : <ColumnNote>{roster.error}</ColumnNote>}
@@ -57,6 +61,7 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
     <ColumnFoot><ColumnLink route={{ view: 'memory', noteId: null }} current={route.view === 'memory'}
       navigate={navigate} lead={<Icon name="memory" size={18} />}>记忆</ColumnLink></ColumnFoot>
     {editor === 'mate' ? <MateEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
+    {editor === 'main' ? <MainEditor phone={phone} onClose={() => setEditor(null)} /> : null}
     {editor === 'group' ? <GroupEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
     {legacy ? <LegacyChats phone={phone} navigate={navigate} onClose={() => setLegacy(false)} /> : null}
   </div>;

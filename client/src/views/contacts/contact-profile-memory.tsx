@@ -1,5 +1,5 @@
 // 第 12 批：资料栏的「记忆」一节——这个联系人绑的是记忆里哪一页人物。
-// 没绑、Plasticine 觉得像某一页时先问：「tingting 是记忆里的「贾婷婷」吗？」是 / 不是 / 选别的…；一页都不像时只有
+// 没绑、Plasticine 觉得像某一页时先问：「tingting 是记忆里的「贾婷婷」吗？」是的 / 不是 / 选别的…；一页都不像时只有
 // 「关联人物…」。绑了：页名（点开到记忆里那一页）、最近几行（每行标谁说的），⋯ 里换一页或解绑。
 // 绑了的人物页只在这台 Plasticine 里，不给对方和对方的 Plasticine 看（不管什么档位）。
 
@@ -115,7 +115,7 @@ export function ContactMemorySection({ contact, memory }: { contact: ContactRow;
           <p>{contact.name} 是记忆里的「{memory.suggest.title}」吗？</p>
           <div className="contact-memory-answers">
             <button type="button" className="chip-button" onClick={() => choose({ docId: memory.suggest?.id ?? null })}>
-              是
+              是的
             </button>
             <button type="button" className="chip-button" onClick={() => choose({ dismiss: true })}>不是</button>
             <button type="button" className="text-button" onClick={(event) => openPicker(event.currentTarget)}>

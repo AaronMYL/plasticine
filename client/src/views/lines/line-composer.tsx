@@ -3,6 +3,7 @@
 // Enter 发送、Shift+Enter 换行，中文输入法选字时的 Enter 不发送；手机上回车换行，点发送键发。
 // 草稿、引用片、附件在 state/（对话框收起、换容器、切页回来字都在）。引用片照旧写成引用块放在正文前面。
 
+import { useMainName } from '../mates/main-identity.tsx';
 import { useMateMentions } from '../mates/mate-mentions.tsx';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
@@ -86,6 +87,7 @@ function ReplyChip({ author, text, onCancel }: { author: string; text: string; o
 }
 
 export function LineComposer({ lineId, askPage, side = false }: LineComposerProps): ReactNode {
+  const mainName = useMainName();
   const state = useClientState();
   const live = useLive();
   const api = useApi();
@@ -227,7 +229,7 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
         <textarea ref={input} className="line-input" aria-label="问一句" aria-describedby={shortcutId}
           aria-controls={mentions.listId}
           aria-activedescendant={mentions.selectedId} disabled={disabledMate}
-          placeholder={side ? '接着说…' : '回复 Plasticine'} rows={1} value={draft}
+          placeholder={side ? '接着说…' : `回复 ${mainName}`} rows={1} value={draft}
           onChange={(event) => { if (askPage) state.dockTargets.protectCurrent();
             conversationUi.setDraft(event.target.value); mentions.update(event.target.selectionStart); }}
           onPaste={(event) => {

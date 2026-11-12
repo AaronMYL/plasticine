@@ -1,7 +1,7 @@
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
 import { MATES_PATH, MATE_GROUPS_PATH, MateViewSchema, MateGroupViewSchema, MateListResponseSchema,
   MateHandoffResponseSchema, LegacyChatProposalSchema, LegacyChatConvertResponseSchema,
-  ListLinesResponseSchema } from '../shared.ts';
+  ListLinesResponseSchema, MAIN_PATH, MainResponseSchema } from '../shared.ts';
 import type { Transport } from './transport.ts';
 
 export function createMatesHttp(transport: Transport): { mates: MatesApi; mateGroups: MateGroupsApi } {
@@ -21,6 +21,8 @@ export function createMatesHttp(transport: Transport): { mates: MatesApi; mateGr
         body: { lineId }, schema: LegacyChatProposalSchema, what: '整理原来的对话', lostAs: 'failed' }),
       convertLegacy: (body) => transport.request({ method: 'POST', path: `${MATES_PATH}/legacy/convert`, body,
         schema: LegacyChatConvertResponseSchema, what: '转换原来的对话', lostAs: 'uncertain' }),
+      updateMain: (body) => transport.request({ method: 'POST', path: MAIN_PATH, body, schema: MainResponseSchema,
+        what: '改主线的名字', lostAs: 'uncertain' }),
     },
     mateGroups: {
       listTasks: (id, signal) => transport.request({ method: 'GET',

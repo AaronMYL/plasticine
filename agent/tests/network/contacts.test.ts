@@ -34,7 +34,7 @@ test('没加入网络：状态说没加入、给默认中继地址；联系人�
   assert.equal(add.status, 409);
   assert.equal(json(add)['code'], 'not_joined');
   assert.deepEqual(json(await call(t, 'GET', '/v2/contacts', { cookie })), { contacts: [], requests: 0, waiting: 0,
-    unread: 0 });
+    unread: 0, removed: [] });
 });
 
 test('中继独立以前记下的旧地址（本机 8790）：改连配置的中继；别的地址照记下的连', async () => {

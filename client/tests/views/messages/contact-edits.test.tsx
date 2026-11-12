@@ -105,12 +105,12 @@ describe('消息 · 管理联系人', () => {
 });
 
 describe('消息 · 资料栏的记忆', () => {
-  it('没绑时先问是不是记忆里的那一页；答「是」就绑上，页名点开到记忆', async () => {
+  it('没绑时先问是不是记忆里的那一页；答「是的」就绑上，页名点开到记忆', async () => {
     const app = await open('#/messages/c_zhouke');
     const profile = await screen.findByRole('complementary', { name: '周可的资料' });
     const memory = await within(profile).findByRole('region', { name: '记忆' });
     expect(within(memory).getByText('周可 是记忆里的「周可」吗？')).toBeTruthy();
-    fireEvent.click(within(memory).getByRole('button', { name: '是' }));
+    fireEvent.click(within(memory).getByRole('button', { name: '是的' }));
     await waitFor(() => expect(app.control.contacts.people.get('c_zhouke')?.personDocId).toBe('doc_person_zhou'));
     const link = await within(memory).findByRole('link', { name: '周可' });
     expect(link.getAttribute('href')).toBe('#/memory/topics/doc_person_zhou');

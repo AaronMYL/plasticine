@@ -6,6 +6,7 @@ import type { NetworkIdentity } from '../../shared/state.ts';
 import { changeOf, requireIdentity, type NetworkContext } from './context.ts';
 import { NetworkError } from './errors.ts';
 import { enqueue } from './outbox.ts';
+import { aiNameOf } from '../mates/main-identity.ts';
 
 const AVATAR_PATTERN = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
 
@@ -24,6 +25,11 @@ export function broadcastProfile(context: NetworkContext, avatar: string | null)
   return sendProfile(context, { avatar: checkAvatar(avatar) });
 }
 
+/** 主线改了名字（第 12 批）：再发一次资料，带上新的 AI 名字。 */
+export function refreshProfile(context: NetworkContext): NetworkIdentity {
+  return sendProfile(context, {});
+}
+
 /** 改名字（2026-11-08 设置 · 账号）：和头像同一封 profile 发给每个好友，他们那边的名字跟着变。 */
 export function renameProfile(context: NetworkContext, displayName: string): NetworkIdentity {
   return sendProfile(context, { displayName });
@@ -37,7 +43,7 @@ function sendProfile(context: NetworkContext, patch: { avatar?: string | null; d
     const touched: string[] = [];
     for (const contact of context.state.contacts.active()) {
       enqueue(context, contact, { kind: 'profile', author: 'me', text: '', quiet: true,
-        payload: { displayName: updated.displayName, avatar: updated.avatar } });
+        payload: { displayName: updated.displayName, avatar: updated.avatar, aiName: aiNameOf(context.state) } });
       touched.push(contact.id);
     }
     changes.afterCommit(() => {

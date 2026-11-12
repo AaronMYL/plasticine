@@ -4,6 +4,7 @@
 // 「任务」有事等他时带一个陶土点（全站只这一个意思）。悬停浮出名字（悬停提示层，data-tip）。
 // Mac 客户端隐藏标题栏时交通灯落在图标栏顶上：壳告诉界面（host.ts 的窗口外观）才留出那一块；网页里不画假的灯。
 
+import { useMainName } from '../views/mates/main-identity.tsx';
 import { useState, type ReactNode } from 'react';
 import type { ConnectionStatus } from '../api/types.ts';
 import { accountInitial } from './account-name.ts';
@@ -46,13 +47,14 @@ const NEW_ITEMS: ReadonlyArray<{ kind: NewKind; label: string; icon: 'conversati
 export function Rail(props: RailProps): ReactNode {
   const [menu, setMenu] = useState<PopoverAnchor | null>(null);
   const offline = props.connection !== 'open';
+  const mainName = useMainName();
   return (
     <nav className="rail" aria-label="栏目">
       <div className="rail-groups">
         {RAIL_GROUPS.map((group) => (
           <ul key={group[0]} className="rail-group">
             {group.map((id) => {
-              const item = SECTIONS[id];
+              const item = id === 'plasticine' ? { ...SECTIONS[id], label: mainName } : SECTIONS[id];
               const flagged = id === 'tasks' && props.waiting > 0;
               const label = flagged ? `${item.label} · 有等你的事` : item.label;
               return (
@@ -92,7 +94,8 @@ export function Rail(props: RailProps): ReactNode {
       {menu === null ? null : (
         <Popover anchor={menu} role="menu" align="start" label="新建" onClose={() => setMenu(null)}>
           {NEW_ITEMS.map((item) => (
-            <MenuItem key={item.kind} icon={item.icon} label={item.label} onSelect={() => {
+            <MenuItem key={item.kind} icon={item.icon}
+              label={item.kind === 'ask' ? `跟 ${mainName} 说` : item.label} onSelect={() => {
               setMenu(null);
               props.onNew(item.kind);
             }} />

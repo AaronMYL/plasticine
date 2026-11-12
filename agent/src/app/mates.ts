@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
 import { CreateMateGroupRequestSchema, CreateMateRequestSchema, LegacyChatConvertRequestSchema,
   LegacyChatPrepareRequestSchema, MateHandoffRequestSchema, UpdateMateGroupRequestSchema,
-  UpdateMateRequestSchema, MATES_PATH, MATE_GROUPS_PATH } from '../../shared/api/mates.ts';
+  UpdateMateRequestSchema, UpdateMainRequestSchema, MAIN_PATH, MATES_PATH, MATE_GROUPS_PATH }
+  from '../../shared/api/mates.ts';
+import { setMainIdentity } from '../mates/main-identity.ts';
 import { Mates } from '../mates/service.ts';
 import { param, requireAuth, requireUserAuth, type RequestContext, type Route } from './context.ts';
 import { readJsonBody } from './http.ts';
@@ -29,6 +31,18 @@ export const MATE_ROUTES: readonly Route[] = [
     const { requestId, ...draft } = input;
     return idempotent(context, requestId, (after) => ({ status: 201,
       body: lineCall(() => matesFor(context).create(draft, after)) }), digest(input));
+  } },
+  { method: 'POST', path: MAIN_PATH, auth: true, async handler(context) {
+    requireUserAuth(context);
+    const input = checkInput(UpdateMainRequestSchema, await readJsonBody(context.req), '主线');
+    const { requestId, ...identity } = input;
+    return idempotent(context, requestId, () => {
+      const { state, network } = context.deps;
+      const main = setMainIdentity(state, identity);
+      // 加入了网络就把新名字发给每个好友（他们那边写「Aaron 的 新名字」）。
+      if (state.networkIdentity.get() !== undefined) network.refreshProfile();
+      return { status: 200, body: { main } };
+    }, digest(input));
   } },
   { method: 'POST', path: `${MATES_PATH}/handoff`, auth: true, async handler(context) {
     requireUserAuth(context);

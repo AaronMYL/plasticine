@@ -6,6 +6,7 @@
 // 想了 / 做了几步，子代理的步骤在它的卡里）；消息之间按时间分隔；悬停一条出表情、回复、更多；往上翻着时来了新消息出
 // 「n 条新消息」；旁聊顶上是它围绕的那一条。
 
+import { useMainName } from '../mates/main-identity.tsx';
 import { MateLineCard } from '../mates/mate-line-card.tsx';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LineView } from '../../api/shared.ts';
@@ -97,6 +98,7 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
    * 还是「立即发送」插进来的（那一轮没停）。
    */
   settled: boolean; streaming: string }): ReactNode {
+  const mainName = useMainName();
   switch (item.kind) {
     case 'user': {
       const { quotes, text } = splitQuotes(item.message.text, `line-${item.message.seq}`);
@@ -112,7 +114,7 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
         onQuote={(text) => onQuote(item.message.seq, text, messageAuthor(item.message))} />;
     case 'turn':
       return <TurnView lineId={lineId} turn={item} running={running} cutOff={settled && item.endedOnTool} quiet
-        streaming={running ? streaming : ''} onQuote={(seq, text) => onQuote(seq, text, 'Plasticine')} />;
+        streaming={running ? streaming : ''} onQuote={(seq, text) => onQuote(seq, text, mainName)} />;
     case 'report':
       return <MateReport message={item.message} onQuote={onQuote} />;
     case 'side':
@@ -122,7 +124,7 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
     case 'welcome':
       return <WelcomeMessage lineId={lineId} message={item.message} />;
     case 'letter':
-      return <MessageRow seq={item.message.seq} author="Plasticine" text={item.message.text}>
+      return <MessageRow seq={item.message.seq} author={mainName} text={item.message.text}>
         <div className="line-answer" data-message-seq={item.message.seq}>
           <Markdown text={item.message.text} />
           {item.message.letter === undefined ? null : <LetterCard letter={item.message.letter} />}

@@ -80,3 +80,25 @@
 .dock-target-section { margin: 12px 10px 4px; font-size: 11px; color: var(--fg3); }
 .dock-target-item { min-height: 38px; min-width: 240px; gap: 10px; }
 
+
+/* 第 12 批：主线那一行右边「编辑主线」，悬停或聚焦时出现。 */
+.mates-main-row {
+  position: relative;
+}
+
+.mates-main-edit {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.mates-main-row:hover > .mates-main-edit,
+.mates-main-row:focus-within > .mates-main-edit,
+.mates-roster-phone .mates-main-edit {
+  opacity: 1;
+}

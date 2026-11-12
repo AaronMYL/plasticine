@@ -210,6 +210,11 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
   return <LiveContext.Provider value={live}>{children}</LiveContext.Provider>;
 }
 
+/** 不在 LiveProvider 里（单独画的小部件、测试）时是 null。 */
+export function useOptionalLive(): Live | null {
+  return useContext(LiveContext);
+}
+
 export function useLive(): Live {
   const live = useContext(LiveContext);
   if (live === null) {
