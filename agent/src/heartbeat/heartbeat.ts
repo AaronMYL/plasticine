@@ -43,6 +43,8 @@ export interface HeartbeatOptions {
   suggest: (input: SuggestionInputDraft) => { created: boolean };
   calendar?: CalendarPort;
   stalled?: StalledPort;
+  /** 定时的订阅和回顾里，本该出、过了一小时还没出的补一期；回补了哪几个（11-12：日报漏发心跳没发现）。 */
+  catchUp?: (now: Date) => string[];
   changed?: () => void;
   newId: () => string;
 }
@@ -135,6 +137,7 @@ export class Heartbeat {
   /** 跳一下：先比对，有新变化才叫模型。 */
   async beat(now: Date): Promise<void> {
     const { state } = this.#options;
+    this.#catchUp(now);
     const zone = this.#options.zone();
     const config = this.config();
     const facts = collectFacts(config.items, { state, now, zone,
@@ -164,6 +167,25 @@ export class Heartbeat {
     const note = this.#note(output, fresh, did);
     state.timedSlots.heartbeats.add({ at: now.toISOString(), found: fresh, did, note, failed: false });
     this.#record({ at: now, outcome: did.length === 0 ? 'quiet' : 'done', note, seen });
+  }
+
+  /** 漏发的定时补一期，告诉他一声，记一跳；补不补都不拦后面照常看。 */
+  #catchUp(now: Date): void {
+    let caught: string[];
+    try {
+      caught = this.#options.catchUp?.(now) ?? [];
+    } catch (error) {
+      safeLog('error', 'heartbeat_catch_up_failed', { category: errorCategory(error), error });
+      return;
+    }
+    if (caught.length === 0) {
+      return;
+    }
+    const text = `${caught.join('、')}没按时出，已补一期。`;
+    const key = `heartbeat:catch-up:${now.toISOString()}`;
+    this.#options.notify({ key, text, brief: clip(`心跳：${text}`, 60), url: '/#/' });
+    this.#options.state.timedSlots.heartbeats.add({ at: now.toISOString(), found: [],
+      did: [{ kind: 'notify', text: clip(text, 300), ref: key }], note: clip(text, NOTE_MAX_CHARS), failed: false });
   }
 
   #act(output: JudgeOutput, fresh: readonly HeartbeatFact[], now: Date): HeartbeatAct[] {

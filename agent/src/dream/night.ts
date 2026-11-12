@@ -9,7 +9,7 @@ import { localDay } from '../daily/index.ts';
 import { MAX_BACKGROUND_LINES } from '../lines/index.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import type { StateService } from '../state/index.ts';
-import { nextRun, slotLast, type TimedProvider } from '../tasks/index.ts';
+import { nextRun, rezonedNext, slotLast, type TimedProvider } from '../tasks/index.ts';
 
 export const DREAM_SLOT_ID = 'dream';
 /** 每晚凌晨 1 点（11-06 定）。 */
@@ -61,8 +61,10 @@ export class DreamNight {
     }
     const nextAt = slot.nextAt === null ? null : Date.parse(slot.nextAt);
     if (nextAt === null || (memoText(slot, 'key') !== key && nextAt > now.getTime())) {
-      state.timedSlots.update(slot.id, slot.version, { nextAt: nextRun(DREAM_CADENCE, now, zone).toISOString(),
-        memo: { ...slot.memo, key } });
+      // 换了时区：按新时区重排，但不漏、不重复（见 rezonedNext）。
+      const next = rezonedNext(DREAM_CADENCE, nextAt === null ? null : new Date(nextAt), now, zone,
+        slot.lastRunAt === null ? null : new Date(slot.lastRunAt));
+      state.timedSlots.update(slot.id, slot.version, { nextAt: next.toISOString(), memo: { ...slot.memo, key } });
       return;
     }
     if (nextAt > now.getTime() || this.#running !== null) {

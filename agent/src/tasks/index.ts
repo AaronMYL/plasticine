@@ -11,7 +11,8 @@ import { SuggestionDesk, type SuggestionLines } from './suggestions.ts';
 import { TimedRegistry } from './timed.ts';
 import { scheduleProposeTool, taskTools } from './tools.ts';
 
-export { cadenceLabel, latestDue, nextRun, zonedClock } from './cadence.ts';
+export { cadenceLabel, coveredBy, latestDue, missedDue, nextAfterRun, nextRun, rezonedNext, zonedClock }
+  from './cadence.ts';
 export { outcomeOf as lineOutcome, ScheduleDesk, ScheduleError, SCHEDULE_TICK_MS } from './schedules.ts';
 export type { ScheduleLines, ScheduleNotice } from './schedules.ts';
 export { SuggestionDesk } from './suggestions.ts';

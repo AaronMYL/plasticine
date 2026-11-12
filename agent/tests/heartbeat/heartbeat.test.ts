@@ -22,7 +22,7 @@ interface World {
   clock: { at: Date };
 }
 
-function world(answers: string[], options: { noModel?: boolean } = {}): World {
+function world(answers: string[], options: { noModel?: boolean; caught?: string[] } = {}): World {
   const asked: TextRequest[] = [];
   const notices: NoticeInput[] = [];
   const opened: { title: string; goal: string }[] = [];
@@ -50,6 +50,7 @@ function world(answers: string[], options: { noModel?: boolean } = {}): World {
       return { created: true };
     },
     newId: () => `item-${(id += 1)}`,
+    ...(options.caught === undefined ? {} : { catchUp: () => options.caught?.splice(0) ?? [] }),
   });
   return { heartbeat, asked, notices, opened, suggested, clock };
 }
@@ -138,3 +139,15 @@ test('清单：拖过的顺序、删掉的、新加的（自己加的那条模�
   assert.equal(said.config.items.some((item) => item.id === 'feed'), false);
   assert.equal(said.config.items.at(-1)?.text, '快递到了没有');
 });
+
+test('漏发的定时（11-12）：心跳补一期，主线发一句、「最近」里记一跳；没漏的不说', async () => {
+  const w = world([], { caught: ['日报', '宇宙与物理周报'] });
+  await w.heartbeat.beat(w.clock.at);
+  assert.equal(w.notices.length, 1);
+  assert.equal(w.notices[0]?.text, '日报、宇宙与物理周报没按时出，已补一期。');
+  const beats = t.state.timedSlots.heartbeats.recent(5);
+  assert.equal(beats.some((beat) => beat.note === '日报、宇宙与物理周报没按时出，已补一期。'), true);
+  await w.heartbeat.beat(new Date(w.clock.at.getTime() + 30 * 60_000));
+  assert.equal(w.notices.length, 1);
+});
+

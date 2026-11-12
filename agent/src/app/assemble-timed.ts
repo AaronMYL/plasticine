@@ -46,6 +46,9 @@ function dreamSkills(skills: SkillStore): DreamSkills {
   };
 }
 
+/** 定时的订阅和回顾过了这么久还没出，心跳补一期。 */
+const CATCH_UP_GRACE_MS = 60 * 60_000;
+
 export function assembleTimed(parts: TimedParts): TimedAssembly {
   const { state, now, hub, tasks } = parts;
   const zone = (): string => tasks.schedules.timeZone();
@@ -66,6 +69,7 @@ export function assembleTimed(parts: TimedParts): TimedAssembly {
       origin: { kind: 'trigger', ref: 'heartbeat' } }).id,
     suggest: (input) => tasks.suggestions.suggest(input),
     stalled: parts.stalled,
+    catchUp: (at) => subscriptions.catchUp(at, CATCH_UP_GRACE_MS),
     ...(parts.calendar === undefined ? {} : { calendar: parts.calendar }),
     newId: () => `item-${randomUUID().slice(0, 8)}` });
   const text = parts.text;

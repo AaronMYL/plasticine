@@ -11,6 +11,7 @@ const EVENTS = {
   timed_tick_failed: '「定时」里登记进来的一种（订阅、心跳、做梦）这一分钟看到点时出错，下一分钟再看',
   timed_ended_failed: '「定时」里登记进来的一种记上次结果时出错',
   heartbeat_failed: '心跳这一跳出错，下一跳再看',
+  heartbeat_catch_up_failed: '心跳补漏发的定时出错，下一跳再看',
   heartbeat_judge_failed: '心跳叫模型判断没成，这几件下一跳再看',
   heartbeat_changed_hook_failed: '心跳改完通知界面重读时出错',
   dream_failed: '做梦这一晚没做完，下一晚把这段补上',

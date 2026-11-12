@@ -79,6 +79,59 @@ export function latestDue(cadence: ScheduleCadence, nextAt: Date, now: Date, tim
   return due;
 }
 
+/** 查漏发时，上次出的比本该出的早不到这么久，算这一期出过了（换了时区，同一期早几个小时出了）。 */
+const COVER_MS = 20 * 60 * MINUTE_MS;
+
+/**
+ * 出完一期以后排下一次：按现在的时区，和这一期落在同一天的跳过，免得换了时区同一天再出一期。interval 照常往后排。
+ */
+export function nextAfterRun(cadence: ScheduleCadence, due: Date, now: Date, timeZone: string): Date {
+  let next = nextRun(cadence, now, timeZone);
+  if (cadence.type !== 'interval' && localDay(next, timeZone) === localDay(due, timeZone)) {
+    next = nextRun(cadence, next, timeZone);
+  }
+  return next;
+}
+
+/**
+ * 时区或钟点变了，还没到的那一次怎么重排（11-12：两台设备报的时区来回切，每切一次从现在重排，跨过 08:00
+ * 的那一期就没了）：按新时区算下一次；新算的落到旧的那次之后的另一天，就留着旧的先出，保证不漏；
+ * 新算的和上次出的在新时区里是同一天，往后挪一期，同一天不重复出。
+ */
+export function rezonedNext(cadence: ScheduleCadence, previous: Date | null, now: Date, timeZone: string,
+  lastRunAt: Date | null): Date {
+  const candidate = lastRunAt === null ? nextRun(cadence, now, timeZone)
+    : nextAfterRun(cadence, lastRunAt, now, timeZone);
+  // 出差：新时区里同一天，挪到当地的同一个钟点；新算的跨到了后一天（中间那一期会没了），留着旧的先出。
+  if (previous !== null && previous.getTime() > now.getTime() && previous.getTime() < candidate.getTime()
+    && localDay(previous, timeZone) !== localDay(candidate, timeZone)) {
+    return previous;
+  }
+  return candidate;
+}
+
+/**
+ * 最近一次本该出、而且已经过了 grace 的那一刻（往回看一天）；没有就 null。心跳拿它查漏发。
+ */
+export function missedDue(cadence: ScheduleCadence, now: Date, timeZone: string, graceMs: number): Date | null {
+  if (cadence.type === 'interval') {
+    return null;
+  }
+  const limit = now.getTime() - graceMs;
+  let due: Date | null = null;
+  let at = nextRun(cadence, new Date(now.getTime() - DAY_MS - graceMs), timeZone);
+  while (at.getTime() <= limit) {
+    due = at;
+    at = nextRun(cadence, at, timeZone);
+  }
+  return due;
+}
+
+/** 这一期算出过没有：上次出的不早于本该出的那一刻 20 小时以前（换时区挪了几个小时也算）。 */
+export function coveredBy(lastRunAt: Date | null, due: Date): boolean {
+  return lastRunAt !== null && lastRunAt.getTime() > due.getTime() - COVER_MS;
+}
+
 function daysLabel(days: readonly number[]): string {
   const sorted = [...days].sort((a, b) => a - b);
   if (sorted.length === 7) {

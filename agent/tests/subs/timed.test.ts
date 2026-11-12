@@ -145,3 +145,42 @@ test('回顾写完：记上次；信里标了值得跟进的每一条出一张�
     ['约赵一舟聊合作', 'review']]);
   assert.match(suggested[0]?.key ?? '', /^review:.+:1$/);
 });
+
+test('两台设备时区来回切（11-12 漏发）：日报照北京 08:00 出，不被推到明天', () => {
+  ensureReviewSubscription(t.state, 'Asia/Shanghai');
+  const zone = { name: 'Asia/Shanghai' };
+  const now = { at: new Date('2026-11-11T10:00:00+08:00') };
+  const lines = fakeLines();
+  const timed = new SubscriptionTimed({ state: t.state, lines, now: () => now.at, zone: () => zone.name });
+  timed.tick(now.at);
+  // 夜里先被切到芝加哥，又切回北京。
+  for (const [at, name] of [['2026-11-12T07:30:00+08:00', 'America/Chicago'],
+    ['2026-11-12T07:40:00+08:00', 'Asia/Shanghai'], ['2026-11-12T07:50:00+08:00', 'America/Chicago']] as const) {
+    now.at = new Date(at);
+    zone.name = name;
+    timed.tick(now.at);
+  }
+  now.at = new Date('2026-11-12T08:00:00+08:00');
+  timed.tick(now.at);
+  assert.equal(lines.opened.length, 1);
+  assert.equal(t.state.timedSlots.get('review:daily')?.lastRunAt, new Date('2026-11-12T08:00:00+08:00').toISOString());
+});
+
+test('心跳查漏发：本该出、过了一小时没出的补一期；出过的、刚建的不补', () => {
+  ensureReviewSubscription(t.state, 'Asia/Shanghai');
+  const now = { at: new Date('2026-11-11T10:00:00+08:00') };
+  const { timed, lines } = setup(now);
+  timed.tick(now.at);
+  // 下一次被挪到了后天（像 11-12 那样），今天 08:00 那一期没出。
+  const slot = t.state.timedSlots.get('review:daily');
+  assert.ok(slot !== undefined);
+  t.state.timedSlots.update(slot.id, slot.version, { nextAt: new Date('2026-11-13T08:00:00+08:00').toISOString(),
+    lastRunAt: new Date('2026-11-10T08:00:00+08:00').toISOString() });
+  now.at = new Date('2026-11-12T09:30:00+08:00');
+  assert.deepEqual(timed.catchUp(now.at, 60 * 60_000), ['日报']);
+  assert.equal(lines.opened.length, 1);
+  const after = t.state.timedSlots.get('review:daily');
+  assert.equal(after?.lastRunAt, new Date('2026-11-12T08:00:00+08:00').toISOString());
+  assert.equal(after?.nextAt, new Date('2026-11-13T08:00:00+08:00').toISOString());
+  assert.deepEqual(timed.catchUp(now.at, 60 * 60_000), []);
+});

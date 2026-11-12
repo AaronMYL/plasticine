@@ -7,7 +7,7 @@ import type { LineInputOrigin, LineView } from '../../shared/api/index.ts';
 import type { Ask, Schedule, ScheduleInput, ScheduleOutcome } from '../../shared/state.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import type { StateService } from '../state/index.ts';
-import { cadenceLabel, latestDue, nextRun } from './cadence.ts';
+import { cadenceLabel, latestDue, nextAfterRun, nextRun, rezonedNext } from './cadence.ts';
 import { scheduleTimeZone } from './time-zone.ts';
 import { outwardBrief } from './schedule-text.ts';
 import { ensureScheduleGrant } from '../outbound/index.ts';
@@ -294,7 +294,7 @@ export class ScheduleDesk {
       return;
     }
     const due = latestDue(schedule.cadence, new Date(schedule.nextAt), now, zone);
-    const next = nextRun(schedule.cadence, now, zone).toISOString();
+    const next = nextAfterRun(schedule.cadence, due, now, zone).toISOString();
     const actor = scheduleActor(this.#state, schedule);
     if (actor !== MAIN_LINE_ID && this.#state.mates.require(actor).disabledAt !== null) {
       this.#state.schedules.update(schedule.id, schedule.version, { nextAt: next,
@@ -365,7 +365,8 @@ export class ScheduleDesk {
       if (schedule.nextAt !== null && Date.parse(schedule.nextAt) <= now.getTime()) {
         continue;
       }
-      const next = nextRun(schedule.cadence, now, zone).toISOString();
+      const next = rezonedNext(schedule.cadence, schedule.nextAt === null ? null : new Date(schedule.nextAt), now, zone,
+        schedule.lastRunAt === null ? null : new Date(schedule.lastRunAt)).toISOString();
       if (next !== schedule.nextAt) {
         this.#state.schedules.update(schedule.id, schedule.version, { nextAt: next });
       }

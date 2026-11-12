@@ -8,8 +8,8 @@ import type { LineView, TeammateView, TimedRowView } from '../../shared/api/inde
 import { STANDING_PROJECT_IDS, type ScheduleCadence, type SpaceEdition, type Subscription, type TimedSlot }
   from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { cadenceLabel, latestDue, lineOutcome, nextRun, slotLast, teammatesFromRows, type TimedProvider }
-  from '../tasks/index.ts';
+import { cadenceLabel, coveredBy, latestDue, lineOutcome, missedDue, nextAfterRun, nextRun, rezonedNext, slotLast,
+  teammatesFromRows, type TimedProvider } from '../tasks/index.ts';
 import type { SuggestionInputDraft } from '../tasks/index.ts';
 import { followUps } from './follow-ups.ts';
 import { runSubscription, type RunPort, type RunState } from './run.ts';
@@ -106,6 +106,35 @@ export class SubscriptionTimed {
     for (const entry of this.entries()) {
       this.#check(entry, now);
     }
+  }
+
+  /**
+   * 心跳顺带查：开着的订阅和回顾里，本该出、过了 graceMs 还没出的那一期，补一期；回补了哪几个（名字）。
+   * 上一期还在写的不补（#fire 会记一次跳过）。
+   */
+  catchUp(now: Date, graceMs: number): string[] {
+    const { state } = this.#options;
+    const zone = this.#options.zone();
+    const caught: string[] = [];
+    for (const entry of this.entries()) {
+      if (!entry.on) {
+        continue;
+      }
+      const slot = state.timedSlots.ensure(entry.slotId, entry.edition === null ? 'subscription' : 'review');
+      const due = missedDue(entry.cadence, now, zone, graceMs);
+      if (due === null || Date.parse(slot.createdAt) > due.getTime()
+        || coveredBy(slot.lastRunAt === null ? null : new Date(slot.lastRunAt), due)) {
+        continue;
+      }
+      if (slot.nextAt !== null && Date.parse(slot.nextAt) <= now.getTime()) {
+        continue;
+      }
+      this.#fire(entry, slot, now, this.#key(entry), due);
+      if (state.timedSlots.get(slot.id)?.lastRunAt !== slot.lastRunAt) {
+        caught.push(entry.edition === null ? entry.subscription.title : EDITION_TITLE[entry.edition]);
+      }
+    }
+    return caught;
   }
 
   /** 订阅的线一轮停下：记上次结果；回顾做成了，把「值得跟进」提成建议。 */
@@ -231,9 +260,16 @@ export class SubscriptionTimed {
     }
     const key = this.#key(entry);
     const nextAt = slot.nextAt === null ? null : Date.parse(slot.nextAt);
-    if (nextAt === null || (slot.memo['key'] !== key && nextAt > now.getTime())) {
-      // 第一次、刚打开、改了时间或换了时区（出差）：从现在起按新的钟点排。
+    if (nextAt === null) {
+      // 第一次、刚打开：从现在起排。
       state.timedSlots.update(slot.id, slot.version, { nextAt: this.#next(entry, now), memo: { key } });
+      return;
+    }
+    if (slot.memo['key'] !== key && nextAt > now.getTime()) {
+      // 改了时间或换了时区（出差）：按新的钟点重排，但不漏、不重复（见 rezonedNext）。
+      const lastRunAt = slot.lastRunAt === null ? null : new Date(slot.lastRunAt);
+      const next = rezonedNext(entry.cadence, new Date(nextAt), now, this.#options.zone(), lastRunAt);
+      state.timedSlots.update(slot.id, slot.version, { nextAt: next.toISOString(), memo: { key } });
       return;
     }
     if (nextAt > now.getTime()) {
@@ -242,11 +278,14 @@ export class SubscriptionTimed {
     this.#fire(entry, slot, now, key);
   }
 
-  #fire(entry: Entry, slot: TimedSlot, now: Date, key: string): void {
+  #fire(entry: Entry, slot: TimedSlot, now: Date, key: string, missed: Date | null = null): void {
     const { state, lines } = this.#options;
     const zone = this.#options.zone();
-    const due = latestDue(entry.cadence, new Date(slot.nextAt ?? now.toISOString()), now, zone);
-    const next = nextRun(entry.cadence, now, zone).toISOString();
+    const due = missed ?? latestDue(entry.cadence, new Date(slot.nextAt ?? now.toISOString()), now, zone);
+    // 补的那一期不动原来排好的下一次；照常到点的，下一次不早于这一期 12 小时后。
+    const planned = slot.nextAt === null ? null : slot.nextAt;
+    const next = missed !== null && planned !== null && Date.parse(planned) > now.getTime() ? planned
+      : nextAfterRun(entry.cadence, due, now, zone).toISOString();
     // 现读：同一分钟里日报刚开了线，周报要看到它。
     const subscription = state.subscriptions.require(entry.subscription.id);
     const view = subscription.lineId === null ? null : lines.view(subscription.lineId);
