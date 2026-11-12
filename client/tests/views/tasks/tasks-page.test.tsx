@@ -65,8 +65,8 @@ describe('任务栏目', () => {
       .toEqual(['idea-biorxiv']));
   });
 
-  it('进行中：线、队友；已结束里没做成写原因；点队友能叫停', async () => {
-    const app = await renderApp({ hash: '#/tasks', setup: ({ control }) => {
+  it('进行中：只放在做的线；Plasticine 的例行事不再单列一栏，跑起来时作为一条线出现；已结束不列没跑完的', async () => {
+    await renderApp({ hash: '#/tasks', setup: ({ control }) => {
       seedTasks(control.tasks, NOW);
       control.lines.put(control.lines.blank('line-weekly', 'background', '研究周报 · 第 3 期', { status: 'running',
         activity: '读到第 9 / 14 篇', activeSince: new Date(NOW.getTime() - 12 * 60_000).toISOString() }));
@@ -76,15 +76,8 @@ describe('任务栏目', () => {
     const running = await screen.findByRole('list', { name: '进行中' });
     expect(within(running).getByText('读到第 9 / 14 篇')).toBeTruthy();
     expect(within(running).queryByText('设置每日续火花')).toBeNull();
-    fireEvent.click(within(screen.getByRole('region', { name: 'Plasticine' }))
-      .getByRole('button', { name: 'Plasticine：回顾' }));
-    const sheet = await screen.findByRole('dialog', { name: '回顾' });
-    expect(within(sheet).getByText('日报')).toBeTruthy();
-    fireEvent.click(within(sheet).getByRole('button', { name: '叫停' }));
-    await waitFor(async () => {
-      const board = await app.api.tasks.board({});
-      expect(board.timed.filter((row) => row.teammateId === 'review').every((row) => !row.enabled)).toBe(true);
-    });
+    expect(screen.queryByRole('region', { name: 'Plasticine' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Plasticine：回顾' })).toBeNull();
   });
 
   it('四个动作：暂停后能继续；停止要确认、进已结束；删除就地撤销，最近删除里能恢复', async () => {

@@ -1,5 +1,6 @@
 // 任务栏目「进行中」（11-11 第二步设计稿 T1）：在跑、排队、在等和暂停着的一行一条（状态符 · 标题 + 项目点 · 那一步 /
-// 暂停原因 · 已用多久 · 暂停或继续 · ⋯）；队友和 Plasticine 自己的长期事。「已结束」「最近删除」两段同一种行。
+// 暂停原因 · 已用多久 · 暂停或继续 · ⋯）和队友。Plasticine 自己的例行事（研究员、回顾、心跳、做梦）只在「定时」，
+// 跑起来时它那条线照常出现在这里（11-12 第 4 条）。「已结束」「最近删除」两段同一种行。
 
 import { useStore } from '../../state/use-store.ts';
 import { mateRoute, routeHash } from '../../shell/routes.ts';
@@ -75,32 +76,15 @@ export function TaskLines({ lines, projects, label, now }: { lines: LineView[]; 
   );
 }
 
-function Mate({ mate, onOpen }: { mate: TeammateView; onOpen: (mate: TeammateView) => void }): ReactNode {
-  return (
-    <li>
-      <button type="button" className="tasks-mate" aria-label={`Plasticine：${mate.name}`} onClick={() => onOpen(mate)}>
-        <span className="tasks-mate-face" style={{ '--tile-hue': hueVar(mate.hue) } as CSSProperties}
-          aria-hidden="true"><Icon name={timedIcon(mate.icon)} size={17} /></span>
-        <span className="tasks-mate-text">
-          <span className="tasks-mate-name"><StatusGlyph status={mate.glyph} />{mate.name}</span>
-          <span className="tasks-row-meta">{mate.now}</span>
-        </span>
-      </button>
-    </li>
-  );
-}
-
 export interface TasksRunProps {
   running: LineView[];
-  teammates: TeammateView[];
   projects: TaskProjectView[];
-  onMate: (mate: TeammateView) => void;
 }
 
-export function TasksRun({ running, teammates, projects, onMate }: TasksRunProps): ReactNode {
+export function TasksRun({ running, projects }: TasksRunProps): ReactNode {
   const now = useNow(running.length > 0);
   const roster = useStore(useLive().mates.data);
-  if (running.length === 0 && teammates.length === 0 && roster.mates.length === 0) {
+  if (running.length === 0 && roster.mates.length === 0) {
     return <p className="tasks-empty">没有进行中的事。</p>;
   }
   return (
@@ -113,12 +97,6 @@ export function TasksRun({ running, teammates, projects, onMate }: TasksRunProps
               <span className="tasks-mate-name">{mate.name}</span><span className="tasks-row-meta">
                 {mate.disabledAt === null ? mate.role : '已停用'}</span></span></a></li>
         ))}</ul></section>}
-      {teammates.length === 0 ? null : (
-        <section className="tasks-section" aria-label="Plasticine">
-          <h2 className="tasks-section-title">Plasticine</h2>
-          <ul className="tasks-mates">{teammates.map((mate) => <Mate key={mate.id} mate={mate} onOpen={onMate} />)}</ul>
-        </section>
-      )}
     </>
   );
 }

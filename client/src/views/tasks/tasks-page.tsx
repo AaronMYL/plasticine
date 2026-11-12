@@ -76,7 +76,6 @@ export function TasksPage({ section, phone, navigate }: TasksPageProps): ReactNo
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
   const current = currentSheet(sheet, board);
   const openRow = (row: TimedRowView): void => setSheet({ kind: 'row', row });
-  const openMate = (mate: TeammateView): void => setSheet({ kind: 'mate', mate, rows: [] });
   return (
     <div className="page tasks-main" data-section={section}>
       {phone ? (
@@ -87,8 +86,7 @@ export function TasksPage({ section, phone, navigate }: TasksPageProps): ReactNo
         <button type="button" className="text-button" onClick={reload}>再读一次</button></p>}
       {board === null ? null : (
         <div className="tasks-body">
-          {section === 'run' ? <TasksRun running={board.running} teammates={board.teammates}
-            projects={board.projects} onMate={openMate} /> : null}
+          {section === 'run' ? <TasksRun running={board.running} projects={board.projects} /> : null}
           {section === 'ended' ? (board.ended.length === 0 ? <p className="tasks-empty">还没有结束的事。</p>
             : <TaskLines lines={board.ended} projects={board.projects} label="已结束" now={Date.now()} />) : null}
           {section === 'deleted' ? (board.deleted.length === 0 ? <p className="tasks-empty">最近没有删除的事。</p>

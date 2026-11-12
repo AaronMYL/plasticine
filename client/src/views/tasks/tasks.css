@@ -151,7 +151,7 @@
 /* 队友：一排五位，上下细线；圆形图标块 36 + 状态符 · 名字 + 一行在做什么。 */
 .tasks-mates {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -161,6 +161,7 @@
 
 .tasks-mate {
   display: flex;
+  text-decoration: none;
   align-items: flex-start;
   gap: 10px;
   width: 100%;
@@ -191,9 +192,10 @@
 }
 
 .tasks-mate-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 14px;
   line-height: 22px;
   font-weight: 500;
