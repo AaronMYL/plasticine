@@ -94,3 +94,44 @@
 .shell[data-phone='true'] .phone-bar {
   background: var(--layer-side);
 }
+
+/*
+ * 停靠（11-12）：宽窗口上展开的对话是壳里最右的一栏——不浮、不盖页面，页面让出它的宽度。左边一条细线和页面分开，
+ * 底色用浮层那一档，和页面区分。拖左边调宽。
+ */
+.chat-dialog[data-docked='true'] {
+  position: relative;
+  z-index: auto;
+  flex: none;
+  align-self: stretch;
+  max-width: 45vw;
+  border-radius: 0;
+  box-shadow: inset 1px 0 0 var(--line2);
+}
+
+.chat-dialog[data-docked='true'] .chat-head {
+  cursor: default;
+  touch-action: auto;
+}
+
+.chat-dialog[data-docked='true'] .chat-grip-w {
+  top: 0;
+  bottom: 0;
+}
+
+.chat-dialog[data-docked='true'] .chat-grip-w:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+/* 桌面客户端有标题栏时壳是格子：对话栏占第二行的第三列。 */
+.shell[data-titled]:has(> .chat-dialog[data-docked='true']) {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.shell[data-titled] > .chat-dialog[data-docked='true'] {
+  grid-column: 3;
+  grid-row: 2;
+  min-height: 0;
+  border-top: 1px solid var(--line2);
+}

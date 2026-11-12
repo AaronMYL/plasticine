@@ -46,6 +46,8 @@
   gap: 12px;
   min-height: 0;
   padding: 8px 40px 24px;
+  /* 窄的时候一句话旁边的悬停操作条会伸出去一点：只竖着滚，不出横向滚动条。 */
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
 }

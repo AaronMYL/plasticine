@@ -75,19 +75,24 @@ describe('手机 · 底栏与消息的几页', () => {
     expect(phoneBar()).not.toBeNull();
   });
 
-  it('Plasticine 手机入口是队友名单，点击主线后全屏聊天', async () => {
+  it('Plasticine 手机入口直接是主线（底栏还在、没有对话浮钮）；队友和群组从右上角的名单进', async () => {
     await renderApp({ hash: '#/today', width: 390, setup: seed });
     await settle();
     fireEvent.click(within(screen.getByRole('navigation', { name: '主导航' }))
       .getByRole('button', { name: 'Plasticine' }));
     await waitFor(() => expect(window.location.hash).toBe('#/plasticine'));
-    expect(screen.queryByRole('textbox', { name: '问一句' })).toBeNull();
-    expect(phoneBar()).not.toBeNull();
-    fireEvent.click(screen.getByRole('link', { name: 'Plasticine 主线' }));
     expect(await screen.findByRole('textbox', { name: '问一句' })).toBeTruthy();
-    expect(phoneBar()).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '返回队友列表' }));
-    expect(await screen.findByRole('link', { name: '记忆' })).toBeTruthy();
+    expect(phoneBar()).not.toBeNull();
+    expect(screen.queryByRole('button', { name: /展开对话框/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: '返回主线' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '队友和群组' }));
+    const roster = await screen.findByRole('dialog', { name: '队友和群组' });
+    expect(within(roster).getByRole('link', { name: '记忆' })).toBeTruthy();
+    // 名单里的「主线」就是这一页：关上名单，不另开一页。
+    fireEvent.click(within(roster).getByRole('link', { name: 'Plasticine 主线' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '队友和群组' })).toBeNull());
+    expect(window.location.hash).toBe('#/plasticine');
+    expect(phoneBar()).not.toBeNull();
   });
 
   it('聊天页顶上的 ✦ 打开对话（问我的 Plasticine）', async () => {

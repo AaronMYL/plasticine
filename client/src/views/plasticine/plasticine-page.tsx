@@ -1,4 +1,5 @@
-// Plasticine 主区：电脑默认主线，手机先显示名单；队友与群组分别进入长期对话。
+// Plasticine 主区：电脑默认主线；手机点「Plasticine」也直接进主线（11-12 全量优化，Aaron 定），队友和群组从右上角
+// 「队友和群组」打开名单切换；队友与群组分别进入长期对话。
 // 原对话地址继续可读，Soul 是同一栏目里的规则页。
 
 import { PendingOps, useOp } from '../pending/pending-ops.tsx';
@@ -22,6 +23,8 @@ import { MateEditor, GroupEditor } from '../mates/mate-editor.tsx';
 import { MateAvatar, GroupAvatar } from '../mates/mate-avatar.tsx';
 import { MateWorkPanel } from '../mates/mate-work-panel.tsx';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
+import { Sheet } from '../../primitives/sheet/index.tsx';
+import { useMainIdentity } from '../mates/main-identity.tsx';
 import { messageAuthor } from '../lines/line-origin.ts';
 import './plasticine.css';
 
@@ -90,8 +93,12 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
   const [editing, setEditing] = useState(false);
   const [disabling, setDisabling] = useState(false);
   const [division, setDivision] = useState(false);
+  const [rosterOpen, setRosterOpen] = useState(false);
+  // 手机上的栏目首页：就是主线，底栏还在；队友和群组从右上角进。
+  const phoneRoot = phone && sideId === null && route.plasticineMain !== true && route.messageId == null;
   const side = useStore(live.lines.thread(sideId ?? MAIN_LINE_ALIAS)).line;
-  const title = mate?.name ?? group?.name ?? (sideId === null ? '主线' : side?.title ?? '对话');
+  const main = useMainIdentity();
+  const title = mate?.name ?? group?.name ?? (sideId === null ? (phoneRoot ? main.name : '主线') : side?.title ?? '对话');
   const topic = sideId === null ? null : side?.topic ?? null;
   const iconSize = phone ? 20 : 16;
   // 桌面客户端里页名在标题栏里、这几个按钮放进标题栏右边（11-08），主区不再画这条顶栏。
@@ -109,10 +116,6 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
         onClick={(event) => setMenu(anchorOf(event.currentTarget))} />
     )}
   </>;
-  if (phone && sideId === null && route.plasticineMain !== true && route.messageId == null
-    && route.mateId == null && route.mateGroupId == null) {
-    return <MatesRoster route={route} navigate={navigate} phone />;
-  }
   if ((route.mateId != null && mate === undefined) || (route.mateGroupId != null && group === undefined)) {
     return <p className="block-empty">{roster.status === 'ready' ? '这位队友或群组暂时找不到。' : '正在读…'}</p>;
   }
@@ -120,7 +123,8 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
     <div className="messages-plasticine" data-phone={phone} data-side={sideId === null ? undefined : 'true'}>
       {titled ? <TitlebarActions>{tools}</TitlebarActions> : (
         <header className="messages-thread-head">
-          {phone ? <IconButton icon="back" label="返回队友列表" onClick={() => navigate(mainLineRoute())} /> : null}
+          {phone && !phoneRoot ? <IconButton icon="back" label="返回主线" onClick={() => navigate(mainLineRoute())} />
+            : null}
           <div className="mate-conversation-name">
             {mate !== undefined ? <MateAvatar mate={mate} /> : group !== undefined
               ? <GroupAvatar mates={roster.mates.filter((item) => group.mateIds.includes(item.id))} />
@@ -128,6 +132,8 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
             <div><h2>{title}</h2>{group === undefined ? null : <p>你和 {group.mateIds.length} 位队友</p>}</div>
           </div>
           <span className="messages-thread-spacer" />
+          {phoneRoot ? <button type="button" className="text-button" aria-expanded={rosterOpen}
+            onClick={() => setRosterOpen(true)}>队友和群组</button> : null}
           {tools}
         </header>
       )}
@@ -155,6 +161,15 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
         onConfirm={() => { void live.mateActions.update(mate, { disabled: mate.disabledAt === null }).then((result) => {
           if (result !== null) setDisabling(false);
         }); }} /> : null}
+      {phoneRoot ? (
+        <Sheet open={rosterOpen} variant="drawer" title="队友和群组" onClose={() => setRosterOpen(false)}>
+          <MatesRoster route={route} phone navigate={(next) => {
+            setRosterOpen(false);
+            // 名单里的「主线」就是这一页：关上名单就行，不另开一页。
+            navigate(next.view === 'plasticine' && next.plasticineMain === true ? mainLineRoute() : next);
+          }} />
+        </Sheet>
+      ) : null}
       {menu === null ? null : (
         <Popover anchor={menu} role="menu" align="end" label="对话的更多操作" onClose={() => setMenu(null)}>
           {mate === undefined && group === undefined ? null : <MenuItem icon="edit"
@@ -168,6 +183,10 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
             setMenu(null);
             navigate(mainLineRoute());
           }} />}
+          {phoneRoot ? <MenuItem icon="memory" label="记忆" onSelect={() => {
+            setMenu(null);
+            navigate({ view: 'memory', noteId: null });
+          }} /> : null}
           <MenuItem icon="sliders" label="模型设置" onSelect={() => {
             setMenu(null);
             openPanel({ kind: 'settings', section: 'ai' });

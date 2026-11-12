@@ -12,7 +12,7 @@ import './reply-confirm.css';
 /** 这段聊天里还开着的确认卡。 */
 export function replyAsksOf(open: readonly AskView[], contact: Pick<ContactRow, 'id' | 'kind'>): AskView[] {
   return open.filter((ask) => ask.networkReply !== undefined
-    && (contact.kind === 'group' ? ask.networkReply.groupId === contact.id : ask.networkReply.contactId === contact.id));
+    && (contact.kind === 'group' ? ask.networkReply.groupId : ask.networkReply.contactId) === contact.id);
 }
 
 function ReplyConfirmCard({ ask, name, onSelf }: { ask: AskView; name: string; onSelf: () => void }): ReactNode {

@@ -2,6 +2,8 @@
 // 缩小是右下角 48px 圆球（角标是「等你 n」）；展开是右下角约 420×640 的浮窗：按住顶栏拖动、拖左边 / 上边 / 左上角
 // 调大小，位置和大小记在本机（shell-prefs.ts）。手机上展开是全屏。展开时从圆球的位置「长」成浮窗（clip-path 形变，
 // 260ms），收起时反过来缩回圆球。
+// 11-12 全量优化（Aaron 定）：窗口宽到 1280 起，展开的对话停靠成右边一栏（整高，页面让出位置，只调宽度）；窄一些的
+// 电脑窗口还是浮窗。
 // 顶栏切换主线、队友或群组；每条对话保留各自的草稿和附件。「问这一页」仍跟随当前页面。
 // 滚动位置、草稿、引用片在 state/ 里，收起再展开、切标签都不变。
 
@@ -76,6 +78,8 @@ function morphKeyframes(element: HTMLElement): Keyframe[] {
 export interface ChatDialogProps {
   /** 手机：全屏，没有拖动和调大小。 */
   fullscreen: boolean;
+  /** 宽窗口：停靠成右边一栏，整高、只能拖左边调宽（宽度和浮窗共用一个记住的值）。 */
+  docked?: boolean;
   frame: ChatFrame;
   onCollapse: () => void;
   onFrame: (frame: ChatFrame) => void;
@@ -83,6 +87,7 @@ export interface ChatDialogProps {
 
 export function ChatDialog(props: ChatDialogProps): ReactNode {
   const { fullscreen } = props;
+  const docked = props.docked === true && !fullscreen;
   const [dragFrame, setDragFrame] = useState<ChatFrame | null>(null);
   const dialog = useRef<HTMLElement>(null);
   const drag = useRef<DragState | null>(null);
@@ -116,7 +121,7 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
   };
 
   const begin = (grip: Grip, event: PointerEvent<HTMLElement>): void => {
-    if (fullscreen || event.button !== 0) {
+    if (fullscreen || event.button !== 0 || (docked && grip !== 'w')) {
       return;
     }
     if (grip === 'move' && (event.target as Element).closest('button, a, input, textarea') !== null) {
@@ -146,7 +151,9 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
   const keyResize = (event: KeyboardEvent<HTMLElement>): void => {
     const change: Record<string, Partial<ChatFrame>> = {
       ArrowLeft: { width: frame.width + KEY_STEP }, ArrowRight: { width: frame.width - KEY_STEP },
-      ArrowUp: { height: frame.height + KEY_STEP }, ArrowDown: { height: frame.height - KEY_STEP },
+      // 停靠着只有宽度可调。
+      ...(docked ? {}
+        : { ArrowUp: { height: frame.height + KEY_STEP }, ArrowDown: { height: frame.height - KEY_STEP } }),
     };
     const patch = change[event.key];
     if (patch !== undefined) {
@@ -162,14 +169,19 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
     }
   };
   const handlers = { onPointerMove: move, onPointerUp: end, onPointerCancel: end, onLostPointerCapture: end };
-  const style: CSSProperties = fullscreen ? {} : { width: frame.width, height: frame.height, right: frame.right,
-    bottom: frame.bottom };
+  const style: CSSProperties = fullscreen ? {} : docked ? { width: frame.width }
+    : { width: frame.width, height: frame.height, right: frame.right, bottom: frame.bottom };
 
   return (
     <aside ref={dialog} className="chat-dialog" data-fullscreen={fullscreen} data-dragging={dragFrame !== null}
+      data-docked={docked ? 'true' : undefined}
       data-hit-region="chat-dialog"
       style={style} aria-label="对话框" onKeyDown={onKey}>
-      {fullscreen ? null : (
+      {fullscreen ? null : docked ? (
+        <div className="chat-grip chat-grip-w" role="separator" tabIndex={0} aria-orientation="vertical"
+          aria-label="调整对话栏宽度（左右方向键）" aria-valuetext={`${frame.width}`}
+          onKeyDown={keyResize} onPointerDown={(event) => begin('w', event)} {...handlers} />
+      ) : (
         <>
           <div className="chat-grip chat-grip-n" aria-hidden="true" onPointerDown={(event) => begin('n', event)}
             {...handlers} />

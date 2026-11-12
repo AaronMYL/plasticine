@@ -209,8 +209,30 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
     expect(screen.getByRole('button', { name: '展开对话框' })).toBeTruthy();
   });
 
-  it('按住顶栏拖动挪位置、拖左上角调大小，松手记下来；键盘方向键也能调大小', async () => {
-    const app = await renderApp();
+  it('宽窗口：对话停靠在右边一栏，不能拖走，只调宽度（方向键、拖左边），记下来', async () => {
+    const app = await renderApp({ width: 1440 });
+    expect(chatColumn().getAttribute('data-docked')).toBe('true');
+    expect(chatColumn().style.width).toBe('420px');
+    expect(chatColumn().style.height).toBe('');
+    const head = chatColumn().querySelector('.chat-head') as HTMLElement;
+    fireEvent.pointerDown(head, { button: 0, pointerId: 1, clientX: 1200, clientY: 300 });
+    fireEvent.pointerMove(head, { pointerId: 1, clientX: 1000, clientY: 250 });
+    fireEvent.pointerUp(head, { pointerId: 1 });
+    expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ right: 24, bottom: 24 });
+    const grip = screen.getByRole('separator', { name: '调整对话栏宽度（左右方向键）' });
+    fireEvent.keyDown(grip, { key: 'ArrowLeft' });
+    fireEvent.keyDown(grip, { key: 'ArrowUp' });
+    expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ width: 436, height: 640 });
+    fireEvent.pointerDown(grip, { button: 0, pointerId: 2, clientX: 1004, clientY: 300 });
+    fireEvent.pointerMove(grip, { pointerId: 2, clientX: 940, clientY: 300 });
+    fireEvent.pointerUp(grip, { pointerId: 2 });
+    expect(app.state.shellPrefs.store.get().chatFrame.width).toBe(500);
+  });
+
+  it('窄一些的电脑窗口：浮窗。按住顶栏拖动挪位置、拖左上角调大小，松手记下来；键盘方向键也能调大小', async () => {
+    const app = await renderApp({ width: 1200 });
+    fireEvent.click(screen.getByRole('button', { name: '展开对话框' }));
+    expect(chatColumn().getAttribute('data-docked')).toBeNull();
     const head = chatColumn().querySelector('.chat-head') as HTMLElement;
     fireEvent.pointerDown(head, { button: 0, pointerId: 1, clientX: 1200, clientY: 300 });
     fireEvent.pointerMove(head, { pointerId: 1, clientX: 1000, clientY: 250 });

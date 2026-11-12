@@ -12,7 +12,8 @@ function block(selector: string): Map<string, string> {
     throw new Error(`tokens.css 里没有 ${selector}`);
   }
   const body = css.slice(start, css.indexOf('\n}', start));
-  return new Map([...body.matchAll(/^\s*(--[a-z0-9-]+):\s*([^;]+);/gm)].map((match) => [match[1] ?? '', match[2] ?? '']));
+  return new Map([...body.matchAll(/^\s*(--[a-z0-9-]+):\s*([^;]+);/gm)]
+    .map((match) => [match[1] ?? '', match[2] ?? '']));
 }
 
 function luminance(hex: string): number {
@@ -73,7 +74,8 @@ describe('主题预设', () => {
   });
 
   it('选主题：写 data-palette（暖纸不写），theme-color 换成这套的底色，记在这台设备', () => {
-    for (const [media, content] of [['(prefers-color-scheme: light)', '#FAF8F4'], ['(prefers-color-scheme: dark)', '#1C1B19']]) {
+    const metas = [['(prefers-color-scheme: light)', '#FAF8F4'], ['(prefers-color-scheme: dark)', '#1C1B19']];
+    for (const [media, content] of metas) {
       const meta = document.createElement('meta');
       meta.name = 'theme-color';
       meta.setAttribute('media', media ?? '');
@@ -95,7 +97,8 @@ describe('主题预设', () => {
   it('每套的底色和 tokens.css 对得上', () => {
     for (const palette of PALETTES) {
       const light = palette === 'paper' ? ':root' : `:root[data-palette='${palette}']`;
-      const dark = palette === 'paper' ? ":root[data-theme='dark']" : `:root[data-palette='${palette}'][data-theme='dark']`;
+      const dark = palette === 'paper' ? ":root[data-theme='dark']"
+        : `:root[data-palette='${palette}'][data-theme='dark']`;
       expect(block(light).get('--bg')).toBe(THEME_COLORS[palette].light.toLowerCase());
       expect(block(dark).get('--bg')).toBe(THEME_COLORS[palette].dark.toLowerCase());
     }

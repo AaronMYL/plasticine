@@ -33,28 +33,28 @@ it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', a
   expect(window.location.hash).toMatch(/^#\/plasticine\/group\//);
 });
 
-it('手机Plasticine根页是主线、队友、群组名单，点主线才进入聊天', async () => {
+it('手机 Plasticine 根页直接是主线；「队友和群组」打开名单，点队友进它的对话，返回回到主线', async () => {
   await renderApp({ width: 390, hash: '#/plasticine' });
-  expect(await screen.findByRole('heading', { name: 'Plasticine' })).toBeTruthy();
-  expect(screen.queryByRole('textbox', { name: '问一句' })).toBeNull();
-  fireEvent.click(screen.getByRole('link', { name: 'Plasticine 主线' }));
   expect(await screen.findByRole('textbox', { name: '问一句' })).toBeTruthy();
-  expect(window.location.hash).toBe('#/plasticine/main');
-  fireEvent.click(screen.getByRole('button', { name: '返回队友列表' }));
-  expect(await screen.findByRole('heading', { name: 'Plasticine' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '队友和群组' }));
+  const roster = await screen.findByRole('dialog', { name: '队友和群组' });
+  expect(within(roster).getByRole('link', { name: 'Plasticine 主线' })).toBeTruthy();
+  expect(within(roster).getByRole('heading', { name: '队友' })).toBeTruthy();
 });
 
 it('手机名单的记忆入口打开目录并能返回', async () => {
   await renderApp({ width: 390, hash: '#/plasticine' });
+  fireEvent.click(await screen.findByRole('button', { name: '队友和群组' }));
   fireEvent.click(await screen.findByRole('link', { name: '记忆' }));
   expect(await screen.findByRole('heading', { name: '记忆' })).toBeTruthy();
   expect(screen.queryByText('记忆暂时不能在手机打开。')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: '回到上一层' }));
-  expect(await screen.findByRole('heading', { name: 'Plasticine' })).toBeTruthy();
+  expect(await screen.findByRole('textbox', { name: '问一句' })).toBeTruthy();
 });
 
 it('Soul 并进记忆的「规则」（11-11）：名单底下只有「记忆」；旧地址打开规则', async () => {
   await renderApp({ width: 390, hash: '#/plasticine' });
+  fireEvent.click(await screen.findByRole('button', { name: '队友和群组' }));
   expect(await screen.findByRole('link', { name: '记忆' })).toBeTruthy();
   expect(screen.queryByRole('link', { name: 'Soul' })).toBeNull();
   window.location.hash = '#/plasticine/soul';
