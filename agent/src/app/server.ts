@@ -5,6 +5,7 @@ import { errorCategory, safeLog } from '../shared-log.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { ApiError, toApiError, unauthorized } from './api-error.ts';
 import { authenticate } from './auth.ts';
+import { pickEncoding, sensitivePath } from './compression.ts';
 import type { AppDeps, HandlerResult } from './context.ts';
 import { sendBytes, sendJson } from './http.ts';
 import { responseTextPolicy } from './outbound-policy.ts';
@@ -57,7 +58,8 @@ async function handle(deps: AppDeps, req: IncomingMessage, res: ServerResponse):
     } else {
       const body = result.body ?? null;
       const policy = responseTextPolicy(pathname, body, deps.state);
-      sendJson(res, result.status, body, result.headers ?? {}, policy);
+      const encoding = sensitivePath(pathname) ? null : pickEncoding(req.headers['accept-encoding']);
+      sendJson(res, result.status, body, result.headers ?? {}, policy, encoding);
     }
   } catch (error) {
     writeError(deps, pathname, res, error);

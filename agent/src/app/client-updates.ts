@@ -1,12 +1,13 @@
-import { ClientUpdateDecisionSchema } from '../../shared/api/index.ts';
+import { ClientUpdateDecisionSchema, clientVersionOf } from '../../shared/api/index.ts';
 import { param, requireAuth, type RequestContext, type Reply } from './context.ts';
 import { readJsonBodyWithDigest } from './http.ts';
 import { idempotent } from './idempotency.ts';
 import { checkInput } from './validate.ts';
+/** GET /v2/client-version：只回界面要比的版本号那几样（11-12：整份清单约 870 KB，不再每次都传）。 */
 export function listClientUpdates(context: RequestContext): Reply {
   requireAuth(context);
   context.deps.clientUpdates.scan();
-  return { status: 200, body: context.deps.clientUpdates.view(), headers: { 'Cache-Control': 'no-store' } };
+  return { status: 200, body: clientVersionOf(context.deps.clientUpdates.view()) };
 }
 export async function decideClientUpdate(context: RequestContext): Promise<Reply> {
   requireAuth(context);

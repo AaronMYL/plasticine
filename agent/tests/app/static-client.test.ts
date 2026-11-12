@@ -98,3 +98,40 @@ test('只接 GET / HEAD，别的方法回 405', async (t) => {
   const post = await fetch(`${served.url}/`, { method: 'POST', body: '{}' });
   assert.equal(post.status, 405);
 });
+
+test('打包时压好的 .br / .gz：按请求头挑一份发，类型照原文件，带 Vary', async (t) => {
+  const directory = clientBuild(t);
+  const { brotliCompressSync, gzipSync, brotliDecompressSync } = await import('node:zlib');
+  const source = 'console.log("中文");'.repeat(200);
+  writeFileSync(join(directory, 'assets', 'big-9f8e.js'), source);
+  writeFileSync(join(directory, 'assets', 'big-9f8e.js.br'), brotliCompressSync(source));
+  writeFileSync(join(directory, 'assets', 'big-9f8e.js.gz'), gzipSync(source));
+  const served = await serve(t, directory);
+  const http = await import('node:http');
+  const get = (encoding: string): Promise<{ headers: Record<string, string | string[] | undefined>; body: Buffer }> =>
+    new Promise((resolve, reject) => {
+      http.get(`${served.url}/assets/big-9f8e.js`, { headers: { 'accept-encoding': encoding } }, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => resolve({ headers: res.headers, body: Buffer.concat(chunks) }));
+      }).on('error', reject);
+    });
+  const br = await get('gzip, br');
+  assert.equal(br.headers['content-encoding'], 'br');
+  assert.match(String(br.headers['content-type']), /^text\/javascript/);
+  assert.match(String(br.headers['vary']), /accept-encoding/i);
+  assert.equal(br.headers['cache-control'], 'public, max-age=31536000, immutable');
+  assert.equal(brotliDecompressSync(br.body).toString(), source);
+  const gz = await get('gzip');
+  assert.equal(gz.headers['content-encoding'], 'gzip');
+  const plain = await get('identity');
+  assert.equal(plain.headers['content-encoding'], undefined);
+  assert.equal(plain.body.toString(), source);
+});
+
+test('没有压好的那一份就发原样', async (t) => {
+  const served = await serve(t, clientBuild(t));
+  const response = await fetch(`${served.url}/assets/app-1a2b.js`, { headers: { 'accept-encoding': 'br' } });
+  assert.equal(response.headers.get('content-encoding'), null);
+  assert.equal(await response.text(), 'console.log("中文");');
+});

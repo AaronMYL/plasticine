@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http';
 import { cleanOutboundJson, type PreserveOutboundField } from '../outbound.ts';
 import { ApiError } from './api-error.ts';
+import { compressText, type Encoding } from './compression.ts';
 import { MAX_BODY_BYTES } from './config.ts';
 
 export const JSON_TYPE = 'application/json; charset=utf-8';
@@ -14,6 +15,8 @@ export function sendJson(
   body: unknown,
   headers: OutgoingHttpHeaders = {},
   preserve?: PreserveOutboundField,
+  /** 浏览器收的压缩编码（server.ts 按请求头挑，带凭据的接口给 null）；不给就不压。 */
+  encoding: Encoding | null = null,
 ): void {
   if (status === 204) {
     res.writeHead(status, { 'cache-control': 'no-store', ...headers });
@@ -21,6 +24,19 @@ export function sendJson(
     return;
   }
   const text = JSON.stringify(cleanOutboundJson(body, preserve));
+  const packed = compressText(text, encoding);
+  if (packed !== null) {
+    res.writeHead(status, {
+      'content-type': JSON_TYPE,
+      'content-encoding': packed.encoding,
+      'content-length': packed.data.length,
+      'cache-control': 'no-store',
+      vary: 'accept-encoding',
+      ...headers,
+    });
+    res.end(packed.data);
+    return;
+  }
   res.writeHead(status, {
     'content-type': JSON_TYPE,
     'content-length': Buffer.byteLength(text),

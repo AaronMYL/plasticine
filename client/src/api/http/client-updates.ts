@@ -1,5 +1,5 @@
 import type { ClientUpdatesApi } from '../client.ts';
-import { ClientUpdatesResponseSchema, ClientUpdateSchema, type ClientUpdateDecision } from '../shared.ts';
+import { ClientUpdateSchema, ClientVersionSchema, type ClientUpdateDecision } from '../shared.ts';
 import type { Transport } from './transport.ts';
 export class HttpClientUpdates implements ClientUpdatesApi {
   private readonly transport: Transport;
@@ -10,8 +10,8 @@ export class HttpClientUpdates implements ClientUpdatesApi {
     return this.transport.request({
       method: 'GET',
       path: '/v2/client-version',
-      schema: ClientUpdatesResponseSchema,
-      what: '读取客户端发布记录',
+      schema: ClientVersionSchema,
+      what: '查新版本',
       lostAs: 'failed',
       ...(signal === undefined ? {} : { signal }),
     });

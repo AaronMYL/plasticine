@@ -21,12 +21,12 @@ export interface BackupsApi {
   getPreview(id: string, signal?: AbortSignal): Promise<RestorePreview>;
 }
 import type {
-  ClientUpdatesResponse,
+  ClientVersion,
   ClientUpdateDecision,
   ClientUpdate,
 } from './shared.ts';
 export interface ClientUpdatesApi {
-  list(signal?: AbortSignal): Promise<ClientUpdatesResponse>;
+  list(signal?: AbortSignal): Promise<ClientVersion>;
   decide(id: string, input: ClientUpdateDecision): Promise<ClientUpdate>;
 }
 import type {

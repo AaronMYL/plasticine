@@ -1,5 +1,12 @@
 import type { ClientUpdatesApi } from '../client.ts';
-import type { ClientUpdatesResponse, ClientUpdate, ClientUpdateDecision, ClientManifest } from '../shared.ts';
+import {
+  clientVersionOf,
+  type ClientManifest,
+  type ClientUpdate,
+  type ClientUpdateDecision,
+  type ClientUpdatesResponse,
+  type ClientVersion,
+} from '../shared.ts';
 import { ApiError } from '../errors.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeEventBus } from './event-bus.ts';
@@ -11,9 +18,9 @@ export class FakeClientUpdates implements ClientUpdatesApi {
     this.session = session;
     this.bus = bus;
   }
-  async list(): Promise<ClientUpdatesResponse> {
+  async list(): Promise<ClientVersion> {
     this.session.require();
-    return structuredClone(this.value);
+    return clientVersionOf(structuredClone(this.value));
   }
   async decide(_id: string, _input: ClientUpdateDecision): Promise<ClientUpdate> {
     this.session.require();

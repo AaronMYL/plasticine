@@ -1,10 +1,12 @@
 // 安装包里的实例自己发客户端构建（docs/install-packages.md）：用 Caddy 挡在前面的部署里这件事是 Caddy 做的（agent/deploy/Caddyfile），
 // Linux / Mac / Windows 的自托管实例没有 Caddy，由服务进程按同样的规则发 client/dist：/v2/* 交给接口，
 // /assets/* 长缓存，入口页 no-cache，其余路径回 index.html。只在设了 PLASTICINE_CLIENT_DIR 时挂上。
+// 11-12：打包时压好的 .br / .gz（client/build-compress.ts）按 Accept-Encoding 挑一份发，没有就发原样。
 
 import { readFile, stat } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { pickEncoding } from './compression.ts';
 
 type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 
@@ -71,13 +73,29 @@ function plain(res: ServerResponse, status: number, text: string, headers: Recor
   res.end(text);
 }
 
+const PACKED_SUFFIX = { br: '.br', gzip: '.gz' } as const;
+
+/** 压好的那一份：浏览器收、文件也在才给。 */
+async function packedVariant(req: IncomingMessage, path: string): Promise<{ path: string; encoding: string } | null> {
+  const encoding = pickEncoding(req.headers['accept-encoding']);
+  const order = encoding === 'br' ? (['br', 'gzip'] as const) : encoding === 'gzip' ? (['gzip'] as const) : [];
+  for (const name of order) {
+    const candidate = `${path}${PACKED_SUFFIX[name]}`;
+    if (await regularFile(candidate)) return { path: candidate, encoding: name };
+  }
+  return null;
+}
+
 async function sendFile(req: IncomingMessage, res: ServerResponse, path: string, cache: string): Promise<void> {
-  const data = await readFile(path);
+  const packed = await packedVariant(req, path);
+  const data = await readFile(packed === null ? path : packed.path);
   res.writeHead(200, {
     'content-type': TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream',
     'content-length': data.length,
     'cache-control': cache,
     'x-content-type-options': 'nosniff',
+    vary: 'accept-encoding',
+    ...(packed === null ? {} : { 'content-encoding': packed.encoding }),
   });
   res.end(req.method === 'HEAD' ? undefined : data);
 }

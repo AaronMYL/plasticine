@@ -56,6 +56,43 @@ export const ClientUpdatesResponseSchema = Type.Object(
   STRICT,
 );
 export type ClientUpdatesResponse = Static<typeof ClientUpdatesResponseSchema>;
+/**
+ * GET /v2/client-version（2026-11-12《首次使用解耦》）：界面只比版本号，不带整份资源清单（清单约 870 KB，原来每分钟
+ * 一个窗口传一份）。protocol 留着：界面要看新版本跟不跟自己的接口版本兼容。
+ */
+export const ClientVersionSchema = Type.Object(
+  {
+    current: Type.Union([
+      Type.Object(
+        {
+          buildId: ClientManifestSchema.properties.buildId,
+          builtAt: IsoTimeSchema,
+          protocol: ClientManifestSchema.properties.protocol,
+          summary: ClientManifestSchema.properties.summary,
+        },
+        STRICT,
+      ),
+      Type.Null(),
+    ]),
+    error: Type.Union([Type.String(), Type.Null()]),
+  },
+  STRICT,
+);
+export type ClientVersion = Static<typeof ClientVersionSchema>;
+
+/** 整份发布记录收成界面要的那几样。 */
+export function clientVersionOf(view: ClientUpdatesResponse): ClientVersion {
+  const current = view.current;
+  return {
+    current: current === null ? null : {
+      buildId: current.buildId,
+      builtAt: current.builtAt,
+      protocol: { ...current.protocol },
+      summary: current.summary,
+    },
+    error: view.error,
+  };
+}
 export const ClientUpdateDecisionSchema = Type.Object(
   {
     requestId: RequestIdSchema,

@@ -1,36 +1,31 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApi } from '../api/context.tsx';
 import { errorText } from '../api/errors.ts';
-import type { ClientUpdatesResponse } from '../api/shared.ts';
+import type { ClientVersion } from '../api/shared.ts';
 import { useLive } from '../live.tsx';
 import { useClientState } from '../state/context.tsx';
 import { useStore } from '../state/use-store.ts';
 import { hasUnsavedWork } from './unsaved-guard.ts';
 import { refreshBlockers, saveNotesForRefresh } from './refresh-notes.ts';
+import { documentVisibility, scheduleVersionChecks } from './version-checks.ts';
 declare const __PLASTICINE_BUILD_ID__: string;
 declare const __PLASTICINE_BUILT_AT__: string;
 export const CLIENT_BUILD_ID =
   typeof __PLASTICINE_BUILD_ID__ === 'string' ? __PLASTICINE_BUILD_ID__ : 'development';
 export const CLIENT_BUILT_AT = typeof __PLASTICINE_BUILT_AT__ === 'string' ? __PLASTICINE_BUILT_AT__ : null;
-const VERSION_POLL_MS = 60_000;
 export function useClientUpdates() {
   const api = useApi();
   const live = useLive();
-  const [value, setValue] = useState<ClientUpdatesResponse | null>(null);
+  const [value, setValue] = useState<ClientVersion | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
-    const reload = () => setRevision((previous) => previous + 1);
-    const stop = live.hub.on((event) => {
-      if (event.type === 'resync' || event.type === 'client.versionChanged') {
-        reload();
-      }
+    return scheduleVersionChecks({
+      check: () => setRevision((previous) => previous + 1),
+      onLiveEvent: (listener) => live.hub.on((event) => listener(event.type)),
+      ...documentVisibility(),
+      now: () => Date.now(),
     });
-    const timer = setInterval(reload, VERSION_POLL_MS);
-    return () => {
-      stop();
-      clearInterval(timer);
-    };
   }, [live]);
   useEffect(() => {
     const controller = new AbortController();
