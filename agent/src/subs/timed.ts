@@ -123,7 +123,7 @@ export class SubscriptionTimed {
       const slot = state.timedSlots.ensure(entry.slotId, entry.edition === null ? 'subscription' : 'review');
       const due = missedDue(entry.cadence, now, zone, graceMs);
       if (due === null || Date.parse(slot.createdAt) > due.getTime()
-        || coveredBy(slot.lastRunAt === null ? null : new Date(slot.lastRunAt), due)) {
+        || coveredBy(slot.lastRunAt === null ? null : new Date(slot.lastRunAt), due) || this.#wroteSince(entry, due)) {
         continue;
       }
       if (slot.nextAt !== null && Date.parse(slot.nextAt) <= now.getTime()) {
@@ -135,6 +135,13 @@ export class SubscriptionTimed {
       }
     }
     return caught;
+  }
+
+  /** 这一期已经有了（手动「现在出一期」写的也算）：同一种的最新一期在本该出的那一刻前后写过。 */
+  #wroteSince(entry: Entry, due: Date): boolean {
+    const latest = this.#options.state.spaces.issues(entry.subscription.id)
+      .find((space) => (space.edition ?? null) === entry.edition);
+    return latest !== undefined && coveredBy(new Date(latest.updatedAt), due);
   }
 
   /** 订阅的线一轮停下：记上次结果；回顾做成了，把「值得跟进」提成建议。 */

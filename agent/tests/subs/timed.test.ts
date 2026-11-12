@@ -184,3 +184,18 @@ test('心跳查漏发：本该出、过了一小时没出的补一期；出过�
   assert.equal(after?.nextAt, new Date('2026-11-13T08:00:00+08:00').toISOString());
   assert.deepEqual(timed.catchUp(now.at, 60 * 60_000), []);
 });
+
+test('心跳查漏发：手动「现在出一期」已经写了这一期，不再补', () => {
+  // 测试库的时钟停在 10-27 16:00（北京）：这时写的一期，算 10-28 08:00 那一期出过了（前后 20 小时内）。
+  ensureReviewSubscription(t.state, 'Asia/Shanghai');
+  const now = { at: new Date('2026-10-27T16:30:00+08:00') };
+  const { timed, lines } = setup(now);
+  timed.tick(now.at);
+  writeSpace(t.state, { title: '今天的信', subscriptionId: REVIEW_SUBSCRIPTION_ID, edition: 'daily',
+    genre: 'letter', html: '<p class="lt-lead">手动出的一期。</p><ul><li data-follow>把验收一节写完</li></ul>' }, 'ai');
+  const slot = t.state.timedSlots.require('review:daily');
+  t.state.timedSlots.update(slot.id, slot.version, { nextAt: new Date('2026-10-29T08:00:00+08:00').toISOString() });
+  now.at = new Date('2026-10-28T10:00:00+08:00');
+  assert.deepEqual(timed.catchUp(now.at, 60 * 60_000), []);
+  assert.equal(lines.opened.length, 0);
+});
