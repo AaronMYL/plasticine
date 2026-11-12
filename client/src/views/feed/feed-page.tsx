@@ -4,8 +4,8 @@
 // 抖音收藏的勾选清单在第二栏里再点一下「抖音收藏」或它的 ⋯。读失败就地说原因并给「再读一次」，手里有一份就照常显示那
 // 一份。手机没有第二栏：页头标题「阅读」，下面分段切信息流和图书馆，「筛选」抽屉里是同一份来源列表和 ⋯。
 
-import { useEffect, useState, type ReactNode } from 'react';
-import { COGNITION_PAGE_DEFAULT, type FeedNavSource } from '../../api/shared.ts';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import type { FeedNavSource, FeedSourcesResponse } from '../../api/shared.ts';
 import type { FeedItemView } from '../../api/types.ts';
 import { useLive } from '../../live.tsx';
 import type { ActionOp } from '../../state/action-ops.ts';
@@ -30,6 +30,15 @@ import { FeedTarget } from './feed-target.tsx';
 import './feed.css';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import { ReadingTabs } from './reading-tabs.tsx';
+import { COLLECT_AFTER_MS, MoreState, NewItemsPill, newCount, PullIndicator, scrollerOf, useAutoMore,
+  usePullRefresh } from './feed-pager.tsx';
+
+/** 来源最近一次去抓的时间（各来源 checkedAt 里最晚的）；一个都没抓过是 null。 */
+function lastCollect(sources: FeedSourcesResponse | null): number | null {
+  const times = [sources?.interests, sources?.blocked, sources?.others].flatMap((list) => list ?? [])
+    .map((source) => source.status?.checkedAt).filter((at): at is string => at !== undefined).map(Date.parse);
+  return times.length === 0 ? null : Math.max(...times);
+}
 
 const SEGMENT_LABELS: Readonly<Record<Exclude<FeedSegment, `source:${string}`>, string>> = {
   all: '信息流',
@@ -95,6 +104,32 @@ function FeedListPage(): ReactNode {
   const setDouyin = (open: boolean): void => feedUi.setDouyinOpen(open);
   // 手机（设计稿 Phone-Feed）：页头只有标题和「筛选」，分段和「加来源」收进筛选的抽屉。
   const [filtering, setFiltering] = useState(false);
+  const board = useRef<HTMLElement>(null);
+  const sentinel = useRef<HTMLDivElement>(null);
+  const [fresh, setFresh] = useState(0);
+  useAutoMore(sentinel, segment !== 'douyin' && data.status === 'ready' && data.nextOffset !== null
+    && !data.loadingMore && data.moreError === null, () => void live.feed.more());
+  const pull = usePullRefresh(board, async () => {
+    const before = new Set(live.feed.data.get().items.map((item) => item.id));
+    await live.feed.reload();
+    const added = newCount(before, live.feed.data.get().items);
+    const last = lastCollect(live.feed.sources.get().sources);
+    const collecting = last === null || Date.now() - last > COLLECT_AFTER_MS;
+    if (collecting) {
+      // 抓完有新的：往下读着时浮一条「n 条新内容」，在顶上的话新内容已经在最前面了。
+      void live.feedActions.refresh().then(() => {
+        const found = newCount(before, live.feed.data.get().items);
+        const top = (scrollerOf(board.current)?.scrollTop ?? 0) < 120;
+        if (found > added && !top) setFresh(found);
+      }, (cause: unknown) => console.warn('信息流后台去来源抓新内容没成', cause));
+    }
+    if (added > 0) return `${added} 条新内容`;
+    return collecting ? '正在去来源找新的' : '暂无新内容';
+  });
+  const jumpTop = (): void => {
+    setFresh(0);
+    scrollerOf(board.current)?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   useEffect(() => {
     live.feed.settleDismissed();
     live.feed.open();
@@ -154,26 +189,17 @@ function FeedListPage(): ReactNode {
         </p>
       )}
       {segment === 'douyin' ? <DouyinPage phone={phone} onSelect={() => setDouyin(true)} />
-        : <section className="feed-board" aria-label="条目">
+        : <section className="feed-board" aria-label="条目" ref={board}>
+        <NewItemsPill count={fresh} onJump={jumpTop} />
+        <PullIndicator phase={pull} />
         {loading ? <PageLoading /> : null}
         {data.status === 'ready' && data.items.length === 0 ? <p className="block-empty">{empty}</p>
           : null}
         <Stream items={data.items} dismissed={ui.dismissedIds} />
-        {data.moreError === null ? null : (
-          <p className="block-empty is-error" role="alert">
-            {data.moreError}
-          </p>
-        )}
-        {data.nextOffset === null ? null : (
-          <button
-            type="button"
-            className="text-button feed-more"
-            disabled={data.loadingMore}
-            onClick={() => void live.feed.more()}
-          >
-            {data.loadingMore ? '正在读…' : `再读 ${COGNITION_PAGE_DEFAULT} 条`}
-          </button>
-        )}
+        <div ref={sentinel} className="feed-sentinel" aria-hidden="true" />
+        {data.status !== 'ready' || data.items.length === 0 ? null
+          : <MoreState loading={data.loadingMore} end={data.nextOffset === null} error={data.moreError}
+            onRetry={() => void live.feed.more()} />}
       </section>}
       <Sheet open={filtering} variant="drawer" className="sheet-fit" title="筛选"
         onClose={() => setFiltering(false)}>
