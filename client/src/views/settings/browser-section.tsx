@@ -18,7 +18,7 @@ import { LoginImportSheet } from './login-import-sheet.tsx';
 import { loginImportRequested } from './login-import-request.ts';
 import { SectionHead } from './section-head.tsx';
 
-const LOCAL_TIP = '登录只存在这台 Mac 上，不进服务器';
+const LOCAL_TIP = '登录只存在这台电脑上，不进服务器';
 
 /** 月-日，按这台设备的时区（登录记在这台 Mac 上）。 */
 function day(iso: string | null): string {
@@ -50,13 +50,13 @@ export function BrowserSection(): ReactNode {
     }
     logins.sites().then((raw) => {
       if (!Value.Check(SiteLoginsSchema, raw)) {
-        throw new Error('Mac 回的登录清单格式不对');
+        throw new Error('客户端回的登录清单格式不对');
       }
       setSites(raw.sites);
       setProblem(null);
     }).catch((cause: unknown) => {
       console.warn('没读到登录着的网站', cause);
-      setProblem('没读到这台 Mac 上的登录，稍后再试。');
+      setProblem('没读到这台电脑上的登录，稍后再试。');
     });
   }, [logins]);
   useEffect(load, [load]);
@@ -67,7 +67,7 @@ export function BrowserSection(): ReactNode {
     }
   }, [requested, logins]);
   if (logins === null) {
-    return <p className="block-empty">登录只记在 Mac 上 Plasticine 的浏览器里，不进服务器；在 Mac 上打开这里看和导入。</p>;
+    return <p className="block-empty">登录只记在电脑上 Plasticine 的浏览器里，不进服务器；在电脑的客户端里打开这里看和导入。</p>;
   }
   const forget = (host: string): void => {
     logins.forget(host).then(load).catch((cause: unknown) => {

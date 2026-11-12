@@ -55,7 +55,7 @@ const INTERRUPT_TEXT: Readonly<Record<PushSwitchStatus, string>> = {
   checking: '正在看这台设备',
   working: '这台设备正在设置',
   on: '这台设备能收到',
-  native: '这台 Mac App 能收到',
+  native: '这台电脑的客户端能收到',
   unregistered: '这台设备订阅了但服务端还没收下',
   off: '这台设备收不到',
   denied: '这台设备收不到（通知被拒绝）',

@@ -14,7 +14,7 @@ import { useSettingsDraft } from './settings-dialog-context.ts';
 import './translate-settings.css';
 
 // 段头的说明：在哪里用、用词表做什么、改了什么时候生效。
-const TRANSLATE_NOTE = '在 Mac 的网页标签里点地址栏右边的「文A」翻译；只发段落文字，同一段再看不再花额度。\n'
+const TRANSLATE_NOTE = '在电脑客户端的网页标签里点地址栏右边的「文A」翻译；只发段落文字，同一段再看不再花额度。\n'
   + '用词表开着时，你的用词按记忆里的词表译。\n'
   + '保存后下一批译文生效，已经插在页面上的译文不变。';
 

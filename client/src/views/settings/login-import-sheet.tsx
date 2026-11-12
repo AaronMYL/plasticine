@@ -20,7 +20,7 @@ const NAMES: Readonly<Record<LoginSourceId, string>> = { chrome: 'Chrome', safar
 
 function detailOf(source: LoginSource): string {
   if (!source.available) {
-    return `这台 Mac 上没有 ${NAMES[source.id]} 的数据`;
+    return `这台电脑上没有 ${NAMES[source.id]} 的数据`;
   }
   if (source.needs === 'full_disk_access') {
     return '要你在系统设置里给一次「完全磁盘访问」';
@@ -60,14 +60,14 @@ export function LoginImportSheet({ logins, open, onClose, onImported }: {
         return;
       }
       if (!Value.Check(LoginSourcesSchema, raw)) {
-        throw new Error('Mac 回的导入来源格式不对');
+        throw new Error('客户端回的导入来源格式不对');
       }
       setSources(raw.sources);
       setFrom(raw.sources.find((source) => source.available)?.id ?? 'chrome');
     }).catch((cause: unknown) => {
       console.warn('没读到能从哪儿导入', cause);
       if (live) {
-        setFailed('没读到这台 Mac 上的浏览器，稍后再试。');
+        setFailed('没读到这台电脑上的浏览器，稍后再试。');
       }
     });
     return () => {
@@ -80,14 +80,14 @@ export function LoginImportSheet({ logins, open, onClose, onImported }: {
     // passwords 只为旧 App 对得上协议，永远是 false。
     logins.import({ from, passwords: false }).then((raw) => {
       if (!Value.Check(LoginImportResultSchema, raw)) {
-        throw new Error('Mac 回的导入结果格式不对');
+        throw new Error('客户端回的导入结果格式不对');
       }
       setPhase(raw.problem === null ? { kind: 'done', text: importSummary(raw) }
         : { kind: 'problem', text: raw.problem });
       onImported();
     }).catch((cause: unknown) => {
       console.warn('导入登录没成', cause);
-      setPhase({ kind: 'problem', text: '导入没成：Mac 那边出了错，稍后再试。' });
+      setPhase({ kind: 'problem', text: '导入没成：电脑那边出了错，稍后再试。' });
     });
   };
   return (

@@ -230,7 +230,7 @@ export class PushSwitch {
       hostNotify(event.ask.kindLabel, PUSH_BODY, '#/plasticine');
       this.notified.add(event.ask.id);
     } catch {
-      this.store.set({ status: 'native', message: 'Mac 通知没能发出，请在对话里查看待处理的卡。' });
+      this.store.set({ status: 'native', message: '系统通知没能发出，请在对话里查看待处理的卡。' });
     }
   }
 
@@ -248,7 +248,7 @@ export class PushSwitch {
       hostNotify(NOTICE_TITLE, brief, MAIN_THREAD_PATH.slice(1));
       this.notified.add(key);
     } catch {
-      this.store.set({ status: 'native', message: 'Mac 通知没能发出，请在和 Plasticine 的对话里查看。' });
+      this.store.set({ status: 'native', message: '系统通知没能发出，请在和 Plasticine 的对话里查看。' });
     }
   }
 

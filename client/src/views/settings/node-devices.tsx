@@ -11,6 +11,10 @@ import { RevealMore } from '../../shell/reveal-more.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { SectionHead } from './section-head.tsx';
 
+/** 这台电脑是什么：Mac 和 Windows 的桌面客户端是同一套，都列在这里。 */
+const PLATFORM_NAMES: Readonly<Partial<Record<NodeView['platform'], string>>> = { macos: 'Mac', windows: 'Windows',
+  linux: 'Linux' };
+
 export function NodeDevices(): ReactNode {
   const live = useLive();
   const nodes = useStore(live.devices.nodes);
@@ -35,7 +39,7 @@ export function NodeDevices(): ReactNode {
         {macs.map((node) => (
           <li key={node.id} className="system-row">
             <Icon name="mac" />
-            <span className="system-row-title">{node.name} · Mac App</span>
+            <span className="system-row-title">{node.name} · {PLATFORM_NAMES[node.platform] ?? '电脑'}</span>
             <span className="system-row-meta">{relativeTime(node.lastSeenAt, now)}</span>
             <RevealMore label={`「${node.name}」的更多操作`} actions={[{ icon: 'close', label: '撤销',
               onSelect: () => setConfirm(node) }]} />
@@ -44,7 +48,7 @@ export function NodeDevices(): ReactNode {
       </ul>
       {confirm === null ? null : (
         <div className="settings-confirm" role="alertdialog" aria-label={`撤销「${confirm.name}」`}>
-          <span className="settings-confirm-text">撤销后这台 Mac 不再替你做设备上的事。</span>
+          <span className="settings-confirm-text">撤销后这台电脑不再替你做设备上的事。</span>
           <button type="button" className="text-button text-button-quiet" disabled={busy}
             onClick={() => setConfirm(null)}>取消</button>
           <button type="button" className="primary-button button-small" disabled={busy}

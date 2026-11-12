@@ -53,7 +53,7 @@ afterEach(() => {
 describe('设置 · 浏览器', () => {
   it('不是 Mac App：整页一句话，说登录只在 Mac 上', () => {
     render(<BrowserSection />);
-    expect(screen.getByText(/登录只记在 Mac 上 Plasticine 的浏览器里/)).toBeTruthy();
+    expect(screen.getByText(/登录只记在电脑上 Plasticine 的浏览器里/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: '导入…' })).toBeNull();
   });
 
@@ -67,8 +67,8 @@ describe('设置 · 浏览器', () => {
       expect.stringContaining('console.cloud.tencent.com')]);
     expect(rows[0]!.textContent).toContain('11-02');
     expect(screen.getByText('只在这台 Mac')).toBeTruthy();
-    const lock = screen.getByRole('button', { name: '登录只存在这台 Mac 上，不进服务器' });
-    expect(lock.getAttribute('data-tip')).toBe('登录只存在这台 Mac 上，不进服务器');
+    const lock = screen.getByRole('button', { name: '登录只存在这台电脑上，不进服务器' });
+    expect(lock.getAttribute('data-tip')).toBe('登录只存在这台电脑上，不进服务器');
   });
 
   it('⋯ 里退出一个网站：删掉它的登录，列表跟着少一行', async () => {
