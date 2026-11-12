@@ -1,7 +1,7 @@
 // 抖音收藏的勾选清单（《优化清单》第 9 条，设计稿 Feed-Douyin，放在信息流的来源管理里）：上次同步 + 同步；收藏夹、
 // 搜标题和作者；每条一行：勾选、标题、作者 · 收藏日期、四格进度（已同步 → 已预览 → 已转写 → 已总结）；底部「已选 n 条」
-// +「处理选中的」。不全量处理：他勾哪几条才处理哪几条；视频直接下载转写（11-09 他定，ⓘ 里说）。Mac 不在线时取地址的活
-// 排着，这一行写「等 Mac 上线」。
+// +「处理选中的」。不全量处理：他勾哪几条才处理哪几条；视频直接下载转写（11-09 他定，ⓘ 里说）。电脑不在线时取地址的活
+// 排着，这一行写「等电脑上线」（Mac、Windows 的桌面客户端都能取）。
 
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { VIDEO_STAGE_LABELS, VIDEO_STAGES, type VideoWorkView } from '../../api/shared.ts';
@@ -17,7 +17,7 @@ import './douyin-sheet.css';
 const RUN_TEXT: Readonly<Record<VideoWorkView['run'], string | null>> = {
   idle: null,
   queued: '排着',
-  waiting_mac: '等 Mac 上线',
+  waiting_mac: '等电脑上线',
   running: '在处理',
   failed: '没做成',
 };
@@ -90,7 +90,7 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
   const left = data === null ? 0 : data.total - works.length;
   const waitingMac = data !== null && !data.macOnline
     && (sync?.state === 'waiting_mac' || works.some((work) => work.run === 'waiting_mac'));
-  const syncLabel = sync?.state === 'waiting_mac' ? '等 Mac 上线' : sync?.state === 'running' ? '正在同步'
+  const syncLabel = sync?.state === 'waiting_mac' ? '等电脑上线' : sync?.state === 'running' ? '正在同步'
     : sync?.lastAt == null ? '还没同步过' : `上次同步 ${dayText(sync.lastAt, timeZone) ?? ''}`;
   const folders = useMemo(() => data?.folders ?? [], [data]);
   return (
@@ -118,7 +118,7 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
               value={state.query} onChange={(event) => store.setQuery(event.target.value)} />
           </label>
         </div>
-        {waitingMac ? <p className="douyin-note" role="status">Mac 不在线：上线后自动去取。</p> : null}
+        {waitingMac ? <p className="douyin-note" role="status">电脑不在线：上线后自动去取。</p> : null}
         {sync?.state === 'failed' && sync.error !== null ? (
           <p className="douyin-note is-error" role="alert">{sync.error}</p>
         ) : null}
@@ -127,7 +127,7 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
           {state.status === 'loading' ? <p className="douyin-note">正在读收藏…</p> : null}
           {state.status === 'ready' && works.length === 0 && state.error === null ? (
             <p className="douyin-note">
-              {state.query === '' && state.folder === null ? '还没同步过收藏。点「同步」从 Mac 上取标题。' : '没有对得上的收藏。'}
+              {state.query === '' && state.folder === null ? '还没同步过收藏。点「同步」从电脑上取标题。' : '没有对得上的收藏。'}
             </p>
           ) : null}
           <ul className="douyin-list" aria-label="收藏">

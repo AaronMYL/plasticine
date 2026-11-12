@@ -91,7 +91,7 @@ describe('首页「今天」一节', () => {
     expect(screen.queryByRole('region', { name: '今天' })).toBeNull();
   });
 
-  it('Mac 不在线、缓存旧了：标题旁写几点同步的', async () => {
+  it('电脑不在线、缓存旧了：标题旁写几点同步的', async () => {
     await renderApp({ hash: '#/today', setup: ({ control }) => control.today.setCalendar(view({ macOnline: false,
       syncedAt: at(-180) })) });
     const today = await screen.findByRole('region', { name: '今天' });

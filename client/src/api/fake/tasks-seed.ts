@@ -38,8 +38,8 @@ export function timedSeed(now: Date): TimedRowView[] {
     row({ id: 'schedule:spark', source: 'schedule', title: '抖音续火花', summary: '每天 15:00 · 以你的名义发出',
       icon: 'clock', hue: 'rose', nextAt: null, last: { glyph: 'wait', text: '等你授权' }, enabled: false,
       canToggle: false, askId: 'ask-schedule-spark' }),
-    row({ id: 'schedule:douyin', source: 'schedule', title: '同步抖音收藏', summary: '每天 22:00 · 只拿标题，要 Mac 在线',
-      icon: 'play', hue: 'rose', nextAt: clock(now, 0, 22), last: { glyph: 'err', text: 'Mac 不在线' }, enabled: true }),
+    row({ id: 'schedule:douyin', source: 'schedule', title: '同步抖音收藏', summary: '每天 22:00 · 只拿标题，要电脑在线',
+      icon: 'play', hue: 'rose', nextAt: clock(now, 0, 22), last: { glyph: 'err', text: '电脑不在线' }, enabled: true }),
     row({ id: 'dream', source: 'dream', title: '做梦', summary: '每晚整理记忆', icon: 'moon', hue: 'olive',
       nextAt: clock(now, 1, 1), last: { glyph: 'done', text: '整理了 11 条' }, enabled: true }),
     row({ id: 'review:daily', source: 'review', title: '日报', summary: '每天 08:00 · 个人回顾', icon: 'sparkle',
@@ -67,7 +67,7 @@ export function teammatesSeed(): TeammateView[] {
       rowIds: ['subscription:neuro'], lineId: 'line-weekly' }),
     mate({ id: 'review', name: '回顾', icon: 'sparkle', hue: 'teal', glyph: 'idle', now: '早上 8:00 出了日报',
       rowIds: ['review:daily', 'review:weekly'] }),
-    mate({ id: 'schedule:douyin', name: '抖音同步', icon: 'play', hue: 'rose', glyph: 'pause', now: '等 Mac 上线',
+    mate({ id: 'schedule:douyin', name: '抖音同步', icon: 'play', hue: 'rose', glyph: 'pause', now: '等电脑上线',
       rowIds: ['schedule:douyin'] }),
   ];
 }

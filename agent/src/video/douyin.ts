@@ -23,11 +23,14 @@ const JOBS_PER_POLL_MAX = 20;
 const SINCE_IDS_MAX = 50;
 
 export const DOUYIN_ERROR_TEXT: Readonly<Record<NonNullable<DouyinReport['error']>['code'], string>> = {
-  signed_out: 'Mac 上的抖音没登录：在 Plasticine 浏览器里登录抖音后再同步。',
-  layout_changed: '抖音改版了，Mac 上读不到收藏，等更新。',
-  load_failed: 'Mac 上抖音没载出来，稍后再同步。',
+  signed_out: '电脑上的抖音没登录：在 Plasticine 浏览器里登录抖音后再同步。',
+  layout_changed: '抖音改版了，电脑上读不到收藏，等更新。',
+  load_failed: '电脑上抖音没载出来，稍后再同步。',
   not_found: '这条作品没了（删了或设了私密）。',
 };
+
+/** 装了桌面客户端、能领抖音活的电脑。 */
+const COMPUTER_PLATFORMS: ReadonlySet<string> = new Set(['macos', 'windows', 'linux']);
 
 export type DouyinState = Pick<StateService, 'videoWorks' | 'videoFolders' | 'videoMacJobs' | 'nodes'>;
 
@@ -58,10 +61,13 @@ export class DouyinFavorites {
     this.#changed = options.changed ?? (() => undefined);
   }
 
-  /** 他那台 Mac 在不在线（最近一分半来过）。 */
+  /**
+   * 他的电脑在不在线（最近一分半来过）。Mac 和 Windows 的桌面客户端是同一套壳，都会来领抖音的活
+   * （desktop/src/feeds/feed-runner.ts），所以哪台电脑在线都算；字段名 macOnline 是早先只有 Mac 时起的，线上格式不改。
+   */
   macOnline(): boolean {
     const since = this.#now().getTime() - NODE_ONLINE_MS;
-    return this.#state.nodes.list({ limit: 50 }).some((node) => node.platform === 'macos'
+    return this.#state.nodes.list({ limit: 50 }).some((node) => COMPUTER_PLATFORMS.has(node.platform)
       && node.revokedAt === null && Date.parse(node.lastSeenAt) >= since);
   }
 

@@ -11,7 +11,7 @@ describe('任务栏目', () => {
     const app = await renderApp({ hash: '#/tasks/timed', setup: ({ control }) => seedTasks(control.tasks, NOW) });
     expect(await screen.findByRole('heading', { name: '定时' })).toBeTruthy();
     const list = screen.getByRole('list', { name: '定时' });
-    expect(within(list).getByText('Mac 不在线')).toBeTruthy();
+    expect(within(list).getByText('电脑不在线')).toBeTruthy();
     expect((within(list).getByRole('switch', { name: '抖音续火花：开着' }) as HTMLInputElement).disabled).toBe(true);
     fireEvent.click(within(list).getByRole('switch', { name: '同步抖音收藏：开着' }));
     await waitFor(async () => {

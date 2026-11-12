@@ -22,7 +22,7 @@ function list(title: string, items: readonly string[]): string[] {
 /** 给模型看的结果。 */
 export function resultText(work: VideoWorkRow): string {
   if (work.run === 'waiting_mac') {
-    return `「${work.title}」排着：要他 Mac 上的抖音登录状态取下载地址，Mac 上线后自动接着做。不用再调。`;
+    return `「${work.title}」排着：要他电脑上的抖音登录状态取下载地址，电脑上线后自动接着做。不用再调。`;
   }
   if (work.run === 'failed') {
     return `「${work.title}」没解析成：${work.error ?? '原因没记下'}`;

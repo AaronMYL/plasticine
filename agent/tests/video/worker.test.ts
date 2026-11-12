@@ -225,3 +225,17 @@ test('同步：排给 Mac 翻收藏；交回按作品 ID 去重，done 才算同
   assert.equal(s.douyin.list({ folder: 'f1' }, 50, 0).works[0]?.title, '30 天把英语听力练到能看美剧');
   assert.equal(view.macOnline, false);
 });
+
+test('哪台电脑在线都算：Windows 的桌面客户端在线，就不写「等电脑上线」；手机和网页不算', () => {
+  const s = setup();
+  const at = new Date().toISOString();
+  let seq = 0;
+  const node = (platform: 'windows' | 'ios' | 'browser', name: string) => t.state.nodes.create({ name, platform,
+    appVersion: '2026.1112.1', protocolVersion: 1, capabilities: [], credentialHash: String(seq += 1).repeat(64),
+    pairingCodeId: `code-${name}`, pairedAt: at, lastSeenAt: at });
+  node('ios', '手机');
+  node('browser', '网页');
+  assert.equal(s.douyin.list({}, 50, 0).macOnline, false);
+  node('windows', '书房的电脑');
+  assert.equal(s.douyin.list({}, 50, 0).macOnline, true);
+});
