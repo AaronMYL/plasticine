@@ -12,6 +12,7 @@ import {
   OUTBOUND_LOG_PATH,
   ACCOUNT_HANDLES_PATH,
   ACCOUNT_OWN_URL_PATH,
+  ACCOUNT_WORK_LIMIT_PATH,
   DIRECT_OFFER_PATH,
   ACCOUNT_PASSWORD_PATH,
   ACCOUNT_PATH,
@@ -136,6 +137,7 @@ import { getDeviceKey, registerDeviceKey } from './device-keys.ts';
 import { listDevices, revokeDevice } from './devices.ts';
 import { getAccountState, handleAvailability, patchAccount, setAccountPassword } from './account.ts';
 import { getOwnUrl, putOwnUrl } from './own-url.ts';
+import { getWorkLimit, putWorkLimit } from './work-limit.ts';
 import { directOffer } from './direct-offer.ts';
 import { setupAccount } from './account-setup.ts';
 import { localLogin, passwordLogin } from './password-session.ts';
@@ -239,6 +241,8 @@ export const ROUTES: readonly Route[] = [
   { method: 'PATCH', path: ACCOUNT_PATH, auth: true, handler: patchAccount },
   { method: 'GET', path: ACCOUNT_OWN_URL_PATH, auth: true, handler: getOwnUrl },
   { method: 'PUT', path: ACCOUNT_OWN_URL_PATH, auth: true, handler: putOwnUrl },
+  { method: 'GET', path: ACCOUNT_WORK_LIMIT_PATH, auth: true, handler: getWorkLimit },
+  { method: 'PUT', path: ACCOUNT_WORK_LIMIT_PATH, auth: true, handler: putWorkLimit },
   { method: 'POST', path: DIRECT_OFFER_PATH, auth: true, handler: directOffer },
   { method: 'POST', path: PASSWORD_SESSION_PATH, auth: false, handler: passwordLogin },
   { method: 'POST', path: LOCAL_SESSION_PATH, auth: false, handler: localLogin },

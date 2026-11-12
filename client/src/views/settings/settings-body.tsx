@@ -26,6 +26,7 @@ import { NoticesSection } from './notices-section.tsx';
 import type { PushSwitchStatus } from './push-switch.ts';
 import { SectionHead } from './section-head.tsx';
 import { SkillsSection } from './skills-section.tsx';
+import { WorkLimitSection } from './work-limit-section.tsx';
 import { SystemSection } from './system-section.tsx';
 import { TimeZoneSection } from './time-zone-section.tsx';
 import { TranslateSettingsSection } from './translate-settings-section.tsx';
@@ -135,6 +136,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
     case 'ai':
       return <>
         <ModelsSection />
+        <WorkLimitSection />
         <SkillsSection />
         <ToolSwitches />
       </>;

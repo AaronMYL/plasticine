@@ -36,7 +36,8 @@ export interface KernelOptions {
   later?: Later;
   /** Plasticine 写给他的网页地址（app/public-url.ts，按需取：入网、改地址后不用重启）。 */
   publicUrl?: () => string;
-  maxBackground?: number;
+  /** 后台线同时跑几条：给数就是固定的，给函数就每次排队时现算（设置里可调、自动按机器算）。 */
+  maxBackground?: number | (() => number);
   /**
    * 要出卡、等他答的业务工具（起草定时卡）：内核把自己等卡的那一套交给它们，答了照 ask_user 一样接着跑。
    */

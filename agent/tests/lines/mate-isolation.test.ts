@@ -116,7 +116,8 @@ test('队友的读取和对话检索不越过独立对话，仍可读所属群�
   } finally { await h.close(); }
 });
 
-test('两个队友回合与普通后台共占三席，停用会中止本人并保留待办，不启动排队队友', async () => {
+// 11-12（Aaron 定）：和队友直接说话不占后台位置，三位队友和一条后台线同时在跑。
+test('队友回合不占后台位置；停用会中止本人并保留排着的话，不接着发', async () => {
   const gate = deferred<string>();
   const started: string[] = [];
   const h = await startKernel({ tools: [slowTool(() => gate.promise, started)] });
@@ -124,14 +125,16 @@ test('两个队友回合与普通后台共占三席，停用会中止本人并�
     const mates = new Mates(h.handle.state, () => h.kernel);
     const a = mates.create(draft);
     const b = mates.create({ ...draft, name: '文字编辑' });
-    const c = mates.create({ ...draft, name: '排队队友' });
-    h.respond(['甲', '乙', '后台'].map((what) => call('slow', { what }, `slow-${what}`)));
+    const c = mates.create({ ...draft, name: '第三位队友' });
+    h.respond(['甲', '乙', '后台', '丙'].map((what) => call('slow', { what }, `slow-${what}`)));
     h.kernel.send(a.lineId, { text: '整理' });
     h.kernel.send(b.lineId, { text: '编辑' });
     h.kernel.open({ title: '普通后台', goal: '核对', parentLineId: MAIN_LINE_ID, projectId: null });
+    h.kernel.send(c.lineId, { text: '开始' });
+    await until(() => started.length === 4, '四条都开跑了');
+    assert.equal(h.kernel.view(c.lineId).status, 'running');
+    // 它还在跑时又说一句：排着。
     h.kernel.send(c.lineId, { text: '等待' });
-    await until(() => started.length === 3, '三席已占满');
-    assert.equal(h.kernel.view(c.lineId).status, 'queued');
     mates.update(c.id, { version: c.version, disabled: true });
     mates.update(a.id, { version: a.version, disabled: true });
     h.respond(Array.from({ length: 5 }, () => fauxAssistantMessage('完成')));
@@ -140,7 +143,7 @@ test('两个队友回合与普通后台共占三席，停用会中止本人并�
     assert.equal(h.kernel.view(a.lineId).status, 'paused');
     assert.equal(h.kernel.view(c.lineId).status, 'paused');
     assert.equal(h.handle.state.lineQueue.queued(c.lineId).length, 1);
-    assert.deepEqual(started, ['甲', '乙', '后台']);
+    assert.deepEqual(started, ['甲', '乙', '后台', '丙']);
   } finally { gate.resolve('完成'); await h.close(); }
 });
 

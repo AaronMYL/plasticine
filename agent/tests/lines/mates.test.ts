@@ -65,7 +65,7 @@ test('队友保持独立对话，交接回发起处，停用后不接受新工�
   } finally { await h.close(); }
 });
 
-test('队友与后台工作合计最多三轮，空位释放后自动接上；模型和授权主体分别继承', async () => {
+test('和队友直接说话不占后台位置，四位同时开始；模型和授权主体分别继承', async () => {
   const gate = deferred<string>();
   const started: string[] = [];
   const h = await startKernel({ tools: [slowTool(() => gate.promise, started)] });
@@ -75,9 +75,10 @@ test('队友与后台工作合计最多三轮，空位释放后自动接上；�
     h.respond([0, 1, 2, 3].map((i) => fauxAssistantMessage([
       fauxToolCall('slow', { what: `工作${i}` }, { id: `work-${i}` })], { stopReason: 'toolUse' })));
     for (const mate of all) h.kernel.send(mate.lineId, { text: '开始整理' });
-    await until(() => started.length === 3, '前三位已开始');
-    assert.equal(h.kernel.view(all[3]!.lineId).status, 'queued');
-    assert.equal(h.purposes.filter((purpose) => purpose === 'main').length, 3);
+    // 11-12（Aaron 定）：和队友直接说话不占后台位置——人在等它回话，四位都马上开始。
+    await until(() => started.length === 4, '四位都已开始');
+    assert.equal(h.kernel.view(all[3]!.lineId).status, 'running');
+    assert.equal(h.purposes.filter((purpose) => purpose === 'main').length, 4);
     h.respond(Array.from({ length: 8 }, () => fauxAssistantMessage('整理完成。')));
     gate.resolve('资料已就绪');
     await h.kernel.settled();

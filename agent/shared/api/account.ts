@@ -21,6 +21,7 @@ export const PASSWORD_SESSION_PATH = `${API_PREFIX}/session/password`;
 export const LOCAL_SESSION_PATH = `${API_PREFIX}/session/local`;
 /** GET / PUT（要登录）：「我自己的网址」——经自己的隧道或反向代理在别的设备上打开这份 Plasticine。 */
 export const ACCOUNT_OWN_URL_PATH = `${ACCOUNT_PATH}/own-url`;
+export const ACCOUNT_WORK_LIMIT_PATH = `${ACCOUNT_PATH}/work-limit`;
 
 /** 壳给本机本体的令牌放在这个请求头里；只在 127.0.0.1 上认。 */
 export const LOCAL_TOKEN_HEADER = 'x-plasticine-local-token';
@@ -137,3 +138,20 @@ export type OwnUrlRequest = OwnUrlView;
 
 /** 欢迎消息下面的「开始」（schema 在 shared/welcome-start.ts：线的视图也要用，放在不引别的文件的那一份里）。 */
 export { WelcomeStartSchema, type WelcomeStart } from '../welcome-start.ts';
+
+/**
+ * 同时做几件事（设置 · AI，11-12 全量优化）：GET / PUT /v2/account/work-limit。setting 是他选的（'auto' 或 1–8），
+ * effective 是现在实际的上限（自动时按这台机器算出来的）。等他回答的事、替别人答话、和队友直接说话都不占位置。
+ */
+export const WORK_LIMIT_AUTO = 'auto';
+export const WORK_LIMIT_MAX = 8;
+export const WorkLimitSettingSchema = Type.Union([Type.Literal(WORK_LIMIT_AUTO),
+  Type.Integer({ minimum: 1, maximum: WORK_LIMIT_MAX })]);
+export type WorkLimitSetting = Static<typeof WorkLimitSettingSchema>;
+export const WorkLimitViewSchema = Type.Object({
+  setting: WorkLimitSettingSchema,
+  effective: Type.Integer({ minimum: 1 }),
+}, { additionalProperties: false });
+export type WorkLimitView = Static<typeof WorkLimitViewSchema>;
+export const WorkLimitRequestSchema = Type.Object({ setting: WorkLimitSettingSchema }, { additionalProperties: false });
+export type WorkLimitRequest = Static<typeof WorkLimitRequestSchema>;

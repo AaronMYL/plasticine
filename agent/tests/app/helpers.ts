@@ -162,7 +162,8 @@ export async function startTestApp(steps: TextStep[] = [], options: TestAppOptio
     stateDirectory: directory,
     ...(options.nodeTransport === undefined ? {} : { nodeTransport: options.nodeTransport }),
     network: { autoSync: false, responder: false, ...options.network },
-    lines: { models: source, ...options.lines },
+    // 机器的样子固定住：自动 = 3 条（2 核、不忙），不随跑测试的机器变。
+    lines: { models: source, machineLoad: () => ({ cores: 2, load1: 0, freeRatio: 0.5 }), ...options.lines },
     ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels(state) }),
     localToken: options.localToken ?? null,
   });

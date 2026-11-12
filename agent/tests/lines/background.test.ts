@@ -1,4 +1,4 @@
-// 第二级：后台线。开条线去做 → 它自己跑 → 做完把最后那段话贴回发起它的线；同时在跑的最多 3 条，多的排队。
+// 第二级：后台线。开条线去做 → 它自己跑 → 做完把最后那段话贴回发起它的线；同时在跑的有上限（默认 3 条，设置里可调），多的排队。
 
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
@@ -245,6 +245,32 @@ test('替别人答话的封闭线不排在长任务后面：三条慢任务占�
   const reply = h.kernel.open({ title: '回 @xiaolin', goal: '他在家吗？', projectId: null, parentLineId: null,
     sealedPrompt: '只替主人答这一个问题。' });
   await until(() => h.kernel.answer(reply.id) !== null, '封闭线马上答完');
+  for (const gate of gates) {
+    gate.resolve('好');
+  }
+  await h.kernel.settled();
+});
+
+test('上限是现算的：调大了，排着队的线接着开跑，不用等谁做完', async () => {
+  const gates: Deferred<string>[] = [deferred(), deferred()];
+  let next = 0;
+  let limit = 1;
+  const started: string[] = [];
+  const h = await harness({ extra: { maxBackground: () => limit },
+    tools: [slowTool(() => gates[next++]?.promise ?? Promise.resolve('多余'), started)] });
+  scriptByLine(h, Object.fromEntries(['甲', '乙'].map((title) => [`标题「${title}」`, [
+    fauxAssistantMessage([fauxToolCall('slow', { what: title }, { id: `slow-${title}` })], { stopReason: 'toolUse' }),
+    fauxAssistantMessage(`${title}做完了`),
+  ]])));
+  const first = h.kernel.spawn('main', { title: '甲', goal: '做甲', projectId: null });
+  const second = h.kernel.spawn('main', { title: '乙', goal: '做乙', projectId: null });
+  await until(() => started.length === 1, '第一条开跑');
+  assert.equal(h.kernel.view(second.id).status, 'queued');
+  assert.equal(h.kernel.backgroundLimit(), 1);
+  limit = 2;
+  h.kernel.reschedule();
+  await until(() => started.length === 2, '调大以后第二条开跑');
+  assert.equal(h.kernel.view(first.id).status, 'running');
   for (const gate of gates) {
     gate.resolve('好');
   }

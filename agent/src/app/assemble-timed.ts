@@ -73,7 +73,7 @@ export function assembleTimed(parts: TimedParts): TimedAssembly {
     ...(parts.calendar === undefined ? {} : { calendar: parts.calendar }),
     newId: () => `item-${randomUUID().slice(0, 8)}` });
   const text = parts.text;
-  const dreamNight = new DreamNight({ state, now, zone, changed,
+  const dreamNight = new DreamNight({ state, now, zone, changed, limit: () => parts.lines().backgroundLimit(),
     dreamer: () => (text === null ? null : new Dreamer({ state, models: text, skills: dreamSkills(parts.skills),
       now })) });
   for (const provider of [...subscriptions.providers(), heartbeat.provider(), dreamNight.provider()]) {

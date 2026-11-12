@@ -29,6 +29,8 @@ export interface DreamNightOptions {
   now: () => Date;
   zone: () => string;
   changed?: (docIds: readonly string[]) => void;
+  /** 后台线同时跑几条（设置里可调）；不给按默认。 */
+  limit?: () => number;
 }
 
 function memoText(slot: TimedSlot, key: string): string | null {
@@ -70,7 +72,7 @@ export class DreamNight {
     if (nextAt > now.getTime() || this.#running !== null) {
       return;
     }
-    if (this.#busy() >= MAX_BACKGROUND_LINES) {
+    if (this.#busy() >= (this.#options.limit?.() ?? MAX_BACKGROUND_LINES)) {
       state.timedSlots.update(slot.id, slot.version, { nextAt: new Date(now.getTime() + BUSY_RETRY_MS).toISOString(),
         lastNote: '后台线满着，等一会儿再整理' });
       return;

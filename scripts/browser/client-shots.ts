@@ -26,6 +26,8 @@ const StepSchema = Type.Union([
   Type.Object({ clickText: Type.String({ minLength: 1 }), within: Type.Optional(Type.String({ minLength: 1 })) },
     { additionalProperties: false }),
   Type.Object({ hover: Type.String({ minLength: 1 }) }, { additionalProperties: false }),
+  /** 把这个元素滚到屏幕中间（长页面靠下的那一块）。 */
+  Type.Object({ scroll: Type.String({ minLength: 1 }) }, { additionalProperties: false }),
   Type.Object({ circle: Type.Literal('answer') }, { additionalProperties: false }),
 ]);
 export type ShotStep = Static<typeof StepSchema>;
@@ -120,6 +122,10 @@ async function runStep(page: Cdp, step: ShotStep): Promise<void> {
       ? { text: step.clickText }
       : { text: step.clickText, within: step.within };
     await until(page, locateShotElement(locator, true), `点「${step.clickText}」`);
+    return;
+  }
+  if ('scroll' in step) {
+    await page.evaluate(`document.querySelector(${JSON.stringify(step.scroll)})?.scrollIntoView({ block: 'center' })`);
     return;
   }
   if ('hover' in step) {

@@ -14,6 +14,8 @@ import type {
   AccountState,
   HandleAvailability,
   OwnUrlView,
+  WorkLimitSetting,
+  WorkLimitView,
   PasswordSessionRequest,
   SessionView,
   WelcomeStart,
@@ -59,6 +61,7 @@ export class FakeAccount implements AccountApi {
   private displayName = 'Alex';
   private failures = 0;
   private own: string | null = null;
+  private limit: WorkLimitSetting = 'auto';
   private readonly deps: FakeAccountDeps;
 
   constructor(deps: FakeAccountDeps) {
@@ -169,6 +172,17 @@ export class FakeAccount implements AccountApi {
     this.displayName = displayName;
     this.deps.network.rename(displayName);
     return this.snapshot();
+  }
+
+  async workLimit(): Promise<WorkLimitView> {
+    this.deps.session.require();
+    return { setting: this.limit, effective: this.limit === 'auto' ? 3 : this.limit };
+  }
+
+  async setWorkLimit(setting: WorkLimitSetting): Promise<WorkLimitView> {
+    this.deps.session.require();
+    this.limit = setting;
+    return this.workLimit();
   }
 
   async ownUrl(): Promise<OwnUrlView> {

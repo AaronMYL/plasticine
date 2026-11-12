@@ -10,6 +10,8 @@ import type {
   AccountState,
   HandleAvailability,
   OwnUrlView,
+  WorkLimitSetting,
+  WorkLimitView,
   PasswordSessionRequest,
   SessionView,
 } from './shared.ts';
@@ -33,4 +35,8 @@ export interface AccountApi {
   ownUrl(signal?: AbortSignal): Promise<OwnUrlView>;
   /** PUT /v2/account/own-url（要登录）：存一个 https 网址，null 清掉。 */
   setOwnUrl(ownUrl: string | null): Promise<OwnUrlView>;
+  /** GET /v2/account/work-limit（要登录）：同时做几件事（设置 · AI）。 */
+  workLimit(signal?: AbortSignal): Promise<WorkLimitView>;
+  /** PUT /v2/account/work-limit（要登录）：'auto' 或 1–8，马上生效。 */
+  setWorkLimit(setting: WorkLimitSetting): Promise<WorkLimitView>;
 }

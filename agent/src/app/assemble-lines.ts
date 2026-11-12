@@ -9,6 +9,7 @@ import { adaptLegacyTool, conversationSearchTool, forgetTool, LineKernel, legacy
   from '../lines/index.ts';
 import type { MessageWidget } from '../../shared/api/message-widgets.ts';
 import type { DriveOutcome, KernelOptions } from '../lines/index.ts';
+import { effectiveLimit, machineLoad, readWorkLimit, type MachineLoad } from '../lines/capacity.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import type { EventHub } from './event-hub.ts';
 
@@ -18,7 +19,10 @@ export interface LineAssembly {
   tools?: (parts: LineParts) => KernelTool[];
   compact?: Compactor;
   later?: Later;
+  /** 固定的上限（测试用）；不给就读设置（lines/capacity.ts）。 */
   maxBackground?: number;
+  /** 这台机器现在的样子（测试给固定的）。 */
+  machineLoad?: () => MachineLoad;
 }
 
 /** 旧工具在新内核里用到的那几样：注册表（取工具、看开关）、设备动作的权限门、干跑开关。 */
@@ -116,7 +120,8 @@ export function assembleLines(assembly: LineAssembly, parts: LineParts): LineKer
     publicUrl: parts.publicUrl,
     ...(parts.legacy === undefined ? {} : { submits: parts.legacy.submits }),
     ...(assembly.later === undefined ? {} : { later: assembly.later }),
-    ...(assembly.maxBackground === undefined ? {} : { maxBackground: assembly.maxBackground }),
+    maxBackground: assembly.maxBackground
+      ?? (() => effectiveLimit(readWorkLimit(parts.state), (assembly.machineLoad ?? machineLoad)())),
     ...(assembly.compact === undefined ? {} : { compact: assembly.compact }),
     ...(parts.turnEnded === undefined ? {} : { turnEnded: parts.turnEnded }),
     ...(parts.reported === undefined ? {} : { reported: parts.reported }),

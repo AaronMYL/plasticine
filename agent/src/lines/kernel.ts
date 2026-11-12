@@ -46,7 +46,7 @@ export class LineKernel implements LineControl, SideControl {
   readonly #state: KernelState;
   readonly #now: () => Date;
   readonly #later: Later;
-  readonly #max: number;
+  readonly #max: () => number;
   readonly #waits = new AnswerWaits();
   readonly #gate: HardLineGate;
   readonly #runners = new Map<string, LineRunner>();
@@ -60,7 +60,8 @@ export class LineKernel implements LineControl, SideControl {
     this.#state = options.state;
     this.#now = options.now ?? (() => new Date());
     this.#later = options.later ?? realLater;
-    this.#max = options.maxBackground ?? MAX_BACKGROUND_LINES;
+    const max = options.maxBackground ?? MAX_BACKGROUND_LINES;
+    this.#max = typeof max === 'function' ? max : () => max;
     const waiting = (lineId: string, on: boolean): void => this.#waiting(lineId, on);
     const shuttingDown = (): boolean => this.#stopping;
     const waitHost = { state: this.#state, desk: options.desk, waits: this.#waits, waiting, now: this.#now,
@@ -132,6 +133,16 @@ export class LineKernel implements LineControl, SideControl {
     if (main.status === 'idle') {
       this.#pump(main.id);
     }
+    this.#schedule();
+  }
+
+  /** 后台线现在最多同时跑几条（设置里可调；自动时按机器现算）。 */
+  backgroundLimit(): number {
+    return this.#max();
+  }
+
+  /** 上限改了：有空位就把排着的接上。 */
+  reschedule(): void {
     this.#schedule();
   }
 
@@ -580,7 +591,7 @@ export class LineKernel implements LineControl, SideControl {
     if (line.status === 'paused' && heldByUser(line)) {
       return false;
     }
-    if (limitedLine(line) && this.#activeBackground() >= this.#max) {
+    if (limitedLine(line) && this.#activeBackground() >= this.#max()) {
       this.#setStatus(lineId, 'queued', { pauseReason: null, pausedUntil: null });
       return false;
     }
@@ -607,7 +618,7 @@ export class LineKernel implements LineControl, SideControl {
     if (['queued', 'running', 'waiting', 'paused'].includes(line.status)) {
       return true;
     }
-    return limitedLine(line) && this.#activeBackground(line.id) >= this.#max;
+    return limitedLine(line) && this.#activeBackground(line.id) >= this.#max();
   }
 
   /**
@@ -679,7 +690,7 @@ export class LineKernel implements LineControl, SideControl {
     if (line.status === 'paused' || line.status === 'failed' || line.status === 'waiting') {
       return false;
     }
-    if (limitedLine(line) && this.#activeBackground() >= this.#max) {
+    if (limitedLine(line) && this.#activeBackground() >= this.#max()) {
       this.#setStatus(lineId, 'queued');
       return false;
     }
@@ -698,7 +709,7 @@ export class LineKernel implements LineControl, SideControl {
         || (line.status !== 'idle' && line.status !== 'queued')) {
         continue;
       }
-      if (limitedLine(line) && this.#activeBackground() >= this.#max) {
+      if (limitedLine(line) && this.#activeBackground() >= this.#max()) {
         continue;
       }
       if (this.#emptyQueued(line.id)) {
@@ -872,9 +883,9 @@ function workerLine(line: LineRow | undefined): boolean {
 }
 
 /**
- * 受执行位置上限管的线：队友回合和后台任务。替别人答话的封闭线不受限——只调一次模型、没有工具，
- * 排在长任务后面会让对面一直等不到回答。
+ * 受执行位置上限管的线：后台任务。替别人答话的封闭线不受限——只调一次模型、没有工具，排在长任务后面会让对面
+ * 一直等不到回答；和队友直接说话的那条对话线也不受限（11-12 Aaron 定：队友回合不占后台位置）——人在等着它回话。
  */
 function limitedLine(line: LineRow | undefined): boolean {
-  return workerLine(line) && line?.sealedPrompt === null;
+  return line?.kind === 'background' && line.sealedPrompt === null;
 }

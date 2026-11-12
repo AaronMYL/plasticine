@@ -86,7 +86,6 @@ import { heartbeatChecklistTool } from '../heartbeat/index.ts';
 import { cachedConflicts, CalendarSync, calendarTools } from '../calendar/index.ts';
 import { interestHit } from '../../shared/feed-order.ts';
 import { createVideo, publishToFeed, transcriberFromEnv, type Transcriber, type VideoMedia } from '../video/index.ts';
-import { MAX_BACKGROUND_LINES } from '../lines/index.ts';
 
 export interface AssembleOptions {
   state: StateService;
@@ -254,11 +253,11 @@ export function assembleApp(options: AssembleOptions): App {
     tunnel = new TunnelService({ ...tunnelSettings, stateDirectory: options.stateDirectory,
       relayUrl: () => network.relayUrl(), signer: () => network.signer(), now });
   }
-  // 第 9 条：视频解析。排进后台线的并发上限（3）里跑；总结好的抖音收藏进信息流。
+  // 第 9 条：视频解析。排进后台线的并发上限里跑；总结好的抖音收藏进信息流。
   const video = createVideo({ state, now, stateDirectory: options.stateDirectory, text,
     transcriber: options.transcriber === undefined ? transcriberFromEnv(process.env) : options.transcriber,
     ...(options.videoMedia === undefined ? {} : { media: options.videoMedia }),
-    slots: () => MAX_BACKGROUND_LINES
+    slots: () => late.get().backgroundLimit()
       - state.lines.withStatus(['running']).filter((line) => line.kind === 'background').length,
     interests: () => state.feedSources.all().filter((source) => source.kind === 'interest' && source.level !== 'off')
       .map((source) => source.label),
