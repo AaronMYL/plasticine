@@ -183,3 +183,31 @@ test('快速切换笔记：上一篇迟到的续写不出现在下一篇；续�
   await until(() => app.state.notes.readBody(app.state.notes.require(second)).includes('接着写'), '照常保存');
   await until(() => page.evaluate(`${GHOST} === '，第三次才给出来。'`), '下一次停笔重新要到续写');
 });
+
+// 11-12 Aaron 在 Mac 客户端 + 第三方输入法上复现并给了输入诊断：光标在文字中间组字时按退格删掉一个拼音字母，
+// ProseMirror 把这次 DOM 变化当成「像是按了退格」，补发一个退格键给各个键位表；TipTap 的键位处理不管成没成都发一个
+// 空事务，空事务让视图在正文还没跟上 DOM 的时候重画了正在组的那段字，组字被打断，剩下的拼音留在正文里。
+for (const [where, position] of [['文字中间', 9], ['段尾', 18]] as const) {
+  test(`组字中按退格删拼音（${where}）：组字不被打断，选字后正文里没有残留的拼音`, async (t) => {
+    const { app, page } = await start(t, Array.from({ length: 20 }, () => ''));
+    const id = await open(page, app, '前半句已经写好，后半句也已经写好。');
+    await page.evaluate(`(() => { window.ends = []; window.odd = 0;
+      ${EDITOR}.view.dom.addEventListener('compositionend', (event) => window.ends.push(event.data));
+      ${EDITOR}.on('transaction', ({ transaction }) => {
+        if (${EDITOR}.view.composing && !transaction.docChanged && !transaction.selectionSet) window.odd += 1; }); })(); 0`);
+    await page.evaluate(`${EDITOR}.chain().focus().setTextSelection(${position}).run()`);
+    await pause(250);
+    for (const text of ['n', 'ni', 'nih', 'niha', 'nihao', 'niha', 'nih', 'niha', 'nihao']) {
+      await page.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
+      await pause(60);
+    }
+    assert.equal(await page.evaluate(`${EDITOR}.view.composing`), true, '删了两个字母以后还在组字');
+    assert.deepEqual(await page.evaluate('window.ends'), [], '组字没有被提前结束');
+    assert.equal(await page.evaluate('window.odd'), 0, '组字期间没有空事务');
+    await page.send('Input.insertText', { text: '你好' });
+    await until(() => page.evaluate(`!${EDITOR}.view.composing`), '选字提交');
+    const expected = position === 9 ? '前半句已经写好，你好后半句也已经写好。' : '前半句已经写好，后半句也已经写好。你好';
+    assert.equal(await page.evaluate(`${EDITOR}.getText()`), expected);
+    await until(() => app.state.notes.readBody(app.state.notes.require(id)).trim() === expected, '保存的也是选好的字');
+  });
+}

@@ -3,7 +3,7 @@
 import { act, waitFor } from '@testing-library/react';
 import { Editor } from '@tiptap/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { noteComposing, trackComposition } from '../../../src/views/notes/note-composition.ts';
+import { emptyTransaction, noteComposing, trackComposition } from '../../../src/views/notes/note-composition.ts';
 import { noteExtensions } from '../../../src/views/notes/editor-extensions.ts';
 import { renderApp, seedNote } from '../../helpers.tsx';
 
@@ -41,6 +41,26 @@ describe('组字闸门', () => {
     expect(noteComposing(editor)).toBe(false);
     editor.destroy();
     expect(noteComposing(editor)).toBe(false);
+  });
+
+  it('组字期间空事务不放行（键位表没接手的退格发出来的那种），改正文、改选区、带标记的照常', () => {
+    const editor = new Editor({ element: document.createElement('div'), extensions: noteExtensions(),
+      content: '前半句，后半句。', contentType: 'markdown' });
+    const seen: boolean[] = [];
+    editor.on('transaction', ({ transaction }) => seen.push(emptyTransaction(transaction)));
+    editor.view.dispatch(editor.state.tr);
+    expect(seen).toEqual([true]);
+    editor.view.dom.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    expect(noteComposing(editor)).toBe(true);
+    // TipTap 的命令没做成也会发出它的事务：组字时这条空事务到不了视图。
+    expect(editor.commands.undoInputRule()).toBe(false);
+    editor.view.dispatch(editor.state.tr);
+    expect(seen).toEqual([true]);
+    editor.view.dispatch(editor.state.tr.insertText('字', 3));
+    editor.view.dispatch(editor.state.tr.setMeta('addToHistory', false));
+    expect(seen).toEqual([true, false, false]);
+    expect(editor.getText()).toBe('前半字句，后半句。');
+    editor.destroy();
   });
 
   it('打字引起的重新渲染不再反复重设编辑器配置', async () => {

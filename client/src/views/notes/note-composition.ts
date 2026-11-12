@@ -4,7 +4,8 @@
 // 组字结束后它还会多留一小会儿。所以两个都看：自己按 compositionstart / compositionend 记一份，再加上 view.composing，
 // 任何一个说在组字就算在组字。组字期间不许有改正文、改选区、改装饰的事务，也不保存、不换正文。
 
-import type { Editor } from '@tiptap/core';
+import { Extension, type Editor } from '@tiptap/core';
+import type { Transaction } from '@tiptap/pm/state';
 
 const active = new WeakSet<Editor>();
 /** 输入法处理中的按键统一报这个键码。 */
@@ -38,4 +39,32 @@ export function trackComposition(editor: Editor, dom: HTMLElement): () => void {
     dom.removeEventListener('keydown', key);
     active.delete(editor);
   };
+}
+
+/**
+ * 组字期间不放行空事务（11-12 全量优化第 12 条，根因）。
+ * 输入法组字时按退格删掉一个拼音字母，ProseMirror 读到「只删不加」的 DOM 变化，会补发一个退格键问各个键位表要不要接手
+ * （prosemirror-view 的 readDOMChange）。TipTap 的命令不管成没成都会发出它那条事务，键位表没接手时发出来的就是空事务；
+ * 这时正文还没跟上 DOM，视图一刷新就把正在组的那段字照旧正文重画，输入法的组字被打断，剩下的拼音当成普通字留在正文里。
+ * 空事务本身什么都不改，组字期间直接丢掉；随后 ProseMirror 照常把这次删除记进正文。
+ */
+export const NoteCompositionGuard = Extension.create({
+  name: 'noteCompositionGuard',
+  // 排在所有扩展前面：别的扩展的 dispatchTransaction 也不该在组字时看到空事务。
+  priority: 1000,
+  dispatchTransaction({ transaction, next }) {
+    if (noteComposing(this.editor) && emptyTransaction(transaction)) {
+      return;
+    }
+    next(transaction);
+  },
+});
+
+/** 不改正文、不改选区、不改待用格式、不滚动，也没带任何标记的事务。 */
+export function emptyTransaction(transaction: Transaction): boolean {
+  if (transaction.docChanged || transaction.selectionSet || transaction.storedMarksSet || transaction.scrolledIntoView) {
+    return false;
+  }
+  const meta: unknown = Reflect.get(transaction, 'meta');
+  return typeof meta !== 'object' || meta === null || Object.keys(meta).length === 0;
 }

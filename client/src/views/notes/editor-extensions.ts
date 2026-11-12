@@ -11,6 +11,7 @@ import { Placeholder } from '@tiptap/extensions';
 import StarterKit from '@tiptap/starter-kit';
 import { cjkMarked } from '../../primitives/message/cjk-marked.ts';
 import { NoteCharts } from './note-chart.ts';
+import { NoteCompositionGuard } from './note-composition.ts';
 import { NoteInputRules } from './note-input-rules.ts';
 import { NoteMarkdown, NoteMarkdownClipboard } from './note-markdown.ts';
 import { currentAssetUrl } from '../../api/shared.ts';
@@ -29,6 +30,7 @@ export function noteExtensions(): AnyExtension[] {
     // 中文标点后的 **…** 认成加粗（和对话同一个解析器）；不然存回去时星号被转义，原文变了。
     NoteMarkdown.configure({ marked: cjkMarked }),
     NoteMarkdownClipboard,
+    NoteCompositionGuard,
     NoteInputRules,
     NoteCharts,
     NoteImage.configure({ inline: false, allowBase64: false }),
