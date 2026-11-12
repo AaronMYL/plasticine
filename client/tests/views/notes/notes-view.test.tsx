@@ -66,8 +66,8 @@ describe('笔记页', () => {
       editor.commands.focus('end');
       editor.commands.insertContent('，加一句');
     });
-    expect(screen.getByText('未保存')).toBeTruthy();
-    await waitFor(() => expect(screen.getByText('已保存')).toBeTruthy(), { timeout: 4000 });
+    expect(screen.getByLabelText(/^未保存/)).toBeTruthy();
+    await waitFor(() => expect(screen.getByLabelText(/^已保存/)).toBeTruthy(), { timeout: 4000 });
     expect((await app.api.notes.get('n1')).markdown).toContain('加一句');
   });
 

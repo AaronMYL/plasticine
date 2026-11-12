@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { NoteAssistRequest, NoteAssistView } from '../../../src/api/shared.ts';
 import { NOTE_INTERJECT_PAUSE_MS, NOTE_PREDICT_PAUSE_MS } from '../../../src/views/notes/note-suggestions.tsx';
 import { renderApp, seedNote, settle } from '../../helpers.tsx';
+import { aiOn, toggleAi } from './ai-switch.ts';
 
 /** 一次补充最长要等这么久：停顿 3 秒再加上假接口和渲染。 */
 const INTERJECT_WAIT_MS = NOTE_INTERJECT_PAUSE_MS + 1500;
@@ -37,13 +38,12 @@ function interjection(): Element | null {
 }
 
 function toggle(name: '续写' | '补充建议'): void {
-  fireEvent.click(screen.getByRole('switch', { name }));
+  toggleAi(name);
 }
 
 function turnOff(): void {
-  for (const name of ['续写', '补充建议']) {
-    const box = screen.getByRole<HTMLInputElement>('switch', { name });
-    if (box.checked) { fireEvent.click(box); }
+  for (const name of ['续写', '补充建议'] as const) {
+    if (aiOn(name)) { toggleAi(name); }
   }
 }
 

@@ -4,7 +4,7 @@
 
 import { currentComposer } from '../conversation/current-composer.ts';
 import { AiMark } from '../../shell/glyph.tsx';
-import { isAiFolder, isAiNote } from './ai-folder.ts';
+import { isAiNote } from './ai-folder.ts';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
@@ -18,11 +18,12 @@ import { restoreNote } from './note-restore.ts';
 import { useStore } from '../../state/use-store.ts';
 import { useTelemetry } from '../../telemetry.ts';
 import { noteExtensions } from './editor-extensions.ts';
-import { NoteSaver, type SaveStatus } from './note-saver.ts';
+import { NoteSaver } from './note-saver.ts';
 import { useNoteSync } from './use-note-sync.ts';
 import { NoteReview, type NoteProposal } from './note-review.tsx';
 import { NoteFormat } from './note-format.tsx';
 import { NoteActions } from './note-actions.tsx';
+import { SaveState } from './note-save-state.tsx';
 import { useScrollMargin, useStickyTools } from './use-sticky-tools.ts';
 import { NoteAi, type NoteRange } from './note-ai.tsx';
 import { NoteImport } from './note-import.tsx';
@@ -36,18 +37,12 @@ import { buildNoteQuote } from './note-quote.ts';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { locateContent } from '../../shell/locate-content.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 import { useRoute } from '../../shell/use-route.ts';
 import { useQuoteHandler } from '../../shell/quote-registry.ts';
 
-const STATUS_TEXT: Record<SaveStatus, string> = {
-  saved: '已保存',
-  dirty: '未保存',
-  saving: '保存中',
-  uncertain: '结果待核实',
-  failed: '保存失败',
-  conflict: '有冲突',
-};
+/** 「已采用修改 · 定位」停多久。 */
+const ADOPTED_SHOWN_MS = 5000;
+
 
 export interface NoteEditorProps {
   note: NoteView;
@@ -89,11 +84,14 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [extensions] = useState(noteExtensions);
   const [proposal, setProposal] = useState<NoteProposal | null>(null);
-  const width = useViewportWidth();
-  const [toolsExpanded, setToolsExpanded] = useState<boolean | null>(null);
-  const toolsOpen = toolsExpanded ?? width >= PHONE_BELOW;
   const [quoteStatus, setQuoteStatus] = useState<string | null>(null);
   const [adopted, setAdopted] = useState(false);
+  // 「已采用修改」几秒后自己收起（11-12 第 6 条）。
+  useEffect(() => {
+    if (!adopted) return undefined;
+    const timer = window.setTimeout(() => setAdopted(false), ADOPTED_SHOWN_MS);
+    return () => window.clearTimeout(timer);
+  }, [adopted]);
   const changedParagraph = useRef<HTMLElement | null>(null);
   const commandBar = useRef<HTMLDivElement>(null);
   const scrollMargin = useScrollMargin();
@@ -129,7 +127,7 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
   const images = useNoteImages(editor, note.id);
   const current = saver.current();
   const readOnly = current.readOnly || current.deletedAt !== null;
-  useStickyTools(commandBar, scrollMargin, toolsOpen && editor !== null && !readOnly);
+  useStickyTools(commandBar, scrollMargin, editor !== null && !readOnly);
   useEffect(() => { editor?.setEditable(!readOnly, false); }, [editor, readOnly]);
   // 刚新建的那一篇：编辑器一挂上就把焦点交给正文开头，之后再打开同一篇不抢焦点（审查第 3 条）。
   useEffect(() => {
@@ -192,44 +190,43 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
     syncEditor();
   };
 
+  const actions = <NoteActions note={current} label="更多笔记操作" extra={[
+    { label: '版本历史', icon: 'history', onSelect: () => setHistoryOpen(true) },
+    ...readOnly ? [] : [{ label: '删除笔记', icon: 'trash', onSelect: () => setConfirmDelete(true) } as const],
+  ]} beforeChange={async () => {
+    await saver.flush();
+    return saver.readyForRefresh() ? saver.current() : null;
+  }} changed={(fresh) => {
+    if (saver.applyRemote(fresh)) {
+      editor?.commands.setContent(fresh.markdown, { contentType: 'markdown', emitUpdate: false });
+    }
+  }} />;
+  // 11-12 第 6 条：保存状态、引用、⋯ 和格式、AI 在同一行；时间进保存图标的悬停说明，出错才常显文字和「重试」。
+  const barEnd = <div className="note-bar-end">
+    {isAiNote(current) ? <AiMark /> : null}
+    <SaveState status={readOnly ? 'readonly' : saveState.status}
+      when={`${localTime(current.updatedAt, timeZone)} 更新`} onRetry={() => void retrySave()} />
+    <IconButton icon="quote" label="引用到对话" onClick={() => void quoteToConversation()} />
+    {actions}
+  </div>;
+
   return (
     <div className="note-editor">
-      <div className="note-meta text-meta">
-        {/* 2026-11-05 设计稿 Notes：Plasticine 写的（在「Plasticine 写的」里、或最后一版是它写的）时间前面一个 ✦。 */}
-        {isAiNote(current) ? <AiMark /> : null}
-        {current.folder === '笔记' || isAiFolder(current.folder) ? null : (
-          <span className="note-current-folder" title={current.folder}>{current.folder}</span>
-        )}
-        <time dateTime={current.updatedAt}>
-          {localTime(current.updatedAt, timeZone)} 更新
-        </time>
-      </div>
       <NoteImport noteId={note.id} />
-      <div className="note-toolbar note-primary-tools">
-        <span className={saveState.status === 'failed' ? 'note-status is-error' : 'note-status'} role="status">
-          {readOnly ? '只读' : STATUS_TEXT[saveState.status]}
-        </span>
-        {saveState.status !== 'uncertain' && saveState.status !== 'failed' ? null :
-          <button type="button" className="text-button" onClick={() => void retrySave()}>
-            {saveState.status === 'uncertain' ? '再核实' : '重试'}</button>}
-        <span className="note-toolbar-gap" />
-        {!readOnly ? <button type="button" className="text-button" aria-expanded={toolsOpen}
-          aria-controls={`note-tools-${note.id}`} onClick={() => setToolsExpanded(!toolsOpen)}>编辑工具</button> : null}
-        <IconButton icon="quote" label="引用到对话" onClick={() => void quoteToConversation()} />
-        <NoteActions note={current} label="更多笔记操作" extra={[
-          { label: '版本历史', icon: 'history', onSelect: () => setHistoryOpen(true) },
-          { label: '笔记 AI 设置', icon: 'settings',
-            onSelect: () => openPanel({ kind: 'settings', section: 'ai' }) },
-          ...readOnly ? [] : [{ label: '删除笔记', icon: 'trash', onSelect: () => setConfirmDelete(true) } as const],
-        ]} beforeChange={async () => {
-          await saver.flush();
-          return saver.readyForRefresh() ? saver.current() : null;
-        }} changed={(fresh) => {
-          if (saver.applyRemote(fresh)) {
-            editor?.commands.setContent(fresh.markdown, { contentType: 'markdown', emitUpdate: false });
-          }
-        }} />
-      </div>
+      {editor === null || readOnly ? <div className="note-command-bar" data-readonly="true">{barEnd}</div> : <>
+        <div className="note-command-bar" ref={commandBar} role="toolbar" aria-label="编辑工具">
+          <NoteFormat editor={editor} upload={() => images.input.current?.click()} />
+          <NoteAi editor={editor} noteId={note.id} onProposal={setProposal}
+            pending={proposal !== null || saveState.conflict !== null}
+            onQuote={(range) => void quoteToConversation(range)} />
+          {barEnd}
+        </div>
+        <input hidden type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple ref={images.input}
+          aria-label="上传笔记图片" onChange={(event) => {
+            void images.upload([...event.target.files ?? []]);
+            event.target.value = '';
+          }} />
+      </>}
       {current.deletedAt === null ? null : <div className="banner">
         <span>这篇笔记在最近删除中。恢复后回到「{current.folder}」。</span>
         <button type="button" className="chip-button" disabled={restoreOp?.status === 'running'}
@@ -277,17 +274,6 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
         </div>
       )}
       {editor === null || readOnly ? null : <>
-        <div className="note-command-bar" ref={commandBar} id={`note-tools-${note.id}`} data-expanded={toolsOpen}>
-          <NoteFormat editor={editor} upload={() => images.input.current?.click()} />
-          <NoteAi editor={editor} noteId={note.id} onProposal={setProposal}
-            pending={proposal !== null || saveState.conflict !== null}
-            onQuote={(range) => void quoteToConversation(range)} />
-        </div>
-        <input hidden type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple ref={images.input}
-          aria-label="上传笔记图片" onChange={(event) => {
-            void images.upload([...event.target.files ?? []]);
-            event.target.value = '';
-          }} />
         {images.busy ? <p role="status" className="note-status">图片上传中…
           <button type="button" className="text-button" onClick={images.cancel}>取消上传</button></p> : null}
         {images.error === null ? null : <p className="note-error" role="alert">{images.error}
@@ -305,10 +291,10 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
           setProposal(null);
           setAdopted(true);
         }} onKeep={() => setProposal(null)} />}
-      {adopted ? <p className="note-status" role="status">修改已采用 · {STATUS_TEXT[saveState.status]}{' '}
+      {adopted ? <p className="note-adopted" role="status"><Icon name="check" size={14} />已采用修改{' '}
         <button type="button" className="text-button" onClick={() => {
           locateContent(changedParagraph.current); setAdopted(false);
-        }}>定位修改<Icon name="chevron-down" size={12} /></button></p> : null}
+        }}>定位</button></p> : null}
       <EditorContent editor={editor} className="note-body" />
       {aiChanged ? <span className="note-ai-cursor" role="status">Plasticine · 已写入这里</span> : null}
       {historyOpen ? (

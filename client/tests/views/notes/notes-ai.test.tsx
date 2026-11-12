@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { Editor } from '@tiptap/core';
 import { describe, expect, it, vi } from 'vitest';
 import { renderApp, seedNote, settle } from '../../helpers.tsx';
+import { aiOn, toggleAi } from './ai-switch.ts';
 
 async function noteEditor(): Promise<Editor> {
   return waitFor(() => {
@@ -134,7 +135,7 @@ describe('笔记续写输入保护', () => {
     fireEvent.compositionEnd(editor.view.dom);
     await waitFor(() => expect(document.querySelector('.note-ghost')?.textContent).toBe('，组完再出现的候选'));
     expect(editor.getText()).toBe('正在写作的文字');
-    fireEvent.click(screen.getByRole('switch', { name: '续写' }));
+    toggleAi('续写');
   });
 
   it('候选不进入可编辑正文，移动光标后旧候选不能写到原位置', async () => {
@@ -146,7 +147,7 @@ describe('笔记续写输入保护', () => {
     act(() => editor.commands.setTextSelection(1));
     fireEvent.keyDown(editor.view.dom, { key: 'Tab' });
     expect(editor.getText()).toBe('正在写作的文字');
-    fireEvent.click(screen.getByRole('switch', { name: '续写' }));
+    toggleAi('续写');
     await settle();
   });
 });
@@ -169,7 +170,7 @@ describe('笔记建议贴着正文', () => {
     expect(editor.getText()).toContain('正在写的第二项，接着写完。');
     expect(countNodes(editor, 'orderedList')).toBe(1);
     expect(countNodes(editor, 'listItem')).toBe(2);
-    fireEvent.click(screen.getByRole('switch', { name: '续写' }));
+    toggleAi('续写');
   });
 
   it('续写灰字只在光标处，顶部工具栏没有建议条；点灰字也能采用', async () => {
@@ -183,6 +184,6 @@ describe('笔记建议贴着正文', () => {
     expect(document.querySelector('.note-command-bar kbd')).toBeNull();
     fireEvent.click(document.querySelector('.note-ghost')!);
     expect(editor.getText()).toBe('正在写作的文字，点一下就采用。');
-    fireEvent.click(screen.getByRole('switch', { name: '续写' }));
+    toggleAi('续写');
   });
 });

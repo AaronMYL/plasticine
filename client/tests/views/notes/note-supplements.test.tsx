@@ -2,6 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { Editor } from '@tiptap/core';
 import { expect, it, vi } from 'vitest';
 import { renderApp, seedNote } from '../../helpers.tsx';
+import { aiOn, toggleAi } from './ai-switch.ts';
 
 async function open() {
   const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1',
@@ -40,8 +41,8 @@ it('选段可主动要一组补充；加上先就地预览草稿，留下才进�
 
 it('结构建议沿用修改稿对比，采用之前不改正文；工具条两个选项使用开关', async () => {
   const { api, editor } = await open();
-  expect(screen.getByRole('switch', { name: '续写' })).toBeTruthy();
-  expect(screen.getByRole('switch', { name: '补充建议' })).toBeTruthy();
+  expect(typeof aiOn('续写')).toBe('boolean');
+  expect(typeof aiOn('补充建议')).toBe('boolean');
   vi.spyOn(api.notes, 'assist').mockResolvedValue({ markdown: '', label: '补充建议', suggestions: [
     { kind: 'structure', text: '给经过加一个小标题', draft: '## 事情经过\n\n先记下事情经过。' },
   ] });

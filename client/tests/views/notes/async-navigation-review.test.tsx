@@ -26,7 +26,7 @@ it('纯阅读和选中文字不会把编辑器补的空段落写回原文或增�
   expect(saves).not.toHaveBeenCalled();
   expect((await app.api.notes.get('n1'))).toMatchObject({ version: 1, markdown });
   expect(app.state.noteDrafts.get('n1')).toBeUndefined();
-  expect(screen.getByText('已保存')).toBeTruthy();
+  expect(screen.getByLabelText(/^已保存/)).toBeTruthy();
 });
 
 it('新建回执迟到时保存创建结果，但用户已离开的页面不被拉回笔记', async () => {

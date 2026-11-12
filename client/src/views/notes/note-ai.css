@@ -247,3 +247,75 @@
     min-height: 40px;
   }
 }
+
+/* 11-12 第 6 条：格式、插入、AI 和保存状态、引用、⋯ 一行；手机上一行横着滑。 */
+.note-command-bar {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+}
+.note-command-bar .note-ai-tools {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.note-command-bar[data-readonly='true'] {
+  position: static;
+  justify-content: flex-end;
+}
+.note-bar-end {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex: none;
+}
+.note-save {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--fg3);
+}
+.note-save:focus-visible { outline: 2px solid var(--fg2); outline-offset: 1px; }
+.note-save-spin {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line2);
+  border-top-color: var(--fg2);
+  animation: note-save-spin 0.9s linear infinite;
+}
+@keyframes note-save-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .note-save-spin { animation: none; } }
+.note-save-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--fg2);
+  white-space: nowrap;
+}
+.note-save-text[data-status='failed'],
+.note-save-text[data-status='uncertain'] { color: var(--err); }
+.note-adopted {
+  position: sticky;
+  top: 52px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  margin: 0 auto 8px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  font-size: 13px;
+}
+.note-adopted svg { color: var(--fg2); }
+@media (max-width: 767px) {
+  .note-command-bar { overflow-x: auto; scrollbar-width: none; }
+  .note-command-bar::-webkit-scrollbar { display: none; }
+}

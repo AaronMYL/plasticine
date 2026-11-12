@@ -10,7 +10,7 @@ import { NOTE_ASSIST_CONTEXT_CHARS, type NoteAssistRequest } from '../../api/sha
 import { DropdownMenu, SEPARATOR } from '../../shell/dropdown-menu.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
-import { InfoTip } from '../../shell/info-tip.tsx';
+import { useOpenPanel } from '../../shell/panel.ts';
 import { editorDom } from './editor-dom.ts';
 import { PHONE_BELOW } from '../../shell/layout.ts';
 import { noteExtensions } from './editor-extensions.ts';
@@ -53,6 +53,7 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
 }): ReactNode {
   const api = useApi();
   const { notesUi } = useClientState();
+  const openPanel = useOpenPanel();
   const { predict, interject } = useStore(notesUi.store);
   const [supplement, setSupplement] = useState<ManualSupplement | null>(null);
   const [selection, setSelection] = useState<NoteRange | null>(null);
@@ -176,27 +177,21 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
 
   return <div className="note-ai-tools">
     <div className="note-toolbar">
+      {/* 11-12 第 6 条：「续写」「补充建议」两个开关收进 AI 下拉（开着行尾一个勾），工具栏只剩一行。 */}
       <DropdownMenu label="AI 写作" className="note-menu-button" items={[
         ...fullActions.map(([action, label]) => ({
           label: `整篇${label}`, disabled, onSelect: () => quick(action, null),
         })),
         SEPARATOR,
         { label: '按要求修改全文', disabled, onSelect: () => openPrompt(null) },
+        SEPARATOR,
+        { label: '续写', shortcut: 'Tab 采用', checked: predict, onSelect: () => notesUi.set({ predict: !predict }) },
+        { label: '补充建议', checked: interject, onSelect: () => notesUi.set({ interject: !interject }) },
+        SEPARATOR,
+        { label: '笔记 AI 设置', icon: 'settings', onSelect: () => openPanel({ kind: 'settings', section: 'ai' }) },
       ]}>
         <Icon name="sparkles" />AI<Icon name="chevron-down" size={14} />
       </DropdownMenu>
-      {/* 11-04 重做悬停：「续写」怎么采用（Tab）看名字猜不到，放进 ⓘ；「补充建议」名字自己说清了，不再解释。 */}
-      <span className="note-toggle-named">
-        <label className="note-toggle">
-          <input type="checkbox" role="switch" checked={predict}
-            onChange={(event) => notesUi.set({ predict: event.target.checked })} />续写
-        </label>
-        <InfoTip label="「续写」的说明" text="停笔后显示续写候选，Tab 或点击采用" side="bottom" />
-      </span>
-      <label className="note-toggle">
-        <input type="checkbox" role="switch" checked={interject}
-          onChange={(event) => notesUi.set({ interject: event.target.checked })} />补充建议
-      </label>
       {busy ? <><span role="status" className="note-status">{busyLabel}</span>
         <IconButton icon="close" label="取消建议" onClick={cancel} /></> : null}
       {!pending ? null : <span className="note-status">修改稿待处理</span>}
