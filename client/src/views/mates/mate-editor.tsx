@@ -15,6 +15,17 @@ import { useOp } from '../pending/pending-ops.tsx';
 import { MateAvatar } from './mate-avatar.tsx';
 
 export const EMPTY_MATE: MateDraft = { name: '', role: '', avatar: '友', hue: 'sky', purpose: null, soul: '' };
+
+/**
+ * 新建队友时的几个现成起点（11-12，Aaron：「让配置更直观」）：点一个填好名字、职责、头像字和颜色，再照自己的事改。
+ * 职责写成「管什么、交回什么」，主线分派和队友自己都照它判断这件事归不归它。
+ */
+export const MATE_PRESETS: readonly Pick<MateDraft, 'name' | 'role' | 'avatar' | 'hue'>[] = [
+  { name: '资料研究员', avatar: '研', hue: 'sky', role: '查公开资料、读原文、核对来源；交回带出处的要点，分清哪些是事实、哪些是推测。' },
+  { name: '文字编辑', avatar: '编', hue: 'rose', role: '改稿、润色、统一说法和格式；交回改好的稿子和改了什么。不改事实和结论。' },
+  { name: '日程管家', avatar: '程', hue: 'teal', role: '看日历、待办和到期的事，排时间、提醒、准备会前材料；要对外回复或改日程先问。' },
+  { name: '代码助手', avatar: '码', hue: 'slate', role: '读代码、查问题、写脚本和小工具；交回能跑的结果、怎么验证的、没验证的部分。' },
+];
 type Props = { phone: boolean; onClose: () => void; navigate: (route: Route) => void };
 
 export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: MateView }): ReactNode {
@@ -42,6 +53,17 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
     title={title} onClose={onClose} className="mate-editor-sheet">
     <form className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       <fieldset disabled={locked}>
+        {mate !== undefined ? null : (
+          <div className="mate-presets" role="group" aria-label="从一个现成的开始">
+            {MATE_PRESETS.map((preset) => (
+              <button key={preset.name} type="button" className="mate-preset"
+                aria-pressed={draft.name === preset.name && draft.role === preset.role}
+                onClick={() => setDraft((old) => ({ ...old, ...preset }))}>
+                <MateAvatar mate={preset} size={24} />{preset.name}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="mate-form-identity"><MateAvatar mate={draft} size={44} />
           <label>头像文字<input value={draft.avatar} maxLength={8}
             onChange={(event) => patch('avatar', event.target.value)} /></label>
@@ -51,6 +73,7 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
         <label>名字<input required minLength={2} maxLength={40} autoFocus value={draft.name}
           onChange={(event) => patch('name', event.target.value)} /></label>
         <label>职责<textarea required minLength={2} maxLength={160} rows={3} value={draft.role}
+          placeholder="管什么事、做完交回什么。比如：查公开资料、核对来源，交回带出处的要点。"
           onChange={(event) => patch('role', event.target.value)} /></label>
         <label>模型配置<select value={draft.purpose ?? ''}
           onChange={(event) => patch('purpose', (event.target.value || null) as MateDraft['purpose'])}>

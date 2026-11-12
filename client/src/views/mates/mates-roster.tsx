@@ -37,11 +37,17 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
       <div className="mates-section-head"><h3>队友</h3>
         <IconButton icon="plus" label="添加队友" onClick={() => setEditor('mate')} /></div>
       {roster.mates.map((mate) => {
-        const working = lines.lines.some((line) => line.mateId === mate.id && line.kind === 'background'
+        const work = lines.lines.filter((line) => line.mateId === mate.id && line.kind === 'background'
           && (line.status === 'running' || line.queued > 0));
+        const working = work.length > 0;
+        const own = lines.lines.find((line) => line.id === mate.lineId);
+        // 第二行平时写职责；它正在做事时写在做什么（11-12：协作状态看得见，不只是一个点）。
+        const doing = mate.disabledAt !== null ? null
+          : working ? `在做「${work[0]?.title ?? ''}」${work.length > 1 ? `等 ${work.length} 件` : ''}`
+            : own?.status === 'running' ? '正在回话' : own?.status === 'waiting' ? '在等你回答' : null;
         return <ColumnLink key={mate.id} route={mateRoute(mate.id)} current={route.view === 'plasticine'
           && (route.mateId === mate.id || route.lineId === mate.lineId)}
-          navigate={navigate} lead={<MateAvatar mate={mate} />} sub={mate.role}
+          navigate={navigate} lead={<MateAvatar mate={mate} />} sub={doing ?? mate.role}
           trail={mate.disabledAt !== null ? <span className="mate-state">已停用</span>
             : working ? <span className="mate-working" aria-label="正在做事" /> : undefined}>{mate.name}</ColumnLink>;
       })}

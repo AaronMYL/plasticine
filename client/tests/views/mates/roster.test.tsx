@@ -78,3 +78,31 @@ it('创建队友发出后关闭表单，晚到回执不会把用户从当前页�
   await waitFor(async () => expect((await app.api.mates.list()).mates).toHaveLength(1));
   expect(window.location.hash).toBe('#/notes');
 });
+
+it('队友正在做事时，名单第二行写在做什么；空着时写职责（11-12）', async () => {
+  const app = await renderApp({ hash: '#/plasticine' });
+  let mate: Awaited<ReturnType<typeof make>> | undefined;
+  await act(async () => { mate = await make(app, '资料研究员'); });
+  const row = await screen.findByRole('link', { name: /资料研究员/ });
+  expect(row.textContent).toContain('整理资料来源');
+  act(() => {
+    const { lines } = app.control;
+    lines.put(lines.blank('line-mate-work', 'background', '查三家中继的价格', { mateId: mate!.id, status: 'running' }));
+  });
+  await waitFor(() => expect(screen.getByRole('link', { name: /资料研究员/ }).textContent)
+    .toContain('在做「查三家中继的价格」'));
+});
+
+it('新建队友时点一个现成的起点：名字、职责、头像字都填好，还能再改（11-12）', async () => {
+  await renderApp({ hash: '#/plasticine' });
+  fireEvent.click(await screen.findByRole('button', { name: '添加队友' }));
+  const editor = screen.getByRole('dialog', { name: '创建队友' });
+  const presets = within(editor).getByRole('group', { name: '从一个现成的开始' });
+  fireEvent.click(within(presets).getByRole('button', { name: '文字编辑' }));
+  expect((within(editor).getByLabelText('名字') as HTMLInputElement).value).toBe('文字编辑');
+  expect((within(editor).getByLabelText('职责') as HTMLTextAreaElement).value).toMatch(/^改稿、润色/);
+  expect((within(editor).getByLabelText('头像文字') as HTMLInputElement).value).toBe('编');
+  expect(within(presets).getByRole('button', { name: '文字编辑' }).getAttribute('aria-pressed')).toBe('true');
+  fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '校对' } });
+  expect(within(presets).getByRole('button', { name: '文字编辑' }).getAttribute('aria-pressed')).toBe('false');
+});

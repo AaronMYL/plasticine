@@ -102,3 +102,11 @@
 .mates-roster-phone .mates-main-edit {
   opacity: 1;
 }
+
+/* 新建队友时的现成起点（11-12）：一排小签，点一个填好名字、职责、头像字和颜色。 */
+.mate-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.mate-preset { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px 0 6px; border: 0;
+  border-radius: 18px; background: transparent; box-shadow: inset 0 0 0 1px var(--line2); color: var(--fg);
+  font: inherit; font-size: 13px; cursor: pointer; }
+.mate-preset:hover { background: var(--tint); }
+.mate-preset[aria-pressed='true'] { box-shadow: inset 0 0 0 2px var(--fg); font-weight: 600; }
