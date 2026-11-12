@@ -14,6 +14,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { messagesRoute, type ContactPane, type Route } from '../../shell/routes.ts';
 import type { Resource } from '../m5b/resource-store.ts';
 import { ContactProfile } from '../contacts/contact-profile.tsx';
+import { focusMemory } from '../contacts/contact-profile-memory.tsx';
 import { ContactRequests } from '../contacts/contact-requests.tsx';
 import { ContactThread } from '../contacts/contact-thread.tsx';
 import { AddFriendPage, InvitePage, NetPane, NewGroupPage } from '../contacts/network-pages.tsx';
@@ -165,7 +166,20 @@ export function MessagesPage({ route, phone, navigate, now = () => new Date() }:
     <MessagesList filter={filter} onFilter={setFilter} selectedId={contactId}
       requestsOpen={listPane === 'requests'} phone={phone} now={at} onOpen={openContact}
       onRequests={() => navigate(messagesRoute(null, 'requests'))}
-      onAdd={(choice) => navigate(messagesRoute(null, choice))} />
+      onAdd={(choice) => navigate(messagesRoute(null, choice))}
+      onProfile={(id, memory) => {
+        if (phone) {
+          navigate(messagesRoute(id, 'profile'));
+        } else {
+          navigate(messagesRoute(id));
+          if (narrow) setOverlay(true);
+          else shellPrefs.setContactProfile(true);
+        }
+        if (memory) focusMemory(id);
+      }}
+      onRemoved={(id) => {
+        if (id === contactId) back();
+      }} />
   );
   const profileOpen = narrow ? overlay : prefs.contactProfile;
   const thread = contact === null ? null : contact.kind === 'mail'
@@ -204,7 +218,7 @@ export function MessagesPage({ route, phone, navigate, now = () => new Date() }:
           }}>
           {narrow ? <IconButton icon="close" className="contacts-profile-close" label={`关掉${contact.name}的资料`}
             onClick={() => setOverlay(false)} /> : null}
-          <ContactProfile contact={contact} phone={false} />
+          <ContactProfile contact={contact} phone={false} onRemoved={back} />
         </aside>
       ) : null}
     </div>
@@ -239,7 +253,7 @@ function PhonePane({ route, contact, missing, list, thread, navigate }: { route:
           <IconButton icon="back" size={20} label={`回到和${contact.name}的聊天`}
             onClick={() => navigate(messagesRoute(contact.id))} />
         </header>
-        <ContactProfile contact={contact} phone />
+        <ContactProfile contact={contact} phone onRemoved={back} />
       </section>
     );
   }

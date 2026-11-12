@@ -169,3 +169,113 @@
 
 /* Plasticine 那一行在做时，实时状态前的动态符号和字之间留一点。 */
 
+
+/* —— 第 12 批：一行的「⋯」、改备注、最近删除 —— */
+
+.messages-list .contact-row-item {
+  position: relative;
+}
+
+.contact-row-menu {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.contact-row-item:hover > .contact-row-menu,
+.contact-row-item:focus-within > .contact-row-menu,
+.contact-row-menu[data-open='true'] {
+  opacity: 1;
+}
+
+.contact-row-item:hover .contact-row-time,
+.contact-row-item:has(> .contact-row-menu[data-open='true']) .contact-row-time {
+  visibility: hidden;
+}
+
+.contact-row[data-renaming='true'] {
+  cursor: default;
+}
+
+.contact-rename {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.contact-rename-input {
+  width: 100%;
+}
+
+.contact-rename-error {
+  margin: 0;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.contact-removed {
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+.contact-removed-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.contact-removed-head > span:first-of-type {
+  flex: 1;
+  text-align: left;
+}
+
+.contact-removed-head:hover {
+  background: var(--tint);
+}
+
+.contact-removed-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: contact-removed-in var(--motion-fast) var(--ease-out);
+}
+
+.contact-removed-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+}
+
+.contact-removed-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes contact-removed-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}

@@ -140,3 +140,93 @@
   line-height: 20px;
 }
 
+
+/* —— 第 12 批：「记忆」一节、改备注和删除 —— */
+
+.contact-memory {
+  outline: none;
+}
+
+.contact-memory-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.contact-memory-head .icon-button {
+  width: 24px;
+  height: 24px;
+}
+
+.contact-memory-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.contact-memory-doc:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+
+.contact-memory-lines {
+  margin-top: 6px;
+}
+
+.contact-memory-ask > p {
+  margin: 0 0 8px;
+  color: var(--fg);
+}
+
+.contact-memory-answers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contact-memory-error {
+  margin: 6px 0 0;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.contact-person-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 260px;
+  padding: 4px;
+}
+
+.contact-person-options {
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.contact-person-linked {
+  margin-left: auto;
+  padding-left: 8px;
+  color: var(--fg3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.profile-manage {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.profile-remove {
+  color: var(--err);
+}

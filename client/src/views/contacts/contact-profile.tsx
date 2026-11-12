@@ -19,6 +19,8 @@ import { Icon } from '../../shell/icons.tsx';
 import { LoadNote } from '../m5b/load-note.tsx';
 import { useOp } from '../pending/pending-ops.tsx';
 import { ContactAvatar } from './contact-avatar.tsx';
+import { RemoveContactDialog, RenameField } from './contact-manage.tsx';
+import { ContactMemorySection } from './contact-profile-memory.tsx';
 import { shortDate } from './contact-time.ts';
 import { deliveryDot, deliveryWord } from './task-status.ts';
 import './contact-profile.css';
@@ -135,10 +137,30 @@ export function subtitleOf(contact: ContactRow): string | null {
 export interface ContactProfileProps {
   contact: ContactRow;
   phone: boolean;
+  /** 删掉这个联系人之后（回到消息列表）。 */
+  onRemoved?: () => void;
 }
 
-export function ContactProfile({ contact, phone }: ContactProfileProps): ReactNode {
+/** 资料栏最底下：改备注、删除联系人（手机上没有列表的「⋯」，从这里做）。 */
+function Manage({ contact, onRename, onRemoved }: { contact: ContactRow; onRename: () => void;
+  onRemoved: (() => void) | undefined }): ReactNode {
+  const [removing, setRemoving] = useState(false);
+  return (
+    <div className="profile-manage">
+      <button type="button" className="text-button" onClick={onRename}>改备注</button>
+      <button type="button" className="text-button profile-remove" onClick={() => setRemoving(true)}>删除联系人</button>
+      {removing ? <RemoveContactDialog row={contact} onDone={(removed) => {
+        setRemoving(false);
+        if (removed) onRemoved?.();
+      }} /> : null}
+    </div>
+  );
+}
+
+export function ContactProfile({ contact, phone, onRemoved }: ContactProfileProps): ReactNode {
   const live = useLive();
+  const [renaming, setRenaming] = useState(false);
+  const person = contact.kind === 'person' && contact.state !== 'request' && (contact.removedAt ?? null) === null;
   const resource = live.contacts.detail(contact.id);
   const detail = useStore(resource.data);
   useEffect(() => {
@@ -151,7 +173,8 @@ export function ContactProfile({ contact, phone }: ContactProfileProps): ReactNo
       <div className="profile-who">
         <ContactAvatar row={contact} size={phone ? 72 : 56} />
         <div className="profile-names">
-          {phone ? <h1 className="profile-name">{contact.name}</h1> : <p className="profile-name">{contact.name}</p>}
+          {renaming ? <RenameField row={contact} onDone={() => setRenaming(false)} />
+            : phone ? <h1 className="profile-name">{contact.name}</h1> : <p className="profile-name">{contact.name}</p>}
           {sub === null ? null : <p className="mono profile-handle">{sub}</p>}
         </div>
         {contact.kind === 'person' && contact.state === 'active' ? <Relation contact={contact} /> : null}
@@ -159,9 +182,12 @@ export function ContactProfile({ contact, phone }: ContactProfileProps): ReactNo
       <LoadNote resource={detail} what="资料" onRetry={() => void resource.reload()} />
       {value === null ? null : (
         <>
+          {person && value.memory !== undefined ? <ContactMemorySection contact={contact} memory={value.memory} />
+            : null}
           <Deliveries detail={value} />
           <Said detail={value} />
           <SafetyCode detail={value} />
+          {person ? <Manage contact={contact} onRename={() => setRenaming(true)} onRemoved={onRemoved} /> : null}
         </>
       )}
     </div>

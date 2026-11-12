@@ -34,6 +34,7 @@ export function contactList(state: StateService): ContactListResponse {
     requests: people.filter((row) => row.state === 'request').length,
     waiting: contacts.filter((row) => row.waiting).length,
     unread: contacts.reduce((sum, row) => sum + row.unread, 0),
+    removed: state.contacts.removed().map((contact) => personRow(state, contact)),
   };
 }
 

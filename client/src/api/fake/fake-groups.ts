@@ -16,6 +16,7 @@ import {
   type MemberFace,
   type NetworkTaskView,
 } from '../shared.ts';
+import { messageIn, replyLine } from './fake-contact-edits.ts';
 import type { FakeEventBus } from './event-bus.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeReceipts } from './receipts.ts';
@@ -140,6 +141,9 @@ export class FakeGroups implements GroupTasksApi {
     const message = this.message(record, 'me', input.text, this.deps.me(),
       target === null || target === undefined ? null : { name: target.name, self: target.self });
     message.attachments = this.deps.attachments?.(input.attachmentIds ?? [], id, message.id) ?? [];
+    if (input.replyToId !== undefined) {
+      message.replyTo = replyLine(messageIn(record.entries, input.replyToId), { me: this.deps.me().name, them: '' });
+    }
     this.post(record, message);
     if (target !== null && target !== undefined) {
       this.deps.later(() => this.post(record, this.message(record, target.self ? 'my_ai' : 'their_ai',

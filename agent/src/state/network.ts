@@ -105,6 +105,8 @@ export function createNetworkStores(context: StoreContext) {
       /** 绑了这一页人物的联系人。 */
       forPersonDoc: (docId: string): Contact[] => contacts.select('person_doc_id = $doc AND removed_at IS NULL',
         { doc: docId }),
+      /** 「最近删除」：删掉的联系人，新删的在前。 */
+      removed: (): Contact[] => contacts.select('removed_at IS NOT NULL', {}, { limit: 200 }, 'removed_at DESC, id'),
       /** 互加了的好友（发资料、头像给他们）。 */
       active: (): Contact[] => allPages((page) => contacts.select("state = 'active' AND removed_at IS NULL", {}, page,
         'last_at DESC, id')),

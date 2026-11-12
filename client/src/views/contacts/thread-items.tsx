@@ -3,14 +3,17 @@
 // 换一天时正中一行等宽的「11-03 周二」。系统的一句（安全码变了、接上了）正中小字。
 // 邮件（2026-11-04 用户定）不进气泡：一封一个整宽阅读区（mail-item.tsx），最新的那封摊开。
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ContactMessageView, ContactRow, ContactThreadItem } from '../../api/shared.ts';
-import { useTimeZone } from '../../live.tsx';
+import { useLive, useTimeZone } from '../../live.tsx';
 import { AiMark } from '../../shell/glyph.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import type { Route } from '../../shell/routes.ts';
 import { ContactMessageMedia } from './contact-message-media.tsx';
 import { ContactAvatar, FaceAvatar } from './contact-avatar.tsx';
+import { ContactMessageActionsProvider, MessageShell, ReplyLine, type ContactMessageActions }
+  from './contact-message-row.tsx';
+import { setContactReply } from './contact-reply.ts';
 import { GroupTaskCard } from './group-task-card.tsx';
 import { dayKey, dayLabel } from './contact-time.ts';
 import { itemKey, itemTime } from './contacts-store.ts';
@@ -54,6 +57,7 @@ export function Mention({ mention }: { mention: NonNullable<ContactMessageView['
 function Text({ message }: { message: ContactMessageView }): ReactNode {
   return (
     <>
+      {message.replyTo === null || message.replyTo === undefined ? null : <ReplyLine reply={message.replyTo} />}
       {message.mention === null || message.mention === undefined ? null : <Mention mention={message.mention} />}
       {message.text}
     </>
@@ -151,7 +155,9 @@ function Item({ item, contact, now, navigate, openMail }: { item: ContactThreadI
       if (item.message.mail !== undefined) {
         return <MailItem contactId={contact.id} message={item.message} defaultOpen={item.message.id === openMail} />;
       }
-      return <ThreadMessage message={item.message} contact={contact} />;
+      return (
+        <MessageShell message={item.message}><ThreadMessage message={item.message} contact={contact} /></MessageShell>
+      );
     case 'exchange':
       return <Exchange item={item} contact={contact} />;
     case 'task':
@@ -194,7 +200,37 @@ function latestMail(items: readonly ContactThreadItem[]): string | null {
   return null;
 }
 
+/** 人和人聊天里一句话能做的事：引用（回这一句）、加表情。邮件和只读来源没有。 */
+function useMessageActions(contact: ContactRow): ContactMessageActions | null {
+  const { contactEdits } = useLive();
+  const chat = contact.kind === 'group' || (contact.kind === 'person' && contact.canSend);
+  return useMemo(() => {
+    if (!chat) return null;
+    const authorOf = (message: ContactMessageView): string =>
+      message.sender?.name ?? (message.author === 'me' ? '自己' : contact.name);
+    return {
+      authorOf,
+      quote: (message) => setContactReply(contact.id, { id: message.id, author: authorOf(message),
+        text: message.text }),
+      react: (message, emoji, on) => {
+        void contactEdits.react(contact.id, message.id, emoji, on).then((problem) => {
+          if (problem !== null) console.warn(`没能加上表情：${problem}`);
+        });
+      },
+    };
+  }, [chat, contact.id, contact.name, contactEdits]);
+}
+
 export function ThreadItems({ items, contact, now, navigate }: ThreadItemsProps): ReactNode {
+  const actions = useMessageActions(contact);
+  return (
+    <ContactMessageActionsProvider value={actions}>
+      <ThreadList items={items} contact={contact} now={now} navigate={navigate} />
+    </ContactMessageActionsProvider>
+  );
+}
+
+function ThreadList({ items, contact, now, navigate }: ThreadItemsProps): ReactNode {
   const timeZone = useTimeZone();
   const openMail = latestMail(items);
   let previousDay = '';

@@ -72,7 +72,8 @@ function HoverBar({ actions, seq, author, text, reactions }: { actions: ThreadAc
       {actions.react === undefined ? null : <IconButton icon="smile" size={14} label="表情" data-message-action="react"
         aria-expanded={menu?.kind === 'emoji'}
         onClick={(event) => setMenu({ kind: 'emoji', anchor: anchorOf(event.currentTarget) })} />}
-      <IconButton icon="quote" size={14} label="引用这条" data-message-action="quote" onClick={() => actions.quote(seq, author, text)} />
+      <IconButton icon="quote" size={14} label="引用这条" data-message-action="quote"
+        onClick={() => actions.quote(seq, author, text)} />
       <IconButton icon={copied === 'copied' ? 'check' : 'more'} size={14}
         label={copied === 'copied' ? '已复制' : '更多'} aria-expanded={menu?.kind === 'more'}
         onClick={(event) => {

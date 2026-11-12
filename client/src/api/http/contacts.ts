@@ -19,9 +19,14 @@ import type {
   SendContactMessageRequest,
   SetContactRelationRequest,
   ConfirmSafetyRequest,
+  ContactAliasRequest,
+  ContactPersonRequest,
+  ContactReactionRequest,
+  ContactRemoveRequest,
   VerdictNetworkTaskRequest,
 } from '../contacts-client.ts';
 import {
+  BrowserAckResponseSchema,
   CONTACT_LOOKUP_PATH,
   CONTACTS_ADD_PATH,
   CONTACTS_PATH,
@@ -155,6 +160,46 @@ export class HttpContacts implements ContactsApi {
       body: input,
       schema: ContactRowResponseSchema,
       what: '改关系',
+      lostAs: 'uncertain',
+      refine: conflictWith(ContactRowSchema),
+    });
+    return response.contact;
+  }
+
+  async setAlias(id: string, input: ContactAliasRequest): Promise<ContactRow> {
+    return this.#edit(id, '/alias', input, '改备注');
+  }
+
+  async setPerson(id: string, input: ContactPersonRequest): Promise<ContactRow> {
+    return this.#edit(id, '/person', input, '关联人物');
+  }
+
+  async remove(id: string, input: ContactRemoveRequest): Promise<ContactRow> {
+    return this.#edit(id, '/remove', input, '删除联系人');
+  }
+
+  async restore(id: string, input: ContactRemoveRequest): Promise<ContactRow> {
+    return this.#edit(id, '/restore', input, '恢复联系人');
+  }
+
+  async react(id: string, messageId: string, input: ContactReactionRequest): Promise<void> {
+    await this.transport.request({
+      method: 'POST',
+      path: contactPath(id, `/messages/${encodeURIComponent(messageId)}/reaction`),
+      body: input,
+      schema: BrowserAckResponseSchema,
+      what: '加表情',
+      lostAs: 'uncertain',
+    });
+  }
+
+  async #edit(id: string, tail: string, input: object, what: string): Promise<ContactRow> {
+    const response = await this.transport.request({
+      method: 'POST',
+      path: contactPath(id, tail),
+      body: input,
+      schema: ContactRowResponseSchema,
+      what,
       lostAs: 'uncertain',
       refine: conflictWith(ContactRowSchema),
     });

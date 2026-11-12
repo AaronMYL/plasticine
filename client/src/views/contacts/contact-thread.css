@@ -324,3 +324,160 @@
   flex: none;
   padding: 0 24px 24px;
 }
+
+/* —— 第 12 批：一句人话的外壳（表情、悬停条、回的哪一句）—— */
+
+.cm-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(560px, 88%);
+  min-width: 0;
+  outline: none;
+}
+
+.cm-row[data-side='me'] {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.cm-row[data-side='them'] {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.cm-row > .cm-line,
+.cm-row > .cm-media-message {
+  max-width: 100%;
+}
+
+.cm-row[data-side='them'] > .cm-reactions {
+  margin-left: 32px;
+}
+
+.cm-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cm-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--tint);
+  color: var(--fg2);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 24px;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+
+.cm-reaction .mono {
+  font-size: 11px;
+}
+
+.cm-reaction:hover {
+  background: var(--tint2);
+}
+
+.cm-reaction[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.cm-hoverbar {
+  position: absolute;
+  top: -18px;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(2px);
+  transition: opacity var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+}
+
+.cm-row[data-side='me'] > .cm-hoverbar {
+  right: 0;
+}
+
+.cm-row[data-side='them'] > .cm-hoverbar {
+  left: 32px;
+}
+
+.cm-row:hover > .cm-hoverbar,
+.cm-row:focus-within > .cm-hoverbar,
+.cm-hoverbar[data-open='true'] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.cm-hoverbar .icon-button {
+  width: 28px;
+  height: 28px;
+}
+
+/* 气泡里「小林：……」：回的那一句。 */
+.cm-reply {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin-bottom: 4px;
+  padding-left: 8px;
+  box-shadow: inset 2px 0 0 var(--line2);
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.cm-reply > svg {
+  flex: none;
+}
+
+.cm-reply-text,
+.contact-reply-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contact-reply-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 6px 4px;
+  color: var(--fg2);
+  font-size: 12px;
+  line-height: 18px;
+  animation: contact-reply-in var(--motion-fast) var(--ease-out);
+}
+
+.contact-reply-text {
+  flex: 1;
+}
+
+.contact-reply-chip .icon-button {
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes contact-reply-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

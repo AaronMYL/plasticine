@@ -99,6 +99,8 @@ export const ContactListResponseSchema = Type.Object({
   requests: Type.Integer({ minimum: 0 }),
   waiting: Type.Integer({ minimum: 0 }),
   unread: Type.Integer({ minimum: 0 }),
+  /** 第 12 批：「最近删除」里的联系人（能恢复）。 */
+  removed: Type.Optional(Type.Array(ContactRowSchema)),
 });
 export type ContactListResponse = Static<typeof ContactListResponseSchema>;
 
@@ -280,10 +282,12 @@ export const SendContactMessageRequestSchema = Type.Object({
 });
 export const SendContactMessageResponseSchema = Type.Object({ message: ContactMessageViewSchema });
 
+/** 第 12 批：联系人和群里能加的表情（和线上格式 NET_REACTIONS 同一组）。 */
+export const CONTACT_REACTIONS = ['👍', '❤️', '😂', '🎉', '🤔', '👀'] as const;
 /** 第 12 批：给一句话加 / 拿掉一个表情。 */
 export const ContactReactionRequestSchema = Type.Object({
   requestId: RequestIdSchema,
-  emoji: Type.Union(['👍', '❤️', '😂', '🎉', '🤔', '👀'].map((emoji) => Type.Literal(emoji))),
+  emoji: Type.Enum(CONTACT_REACTIONS),
   on: Type.Boolean(),
 });
 /** 第 12 批：改备注（null = 去掉）。 */

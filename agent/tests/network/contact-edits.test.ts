@@ -99,9 +99,14 @@ test('人物页：名字像就先问；答「不是」不再问；绑上后资�
     docId: doc.id });
   t.state.memoryDocs.lines.add({ docId: doc.id, text: '山姆下个月搬家', basis: 'contact_stated',
     anchors: [{ kind: 'contact_message', ref: 'msg-any-0001' }], writtenBy: 'brain' });
+  t.clock.advance(1000);
+  t.state.memoryDocs.lines.add({ docId: doc.id, text: '山姆喜欢爬山', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'msg-any-0002' }], writtenBy: 'brain' });
   const memory = await detail();
   assert.deepEqual(memory['doc'], { id: doc.id, title: '山姆' });
-  assert.equal((memory['lines'] as Body[])[0]?.['by'], '山姆说的');
+  const tags = new Map((memory['lines'] as Body[]).map((line) => [line['text'], line['by']]));
+  assert.equal(tags.get('山姆下个月搬家'), '山姆说的');
+  assert.equal(tags.get('山姆喜欢爬山'), '你说的');
   await post(t, cookie, `/v2/contacts/${contactId}/person`, { requestId: 'person-req-0003', version: version(),
     create: '新的一页' });
   assert.equal(((await detail())['doc'] as Body)['title'], '新的一页');
@@ -110,13 +115,16 @@ test('人物页：名字像就先问；答「不是」不再问；绑上后资�
 test('删除联系人：列表里没了、关系回陌生人，记录还在；恢复回到列表', async () => {
   const { t, cookie, contactId } = await joined();
   await post(t, cookie, `/v2/contacts/${contactId}/remove`, { requestId: 'remove-req-0001' });
-  const after = (await contacts(t, cookie))['contacts'] as Body[];
+  const listed = await contacts(t, cookie);
+  const after = listed['contacts'] as Body[];
   assert.equal(after.some((row) => row['id'] === contactId), false);
+  assert.deepEqual((listed['removed'] as Body[]).map((row) => row['id']), [contactId], '在「最近删除」里');
   assert.equal(t.state.contacts.require(contactId).relation, 'stranger');
   assert.equal(t.state.contactMessages.page(contactId, undefined, 10).length, 1);
   await post(t, cookie, `/v2/contacts/${contactId}/restore`, { requestId: 'restore-req-0001' });
-  const back = (await contacts(t, cookie))['contacts'] as Body[];
-  assert.equal(back.some((row) => row['id'] === contactId), true);
+  const restored = await contacts(t, cookie);
+  assert.equal((restored['contacts'] as Body[]).some((row) => row['id'] === contactId), true);
+  assert.deepEqual(restored['removed'], []);
 });
 
 test('绑了联系人的人物页不管标成哪一档都不拿去对外答', async () => {

@@ -44,6 +44,13 @@ export interface PersonRecord {
   suggestion: string | null;
   /** 对方发来的头像（data URL）；没有画名字首字。 */
   avatar?: string | null;
+  /** 第 12 批：备注、删掉的时间、对方主线 AI 的名字。 */
+  alias?: string | null;
+  removedAt?: string | null;
+  aiName?: string | null;
+  /** 第 12 批：绑的人物页、答过「不是」。 */
+  personDocId?: string | null;
+  linkDismissed?: boolean;
 }
 
 export type PersonEntry = { type: 'message'; message: ContactMessageView } | { type: 'task'; taskId: string };
@@ -104,7 +111,7 @@ export function personRow(record: PersonRecord, tasks: ReadonlyMap<string, Netwo
   return {
     id: record.id,
     kind: 'person',
-    name: record.name,
+    name: record.alias ?? record.name,
     handle: record.handle,
     address: null,
     relation: record.relation,
@@ -115,6 +122,8 @@ export function personRow(record: PersonRecord, tasks: ReadonlyMap<string, Netwo
     canSend: record.state !== 'blocked',
     version: record.version,
     avatar: record.avatar ?? null,
+    aiName: record.aiName ?? null,
+    removedAt: record.removedAt ?? null,
   };
 }
 

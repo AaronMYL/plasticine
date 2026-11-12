@@ -27,6 +27,7 @@ function list(): HTMLElement {
 
 function rowNames(filter = '全部'): string[] {
   return within(within(list()).getByRole('list', { name: filter })).getAllByRole('button')
+    .filter((button) => button.classList.contains('contact-row'))
     .map((button) => button.getAttribute('aria-label')?.split('，')[0] ?? '');
 }
 

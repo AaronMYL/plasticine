@@ -16,11 +16,17 @@ import type {
   SendContactMessageRequest,
   SetContactRelationRequest,
   ConfirmSafetyRequest,
+  ContactAliasRequest,
+  ContactPersonRequest,
+  ContactReactionRequest,
+  ContactRemoveRequest,
 } from '../contacts-client.ts';
+import { fakeMemory, messageIn, replyLine, withReaction } from './fake-contact-edits.ts';
 import { ApiError, ConflictError } from '../errors.ts';
 import {
   type ContactDetail,
   type ContactListResponse,
+  type ContactMemory,
   type ContactLookupResponse,
   type GroupTaskView,
   type MemberFace,
@@ -91,6 +97,8 @@ export class FakeContacts implements ContactsApi {
   /** 我在群里的样子（预置按网络账号改）。 */
   me: MemberFace = { accountId: 'acct_me', name: 'Alex', handle: 'alex', avatar: null, self: true };
   readonly groupChats: FakeGroups;
+  /** 记忆里的人物页（资料栏「记忆」一节能选的）和每页最近几行。 */
+  readonly personPages: { id: string; title: string; lines: ContactMemory['lines'] }[] = [];
 
   constructor(deps: FakeContactsDeps) {
     this.deps = deps;
@@ -109,10 +117,14 @@ export class FakeContacts implements ContactsApi {
 
   async list(): Promise<ContactListResponse> {
     this.deps.session.require();
-    const rows = [...this.people.values()].map((record) => personRow(record, this.tasks));
+    const all = [...this.people.values()];
+    const rows = all.filter((record) => (record.removedAt ?? null) === null)
+      .map((record) => personRow(record, this.tasks));
     const contacts = [...rows, ...this.groupChats.rows(), ...this.groups().map(sourceRow)]
       .sort((a, b) => (b.last?.at ?? '').localeCompare(a.last?.at ?? ''));
-    return { contacts, ...this.totals(contacts) };
+    const removed = all.filter((record) => (record.removedAt ?? null) !== null)
+      .map((record) => personRow(record, this.tasks));
+    return { contacts, ...this.totals(contacts), removed };
   }
 
   async lookup(handle: string): Promise<ContactLookupResponse> {
@@ -154,7 +166,7 @@ export class FakeContacts implements ContactsApi {
     }
     const record = this.people.get(id);
     if (record !== undefined) {
-      return personDetail(record, this.tasks);
+      return { ...personDetail(record, this.tasks), memory: this.memoryOf(record) };
     }
     return sourceDetail(this.group(id));
   }
@@ -224,6 +236,8 @@ export class FakeContacts implements ContactsApi {
         exchangeId: toAi || mine ? `ex_ask_${this.sequence}` : null,
         taskId: null,
         mention: toAi ? { name: record.name, self: false } : mine ? { name: this.me.name, self: true } : null,
+        replyTo: input.replyToId === undefined ? null
+          : replyLine(messageIn(record.entries, input.replyToId), { me: this.me.name, them: record.alias ?? record.name }),
       };
       message.attachments = this.deps.attachments?.(input.attachmentIds ?? [], id, message.id) ?? [];
       record.suggestion = null;
@@ -293,6 +307,78 @@ export class FakeContacts implements ContactsApi {
       this.emitTotals();
       return personRow(record, this.tasks);
     });
+  }
+
+  async setAlias(id: string, input: ContactAliasRequest): Promise<ContactRow> {
+    return this.edit(id, input, 'alias', (record) => {
+      const alias = input.alias?.trim() ?? '';
+      record.alias = alias === '' || alias === record.name ? null : alias;
+    });
+  }
+
+  async setPerson(id: string, input: ContactPersonRequest): Promise<ContactRow> {
+    return this.edit(id, input, 'person', (record) => {
+      if (input.dismiss === true) {
+        record.linkDismissed = true;
+      } else if (input.create !== undefined) {
+        const page = { id: `doc_person_${this.personPages.length + 1}`, title: input.create, lines: [] };
+        this.personPages.push(page);
+        record.personDocId = page.id;
+      } else {
+        record.personDocId = input.docId ?? null;
+      }
+    });
+  }
+
+  async remove(id: string, input: ContactRemoveRequest): Promise<ContactRow> {
+    return this.edit(id, input, 'remove', (record) => {
+      record.removedAt ??= this.deps.now().toISOString();
+      record.relation = 'stranger';
+      record.tierCap = null;
+    });
+  }
+
+  async restore(id: string, input: ContactRemoveRequest): Promise<ContactRow> {
+    return this.edit(id, input, 'restore', (record) => { record.removedAt = null; });
+  }
+
+  async react(id: string, messageId: string, input: ContactReactionRequest): Promise<void> {
+    this.deps.session.require();
+    await this.deps.receipts.run('contacts', input.requestId, `POST /v2/contacts/${id}/messages/${messageId}/reaction`,
+      () => {
+        const entries = this.people.get(id)?.entries ?? this.groupChats.records.get(id)?.entries ?? [];
+        const entry = entries.find((item) => item.type === 'message' && item.message.id === messageId);
+        if (entry?.type !== 'message') throw notFound('这条消息');
+        entry.message = withReaction(entry.message, input.emoji, input.on);
+        this.deps.bus.emit({ type: 'contact.item', contactId: id, item: { type: 'message', message: entry.message } });
+        return { ok: true };
+      });
+  }
+
+  private edit(id: string, input: { requestId: string; version?: number }, what: string,
+    change: (record: PersonRecord) => void): Promise<ContactRow> {
+    this.deps.session.require();
+    return this.deps.receipts.run('contacts', input.requestId, `POST /v2/contacts/${id}/${what}`, () => {
+      const record = this.person(id);
+      if (input.version !== undefined && record.version !== input.version) {
+        throw new ConflictError(personRow(record, this.tasks), '这个联系人在别处改过了，这次没有改。', '看最新的再改。');
+      }
+      change(record);
+      record.version += 1;
+      this.emitTotals();
+      return personRow(record, this.tasks);
+    });
+  }
+
+  private memoryOf(record: PersonRecord): ContactMemory {
+    const people = this.personPages.map((page) => ({ id: page.id, title: page.title,
+      linked: [...this.people.values()].filter((other) => other.personDocId === page.id && other.id !== record.id)
+        .map((other) => other.alias ?? other.name) }));
+    const docId = record.personDocId ?? null;
+    const named = this.personPages.find((page) => page.title === record.name || page.title === record.alias);
+    const suggest = record.linkDismissed === true ? null : named?.id ?? null;
+    const lines = this.personPages.find((page) => page.id === docId)?.lines ?? [];
+    return fakeMemory(docId, suggest, people, lines);
   }
 
   async confirmSafety(id: string, input: ConfirmSafetyRequest): Promise<ContactRow> {

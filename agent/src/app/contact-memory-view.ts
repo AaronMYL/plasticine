@@ -1,9 +1,10 @@
-// 资料栏「记忆」一节（第 12 批，11-12 Aaron 定）：联系人绑的记忆人物页、那一页最近几行（谁说的：人物页的名字或「你」）、
+// 资料栏「记忆」一节（第 12 批，11-12 Aaron 定）：联系人绑的记忆人物页、那一页最近几行（谁说的：人物页的名字、你，或 Plasticine 推断）、
 // 没绑时 Plasticine 觉得可能是哪一页（名字、@账号、备注出现在那一页的标题或行里；答过「不是」就不再问），
 // 和能选的人物页（选的时候看到每页已经绑了谁）。人物页只在本机：不进对外可见的材料（visibility.ts 另有规矩）。
 
 import type { ContactMemory } from '../../shared/api/index.ts';
 import type { Contact, MemoryDoc } from '../../shared/state.ts';
+import type { MemoryLineBasis } from '../../shared/state-memory-docs.ts';
 import type { StateService } from '../state/index.ts';
 
 const LINES_SHOWN = 3;
@@ -32,13 +33,22 @@ export function suggestPerson(state: StateService, contact: Contact, people: rea
   return null;
 }
 
+/** 一行是谁说的：对方自己说的写人物页的名字，你说的写「你说的」，Plasticine 推的写「推断」。 */
+function tagOf(basis: MemoryLineBasis, title: string): string {
+  switch (basis) {
+    case 'contact_stated': return `${title}说的`;
+    case 'stated': return '你说的';
+    case 'confirmed_inference': return '推断';
+    case 'system': return '系统默认';
+  }
+}
+
 export function contactMemory(state: StateService, contact: Contact): ContactMemory {
   const people = state.memoryDocs.docs.live().filter((doc) => doc.kind === 'person');
   const doc = contact.personDocId === null ? undefined : state.memoryDocs.docs.get(contact.personDocId);
   const lines = doc === undefined ? [] : state.memoryDocs.lines.live(doc.id)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, LINES_SHOWN)
-    .map((line) => ({ text: line.text, by: line.basis === 'contact_stated' ? `${doc.title}说的` : '你说的',
-      at: line.createdAt }));
+    .map((line) => ({ text: line.text, by: tagOf(line.basis, doc.title), at: line.createdAt }));
   const suggested = doc === undefined ? suggestPerson(state, contact, people) : null;
   const linkedNames = (id: string): string[] => state.contacts.forPersonDoc(id)
     .map((row) => row.alias ?? row.displayName);

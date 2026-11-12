@@ -6,7 +6,8 @@ type AiSwitch = '续写' | '补充建议';
 
 function item(name: AiSwitch): HTMLElement {
   fireEvent.click(screen.getByRole('button', { name: 'AI 写作' }));
-  return screen.getAllByRole('menuitemcheckbox').find((element) => element.textContent?.startsWith(name)) as HTMLElement;
+  return screen.getAllByRole('menuitemcheckbox')
+    .find((element) => element.textContent?.startsWith(name)) as HTMLElement;
 }
 
 /** 拨一下这个开关。 */

@@ -18,6 +18,8 @@ export interface DropdownItem {
   shortcut?: string | undefined;
   /** 开关项：开着时行尾一个勾。 */
   checked?: boolean;
+  /** 删除这类不可逆的：危险色。 */
+  danger?: boolean;
 }
 
 /** 菜单里的一条分隔线。 */
@@ -86,7 +88,7 @@ export function DropdownMenu(props: DropdownMenuProps): ReactNode {
           leaving={phase.kind === 'leaving'} onLeft={() => setPhase({ kind: 'closed' })} onClose={hide}>
           {props.items.map((item, index) => item === SEPARATOR ? <MenuSeparator key={`separator-${index}`} /> : (
             <MenuItem key={item.label} label={item.label} icon={item.icon} disabled={item.disabled === true}
-              shortcut={item.shortcut} checked={item.checked} onSelect={() => {
+              shortcut={item.shortcut} checked={item.checked} danger={item.danger} onSelect={() => {
                 item.onSelect();
                 hide();
               }} />

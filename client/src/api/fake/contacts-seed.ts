@@ -77,7 +77,8 @@ function seedLin(contacts: FakeContacts, now: Date): void {
     verdict: { verdict: 'pass', note: '用第二版', at: ago(now, 6 * DAY) } }));
   contacts.seedMessage(id, line('cm_lin_1', 'them',
     '下周要给品牌方交 10 场直播的复盘，你那边的 Plasticine 能帮我把商单整理成表吗？', ago(now, 130 * MINUTE)));
-  contacts.seedMessage(id, line('cm_lin_2', 'me', '可以，我发一条任务给你。', ago(now, 128 * MINUTE)));
+  contacts.seedMessage(id, line('cm_lin_2', 'me', '可以，我发一条任务给你。', ago(now, 128 * MINUTE), {
+    reactions: [{ emoji: '👍', mine: false, count: 1 }] }));
   contacts.seedTask(task({ id: 'nt_lin_review', direction: 'out', contactId: id,
     title: '把 10 场直播的商单整理成复盘表', goal: '10 场直播的商单按场次整理成一张表，带佣金和退货',
     acceptance: '一张表，每场一行，能看出退货率', state: 'in_progress', stage: 2, doer: 'ai',
@@ -157,10 +158,28 @@ const MATERIALS: readonly MaterialRow[] = [
   { kind: 'note', id: 'n_review_method', title: '商单复盘的做法', tier: 'public', proposed: null, version: 1 },
 ];
 
+/** 第 12 批：记忆里的人物页。林一已经绑上；周可有一页同名的，资料栏会问是不是；老许删掉了，在「最近删除」。 */
+function seedPeoplePages(contacts: FakeContacts, now: Date): void {
+  contacts.personPages.push(
+    { id: 'doc_person_lin', title: '林一', lines: [
+      { text: '在做直播带货，主播是自己', by: '林一说的', at: ago(now, 2 * DAY) },
+      { text: '周五下午一般有空', by: '你说的', at: ago(now, 4 * DAY) },
+    ] },
+    { id: 'doc_person_zhou', title: '周可', lines: [] },
+    { id: 'doc_person_chen', title: '陈默', lines: [] },
+  );
+  const lin = contacts.people.get('c_linyi');
+  if (lin !== undefined) lin.personDocId = 'doc_person_lin';
+  contacts.addPerson({ id: 'c_laoxu', name: '老许', handle: 'laoxu', relation: 'stranger' });
+  const xu = contacts.people.get('c_laoxu');
+  if (xu !== undefined) xu.removedAt = ago(now, DAY);
+}
+
 export function seedContacts(parts: ContactsSeedParts, now: Date): void {
   seedLin(parts.contacts, now);
   seedZhou(parts.contacts, now);
   seedOthers(parts.contacts, now);
+  seedPeoplePages(parts.contacts, now);
   seedInbox(parts.inbox, now);
   // 阿里云那封到期提醒有 HTML 正文（邮件按原样显示）：标题条、正文段落、按钮链接、页脚小字。
   parts.contacts.seedMailHtml('inbox_aliyun_expire', ALIYUN_EXPIRE_HTML);

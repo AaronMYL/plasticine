@@ -16,6 +16,8 @@ import { Icon } from '../../shell/icons.tsx';
 import { LoadNote } from '../m5b/load-note.tsx';
 import { ContactAvatar } from '../contacts/contact-avatar.tsx';
 import { listTime } from '../contacts/contact-time.ts';
+import { RemoveContactDialog, RenameField } from '../contacts/contact-manage.tsx';
+import { ContactRowMenu, RemovedContacts } from './contact-row-menu.tsx';
 import {
   FILTER_LABELS,
   MESSAGE_FILTERS,
@@ -42,13 +44,34 @@ function rowLabel(row: ContactRow): string {
   return parts.join('，');
 }
 
-function Row({ row, current, phone, now, groupStart, onOpen }: { row: ContactRow; current: boolean; phone: boolean;
-  now: Date; groupStart: boolean; onOpen: () => void }): ReactNode {
+/** 一行的管理（第 12 批）：「⋯」菜单、改备注、删除。只有接上了或发出请求的人有，群和邮件没有。 */
+interface RowManage {
+  renaming: boolean;
+  onRename: (on: boolean) => void;
+  onProfile: (memory: boolean) => void;
+  onRemove: () => void;
+}
+
+function Row({ row, current, phone, now, groupStart, onOpen, manage }: { row: ContactRow; current: boolean;
+  phone: boolean; now: Date; groupStart: boolean; onOpen: () => void; manage: RowManage | null }): ReactNode {
   const timeZone = useTimeZone();
+  if (manage?.renaming === true) {
+    return (
+      <li className="contact-row-item" data-group-start={groupStart ? 'true' : undefined}>
+        <div className="contact-row" data-renaming="true">
+          <ContactAvatar row={row} size={phone ? 44 : 36} />
+          <RenameField row={row} onDone={() => manage.onRename(false)} />
+        </div>
+      </li>
+    );
+  }
   const previewId = `contact-preview-${row.id}`;
   const byAi = row.last?.author === 'my_ai' || row.last?.author === 'their_ai';
   return (
-    <li className="contact-row-item" data-group-start={groupStart ? 'true' : undefined}>
+    <li className="contact-row-item" data-group-start={groupStart ? 'true' : undefined}
+      data-context-row={manage === null ? undefined : ''}>
+      {manage === null || phone ? null : <ContactRowMenu row={row} onRename={() => manage.onRename(true)}
+        onProfile={manage.onProfile} onRemove={manage.onRemove} />}
       <button type="button" className="contact-row" aria-current={current ? 'true' : undefined}
         aria-label={rowLabel(row)} aria-describedby={row.last === null ? undefined : previewId} onClick={onOpen}>
         <ContactAvatar row={row} size={phone ? 44 : 36} />
@@ -150,12 +173,25 @@ export interface MessagesListProps {
   onOpen: (id: string) => void;
   onRequests: () => void;
   onAdd: (choice: AddChoice) => void;
+  /** 打开这个人的资料；memory = 落到「记忆」那一节。 */
+  onProfile: (id: string, memory: boolean) => void;
+  /** 删掉了一个联系人（正开着的就回到列表）。 */
+  onRemoved: (id: string) => void;
 }
 
 export function MessagesList(props: MessagesListProps): ReactNode {
   const { contacts } = useLive();
   const list = useStore(contacts.list.data);
   const [query, setQuery] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<ContactRow | null>(null);
+  const manageOf = (row: ContactRow): RowManage | null => (row.kind !== 'person' || row.state === 'request' ? null : {
+    renaming: renaming === row.id,
+    onRename: (on) => setRenaming(on ? row.id : null),
+    onProfile: (memory) => props.onProfile(row.id, memory),
+    onRemove: () => setRemoving(row),
+  });
+  const removed = showsRequests(props.filter) && query === null ? list.value?.removed ?? [] : [];
   const all = list.value?.contacts ?? [];
   const rows = rowsFor(all, props.filter).filter((row) => matches(row, query ?? ''));
   const requests = showsRequests(props.filter) && query === null ? list.value?.requests ?? 0 : 0;
@@ -194,9 +230,14 @@ export function MessagesList(props: MessagesListProps): ReactNode {
       <FlipList className="contact-rows" keys={rows.map((row) => row.id)} label={FILTER_LABELS[props.filter]}>
         {rows.map((row, index) => (
           <Row key={row.id} row={row} current={row.id === props.selectedId} phone={props.phone} now={props.now}
-            groupStart={startsOtherGroup(rows, index)} onOpen={() => props.onOpen(row.id)} />
+            groupStart={startsOtherGroup(rows, index)} onOpen={() => props.onOpen(row.id)} manage={manageOf(row)} />
         ))}
       </FlipList>
+      <RemovedContacts rows={removed} phone={props.phone} />
+      {removing === null ? null : <RemoveContactDialog row={removing} onDone={(done) => {
+        setRemoving(null);
+        if (done) props.onRemoved(removing.id);
+      }} />}
     </div>
   );
 }

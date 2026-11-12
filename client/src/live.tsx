@@ -36,6 +36,7 @@ import { BookmarkStore } from './views/bookmarks/bookmark-store.ts';
 import { ChapterCache } from './views/books/chapter-cache.ts';
 import { M5bActions } from './views/m5b/m5b-actions.ts';
 import { ContactActions } from './views/contacts/contact-actions.ts';
+import { ContactEdits } from './views/contacts/contact-edits.ts';
 import { ContactsStore } from './views/contacts/contacts-store.ts';
 import { NetworkActions, NetworkStore } from './views/settings/network-store.ts';
 import { createM5bStores, startM5bStores, type M5bStores } from './views/m5b/m5b-stores.ts';
@@ -72,6 +73,8 @@ export interface Live {
   /** 第 113 条：联系人（列表、聊天、资料）和它们的写操作；设置里的网络账号、对外可见。 */
   contacts: ContactsStore;
   contactActions: ContactActions;
+  /** 第 12 批：表情、备注、绑人物页、删除和恢复。 */
+  contactEdits: ContactEdits;
   network: NetworkStore;
   networkActions: NetworkActions;
 }
@@ -151,6 +154,7 @@ function createLive(api: PlasticineApi, parts: ClientParts, push: PushSwitch): L
     chapters: new ChapterCache(api.books),
     contacts,
     contactActions: new ContactActions({ api, store: contacts, ops: actionOps, drafts: inlineDrafts }),
+    contactEdits: new ContactEdits(api, contacts),
     network,
     networkActions: new NetworkActions({ api, store: network, ops: actionOps, drafts: inlineDrafts }),
   };

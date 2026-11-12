@@ -33,7 +33,8 @@ describe('contextItems', () => {
   });
 
   it('一行的右键就是这一行的「⋯」', () => {
-    const box = mount('<ul class="column"><li data-context-row><span>标题</span><button data-row-menu>⋯</button></li></ul>');
+    const box = mount('<ul class="column"><li data-context-row><span>标题</span>'
+      + '<button data-row-menu>⋯</button></li></ul>');
     const clicked = vi.fn();
     box.querySelector('button')?.addEventListener('click', clicked);
     expect(contextItems(box.querySelector('span') as Element, 10, 20, vi.fn())).toEqual([]);

@@ -36,6 +36,10 @@ import type {
   ConfirmSafetyRequestSchema,
   SendContactMessageRequestSchema,
   SetContactRelationRequestSchema,
+  ContactAliasRequestSchema,
+  ContactPersonRequestSchema,
+  ContactReactionRequestSchema,
+  ContactRemoveRequestSchema,
   SetMarkRequestSchema,
   VerdictNetworkTaskRequestSchema,
   VisibilityResponse,
@@ -45,6 +49,10 @@ export type SendContactMessageRequest = Static<typeof SendContactMessageRequestS
 export type AddContactRequest = Static<typeof AddContactRequestSchema>;
 export type ContactRequestDecision = Static<typeof ContactRequestDecisionSchema>;
 export type SetContactRelationRequest = Static<typeof SetContactRelationRequestSchema>;
+export type ContactAliasRequest = Static<typeof ContactAliasRequestSchema>;
+export type ContactPersonRequest = Static<typeof ContactPersonRequestSchema>;
+export type ContactReactionRequest = Static<typeof ContactReactionRequestSchema>;
+export type ContactRemoveRequest = Static<typeof ContactRemoveRequestSchema>;
 export type ReadContactRequest = Static<typeof ReadContactRequestSchema>;
 export type ConfirmSafetyRequest = Static<typeof ConfirmSafetyRequestSchema>;
 export type CreateNetworkTaskRequest = Static<typeof CreateNetworkTaskRequestSchema>;
@@ -80,6 +88,16 @@ export interface ContactsApi {
   decideRequest(id: string, input: ContactRequestDecision): Promise<ContactRow>;
   /** POST /v2/contacts/:id/relation：关系或单独档位上限，带 version。回答按 { contact } 读（同上）。 */
   setRelation(id: string, input: SetContactRelationRequest): Promise<ContactRow>;
+  /** POST /v2/contacts/:id/alias：改备注（null = 去掉），带 version。 */
+  setAlias(id: string, input: ContactAliasRequest): Promise<ContactRow>;
+  /** POST /v2/contacts/:id/person：绑记忆里的人物页、新建一页再绑、解绑、答「不是」。 */
+  setPerson(id: string, input: ContactPersonRequest): Promise<ContactRow>;
+  /** POST /v2/contacts/:id/remove：删除联系人（进「最近删除」，对方不会收到通知）。 */
+  remove(id: string, input: ContactRemoveRequest): Promise<ContactRow>;
+  /** POST /v2/contacts/:id/restore：从「最近删除」恢复。 */
+  restore(id: string, input: ContactRemoveRequest): Promise<ContactRow>;
+  /** POST /v2/contacts/:id/messages/:messageId/reaction：给一句加 / 拿掉表情（联系人或群）。 */
+  react(id: string, messageId: string, input: ContactReactionRequest): Promise<void>;
   /** POST /v2/contacts/:id/read：读到哪儿。回答按 { contact } 读（同上）。 */
   read(id: string, input: ReadContactRequest): Promise<ContactRow>;
   /** POST /v2/contacts/:id/safety：和对方核对过安全码，换上对方的新钥匙。回答按 { contact } 读。 */

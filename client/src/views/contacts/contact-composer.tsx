@@ -3,7 +3,7 @@
 // 这句就是让那个 Plasticine 在这段聊天里回答；不 @ 就是和人说话。空着时灰字是「预测一句」候选（Tab 采用）。
 // Enter 发、Shift+Enter 换行、中文输入法选字时不发；小签在、字空着时按退格去掉小签。邮件联系人发 = 回最近一封。
 
-import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { ContactRow } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
@@ -18,6 +18,7 @@ import { useOp } from '../pending/pending-ops.tsx';
 import { NetworkAttachmentDrafts, useNetworkAttachmentDrafts } from './network-attachment-drafts.tsx';
 import './network-attachments.css';
 import { FaceAvatar } from './contact-avatar.tsx';
+import { setContactReply, useContactReply } from './contact-reply.ts';
 
 /** 输入框最多长到这么高（px），再多就在框里滚。 */
 const COMPOSER_MAX_HEIGHT = 160;
@@ -109,6 +110,10 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
   const locked = op !== undefined && isOpenOp(op);
   const offered = target !== null || text !== '' ? null : suggestion;
   const choices = mentionChoices(contact);
+  const reply = useContactReply(contact.id);
+  useEffect(() => {
+    if (reply !== null) input.current?.focus();
+  }, [reply]);
   const grow = (): void => {
     const element = input.current;
     if (element === null) {
@@ -135,9 +140,10 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
     if (locked || !attachments.ready) return;
     const kind = target?.target?.kind ?? null;
     const aiOf = contact.kind === 'group' ? target?.target?.aiOf ?? null : null;
-    const sent = await contactActions.send(contact, kind === null ? 'person' : kind, aiOf, attachments.ids);
+    const sent = await contactActions.send(contact, kind === null ? 'person' : kind, aiOf, attachments.ids,
+      reply?.id ?? null);
     if (sent) {
-      setTarget(null); attachments.clear();
+      setTarget(null); attachments.clear(); setContactReply(contact.id, null);
       requestAnimationFrame(grow);
     }
   };
@@ -166,6 +172,11 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
         return;
       }
     }
+    if (event.key === 'Escape' && reply !== null) {
+      event.preventDefault();
+      setContactReply(contact.id, null);
+      return;
+    }
     if (event.key === 'Backspace' && text === '' && target !== null) {
       setTarget(null);
       return;
@@ -190,6 +201,13 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
         event.preventDefault(); attachments.add(Array.from(event.dataTransfer.files));
       }}>
       <div className="contact-compose-surface">
+      {reply === null ? null : (
+        <div className="contact-reply-chip">
+          <Icon name="quote" size={12} />
+          <span className="contact-reply-text">回复 {reply.author}：{reply.text}</span>
+          <IconButton icon="close" size={12} label="不回这句了" onClick={() => setContactReply(contact.id, null)} />
+        </div>
+      )}
       <NetworkAttachmentDrafts drafts={attachments} disabled={locked} />
       <input type="file" multiple hidden ref={files} aria-label="选择消息附件" disabled={locked}
         onChange={(event) => { attachments.add(Array.from(event.target.files ?? [])); event.target.value = ''; }} />
