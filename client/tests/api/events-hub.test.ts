@@ -28,6 +28,23 @@ describe('EventsHub：整个应用一条事件流', () => {
     hub.stop();
   });
 
+  it('reconnect：断开立刻重连，仍是一条订阅、事件照常到（直连通了时换路用）；没开始时不动', async () => {
+    const bus = new FakeEventBus();
+    const hub = new EventsHub(bus);
+    hub.reconnect();
+    expect(bus.subscriberCount).toBe(0);
+    const seen = vi.fn();
+    hub.on(seen);
+    hub.start();
+    await Promise.resolve();
+    hub.reconnect();
+    await Promise.resolve();
+    expect(bus.subscriberCount).toBe(1);
+    bus.emit(EVENT);
+    expect(seen).toHaveBeenCalledWith(EVENT);
+    hub.stop();
+  });
+
   it('断线后按退避重连，重连上状态回到 open', async () => {
     vi.useFakeTimers();
     const bus = new FakeEventBus();

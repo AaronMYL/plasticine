@@ -46,6 +46,7 @@ import { SourceLimiter } from './source-limiter.ts';
 import { askView } from './asks.ts';
 import { BrowserSessions } from './browser-sessions.ts';
 import { DevicePaths } from './device-paths.ts';
+import { DirectHub } from '../direct/hub.ts';
 
 export interface AppOptions {
   state: StateService;
@@ -163,10 +164,14 @@ export function createApp(options: AppOptions): App {
     glossary: () => glossaryTerms(options.state),
     now,
   });
-  const devicePaths = new DevicePaths();
+  // 直连（11-12）：握手答 answer、通道里的请求转给本机这个端口；开始听以后才有端口。
+  let listeningPort: number | null = null;
+  const direct = new DirectHub({ port: () => listeningPort });
+  const devicePaths = new DevicePaths(direct.marker);
   const deps: AppDeps = {
     state: options.state,
     devicePaths,
+    direct,
     text: options.text,
     bookInsights,
     noteAssistant: new NoteAssistant(options.text, options.state),
@@ -264,6 +269,7 @@ export function createApp(options: AppOptions): App {
             reject(new Error(`监听 ${host}:${port} 后拿不到端口`));
             return;
           }
+          listeningPort = address.port;
           resolve(address.port);
         });
       });
@@ -272,6 +278,7 @@ export function createApp(options: AppOptions): App {
       stopping ??= (async () => {
         const wasListening = server.listening;
         server.close();
+        direct.close();
         stopSpaceEvents();
         options.scans.stop();
         options.tasks.stop();

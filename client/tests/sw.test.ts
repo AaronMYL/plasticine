@@ -209,3 +209,99 @@ describe('service worker · 离线兜底', () => {
     expect((result as Response).status).toBe(503);
   });
 });
+
+// 直连（11-12《首次使用解耦》）：本站 /v2/ 的请求先问发请求的页面；页面从通道发、把回应递回来；页面不管或通道没开就
+// 照旧走网络；写请求交出去以后出错不再走网络；登录、账号、握手类不问页面。
+describe('service worker · 直连', () => {
+  type PageReply = (message: { method: string; path: string; body: ArrayBuffer | null }, port: MessagePort) => void;
+
+  function directWorker(reply: PageReply | null, network = vi.fn(async () => new Response('经中继'))) {
+    const page = {
+      id: 'page-1',
+      postMessage: vi.fn((message: { method: string; path: string; body: ArrayBuffer | null },
+        transfer: MessagePort[]) => {
+        if (reply !== null) reply(message, transfer[0]!);
+      }),
+    };
+    const listeners = new Map<string, Listener>();
+    const self = {
+      location: { origin: 'https://alex.cyberhunter.top' },
+      registration: { showNotification: vi.fn() },
+      clients: { get: vi.fn(async (id: string) => (id === page.id ? page : undefined)), matchAll: vi.fn(),
+        claim: vi.fn(async () => undefined) },
+      addEventListener: (type: string, listener: Listener) => listeners.set(type, listener),
+      skipWaiting: vi.fn(async () => undefined),
+    };
+    new Function('self', 'caches', 'fetch', source)(self, fakeCaches(), network);
+    const fetchEvent = async (request: Request, clientId = page.id): Promise<Response | undefined> => {
+      let responded: Promise<Response> | undefined;
+      listeners.get('fetch')?.({ request, clientId, respondWith: (promise: Promise<Response>) => { responded = promise; } });
+      return responded === undefined ? undefined : await responded;
+    };
+    return { fetchEvent, page, network };
+  }
+
+  const answer: PageReply = (message, port) => {
+    port.postMessage({ type: 'ack' });
+    port.postMessage({ type: 'head', status: 200, headers: { 'content-type': 'application/json' } });
+    const bytes = new TextEncoder().encode(JSON.stringify({ via: 'direct', path: message.path }));
+    port.postMessage({ type: 'chunk', data: bytes.buffer });
+    port.postMessage({ type: 'end' });
+  };
+
+  it('页面通道开着：从通道拿回应，不走网络', async () => {
+    const { fetchEvent, network } = directWorker(answer);
+    const response = await fetchEvent(new Request('https://alex.cyberhunter.top/v2/lines?limit=5'));
+    expect(await response?.json()).toEqual({ via: 'direct', path: '/v2/lines?limit=5' });
+    expect(network).not.toHaveBeenCalled();
+  });
+
+  it('页面说通道没开：照旧走网络；页面不回话的，以后不再问它', async () => {
+    const fallback = directWorker((_message, port) => {
+      port.postMessage({ type: 'ack' });
+      port.postMessage({ type: 'fallback', sent: false });
+    });
+    expect(await (await fallback.fetchEvent(new Request('https://alex.cyberhunter.top/v2/lines')))?.text())
+      .toBe('经中继');
+    const deaf = directWorker(null);
+    expect(await (await deaf.fetchEvent(new Request('https://alex.cyberhunter.top/v2/lines')))?.text())
+      .toBe('经中继');
+    expect(await deaf.fetchEvent(new Request('https://alex.cyberhunter.top/v2/lines'))).toBeUndefined();
+    expect(deaf.page.postMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('写请求交给通道以后出错：不改走网络（免得做两遍）；读请求出错改走网络', async () => {
+    const broken: PageReply = (_message, port) => {
+      port.postMessage({ type: 'ack' });
+      port.postMessage({ type: 'error' });
+    };
+    const write = directWorker(broken);
+    const response = await write.fetchEvent(new Request('https://alex.cyberhunter.top/v2/notes', { method: 'POST',
+      headers: { 'content-type': 'application/json' }, body: '{"title":"t"}' }));
+    expect(response?.type).toBe('error');
+    expect(write.network).not.toHaveBeenCalled();
+    const read = directWorker(broken);
+    expect(await (await read.fetchEvent(new Request('https://alex.cyberhunter.top/v2/notes')))?.text()).toBe('经中继');
+  });
+
+  it('登录、账号、握手、上传、别的站点、没有页面的请求都不问页面', async () => {
+    const { fetchEvent, page } = directWorker(answer);
+    for (const request of [new Request('https://alex.cyberhunter.top/v2/session/password', { method: 'POST' }),
+      new Request('https://alex.cyberhunter.top/v2/account/state'),
+      new Request('https://alex.cyberhunter.top/v2/direct/offer', { method: 'POST' }),
+      new Request('https://alex.cyberhunter.top/v2/attachments', { method: 'POST',
+        headers: { 'content-type': 'application/octet-stream' }, body: 'x' }),
+      new Request('https://other.example/v2/lines')]) {
+      expect(await fetchEvent(request)).toBeUndefined();
+    }
+    expect(await fetchEvent(new Request('https://alex.cyberhunter.top/v2/lines'), '')).toBeUndefined();
+    expect(page.postMessage).not.toHaveBeenCalled();
+  });
+
+  it('不走直连的接口和 agent/shared/api/direct.ts 一致', async () => {
+    const { DIRECT_EXCLUDED_PREFIXES } = await import('../src/api/shared.ts');
+    const listed = /const DIRECT_EXCLUDED = \[([^\]]*)\]/.exec(source)?.[1] ?? '';
+    expect(listed.split(',').map((item) => item.trim().replace(/'/g, '')).filter(Boolean))
+      .toEqual([...DIRECT_EXCLUDED_PREFIXES]);
+  });
+});

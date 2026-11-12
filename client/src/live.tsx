@@ -7,6 +7,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { Value } from 'typebox/value';
 import type { PlasticineApi } from './api/client.ts';
 import { useApi } from './api/context.tsx';
+import { DIRECT_OPEN_EVENT } from './api/direct/direct-channel.ts';
 import { EventsHub } from './api/events-hub.ts';
 import { usePushDevice } from './api/push-device.ts';
 import { AgreementViewSchema, MAIN_LINE_ALIAS } from './api/shared.ts';
@@ -186,7 +187,11 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
       live.lines.lineOf(MAIN_LINE_ALIAS)?.id ?? null));
     live.hub.start();
     void live.push.start();
+    // 直连通了（api/direct/direct-link.tsx）：事件流断开重连一次，下一条就从直连走。
+    const toDirect = (): void => live.hub.reconnect();
+    window.addEventListener(DIRECT_OPEN_EVENT, toDirect);
     return () => {
+      window.removeEventListener(DIRECT_OPEN_EVENT, toDirect);
       stopNotes();
       stopChapters();
       live.network.stop();

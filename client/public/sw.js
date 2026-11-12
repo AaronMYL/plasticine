@@ -5,6 +5,9 @@
 // - 离线兜底（用户视角审查 2026-11-01 第 16 条 ③）：install 时只预缓存本站的 offline.html；fetch 只拦导航请求
 //   （mode === 'navigate'），网络失败时回 offline.html。接口、/sw.js、资源一律不拦、不缓存（第 92 条：/sw.js 不缓存，
 //   更新机制不变）。
+// - 直连（11-12《首次使用解耦》）：本站 /v2/ 的请求（含图片、附件、事件流）先问发请求的那个页面能不能从直连通道发；
+//   页面通道开着就由它发、把回应一块块递回来，不开就照旧走网络（经中继）。登录、账号、握手类不走；上传文件不走。
+//   写操作一旦交给通道就不再改走网络（免得做两遍）；读操作通道出错改走网络。
 
 const FALLBACK_TITLE = 'Plasticine';
 const FALLBACK_BODY = '有一件事要你马上看。';
@@ -143,7 +146,8 @@ async function cacheOfflinePage() {
 }
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(cacheOfflinePage());
+  // 新版 worker 不等旧页面全关掉：直连这一段要马上接管。
+  event.waitUntil(cacheOfflinePage().then(() => self.skipWaiting()));
 });
 
 async function dropOldOfflineCaches() {
@@ -153,7 +157,7 @@ async function dropOldOfflineCaches() {
 }
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(dropOldOfflineCaches());
+  event.waitUntil(dropOldOfflineCaches().then(() => self.clients.claim()));
 });
 
 /** 导航请求先走网络；网络失败才回缓存里的离线页；连离线页都没有就回一个本站的 503，不让导航悬着。 */
@@ -173,7 +177,142 @@ async function navigateOrOffline(request) {
   }
 }
 
+// ---------- 直连 ----------
+
+// 和 agent/shared/api/direct.ts 的 DIRECT_EXCLUDED_PREFIXES 一致（测试核对）。
+const DIRECT_EXCLUDED = ['/v2/direct', '/v2/session', '/v2/account', '/v2/auth'];
+/** 页面多久没回「收到」就当它不管直连（旧页面没装这一段）。 */
+const DIRECT_ACK_MS = 400;
+/** 读请求多久没等到回应头就改走网络。 */
+const DIRECT_HEAD_MS = 8000;
+/** 没回过「收到」的页面：这个 worker 活着时不再问它。 */
+const directDeaf = new Set();
+
+function directPath(url) {
+  if (url.origin !== self.location.origin || !url.pathname.startsWith('/v2/')) {
+    return false;
+  }
+  return !DIRECT_EXCLUDED.some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`));
+}
+
+/** 只转读请求和 JSON 写请求；上传（文件、表单）照旧走网络，进度条才准。 */
+function directMethodOk(request) {
+  if (request.method === 'GET' || request.method === 'HEAD') {
+    return true;
+  }
+  const type = request.headers.get('content-type') ?? '';
+  return type === '' || type.startsWith('application/json');
+}
+
+function directWanted(event) {
+  const request = event.request;
+  if (request.mode === 'navigate' || !isText(event.clientId) || directDeaf.has(event.clientId)) {
+    return false;
+  }
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch {
+    return false;
+  }
+  return directPath(url) && directMethodOk(request);
+}
+
+function headersOf(request) {
+  const headers = {};
+  request.headers.forEach((value, name) => { headers[name] = value; });
+  return headers;
+}
+
+/**
+ * 交给页面发：先等一声「收到」，再等回应头，然后正文一块块进一个流。拿不到就回 null（改走网络）；
+ * 写请求交出去以后出错回 Response.error()，不再走网络。
+ */
+async function directFetch(event) {
+  const request = event.request;
+  const safe = request.method === 'GET' || request.method === 'HEAD';
+  const client = await self.clients.get(event.clientId);
+  if (client === undefined || client === null) {
+    return null;
+  }
+  const body = safe ? null : await request.clone().arrayBuffer();
+  const url = new URL(request.url);
+  const channel = new MessageChannel();
+  const port = channel.port1;
+  let controller = null;
+  let settled = false;
+  let headTimer = 0;
+  return await new Promise((resolve) => {
+    const settle = (value) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(ackTimer);
+        clearTimeout(headTimer);
+        resolve(value);
+      }
+    };
+    const ackTimer = setTimeout(() => {
+      directDeaf.add(event.clientId);
+      port.close();
+      settle(null);
+    }, DIRECT_ACK_MS);
+    port.onmessage = (message) => {
+      const data = message.data ?? {};
+      if (data.type === 'ack') {
+        clearTimeout(ackTimer);
+        if (safe) {
+          headTimer = setTimeout(() => {
+            port.postMessage({ type: 'abort' });
+            port.close();
+            settle(null);
+          }, DIRECT_HEAD_MS);
+        }
+      } else if (data.type === 'fallback') {
+        port.close();
+        settle(safe || data.sent !== true ? null : Response.error());
+      } else if (data.type === 'head') {
+        const stream = new ReadableStream({
+          start(next) { controller = next; },
+          cancel() { port.postMessage({ type: 'abort' }); port.close(); },
+        });
+        const nullBody = request.method === 'HEAD' || [204, 205, 304].includes(data.status);
+        settle(new Response(nullBody ? null : stream, { status: data.status, headers: data.headers }));
+      } else if (data.type === 'chunk' && controller !== null) {
+        controller.enqueue(new Uint8Array(data.data));
+      } else if (data.type === 'end' && controller !== null) {
+        controller.close();
+        port.close();
+      } else if (data.type === 'error') {
+        if (controller !== null) {
+          controller.error(new TypeError('直连断了'));
+        }
+        port.close();
+        settle(safe ? null : Response.error());
+      }
+    };
+    client.postMessage({ type: 'plasticine-direct-fetch', method: request.method,
+      path: `${url.pathname}${url.search}`, headers: headersOf(request), body }, [channel.port2]);
+  });
+}
+
+async function directOrNetwork(event) {
+  const copy = event.request.clone();
+  try {
+    const response = await directFetch(event);
+    if (response !== null) {
+      return response;
+    }
+  } catch (error) {
+    console.warn('直连这次没用上，改走网络', error);
+  }
+  return await fetch(copy);
+}
+
 self.addEventListener('fetch', (event) => {
+  if (directWanted(event)) {
+    event.respondWith(directOrNetwork(event));
+    return;
+  }
   if (event.request.mode !== 'navigate') {
     return;
   }

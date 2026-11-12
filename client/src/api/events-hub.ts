@@ -44,6 +44,16 @@ export class EventsHub {
     this.status.set('closed');
   }
 
+  /** 断开重连一次（直连通了：让事件流也换到直连上）。接得上原来的位置，不丢事件。 */
+  reconnect(): void {
+    if (this.controller === null) {
+      return;
+    }
+    const controller = this.controller;
+    controller.abort();
+    this.connect(true);
+  }
+
   on(listener: EventListener): () => void {
     this.listeners.add(listener);
     return () => {

@@ -28,11 +28,14 @@ import type { Tasks } from '../tasks/index.ts';
 import type { CalendarSync } from '../calendar/index.ts';
 import type { Heartbeat } from '../heartbeat/index.ts';
 import type { DevicePaths } from './device-paths.ts';
+import type { DirectHub } from '../direct/hub.ts';
 
 export interface AppDeps {
   state: StateService;
   /** 登录着的设备这次怎么连进来的（本机 / 直连 / 经中继 / 自己的网址），只在内存里。 */
   devicePaths: DevicePaths;
+  /** 直连的握手和通道（direct/hub.ts）。 */
+  direct: DirectHub;
   /** 旁路的模型调用（kernel/text.ts）：笔记、翻译、图书、记账截图、分身、记忆整理。 */
   text: TextModels;
   noteAssistant: NoteAssistant;

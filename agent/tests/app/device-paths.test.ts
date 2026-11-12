@@ -14,7 +14,7 @@ function req(input: { address?: string; host?: string; headers?: Record<string, 
 }
 
 test('本机 / 经中继 / 直连 / 自己的网址', () => {
-  const paths = new DevicePaths();
+  const paths = new DevicePaths('test-marker');
   assert.equal(paths.pathOf(req({ address: '127.0.0.1' })), 'local');
   assert.equal(paths.pathOf(req({ address: '127.0.0.1', host: 'plasticine.example.test',
     headers: { 'x-forwarded-for': '100.64.0.2' } })), 'web');
@@ -22,9 +22,9 @@ test('本机 / 经中继 / 直连 / 自己的网址', () => {
   const tunnel = { remoteAddress: undefined };
   paths.markTunnel(tunnel);
   assert.equal(paths.pathOf(req({ socket: tunnel, host: 'alex.cyberhunter.top' })), 'relay');
-  const direct = req({ socket: tunnel });
-  paths.markDirect(direct);
+  const direct = req({ address: '127.0.0.1', headers: { 'x-plasticine-direct': 'test-marker' } });
   assert.equal(paths.pathOf(direct), 'direct');
+  assert.equal(paths.pathOf(req({ address: '127.0.0.1', headers: { 'x-plasticine-direct': 'guess' } })), 'local');
   paths.see('device-a', direct);
   assert.equal(paths.of('device-a'), 'direct');
   assert.equal(paths.of('device-b'), undefined);
