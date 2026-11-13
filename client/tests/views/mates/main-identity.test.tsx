@@ -1,4 +1,4 @@
-// 第 12 批：主线的名字可以自己起。编辑主线和编辑队友同一个弹框（名字、头像字、颜色，没有职责）；
+// 第 12 批：主线的名字可以自己起（11-13 起头像固定是泥团加漩涡，编辑主线只改名字）；
 // 改了以后栏目、主线那一行、输入框提示都用新名字；对方给他的 AI 起了名字，聊天里写「林一的 小满」。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -6,15 +6,16 @@ import { expect, it } from 'vitest';
 import { seedContacts } from '../../../src/api/fake/contacts-seed.ts';
 import { renderApp, settle } from '../../helpers.tsx';
 
-it('编辑主线：改名、头像字；栏目、主线、输入框提示跟着变', async () => {
+it('编辑主线：只改名字，没有头像字和颜色；栏目、主线、输入框提示跟着变', async () => {
   const app = await renderApp({ hash: '#/plasticine' });
   fireEvent.click(await screen.findByRole('button', { name: '编辑主线' }));
   const editor = screen.getByRole('dialog', { name: '编辑主线' });
   expect(within(editor).queryByLabelText('职责')).toBeNull();
   fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '阿泥' } });
-  fireEvent.change(within(editor).getByLabelText('头像文字'), { target: { value: '泥' } });
+  expect(within(editor).queryByLabelText('头像文字')).toBeNull();
+  expect(within(editor).queryByRole('group', { name: '颜色' })).toBeNull();
   fireEvent.click(within(editor).getByRole('button', { name: '保存修改' }));
-  await waitFor(() => expect(app.control.mates.main).toEqual({ name: '阿泥', avatar: '泥', hue: 'sky' }));
+  await waitFor(() => expect(app.control.mates.main).toEqual({ name: '阿泥' }));
   expect(await screen.findByRole('link', { name: '阿泥 主线' })).toBeTruthy();
   expect(screen.getByRole('navigation', { name: '栏目' }).querySelector('[aria-label="阿泥"]')).not.toBeNull();
   const input = await screen.findByRole('textbox', { name: '问一句' }) as HTMLTextAreaElement;

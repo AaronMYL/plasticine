@@ -7,7 +7,7 @@ import { mateGroupTaskTools } from '../../src/mates/group-task-tools.ts';
 import { openTestState } from '../state/helpers.ts';
 import { deferred, slowTool, startKernel, until, type Harness } from './helpers.ts';
 
-const draft = { name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky' as const,
+const draft = { name: '资料研究员', role: '整理公开资料', avatar: 'cat' as const, hue: 'sky' as const,
   soul: '先核对原文。', purpose: null };
 function setup(h: Harness) {
   const mates = new Mates(h.handle.state, () => h.kernel);

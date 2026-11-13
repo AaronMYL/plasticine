@@ -5,9 +5,9 @@ import type { FakeMates } from './fake-mates.ts';
 import type { FakeSoul } from './fake-soul.ts';
 
 export function seedMemoryScene({ mates, soul }: { mates: FakeMates; soul: FakeSoul }, now: Date): void {
-  void mates.create({ requestId: 'scene-mate-research', name: '研究员', avatar: '研', hue: 'sky', role: '查资料、写周报',
+  void mates.create({ requestId: 'scene-mate-research', name: '研究员', avatar: 'fox', hue: 'sky', role: '查资料、写周报',
     soul: '- 报告里的数字都带来源链接。\n- 先列结论，再列依据。', purpose: null });
-  void mates.create({ requestId: 'scene-mate-design', name: 'UI 设计师', avatar: '设', hue: 'rose', role: '出界面设计稿',
+  void mates.create({ requestId: 'scene-mate-design', name: 'UI 设计师', avatar: 'curly', hue: 'rose', role: '出界面设计稿',
     soul: '- 设计稿里的数字用示例，标「示例」。', purpose: null });
   const at = now.toISOString();
   soul.seedLines([{ id: 'scene-rule-weekend', text: '周末不发等我决定的卡。', section: 'doing', source: 'inference',

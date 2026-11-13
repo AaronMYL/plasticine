@@ -25,7 +25,7 @@ export function ruleMate(line: SoulLine, mates: readonly MateView[]): MateView |
 export function ScopeChip({ line, mates }: { line: SoulLine; mates: readonly MateView[] }): ReactNode {
   if (line.scopeKind !== 'mate') return null;
   const mate = ruleMate(line, mates);
-  return <span className="rule-chip">{mate === undefined ? null : <MateAvatar mate={mate} size={14} />}
+  return <span className="rule-chip">{mate === undefined ? null : <MateAvatar mate={mate} size={16} still />}
     只对{mate?.name ?? '一位队友'}</span>;
 }
 

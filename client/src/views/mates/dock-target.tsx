@@ -9,8 +9,8 @@ import { useCurrentTab } from '../../shell/current-tab-context.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { Popover, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 import { routeHash } from '../../shell/routes.ts';
-import { MainAvatar, useMainIdentity } from './main-identity.tsx';
-import { MateAvatar, GroupAvatar } from './mate-avatar.tsx';
+import { useMainIdentity } from './main-identity.tsx';
+import { MainAvatar, MateAvatar, GroupAvatar } from './mate-avatar.tsx';
 import './mates.css';
 
 function writerTarget(writer: string, roster: MateListResponse, line?: LineView): string | null {
@@ -88,14 +88,14 @@ export function DockTargetSelector(): ReactNode {
       onClick={(event) => setMenu(anchorOf(event.currentTarget))}>
       {mate !== undefined ? <MateAvatar mate={mate} size={24} /> : group !== undefined
         ? <GroupAvatar mates={roster.mates.filter((item) => group.mateIds.includes(item.id))} />
-        : <MainAvatar main={main} size={22} />}
+        : <MainAvatar size={24} />}
       <span>{mate?.name ?? group?.name ?? main.name}</span><Icon name="chevron-down" size={12} />
     </button>
     {target.fromWriter ? <span className="dock-writer">写过这一页</span> : null}
     {menu === null ? null : <Popover anchor={menu} role="menu" label="对话对象" align="start"
       onClose={() => setMenu(null)}>
       <TargetItem label={`${main.name} 主线`} selected={target.lineId === MAIN_LINE_ALIAS}
-        lead={<MainAvatar main={main} size={24} />} onSelect={() => select(MAIN_LINE_ALIAS)} />
+        lead={<MainAvatar size={24} />} onSelect={() => select(MAIN_LINE_ALIAS)} />
       <p className="dock-target-section">队友</p>
       {roster.mates.filter((item) => item.disabledAt === null).map((item) => <TargetItem key={item.id}
         label={item.name} selected={target.lineId === item.lineId} lead={<MateAvatar mate={item} size={24} />}

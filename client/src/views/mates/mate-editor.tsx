@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { MODEL_PURPOSES, PROJECT_HUES, type MateDraft, type MateView, type MateGroupView,
+import { DEFAULT_MATE_CHARACTER, MODEL_PURPOSES, PROJECT_HUES, type MateDraft, type MateView, type MateGroupView,
   type MateGroupDraft } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { HueSwatches } from '../../primitives/hue-swatches/index.tsx';
@@ -12,19 +12,21 @@ import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { mateGroupRoute, mateRoute, type Route } from '../../shell/routes.ts';
 import { useOp } from '../pending/pending-ops.tsx';
+import { CharacterPicker } from './bot/character-picker.tsx';
 import { MateAvatar } from './mate-avatar.tsx';
 
-export const EMPTY_MATE: MateDraft = { name: '', role: '', avatar: '友', hue: 'sky', purpose: null, soul: '' };
+export const EMPTY_MATE: MateDraft = { name: '', role: '', avatar: DEFAULT_MATE_CHARACTER, hue: 'sky', purpose: null,
+  soul: '' };
 
 /**
- * 新建队友时的几个现成起点（11-12，Aaron：「让配置更直观」）：点一个填好名字、职责、头像字和颜色，再照自己的事改。
+ * 新建队友时的几个现成起点（11-12，Aaron：「让配置更直观」）：点一个填好名字、职责、头像角色和颜色，再照自己的事改。
  * 职责写成「管什么、交回什么」，主线分派和队友自己都照它判断这件事归不归它。
  */
 export const MATE_PRESETS: readonly Pick<MateDraft, 'name' | 'role' | 'avatar' | 'hue'>[] = [
-  { name: '资料研究员', avatar: '研', hue: 'sky', role: '查公开资料、读原文、核对来源；交回带出处的要点，分清哪些是事实、哪些是推测。' },
-  { name: '文字编辑', avatar: '编', hue: 'rose', role: '改稿、润色、统一说法和格式；交回改好的稿子和改了什么。不改事实和结论。' },
-  { name: '日程管家', avatar: '程', hue: 'teal', role: '看日历、待办和到期的事，排时间、提醒、准备会前材料；要对外回复或改日程先问。' },
-  { name: '代码助手', avatar: '码', hue: 'slate', role: '读代码、查问题、写脚本和小工具；交回能跑的结果、怎么验证的、没验证的部分。' },
+  { name: '资料研究员', avatar: 'cat', hue: 'sky', role: '查公开资料、读原文、核对来源；交回带出处的要点，分清哪些是事实、哪些是推测。' },
+  { name: '文字编辑', avatar: 'bunny', hue: 'rose', role: '改稿、润色、统一说法和格式；交回改好的稿子和改了什么。不改事实和结论。' },
+  { name: '日程管家', avatar: 'bell', hue: 'teal', role: '看日历、待办和到期的事，排时间、提醒、准备会前材料；要对外回复或改日程先问。' },
+  { name: '代码助手', avatar: 'bot', hue: 'slate', role: '读代码、查问题、写脚本和小工具；交回能跑的结果、怎么验证的、没验证的部分。' },
 ];
 type Props = { phone: boolean; onClose: () => void; navigate: (route: Route) => void };
 
@@ -39,12 +41,13 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
   const [draft, setDraft] = useState<MateDraft>(() => ({ ...EMPTY_MATE, ...mate,
     ...(cached?.kind === 'mate_create' || cached?.kind === 'mate_update' ? cached.body : {}) }));
   const locked = op !== undefined && isOpenOp(op);
+  const [picked, setPicked] = useState(false);
   const patch = <K extends keyof MateDraft>(field: K, value: MateDraft[K]): void => {
     setDraft((old) => ({ ...old, [field]: value }));
   };
   const submit = async (): Promise<void> => {
-    const body: MateDraft = { name: draft.name.trim(), avatar: draft.avatar.trim() || draft.name.slice(0, 1),
-      hue: draft.hue, role: draft.role.trim(), soul: draft.soul, purpose: draft.purpose };
+    const body: MateDraft = { name: draft.name.trim(), avatar: draft.avatar, hue: draft.hue, role: draft.role.trim(),
+      soul: draft.soul, purpose: draft.purpose };
     const result = mate === undefined ? await live.mateActions.create(body) : await live.mateActions.update(mate, body);
     if (mounted.current && result !== null && 'role' in result) { onClose(); navigate(mateRoute(result.id)); }
   };
@@ -59,17 +62,21 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
               <button key={preset.name} type="button" className="mate-preset"
                 aria-pressed={draft.name === preset.name && draft.role === preset.role}
                 onClick={() => setDraft((old) => ({ ...old, ...preset }))}>
-                <MateAvatar mate={preset} size={24} />{preset.name}
+                <MateAvatar mate={preset} size={24} still />{preset.name}
               </button>
             ))}
           </div>
         )}
-        <div className="mate-form-identity"><MateAvatar mate={draft} size={44} />
-          <label>头像文字<input value={draft.avatar} maxLength={8}
-            onChange={(event) => patch('avatar', event.target.value)} /></label>
-          <div className="mate-form-hue"><span className="mate-form-label">颜色</span>
+        <div className="mate-form-identity mate-form-look">
+          {/* 换了角色或颜色弹一下：重新挂上，做完的那一下（11-13 设计稿）。 */}
+          <MateAvatar key={`${draft.avatar}:${draft.hue}`} mate={draft} size={56} picked={picked} />
+          <div className="mate-form-look-side">
+            <span className="mate-form-label">头像</span>
+            <CharacterPicker value={draft.avatar} hue={draft.hue}
+              onChange={(avatar) => { setPicked(true); patch('avatar', avatar); }} />
+            <span className="mate-form-label">颜色</span>
             <HueSwatches label="颜色" hues={PROJECT_HUES} names={HUE_NAMES} value={draft.hue}
-              onChange={(hue) => patch('hue', hue)} /></div></div>
+              onChange={(hue) => { setPicked(true); patch('hue', hue); }} /></div></div>
         <label>名字<input required minLength={2} maxLength={40} autoFocus value={draft.name}
           onChange={(event) => patch('name', event.target.value)} /></label>
         <label>职责<textarea required minLength={2} maxLength={160} rows={3} value={draft.role}
@@ -124,7 +131,7 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
           <label key={mate.id} className="mate-check"><input type="checkbox" checked={draft.mateIds.includes(mate.id)}
             disabled={!draft.mateIds.includes(mate.id) && (mate.disabledAt !== null || draft.mateIds.length >= 6)}
             onChange={(event) => setDraft({ ...draft, mateIds: event.target.checked ? [...draft.mateIds, mate.id]
-              : draft.mateIds.filter((id) => id !== mate.id) })} /><MateAvatar mate={mate} />{mate.name}</label>
+              : draft.mateIds.filter((id) => id !== mate.id) })} /><MateAvatar mate={mate} still />{mate.name}</label>
         ))}
       </fieldset>
       {op === undefined ? null : <OpLine op={op} onRetry={() => {

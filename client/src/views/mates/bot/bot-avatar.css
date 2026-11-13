@@ -1,0 +1,11 @@
+/* 队友、主线头像（11-13）：角色画在一个正方形里，大小由组件给；动起来的小图标和彩纸可以出这个框。 */
+.bot-avatar { display: inline-grid; flex: none; place-items: center; }
+.bot-avatar > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+/* 引擎还没到：同一个位置上一团淡淡的颜色，到了换成角色，不跳版。 */
+.bot-avatar-wait::before {
+  content: '';
+  width: 62%;
+  height: 62%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tile-hue) 18%, transparent);
+}

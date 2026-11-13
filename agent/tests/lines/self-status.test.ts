@@ -71,8 +71,8 @@ test('队友各自在干什么：空着、后台在做几件', async () => {
   try {
     const { state } = h.handle;
     const mates = new Mates(state, () => h.kernel);
-    const a = mates.create({ name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky', soul: '', purpose: null });
-    mates.create({ name: '文字编辑', role: '改稿', avatar: '编', hue: 'rose', soul: '', purpose: null });
+    const a = mates.create({ name: '资料研究员', role: '整理公开资料', avatar: 'cat' as const, hue: 'sky', soul: '', purpose: null });
+    mates.create({ name: '文字编辑', role: '改稿', avatar: 'bunny' as const, hue: 'rose', soul: '', purpose: null });
     const work = state.lines.create({ kind: 'background', parentLineId: null, projectId: null, title: '查三家中继',
       mateId: a.id });
     state.lines.update(work.id, { status: 'running' });

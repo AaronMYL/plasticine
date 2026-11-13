@@ -2,14 +2,13 @@
 .mates-roster .column-item { min-height: 46px; }
 .mates-section-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 12px 4px; }
 .mates-section-head h3 { margin: 0; font-size: 12px; font-weight: 500; color: var(--fg2); }
-.mate-avatar { flex: none; font-size: 13px; font-weight: 600; }
 .mate-avatar-stack { display: inline-flex; align-items: center; padding-right: 2px; }
-.mate-avatar-stack .mate-avatar + .mate-avatar { margin-left: -12px; border: 2px solid var(--bg); }
-.mate-working { display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--hue-teal); }
+.mate-avatar-stack .bot-avatar + .bot-avatar { margin-left: -10px; }
 .mate-state { font-size: 11px; color: var(--fg3); }
 .mates-legacy { padding-top: 24px; }
 .mates-legacy > .text-button { margin-left: 12px; }
-.mates-roster-phone { background: var(--bg); padding: 0 16px; }
+/* 手机上名单在抽屉里，底栏盖着抽屉最下面一截：留出底栏的高度，「技能」「记忆」和最后一行不被压住。 */
+.mates-roster-phone { background: var(--bg); padding: 0 16px calc(64px + env(safe-area-inset-bottom)); }
 .mates-phone-head { padding: 24px 8px 16px; }
 .mates-phone-head h1 { margin: 0; font-size: 24px; font-weight: 600; }
 .mates-roster-phone .column-item { min-height: 64px; gap: 12px; border-bottom: 1px solid var(--line); }
@@ -86,7 +85,7 @@
 .dock-target-button { display: flex; align-items: center; gap: 8px; border: 0; padding: 4px 6px;
   border-radius: 8px; background: transparent; color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
 .dock-target-button:hover { background: var(--tint); }
-.dock-target-button span:not(.mate-avatar) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock-target-button span:not(.bot-avatar) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dock-writer { font-size: 11px; color: var(--fg2); white-space: nowrap; }
 .dock-target-error { max-width: 260px; padding: 8px 12px; font-size: 12px; color: var(--err); }
 .mate-report-author { display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
@@ -142,3 +141,16 @@
   font: inherit; font-size: 13px; cursor: pointer; }
 .mate-preset:hover { background: var(--tint); }
 .mate-preset[aria-pressed='true'] { box-shadow: inset 0 0 0 2px var(--fg); font-weight: 600; }
+/* 编辑队友的头像（11-13）：左边大头像，右边角色格子和颜色。 */
+.mate-form-look { align-items: flex-start; flex-wrap: nowrap; }
+.mate-form-look-side { display: flex; flex: 1; flex-direction: column; gap: 8px; min-width: 0; }
+.character-picker { display: flex; flex-direction: column; gap: 8px; height: 196px; overflow-y: auto; padding: 6px;
+  border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+.character-family { display: flex; flex-direction: column; gap: 2px; }
+.character-family-name { padding: 0 4px; font-size: 11px; color: var(--fg3); }
+.character-family-items { display: flex; flex-wrap: wrap; gap: 2px; }
+.character-choice { display: grid; place-items: center; width: 38px; height: 38px; padding: 4px; border: 0;
+  border-radius: 8px; background: transparent; cursor: pointer; transition: background-color 120ms ease-out; }
+.character-choice:hover { background: var(--tint2); }
+.character-choice[aria-pressed='true'] { background: var(--tint2); box-shadow: inset 0 0 0 1.5px var(--fg); }
+.character-choice-art, .character-choice-art > svg { display: block; width: 30px; height: 30px; }

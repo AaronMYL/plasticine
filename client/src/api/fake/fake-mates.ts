@@ -1,7 +1,8 @@
 import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
-import { DEFAULT_MAIN, MateDraftSchema, MateGroupDraftSchema, SendLineMessageRequestSchema } from '../shared.ts';
+import { autoMateCharacter, DEFAULT_MAIN, MateDraftSchema, MateGroupDraftSchema, SendLineMessageRequestSchema }
+  from '../shared.ts';
 import type { MateDraft, MateView, MateGroupView, MateGroupDraft, CreateMateRequest, UpdateMateRequest,
   MateHandoffRequest, LegacyChatConvertRequest, LegacyChatProposal, MainIdentity, UpdateMainRequest }
   from '../shared.ts';
@@ -35,13 +36,12 @@ export class FakeMates implements MatesApi {
         .map((line) => ({ lineId: line.id, title: line.title, updatedAt: line.updatedAt })),
       main: structuredClone(this.main) };
   }
-  /** 主线的名字、头像字、颜色（第 12 批）。 */
+  /** 主线的名字（第 12 批；头像固定，11-13）。 */
   main: MainIdentity = { ...DEFAULT_MAIN };
   async updateMain(input: UpdateMainRequest): Promise<{ main: MainIdentity }> {
     this.deps.session.require();
     return this.deps.receipts.run('save', input.requestId, 'POST /v2/main', () => {
-      const avatar = input.avatar?.trim() ?? '';
-      this.main = { name: input.name.trim(), avatar: avatar === '' ? null : avatar, hue: input.hue };
+      this.main = { name: input.name.trim() };
       return { main: structuredClone(this.main) };
     });
   }
@@ -177,7 +177,7 @@ export class FakeMates implements MatesApi {
     const legacy = (await this.list()).legacyChats.find((row) => row.lineId === lineId);
     if (legacy === undefined) throw missing();
     return { lineId: legacy.lineId, title: legacy.title, recommendation: 'mate', reason: '这段对话可以由一位专门的队友接着处理。',
-      draft: { name: legacy.title.slice(0, 38) + '队友', avatar: '友', hue: 'sky',
+      draft: { name: legacy.title.slice(0, 38) + '队友', avatar: autoMateCharacter(legacy.title), hue: 'sky',
         role: '接着处理这段对话的工作', soul: '', purpose: null } };
   }
   async convertLegacy(input: LegacyChatConvertRequest) {

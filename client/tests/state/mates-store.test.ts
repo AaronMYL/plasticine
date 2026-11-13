@@ -8,7 +8,7 @@ import { MatesStore } from '../../src/views/mates/mates-store.ts';
 it('队友资料随line_changed更新，停止后晚到的请求不覆盖已卸载会话', async () => {
   const fake = createFakeApi({ seed: false, streamStepMs: 0 });
   fake.control.session.signInForDevelopment('测试机');
-  const mate = await fake.api.mates.create({ requestId: createRequestId(), name: '资料队友', avatar: '研', hue: 'sky',
+  const mate = await fake.api.mates.create({ requestId: createRequestId(), name: '资料队友', avatar: 'cat', hue: 'sky',
     role: '核对资料', soul: '', purpose: null });
   const hub = new EventsHub(fake.api.events);
   const store = new MatesStore(fake.api, hub);
@@ -31,7 +31,7 @@ it('群任务列表随事件更新，停启后再读一次并保持真实任务�
   const fake = createFakeApi({ seed: false, streamStepMs: 0 });
   fake.control.session.signInForDevelopment('测试机');
   const make = (name: string) => fake.api.mates.create({ requestId: createRequestId(), name,
-    avatar: '研', hue: 'sky', role: '核对资料', soul: '', purpose: null });
+    avatar: 'cat', hue: 'sky', role: '核对资料', soul: '', purpose: null });
   const mates = await Promise.all([make('研究员'), make('编辑队友')]);
   const group = await fake.api.mateGroups.create({ requestId: createRequestId(), name: '资料小组',
     mateIds: mates.map((mate) => mate.id) });

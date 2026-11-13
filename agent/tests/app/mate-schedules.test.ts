@@ -7,7 +7,7 @@ import { MAIN_LINE_ID } from '../../src/state/index.ts';
 import { until } from '../lines/helpers.ts';
 import { call, pair, startTestApp, type TestApp } from './helpers.ts';
 
-const draft = { name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky' as const,
+const draft = { name: '资料研究员', role: '整理公开资料', avatar: 'cat' as const, hue: 'sky' as const,
   soul: '先核对资料。', purpose: null };
 const proposal = { title: '每天核对', goal: '整理公开资料', cadence: { type: 'daily', at: '17:00' },
   outward: { channel: '网页私信', site: 'example.com', recipients: ['纸鹤'],

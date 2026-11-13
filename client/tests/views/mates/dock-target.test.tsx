@@ -6,7 +6,7 @@ import { MAIN_LINE_ALIAS } from '../../../src/api/shared.ts';
 
 it('对话框切目标保留独立草稿，引用跟随当前目标，主线整页保持主线', async () => {
   const app = await renderApp({ hash: '#/today' });
-  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '资料队友', avatar: '研',
+  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '资料队友', avatar: 'cat',
     hue: 'sky', role: '检查资料', soul: '', purpose: null }));
   const expand = screen.queryByRole('button', { name: /展开对话框/ });
   if (expand !== null) fireEvent.click(expand);

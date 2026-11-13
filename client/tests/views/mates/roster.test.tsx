@@ -5,7 +5,7 @@ import { createRequestId } from '../../../src/api/request-id.ts';
 import type { FakeApi } from '../../../src/api/fake/index.ts';
 
 const make = (fake: FakeApi, name: string) => fake.api.mates.create({ requestId: createRequestId(), name,
-  avatar: '研', hue: 'sky', role: '整理资料来源', soul: '', purpose: null });
+  avatar: 'cat', hue: 'sky', role: '整理资料来源', soul: '', purpose: null });
 
 it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', async () => {
   const app = await renderApp({ hash: '#/plasticine' });
@@ -17,10 +17,14 @@ it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', a
   const picked = within(colors).getAllByRole('radio')[2]!;
   fireEvent.click(picked);
   expect(picked.getAttribute('aria-checked')).toBe('true');
+  const picker = within(editor).getByRole('group', { name: '头像' });
+  fireEvent.click(await within(picker).findByRole('button', { name: '狐狸' }));
+  expect(within(picker).getByRole('button', { name: '狐狸' }).getAttribute('aria-pressed')).toBe('true');
   fireEvent.click(within(editor).getByRole('button', { name: '创建队友' }));
   await waitFor(async () => expect((await app.api.mates.list()).mates).toHaveLength(1));
   const first = (await app.api.mates.list()).mates[0]!;
   expect(first.hue).toBe('sky');
+  expect(first.avatar).toBe('fox');
   await waitFor(() => expect(window.location.hash).toBe(`#/plasticine/mate/${first.id}`));
   await act(async () => { await make(app, '编辑队友'); });
   fireEvent.click(await screen.findByRole('button', { name: '创建队友群组' }));
@@ -93,7 +97,7 @@ it('队友正在做事时，名单第二行写在做什么；空着时写职责�
     .toContain('在做「查三家中继的价格」'));
 });
 
-it('新建队友时点一个现成的起点：名字、职责、头像字都填好，还能再改（11-12）', async () => {
+it('新建队友时点一个现成的起点：名字、职责、头像角色都填好，还能再改（11-12，11-13 头像换成角色）', async () => {
   await renderApp({ hash: '#/plasticine' });
   fireEvent.click(await screen.findByRole('button', { name: '添加队友' }));
   const editor = screen.getByRole('dialog', { name: '创建队友' });
@@ -101,7 +105,9 @@ it('新建队友时点一个现成的起点：名字、职责、头像字都填�
   fireEvent.click(within(presets).getByRole('button', { name: '文字编辑' }));
   expect((within(editor).getByLabelText('名字') as HTMLInputElement).value).toBe('文字编辑');
   expect((within(editor).getByLabelText('职责') as HTMLTextAreaElement).value).toMatch(/^改稿、润色/);
-  expect((within(editor).getByLabelText('头像文字') as HTMLInputElement).value).toBe('编');
+  const picker = within(editor).getByRole('group', { name: '头像' });
+  expect((await within(picker).findByRole('button', { name: '兔子' })).getAttribute('aria-pressed')).toBe('true');
+  expect(within(editor).queryByLabelText('头像文字')).toBeNull();
   expect(within(presets).getByRole('button', { name: '文字编辑' }).getAttribute('aria-pressed')).toBe('true');
   fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '校对' } });
   expect(within(presets).getByRole('button', { name: '文字编辑' }).getAttribute('aria-pressed')).toBe('false');

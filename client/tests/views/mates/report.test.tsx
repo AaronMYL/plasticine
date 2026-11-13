@@ -5,7 +5,7 @@ import { createRequestId } from '../../../src/api/request-id.ts';
 
 it('队友的回报根据后台线身份署名并保留全文', async () => {
   const app = await renderApp({ hash: '#/plasticine/main' });
-  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '来源核对员', avatar: '核',
+  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '来源核对员', avatar: 'koala',
     hue: 'teal', role: '核对原始来源', soul: '', purpose: null }));
   const text = '这是一份完整的核对结果。'.repeat(30) + '最后的结论也保留。';
   act(() => {

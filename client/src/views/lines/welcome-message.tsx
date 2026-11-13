@@ -11,7 +11,8 @@ import { hostProfile } from '../../shell/host.ts';
 import { Icon, type IconName } from '../../shell/icons.tsx';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { useStore } from '../../state/use-store.ts';
-import { MainAvatar, useMainIdentity } from '../mates/main-identity.tsx';
+import { useMainIdentity } from '../mates/main-identity.tsx';
+import { MainAvatar } from '../mates/mate-avatar.tsx';
 import { ConnectCard, noModelConnected } from '../models/connect-card.tsx';
 import { choiceName, providerName } from '../models/model-store.ts';
 import { arrangeStarts } from './welcome-starts.ts';
@@ -156,7 +157,7 @@ export function WelcomeMessage({ lineId, message }: { lineId: string; message: L
         </DoneRow>
       )}
       <header className="welcome-head">
-        <MainAvatar main={main} size={20} />
+        <MainAvatar size={20} still />
         <span className="welcome-name">{main.name}</span>
         <time className="text-meta welcome-time" dateTime={message.createdAt}>
           {relativeTime(message.createdAt, new Date())}

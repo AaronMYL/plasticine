@@ -7,7 +7,7 @@ test('队友和群组分别保存身份及对话线，停用保留全部数据�
   try {
     const { state } = fixture;
     const line = state.lines.create({ kind: 'side', parentLineId: null, projectId: null, title: '研究队友' });
-    const draft = { name: '研究队友', avatar: '研', hue: 'sky' as const, role: '梳理材料', soul: '先查原文',
+    const draft = { name: '研究队友', avatar: 'cat' as const, hue: 'sky' as const, role: '梳理材料', soul: '先查原文',
       purpose: null, lineId: line.id };
     const mate = state.mates.create(draft);
     state.lines.update(line.id, { mateId: mate.id });

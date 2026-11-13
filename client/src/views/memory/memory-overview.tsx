@@ -62,7 +62,7 @@ export function TeammatesBlock({ navigate }: { navigate: (route: Route) => void 
         {mates.map((mate) => (
           <li key={mate.id}>
             <button type="button" className="topic-row" onClick={() => navigate(soulRoute(mate.id))}>
-              <MateAvatar mate={mate} size={20} />
+              <MateAvatar mate={mate} size={20} still />
               <span className="topic-row-text">
                 <span className="topic-row-title">{mate.name}</span>
                 <span className="topic-row-summary">{mate.role.replace(/[。；;.\s]+$/u, '')}；只对它的规则在这里</span>

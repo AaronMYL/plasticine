@@ -1,4 +1,4 @@
-// 第 12 批：主线的名字、头像字、颜色（11-12 Aaron 定：主线 AI 的名字可以自己起）。存在 kernel_settings 一个键里；
+// 第 12 批：主线的名字（11-12 Aaron 定：主线 AI 的名字可以自己起）。存在 kernel_settings 一个键里；头像固定（11-13）；
 // 新名字用在栏目、主线、署名、输入框提示、它的自称和发给好友的资料（aiName）；窗口标题、安装包、官网等产品名不变。
 
 import { Value } from 'typebox/value';
@@ -16,9 +16,7 @@ export function mainIdentity(state: MainIdentityState): MainIdentity {
 
 export function setMainIdentity(state: MainIdentityState, input: MainIdentity): MainIdentity {
   const name = input.name.trim();
-  const avatar = input.avatar?.trim() ?? '';
-  const next: MainIdentity = { name: name.length < 2 ? DEFAULT_MAIN_NAME : name, avatar: avatar === '' ? null : avatar,
-    hue: input.hue };
+  const next: MainIdentity = { name: name.length < 2 ? DEFAULT_MAIN_NAME : name };
   state.kernelSettings.set(KEY, next);
   return next;
 }

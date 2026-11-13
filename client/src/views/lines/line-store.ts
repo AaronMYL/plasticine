@@ -7,11 +7,12 @@ import { errorText } from '../../api/errors.ts';
 import type { EventsHub } from '../../api/events-hub.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import { lineMessageText, lineQuoteInputs } from '../../api/quote-text.ts';
-import { LINE_PAGE_DEFAULT, MAIN_LINE_ALIAS, type LineReply, type LineView, type OpenSideRequest,
+import { LINE_PAGE_DEFAULT, MAIN_LINE_ALIAS, type LineReply, type LineStreamEvent, type LineView, type OpenSideRequest,
   type ReactLineMessageRequest } from '../../api/shared.ts';
 import type { Quote } from '../../api/types.ts';
 import { Store } from '../../state/store.ts';
 import { EMPTY_THREAD, applyLineEvent, upsertMessages, type LineThreadData } from './line-thread-data.ts';
+import type { LinePulse } from '../mates/bot/bot-state.ts';
 
 export { MAIN_LINE_ALIAS };
 
@@ -41,8 +42,35 @@ function upsertLine(list: readonly LineView[], line: LineView): LineView[] {
 /** 只发了附件：线上那句话得有字，照旧写「（附件）」。 */
 const ATTACHMENTS_ONLY = '（附件）';
 
+/**
+ * 一条在跑的线这一刻在做的那一步（队友、主线头像的动效看它，11-13）：同一步的事件（回答的每一小段）不重复改。
+ * 线不在跑了就拿掉。
+ */
+export function nextPulse(pulses: ReadonlyMap<string, LinePulse>, event: LineStreamEvent)
+  : ReadonlyMap<string, LinePulse> {
+  const set = (lineId: string, pulse: LinePulse): ReadonlyMap<string, LinePulse> => {
+    const old = pulses.get(lineId);
+    if (old?.phase === pulse.phase && old.tool === pulse.tool) return pulses;
+    return new Map(pulses).set(lineId, pulse);
+  };
+  switch (event.type) {
+    case 'line_changed': {
+      if (event.line.status === 'running' || !pulses.has(event.line.id)) return pulses;
+      const next = new Map(pulses);
+      next.delete(event.line.id);
+      return next;
+    }
+    case 'line_thinking': return set(event.lineId, { phase: 'thinking', tool: null });
+    case 'line_text': return set(event.lineId, { phase: 'text', tool: null });
+    case 'line_tool': return set(event.lineId, event.phase === 'started' ? { phase: 'tool', tool: event.tool }
+      : { phase: 'thinking', tool: null });
+    default: return pulses;
+  }
+}
+
 export class LinesStore {
   readonly list = new Store<LinesListData>({ lines: [], loaded: false, error: null });
+  readonly pulse = new Store<ReadonlyMap<string, LinePulse>>(new Map());
   private readonly api: PlasticineApi;
   private readonly hub: EventsHub;
   /** 打开过的线：键是打开时用的 id（主对话是 main），值是那条线的数据。 */
@@ -71,6 +99,8 @@ export class LinesStore {
         return;
       }
       const { event: lineEvent } = event;
+      const pulses = nextPulse(this.pulse.get(), lineEvent);
+      if (pulses !== this.pulse.get()) this.pulse.set(pulses);
       if (lineEvent.type === 'line_changed') {
         if (lineEvent.line.kind === 'main') {
           this.mainId = lineEvent.line.id;

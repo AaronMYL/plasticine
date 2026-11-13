@@ -8,7 +8,7 @@ import { until } from '../lines/helpers.ts';
 
 let app: TestApp | undefined;
 afterEach(async () => { await app?.close(); app = undefined; });
-const draft = { name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky', soul: '先读原始资料。', purpose: null };
+const draft = { name: '资料研究员', role: '整理公开资料', avatar: 'cat' as const, hue: 'sky', soul: '先读原始资料。', purpose: null };
 
 test('模型建立队友先出确认卡，本人确认后只建一位', async () => {
   app = await startTestApp([], { startTasks: false });

@@ -115,7 +115,7 @@ async function rig(): Promise<Rig> {
 async function scheduleRoundTrip(asMate: boolean) {
   const { h, tasks, nodeId, sent } = await rig();
   const mate = asMate ? new Mates(h.handle.state, () => h.kernel).create({ name: '联络队友', role: '按名单联络',
-    avatar: '联', hue: 'sky', soul: '只按确认的名单和原文发送。', purpose: null }) : null;
+    avatar: 'chat' as const, hue: 'sky', soul: '只按确认的名单和原文发送。', purpose: null }) : null;
   const source = mate?.lineId ?? MAIN_LINE_ALIAS;
   // 2026-11-05T08:00Z 是北京时间 16:00：今天 15:00 过了，第一次是明天 15:00。
   h.respond([

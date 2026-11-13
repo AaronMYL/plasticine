@@ -1,12 +1,14 @@
 // Plasticine 的标记（2026-11-05 他定图标 v1 · 照参考）：一团略不规则的陶土泥团，里面一圈半细线卷。侧栏左上、消息里
 // Plasticine 那一行、对话顶上、连接模型那一页都用这一个；颜色走令牌（泥团 --accent，线 --bg），深浅色自己跟着变。
 // 路径照设计稿 /design/icon/plasticine-icon-v1-sidebar-20.svg（16 格）。App 图标和 favicon 在 client/public/icon.svg。
+// 主线头像（views/mates/bot/plasticine-face.ts）也从这两条路径取点。
 
 import type { ReactNode } from 'react';
 // 标记的颜色在 glyph.css 里（下载页这种独立入口也要它）。
 import './glyph.css';
 
-const BLOB = 'M15.17 8.10 C15.12 8.66 15.00 9.23 14.85 9.76 C14.69 10.29 14.48 10.80 14.24 11.28 C14.00 11.77 '
+export const PLASTICINE_BLOB_PATH = 'M15.17 8.10 C15.12 8.66 15.00 9.23 14.85 9.76 C14.69 10.29 14.48 10.80 '
+  + '14.24 11.28 C14.00 11.77 '
   + '13.72 12.23 13.40 12.66 C13.08 13.09 12.72 13.50 12.33 13.85 C11.94 14.21 11.50 14.54 11.04 '
   + '14.80 C10.58 15.06 10.08 15.27 9.57 15.41 C9.07 15.54 8.52 15.61 8.00 15.62 C7.48 15.62 6.94 '
   + '15.54 6.43 15.41 C5.92 15.28 5.41 15.08 4.94 14.84 C4.47 14.59 4.02 14.28 3.60 13.94 C3.19 13.60 '
@@ -18,7 +20,8 @@ const BLOB = 'M15.17 8.10 C15.12 8.66 15.00 9.23 14.85 9.76 C14.69 10.29 14.48 1
   + 'C14.18 3.62 14.48 4.15 14.70 4.68 C14.92 5.21 15.07 5.80 15.15 6.37 C15.23 6.94 15.22 7.54 15.17 '
   + '8.10Z';
 
-const SWIRL = 'M4.40 8.00 L4.44 7.81 L4.48 7.63 L4.53 7.45 L4.59 7.28 L4.66 7.11 L4.74 6.94 L4.82 6.78 L4.91 '
+export const PLASTICINE_SWIRL_PATH = 'M4.40 8.00 L4.44 7.81 L4.48 7.63 L4.53 7.45 L4.59 7.28 L4.66 7.11 '
+  + 'L4.74 6.94 L4.82 6.78 L4.91 '
   + '6.63 L5.01 6.48 L5.11 6.33 L5.23 6.20 L5.34 6.07 L5.47 5.95 L5.59 5.83 L5.73 5.73 L5.87 5.63 '
   + 'L6.01 5.54 L6.15 5.46 L6.30 5.38 L6.45 5.32 L6.60 5.26 L6.76 5.21 L6.91 5.17 L7.07 5.14 L7.23 '
   + '5.11 L7.38 5.10 L7.54 5.09 L7.69 5.09 L7.85 5.10 L8.00 5.12 L8.15 5.15 L8.30 5.18 L8.44 5.22 '
@@ -38,8 +41,9 @@ export function PlasticineMark({ size = 20, label }: { size?: number; label?: st
     <svg className="plasticine-mark" width={size} height={size} viewBox="0 0 16 16"
       role={label === undefined ? undefined : 'img'} aria-label={label}
       aria-hidden={label === undefined ? true : undefined}>
-      <path className="plasticine-mark-blob" d={BLOB} />
-      <path className="plasticine-mark-swirl" d={SWIRL} fill="none" strokeWidth="1.5" strokeLinecap="round"
+      <path className="plasticine-mark-blob" d={PLASTICINE_BLOB_PATH} />
+      <path className="plasticine-mark-swirl" d={PLASTICINE_SWIRL_PATH} fill="none" strokeWidth="1.5"
+        strokeLinecap="round"
         strokeLinejoin="round" />
     </svg>
   );
@@ -48,6 +52,7 @@ export function PlasticineMark({ size = 20, label }: { size?: number; label?: st
 /** 同一个标记写成一段 SVG 字：来信的署名在 iframe 里（第 8 批第 6 条），用不了组件。颜色由那边的样式给。 */
 export function plasticineMarkSvg(size: number): string {
   return `<svg class="plasticine-mark" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true">`
-    + `<path class="plasticine-mark-blob" d="${BLOB}"></path><path class="plasticine-mark-swirl" d="${SWIRL}" `
+    + `<path class="plasticine-mark-blob" d="${PLASTICINE_BLOB_PATH}"></path>`
+    + `<path class="plasticine-mark-swirl" d="${PLASTICINE_SWIRL_PATH}" `
     + 'fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 }

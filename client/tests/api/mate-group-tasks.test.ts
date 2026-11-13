@@ -8,7 +8,7 @@ it('群任务发布和领取幂等，限定组内队友、原目标和同一条�
   const fake = createFakeApi({ seed: false, streamStepMs: 0 });
   fake.control.session.signInForDevelopment('测试机');
   const make = (name: string) => fake.api.mates.create({ requestId: createRequestId(), name,
-    avatar: '研', hue: 'sky', role: '整理资料', soul: '', purpose: null });
+    avatar: 'cat', hue: 'sky', role: '整理资料', soul: '', purpose: null });
   const [one, two, outside] = await Promise.all([make('研究员'), make('编辑队友'), make('组外队友')]);
   const group = await fake.api.mateGroups.create({ requestId: createRequestId(), name: '资料小组',
     mateIds: [one.id, two.id] });

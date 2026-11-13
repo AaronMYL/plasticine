@@ -1,6 +1,7 @@
 import { Type, type Static } from 'typebox';
 import { IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { MODEL_PURPOSE_IDS } from './model-purposes.ts';
+import { MATE_CHARACTERS } from './mate-characters.ts';
 import { PROJECT_HUES } from './project-tag.ts';
 import { RECORD_META } from '../state-common.ts';
 import { LineViewSchema } from './lines.ts';
@@ -11,7 +12,8 @@ export const MATES_PATH = '/v2/mates';
 export const MATE_GROUPS_PATH = '/v2/mate-groups';
 export const MateDraftSchema = Type.Object({
   name: Type.String({ minLength: 2, maxLength: 40 }),
-  avatar: Type.String({ minLength: 1, maxLength: 8 }),
+  /** 头像是 Plasticine-bot 的一个角色（11-13，原来是头像文字）；颜色是 hue。 */
+  avatar: Type.Enum(MATE_CHARACTERS),
   hue: Type.Enum(PROJECT_HUES),
   role: Type.String({ minLength: 2, maxLength: 160 }),
   soul: Type.String({ maxLength: 20_000 }),
@@ -29,16 +31,16 @@ export const MateGroupViewSchema = Type.Object({ ...RECORD_META, ...MateGroupDra
 export type MateGroupView = Static<typeof MateGroupViewSchema>;
 export const LegacyChatSchema = Type.Object({ lineId: IdSchema, title: Type.String(),
   updatedAt: IsoTimeSchema }, STRICT);
-/** 第 12 批：主线的名字、头像字、颜色（和编辑队友同一套，少「职责」）。头像字和颜色是 null 时画 Plasticine 的标。 */
+/**
+ * 第 12 批：主线的名字。头像固定是 Plasticine 的泥团、漩涡当脸，颜色跟强调色（11-13 Aaron 定，原来的头像字和颜色去掉）。
+ */
 export const MAIN_PATH = '/v2/main';
 export const DEFAULT_MAIN_NAME = 'Plasticine';
 export const MainIdentitySchema = Type.Object({
   name: Type.String({ minLength: 2, maxLength: 20 }),
-  avatar: Type.Union([Type.String({ minLength: 1, maxLength: 8 }), Type.Null()]),
-  hue: Type.Union([Type.Enum(PROJECT_HUES), Type.Null()]),
 }, STRICT);
 export type MainIdentity = Static<typeof MainIdentitySchema>;
-export const DEFAULT_MAIN: MainIdentity = { name: DEFAULT_MAIN_NAME, avatar: null, hue: null };
+export const DEFAULT_MAIN: MainIdentity = { name: DEFAULT_MAIN_NAME };
 export const UpdateMainRequestSchema = Type.Object({ requestId: RequestIdSchema,
   ...MainIdentitySchema.properties }, STRICT);
 export type UpdateMainRequest = Static<typeof UpdateMainRequestSchema>;

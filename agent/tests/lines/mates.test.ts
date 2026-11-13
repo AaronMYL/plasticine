@@ -7,7 +7,7 @@ import { mateTools } from '../../src/mates/tools.ts';
 import { openTestState } from '../state/helpers.ts';
 import { deferred, scriptByLine, slowTool, startKernel, until } from './helpers.ts';
 
-const draft: MateDraft = { name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky',
+const draft: MateDraft = { name: '资料研究员', role: '整理公开资料', avatar: 'cat' as const, hue: 'sky',
   soul: '先查原始资料。', purpose: null };
 
 test('主线自动分派的队友晚完成也继续汇总；用户叫停后只收结果', async () => {
@@ -49,7 +49,7 @@ test('队友保持独立对话，交接回发起处，停用后不接受新工�
   try {
     const mates = new Mates(h.handle.state, () => h.kernel);
     const mate = mates.create(draft);
-    const other = mates.create({ ...draft, name: '文字编辑', avatar: '编' });
+    const other = mates.create({ ...draft, name: '文字编辑', avatar: 'bunny' as const });
     const group = mates.createGroup({ name: '写作小组', mateIds: [mate.id, other.id] });
     const work = mates.handoff({ mateId: mate.id, sourceLineId: group.lineId, goal: '整理背景', groupId: group.id });
     assert.equal(work.mateId, mate.id);

@@ -8,9 +8,9 @@ import { useStore } from '../../state/use-store.ts';
 import { PendingOps } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from './mate-actions.ts';
 import { groupWaiting } from './group-work.ts';
-import { MateAvatar, GroupAvatar } from './mate-avatar.tsx';
+import { MainAvatar, MateAvatar, GroupAvatar } from './mate-avatar.tsx';
 import { MateEditor, GroupEditor } from './mate-editor.tsx';
-import { MainAvatar, MainEditor, useMainIdentity } from './main-identity.tsx';
+import { MainEditor, useMainIdentity } from './main-identity.tsx';
 import { LegacyChats } from './legacy-chats.tsx';
 import './mates.css';
 
@@ -29,7 +29,7 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
     <div className="column-scroll">
       <div className="mates-main-row">
         <ColumnLink route={mainChatRoute()} current={root} navigate={navigate} label={`${main.name} 主线`}
-          lead={<MainAvatar main={main} size={28} />} sub="主线">{main.name}</ColumnLink>
+          lead={<MainAvatar size={28} />} sub="主线">{main.name}</ColumnLink>
         <IconButton icon="edit" className="mates-main-edit" label="编辑主线" onClick={() => setEditor('main')} />
       </div>
       <PendingOps label="队友待核实的操作" prefixes={MATE_OP_PREFIXES} visible={() => false}
@@ -42,15 +42,16 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
           && (line.status === 'running' || line.queued > 0));
         const working = work.length > 0;
         const own = lines.lines.find((line) => line.id === mate.lineId);
-        // 第二行平时写职责；它正在做事时写在做什么（11-12：协作状态看得见，不只是一个点）。
+        // 第二行平时写职责；它正在做事时写在做什么（11-12：协作状态看得见，不只是一个点）。在做事的那个点去掉了：
+        // 头像自己会动（11-13）。
         const doing = mate.disabledAt !== null ? null
           : working ? `在做「${work[0]?.title ?? ''}」${work.length > 1 ? `等 ${work.length} 件` : ''}`
             : own?.status === 'running' ? '正在回话' : own?.status === 'waiting' ? '等你回答' : null;
         return <ColumnLink key={mate.id} route={mateRoute(mate.id)} current={route.view === 'plasticine'
           && (route.mateId === mate.id || route.lineId === mate.lineId)}
           navigate={navigate} lead={<MateAvatar mate={mate} />} sub={doing ?? mate.role}
-          trail={mate.disabledAt !== null ? <span className="mate-state">已停用</span>
-            : working ? <span className="mate-working" aria-label="正在做事" /> : undefined}>{mate.name}</ColumnLink>;
+          trail={mate.disabledAt !== null ? <span className="mate-state">已停用</span> : undefined}>
+          {mate.name}</ColumnLink>;
       })}
       <div className="mates-section-head"><h3>群组</h3>
         <IconButton icon="plus" label="创建队友群组" onClick={() => setEditor('group')} /></div>

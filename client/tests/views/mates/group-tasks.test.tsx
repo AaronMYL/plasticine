@@ -7,7 +7,7 @@ import type { LineView } from '../../../src/api/shared.ts';
 async function setup() {
   const app = await renderApp({ hash: '#/plasticine/main' });
   const make = (name: string) => app.api.mates.create({ requestId: createRequestId(), name,
-    avatar: '研', hue: 'sky', role: '核对资料', soul: '', purpose: null });
+    avatar: 'cat', hue: 'sky', role: '核对资料', soul: '', purpose: null });
   const [first, second, outside] = await act(() => Promise.all([make('研究员'), make('编辑队友'), make('组外队友')]));
   const group = await act(() => app.api.mateGroups.create({ requestId: createRequestId(), name: '资料小组',
     mateIds: [first.id, second.id] }));

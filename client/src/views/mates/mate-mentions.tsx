@@ -54,7 +54,7 @@ export function useMateMentions({ lineId, draft, input, change }: { lineId: stri
       {matches.map((mate, index) => <button key={mate.id} id={`${id}-${index}`} type="button" role="option"
         aria-selected={index === active} onMouseDown={(event) => event.preventDefault()}
         onClick={() => choose(mate.name)}>
-        <MateAvatar mate={mate} size={24} /><span>{mate.name}<small>{mate.role}</small></span>
+        <MateAvatar mate={mate} size={24} still /><span>{mate.name}<small>{mate.role}</small></span>
       </button>)}
     </div> };
 }

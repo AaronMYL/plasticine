@@ -22,7 +22,7 @@ it('创建结果不确定后重载仍用原请求核实，不因换了表单内�
     throw new ApiError({ kind: 'uncertain', code: 'network', message: '回执未到' });
   }).mockImplementation(create);
   const first = new MateActions(fake.api, new ActionOps(storage), directory);
-  expect(await first.create({ name: '资料队友', avatar: '研', hue: 'sky', role: '整理资料', soul: '', purpose: null }))
+  expect(await first.create({ name: '资料队友', avatar: 'cat', hue: 'sky', role: '整理资料', soul: '', purpose: null }))
     .toBeNull();
   const resumed = new MateActions(fake.api, new ActionOps(storage), directory);
   const result = await resumed.retry('mates:create');
@@ -38,7 +38,7 @@ it('群任务发布与领取回执丢失，重载后沿原标识核实同一张�
     removeItem: (key: string) => { saved.delete(key); } };
   const fake = createFakeApi({ seed: false, streamStepMs: 0 });
   fake.control.session.signInForDevelopment('测试机');
-  const make = (name: string) => fake.api.mates.create({ requestId: createRequestId(), name, avatar: '研',
+  const make = (name: string) => fake.api.mates.create({ requestId: createRequestId(), name, avatar: 'cat',
     hue: 'sky', role: '核对资料', soul: '', purpose: null });
   const [one, two] = await Promise.all([make('研究员'), make('编辑队友')]);
   const group = await fake.api.mateGroups.create({ requestId: createRequestId(), name: '资料小组',

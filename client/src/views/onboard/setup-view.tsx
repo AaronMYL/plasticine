@@ -96,7 +96,7 @@ export function SetupView({ account, onSignedIn }: { account?: AccountState | nu
       .then(async (answer) => {
         if (ai !== DEFAULT_MAIN_NAME) {
           try {
-            await api.mates.updateMain({ requestId: createRequestId(), name: ai, avatar: null, hue: null });
+            await api.mates.updateMain({ requestId: createRequestId(), name: ai });
           } catch (cause) {
             console.warn('主线的名字没改成，以后在主线的编辑里改', cause);
           }

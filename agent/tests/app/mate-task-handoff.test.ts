@@ -12,7 +12,7 @@ test('本人领取原任务，执行队友仍能再交接；第二次领取不�
   try {
     const cookie = await pair(app);
     const mates = new Mates(app.state, () => app.app.deps.lines);
-    const draft = { name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky' as const,
+    const draft = { name: '资料研究员', role: '整理公开资料', avatar: 'cat' as const, hue: 'sky' as const,
       soul: '核对来源。', purpose: null };
     const first = mates.create(draft);
     const second = mates.create({ ...draft, name: '文字编辑' });

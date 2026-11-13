@@ -13,10 +13,10 @@ test('每次请求先共用规则后只对这位队友的规则，队友的规�
     const state = h.handle.state;
     ensureRulesDoc(state);
     const mates = new Mates(state, () => h.kernel);
-    const mate = mates.create({ name: '资料编辑', avatar: '编', hue: 'sky', role: '核对资料',
+    const mate = mates.create({ name: '资料编辑', avatar: 'bunny' as const, hue: 'sky', role: '核对资料',
       soul: '这类报告使用简短列表。', purpose: null });
     const line = state.lines.require(mate.lineId);
-    const other = mates.create({ name: '旅行顾问', avatar: '旅', hue: 'teal', role: '订行程',
+    const other = mates.create({ name: '旅行顾问', avatar: 'penguin' as const, hue: 'teal', role: '订行程',
       soul: '- 只订直飞航班。', purpose: null });
     const before = linePrompt(state, line);
     assert.ok(before.indexOf('## 规则') < before.indexOf('## 只对你的规则'));
@@ -44,7 +44,7 @@ test('队友原来的 Soul 拆成只对它的规则：一行一条、去掉列�
   const h = await startKernel();
   try {
     const state = h.handle.state;
-    const mate = state.mates.create({ name: '研究员', avatar: '研', hue: 'sky', role: '查资料',
+    const mate = state.mates.create({ name: '研究员', avatar: 'cat' as const, hue: 'sky', role: '查资料',
       soul: '# 研究员\n- 报告里的数字带来源链接\n\n2. 先列结论', purpose: null, lineId: state.lines.main().id });
     adoptMateSouls(state);
     adoptMateSouls(state);

@@ -78,7 +78,7 @@ export function MateGroupTaskCard({ line }: { line: LineView }): ReactNode {
     {menu === null ? null : <Popover anchor={menu} role="menu" label="领取任务" onClose={() => setMenu(null)}>
       {members.map((member) => <button key={member.id} type="button" role="menuitem"
         className="popover-item" aria-label={`${member.name}领取`} onClick={() => { void claim(member.id); }}>
-        <MateAvatar mate={member} size={24} /><span>{member.name}</span></button>)}
+        <MateAvatar mate={member} size={24} still /><span>{member.name}</span></button>)}
     </Popover>}
   </article>;
 }

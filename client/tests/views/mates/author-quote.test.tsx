@@ -9,7 +9,7 @@ it('已归档作者后台线通过read查队友，页面默认该队友，信息
     control.spaces.seed();
     control.feed.seedItem({ id: 'feed-proof', title: '来源核对', summary: '这是一条可引用的示例。' });
   } });
-  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '研究队友', avatar: '研',
+  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '研究队友', avatar: 'cat',
     hue: 'sky', role: '研究资料', soul: '', purpose: null }));
   act(() => app.control.lines.put(app.control.lines.blank('writer-archived', 'background', '写报告',
     { mateId: mate.id, archivedAt: NOW.toISOString() })));
@@ -33,7 +33,7 @@ it('已归档作者后台线通过read查队友，页面默认该队友，信息
 
 it('页面作者晚到不能覆盖用户手选', async () => {
   const app = await renderApp({ hash: '#/today', setup: ({ control }) => control.spaces.seed() });
-  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '写作队友', avatar: '写',
+  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '写作队友', avatar: 'bunny',
     hue: 'teal', role: '写作资料', soul: '', purpose: null }));
   const space = (await app.api.spaces.list()).spaces[0]!;
   const original = await app.api.spaces.get(space.id);

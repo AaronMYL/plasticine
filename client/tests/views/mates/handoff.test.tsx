@@ -10,7 +10,7 @@ it.each([
   ['user', null, '来源未记录'],
 ] as const)('交接按原始%s消息身份署名为%s', async (role, origin, author) => {
   const app = await renderApp({ hash: '#/plasticine/main' });
-  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '资料队友', avatar: '资',
+  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '资料队友', avatar: 'fox',
     hue: 'sky', role: '检查资料', soul: '', purpose: null }));
   const message = (role: LineMessageView['role'], origin: LineInputOrigin | null) => ({
     role, origin, text: '请检查这份示例资料', thinking: null, thinkingMs: null, steps: [], toolCallId: null,

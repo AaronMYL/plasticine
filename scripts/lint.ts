@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 import { isTestFile, lintSource } from './lint-rules.ts';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const SKIPPED_DIRS = new Set(['.git', 'node_modules', 'dist', 'coverage', '.claude', 'docs', 'skills', 'mac']);
+// vendor：原样打包进来的第三方代码（压缩过），不按本仓库的规矩查。
+const SKIPPED_DIRS = new Set(['.git', 'node_modules', 'dist', 'coverage', '.claude', 'docs', 'skills', 'mac',
+  'vendor']);
 const CODE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs']);
 const TEXT_EXTENSIONS = new Set(['.css', '.sh', '.ps1', '.html']);
 

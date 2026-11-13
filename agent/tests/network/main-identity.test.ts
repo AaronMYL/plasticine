@@ -33,14 +33,14 @@ async function joined(): Promise<{ t: TestApp; cookie: string; contactId: string
 test('没改过：队友列表里主线叫 Plasticine，发给好友的 aiName 是 null', async () => {
   const { t, cookie } = await joined();
   const list = json(await call(t, 'GET', '/v2/mates', { cookie }));
-  assert.deepEqual(list['main'], { name: 'Plasticine', avatar: null, hue: null });
+  assert.deepEqual(list['main'], { name: 'Plasticine' });
   assert.equal(aiNameOf(t.state), null);
 });
 
 test('改名：列表带新名字，提示词自称用它，资料再发给每个好友（带 aiName）', async () => {
   const { t, cookie, contactId } = await joined();
-  const reply = await post(t, cookie, '/v2/main', { name: '阿泥', avatar: '泥', hue: 'sky' });
-  assert.deepEqual(reply['main'], { name: '阿泥', avatar: '泥', hue: 'sky' });
+  const reply = await post(t, cookie, '/v2/main', { name: '阿泥' });
+  assert.deepEqual(reply['main'], { name: '阿泥' });
   const list = json(await call(t, 'GET', '/v2/mates', { cookie }));
   assert.equal((list['main'] as Body)['name'], '阿泥');
   assert.match(identitySection(undefined, '阿泥'), /^你叫阿泥/);

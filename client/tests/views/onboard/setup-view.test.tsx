@@ -90,7 +90,7 @@ describe('建账号', () => {
     await screen.findByText('能用');
     fireEvent.click(screen.getByRole('button', { name: '创建' }));
     expect(await screen.findByRole('article', { name: '小满 的欢迎' })).toBeTruthy();
-    expect(update.mock.calls[0]?.[0]).toMatchObject({ name: '小满', avatar: null, hue: null });
+    expect(update.mock.calls[0]?.[0]).toEqual({ requestId: expect.any(String) as string, name: '小满' });
   });
 
   it('叫我什么不改就不调改名', async () => {

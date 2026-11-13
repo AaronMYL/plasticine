@@ -8,7 +8,7 @@ it('授权发送者列出真实在用队友名字，停用后不再提供新授�
   const app = await renderApp({ hash: '#/settings/grants', setup: ({ control }) => {
     control.outbound.seed([outboundGrant(NOW)]);
   } });
-  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '项目队友', avatar: '项',
+  const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '项目队友', avatar: 'bear',
     hue: 'olive', role: '整理项目', soul: '', purpose: null }));
   const section = await screen.findByRole('region', { name: '对外授权' });
   fireEvent.click(within(section).getByRole('button', { name: /授权操作/ }));

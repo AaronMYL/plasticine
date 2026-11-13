@@ -5,7 +5,7 @@ import { createFakeApi } from '../../src/api/fake/index.ts';
 import { createRequestId } from '../../src/api/request-id.ts';
 import type { MateDraft } from '../../src/api/shared.ts';
 
-const draft: MateDraft = { name: '资料研究员', avatar: '研', hue: 'sky', role: '整理资料与来源', soul: '', purpose: null };
+const draft: MateDraft = { name: '资料研究员', avatar: 'cat', hue: 'sky', role: '整理资料与来源', soul: '', purpose: null };
 function setup() {
   const fake = createFakeApi({ seed: false, streamStepMs: 0 });
   fake.control.session.signInForDevelopment('测试机');

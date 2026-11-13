@@ -17,7 +17,7 @@ export function MateReport({ message, onQuote }: { message: LineMessageView;
   const mate = roster.mates.find((candidate) => candidate.id === child?.mateId);
   const author = mate?.name ?? (child?.mateId != null ? '队友' : child === null ? '工作回复' : 'Plasticine');
   return <MessageRow seq={message.seq} author={author} text={message.text}>
-    {mate === undefined ? null : <div className="mate-report-author"><MateAvatar mate={mate} size={24} />
+    {mate === undefined ? null : <div className="mate-report-author"><MateAvatar mate={mate} size={24} still />
       <span>{mate.name}</span></div>}
     <div className="line-answer" data-message-seq={message.seq}>
       <QuoteSelection onQuote={(text) => onQuote(message.seq, text, author)}>

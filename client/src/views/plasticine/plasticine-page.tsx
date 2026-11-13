@@ -11,7 +11,6 @@ import { Popover, MenuItem, anchorOf, type PopoverAnchor } from '../../shell/pop
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
-import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { TitlebarActions, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { mainLineRoute, skillsRoute, soulRoute, type Route } from '../../shell/routes.ts';
@@ -20,7 +19,7 @@ import { SideUiProvider } from '../lines/conversation-ui-context.tsx';
 import { LineConversation } from '../lines/line-conversation.tsx';
 import { MatesRoster } from '../mates/mates-roster.tsx';
 import { MateEditor, GroupEditor } from '../mates/mate-editor.tsx';
-import { MateAvatar, GroupAvatar } from '../mates/mate-avatar.tsx';
+import { MainAvatar, MateAvatar, GroupAvatar } from '../mates/mate-avatar.tsx';
 import { groupWaiting } from '../mates/group-work.ts';
 import { MateWorkPanel } from '../mates/mate-work-panel.tsx';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
@@ -133,7 +132,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
           <div className="mate-conversation-name">
             {mate !== undefined ? <MateAvatar mate={mate} /> : group !== undefined
               ? <GroupAvatar mates={roster.mates.filter((item) => group.mateIds.includes(item.id))} />
-              : <PlasticineMark size={20} />}
+              : <MainAvatar size={24} />}
             <div><h2>{title}</h2>{group === undefined ? null : <p>你和 {group.mateIds.length} 位队友</p>}</div>
           </div>
           <span className="messages-thread-spacer" />

@@ -5,7 +5,7 @@ import { renderApp } from '../../helpers.tsx';
 
 it('主线输入 @ 能选择实际队友，用名字插入草稿', async () => {
   const app = await renderApp({ hash: '#/plasticine/main' });
-  await act(() => app.api.mates.create({ requestId: createRequestId(), name: '校对队友', avatar: '校',
+  await act(() => app.api.mates.create({ requestId: createRequestId(), name: '校对队友', avatar: 'penguin',
     hue: 'teal', role: '检查文字', soul: '', purpose: null }));
   const input = screen.getByRole('textbox', { name: '问一句' });
   fireEvent.change(input, { target: { value: '@校' } });

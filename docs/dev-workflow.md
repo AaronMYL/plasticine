@@ -32,6 +32,7 @@
 | 浏览器回归 | `cd client && TZ=Asia/Shanghai npm run test:browser` |
 | 测试里的密钥扫描 | `node scripts/scan-tests.ts` |
 | 技能同步 | 技能正本在 `agent/skills/`，改完跑 `npm run skills:sync` |
+| 角色引擎（队友头像） | 打包好的在 `client/src/vendor/plasticine-bot/`；引擎更新时在它的检出里构建，再 `node scripts/vendor-plasticine-bot.ts <检出目录>` |
 
 - 测试统一带 `TZ=Asia/Shanghai`。
 - 环境里开着代理（`NODE_USE_ENV_PROXY=1`）时，连本机的测试单独设 `NODE_USE_ENV_PROXY=0`。

@@ -7,7 +7,7 @@ import { Mates } from '../../src/mates/service.ts';
 import { MAIN_LINE_ID } from '../../src/state/index.ts';
 import { deferred, mailTool, slowTool, startKernel, until } from './helpers.ts';
 
-const draft: MateDraft = { name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky',
+const draft: MateDraft = { name: '资料研究员', role: '整理公开资料', avatar: 'cat' as const, hue: 'sky',
   soul: '先查原始资料。', purpose: null };
 const grant = { channel: 'fixture.mail', account: 'fixture-account', recipientMode: 'list' as const,
   recipients: ['Fixture'], category: 'reply', fixedTexts: null, scope: { kind: 'always' as const }, expiresAt: null };

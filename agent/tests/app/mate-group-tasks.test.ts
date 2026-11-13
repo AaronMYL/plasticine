@@ -12,7 +12,7 @@ afterEach(async () => { await app?.close(); app = undefined; });
 test('群任务接口沿用线 schema，未登录不可读写，发布重放和归档后重试都不重复创建', async () => {
   app = await startTestApp([], { startTasks: false });
   const mates = new Mates(app.state, () => app!.app.deps.lines);
-  const draft = { name: '资料研究员', role: '整理公开资料', avatar: '研', hue: 'sky' as const,
+  const draft = { name: '资料研究员', role: '整理公开资料', avatar: 'cat' as const, hue: 'sky' as const,
     soul: '核对来源。', purpose: null };
   const a = mates.create(draft);
   const b = mates.create({ ...draft, name: '文字编辑' });
