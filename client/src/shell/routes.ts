@@ -142,19 +142,20 @@ export interface NavItem {
 }
 
 /**
- * 设置弹框的五段（2026-11-05 他定六段，11-08 第 7 批删掉「日常」、时区挪进通用）：通用（外观、时区、通知）·
- * AI（含笔记、翻译模型）· 浏览器 · 账号（原「账号与网络」+「对外可见」+「通知记录」）· 系统（原系统页）。
+ * 设置弹框的六段（11-13 Aaron 看过设计稿定的重排）：通用（外观、时区、通知和通知记录）· 账号（名字、头像、@账号、密码、设备）·
+ * AI（模型、同时做几件事、工具开关）· 隐私与授权（对外可见、对外授权；段名还叫 grants，旧地址照样进得来）· 浏览器 · 系统。
  */
-export const SETTINGS_SECTIONS = ['general', 'ai', 'browser', 'account', 'grants', 'system'] as const;
+export const SETTINGS_SECTIONS = ['general', 'account', 'ai', 'grants', 'browser', 'system'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
-/** 旧地址的段名（第 113 条和第 3 批那九段）落到新五段的哪一段、哪一处。 */
+/** 旧地址的段名（第 113 条和第 3 批那九段）落到现在的哪一段、哪一处。 */
 const LEGACY_SETTINGS: Readonly<Record<string, { section: SettingsSection; focus?: SettingsFocus }>> = {
   daily: { section: 'general', focus: 'time-zone' },
   feed: { section: 'browser', focus: 'feed' },
   network: { section: 'account' },
-  visibility: { section: 'account', focus: 'visibility' },
-  notices: { section: 'account', focus: 'notices' },
+  privacy: { section: 'grants' },
+  visibility: { section: 'grants', focus: 'visibility' },
+  notices: { section: 'general', focus: 'notices' },
 };
 
 function settingsLink(segment: string | undefined): Route {

@@ -90,9 +90,3 @@
   color: var(--err);
   font-size: 12px;
 }
-
-.settings-avatar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}

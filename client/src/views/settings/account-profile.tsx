@@ -1,10 +1,11 @@
 // 设置 · 账号最上面两行（11-08 设计稿 Settings-Account）：
-//   名字一行  头像 · 名字 · 下面「@账号 · 地址」·「改」（就地改名字，PATCH /v2/account）；没加入网络的，这里「起一个
-//            @账号」（自助注册，不要邀请码：11-08 决定 4），输入时照建账号页一样问能不能用；
+//   名字一行  头像 · 名字 · 下面「@账号 · 地址」·「换头像」「改名字」（就地改名字，PATCH /v2/account）；没加入网络的，这里
+//            「起一个 @账号」（自助注册，不要邀请码：11-08 决定 4），输入时照建账号页一样问能不能用；
+//            换头像（11-13 从单独一块并进来）：挑一张图 → 圆形裁剪框 → 保存后加密随资料发给每个好友；有 @账号才能换；
 //   密码一行  「改密码」就地展开：要旧密码；桌面客户端本机（有本机令牌）和还没设过密码的不要。
 // 出错就地一行，不弹框。
 
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { DISPLAY_NAME_MAX_CHARS, PASSWORD_MIN_CHARS, type AccountState } from '../../api/shared.ts';
@@ -19,11 +20,12 @@ import { HandleField, handleBlocks, normalizeHandle, useHandleCheck } from '../o
 import { PasswordField } from '../onboard/onboard-parts.tsx';
 import { useOp } from '../pending/pending-ops.tsx';
 import { joinDraftKey } from './network-store.ts';
+import { AvatarCrop } from './avatar-crop.tsx';
 import { useSettingsDraft } from './settings-dialog-context.ts';
 import './account-profile.css';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
-const AVATAR_SIZE = 28;
+const AVATAR_SIZE = 44;
 
 /** 「11月8日」：密码哪天设的。 */
 function dayOf(iso: string, timeZone: string | undefined): string {
@@ -151,7 +153,7 @@ type Editing = 'name' | 'handle' | 'password' | null;
 
 export function AccountProfile(): ReactNode {
   const api = useApi();
-  const { network } = useLive();
+  const { network, contactActions } = useLive();
   const timeZone = useTimeZone();
   const [state, setState] = useState<AccountState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -176,6 +178,8 @@ export function AccountProfile(): ReactNode {
   // 头像在网络状态里（设置 · 账号下面「头像」那块换的），和图标栏读同一份。
   const status = useStore(network.status.data).value;
   const avatar = status?.account?.avatar ?? null;
+  const [cropping, setCropping] = useState<File | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
   const host = hostOf(state?.networkUrl ?? null);
   const reread = (): void => {
     setEditing(null);
@@ -198,9 +202,25 @@ export function AccountProfile(): ReactNode {
           </span>
           {state.handle === null ? <button type="button" className="secondary-button button-small"
             aria-expanded={editing === 'handle'} onClick={() => setEditing('handle')}>起一个 @账号</button> : null}
-          <button type="button" className="secondary-button button-small" aria-label="改名字"
-            aria-expanded={editing === 'name'} onClick={() => setEditing('name')}>修改</button>
+          {/* 头像只给网络上的人看：有 @账号才能换。 */}
+          {status?.account == null ? null : <>
+            <button type="button" className="secondary-button button-small"
+              onClick={() => picker.current?.click()}>换头像</button>
+            <input ref={picker} type="file" accept="image/*" hidden aria-label="挑一张头像" onChange={(event) => {
+              const picked = event.target.files?.[0];
+              if (picked !== undefined) setCropping(picked);
+              event.target.value = '';
+            }} />
+          </>}
+          <button type="button" className="secondary-button button-small"
+            aria-expanded={editing === 'name'} onClick={() => setEditing('name')}>改名字</button>
         </li>
+        {cropping === null ? null : <li className="account-edit">
+          <AvatarCrop file={cropping} shape="circle" onCancel={() => setCropping(null)} onSave={(dataUrl) => {
+            setCropping(null);
+            void contactActions.setAvatar(dataUrl).then(() => network.status.reload());
+          }} />
+        </li>}
         {editing === 'name' ? <li className="account-edit"><RenameForm name={name} onDone={(next) => {
           if (next === null) setEditing(null);
           else {

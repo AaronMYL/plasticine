@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { outboundAsk, outboundGrant, outboundLog } from '../../../src/api/fake/outbound-seed.ts';
 import { NOW, renderApp } from '../../helpers.tsx';
 
-describe('设置 · 授权', () => {
-  it('设置有独立授权段，空列表说明没有授权', async () => {
+describe('设置 · 隐私与授权', () => {
+  it('对外授权在「隐私与授权」里，空列表说明没有授权', async () => {
     await renderApp({ hash: '#/settings/grants' });
     const dialog = await screen.findByRole('dialog', { name: '设置' });
-    fireEvent.click(within(dialog).getByRole('button', { name: '授权' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: '隐私与授权' }));
     const section = await within(dialog).findByRole('region', { name: '对外授权' });
     expect(await within(section).findByText('还没有对外授权')).toBeTruthy();
   });

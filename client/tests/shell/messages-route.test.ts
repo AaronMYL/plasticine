@@ -89,17 +89,17 @@ describe('地址和栏目', () => {
     expect(phoneTabOf(parseHash('#/memory'))).toBe('plasticine');
   });
 
-  it('设置六段：通用 · AI · 浏览器 · 账号 · 授权 · 系统；旧段名落到新段的对应处', () => {
-    expect(SETTINGS_SECTIONS).toEqual(['general', 'ai', 'browser', 'account', 'grants', 'system']);
+  it('设置六段：通用 · 账号 · AI · 隐私与授权 · 浏览器 · 系统；旧段名落到新段的对应处', () => {
+    expect(SETTINGS_SECTIONS).toEqual(['general', 'account', 'ai', 'grants', 'browser', 'system']);
     expect(parseHash('#/settings/daily')).toEqual({ view: 'settings', noteId: null, settingsSection: 'general',
       settingsFocus: 'time-zone' });
     expect(routeHash(parseHash('#/settings/browser'))).toBe('#/settings/browser');
     expect(parseHash('#/settings/feed')).toEqual({ view: 'settings', noteId: null, settingsSection: 'browser',
       settingsFocus: 'feed' });
     expect(parseHash('#/settings/network')).toEqual({ view: 'settings', noteId: null, settingsSection: 'account' });
-    expect(parseHash('#/settings/visibility')).toEqual({ view: 'settings', noteId: null, settingsSection: 'account',
+    expect(parseHash('#/settings/visibility')).toEqual({ view: 'settings', noteId: null, settingsSection: 'grants',
       settingsFocus: 'visibility' });
-    expect(parseHash('#/settings/notices')).toEqual({ view: 'settings', noteId: null, settingsSection: 'account',
+    expect(parseHash('#/settings/notices')).toEqual({ view: 'settings', noteId: null, settingsSection: 'general',
       settingsFocus: 'notices' });
     expect(parseHash('#/settings/nonsense')).toEqual({ view: 'settings', noteId: null });
   });

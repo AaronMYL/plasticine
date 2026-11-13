@@ -1,150 +1,276 @@
 /* 设置 · 账号与网络、对外可见、通知记录（第 113 条）。只用方向 I 令牌：一底一前景，陶土橙只给「等你」（建议待确认的圈、
    「n 处等你确认」的点），选中的单选是 --fg 实心，可听到的档位是 --tint2 台阶色块。 */
 
-/* ---------- 对外可见：矩阵 ---------- */
+/* ---------- 对外可见：只列放开的（11-13） ---------- */
 
-.vis-head {
-  align-items: center;
-}
-
-.vis-head .block-title {
-  flex: 1;
-}
-
-.vis-pending {
-  display: inline-flex;
+.vis-suggest {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  height: 32px;
-  padding: 0 12px;
+  padding: 8px 12px;
   border-radius: 8px;
   background: var(--tint2);
-  font-size: 13px;
 }
 
-.vis-matrix {
-  display: flex;
-  flex-direction: column;
-  width: fit-content;
-  max-width: 100%;
-}
-
-.vis-row {
-  display: grid;
-  grid-template-columns: minmax(96px, 200px) repeat(4, minmax(48px, 88px));
+.vis-suggest-tag {
+  display: inline-flex;
+  flex: none;
   align-items: center;
-  min-height: 40px;
-}
-
-.vis-cols {
-  min-height: 32px;
-}
-
-.vis-col {
-  text-align: center;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.vis-group {
-  margin: 0;
-  padding: 12px 0 4px;
+  gap: 4px;
   font-size: 12px;
-  line-height: 18px;
-  color: var(--fg2);
+  font-weight: 600;
+  color: var(--accent);
 }
 
-.vis-section {
-  display: flex;
-  flex-direction: column;
-}
-
-.vis-rule {
-  height: 1px;
-  margin: 8px 0;
-  background: var(--line);
-}
-
-.vis-head .vis-confirm {
-  height: 32px;
-  padding: 0 12px;
+.vis-suggest-text {
+  flex: 1;
+  min-width: 12em;
   font-size: 13px;
 }
 
-.vis-label {
+.vis-tier {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.vis-tier-head {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  overflow-wrap: anywhere;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.vis-tier-title {
+  margin: 0;
   font-size: 14px;
   line-height: 22px;
+  font-weight: 600;
 }
 
-.vis-count {
+.vis-tier-who {
   font-size: 12px;
   color: var(--fg2);
 }
 
-.vis-cell {
-  display: grid;
-  place-items: center;
+.vis-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.vis-fill {
-  width: calc(100% - 16px);
-  height: 24px;
-  border-radius: 6px;
-  background: var(--tint2);
+.vis-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 0 4px 0 10px;
+  border-radius: 8px;
+  background: var(--layer-float);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  font-size: 13px;
 }
 
-.vis-radio {
+/* 建议还没确认：虚线框（不靠颜色一样东西区分，形状也不同）。 */
+.vis-chip[data-pending='true'] {
+  box-shadow: none;
+  outline: 1px dashed var(--accent);
+  outline-offset: -1px;
+}
+
+.vis-chip-kind {
+  flex: none;
+  font-size: 11px;
+  color: var(--fg2);
+}
+
+.vis-chip-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vis-chip-action {
   display: inline-grid;
+  flex: none;
   place-items: center;
   width: 24px;
   height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: 6px;
   background: transparent;
-  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
   cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
-.vis-radio::after {
-  content: '';
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.vis-chip-action:hover:not(:disabled) {
+  background: var(--tint2);
+  color: var(--fg);
 }
 
-.vis-radio[data-state='on'] {
-  box-shadow: inset 0 0 0 1.5px var(--fg);
-}
-
-.vis-radio[data-state='on']::after {
-  background: var(--fg);
-}
-
-.vis-radio[data-state='ask'] {
-  box-shadow: inset 0 0 0 1.5px var(--accent);
-}
-
-.vis-radio[data-state='ask']::after {
-  box-shadow: inset 0 0 0 1.5px var(--accent);
-}
-
-.vis-radio:hover:not(:disabled) {
-  background: var(--tint);
-}
-
-.vis-radio:focus-visible {
+.vis-chip-action:focus-visible,
+.vis-add:focus-visible,
+.vis-picker-row:focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: 2px;
 }
 
-.vis-radio:disabled {
+.vis-chip-action:disabled {
+  opacity: 0.5;
   cursor: default;
+}
+
+.vis-none {
+  font-size: 13px;
+  color: var(--fg2);
+}
+
+.vis-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.vis-add:hover,
+.vis-add[aria-expanded='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.vis-rest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--fg2);
+}
+
+.vis-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 288px;
+  padding: 8px;
+}
+
+.vis-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.vis-picker-search .search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  appearance: none;
+}
+
+.vis-picker-search:focus-within {
+  box-shadow: inset 0 0 0 1px var(--fg2);
+}
+
+.vis-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vis-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vis-picker-row:hover {
+  background: var(--tint2);
+}
+
+.vis-picker-row .vis-chip-kind {
+  width: 28px;
+}
+
+.vis-picker-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vis-picker-empty {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--fg2);
+}
+
+@media (max-width: 720px) {
+  /* 窄屏：那句话自己一行，两个按钮在下面一行。 */
+  .vis-suggest-text {
+    flex: 1 1 calc(100% - 64px);
+  }
+
+  .vis-chip,
+  .vis-add {
+    min-height: 36px;
+  }
+
+  .vis-chip-action {
+    width: 32px;
+    height: 32px;
+  }
+
+  .vis-picker {
+    width: min(320px, calc(100vw - 32px));
+  }
+
+  .vis-picker-row {
+    min-height: 44px;
+  }
 }
 
 /* ---------- 通知记录 ---------- */

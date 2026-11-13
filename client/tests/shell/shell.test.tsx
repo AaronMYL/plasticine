@@ -85,7 +85,7 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     const dialog = screen.getByRole('dialog', { name: '设置' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(within(dialog).getAllByRole('button').filter((button) => button.closest('nav') !== null)
-      .map((button) => button.textContent)).toEqual(['通用', 'AI', '浏览器', '账号', '授权', '系统']);
+      .map((button) => button.textContent)).toEqual(['通用', '账号', 'AI', '隐私与授权', '浏览器', '系统']);
     expect(window.location.hash).toBe('#/settings');
     fireEvent.click(within(dialog).getByRole('button', { name: '系统' }));
     await settle();
@@ -102,8 +102,9 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     await renderApp({ hash: '#/settings/notices' });
     await settle();
     let dialog = await screen.findByRole('dialog', { name: '设置' });
-    expect(within(dialog).getByRole('button', { name: '账号' }).getAttribute('aria-current')).toBe('page');
-    expect(window.location.hash).toBe('#/settings/account');
+    // 11-13 重排：通知记录回到通用里。
+    expect(within(dialog).getByRole('button', { name: '通用' }).getAttribute('aria-current')).toBe('page');
+    expect(window.location.hash).toBe('#/settings');
     fireEvent.keyDown(document, { key: 'Escape' });
     await settle();
     expect(screen.queryByRole('dialog', { name: '设置' })).toBeNull();

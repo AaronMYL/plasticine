@@ -1,9 +1,9 @@
-// 设置弹框里一段的内容（2026-11-05 他定六段；11-08 第 7 批删「日常」剩五段，见 routes.ts SETTINGS_SECTIONS）：
-//   通用 = 外观 · 时区 · 通知 · 装到主屏幕（2026-11-05 度量采集删了；11-06 他定通知全改成消息；11-13 他定去掉「提建议或反馈」）；
-//   AI = 模型（提供商平级）· 默认模型 · 技能 · 工具开关（2026-11-05 照设计稿 Settings-AI）；
-//   浏览器 = 登录着的网站 · 导入 · 网页翻译（11-08 信息流来源挪到信息流第二栏）；
-//   账号 = 名字和 @账号 · 密码 · 登录着的设备 · 头像 · 对外可见 · 通知记录（11-08 设计稿 Settings-Account；11-13 他定去掉
-//   「邀请朋友」：入网早就不要邀请码了）；
+// 设置弹框里一段的内容（11-13 Aaron 看过设计稿定的六段，见 routes.ts SETTINGS_SECTIONS）：
+//   通用 = 外观 · 时区 · 通知 · 通知记录 · 装到主屏幕（11-13 去掉「提建议或反馈」，通知记录从账号挪回来）；
+//   账号 = 名字、头像、@账号、密码 · 在别的设备上用 · 登录着的设备（11-13 去掉「邀请朋友」，头像并进名字那一行）；
+//   AI = 模型（提供商平级）· 同时做几件事 · 技能 · 工具开关；
+//   隐私与授权 = 对外可见（只列放开的）· 对外授权 · 自动发出的；
+//   浏览器 = 搜索引擎 · 登录着的网站 · 导入 · 网页翻译；
 //   系统 = 版本 · 运行情况 · 替你动手的电脑 · 备份（设计稿 Settings-System）。
 // 段名是弹框右边的标题，段里每块用自己的小节标题分开，不加说明段落。从别处带着 focus 打开时滚到那一块并把焦点给它。
 
@@ -15,7 +15,6 @@ import type { SettingsSection } from '../../shell/routes.ts';
 import { TOOL_GROUPS_NOTE, ToolGroupsView } from '../tools/tool-groups-view.tsx';
 import { AccountProfile } from './account-profile.tsx';
 import { AccessSection } from './access-section.tsx';
-import { AvatarSection } from './avatar-section.tsx';
 import { AppearanceSection } from './appearance-section.tsx';
 import { BrowserSection } from './browser-section.tsx';
 import { Devices } from './devices-block.tsx';
@@ -37,10 +36,10 @@ import './network.css';
 
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsSection, string>> = {
   general: '通用',
-  ai: 'AI',
-  browser: '浏览器',
   account: '账号',
-  grants: '授权',
+  ai: 'AI',
+  grants: '隐私与授权',
+  browser: '浏览器',
   system: '系统',
 };
 
@@ -130,6 +129,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
         <AppearanceSection />
         <Spot name="time-zone"><TimeZoneSection /></Spot>
         <NotificationSection />
+        <Spot name="notices"><NoticesSection /></Spot>
         <InstallSection />
       </>;
     case 'ai':
@@ -150,14 +150,14 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
         <AccountProfile />
         <AccessSection />
         <Devices />
-        <AvatarSection />
-        <Spot name="visibility"><VisibilitySection /></Spot>
-        <Spot name="notices"><NoticesSection /></Spot>
       </>;
     case 'system':
       return <SystemSection />;
     case 'grants':
-      return <OutboundSettings />;
+      return <>
+        <Spot name="visibility"><VisibilitySection /></Spot>
+        <OutboundSettings />
+      </>;
   }
 }
 
