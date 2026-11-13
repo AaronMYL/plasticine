@@ -143,6 +143,33 @@ describe('发送前的当前页来源', () => {
     expect((screen.getByRole('textbox', { name: '问一句' }) as HTMLTextAreaElement).value).toBe('按这个页面整理');
   });
 
+  it('取消当前页引用以后再发：这句不带这一页（11-13 Aaron：关了「问这一页」下一句还带着页面）', async () => {
+    const app = await webPage(() => Promise.resolve(SNAPSHOT));
+    await within(screen.getByRole('group', { name: '当前页来源' })).findByText('可见正文');
+    fireEvent.click(screen.getByRole('button', { name: '取消当前页引用' }));
+    draft('这句和网页没关系');
+    fireEvent.click(screen.getByRole('button', { name: '发送' }));
+    await waitFor(async () => {
+      const messages = (await app.api.lines.read('main', {})).messages;
+      expect(messages.some((row) => row.text.includes('这句和网页没关系'))).toBe(true);
+    });
+    const sent = (await app.api.lines.read('main', {})).messages.find((row) => row.text.includes('这句和网页没关系'));
+    expect(sent?.text).toBe('这句和网页没关系');
+  });
+
+  it('没开过「问这一页」：这句也不带当前页', async () => {
+    const app = await renderApp({ hash: '#/notes/context-note', setup: (fake) => {
+      seedNote(fake, 'context-note', '# 用户访谈摘要\n\n第一轮访谈发现的问题。');
+    } });
+    await screen.findByRole('button', { name: '问这一页' });
+    draft('今天几号');
+    fireEvent.click(screen.getByRole('button', { name: '发送' }));
+    await waitFor(async () => {
+      const messages = (await app.api.lines.read('main', {})).messages;
+      expect(messages.some((row) => row.text === '今天几号')).toBe(true);
+    });
+  });
+
   it('发送时再读一次期间改了草稿，不清空新文字也不发送旧问题', async () => {
     const snapshot = vi.fn(() => Promise.resolve(SNAPSHOT));
     const app = await webPage(snapshot);

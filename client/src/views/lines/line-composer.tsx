@@ -156,8 +156,11 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
     const original = { draft, quotes, reply, attachments: attachments.store.get() };
     const prepare = async (): Promise<void> => {
       try {
-        const full = askPage ? await page.quoteFor(original.quotes) : null;
-        const pageQuote = full ?? (askPage ? await currentPageReference(currentTab, api) : null);
+        // 「问这一页」开着才带这一页：整页已经发过一遍的，这次只带它的标识和链接；关着就什么都不带
+        // （11-13 Aaron：关了以后下一句还带着页面）。
+        const asking = askPage && page.on && page.available;
+        const full = asking ? await page.quoteFor(original.quotes) : null;
+        const pageQuote = full ?? (asking ? await currentPageReference(currentTab, api) : null);
         if (!mounted.current) return;
         if (tabRef.current !== sourceKey) {
           throw new Error('当前页已经改变，请在新页面重新发送。');
