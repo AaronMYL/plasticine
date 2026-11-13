@@ -377,3 +377,52 @@
 .note-meta .ai-mark {
   margin-left: 0;
 }
+
+/* 11-13：电脑上没有页头那条大标题了，栏目直接顶到页面上沿；按钮在列表的文件夹名那一行。 */
+.notes-columns:not([data-phone='true']) {
+  border-top: 0;
+}
+
+.note-list-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.note-list-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  margin-right: -4px;
+}
+
+.note-list-tools .icon-button {
+  width: 28px;
+  height: 28px;
+}
+
+.note-list-tools > .bulk-header {
+  gap: 2px;
+  margin-bottom: 0;
+}
+
+/* 列表收着（或窄到只放得下正文）时：回列表、新建放在正文上面一小行。 */
+.notes-detail-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 8px 0 0 20px;
+}
+
+.notes-detail-bar .notes-back {
+  margin: 0;
+  align-self: center;
+}
+
+.notes-columns[data-layout='single'] .notes-detail-bar {
+  padding-left: 0;
+}

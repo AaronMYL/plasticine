@@ -33,6 +33,8 @@ export interface NoteListProps {
   onRetry?: () => void;
   /** 手机上文件夹名已经在页头（设计稿 Phone-Notes），列表里不再写一遍。 */
   heading?: boolean;
+  /** 文件夹名这一行右边的按钮（收起列表、新建）；电脑上才有。 */
+  tools?: ReactNode;
 }
 
 export function NoteList(props: NoteListProps): ReactNode {
@@ -41,25 +43,33 @@ export function NoteList(props: NoteListProps): ReactNode {
   const now = new Date();
   const api = useApi();
   const { noteOps } = useClientState();
+  // 电脑上（有文件夹名这一行）工具并进这一行；手机上文件夹名在页头，「更多操作」照旧自己一行。
+  const merged = props.heading !== false;
+  const bulk = props.selection === undefined ? null : <BulkHeader selection={props.selection}
+    trash={props.trash ?? false} allowEmpty={props.query.trim() === ''}
+    items={(props.notes ?? []).map((note) => ({ kind: 'note', id: note.id, title: note.title || '未命名' }))} />;
   return (
     <div className="note-list" ref={ref} onScroll={onScroll} hidden={props.hidden}>
       <div className="note-list-head">
-        {props.selection === undefined ? null : <BulkHeader selection={props.selection} trash={props.trash ?? false}
-          allowEmpty={props.query.trim() === ''}
-          items={(props.notes ?? []).map((note) => ({ kind: 'note', id: note.id, title: note.title || '未命名' }))} />}
+        {merged ? null : bulk}
         {props.feedback && props.selection !== undefined ? <BulkFeedback selection={props.selection} /> : null}
+        {/* 11-13 Aaron 的示意：页头那条大标题去掉，「收起列表」「新建」和列表的「更多操作」都放到文件夹名这一行。 */}
+        {merged && props.selection?.active ? bulk : null}
         {props.heading === false || props.selection?.active ? null : <div className="note-list-heading">
-          {props.onFolders === undefined ? <h2 title={props.collectionLabel}>{props.collectionLabel ?? '全部'}</h2> : (
-            <button type="button" className="note-collection-toggle" aria-label="选择文件夹"
-              title={props.collectionLabel} onClick={props.onFolders}>
-              <Icon name="folder" />
-              <span>{props.collectionLabel ?? '全部'}</span>
-              <Icon name="chevron-down" size={14} />
-            </button>
-          )}
-          {props.notes === null ? null : <span className="note-list-count" aria-label={`${props.notes.length} 篇`}>
-            {props.notes.length}
-          </span>}
+          <div className="note-list-title">
+            {props.onFolders === undefined ? <h2 title={props.collectionLabel}>{props.collectionLabel ?? '全部'}</h2> : (
+              <button type="button" className="note-collection-toggle" aria-label="选择文件夹"
+                title={props.collectionLabel} onClick={props.onFolders}>
+                <Icon name="folder" />
+                <span>{props.collectionLabel ?? '全部'}</span>
+                <Icon name="chevron-down" size={14} />
+              </button>
+            )}
+            {props.notes === null ? null : <span className="note-list-count" aria-label={`${props.notes.length} 篇`}>
+              {props.notes.length}
+            </span>}
+          </div>
+          {merged ? <div className="note-list-tools">{props.tools}{bulk}</div> : null}
         </div>}
         {props.selection?.active ? null : <div className="note-search">
           <Icon name="search" size={15} />

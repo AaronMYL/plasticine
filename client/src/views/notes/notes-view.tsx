@@ -238,8 +238,10 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
 
   return (
     <div className="page page-fill notes">
-      <PageHeader title={phone && showList ? collectionLabel : '笔记'} controls={controls}
-        onBack={phone && showList ? () => notesUi.set({ phoneList: false }) : undefined} />
+      {/* 11-13 Aaron：电脑上不要顶上那条大标题，按钮并进列表的文件夹名那一行；列表收着时放在正文上面一小行。 */}
+      {phone ? <PageHeader title={showList ? collectionLabel : '笔记'} controls={controls}
+        onBack={showList ? () => notesUi.set({ phoneList: false }) : undefined} />
+        : <h1 className="sr-only">笔记</h1>}
       <CreateStatus op={createOp} onRetry={() => void create()} />
       <PendingNoteChanges onDeleted={afterDeleted} />
       {invalid ? (
@@ -270,9 +272,11 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
           showFolder={collection.kind === 'all'}
           collectionLabel={collectionLabel}
           heading={!phone}
+          tools={phone ? undefined : controls}
           onFolders={phone ? () => setFoldersOpen(true) : undefined}
         />
         <div className="notes-detail" hidden={!showNote}>
+            {phone || showList ? null : <div className="notes-detail-bar">{controls}</div>}
             {selection.active ? <div className="note-bulk-detail">
               <h2>选了 {selection.selected.length} 篇笔记</h2><BulkFeedback selection={selection} />
             </div> : <OpenNotePane noteId={selectedId} onDeleted={() => {
