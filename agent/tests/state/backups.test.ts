@@ -61,7 +61,7 @@ test('有效约定只写提议，不覆盖现在的约定', () => {
   }
 });
 
-test('缺正文的备份失败，保留期只清本功能登记、过了保留期（7 天 + 每周留 4 周，第 116 条）的目录', () => {
+test('缺正文的备份失败，保留期只清本功能登记、过了保留期（最新 2 份、每份 7 天）的目录', () => {
   const directory = mkdtempSync(join(tmpdir(), 'backup-retention-'));
   let now = '2026-10-01T00:00:00Z';
   const state = openState({ path: join(directory, 'plasticine.sqlite'), now: () => now });

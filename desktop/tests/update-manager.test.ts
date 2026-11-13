@@ -105,3 +105,25 @@ test('没有上一版时退回说清楚；开发版不查', async (t) => {
   assert.match((await dev.updates.check()).problem ?? '', /开发版/);
   assert.deepEqual(dev.fetched, []);
 });
+
+test('启动时清更新目录：装好的更新包删掉；上一版满 7 天删掉、不再能退回', (t) => {
+  const dir = tempDir(t);
+  const root = join(dir, 'updates');
+  mkdirSync(join(root, 'downloads', '2026.1030.1'), { recursive: true });
+  writeFileSync(join(root, 'downloads', '2026.1030.1', 'Plasticine-Desktop-mac-2026.1030.000001.zip'), ZIP);
+  mkdirSync(join(root, 'previous', 'Plasticine.app', 'Contents'), { recursive: true });
+  writeFileSync(join(root, 'state.json'), JSON.stringify({ skipped: [], previous: '2026.1030.1', checkedAt: null,
+    problem: null, created: { previous: '2026-11-07T00:00:00.000Z' } }));
+  const lines: string[] = [];
+  const { updates } = manager(dir, manifest('2026.1101.000000'), { log: (line) => lines.push(line) });
+  updates.started();
+  assert.equal(existsSync(join(root, 'downloads', '2026.1030.1')), false);
+  assert.equal(existsSync(join(root, 'previous', 'Plasticine.app')), true, '上一版才 1 天，留着');
+  assert.equal(updates.status().previous, '2026.1030.1');
+  assert.match(lines.join('\n'), /清掉了用不上的更新文件：downloads\/2026\.1030\.1/);
+  const later = manager(dir, manifest('2026.1101.000000'), { now: () => new Date('2026-11-14T00:00:00.000Z') });
+  later.updates.started();
+  assert.equal(existsSync(join(root, 'previous')), false);
+  assert.equal(later.updates.status().previous, null);
+  assert.deepEqual(JSON.parse(readFileSync(join(root, 'state.json'), 'utf8')).created, {});
+});

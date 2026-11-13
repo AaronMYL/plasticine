@@ -5,8 +5,8 @@
 
 import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { acquireLock, layoutOf, pointedVersion, pointTo, prune, readServerManifest, readState, writeState,
-  type Layout } from './install-layout.ts';
+import { acquireLock, expirePrevious, layoutOf, pointedVersion, pointTo, prune, readServerManifest, readState,
+  writeState, type Layout } from './install-layout.ts';
 import { assetUrl, isNewerVersion, manifestUrl, parseReleaseManifest, sameNodeMajor, sha256Hex,
   type ReleaseManifest } from './release-manifest.ts';
 
@@ -85,13 +85,18 @@ async function restartAndCheck(options: UpdateOptions, deps: UpdaterDeps): Promi
 function record(layout: Layout, deps: UpdaterDeps, result: string, skip?: string): void {
   const state = readState(layout);
   const skipped = skip === undefined || state.skipped.includes(skip) ? state.skipped : [...state.skipped, skip];
-  writeState(layout, { lastCheckAt: deps.now().toISOString(), lastResult: result, skipped });
+  writeState(layout, { ...state, lastCheckAt: deps.now().toISOString(), lastResult: result, skipped });
 }
 
 async function checkAndInstall(options: UpdateOptions, layout: Layout, deps: UpdaterDeps): Promise<UpdateOutcome> {
   const current = pointedVersion(layout.current);
   if (current === null) {
     throw new Error(`${layout.current} 不存在：还没装过，先运行 install.sh。`);
+  }
+  // 每次检查（定时器每天一次）都先看上一版到没到期，所以没有新版本也会清。
+  const expired = expirePrevious(layout, deps.now());
+  if (expired !== null) {
+    deps.log(`上一版 ${expired} 留满 7 天，已删`);
   }
   const installed = readServerManifest(layout.current);
   const location = manifestUrl(options.releaseUrl ?? installed.releaseUrl);
@@ -113,8 +118,10 @@ async function checkAndInstall(options: UpdateOptions, layout: Layout, deps: Upd
   const file = await download(release, location, layout, deps);
   await unpack(file, release.version, layout, deps);
   const earlier = pointedVersion(layout.previous);
+  const earlierSince = readState(layout).previousSince ?? null;
   pointTo(layout, layout.previous, current);
   pointTo(layout, layout.current, release.version);
+  writeState(layout, { ...readState(layout), previousSince: deps.now().toISOString() });
   deps.log(`已换到 ${release.version}，上一版 ${installed.version} 留作回退`);
   if (await restartAndCheck(options, deps)) {
     prune(layout);
@@ -125,6 +132,7 @@ async function checkAndInstall(options: UpdateOptions, layout: Layout, deps: Upd
   deps.log(`${release.version} 启动后健康检查没过，退回 ${installed.version}`);
   pointTo(layout, layout.current, current);
   pointTo(layout, layout.previous, earlier);
+  writeState(layout, { ...readState(layout), previousSince: earlierSince });
   await restartAndCheck(options, deps);
   prune(layout);
   record(layout, deps, `${release.version} 不健康，已退回 ${installed.version}`, release.version);
@@ -155,6 +163,7 @@ export async function rollback(options: UpdateOptions, deps: UpdaterDeps): Promi
     }
     pointTo(layout, layout.current, previous);
     pointTo(layout, layout.previous, current);
+    writeState(layout, { ...readState(layout), previousSince: deps.now().toISOString() });
     const healthy = await restartAndCheck(options, deps);
     record(layout, deps, `手动回退到 ${previous}${healthy ? '' : '（健康检查没过）'}`);
     return { kind: 'rolled_back', from: current, to: previous, healthy };

@@ -53,6 +53,17 @@ Linux 换的是 `current` 指针，不健康自动换回 `previous`，那一版�
 一分半没答上健康检查就装回上一版；Mac 换 App 的 Contents（沿用原来的自更新，重签后再换），上一版留在
 `~/Library/Application Support/Plasticine/上一版`。
 
+**回退用的备份留多少**（2026-11-13 定，各处一个规则）：同一样东西最多留最新 2 份，每份从生成那一刻起满 7 天就删，两条同时
+生效，不够 2 份也照样到期删；自动清，不用人管。
+
+| 哪里 | 留什么 | 什么时候清 |
+|---|---|---|
+| Linux 包 `versions/` | `current` 之外只留 `previous` 一版，满 7 天删（`install-layout.ts` 的 `expirePrevious`） | 每次更新后；每天那次检查 |
+| Windows 托盘 `installers/` | 最新 2 份安装程序，每份 7 天 | 每次更新后；每天那次检查 |
+| 桌面客户端 `<用户数据>/updates/` | 更新包装好就删；Windows 留最新 2 份安装程序、Mac 留 1 份上一版，都是 7 天（`desktop/src/updates/update-cleanup.ts`） | 启动时；每 6 小时查更新时 |
+| Mac App「上一版」 | 1 份，7 天 | 每次查更新时 |
+| 本机备份（数据库 + 笔记） | 最新 2 份，每份 7 天（`agent/src/state/backup-retention.ts`） | 每次备份后；每 5 分钟那次扫描 |
+
 Mac 原生 App 另外提供本机设备能力，见 [mac/README.md](../mac/README.md)。Windows 托盘负责看护本机服务、打开浏览器和
 更新；三个安装包拥有相同的服务基础，不代表三种操作系统已有完全相同的原生设备能力。
 

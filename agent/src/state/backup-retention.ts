@@ -1,8 +1,9 @@
-// 本机备份留多少（第 116 条，用户 2026-11-04 弹框定）：最近 7 天的每一份都留；更早的，每周只留那一周最新的一份、
-// 留 4 周；再早的到期清掉。原来是一律留 30 天，数据库还在长，稳定后会到 2G 以上。周按 UTC 的周一起算。
+// 本机备份留多少（2026-11-13 他定，和别的备份一个规则）：只留最新 2 份，每份从生成那一刻起满 7 天就清；两条同时生效，
+// 不够 2 份也照样到期清。原来是「最近 7 天每天一份 + 每周一份留 4 周」（第 116 条，11-04），8 份 700 多兆。
+// 生成时间用登记的 createdAt，不看文件时间。没做成的（不是 ready）不占那 2 份的位置，满 7 天清掉。
 
-export const DAILY_KEEP_DAYS = 7;
-export const WEEKLY_KEEP_WEEKS = 4;
+export const KEEP_COPIES = 2;
+export const KEEP_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface RetentionRow {
@@ -11,32 +12,12 @@ export interface RetentionRow {
   status: string;
 }
 
-/** 这份备份属于哪一周（UTC 周一的日期）。 */
-function weekOf(at: string): string {
-  const time = new Date(at);
-  const sinceMonday = (time.getUTCDay() + 6) % 7;
-  const monday = new Date(Date.UTC(time.getUTCFullYear(), time.getUTCMonth(), time.getUTCDate() - sinceMonday));
-  return monday.toISOString().slice(0, 10);
-}
-
-/** 到期该清的备份 id：过了 7 天、又不是那一周最新的一份（或者已经过了 4 周）。已经清过的不再算。 */
+/** 到期该清的备份 id。已经清过的不再算。 */
 export function expiredBackups(rows: readonly RetentionRow[], now: string): string[] {
-  const live = rows.filter((row) => row.status !== 'expired');
-  const newestOfWeek = new Map<string, RetentionRow>();
-  for (const row of live) {
-    const week = weekOf(row.createdAt);
-    const kept = newestOfWeek.get(week);
-    if (kept === undefined || row.createdAt > kept.createdAt) {
-      newestOfWeek.set(week, row);
-    }
-  }
   const nowMs = Date.parse(now);
-  return live.filter((row) => {
-    const age = nowMs - Date.parse(row.createdAt);
-    if (age < DAILY_KEEP_DAYS * DAY_MS) {
-      return false;
-    }
-    const weekly = newestOfWeek.get(weekOf(row.createdAt))?.id === row.id;
-    return !(weekly && age < WEEKLY_KEEP_WEEKS * 7 * DAY_MS);
-  }).map((row) => row.id);
+  const fresh = (row: RetentionRow): boolean => nowMs - Date.parse(row.createdAt) < KEEP_DAYS * DAY_MS;
+  const live = rows.filter((row) => row.status !== 'expired');
+  const kept = new Set(live.filter((row) => row.status === 'ready' && fresh(row))
+    .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, KEEP_COPIES).map((row) => row.id));
+  return live.filter((row) => (row.status === 'ready' ? !kept.has(row.id) : !fresh(row))).map((row) => row.id);
 }

@@ -1,4 +1,4 @@
-// 第 116 条：本机备份最近 7 天每份都留；更早的每周留最新一份、留 4 周；其余到期。
+// 2026-11-13：本机备份只留最新 2 份，每份满 7 天就清，两条同时生效。
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -12,20 +12,24 @@ function daily(from: string, days: number) {
   });
 }
 
-test('每天一份、连续 40 天：最近 7 天全留，更早的每周留最新一份、留 4 周，其余到期', () => {
-  // 2026-09-26（周六）到 2026-11-04（周三）
+test('每天一份、连续 40 天：只留最新 2 份', () => {
   const rows = daily('2026-09-26T00:30:00.000Z', 40);
   const expired = new Set(expiredBackups(rows, '2026-11-04T12:00:00.000Z'));
-  const kept = rows.map((row) => row.id).filter((id) => !expired.has(id));
-  assert.deepEqual(kept, [
-    '2026-10-11', '2026-10-18', '2026-10-25',
-    '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04',
-  ]);
+  assert.deepEqual(rows.map((row) => row.id).filter((id) => !expired.has(id)), ['2026-11-03', '2026-11-04']);
 });
 
-test('已经清过的不再算；只有几天的备份一份都不清', () => {
-  const rows = daily('2026-11-01T00:30:00.000Z', 4);
-  assert.deepEqual(expiredBackups(rows, '2026-11-04T12:00:00.000Z'), []);
+test('只有 2 份、以后再没有新的：满 7 天照样清，不因为凑不够 2 份就一直留', () => {
+  const rows = daily('2026-11-01T00:30:00.000Z', 2);
+  assert.deepEqual(expiredBackups(rows, '2026-11-07T12:00:00.000Z'), []);
+  assert.deepEqual(expiredBackups(rows, '2026-11-08T00:30:00.000Z'), ['2026-11-01']);
+  assert.deepEqual(expiredBackups(rows, '2026-11-09T00:30:00.000Z'), ['2026-11-01', '2026-11-02']);
+});
+
+test('已经清过的不再算；没做成的不占位置，满 7 天才清', () => {
   const old = { id: 'old', createdAt: '2026-09-01T00:00:00.000Z', status: 'expired' };
   assert.deepEqual(expiredBackups([old], '2026-11-04T12:00:00.000Z'), []);
+  const rows = [...daily('2026-11-01T00:30:00.000Z', 3),
+    { id: 'failed-new', createdAt: '2026-11-04T00:30:00.000Z', status: 'failed' },
+    { id: 'failed-old', createdAt: '2026-10-20T00:30:00.000Z', status: 'failed' }];
+  assert.deepEqual(expiredBackups(rows, '2026-11-04T12:00:00.000Z').toSorted(), ['2026-11-01', 'failed-old']);
 });

@@ -54,6 +54,7 @@ final class SelfUpdate {
         guard !running else { return }
         running = true
         defer { running = false }
+        SelfUpdateInstaller.expirePreviousBackups()
         setState(.checking)
         do {
             let plan = try await fetchPlan()

@@ -19,6 +19,7 @@ namespace Plasticine
     sealed class Updater
     {
         static readonly TimeSpan HealthAfterUpdate = TimeSpan.FromSeconds(90);
+        static readonly TimeSpan KeepInstallers = TimeSpan.FromDays(7);
         static string PendingFile { get { return Path.Combine(Paths.Data, "update-pending.json"); } }
         static string StateFile { get { return Path.Combine(Paths.Data, "update-state.json"); } }
 
@@ -49,6 +50,8 @@ namespace Plasticine
         public string CheckAndDownload()
         {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            try { PruneInstallers(); }
+            catch (Exception error) { Paths.Log("tray.log", "清旧安装程序没成：" + error.Message); }
             var local = LocalManifest();
             string releaseUrl = Text(local, "releaseUrl");
             string current = Text(local, "version");
@@ -148,10 +151,16 @@ namespace Plasticine
             return File.Exists(path) ? path : null;
         }
 
-        /// <summary>只留装着的和上一份安装程序。</summary>
-        void PruneInstallers()
+        /// <summary>
+        /// 只留最新 2 份安装程序，每份从下载那一刻起满 7 天就删（2026-11-13 定）。按文件的创建时间算，打开、复制都不会让它重新计时。
+        /// 更新成功后跑一次，每次查更新也跑一次，所以没有新版本也会到期清。
+        /// </summary>
+        public void PruneInstallers()
         {
-            var keep = InstallerVersions().OrderByDescending(v => v, Comparer<string>.Create(Compare)).Take(2).ToList();
+            DateTime cutoff = DateTime.UtcNow - KeepInstallers;
+            var keep = InstallerVersions()
+                .Where(v => File.GetCreationTimeUtc(Installer(v)) > cutoff)
+                .OrderByDescending(v => v, Comparer<string>.Create(Compare)).Take(2).ToList();
             foreach (string version in InstallerVersions().ToList())
             {
                 if (!keep.Contains(version)) File.Delete(Installer(version));

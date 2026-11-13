@@ -12,6 +12,7 @@ import { Value } from 'typebox/value';
 import type { UpdateStatus } from '../../../agent/shared/api/desktop-bridge.ts';
 import { DESKTOP_MANIFEST_FILE, parseDesktopManifest } from '../../../agent/shared/desktop-release.ts';
 import type { ReleaseAsset } from '../../../agent/shared/release-manifest.ts';
+import { cleanUpdates } from './update-cleanup.ts';
 import { HEALTH_WAIT_SECONDS, macSwapScript, windowsInstallScript } from './update-scripts.ts';
 
 export const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
@@ -24,6 +25,8 @@ const StateSchema = Type.Object({
   previous: Type.Union([Type.String(), Type.Null()]),
   checkedAt: Type.Union([Type.String(), Type.Null()]),
   problem: Type.Union([Type.String(), Type.Null()]),
+  /** 各份回退备份的生成时间（`previous`、`installer:<版本>`），清理按它算 7 天（update-cleanup.ts）。 */
+  created: Type.Optional(Type.Record(Type.String(), Type.String())),
 });
 type State = Static<typeof StateSchema>;
 
@@ -124,6 +127,35 @@ export class UpdateManager {
       this.save((state) => ({ ...state, skipped: [...new Set([...state.skipped, failed])],
         problem: `${failed} 装上后没起来，已退回 ${this.deps.version}；等下一版。` }));
     }
+    this.cleanup();
+  }
+
+  /**
+   * 清更新目录：装好的更新包、解包残留马上清；回退用的备份最多 2 份、每份 7 天（11-13 他定）。启动时、每次查更新时各跑一次，
+   * 所以没有新版本也会到期清。清不动（比如文件被占着）只记一行，不挡查更新。
+   */
+  cleanup(): void {
+    if (this.stateValue === 'installing') {
+      return;
+    }
+    try {
+      const state = this.state();
+      const result = cleanUpdates({ directory: this.deps.directory, platform: this.deps.platform,
+        current: this.deps.version, holding: this.available?.version ?? this.pending?.version ?? null,
+        createdAt: state.created ?? {}, now: this.deps.now(), previous: state.previous });
+      if (result.removed.length > 0) {
+        this.deps.log(`清掉了用不上的更新文件：${result.removed.join('、')}`);
+      }
+      const created = Object.fromEntries(Object.entries(state.created ?? {}).filter(([key]) => (key === 'previous'
+        ? !result.previousGone : !result.removed.includes(`installers/${key.slice('installer:'.length)}.exe`))));
+      if (result.previousGone && state.previous !== null) {
+        this.save((current) => ({ ...current, previous: null, created }));
+      } else if (Object.keys(created).length !== Object.keys(state.created ?? {}).length) {
+        this.save((current) => ({ ...current, created }));
+      }
+    } catch (error) {
+      this.deps.log(`清更新文件没成：${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /** 开始每 6 小时查一次（开发版和 Linux 不查）。 */
@@ -150,6 +182,7 @@ export class UpdateManager {
     if (this.stateValue === 'downloading' || this.stateValue === 'installing' || this.stateValue === 'ready') {
       return this.status();
     }
+    this.cleanup();
     this.set('checking');
     try {
       const base = this.deps.releaseUrl.endsWith('/') ? this.deps.releaseUrl : `${this.deps.releaseUrl}/`;
@@ -269,7 +302,8 @@ export class UpdateManager {
       writeFileSync(script, macSwapScript({ pid: this.deps.pid, app: this.deps.installed, incoming,
         previous: join(this.deps.directory, 'previous', 'Plasticine.app'), marker, rolledBack, version,
         open: '/usr/bin/open', lsregister: LSREGISTER, waitSeconds: HEALTH_WAIT_SECONDS }), { mode: 0o700 });
-      this.save((state) => ({ ...state, previous: this.deps.version }));
+      this.save((state) => ({ ...state, previous: this.deps.version,
+        created: { ...state.created, previous: this.deps.now().toISOString() } }));
       this.deps.launchDetached('/bin/sh', [script]);
     } else {
       const installers = join(this.deps.directory, 'installers');
@@ -277,6 +311,8 @@ export class UpdateManager {
       const setup = join(installers, `${version}.exe`);
       if (!rollingBack) {
         cpSync(source, setup);
+        this.save((state) => ({ ...state,
+          created: { ...state.created, [`installer:${version}`]: this.deps.now().toISOString() } }));
       }
       const previousSetup = join(installers, `${this.deps.version}.exe`);
       const script = join(this.deps.directory, 'install.ps1');

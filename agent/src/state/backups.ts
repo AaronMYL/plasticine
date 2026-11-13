@@ -324,7 +324,7 @@ export function createBackupStore(context: StoreContext, options: BackupStoreOpt
         return updatePreview(id, { status: 'restored', resultVersion });
       });
     },
-    /** 第 116 条：最近 7 天每份都留，更早的每周留最新一份、留 4 周（backup-retention.ts）。 */
+    /** 只留最新 2 份、每份满 7 天就清（2026-11-13 定，backup-retention.ts）。 */
     prune(): void {
       const expired = new Set(expiredBackups(list(), now()));
       for (const row of list()) {

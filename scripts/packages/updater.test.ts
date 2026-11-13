@@ -187,3 +187,21 @@ test('没给重启命令：只换指针，不重启，由调用方重启', async
   assert.deepEqual(outcome, { kind: 'updated', from: V1, to: V2, restarted: false });
   assert.deepEqual(f.restarts, []);
 });
+
+test('上一版留满 7 天就删：没有新版本，每天那次检查也会清；不满 7 天留着', async (t) => {
+  const root = installed(t);
+  const f = fake();
+  publish(f, V2);
+  await update(options(root), f.deps);
+  assert.equal(readlinkSync(join(root, 'previous')), join('versions', V1));
+  const day = 24 * 60 * 60 * 1000;
+  const start = f.deps.now().getTime();
+  const at = (ms: number) => ({ ...f.deps, now: () => new Date(start + ms) });
+  assert.deepEqual(await update(options(root), at(6 * day)), { kind: 'up_to_date', version: V2 });
+  assert.equal(existsSync(join(root, 'versions', V1)), true);
+  assert.deepEqual(await update(options(root), at(7 * day)), { kind: 'up_to_date', version: V2 });
+  assert.equal(existsSync(join(root, 'previous')), false);
+  assert.equal(existsSync(join(root, 'versions', V1)), false);
+  assert.equal(existsSync(join(root, 'versions', V2)), true);
+  assert.equal(status(root).previous, null);
+});

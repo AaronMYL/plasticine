@@ -125,6 +125,23 @@ enum SelfUpdateInstaller {
         return removed
     }
 
+    /// 「上一版」留满 7 天就删（2026-11-13 定：备份最多 2 份、每份 7 天；这里只有一份）。按备份文件夹的创建时间算，
+    /// 打开、复制都不会让它重新计时。每次查更新都调，所以没有新版本也会到期清。返回删掉的个数。
+    @discardableResult
+    static func expirePreviousBackups(in folder: URL? = nil, now: Date = Date(),
+                                      keep: TimeInterval = 7 * 24 * 60 * 60) -> Int {
+        let manager = FileManager.default
+        guard let target = folder ?? (try? previousVersionFolder(create: false)) else { return 0 }
+        let items = (try? manager.contentsOfDirectory(at: target, includingPropertiesForKeys: [.creationDateKey])) ?? []
+        var removed = 0
+        for item in items {
+            guard let created = (try? item.resourceValues(forKeys: [.creationDateKey]))?.creationDate,
+                  now.timeIntervalSince(created) >= keep else { continue }
+            if (try? manager.removeItem(at: item)) != nil { removed += 1 }
+        }
+        return removed
+    }
+
     /// 只认自更新起的名字：Plasticine-backup-<时间>-<进程号>.app。internal 以便单测。
     static func isLeftoverBackup(_ name: String) -> Bool {
         name.hasPrefix("Plasticine-backup-") && name.hasSuffix(".app")

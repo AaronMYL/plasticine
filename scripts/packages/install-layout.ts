@@ -6,8 +6,8 @@
 //   <root>/update-state.json                 上次检查的结果、装上就不健康而跳过的版本
 // 指针是符号链接，先建 .next 再 rename，换指针是原子的。
 
-import { existsSync, mkdirSync, openSync, closeSync, readFileSync, readlinkSync, renameSync, rmSync, statSync,
-  symlinkSync, unlinkSync, writeFileSync, readdirSync, writeSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, openSync, closeSync, readFileSync, readlinkSync, renameSync, rmSync,
+  statSync, symlinkSync, unlinkSync, writeFileSync, readdirSync, writeSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { MANIFEST_FILE, parseServerManifest, type ServerManifest } from './release-manifest.ts';
 
@@ -26,7 +26,12 @@ export interface UpdateState {
   lastResult: string | null;
   /** 装上之后健康检查不过、已经退回的版本；同一版不再自动装。 */
   skipped: string[];
+  /** previous 指的那一版是什么时候留下的；满 7 天就删（expirePrevious）。老状态文件没有这一项。 */
+  previousSince?: string | null;
 }
+
+/** 回退用的上一版留多久（2026-11-13 定：备份最多 2 份、每份 7 天；这里只有 previous 一份）。 */
+export const PREVIOUS_KEEP_MS = 7 * 24 * 60 * 60 * 1000;
 
 // 上一次更新进程被强行结束会留下锁；超过一小时（下载 + 健康检查远用不了这么久）就当它没了。
 const STALE_LOCK_MS = 60 * 60 * 1000;
@@ -81,7 +86,8 @@ export function readState(layout: Layout): UpdateState {
   }
   const raw = JSON.parse(readFileSync(layout.stateFile, 'utf8')) as Partial<UpdateState>;
   return { lastCheckAt: raw.lastCheckAt ?? null, lastResult: raw.lastResult ?? null,
-    skipped: Array.isArray(raw.skipped) ? raw.skipped.filter((item) => typeof item === 'string') : [] };
+    skipped: Array.isArray(raw.skipped) ? raw.skipped.filter((item) => typeof item === 'string') : [],
+    previousSince: typeof raw.previousSince === 'string' ? raw.previousSince : null };
 }
 
 export function writeState(layout: Layout, state: UpdateState): void {
@@ -126,4 +132,25 @@ export function prune(layout: Layout): string[] {
   }
   rmSync(layout.downloads, { recursive: true, force: true });
   return removed;
+}
+
+/**
+ * 上一版留满 7 天就删：去掉 previous 指针、删掉它的版本目录，返回删掉的版本；没到期或没有上一版返回 null。
+ * 时间用状态文件里记的 previousSince；老安装没记，就看 previous 这个链接自己是什么时候建的。
+ */
+export function expirePrevious(layout: Layout, now: Date): string | null {
+  const previous = pointedVersion(layout.previous);
+  if (previous === null) {
+    return null;
+  }
+  const state = readState(layout);
+  const recorded = state.previousSince == null ? Number.NaN : Date.parse(state.previousSince);
+  const since = Number.isFinite(recorded) ? recorded : lstatSync(layout.previous).mtimeMs;
+  if (now.getTime() - since < PREVIOUS_KEEP_MS) {
+    return null;
+  }
+  pointTo(layout, layout.previous, null);
+  prune(layout);
+  writeState(layout, { ...state, previousSince: null });
+  return previous;
 }

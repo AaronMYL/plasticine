@@ -1,4 +1,4 @@
-// 本机备份：每天一份数据库与笔记的一致快照（留 7 天 + 每周留 4 周，第 116 条），手动也能做一份；按对象恢复要先预览、
+// 本机备份：每天一份数据库与笔记的一致快照（只留最新 2 份、每份 7 天，2026-11-13 定），手动也能做一份；按对象恢复要先预览、
 // 在卡上核对确认。2026-11-05 Harness 重做：不再借任务系统记进度，自己一个定时器每小时看一眼今天的那份做了没有。
 
 import type { Backup, BackupObjectKind, RestoreBackupRequest, RestorePreview } from '../../shared/api/index.ts';

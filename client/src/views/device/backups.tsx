@@ -159,14 +159,14 @@ export function Backups({ trigger = false }: { trigger?: boolean }): ReactNode {
       {trigger ? null : (
         <header className="block-head">
           <h2 className="block-title">本机备份</h2>
-          <span className="block-meta">每天一份 · 保留 30 天 · 不外传</span>
+          <span className="block-meta">每天一份 · 留最新 2 份 · 不外传</span>
         </header>
       )}
       {sheetTrigger}
       {open ? null : errors}
       <Sheet open={open} title="本机备份" variant={phone ? 'drawer' : 'panel'} onClose={() => setOpen(false)}>
         <div className="backup-detail">
-          <p className="block-meta">每天一份 · 保留 30 天 · 不外传</p>
+          <p className="block-meta">每天一份 · 留最新 2 份 · 不外传</p>
           {errors}
           <button
             className="text-button"
