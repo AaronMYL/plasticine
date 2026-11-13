@@ -12,7 +12,7 @@ import { ColumnCount, ColumnFoot, ColumnHead, ColumnLabel, ColumnLink, ColumnNot
 
 const ROWS: Readonly<Record<TasksSection, { label: string; count: keyof TaskCounts; lead: 'run' | 'wait' | IconName }>>
   = {
-    run: { label: '进行中', count: 'running', lead: 'run' },
+    run: { label: '在做', count: 'running', lead: 'run' },
     wait: { label: '等你', count: 'waiting', lead: 'wait' },
     timed: { label: '定时', count: 'timed', lead: 'clock' },
     ideas: { label: '建议', count: 'ideas', lead: 'bulb' },

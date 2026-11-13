@@ -68,7 +68,7 @@ export class FakeDeviceKeys implements DeviceKeysApi {
   async verify(request: SignedSend): Promise<void> {
     const deviceId = this.deviceId();
     if (request.signedAt == null || request.signature == null || request.signedAt === '' || request.signature === '') {
-      throw refusal('signature_required', '这一步改的是要你确认的内容，请求里没有这台设备的签名，没有执行。');
+      throw refusal('signature_required', '这一步改的是等你确认的内容，请求里没有这台设备的签名，没有执行。');
     }
     const key = this.keys.get(deviceId);
     if (key === undefined) {

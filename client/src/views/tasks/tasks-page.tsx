@@ -19,7 +19,7 @@ import './tasks.css';
 registerHeartbeatSheet();
 
 export const SECTION_TITLES: Readonly<Record<TasksSection, string>> = {
-  run: '进行中',
+  run: '在做',
   wait: '等你',
   timed: '定时',
   ideas: '建议',

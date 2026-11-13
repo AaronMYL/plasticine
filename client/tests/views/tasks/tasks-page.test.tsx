@@ -73,7 +73,7 @@ describe('任务栏目', () => {
       control.lines.put(control.lines.blank('line-spark', 'background', '设置每日续火花', { status: 'idle',
         outcome: 'done', unmet: '当时还不能新建定时任务' }));
     } });
-    const running = await screen.findByRole('list', { name: '进行中' });
+    const running = await screen.findByRole('list', { name: '在做' });
     expect(within(running).getByText('读到第 9 / 14 篇')).toBeTruthy();
     expect(within(running).queryByText('设置每日续火花')).toBeNull();
     expect(screen.queryByRole('region', { name: 'Plasticine' })).toBeNull();
@@ -87,7 +87,7 @@ describe('任务栏目', () => {
       control.lines.put(control.lines.blank('line-blog', 'background', '翻译博客', { status: 'paused',
         pauseReason: 'user' }));
     } });
-    const running = await screen.findByRole('list', { name: '进行中' });
+    const running = await screen.findByRole('list', { name: '在做' });
     expect(within(running).getByRole('button', { name: '继续' })).toBeTruthy();
     fireEvent.click(within(running).getByRole('button', { name: '更多操作：整理 11 月账单' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: '停止…' }));
@@ -110,7 +110,7 @@ describe('任务栏目', () => {
     const app = await renderApp({ hash: '#/messages/plasticine', setup: ({ control }) => {
       seedScheduleScene(control.lines, (seed) => control.asks.raise(seed), NOW);
     } });
-    const card = await screen.findByRole('region', { name: '要你授权：每天 15:00 · 抖音续火花' });
+    const card = await screen.findByRole('region', { name: '等你授权：每天 15:00 · 抖音续火花' });
     expect(within(card).getByText('Kiki')).toBeTruthy();
     expect(within(card).getByText('每人一个表情，每天随机换')).toBeTruthy();
     expect(within(card).getByText('你所在地的时间')).toBeTruthy();

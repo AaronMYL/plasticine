@@ -24,7 +24,7 @@ it('立刻打断走 Mac notify，普通卡不通知，不申请浏览器权限�
     app.control.asks.raise({ id: 'mac-normal', kind: 'decide', channel: 'popup', question: '稍后看看' });
   });
   await waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
-  expect(notify).toHaveBeenCalledWith('要你动手', '有一件事要你现在处理，点开看。', '#/plasticine');
+  expect(notify).toHaveBeenCalledWith('等你动手', '有一件事要你现在处理，点开看。', '#/plasticine');
   fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
   const tip = await within(await screen.findByRole('dialog', { name: '设置' }))
     .findByRole('button', { name: '通知的说明' });

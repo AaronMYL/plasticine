@@ -146,7 +146,7 @@ export function NoteVersions({
             {!confirm ? null : (
               <div className="ask-card">
                 <div className="ask-card-head">
-                  <span className="tag tag-outline">要你确认</span>
+                  <span className="tag tag-outline">等你确认</span>
                 </div>
                 <p className="ask-question">恢复到第 {preview.version} 版？会先保存当前草稿，已有版本都会保留。</p>
                 <div className="ask-options">

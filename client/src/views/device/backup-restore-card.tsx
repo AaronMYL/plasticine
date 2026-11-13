@@ -107,7 +107,7 @@ export function BackupRestoreCard({ id }: { id: string }): ReactNode {
   return (
     <section className="ask-card backup-restore-card" aria-label="按对象恢复确认">
       <div className="ask-card-head">
-        <span className="tag tag-outline">要你确认</span>
+        <span className="tag tag-outline">等你确认</span>
       </div>
       {error === null ? null : (
         <p role="alert">

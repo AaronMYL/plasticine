@@ -93,7 +93,7 @@ test('立刻打断的卡发一条系统通知：只有类型、一句固定的�
   const text = browser.decrypt(request.body);
   const payload: unknown = JSON.parse(text);
   assert.ok(Value.Check(PushPayloadSchema, payload));
-  assert.deepEqual(payload, { title: '要你动手', body: PUSH_BODY, url: `/?ask=${ask.id}`, tag: `ask-${ask.id}` });
+  assert.deepEqual(payload, { title: '等你动手', body: PUSH_BODY, url: `/?ask=${ask.id}`, tag: `ask-${ask.id}` });
   for (const secret of ['6222', '工资', '会计', '十月账单', '私密']) {
     assert.equal(text.includes(secret), false, `推送里不该有「${secret}」`);
   }

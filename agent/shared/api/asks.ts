@@ -26,10 +26,10 @@ export { ASK_BASES, ASK_BASIS_LABELS, ASK_BASIS_MEANINGS, HARD_LINES, type AskBa
 
 /** 左上小签的字（第 49 条：授权 / 动手用强调色描边，定 / 确认用中性描边）。 */
 export const ASK_KIND_LABELS: Readonly<Record<AskKind, string>> = {
-  decide: '要你定',
-  confirm: '要你确认',
-  approve: '要你授权',
-  act: '要你动手',
+  decide: '等你定',
+  confirm: '等你确认',
+  approve: '等你授权',
+  act: '等你动手',
 };
 
 /** 「等你」区的顺序（第 44 条）：动手 > 授权 > 确认 > 定；「下次汇报」档的卡永远排在最后。 */

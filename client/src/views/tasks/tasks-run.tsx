@@ -85,11 +85,11 @@ export function TasksRun({ running, projects }: TasksRunProps): ReactNode {
   const now = useNow(running.length > 0);
   const roster = useStore(useLive().mates.data);
   if (running.length === 0 && roster.mates.length === 0) {
-    return <p className="tasks-empty">没有进行中的事。</p>;
+    return <p className="tasks-empty">没有在做的事。</p>;
   }
   return (
     <>
-      {running.length === 0 ? null : <TaskLines lines={running} projects={projects} label="进行中" now={now} />}
+      {running.length === 0 ? null : <TaskLines lines={running} projects={projects} label="在做" now={now} />}
       {roster.mates.length === 0 ? null : <section className="tasks-section" aria-label="队友">
         <h2 className="tasks-section-title">队友</h2><ul className="tasks-mates">{roster.mates.map((mate) => (
           <li key={mate.id}><a className="tasks-mate" href={routeHash(mateRoute(mate.id))}>

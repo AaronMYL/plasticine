@@ -21,13 +21,13 @@ import { HomeStart } from './home-start.tsx';
 import './home.css';
 import './home-work.css';
 
-/** 「1 件要你定，2 件在进行」：两样都没有就空。 */
+/** 「1 件等你，2 件在做」：两样都没有就空。 */
 function useSummary(): string {
   const live = useLive();
   const asks = useStore(live.asks.store);
   const list = useStore(live.lines.list);
   const doing = doingLines(list.lines).length;
-  return [asks.open.length > 0 ? `${asks.open.length} 件要你定` : '', doing > 0 ? `${doing} 件在进行` : '']
+  return [asks.open.length > 0 ? `${asks.open.length} 件等你` : '', doing > 0 ? `${doing} 件在做` : '']
     .filter((part) => part !== '').join('，');
 }
 

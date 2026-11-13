@@ -23,7 +23,7 @@ describe('联系人和群的统一工作详情', () => {
     const { dialog, control } = await revision();
     const submit = within(dialog).getByRole('button', { name: '让 Plasticine 继续' });
     expect(submit.hasAttribute('disabled')).toBe(true);
-    expect(within(dialog).getByText('等你决定下一步')).toBeTruthy();
+    expect(within(dialog).getByText('等你决定')).toBeTruthy();
     expect(within(dialog).queryByText('已完成')).toBeNull();
     expect(await within(dialog).findByRole('heading', { name: /已保留的结果/ })).toBeTruthy();
     expect(within(dialog).queryByRole('textbox', { name: '补充这件事' })).toBeNull();

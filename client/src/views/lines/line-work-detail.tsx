@@ -55,7 +55,7 @@ export function LineWorkDetail({ lineId, navigate, task, before, actions, hideCo
   let stateText = line.status === 'running' ? '进行中' : workStatusText(line, timeZone);
   let stateGlyph = <WorkStatusGlyph line={line} />;
   if (revision) {
-    stateText = '等你决定下一步';
+    stateText = '等你决定';
     stateGlyph = <StatusGlyph status="wait" label={stateText} />;
   } else if (manual) {
     stateText = manualState(task.state);

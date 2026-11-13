@@ -71,8 +71,8 @@ export function HomeWaiting({ phone }: { phone: boolean }): ReactNode {
     return null;
   }
   return (
-    <section className="home-section" aria-label="要你处理">
-      <h2 className="home-section-title">要你处理<span className="home-section-count">{count}</span></h2>
+    <section className="home-section" aria-label="等你">
+      <h2 className="home-section-title">等你<span className="home-section-count">{count}</span></h2>
       <ul className="home-list">
         {noModel ? <NoModelRow /> : null}
         {data.open.map((ask) => <WaitRow key={ask.id} ask={ask} phone={phone} />)}
@@ -127,8 +127,8 @@ export function HomeDoing({ phone }: { phone: boolean }): ReactNode {
     return null;
   }
   return (
-    <section className="home-section" aria-label="进行中">
-      <h2 className="home-section-title">进行中<span className="home-section-count">{doing.length}</span>
+    <section className="home-section" aria-label="在做">
+      <h2 className="home-section-title">在做<span className="home-section-count">{doing.length}</span>
         <button type="button" className="text-button home-section-more"
           onClick={() => tabs.focusSection('tasks')}>全部任务</button></h2>
       <ul className="home-list">

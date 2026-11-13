@@ -10,8 +10,8 @@ describe('首页「现在」', () => {
   it('全空时有一个直接开始的输入框，发出后进入对话继续接结果', async () => {
     await renderApp({ hash: '#/today' });
     expect(await screen.findByRole('heading', { name: HOME_HEADING })).toBeTruthy();
-    expect(screen.queryByRole('region', { name: '要你处理' })).toBeNull();
-    expect(screen.queryByRole('region', { name: '进行中' })).toBeNull();
+    expect(screen.queryByRole('region', { name: '等你' })).toBeNull();
+    expect(screen.queryByRole('region', { name: '在做' })).toBeNull();
     const start = await screen.findByRole('textbox', { name: '想一起做什么' });
     fireEvent.change(start, { target: { value: '帮我查一下安装来源' } });
     fireEvent.click(screen.getByRole('button', { name: '开始聊' }));
@@ -24,13 +24,13 @@ describe('首页「现在」', () => {
         detail: '发出后对方会收到，撤不回', options: [{ id: 'allow', label: '发出', recommended: true,
           description: null }, { id: 'deny', label: '先不', recommended: false, description: null }] });
     } });
-    const waiting = await screen.findByRole('region', { name: '要你处理' });
+    const waiting = await screen.findByRole('region', { name: '等你' });
     expect(within(waiting).getByText('1')).toBeTruthy();
     fireEvent.click(within(waiting).getByRole('button', { name: '去看' }));
     const card = within(waiting).getByRole('region', { name: /要把这封回复发给 Bolt 吗/ });
     fireEvent.click(within(card).getByRole('button', { name: '发出（推荐）' }));
     await waitFor(async () => expect((await app.api.asks.get('ask-1')).status).toBe('answered'));
-    await waitFor(() => expect(screen.queryByRole('region', { name: '要你处理' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('region', { name: '等你' })).toBeNull());
   });
 
   it('在做：点暂停会留下可继续的工作，停在卡上的线不重复列', async () => {
@@ -40,7 +40,7 @@ describe('首页「现在」', () => {
         activity: '读官方发布页…', activeSince: at }));
       control.lines.put(control.lines.blank('line-b', 'background', '回 Bolt', { status: 'waiting' }));
     } });
-    const doing = await screen.findByRole('region', { name: '进行中' });
+    const doing = await screen.findByRole('region', { name: '在做' });
     expect(within(doing).getByText('查安装来源')).toBeTruthy();
     expect(within(doing).getByText('读官方发布页…')).toBeTruthy();
     expect(within(doing).queryByText('回 Bolt')).toBeNull();
@@ -55,8 +55,8 @@ describe('首页「现在」', () => {
       control.lines.put(control.lines.blank('line-a', 'background', '查安装来源', { status: 'running',
         activeSince: new Date().toISOString() }));
     } });
-    const doing = await screen.findByRole('region', { name: '进行中' });
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('1 件在进行');
+    const doing = await screen.findByRole('region', { name: '在做' });
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('1 件在做');
     expect(doing.closest('.home-main')).not.toBeNull();
     fireEvent.click(within(doing).getByRole('button', { name: '全部任务' }));
     await waitFor(() => expect(window.location.hash).toMatch(/^#\/tasks/));

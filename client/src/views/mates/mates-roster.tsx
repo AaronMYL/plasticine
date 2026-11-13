@@ -44,7 +44,7 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
         // 第二行平时写职责；它正在做事时写在做什么（11-12：协作状态看得见，不只是一个点）。
         const doing = mate.disabledAt !== null ? null
           : working ? `在做「${work[0]?.title ?? ''}」${work.length > 1 ? `等 ${work.length} 件` : ''}`
-            : own?.status === 'running' ? '正在回话' : own?.status === 'waiting' ? '在等你回答' : null;
+            : own?.status === 'running' ? '正在回话' : own?.status === 'waiting' ? '等你回答' : null;
         return <ColumnLink key={mate.id} route={mateRoute(mate.id)} current={route.view === 'plasticine'
           && (route.mateId === mate.id || route.lineId === mate.lineId)}
           navigate={navigate} lead={<MateAvatar mate={mate} />} sub={doing ?? mate.role}

@@ -229,7 +229,7 @@ function InBody({ task, name }: { task: NetworkTaskView; name: string }): ReactN
       if (task.doer === 'ai' && task.state === 'rejected') return <Status
         lead={<StatusGlyph status="wait" label="等你决定" />} tail={<button type="button"
           className="primary-button button-small" onClick={() => open({ kind: 'work', taskId: task.id })}>
-          补充修改意见</button>}>等你决定下一步</Status>;
+          补充修改意见</button>}>等你决定</Status>;
       if (task.doer === 'ai') {
         return (
           <Status lead={task.execution == null ? <Icon name="clock" size={13} />

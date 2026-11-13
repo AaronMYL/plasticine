@@ -52,7 +52,7 @@ describe('没连模型时发话', () => {
 describe('首页「要你处理」', () => {
   it('没连模型时只出一条「连上模型后，定时的事才会跑」，点「去连」就地连，连上后这一条消失', async () => {
     await renderApp({ hash: '#/today', modelConnected: false });
-    const section = await screen.findByRole('region', { name: '要你处理' });
+    const section = await screen.findByRole('region', { name: '等你' });
     const row = within(section).getByText('连上模型后，定时的事才会跑');
     fireEvent.click(within(row.closest('li')!).getByRole('button', { name: '去连' }));
     const sheet = await screen.findByRole('dialog', { name: '连上一个模型' });
