@@ -85,7 +85,8 @@ import { assembleTimed } from './assemble-timed.ts';
 import { heartbeatChecklistTool } from '../heartbeat/index.ts';
 import { cachedConflicts, CalendarSync, calendarTools } from '../calendar/index.ts';
 import { interestHit } from '../../shared/feed-order.ts';
-import { createVideo, publishToFeed, transcriberFromEnv, type Transcriber, type VideoMedia } from '../video/index.ts';
+import { VIDEO_SKILL_NAME, createVideo, publishToFeed, transcriberFromEnv, type Transcriber, type VideoMedia }
+  from '../video/index.ts';
 
 export interface AssembleOptions {
   state: StateService;
@@ -186,7 +187,7 @@ export function assembleApp(options: AssembleOptions): App {
   const text = withMainSoul(options.text ?? kernelText(options.lines.models, now), state);
   const illustrator = options.illustrator !== undefined ? options.illustrator : illustratorOf(options.kernelModels);
   const server = new ServerCommands({ stateDirectory: options.stateDirectory, now });
-  const skills = new SkillStore({ stateDirectory: options.stateDirectory, now,
+  const skills = new SkillStore({ stateDirectory: options.stateDirectory, now, shipped: [VIDEO_SKILL_NAME],
     ...(options.builtinSkills === undefined ? {} : { builtinDirectory: options.builtinSkills }) });
   const fixedUrl = options.publicUrl;
   const publicUrl = fixedUrl === undefined ? publicUrlSource(state) : () => fixedUrl;

@@ -1,7 +1,7 @@
 // 技能页（11-13）：#/skills 目录 + 一个技能；入口在 Plasticine 栏和设置 · AI；随应用的不能删，别的删之前后果常显。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FakeApi } from '../../../src/api/fake/index.ts';
 import { renderApp } from '../../helpers.tsx';
 
@@ -83,5 +83,29 @@ describe('技能页', () => {
     fireEvent.click(within(list).getByRole('link', { name: /视频解析/ }));
     await screen.findByRole('article', { name: '视频解析' });
     expect(screen.queryByRole('region', { name: '技能目录' })).toBeNull();
+  });
+});
+
+describe('技能页 · 电脑上主区窄', () => {
+  it('主区窄于 640 时一次只放一栏：目录一栏，点一个技能换成详情，有「回到技能」', async () => {
+    // jsdom 不排版：给它一个会量宽的 ResizeObserver，这一页量出来是 500。
+    const rect = HTMLElement.prototype.getBoundingClientRect;
+    vi.stubGlobal('ResizeObserver', class { observe(): void {} disconnect(): void {} unobserve(): void {} });
+    HTMLElement.prototype.getBoundingClientRect = function narrow(this: HTMLElement): DOMRect {
+      return this.classList.contains('skills-root') ? { ...rect.call(this), width: 500 } as DOMRect : rect.call(this);
+    };
+    try {
+      await renderApp({ hash: '#/skills', setup: seed });
+      const list = await catalog();
+      expect(screen.queryByRole('article')).toBeNull();
+      fireEvent.click(within(list).getByRole('link', { name: /视频解析/ }));
+      await screen.findByRole('article', { name: '视频解析' });
+      expect(screen.queryByRole('region', { name: '技能目录' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: '回到技能' }));
+      await catalog();
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = rect;
+      vi.unstubAllGlobals();
+    }
   });
 });

@@ -1,5 +1,6 @@
 ---
 name: plasticine-guide
+title: Plasticine 怎么用
 description: 用户问 Plasticine 怎么用、某个功能在哪、某件事 Plasticine 能不能做、设置在哪改时读：各栏目是什么、常见的事怎么做、设置各段有什么
 ---
 

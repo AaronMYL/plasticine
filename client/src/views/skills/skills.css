@@ -3,6 +3,8 @@
 .settings-skills-link { margin-left: auto; }
 .skills-gap { flex: 1; }
 
+.skills-root { height: 100%; min-height: 0; }
+
 .skills-page,
 .skills-add,
 .skills-new {
@@ -132,6 +134,9 @@
   max-width: 760px;
   padding: 24px 40px 48px;
 }
+
+.skills-main-head { padding: 20px 16px 0; }
+.skills-main-head + .skill-detail { padding-top: 12px; }
 
 .skill-detail-head {
   display: flex;
@@ -337,19 +342,19 @@
 
 /* ---------- 新建 ---------- */
 
-.skills-new[data-phone='false'] > .skills-new-ask {
+.skills-new[data-single='false'] > .skills-new-ask {
   flex: none;
   width: 460px;
   border-right: 1px solid var(--line);
 }
 
 /* 自己写：没有左边那一栏要说的话，页头在上、表单在下，一栏到底。 */
-.skills-new[data-phone='false'][data-mode='write'] {
+.skills-new[data-single='false'][data-mode='write'] {
   flex-direction: column;
   overflow-y: auto;
 }
 
-.skills-new[data-phone='false'][data-mode='write'] > .skills-new-ask {
+.skills-new[data-single='false'][data-mode='write'] > .skills-new-ask {
   flex: none;
   width: auto;
   padding-bottom: 0;
@@ -477,24 +482,38 @@ textarea.field-input.skills-body {
   .skills-main > .skill-detail { padding: 24px 24px 48px; }
   .skills-add-main { padding: 20px 16px 32px; }
   .skills-add > .skill-preview { width: 300px; padding: 24px 20px 32px; }
-  .skills-new[data-phone='false'] > .skills-new-ask { width: 300px; padding: 20px 16px 32px; }
+  .skills-new[data-single='false'] > .skills-new-ask { width: 300px; padding: 20px 16px 32px; }
   .skills-new-form { padding: 20px 20px 32px; }
   .skills-new[data-mode='write'] > .skills-new-form { padding-inline: 16px; }
   .skills-form-pair { flex-direction: column; }
   .skills-field-name { width: auto; }
 }
 
+/* ---------- 一次只放一栏（手机，或电脑上主区窄于 640） ---------- */
+
+.skills-root[data-single='true'] .skills-page > .skills-list {
+  flex: 1;
+  width: auto;
+  border-right: 0;
+}
+
+.skills-add[data-single='true'],
+.skills-new[data-single='true'] { flex-direction: column; }
+.skills-add[data-single='true'] > .skills-add-main > .skill-preview {
+  animation: skills-in var(--motion-base) var(--ease-out);
+}
+.skills-new[data-single='true'] > .skills-new-ask { flex: 1; }
+.skills-new[data-single='true'] > .skills-new-ask > .skills-form { flex: 1 0 auto; min-height: 0; }
+.skills-new[data-single='true'] .skills-form-pair { flex-direction: column; }
+.skills-new[data-single='true'] .skills-field-name { width: auto; }
+
 /* ---------- 手机 ---------- */
 
 .skills-phone { gap: 16px; }
-.skills-add[data-phone='true'],
-.skills-new[data-phone='true'] { flex-direction: column; }
 .skills-add[data-phone='true'] > .skills-add-main,
 .skills-new[data-phone='true'] > .skills-new-ask { padding: 12px 16px 32px; }
 .skills-add[data-phone='true'] .store-grid { grid-template-columns: minmax(0, 1fr); }
 .skills-add[data-phone='true'] .store-card { min-height: 0; }
-.skills-new[data-phone='true'] .skills-form-pair { flex-direction: column; }
-.skills-new[data-phone='true'] .skills-field-name { width: auto; }
 .skills-new[data-phone='true'] .skills-tell-go { align-self: stretch; height: 44px; }
 
 @media (prefers-reduced-motion: reduce) {

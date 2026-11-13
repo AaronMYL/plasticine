@@ -19,6 +19,8 @@ import { SKILL_NAME_PATTERN } from './skill-text.ts';
 
 export interface SkillsNewProps {
   phone: boolean;
+  /** 一次只放一栏（手机，或电脑上主区窄）：草稿出来以后只画草稿。 */
+  single: boolean;
   navigate: (route: Route) => void;
   onBack: () => void;
   onSaved: (skill: SkillRow) => void;
@@ -30,18 +32,17 @@ const DONE_SHOWN = 6;
 const NAME_TIP = 'Plasticine 认技能用的名字：小写字母、数字和连字符。存了以后不能改。';
 
 /** 左边：说一句，或者挑一件做成过的事。 */
-function Tell({ busy, onDraft }: { busy: boolean; onDraft: (input: { said?: string; lineId?: string }) => void })
-  : ReactNode {
+function Tell({ busy, said, onSaid, onDraft }: { busy: boolean; said: string; onSaid: (text: string) => void;
+  onDraft: (input: { said?: string; lineId?: string }) => void }): ReactNode {
   const live = useLive();
   const lines = useStore(live.lines.list).lines;
-  const [said, setSaid] = useState('');
   const [lineId, setLineId] = useState<string | null>(null);
   const done = lines.filter((line) => line.kind === 'background' && line.outcome === 'done' && line.unmet == null)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, DONE_SHOWN);
   return <div className="skills-tell">
     <label className="skills-tell-label" htmlFor="skill-said">想让 Plasticine 学会什么？</label>
     <textarea id="skill-said" className="field-input skills-said" maxLength={SKILL_SAID_MAX_CHARS} autoFocus
-      value={said} onChange={(event) => setSaid(event.target.value)} />
+      value={said} onChange={(event) => onSaid(event.target.value)} />
     <button type="button" className="primary-button skills-tell-go" disabled={busy || said.trim() === ''}
       onClick={() => onDraft({ said: said.trim() })}>{busy && lineId === null ? '正在写…' : '写草稿'}</button>
     {done.length === 0 ? null : <>
@@ -118,10 +119,12 @@ function Form({ draft, written, onChange, onSave, onDrop, busy, error }: { draft
   </form>;
 }
 
-export function SkillsNew({ phone, navigate, onBack, onSaved }: SkillsNewProps): ReactNode {
+export function SkillsNew({ phone, single, navigate, onBack, onSaved }: SkillsNewProps): ReactNode {
   const api = useApi();
   const { conversations } = useClientState();
   const [mode, setMode] = useState<Mode>('tell');
+  // 说的那句放在这一层：一次只放一栏时回去重说，话还在。
+  const [said, setSaid] = useState('');
   const [draft, setDraft] = useState<SkillDraft | null>(null);
   const [written, setWritten] = useState(false);
   const [drafting, setDrafting] = useState(false);
@@ -163,9 +166,8 @@ export function SkillsNew({ phone, navigate, onBack, onSaved }: SkillsNewProps):
   };
   const form = draft === null ? null : <Form draft={draft} written={written} onChange={setDraft} onSave={save}
     onDrop={onBack} busy={saving} error={error} />;
-  // 手机上一次一页：草稿出来以后只画草稿。
-  const formOnly = phone && draft !== null;
-  return <div className="skills-new" data-phone={phone} data-mode={mode}>
+  const formOnly = single && draft !== null;
+  return <div className="skills-new" data-phone={phone} data-single={single} data-mode={mode}>
     {formOnly ? null : <section className="skills-new-ask" aria-label="新建技能">
       <header className="skills-pane-head">
         <IconButton icon="back" label="回到技能" onClick={onBack} />
@@ -177,18 +179,17 @@ export function SkillsNew({ phone, navigate, onBack, onSaved }: SkillsNewProps):
         <button type="button" className="segmented-item" aria-pressed={mode === 'write'}
           onClick={() => change('write')}>自己写</button>
       </div>
-      {mode === 'tell' ? <Tell busy={drafting} onDraft={ask} /> : null}
+      {mode === 'tell' ? <Tell busy={drafting} said={said} onSaid={setSaid} onDraft={ask} /> : null}
       {mode === 'tell' && error !== null && draft === null ? <p className="skills-error" role="alert">{error}</p>
         : null}
     </section>}
     {formOnly ? <section className="skills-new-ask" aria-label="新建技能">
       <header className="skills-pane-head">
-        <IconButton icon="back" label={mode === 'tell' ? '回去重说' : '回到技能'}
-          onClick={mode === 'tell' ? () => { setDraft(null); setError(null); } : onBack} />
+        <IconButton icon="back" label={mode === 'tell' ? '回去重说' : '回上一步'} onClick={() => change('tell')} />
         <h1>新建技能</h1>
       </header>
       {form}
-    </section> : phone ? null : <div className="skills-new-form">
+    </section> : single ? null : <div className="skills-new-form">
       {form ?? (mode === 'tell' ? <p className="block-empty">草稿会出现在这里</p> : null)}
     </div>}
   </div>;

@@ -13,6 +13,7 @@ import { SkillDetail } from './skill-detail.tsx';
 import { SOURCE_LABELS, skillLabel, type SkillKind } from './skill-text.ts';
 import { SkillsAdd } from './skills-add.tsx';
 import { SkillsNew } from './skills-new.tsx';
+import { useNarrow } from './use-narrow.ts';
 import { useSkills, type SkillsData } from './use-skills.ts';
 import './skills.css';
 
@@ -112,45 +113,60 @@ function Missing({ navigate }: { navigate: (route: Route) => void }): ReactNode 
     <button type="button" className="text-button" onClick={() => navigate(skillsRoute())}>回到技能</button></p></div>;
 }
 
+/** 主区窄于这个宽度就一次只放一栏（和手机一样的走法，页头照电脑的样子）。 */
+const SINGLE_BELOW = 640;
+
 export function SkillsPage({ route, phone, navigate, onBack }: SkillsPageProps): ReactNode {
   const data = useSkills();
+  const [root, narrow] = useNarrow<HTMLDivElement>(SINGLE_BELOW);
+  const single = phone || narrow;
   const toList = (): void => navigate(skillsRoute());
   const saved = (skill: SkillRow): void => {
     data.reload();
     navigate(skillsRoute({ name: skill.name }));
   };
-  if (route.skillsPane === 'add') {
-    return <SkillsAdd phone={phone} onBack={toList} onSaved={saved} onChanged={data.reload}
-      onOpen={(name) => navigate(skillsRoute({ name }))} />;
-  }
-  if (route.skillsPane === 'new') {
-    return <SkillsNew phone={phone} navigate={navigate} onBack={toList} onSaved={saved} />;
-  }
   const name = route.skillName ?? null;
-  // 电脑上没点哪一个时右边放第一个，不留一块空白。
+  // 两栏并排、没点哪一个时右边放第一个，不留一块空白。
   const skill = data.skills === null ? null
-    : data.skills.find((item) => item.name === name) ?? (name === null && !phone ? data.skills[0] ?? null : null);
+    : data.skills.find((item) => item.name === name) ?? (name === null && !single ? data.skills[0] ?? null : null);
   const removed = (): void => {
     data.reload();
     toList();
   };
-  if (phone && name !== null) {
-    return <div className="page skills-phone">
-      <PageHeader title="技能" phoneSearch={false} onBack={onBack ?? toList} />
-      {data.skills === null ? (data.error ? <p className="block-empty is-error" role="alert">技能没读出来。</p>
-        : <PageLoading rows={3} dense />)
-        : skill === null ? <Missing navigate={navigate} />
-          : <SkillDetail key={skill.name} skill={skill} onRemoved={removed} />}
+  const detail = data.skills === null ? (data.error ? <p className="block-empty is-error" role="alert">技能没读出来。</p>
+    : single ? <PageLoading rows={3} dense /> : null)
+    : skill !== null ? <SkillDetail key={skill.name} skill={skill} onRemoved={removed} />
+      : name !== null ? <Missing navigate={navigate} /> : null;
+  const body = (): ReactNode => {
+    if (route.skillsPane === 'add') {
+      return <SkillsAdd phone={phone} single={single} onBack={toList} onSaved={saved} onChanged={data.reload}
+        onOpen={(picked) => navigate(skillsRoute({ name: picked }))} />;
+    }
+    if (route.skillsPane === 'new') {
+      return <SkillsNew phone={phone} single={single} navigate={navigate} onBack={toList} onSaved={saved} />;
+    }
+    if (phone && name !== null) {
+      return <div className="page skills-phone">
+        <PageHeader title="技能" phoneSearch={false} onBack={onBack ?? toList} />
+        {detail}
+      </div>;
+    }
+    if (phone) {
+      return <div className="page skills-phone"><List data={data} selected={null} phone navigate={navigate} /></div>;
+    }
+    if (single && name !== null) {
+      return <div className="skills-page"><div className="skills-main">
+        <header className="skills-pane-head skills-main-head">
+          <IconButton icon="back" label="回到技能" onClick={toList} />
+          <h1>技能</h1>
+        </header>
+        {detail}
+      </div></div>;
+    }
+    return <div className="skills-page">
+      <List data={data} selected={skill?.name ?? null} phone={false} navigate={navigate} />
+      {single ? null : <div className="skills-main">{detail}</div>}
     </div>;
-  }
-  if (phone) {
-    return <div className="page skills-phone"><List data={data} selected={null} phone navigate={navigate} /></div>;
-  }
-  return <div className="skills-page">
-    <List data={data} selected={skill?.name ?? null} phone={false} navigate={navigate} />
-    <div className="skills-main">
-      {data.skills === null ? null : skill !== null ? <SkillDetail key={skill.name} skill={skill} onRemoved={removed} />
-        : name !== null ? <Missing navigate={navigate} /> : null}
-    </div>
-  </div>;
+  };
+  return <div ref={root} className="skills-root" data-single={single}>{body()}</div>;
 }

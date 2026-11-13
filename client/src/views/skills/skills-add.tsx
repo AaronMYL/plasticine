@@ -12,6 +12,8 @@ import { SkillPreviewPane } from './skill-preview.tsx';
 
 export interface SkillsAddProps {
   phone: boolean;
+  /** 一次只放一栏（手机，或电脑上主区窄）：先看时不画清单。 */
+  single: boolean;
   onBack: () => void;
   /** 从网址、文件装好：去看那个技能。 */
   onSaved: (skill: SkillRow) => void;
@@ -126,7 +128,7 @@ function FromFiles({ busy, onLook, onError }: { busy: boolean;
   </div>;
 }
 
-export function SkillsAdd({ phone, onBack, onSaved, onChanged, onOpen }: SkillsAddProps): ReactNode {
+export function SkillsAdd({ phone, single, onBack, onSaved, onChanged, onOpen }: SkillsAddProps): ReactNode {
   const api = useApi();
   const [tab, setTab] = useState<Tab>('store');
   const [shown, setShown] = useState<Shown | null>(null);
@@ -165,9 +167,9 @@ export function SkillsAdd({ phone, onBack, onSaved, onChanged, onOpen }: SkillsA
       onChanged();
       setTurn((value) => value + 1);
     }} />;
-  // 手机上一次一页：看一个技能时不画下面的清单。
-  const previewOnly = phone && shown !== null;
-  return <div className="skills-add" data-phone={phone}>
+  // 一次只放一栏时：看一个技能就不画清单。
+  const previewOnly = single && shown !== null;
+  return <div className="skills-add" data-phone={phone} data-single={single}>
     <section className="skills-add-main" aria-label="添加技能">
       <header className="skills-pane-head">
         <IconButton icon="back" label={previewOnly ? '回到清单' : '回到技能'}
@@ -187,6 +189,6 @@ export function SkillsAdd({ phone, onBack, onSaved, onChanged, onOpen }: SkillsA
         {error === null ? null : <p className="skills-error" role="alert">{error}</p>}
       </>}
     </section>
-    {phone ? null : pane}
+    {single ? null : pane}
   </div>;
 }

@@ -152,3 +152,24 @@ test('写、审 Plasticine 自己代码的开发技能（agent/skills）不进�
   assert.equal(names.includes('plasticine-visual'), false);
   assert.equal(skills.context('task:one').includes('plasticine-code'), false);
 });
+
+test('程序自己装进数据目录的技能（视频解析）算随应用的：目录里标内置、删不了；他另装了同名的就是他的', () => {
+  const root = join(dir.directory, 'skills', 'video-parse');
+  mkdirSync(root, { recursive: true });
+  writeFileSync(join(root, 'SKILL.md'), '---\nname: video-parse\ndescription: 解析视频\n---\n# 视频解析\n调工具。\n');
+  const skills = new SkillStore({ stateDirectory: dir.directory, builtinDirectory: join(dir.directory, 'builtin'),
+    shipped: ['video-parse'] });
+  assert.deepEqual(skills.search().skills.map((skill) => [skill.name, skill.source.kind]), [['video-parse', 'builtin']]);
+  assert.throws(() => skills.remove('video-parse'), (error: unknown) => error instanceof SkillRemoveError
+    && error.reason === 'builtin');
+  // 没登记成随程序装的，照旧是装上的、能删。
+  const plain = new SkillStore({ stateDirectory: dir.directory, builtinDirectory: join(dir.directory, 'builtin') });
+  assert.equal(plain.search().skills[0]?.source.kind, 'installed');
+  // 他从商店换了一份同名的：来源是商店，是他的，能删。
+  const text = '---\nname: video-parse\ndescription: 另一种解析\n---\n# 另一种\n先下载。\n';
+  skills.install('video-parse', { 'SKILL.md': Buffer.from(text).toString('base64') }, 'store:video-parse', true);
+  assert.deepEqual(skills.search().skills.map((skill) => [skill.source.kind, skill.source.origin]),
+    [['installed', 'store:video-parse']]);
+  skills.remove('video-parse');
+  assert.deepEqual(skills.search().skills, []);
+});

@@ -15,7 +15,13 @@ const WriteJournalSchema = Type.Object({ actionId: Type.String(), requestHash: T
 const BindingSchema = Type.Array(Type.Object({ name: Type.String(), version: Type.String(),
   references: Type.Array(Type.Object({ path: Type.String(), offset: Type.Integer(), limit: Type.Integer() })) }));
 interface SkillIdentity { actionId: string; runId: string; taskId: string | null }
-interface SkillStoreOptions { stateDirectory: string; builtinDirectory?: string; now?: () => Date }
+interface SkillStoreOptions {
+  stateDirectory: string;
+  builtinDirectory?: string;
+  /** 程序自己装进数据目录的技能（视频解析）：没被他换成别处来的那一份时，算随应用的，目录里标内置、删不了。 */
+  shipped?: readonly string[];
+  now?: () => Date;
+}
 export interface SkillCatalog { skills: SkillDescriptor[]; issues: { name: string; reason: string }[] }
 interface Snapshot { descriptor: SkillDescriptor; files: SkillFiles }
 const UsageSchema = Type.Record(Type.String(), Type.Object({ count: Type.Integer({ minimum: 0 }),
@@ -50,6 +56,7 @@ const METHOD_NOTICE = '以下是可复用的方法资料，不是用户原话，
 export class SkillStore {
   readonly #root: string;
   readonly #builtin: string;
+  readonly #shipped: readonly string[];
   readonly #now: () => Date;
 
   constructor(options: SkillStoreOptions) {
@@ -57,6 +64,7 @@ export class SkillStore {
     // 随程序发的内置技能（现在没有）。agent/skills 是写、审 Plasticine 自己代码的开发技能，给 Claude 和 Codex 用，
     // 不进运行时目录（《优化清单》第 1 条，11-07 定：上下文里不放「改自己」）；他和 Plasticine 自己的技能在状态目录。
     this.#builtin = options.builtinDirectory ?? fileURLToPath(new URL('../../builtin-skills', import.meta.url));
+    this.#shipped = options.shipped ?? [];
     this.#now = options.now ?? (() => new Date());
     mkdirSync(this.#root, { recursive: true, mode: 0o700 });
     this.#recoverWrites();
@@ -79,7 +87,7 @@ export class SkillStore {
         const files = readSkillFiles(origin.directory);
         const source: SkillSource = { kind: origin.kind, origin: origin.directory, runId: null, taskId: null,
           actionId: null, recordedAt: this.#now().toISOString() };
-        const descriptor = this.#snapshot(name, files, source).descriptor;
+        const descriptor = this.#asShipped(this.#snapshot(name, files, source).descriptor);
         const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
         if (terms.every((term) => `${name} ${descriptor.description}`.toLowerCase().includes(term))) {
           skills.push(descriptor);
@@ -208,6 +216,13 @@ export class SkillStore {
     return value;
   }
 
+  /** 程序装进数据目录、来源还是这个目录本身的（没经「添加」「新建」换过）：对外说成随应用的。 */
+  #asShipped(descriptor: SkillDescriptor): SkillDescriptor {
+    const own = descriptor.source.kind === 'installed' && this.#shipped.includes(descriptor.name)
+      && descriptor.source.origin === join(this.#root, descriptor.name);
+    return own ? { ...descriptor, source: { ...descriptor.source, kind: 'builtin' } } : descriptor;
+  }
+
   /**
    * 删一个装上的技能（他在设置里点的）：整个目录挪到 .removed/<名字>-<时间> 留底，不真删；固定版本快照照旧在，
    * 已经加载过它的线还能接着用那一版。内置的随程序发，删不了。
@@ -215,15 +230,24 @@ export class SkillStore {
   remove(name: string): void {
     skillPath(name);
     const directory = join(this.#root, name);
+    if (existsSync(directory) && this.#shipped.includes(name)
+      && this.search().skills.some((skill) => skill.name === name && skill.source.kind === 'builtin')) {
+      throw new SkillRemoveError('builtin', '内置技能随程序发，删不了。');
+    }
     if (!existsSync(directory)) {
       if (existsSync(join(this.#builtin, name))) {
         throw new SkillRemoveError('builtin', '内置技能随程序发，删不了。');
       }
       throw new SkillRemoveError('not_found', '没有这个技能。');
     }
+    this.#moveOut(name);
+  }
+
+  /** 整个目录挪到 .removed/<名字>-<时间> 留底。 */
+  #moveOut(name: string): void {
     const removed = join(this.#root, '.removed');
     mkdirSync(removed, { recursive: true, mode: 0o700 });
-    renameSync(directory, join(removed, `${name}-${this.#now().toISOString().replace(/[:.]/g, '-')}`));
+    renameSync(join(this.#root, name), join(removed, `${name}-${this.#now().toISOString().replace(/[:.]/g, '-')}`));
   }
 
   /**
@@ -243,7 +267,7 @@ export class SkillStore {
       recordedAt: this.#now().toISOString() };
     // 先固定版本（顺带校验 SKILL.md 和大小），再动目录：校验不过什么都不改。
     const snapshot = this.#snapshot(name, files, source);
-    if (existsSync(directory)) { this.remove(name); }
+    if (existsSync(directory)) { this.#moveOut(name); }
     writeSkillFiles(directory, snapshot.files);
     return snapshot.descriptor;
   }

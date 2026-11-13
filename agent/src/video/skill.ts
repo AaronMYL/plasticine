@@ -15,7 +15,11 @@ const SKILL_SOURCE = new URL('./skill/SKILL.md', import.meta.url);
  * 以前版本装进去的 SKILL.md（sha256）。数据目录里的那份和其中之一一字不差，说明没人改过，就换成这一版的说明；
  * 改过的不动（11-09 抖音视频改成直接转写，旧说明里「先用自带字幕」「三份提示词」不对了）。
  */
-const RETIRED_SKILL_SHA256: readonly string[] = ['90c7d82842fbdedb78472d3aa1923c978c258c77b5123db6f2aaa9f5822d96d3'];
+const RETIRED_SKILL_SHA256: readonly string[] = [
+  '90c7d82842fbdedb78472d3aa1923c978c258c77b5123db6f2aaa9f5822d96d3',
+  // 11-13：开头加了给人看的名字（title: 视频解析），技能页显示它。
+  'd51f6d553a9a7659663d5308afc9e8ab58f2ef487c68dce8560eaa288a3ba8c7',
+];
 
 export function videoSkillDirectory(stateDirectory: string): string {
   return join(stateDirectory, 'skills', VIDEO_SKILL_NAME);
