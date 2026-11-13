@@ -39,8 +39,11 @@ it('群组发布待领任务，原始全文交给组内队友；普通后台不�
   const tasks = await app.api.mateGroups.listTasks(app.group.id);
   expect(claim.mock.calls[0]?.[0]).toMatchObject({ sourceLineId: tasks.lines[0]!.id,
     groupId: app.group.id, mateId: app.first.id, goal });
-  await waitFor(() => expect(within(card).getByText('研究员接了')).toBeTruthy());
-  expect(within(card).queryByRole('button', { name: '选择领取队友' })).toBeNull();
+  // 领了以后不再在「待领」里：挪到研究员名下那一块，一件事只出现在一个人名下。
+  const mine = await within(panel).findByRole('region', { name: '研究员' });
+  expect(await within(mine).findByRole('button', { name: '查看工作：检查三条来源' })).toBeTruthy();
+  expect(within(panel).queryByRole('region', { name: '待领' })).toBeNull();
+  expect(within(panel).queryByRole('button', { name: '选择领取队友' })).toBeNull();
   expect(tasks.lines).toHaveLength(1);
 });
 
@@ -93,10 +96,38 @@ it('领取后 SSE 未到，任务 GET 的新状态也同步更新聊天和分工
   fireEvent.click(within(panel).getByRole('button', { name: '选择领取队友' }));
   fireEvent.click(screen.getByRole('menuitem', { name: '研究员领取' }));
   await waitFor(() => {
-    for (const card of screen.getAllByRole('article', { name: '任务：核对来源' })) {
-      expect(within(card).getByText('研究员接了')).toBeTruthy();
-      expect(within(card).queryByRole('button', { name: '选择领取队友' })).toBeNull();
-    }
+    const cards = screen.getAllByRole('article', { name: '任务：核对来源' });
+    expect(cards).toHaveLength(1);
+    expect(within(cards[0]!).getByText('研究员接了')).toBeTruthy();
+    expect(within(cards[0]!).queryByRole('button', { name: '选择领取队友' })).toBeNull();
+    expect(within(within(panel).getByRole('region', { name: '研究员' }))
+      .getByRole('button', { name: '查看工作：核对来源' })).toBeTruthy();
   });
   expect(app.control.lines.find(line.id)?.mateId).toBeNull();
+});
+
+it('分工面板：四个数；等你的排最前、能去答；每位队友写在做什么、空着；群组那一行和「分工」按钮写等你几件', async () => {
+  const app = await setup();
+  const put = (id: string, title: string, patch: Partial<LineView>): void => {
+    act(() => { app.control.lines.put(app.control.lines.blank(id, 'background', title,
+      { parentLineId: app.group.lineId, mateGroupId: app.group.id, ...patch })); });
+  };
+  put('job-run', '整理访谈', { mateId: app.first.id, status: 'running', activity: '在读上周的访谈' });
+  put('job-wait', '首页改版设计稿', { mateId: app.second.id, status: 'waiting' });
+  put('job-done', '核对三条来源', { mateId: app.first.id, status: 'idle', outcome: 'done' });
+  const toggle = screen.getByRole('button', { name: '分工' });
+  await waitFor(() => expect(toggle.textContent).toContain('等你 1'));
+  expect(screen.getByRole('link', { name: /资料小组/ }).textContent).toContain('等你 1');
+  fireEvent.click(toggle);
+  const panel = screen.getByRole('complementary', { name: '群组分工' });
+  const stats = within(panel).getByRole('group', { name: '这个群的事' });
+  expect(stats.textContent).toBe('1在做1等你0待领1做完');
+  const waiting = within(panel).getByRole('region', { name: '等你' });
+  expect(within(waiting).getByText(/^编辑队友问：/)).toBeTruthy();
+  expect(within(waiting).getByRole('button', { name: '去答' })).toBeTruthy();
+  const first = within(panel).getByRole('region', { name: '研究员' });
+  expect(within(first).getByText('在做「整理访谈」')).toBeTruthy();
+  expect(within(first).getByText(/在读上周的访谈/)).toBeTruthy();
+  expect(within(first).getByText('做完 1')).toBeTruthy();
+  expect(within(within(panel).getByRole('region', { name: '编辑队友' })).getByText('等你回答')).toBeTruthy();
 });

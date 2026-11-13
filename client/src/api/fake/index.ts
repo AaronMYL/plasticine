@@ -1,6 +1,7 @@
 import { FakeMates } from './fake-mates.ts';
 import { FakeSoul } from './fake-soul.ts';
 import { seedMemoryScene } from './memory-scene-seed.ts';
+import { seedTeamScene } from './team-scene-seed.ts';
 import { inferSoulSection, ruleTexts } from '../../../../agent/shared/soul.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
@@ -327,6 +328,10 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     // ?scene=memory：两位队友各有只对它的规则，外加一处说法冲突（11-11 第二步截图用）。
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'memory') {
       seedMemoryScene({ mates, soul }, now());
+    }
+    // ?scene=team：四位队友、一个群组、各种状态的事（11-13 分工面板截图用）。
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'team') {
+      void seedTeamScene({ mates, lines }, now());
     }
     spaces.seed();
     // 技能页（11-13）：随应用的两个，加一个 Plasticine 整理的。

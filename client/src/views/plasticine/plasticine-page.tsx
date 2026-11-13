@@ -21,6 +21,7 @@ import { LineConversation } from '../lines/line-conversation.tsx';
 import { MatesRoster } from '../mates/mates-roster.tsx';
 import { MateEditor, GroupEditor } from '../mates/mate-editor.tsx';
 import { MateAvatar, GroupAvatar } from '../mates/mate-avatar.tsx';
+import { groupWaiting } from '../mates/group-work.ts';
 import { MateWorkPanel } from '../mates/mate-work-panel.tsx';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
@@ -97,6 +98,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
   // 手机上的栏目首页：就是主线，底栏还在；队友和群组从右上角进。
   const phoneRoot = phone && sideId === null && route.plasticineMain !== true && route.messageId == null;
   const side = useStore(live.lines.thread(sideId ?? MAIN_LINE_ALIAS)).line;
+  const lines = useStore(live.lines.list).lines;
   const main = useMainIdentity();
   const title = mate?.name ?? group?.name ?? (sideId === null ? (phoneRoot ? main.name : '主线') : side?.title ?? '对话');
   const topic = sideId === null ? null : side?.topic ?? null;
@@ -109,8 +111,11 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
       onClick={() => navigate({ view: 'feed', noteId: null, feedItemId: topic.ref })} /> : null}
     {phone ? null : <IconButton icon="search" size={iconSize} label="在记录里找" aria-pressed={finding}
       onClick={() => setFinding((value) => !value)} />}
-    {group === undefined ? null : <button type="button" className="text-button"
-      aria-pressed={division} onClick={() => setDivision((value) => !value)}>分工</button>}
+    {group === undefined ? null : <button type="button" className="mate-work-toggle" aria-label="分工"
+      aria-pressed={division} onClick={() => setDivision((value) => !value)}>
+      <Icon name="tasks" size={15} />分工
+      {groupWaiting(group, lines) === 0 ? null
+        : <span className="mate-wait-count">等你 {groupWaiting(group, lines)}</span>}</button>}
     {(
       <IconButton icon="more" size={iconSize} label="更多" aria-expanded={menu !== null}
         onClick={(event) => setMenu(anchorOf(event.currentTarget))} />
@@ -148,7 +153,8 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
           </SideUiProvider>
         </div>
       )}
-      {group !== undefined && division ? <MateWorkPanel group={group} phone={phone} /> : null}
+      {group !== undefined && division ? <MateWorkPanel group={group} phone={phone}
+        onClose={() => setDivision(false)} /> : null}
       </div>
       {editing && mate !== undefined ? <MateEditor mate={mate} phone={phone} navigate={navigate}
         onClose={() => setEditing(false)} /> : null}

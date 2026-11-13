@@ -40,15 +40,47 @@
 .mate-conversation-name p { margin: 0; font-size: 12px; color: var(--fg2); }
 .mate-chat-body { display: flex; flex: 1; min-height: 0; position: relative; }
 .mate-chat-body > .conv { min-width: 0; }
-.mate-work-panel { flex: 0 0 280px; overflow-y: auto; padding: 20px 16px; border-left: 1px solid var(--line); }
-.mate-work-panel h3 { margin: 0 0 16px; font-size: 13px; font-weight: 500; color: var(--fg2); }
-.mate-work-person { display: flex; gap: 10px; align-items: center; padding: 12px 0; }
-.mate-work-person strong { font-size: 13px; font-weight: 500; }
-.mate-work-person p { margin: 4px 0 0; color: var(--fg2); font-size: 12px; }
-.mate-work-panel .line-card { margin-bottom: 12px; }
+/* 分工面板（11-13）：四个数、等你、待领、每位队友一块。 */
+.mate-work-panel { flex: 0 0 340px; overflow-y: auto; padding: 16px 16px 24px; border-left: 1px solid var(--line); }
+.mate-work-heading { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.mate-work-heading h3 { flex: 1; margin: 0; font-size: 15px; line-height: 24px; font-weight: 600; }
+.mate-work-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0 0 4px; }
+.mate-work-stat { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px;
+  background: var(--tint); }
+.mate-work-stat dd { margin: 0; font-family: var(--mono); font-size: 16px; line-height: 22px; font-weight: 600; }
+.mate-work-stat dt { color: var(--fg2); font-size: 12px; line-height: 18px; }
+.mate-work-stat[data-tone='run'] dd { color: var(--run); }
+.mate-work-stat[data-tone='wait'] dd { color: var(--accent); }
+.mate-work-stat[data-tone='done'] dd { color: var(--ok); }
+.mate-work-block { padding-top: 12px; }
+.mate-work-label { margin: 0 0 2px; color: var(--fg3); font-size: 11px; line-height: 16px; font-weight: 600; }
+.mate-work-rows { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.mate-work-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; }
+.mate-work-glyph { display: grid; place-items: center; flex: none; width: 16px; height: 20px; }
+.mate-work-open { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: 0; border: 0;
+  background: transparent; color: var(--fg); text-align: left; cursor: pointer; }
+.mate-work-open:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; border-radius: 4px; }
+.mate-work-title { font-size: 13px; line-height: 20px; overflow-wrap: anywhere; }
+.mate-work-open:hover .mate-work-title { text-decoration: underline; text-underline-offset: 3px; }
+.mate-work-state { color: var(--fg2); font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
+.mate-work-person { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.mate-work-person > header { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+.mate-work-person h4 { margin: 0; font-size: 13px; line-height: 20px; font-weight: 600; }
+.mate-work-person p { margin: 0; color: var(--fg2); font-size: 12px; line-height: 18px; }
+.mate-work-done > summary { display: flex; align-items: center; gap: 6px; height: 28px; color: var(--fg3);
+  font-size: 12px; list-style: none; cursor: pointer; }
+.mate-work-done > summary::-webkit-details-marker { display: none; }
+.mate-work-done > summary > svg:first-child { color: var(--ok); }
+.mate-work-done > summary > svg:last-child { margin-left: auto; transition: transform var(--motion-fast) var(--ease-out); }
+.mate-work-done[open] > summary > svg:last-child { transform: rotate(180deg); }
+.mate-work-tasks { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+.mate-work-toggle { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0;
+  border-radius: 8px; background: transparent; color: var(--fg); font-size: 13px; font-weight: 500; cursor: pointer; }
+.mate-work-toggle:hover, .mate-work-toggle[aria-pressed='true'] { background: var(--tint); }
+.mate-wait-count { color: var(--accent); font-size: 11px; font-weight: 600; white-space: nowrap; }
 @media (max-width: 600px) {
   .mate-form { padding: 16px; }
-  .mate-work-panel { position: absolute; inset: 0; z-index: 5; background: var(--bg); border-left: 0; }
+  .mate-work-panel { position: absolute; inset: 0; z-index: 5; flex-basis: auto; background: var(--bg); border-left: 0; }
 }
 .dock-target-head { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .dock-target-button { display: flex; align-items: center; gap: 8px; border: 0; padding: 4px 6px;

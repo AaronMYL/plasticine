@@ -7,6 +7,7 @@ import { mainChatRoute, mateGroupRoute, mateRoute, sideRoute, skillsRoute, type 
 import { useStore } from '../../state/use-store.ts';
 import { PendingOps } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from './mate-actions.ts';
+import { groupWaiting } from './group-work.ts';
 import { MateAvatar, GroupAvatar } from './mate-avatar.tsx';
 import { MateEditor, GroupEditor } from './mate-editor.tsx';
 import { MainAvatar, MainEditor, useMainIdentity } from './main-identity.tsx';
@@ -56,7 +57,9 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
       {roster.groups.map((group) => <ColumnLink key={group.id} route={mateGroupRoute(group.id)}
         current={route.mateGroupId === group.id || route.lineId === group.lineId} navigate={navigate}
         lead={<GroupAvatar mates={roster.mates.filter((mate) => group.mateIds.includes(mate.id))} />}
-        sub={`${group.mateIds.length} 位队友`}>{group.name}</ColumnLink>)}
+        sub={`${group.mateIds.length} 位队友`}
+        trail={groupWaiting(group, lines.lines) === 0 ? undefined
+          : <span className="mate-wait-count">等你 {groupWaiting(group, lines.lines)}</span>}>{group.name}</ColumnLink>)}
       {roster.legacyChats.length === 0 ? null : <div className="mates-legacy">
         <button type="button" className="text-button" onClick={() => setLegacy(true)}>整理原来的对话</button>
         {roster.legacyChats.map((chat) => <ColumnLink key={chat.lineId} route={sideRoute(chat.lineId)}
