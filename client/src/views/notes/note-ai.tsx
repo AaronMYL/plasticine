@@ -192,8 +192,8 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
   const aiRow = useRef<HTMLDivElement>(null);
   useKeyboardInset(aiRow, useViewportWidth() < PHONE_BELOW);
 
-  return <div className="note-ai-tools" ref={aiRow}>
-    <div className="note-toolbar" role="group" aria-label="笔记 AI">
+  return <div className="note-ai-tools">
+    <div className="note-toolbar" role="group" aria-label="笔记 AI" ref={aiRow}>
       {/* 11-12 全量优化第 14 条：用得最多的三样（续写、补充建议的开关和整理）直接放在工具栏上，其余收在「⋯」里。 */}
       <label className="note-ai-switch">
         <input type="checkbox" role="switch" checked={predict}

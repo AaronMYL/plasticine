@@ -271,12 +271,13 @@
     text-indent: 0;
     pointer-events: auto;
   }
-  /* 续写、补充建议、整理这一行常在键盘上方（键盘收着时贴在底栏上面）；工具栏收着也照样在。 */
+  /* 续写、补充建议、整理这一行常在键盘上方（键盘收着时贴在底栏上面，弹起来时 use-keyboard-inset.ts 往上挪）；
+     工具栏收着也照样在。 */
   .note-command-bar > .note-ai-tools > .note-toolbar,
   .note-command-bar[data-expanded='false'] > .note-ai-tools > .note-toolbar {
     position: fixed;
     right: 0;
-    bottom: max(var(--keyboard-inset, 0px), calc(64px + env(safe-area-inset-bottom)));
+    bottom: calc(64px + env(safe-area-inset-bottom));
     left: 0;
     z-index: 6;
     display: flex;
