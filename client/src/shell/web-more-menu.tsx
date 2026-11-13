@@ -127,7 +127,8 @@ export function WebMoreMenu(props: WebMoreMenuProps): ReactNode {
       onSelect={run(props.onReading)} /> : null,
   ].filter((item) => item !== null);
   const keep: ReactNode[] = [
-    tools.has('capture') ? <MenuItem key="capture" icon="image" label="截图" more onSelect={() => setPage('capture')} /> : null,
+    tools.has('capture') ? <MenuItem key="capture" icon="image" label="截图" more
+      onSelect={() => setPage('capture')} /> : null,
     props.native ? <MenuItem key="clip" icon="notes" label="存进笔记" onSelect={run(props.onClip)} /> : null,
     tools.has('print') ? <MenuItem key="print" icon="file" label="存成 PDF / 打印" shortcut={props.phone ? undefined : '⌘P'}
       onSelect={run(props.onPrint)} /> : null,
@@ -138,7 +139,8 @@ export function WebMoreMenu(props: WebMoreMenuProps): ReactNode {
       onSelect={run(props.onOpenOutside)} />,
   ];
   const records: ReactNode[] = [
-    tools.has('downloads') ? <MenuItem key="downloads" icon="download" label="下载" onSelect={run(props.onDownloads)} /> : null,
+    tools.has('downloads') ? <MenuItem key="downloads" icon="download" label="下载"
+      onSelect={run(props.onDownloads)} /> : null,
     props.native && props.onHistory !== undefined ? <MenuItem key="history" icon="history" label="历史记录"
       onSelect={() => props.onHistory?.(props.anchor)} /> : null,
   ].filter((item) => item !== null);

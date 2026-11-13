@@ -166,7 +166,8 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
   const moreButton = (): PopoverAnchor => {
-    const button = document.querySelector('.web-tab .web-history-toggle') ?? document.querySelector('.web-tab .web-more');
+    const button = document.querySelector('.web-tab .web-history-toggle')
+      ?? document.querySelector('.web-tab .web-more');
     return button === null ? { left: window.innerWidth - 24, top: 44, right: window.innerWidth - 24, bottom: 44 }
       : anchorOf(button);
   };

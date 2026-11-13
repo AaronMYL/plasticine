@@ -37,9 +37,11 @@ export interface WebToolbarProps {
 export function WebToolbar(props: WebToolbarProps): ReactNode {
   const { tab, url, native } = props;
   const nav = native?.nav[tab.id];
+  // 手机上历史记录在「更多」里：历史开着时「更多」也算按下。
+  const viaMore = props.historyInMenu === true && props.open === 'history';
   const pressed = (kind: WebPopoverKind): Record<string, boolean | string> => ({
-    'aria-expanded': props.open === kind || (kind === 'more' && props.historyInMenu === true && props.open === 'history'),
-    'data-active': props.open === kind || (kind === 'more' && props.historyInMenu === true && props.open === 'history'),
+    'aria-expanded': props.open === kind || (kind === 'more' && viaMore),
+    'data-active': props.open === kind || (kind === 'more' && viaMore),
     'data-web-toggle': kind,
   });
   return (
@@ -66,7 +68,8 @@ export function WebToolbar(props: WebToolbarProps): ReactNode {
       {/* 11-13 浏览器一套样子：工具栏右边全是图标按钮——提取不带字，历史从「更多」里提上来（手机上地方窄，还在「更多」里）。 */}
       {props.onExtract === undefined ? null : <IconButton icon="edit" className="web-extract-toggle" label="提取"
         aria-pressed={props.extracting ?? false} data-active={props.extracting ?? false} onClick={props.onExtract} />}
-      {native === null || props.historyInMenu === true ? null : <IconButton icon="history" className="web-history-toggle"
+      {native === null || props.historyInMenu === true ? null : <IconButton icon="history"
+        className="web-history-toggle"
         label="历史记录" title="历史记录 · ⌘Y" {...pressed('history')}
         onClick={(event) => props.onToggle('history', event.currentTarget)} />}
       <IconButton icon="more" className="web-more" label="更多" {...pressed('more')}

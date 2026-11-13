@@ -127,7 +127,8 @@ export function WebColumn(props: WebColumnProps): ReactNode {
   const listed = new Set([...hits.map((tab) => tab.url), ...marked.map((bookmark) => bookmark.target),
     ...gone.map((entry) => entry.url)]);
   const visited = needle === '' || history === null ? []
-    : history.search(needle, HISTORY_HITS + listed.size).filter((visit) => !listed.has(visit.url)).slice(0, HISTORY_HITS);
+    : history.search(needle, HISTORY_HITS + listed.size).filter((visit) => !listed.has(visit.url))
+      .slice(0, HISTORY_HITS);
   const fold = (id: string): { collapsed: boolean; onToggle: () => void } => ({ collapsed: folded.includes(id),
     onToggle: () => shellPrefs.setColumnCollapsed(id, !folded.includes(id)) });
   return (
@@ -145,7 +146,8 @@ export function WebColumn(props: WebColumnProps): ReactNode {
       </div>
       {needle !== '' ? (
         <div className="column-scroll">
-          {hits.length === 0 && marked.length === 0 && gone.length === 0 && visited.length === 0 ? <p className="column-note">没找到</p> : null}
+          {hits.length + marked.length + gone.length + visited.length === 0
+            ? <p className="column-note">没找到</p> : null}
           <ul className="web-tabs">{hits.map((tab) => row(tab.id, false))}</ul>
           {marked.length === 0 ? null : <>
             <ColumnLabel>书签</ColumnLabel>
