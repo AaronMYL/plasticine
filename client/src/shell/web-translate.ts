@@ -32,6 +32,8 @@ export interface TabTranslation {
   /** 出错时的一句原因（含几点能再试）；点了重试、或这一轮都译完了就清掉。 */
   reason: string | null;
   chars: number;
+  /** 这一轮还在等的段数（含排着没发出去的）：按钮上的「在译 n / m 段」用。 */
+  pending: number;
   done: number;
   /** 页面上没译成的段数（脚本报的）：大于 0 就是「有段落没译成」。 */
   failed: number;
@@ -39,7 +41,7 @@ export interface TabTranslation {
   firstScreenMs: number | null;
 }
 
-const OFF: TabTranslation = { status: 'off', run: null, url: '', blocked: false, reason: null, chars: 0, done: 0,
+const OFF: TabTranslation = { status: 'off', run: null, url: '', blocked: false, reason: null, chars: 0, pending: 0, done: 0,
   failed: 0, cachedChars: 0, firstScreenMs: null };
 
 type RequestEvent = Extract<TranslateEvent, { type: 'request' }>;
@@ -287,7 +289,8 @@ export class WebTranslator {
     const settled = event.pending === 0 && this.#jobsFor(event.tabId) === 0;
     // 页面上还有没译成的段落就是出错；都译完了（没有没译成的）上一次出错的原因作废——重试成功了。
     const status: TranslateStatus = event.failed > 0 ? 'error' : settled ? 'on' : 'running';
-    this.#patch(event.tabId, { status, chars: event.chars, done: event.done, failed: event.failed,
+    this.#patch(event.tabId, { status, chars: event.chars, pending: event.pending, done: event.done,
+      failed: event.failed,
       ...(status === 'on' ? { reason: null } : {}),
       ...(event.firstScreenMs === null ? {} : { firstScreenMs: event.firstScreenMs }) });
     if (event.firstScreenMs !== null && tab.firstScreenMs === null) {

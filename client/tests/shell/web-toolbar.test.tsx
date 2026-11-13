@@ -80,7 +80,7 @@ describe('电脑网页工具条', () => {
     await openArticle(app);
     const bar = screen.getByRole('main').querySelector('.web-toolbar') as HTMLElement;
     const names = [...bar.querySelectorAll('button')].map((button) => button.getAttribute('aria-label'));
-    expect(names).toEqual(['后退', '前进', '重新载入', '圈一块', `网址：${ARTICLE}`, '加书签', '翻译这一页', '更多']);
+    expect(names).toEqual(['后退', '前进', '重新载入', '圈一块', `网址：${ARTICLE}`, '加书签', '翻译这一页', '历史记录', '更多']);
     expect(within(bar).getByRole('button', { name: /^网址/ }).textContent).toBe('blog.example.org/local-first-sync');
   });
 
@@ -91,7 +91,7 @@ describe('电脑网页工具条', () => {
     expect(within(screen.getByRole('main')).queryByRole('button', { name: '圈一块' })).toBeNull();
     const menu = openMore();
     expect([...menu.querySelectorAll('[role^="menuitem"]')].map((item) => item.textContent)).toEqual(['阅读模式', '存进笔记',
-      '复制链接', '在浏览器打开', '历史记录⌘Y']);
+      '复制链接', '在浏览器打开']);
   });
 
   it('⋯ 菜单照他定的顺序分节；Mac 会导入登录时最后一节是「导入登录…」，点了到设置 · 浏览器打开导入', async () => {
@@ -107,7 +107,7 @@ describe('电脑网页工具条', () => {
     const rows = [...menu.children].map((child) => (child.tagName === 'HR' ? '｜'
       : child.querySelector('.popover-item-label')?.textContent ?? child.textContent));
     expect(rows).toEqual(['在页面中查找', '缩放', '阅读模式', '｜', '截图', '存进笔记', '存成 PDF / 打印', '｜',
-      '复制链接', '在浏览器打开', '｜', '下载', '历史记录', '｜', '导入登录…']);
+      '复制链接', '在浏览器打开', '｜', '下载', '｜', '导入登录…']);
     fireEvent.click(within(menu).getByRole('menuitem', { name: '导入登录…' }));
     expect(await screen.findByRole('dialog', { name: '导入登录' })).toBeTruthy();
     // 设置是弹框（2026-11-05）：开在「浏览器」，底下还是这个网页标签。
@@ -263,6 +263,22 @@ describe('⋯ 菜单里的工具', () => {
       .toEqual(['https://b.example.com/x', 'https://a.example.com/']);
     fireEvent.click(within(today).getAllByRole('button')[1]!);
     expect(bridge.navigate).toHaveBeenCalledWith(id, 'https://a.example.com/');
+  });
+
+  it('历史记录在工具栏上（11-13）：点了出同一个浮层；左栏的查找框也搜历史，标签里已有的不重复列', async () => {
+    install();
+    const app = await renderApp();
+    const id = await openArticle(app);
+    emitState(id, 'https://notes.example.com/sync-design');
+    emitState(id, ARTICLE);
+    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: '历史记录' }));
+    expect(screen.getByRole('dialog', { name: '历史记录' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    const search = screen.getByRole('searchbox', { name: '搜标签' });
+    fireEvent.change(search, { target: { value: 'example' } });
+    const history = await screen.findByRole('list', { name: '历史' });
+    expect(within(history).getAllByRole('button').map((row) => row.getAttribute('title')))
+      .toEqual(['https://notes.example.com/sync-design']);
   });
 });
 

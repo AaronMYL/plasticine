@@ -29,7 +29,8 @@ export interface WebMoreMenuProps {
   onCopyLink: () => void;
   onOpenOutside: () => void;
   onDownloads: () => void;
-  onHistory: (anchor: PopoverAnchor) => void;
+  /** 手机上历史记录在这张菜单里；电脑上在工具栏，不给。 */
+  onHistory?: ((anchor: PopoverAnchor) => void) | undefined;
   /** 第 3 批：Mac 会导入登录（webTabs 之外的 logins 桥）才给；不给就不出这一项。 */
   onImportLogins?: () => void;
   /** 手机顶上那一排。 */
@@ -56,6 +57,7 @@ function Quick({ icon, label, onSelect }: { icon: IconName; label: string; onSel
 function ZoomRow({ zoom, onZoom }: { zoom: number; onZoom: (factor: number) => void }): ReactNode {
   return (
     <div className="web-zoom-row">
+      <Icon name="expand" size={15} />
       <span className="popover-item-label">缩放</span>
       <span className="web-zoom" role="group" aria-label="缩放">
         <button type="button" role="menuitem" aria-label="缩小" onClick={() => onZoom(zoomStep(zoom, -1))}>−</button>
@@ -118,30 +120,30 @@ export function WebMoreMenu(props: WebMoreMenuProps): ReactNode {
     </div>,
   ];
   const view: ReactNode[] = [
-    tools.has('find') ? <MenuItem key="find" label="在页面中查找" shortcut={props.phone ? undefined : '⌘F'}
+    tools.has('find') ? <MenuItem key="find" icon="search" label="在页面中查找" shortcut={props.phone ? undefined : '⌘F'}
       onSelect={run(props.onFind)} /> : null,
     tools.has('zoom') ? <ZoomRow key="zoom" zoom={props.zoom} onZoom={props.onZoom} /> : null,
-    props.native ? <MenuItem key="reader" label="阅读模式" checked={props.reading}
+    props.native ? <MenuItem key="reader" icon="toc" label="阅读模式" checked={props.reading}
       onSelect={run(props.onReading)} /> : null,
   ].filter((item) => item !== null);
   const keep: ReactNode[] = [
-    tools.has('capture') ? <MenuItem key="capture" label="截图" more onSelect={() => setPage('capture')} /> : null,
-    props.native ? <MenuItem key="clip" label="存进笔记" onSelect={run(props.onClip)} /> : null,
-    tools.has('print') ? <MenuItem key="print" label="存成 PDF / 打印" shortcut={props.phone ? undefined : '⌘P'}
+    tools.has('capture') ? <MenuItem key="capture" icon="image" label="截图" more onSelect={() => setPage('capture')} /> : null,
+    props.native ? <MenuItem key="clip" icon="notes" label="存进笔记" onSelect={run(props.onClip)} /> : null,
+    tools.has('print') ? <MenuItem key="print" icon="file" label="存成 PDF / 打印" shortcut={props.phone ? undefined : '⌘P'}
       onSelect={run(props.onPrint)} /> : null,
   ].filter((item) => item !== null);
   const share: ReactNode[] = [
-    <MenuItem key="copy" label="复制链接" onSelect={run(props.onCopyLink)} />,
-    <MenuItem key="outside" label={props.phone ? '在 Safari 打开' : '在浏览器打开'}
+    <MenuItem key="copy" icon="link" label="复制链接" onSelect={run(props.onCopyLink)} />,
+    <MenuItem key="outside" icon="external" label={props.phone ? '在 Safari 打开' : '在浏览器打开'}
       onSelect={run(props.onOpenOutside)} />,
   ];
   const records: ReactNode[] = [
-    tools.has('downloads') ? <MenuItem key="downloads" label="下载" onSelect={run(props.onDownloads)} /> : null,
-    props.native ? <MenuItem key="history" label="历史记录" shortcut={props.phone ? undefined : '⌘Y'}
-      onSelect={() => props.onHistory(props.anchor)} /> : null,
+    tools.has('downloads') ? <MenuItem key="downloads" icon="download" label="下载" onSelect={run(props.onDownloads)} /> : null,
+    props.native && props.onHistory !== undefined ? <MenuItem key="history" icon="history" label="历史记录"
+      onSelect={() => props.onHistory?.(props.anchor)} /> : null,
   ].filter((item) => item !== null);
   const logins: ReactNode[] = props.onImportLogins === undefined ? [] : [
-    <MenuItem key="import" label="导入登录…" onSelect={run(props.onImportLogins)} />,
+    <MenuItem key="import" icon="lock" label="导入登录…" onSelect={run(props.onImportLogins)} />,
   ];
   return (
     <Popover anchor={props.anchor} role="menu" align="end" label="更多"

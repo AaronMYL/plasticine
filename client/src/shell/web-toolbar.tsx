@@ -7,7 +7,6 @@
 import type { ReactNode } from 'react';
 import type { WebTab } from '../state/web-tabs.ts';
 import { BookmarkToggle } from './bookmark-toggle.tsx';
-import { Icon } from './icons.tsx';
 import { IconButton } from './icon-button.tsx';
 import { TranslateButton } from './translate-button.tsx';
 import type { NativeWebTabs } from './use-native-web-tabs.ts';
@@ -31,14 +30,16 @@ export interface WebToolbarProps {
   onBookmarkError: (text: string) => void;
   onExtract?: () => void;
   extracting?: boolean;
+  /** 手机：历史记录不上工具栏，留在「更多」里。 */
+  historyInMenu?: boolean;
 }
 
 export function WebToolbar(props: WebToolbarProps): ReactNode {
   const { tab, url, native } = props;
   const nav = native?.nav[tab.id];
   const pressed = (kind: WebPopoverKind): Record<string, boolean | string> => ({
-    'aria-expanded': props.open === kind || (kind === 'more' && props.open === 'history'),
-    'data-active': props.open === kind || (kind === 'more' && props.open === 'history'),
+    'aria-expanded': props.open === kind || (kind === 'more' && props.historyInMenu === true && props.open === 'history'),
+    'data-active': props.open === kind || (kind === 'more' && props.historyInMenu === true && props.open === 'history'),
     'data-web-toggle': kind,
   });
   return (
@@ -62,8 +63,12 @@ export function WebToolbar(props: WebToolbarProps): ReactNode {
       <WebAddress tab={tab} url={url} native={native} leading={props.leading}
         trailing={<BookmarkToggle url={url} title={props.title} onError={props.onBookmarkError} />} />
       {native === null ? null : <TranslateButton tabId={tab.id} url={url} />}
-      {props.onExtract === undefined ? null : <button type="button" className="secondary-button web-extract-toggle"
-        aria-pressed={props.extracting ?? false} onClick={props.onExtract}><Icon name="edit" />提取</button>}
+      {/* 11-13 浏览器一套样子：工具栏右边全是图标按钮——提取不带字，历史从「更多」里提上来（手机上地方窄，还在「更多」里）。 */}
+      {props.onExtract === undefined ? null : <IconButton icon="edit" className="web-extract-toggle" label="提取"
+        aria-pressed={props.extracting ?? false} data-active={props.extracting ?? false} onClick={props.onExtract} />}
+      {native === null || props.historyInMenu === true ? null : <IconButton icon="history" className="web-history-toggle"
+        label="历史记录" title="历史记录 · ⌘Y" {...pressed('history')}
+        onClick={(event) => props.onToggle('history', event.currentTarget)} />}
       <IconButton icon="more" className="web-more" label="更多" {...pressed('more')}
         onClick={(event) => props.onToggle('more', event.currentTarget)} />
       {nav?.loading === true ? <span className="web-loading" role="progressbar" aria-label="正在载入" /> : null}

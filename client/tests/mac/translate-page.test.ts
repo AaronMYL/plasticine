@@ -243,21 +243,45 @@ describe('翻译一页', () => {
       items: [{ text: 'First paragraph of the page.' }] });
   });
 
-  it('只看译文：原文藏起、悬停看原文；切回双语对照、关掉都原样还原', () => {
+  it('只看译文：没译到的段落先留原文、变淡，译好了原文藏起；工具条上「看原文」在这段下面浮出原文；切回双语对照、关掉都原样还原', () => {
+    const shadows: ShadowRoot[] = [];
+    const attach = Element.prototype.attachShadow;
+    vi.spyOn(Element.prototype, 'attachShadow').mockImplementation(function (this: Element, init) {
+      shadows.push(attach.call(this, { ...init, mode: 'open' }));
+      return shadows.at(-1)!;
+    });
     document.body.innerHTML = ARTICLE;
     const original = document.body.innerHTML;
     const fake = fakeHost();
     const translator = installPageTranslator(fake.host);
     translator.start({ ...config, display: 'translation' });
     fake.flush();
+    const p1 = byId('p1');
+    // 还在等：原文留着、标成在等（样式把它变淡、不出灰条），还没藏原文。
+    expect(p1.hasAttribute('data-plasticine-wait')).toBe(true);
+    expect(p1.hasAttribute('data-plasticine-only')).toBe(false);
     const sent = requests(fake.posts)[0]!;
     translator.apply({ run: 'run-1', items: sent.items.map((item) => ({ id: item.id, text: `译：${item.text}` })),
       failed: [] });
-    const p1 = byId('p1');
+    expect(p1.hasAttribute('data-plasticine-wait')).toBe(false);
     expect(p1.hasAttribute('data-plasticine-only')).toBe(true);
-    expect(p1.querySelector('plasticine-tr')?.getAttribute('title')).toBe(p1.firstChild?.textContent?.trim());
+    const node = p1.querySelector('plasticine-tr')!;
+    expect(node.hasAttribute('title')).toBe(false);
+    node.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    const look = shadows[0]!.querySelector<HTMLButtonElement>('button[data-act="original"]')!;
+    expect(look.hidden).toBe(false);
+    look.click();
+    const card = document.querySelector('plasticine-original')!;
+    expect(card.hasAttribute('data-open')).toBe(true);
+    expect(shadows[1]!.querySelector('[role="note"]')?.textContent).toBe(`原文${p1.firstChild?.textContent?.trim()}`);
+    expect(look.getAttribute('aria-pressed')).toBe('true');
+    look.click();
+    expect(card.hasAttribute('data-open')).toBe(false);
     translator.start(config);
     expect(p1.hasAttribute('data-plasticine-only')).toBe(false);
+    // 双语对照时工具条上没有「看原文」（原文就在上面）。
+    node.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    expect(look.hidden).toBe(true);
     expect(p1.querySelector('plasticine-tr')?.textContent).toMatch(/^译：Most agents/);
     translator.stop();
     expect(document.body.innerHTML).toBe(original);

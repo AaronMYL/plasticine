@@ -166,7 +166,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
   const moreButton = (): PopoverAnchor => {
-    const button = document.querySelector('.web-tab .web-more');
+    const button = document.querySelector('.web-tab .web-history-toggle') ?? document.querySelector('.web-tab .web-more');
     return button === null ? { left: window.innerWidth - 24, top: 44, right: window.innerWidth - 24, bottom: 44 }
       : anchorOf(button);
   };
@@ -227,7 +227,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
     <div className="web-tab" aria-label={`网页：${tab.title}`}>
       <WebToolbar tab={tab} url={url} title={title} native={native} leading={leading} open={openKind}
         onToggle={popovers.toggle} circling={actions.circling} onCircle={actions.circle}
-        onBookmarkError={actions.report}
+        onBookmarkError={actions.report} historyInMenu={phone}
         {...(native?.tools.has('extract_marks') !== true || !native.tools.has('extract_images') ? {} : {
           onExtract: () => { setReading(false); extract.toggle(); }, extracting: extract.open })} />
       {/* 查找条和那一句浮在网页右上角，不把网页往下推（不跳布局）；盖在原生网页上，报成 hitRegions。 */}
@@ -264,7 +264,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
           }}
           onCapture={actions.capture} onClip={actions.clip} onPrint={actions.print} onCopyLink={actions.copyLink}
           onOpenOutside={openOutside} onDownloads={actions.downloads}
-          onHistory={(anchor) => popovers.setOpen({ kind: 'history', anchor })}
+          {...(phone ? { onHistory: (anchor: PopoverAnchor) => popovers.setOpen({ kind: 'history', anchor }) } : {})}
           {...(phone ? { onBookmarks: showBookmarks } : {})}
           {...(hostLogins() === null ? {} : { onImportLogins: openLoginImport })}
           {...(phone ? { onCircle: actions.circle } : {})} />

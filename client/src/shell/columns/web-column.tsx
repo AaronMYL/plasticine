@@ -4,7 +4,7 @@
 // 一行：网站首字母小方块 + 标题，当前那一个是 --bg 底加细线、行尾 ×。拖动排序、拖进分组、拖到置顶（web-tab-drag.ts），
 // 右键出菜单（web-tab-menu.tsx）。搜标签时下面换成一张平的结果：开着的标签、书签、关掉的（点了重开）。
 
-import { useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useContext, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
@@ -16,7 +16,10 @@ import { hueVar } from '../hue.tsx';
 import { Icon } from '../icons.tsx';
 import { pointAnchor, type PopoverAnchor } from '../popover.tsx';
 import { SiteIcon } from '../site-icon.tsx';
+import { NativeWebTabsContext } from '../use-native-web-tabs.ts';
+import { useTabActions } from '../tabs-context.ts';
 import { ColumnFoot, ColumnLabel } from './column.tsx';
+import { WebSectionHead } from './web-section-head.tsx';
 import { ColumnCollapseButton } from './column-toggle.tsx';
 import { BookmarkButton, useOpenBookmark, WebBookmarks } from './web-bookmarks.tsx';
 import { useTabDrag } from './web-tab-drag.ts';
@@ -36,6 +39,12 @@ function tabTitle(tab: Pick<WebTab, 'title' | 'url'>): string {
   return tab.title.trim() === '' ? hostOf(tab.url) || tab.url : tab.title;
 }
 
+/** 查找时历史里最多列这么多条。 */
+const HISTORY_HITS = 8;
+/** 「分组」「今天」两节收没收起，和各栏目的第二栏记在同一处（shell-prefs 的 collapsedColumns）。 */
+const FOLD_GROUPS = 'web:groups';
+const FOLD_TODAY = 'web:today';
+
 type Menu = { kind: 'tab'; id: string; anchor: PopoverAnchor } | { kind: 'group'; id: string; anchor: PopoverAnchor };
 
 export interface WebColumnProps {
@@ -48,8 +57,11 @@ export interface WebColumnProps {
 }
 
 export function WebColumn(props: WebColumnProps): ReactNode {
-  const { webTabs } = useClientState();
+  const { webTabs, shellPrefs } = useClientState();
   const state = useStore(webTabs.store);
+  const folded = useStore(shellPrefs.store).collapsedColumns;
+  const history = useContext(NativeWebTabsContext)?.history ?? null;
+  const tabActions = useTabActions();
   const bookmarks = webBookmarks(useStore(useLive().bookmarks.data).bookmarks);
   const openBookmark = useOpenBookmark();
   const root = useRef<HTMLDivElement>(null);
@@ -111,12 +123,19 @@ export function WebColumn(props: WebColumnProps): ReactNode {
     .toLowerCase().includes(needle));
   const gone = needle === '' ? [] : state.archived.filter((entry) => `${entry.title} ${entry.url}`.toLowerCase()
     .includes(needle)).slice(0, 20);
+  // 11-13：查找框一次搜标签、书签和历史；已经作为标签、书签列出来的网址不在历史里再列一遍。
+  const listed = new Set([...hits.map((tab) => tab.url), ...marked.map((bookmark) => bookmark.target),
+    ...gone.map((entry) => entry.url)]);
+  const visited = needle === '' || history === null ? []
+    : history.search(needle, HISTORY_HITS + listed.size).filter((visit) => !listed.has(visit.url)).slice(0, HISTORY_HITS);
+  const fold = (id: string): { collapsed: boolean; onToggle: () => void } => ({ collapsed: folded.includes(id),
+    onToggle: () => shellPrefs.setColumnCollapsed(id, !folded.includes(id)) });
   return (
     <div ref={root} className="web-column" data-dragging={drag.dragging !== null}>
       <div className="web-search">
         <label className="web-search-field">
           <Icon name="search" size={14} />
-          <input type="search" placeholder="搜标签" aria-label="搜标签" value={query}
+          <input type="search" placeholder="搜标签、书签、历史" aria-label="搜标签" value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Escape') setQuery('');
@@ -126,7 +145,7 @@ export function WebColumn(props: WebColumnProps): ReactNode {
       </div>
       {needle !== '' ? (
         <div className="column-scroll">
-          {hits.length === 0 && marked.length === 0 && gone.length === 0 ? <p className="column-note">没找到</p> : null}
+          {hits.length === 0 && marked.length === 0 && gone.length === 0 && visited.length === 0 ? <p className="column-note">没找到</p> : null}
           <ul className="web-tabs">{hits.map((tab) => row(tab.id, false))}</ul>
           {marked.length === 0 ? null : <>
             <ColumnLabel>书签</ColumnLabel>
@@ -147,6 +166,20 @@ export function WebColumn(props: WebColumnProps): ReactNode {
                   <button type="button" className="web-tab-row" onClick={() => props.onReopen(entry)}>
                     <SiteIcon url={entry.url} title={entry.title} />
                     <span className="web-tab-title">{tabTitle(entry)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>}
+          {visited.length === 0 ? null : <>
+            <ColumnLabel>历史</ColumnLabel>
+            <ul className="web-tabs" aria-label="历史">
+              {visited.map((visit) => (
+                <li key={visit.url} className="web-tab-item">
+                  <button type="button" className="web-tab-row" title={visit.url}
+                    onClick={() => tabActions.openWeb(visit.url, visit.title)}>
+                    <SiteIcon url={visit.url} title={visit.title} />
+                    <span className="web-tab-title">{tabTitle(visit)}</span>
                   </button>
                 </li>
               ))}
@@ -175,15 +208,19 @@ export function WebColumn(props: WebColumnProps): ReactNode {
             </ul>
           )}
           {state.groups.length === 0 ? null : <>
-            <ColumnLabel>分组</ColumnLabel>
-            {state.groups.map(group)}
+            <WebSectionHead id="web-groups-head" title="分组" count={state.groups.length} controls="web-groups-body"
+              {...fold(FOLD_GROUPS)} />
+            <Collapse open={!folded.includes(FOLD_GROUPS)} id="web-groups-body">{state.groups.map(group)}</Collapse>
           </>}
-          <ColumnLabel>今天</ColumnLabel>
-          <div data-drop-list="today" className="web-today">
-            <FlipList className="web-tabs" keys={state.today} label="今天">
-              {state.today.map((id) => row(id, false))}
-            </FlipList>
-          </div>
+          <WebSectionHead id="web-today-head" title="今天" count={state.today.length} controls="web-today-body"
+            {...fold(FOLD_TODAY)} />
+          <Collapse open={!folded.includes(FOLD_TODAY)} id="web-today-body">
+            <div data-drop-list="today" className="web-today">
+              <FlipList className="web-tabs" keys={state.today} label="今天">
+                {state.today.map((id) => row(id, false))}
+              </FlipList>
+            </div>
+          </Collapse>
         </div>
       )}
       {drag.target?.lineTop == null ? null

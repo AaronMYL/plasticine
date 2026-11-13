@@ -13,9 +13,7 @@
 .web-extract footer { padding: 16px; border-top: 1px solid var(--line); }
 .web-extract footer button { width: 100%; }
 .web-extract > p { padding: 0 16px; font-size: 13px; }
-.web-extract-toggle { display: flex; align-items: center; gap: 8px; }
 @media(max-width:767px) {
   .web-content:has(.web-extract) > .web-frame { display: none; }
   .web-extract { width: 100%; border-left: 0; }
-  .web-extract-toggle { padding: 4px 8px; }
 }

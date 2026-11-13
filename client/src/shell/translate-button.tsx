@@ -29,8 +29,8 @@ const BLOCKED_REASON = '付款类页面不翻译';
 
 const TITLES: Readonly<Record<Exclude<TranslateStatus, 'error'>, string>> = {
   off: '翻译这一页',
-  on: '关掉翻译',
-  running: '正在翻译',
+  on: '翻译开着，点开换显示方式或关掉',
+  running: '正在翻译，点开换显示方式或关掉',
   blocked: BLOCKED_REASON,
 };
 /** 没拿到具体原因时（页面报有段落没译成，原因已经清掉）的一句。 */
@@ -107,12 +107,15 @@ function TranslateMenu({ translator, tabId, url, active, onClose }: {
   const choose = (mode: TranslateDisplay): void => run(translator.setDisplay(mode), false);
   return (
     <div className="translate-menu" role="menu" aria-label="翻译" {...{ [HIT_REGION_ATTRIBUTE]: 'translate-menu' }}>
-      {active ? (
-        <button type="button" role="menuitem" className="translate-menu-row" onClick={() => {
-          translator.stop(tabId);
-          onClose();
-        }}>关掉翻译</button>
-      ) : null}
+      {/* 11-13：第一行就是两种显示（切换不重译）；关掉翻译在最下面。 */}
+      <div className="segmented translate-menu-display" role="group" aria-label="显示">
+        {(['bilingual', 'translation'] as const).map((mode) => (
+          <button key={mode} type="button" role="menuitemradio" aria-checked={display === mode}
+            aria-pressed={display === mode} className="segmented-item" onClick={() => choose(mode)}>
+            {mode === 'bilingual' ? '双语对照' : '只看译文'}
+          </button>
+        ))}
+      </div>
       <button type="button" role="menuitem" className="translate-menu-row" aria-expanded={targets}
         onClick={() => setTargets((open) => !open)}>
         <span>翻译成</span>
@@ -130,14 +133,6 @@ function TranslateMenu({ translator, tabId, url, active, onClose }: {
           ))}
         </div>
       ) : null}
-      <div className="segmented translate-menu-display" role="group" aria-label="显示">
-        {(['bilingual', 'translation'] as const).map((mode) => (
-          <button key={mode} type="button" role="menuitemradio" aria-checked={display === mode}
-            aria-pressed={display === mode} className="segmented-item" onClick={() => choose(mode)}>
-            {mode === 'bilingual' ? '双语对照' : '只看译文'}
-          </button>
-        ))}
-      </div>
       <hr className="translate-menu-line" />
       {site === null ? null : (
         <label className="translate-menu-row">
@@ -152,6 +147,13 @@ function TranslateMenu({ translator, tabId, url, active, onClose }: {
       )}
       <hr className="translate-menu-line" />
       <TranslateModelRow />
+      {active ? <>
+        <hr className="translate-menu-line" />
+        <button type="button" role="menuitem" className="translate-menu-row" onClick={() => {
+          translator.stop(tabId);
+          onClose();
+        }}>关掉翻译</button>
+      </> : null}
     </div>
   );
 }
@@ -218,6 +220,10 @@ function TranslateControl({ translator, tabId, url }: { translator: WebTranslato
   const status = state.status;
   const reason = state.reason ?? FAILED_REASON;
   const title = status === 'error' ? `${reason}${RETRY_HINT}` : TITLES[status];
+  // 开着时按钮上写进度（11-13 设计稿）：在译 12 / 40 段、译完了、3 段没译成。
+  const total = state.done + state.pending + state.failed;
+  const progress = status === 'running' ? (total === 0 ? '在译' : `在译 ${state.done} / ${total} 段`)
+    : status === 'on' ? '译完了' : status === 'error' ? `${Math.max(state.failed, 1)} 段没译成` : null;
   const cancelPress = (): void => {
     if (press.current !== null) {
       window.clearTimeout(press.current);
@@ -227,6 +233,7 @@ function TranslateControl({ translator, tabId, url }: { translator: WebTranslato
   return (
     <span className="translate" ref={wrap}>
       <button type="button" className="icon-button translate-button" data-status={status}
+        data-text={progress === null ? undefined : 'true'}
         aria-label={status === 'error' ? '重试翻译' : '翻译这一页'}
         aria-pressed={status === 'on' || status === 'running' || status === 'error'}
         aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined}
@@ -239,11 +246,15 @@ function TranslateControl({ translator, tabId, url }: { translator: WebTranslato
           }
           if (open) {
             close();
+            if (status !== 'error') { return; }
           }
           if (status === 'error') {
             translator.retry(tabId);
-          } else {
+          } else if (status === 'off') {
             translator.toggle(tabId, url);
+          } else if (!open) {
+            // 开着时点一下是出菜单（换显示方式、关掉），不直接关——关掉在菜单最下面。
+            show();
           }
         }}
         onContextMenu={(event) => {
@@ -268,6 +279,7 @@ function TranslateControl({ translator, tabId, url }: { translator: WebTranslato
         onPointerUp={cancelPress} onPointerLeave={cancelPress}>
         <Icon name="translate" size={16} />
         <StatusDot status={status} reason={reason} />
+        {progress === null ? null : <span className="translate-progress">{progress}</span>}
       </button>
       {status === 'error' || status === 'blocked' ? <span id={reasonId} className="sr-only">{title}</span> : null}
       {shown ? createPortal(<span id={menuId} ref={pop} className="translate-pop" style={place}

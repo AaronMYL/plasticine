@@ -16,6 +16,7 @@ import {
   webBookmarks,
   type WebBookmark,
 } from '../../views/bookmarks/bookmark-address.ts';
+import { WebSectionHead } from './web-section-head.tsx';
 import { Collapse } from '../collapse.tsx';
 import { FlipList } from '../flip-list.tsx';
 import { Icon } from '../icons.tsx';
@@ -174,11 +175,8 @@ export function WebBookmarks(): ReactNode {
   return (
     <>
       <section className="web-bookmarks" aria-labelledby="web-bookmarks-head" data-dragging={drag.dragging !== null}>
-        <button type="button" id="web-bookmarks-head" className="web-bookmarks-head" aria-expanded={!collapsed}
-          aria-controls={LIST_ID} onClick={() => shellPrefs.setBookmarksCollapsed(!collapsed)}>
-          <span>书签</span>
-          <span className="web-bookmarks-chevron" aria-hidden="true"><Icon name="chevron-down" size={12} /></span>
-        </button>
+        <WebSectionHead id="web-bookmarks-head" title="书签" count={shown.length} collapsed={collapsed}
+          controls={LIST_ID} onToggle={() => shellPrefs.setBookmarksCollapsed(!collapsed)} />
         <Collapse open={!collapsed} id={LIST_ID}>
           <div ref={list} className="web-bookmarks-body">
             <FlipList className="web-bookmarks-list" keys={keys} label="书签">

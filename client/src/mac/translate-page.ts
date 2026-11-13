@@ -98,7 +98,7 @@ export function installPageTranslator(host: TranslatorHost): PageTranslator {
     if (segment !== undefined && segment.state === 'done' && segment.node !== null) {
       const chosen = segment;
       toolbar.show(segment.node, { again: () => retranslate(chosen), copy: () => copy(chosen),
-        ask: () => ask(chosen) });
+        ask: () => ask(chosen) }, config?.display === 'translation' ? chosen.source : undefined);
     }
   }
 
@@ -200,6 +200,7 @@ export function installPageTranslator(host: TranslatorHost): PageTranslator {
       segment.element.appendChild(node);
     }
     segment.node = node;
+    waitMode(segment, config?.display === 'translation');
     return node;
   }
 
@@ -236,12 +237,19 @@ export function installPageTranslator(host: TranslatorHost): PageTranslator {
     progress();
   }
 
+  /** 只看译文时还没译到的段落：原文先留着、变淡（不出灰条），译好了原地换。 */
+  function waitMode(segment: Segment, on: boolean): void {
+    (segment.element as HTMLElement).toggleAttribute('data-plasticine-wait', on && segment.state !== 'done');
+  }
+
   /**
    * 只看译文：原文的字号记成变量（译文照这个大小），元素标 data-plasticine-only（样式把原文藏起）。
    * 还原时连 style 属性一起还原：原来没有就去掉，不留一个空的 style=""。
    */
   function onlyMode(segment: Segment, on: boolean): void {
     const element = segment.element as HTMLElement;
+    // 等着的样子只给「只看译文、正在等」的段落；译好了、没译成、换回双语对照都撤掉。
+    element.toggleAttribute('data-plasticine-wait', on && segment.node?.getAttribute('data-state') === 'pending');
     if (on && segment.state === 'done') {
       if (!element.hasAttribute('data-plasticine-only')) {
         const computed = doc.defaultView?.getComputedStyle(element);
@@ -253,10 +261,8 @@ export function installPageTranslator(host: TranslatorHost): PageTranslator {
         element.style.setProperty('--plasticine-mb', computed?.marginBottom || '0px');
       }
       element.setAttribute('data-plasticine-only', '');
-      segment.node?.setAttribute('title', segment.source);
       return;
     }
-    segment.node?.removeAttribute('title');
     if (!element.hasAttribute('data-plasticine-only')) {
       return;
     }

@@ -321,6 +321,9 @@ margin-bottom:var(--plasticine-mb)!important}
 [data-plasticine-only]>plasticine-tr{display:inline!important;font-size:var(--plasticine-fs)!important;
 line-height:var(--plasticine-lh)!important;margin:0!important;padding:0!important;border:0!important;opacity:1!important}
 [data-plasticine-only]::marker{font-size:var(--plasticine-fs)}
+[data-plasticine-wait]{opacity:.45}
+[data-plasticine-wait]>plasticine-tr{display:none!important}
+@media (prefers-reduced-motion:no-preference){[data-plasticine-only],[data-plasticine-wait]{transition:opacity .2s ease-out}}
 plasticine-tr[data-state="failed"]{display:inline!important;margin:0!important;padding:0!important;
 border:0!important;opacity:1}
 `;
@@ -335,8 +338,21 @@ font:500 12px/16px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
 box-shadow:0 0 0 1px rgba(249,249,247,.14),0 4px 16px rgba(0,0,0,.4)}}
 .mark{display:grid;place-items:center;width:24px;height:24px;opacity:.5}
 button{all:unset;display:flex;align-items:center;gap:4px;height:24px;padding:0 6px;border-radius:6px;cursor:pointer}
+button[hidden]{display:none}
+button[aria-pressed="true"]{background:rgba(127,127,127,.16)}
 button:hover,button:focus-visible{background:rgba(127,127,127,.16)}
 svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+`;
+// 只看译文时「看原文」浮出来的那张卡：在这段下面，和这段一样宽；页面的样式碰不到（影子 DOM）。
+const ORIGINAL_STYLE = `
+:host{all:initial;position:absolute;z-index:2147483646;display:none;box-sizing:border-box}
+:host([data-open]){display:block}
+.card{box-sizing:border-box;padding:10px 14px 12px;border-radius:10px;background:#fff;color:#444;
+box-shadow:0 0 0 1px rgba(45,45,43,.1),0 8px 24px rgba(45,45,43,.14);font:15px/24px Georgia,"Times New Roman",serif;
+white-space:pre-wrap;overflow-wrap:anywhere}
+.label{display:block;margin-bottom:4px;color:#777;font:600 11px/16px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+@media (prefers-color-scheme:dark){.card{background:#2d2d2b;color:#deded9;
+box-shadow:0 0 0 1px rgba(249,249,247,.14),0 8px 24px rgba(0,0,0,.4)}.label{color:#a5a59f}}
 `;
 // 和 client/src/shell/icons.tsx 同一套描边图标（sparkle / refresh / copy / thread）。
 const ICONS = {
@@ -383,17 +399,55 @@ function createRetryMark(doc          , onRetry            )              {
   return mark;
 }
 
-                                  
+                                                             
+                                  
 
 function createToolbar(doc          , schedule                                                  )          {
   let element                     = null;
+  let toggle                     = null;
+  let card                     = null;
+  let cardText                     = null;
   let current                        = null;
+  let shown                                                        = null;
   let cancelHide                      = null;
+  const closeCard = ()       => {
+    card?.removeAttribute('data-open');
+    toggle?.setAttribute('aria-pressed', 'false');
+  };
   const hide = ()       => {
     cancelHide?.();
     cancelHide = null;
     current = null;
+    shown = null;
     element?.removeAttribute('data-open');
+    closeCard();
+  };
+  const openCard = ()       => {
+    if (shown === null || shown.original === null) {
+      return;
+    }
+    if (card === null || !card.isConnected) {
+      card = doc.createElement('plasticine-original');
+      const shadow = card.attachShadow({ mode: 'closed' });
+      shadow.innerHTML = `<style>${ORIGINAL_STYLE}</style><div class="card" role="note" aria-label="原文">`
+        + '<span class="label">原文</span><span class="text"></span></div>';
+      cardText = shadow.querySelector('.text');
+      card.addEventListener('mouseenter', () => cancelHide?.());
+      card.addEventListener('mouseleave', () => hideSoon());
+      doc.documentElement.appendChild(card);
+    }
+    if (cardText !== null) {
+      cardText.textContent = shown.original;
+    }
+    // 译文在只看译文时是行内的：按它所在的那一段（父元素）定宽和位置。
+    const block = shown.node.parentElement ?? shown.node;
+    const rect = block.getBoundingClientRect();
+    const view = doc.defaultView;
+    card.style.top = `${Math.round(rect.bottom + 8 + (view?.scrollY ?? 0))}px`;
+    card.style.left = `${Math.round(rect.left + (view?.scrollX ?? 0))}px`;
+    card.style.width = `${Math.round(Math.max(rect.width, 240))}px`;
+    card.setAttribute('data-open', '');
+    toggle?.setAttribute('aria-pressed', 'true');
   };
   const hideSoon = ()       => {
     cancelHide?.();
@@ -407,6 +461,7 @@ function createToolbar(doc          , schedule                                  
     const shadow = element.attachShadow({ mode: 'closed' });
     shadow.innerHTML = `<style>${TOOLBAR_STYLE}</style><div class="bar" role="toolbar" aria-label="译文">`
       + `<span class="mark" role="img" aria-label="Plasticine 译的" title="Plasticine 译的">${svg(ICONS.sparkle)}</span>`
+      + '<button data-act="original" aria-pressed="false" title="看原文" hidden><span>看原文</span></button>'
       + `<button data-act="again" aria-label="重译" title="重译">${svg(ICONS.refresh)}</button>`
       + `<button data-act="copy" aria-label="复制译文" title="复制译文">${svg(ICONS.copy)}</button>`
       + `<button data-act="ask" title="问这一段">${svg(ICONS.thread)}<span>问这一段</span></button></div>`;
@@ -415,6 +470,15 @@ function createToolbar(doc          , schedule                                  
       const act = target?.getAttribute('data-act');
       event.preventDefault();
       event.stopPropagation();
+      if (act === 'original') {
+        // 看原文不收工具条：再点一下收起那张卡。
+        if (card?.hasAttribute('data-open') === true) {
+          closeCard();
+        } else {
+          openCard();
+        }
+        return;
+      }
       const actions = current;
       hide();
       if (actions === null) {
@@ -428,15 +492,22 @@ function createToolbar(doc          , schedule                                  
         actions.ask();
       }
     });
+    toggle = shadow.querySelector('[data-act="original"]');
     element.addEventListener('mouseenter', () => cancelHide?.());
     element.addEventListener('mouseleave', () => hideSoon());
     doc.documentElement.appendChild(element);
     return element;
   };
-  const show = (node             , actions                )       => {
+  const show = (node             , actions                , original         )       => {
     cancelHide?.();
     current = actions;
+    // 换到另一段：上一段的原文卡收起。
+    if (shown !== null && shown.node !== node) {
+      closeCard();
+    }
+    shown = { node, original: original ?? null };
     const bar = ensure();
+    toggle?.toggleAttribute('hidden', original === undefined);
     bar.setAttribute('data-open', '');
     const rect = node.getBoundingClientRect();
     const view = doc.defaultView;
@@ -451,6 +522,10 @@ function createToolbar(doc          , schedule                                  
     hide();
     element?.remove();
     element = null;
+    toggle = null;
+    card?.remove();
+    card = null;
+    cardText = null;
   };
   return { show, hide, hideSoon, remove };
 }
@@ -517,7 +592,7 @@ function installPageTranslator(host                )                 {
     if (segment !== undefined && segment.state === 'done' && segment.node !== null) {
       const chosen = segment;
       toolbar.show(segment.node, { again: () => retranslate(chosen), copy: () => copy(chosen),
-        ask: () => ask(chosen) });
+        ask: () => ask(chosen) }, config?.display === 'translation' ? chosen.source : undefined);
     }
   }
 
@@ -619,6 +694,7 @@ function installPageTranslator(host                )                 {
       segment.element.appendChild(node);
     }
     segment.node = node;
+    waitMode(segment, config?.display === 'translation');
     return node;
   }
 
@@ -655,12 +731,19 @@ function installPageTranslator(host                )                 {
     progress();
   }
 
+  /** 只看译文时还没译到的段落：原文先留着、变淡（不出灰条），译好了原地换。 */
+  function waitMode(segment         , on         )       {
+    (segment.element               ).toggleAttribute('data-plasticine-wait', on && segment.state !== 'done');
+  }
+
   /**
    * 只看译文：原文的字号记成变量（译文照这个大小），元素标 data-plasticine-only（样式把原文藏起）。
    * 还原时连 style 属性一起还原：原来没有就去掉，不留一个空的 style=""。
    */
   function onlyMode(segment         , on         )       {
     const element = segment.element               ;
+    // 等着的样子只给「只看译文、正在等」的段落；译好了、没译成、换回双语对照都撤掉。
+    element.toggleAttribute('data-plasticine-wait', on && segment.node?.getAttribute('data-state') === 'pending');
     if (on && segment.state === 'done') {
       if (!element.hasAttribute('data-plasticine-only')) {
         const computed = doc.defaultView?.getComputedStyle(element);
@@ -672,10 +755,8 @@ function installPageTranslator(host                )                 {
         element.style.setProperty('--plasticine-mb', computed?.marginBottom || '0px');
       }
       element.setAttribute('data-plasticine-only', '');
-      segment.node?.setAttribute('title', segment.source);
       return;
     }
-    segment.node?.removeAttribute('title');
     if (!element.hasAttribute('data-plasticine-only')) {
       return;
     }

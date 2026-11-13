@@ -64,7 +64,7 @@ async function start(): Promise<AppHarness> {
 describe('网页栏的「书签」一节', () => {
   it('在搜标签和置顶之间；只列网页书签；点了新开一个标签进「今天」并切过去，书签不变；再点切回那一个', async () => {
     const app = await start();
-    const parts = [...column().querySelectorAll('.web-search, .web-bookmarks, .web-bookmarks-rule, [aria-label="今天"]')];
+    const parts = [...column().querySelectorAll('.web-search, .web-bookmarks, .web-bookmarks-rule, ul[aria-label="今天"]')];
     expect(parts.map((part) => part.className.split(' ')[0])).toEqual(['web-search', 'web-bookmarks',
       'web-bookmarks-rule', 'web-tabs']);
     expect(titles(list())).toEqual(['小红书', 'GitHub']);
@@ -197,6 +197,20 @@ describe('网页栏的「书签」一节', () => {
     fireEvent.change(within(column()).getByRole('searchbox', { name: '搜标签' }), { target: { value: '小红' } });
     fireEvent.click(within(within(column()).getByRole('list', { name: '书签' })).getByRole('button', { name: '小红书' }));
     await waitFor(() => expect(app.state.webTabs.get().tabs.map((tab) => tab.url)).toEqual([RED]));
+  });
+});
+
+describe('网页栏的小节（11-13 一套样子）', () => {
+  it('书签、今天是同一种小标题：名字和个数，都能收起，记住', async () => {
+    const app = await start();
+    const today = within(column()).getByRole('button', { name: '今天' });
+    expect(today.getAttribute('aria-expanded')).toBe('true');
+    expect(within(column()).getByRole('button', { name: '书签' }).textContent).toBe('书签2');
+    fireEvent.click(today);
+    expect(today.getAttribute('aria-expanded')).toBe('false');
+    expect(app.state.shellPrefs.store.get().collapsedColumns).toContain('web:today');
+    fireEvent.click(today);
+    expect(app.state.shellPrefs.store.get().collapsedColumns).not.toContain('web:today');
   });
 });
 

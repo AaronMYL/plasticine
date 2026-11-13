@@ -45,7 +45,7 @@ describe('网页工具条 · 文A', () => {
     expect(within(main).queryByRole('button', { name: '翻译这一页' })).toBeNull();
   });
 
-  it('点一下开翻：按下的样子、在译时有一明一暗的点；段落来了经接口译好送回；再点关掉', async () => {
+  it('点一下开翻：按下的样子、在译时有一明一暗的点和进度；段落来了经接口译好送回；再点出菜单，在菜单里关掉', async () => {
     const translate = { configure: vi.fn(), deliver: vi.fn() };
     const { app, main, tabId } = await openWebTab(translate);
     const button = await within(main).findByRole('button', { name: '翻译这一页' });
@@ -64,7 +64,12 @@ describe('网页工具条 · 文A', () => {
     emit({ type: 'progress', tabId, run: config.run, pending: 0, done: 1, failed: 0, chars: 35, firstScreenMs: 900 });
     expect(within(button).queryByRole('img', { name: '正在翻译' })).toBeNull();
     expect(within(button).getByRole('img', { name: '已翻译' })).toBeTruthy();
+    // 11-13：开着时按钮上写进度；再点一下是出菜单（第一行换显示方式），关掉在菜单最下面。
+    expect(button.textContent).toContain('译完了');
     fireEvent.click(button);
+    const menu = await screen.findByRole('menu', { name: '翻译' });
+    expect(translate.configure).not.toHaveBeenLastCalledWith(tabId, null);
+    fireEvent.click(within(menu).getByRole('menuitem', { name: '关掉翻译' }));
     expect(translate.configure).toHaveBeenLastCalledWith(tabId, null);
     expect(button.getAttribute('aria-pressed')).toBe('false');
   });
