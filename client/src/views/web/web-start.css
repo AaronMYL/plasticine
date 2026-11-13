@@ -38,6 +38,30 @@
   color: var(--fg3);
 }
 
+.web-start-engine {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  margin-right: -6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.web-start-engine:hover,
+.web-start-engine[aria-expanded='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
 .web-start-recent {
   margin-top: 36px;
 }
