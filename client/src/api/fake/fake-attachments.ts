@@ -92,6 +92,13 @@ export class FakeAttachments implements AttachmentsApi {
     return new Blob([bytes], { type: row.mimeType });
   }
 
+  /** 场景种子：放一张现成的图。 */
+  seedImage(id: string, name: string, mimeType: AttachmentView['mimeType'], base64: string): void {
+    this.rows.set(id, { id, name, mimeType, bytes: Math.floor(base64.length * 3 / 4), sha256: '0'.repeat(64),
+      status: 'ready', truncated: false, error: null, createdAt: this.now().toISOString(), summary: null });
+    this.contents.set(id, base64);
+  }
+
   purge(id: string, summary: string): AttachmentView {
     const row = this.require(id);
     this.contents.delete(id);

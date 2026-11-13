@@ -63,6 +63,7 @@ import { FakeModelProviders } from './fake-model-providers.ts';
 import { pieces } from './fake-line-script.ts';
 import { lineSceneOf, seedLines } from './lines-seed.ts';
 import { seedLetterScene } from './letter-seed.ts';
+import { seedPageScene } from './page-seed.ts';
 import { seedWorkScene, workSceneOf } from './work-seed.ts';
 
 /** 本地开发里导入一本书、生成一次大纲要等多久（毫秒）：够看清进行中的样子，又不拖。 */
@@ -133,7 +134,7 @@ export interface FakeApi {
 
 /** 本地开发的线和模型连接：场景看地址里的 ?scene=（lines-seed.ts）；硬线卡答了，主对话接着跑。 */
 function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProviders; asks: FakeAsks;
-  contacts: FakeContacts; outbound: FakeOutbound;
+  contacts: FakeContacts; outbound: FakeOutbound; attachments: FakeAttachments;
   projectId: string | null }, now: Date): void {
   const { lines, modelProviders, asks } = deps;
   const search = typeof window === 'undefined' ? '' : window.location.search;
@@ -188,6 +189,11 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   // ?scene=sample：研究周报样刊出来、附「开启定时 / 再改改」卡（第 7 批第 14 条，设计稿 Chat-Sample）。
   if (scene === 'sample') {
     seedSampleScene(lines, (seed) => asks.raise(seed), now);
+    return;
+  }
+  // ?scene=page：开着「问这一页」发出去的一句，带网页结构和截图（11-13 快照卡）。
+  if (scene === 'page') {
+    seedPageScene(lines, deps.attachments, now);
     return;
   }
   // ?scene=letter：早上收到的来信（第 8 批第 6 条，设计稿 Chat-Letter）。
@@ -330,7 +336,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       seedNetworkScene({ contacts, network }, now(), netScene);
     }
     const cyberHunter = projects.names().find((item) => item.name === 'Cyber Hunter')?.id ?? null;
-    seedNewKernel({ lines, modelProviders, asks, contacts, outbound, projectId: cyberHunter }, now());
+    seedNewKernel({ lines, modelProviders, asks, contacts, outbound, attachments, projectId: cyberHunter }, now());
     if (typeof window !== 'undefined'
       && new URLSearchParams(window.location.search).get('scene') === 'network-attachments') {
       seedNetworkAttachmentScene(contacts, networkAttachments, now());

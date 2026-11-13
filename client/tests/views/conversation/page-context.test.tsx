@@ -143,6 +143,36 @@ describe('发送前的当前页来源', () => {
     expect((screen.getByRole('textbox', { name: '问一句' }) as HTMLTextAreaElement).value).toBe('按这个页面整理');
   });
 
+  it('桌面客户端里开着问这一页发：截一张当时的样子一起发；对话里是网页卡（截图、标题、域名），原文点开才看', async () => {
+    const tool = vi.fn(async (_tabId: string, request: { kind: string }) => (request.kind === 'capture'
+      ? { type: 'image/jpeg', base64: btoa('jpeg-bytes-for-the-test') } : null));
+    window.plasticineDesktop = { version: '0.6.0', notify: () => undefined, webTabs: {
+      sync: () => undefined, navigate: () => undefined, command: () => undefined, tools: ['capture'], tool,
+      snapshot: () => Promise.resolve(SNAPSHOT) } };
+    const app = await renderApp();
+    act(() => {
+      window.location.hash = webHash(app.state.webTabs.open(URL, SNAPSHOT.title, 'user'));
+      app.state.shellPrefs.setAskPage(true);
+    });
+    await within(await screen.findByRole('group', { name: '当前页来源' })).findByText('可见正文');
+    draft('这一页讲了什么');
+    fireEvent.click(screen.getByRole('button', { name: '发送' }));
+    const sent = await waitFor(async () => {
+      const row = (await app.api.lines.read('main', {})).messages.find((item) => item.text.includes('这一页讲了什么'));
+      expect(row).toBeDefined();
+      return row!;
+    });
+    expect(tool).toHaveBeenCalledWith(expect.any(String), { kind: 'capture', scope: 'visible' });
+    expect(sent.attachments).toHaveLength(1);
+    expect(sent.text).toContain(`〔网页快照：附件 ${sent.attachments[0]}〕`);
+    const card = (await screen.findByRole('img', { name: '这一页当时的样子' })).closest('.page-card') as HTMLElement;
+    expect(within(card).getByText('协作中的上下文')).toBeTruthy();
+    expect(within(card).getByText(/^example\.org · [\d,]+ 字$/)).toBeTruthy();
+    expect(card.querySelector('details')?.open).toBe(false);
+    // 卡上用掉的截图不在附件里再画一遍。
+    expect(screen.getAllByRole('img', { name: '这一页当时的样子' })).toHaveLength(1);
+  });
+
   it('取消当前页引用以后再发：这句不带这一页（11-13 Aaron：关了「问这一页」下一句还带着页面）', async () => {
     const app = await webPage(() => Promise.resolve(SNAPSHOT));
     await within(screen.getByRole('group', { name: '当前页来源' })).findByText('可见正文');

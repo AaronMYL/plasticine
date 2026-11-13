@@ -8,7 +8,8 @@ import { useMateMentions } from '../mates/mate-mentions.tsx';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
-import { LINE_MESSAGE_MAX_CHARS, quoteLimitMessage, type QueuedMessageView } from '../../api/shared.ts';
+import { CONVERSATION_ATTACHMENT_MAX_COUNT, LINE_MESSAGE_MAX_CHARS, quoteLimitMessage, type QueuedMessageView }
+  from '../../api/shared.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useLive } from '../../live.tsx';
 import { QuotePreview } from '../../primitives/message/quote-preview.tsx';
@@ -20,6 +21,7 @@ import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 import { useCurrentTab } from '../../shell/current-tab-context.ts';
 import { routeHash } from '../../shell/routes.ts';
 import { currentPageReference } from '../conversation/current-page-reference.ts';
+import { capturePageSnapshot, withSnapshot } from '../conversation/page-snapshot.ts';
 import { splitReply } from '../../api/shared.ts';
 import { useComposerAttachments, useConversationUi } from './conversation-ui-context.tsx';
 import { useStore } from '../../state/use-store.ts';
@@ -161,6 +163,13 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
         const asking = askPage && page.on && page.available;
         const full = asking ? await page.quoteFor(original.quotes) : null;
         const pageQuote = full ?? (asking ? await currentPageReference(currentTab, api) : null);
+        // 整页带出去的这一次，桌面客户端顺手截一张当时的样子：他看到的是快照卡，Plasticine 读截图加页面结构。
+        // 附件满了、截不了、传不上都不拦着发（卡上只有标题和网址）。
+        const room = original.attachments.filter((item) => !item.canceled).length < CONVERSATION_ATTACHMENT_MAX_COUNT;
+        const shot = full !== null && room && currentTab !== null
+          ? await capturePageSnapshot(currentTab, api.attachments) : null;
+        const sentQuote = pageQuote === null || shot === null ? pageQuote
+          : { ...pageQuote, text: withSnapshot(pageQuote.text, shot.id) };
         if (!mounted.current) return;
         if (tabRef.current !== sourceKey) {
           throw new Error('当前页已经改变，请在新页面重新发送。');
@@ -170,10 +179,10 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
           || attachments.store.get() !== original.attachments) {
           throw new Error('内容有更新，请再发一次。');
         }
-        const all = pageQuote === null ? original.quotes : [...original.quotes, pageQuote];
+        const all = sentQuote === null ? original.quotes : [...original.quotes, sentQuote];
         const limit = quoteLimitMessage(all);
         if (limit !== null) throw new Error(limit);
-        const sentAttachments = attachments.takeReady().map((item) => item.id);
+        const sentAttachments = [...attachments.takeReady().map((item) => item.id), ...(shot === null ? [] : [shot.id])];
         // 先交给线的待发记录，再清空草稿；来源预读失败不会来到这里。
         const delivery = live.lines.send(lineId, original.draft.trim(), sentAttachments, all, original.reply);
         conversationUi.clearComposer();

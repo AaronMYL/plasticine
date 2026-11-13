@@ -3,7 +3,7 @@
 // 送到了的那句，复制、回复在对话的悬停条里（views/lines/thread-actions.tsx）；11-08 第 7 批第 9 条删了气泡左边那一排
 // 旧的「复制消息」「引用这句话」（和悬停条重复）。选中一段照样能引用（QuoteSelection）。
 
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import type { QuoteChip } from '../../api/types.ts';
 import { USER_STATE_TEXT, type UserState } from './states.ts';
 import { QuoteSelection } from './quote-selection.tsx';
@@ -26,6 +26,8 @@ export interface UserMessageProps {
   onQuote?: ((text: string) => void) | undefined;
   /** 这句是回复哪一条的（「回复 Plasticine：……」，《优化清单》第 17 条）。 */
   replyTo?: { author: string; text: string } | null | undefined;
+  /** 某一类引用另有画法（「问这一页」的网页卡）：回 null 就照平常的引用片画。 */
+  renderQuote?: ((quote: QuoteChip) => ReactNode | null) | undefined;
 }
 
 /** 引用了书的那一句下面写一行「归入 · 《书名》 · 讨论」：这本书的「讨论」tab 会收着它。 */
@@ -86,7 +88,7 @@ export function UserMessage(props: UserMessageProps): ReactNode {
           {props.quotes.length > 0 ? (
             <div className="msg-quotes">
               {props.quotes.map((quote) => (
-                <QuotePreview key={quote.id} quote={quote} />
+                <Fragment key={quote.id}>{props.renderQuote?.(quote) ?? <QuotePreview quote={quote} />}</Fragment>
               ))}
             </div>
           ) : null}

@@ -12,6 +12,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import type { LineView } from '../../api/shared.ts';
 import type { AskView } from '../../api/types.ts';
 import { splitQuotes } from '../../api/quote-text.ts';
+import { PageCard } from '../conversation/page-card.tsx';
+import { parsePageQuote } from '../conversation/page-snapshot.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { UserMessage } from '../../primitives/message/index.tsx';
 import { Markdown } from '../../primitives/message/markdown.tsx';
@@ -102,10 +104,20 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
   switch (item.kind) {
     case 'user': {
       const { quotes, text } = splitQuotes(item.message.text, `line-${item.message.seq}`);
+      // 「问这一页」带的网页画成卡；卡上用掉的那张截图不再在附件里画一遍。
+      const pages = new Map(quotes.flatMap((quote) => {
+        const page = parsePageQuote(quote.text);
+        return page === null ? [] : [[quote.id, page] as const];
+      }));
+      const shots = new Set([...pages.values()].flatMap((page) => (page.snapshotId === null ? [] : [page.snapshotId])));
       return <MessageRow seq={item.message.seq} author="你" text={text}>
         <UserMessage text={text} quotes={quotes} state="sent" replyTo={item.message.replyTo}
           content={<MessageContent text={text} markdown={false} />}
-          attachments={<MessageAttachments ids={item.message.attachments} />}
+          renderQuote={(quote) => {
+            const page = pages.get(quote.id);
+            return page === undefined ? null : <PageCard quote={quote} page={page} />;
+          }}
+          attachments={<MessageAttachments ids={item.message.attachments.filter((id) => !shots.has(id))} />}
           onQuote={(selected) => onQuote(item.message.seq, selected, '你')} />
       </MessageRow>;
     }
