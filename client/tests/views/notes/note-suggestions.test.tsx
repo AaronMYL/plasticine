@@ -2,7 +2,7 @@
 // 2026-11-09 他定重做：续写停下就有、边生成边画、边打边吃（对不上才撤下）；补充光标停在段尾约 3 秒给一次，同一段只给
 // 一次（内容没变不再给，换段或这段又写了新内容算新的一次）；中文输入法组字期间不改正文也不改装饰，组完按提交的字比。
 
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { Editor } from '@tiptap/core';
 import { describe, expect, it, vi } from 'vitest';
 import type { NoteAssistRequest, NoteAssistView } from '../../../src/api/shared.ts';
@@ -67,6 +67,19 @@ describe('续写和补充都开', () => {
     expect(editor.getText()).not.toContain('要不要补一条证据');
     expect(ghost()).toBeNull();
     expect(interjection()).toBeNull();
+    turnOff();
+  }, TEST_TIMEOUT_MS);
+
+  it('灰字下面有「收下这句」（手机上代替 Tab），点了就采用；工具栏那一行 AI 有名字', async () => {
+    const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', '开头') });
+    const editor = await noteEditor();
+    vi.spyOn(app.api.notes, 'assist').mockResolvedValue({ markdown: '，续写的一句。', label: '续写' });
+    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    await waitFor(() => expect(ghost()).not.toBeNull(), { timeout: PREDICT_WAIT_MS });
+    expect(within(screen.getByRole('group', { name: '笔记 AI' })).getByRole('switch', { name: '续写' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '收下这句' }));
+    expect(editor.getText()).toContain(`${PARAGRAPH}，续写的一句。`);
+    expect(ghost()).toBeNull();
     turnOff();
   }, TEST_TIMEOUT_MS);
 

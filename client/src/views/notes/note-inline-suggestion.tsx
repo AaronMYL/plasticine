@@ -126,5 +126,7 @@ export function InlineSuggestion({ editor, suggestion, onAdopt, onDismiss }: {
     style={{ ...layout.font, ...place, textIndent: layout.indent }}>
     <span className="note-ghost" role="button" aria-label="采用续写" {...keepFocus} onClick={() => onAdopt()}>
       {suggestion.text}</span><kbd className="note-ghost-key">Tab</kbd>
+    {/* 手机没有 Tab：灰字下面给一个按钮（11-12 Aaron 看过设计稿定的）。 */}
+    <button type="button" className="note-ghost-accept" {...keepFocus} onClick={() => onAdopt()}>收下这句</button>
   </div>, layout.body);
 }

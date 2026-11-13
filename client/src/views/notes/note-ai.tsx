@@ -21,6 +21,8 @@ import { ConnectSheet, useNoModel } from '../models/connect-sheet.tsx';
 import type { NoteProposal } from './note-review.tsx';
 import './note-ai.css';
 import { useCloseOnContextMenu } from '../../shell/use-context-menu-close.ts';
+import { useKeyboardInset } from './use-keyboard-inset.ts';
+import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 
 export { NOTE_PREDICT_PAUSE_MS, NOTE_INTERJECT_PAUSE_MS } from './note-suggestions.tsx';
 export interface NoteRange { from: number; to: number }
@@ -186,9 +188,12 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
   const selectedActions = [['correct', '检查与纠正'], ['format', '排版'], ['chart', '图表化']] as const;
   const disabled = busy || pending;
   const visibleError = error ?? automaticError;
+  // 手机上这一行常在键盘上方（11-12 Aaron 看过设计稿定的）：量键盘占了多高，样式拿它当 bottom。
+  const aiRow = useRef<HTMLDivElement>(null);
+  useKeyboardInset(aiRow, useViewportWidth() < PHONE_BELOW);
 
-  return <div className="note-ai-tools">
-    <div className="note-toolbar">
+  return <div className="note-ai-tools" ref={aiRow}>
+    <div className="note-toolbar" role="group" aria-label="笔记 AI">
       {/* 11-12 全量优化第 14 条：用得最多的三样（续写、补充建议的开关和整理）直接放在工具栏上，其余收在「⋯」里。 */}
       <label className="note-ai-switch">
         <input type="checkbox" role="switch" checked={predict}

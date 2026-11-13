@@ -91,6 +91,11 @@
   height: 56px;
 }
 
+/* 写笔记时底栏上面多一行 AI（note-ai.css）：圆球再抬高一行，不压着它。 */
+.shell[data-phone='true']:has(.note-ai-tools) .chat-ball {
+  bottom: calc(56px + 16px + 48px + env(safe-area-inset-bottom));
+}
+
 .shell[data-phone='true'] .phone-bar {
   background: var(--layer-side);
 }
