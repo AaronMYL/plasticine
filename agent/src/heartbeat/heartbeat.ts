@@ -46,6 +46,8 @@ export interface HeartbeatOptions {
   stalled?: StalledPort;
   /** 没做成的后台任务（出错停下、自己说没做成）：心跳替他跟。 */
   stuck?: StuckPort;
+  /** 预测闭环（11-13）：自己的读数，偏离了才交给判断。 */
+  readings?: (now: Date) => HeartbeatFact[];
   /** 定时的订阅和回顾里，本该出、过了一小时还没出的补一期；回补了哪几个（11-12：日报漏发心跳没发现）。 */
   catchUp?: (now: Date) => string[];
   changed?: () => void;
@@ -146,7 +148,8 @@ export class Heartbeat {
     const facts = collectFacts(config.items, { state, now, zone,
       ...(this.#options.calendar === undefined ? {} : { calendar: this.#options.calendar }),
       ...(this.#options.stalled === undefined ? {} : { stalled: this.#options.stalled }),
-      ...(this.#options.stuck === undefined ? {} : { stuck: this.#options.stuck }) });
+      ...(this.#options.stuck === undefined ? {} : { stuck: this.#options.stuck }),
+      ...(this.#options.readings === undefined ? {} : { readings: this.#options.readings }) });
     const fresh = freshFacts(facts, seenOf(this.slot()));
     const seen = facts.map((fact) => fact.key);
     if (fresh.length === 0) {

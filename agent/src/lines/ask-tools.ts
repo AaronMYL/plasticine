@@ -10,6 +10,7 @@ import type { LineInputOrigin } from '../../shared/api/lines.ts';
 import type { Ask } from '../../shared/state.ts';
 import type { AskDesk, AskResolver } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
+import { autoChoice, raiseOffer, recordAsk, settleAsk } from '../loop/autonomy.ts';
 import { withdrawAsk } from './hard-line.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';
@@ -31,10 +32,13 @@ const AskUserParameters = Type.Object({
   }, { additionalProperties: false }), { maxItems: 6,
     description: 'Choices, recommended one first; empty when he should answer in words' }),
   basis: Type.Enum(ASK_BASES, { description: BASIS_PARAMETER_DESCRIPTION }),
+  topic: Type.Optional(Type.String({ minLength: 1, maxLength: 16, description: '这类事的叫法，2–8 个字，同一类每次用'
+    + '同一个词（如「排日程」「回邮件」「整理笔记」）。推出来的卡一定要写：他连续原样同意够多次，会问他这类能不能以后直接做' })),
 }, { additionalProperties: false });
 
 export interface AskToolHost {
-  state: Pick<StateService, 'asks' | 'transaction'>;
+  /** loop：预测闭环（11-13）；没有的地方（测试里的内核）不记、不放手。 */
+  state: Pick<StateService, 'asks' | 'transaction'> & Partial<Pick<StateService, 'loop'>>;
   desk: AskDesk;
   waits: AnswerWaits;
   waiting(lineId: string, on: boolean): void;
@@ -122,6 +126,12 @@ function createAskUser(host: AskToolHost, scope: LineScope): AgentTool<typeof As
       if (problem !== null) {
         throw new Error(`卡没有出：${problem}`);
       }
+      const loop = host.state.loop === undefined ? undefined : { loop: host.state.loop };
+      const auto = loop === undefined ? null : autoChoice(loop, params.topic, params.basis, params.options);
+      if (auto !== null) {
+        return { content: [{ type: 'text', text: `这类事（「${params.topic ?? ''}」）他放过手，不出卡：按推荐的`
+          + `「${auto.label}」直接做，做完在回答里告诉他一声。` }], details: { autoTopic: params.topic, optionId: auto.id } };
+      }
       const ask = host.desk.commit((changes) => host.desk.raise(changes, {
         kind: params.kind,
         purpose: QUESTION_PURPOSE,
@@ -131,11 +141,18 @@ function createAskUser(host: AskToolHost, scope: LineScope): AgentTool<typeof As
           ...(option.recommended === undefined ? {} : { recommended: option.recommended }),
           description: option.description ?? null })),
         actionId: `line-ask:${scope.lineId}:${toolCallId}`,
-        context: { lineId: scope.lineId, toolCallId },
+        context: { lineId: scope.lineId, toolCallId, ...(params.topic === undefined ? {} : { topic: params.topic }) },
         basis: params.basis,
         channel: scope.kind === 'background' ? 'interrupt' : 'popup',
       }));
+      if (loop !== undefined) {
+        recordAsk(loop, ask, params.topic);
+      }
       const answered = await awaitAnswer(host, scope.lineId, ask, signal);
+      const offer = loop === undefined ? null : settleAsk(loop, answered, params.topic);
+      if (loop !== undefined && offer !== null) {
+        host.desk.commit((changes) => raiseOffer(loop, host.desk, changes, offer));
+      }
       return { content: [{ type: 'text', text: answerSentence(answered) }], details: { askId: answered.id } };
     },
   };

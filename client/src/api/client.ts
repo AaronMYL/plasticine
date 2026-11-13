@@ -152,6 +152,8 @@ export interface NotesApi {
    */
   assistStream(id: string, input: import('./shared.ts').NoteAssistRequest, onText: (delta: string) => void,
     signal?: AbortSignal): Promise<import('./shared.ts').NoteAssistView>;
+  /** 预测闭环（11-13）：续写、补充摆出来以后他收下了还是没要。只报，不等结果改界面。 */
+  assistOutcome(id: string, input: import('./shared.ts').NoteAssistOutcome): Promise<void>;
   imported(id: string, signal?: AbortSignal): Promise<import('./shared.ts').NoteImportView>;
   /** GET /v2/notes：服务端正文搜索，翻完匹配结果的所有页。 */
   list(query: NoteSearch, signal?: AbortSignal): Promise<NoteMetaView[]>;

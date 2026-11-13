@@ -313,3 +313,28 @@ describe('中文输入法组字时', () => {
     turnOff();
   }, TEST_TIMEOUT_MS);
 });
+
+// 预测闭环（11-13 Aaron 定）：摆出来的续写他收下就报 kept；摆了一会儿被打字盖掉报 rejected；一闪而过的不报。
+describe('续写的结果报回去', () => {
+  it('Tab 收下报 kept；摆够 1.5 秒后打别的字盖掉报 rejected', async () => {
+    const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', '开头') });
+    const editor = await noteEditor();
+    let seq = 0;
+    vi.spyOn(app.api.notes, 'assistStream').mockImplementation(async () => {
+      seq += 1;
+      return { markdown: '，续写的一句。', label: '续写', loopId: `loop-${seq}` };
+    });
+    const outcome = vi.spyOn(app.api.notes, 'assistOutcome').mockResolvedValue(undefined);
+    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    await waitFor(() => expect(ghost()).not.toBeNull(), { timeout: PREDICT_WAIT_MS });
+    fireEvent.keyDown(editor.view.dom, { key: 'Tab' });
+    expect(outcome).toHaveBeenCalledWith('n1', { area: 'note_predict', loopId: 'loop-1', outcome: 'kept' });
+    await waitFor(() => expect(ghost()).not.toBeNull(), { timeout: PREDICT_WAIT_MS });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1600)); });
+    act(() => { editor.commands.insertContent('完全不一样的字'); });
+    await waitFor(() => expect(outcome).toHaveBeenCalledWith('n1',
+      { area: 'note_predict', loopId: 'loop-2', outcome: 'rejected' }));
+    expect(outcome).toHaveBeenCalledTimes(2);
+    turnOff();
+  }, TEST_TIMEOUT_MS);
+});

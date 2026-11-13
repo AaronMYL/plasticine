@@ -1,6 +1,7 @@
 import { migration as networkAttachments } from './0127-network-attachments.ts';
 import { migration as contactLinks } from './0133-contact-links.ts';
 import { migration as mateCharacters } from './0134-mate-characters.ts';
+import { migration as predictionLoop } from './0135-prediction-loop.ts';
 // The ordered list of schema migrations. Append only: a shipped migration is never edited or removed.
 
 import { migration as lineArchive } from './0066-line-archive.ts';
@@ -216,6 +217,7 @@ export const MIGRATIONS: readonly Migration[] = [
   memoryCleanups,
   contactLinks,
   mateCharacters,
+  predictionLoop,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

@@ -9,9 +9,9 @@ import { ApiError, badResponseError, NoteConflictError } from '../errors.ts';
 import { toMeta } from '../note-meta.ts';
 import { NOTE_LIST_MAX, NoteConflictSchema, NoteListResponseSchema, NOTES_PATH, NoteViewSchema } from '../shared.ts';
 import { NoteFoldersViewSchema, NoteImageViewSchema, NoteAssistViewSchema, NoteImportViewSchema } from '../shared.ts';
-import { noteAssistTimeoutMs, NoteAssistStreamEventSchema } from '../shared.ts';
+import { noteAssistTimeoutMs, NoteAssistOutcomeViewSchema, NoteAssistStreamEventSchema } from '../shared.ts';
 import type { NoteFolderCommand, NoteFoldersView, NoteImageRequest, NoteImageView,
-  NoteAssistRequest, NoteAssistView, NoteImportView } from '../shared.ts';
+  NoteAssistOutcome, NoteAssistRequest, NoteAssistView, NoteImportView } from '../shared.ts';
 import type { NoteListResponse } from '../shared.ts';
 import type { CreateNoteRequest, NoteMetaView, NoteSearch, NoteView, SaveNoteRequest } from '../types.ts';
 import type { LocalEvents } from './local-events.ts';
@@ -112,6 +112,10 @@ export class HttpNotes implements NotesApi {
   async assist(id: string, input: NoteAssistRequest, signal?: AbortSignal): Promise<NoteAssistView> {
     return this.transport.request({ method: 'POST', path: `${notePath(id)}/assist`, body: input,
       schema: NoteAssistViewSchema, what: '笔记建议', lostAs: 'failed', timeoutMs: assistTimeoutMs(input), signal });
+  }
+  async assistOutcome(id: string, input: NoteAssistOutcome): Promise<void> {
+    await this.transport.request({ method: 'POST', path: `${notePath(id)}/assist/outcome`, body: input,
+      schema: NoteAssistOutcomeViewSchema, what: '笔记建议的结果', lostAs: 'failed' });
   }
   async assistStream(id: string, input: NoteAssistRequest, onText: (delta: string) => void,
     signal?: AbortSignal): Promise<NoteAssistView> {

@@ -15,6 +15,7 @@ const EVENTS = {
   heartbeat_judge_failed: '心跳叫模型判断没成，这几件下一跳再看',
   heartbeat_changed_hook_failed: '心跳改完通知界面重读时出错',
   dream_failed: '做梦这一晚没做完，下一晚把这段补上',
+  self_notes_failed: '说明书这一晚没写成，下一晚再写',
   dream_changed_hook_failed: '做梦改完记忆通知界面重读时出错',
   schedule_notice_failed: '定时任务的结果要告诉他时出错，结果已记在定时列表里',
   schedule_tick_failed: '看有没有到点的定时任务时出错，一分钟后再看',

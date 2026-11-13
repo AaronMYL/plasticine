@@ -66,6 +66,21 @@ test('笔记AI返回建议，服务器不擅自改正文或加版本', async () 
   assert.equal(t.state.notes.readBody(current), '# 原文\n正文');
 });
 
+test('预测闭环：续写回一个 id，他收下后报回来只记一次，报错的一处不认', async () => {
+  const current = note();
+  const view = await json(await call(t, 'POST', `/v2/notes/${current.id}/assist`, {
+    cookie, body: { action: 'predict', markdown: '# 原文\n正文' },
+  }));
+  const loopId = String(view['loopId']);
+  const report = (area: string, outcome: string) => call(t, 'POST', `/v2/notes/${current.id}/assist/outcome`,
+    { cookie, body: { area, loopId, outcome } });
+  assert.deepEqual(await json(await report('note_supplement', 'kept')), { resolved: false });
+  assert.deepEqual(await json(await report('note_predict', 'kept')), { resolved: true });
+  assert.deepEqual(await json(await report('note_predict', 'rejected')), { resolved: false });
+  assert.equal(t.state.loop.tallies('note_predict')[0]?.kept, 1);
+  assert.equal((await report('note_predict', 'maybe')).status, 400);
+});
+
 /** SSE 回答拆成一条条事件，每条都要合 shared 里的 schema。 */
 function events(reply: ApiReply): NoteAssistStreamEvent[] {
   const text = Buffer.from(reply.body as ArrayBuffer).toString();

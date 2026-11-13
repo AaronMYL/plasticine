@@ -6,8 +6,10 @@ import type { LineInputOrigin } from '../../shared/api/index.ts';
 import { STANDING_PROJECT_IDS, type Suggestion, type SuggestionInput } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { ScheduleError } from './schedules.ts';
+import { heldBack, recordSuggestion, settleSuggestion, suggestionTopic } from '../loop/suggestions.ts';
 
-export type SuggestionState = Pick<StateService, 'suggestions' | 'projects' | 'transaction'>;
+export type SuggestionState = Pick<StateService, 'suggestions' | 'projects' | 'transaction'>
+  & Partial<Pick<StateService, 'loop'>>;
 
 /** 开始做：开一条后台线，做完贴回主线（lines/ 的 LineKernel.open，assemble 接上）。 */
 export interface SuggestionLines {
@@ -20,10 +22,17 @@ export interface SuggestionDeskOptions {
   changed?: () => void;
   /** 加了待办：项目页重读。 */
   projectChanged?: (projectId: string) => void;
+  now?: () => Date;
 }
 
 export type SuggestionInputDraft = Omit<SuggestionInput, 'projectId' | 'key' | 'sourceRef' | 'icon'>
-  & Partial<Pick<SuggestionInput, 'projectId' | 'key' | 'sourceRef' | 'icon'>>;
+  & Partial<Pick<SuggestionInput, 'projectId' | 'key' | 'sourceRef' | 'icon'>>
+  /** 预测闭环（11-13）：这类建议的叫法；不给按来源和图标分。只记在闭环里，不进建议卡。 */
+  & { topic?: string | undefined };
+
+/** 出了卡（created）、认回同一张（没出新的）、或这一类他最近都忽略、先不出（held）。 */
+export type SuggestResult = { suggestion: Suggestion; created: boolean; held?: undefined }
+  | { suggestion: null; created: false; held: string };
 
 export class SuggestionDesk {
   readonly #options: SuggestionDeskOptions;
@@ -33,8 +42,9 @@ export class SuggestionDesk {
   }
 
   /** 提一条建议。同一个 key 提过（不管他处理没处理）就认回那一张，不再出第二张。 */
-  suggest(input: SuggestionInputDraft): { suggestion: Suggestion; created: boolean } {
+  suggest(draft: SuggestionInputDraft): SuggestResult {
     const { state } = this.#options;
+    const { topic: given, ...input } = draft;
     const key = input.key ?? null;
     const existing = key === null ? undefined : state.suggestions.byKey(key);
     if (existing !== undefined) {
@@ -44,8 +54,16 @@ export class SuggestionDesk {
     if (projectId !== null && state.projects.get(projectId) === undefined) {
       throw new ScheduleError('not_found', `没有这个项目：${projectId}。`);
     }
+    const loop = state.loop === undefined ? undefined : { loop: state.loop };
+    const topic = suggestionTopic({ topic: given, source: input.source, icon: input.icon });
+    if (loop !== undefined && heldBack(loop, topic, this.#options.now?.() ?? new Date())) {
+      return { suggestion: null, created: false, held: topic };
+    }
     const suggestion = state.suggestions.create({ ...input, projectId, key, sourceRef: input.sourceRef ?? null,
       icon: input.icon ?? 'sparkle' });
+    if (loop !== undefined) {
+      recordSuggestion(loop, suggestion.id, topic, suggestion.title);
+    }
     this.#options.changed?.();
     return { suggestion, created: true };
   }
@@ -61,6 +79,7 @@ export class SuggestionDesk {
       projectId: suggestion.projectId, origin: { kind: 'delegation', ref: `suggestion:${suggestion.id}` } });
     const started = this.#options.state.suggestions.update(suggestion.id, suggestion.version, { status: 'started',
       lineId, actedAt: at, actedByDeviceId: deviceId });
+    this.#settle(suggestion.id, 'kept');
     this.#options.changed?.();
     return { suggestion: started, lineId };
   }
@@ -76,6 +95,7 @@ export class SuggestionDesk {
       return state.suggestions.update(suggestion.id, suggestion.version, { status: 'todo', todoId: todo.id,
         actedAt: at, actedByDeviceId: deviceId });
     });
+    this.#settle(suggestion.id, 'kept');
     this.#options.changed?.();
     this.#options.projectChanged?.(projectId);
     return { suggestion: done, projectId };
@@ -86,8 +106,17 @@ export class SuggestionDesk {
     const suggestion = this.#openOne(id);
     const dismissed = this.#options.state.suggestions.update(suggestion.id, suggestion.version,
       { status: 'dismissed', actedAt: at, actedByDeviceId: deviceId });
+    this.#settle(suggestion.id, 'rejected');
     this.#options.changed?.();
     return dismissed;
+  }
+
+  /** 预测闭环：他点了什么记进这张卡的那一条（没记过的旧卡不算）。 */
+  #settle(id: string, outcome: 'kept' | 'rejected'): void {
+    const loop = this.#options.state.loop;
+    if (loop !== undefined) {
+      settleSuggestion({ loop }, id, outcome);
+    }
   }
 
   #openOne(id: string): Suggestion {

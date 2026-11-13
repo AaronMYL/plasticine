@@ -68,12 +68,28 @@ export const NoteSupplementsSchema = Type.Array(Type.Object({
   text: Type.String({ minLength: 1, maxLength: 120 }),
   draft: Type.String({ minLength: 1, maxLength: 12_000 }),
   reference: Type.Optional(NoteSupplementReferenceSchema),
+  /** 预测闭环（11-13）：这一条记成了一次预测，他加上或没要时按这个 id 报回来。模型给的不带，服务端贴上。 */
+  loopId: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
 }, { additionalProperties: false }), { maxItems: 4 });
 export type NoteSupplement = Static<typeof NoteSupplementsSchema>[number];
 
 export const NoteAssistViewSchema = Type.Object({ markdown: Type.String(), label: Type.String(),
-  suggestions: Type.Optional(NoteSupplementsSchema) });
+  suggestions: Type.Optional(NoteSupplementsSchema),
+  /** 预测闭环（11-13）：这一句续写记成了一次预测，收下或没要时按这个 id 报回来。 */
+  loopId: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })) });
 export type NoteAssistView = Static<typeof NoteAssistViewSchema>;
+
+/**
+ * 预测闭环（11-13 Aaron 定）：续写、补充给出去以后他的反应。kept 收下了（Tab、收下这句、加上）；rejected 看到了没要
+ * （摆了一会儿被打字盖掉、Esc、×）。只在灰字或补充真的摆出来过才报，一闪而过的不报。
+ */
+export const NoteAssistOutcomeSchema = Type.Object({
+  area: Type.Enum(['note_predict', 'note_supplement']),
+  loopId: Type.String({ minLength: 1, maxLength: 64 }),
+  outcome: Type.Enum(['kept', 'rejected']),
+}, { additionalProperties: false });
+export type NoteAssistOutcome = Static<typeof NoteAssistOutcomeSchema>;
+export const NoteAssistOutcomeViewSchema = Type.Object({ resolved: Type.Boolean() }, { additionalProperties: false });
 /**
  * stream: true 的回答，和 /v2/events、浏览器画面一样是 SSE（一条一行 `data: <JSON>`）：
  * - text：续写又生成了一段（开头和光标前重复的已经去掉）；拼起来是最终文字的开头。

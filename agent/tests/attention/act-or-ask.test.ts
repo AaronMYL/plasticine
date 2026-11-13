@@ -75,7 +75,8 @@ test('现有的卡逐个归了类：每种用途都在表里；硬线的、看�
   assert.deepEqual(Object.keys(ASK_PURPOSE_LINES).sort(), [...ASK_PURPOSES].sort());
   const of = (line: string) => ASK_PURPOSES.filter((purpose) => ASK_PURPOSE_LINES[purpose].line === line).sort();
   assert.deepEqual(of('retired'), []);
-  assert.deepEqual(of('hard_line'), ['backup_restore', 'device_action', 'line_approval', 'network_task']);
+  assert.deepEqual(of('hard_line'), ['backup_restore', 'device_action', 'line_approval', 'loop_offer',
+    'network_task']);
   assert.deepEqual(of('by_confidence'), ['line_question', 'money_confirmation', 'network_reply',
     'subscription_schedule']);
   for (const purpose of of('hard_line')) {

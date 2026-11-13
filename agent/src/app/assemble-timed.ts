@@ -1,6 +1,8 @@
 // 登记进「任务 · 定时」的那几样（第 6 批二段 night 线）：订阅（研究周报、个人回顾的日报 / 周报）、心跳、做梦。
 // 都用 tasks 的计时器（每分钟看一眼）；各自到点做什么在 subs/、heartbeat/、dream/。线、通知后面才装好，这里按需取。
 
+import { loopReadings } from '../loop/readings.ts';
+import { writeSelfNotes } from '../loop/self-notes.ts';
 import { randomUUID } from 'node:crypto';
 import type { NoticeInput } from '../attention/index.ts';
 import { Dreamer, type DreamSkills } from '../brain/index.ts';
@@ -77,10 +79,12 @@ export function assembleTimed(parts: TimedParts): TimedAssembly {
       .map((line) => ({ lineId: line.id, title: line.title,
         reason: line.failure ?? line.unmetReason ?? '原因没记下' })),
     catchUp: (at) => subscriptions.catchUp(at, CATCH_UP_GRACE_MS),
+    readings: (at) => loopReadings(state, at),
     ...(parts.calendar === undefined ? {} : { calendar: parts.calendar }),
     newId: () => `item-${randomUUID().slice(0, 8)}` });
   const text = parts.text;
   const dreamNight = new DreamNight({ state, now, zone, changed, limit: () => parts.lines().backgroundLimit(),
+    selfNotes: (at, signal) => writeSelfNotes(state, text, at, signal),
     dreamer: () => (text === null ? null : new Dreamer({ state, models: text, skills: dreamSkills(parts.skills),
       now,
       // 做梦时发现的没了结的事进「任务 · 建议」，他点了才做（11-12 主动性一批）。

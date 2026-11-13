@@ -1,6 +1,7 @@
 import { FakeMates } from './fake-mates.ts';
 import { FakeSoul } from './fake-soul.ts';
 import { seedMemoryScene } from './memory-scene-seed.ts';
+import { seedOfferScene } from './offer-seed.ts';
 import { seedTeamScene } from './team-scene-seed.ts';
 import { inferSoulSection, ruleTexts } from '../../../../agent/shared/soul.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
@@ -195,6 +196,11 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   // ?scene=page：开着「问这一页」发出去的一句，带网页结构和截图（11-13 快照卡）。
   if (scene === 'page') {
     seedPageScene(lines, deps.attachments, now);
+    return;
+  }
+  // ?scene=offer：预测闭环的放手卡「这类事以后我直接做？」（11-13）。
+  if (scene === 'offer') {
+    seedOfferScene((seed) => asks.raise(seed));
     return;
   }
   // ?scene=letter：早上收到的来信（第 8 批第 6 条，设计稿 Chat-Letter）。

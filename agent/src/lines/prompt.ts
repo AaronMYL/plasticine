@@ -12,10 +12,11 @@ import { DEFAULT_MAIN_NAME } from '../../shared/api/mates.ts';
 import { mainIdentity } from '../mates/main-identity.ts';
 import { daySection } from './day-context.ts';
 import { statusSection, type StatusState } from './self-status.ts';
+import { loopSection } from '../loop/prompt.ts';
 import { BACKGROUND_HANDOFF, SIDE_TOPIC_HINT, TALK_STYLE } from './talk-style.ts';
 
 export type PromptState = Pick<StateService, 'memoryDocs' | 'projects' | 'memoryJournal' | 'lineDays'>
-  & Partial<Pick<StateService, 'mates' | 'mateGroups' | 'lineMessages' | 'kernelSettings'>> & StatusState;
+  & Partial<Pick<StateService, 'mates' | 'mateGroups' | 'lineMessages' | 'kernelSettings' | 'loop'>> & StatusState;
 
 /** publicUrl：他打开 Plasticine 的网页地址（app/public-url.ts）；没给就不写（测试里的内核）。 */
 /** name：主线的名字（第 12 批，他可以自己起）；还叫 Plasticine 时照旧写。 */
@@ -103,6 +104,7 @@ export function linePrompt(state: PromptState, line: LineRow, publicUrl?: string
     daySection(state, line),
     projectSection(state, line.projectId),
     statusSection(state, line, now),
+    loopSection(state),
     lineSection(line),
     line.kind === 'background' ? '' : TALK_STYLE,
   ].filter((section) => section.trim() !== '').join('\n\n');

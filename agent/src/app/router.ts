@@ -201,7 +201,7 @@ import { helloNodeHandler, pairNodeHandler } from './node-protocol.ts';
 import { nodeBrowserSession } from './node-browser.ts';
 import { issueNodePairingCode, listNodeActions, listNodes, revokeNodeHandler, setNodeLimitsHandler } from './nodes.ts';
 import { unlockNote } from './note-access.ts';
-import { assistNote, changeNoteFolder, getNoteImport, listNoteFolders, restoreNote, uploadNoteImage }
+import { assistNote, assistOutcome, changeNoteFolder, getNoteImport, listNoteFolders, restoreNote, uploadNoteImage }
   from './notes-workspace.ts';
 import { createNote, deleteNote, getNote, getNoteAsset, getNoteVersion, listNotes, listNoteVersions, saveNote }
   from './notes.ts';
@@ -342,6 +342,7 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: `${NOTES_PATH}/:id/images`, auth: true, handler: uploadNoteImage },
   { method: 'GET', path: `${NOTES_PATH}/:id/import`, auth: true, handler: getNoteImport },
   { method: 'POST', path: `${NOTES_PATH}/:id/assist`, auth: true, handler: assistNote },
+  { method: 'POST', path: `${NOTES_PATH}/:id/assist/outcome`, auth: true, handler: assistOutcome },
   { method: 'GET', path: NOTES_PATH, auth: true, handler: listNotes },
   { method: 'POST', path: NOTES_PATH, auth: true, handler: createNote },
   { method: 'POST', path: `${NOTES_PATH}/:id/unlock`, auth: true, handler: unlockNote },

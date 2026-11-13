@@ -18,6 +18,7 @@ import { NOTE_ASSIST_CONTEXT_CHARS, NOTE_PREDICT_BEFORE_CHARS, NOTE_PREDICT_AFTE
 import { useEditorDom } from './editor-dom.ts';
 import { noteComposing } from './note-composition.ts';
 import { InlineSuggestion, type Suggestion } from './note-inline-suggestion.tsx';
+import { LoopReports } from './note-loop-reports.ts';
 import { followTyping, ghostPosition, remaining, startPrediction, withDelta, withFinal,
   type LivePrediction } from './note-predict-live.ts';
 import { flushSuggestionSpace, SUGGESTION_KINDS, suggestionSpacePlugin, unregisterSuggestionSpace,
@@ -109,6 +110,15 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
   const live = useRef<LivePrediction | null>(null);
   const requests = useRef<{ predict: AbortController | null; interject: InterjectRequest | null }>(
     { predict: null, interject: null });
+  // 预测闭环（11-13）：摆出来的续写、补充他收下还是没要，报回去（报失败不打扰他，只在控制台留一句）。
+  const where = useRef({ api, noteId });
+  where.current = { api, noteId };
+  const reports = useRef<LoopReports | null>(null);
+  reports.current ??= new LoopReports((outcome) => {
+    void where.current.api.notes.assistOutcome(where.current.noteId, outcome)
+      .catch((cause: unknown) => console.warn('笔记建议的结果没报上，这一条不算', cause));
+  });
+  const predictLoopId = useRef<string | undefined>(undefined);
   const given = useRef({ noteId, paragraphs: new GivenParagraphs() });
   if (given.current.noteId !== noteId) {
     given.current = { noteId, paragraphs: new GivenParagraphs() };
@@ -127,7 +137,9 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
       : { kind: 'predict', text, position: ghostPosition(value), doc: value.doc });
   };
   const drop = (kind: SuggestionKind): void => {
+    reports.current?.dropped(kind);
     if (kind === 'predict') {
+      predictLoopId.current = undefined;
       requests.current.predict?.abort();
       requests.current.predict = null;
       live.current = null;
@@ -153,6 +165,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     const value = shownRef.current[kind];
     if (value === null || !current(value)) { drop(kind); return; }
     if (kind === 'interject' && item === undefined) return;
+    reports.current?.kept(kind, kind === 'predict' ? predictLoopId.current : item?.loopId);
     // 采用会改正文，另一条的位置随之作废，两条一起撤下。
     dropAll();
     if (value.kind === 'predict') {
@@ -207,7 +220,10 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
       if (controller.signal.aborted || editor.isDestroyed || editor.state.doc !== doc) return;
       const candidate: Suggestion = { text: '', items: view.suggestions ?? [], kind: 'interject',
         doc, position: to, range: { from, to } };
-      if (candidate.items!.length > 0 && current(candidate)) show('interject', candidate);
+      if (candidate.items!.length > 0 && current(candidate)) {
+        show('interject', candidate);
+        reports.current?.shown('interject', candidate.items!.map((item) => item.loopId));
+      }
       latest.current.onError(null);
     }, (cause: unknown) => {
       if (!controller.signal.aborted) latest.current.onError(errorText(cause));
@@ -254,7 +270,9 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
         const final = withFinal(live.current, view.markdown);
         if (final === null || remaining(final) === '') { drop('predict'); return; }
         live.current = final;
+        predictLoopId.current = view.loopId;
         showPrediction();
+        if (shownRef.current.predict !== null) { reports.current?.shown('predict', [view.loopId]); }
       } catch (cause) {
         if (mine()) {
           latest.current.onError(errorText(cause));
@@ -287,6 +305,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
         if (candidate.items?.length === 0) { return; }
         if (current(candidate)) {
           show('interject', candidate);
+          reports.current?.shown('interject', (candidate.items ?? []).map((item) => item.loopId));
         } else {
           // 回来时正在组字、或者刚好挪开了：没给出去，这一段还可以再要。
           given.current.paragraphs.delete(key);

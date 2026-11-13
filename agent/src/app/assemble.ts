@@ -1,3 +1,4 @@
+import { offerResolver } from '../loop/autonomy.ts';
 import { withMainSoul } from './soul-text.ts';
 import type { LinkPreviewFetchOptions } from '../cloud-tools/index.ts';
 // The wiring of the whole service in one place, used by main.ts and by the tests alike. 2026-11-05 Harness 重做：对话就是
@@ -386,6 +387,8 @@ export function assembleApp(options: AssembleOptions): App {
   const resolvers: Partial<Record<string, AskResolver>> = {
     ...lines.resolvers(),
     subscription_schedule: sampleCards.resolver,
+    // 预测闭环（11-13）：放手卡答了「以后直接做」才放。
+    loop_offer: offerResolver(state),
     money_confirmation: moneyDrafts.resolver,
     backup_restore: backups.resolver,
     ...network.resolvers(),

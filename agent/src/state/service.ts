@@ -73,6 +73,7 @@ import { createSubscriptionStore } from './subscriptions.ts';
 import { createSuggestionStore } from './suggestions.ts';
 import { createTimedSlotStore } from './timed-slots.ts';
 import { createHeartbeatFacts } from './heartbeat-facts.ts';
+import { createLoopStore } from './loop.ts';
 import { createSystemOperationsStore } from './system-operations.ts';
 import { createTermDecodings } from './term-decodings.ts';
 import { createToolGroupStore } from './tool-groups.ts';
@@ -203,6 +204,8 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     suggestions: createSuggestionStore(context),
     timedSlots: createTimedSlotStore(context),
     heartbeatFacts: createHeartbeatFacts(context),
+    // 预测闭环（11-13，迁移 0135）：记预测和他的反应、放手、做梦写的说明书。
+    loop: createLoopStore(context),
     deviceTimeZones: createDeviceTimeZoneStore(context),
     // 主人账号（2026-11-08《首次使用流程》）：名字、密码哈希、建账号令牌。
     ownerAccount: createOwnerAccountStore(context),

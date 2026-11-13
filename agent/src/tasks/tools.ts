@@ -65,6 +65,8 @@ const SuggestParameters = Type.Object({
   icon: Type.Optional(Type.Enum(SUGGESTION_ICONS)),
   key: Type.Optional(Type.String({ minLength: 1, maxLength: 200,
     description: 'Stable key so the same suggestion is never offered twice' })),
+  topic: Type.Optional(Type.String({ minLength: 1, maxLength: 16,
+    description: '这类建议的叫法，2–8 个字，同一类每次用同一个词（他常忽略的那类会先不出）' })),
 }, { additionalProperties: false });
 
 export interface TaskToolParts {
@@ -223,8 +225,12 @@ function suggestTool(parts: TaskToolParts, scope: LineScope): AgentTool<typeof S
     parameters: SuggestParameters,
     async execute(_id, raw) {
       const args = checkedArgs(SuggestParameters, raw, 'suggest');
-      const { suggestion, created } = parts.suggestions.suggest({ ...args, source: 'plasticine',
+      const result = parts.suggestions.suggest({ ...args, source: 'plasticine',
         projectId: args.projectId ?? scope.projectId, sourceRef: `line:${scope.lineId}` });
+      if (result.suggestion === null) {
+        return json({ suggestion: null, note: `「${result.held}」这类建议他最近都忽略了，这次先不出卡。` });
+      }
+      const { suggestion, created } = result;
       return json({ suggestion: { id: suggestion.id, status: suggestion.status },
         note: created ? '建议卡放进任务栏目「建议」了，他点了才开始。' : '同一件提过了，没有再出一张。' });
     },

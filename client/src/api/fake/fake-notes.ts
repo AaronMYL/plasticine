@@ -7,7 +7,7 @@ import type { NotesBatchRequest, EmptyTrashRequest } from '../shared.ts';
 import type { NotesApi } from '../client.ts';
 import { ApiError, NoteConflictError } from '../errors.ts';
 import { DEFAULT_NOTE_FOLDER, NOTE_IMAGE_MAX_BYTES } from '../shared.ts';
-import type { NoteFoldersView, NoteFolderCommand, NoteImageRequest, NoteImageView,
+import type { NoteAssistOutcome, NoteFoldersView, NoteSupplement, NoteFolderCommand, NoteImageRequest, NoteImageView,
   NoteAssistRequest, NoteAssistView, NoteImportView } from '../shared.ts';
 import type { CreateNoteRequest, NoteMetaView, NoteSearch, NoteView, SaveNoteRequest } from '../types.ts';
 import { toMeta } from '../note-meta.ts';
@@ -185,17 +185,32 @@ export class FakeNotes implements NotesApi {
     signal?.throwIfAborted();
     const related = [...this.notes.values()].find((note) => note.id !== id && !note.private
       && note.deletedAt === null);
-    if (input.action === 'interject') return { markdown: '', label: '补充建议', suggestions: [
+    if (input.action === 'interject') return { markdown: '', label: '补充建议', suggestions: this.withLoopIds([
       { kind: 'structure', text: '把经过与想法分成两节', draft: `## 经过\n\n${input.selected ?? input.markdown}` },
       { kind: 'supplement', text: '补上需要核实的时间', draft: '具体时间：[待确认]。' },
       { kind: 'example', text: '用一个已有的例子说明', draft: '例如，可以补上已经记录过的那次尝试。' },
       ...(related === undefined ? [] : [{ kind: 'contact' as const, text: `关联《${related.title}》`,
         draft: '也可以参照已有记录，再核对这次的变化。',
         reference: { kind: 'note' as const, id: related.id, label: related.title } }]),
-    ] };
+    ]) };
     const markdown = input.action === 'predict' ? '，再想一步。'
       : `${input.selected ?? input.markdown}\n\n整理后的补充。`;
-    return { markdown, label: '修改建议' };
+    return input.action === 'predict' ? { markdown, label: '修改建议', loopId: this.nextLoopId() }
+      : { markdown, label: '修改建议' };
+  }
+  private loopSeq = 0;
+  private nextLoopId(): string {
+    this.loopSeq += 1;
+    return `fake-loop-${this.loopSeq}`;
+  }
+  private withLoopIds(items: NoteSupplement[]): NoteSupplement[] {
+    return items.map((item) => ({ ...item, loopId: this.nextLoopId() }));
+  }
+  /** 预测闭环：假接口把报回来的结果记下，测试看这里。 */
+  readonly outcomes: NoteAssistOutcome[] = [];
+  async assistOutcome(id: string, input: NoteAssistOutcome): Promise<void> {
+    this.requireAccess(id);
+    this.outcomes.push(input);
   }
   /** 假的也一段段给（两个字一段，段与段之间让出一轮微任务），界面走和真接口一样的路。 */
   async assistStream(id: string, input: NoteAssistRequest, onText: (delta: string) => void,

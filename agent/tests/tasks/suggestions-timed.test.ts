@@ -44,6 +44,7 @@ test('开始做：开一条后台线，记他点的那一下；处理过的不�
   const opened: { title: string; goal: string }[] = [];
   const suggestions = desk(opened);
   const { suggestion } = suggestions.suggest(idea);
+  assert.ok(suggestion !== null);
   const started = suggestions.start(suggestion.id, 'device-mac', '2026-11-07T08:00:00.000Z');
   assert.equal(started.lineId, 'line-1');
   assert.equal(started.suggestion.status, 'started');
@@ -55,6 +56,7 @@ test('开始做：开一条后台线，记他点的那一下；处理过的不�
 test('加成待办：没归项目的进「个人」，待办记成他加的', () => {
   const suggestions = desk();
   const { suggestion } = suggestions.suggest(idea);
+  assert.ok(suggestion !== null);
   const done = suggestions.toTodo(suggestion.id, 'device-mac', '2026-11-07T08:00:00.000Z');
   assert.equal(done.projectId, 'project-personal');
   const todo = t.state.projects.items.get(done.suggestion.todoId!);

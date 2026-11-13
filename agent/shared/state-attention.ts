@@ -32,6 +32,8 @@ export const ASK_PURPOSES = [
   'line_question',
   // 第 7 批第 14 条：研究周报样刊出来时问他开不开定时（subs/sample-card.ts）。
   'subscription_schedule',
+  // 预测闭环（11-13 Aaron 定）：某一类事他连续 5 次原样同意，问「这类以后我直接做？」（loop/autonomy.ts）。
+  'loop_offer',
 ] as const;
 export const AskPurposeSchema = Type.Enum(ASK_PURPOSES);
 export type AskPurpose = Static<typeof AskPurposeSchema>;
@@ -60,6 +62,8 @@ export const ASK_PURPOSE_LINES: Readonly<Record<AskPurpose, { line: AskLine; bas
   line_approval: { line: 'hard_line', basis: 'hard_line' },
   line_question: { line: 'by_confidence', basis: 'missing' },
   subscription_schedule: { line: 'by_confidence', basis: 'inferred' },
+  // 放手是权限变化，硬线：不管把握多大都问他。
+  loop_offer: { line: 'hard_line', basis: 'hard_line' },
 };
 
 /** 四档渠道（《从零方案》第 6 节，关切上已有同一份 CHANNELS）：不打扰 · 下次汇报 · 弹框 · 立刻打断。 */

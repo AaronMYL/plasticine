@@ -1,6 +1,7 @@
 import {
   DeleteNoteRequestSchema, NOTE_ASSETS_PATH, NOTE_IMAGE_MAX_BYTES, NoteFolderCommandSchema,
-  NoteImageRequestSchema, NoteAssistRequestSchema, type NoteAssistRequest, type NoteAssistStreamEvent,
+  NoteImageRequestSchema, NoteAssistOutcomeSchema,
+  NoteAssistRequestSchema, type NoteAssistRequest, type NoteAssistStreamEvent,
 } from '../../shared/api/index.ts';
 import { cleanOutboundJson } from '../outbound.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
@@ -84,6 +85,15 @@ export async function assistNote(context: RequestContext): Promise<HandlerResult
   } finally {
     context.res.off('close', abort);
   }
+}
+
+/** 预测闭环（11-13）：续写、补充给出去以后他收下了还是没要。报过的不再改；记录不在（旧客户端、清过库）也不算错。 */
+export async function assistOutcome(context: RequestContext): Promise<Reply> {
+  requireAuth(context);
+  context.deps.state.notes.require(param(context, 'id'));
+  const input = checkInput(NoteAssistOutcomeSchema, await readJsonBody(context.req), '笔记建议的结果');
+  const resolved = context.deps.state.loop.resolveById(input.area, input.loopId, input.outcome);
+  return { status: 200, body: { resolved } };
 }
 
 /**

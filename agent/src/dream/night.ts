@@ -31,6 +31,11 @@ export interface DreamNightOptions {
   changed?: (docIds: readonly string[]) => void;
   /** 后台线同时跑几条（设置里可调）；不给按默认。 */
   limit?: () => number;
+  /**
+   * 预测闭环（11-13）：整理完记忆再写一份「我自己的说明书」（loop/self-notes.ts）。回 true 写了、false 没新结果；
+   * 失败只记日志，不算这一晚没整理成。
+   */
+  selfNotes?: (now: Date, signal: AbortSignal) => Promise<boolean>;
 }
 
 function memoText(slot: TimedSlot, key: string): string | null {
@@ -90,8 +95,24 @@ export class DreamNight {
     await this.#running;
   }
 
-  /** 整理一晚：从上次整理到的地方读到现在。 */
+  /** 整理一晚：从上次整理到的地方读到现在；之后写说明书（不管记忆这一晚整理成没有）。 */
   async run(now: Date): Promise<void> {
+    await this.#dream(now);
+    await this.#selfNotes(now);
+  }
+
+  async #selfNotes(now: Date): Promise<void> {
+    if (this.#options.selfNotes === undefined) {
+      return;
+    }
+    try {
+      await this.#options.selfNotes(now, AbortSignal.timeout(NIGHT_TIMEOUT_MS));
+    } catch (error) {
+      safeLog('warn', 'self_notes_failed', { category: errorCategory(error) });
+    }
+  }
+
+  async #dream(now: Date): Promise<void> {
     const dreamer = this.#options.dreamer();
     const from = memoText(this.slot(), 'coveredUntil') ?? new Date(now.getTime() - DAY_MS).toISOString();
     if (dreamer === null) {

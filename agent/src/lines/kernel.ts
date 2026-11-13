@@ -16,6 +16,7 @@ import { DEFAULT_TIME_ZONE, LineError, MAX_BACKGROUND_LINES, NOW, type After, ty
   type OpenLine, type SendInput, type SendResult } from './kernel-types.ts';
 import { lineTools, type LineControl } from './line-tools.ts';
 import { outcomeTool } from './outcome-tool.ts';
+import { loopTools } from '../loop/tools.ts';
 import { isAssistant, messageView, userMessage, type AttachmentNote, type LineNoticeMessage,
   type LineLetterMessage, type LineWelcomeMessage, type PostedMessage,
   type ReportOutcome } from './messages.ts';
@@ -71,7 +72,7 @@ export class LineKernel implements LineControl, SideControl {
     const submits = options.submits === undefined ? [] : [pageSubmitAskTool(askHost, options.submits)];
     const asking = (options.askTools ?? []).map((make) => make(askHost));
     this.#tools = [askUserTool(askHost), ...lineTools(this, this.#state),
-      outcomeTool(this.#state), readResultTool(this.#state),
+      outcomeTool(this.#state), readResultTool(this.#state), ...loopTools(this.#state),
       ...submits, ...asking, ...(options.tools ?? [])];
     this.#host = this.#runnerHost();
   }

@@ -40,6 +40,8 @@ export interface FactContext {
   calendar?: CalendarPort;
   stalled?: StalledPort;
   stuck?: StuckPort;
+  /** 预测闭环（11-13）：自己的读数，偏离了才有（loop/readings.ts）；不看清单，总是看。 */
+  readings?: (now: Date) => HeartbeatFact[];
 }
 
 /** 这一类事在材料里叫什么（模型按它判断，界面上的「上次看到了什么」也用它）。 */
@@ -104,7 +106,8 @@ function stuckFacts(context: FactContext): HeartbeatFact[] {
 
 /** 这一跳看到的全部；清单里删掉的那一类不看。没做成的后台任务不看清单，总是看。 */
 export function collectFacts(items: readonly HeartbeatItem[], context: FactContext): HeartbeatFact[] {
-  return [...items.flatMap((item) => factsFor(item, context)), ...stuckFacts(context)];
+  return [...items.flatMap((item) => factsFor(item, context)), ...stuckFacts(context),
+    ...(context.readings?.(context.now) ?? [])];
 }
 
 /** 比上一跳多出来的（上一跳没见过的 key）。 */
