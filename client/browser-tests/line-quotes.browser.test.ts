@@ -47,10 +47,10 @@ async function selectReply(page: Cdp, phone: boolean): Promise<string> {
     await page.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: rect.right, y: rect.y,
       button: 'left', buttons: 0, clickCount: 1 });
   }
-  await until(page, `document.querySelector('.msg-selection')`, '选文引用操作');
+  await until(page, `document.querySelector('.quote-action:not([hidden])')`, '选文引用操作');
   assert.equal(await page.evaluate('getSelection().toString()'), selected);
   const hit = await page.evaluate<boolean>(`(() => {
-    const button = document.querySelector('.msg-selection');
+    const button = document.querySelector('.quote-action:not([hidden])');
     const box = button.getBoundingClientRect();
     return box.left >= 0 && box.right <= innerWidth && box.top >= 0 && box.bottom <= innerHeight
       && button.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
@@ -108,7 +108,7 @@ for (const client of ['mac', 'phone'] as const) {
     await fill(page, 'textarea[aria-label="问一句"]', DRAFT);
     const selected = await selectReply(page, client === 'phone');
     await capture(page, `line-selection-${client}`);
-    await click(page, '引用选中文字');
+    await click(page, '引用到对话');
     await until(page, `document.querySelector('.line-quotes pre')`, '输入框引用片');
     assert.equal(await page.evaluate(`document.querySelector('.line-quotes pre').textContent`), selected);
     assert.equal(await page.evaluate(`document.querySelector('.line-input').value`), DRAFT);

@@ -21,6 +21,8 @@ for (const client of ['mac', 'phone'] as const) {
           const group = mates.createGroup({ name: '阅读小组', mateIds: [first.id, second.id] });
           groupId = group.id; groupLineId = group.lineId; mateId = first.id;
         } });
+      // 手机上 Plasticine 栏就是主线（11-12），队友和群组在右上角的名单里。
+      if (client === 'phone') await click(page, '队友和群组');
       await until(page, `(() => {
         const link = document.querySelector('a[href="#/plasticine/group/${groupId}"]');
         link?.click(); return link !== null;
@@ -45,10 +47,12 @@ for (const client of ['mac', 'phone'] as const) {
       app.respond([fauxAssistantMessage(answer)]);
       await click(page, '选择领取队友', 'document.querySelector("[aria-label=群组分工]")');
       await click(page, '资料研究员领取');
-      await until(page, `document.querySelector('[aria-label="群组分工"]')?.textContent.includes('已交付')`,
-        '同一张任务卡完成交付');
-      await until(page, `document.querySelector('[aria-label="群组分工"]')?.textContent
-        .includes('最后一点：下一步可以进入文字校对。')`, '完整交付末段');
+      // 对话里还是同一张任务卡，交付写在卡上；分工面板（11-13）把它挪到领取的那位队友名下、收进「做完」。
+      const card = `document.querySelector('[aria-label="任务：核对阅读提纲"]')`;
+      await until(page, `${card}?.textContent.includes('已交付')`, '同一张任务卡完成交付');
+      await until(page, `${card}?.textContent.includes('最后一点：下一步可以进入文字校对。')`, '完整交付末段');
+      await until(page, `document.querySelector('[aria-label="群组分工"] [aria-label="资料研究员"]')
+        ?.textContent.includes('做完 1')`, '分工面板里记在资料研究员名下');
       const finished = app.state.lines.require(task.id);
       assert.equal(finished.mateId, mateId);
       assert.equal(finished.status, 'idle');
@@ -60,7 +64,7 @@ for (const client of ['mac', 'phone'] as const) {
       await pause(200);
       await capture(page, `mate-task-delivered-${client}-${theme}`);
       await page.send('Page.reload');
-      await until(page, `document.body.textContent.includes('核对阅读提纲')`, '刷新仍保留任务卡');
+      await until(page, `document.body?.textContent.includes('核对阅读提纲') === true`, '刷新仍保留任务卡');
       assert.equal(app.state.lines.require(task.id).mateId, mateId);
     });
   }

@@ -243,6 +243,12 @@
 .feed-manage,
 .feed-sources > .text-button { align-self: flex-start; }
 .feed-target { display: flex; flex-direction: column; max-width: 560px; }
+/* 直达的那一条（11-13）：外面留一圈内边距、往外让同样多，字和上面的标题对齐；到达时的浅底铺在这一圈上，
+   字和按钮不再贴着浅底的边。 */
+.feed-target-block { margin-inline: -16px; padding: 12px 16px; border-radius: 12px;
+  transition: background-color var(--motion-base) var(--ease-out); }
+/* 手机页边只有 16：只往外让 8，浅底不顶到屏幕边。 */
+@media (max-width: 767px) { .feed-target-block { margin-inline: -8px; padding-inline: 8px; } }
 
 /* 信息源在 Sheet 里：手机抽屉的 body 没有内边距，这里补上；桌面 panel 的 16 由 sheet-body 给。 */
 .sheet-drawer .feed-sources { padding: 16px; }

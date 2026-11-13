@@ -18,43 +18,43 @@ async function say(page: Parameters<typeof fill>[0], words: string): Promise<voi
   await key(page, 'Enter');
 }
 
-test('网页连接模型：一家都没连先连；订阅登录粘回调地址，填 key 不回显，连上后进首页', async (t) => {
+test('网页连接模型：一家都没连照样进首页，「等你」里一条去连；订阅登录粘回调地址，填 key 不回显', async (t) => {
   const { page, kernel, app } = await startStack(t, { kernel: { connected: false }, realClock: true,
     client: 'web' });
   assert.ok(kernel !== null);
   // 授权页会在新窗口打开：测试里不真开（假地址），记下开了哪里。
   await page.evaluate(`window.open = (url) => { window.__opened = String(url); return null; }`);
-  await until(page, `document.querySelector('main[aria-label="连接模型"]')`, '没连模型时的连接页');
-  await until(page, `document.querySelector('.provider-more')`, '「更多 n 家」');
-  await page.evaluate(`document.querySelector('.provider-more').click()`);
-  await click(page, '登录', `document.querySelector('[aria-label="Fake 订阅"]')`);
-  await until(page, text('在浏览器里登录 Fake 订阅'), '等浏览器授权');
+  // 11-12 首次使用解耦：不再挡在连接页前面；首页「等你」里一条「连上模型后，定时的事才会跑」，点「去连」出小窗。
+  await until(page, text('连上模型后，定时的事才会跑', '.shell-main [aria-label="等你"]'), '首页提醒去连');
+  await click(page, '去连', `document.querySelector('.shell-main [aria-label="等你"]')`);
+  const sheet = `document.querySelector('.connect-sheet')`;
+  await until(page, `${sheet}?.querySelector('.provider-more-row')`, '小窗里「其他 n 家」');
+  await page.evaluate(`${sheet}.querySelector('.provider-more-row').click()`);
+  await click(page, '登录', `(${sheet}).querySelector('[aria-label="Fake 订阅"]')`);
+  await until(page, text('在浏览器里登录', sheet), '等浏览器授权');
   await until(page, `window.__opened?.startsWith('https://auth.fake.test/')`, '打开了授权页');
   await capture(page, 'connect-login');
-  await fill(page, 'input[aria-label="回调地址"]', GOOD_CALLBACK);
-  await click(page, '继续');
-  await until(page, `document.querySelector('[role="img"][aria-label="已连接"]')`, '连上了');
-  assert.equal(kernel.models.credentials.connectedType('fake-sub'), 'oauth');
-  await click(page, '开始用');
-  await until(page, `!document.querySelector('main[aria-label="连接模型"]')
-    && document.querySelector('.shell-main')`, '进首页');
+  await fill(page, '.connect-sheet input[aria-label="回调地址"]', GOOD_CALLBACK);
+  await click(page, '继续', sheet);
+  await settle(() => kernel.models.credentials.connectedType('fake-sub') === 'oauth', '真服务端存了登录');
+  await until(page, `!document.querySelector('.connect-sheet')`, '连上后小窗关掉');
+  await until(page, `!(${text('连上模型后，定时的事才会跑')})`, '首页那条提醒没了');
 
-  // 设置 · AI：填 key 后响应和页面都不带 key；默认模型能选。
+  // 设置 · AI：「添加提供商」里填 key，响应和页面都不带 key；连上的一家进「连着的提供商」。
   await page.evaluate(`location.hash = '#/settings/ai'`);
-  await until(page, `document.querySelector('.settings-dialog .model-connections > summary')`, '模型连接入口');
-  await page.evaluate(`document.querySelector('.settings-dialog .model-connections > summary').click()`);
-  await until(page, `document.querySelector('.settings-dialog [aria-label="模型提供商"]')`, '设置里的提供商');
-  await page.evaluate(`document.querySelector('.settings-dialog .provider-more')?.click()`);
-  await click(page, '填 key', `document.querySelector('.settings-dialog [aria-label="Fake Key"]')`);
+  await click(page, '添加提供商', `document.querySelector('.settings-dialog')`);
+  const adding = `document.querySelector('.settings-dialog [aria-label="添加提供商"][role="region"]')`;
+  await until(page, adding, '设置里的提供商');
+  await page.evaluate(`${adding}.querySelector('.provider-more, .provider-more-row')?.click()`);
+  await click(page, '填 key', `(${adding}).querySelector('[aria-label="Fake Key"]')`);
   await fill(page, '.settings-dialog input[type="password"]', 'key-value-for-browser-tests');
   await click(page, '连接', `document.querySelector('.settings-dialog')`);
   await settle(() => kernel.models.credentials.connectedType('fake-key') === 'api_key', '真服务端存了 key');
   await until(page, `!document.querySelector('.settings-dialog input[type="password"]')`, 'key 表单收起');
   assert.equal(await page.evaluate(text('key-value-for-browser-tests')), false, '页面不回显 key');
   await reloadPage(page);
-  await until(page, `document.querySelector('.settings-dialog .model-connections > summary')`, '刷新后的模型连接入口');
-  await page.evaluate(`document.querySelector('.settings-dialog .model-connections > summary').click()`);
-  await until(page, `document.querySelector('.settings-dialog [aria-label="Fake Key"]')`, '刷新后还在设置');
+  const connected = `document.querySelector('.settings-dialog [aria-label="连着的提供商"]')`;
+  await until(page, `${connected}?.querySelector('[aria-label="Fake Key"]')`, '刷新后连着的里有这一家');
   assert.equal(await page.evaluate(text('key-value-for-browser-tests')), false);
   await layouts(page, 'settings-ai', '.settings-dialog', true);
   assert.equal(app.requests.length, 0, '连模型不调旧大脑');
@@ -131,7 +131,7 @@ test('后台线：在跑的能暂停；做完可展开步骤，首页从在做�
   // 首页「在做」不列做完的线；对话框（右下角）读的是同一条主线。
   await page.evaluate(`location.hash = '#/today'`);
   await until(page, `document.querySelector('.shell-main h1')`, '首页');
-  await until(page, text('查 CuaDriver 的安装来源', '.shell-main [aria-label="最近结果"]'), '已完成工作留在最近结果');
+  await until(page, text('查 CuaDriver 的安装来源', '.shell-main [aria-label="新的"]'), '已完成工作在「新的」');
   assert.equal(await page.evaluate(`Boolean(${text('查 CuaDriver 的安装来源', '.shell-main [aria-label="在做"]')})`), false,
     '做完的线不在「在做」');
   await until(page, `${DIALOG}`, '对话框');

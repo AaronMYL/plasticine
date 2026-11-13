@@ -8,7 +8,10 @@ import { button, capture, click, fill, key, settle, startStack, text, until } fr
 
 const INVITE = `document.querySelector('[aria-label="添加设备"]')`;
 
-test('设备邀请：新设备确认前不登记；当前邀请使用后两端成功，其他设备出现不能误判', async (t) => {
+// 配对码 11-08 已去掉，这两条先跳过；整个文件删不删等 Aaron 定（11-13）。
+const SKIP = '配对码 11-08 已去掉';
+
+test('设备邀请：新设备确认前不登记；当前邀请使用后两端成功，其他设备出现不能误判', { skip: SKIP }, async (t) => {
   const { app, page, browser, base } = await startStack(t, { realClock: true, hash: '/settings/system',
     plugins: [{ name: 'pairing-invitation-latency', configureServer(server) {
       server.middlewares.use((req, _res, next) => {
@@ -68,7 +71,7 @@ test('设备邀请：新设备确认前不登记；当前邀请使用后两端�
   await until(page, text('我的 iPhone', `document.querySelector('[aria-label="已配对的设备"]')`), '列表刷新');
 });
 
-test('设备邀请过期：原设备据服务端状态重领，新设备显示过期并可改用备用码', async (t) => {
+test('设备邀请过期：原设备据服务端状态重领，新设备显示过期并可改用备用码', { skip: SKIP }, async (t) => {
   const { app, page, browser, base } = await startStack(t, { realClock: true, hash: '/settings/system' });
   await click(page, '添加设备');
   await until(page, `document.querySelector('[aria-label="备用配对码"]')`, '邀请生成');

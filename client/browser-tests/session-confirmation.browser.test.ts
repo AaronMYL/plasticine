@@ -85,13 +85,6 @@ async function noKeyRequirement(page: Cdp, app: TestApp, deviceId: string): Prom
     '页面没有额外钥匙提示');
 }
 
-async function available(page: Cdp, label: string): Promise<void> {
-  const found = `Array.from(document.querySelectorAll('button')).find(node =>
-    node.getClientRects().length > 0 && node.textContent.trim() === ${JSON.stringify(label)})`;
-  await until(page, `(${found}) !== undefined`, `已经展示「${label}」`);
-  assert.equal(await page.evaluate(`(${found}).disabled`), false, `已配对会话可直接「${label}」`);
-}
-
 async function evidence(page: Cdp, client: ClientName, stage: string): Promise<void> {
   const directory = process.env['PLASTICINE_PRIVATE_NOTES_EVIDENCE'];
   if (directory === undefined) return;
@@ -123,7 +116,7 @@ async function visitNote(page: Cdp, id: string): Promise<void> {
 }
 
 for (const client of PROFILES) {
-  test(`${client}：配对后直接读私密正文、历史和备份预览，刷新也不需要解锁`, async (t) => {
+  test(`${client}：登录后直接读私密正文、历史和备份预览，刷新也不需要解锁`, async (t) => {
     let noteId = '';
     let backupId = '';
     const { app, page, cookie } = await startStack(t, { client, hash: '/notes', realClock: true,
@@ -162,27 +155,8 @@ for (const client of PROFILES) {
     await reloadPage(page);
     await until(page, text(CONTENT, '.note-body .ProseMirror'), '刷新后直接读取私密正文');
     await noKeyRequirement(page, app, session.deviceId);
+    // 「添加设备」和 Mac 专用码 11-08 随配对码一起去掉了（《决定》），这里只看备份。
     await page.evaluate(`location.hash = '#/settings/system'`);
-    await click(page, '添加设备', SETTINGS);
-    const mac = `Array.from(document.querySelectorAll('summary')).find(node =>
-      node.textContent.trim() === '连接 Mac 执行节点')`;
-    await until(page, `(${mac}) !== undefined`, '展开已有的 Mac 节点入口');
-    await page.evaluate(`(${mac}).click()`);
-    await available(page, '生成 Mac 专用码');
-    await click(page, '生成 Mac 专用码');
-    await until(page, `document.querySelector('.device-pair-mac [role="status"] .mono')
-      ?.textContent.trim().length === 9`, '真实服务返回 Mac 节点专用码');
-    const issued = (await observed(page)).find((entry) => entry.path === '/v2/nodes/pairing-codes');
-    assert.ok(issued);
-    assert.equal(issued.status, 201);
-    assert.equal(issued.signed, false);
-    const receipt = app.state.apiRequests.find(issued.requestId ?? '');
-    assert.equal(receipt?.deviceId, session.deviceId);
-    assert.ok(typeof receipt?.body === 'object' && receipt.body !== null && 'codeId' in receipt.body);
-    const code = app.state.nodePairingCodes.get(String(receipt.body.codeId));
-    assert.equal(code?.issuedByDeviceId, session.deviceId, '领码来源是实际本人设备');
-    await noKeyRequirement(page, app, session.deviceId);
-    await click(page, '关掉添加设备');
     await click(page, '全部备份', SETTINGS);
     await click(page, '校验与恢复');
     await click(page, `预览恢复 ${TITLE}`);
@@ -249,7 +223,7 @@ test('本实例系统浏览器可直接读私密笔记且仍是系统来源，�
     assert.equal(app.state.apiRequests.find(requestId), undefined, '撤销的会话不产生确认回执');
   }
   await reloadPage(page);
-  await until(page, text('配对这台设备'), '撤销后刷新回到配对页');
+  await until(page, 'document.querySelector(".login") !== null', '撤销后刷新回到登录页');
   assert.equal(await page.evaluate(text(CONTENT)), false, '撤销后不展示私密正文');
   await noKeyRequirement(page, app, user.deviceId);
 });

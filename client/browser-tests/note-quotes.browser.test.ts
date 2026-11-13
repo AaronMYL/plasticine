@@ -66,6 +66,6 @@ test('笔记引用固定点下去时的那一版和完整末尾，手机上能�
   await reloadPage(page);
   await until(page, preview, '刷新恢复记录');
   assert.equal(await page.evaluate(`${preview}.querySelector('pre').textContent`), markdown);
-  assert.equal(await page.evaluate(`${preview}.textContent.includes('版本 1')`), true);
+  assert.equal(await page.evaluate(`${preview}.textContent.includes('第 1 版')`), true);
   assert.equal(kernel.providers.oauth.state.callCount, 1, '刷新只读记录，不重复调模型');
 });

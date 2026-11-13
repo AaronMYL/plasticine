@@ -66,6 +66,10 @@ test('E53–59/70：真实刷新、语义归属、收藏、评论失败接续、
           : '效率工具'))!.id,
         summary: '按实际内容核对主题的摘要。', why: '与你的关注点有关。', event: row.id })) }) };
     }
+    // 只数评论回复：别的后台小调用（比如收藏时整理标题）不算，免得第一次失败落到别处。
+    if (request.purpose !== 'feed_comment') {
+      return { complete: true, text: JSON.stringify({ text: '无关的后台调用。', level: null }) };
+    }
     commentCalls += 1;
     if (commentCalls === 1) {
       throw new TextModelError('quota', '隔离测试：额度不足');
@@ -132,7 +136,9 @@ test('E53–59/70：真实刷新、语义归属、收藏、评论失败接续、
   // 收藏归信息流（11-04），页头分段「收藏」只看收藏的。
   await until(() => app.state.feedItems.page({}, {}).some((item) => item.id === toolItem.id && item.savedAt !== null),
     '收藏落盘');
-  await click(page, '收藏', `document.querySelector('[role="group"][aria-label="信息流来自哪里"]')`);
+  // 「收藏」11-11 起在阅读栏里（信息流下面一行），不在页头分段。
+  await until(() => page.evaluate(`(() => { const row = Array.from(document.querySelectorAll('.column-item'))
+    .find((node) => node.textContent.trim() === '收藏'); row?.click(); return row !== undefined; })()`), '阅读栏的收藏');
   await until(() => page.evaluate(`document.querySelectorAll('.feed-board [role="listitem"]').length === 1`), '只看收藏');
   // 记想法、评论在这一条的直达页（#/feed/<id>，第 3 批）。
   await page.evaluate(`location.hash = '#/feed/${toolItem.id}'`);
@@ -145,15 +151,16 @@ test('E53–59/70：真实刷新、语义归属、收藏、评论失败接续、
   await until(() => page.evaluate(`document.body.textContent.includes('已调为多推')`), '只接续这次回复');
   assert.equal(app.state.feedSources.require(tools.id).level, 'more');
   assert.equal(app.app.deps.daily.comments!.list(toolItem.id).length, 2);
-  await click(page, '问 Plasticine', `document.querySelector('[aria-label="直达的信息"]')`);
+  await click(page, '讨论', `document.querySelector('[aria-label="直达的信息"]')`);
   await until(() => page.evaluate(`Boolean(document.querySelector('.line-quotes'))`), '带入引用');
   await screenshots(page, 'feed-comments', '.feed-comments');
   const existing = app.state.feedItems.page({}, {}).find((item) => item.title === '已有条目')!;
   await page.evaluate(`location.hash = '#/feed/${existing.id}'`);
   await until(() => page.evaluate(`document.body.textContent.includes('旧版接上的一句')`), '旧双方评论');
-  // 关注点和屏蔽的网站在页头「加来源」打开的 Sheet 里（第 3 批，以前叫「信息源」）。
+  // 关注点和屏蔽的网站在第二栏「按关注点的新闻」那一行 ⋯ 的「设置…」里（第 7 批第 10 条）。
   await page.evaluate(`location.hash = '#/feed'`);
-  await click(page, '加来源');
+  await click(page, '「按关注点的新闻」的操作');
+  await click(page, '设置…');
   await click(page, '加关注点');
   await until(() => page.evaluate(`Boolean(document.querySelector('.feed-interest input[maxlength="200"]'))`), '关注点表单');
   await fill(page, '.feed-interest input[maxlength="200"]', '学习方法');

@@ -56,7 +56,7 @@ export function FeedTarget({ id }: { id: string }): ReactNode {
       </button>
     </p>}
     {shown === null ? error === null ? <p className="block-empty" role="status">正在读这条信息…</p> : null :
-      <section className="block" aria-label="直达的信息" id={`feed-target-${id}`} tabIndex={-1}
+      <section className="block feed-target-block" aria-label="直达的信息" id={`feed-target-${id}`} tabIndex={-1}
         data-target-highlight={highlighted}>
         <div className="feed-target" role="list"><FeedCard item={shown} /></div>
         <FeedComments item={shown} />

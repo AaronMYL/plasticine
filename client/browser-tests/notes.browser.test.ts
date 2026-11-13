@@ -100,6 +100,10 @@ async function shots(page: Cdp, prefix: string, prepare?: () => Promise<void>): 
       && target.isConnected && target === (columns.querySelector('.ProseMirror') ?? columns);
   })()`), '截图后桌面笔记编辑区稳定');
 }
+/** 补充建议的回答是 JSON 数组（kind / text / draft），这里只给一条「补充」。 */
+function supplement(text: string): string {
+  return JSON.stringify([{ kind: 'supplement', text, draft: text }]);
+}
 async function start(t: TestContext, script: TextStep[] = ['自然续写']): Promise<{
   app: TestApp; page: Cdp; base: string;
 }> {
@@ -307,6 +311,9 @@ test('笔记阅读布局：按主区宽度让出目录和列表，管理面板�
     await page.evaluate(`document.documentElement.dataset.theme = '${theme}'`);
     await measure(`notes-reading-chat-1280-${theme}`);
   }
+  // 对话框贴在右边时占掉主区宽度（11-10 起），量列表收起前先缩回圆球。
+  await click(page, '缩小对话框');
+  await until(() => page.evaluate(`!document.querySelector('.chat-dialog')`), '缩回圆球');
   await resizeNotes(page, 1440, 900);
   await page.evaluate(`document.querySelector('.note-list').scrollTop = 160`);
   const scroll = await page.evaluate<number>(`document.querySelector('.note-list').scrollTop`);
@@ -426,14 +433,14 @@ test('D45/47/48：浏览器预测采用、AI对照保留新输入、保存冲突
   await until(() => page.evaluate(`Boolean(document.querySelector('.note-body .ProseMirror'))`), '打开正文');
   await page.evaluate(`${EDITOR}.commands.focus('end')`);
   assert.equal(await page.evaluate(`Array.from(document.querySelectorAll('label'))
-    .find(l => l.textContent.trim() === '续写建议').querySelector('input').checked`), true, '新设备默认启用预测');
+    .find(l => l.textContent.trim() === '续写').querySelector('input').checked`), true, '新设备默认启用预测');
   await until(() => page.evaluate(`Boolean(document.querySelector('.note-ghost'))`), '出现灰字预测');
   assert.equal(await page.evaluate(`document.querySelector('.ProseMirror .note-ghost') === null`), true,
     '候选处于可编辑DOM之外，避免打断输入法');
   await page.evaluate(`document.querySelector('.note-body .ProseMirror').focus()`);
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
   await until(() => page.evaluate(`${EDITOR}.getText().includes('自然续写')`), 'Tab采用预测');
-  await page.evaluate(`Array.from(document.querySelectorAll('label')).find(l => l.textContent.trim() === '续写建议')
+  await page.evaluate(`Array.from(document.querySelectorAll('label')).find(l => l.textContent.trim() === '续写')
     .querySelector('input').click()`);
   await page.evaluate(`${EDITOR}.commands.setContent(${JSON.stringify('# 思路\n\n甲段\n\n乙段')},
     { contentType: 'markdown' })`);
@@ -567,7 +574,7 @@ test('灰字在时中文输入法组字：组字中不发改装饰的事务、�
 test('笔记建议贴着正文：编号列表里Tab采用续写、灰字在光标行、补充建议在段落下方、选段工具不挡选中的字',
   async (t) => {
     const long = '，接着把第二项写完整，不在半句停下，也不受字数限制，一直写到这一段自然结束的地方。';
-    const { app, page } = await start(t, [long, '要不要先列出验证这件事的证据？']);
+    const { app, page } = await start(t, [long, supplement('要不要先列出验证这件事的证据？')]);
     const note = app.state.notes.create({ markdown: '1. 第一项要点\n2. 正在写的第二项', folder: '笔记', author: 'user' });
     await page.evaluate(`location.hash = '#/notes/${note.id}'`);
     await reloadPage(page);
@@ -592,19 +599,27 @@ test('笔记建议贴着正文：编号列表里Tab采用续写、灰字在光�
     assert.equal(await page.evaluate(`document.querySelectorAll('.note-body ol ol, .note-body li li').length`), 0,
       'Tab没有把这一项缩进成下一级');
     assert.equal(await page.evaluate(`document.querySelectorAll('.note-body li').length`), 2);
-    await page.evaluate(`Array.from(document.querySelectorAll('label')).find(l => l.textContent.trim() === '续写建议')
+    await page.evaluate(`Array.from(document.querySelectorAll('label')).find(l => l.textContent.trim() === '续写')
       .querySelector('input').click()`);
     await page.evaluate(`Array.from(document.querySelectorAll('label')).find(l => l.textContent.trim() === '补充建议')
       .querySelector('input').click()`);
     await page.evaluate(`${EDITOR}.commands.focus('end');
       ${EDITOR}.commands.insertContent(${JSON.stringify('想清楚为什么这件事值得做。'.repeat(8))})`);
     await until(() => page.evaluate(`Boolean(document.querySelector('.note-body .note-suggestion'))`), '补充建议出现');
+    // 正在写的那段（Tab 采用续写后光标落到列表下面的新段）：量它文字的底边，不算给建议让出的空白。
     const below = await page.evaluate<{ top: number; item: number }>(`(() => {
-      const items = document.querySelectorAll('.note-body li');
-      return { top: document.querySelector('.note-body .note-suggestion').getBoundingClientRect().top,
-        item: items[items.length - 1].querySelector('p').getBoundingClientRect().bottom };
+      const block = Array.from(document.querySelectorAll('.note-body .ProseMirror > *'))
+        .filter(node => node.textContent.includes('想清楚')).pop();
+      const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+      let bottom = 0;
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        bottom = Math.max(bottom, range.getBoundingClientRect().bottom);
+      }
+      return { top: document.querySelector('.note-body .note-suggestion').getBoundingClientRect().top, item: bottom };
     })()`);
-    assert.ok(below.top >= below.item, '补充建议在当前段落下方，不盖住正在写的字');
+    assert.ok(below.top >= below.item, `补充建议在当前段落下方，不盖住正在写的字 ${JSON.stringify(below)}`);
     await layoutShot(page, 'notes-interject');
     await click(page, '不用', `document.querySelector('.note-suggestion')`);
     await page.evaluate(`Array.from(document.querySelectorAll('label')).find(l => l.textContent.trim() === '补充建议')
@@ -632,7 +647,7 @@ test('笔记建议贴着正文：编号列表里Tab采用续写、灰字在光�
 test('续写和补充同时在：灰字在光标行、补充排在灰字下面不叠，Tab 采用续写，补充随之撤下', async (t) => {
   const long = '，再把这件事和上周的记录对一下，看看哪些是实际发生的，哪些是当时的解释，一条一条分开写清楚。';
   const { app, page } = await start(t, [async (request) => ({
-    text: request.system.includes('补充') ? '要不要先列出验证这件事的证据？' : long, complete: true })]);
+    text: request.system.includes('补充') ? supplement('要不要先列出验证这件事的证据？') : long, complete: true })]);
   const note = app.state.notes.create({ markdown: '开头', folder: '笔记', author: 'user' });
   await page.evaluate(`location.hash = '#/notes/${note.id}'`);
   await reloadPage(page);
@@ -717,7 +732,9 @@ test('D37：改名已落地但回执丢失，切页刷新后原请求核实；�
   await until(() => app.state.notes.require(note.id).folder === '新文件夹', '真实数据库已改名');
   const pending = `document.querySelector('[aria-label="还没了结的文件夹操作"]')`;
   await until(() => page.evaluate(`${pending}?.textContent.includes('再核实') === true`), '明确显示回执待核实');
-  await until(() => page.evaluate(`document.querySelector('.note-meta')?.textContent.includes('新文件夹') === true`),
+  // 正文上方不再写文件夹（笔记页头精简后），看列表里这一篇的文件夹标签。
+  await until(() => page.evaluate(`Array.from(document.querySelectorAll('.note-row-folder'))
+    .some(tag => tag.textContent === '新文件夹')`),
     '服务端事件同步打开笔记的文件夹');
   assert.equal(app.state.notes.require(note.id).version, note.version + 1);
   assert.equal(await page.evaluate(`JSON.parse(sessionStorage.getItem('folder-test-requests')).length`), 1);
@@ -734,6 +751,8 @@ test('D37：改名已落地但回执丢失，切页刷新后原请求核实；�
   await page.send('Emulation.setDeviceMetricsOverride', {
     width: 390, height: 844, deviceScaleFactor: 1, mobile: false,
   });
+  // 手机上没有侧栏，没了结的文件夹操作跟着笔记首层的文件夹一起显示。
+  await until(() => page.evaluate(`Boolean(${pending})`), '手机文件夹面板里的原操作');
   await page.evaluate(`${pending}.scrollIntoView({ block: 'center' })`);
   await click(page, '再核实', pending);
   await until(() => page.evaluate(`!${pending}`), '原操作取得明确回执');
@@ -777,7 +796,7 @@ test('D38：恢复已落地但回执丢失，刷新后可核实且不再写一�
 });
 
 test('D46/50/51：导入三版与差异、合并原版双向导航、接话不用或明确加上', async (t) => {
-  const { app, page } = await start(t, ['先搁置的一句观察。', '采用的一句额外思考。']);
+  const { app, page } = await start(t, [supplement('先搁置的一句观察。'), supplement('采用的一句额外思考。')]);
   const merged = app.state.notes.create({ markdown: '# 合并结果\n\n结果保持可编辑。', folder: '笔记', author: 'user' }, {
     legacyPayload: { note: { merges: [{ fromId: 'old-original' }] } },
   });
@@ -819,15 +838,15 @@ test('D46/50/51：导入三版与差异、合并原版双向导航、接话不�
   await page.evaluate(`Array.from(document.querySelectorAll('.note-import summary'))
     .find(summary => summary.textContent.trim() === '合并 1 份原版').click()`);
   await page.evaluate(`document.querySelector('.note-import a[href="#/notes/${original.id}"]').click()`);
-  await until(() => page.evaluate(`document.querySelector('.note-meta')?.textContent
-    .includes('已合并（原版）') === true`), '结果列表跳回原版');
+  await until(() => page.evaluate(`location.hash === '#/notes/${original.id}'
+    && document.querySelector('.note-import')?.textContent.includes('这份原版已合并进') === true`), '结果列表跳回原版');
   await until(() => page.evaluate(`Boolean(document.querySelector('.note-import a[href="#/notes/${merged.id}"]'))`),
     '返回原版后合并链接就绪');
   await page.evaluate(`document.querySelector('.note-import a[href="#/notes/${merged.id}"]').click()`);
   await until(() => page.evaluate(`Boolean(document.querySelector('.note-ai-tools'))`), '回到可编辑结果');
   // 这里只看补充：续写各管各的，开着会先用掉脚本里的回答（两个都开的测试在「续写和补充同时在」）。
-  for (const name of ['续写建议', '补充建议']) {
-    await page.evaluate(`Array.from(document.querySelectorAll('.note-toggle')).find(label =>
+  for (const name of ['续写', '补充建议']) {
+    await page.evaluate(`Array.from(document.querySelectorAll('.note-ai-switch')).find(label =>
       label.textContent.trim() === ${JSON.stringify(name)}).querySelector('input').click()`);
   }
   const paragraph = '我正在把一段经历记下来，想分清实际发生的事和自己的解释。'.repeat(4);
@@ -845,6 +864,7 @@ test('D46/50/51：导入三版与差异、合并原版双向导航、接话不�
     .includes('采用的一句额外思考') === true`), '一分钟后新一段触发接话');
   assert.ok(!await page.evaluate(`${EDITOR}.getText().includes('采用的一句额外思考')`));
   await click(page, '加上', `document.querySelector('.note-suggestion')`);
+  await click(page, '留下', `document.querySelector('.note-suggestion-draft')`);
   await until(() => app.state.notes.readBody(app.state.notes.require(merged.id)).includes('采用的一句额外思考'),
     '只有加上后才实际保存');
   assert.ok(!app.state.notes.readBody(app.state.notes.require(merged.id)).includes('先搁置的一句观察'));

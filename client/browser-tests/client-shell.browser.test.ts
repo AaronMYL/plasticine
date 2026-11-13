@@ -76,7 +76,9 @@ test('装成 Mac：有鼠标、PlasticineMac 标记和桥，网页标签同步�
   assert.match(facts.ua, /PlasticineMac\/[0-9.]+$/);
   assert.deepEqual([facts.mac, facts.ios], [true, false]);
   await until(page, `window.__plasticineFakeNative.calls.some((call) => call.method === 'titlebar')`, '顶栏布局');
-  await click(page, '[aria-label="本地优先软件的同步难题"]');
+  // 网页标签只在「网页」栏里（11-07 两层侧栏）：进网页栏点一个标签。
+  await page.evaluate(`location.hash = '#/web'`);
+  await click(page, '.web-tab-row');
   await until(page, `window.__plasticineFakeNative.calls.some((call) => call.method === 'sync'
     && call.args[0].active !== null && call.args[0].frame !== null)`, '网页标签垫到中间区');
   await click(page, '.shell-main [aria-label="更多"]');
@@ -92,7 +94,7 @@ test('装成 Mac：有鼠标、PlasticineMac 标记和桥，网页标签同步�
   assert.ok(tools.includes('circle'), `调过圈一块：${tools.join('、')}`);
 });
 
-test('手机网页：触屏、没有桥、五项底栏；项目和记忆只读承接，不支持的页保留完整地址', async (t) => {
+test('手机网页：触屏、没有桥、五项底栏；项目只读承接、记忆主题整页可读，不支持的页保留完整地址', async (t) => {
   const server = await devServer();
   const browser = await launchBrowser();
   t.after(async () => {
@@ -126,13 +128,12 @@ test('手机网页：触屏、没有桥、五项底栏；项目和记忆只读�
     + ' .phone-content [contenteditable="true"]') === null`), true, '项目详情不露编辑控件');
   await evidence(page, 'client-phone-project');
 
-  await page.evaluate(`location.hash = '#/memory/topics/memdoc-rules'`);
-  await until(page, `document.querySelector('.phone-read-title h1')?.textContent === '怎么替你做事'
-    && document.querySelector('.phone-content')?.textContent.includes('改设计先出电脑和手机截图')`, '记忆主题原文可读');
-  assert.equal(await page.evaluate('location.hash'), '#/memory/topics/memdoc-rules');
-  assert.equal(await page.evaluate(`document.querySelector('.phone-read-title .tag')?.textContent`), '只读');
-  assert.equal(await page.evaluate(`document.querySelector('.phone-content input, .phone-content textarea,'
-    + ' .phone-content [contenteditable="true"]') === null`), true, '记忆主题不露编辑控件');
+  // 记忆主题 11-11 起手机上也是整页（能看对外可见、能在对话里提），不再是只读说明页。
+  await page.evaluate(`location.hash = '#/memory/topics/t_hunter'`);
+  await until(page, `document.querySelector('.shell-main h1')?.textContent.trim() === 'Cyber Hunter'
+    && document.querySelector('.shell-main')?.textContent.includes('先写清验收规则。')`, '记忆主题原文可读');
+  assert.equal(await page.evaluate('location.hash'), '#/memory/topics/t_hunter');
+  assert.equal(await page.evaluate('document.documentElement.scrollWidth > innerWidth'), false, '手机上不横向溢出');
   await evidence(page, 'client-phone-memory');
 
   await page.evaluate(`location.hash = '#/books/book_fusheng/0/40'`);

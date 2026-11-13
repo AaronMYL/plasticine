@@ -117,8 +117,9 @@ test('邮件：整宽阅读区、沙箱 iframe、内嵌图和代理远程图都�
   assert.equal(remoteHits, 1);
   // 高度跟着内容：iframe 里没有自己的滚动条。
   await until(() => page.evaluate(`${frame}.getBoundingClientRect().height > 400`), 'iframe 高度随内容');
-  assert.equal(await page.evaluate(`Math.abs(${frame}.getBoundingClientRect().height
-    - ${frame}.contentDocument.documentElement.getBoundingClientRect().height) <= 2`), true);
+  // 图片和字体后到，高度会再调一两次；等它对齐。
+  await until(() => page.evaluate(`Math.abs(${frame}.getBoundingClientRect().height
+    - ${frame}.contentDocument.documentElement.getBoundingClientRect().height) <= 2`), 'iframe 高度和内容对齐');
   assert.equal(await page.evaluate(`getComputedStyle(${frame}.contentDocument.body).backgroundColor`),
     'rgb(255, 255, 255)');
   // 阅读区是整宽的：占满阅读区这一栏（最宽 720，减去两边留白），不是气泡的那一截。

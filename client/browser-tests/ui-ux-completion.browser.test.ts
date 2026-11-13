@@ -11,7 +11,7 @@ import { pair, startTestApp, type TestApp } from '../../agent/tests/app/helpers.
 const SIZES = [[1440, 900], [768, 1024], [390, 844], [500, 500]] as const;
 // 设置是一页（第 2 批）：分类在左栏，内容在右边。
 const SETTINGS = `document.querySelector('.settings-dialog')`;
-const SIDEBAR = `document.querySelector('.sidebar')`;
+const SIDEBAR = `document.querySelector('.rail')`;
 
 async function until(done: () => boolean | Promise<boolean>, label: string): Promise<void> {
   const deadline = Date.now() + 12_000;
@@ -65,7 +65,7 @@ async function capture(page: Cdp, prefix: string, selector: string): Promise<voi
         getComputedStyle(sheet).opacity === '1' && sheet.getAnimations().every(animation =>
           animation.playState === 'finished' || animation.playState === 'idle'))`), '浮层动画结束');
       if (prefix.startsWith('search-')) {
-        await page.evaluate(`document.querySelector('.sheet-body').scrollTop = 0`);
+        await page.evaluate(`document.querySelector('.palette-list')?.scrollTo(0, 0)`);
       }
       await page.evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({ block: 'center' })`);
       await pause(90);
@@ -130,70 +130,66 @@ function searchFixtures(app: TestApp) {
   return { note, privateNote, feed, topic };
 }
 
-async function submitSearch(page: Cdp, text: string): Promise<void> {
-  // 查找在顶栏右边（「查找或打开 · ⌘K」）；浮层开着时就直接用它的输入框。
-  if (!await page.evaluate(`Boolean(document.getElementById('global-search-input'))`)) {
-    await click(page, '查找', `document.querySelector('.topbar')`);
+/** ⌘K 浮层（11-12 起查找和切换是同一个浮层，入口在左边图标栏）：填词，等结果出来。 */
+async function openPalette(page: Cdp, text: string): Promise<void> {
+  if (!await page.evaluate(`Boolean(document.querySelector('.palette-input'))`)) {
+    await click(page, '搜索和切换', `document.querySelector('.rail')`);
   }
-  await fill(page, '#global-search-input', text);
-  await page.evaluate(`document.getElementById('global-search-input').focus()`);
-  await key(page, 'Enter');
-  try {
-    await until(() => page.evaluate(`document.querySelector('.search-status')?.textContent.startsWith('共 ')`), '查找结果');
-  } catch (cause) {
-    const state = await page.evaluate(`({ status: document.querySelector('.search-status')?.textContent,
-      error: document.querySelector('.search-error')?.textContent,
-      input: document.getElementById('global-search-input')?.value, active: document.activeElement?.id })`);
-    throw new Error(`查找浏览器状态：${JSON.stringify(state)}`, { cause });
-  }
+  await fill(page, '.palette-input', text);
+  await until(() => page.evaluate(`document.querySelectorAll('.palette-row').length > 1`), `「${text}」的结果`);
+}
+
+/** 浮层里标题是这一句的那一行（第几组由 group 定），点了打开。 */
+const paletteRow = (title: string): string => `Array.from(document.querySelectorAll('.palette-row'))
+  .find(row => row.querySelector('.palette-title')?.textContent === ${JSON.stringify(title)})`;
+
+async function choose(page: Cdp, title: string): Promise<void> {
+  await until(() => page.evaluate(`(() => { const row = ${paletteRow(title)}; row?.click(); return row !== undefined; })()`),
+    `打开「${title}」`);
 }
 
 async function verifySearch(page: Cdp, app: TestApp, fixtures: ReturnType<typeof searchFixtures>): Promise<void> {
   const { note, privateNote, feed, topic } = fixtures;
-  await submitSearch(page, '远足');
-  assert.equal(await page.evaluate(`document.querySelector('.search-results').textContent.includes('远足集合细节')`), true);
-  assert.equal(await page.evaluate(`document.querySelector('.search-results').textContent.includes('远足私密内容')`), true,
-    '配对后同样查到自己的私密笔记');
-  await capture(page, 'search-all-content', '.search-form');
-  await click(page, '打开笔记：远足私密内容');
+  await openPalette(page, '远足');
+  await until(() => page.evaluate(`Boolean(${paletteRow('旅行准备')})`), '正文深处命中的笔记');
+  assert.equal(await page.evaluate(`Boolean(${paletteRow('远足私密内容')})`), true, '登录后同样查到自己的私密笔记');
+  await capture(page, 'search-all-content', '.palette');
+  await choose(page, '远足私密内容');
   await until(() => page.evaluate(`location.hash === ${JSON.stringify(`#/notes/${privateNote.id}`)}
     && document.querySelector('.note-pane .ProseMirror')?.textContent.includes('私密行程正文可以直接阅读')`),
   '私密查找结果直接打开正文');
   assert.equal(await page.evaluate(`document.querySelector('.note-pane').textContent.includes('确认解锁')`), false);
-  await submitSearch(page, '远足');
-  await click(page, '打开笔记：旅行准备');
+  await openPalette(page, '远足');
+  await choose(page, '旅行准备');
   await until(() => page.evaluate(`location.hash === ${JSON.stringify(`#/notes/${note.id}`)}
     && document.querySelector('.note-pane')?.textContent.includes('远足集合细节')`), '笔记正文深处命中后直达');
-  await submitSearch(page, '远足');
-  await click(page, '打开信息流：远足路线的旧信息');
+  await openPalette(page, '远足');
+  await choose(page, '远足路线的旧信息');
   await targetFocused(page, `feed-target-${feed.id}`);
   assert.equal(await page.evaluate(`location.hash`), `#/feed/${feed.id}`);
-  await submitSearch(page, '回程交通');
-  await until(() => page.evaluate(`Boolean(Array.from(document.querySelectorAll('.search-result'))
-    .find(button => button.getAttribute('aria-label')?.startsWith('打开记忆：')))`), '记忆主题命中');
-  await page.evaluate(`Array.from(document.querySelectorAll('.search-result'))
-    .find(button => button.getAttribute('aria-label')?.startsWith('打开记忆：')).click()`);
+  await openPalette(page, '回程交通');
+  await choose(page, topic.title);
   await until(() => page.evaluate(`location.hash === ${JSON.stringify(`#/memory/topics/${topic.id}`)}`), '记忆直达');
-  await submitSearch(page, '分页查找');
-  if (await page.evaluate(`Boolean(${button('加载更多结果')})`)) {
-    await click(page, '加载更多结果');
-  }
-  await until(() => page.evaluate(`document.querySelector('.search-status')?.textContent
-    === '共 31 条，已显示 31 条'`), '分页完整加载');
-  assert.equal(await page.evaluate(`new Set(Array.from(document.querySelectorAll('.search-result'))
-    .map(button => button.getAttribute('aria-label'))).size`), 31);
+  // 浮层每组最多列 GROUP_MAX 条，最后一行是「让 Plasticine 做」；服务端照样查得到全部。
+  await openPalette(page, '分页查找');
+  assert.equal(await page.evaluate(`Array.from(document.querySelectorAll('.palette-row .palette-title'))
+    .filter(node => node.textContent.startsWith('分页查找资料')).length`), 4);
   assert.equal(app.state.search.query({ q: '分页查找' }).total, 31);
-  await capture(page, 'search-paged-results', '.search-form');
-  await click(page, '关掉查找');
+  await capture(page, 'search-grouped-results', '.palette');
+  // 截图换过深浅色、滚过列表，焦点可能不在浮层里；Esc 从输入框发出。
+  await page.evaluate(`document.querySelector('.palette-input')?.focus()`);
+  await key(page, 'Escape');
+  await until(() => page.evaluate(`!document.querySelector('.palette')`), 'Esc 收起浮层');
   await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'k', code: 'KeyK',
-    windowsVirtualKeyCode: 75, modifiers: 2 });
+    windowsVirtualKeyCode: 75, modifiers: 4 });
   await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'k', code: 'KeyK',
-    windowsVirtualKeyCode: 75, modifiers: 2 });
-  await until(() => page.evaluate(`document.activeElement?.id === 'global-search-input'`), 'Ctrl K打开并聚焦查找');
-  await click(page, '关掉查找');
+    windowsVirtualKeyCode: 75, modifiers: 4 });
+  await until(() => page.evaluate(`document.activeElement?.classList.contains('palette-input') === true`),
+    '⌘K 打开并聚焦');
+  await key(page, 'Escape');
 }
 
-test('普通用户完整路径：设置日常的时区、信息流单条直达与返回、查找直达笔记 / 信息流 / 记忆', async (t) => {
+test('普通用户完整路径：设置通用的时区、信息流单条直达与返回、⌘K 直达笔记 / 信息流 / 记忆', async (t) => {
   const app = await startTestApp(['本地验收的固定回复。'], { startTasks: false });
   t.after(async () => { await app.close(); });
   const fixtures = searchFixtures(app);
@@ -220,9 +216,10 @@ test('普通用户完整路径：设置日常的时区、信息流单条直达�
     width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,
   });
   await page.send('Page.reload');
-  await click(page, '设置 · Alex', SIDEBAR);
+  // 11-13 设置六段：时区在「通用」里；从地址打开设置（头像按钮的名字跟着账号走）。
+  await page.evaluate(`location.hash = '#/settings'`);
   await until(() => page.evaluate(`Boolean(${SETTINGS})`), '设置弹框');
-  await click(page, '日常', SETTINGS);
+  await click(page, '通用', SETTINGS);
   await click(page, '选择时区', SETTINGS);
   await fill(page, '.settings-time-zone input[type="search"]', '北京');
   const zoneButton = `Array.from(document.querySelectorAll('[aria-label="可选时区"] button'))

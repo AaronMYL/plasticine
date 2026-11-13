@@ -10,8 +10,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as pause } from 'node:timers/promises';
 import type { Plugin } from 'vite';
-import { issuePairingCode } from '../../agent/src/app/pairing-code.ts';
-import { pair } from '../../agent/tests/app/helpers.ts';
+import { pair, TEST_PASSWORD } from '../../agent/tests/app/helpers.ts';
 import type { BrowserTransport } from '../../agent/src/cloud-tools/index.ts';
 import { locateShotElement, selectorPreflight } from '../../scripts/browser/shot-page.ts';
 import type { Cdp } from '../../scripts/browser/cdp.ts';
@@ -85,6 +84,7 @@ test('工具：文件被别处改了不覆盖，核对新版后写回；记账�
 
 test('截图定位：Chromium 真文字范围与 visibility 覆盖、合法属性选择器', async (t) => {
   const { page } = await startStack(t);
+  await until(page, 'document.body !== null', '页面载入');
   await page.evaluate(`document.body.innerHTML = '<section style="height:1200px"><span style="display:block;`
     + `margin-top:1000px">远处文字</span></section>'`);
   assert.equal(await page.evaluate(locateShotElement({ text: '远处文字' })), false);
@@ -95,29 +95,26 @@ test('截图定位：Chromium 真文字范围与 visibility 覆盖、合法属�
   assert.equal(await page.evaluate(locateShotElement({ selector: 'button[text="保存"]' })), true);
 });
 
-test('设置：外观刷新保持；系统 · 设备领配对码、撤销另一台先说后果；手机底栏下滚收起；装到主屏幕的清单', async (t) => {
+test('设置：外观刷新保持；账号 · 登录着的设备，让另一台退出先说后果；手机底栏下滚收起；装到主屏幕的清单', async (t) => {
   const { app, page, base } = await startStack(t, { realClock: true });
   await pair(app, '另一台隔离浏览器');
-  await click(page, '设置 · Alex', `document.querySelector('.sidebar')`);
-  await select(page, 'select[aria-label="外观"]', 'dark');
+  await page.evaluate(`location.hash = '#/settings'`);
+  const appearance = `document.querySelector('[role="group"][aria-label="外观"]')`;
+  await click(page, '深色', appearance);
   await until(page, `document.documentElement.dataset.theme === 'dark'`, '外观生效');
   await reloadPage(page);
   await until(page, `document.documentElement?.dataset.theme === 'dark'`, '刷新保持外观');
   // 设置的地址跟着弹框：刷新后照样开着。
-  await select(page, 'select[aria-label="外观"]', 'light');
-  await click(page, '系统', SETTINGS);
-  const devices = `document.querySelector('[aria-label="已配对的设备"]')`;
+  await click(page, '浅色', appearance);
+  // 11-13 设置六段：登录着的设备在「账号」里；配对码 11-08 去掉了。
+  await click(page, '账号', SETTINGS);
+  const devices = `document.querySelector('[aria-label="登录着的设备"]')`;
   await until(page, text('另一台隔离浏览器', devices), '设备列表');
   await until(page, text('这台', devices), '这台');
-  await click(page, '添加设备', SETTINGS);
-  await until(page, `document.querySelector('[aria-label="备用配对码"]')?.textContent.trim().length === 9`,
-    '八位一次性配对码');
-  await click(page, '关掉添加设备');
-  await click(page, '「另一台隔离浏览器」的更多操作', SETTINGS);
-  await click(page, '撤销', `document.querySelector('[role="menu"]')`);
-  await until(page, text('撤销后那台要重新配对', SETTINGS), '先说后果');
-  await layouts(page, 'settings-system', '.settings-dialog');
-  await click(page, '确定撤销', SETTINGS);
+  await click(page, '让「另一台隔离浏览器」退出', SETTINGS);
+  await until(page, text('「另一台隔离浏览器」会退出，要用 @账号和密码重新登录。', SETTINGS), '先说后果');
+  await layouts(page, 'settings-account', '.settings-dialog');
+  await click(page, '确定退出', SETTINGS);
   await settle(() => app.state.devices.list().find((row) => row.name === '另一台隔离浏览器')?.revokedAt != null,
     '撤销落到服务端');
   await until(page, `!(${text('另一台隔离浏览器', devices)})`, '列表里去掉');
@@ -140,7 +137,7 @@ test('设置：外观刷新保持；系统 · 设备领配对码、撤销另一�
   assert.ok(manifest.icons.length >= 2);
 });
 
-test('主区出错不挡对话；浏览器控制；本人确认约定再撤回；退出这台后配对回来，会话读不到能重新连接', async (t) => {
+test('主区出错不挡对话；浏览器控制；本人确认约定再撤回；退出这台后用密码登录回来，会话读不到能重新连接', async (t) => {
   const opened: string[] = [];
   const tabActions: string[] = [];
   let snapshot: Awaited<ReturnType<NonNullable<BrowserTransport['snapshot']>>> = {
@@ -172,7 +169,7 @@ test('主区出错不挡对话；浏览器控制；本人确认约定再撤回�
   await page.evaluate('globalThis.__pageFailure = true');
   await tool(page, '#/tools/files', '这一页出错了');
   await until(page, text('隔离主区渲染故障', '.shell-main'), '主区出错');
-  assert.equal(await page.evaluate(`Boolean(document.querySelector('.sidebar'))`), true, '侧栏还在');
+  assert.equal(await page.evaluate(`Boolean(document.querySelector('.rail'))`), true, '侧栏还在');
   await fill(page, 'textarea[aria-label="问一句"]', '主区出错时我仍能补充');
   assert.equal(await page.evaluate(`document.querySelector('textarea[aria-label="问一句"]').value`),
     '主区出错时我仍能补充', '对话框照常能写');
@@ -201,25 +198,22 @@ test('主区出错不挡对话；浏览器控制；本人确认约定再撤回�
   await click(page, '确认生效', focus);
   await settle(() => app.state.agreements.require(term.id).state === 'active', '约定生效');
   await until(page, text('第 2 版', focus), '读回生效后的那一版');
-  // 撤在行尾 ⋯ 里；点了先常显后果，再点「撤」确认。
+  // 撤回在行尾 ⋯ 里；点了先常显后果，再点「撤回」确认。
   await click(page, '「浏览器词语验收」的更多操作', focus);
-  await click(page, '撤', `document.querySelector('[role="menu"]')`);
+  await click(page, '撤回', `document.querySelector('[role="menu"]')`);
   await until(page, text('撤了它就不再按这条办', focus), '撤的后果');
-  await click(page, '撤', `(${focus}).querySelector('[aria-label="确认撤掉"]')`);
+  await click(page, '撤回', `(${focus}).querySelector('[aria-label="确认撤掉"]')`);
   await settle(() => app.state.agreements.require(term.id).state === 'revoked', '撤回约定');
 
-  await page.evaluate(`location.hash = '#/settings/system'`);
-  // startStack 用 pair(app) 配的这台叫「测试手机」。
-  await click(page, '「测试手机」的更多操作', SETTINGS);
-  await click(page, '退出这台', `document.querySelector('[role="menu"]')`);
-  await until(page, text('退出后要在另一台已登录的设备上拿配对码才能回来。', SETTINGS), '先说后果');
+  // 11-08 起没有配对码：退出这台以后用密码登录回来（startStack 用 pair(app) 登录的这台叫「测试手机」）。
+  await page.evaluate(`location.hash = '#/settings/account'`);
+  await click(page, '退出这台', SETTINGS);
+  await until(page, text('退出后要用 @账号和密码重新登录。', SETTINGS), '先说后果');
   await click(page, '确定退出', SETTINGS);
-  await until(page, text('配对这台设备'), '回到配对页');
-  const { code } = issuePairingCode(app.state, app.clock.now());
-  await fill(page, 'input[autocomplete="one-time-code"]', code);
-  await fill(page, 'input[placeholder="例如：书房的 Mac"]', '重新配对的隔离浏览器');
-  await click(page, '配对');
-  await until(page, `document.querySelector('.shell-main')`, '配对后回到应用');
+  await until(page, `document.querySelector('main.login')`, '回到登录页');
+  await fill(page, '#login-password', TEST_PASSWORD);
+  await click(page, '登录');
+  await until(page, `document.querySelector('.shell-main')`, '登录后回到应用');
   await page.send('Page.enable');
   const script = await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
     const original = window.fetch; let cut = true; window.fetch = (...args) => {
