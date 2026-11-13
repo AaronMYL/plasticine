@@ -11,6 +11,14 @@ import { libraryHash, parseLibraryHash } from './library-routes.ts';
 import type { SettingsFocus } from './panel.ts';
 
 // 成果卡片和侧栏「工具 · 成果」都在主区打开成果页（第 92 条）。
+export type SkillsPane = 'add' | 'new';
+
+export function skillsRoute(target: { name?: string | null; pane?: SkillsPane | null } = {}): Route {
+  return { view: 'skills', noteId: null,
+    ...(target.name == null ? {} : { skillName: target.name }),
+    ...(target.pane == null ? {} : { skillsPane: target.pane }) };
+}
+
 export const VIEW_IDS = [
   'today',
   // 2026-11-07 两层侧栏：和 Plasticine 的主线、旁聊（#/plasticine、#/plasticine/side/<线>）。
@@ -26,6 +34,8 @@ export const VIEW_IDS = [
   'contacts',
   'projects',
   'memory',
+  // 11-13：技能页（#/skills 列表、#/skills/s/<短名> 一个技能、#/skills/add 添加、#/skills/new 新建），入口在 Plasticine 栏里。
+  'skills',
   'notes',
   'books',
   'feed',
@@ -49,6 +59,10 @@ export interface Route {
   taskId?: string | null;
   groupTaskId?: string | null;
   view: ViewId;
+  /** 技能页打开的是哪个技能（短名）；列表本身是 null / 没有。 */
+  skillName?: string | null;
+  /** 技能页右边是「添加」还是「新建」。 */
+  skillsPane?: SkillsPane | null;
   /** 笔记页打开的是哪一篇；别的页为 null。 */
   noteId: string | null;
   /**
@@ -182,7 +196,7 @@ export function phonePageAvailable(route: Route): boolean {
   if (PHONE_VIEWS.has(route.view)) return true;
   if (route.view === 'tools') return route.tool === '文件';
   if (route.view === 'projects') return route.projectId != null;
-  if (route.view === 'memory') return true;
+  if (route.view === 'memory' || route.view === 'skills') return true;
   return false;
 }
 
@@ -281,6 +295,10 @@ export function parseHash(hash: string): Route {
   }
   if (view === 'books' && id !== undefined) { return booksRoute(id, sub, parts[3]); }
   if (view === 'feed' && id !== undefined) { return { view, noteId: null, feedItemId: decodedOrNull(id) }; }
+  if (view === 'skills') {
+    if (id === 'add' || id === 'new') return skillsRoute({ pane: id });
+    return skillsRoute({ name: id === 's' && sub !== undefined ? decodedOrNull(sub) : null });
+  }
   if (view === 'memory' && id === 'topics' && sub !== undefined) {
     return { view, noteId: null, topicId: decodedOrNull(sub) };
   }
@@ -487,6 +505,10 @@ export function routeHash(route: Route): string {
   if (route.view === 'feed' && route.feedItemId != null) {
     return `#/feed/${encodeURIComponent(route.feedItemId)}`;
   }
+  if (route.view === 'skills') {
+    if (route.skillsPane != null) return `#/skills/${route.skillsPane}`;
+    return route.skillName == null ? '#/skills' : `#/skills/s/${encodeURIComponent(route.skillName)}`;
+  }
   if (route.view === 'memory' && route.topicId != null) {
     return `#/memory/topics/${encodeURIComponent(route.topicId)}`;
   }
@@ -542,8 +564,8 @@ function contactsHash(route: Route): string {
 
 const VIEW_LABELS: Readonly<Record<ViewId, string>> = {
   today: '首页', plasticine: 'Plasticine', web: '网页', work: '工作', messages: '消息', conversation: '消息',
-  contacts: '消息', projects: '项目', memory: '记忆', notes: '笔记', books: '图书', feed: '信息流', browser: '浏览器',
-  settings: '设置', tools: '工具', tasks: '任务', library: '资料库',
+  contacts: '消息', projects: '项目', memory: '记忆', skills: '技能', notes: '笔记', books: '图书', feed: '信息流',
+  browser: '浏览器', settings: '设置', tools: '工具', tasks: '任务', library: '资料库',
 };
 
 export function navLabel(view: ViewId): string {

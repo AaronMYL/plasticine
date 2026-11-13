@@ -1,0 +1,504 @@
+/* 技能页（11-13）：电脑上左边目录（360）、右边一个技能；添加是卡片格 + 右边先看；新建是左边说、右边草稿。手机上一次一页。 */
+
+.settings-skills-link { margin-left: auto; }
+.skills-gap { flex: 1; }
+
+.skills-page,
+.skills-add,
+.skills-new {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.skills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.skills-page > .skills-list {
+  flex: none;
+  width: 360px;
+  padding: 20px 16px 24px;
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.skills-list-head,
+.skills-pane-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skills-list-head { padding: 0 8px; }
+
+.skills-pane-head { flex-wrap: wrap; }
+
+.skills-list-head h1,
+.skills-pane-head h1 {
+  flex: 1;
+  white-space: nowrap;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.skills-kinds { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.skills-search { flex: none; }
+
+.skill-cards,
+.store-grid,
+.skills-done {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skill-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.skill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 8px;
+  color: var(--fg);
+  text-decoration: none;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.skill-card:hover,
+.skill-card[aria-current='page'] { background: var(--tint); }
+.skill-card:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+
+.skill-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skill-card-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-card-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.skill-card-uses {
+  color: var(--fg3);
+  font-size: 12px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 一个技能 ---------- */
+
+.skills-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.skill-detail,
+.skill-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.skills-main > .skill-detail {
+  max-width: 760px;
+  padding: 24px 40px 48px;
+}
+
+.skill-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.skill-detail-head h2 {
+  min-width: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.skill-detail-name {
+  margin: -8px 0 0;
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.skill-detail-desc {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.skill-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin: 0;
+  padding: 10px 0;
+  border-block: 1px solid var(--line);
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 删除、丢草稿前的那一问：后果写在这一行里，点了才做。 */
+.skill-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-height: 48px;
+  padding: 8px 8px 8px 12px;
+  border-radius: 8px;
+  background: var(--tint2);
+  animation: skills-in var(--motion-base) var(--ease-out);
+}
+
+.skill-confirm-text {
+  flex: 1;
+  min-width: 160px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.skill-confirm-text b { font-weight: 500; }
+
+.skills-error {
+  margin: 0;
+  color: var(--err);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.skills-fold summary { width: fit-content; cursor: pointer; font-size: 12px; color: var(--fg2); }
+.skills-fold p { margin: 4px 0 0; font-size: 12px; line-height: 18px; color: var(--fg2); overflow-wrap: anywhere; }
+
+.skill-reader { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.skill-reader .text-meta { overflow-wrap: anywhere; }
+.skill-method { min-width: 0; }
+.skill-method .markdown { overflow-wrap: anywhere; }
+.skill-method pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---------- 添加 ---------- */
+
+.skills-add-main,
+.skills-new-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 28px 32px;
+  overflow-y: auto;
+}
+
+.skills-add-main { flex: 1; }
+.skills-add-main > *,
+.skills-new-ask > *,
+.skills-page > .skills-list > * { flex: none; }
+
+.store-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.store-cats .chip-button { padding: 0 12px; border-radius: 14px; color: var(--fg2); }
+.store-cats .chip-button[aria-pressed='true'] { background: var(--tint); color: var(--fg); }
+
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.store-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-height: 124px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.store-card:hover { background: var(--tint); }
+.store-card[aria-pressed='true'] { box-shadow: inset 0 0 0 2px var(--fg); }
+.store-card:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.store-card-title {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.store-card-desc {
+  flex: 1;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.store-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.skills-add > .skill-preview {
+  flex: none;
+  width: 400px;
+  padding: 24px 28px 32px;
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+  animation: skills-in var(--motion-base) var(--ease-out);
+}
+
+@keyframes skills-in {
+  from { opacity: 0; transform: translateX(8px); }
+}
+
+.skill-preview h3 {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.skill-preview-method {
+  font-size: 13px;
+}
+
+.skill-preview-warn {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--tint2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.skill-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.skills-from {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+}
+
+.skills-from .primary-button { align-self: flex-start; }
+.skills-from-lead { margin: 0; font-size: 14px; line-height: 22px; }
+
+/* ---------- 新建 ---------- */
+
+.skills-new[data-phone='false'] > .skills-new-ask {
+  flex: none;
+  width: 460px;
+  border-right: 1px solid var(--line);
+}
+
+/* 自己写：没有左边那一栏要说的话，页头在上、表单在下，一栏到底。 */
+.skills-new[data-phone='false'][data-mode='write'] {
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.skills-new[data-phone='false'][data-mode='write'] > .skills-new-ask {
+  flex: none;
+  width: auto;
+  padding-bottom: 0;
+  border-right: 0;
+  overflow: visible;
+}
+
+.skills-new[data-mode='write'] > .skills-new-form {
+  flex: 1 0 auto;
+  padding: 16px 28px 32px;
+  overflow: visible;
+}
+
+.skills-tell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skills-tell-label {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+h2.skills-tell-label {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+textarea.field-input.skills-said { min-height: 120px; }
+.skills-tell-go { align-self: flex-end; }
+
+.skills-done {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.skills-done-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.skills-done-row:hover,
+.skills-done-row[aria-pressed='true'] { background: var(--tint); }
+.skills-done-row[aria-pressed='true'] { box-shadow: inset 0 0 0 1px var(--line2); }
+.skills-done-row > svg { flex: none; color: var(--fg2); }
+
+.skills-done-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills-done-time {
+  flex: none;
+  color: var(--fg3);
+  font-size: 12px;
+}
+
+.skills-new-form {
+  flex: 1;
+  min-width: 0;
+  padding: 20px 36px 32px;
+  overflow-y: auto;
+}
+
+.skills-new-form > .block-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+
+.skills-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 760px;
+  min-height: 100%;
+  animation: skills-in var(--motion-base) var(--ease-out);
+}
+
+.skills-form-pair {
+  display: flex;
+  gap: 12px;
+}
+
+.skills-field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.skills-form > .skills-field { flex: none; }
+.skills-field-name { flex: none; width: 220px; }
+.skills-form > .skills-field-grow { flex: 1; }
+
+textarea.field-input.skills-body {
+  flex: 1;
+  min-height: 220px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+/* 主区窄的时候（对话框开着占了右边一块）：目录、先看、说给 Plasticine 这几栏都收窄，卡片排一列。 */
+@container workspace (max-width: 860px) {
+  .skills-page > .skills-list { width: 280px; padding-inline: 8px; }
+  .skills-main > .skill-detail { padding: 24px 24px 48px; }
+  .skills-add-main { padding: 20px 16px 32px; }
+  .skills-add > .skill-preview { width: 300px; padding: 24px 20px 32px; }
+  .skills-new[data-phone='false'] > .skills-new-ask { width: 300px; padding: 20px 16px 32px; }
+  .skills-new-form { padding: 20px 20px 32px; }
+  .skills-new[data-mode='write'] > .skills-new-form { padding-inline: 16px; }
+  .skills-form-pair { flex-direction: column; }
+  .skills-field-name { width: auto; }
+}
+
+/* ---------- 手机 ---------- */
+
+.skills-phone { gap: 16px; }
+.skills-add[data-phone='true'],
+.skills-new[data-phone='true'] { flex-direction: column; }
+.skills-add[data-phone='true'] > .skills-add-main,
+.skills-new[data-phone='true'] > .skills-new-ask { padding: 12px 16px 32px; }
+.skills-add[data-phone='true'] .store-grid { grid-template-columns: minmax(0, 1fr); }
+.skills-add[data-phone='true'] .store-card { min-height: 0; }
+.skills-new[data-phone='true'] .skills-form-pair { flex-direction: column; }
+.skills-new[data-phone='true'] .skills-field-name { width: auto; }
+.skills-new[data-phone='true'] .skills-tell-go { align-self: stretch; height: 44px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .skills-add > .skill-preview,
+  .skills-form,
+  .skill-confirm { animation: none; }
+}

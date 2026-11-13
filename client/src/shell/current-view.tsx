@@ -8,6 +8,7 @@ import { ProjectsPage } from '../views/projects/projects-page.tsx';
 import { FeedPage } from '../views/feed/feed-page.tsx';
 import type { MemoryPageProps } from '../views/memory/memory-page.tsx';
 import type { NotesViewProps } from '../views/notes/notes-view.tsx';
+import type { SkillsPageProps } from '../views/skills/skills-page.tsx';
 import { HomeView } from '../views/home/home-view.tsx';
 import { MessagesPage } from '../views/messages/messages-page.tsx';
 import { PlasticinePage } from '../views/plasticine/plasticine-page.tsx';
@@ -19,6 +20,7 @@ import { PhoneUnavailable } from '../views/reading/phone-content.tsx';
 
 const NotesView = lazyView<NotesViewProps>(() => import('../views/notes/notes-view.tsx'), 'NotesView');
 const MemoryPage = lazyView<MemoryPageProps>(() => import('../views/memory/memory-page.tsx'), 'MemoryPage');
+const SkillsPage = lazyView<SkillsPageProps>(() => import('../views/skills/skills-page.tsx'), 'SkillsPage');
 const BooksPage = lazyView<BooksPageProps>(() => import('../views/books/books-page.tsx'), 'BooksPage');
 const LibraryPage = lazyView<LibraryPageProps>(() => import('../views/library/library-page.tsx'), 'LibraryPage');
 import { WebStart } from '../views/web/web-start.tsx';
@@ -72,6 +74,8 @@ function RoutedView({ route, phone, navigate, onBack }: CurrentViewProps): React
       return <ProjectsPage projectId={route.projectId ?? null} phone={phone} navigate={navigate} onBack={onBack} />;
     case 'memory':
       return <MemoryPage route={route} phone={phone} navigate={navigate} onBack={onBack} />;
+    case 'skills':
+      return <SkillsPage route={route} phone={phone} navigate={navigate} onBack={onBack} />;
     case 'feed':
       return <FeedPage />;
     case 'work':

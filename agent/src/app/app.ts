@@ -18,7 +18,7 @@ import type { Tasks } from '../tasks/index.ts';
 import type { CalendarSync } from '../calendar/index.ts';
 import type { Heartbeat } from '../heartbeat/index.ts';
 import type { NetworkService, TunnelService } from '../network/index.ts';
-import type { SkillStore } from '../skills/index.ts';
+import type { SkillShop, SkillStore } from '../skills/index.ts';
 import { allPages, type StateService } from '../state/index.ts';
 import type { BackupService, ClientReleases } from '../system/index.ts';
 import { AttemptLimiter } from './attempt-limiter.ts';
@@ -69,6 +69,8 @@ export interface AppOptions {
   clientUpdates: ClientReleases;
   backups: BackupService;
   skills: SkillStore;
+  /** 技能页的「添加」：商店清单、从网址、从文件（11-13）。 */
+  skillShop: SkillShop;
   /** 记忆的后台整理（用户 2026-11-02 定）：主线每一轮结束后入队一次。 */
   memoryCurator: MemoryCurator;
   intake: IntakeDesk;
@@ -197,6 +199,7 @@ export function createApp(options: AppOptions): App {
     dryRun: options.dryRun,
     m5b: options.m5b,
     skills: options.skills,
+    skillShop: options.skillShop,
     intake: options.intake,
     macDownloads: options.macDownloads ?? null,
     network: options.network,

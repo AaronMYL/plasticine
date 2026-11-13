@@ -95,6 +95,10 @@ import {
   SESSION_PATH,
   NODE_BROWSER_SESSION_PATH,
   SKILLS_PATH,
+  SKILL_DRAFT_PATH,
+  SKILL_INSTALL_PATH,
+  SKILL_PREVIEW_PATH,
+  SKILL_STORE_PATH,
   TODAY_SETTINGS_PATH,
   TOOL_GROUPS_PATH,
 } from '../../shared/api/index.ts';
@@ -129,7 +133,8 @@ import { WEB_EXTRACT_PATH, WEB_ARCHIVE_PATH } from '../../shared/api/web-extract
 import { extractBrowserPage, archiveBrowserPage } from './web-extract.ts';
 import { ackBrowser, streamBrowser } from './browser-stream.ts';
 import { actBrowser, getBrowser, getBrowserFrame, openBrowser, settleAction, tabBrowser } from './browser.ts';
-import { getSkill, listSkills, removeSkill } from './skills.ts';
+import { createSkill, draftSkillRequest, getSkill, installSkill, listSkills, listSkillStore, previewSkill, removeSkill }
+  from './skills.ts';
 import { decideClientUpdate, listClientUpdates, previewClientUpdate } from './client-updates.ts';
 import { CONTACT_ROUTES } from './contact-routes.ts';
 import type { HttpMethod, Route } from './context.ts';
@@ -256,6 +261,11 @@ export const ROUTES: readonly Route[] = [
   { method: 'GET', path: SKILLS_PATH, auth: true, handler: listSkills },
   { method: 'GET', path: `${SKILLS_PATH}/:name`, auth: true, handler: getSkill },
   { method: 'DELETE', path: `${SKILLS_PATH}/:name`, auth: true, handler: removeSkill },
+  { method: 'POST', path: SKILLS_PATH, auth: true, handler: createSkill },
+  { method: 'GET', path: SKILL_STORE_PATH, auth: true, handler: listSkillStore },
+  { method: 'POST', path: SKILL_PREVIEW_PATH, auth: true, handler: previewSkill },
+  { method: 'POST', path: SKILL_INSTALL_PATH, auth: true, handler: installSkill },
+  { method: 'POST', path: SKILL_DRAFT_PATH, auth: true, handler: draftSkillRequest },
   { method: 'GET', path: SEARCH_PATH, auth: true, handler: search },
   { method: 'GET', path: '/v2/system/operations', auth: true, handler: getSystemOperations },
   { method: 'GET', path: TRANSLATE_SETTINGS_PATH, auth: true, handler: getTranslateSettings },

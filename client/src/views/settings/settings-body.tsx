@@ -11,7 +11,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
 import type { SettingsFocus } from '../../shell/panel.ts';
-import type { SettingsSection } from '../../shell/routes.ts';
+import { routeHash, skillsRoute, type SettingsSection } from '../../shell/routes.ts';
 import { TOOL_GROUPS_NOTE, ToolGroupsView } from '../tools/tool-groups-view.tsx';
 import { AccountProfile } from './account-profile.tsx';
 import { AccessSection } from './access-section.tsx';
@@ -24,7 +24,6 @@ import { NoticesSection } from './notices-section.tsx';
 import type { PushSwitchStatus } from './push-switch.ts';
 import { SearchEngineSection } from './search-engine-section.tsx';
 import { SectionHead } from './section-head.tsx';
-import { SkillsSection } from './skills-section.tsx';
 import { WorkLimitSection } from './work-limit-section.tsx';
 import { SystemSection } from './system-section.tsx';
 import { TimeZoneSection } from './time-zone-section.tsx';
@@ -107,6 +106,17 @@ function NotificationSection(): ReactNode {
   );
 }
 
+/** 技能 11-13 搬到自己的一页（Plasticine 栏里）；这里留一行入口，去了以后设置弹框自己收起。 */
+function SkillsLink(): ReactNode {
+  return (
+    <section className="block" aria-labelledby="settings-skills">
+      <SectionHead id="settings-skills" title="技能">
+        <a className="text-button settings-skills-link" href={routeHash(skillsRoute())}>打开技能页</a>
+      </SectionHead>
+    </section>
+  );
+}
+
 function ToolSwitches(): ReactNode {
   // 用户视角审查 2026-11-01 已定第 3 条：工具开关从工具组挪到这里。
   return (
@@ -136,7 +146,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
       return <>
         <ModelsSection />
         <WorkLimitSection />
-        <SkillsSection />
+        <SkillsLink />
         <ToolSwitches />
       </>;
     case 'browser':

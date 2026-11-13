@@ -49,6 +49,7 @@ export function sectionOf(route: Route): SectionId {
     case 'plasticine':
     case 'conversation':
     case 'memory':
+    case 'skills':
       return 'plasticine';
     case 'messages':
     case 'contacts':

@@ -14,7 +14,7 @@ import { useOpenPanel } from '../../shell/panel.ts';
 import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { TitlebarActions, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { mainLineRoute, soulRoute, type Route } from '../../shell/routes.ts';
+import { mainLineRoute, skillsRoute, soulRoute, type Route } from '../../shell/routes.ts';
 import { Conversation } from '../conversation/conversation.tsx';
 import { SideUiProvider } from '../lines/conversation-ui-context.tsx';
 import { LineConversation } from '../lines/line-conversation.tsx';
@@ -183,6 +183,10 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
             setMenu(null);
             navigate(mainLineRoute());
           }} />}
+          {phoneRoot ? <MenuItem icon="sparkle" label="技能" onSelect={() => {
+            setMenu(null);
+            navigate(skillsRoute());
+          }} /> : null}
           {phoneRoot ? <MenuItem icon="memory" label="记忆" onSelect={() => {
             setMenu(null);
             navigate({ view: 'memory', noteId: null });

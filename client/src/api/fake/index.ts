@@ -329,6 +329,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       seedMemoryScene({ mates, soul }, now());
     }
     spaces.seed();
+    // 技能页（11-13）：随应用的两个，加一个 Plasticine 整理的。
+    m5b.control.skills.seedPage();
     const netScene = netSceneOf(typeof window === 'undefined' ? '' : window.location.search);
     if (netScene === null) {
       seedContacts({ contacts, inbox: m5b.control.inbox, network, visibility }, now());

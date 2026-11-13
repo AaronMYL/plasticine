@@ -96,6 +96,8 @@ export interface TestAppOptions {
   /** 邮件图片代理的解析和核地址（测试给固定表）。 */
   mailImages?: MailImageFetchOptions;
   linkPreviews?: AssembleOptions['linkPreviews'];
+  /** 技能商店读外面的网址（给假的，不出网）。 */
+  skillShop?: AssembleOptions['skillShop'];
   favicons?: FaviconFetchOptions;
   /** The development dry run (default on, as in the service until it is switched on). */
   dryRun?: boolean;
@@ -151,6 +153,7 @@ export async function startTestApp(steps: TextStep[] = [], options: TestAppOptio
     ...(options.cloudTransports === undefined ? {} : { cloudTransports: options.cloudTransports }),
     ...(options.mailImages === undefined ? {} : { mailImages: options.mailImages }),
     ...(options.linkPreviews === undefined ? {} : { linkPreviews: options.linkPreviews }),
+    ...(options.skillShop === undefined ? {} : { skillShop: options.skillShop }),
     ...(options.favicons === undefined ? {} : { favicons: options.favicons }),
     vapidKeys,
     vapidSubject: 'https://plasticine.test',

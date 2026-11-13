@@ -29,6 +29,9 @@ export function usePageTitle(): (route: Route) => string {
     if (route.view === 'projects' && route.projectId != null) {
       return live.bookmarks.project(route.projectId)?.name ?? navLabel('projects');
     }
+    if (route.view === 'skills' && route.skillsPane != null) {
+      return route.skillsPane === 'add' ? '添加技能' : '新建技能';
+    }
     if (route.view === 'memory' && route.topicId != null) {
       const groups = topics.list?.groups ?? [];
       return groups.flatMap((group) => group.topics).find((topic) => topic.id === route.topicId)?.title ?? '记忆';

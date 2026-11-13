@@ -39,7 +39,6 @@ const ALLOWED: Readonly<Record<string, readonly string[]>> = {
   'client/src/views/notes/note-import.tsx': ['有'],
   'client/src/views/spaces/subscription-settings.tsx': ['日', '一', '二', '三', '四', '五', '六', '第'],
   'client/src/views/tools/money-view.tsx': ['有'],
-  'client/src/views/settings/skills-section.tsx': ['删', '有'],
 };
 
 function bare(text: string): string {

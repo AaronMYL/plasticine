@@ -2,17 +2,8 @@ import { useEffect, useId, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import type { SkillDescriptor, SkillPage } from '../../api/shared.ts';
 import { Markdown } from '../../primitives/message/markdown.tsx';
+import { methodText } from './skill-text.ts';
 
-/** Keep raw text for paging; metadata belongs to the directory, not the displayed method. */
-function methodText(text: string, path: string, complete: boolean): string {
-  if (path !== 'SKILL.md') { return text; }
-  const opening = /^\uFEFF?---[ \t]*\r?\n/.exec(text);
-  if (opening === null) { return text; }
-  const rest = text.slice(opening[0].length);
-  const closing = /^---[ \t]*(?:\r?\n|$)/m.exec(rest);
-  if (closing === null) { return complete ? text : ''; }
-  return rest.slice(closing.index + closing[0].length);
-}
 
 export function SkillReader({ descriptor }: { descriptor: SkillDescriptor }): ReactNode {
   const api = useApi();
@@ -37,21 +28,27 @@ export function SkillReader({ descriptor }: { descriptor: SkillDescriptor }): Re
       .finally(() => { if (!controller.signal.aborted) { setBusy(false); } });
     return () => controller.abort();
   }, [api, descriptor.name, descriptor.version, path, offset, refresh]);
+  const files = [...new Set(['SKILL.md', ...descriptor.resources])];
   return <div className="skill-reader">
-    <label className="field-label" htmlFor={id}>查看技能文件</label>
-    <select id={id} className="field-input" value={path} onChange={(event) => {
-      setPath(event.target.value); setOffset(0); setPage(null); setText('');
-    }}>
-      {[...new Set(['SKILL.md', ...descriptor.resources])].map((file) => <option key={file}>{file}</option>)}
-    </select>
-    {busy ? <p className="tool-sub">正在读取方法…</p> : null}
+    {/* 只有方法一份文件时不出下拉（11-13 技能页）。 */}
+    {files.length < 2 ? null : <>
+      <label className="field-label" htmlFor={id}>查看技能文件</label>
+      <select id={id} className="field-input" value={path} onChange={(event) => {
+        setPath(event.target.value); setOffset(0); setPage(null); setText('');
+      }}>
+        {files.map((file) => <option key={file}>{file}</option>)}
+      </select>
+    </>}
+    {busy ? <p className="block-empty">正在读取方法…</p> : null}
     {error ? <p className="block-empty is-error" role="alert">读取技能失败。{' '}
       <button type="button" className="text-button" onClick={() => setRefresh((value) => value + 1)}>再读一次</button>
     </p> : null}
-    <div className="skill-method"><Markdown text={methodText(text, path, page?.nextOffset === null)} /></div>
+    <div className="skill-method">
+      <Markdown text={path === 'SKILL.md' ? methodText(text, page?.nextOffset === null) : text} />
+    </div>
     {page?.nextOffset !== null && page?.nextOffset !== undefined ? <button type="button" className="text-button"
       disabled={busy || error} onClick={() => setOffset(page.nextOffset!)}>继续读取</button> : null}
-    <details className="tool-group-details">
+    <details className="skills-fold">
       <summary className="text-meta">来源与版本</summary>
       <p className="text-meta">{descriptor.source.origin}</p>
       <p className="text-meta">版本：{descriptor.version}</p>

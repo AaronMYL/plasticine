@@ -13,7 +13,7 @@ import type { TextModels } from '../kernel/index.ts';
 import type { MoneyDraftDesk } from '../life/index.ts';
 import type { LineKernel } from '../lines/index.ts';
 import type { NetworkService, TunnelService } from '../network/index.ts';
-import type { SkillStore } from '../skills/index.ts';
+import type { SkillShop, SkillStore } from '../skills/index.ts';
 import type { StateService } from '../state/index.ts';
 import type { BackupService, ClientReleases } from '../system/index.ts';
 import type { AttemptLimiter } from './attempt-limiter.ts';
@@ -73,6 +73,8 @@ export interface AppDeps {
   /** M5 乙路: 记账、云端工具、文件页、站内信. */
   m5b: M5bServices;
   skills: SkillStore;
+  /** 技能页的「添加」：商店清单、从网址、从文件（11-13）。 */
+  skillShop: SkillShop;
   /** 第 102 条：进门（来源记成触发，命中规则开后台线）。 */
   intake: IntakeDesk;
   /** 第 102 条：Mac 自更新的包（状态目录 downloads/mac/）；没装配就是 null，接口回 404。 */

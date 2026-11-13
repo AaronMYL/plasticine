@@ -22,6 +22,16 @@ const UsageSchema = Type.Record(Type.String(), Type.Object({ count: Type.Integer
   lastUsedAt: Type.String() }));
 export type SkillUsage = Record<string, { count: number; lastUsedAt: string }>;
 
+/** 装不了的原因：和内置的重名；已经有同名的（没说要换）。 */
+export class SkillInstallError extends Error {
+  readonly reason: 'builtin' | 'exists';
+  constructor(reason: 'builtin' | 'exists', message: string) {
+    super(message);
+    this.name = 'SkillInstallError';
+    this.reason = reason;
+  }
+}
+
 /** 删不了的原因：内置的随程序发，不归这里删；没有这个技能。 */
 export class SkillRemoveError extends Error {
   readonly reason: 'builtin' | 'not_found';
@@ -214,6 +224,28 @@ export class SkillStore {
     const removed = join(this.#root, '.removed');
     mkdirSync(removed, { recursive: true, mode: 0o700 });
     renameSync(directory, join(removed, `${name}-${this.#now().toISOString().replace(/[:.]/g, '-')}`));
+  }
+
+  /**
+   * 装一个技能（技能页的「添加」「新建」）：files 是整个目录（base64），origin 记从哪来的（store:<名字> / url:<网址> /
+   * files / user）。已经有同名的：replace 才换，旧的那份挪到 .removed 留底；内置的同名不能装。
+   */
+  install(name: string, files: SkillFiles, origin: string, replace = false): SkillDescriptor {
+    skillPath(name);
+    if (existsSync(join(this.#builtin, name))) {
+      throw new SkillInstallError('builtin', '和随应用提供的技能重名了，换一个短名。');
+    }
+    const directory = join(this.#root, name);
+    if (existsSync(directory) && !replace) {
+      throw new SkillInstallError('exists', '已经有同名的技能了。');
+    }
+    const source: SkillSource = { kind: 'installed', origin, runId: null, taskId: null, actionId: null,
+      recordedAt: this.#now().toISOString() };
+    // 先固定版本（顺带校验 SKILL.md 和大小），再动目录：校验不过什么都不改。
+    const snapshot = this.#snapshot(name, files, source);
+    if (existsSync(directory)) { this.remove(name); }
+    writeSkillFiles(directory, snapshot.files);
+    return snapshot.descriptor;
   }
 
   #countUse(name: string): void {

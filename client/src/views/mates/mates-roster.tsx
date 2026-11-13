@@ -3,7 +3,7 @@ import { useLive } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { ColumnFoot, ColumnHead, ColumnLink, ColumnNote } from '../../shell/columns/column.tsx';
-import { mainChatRoute, mateGroupRoute, mateRoute, sideRoute, type Route } from '../../shell/routes.ts';
+import { mainChatRoute, mateGroupRoute, mateRoute, sideRoute, skillsRoute, type Route } from '../../shell/routes.ts';
 import { useStore } from '../../state/use-store.ts';
 import { PendingOps } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from './mate-actions.ts';
@@ -64,8 +64,12 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
           {chat.title}</ColumnLink>)}
       </div>}
     </div>
-    <ColumnFoot><ColumnLink route={{ view: 'memory', noteId: null }} current={route.view === 'memory'}
-      navigate={navigate} lead={<Icon name="memory" size={18} />}>记忆</ColumnLink></ColumnFoot>
+    <ColumnFoot>
+      <ColumnLink route={skillsRoute()} current={route.view === 'skills'} navigate={navigate}
+        lead={<Icon name="sparkle" size={18} />}>技能</ColumnLink>
+      <ColumnLink route={{ view: 'memory', noteId: null }} current={route.view === 'memory'}
+        navigate={navigate} lead={<Icon name="memory" size={18} />}>记忆</ColumnLink>
+    </ColumnFoot>
     {editor === 'mate' ? <MateEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
     {editor === 'main' ? <MainEditor phone={phone} onClose={() => setEditor(null)} /> : null}
     {editor === 'group' ? <GroupEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}

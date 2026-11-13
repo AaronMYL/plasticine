@@ -19,6 +19,7 @@ export function pageIcon(route: Route | null): IconName {
     case 'messages':
     case 'contacts': return 'person';
     case 'memory': return 'memory';
+    case 'skills': return 'sparkle';
     case 'tools': return route.tool == null ? 'tools' : TOOL_ICONS[route.tool];
     case 'browser': return 'globe';
     default: {

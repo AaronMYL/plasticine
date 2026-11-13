@@ -40,7 +40,8 @@ describe('截一张传上去', () => {
   it('桌面客户端里：截可见的这一屏，传成一份叫「网页快照 …」的图片附件', async () => {
     const tool = vi.fn(async () => JPEG);
     window.plasticineDesktop = { version: '0.6.0', notify: () => undefined, webTabs: {
-      sync: () => undefined, navigate: () => undefined, command: () => undefined, snapshot: () => Promise.reject(new Error('不读正文')), tools: ['capture'], tool } };
+      sync: () => undefined, navigate: () => undefined, command: () => undefined,
+      snapshot: () => Promise.reject(new Error('不读正文')), tools: ['capture'], tool } };
     const fake = createFakeApi({ seed: true, streamStepMs: 0 });
     const view = await capturePageSnapshot(TAB, fake.api.attachments);
     expect(tool).toHaveBeenCalledWith('web-1', { kind: 'capture', scope: 'visible' });
@@ -52,7 +53,8 @@ describe('截一张传上去', () => {
     const fake = createFakeApi({ seed: true, streamStepMs: 0 });
     expect(await capturePageSnapshot(TAB, fake.api.attachments)).toBeNull();
     window.plasticineDesktop = { version: '0.6.0', notify: () => undefined, webTabs: {
-      sync: () => undefined, navigate: () => undefined, command: () => undefined, snapshot: () => Promise.reject(new Error('不读正文')), tools: ['perceive'],
+      sync: () => undefined, navigate: () => undefined, command: () => undefined,
+      snapshot: () => Promise.reject(new Error('不读正文')), tools: ['perceive'],
       tool: async () => JPEG } };
     expect(await capturePageSnapshot(TAB, fake.api.attachments)).toBeNull();
     expect(await capturePageSnapshot({ ...TAB, kind: 'page', url: null }, fake.api.attachments)).toBeNull();
@@ -61,7 +63,8 @@ describe('截一张传上去', () => {
   it('截图出错：记一句，回 null，不往外抛', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     window.plasticineDesktop = { version: '0.6.0', notify: () => undefined, webTabs: {
-      sync: () => undefined, navigate: () => undefined, command: () => undefined, snapshot: () => Promise.reject(new Error('不读正文')), tools: ['capture'],
+      sync: () => undefined, navigate: () => undefined, command: () => undefined,
+      snapshot: () => Promise.reject(new Error('不读正文')), tools: ['capture'],
       tool: async () => { throw new Error('标签关了'); } } };
     const fake = createFakeApi({ seed: true, streamStepMs: 0 });
     expect(await capturePageSnapshot(TAB, fake.api.attachments)).toBeNull();

@@ -54,3 +54,30 @@ export function skillPath(path: string): string {
   }
   return path;
 }
+
+/** SKILL.md 开头 frontmatter 里的 title 一行（给人看的名字，标准字段之外的）；没有就是 null。 */
+export function skillTitle(document: string): string | null {
+  const matched = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(document.replace(/^\uFEFF/, ''));
+  const line = matched === null ? null : /^title:\s*(.+)$/m.exec(matched[1]!);
+  if (line === null) { return null; }
+  const raw = line[1]!.trim();
+  try {
+    const text = raw.startsWith('"') ? String(JSON.parse(raw)) : raw.replace(/^'(.*)'$/, '$1');
+    return text.trim() === '' ? null : text.trim();
+  } catch {
+    return null;
+  }
+}
+
+/** 界面里填的四样拼成一份 SKILL.md。 */
+export function skillDocument(input: { name: string; title: string; description: string; body: string }): string {
+  const title = input.title.trim() === '' ? '' : `title: ${JSON.stringify(input.title.trim())}\n`;
+  return `---\nname: ${input.name}\n${title}description: ${JSON.stringify(input.description.trim())}\n---\n\n`
+    + `${input.body.trim()}\n`;
+}
+
+/** 带不带脚本：方法和参考资料（文字、图片）以外的文件，或者放在 scripts/ 里的。 */
+export function hasScripts(paths: readonly string[]): boolean {
+  return paths.some((path) => path.startsWith('scripts/')
+    || /\.(?:sh|bash|zsh|py|js|mjs|cjs|ts|rb|pl|php|ps1|bat|cmd|exe)$/i.test(path));
+}

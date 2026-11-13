@@ -56,7 +56,7 @@ import { DEFAULT_RELAY_URL, NetworkService, TunnelService, type TunnelServiceOpt
 import { ServerCommands, type CloudTransports } from '../cloud-tools/index.ts';
 import type { MailImageFetchOptions } from '../cloud-tools/mail-image-fetch.ts';
 import type { FaviconFetchOptions } from '../cloud-tools/favicon-fetch.ts';
-import { SkillStore } from '../skills/index.ts';
+import { SkillShop, SkillStore, type SkillShopOptions } from '../skills/index.ts';
 import { Tasks } from '../tasks/index.ts';
 import { BackupService, ClientReleases } from '../system/index.ts';
 import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
@@ -117,6 +117,8 @@ export interface AssembleOptions {
   /** 邮件图片代理怎么解析和核地址（测试给固定表）。 */
   mailImages?: MailImageFetchOptions;
   linkPreviews?: LinkPreviewFetchOptions;
+  /** 技能商店读外面的网址（测试给假的）。 */
+  skillShop?: SkillShopOptions;
   /** 网站图标代取怎么解析和核地址（测试给固定表）。 */
   favicons?: FaviconFetchOptions;
   /** Check credential files for 0600 even on Windows (tests). */
@@ -418,6 +420,7 @@ export function assembleApp(options: AssembleOptions): App {
     m5b,
     memoryCurator,
     skills,
+    skillShop: new SkillShop(options.skillShop ?? {}),
     moneyDrafts,
     paymentReader,
     clientUpdates,
