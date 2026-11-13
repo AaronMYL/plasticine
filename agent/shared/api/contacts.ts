@@ -277,6 +277,11 @@ export const SendContactMessageRequestSchema = Type.Object({
   target: Type.Optional(Type.Union([Type.Literal('person'), Type.Literal('ai'), Type.Literal('mine')])),
   /** 群里：问谁的 Plasticine（成员的账号 id，可以是我自己的）。 */
   aiOf: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
+  /**
+   * 群里一句同时 @ 好几个人的 Plasticine（11-13）：第一个照旧写 aiOf，其余的账号 id 放这里。线上格式一句只能问一个，
+   * 所以其余每个各发一句同样的话（不带附件），界面把紧挨着的这几句并成一个气泡。
+   */
+  alsoAiOf: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 64 }), { maxItems: 8, uniqueItems: true })),
   /** 第 12 批：回的是这个聊天里的哪一句（那一句的 id）。 */
   replyToId: Type.Optional(IdSchema),
 });

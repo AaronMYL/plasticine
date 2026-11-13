@@ -1,6 +1,8 @@
 // 聊天底下的输入框（第 113 条；2026-11-05 设计稿 Mention）：打「@」出一个小菜单——对方本人、对方的 Plasticine、
-// 我的 Plasticine（群里是每个人的 Plasticine 和我的）。挑了谁的 Plasticine，框里开头一个「@✦…的 Plasticine」小签，
-// 这句就是让那个 Plasticine 在这段聊天里回答；不 @ 就是和人说话。空着时灰字是「预测一句」候选（Tab 采用）。
+// 我的 Plasticine（群里是每个人、每个人的 Plasticine 和我的）。挑了谁的 Plasticine，框里开头一个「@✦…的 Plasticine」
+// 小签，这句就是让那个 Plasticine 在这段聊天里回答；不 @ 就是和人说话。空着时灰字是「预测一句」候选（Tab 采用）。
+// 11-13 Aaron 用群聊后提的：菜单里要有群里的人（原来只有各人的 Plasticine）；一句能 @ 好几个（人写进字里，Plasticine
+// 是并排的小签）；@ 后面接着打字是在菜单里找。
 // Enter 发、Shift+Enter 换行、中文输入法选字时不发；小签在、字空着时按退格去掉小签。邮件联系人发 = 回最近一封。
 
 import { theirAi } from './contact-names.ts';
@@ -41,13 +43,16 @@ export interface MentionChoice {
   target: { kind: 'ai' | 'mine'; aiOf: string | null } | null;
 }
 
-/** 这段聊天里能 @ 谁。mainName：我的主线叫什么（第 12 批，能自己起名）。 */
+/** 这段聊天里能 @ 谁。mainName：我的主线叫什么（第 12 批，能自己起名）。群里先列人、再列各人的 Plasticine。 */
 export function mentionChoices(contact: ContactRow, mainName = 'Plasticine'): MentionChoice[] {
   if (contact.kind === 'group') {
     const members = contact.members ?? [];
     const me = members.find((member) => member.self);
+    const others = members.filter((member) => !member.self);
     return [
-      ...members.filter((member) => !member.self).map((member): MentionChoice => ({ id: `ai:${member.accountId}`,
+      ...others.map((member): MentionChoice => ({ id: `person:${member.accountId}`, label: member.name,
+        person: { name: member.name, avatar: member.avatar ?? null }, target: null })),
+      ...others.map((member): MentionChoice => ({ id: `ai:${member.accountId}`,
         label: `${member.name}的 Plasticine`, person: null, target: { kind: 'ai', aiOf: member.accountId } })),
       ...(me === undefined ? [] : [{ id: 'mine', label: `我的 ${mainName}`, person: null,
         target: { kind: 'mine' as const, aiOf: me.accountId } }]),
@@ -73,10 +78,25 @@ function placeholderOf(contact: ContactRow, suggestion: string | null): string {
 
 /** 光标前面刚打了一个「@」（行首或空白后面）。 */
 export function startsMention(text: string, caret: number): boolean {
-  if (caret < 1 || text[caret - 1] !== '@') {
-    return false;
+  return mentionQuery(text, caret) === '';
+}
+
+/** 光标正在一个「@…」里（@ 在行首或空白后面，到光标之间没有空白）：返回 @ 后面已经打的字；不在就是 null。 */
+export function mentionQuery(text: string, caret: number): string | null {
+  const at = text.lastIndexOf('@', caret - 1);
+  if (at < 0 || (at > 0 && !/\s/.test(text[at - 1] ?? ''))) {
+    return null;
   }
-  return caret === 1 || /\s/.test(text[caret - 2] ?? '');
+  const typed = text.slice(at + 1, caret);
+  return /\s/.test(typed) ? null : typed;
+}
+
+/** 菜单里还剩哪几项：按 @ 后面打的字找（不分大小写），已经挑成小签的 Plasticine 不再列。 */
+export function matchMentions(choices: readonly MentionChoice[], typed: string, picked: readonly MentionChoice[])
+  : MentionChoice[] {
+  const term = typed.trim().toLocaleLowerCase();
+  return choices.filter((choice) => !picked.some((entry) => entry.id === choice.id)
+    && (term === '' || choice.label.toLocaleLowerCase().includes(term)));
 }
 
 function MentionMenu({ choices, active, onPick }: { choices: readonly MentionChoice[]; active: number;
@@ -105,13 +125,17 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
   const drafts = useStore(inlineDrafts.store);
   const key = contactOpKey(contact.id, 'send');
   const op = useOp(key);
-  const [target, setTarget] = useState<MentionChoice | null>(null);
-  const [menu, setMenu] = useState<number | null>(null);
+  // 挑成小签的 Plasticine：群里可以并排好几个，一对一只留一个（再挑就换）。
+  const [targets, setTargets] = useState<readonly MentionChoice[]>([]);
+  const [menu, setMenu] = useState<{ active: number; typed: string } | null>(null);
+  const group = contact.kind === 'group';
   const input = useRef<HTMLTextAreaElement>(null);
   const text = drafts.get(key) ?? '';
   const locked = op !== undefined && isOpenOp(op);
+  const target = targets[0] ?? null;
   const offered = target !== null || text !== '' ? null : suggestion;
-  const choices = mentionChoices(contact, useMainName());
+  const all = mentionChoices(contact, useMainName());
+  const choices = menu === null ? [] : matchMentions(all, menu.typed, group ? targets : []);
   const reply = useContactReply(contact.id);
   useEffect(() => {
     if (reply !== null) input.current?.focus();
@@ -127,13 +151,14 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
   const pick = (choice: MentionChoice): void => {
     const element = input.current;
     const caret = element?.selectionStart ?? text.length;
-    const before = text.slice(0, Math.max(0, caret - 1));
+    // 把「@」和后面已经打的那几个字换掉。
+    const before = text.slice(0, Math.max(0, caret - 1 - (menu?.typed.length ?? 0)));
     const after = text.slice(caret);
     setMenu(null);
     if (choice.target === null) {
       inlineDrafts.set(key, `${before}@${choice.label} ${after}`);
     } else {
-      setTarget(choice);
+      setTargets(group ? [...targets, choice] : [choice]);
       inlineDrafts.set(key, `${before}${after}`);
     }
     requestAnimationFrame(() => element?.focus());
@@ -141,11 +166,11 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
   const send = async (): Promise<void> => {
     if (locked || !attachments.ready) return;
     const kind = target?.target?.kind ?? null;
-    const aiOf = contact.kind === 'group' ? target?.target?.aiOf ?? null : null;
-    const sent = await contactActions.send(contact, kind === null ? 'person' : kind, aiOf, attachments.ids,
-      reply?.id ?? null);
+    const asked = group ? targets.flatMap((entry) => (entry.target?.aiOf == null ? [] : [entry.target.aiOf])) : [];
+    const sent = await contactActions.send(contact, kind === null ? 'person' : kind, asked[0] ?? null, attachments.ids,
+      reply?.id ?? null, asked.slice(1));
     if (sent) {
-      setTarget(null); attachments.clear(); setContactReply(contact.id, null);
+      setTargets([]); attachments.clear(); setContactReply(contact.id, null);
       requestAnimationFrame(grow);
     }
   };
@@ -157,12 +182,12 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         const step = event.key === 'ArrowDown' ? 1 : -1;
-        setMenu((menu + step + choices.length) % choices.length);
+        setMenu({ ...menu, active: (menu.active + step + choices.length) % choices.length });
         return;
       }
       if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault();
-        const choice = choices[menu];
+        const choice = choices[menu.active];
         if (choice !== undefined) {
           pick(choice);
         }
@@ -179,8 +204,8 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
       setContactReply(contact.id, null);
       return;
     }
-    if (event.key === 'Backspace' && text === '' && target !== null) {
-      setTarget(null);
+    if (event.key === 'Backspace' && text === '' && targets.length > 0) {
+      setTargets(targets.slice(0, -1));
       return;
     }
     if (event.key === 'Tab' && offered !== null) {
@@ -195,7 +220,7 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
     }
   };
   const sendDisabled = locked || !attachments.ready || text.trim() === '' && attachments.ids.length === 0;
-  const label = target === null ? `发给${contact.name}` : `问${target.label}`;
+  const label = target === null ? `发给${contact.name}` : `问${targets.map((entry) => entry.label).join('、')}`;
   return (
     <div className="contact-composer" data-phone={phone} data-has-media={attachments.rows.length > 0 || reply !== null}
       onDragOver={(event) => { if (supportsFiles && !locked) event.preventDefault(); }} onDrop={(event) => {
@@ -218,15 +243,17 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
         <div className="contact-composer-box" data-ai={target !== null}>
           {supportsFiles ? <IconButton icon="paperclip" label="添加附件" disabled={locked}
             onClick={() => files.current?.click()} /> : null}
-          {menu !== null && choices.length > 0 ? <MentionMenu choices={choices} active={menu} onPick={pick} /> : null}
-          {target === null ? null : (
-            <span className="composer-mention">@<AiMark label={target.label} />{target.label}</span>
-          )}
+          {menu !== null && choices.length > 0
+            ? <MentionMenu choices={choices} active={menu.active} onPick={pick} /> : null}
+          {targets.length === 0 ? null : <span className="composer-mentions">{targets.map((entry) => (
+            <span key={entry.id} className="composer-mention">@<AiMark label={entry.label} />{entry.label}</span>
+          ))}</span>}
           <textarea ref={input} className="contact-composer-input" rows={1} value={text} disabled={locked}
             aria-label={label} placeholder={target === null ? placeholderOf(contact, offered) : ''}
             onChange={(event) => {
               inlineDrafts.set(key, event.target.value);
-              setMenu(startsMention(event.target.value, event.target.selectionStart) ? 0 : null);
+              const typed = mentionQuery(event.target.value, event.target.selectionStart);
+              setMenu(typed === null ? null : { active: 0, typed });
               grow();
             }}
             onPaste={(event) => {

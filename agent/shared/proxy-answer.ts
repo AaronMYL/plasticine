@@ -26,6 +26,8 @@ export interface ProxyMaterial {
 export interface ProxyLine {
   /** 谁说的：对方、对方的 Plasticine、主人（我）、我的 Plasticine。 */
   speaker: 'them' | 'their_ai' | 'me' | 'my_ai';
+  /** 群里：这一句是谁说的（AI 的话写它主人的名字）。一对一不用给。 */
+  name?: string;
   text: string;
 }
 

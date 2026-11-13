@@ -98,7 +98,7 @@ export const AskViewSchema = Type.Object({
   /** 网络任务卡可直接进入统一工作详情；只投影服务端记录的关联。 */
   networkTaskId: Type.Optional(IdSchema),
   /**
-   * 别人 @ 了我的 Plasticine、它拿不准时要我确认怎么回的卡：属于哪段聊天（联系人或群组）、是哪句话问的、打算怎么回。
+   * 别人（或我自己）@ 了我的 Plasticine、它拿不准时要我确认怎么回的卡：属于哪段聊天（联系人或群组）、是哪句话问的、打算怎么回。
    * 界面把这张卡直接画在那段聊天里；「这样回」时可以带上改过的字（回答的 text）。
    */
   networkReply: Type.Optional(Type.Object({
@@ -106,6 +106,8 @@ export const AskViewSchema = Type.Object({
     groupId: Nullable(IdSchema),
     questionId: Type.String({ minLength: 1 }),
     draft: Nullable(Type.String()),
+    /** 是我自己 @ 了我的 Plasticine、它想先给我看一眼再发（卡上是「这样发 / 不发」）；别人问的不带这一项。 */
+    self: Type.Optional(Type.Boolean()),
   }, { additionalProperties: false })),
   createdAt: IsoTimeSchema,
   /** 「先不」的时间：移入暂缓区，不再计入当前待答。 */

@@ -9,9 +9,9 @@ import type { ContactMessageView, GroupTaskView, MemberFace, NetworkTaskView } f
 import type { FakeContacts } from './fake-contacts.ts';
 import type { FakeNetwork } from './fake-network.ts';
 
-export type NetScene = 'alex' | 'xiaolin' | 'welcome' | 'connect' | 'states';
+export type NetScene = 'alex' | 'xiaolin' | 'welcome' | 'connect' | 'states' | 'group';
 
-const SCENES: readonly NetScene[] = ['alex', 'xiaolin', 'welcome', 'connect', 'states'];
+const SCENES: readonly NetScene[] = ['alex', 'xiaolin', 'welcome', 'connect', 'states', 'group'];
 
 export function netSceneOf(search: string): NetScene | null {
   const value = new URLSearchParams(search).get('net');
@@ -101,6 +101,23 @@ function seedAlex(contacts: FakeContacts, network: FakeNetwork, now: Date): void
     deadline: weekday(now, 6, 11), owner: zhou, state: 'open', canClaim: true, offeredAt: at(now, 30 * MINUTE) });
 }
 
+/** ?net=group：在 alex 那个群上再加几句——一句同时 @ 两个人的 Plasticine、两边各回一句（11-13 群聊那几处）。 */
+function seedGroupAsks(contacts: FakeContacts, now: Date): void {
+  const groups = contacts.groupChats;
+  const [me, lin, zhou] = [face('alex', 'Alex', true), face('xiaolin', '小林'), face('zhouke', '周可')];
+  const asked = at(now, 20 * MINUTE);
+  groups.seedMessage('grp-hangzhou', line('g_6', 'me', '周六下午谁有空一起去茶社？', asked,
+    { sender: me, toAi: true, mention: { name: '小林', self: false } }));
+  groups.seedMessage('grp-hangzhou', line('g_7', 'me', '周六下午谁有空一起去茶社？', asked,
+    { sender: me, toAi: true, mention: { name: '周可', self: false } }));
+  groups.seedMessage('grp-hangzhou', line('g_8', 'their_ai', '小林周六下午两点以后有空。', at(now, 19 * MINUTE),
+    { sender: lin }));
+  groups.seedMessage('grp-hangzhou', line('g_9', 'their_ai', '周可周六下午要开车接人，四点以后可以。',
+    at(now, 18 * MINUTE), { sender: zhou }));
+  groups.seedMessage('grp-hangzhou', line('g_10', 'them', '那就四点，茶社门口见，我带上次那副牌', at(now, 17 * MINUTE),
+    { sender: lin }));
+}
+
 function seedXiaolin(contacts: FakeContacts, network: FakeNetwork, now: Date): void {
   network.seedJoined('xiaolin', '小林');
   contacts.me = face('xiaolin', '小林', true);
@@ -151,6 +168,9 @@ export function seedNetworkScene(parts: { contacts: FakeContacts; network: FakeN
   scene: NetScene): void {
   if (scene === 'alex') {
     seedAlex(parts.contacts, parts.network, now);
+  } else if (scene === 'group') {
+    seedAlex(parts.contacts, parts.network, now);
+    seedGroupAsks(parts.contacts, now);
   } else if (scene === 'xiaolin') {
     seedXiaolin(parts.contacts, parts.network, now);
   } else if (scene === 'states') {

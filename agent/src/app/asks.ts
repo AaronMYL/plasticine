@@ -76,7 +76,8 @@ function networkReplyOf(ask: Ask): NonNullable<AskView['networkReply']> | null {
     return null;
   }
   const text = (key: string): string | null => (typeof context[key] === 'string' ? context[key] : null);
-  return { contactId: text('contactId'), groupId: text('groupId'), questionId, draft: text('draft') };
+  return { contactId: text('contactId'), groupId: text('groupId'), questionId, draft: text('draft'),
+    ...(context['self'] === true ? { self: true } : {}) };
 }
 
 export function askView(_state: unknown, ask: Ask): AskView {

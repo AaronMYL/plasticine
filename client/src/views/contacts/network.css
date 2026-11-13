@@ -165,6 +165,28 @@
   flex-direction: column;
 }
 
+.cm-group-line[data-side='me'] {
+  align-items: flex-end;
+}
+
+/* 人话外面那层（.cm-row）是按内容收紧的：里面这一行再按百分比限宽会被算窄，别人说的话就提前换行了（11-13）。 */
+.cm-row > .cm-group-line {
+  max-width: 100%;
+}
+
+.cm-row > .cm-group-line > .cm-line {
+  max-width: 100%;
+}
+
+/* 群里 Plasticine 的话上面一行：是谁的。 */
+.cm-ai-owner[data-side='me'] {
+  margin: 0 32px 2px 0;
+}
+
+.cm-group-line[data-side='me'] > .cm-line {
+  max-width: min(560px, 88%);
+}
+
 .cm-ai-note {
   display: inline-grid;
   place-items: center;
@@ -215,6 +237,14 @@
   border-radius: 50%;
   background: var(--tint2);
   color: var(--fg2);
+}
+
+.composer-mentions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 60%;
+  padding-block: 4px;
 }
 
 .composer-mention {
@@ -545,23 +575,6 @@
   flex: none;
 }
 
-.net-code {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  font-family: var(--mono);
-  font-size: 24px;
-  font-weight: 500;
-  line-height: 32px;
-}
-
-.net-code small {
-  color: var(--fg2);
-  font-family: var(--sans);
-  font-size: 12px;
-  font-weight: 400;
-}
 
 .net-share {
   margin: 0;

@@ -2,9 +2,12 @@
 // 我问对方的 Plasticine 的那句，气泡里开头一个 ✦。AI↔AI 那一段折成正中一行「✦ 摘要 · n」，点开摊开。任务卡站在发起方一侧。
 // 换一天时正中一行等宽的「11-03 周二」。系统的一句（安全码变了、接上了）正中小字。
 // 邮件（2026-11-04 用户定）不进气泡：一封一个整宽阅读区（mail-item.tsx），最新的那封摊开。
+// 11-13 Aaron 用群聊后提的：群里 Plasticine 的话上面写是谁的（原来只有一个 ✦，分不清）；一句同时 @ 了好几个 Plasticine
+// 的（服务端按人各发一句同样的话）并成一个气泡，开头并排几个 @。
 
 import { theirAi } from './contact-names.ts';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMainName } from '../mates/main-identity.tsx';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ContactMessageView, ContactRow, ContactThreadItem } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { AiMark } from '../../shell/glyph.tsx';
@@ -23,23 +26,67 @@ import { TaskCard } from './task-card.tsx';
 
 const GROUP_AI_TIP = '群里只用对全群都能说的资料回答';
 
-function TheirAi({ message, label }: { message: ContactMessageView; label: string }): ReactNode {
-  return (
+type MentionOf = NonNullable<ContactMessageView['mention']>;
+
+/** 同一句还 @ 了谁（并进来的那几句）：消息 id → 另外几个。 */
+const AlsoAsked = createContext<ReadonlyMap<string, readonly MentionOf[]>>(new Map());
+
+/** 并成一个气泡的那几句，发出来的时间最多差这么久。 */
+const SAME_ASK_MS = 10_000;
+
+/**
+ * 一句同时 @ 了好几个 Plasticine：紧挨着、同一个人说的、字一样的几句「问 Plasticine」并成第一句，其余的 @ 记在 also 里。
+ * 带附件的、隔了别的话的不并。
+ */
+export function foldAsks(items: readonly ContactThreadItem[])
+  : { items: ContactThreadItem[]; also: Map<string, MentionOf[]> } {
+  const kept: ContactThreadItem[] = [];
+  const also = new Map<string, MentionOf[]>();
+  for (const item of items) {
+    const last = kept.at(-1);
+    if (item.type === 'message' && last?.type === 'message' && item.message.mention != null) {
+      const [head, next] = [last.message, item.message];
+      const same = head.toAi === true && next.toAi === true && head.mention != null && head.author === next.author
+        && head.sender?.accountId === next.sender?.accountId && head.text === next.text
+        && (next.attachments?.length ?? 0) === 0 && next.status !== 'failed'
+        && Math.abs(Date.parse(next.at) - Date.parse(head.at)) <= SAME_ASK_MS;
+      if (same) {
+        also.set(head.id, [...(also.get(head.id) ?? []), item.message.mention]);
+        continue;
+      }
+    }
+    kept.push(item);
+  }
+  return { items: kept, also };
+}
+
+/** AI 那句上面的一行小字：是谁的 Plasticine（群里才写；一对一左边是对方的、右边是我的，不用写）。 */
+function AiOwner({ label, side }: { label: string; side: 'me' | 'them' }): ReactNode {
+  return <span className="cm-sender cm-ai-owner" data-side={side}>{label}</span>;
+}
+
+function TheirAi({ message, label, named = false }: { message: ContactMessageView; label: string; named?: boolean })
+  : ReactNode {
+  const line = (
     <div className="cm-line" data-side="them" data-ai="true">
       <span className="cm-ai-slot"><AiMark label={label} /></span>
       <p className="cm-ai-text">{message.text}</p>
     </div>
   );
+  return named ? <div className="cm-group-line"><AiOwner label={label} side="them" />{line}</div> : line;
 }
 
 function MyAi({ message, group }: { message: ContactMessageView; group: boolean }): ReactNode {
-  return (
+  const mainName = useMainName();
+  const line = (
     <div className="cm-line" data-side="me" data-ai="true">
       <p className="cm-ai-text">{message.text}</p>
       <span className="cm-ai-slot"><AiMark label="你的 Plasticine" /></span>
       {group ? <InfoTip text={GROUP_AI_TIP} label="你的 Plasticine 在群里怎么答" /> : null}
     </div>
   );
+  return group ? <div className="cm-group-line" data-side="me"><AiOwner label={`我的 ${mainName}`} side="me" />{line}</div>
+    : line;
 }
 
 /** 「小林的」「Alex 的」：名字是拉丁字母结尾时空一格（设计稿的写法）。 */
@@ -56,10 +103,12 @@ export function Mention({ mention }: { mention: NonNullable<ContactMessageView['
 }
 
 function Text({ message }: { message: ContactMessageView }): ReactNode {
+  const also = useContext(AlsoAsked).get(message.id) ?? [];
   return (
     <>
       {message.replyTo === null || message.replyTo === undefined ? null : <ReplyLine reply={message.replyTo} />}
       {message.mention === null || message.mention === undefined ? null : <Mention mention={message.mention} />}
+      {also.map((mention) => <Mention key={`${mention.name}:${mention.self}`} mention={mention} />)}
       {message.text}
     </>
   );
@@ -72,7 +121,7 @@ function GroupThem({ message }: { message: ContactMessageView }): ReactNode {
     return <p className="cm-system">{message.text}</p>;
   }
   if (message.author === 'their_ai') {
-    return <TheirAi message={message} label={`${sender.name}的 Plasticine`} />;
+    return <TheirAi message={message} label={`${ownerOf(sender.name)} Plasticine`} named />;
   }
   return (
     <div className="cm-group-line">
@@ -231,11 +280,12 @@ export function ThreadItems({ items, contact, now, navigate }: ThreadItemsProps)
   );
 }
 
-function ThreadList({ items, contact, now, navigate }: ThreadItemsProps): ReactNode {
+function ThreadList({ items: all, contact, now, navigate }: ThreadItemsProps): ReactNode {
   const timeZone = useTimeZone();
+  const { items, also } = useMemo(() => foldAsks(all), [all]);
   const openMail = latestMail(items);
   let previousDay = '';
-  return items.map((item) => {
+  const rows = items.map((item) => {
     const at = itemTime(item);
     const day = dayKey(at, timeZone);
     const separator = day === previousDay ? null : <p className="cm-day mono">{dayLabel(at, timeZone)}</p>;
@@ -247,4 +297,5 @@ function ThreadList({ items, contact, now, navigate }: ThreadItemsProps): ReactN
       </div>
     );
   });
+  return <AlsoAsked.Provider value={also}>{rows}</AlsoAsked.Provider>;
 }

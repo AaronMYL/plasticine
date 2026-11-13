@@ -145,10 +145,17 @@ export class FakeGroups implements GroupTasksApi {
       message.replyTo = replyLine(messageIn(record.entries, input.replyToId), { me: this.deps.me().name, them: '' });
     }
     this.post(record, message);
-    if (target !== null && target !== undefined) {
-      this.deps.later(() => this.post(record, this.message(record, target.self ? 'my_ai' : 'their_ai',
-        `${target.self ? '' : `${target.name}的 Plasticine：`}我只用群里每个人都能听的资料回答，这件事资料里没有。`,
-        target)));
+    // 同一句还 @ 了别人的 Plasticine：和真服务端一样各记一句同样的话（界面并成一个气泡），各回各的。
+    const more = target === null || target === undefined ? [] : (input.alsoAiOf ?? [])
+      .map((accountId) => record.members.find((member) => member.accountId === accountId))
+      .filter((member) => member !== undefined && member.accountId !== target.accountId) as MemberFace[];
+    for (const member of more) {
+      this.post(record, this.message(record, 'me', input.text, this.deps.me(),
+        { name: member.name, self: member.self }));
+    }
+    for (const member of target === null || target === undefined ? [] : [target, ...more]) {
+      this.deps.later(() => this.post(record, this.message(record, member.self ? 'my_ai' : 'their_ai',
+        '我只用群里每个人都能听的资料回答，这件事资料里没有。', member)));
     }
     return message;
   }

@@ -8,7 +8,9 @@
 // 线停下以后：
 // - 别人问我（answer）：说得准、不用主人拍板 → 直接回；否则先回一句「我问一下 <我的名字>」，再出一张要你确认卡
 //   （这样回 / 我自己回 / 不回）。没连模型、线失败了也出卡（没有草稿）。
-// - 我 @ 自己的（self）：有回答就发出去（是他自己叫它答的）；没答成在聊天里记一句原因，不发。
+// - 我 @ 自己的（self）：说得准、不用我拍板 → 直接发出去（是我自己叫它答的）；拿不准、或者是替我对别人说话 → 不往
+//   聊天里发，出一张只有我看得到的确认卡（这样发 / 不发），草稿能先改（11-13 Aaron：「我 @ 自己的 AI 没有出确认卡，
+//   只能通过 @ 确认」）；没答成在聊天里记一句原因，不发。
 
 import { Type } from 'typebox';
 import { Value } from 'typebox/value';
@@ -46,6 +48,21 @@ const SPEAKER_LABELS: Readonly<Record<ProxyLine['speaker'], string>> = {
   them: '对方', their_ai: '对方的 Plasticine', me: '主人', my_ai: '你（主人的 Plasticine）',
 };
 
+/** 群里好几个人：写名字，才分得清谁说的（一对一照旧写「对方」）。 */
+function speakerLabel(line: ProxyLine): string {
+  if (line.name === undefined || line.name.trim() === '' || line.speaker === 'me' || line.speaker === 'my_ai') {
+    return SPEAKER_LABELS[line.speaker];
+  }
+  return line.speaker === 'their_ai' ? `${line.name} 的 Plasticine` : line.name;
+}
+
+/** 主人自己 @ 的：answer 就是要发出去的那句；替主人对别人说话先给主人看。 */
+const SELF_RULE = [
+  'answer 只写要发到聊天里的那句话本身，不要写「我想这样回」「你看行吗」这类问主人的话。',
+  '主人是让你替他对别人说话（回一句、表个态、怼回去、答应或拒绝什么）时，needsOwner=true：这句先给主人一个人看，他点了才发；',
+  '主人只是问你一件事、材料里答得上，needsOwner=false，直接答。',
+].join('');
+
 const RULES = [
   '你是主人的 Plasticine，替主人在 Cyber Hunter 上回答一个问题。这条线只做这一件事，没有工具。',
   '只能根据下面「能说的材料」和最近的对话回答；材料里没有的，不猜、不编，confident=false。',
@@ -70,16 +87,16 @@ export interface Question {
   conversation: ProxyLine[];
 }
 
-function sealedPrompt(ownerName: string, question: Question, materials: readonly GatheredMaterial[]): string {
+export function sealedPrompt(ownerName: string, question: Question, materials: readonly GatheredMaterial[]): string {
   const where = question.origin === 'group' && question.group !== null
     ? `在群「${question.group.name}」里（群里人人都看得到你的回答）。` : '在一对一的聊天里。';
   const who = question.mode === 'self'
-    ? `主人（${ownerName}）自己 @ 了你，你的回答对面也看得到，所以照样只用下面的材料。`
+    ? `主人（${ownerName}）自己 @ 了你，你的回答对面也看得到，所以照样只用下面的材料。${SELF_RULE}`
     : `问的是 ${question.askerName}${question.askerIsAi ? '的 Plasticine（一个 AI）' : ''}。`;
   const material = materials.length === 0 ? '（没有）' : materials.map((entry) =>
     `### [${entry.ref}] ${entry.title}\n${entry.text}`).join('\n\n');
   const conversation = question.conversation.length === 0 ? '（没有）' : question.conversation
-    .map((line) => `${SPEAKER_LABELS[line.speaker]}：${line.text}`).join('\n');
+    .map((line) => `${speakerLabel(line)}：${line.text}`).join('\n');
   return [RULES, `## 这一次\n主人是 ${ownerName}。${where}${who}`, `## 能说的材料\n${material}`,
     `## 最近的对话\n${conversation}`].join('\n\n');
 }
@@ -103,6 +120,18 @@ export function parseAnswer(text: string | null): ProxyAnswer | null {
     }
   }
   return { answer: clip(body, 2_000), confident: false, usedMaterialIds: [], needsOwner: true };
+}
+
+/**
+ * 线停下以后这段回答怎么办：send = 直接发；hold = 交给主人在确认卡上定；note = 只在聊天里记一句没答成。
+ * 别人问的拿不准一律出卡（没草稿也出）；我自己 @ 的有草稿才出卡。
+ */
+export function settleAction(mode: Question['mode'], answer: ProxyAnswer | null): 'send' | 'hold' | 'note' {
+  const usable = answer !== null && answer.answer.trim() !== '';
+  if (usable && answer.confident && !answer.needsOwner) {
+    return 'send';
+  }
+  return mode === 'self' && !usable ? 'note' : 'hold';
 }
 
 function said(materials: readonly ResponseMaterial[], used: readonly string[]): SaidMaterial[] {
@@ -202,8 +231,11 @@ export class Responder {
       const mine = message.authorAccountId === me;
       const ai = message.kind === 'ai_text';
       const speaker: ProxyLine['speaker'] = mine ? (ai ? 'my_ai' : 'me') : (ai ? 'their_ai' : 'them');
-      return { speaker, text: [message.text, this.#context.state.networkAttachments.contextText(message.id)]
-        .filter(Boolean).join('\n') };
+      const name = mine ? undefined
+        : this.#context.state.groupMembers.get(groupId, message.authorAccountId)?.displayName;
+      return { speaker, ...(name === undefined ? {} : { name }),
+        text: [message.text, this.#context.state.networkAttachments.contextText(message.id)]
+          .filter(Boolean).join('\n') };
     });
   }
 
@@ -309,19 +341,17 @@ export class Responder {
         }
         context.state.netResponses.settle(current.id, current.version, context.now().toISOString());
       }
-      if (question.mode === 'self') {
-        if (usable) {
-          this.#send(changes, question, answer.answer, `responder:${question.questionId}`, said(materials, used));
-        } else {
-          this.#note(question, SELF_FAILED);
-        }
-        return;
+      const action = settleAction(question.mode, answer);
+      if (action === 'note') {
+        this.#note(question, SELF_FAILED);
+      } else if (action === 'send' && usable) {
+        this.#send(changes, question, answer.answer,
+          `${question.mode === 'self' ? 'responder' : 'proxy'}:${question.questionId}`, said(materials, used));
+      } else if (question.mode === 'self') {
+        this.#holdSelf(changes, question, usable ? answer.answer : '', said(materials, used));
+      } else {
+        this.#hold(changes, question, usable ? answer.answer : null, said(materials, used));
       }
-      if (usable && answer.confident && !answer.needsOwner) {
-        this.#send(changes, question, answer.answer, `proxy:${question.questionId}`, said(materials, used));
-        return;
-      }
-      this.#hold(changes, question, usable ? answer.answer : null, said(materials, used));
     });
   }
 
@@ -381,6 +411,25 @@ export class Responder {
     });
   }
 
+  /** 我自己 @ 的、它拿不准：不往聊天里发，出一张只有我看得到的卡（这样发 / 不发）。 */
+  #holdSelf(changes: Changes, question: Question, draft: string, materials: SaidMaterial[]): void {
+    const context = this.#context;
+    const where = question.origin === 'group' && question.group !== null ? `在「${question.group.name}」里`
+      : `给 ${question.contact?.displayName ?? '对方'}`;
+    context.desk.raise(changes, {
+      kind: 'confirm',
+      purpose: 'network_reply',
+      basis: 'inferred',
+      question: clip(`你让 Plasticine ${where}回一句：${question.text}`, ASK_QUESTION_MAX_CHARS),
+      detail: clip(`你说的：${question.text}\n\n想这样发：${draft}`, ASK_DETAIL_MAX_CHARS),
+      options: [{ id: 'send', label: '这样发', recommended: true }, { id: 'none', label: '不发' }],
+      actionId: `network-reply:${question.questionId}`,
+      context: { contactId: question.contact?.id ?? null, groupId: question.group?.id ?? null,
+        questionId: question.questionId, exchangeId: question.exchangeId, draft, askerIsAi: false, self: true,
+        materials },
+    });
+  }
+
   #note(question: Question, text: string): void {
     const { state, now } = this.#context;
     const at = now().toISOString();
@@ -428,7 +477,8 @@ export class Responder {
         const exchangeId = typeof ask.context?.['exchangeId'] === 'string' ? ask.context['exchangeId'] : questionId;
         const listed = ask.context?.['materials'];
         const materials = Value.Check(SAID_MATERIALS, listed) ? listed : [];
-        const question: Question = { origin: group === null ? 'contact' : 'group', mode: 'answer', contact, group,
+        const question: Question = { origin: group === null ? 'contact' : 'group',
+          mode: ask.context?.['self'] === true ? 'self' : 'answer', contact, group,
           questionId, text: '', askerName: contact?.displayName ?? '', askerIsAi: ask.context?.['askerIsAi'] === true,
           exchangeId, reach: [], conversation: [] };
         // 他在卡上改过字再发：发他改的那一版（没改就是草稿原样）。

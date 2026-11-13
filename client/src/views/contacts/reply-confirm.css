@@ -58,3 +58,11 @@
 .contact-thread[data-phone='true'] .reply-confirm-draft {
   font-size: 16px;
 }
+
+.reply-confirm-question {
+  margin: 0;
+  color: var(--fg2);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}

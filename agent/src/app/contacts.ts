@@ -140,6 +140,7 @@ export async function sendContactMessage(context: RequestContext): Promise<Reply
     requireGroupRow(deps, id);
     return idempotent(context, body.requestId, () => {
       const message = network.postToGroup(id, { text: body.text, aiOf: body.aiOf ?? null,
+        ...(body.alsoAiOf === undefined ? {} : { alsoAiOf: body.alsoAiOf }),
         ...(body.replyToId === undefined ? {} : { replyToId: body.replyToId }),
         requestId: body.requestId,
         ...(body.attachmentIds === undefined ? {} : { attachmentIds: body.attachmentIds }) });

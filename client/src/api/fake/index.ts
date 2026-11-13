@@ -175,6 +175,14 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
         { id: 'none', label: '不回', description: null, recommended: false }],
       networkReply: { contactId: 'c_zhouke', groupId: null, questionId: 'q_zhou_1',
         draft: '能接。稿子发来后，周五前给你 10 条要点，每条都能点回原话。' } });
+    // 我在群里 @ 了自己的 Plasticine、它想先给我看一眼（11-13；群在 ?net=alex / ?net=group 里才有）。
+    asks.raise({ id: 'ask_reply_self', kind: 'confirm', basis: 'inferred',
+      question: '你让 Plasticine 在「杭州周末」里回一句：帮我回阿杰，茶社我订',
+      detail: '你说的：帮我回阿杰，茶社我订\n\n想这样发：茶社我来订，周六四点的位子，到了报 Alex。',
+      options: [{ id: 'send', label: '这样发', description: null, recommended: true },
+        { id: 'none', label: '不发', description: null, recommended: false }],
+      networkReply: { contactId: null, groupId: 'grp-hangzhou', questionId: 'q_self_1',
+        draft: '茶社我来订，周六四点的位子，到了报 Alex。', self: true } });
     return;
   }
   // ?scene=sample：研究周报样刊出来、附「开启定时 / 再改改」卡（第 7 批第 14 条，设计稿 Chat-Sample）。

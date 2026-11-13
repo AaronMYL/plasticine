@@ -96,11 +96,13 @@ export class ContactActions {
   }
 
   /**
-   * 发输入框里那一句：target ai = 问对方的 Plasticine，mine = @ 我自己的；群里 aiOf = 问谁的 Plasticine（账号 id）。
+   * 发输入框里那一句：target ai = 问对方的 Plasticine，mine = @ 我自己的；群里 aiOf = 问谁的 Plasticine（账号 id），
+   * alsoAiOf = 同一句还问了谁的。
    * 邮件联系人由服务端回最近一封。replyToId = 回的是这个聊天里的哪一句（第 12 批）。
    */
   async send(contact: ContactRow, target: 'person' | 'ai' | 'mine', aiOf: string | null = null,
-    attachmentIds: string[] = [], replyToId: string | null = null): Promise<boolean> {
+    attachmentIds: string[] = [], replyToId: string | null = null, alsoAiOf: readonly string[] = [])
+    : Promise<boolean> {
     const key = contactOpKey(contact.id, 'send');
     const text = this.deps.drafts.get(key).trim();
     if (text === '' && attachmentIds.length === 0) {
@@ -112,7 +114,8 @@ export class ContactActions {
     return this.run(key, asking ? '问 Plasticine' : '发送', contact.name, (requestId) => ({
       kind: 'contact_send',
       contactId: contact.id,
-      body: aiOf !== null ? { requestId, text, aiOf, ...media } : target === 'person' ? { requestId, text, ...media }
+      body: aiOf !== null ? { requestId, text, aiOf, ...(alsoAiOf.length === 0 ? {} : { alsoAiOf: [...alsoAiOf] }),
+        ...media } : target === 'person' ? { requestId, text, ...media }
         : { requestId, text, target, ...media },
     }));
   }

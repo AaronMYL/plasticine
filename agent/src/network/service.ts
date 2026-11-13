@@ -383,31 +383,44 @@ export class NetworkService {
     return leaveGroup(this.#context, groupId);
   }
 
-  /** 在群里说一句；aiOf = 问谁的 Plasticine（账号 id，可以是自己）。 */
-  postToGroup(groupId: string, input: { text: string; aiOf: string | null; requestId: string;
-    attachmentIds?: string[]; replyToId?: string })
+  /**
+   * 在群里说一句；aiOf = 问谁的 Plasticine（账号 id，可以是自己）。alsoAiOf = 同一句还 @ 了谁的（每个各发一句同样的话，
+   * 线上格式一句只能问一个）。回的是第一句。
+   */
+  postToGroup(groupId: string, input: { text: string; aiOf: string | null; alsoAiOf?: readonly string[];
+    requestId: string; attachmentIds?: string[]; replyToId?: string })
     : GroupMessage {
     const context = this.#context;
     const identity = requireIdentity(context);
     const group = requireGroup(context, groupId);
-    if (input.aiOf !== null && context.state.groupMembers.get(group.id, input.aiOf)?.leftAt !== null) {
-      throw new NetworkError('invalid_input', '只能 @ 群里的人的 Plasticine。', 'aiOf');
+    // 只有附件、没有字的那句没法再发一遍，只问第一个。
+    const more = input.aiOf === null || input.text.trim() === '' ? []
+      : [...new Set(input.alsoAiOf ?? [])].filter((id) => id !== input.aiOf);
+    for (const target of input.aiOf === null ? [] : [input.aiOf, ...more]) {
+      if (context.state.groupMembers.get(group.id, target)?.leftAt !== null) {
+        throw new NetworkError('invalid_input', '只能 @ 群里的人的 Plasticine。', 'aiOf');
+      }
     }
-    const message = context.desk.commit((changes) => {
-      const exchangeId = input.aiOf === null ? null : context.newId();
-      const posted = postGroupMessage(context, changes, group, { kind: input.aiOf === null ? 'text' : 'ask_ai',
-        text: input.text, target: input.aiOf, exchangeId, author: 'me', requestId: input.requestId,
-        replyTo: groupReplyKey(context, group.id, input.replyToId),
+    const replyTo = groupReplyKey(context, group.id, input.replyToId);
+    const posted = context.desk.commit((changes) => {
+      const first = postGroupMessage(context, changes, group, { kind: input.aiOf === null ? 'text' : 'ask_ai',
+        text: input.text, target: input.aiOf, exchangeId: input.aiOf === null ? null : context.newId(), author: 'me',
+        requestId: input.requestId, replyTo,
         ...(input.attachmentIds === undefined ? {} : { attachmentIds: input.attachmentIds }) });
-      if (posted === null) {
+      if (first === null) {
         throw new NetworkError('conflict', '这句没发出去。');
       }
-      return posted;
+      const rest = more.map((target) => postGroupMessage(context, changes, group, { kind: 'ask_ai',
+        text: input.text, target, exchangeId: context.newId(), author: 'me',
+        requestId: `${input.requestId}:${target}`, replyTo }));
+      return { first, all: [first, ...rest.filter((message) => message !== null)] };
     });
-    if (input.aiOf === identity.accountId) {
-      this.#responder.askedInGroup(message.id);
+    for (const message of posted.all) {
+      if (message.targetAccountId === identity.accountId) {
+        this.#responder.askedInGroup(message.id);
+      }
     }
-    return message;
+    return posted.first;
   }
 
   /** 给一句话加 / 拿掉一个表情（第 12 批）：threadId 是联系人或群。 */
