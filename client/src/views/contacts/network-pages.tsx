@@ -1,12 +1,10 @@
 // 消息右边整块（手机上一整页）的四样（2026-11-05 设计稿 Add-Friend / New-Group / Invite / Friend-Request，
 // Phone-Add-Friend / Phone-New-Group）：加好友（按账号号找、附一句、加好友；或者让对方扫我的链接）、新建群聊（勾好友、
-// 群名可选、建群）、邀请朋友加入网络（邀请码 + 一段能直接发的话、复制、换一个码）、新请求（谁、他说的那句、关系、
+// 群名可选、建群）、邀请朋友加入网络（一段能直接发的话：去哪下载、装好后加我的 @账号）、新请求（谁、他说的那句、关系、
 // 接受 / 忽略）。头上一行标题 + 关掉（手机是返回）。
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import type { NetworkInviteResponse } from '../../api/contacts-client.ts';
-import { createRequestId } from '../../api/request-id.ts';
 import type { ContactLookupResponse, ContactRow } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
@@ -215,38 +213,37 @@ export function NewGroupPage({ phone, onClose, onCreated }: { phone: boolean; on
   );
 }
 
-const INVITE_DAYS = 14;
+/** 发给朋友的那段话：去哪下载、装好后加谁。入网不要邀请码（11-08），11-13 Aaron 定把码去掉。 */
+export function inviteText(handle: string, host: string | undefined): string {
+  const site = host === undefined || !host.includes('.') ? 'cyberhunter.top' : host.slice(host.indexOf('.') + 1);
+  return `我在用 Plasticine，邀请你加入。\n下载：https://${site}/download/\n装好后加我 @${handle}`;
+}
 
 export function InvitePage({ phone, onClose }: { phone: boolean; onClose: () => void }): ReactNode {
-  const api = useApi();
-  const [invite, setInvite] = useState<NetworkInviteResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { network } = useLive();
+  const status = useStore(network.status.data);
   const [copied, setCopied] = useState(false);
-  const make = (): void => {
-    setCopied(false);
-    api.network.createInvite({ requestId: createRequestId() }).then(setInvite)
-      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : '这次没生成，稍后再试。'));
-  };
-  useEffect(make, [api]);
+  useEffect(() => {
+    network.status.open();
+  }, [network]);
+  const account = status.value?.account ?? null;
+  const text = account === null ? null : inviteText(account.handle, account.host);
   return (
     <NetPane title="邀请朋友加入网络" phone={phone} onClose={onClose}>
       <div className="net-form">
-        {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
-        {invite === null ? null : (
+        {status.error === null ? null : <p className="block-empty is-error" role="alert">{status.error}</p>}
+        {status.value !== null && account === null
+          ? <p className="block-empty">先在「设置 · 账号」里起一个 @账号，朋友才加得到你。</p> : null}
+        {text === null ? null : (
           <>
             <div className="field">
-              <span className="field-label">邀请码</span>
-              <p className="net-code">{invite.invite.code}<small>{INVITE_DAYS} 天内有效 · 用一次</small></p>
-            </div>
-            <div className="field">
               <span className="field-label">发给朋友的话</span>
-              <p className="net-share">{invite.shareText}</p>
+              <p className="net-share">{text}</p>
             </div>
             <div className="net-actions">
               <button type="button" className="primary-button" onClick={() => {
-                void navigator.clipboard?.writeText(invite.shareText).then(() => setCopied(true));
+                void navigator.clipboard?.writeText(text).then(() => setCopied(true));
               }}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? '复制好了' : '复制这段话'}</button>
-              <button type="button" className="chip-button" onClick={make}>换一个码</button>
             </div>
           </>
         )}

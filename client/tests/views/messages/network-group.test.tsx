@@ -89,11 +89,14 @@ describe('群聊', () => {
 });
 
 describe('加好友、邀请、新请求、起草的任务卡', () => {
-  it('邀请朋友：邀请码和三行能直接发的话', async () => {
+  it('邀请朋友：三行能直接发的话——去哪下载、装好后加我的 @账号；没有邀请码了', async () => {
     await open('#/messages/invite');
     const pane = await screen.findByRole('region', { name: '邀请朋友加入网络' });
     expect(await within(pane).findByText(/我在用 Plasticine，邀请你加入/)).toBeTruthy();
-    expect(within(pane).getByRole('button', { name: '换一个码' })).toBeTruthy();
+    expect(within(pane).getByText(/装好后加我 @alex/)).toBeTruthy();
+    expect(within(pane).queryByText(/邀请码/)).toBeNull();
+    expect(within(pane).queryByRole('button', { name: '换一个码' })).toBeNull();
+    expect(within(pane).getByRole('button', { name: '复制这段话' })).toBeTruthy();
   });
 
   it('新请求：一张卡带关系分段，选了合作再接受，就按合作记下', async () => {

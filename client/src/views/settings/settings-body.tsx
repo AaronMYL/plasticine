@@ -1,8 +1,9 @@
 // 设置弹框里一段的内容（2026-11-05 他定六段；11-08 第 7 批删「日常」剩五段，见 routes.ts SETTINGS_SECTIONS）：
-//   通用 = 外观 · 时区 · 通知 · 装到主屏幕 · 提建议或反馈（2026-11-05 度量采集删了；11-06 他定通知全改成消息）；
+//   通用 = 外观 · 时区 · 通知 · 装到主屏幕（2026-11-05 度量采集删了；11-06 他定通知全改成消息；11-13 他定去掉「提建议或反馈」）；
 //   AI = 模型（提供商平级）· 默认模型 · 技能 · 工具开关（2026-11-05 照设计稿 Settings-AI）；
 //   浏览器 = 登录着的网站 · 导入 · 网页翻译（11-08 信息流来源挪到信息流第二栏）；
-//   账号 = 名字和 @账号 · 密码 · 登录着的设备 · 头像 · 邀请朋友 · 对外可见 · 通知记录（11-08 设计稿 Settings-Account）；
+//   账号 = 名字和 @账号 · 密码 · 登录着的设备 · 头像 · 对外可见 · 通知记录（11-08 设计稿 Settings-Account；11-13 他定去掉
+//   「邀请朋友」：入网早就不要邀请码了）；
 //   系统 = 版本 · 运行情况 · 替你动手的电脑 · 备份（设计稿 Settings-System）。
 // 段名是弹框右边的标题，段里每块用自己的小节标题分开，不加说明段落。从别处带着 focus 打开时滚到那一块并把焦点给它。
 
@@ -18,10 +19,8 @@ import { AvatarSection } from './avatar-section.tsx';
 import { AppearanceSection } from './appearance-section.tsx';
 import { BrowserSection } from './browser-section.tsx';
 import { Devices } from './devices-block.tsx';
-import { FeedbackSection } from './feedback-section.tsx';
 import { InstallSection } from './install-section.tsx';
 import { ModelsSection } from '../models/models-section.tsx';
-import { NetworkSection } from './network-section.tsx';
 import { NoticesSection } from './notices-section.tsx';
 import type { PushSwitchStatus } from './push-switch.ts';
 import { SearchEngineSection } from './search-engine-section.tsx';
@@ -132,7 +131,6 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
         <Spot name="time-zone"><TimeZoneSection /></Spot>
         <NotificationSection />
         <InstallSection />
-        <FeedbackSection />
       </>;
     case 'ai':
       return <>
@@ -153,7 +151,6 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
         <AccessSection />
         <Devices />
         <AvatarSection />
-        <NetworkSection />
         <Spot name="visibility"><VisibilitySection /></Spot>
         <Spot name="notices"><NoticesSection /></Spot>
       </>;

@@ -31,6 +31,9 @@ const KNOWN_ZONES: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'Etc/UTC', label: '协调世界时 · UTC' },
 ];
 
+/** 搜出来最多列几个。 */
+const RESULTS_SHOWN = 6;
+
 function zoneChoices() {
   const known = new Map(KNOWN_ZONES.map((zone) => [zone.id, zone.label]));
   const available = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
@@ -61,7 +64,8 @@ export function TimeZoneField({ value, disabled, onChange }: {
   const label = choices.find((entry) => entry.id === zone)?.label ?? zone;
   const term = query.trim().toLocaleLowerCase();
   const results = choices.filter((entry) => `${entry.id} ${entry.label}`.toLocaleLowerCase().includes(term));
-  const shown = results.slice(0, term === '' ? 8 : 16);
+  // 11-13 Aaron：「选择时区后，下面的时区列表也太长了」——不搜就不列；搜了最多 6 个，挑了就收起。
+  const shown = term === '' ? [] : results.slice(0, RESULTS_SHOWN);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
@@ -82,13 +86,16 @@ export function TimeZoneField({ value, disabled, onChange }: {
         <input type="search" className="search-input" value={query} disabled={disabled}
           placeholder="例如北京、新加坡、London" onChange={(event) => setQuery(event.target.value)} />
       </label>
-      <ul className="time-zone-results" aria-label="可选时区">
+      {shown.length === 0 ? null : <ul className="time-zone-results" aria-label="可选时区">
         {shown.map((entry) => <li key={entry.id}><button type="button" className="chip-button time-zone-result"
-          aria-pressed={entry.id === value} disabled={disabled} onClick={() => onChange(entry.id)}>
+          aria-pressed={entry.id === value} disabled={disabled} onClick={() => {
+            onChange(entry.id);
+            setQuery('');
+          }}>
           <span>{entry.label}</span><span className="text-meta">{entry.id}</span>
         </button></li>)}
-      </ul>
-      {shown.length === 0 ? <p className="block-empty">没有找到</p> : null}
+      </ul>}
+      {term !== '' && shown.length === 0 ? <p className="block-empty">没有找到</p> : null}
       <details><summary>直接填写时区名称</summary>
         <label className="field" htmlFor={`${id}-value`}><span className="field-label">时区名称</span>
           <input id={`${id}-value`} className="field-input field-input-mono" value={value} readOnly={disabled}

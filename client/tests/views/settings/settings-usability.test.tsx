@@ -16,7 +16,9 @@ describe('设置的用户操作路径', () => {
     // 弹框里第一个能停的是左栏顶上的查找框（11-12 加的）。
     const first = within(panel).getByRole('searchbox', { name: '搜设置' });
     const close = within(panel).getByRole('button', { name: '关掉设置' });
-    await within(panel).findByRole('region', { name: '提建议或反馈' });
+    await within(panel).findByRole('region', { name: '时区' });
+    // 11-13 Aaron 定：通用里不要「提建议或反馈」。
+    expect(within(panel).queryByRole('region', { name: '提建议或反馈' })).toBeNull();
     const controls = [...panel.querySelectorAll<HTMLElement>('button, input, select, textarea')]
       .filter((element) => !element.matches(':disabled'));
     const last = controls.at(-1)!;
@@ -37,8 +39,12 @@ describe('设置的用户操作路径', () => {
     expect(within(panel).queryByRole('button', { name: '保存' })).toBeNull();
     fireEvent.click(await within(panel).findByRole('button', { name: '选择时区' }));
     const search = within(panel).getByRole('searchbox', { name: '搜索城市或时区' });
+    // 11-13 Aaron：「选择时区后，下面的时区列表也太长了」——不搜不列，搜了才出，挑了就收起。
+    expect(within(panel).queryByRole('list', { name: '可选时区' })).toBeNull();
     fireEvent.change(search, { target: { value: '广州' } });
     fireEvent.click(within(panel).getByRole('button', { name: /北京.*上海.*广州/ }));
+    expect(within(panel).queryByRole('list', { name: '可选时区' })).toBeNull();
+    expect((search as HTMLInputElement).value).toBe('');
     expect(within(panel).getByLabelText('时区名称')).toHaveProperty('value', 'Asia/Shanghai');
     expect(within(panel).getByLabelText('所选时区的当前时间').textContent).toContain('UTC+08:00');
     fireEvent.click(within(panel).getByRole('button', { name: '保存' }));

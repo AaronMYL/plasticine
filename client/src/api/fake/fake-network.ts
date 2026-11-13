@@ -65,6 +65,11 @@ export class FakeNetwork implements NetworkApi {
   /** 新装的实例（第一次打开的三步）。 */
   welcome = false;
 
+  /** 测试：和中继同步出了错（null = 好了）。 */
+  fail(message: string | null): void {
+    this.state.lastError = message;
+  }
+
   async status(): Promise<NetworkStatus> {
     this.deps.session.require();
     return { ...structuredClone(this.state), inviteNeeded: !this.state.joined && !this.relayEmpty,

@@ -174,7 +174,8 @@ export function AccountProfile(): ReactNode {
   }, [api, round]);
   const name = state?.displayName ?? '';
   // 头像在网络状态里（设置 · 账号下面「头像」那块换的），和图标栏读同一份。
-  const avatar = useStore(network.status.data).value?.account?.avatar ?? null;
+  const status = useStore(network.status.data).value;
+  const avatar = status?.account?.avatar ?? null;
   const host = hostOf(state?.networkUrl ?? null);
   const reread = (): void => {
     setEditing(null);
@@ -184,6 +185,8 @@ export function AccountProfile(): ReactNode {
     <section className="block account-profile" aria-label="名字和密码">
       {state === null && error === null ? <PageLoading rows={3} dense /> : null}
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
+      {/* 和中继同步出的错（有才写）：原来在「邀请朋友」那一块，11-13 那块去掉后挪到这里。 */}
+      {status?.lastError == null ? null : <p className="block-empty is-error" role="alert">{status.lastError}</p>}
       {state === null ? null : <ul className="system-rows">
         <li className="system-row account-row">
           <FaceAvatar name={name === '' ? '?' : name} avatar={avatar} size={AVATAR_SIZE} />
