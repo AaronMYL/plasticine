@@ -27,6 +27,7 @@ import { openBookmark } from '../views/bookmarks/bookmark-address.ts';
 import { ToolPanel } from '../views/tools/tool-panel.tsx';
 import { BrowserView } from '../views/tools/browser-view.tsx';
 import { WorkDetail } from '../views/lines/work-detail.tsx';
+import { AmbientLayer } from './ambient/ambient-layer.tsx';
 import { ChatBall, ChatDialog } from './chat-dialog.tsx';
 import { ShellColumn } from './columns/shell-column.tsx';
 import { ColumnExpandButton, ColumnToggleContext, type ColumnToggle } from './columns/column-toggle.tsx';
@@ -429,6 +430,7 @@ export function Shell(): ReactNode {
           onOpenTab={openTabWeb} onCloseTab={closeWebTab} onReopen={(entry) => tabActions.reopenTab(entry.key)}
           onAsk={expandChat} collapsed={columnCollapsed} onSearch={() => setPalette(true)} /> : null}
         <div className="shell-main-area">
+          <AmbientLayer route={route} main={main.ref} suspended={webTab !== null || browserPage} />
           {columnHidden && !titled ? (
             <div className="column-reveal"><ColumnExpandButton tipSide="right" /></div>
           ) : null}

@@ -20,6 +20,8 @@ export interface DropdownItem {
   checked?: boolean;
   /** 删除这类不可逆的：危险色。 */
   danger?: boolean;
+  /** 多选的开关项：点了不收起菜单，接着点下一项。 */
+  keepOpen?: boolean;
 }
 
 /** 菜单里的一条分隔线。 */
@@ -90,7 +92,7 @@ export function DropdownMenu(props: DropdownMenuProps): ReactNode {
             <MenuItem key={item.label} label={item.label} icon={item.icon} disabled={item.disabled === true}
               shortcut={item.shortcut} checked={item.checked} danger={item.danger} onSelect={() => {
                 item.onSelect();
-                hide();
+                if (item.keepOpen !== true) hide();
               }} />
           ))}
         </Popover>
