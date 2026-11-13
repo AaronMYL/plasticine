@@ -1,15 +1,19 @@
 import { autoMateCharacter, isMateCharacter } from '../../../shared/api/mate-characters.ts';
 import type { Migration } from './migrate.ts';
 
-// 队友头像（11-13 Aaron 定）：头像文字换成 Plasticine-bot 的角色。旧的头像文字按队友名字自动分一个角色，颜色不变；
+// 队友头像（11-13 Aaron 定）：头像文字换成 Plasticine-bot 的角色。旧的头像文字按队友名字自动分一个角色（先建的先挑，
+// 尽量不和别的队友重样），颜色不变；
 // 主线的头像固定成 Plasticine 的泥团，存着的头像字和颜色去掉，只留名字。不加列、不删行。
 export const migration: Migration = {
   id: '0134-mate-characters',
   up(db) {
-    for (const row of db.all('SELECT id, name, avatar FROM mates')) {
+    const rows = db.all('SELECT id, name, avatar FROM mates ORDER BY created_at, id');
+    const taken = new Set(rows.map((row) => row['avatar']).filter(isMateCharacter));
+    for (const row of rows) {
       if (!isMateCharacter(row['avatar'])) {
-        db.run('UPDATE mates SET avatar = $avatar WHERE id = $id',
-          { id: String(row['id']), avatar: autoMateCharacter(String(row['name'])) });
+        const avatar = autoMateCharacter(String(row['name']), taken);
+        taken.add(avatar);
+        db.run('UPDATE mates SET avatar = $avatar WHERE id = $id', { id: String(row['id']), avatar });
       }
     }
     const main = db.all("SELECT value FROM kernel_settings WHERE key = 'main_identity'")[0];

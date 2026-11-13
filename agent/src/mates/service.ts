@@ -136,11 +136,12 @@ export class Mates {
     try { value = JSON.parse(result.text.replace(/^```(?:json)?\s*|\s*```$/g, '')); }
     catch { throw new LineError('conflict', '归纳结果没有读成，请重试。'); }
     const parsed = typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
-    // 头像是角色（11-13）：不让模型挑，按它起的名字固定分一个，转换前用户还能在弹框里换。
+    // 头像是角色（11-13）：不让模型挑，按它起的名字分一个别的队友没用的，转换前用户还能在弹框里换。
     const draft = typeof parsed['draft'] === 'object' && parsed['draft'] !== null
       ? parsed['draft'] as Record<string, unknown> : null;
     const proposal = { ...parsed, lineId, title: line.title, ...(draft === null ? {} : { draft: { ...draft,
-      avatar: autoMateCharacter(typeof draft['name'] === 'string' ? draft['name'] : line.title) } }) };
+      avatar: autoMateCharacter(typeof draft['name'] === 'string' ? draft['name'] : line.title,
+        new Set(this.#state.mates.all().map((mate) => mate.avatar))) } }) };
     if (!Value.Check(LegacyChatProposalSchema, proposal)) {
       throw new LineError('conflict', '归纳结果不完整，请重试。');
     }

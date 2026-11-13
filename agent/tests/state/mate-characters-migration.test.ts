@@ -39,9 +39,11 @@ test('头像文字换成按名字分的角色，挑过角色的、颜色、停�
       assert.ok(migration !== undefined);
       migration.up(db, { writeNoteBody: () => { throw new Error('不写笔记'); } });
       const row = (id: string) => db.get('SELECT avatar, hue FROM mates WHERE id = $id', { id });
-      assert.deepEqual({ ...row(old.id) }, { avatar: autoMateCharacter('资料研究员'), hue: 'rose' });
-      assert.deepEqual({ ...row(picked.id) }, { avatar: 'bunny' as const, hue: 'sky' });
-      assert.equal(row(gone.id)?.['avatar'], autoMateCharacter('旧队友'));
+      const first = autoMateCharacter('资料研究员', new Set(['bunny']));
+      assert.deepEqual({ ...row(old.id) }, { avatar: first, hue: 'rose' });
+      assert.deepEqual({ ...row(picked.id) }, { avatar: 'bunny', hue: 'sky' });
+      assert.equal(row(gone.id)?.['avatar'], autoMateCharacter('旧队友', new Set(['bunny', first])));
+      assert.notEqual(row(gone.id)?.['avatar'], first);
       assert.ok(isMateCharacter(row(gone.id)?.['avatar']));
       const main = db.get("SELECT value FROM kernel_settings WHERE key = 'main_identity'");
       assert.deepEqual(JSON.parse(String(main?.['value'])), { name: '阿泥' });

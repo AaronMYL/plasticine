@@ -11,10 +11,13 @@ test('角色清单不重复，自动分的和默认的都在清单里', () => {
   for (const id of [...AUTO_MATE_CHARACTERS, DEFAULT_MATE_CHARACTER]) assert.ok(isMateCharacter(id), id);
 });
 
-test('同一个名字总是分到同一个角色，名字不同大多分得开', () => {
+test('同一个名字总是分到同一个角色；别人用了的顺着往后找', () => {
   assert.equal(autoMateCharacter('资料研究员'), autoMateCharacter('资料研究员'));
   const names = ['资料研究员', '文字编辑', '日程管家', '代码助手', '产品经理', '设计师', '开发工程师', '测试工程师'];
-  assert.ok(new Set(names.map(autoMateCharacter)).size >= 6);
+  const taken = new Set<string>();
+  for (const name of names) taken.add(autoMateCharacter(name, taken));
+  assert.equal(taken.size, names.length);
+  assert.equal(autoMateCharacter('甲', new Set(AUTO_MATE_CHARACTERS)), autoMateCharacter('甲'));
 });
 
 test('队友头像只收清单里的角色；主线只有名字', () => {

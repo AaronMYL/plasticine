@@ -45,6 +45,12 @@ function hash(text: string): number {
   return h;
 }
 
-export function autoMateCharacter(seed: string): MateCharacter {
-  return AUTO_MATE_CHARACTERS[hash(seed) % AUTO_MATE_CHARACTERS.length] ?? DEFAULT_MATE_CHARACTER;
+/** 按名字分一个；taken 里是别的队友已经用了的，顺着往后找一个没人用的（都用了就不管重不重）。 */
+export function autoMateCharacter(seed: string, taken: ReadonlySet<string> = new Set()): MateCharacter {
+  const start = hash(seed) % AUTO_MATE_CHARACTERS.length;
+  for (let step = 0; step < AUTO_MATE_CHARACTERS.length; step += 1) {
+    const pick = AUTO_MATE_CHARACTERS[(start + step) % AUTO_MATE_CHARACTERS.length];
+    if (pick !== undefined && !taken.has(pick)) return pick;
+  }
+  return AUTO_MATE_CHARACTERS[start] ?? DEFAULT_MATE_CHARACTER;
 }
