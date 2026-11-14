@@ -67,6 +67,7 @@ const EVENTS = {
   feed_computer_fetch_failed: '电脑替服务器取回的订阅没读成，原因记在来源那一行',
   soul_night_failed: '夜里看自己的 Soul 时这一份没看成，下一晚再看；别的照常',
   soul_night_skipped: '夜里想改 Soul，但改得太多（只许小改），这一次没收',
+  illustration_shrink_skipped: '来信配图没压小（没有 ffmpeg 或转不成），照原图存',
   sse_failed: '事件推送失败，已关闭对应连接',
   after_commit_failed: '请求已提交，后续动作失败',
   request_failed: '请求处理失败',

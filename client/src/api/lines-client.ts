@@ -16,6 +16,7 @@ import type {
   LineResponse,
   ListLinesResponse,
   ListLinesQuery,
+  ImageModelResponse,
   ListModelProvidersResponse,
   ProviderLoginView,
   ReadLineResponse,
@@ -67,6 +68,8 @@ export interface LinesApi {
 export interface ModelProvidersApi {
   /** GET /v2/model-providers：平级的提供商列表、选的默认模型、实际在用的。 */
   list(signal?: AbortSignal): Promise<ListModelProvidersResponse>;
+  /** GET /v2/model-providers/image-model：设置 · AI「出图」那一行写的图片模型（第13批）；没有是 null。 */
+  imageModel(signal?: AbortSignal): Promise<ImageModelResponse>;
   /** POST /v2/model-providers/:id/login：开始订阅登录，回授权网址。 */
   startLogin(providerId: string, requestId: string): Promise<ProviderLoginView>;
   /** GET /v2/model-providers/:id/login/:loginId：登录走到哪了。 */

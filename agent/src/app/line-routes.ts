@@ -1,8 +1,8 @@
 // 新内核的路由条目（router.ts 摊进 ROUTES）：线（shared/api/lines.ts）和模型连接（shared/api/model-providers.ts）。
 // 都要设备会话。旧路由一条不动。
 
-import { CHATS_PATH, LINES_PATH, MODEL_CONFIG_PATH, MODEL_DEFAULT_PATH, MODEL_PROVIDERS_PATH, SIDE_PATH }
-  from '../../shared/api/index.ts';
+import { CHATS_PATH, LINES_PATH, MODEL_CONFIG_PATH, MODEL_DEFAULT_PATH, MODEL_IMAGE_PATH, MODEL_PROVIDERS_PATH,
+  SIDE_PATH } from '../../shared/api/index.ts';
 import { MATE_ROUTES } from './mates.ts';
 import type { Route } from './context.ts';
 import { listChats, openSideChat, reactLineMessage } from './side-chats.ts';
@@ -10,8 +10,8 @@ import { answerLineWidget } from './line-widgets.ts';
 import { deleteLine, pauseLine, restoreLine, listLines, readLine, readLineDetails, resumeLine, sendLineMessage,
   sendQueuedNow, stopLine, withdrawQueued }
   from './lines.ts';
-import { cancelProviderLogin, completeProviderLogin, getProviderLogin, listModelProviders, logoutProvider,
-  saveModelConfig, setDefaultModel, setProviderKey, startProviderLogin } from './model-providers.ts';
+import { cancelProviderLogin, completeProviderLogin, getImageModel, getProviderLogin, listModelProviders,
+  logoutProvider, saveModelConfig, setDefaultModel, setProviderKey, startProviderLogin } from './model-providers.ts';
 
 const PROVIDER = `${MODEL_PROVIDERS_PATH}/:id`;
 const LOGIN = `${PROVIDER}/login/:loginId`;
@@ -36,6 +36,7 @@ export const LINE_ROUTES: readonly Route[] = [
   { method: 'POST', path: `${LINES_PATH}/:id/delete`, auth: true, handler: deleteLine },
   { method: 'POST', path: `${LINES_PATH}/:id/restore`, auth: true, handler: restoreLine },
   { method: 'GET', path: MODEL_PROVIDERS_PATH, auth: true, handler: listModelProviders },
+  { method: 'GET', path: MODEL_IMAGE_PATH, auth: true, handler: getImageModel },
   { method: 'POST', path: `${PROVIDER}/login`, auth: true, handler: startProviderLogin },
   { method: 'GET', path: LOGIN, auth: true, handler: getProviderLogin },
   { method: 'POST', path: `${LOGIN}/complete`, auth: true, handler: completeProviderLogin },

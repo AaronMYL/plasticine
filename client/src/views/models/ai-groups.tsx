@@ -2,7 +2,8 @@
 // 「照设计稿做」）：模型 · 对话 · 例行 · 笔记、阅读和资料 · 记忆和记账 · 工具和技能。一个功能的开关、选项和用哪个模型在同一行
 // （输入建议的开关和模型在一起），「同时做几件事」在对话里，出图有自己一行。
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useApi } from '../../api/context.tsx';
 import type { ListModelProvidersResponse, ModelPurpose } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { routeHash, skillsRoute } from '../../shell/routes.ts';
@@ -28,17 +29,36 @@ function Group({ id, title, children }: { id: string; title: string; children: R
   );
 }
 
-/** 出图用哪个登录：连着 ChatGPT（Codex）就用它，不然用 OpenAI 的 API key；都没有给一个去连的按钮。 */
+/**
+ * 出图用哪个登录、哪个图片模型：连着 ChatGPT（Codex）就用它，不然用 OpenAI 的 API key；都没有给一个去连的按钮。
+ * 图片模型问服务端（第13批，11-14 Aaron：写明在用的模型，不写死——订阅那一路是接口自己定的），问不出来就只写登录。
+ */
 function ImageRow({ value }: { value: ListModelProvidersResponse }): ReactNode {
+  const api = useApi();
   const codex = value.providers.find((item) => item.id === CODEX);
   const openai = value.providers.find((item) => item.id === 'openai');
   const source = codex?.connected != null ? 'ChatGPT（Codex）'
     : openai?.connected === 'api_key' ? 'OpenAI · API key' : null;
+  const [model, setModel] = useState<string | null>(null);
+  useEffect(() => {
+    setModel(null);
+    if (source === null) return undefined;
+    const controller = new AbortController();
+    void api.modelProviders.imageModel(controller.signal).then((answer) => {
+      if (!controller.signal.aborted) setModel(answer.model);
+    }, () => {
+      // 读不到图片模型：那一行照旧只写用哪个登录。
+      if (!controller.signal.aborted) setModel(null);
+    });
+    return () => controller.abort();
+  }, [api, source]);
   return (
     <div className="ai-use">
       <div className="ai-use-line">
         <span className="ai-use-name">出图<span className="ai-use-sub">来信配图</span></span>
-        {source !== null ? <span className="ai-use-static">{source}</span> : codex === undefined ? (
+        {source !== null ? (
+          <span className="ai-use-static">{model === null ? source : `${source} · ${model}`}</span>
+        ) : codex === undefined ? (
           <span className="ai-use-static" data-quiet="true">没有能出图的登录</span>
         ) : (
           <button type="button" className="secondary-button button-small" onClick={() => connectRequest.set(CODEX)}>

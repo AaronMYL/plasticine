@@ -5,8 +5,8 @@ import type { ModelProvidersApi } from '../lines-client.ts';
 import { ApiError } from '../errors.ts';
 import {
   clampToLevels, MODEL_PURPOSES, ModelResolver, THINKING_LEVELS,
-  type CatalogProvider, type ListModelProvidersResponse, type ModelChoiceView, type ModelEnabledChange,
-  type ModelOverride, type ModelProviderView, type ModelPurpose, type ProviderLoginView,
+  type CatalogProvider, type ImageModelResponse, type ListModelProvidersResponse, type ModelChoiceView,
+  type ModelEnabledChange, type ModelOverride, type ModelProviderView, type ModelPurpose, type ProviderLoginView,
   type SaveModelConfigRequest, type SetDefaultModelRequest,
 } from '../shared.ts';
 import type { FakeSession } from './fake-session.ts';
@@ -76,6 +76,13 @@ export class FakeModelProviders implements ModelProvidersApi {
   async list(): Promise<ListModelProvidersResponse> {
     this.session.require();
     return this.view();
+  }
+
+  /** 出图那一行的图片模型：假的照服务端的规矩——订阅那一路是接口说的那个，API key 那一路是要的那个。 */
+  async imageModel(): Promise<ImageModelResponse> {
+    this.session.require();
+    if (this.connected.has('openai-codex')) return { model: 'gpt-image-2-codex' };
+    return { model: this.connected.get('openai') === 'api_key' ? 'gpt-image-1' : null };
   }
 
   async startLogin(providerId: string): Promise<ProviderLoginView> {

@@ -2,7 +2,7 @@
 // 三处共用一个选择器，在哪里切换都是改这个功能的默认；选到的后来用不了就回到默认，那一行写原因。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { FakeApi } from '../../../src/api/fake/index.ts';
 import { renderApp } from '../../helpers.tsx';
 
@@ -140,5 +140,38 @@ describe('设置 · AI 模型选择', () => {
     expect((await purposeOf(app, 'side'))?.effective?.model).toBe('claude-sonnet-5');
     expect(after.purposes.find((item) => item.purpose === 'translation'))
       .toEqual(before.purposes.find((item) => item.purpose === 'translation'));
+  });
+  it('出图那一行（第13批）：没有能出图的登录就照实写，不去问图片模型', async () => {
+    const app = await renderApp({ hash: '#/settings/ai', setup: seed });
+    const row = (await screen.findByText('来信配图')).closest('.ai-use') as HTMLElement;
+    expect(within(row).getByText('没有能出图的登录')).toBeTruthy();
+    expect(await app.api.modelProviders.imageModel()).toEqual({ model: null });
+  });
+
+  it('出图那一行：写用哪个登录和服务端说的图片模型，不写死', async () => {
+    await renderApp({ hash: '#/settings/ai', setup: (fake) => {
+      seed(fake);
+      fake.control.modelProviders.seedConnected([['openai', 'api_key']],
+        { provider: 'openai', model: 'gpt-5.5', thinking: 'high' });
+    } });
+    const row = (await screen.findByText('来信配图')).closest('.ai-use') as HTMLElement;
+    await waitFor(() => expect(row.textContent).toContain('OpenAI · API key · gpt-image-1'));
+  });
+
+  it('出图那一行：问不到图片模型时只写用哪个登录', async () => {
+    let asked = 0;
+    await renderApp({ hash: '#/settings/ai', setup: (fake) => {
+      seed(fake);
+      fake.control.modelProviders.seedConnected([['openai', 'api_key']],
+        { provider: 'openai', model: 'gpt-5.5', thinking: 'high' });
+      vi.spyOn(fake.control.modelProviders, 'imageModel').mockImplementation(async () => {
+        asked += 1;
+        throw new Error('断网');
+      });
+    } });
+    const row = (await screen.findByText('来信配图')).closest('.ai-use') as HTMLElement;
+    await waitFor(() => expect(asked).toBeGreaterThan(0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(within(row).getByText('OpenAI · API key')).toBeTruthy();
   });
 });

@@ -16,9 +16,11 @@ import {
   LineDetailsResponseSchema,
   LineResponseSchema,
   ListLinesResponseSchema,
+  ImageModelResponseSchema,
   ListModelProvidersResponseSchema,
   MODEL_CONFIG_PATH,
   MODEL_DEFAULT_PATH,
+  MODEL_IMAGE_PATH,
   MODEL_PROVIDERS_PATH,
   ProviderLoginViewSchema,
   ReadLineResponseSchema,
@@ -131,6 +133,11 @@ export class HttpModelProviders implements ModelProvidersApi {
   list(signal?: AbortSignal) {
     return this.transport.request({ method: 'GET', path: MODEL_PROVIDERS_PATH,
       schema: ListModelProvidersResponseSchema, what: '读模型连接', lostAs: 'failed', signal });
+  }
+
+  imageModel(signal?: AbortSignal) {
+    return this.transport.request({ method: 'GET', path: MODEL_IMAGE_PATH, schema: ImageModelResponseSchema,
+      what: '读出图用的模型', lostAs: 'failed', signal });
   }
 
   startLogin(providerId: string, requestId: string) {

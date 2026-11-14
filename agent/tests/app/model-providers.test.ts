@@ -2,7 +2,7 @@
 
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { MODEL_CONFIG_PATH, MODEL_DEFAULT_PATH, MODEL_PROVIDERS_PATH, TRANSLATE_MODEL_PATH,
+import { MODEL_CONFIG_PATH, MODEL_DEFAULT_PATH, MODEL_IMAGE_PATH, MODEL_PROVIDERS_PATH, TRANSLATE_MODEL_PATH,
   modelProviderPath, providerLoginPath, type ListModelProvidersResponse }
   from '../../shared/api/index.ts';
 import { KernelModels, ProviderLogins } from '../../src/kernel/index.ts';
@@ -137,4 +137,15 @@ test('用途配置接口一次保存、按版本防覆盖并幂等；未知用�
   assert.equal(json(after)['version'], read.version + 1);
   const listed = json(after) as unknown as ListModelProvidersResponse;
   assert.deepEqual(listed.providers.find((item) => item.id === 'fake-key')?.enabled, ['key-model']);
+});
+
+test('出图那一行的图片模型（第13批）：要会话；没有能出图的登录是 null（不写死模型名）', async () => {
+  const { t, cookie } = await providerApp();
+  assert.equal((await call(t, 'GET', MODEL_IMAGE_PATH)).status, 401);
+  const keyed = await call(t, 'POST', `${modelProviderPath('fake-key')}/key`, { cookie,
+    body: { requestId: requestId(), apiKey: 'key-value-for-tests' } });
+  assert.equal(keyed.status, 200);
+  const image = await call(t, 'GET', MODEL_IMAGE_PATH, { cookie });
+  assert.equal(image.status, 200);
+  assert.deepEqual(json(image), { model: null });
 });

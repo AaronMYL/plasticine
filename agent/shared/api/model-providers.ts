@@ -16,6 +16,11 @@ export const modelProviderPath = (providerId: string): string =>
   `${MODEL_PROVIDERS_PATH}/${encodeURIComponent(providerId)}`;
 export const providerLoginPath = (providerId: string, loginId: string): string =>
   `${modelProviderPath(providerId)}/login/${encodeURIComponent(loginId)}`;
+/**
+ * 设置 · AI「出图」那一行写的图片模型（第13批，11-14 Aaron：写明在用的模型，不写死——别人不一定用 ChatGPT、不一定
+ * 有出图模型）：GET 回 { model }，没有能出图的登录或问不出来是 null。订阅那一路是接口自己定的，服务端问过记一天。
+ */
+export const MODEL_IMAGE_PATH = `${MODEL_PROVIDERS_PATH}/image-model`;
 
 export const PROVIDER_AUTH_METHODS = ['oauth', 'api_key'] as const;
 export const ProviderAuthMethodSchema = Type.Enum(PROVIDER_AUTH_METHODS);
@@ -157,3 +162,8 @@ export const SetDefaultModelRequestSchema = Type.Object({
   thinking: Type.Optional(ThinkingLevelSchema),
 }, STRICT);
 export type SetDefaultModelRequest = Static<typeof SetDefaultModelRequestSchema>;
+
+export const ImageModelResponseSchema = Type.Object({
+  model: Nullable(Type.String({ minLength: 1, maxLength: 80 })),
+}, STRICT);
+export type ImageModelResponse = Static<typeof ImageModelResponseSchema>;

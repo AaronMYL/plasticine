@@ -99,3 +99,48 @@ test('出图接口出错说真实原因：Codex 登录过期、额度用完、�
     fetch: (async () => Response.json({ detail: 'Invalid key' }, { status: 401 })) as typeof fetch });
   assert.deepEqual(await keyed.draw('图', signal), { error: 'OpenAI 的 API key 不对或没有出图权限：Invalid key' });
 });
+
+// 第13批（11-14 Aaron：设置里「出图」那一行写明在用的模型，不写死——别人不一定用 ChatGPT、不一定有出图模型）。
+// 订阅那一路 OpenAI 自己定图片模型（11-14 实测固定成 gpt-image-2-codex，传什么都改回来）：不出图问一下它把出图工具
+// 补成什么样，按账号记一天；出图时接口回的也记上。API key 那一路就是我们要的那个；别的都是 null。
+function echoed(model: string, extra: string[] = []): Response {
+  return new Response([
+    `data: ${JSON.stringify({ type: 'response.created', response: { tools: [{ type: 'image_generation', model,
+      size: 'auto', quality: 'auto' }] } })}`,
+    ...extra, 'data: [DONE]'].join('\n\n'), { status: 200 });
+}
+
+test('出图那一行写的模型：订阅那一路问接口（不出图），按账号记住；API key 那一路是要的那个；别的是 null', async () => {
+  const bodies: Record<string, unknown>[] = [];
+  const asked = new KernelImages({ models: models({ 'openai-codex': { auth: { apiKey: token('acct-model') } } }),
+    codexModel: () => 'gpt-6.1-sol', fetch: (async (_url: string, init: RequestInit) => {
+      bodies.push(JSON.parse(String(init.body)));
+      return echoed('gpt-image-2-codex');
+    }) as typeof fetch });
+  assert.equal(await asked.model(signal), 'gpt-image-2-codex');
+  assert.equal(bodies[0]?.['tool_choice'], 'none');
+  assert.equal(await asked.model(signal), 'gpt-image-2-codex');
+  assert.equal(bodies.length, 1, '一天里问过就不再问');
+  const keyed = new KernelImages({ models: models({ openai: { auth: { apiKey: 'sk-test' } } }) });
+  assert.equal(await keyed.model(signal), 'gpt-image-1');
+  const oauth = new KernelImages({ models: models({ openai: { auth: { apiKey: 'x' }, source: 'OAuth' } }) });
+  assert.equal(await oauth.model(signal), null);
+  assert.equal(await new KernelImages({ models: models({}) }).model(signal), null);
+  const failing = new KernelImages({ models: models({ 'openai-codex': { auth: { apiKey: token('acct-down') } } }),
+    codexModel: () => 'gpt-6.1-sol', fetch: (async () => new Response('', { status: 500 })) as typeof fetch });
+  assert.equal(await failing.model(signal), null, '问不出来就不写模型，不报错');
+});
+
+test('出图时接口回的图片模型也记上：之后问模型不用再去问', async () => {
+  let calls = 0;
+  const image = Buffer.from('webp-bytes').toString('base64');
+  const images = new KernelImages({ models: models({ 'openai-codex': { auth: { apiKey: token('acct-draw') } } }),
+    codexModel: () => 'gpt-6.1-sol', fetch: (async () => {
+      calls += 1;
+      return echoed('gpt-image-2-codex', [`data: ${JSON.stringify({ type: 'response.output_item.done',
+        item: { type: 'image_generation_call', result: image } })}`]);
+    }) as typeof fetch });
+  assert.ok('data' in await images.draw('湖边的纸船', signal));
+  assert.equal(await images.model(signal), 'gpt-image-2-codex');
+  assert.equal(calls, 1);
+});

@@ -12,6 +12,7 @@ import {
 } from '../../shared/api/index.ts';
 import { KernelModelError, type KernelModels, type ProviderLogins } from '../kernel/index.ts';
 import { ApiError } from './api-error.ts';
+import { kernelImagesOf } from './assemble-spaces.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent, idempotentAsync } from './idempotency.ts';
@@ -71,6 +72,17 @@ export async function saveModelConfig(context: RequestContext): Promise<Reply> {
 /** GET /v2/model-providers */
 export function listModelProviders(context: RequestContext): Reply {
   return { status: 200, body: listBody(parts(context)) };
+}
+
+/** GET /v2/model-providers/image-model：设置 · AI「出图」那一行写的图片模型（第13批）。 */
+export async function getImageModel(context: RequestContext): Promise<Reply> {
+  const images = kernelImagesOf(parts(context));
+  const gone = new AbortController();
+  const close = (): void => gone.abort();
+  context.res.once('close', close);
+  try {
+    return { status: 200, body: { model: images === null ? null : await images.model(gone.signal) } };
+  } finally { context.res.removeListener('close', close); }
 }
 
 /** POST /v2/model-providers/:id/login：开始订阅登录，回授权网址（或设备码）。 */

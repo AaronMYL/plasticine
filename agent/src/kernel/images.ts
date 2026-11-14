@@ -6,6 +6,9 @@
 // - OpenAI 连的是「Sign in with ChatGPT」（订阅登录，凭证是 OAuth）：OpenAI 不让这种登录出图（11-14 服务器实测，Images
 //   接口 401、出图工具 400），不去调，直接说该连哪个。
 // 都没连、超时、出错都返回一句真实原因，不抛：出不了图这封信就不配图，不挡写信。
+// 第13批（11-14 Aaron：设置里「出图」那一行写明在用的模型，不写死）：订阅那一路 OpenAI 自己定图片模型（实测固定成
+// gpt-image-2-codex，我们传的模型、尺寸、画质都被改回来），不出图问一下它把出图工具补成什么样，按账号记一天；
+// 出图时接口回的也记上。API key 那一路就是我们要的那个。
 
 import type { Models } from '@earendil-works/pi-ai';
 
@@ -33,6 +36,12 @@ const INSTRUCTIONS = 'You draw one illustration for a personal letter. Always ca
 /** 设置里「ChatGPT（Codex）」那一行的名字（models.ts 里同一个）。 */
 const CODEX_NAME = 'ChatGPT（Codex）';
 const DETAIL_MAX_CHARS = 160;
+/** 订阅那一路问到的图片模型记多久（按账号）。 */
+const MODEL_TTL_MS = 24 * 60 * 60 * 1000;
+const PROBE_TIMEOUT_MS = 20_000;
+const PROBE_INSTRUCTIONS = 'Reply with the single word OK. Do not call any tool.';
+/** 账号 → 接口说的图片模型（同一进程里的几个 KernelImages 共用：设置那一行和来信出图是不同的实例）。 */
+const seenModels = new Map<string, { model: string; at: number }>();
 
 export interface KernelImagesOptions {
   models: Pick<Models, 'getAuth' | 'getModels'>;
@@ -69,20 +78,36 @@ function imageFromEvent(value: unknown): string | null {
   return null;
 }
 
-async function readSse(response: Response): Promise<string | null> {
+/** 接口回显的出图工具里写的图片模型（response.created、response.completed 里的 response.tools）。 */
+function toolModelOf(value: unknown): string | null {
+  const response: unknown = typeof value === 'object' && value !== null ? Reflect.get(value, 'response') : null;
+  const tools: unknown = typeof response === 'object' && response !== null ? Reflect.get(response, 'tools') : null;
+  if (!Array.isArray(tools)) return null;
+  for (const tool of tools) {
+    const type: unknown = typeof tool === 'object' && tool !== null ? Reflect.get(tool, 'type') : null;
+    const model: unknown = type === 'image_generation' ? Reflect.get(tool as object, 'model') : null;
+    if (typeof model === 'string' && model !== '') return model;
+  }
+  return null;
+}
+
+async function readSse(response: Response): Promise<{ image: string | null; model: string | null }> {
   const text = await response.text();
-  let found: string | null = null;
+  let image: string | null = null;
+  let model: string | null = null;
   for (const block of text.split(/\r?\n\r?\n/)) {
     const data = block.split(/\r?\n/).filter((line) => line.startsWith('data:'))
       .map((line) => line.slice(5).trimStart()).join('\n');
     if (data === '' || data === '[DONE]') continue;
     try {
-      found = imageFromEvent(JSON.parse(data)) ?? found;
+      const event: unknown = JSON.parse(data);
+      image = imageFromEvent(event) ?? image;
+      model = toolModelOf(event) ?? model;
     } catch (error) {
       if (!(error instanceof SyntaxError)) throw error;
     }
   }
-  return found;
+  return { image, model };
 }
 
 /** 回包里接口自己给的那句说法（OpenAI 是 error.message，Codex 有时是 detail）；读不出来是空的。 */
@@ -140,6 +165,49 @@ export class KernelImages implements Illustrator {
     }
   }
 
+  /**
+   * 设置 · AI「出图」那一行写的图片模型：订阅那一路问接口（不出图），API key 那一路是我们要的那个；没有能出图的登录、
+   * 问不出来都是 null（那一行就只写用哪个登录）。
+   */
+  async model(signal: AbortSignal): Promise<string | null> {
+    const codex = await this.#options.models.getAuth('openai-codex');
+    if (codex?.auth.apiKey !== undefined) {
+      return this.#codexModel(codex.auth.apiKey, AbortSignal.any([signal, AbortSignal.timeout(PROBE_TIMEOUT_MS)]));
+    }
+    const openai = await this.#options.models.getAuth('openai');
+    return openai?.source !== 'OAuth' && openai?.auth.apiKey !== undefined ? IMAGE_MODEL : null;
+  }
+
+  async #codexModel(token: string, signal: AbortSignal): Promise<string | null> {
+    const account = accountId(token);
+    const routing = this.#routingModel();
+    if (account === null || routing === null) return null;
+    const known = seenModels.get(account);
+    if (known !== undefined && Date.now() - known.at < MODEL_TTL_MS) return known.model;
+    const body = { model: routing, store: false, stream: true, instructions: PROBE_INSTRUCTIONS,
+      input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'OK?' }] }],
+      tools: [{ type: 'image_generation', size: SIZE, output_format: FORMAT, quality: 'medium' }],
+      tool_choice: 'none' };
+    try {
+      const response = await this.#post(token, account, body, signal);
+      if (!response.ok) return null;
+      const { model } = await readSse(response);
+      if (model !== null) seenModels.set(account, { model, at: Date.now() });
+      return model;
+    } catch (error) {
+      // 问不出来（断网、超时）这一行就只写用哪个登录；不挡设置页。
+      if (signal.aborted || error instanceof TypeError) return null;
+      throw error;
+    }
+  }
+
+  #post(token: string, account: string, body: object, signal: AbortSignal): Promise<Response> {
+    return (this.#options.fetch ?? fetch)(CODEX_URL, { method: 'POST', signal,
+      headers: { 'authorization': `Bearer ${token}`, 'chatgpt-account-id': account, 'originator': 'pi',
+        'OpenAI-Beta': 'responses=experimental', 'accept': 'text/event-stream', 'content-type': 'application/json' },
+      body: JSON.stringify(body) });
+  }
+
   #routingModel(): string | null {
     const chosen = this.#options.codexModel?.() ?? null;
     return chosen ?? this.#options.models.getModels('openai-codex')[0]?.id ?? null;
@@ -155,12 +223,10 @@ export class KernelImages implements Illustrator {
       tools: [{ type: 'image_generation', size: SIZE, output_format: FORMAT, quality: 'medium' }],
       tool_choice: { type: 'allowed_tools', mode: 'required', tools: [{ type: 'image_generation' }] },
     };
-    const response = await (this.#options.fetch ?? fetch)(CODEX_URL, { method: 'POST', signal,
-      headers: { 'authorization': `Bearer ${token}`, 'chatgpt-account-id': account, 'originator': 'pi',
-        'OpenAI-Beta': 'responses=experimental', 'accept': 'text/event-stream', 'content-type': 'application/json' },
-      body: JSON.stringify(body) });
+    const response = await this.#post(token, account, body, signal);
     if (!response.ok) return { error: await failure(response, 'codex') };
-    const image = await readSse(response);
+    const { image, model: used } = await readSse(response);
+    if (used !== null) seenModels.set(account, { model: used, at: Date.now() });
     return image === null ? { error: '出图接口没给图' } : { data: Buffer.from(image, 'base64'), mime: 'image/webp' };
   }
 

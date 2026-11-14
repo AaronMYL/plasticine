@@ -197,7 +197,10 @@ export function assembleApp(options: AssembleOptions): App {
   // 第 7 条（11-07 定）：个人回顾是一个订阅，日报每天早上 8 点、周报周日晚上，按他所在地的时区；没有就建上。
   ensureReviewSubscription(state, state.dailySettings.read().settings.timeZone ?? BACKGROUND_TIME_ZONE);
   const text = withMainSoul(options.text ?? kernelText(options.lines.models, now), state);
-  const illustrator = options.illustrator !== undefined ? options.illustrator : illustratorOf(options.kernelModels);
+  // 出图压小用的 ffmpeg 晚取：视频那一块（转写组件里带一份）在下面才建。
+  let ffmpeg = (): string => 'ffmpeg';
+  const illustrator = options.illustrator !== undefined ? options.illustrator
+    : illustratorOf(options.kernelModels, () => ffmpeg());
   const server = new ServerCommands({ stateDirectory: options.stateDirectory, now });
   const skills = new SkillStore({ stateDirectory: options.stateDirectory, now, shipped: [VIDEO_SKILL_NAME],
     ...(options.builtinSkills === undefined ? {} : { builtinDirectory: options.builtinSkills }) });
@@ -286,6 +289,7 @@ export function assembleApp(options: AssembleOptions): App {
       }
     },
     changed: () => hub.publish({ type: 'video_changed' }) });
+  ffmpeg = () => video.kit.ffmpeg();
   const registry = new ToolRegistry();
   const noteTools = createNoteTools(state, (noteId) => hub.publish({ type: 'note_invalidated', noteId }));
   const tools = [...noteTools, ...createBookTools(state), getTimeTool,
