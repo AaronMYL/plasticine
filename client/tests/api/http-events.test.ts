@@ -53,7 +53,7 @@ describe('真事件流 · 连接', () => {
         'agreement_changed', 'feed_item_changed', 'node_changed', 'node_action_recorded', 'money_changed',
         'inbox_changed', 'tool_group_changed', 'video_changed', 'browser_changed', 'contacts_changed', 'contact_item',
         'line_changed', 'line_text', 'line_thinking', 'line_tool', 'line_message', 'line_queue',
-        'web_tabs_changed', 'bookmarks_changed', 'space_changed',
+        'web_tabs_changed', 'bookmarks_changed', 'space_changed', 'notify',
       ].sort(),
     );
     source.open();
