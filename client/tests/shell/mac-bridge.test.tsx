@@ -27,7 +27,7 @@ it('立刻打断走 Mac notify，普通卡不通知，不申请浏览器权限�
   expect(notify).toHaveBeenCalledWith('等你动手', '有一件事要你现在处理，点开看。', '#/plasticine');
   fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
   const tip = await within(await screen.findByRole('dialog', { name: '设置' }))
-    .findByRole('button', { name: '通知的说明' });
+    .findByRole('button', { name: '这台设备接收系统通知的说明' });
   await waitFor(() => expect(tip.getAttribute('aria-description')).toContain('这台电脑的客户端能收到'));
   expect(app.pushDevice.prompts).toBe(0);
   expect(app.pushDevice.subscribedWith).toBeNull();

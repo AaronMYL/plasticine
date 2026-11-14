@@ -49,8 +49,13 @@ describe('动态背景 · 地上的小动物', () => {
     const rabbit = world.critters[0]!;
     const start = { x: rabbit.x, y: rabbit.y };
     world.pointer = { x: rabbit.x + 40, y: rabbit.y, active: true };
-    run(world, 2);
-    expect(rabbit.mood?.glyph).toBe('!');
+    // 跑到地方以后有 5% 会睡着，头上换成「z」：看这两秒里冒没冒过「!」，不看最后一刻（全量跑时偶尔失败过）。
+    let startled = false;
+    for (let i = 0; i < 2 * 60; i++) {
+      world.step(STEP);
+      if (rabbit.mood?.glyph === '!') startled = true;
+    }
+    expect(startled).toBe(true);
     expect(Math.hypot(rabbit.x - (start.x + 40), rabbit.y - start.y)).toBeGreaterThan(60);
   });
 

@@ -22,13 +22,18 @@ it('页面崩溃只显示该区错误，重试可以恢复，外部对话仍可�
 });
 
 it('外观在本设备记住，跟随系统取消固定主题', () => {
+  // 11-14 设置页一种行：「浅色 / 深色」是一行下拉。
+  const pick = (name: string): void => {
+    fireEvent.click(screen.getByRole('button', { name: '浅色 / 深色' }));
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name }));
+  };
   const view = render(<AppearanceSection />);
-  fireEvent.click(screen.getByRole('button', { name: '深色' }));
+  pick('深色');
   expect(document.documentElement.dataset.theme).toBe('dark');
   view.unmount();
   render(<AppearanceSection />);
-  expect(screen.getByRole('button', { name: '深色' }).getAttribute('aria-pressed')).toBe('true');
-  fireEvent.click(screen.getByRole('button', { name: '跟随系统' }));
+  expect(screen.getByRole('button', { name: '浅色 / 深色' }).textContent).toBe('深色');
+  pick('跟随系统');
   expect(document.documentElement.dataset.theme).toBeUndefined();
 });
 
