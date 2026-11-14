@@ -159,6 +159,7 @@ import { getFeedRefresh, refreshFeed } from './feed-refresh.ts';
 import { addFeedComment, blockFeedSite, listFeedComments, retryFeedComment } from './feed-work.ts';
 import { FEED_X_PATH, getXTimelineDue, reportXTimeline } from './feed-x.ts';
 import { FEED_XHS_PATH, getXhsDue, reportXhs } from './feed-xhs.ts';
+import { FEED_COMPUTER_FETCH_PATH, leaseComputerFetches, reportComputerFetch } from './feed-computer-fetch.ts';
 import { addReddit, deleteFeedSource, previewReddit, refreshFeedSource, updateFeedSource } from './feed-sources.ts';
 import { douyinJobs, getTranscriber, installTranscriber, listDouyin, processDouyin, reportDouyin, syncDouyin }
   from './video.ts';
@@ -494,6 +495,8 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: FEED_X_PATH, auth: false, handler: reportXTimeline },
   { method: 'GET', path: FEED_XHS_PATH, auth: false, handler: getXhsDue },
   { method: 'POST', path: FEED_XHS_PATH, auth: false, handler: reportXhs },
+  { method: 'GET', path: FEED_COMPUTER_FETCH_PATH, auth: false, handler: leaseComputerFetches },
+  { method: 'POST', path: FEED_COMPUTER_FETCH_PATH, auth: false, handler: reportComputerFetch },
   // 第 6 批第 9 条：抖音收藏的勾选清单；Mac 用他登录着的状态翻收藏、取下载地址（app/video.ts）：节点 Bearer。
   { method: 'GET', path: DOUYIN_PATH, auth: true, handler: listDouyin },
   { method: 'POST', path: DOUYIN_SYNC_PATH, auth: true, handler: syncDouyin },

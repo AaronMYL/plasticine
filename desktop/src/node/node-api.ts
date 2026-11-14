@@ -3,12 +3,13 @@
 // 「这台电脑」模式下本体是 http://127.0.0.1:8790，远程只认 https。fetch 由壳给（Electron 的 net.fetch，走系统代理）。
 
 import { Value } from 'typebox/value';
-import { DOUYIN_NODE_PATH, DouyinJobsResponseSchema, FEED_X_PATH, FEED_XHS_PATH, NODE_HELLO_PATH, NODE_NEXT_ACTION_PATH,
+import { ComputerFetchJobsResponseSchema, DOUYIN_NODE_PATH, DouyinJobsResponseSchema, FEED_COMPUTER_FETCH_PATH,
+  FEED_X_PATH, FEED_XHS_PATH, NODE_HELLO_PATH, NODE_NEXT_ACTION_PATH,
   NODE_PAIR_PATH, NODE_POLL_MAX_SECONDS, NODE_PROTOCOL_VERSION, NODES_PATH, NodeHelloResponseSchema,
   NodeNextActionResponseSchema, NodePairResponseSchema, XTimelineDueSchema, type DouyinJob,
   type DouyinReport, type NodeActionResultRequest, type NodeHelloResponse, type NodePairResponse, type NodeWireAction,
-  type XTimelineDue, type XTimelineReport, XhsDueSchema, type XhsDue, type XhsReport } from
-  '../../../agent/shared/api/index.ts';
+  type XTimelineDue, type XTimelineReport, XhsDueSchema, type XhsDue, type XhsReport, type ComputerFetchJob,
+  type ComputerFetchReport } from '../../../agent/shared/api/index.ts';
 import type { Static, TSchema } from 'typebox';
 import type { DeviceActionKind } from '../../../agent/shared/state.ts';
 
@@ -98,6 +99,16 @@ export class NodeApi {
 
   async xhsReport(credential: string, report: XhsReport): Promise<void> {
     await this.request(FEED_XHS_PATH, credential, { method: 'POST', body: report }, REQUEST_TIMEOUT_MS);
+  }
+
+  /** 服务器取不到、要电脑替它取的网址（第13批）。 */
+  async fetchJobs(credential: string): Promise<ComputerFetchJob[]> {
+    return (await this.json(FEED_COMPUTER_FETCH_PATH, credential, { method: 'GET' },
+      ComputerFetchJobsResponseSchema)).jobs;
+  }
+
+  async fetchReport(credential: string, report: ComputerFetchReport): Promise<void> {
+    await this.request(FEED_COMPUTER_FETCH_PATH, credential, { method: 'POST', body: report }, REQUEST_TIMEOUT_MS);
   }
 
   async douyinJobs(credential: string): Promise<DouyinJob[]> {

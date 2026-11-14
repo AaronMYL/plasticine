@@ -31,12 +31,16 @@ import {
 import {
   cleanLinkData,
   cleanSourceLinks,
+  cleanUrl,
+  DailyError,
   dayRange,
   FEED_SOURCE_EVERY_MS,
+  handOffText,
   RETIRED_SOURCE_REFS,
   siteOf,
   sourceSearchTerms,
 } from '../daily/index.ts';
+import { checkPublicHttpsUrl } from '../cloud-tools/index.ts';
 import type { FeedItem, FeedSource } from '../../shared/state.ts';
 import { StateError } from '../state/index.ts';
 import { ApiError } from './api-error.ts';
@@ -201,13 +205,44 @@ export async function addSubscription(context: RequestContext): Promise<Reply> {
   if (external === null) {
     throw new ApiError(503, 'not_configured', '订阅抓取还没接上，请稍后再试。');
   }
-  const found = await external.discover(body.url, AbortSignal.timeout(DISCOVER_TIMEOUT_MS));
+  let found: { url: string; title: string | null };
+  try {
+    found = await external.discover(body.url, AbortSignal.timeout(DISCOVER_TIMEOUT_MS));
+  } catch (error) {
+    return addViaComputer(context, body, options, error);
+  }
   const label = body.label?.trim() || found.title || siteOf(found.url);
   return cleanFeedReply(context, idempotent(context, body.requestId, (afterCommit) => {
     const source = context.deps.state.feedSources.ensure({ kind: 'rss', label: label.slice(0, 200),
       query: found.url, level: 'normal', ref: `rss:${createHash('sha256').update(found.url).digest('hex')}` });
     // 加上就抓一次，不等下一个两小时。
     afterCommit(() => { context.deps.daily.subscriptions.scan(); });
+    return { status: 201, body: { source: feedSourceView(source) } };
+  }, options));
+}
+
+/**
+ * 服务器连不上这个网站（第13批，11-14 Aaron：「优先服务器抓，抓不到再改由在线的电脑重试」）：有电脑在线就先加上这个
+ * 来源（地址先用他给的网址），排给电脑去取、从网页里找订阅地址；没有电脑在线照常报错，多说一句开着电脑再加一次。
+ */
+function addViaComputer(context: RequestContext, body: { requestId: string; url: string; label?: string | undefined },
+  options: { bodyDigest: string }, error: unknown): Reply {
+  const { daily, state } = context.deps;
+  const handed = handOffText('rss', error);
+  if (handed === null || !(error instanceof DailyError)) { throw error; }
+  if (!daily.computerFetches.online()) {
+    throw new DailyError('unreachable', `${error.message.replace(/，?过一会儿再试。?$/, '。')}`
+      + '开着电脑上的 Plasticine 再加一次，会改由电脑去取。');
+  }
+  const url = cleanUrl(checkPublicHttpsUrl(body.url).href);
+  const label = body.label?.trim() || siteOf(url);
+  return cleanFeedReply(context, idempotent(context, body.requestId, (afterCommit) => {
+    const source = state.feedSources.ensure({ kind: 'rss', label: label.slice(0, 200), query: url, level: 'normal',
+      ref: `rss:${createHash('sha256').update(url).digest('hex')}` });
+    afterCommit(() => {
+      daily.computerFetches.ask(url, { sourceId: source.id, discover: true });
+      state.feedSourceStatus.failed(source.id, context.deps.now().toISOString(), handed);
+    });
     return { status: 201, body: { source: feedSourceView(source) } };
   }, options));
 }

@@ -10,6 +10,7 @@ import { BookmarkDesk } from './bookmarks.ts';
 import { FeedDesk } from './feed.ts';
 import { InterestDesk } from './interests.ts';
 import { ExternalFeed } from './external-feed.ts';
+import { ComputerFetches } from './computer-fetch.ts';
 import { FeedSubscriptions } from './feed-subscriptions.ts';
 import type { FeedFetcher } from './feed-fetch.ts';
 import type { FeedSelector } from '../../shared/feed-selection.ts';
@@ -20,6 +21,7 @@ export { checkedChart, numbersIn } from './feed-chart-check.ts';
 export { FeedFetcher } from './feed-fetch.ts';
 export type { DiscoveredFeed } from './feed-fetch.ts';
 export { FEED_SOURCE_EVERY_MS, FeedSubscriptions, X_READ_ERROR_TEXT } from './feed-subscriptions.ts';
+export { ComputerFetches, handOffText } from './computer-fetch.ts';
 export { sourceSearchTerms } from './feed-candidates.ts';
 export { BookmarkDesk, cleanBookmarkUrl } from './bookmarks.ts';
 export type { BookmarkDeskOptions, BookmarkState, NewBookmark } from './bookmarks.ts';
@@ -66,7 +68,9 @@ export function createDaily(options: DailyOptions) {
     state, now, ...options.externalFeed, onAdded: added,
   });
   // 第 3 批：订阅每 2 小时直接进信息流；X 由 Mac 交来。抓取器没接上时订阅不抓，X 照收。
-  const subscriptions = new FeedSubscriptions({ state, now,
+  // 第13批：服务器取不到的交给在线的电脑取（computer-fetch.ts）。
+  const computerFetches = new ComputerFetches(now);
+  const subscriptions = new FeedSubscriptions({ state, now, computer: computerFetches,
     ...(options.externalFeed === undefined ? {} : { fetcher: options.externalFeed.fetcher }),
     onAdded: added });
   const comments = options.feedCommentGenerator === undefined ? null : new FeedComments({ state,
@@ -80,7 +84,8 @@ export function createDaily(options: DailyOptions) {
     { name: '信息流评论', run: () => comments?.resume() },
     { name: '信息流翻成中文', run: () => translations?.scan() },
   ];
-  return { feed, interests, scans, externalFeed, subscriptions, comments, bookmarks, translations, added };
+  return { feed, interests, scans, externalFeed, subscriptions, computerFetches, comments, bookmarks, translations,
+    added };
 }
 
 export type Daily = ReturnType<typeof createDaily>;

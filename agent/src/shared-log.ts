@@ -64,6 +64,7 @@ const EVENTS = {
   sample_card_backfill_failed: '样刊的「开启定时」卡没补上，下次启动再补',
   space_rewrite_failed: '一个旧空间按新版式重写没成，留着旧版，下次启动再试',
   feed_subscription_failed: '一个订阅这次没抓到，原因记在设置那一行，两小时后再试',
+  feed_computer_fetch_failed: '电脑替服务器取回的订阅没读成，原因记在来源那一行',
   sse_failed: '事件推送失败，已关闭对应连接',
   after_commit_failed: '请求已提交，后续动作失败',
   request_failed: '请求处理失败',

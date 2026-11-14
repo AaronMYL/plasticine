@@ -1,32 +1,29 @@
 // 订阅和 X 上他关注的人（第 3 批，用户 11-04 定）：是他自己选的来源，直接进信息流，不经模型选材——模型额度用完
 // （11-04 那次）也照常有内容；只去重（同一网址、同一帖子只一条）、按档位限每次的条数、字面匹配关注点。
-// 订阅每 2 小时抓一次；X 由 Mac 在线时读（GET / POST /v2/nodes/feed/x，读到的交到 ingestX）。每个来源这一次成没成
-// 记在 feedSourceStatus，设置里那一行写出来；抓不到不弹卡。
+// 订阅每 2 小时抓一次；X、小红书由电脑在线时读（/v2/nodes/feed/x、/xhs，读到的交到 ingestX、ingestXhs）。每个来源
+// 这一次成没成记在 feedSourceStatus，设置里那一行写出来；抓不到不弹卡。
 
-import { createHash } from 'node:crypto';
-import type { XPost, XTimelineDue, XTimelineReport } from '../../shared/api/feed-x.ts';
-import type { XhsDue, XhsNote, XhsReport } from '../../shared/api/feed-xhs.ts';
-import type { FeedBlock, FeedItem, FeedItemInput, FeedPlace, FeedSource } from '../../shared/state.ts';
+import type { ComputerFetchReport } from '../../shared/api/feed-computer-fetch.ts';
+import type { XTimelineDue, XTimelineReport } from '../../shared/api/feed-x.ts';
+import type { XhsDue, XhsReport } from '../../shared/api/feed-xhs.ts';
+import type { FeedItem, FeedItemInput, FeedSource } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { errorCategory, failureText, safeLog } from '../shared-log.ts';
 import { BACKGROUND_TIME_ZONE, localDay } from './days.ts';
 import { BUILT_IN_SOURCES } from './feed.ts';
-import type { FeedFetcher } from './feed-fetch.ts';
+import { computerFailureText, handOffText, type ComputerFetches } from './computer-fetch.ts';
+import { articleEntry, newest, noteEntry, postEntry, redditEntry, type NewEntry } from './feed-entries.ts';
+import { feedLinkIn, looksLikeFeed, type FeedFetcher } from './feed-fetch.ts';
 import { matchInterest } from './feed-match.ts';
 import { parseFeed } from './feed-parse.ts';
-import { safeUrl } from './link-data.ts';
 import { DailyError } from './errors.ts';
+import { siteOf } from './urls.ts';
 import { REDDIT_WINDOW_MS, redditPost, type RedditPost } from './reddit.ts';
-import { articleBlocks } from './article-blocks.ts';
 
 /** 用户 11-04：「不花钱、频率低，比如每 2 小时」——订阅和 X 一样。 */
 export const FEED_SOURCE_EVERY_MS = 2 * 60 * 60 * 1000;
 // 每次最多进几条：多档全要（上限防一次灌满），正常十条，少档三条。
 const PER_ROUND: Readonly<Record<FeedSource['level'], number>> = { more: 40, normal: 10, less: 3, off: 0 };
-// 订阅文章的摘要：卡片上只放开头这些字，点开原文看全文。
-const ARTICLE_SUMMARY_CHARS = 400;
-// X 帖子没有标题：取正文第一行的前这些字当标题（读屏念、问 Plasticine 时引用）。
-const POST_TITLE_CHARS = 60;
 // Reddit 限流（429）后这个版块先停这么久再取，再碰上就翻倍，最多停到下一个两小时（第13批：只停那一个版块，不停整组）。
 const REDDIT_BACKOFF_MS = 30 * 60 * 1000;
 // 一轮里两个 Reddit 版块之间隔一会儿，别一下子连着打。
@@ -52,25 +49,6 @@ export const XHS_READ_ERROR_TEXT: Readonly<Record<NonNullable<XhsReport['error']
   load_failed: '小红书的页面没打开',
 };
 
-interface NewEntry {
-  key: string;
-  title: string;
-  url: string;
-  summary: string;
-  /** 订阅文章的全文（一段段）；没有就是 null。 */
-  body?: FeedBlock[] | null;
-  /** 在哪一处看到的（X、小红书）。 */
-  places?: FeedPlace[];
-  /** 拿来匹配关注点的文字。 */
-  text: string;
-  publishedAt: string | null;
-  author: string | null;
-  authorHandle: string | null;
-  avatarUrl: string | null;
-  imageUrl: string | null;
-  imageRatio: number | null;
-}
-
 export interface FeedSubscriptionsOptions {
   state: StateService;
   now: () => Date;
@@ -78,80 +56,8 @@ export interface FeedSubscriptionsOptions {
   onAdded?: (item: FeedItem) => void;
   /** 两个 Reddit 版块之间隔多久（测试给 0）。 */
   redditGapMs?: number;
-}
-
-function clip(text: string, max: number): string {
-  const trimmed = text.trim();
-  return trimmed.length <= max ? trimmed : `${trimmed.slice(0, max - 1)}…`;
-}
-
-function httpsOrNull(raw: string | null | undefined): string | null {
-  const url = safeUrl(raw);
-  return url !== null && url.startsWith('https://') ? url : null;
-}
-
-function postEntry(post: XPost): NewEntry {
-  const firstLine = post.text.split('\n').find((line) => line.trim() !== '') ?? '';
-  return {
-    key: `x:${post.id}`,
-    title: firstLine === '' ? `@${post.handle}` : clip(firstLine, POST_TITLE_CHARS),
-    url: `https://x.com/${post.handle}/status/${post.id}`,
-    summary: post.text.trim(),
-    text: post.text,
-    publishedAt: post.publishedAt,
-    author: post.author,
-    authorHandle: post.handle,
-    avatarUrl: httpsOrNull(post.avatar),
-    imageUrl: httpsOrNull(post.image),
-    imageRatio: post.image === null ? null : post.imageRatio,
-    places: post.places === undefined ? ['following'] : [...new Set(post.places)],
-  };
-}
-
-/**
- * 最新的几条（新的在前）。perPlace：X 的三处各取最新的几条再合起来（第13批），书签里多是旧帖，不按发布时间和关注里的
- * 新帖一起挤，挤掉了就永远进不来。
- */
-function newest(entries: readonly NewEntry[], cap: number, perPlace: boolean): NewEntry[] {
-  const byTime = [...entries].sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''));
-  if (!perPlace) { return byTime.slice(0, cap); }
-  const picked = new Set<NewEntry>();
-  for (const place of new Set(byTime.flatMap((entry) => entry.places ?? []))) {
-    const here = byTime.filter((entry) => entry.places?.includes(place) === true);
-    here.slice(0, cap).forEach((entry) => picked.add(entry));
-  }
-  return byTime.filter((entry) => picked.has(entry));
-}
-
-/** 小红书的一条笔记（第13批）：列表里只有标题，正文不重复标题。 */
-function noteEntry(note: XhsNote): NewEntry {
-  const title = note.title.trim() === '' ? `${note.author}的笔记` : note.title.trim();
-  return {
-    key: `xhs:${note.id}`, title, url: `https://www.xiaohongshu.com/explore/${note.id}`, summary: title,
-    text: title, publishedAt: null, author: note.author, authorHandle: null, avatarUrl: httpsOrNull(note.avatar),
-    imageUrl: httpsOrNull(note.image), imageRatio: note.image === null ? null : note.imageRatio,
-    places: [...new Set(note.places)],
-  };
-}
-
-function articleEntry(hit: ReturnType<typeof parseFeed>[number]): NewEntry {
-  const body = articleBlocks(hit.html, hit.url);
-  return {
-    key: `rss:${createHash('sha256').update(hit.url).digest('hex')}`,
-    title: hit.title, url: hit.url, summary: clip(hit.text, ARTICLE_SUMMARY_CHARS),
-    body: body.length === 0 ? null : body,
-    text: `${hit.title}\n${hit.text}`, publishedAt: hit.publishedAt, author: hit.author, authorHandle: null,
-    avatarUrl: null, imageUrl: httpsOrNull(hit.image), imageRatio: null,
-  };
-}
-
-function redditEntry(post: RedditPost): NewEntry {
-  return {
-    key: `reddit:${createHash('sha256').update(post.url).digest('hex')}`,
-    title: post.title, url: post.url, summary: clip(post.text, ARTICLE_SUMMARY_CHARS),
-    text: `${post.title}\n${post.text}`, publishedAt: post.publishedAt, author: post.author, authorHandle: null,
-    avatarUrl: null, imageUrl: httpsOrNull(post.image), imageRatio: null,
-  };
+  /** 服务器取不到时交给在线的电脑取（第13批）。 */
+  computer?: ComputerFetches;
 }
 
 function wait(ms: number, signal: AbortSignal): Promise<void> {
@@ -276,21 +182,77 @@ export class FeedSubscriptions {
       }
       try {
         const page = await fetcher.get(source.query ?? '', this.#controller.signal);
-        // 博客收得还少（第一次抓、或者以前只收两天内的只收到一两篇）：不限两天，导入到最近十篇为止。
-        const first = source.kind === 'rss' && state.feedItems.countForSource(source.id) < FIRST_IMPORT;
-        const entries = source.kind === 'reddit'
-          ? parseFeed(page.text, page.url, now(), REDDIT_WINDOW_MS).map((hit) => redditEntry(redditPost(hit)))
-          : parseFeed(page.text, page.url, now(), first ? Infinity : undefined).map(articleEntry);
-        const added = this.#ingest(state.feedSources.require(source.id), entries,
-          first ? FIRST_IMPORT - state.feedItems.countForSource(source.id) : undefined);
-        state.feedSourceStatus.succeeded(source.id, now().toISOString(), added);
+        this.#take(state.feedSources.require(source.id), page);
         if (source.kind === 'reddit') { this.#redditBackoffMs.delete(source.id); }
       } catch (error) {
         if (this.#controller.signal.aborted) { return; }
-        state.feedSourceStatus.failed(source.id, now().toISOString(), this.#failure(source, error));
+        const reason = this.#failure(source, error);
+        state.feedSourceStatus.failed(source.id, now().toISOString(), this.#handOff(source, error) ?? reason);
         safeLog('warn', 'feed_subscription_failed', { objectId: source.id, category: errorCategory(error), error });
       }
     }
+  }
+
+  /** 取到的一页（服务器自己取的，或电脑替它取的）：解析、入库、记成功。回加了几条。 */
+  #take(source: FeedSource, page: { text: string; url: string }): number {
+    const { state, now } = this.#options;
+    // 博客收得还少（第一次抓、或者以前只收两天内的只收到一两篇）：不限两天，导入到最近十篇为止。
+    const count = state.feedItems.countForSource(source.id);
+    const first = source.kind === 'rss' && count < FIRST_IMPORT;
+    const entries = source.kind === 'reddit'
+      ? parseFeed(page.text, page.url, now(), REDDIT_WINDOW_MS).map((hit) => redditEntry(redditPost(hit)))
+      : parseFeed(page.text, page.url, now(), first ? Infinity : undefined).map(articleEntry);
+    const added = this.#ingest(source, entries, first ? FIRST_IMPORT - count : undefined);
+    state.feedSourceStatus.succeeded(source.id, now().toISOString(), added);
+    return added;
+  }
+
+  /** 服务器没取到：电脑在线就排给它，回来源那一行要写的话；不交给电脑回 null。 */
+  #handOff(source: FeedSource, error: unknown): string | null {
+    const text = handOffText(source.kind, error);
+    if (text === null || source.query === null) { return null; }
+    return this.#options.computer?.ask(source.query, { sourceId: source.id, discover: false }) === true ? text : null;
+  }
+
+  /**
+   * 电脑替服务器取回来一件（第13批）：取到了照服务器自己取到的入库；给的是网站地址、取回来是网页的，找订阅地址换上再让
+   * 电脑取订阅；没取到写两边都没取到。回这件是不是还排着（交两次、早过期的回 false）。
+   */
+  fetchedByComputer(report: ComputerFetchReport): boolean {
+    const { state, now } = this.#options;
+    const job = this.#options.computer?.take(report.jobId);
+    if (job === undefined) { return false; }
+    const source = state.feedSources.get(job.purpose.sourceId);
+    if (source === undefined || state.feedSources.removed(source.id) || source.level === 'off') { return true; }
+    try {
+      if (report.page === null) {
+        state.feedSourceStatus.failed(source.id, now().toISOString(), computerFailureText(report.error));
+      } else if (job.purpose.discover && !looksLikeFeed(report.page.text)) {
+        this.#discovered(source, report.page);
+      } else {
+        this.#take(source, report.page);
+      }
+    } catch (error) {
+      state.feedSourceStatus.failed(source.id, now().toISOString(), failureText(error));
+      safeLog('warn', 'feed_computer_fetch_failed', { objectId: source.id, category: errorCategory(error), error });
+    }
+    return true;
+  }
+
+  /** 电脑取回的是网页：找订阅地址换上（名字还是网址的换成网站名），再让电脑取订阅；没有订阅源就写出来。 */
+  #discovered(source: FeedSource, page: { text: string; url: string }): void {
+    const { state, now } = this.#options;
+    const found = feedLinkIn(page.text, page.url);
+    if (found === null) {
+      state.feedSourceStatus.failed(source.id, now().toISOString(), '这个网站没有订阅源');
+      return;
+    }
+    const named = source.query !== null && source.label === siteOf(source.query) && found.title !== null;
+    state.feedSources.update(source.id, source.version, { query: found.url,
+      ...(named ? { label: (found.title ?? source.label).slice(0, 200) } : {}) });
+    const asked = this.#options.computer?.ask(found.url, { sourceId: source.id, discover: false }) === true;
+    state.feedSourceStatus.failed(source.id, now().toISOString(),
+      asked ? '找到了订阅地址，正让电脑去取' : '找到了订阅地址，电脑下次在线时再取');
   }
 
   /** 没取到的原因；Reddit 限流时只停这一个版块，写清几分钟后再取。 */

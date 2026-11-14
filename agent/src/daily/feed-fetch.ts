@@ -136,15 +136,8 @@ export class FeedFetcher {
     if (looksLikeFeed(page.text)) {
       return { url: page.url, title: titleOf(page.text) };
     }
-    for (const tag of page.text.matchAll(/<link\b[^>]*>/gi)) {
-      const attrs = tagAttributes(tag[0]);
-      if ((attrs['rel'] ?? '').toLowerCase().split(/\s+/).includes('alternate')
-        && /^application\/(rss|atom)\+xml$/i.test(attrs['type'] ?? '') && attrs['href']) {
-        const url = cleanUrl(checkPublicHttpsUrl(new URL(attrs['href'], page.url).href).href);
-        // 网站名优先：订阅链接上写的常是「Recent Entries」「RSS」这类（第13批，阮一峰的博客就是）。
-        return { url, title: siteName(page.text) ?? (attrs['title']?.trim() || null) };
-      }
-    }
+    const declared = feedLinkIn(page.text, page.url);
+    if (declared !== null) { return declared; }
     for (const candidate of commonFeedUrls(page.url)) {
       signal.throwIfAborted();
       let found: { text: string; url: string };
@@ -174,7 +167,23 @@ export interface DiscoveredFeed {
 const COMMON_FEED_PATHS = ['feed', 'rss', 'feed.xml', 'rss.xml', 'atom.xml', 'index.xml'];
 const COMMON_FEED_TRIES = 8;
 
-function looksLikeFeed(text: string): boolean {
+/**
+ * 网页里声明的订阅（rel=alternate、RSS / Atom）；没有是 null。网站名优先：订阅链接上写的常是「Recent Entries」「RSS」
+ * 这类（第13批，阮一峰的博客就是）。电脑替服务器取回的网页也用它找（computer-fetch.ts）。
+ */
+export function feedLinkIn(html: string, pageUrl: string): DiscoveredFeed | null {
+  for (const tag of html.matchAll(/<link\b[^>]*>/gi)) {
+    const attrs = tagAttributes(tag[0]);
+    if ((attrs['rel'] ?? '').toLowerCase().split(/\s+/).includes('alternate')
+      && /^application\/(rss|atom)\+xml$/i.test(attrs['type'] ?? '') && attrs['href']) {
+      const url = cleanUrl(checkPublicHttpsUrl(new URL(attrs['href'], pageUrl).href).href);
+      return { url, title: siteName(html) ?? (attrs['title']?.trim() || null) };
+    }
+  }
+  return null;
+}
+
+export function looksLikeFeed(text: string): boolean {
   return /<(?:rss|feed)(?:\s|>)/i.test(text);
 }
 
