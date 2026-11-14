@@ -16,9 +16,8 @@ const AUTO: ShellPrefsState = {
 };
 
 describe('壳怎么折（悬浮对话框，设计稿 2026-11-03）', () => {
-  it('1440：侧栏展开，对话默认展开、停靠在右边', () => {
-    expect(computeLayout(1440, AUTO, 'today')).toEqual({ phone: false, sidebarCollapsed: false, chat: 'dialog',
-      chatDocked: true });
+  it('1440：侧栏展开，对话默认展开（浮在右侧，第13批取代停靠）', () => {
+    expect(computeLayout(1440, AUTO, 'today')).toEqual({ phone: false, sidebarCollapsed: false, chat: 'dialog' });
   });
 
   it('窄于 1280 侧栏自动收，对话框没选过时缩成圆球', () => {
@@ -29,9 +28,7 @@ describe('壳怎么折（悬浮对话框，设计稿 2026-11-03）', () => {
   it('手动选过的照选的来：宽窗口里收起是圆球，窄窗口里展开是浮窗；对话框不按视图分', () => {
     expect(computeLayout(1440, { ...AUTO, chatOpen: false }, 'today').chat).toBe('ball');
     expect(computeLayout(1440, { ...AUTO, chatOpen: false }, 'notes').chat).toBe('ball');
-    expect(computeLayout(1000, { ...AUTO, chatOpen: true }, 'projects')).toMatchObject({ chat: 'dialog', chatDocked: false });
-    expect(computeLayout(1440, { ...AUTO, chatOpen: false }, 'today').chatDocked).toBe(false);
-    expect(computeLayout(390, { ...AUTO, phoneChatOpen: true }, 'today').chatDocked).toBe(false);
+    expect(computeLayout(1000, { ...AUTO, chatOpen: true }, 'projects')).toMatchObject({ chat: 'dialog' });
     expect(computeLayout(1100, { ...AUTO, sidebarCollapsed: false }, 'notes').sidebarCollapsed).toBe(false);
   });
 

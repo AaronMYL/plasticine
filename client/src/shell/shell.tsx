@@ -470,7 +470,6 @@ export function Shell(): ReactNode {
         {chatOpen && !workFullPage ? (
           <ChatDialog
             fullscreen={layout.phone}
-            docked={layout.chatDocked}
             frame={prefs.chatFrame}
             onCollapse={collapseChat}
             onFrame={(frame) => shellPrefs.setChatFrame(frame)}

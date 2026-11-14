@@ -115,3 +115,20 @@ function TargetItem({ label, selected, lead, onSelect }: { label: string; select
     className="popover-item dock-target-item" onClick={onSelect}>{lead}<span className="popover-item-label">
       {label}</span>{selected ? <Icon name="check" size={14} /> : null}</button>;
 }
+
+/** 对话框现在对着谁（主线、某位队友、某个群组）：名字和头像（收起时右下角的入口用，第13批）。 */
+export function useDockTarget(): { name: string; avatar: (size: number) => ReactNode } {
+  const live = useLive();
+  const state = useClientState();
+  const target = useStore(state.dockTargets.store);
+  const roster = useStore(live.mates.data);
+  const main = useMainIdentity();
+  const mate = roster.mates.find((item) => item.lineId === target.lineId);
+  const group = roster.groups.find((item) => item.lineId === target.lineId);
+  if (mate !== undefined) return { name: mate.name, avatar: (size) => <MateAvatar mate={mate} size={size} /> };
+  if (group !== undefined) {
+    return { name: group.name, avatar: (size) => <GroupAvatar size={Math.round(size * 0.6)}
+      mates={roster.mates.filter((item) => group.mateIds.includes(item.id))} /> };
+  }
+  return { name: main.name, avatar: (size) => <MainAvatar size={size} /> };
+}

@@ -2,8 +2,8 @@
 // 缩小是右下角 48px 圆球（角标是「等你 n」）；展开是右下角约 420×640 的浮窗：按住顶栏拖动、拖左边 / 上边 / 左上角
 // 调大小，位置和大小记在本机（shell-prefs.ts）。手机上展开是全屏。展开时从圆球的位置「长」成浮窗（clip-path 形变，
 // 260ms），收起时反过来缩回圆球。
-// 11-12 全量优化（Aaron 定）：窗口宽到 1280 起，展开的对话停靠成右边一栏（整高，页面让出位置，只调宽度）；窄一些的
-// 电脑窗口还是浮窗。
+// 第13批（11-14 Aaron 看过设计稿，取代 11-12 的停靠）：电脑上展开的对话浮在页面右侧——上、下、右各留 8、整高，
+// 细边框加阴影，拖左边调宽（宽度记在本机）；打开、收起都不动页面布局，点页面不收起，Esc 或收起按钮才收。手机全屏。
 // 顶栏切换主线、队友或群组；每条对话保留各自的草稿和附件。「问这一页」仍跟随当前页面。
 // 滚动位置、草稿、引用片在 state/ 里，收起再展开、切标签都不变。
 
@@ -19,25 +19,21 @@ import {
 } from 'react';
 import { clampChatFrame, type ChatFrame } from '../state/shell-prefs.ts';
 import { Conversation } from '../views/conversation/conversation.tsx';
-import { DockTargetSelector } from '../views/mates/dock-target.tsx';
-import { Icon } from './icons.tsx';
+import { DockTargetSelector, useDockTarget } from '../views/mates/dock-target.tsx';
 import { IconButton } from './icon-button.tsx';
 import { EASE_OUT, MOTION, canAnimate, play, playThen } from './motion.ts';
 import './chat-dialog.css';
 
-/** 圆球的直径和离右下角的距离（views.md「三栏壳」：48px，距右、距底各 24）。 */
-export const BALL_SIZE = 48;
+/** 入口的大小和离右下角的距离（第13批设计稿：头像 52，占 56 的位置，距右、距底各 24）。 */
+export const BALL_SIZE = 56;
 export const BALL_INSET = 24;
+const BALL_AVATAR = 52;
 /** 键盘调大小、挪位置一步多少：方向 I 的 16px 间距。 */
 const KEY_STEP = 16;
 
-type Grip = 'move' | 'n' | 'w' | 'nw';
-
 interface DragState {
-  grip: Grip;
   pointerId: number;
   x: number;
-  y: number;
   start: ChatFrame;
 }
 
@@ -45,15 +41,6 @@ function viewport(): { width: number; height: number } {
   return { width: window.innerWidth, height: window.innerHeight };
 }
 
-function nextFrame(drag: DragState, dx: number, dy: number): ChatFrame {
-  const { start } = drag;
-  switch (drag.grip) {
-    case 'move': return { ...start, right: start.right - dx, bottom: start.bottom - dy };
-    case 'n': return { ...start, height: start.height - dy };
-    case 'w': return { ...start, width: start.width - dx };
-    case 'nw': return { ...start, width: start.width - dx, height: start.height - dy };
-  }
-}
 
 /** 圆球在对话框里的位置，算成 clip-path：从圆球那一点长成整个框。圆球不在框里（框被拖走了）就只淡入。 */
 function ballClip(dialog: DOMRect): string | null {
@@ -76,10 +63,8 @@ function morphKeyframes(element: HTMLElement): Keyframe[] {
 }
 
 export interface ChatDialogProps {
-  /** 手机：全屏，没有拖动和调大小。 */
+  /** 手机：全屏，没有调宽。 */
   fullscreen: boolean;
-  /** 宽窗口：停靠成右边一栏，整高、只能拖左边调宽（宽度和浮窗共用一个记住的值）。 */
-  docked?: boolean;
   frame: ChatFrame;
   onCollapse: () => void;
   onFrame: (frame: ChatFrame) => void;
@@ -87,7 +72,6 @@ export interface ChatDialogProps {
 
 export function ChatDialog(props: ChatDialogProps): ReactNode {
   const { fullscreen } = props;
-  const docked = props.docked === true && !fullscreen;
   const [dragFrame, setDragFrame] = useState<ChatFrame | null>(null);
   const dialog = useRef<HTMLElement>(null);
   const drag = useRef<DragState | null>(null);
@@ -120,23 +104,21 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
     playThen(element, [...morphKeyframes(element)].reverse(), MOTION.base, props.onCollapse);
   };
 
-  const begin = (grip: Grip, event: PointerEvent<HTMLElement>): void => {
-    if (fullscreen || event.button !== 0 || (docked && grip !== 'w')) {
-      return;
-    }
-    if (grip === 'move' && (event.target as Element).closest('button, a, input, textarea') !== null) {
+  const begin = (event: PointerEvent<HTMLElement>): void => {
+    if (fullscreen || event.button !== 0) {
       return;
     }
     event.preventDefault();
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    drag.current = { grip, pointerId: event.pointerId, x: event.clientX, y: event.clientY, start: frame };
+    drag.current = { pointerId: event.pointerId, x: event.clientX, start: frame };
   };
   const move = (event: PointerEvent<HTMLElement>): void => {
     const current = drag.current;
     if (current === null || current.pointerId !== event.pointerId) {
       return;
     }
-    setDragFrame(clampChatFrame(nextFrame(current, event.clientX - current.x, event.clientY - current.y), viewport()));
+    setDragFrame(clampChatFrame({ ...current.start, width: current.start.width - (event.clientX - current.x) },
+      viewport()));
   };
   const end = (): void => {
     if (drag.current === null) {
@@ -151,9 +133,6 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
   const keyResize = (event: KeyboardEvent<HTMLElement>): void => {
     const change: Record<string, Partial<ChatFrame>> = {
       ArrowLeft: { width: frame.width + KEY_STEP }, ArrowRight: { width: frame.width - KEY_STEP },
-      // 停靠着只有宽度可调。
-      ...(docked ? {}
-        : { ArrowUp: { height: frame.height + KEY_STEP }, ArrowDown: { height: frame.height - KEY_STEP } }),
     };
     const patch = change[event.key];
     if (patch !== undefined) {
@@ -169,30 +148,18 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
     }
   };
   const handlers = { onPointerMove: move, onPointerUp: end, onPointerCancel: end, onLostPointerCapture: end };
-  const style: CSSProperties = fullscreen ? {} : docked ? { width: frame.width }
-    : { width: frame.width, height: frame.height, right: frame.right, bottom: frame.bottom };
+  const style: CSSProperties = fullscreen ? {} : { width: frame.width };
 
   return (
     <aside ref={dialog} className="chat-dialog" data-fullscreen={fullscreen} data-dragging={dragFrame !== null}
-      data-docked={docked ? 'true' : undefined}
       data-hit-region="chat-dialog"
       style={style} aria-label="对话框" onKeyDown={onKey}>
-      {fullscreen ? null : docked ? (
+      {fullscreen ? null : (
         <div className="chat-grip chat-grip-w" role="separator" tabIndex={0} aria-orientation="vertical"
-          aria-label="调整对话栏宽度（左右方向键）" aria-valuetext={`${frame.width}`}
-          onKeyDown={keyResize} onPointerDown={(event) => begin('w', event)} {...handlers} />
-      ) : (
-        <>
-          <div className="chat-grip chat-grip-n" aria-hidden="true" onPointerDown={(event) => begin('n', event)}
-            {...handlers} />
-          <div className="chat-grip chat-grip-w" aria-hidden="true" onPointerDown={(event) => begin('w', event)}
-            {...handlers} />
-          <div className="chat-grip chat-grip-nw" role="separator" tabIndex={0}
-            aria-label="调整对话框大小（方向键）" aria-valuetext={`${frame.width} × ${frame.height}`}
-            onKeyDown={keyResize} onPointerDown={(event) => begin('nw', event)} {...handlers} />
-        </>
+          aria-label="调整对话框宽度（左右方向键）" aria-valuetext={`${frame.width}`}
+          onKeyDown={keyResize} onPointerDown={begin} {...handlers}><span aria-hidden="true" /></div>
       )}
-      <header className="chat-head" onPointerDown={(event) => begin('move', event)} {...handlers}>
+      <header className="chat-head">
         <DockTargetSelector />
         <IconButton icon={fullscreen ? 'close' : 'collapse'} className="chat-collapse"
           label={fullscreen ? '关上对话' : '缩小对话框'} onClick={collapse} />
@@ -202,8 +169,13 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
   );
 }
 
+/**
+ * 收起时右下角的入口（第13批，11-14 Aaron 看过设计稿）：就是当前对话对象的头像——主线、队友或群组，外面不包圆，
+ * 平时静止、干活时按状态动；有等你的事左上角一枚「等你 n」。
+ */
 export function ChatBall({ waiting, onExpand }: { waiting: number; onExpand: () => void }): ReactNode {
-  const label = waiting > 0 ? `展开对话框，等你 ${waiting}` : '展开对话框';
+  const target = useDockTarget();
+  const label = waiting > 0 ? `展开对话框：${target.name}，等你 ${waiting}` : `展开对话框：${target.name}`;
   const ball = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     play(ball.current, [{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'scale(1)' }],
@@ -212,13 +184,8 @@ export function ChatBall({ waiting, onExpand }: { waiting: number; onExpand: () 
   return (
     <button ref={ball} type="button" className="chat-ball" aria-label={label} title={label} onClick={onExpand}
       data-hit-region="chat-ball">
-      <Icon name="conversation" size={20} />
-      {waiting > 0 ? (
-        <span className="chat-ball-badge" aria-hidden="true">
-          <span className="dot dot-accent" />
-          {waiting}
-        </span>
-      ) : null}
+      {target.avatar(BALL_AVATAR)}
+      {waiting > 0 ? <span className="chat-ball-badge" aria-hidden="true">等你 {waiting}</span> : null}
     </button>
   );
 }

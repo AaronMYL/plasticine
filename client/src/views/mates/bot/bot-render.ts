@@ -46,7 +46,8 @@ export function stillSvg(engine: Engine, look: BotLook, state: string, size: num
   if (hit !== undefined) return hit;
   const svg = engine.renderStaticSvg({ shape, face, variant, state, sizePx: size, ink: { flat: inkOf(look) },
     eyeColor: PAGE, colorScheme: 'page' });
-  const done = look.kind === 'main' ? recolorDrawnFace(svg) : svg;
+  // 标签之间的换行缩进去掉：头像放在带字的按钮里（手机底栏）时不给按钮的字多出空白。
+  const done = (look.kind === 'main' ? recolorDrawnFace(svg) : svg).replace(/>\s+</g, '><').trim();
   if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value ?? '');
   cache.set(key, done);
   return done;

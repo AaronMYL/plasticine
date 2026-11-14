@@ -1,7 +1,13 @@
-/* 悬浮对话框（设计稿 2026-11-03）：最亮一层 --layer-float + --lift，圆角 12；手机全屏。 */
+/*
+ * 对话框（第13批，11-14 Aaron 看过设计稿，取代 11-12 的停靠）：电脑上浮在页面右侧，上、下、右各留 8、整高，最亮一层
+ * --layer-float + --lift（细边框加阴影），圆角 12；拖左边那条调宽。打开、收起都不动页面布局。手机全屏。
+ */
 
 .chat-dialog {
   position: fixed;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -11,6 +17,11 @@
   background: var(--layer-float);
   box-shadow: var(--lift);
   overflow: hidden;
+}
+
+/* 桌面客户端有标题栏（44 高）：对话框从标题栏下面开始，不盖住窗口按钮。 */
+.shell[data-titled] > .chat-dialog[data-fullscreen='false'] {
+  top: calc(44px + 8px);
 }
 
 .chat-dialog[data-fullscreen='true'] {
@@ -24,14 +35,6 @@
   user-select: none;
 }
 
-.chat-dialog[data-fullscreen='false'] .chat-head {
-  cursor: grab;
-  touch-action: none;
-}
-
-.chat-dialog[data-dragging='true'] .chat-head {
-  cursor: grabbing;
-}
 
 .chat-dialog .conv {
   flex: 1;
@@ -45,39 +48,37 @@
   touch-action: none;
 }
 
-.chat-grip-n {
-  top: 0;
-  right: 16px;
-  left: 16px;
-  height: 6px;
-  cursor: ns-resize;
-}
 
 .chat-grip-w {
-  top: 16px;
-  bottom: 16px;
+  top: 0;
+  bottom: 0;
   left: 0;
-  width: 6px;
+  width: 8px;
+  display: grid;
+  place-items: center;
   cursor: ew-resize;
 }
 
-.chat-grip-nw {
-  top: 0;
-  left: 0;
-  width: 16px;
-  height: 16px;
-  border-radius: 12px 0 0 0;
-  cursor: nwse-resize;
+/* 拖的那条：平时看不见，鼠标移到左边才显出一道短竖线（设计稿 Main）。 */
+.chat-grip-w > span {
+  width: 3px;
+  height: 40px;
+  border-radius: 2px;
+  background: var(--line2);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
 }
 
-.chat-grip-nw:focus-visible {
-  outline: 2px solid var(--fg);
-  outline-offset: -2px;
+.chat-grip-w:hover > span,
+.chat-grip-w:focus-visible > span,
+.chat-dialog[data-dragging='true'] .chat-grip-w > span {
+  opacity: 1;
 }
 
-.chat-grip:hover {
-  background: var(--tint2);
+.chat-grip-w:focus-visible {
+  outline: none;
 }
+
 
 .chat-collapse {
   flex: none;
@@ -98,45 +99,4 @@
 
 .shell[data-phone='true'] .phone-bar {
   background: var(--layer-side);
-}
-
-/*
- * 停靠（11-12）：宽窗口上展开的对话是壳里最右的一栏——不浮、不盖页面，页面让出它的宽度。左边一条细线和页面分开，
- * 底色用浮层那一档，和页面区分。拖左边调宽。
- */
-.chat-dialog[data-docked='true'] {
-  position: relative;
-  z-index: auto;
-  flex: none;
-  align-self: stretch;
-  max-width: 45vw;
-  border-radius: 0;
-  box-shadow: inset 1px 0 0 var(--line2);
-}
-
-.chat-dialog[data-docked='true'] .chat-head {
-  cursor: default;
-  touch-action: auto;
-}
-
-.chat-dialog[data-docked='true'] .chat-grip-w {
-  top: 0;
-  bottom: 0;
-}
-
-.chat-dialog[data-docked='true'] .chat-grip-w:focus-visible {
-  outline: 2px solid var(--fg);
-  outline-offset: -2px;
-}
-
-/* 桌面客户端有标题栏时壳是格子：对话栏占第二行的第三列。 */
-.shell[data-titled]:has(> .chat-dialog[data-docked='true']) {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
-.shell[data-titled] > .chat-dialog[data-docked='true'] {
-  grid-column: 3;
-  grid-row: 2;
-  min-height: 0;
-  border-top: 1px solid var(--line2);
 }

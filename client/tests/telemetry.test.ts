@@ -31,7 +31,7 @@ describe('遥测', () => {
     fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '笔记' }));
     await settle();
     fireEvent.click(screen.getByRole('button', { name: '缩小对话框' }));
-    fireEvent.click(screen.getByRole('button', { name: '展开对话框' }));
+    fireEvent.click(screen.getByRole('button', { name: /^展开对话框/ }));
     expect(app.records.map((record) => record.name)).toEqual(['view.switched', 'chat.collapsed', 'chat.expanded']);
     expect(app.records[0]?.payload).toEqual({ from: 'today', to: 'notes' });
   });

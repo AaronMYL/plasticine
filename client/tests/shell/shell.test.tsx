@@ -126,7 +126,7 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     expect(window.location.hash).toBe('#/projects');
   });
 
-  it('有事等他时「任务」带一个陶土点；圆球写「等你 n」，在「首页」上圆球不带数', async () => {
+  it('有事等他时「任务」带一个陶土点；入口写「等你 n」，在「首页」上不带数', async () => {
     await renderApp({ width: 1200, setup: (fake) => {
       fake.control.asks.raise({ id: 'ask_wait', kind: 'decide', question: '首页卡片按类别还是按项目上色？',
         options: [{ id: 'a', label: '按类别', recommended: true, description: null }] });
@@ -134,10 +134,12 @@ describe('壳 · 两层侧栏（11-07 设计稿）', () => {
     await settle();
     await waitFor(() => expect(within(rail()).getByRole('button', { name: '任务 · 有等你的事' })).toBeTruthy());
     expect(rail().querySelectorAll('.rail-dot')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: '展开对话框' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^展开对话框/ })).toBeTruthy();
     navTo('笔记');
     await settle();
-    expect(screen.getByRole('button', { name: '展开对话框，等你 1' })).toBeTruthy();
+    // 第13批：入口是当前对话对象的头像，名字在读屏名里（主线没改名就是 Plasticine）。
+    const ball = screen.getByRole('button', { name: '展开对话框：Plasticine，等你 1' });
+    expect(ball.querySelector('.chat-ball-badge')?.textContent).toBe('等你 1');
   });
 });
 
@@ -188,7 +190,7 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
     fireEvent.click(screen.getByRole('button', { name: '缩小对话框' }));
     expect(screen.queryByRole('complementary', { name: '对话框' })).toBeNull();
     expect(app.state.shellPrefs.store.get().chatOpen).toBe(false);
-    fireEvent.click(screen.getByRole('button', { name: '展开对话框' }));
+    fireEvent.click(screen.getByRole('button', { name: /^展开对话框/ }));
     expect(chatInput().value).toBe('收起前的字');
     expect(within(chatColumn()).getByLabelText('对话记录').scrollTop).toBe(80);
     expect(app.state.shellPrefs.store.get().chatOpen).toBe(true);
@@ -207,49 +209,32 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
     expect(chatColumn()).toBeTruthy();
     act(() => setViewportWidth(1000));
     expect(screen.queryByRole('complementary', { name: '对话框' })).toBeNull();
-    expect(screen.getByRole('button', { name: '展开对话框' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^展开对话框/ })).toBeTruthy();
   });
 
-  it('宽窗口：对话停靠在右边一栏，不能拖走，只调宽度（方向键、拖左边），记下来', async () => {
-    const app = await renderApp({ width: 1440 });
-    expect(chatColumn().getAttribute('data-docked')).toBe('true');
-    expect(chatColumn().style.width).toBe('420px');
-    expect(chatColumn().style.height).toBe('');
-    const head = chatColumn().querySelector('.chat-head') as HTMLElement;
-    fireEvent.pointerDown(head, { button: 0, pointerId: 1, clientX: 1200, clientY: 300 });
-    fireEvent.pointerMove(head, { pointerId: 1, clientX: 1000, clientY: 250 });
-    fireEvent.pointerUp(head, { pointerId: 1 });
-    expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ right: 24, bottom: 24 });
-    const grip = screen.getByRole('separator', { name: '调整对话栏宽度（左右方向键）' });
-    fireEvent.keyDown(grip, { key: 'ArrowLeft' });
-    fireEvent.keyDown(grip, { key: 'ArrowUp' });
-    expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ width: 436, height: 640 });
-    fireEvent.pointerDown(grip, { button: 0, pointerId: 2, clientX: 1004, clientY: 300 });
-    fireEvent.pointerMove(grip, { pointerId: 2, clientX: 940, clientY: 300 });
-    fireEvent.pointerUp(grip, { pointerId: 2 });
-    expect(app.state.shellPrefs.store.get().chatFrame.width).toBe(500);
-  });
-
-  it('窄一些的电脑窗口：浮窗。按住顶栏拖动挪位置、拖左上角调大小，松手记下来；键盘方向键也能调大小', async () => {
-    const app = await renderApp({ width: 1200 });
-    fireEvent.click(screen.getByRole('button', { name: '展开对话框' }));
-    expect(chatColumn().getAttribute('data-docked')).toBeNull();
-    const head = chatColumn().querySelector('.chat-head') as HTMLElement;
-    fireEvent.pointerDown(head, { button: 0, pointerId: 1, clientX: 1200, clientY: 300 });
-    fireEvent.pointerMove(head, { pointerId: 1, clientX: 1000, clientY: 250 });
-    fireEvent.pointerUp(head, { pointerId: 1 });
-    expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ right: 224, bottom: 74 });
-    const grip = screen.getByRole('separator', { name: '调整对话框大小（方向键）' });
-    fireEvent.keyDown(grip, { key: 'ArrowLeft' });
-    fireEvent.keyDown(grip, { key: 'ArrowUp' });
-    expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ width: 436, height: 656 });
-  });
+  it('电脑上对话浮在页面右侧（第13批，取代停靠）：不盖住页面布局、不能拖走，只调宽度（方向键、拖左边），记下来',
+    async () => {
+      const app = await renderApp({ width: 1440 });
+      expect(chatColumn().getAttribute('data-docked')).toBeNull();
+      expect(chatColumn().style.width).toBe('420px');
+      expect(chatColumn().style.height).toBe('');
+      expect(document.querySelector('.shell > .chat-dialog')).not.toBeNull();
+      const grip = screen.getByRole('separator', { name: '调整对话框宽度（左右方向键）' });
+      fireEvent.keyDown(grip, { key: 'ArrowLeft' });
+      fireEvent.keyDown(grip, { key: 'ArrowUp' });
+      expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ width: 436, height: 640 });
+      fireEvent.pointerDown(grip, { button: 0, pointerId: 2, clientX: 1004, clientY: 300 });
+      fireEvent.pointerMove(grip, { pointerId: 2, clientX: 940, clientY: 300 });
+      fireEvent.pointerUp(grip, { pointerId: 2 });
+      expect(app.state.shellPrefs.store.get().chatFrame.width).toBe(500);
+      expect(screen.queryByRole('separator', { name: /调整对话框大小/ })).toBeNull();
+    });
 
   it('Esc 缩小对话框，焦点回到圆球', async () => {
     await renderApp();
     fireEvent.keyDown(chatInput(), { key: 'Escape' });
     expect(screen.queryByRole('complementary', { name: '对话框' })).toBeNull();
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: '展开对话框' })));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: /^展开对话框/ })));
   });
 });
 

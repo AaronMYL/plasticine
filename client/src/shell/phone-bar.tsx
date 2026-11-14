@@ -7,6 +7,7 @@ import { Sheet } from '../primitives/sheet/index.tsx';
 import { HueTile } from './hue.tsx';
 import { Icon } from './icons.tsx';
 import { PlasticineMark } from './plasticine-mark.tsx';
+import { MainAvatar } from '../views/mates/mate-avatar.tsx';
 import type { Route } from './routes.ts';
 import { MORE_ITEMS, PHONE_TABS, SECTIONS, phoneTabOf, type MoreItemId, type PhoneTabId } from './sections.ts';
 
@@ -38,7 +39,8 @@ const LABELS: Readonly<Record<PhoneTabId, string>> = {
 };
 
 function TabIcon({ tab }: { tab: PhoneTabId }): ReactNode {
-  if (tab === 'plasticine') return <PlasticineMark size={22} />;
+  // 第13批：底栏的 Plasticine 是主线的头像，跟着主线在做什么动。
+  if (tab === 'plasticine') return <MainAvatar size={26} />;
   if (tab === 'more') return <Icon name="more" size={22} />;
   const icon = SECTIONS[tab].icon;
   return icon === 'mark' ? <PlasticineMark size={22} /> : <Icon name={icon} size={22} />;

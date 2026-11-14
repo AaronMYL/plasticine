@@ -11,6 +11,7 @@ import type { ConnectionStatus } from '../api/types.ts';
 import { accountInitial } from './account-name.ts';
 import { Icon } from './icons.tsx';
 import { PlasticineMark } from './plasticine-mark.tsx';
+import { MainAvatar } from '../views/mates/mate-avatar.tsx';
 import { MenuItem, Popover, anchorOf, type PopoverAnchor } from './popover.tsx';
 import { RAIL_GROUPS, SECTIONS, type SectionId } from './sections.ts';
 
@@ -63,7 +64,9 @@ export function Rail(props: RailProps): ReactNode {
                   <button type="button" className="rail-item" aria-label={label} data-tip={item.label}
                     data-tip-side="right" aria-current={props.section === id ? 'page' : undefined}
                     onClick={() => props.onSection(id)}>
-                    {item.icon === 'mark' ? <PlasticineMark size={20} /> : <Icon name={item.icon} size={18} />}
+                    {/* 第13批：Plasticine 这一格是主线的头像，跟着主线在做什么动（11-14 Aaron）。 */}
+                    {id === 'plasticine' ? <MainAvatar size={26} /> : item.icon === 'mark'
+                      ? <PlasticineMark size={20} /> : <Icon name={item.icon} size={18} />}
                     {flagged ? <span className="rail-dot" aria-hidden="true" /> : null}
                   </button>
                 </li>
