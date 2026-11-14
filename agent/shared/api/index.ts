@@ -62,6 +62,7 @@ export * from './systems.ts';
 
 export * from './feed-work.ts';
 export * from './feed-x.ts';
+export * from './feed-xhs.ts';
 export * from './video.ts';
 export * from './cognition-source.ts';
 export * from './search.ts';

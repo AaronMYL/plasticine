@@ -165,7 +165,7 @@ export function feedNav(context: RequestContext): Reply {
 export function listFeedSources(context: RequestContext): Reply {
   requireAuth(context);
   const { state, daily } = context.deps;
-  // 第 3 批：X 和「按关注点搜新闻」两行一直在（设置里能开关）；第一次列来源时建出来。
+  // 第 3 批：X 和「按关注点搜新闻」两行一直在（设置里能开关）；第13批加小红书。第一次列来源时建出来。
   daily.subscriptions.builtIn('x');
   daily.subscriptions.builtIn('news');
   daily.subscriptions.builtIn('xhs');
@@ -177,7 +177,7 @@ export function listFeedSources(context: RequestContext): Reply {
     blocked: sources.filter((source) => source.kind === 'blocked_site').map(view),
     // 任务、项目两个站内来源停了（信息流只放站外资讯），不再列在「其他来源」里；手动添加、订阅、X 留着。
     others: sources.filter((source) => (source.kind === 'internal' || source.kind === 'rss' || source.kind === 'x'
-      || source.kind === 'reddit')
+      || source.kind === 'reddit' || source.kind === 'xhs')
       && (source.ref === null || !RETIRED_SOURCE_REFS.includes(source.ref))).map(view),
     everyMinutes: FEED_SOURCE_EVERY_MS / 60_000,
     recentSites: state.feedItems.recentSites(RECENT_SITES_MAX),

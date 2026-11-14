@@ -5,6 +5,7 @@
 
 import { createHash } from 'node:crypto';
 import type { XPost, XTimelineDue, XTimelineReport } from '../../shared/api/feed-x.ts';
+import type { XhsDue, XhsNote, XhsReport } from '../../shared/api/feed-xhs.ts';
 import type { FeedBlock, FeedItem, FeedItemInput, FeedPlace, FeedSource } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { errorCategory, failureText, safeLog } from '../shared-log.ts';
@@ -42,6 +43,13 @@ export const X_READ_ERROR_TEXT: Readonly<Record<NonNullable<XTimelineReport['err
   signed_out: '在 Plasticine 浏览器里登录 X',
   layout_changed: 'X 改版了，这次没读到帖子',
   load_failed: 'X 的页面没打开',
+};
+
+export const XHS_READ_ERROR_TEXT: Readonly<Record<NonNullable<XhsReport['error']>['code'], string>> = {
+  signed_out: '在 Plasticine 浏览器里登录小红书',
+  verify: '小红书要你验证一下：在 Plasticine 浏览器里打开小红书，过了验证再刷新',
+  layout_changed: '小红书改版了，这次没读到笔记',
+  load_failed: '小红书的页面没打开',
 };
 
 interface NewEntry {
@@ -113,6 +121,17 @@ function newest(entries: readonly NewEntry[], cap: number, perPlace: boolean): N
     here.slice(0, cap).forEach((entry) => picked.add(entry));
   }
   return byTime.filter((entry) => picked.has(entry));
+}
+
+/** 小红书的一条笔记（第13批）：列表里只有标题，正文不重复标题。 */
+function noteEntry(note: XhsNote): NewEntry {
+  const title = note.title.trim() === '' ? `${note.author}的笔记` : note.title.trim();
+  return {
+    key: `xhs:${note.id}`, title, url: `https://www.xiaohongshu.com/explore/${note.id}`, summary: title,
+    text: title, publishedAt: null, author: note.author, authorHandle: null, avatarUrl: httpsOrNull(note.avatar),
+    imageUrl: httpsOrNull(note.image), imageRatio: note.image === null ? null : note.imageRatio,
+    places: [...new Set(note.places)],
+  };
 }
 
 function articleEntry(hit: ReturnType<typeof parseFeed>[number]): NewEntry {
@@ -290,20 +309,38 @@ export class FeedSubscriptions {
     return { due: this.#due(this.builtIn('x')), everyMinutes: FEED_SOURCE_EVERY_MS / 60_000 };
   }
 
-  /** Mac 读完交来的结果：有错只记原因；有帖子就入库。返回新加了几条。 */
+  /** 电脑读完交来的结果：有错只记原因；有帖子就入库。返回新加了几条。 */
   ingestX(report: XTimelineReport): number {
+    const error = report.error === null ? null : { ...report.error, reason: X_READ_ERROR_TEXT[report.error.code] };
+    return this.#ingestRead(this.builtIn('x'), error, report.posts.map(postEntry));
+  }
+
+  /** 电脑来问到没到读小红书的时候（第13批）。 */
+  xhsDue(): XhsDue {
+    return { due: this.#due(this.builtIn('xhs')), everyMinutes: FEED_SOURCE_EVERY_MS / 60_000 };
+  }
+
+  /** 电脑读完小红书交来的结果，和 X 一样。 */
+  ingestXhs(report: XhsReport): number {
+    const error = report.error === null ? null : { ...report.error, reason: XHS_READ_ERROR_TEXT[report.error.code] };
+    return this.#ingestRead(this.builtIn('xhs'), error, report.notes.map(noteEntry));
+  }
+
+  /**
+   * 电脑读的来源（X、小红书）交来一轮：有错只记原因（没登录、要验证时不带系统说法）；有条目就入库，几处各取最新的几条。
+   */
+  #ingestRead(source: FeedSource, error: { code: string; detail?: string; reason: string } | null,
+    entries: readonly NewEntry[]): number {
     const { state, now } = this.#options;
     const at = now().toISOString();
-    const source = this.builtIn('x');
-    if (report.error !== null) {
-      const detail = report.error.detail?.trim() ?? '';
-      const reason = X_READ_ERROR_TEXT[report.error.code];
-      const plain = detail === '' || report.error.code === 'signed_out';
-      state.feedSourceStatus.failed(source.id, at, plain ? reason : `${reason}：${detail}`);
+    if (error !== null) {
+      const detail = error.detail?.trim() ?? '';
+      const plain = detail === '' || error.code === 'signed_out' || error.code === 'verify';
+      state.feedSourceStatus.failed(source.id, at, plain ? error.reason : `${error.reason}：${detail}`);
       return 0;
     }
     if (source.level === 'off') { return 0; }
-    const added = this.#ingest(source, report.posts.map(postEntry), undefined, true);
+    const added = this.#ingest(source, entries, undefined, true);
     state.feedSourceStatus.succeeded(source.id, at, added);
     return added;
   }

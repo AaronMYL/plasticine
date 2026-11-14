@@ -57,6 +57,7 @@ export async function bundle(): Promise<void> {
   for (const [name, file, install, global] of [
     ['x-timeline', 'x-timeline-page.ts', 'installTimelineReader', '__plasticineX'],
     ['douyin', 'douyin-page.ts', 'installDouyinReader', '__plasticineDouyin'],
+    ['xhs', 'xhs-page.ts', 'installXhsReader', '__plasticineXhs'],
   ] as const) {
     await build({ ...common, sourcemap: false, stdin: { contents: injected(file, install, global),
       resolveDir: MAC_SCRIPTS, loader: 'ts' }, outfile: join(DIST, 'pages', `${name}.js`), platform: 'browser',

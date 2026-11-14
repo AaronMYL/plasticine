@@ -1,19 +1,22 @@
-// 信息流要这台电脑做的两样（用他在 Plasticine 浏览器里的登录；登录只在这台电脑上，不进本体）：
+// 信息流要这台电脑做的三样（用他在 Plasticine 浏览器里的登录；登录只在这台电脑上，不进本体）：
 // - X 时间线（agent/shared/api/feed-x.ts）：每 10 分钟问本体到没到，到了在一个看不见的窗口里读「正在关注」「为你推荐」
 //   「书签」三处（第13批，x-places.ts），只露一段的长帖再载入帖子页补全文，合起来交回。Mac App 的 x-timeline-reader.swift
 //   还只读「关注」。
+// - 小红书（第13批，agent/shared/api/feed-xhs.ts）：和 X 一样每 10 分钟问到没到，到了读首页「推荐」和自己的收藏
+//   （xhs-read.ts），在网页自己的脚本世界里读（要读页面自带的初始数据）。
 // - 抖音收藏和下载地址（docs/specs/video-parse.md）：每分钟领活，在看不见的窗口里载入 douyin.com，在网页自己的脚本世界
 //   （签名要页面自己的脚本加）里装上 douyin-page 的读取器，翻收藏 / 取地址，交回。
-// 没配对、设备服务暂停时不读；读完就把窗口拆掉。注入的脚本是 client/src/mac/x-timeline-page.ts、douyin-page.ts，
-// 构建时打成 dist/pages/*.js。
+// 没配对、设备服务暂停时不读；读完就把窗口拆掉。注入的脚本是 client/src/mac/x-timeline-page.ts、douyin-page.ts、
+// xhs-page.ts，构建时打成 dist/pages/*.js。
 
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { BrowserWindow, type Session } from 'electron';
-import type { DouyinJob, DouyinReport, XTimelineReport } from '../../../agent/shared/api/index.ts';
+import type { DouyinJob, DouyinReport, XhsReport, XTimelineReport } from '../../../agent/shared/api/index.ts';
 import { DOUYIN_WORKS_PER_REPORT_MAX, X_POSTS_MAX } from '../../../agent/shared/api/index.ts';
 import type { NodeApi } from '../node/node-api.ts';
 import { readXPlaces, type XPage } from './x-places.ts';
+import { readXhs } from './xhs-read.ts';
 
 const X_ASK_EVERY_MS = 10 * 60_000;
 const DOUYIN_ASK_EVERY_MS = 60_000;
@@ -23,12 +26,14 @@ const LOAD_TIMEOUT_MS = 30_000;
 /** X 的 isolated world 编号（和界面、标签的 preload 世界错开）。 */
 const X_WORLD = 1_017;
 
+export type PageScript = 'x-timeline' | 'douyin' | 'xhs';
+
 export interface FeedDeps {
   session: Session;
   userAgent: string;
   /** 现在配对着的本体和凭证；没配对、暂停时是 null。 */
   node(): { api: NodeApi; credential: string } | null;
-  pageScript(name: 'x-timeline' | 'douyin'): string;
+  pageScript(name: PageScript): string;
   log(line: string): void;
 }
 
@@ -67,6 +72,7 @@ export class FeedRunner {
   private readonly deps: FeedDeps;
   private readonly timers: ReturnType<typeof setTimeout>[] = [];
   private xRunning = false;
+  private xhsRunning = false;
   private douyinRunning = false;
 
   constructor(deps: FeedDeps) {
@@ -76,8 +82,10 @@ export class FeedRunner {
   start(): void {
     this.timers.push(setTimeout(() => {
       void this.x();
+      void this.xhs();
       void this.douyin();
       this.timers.push(setInterval(() => void this.x(), X_ASK_EVERY_MS));
+      this.timers.push(setInterval(() => void this.xhs(), X_ASK_EVERY_MS));
       this.timers.push(setInterval(() => void this.douyin(), DOUYIN_ASK_EVERY_MS));
     }, FIRST_ASK_DELAY_MS));
   }
@@ -117,6 +125,37 @@ export class FeedRunner {
       const read = await readXPlaces(page, { script: this.deps.pageScript('x-timeline'), sleep,
         log: (line) => this.deps.log(line) });
       return { requestId: `x-${randomUUID()}`, posts: read.posts.slice(0, X_POSTS_MAX), error: read.error };
+    } finally {
+      window.destroy();
+    }
+  }
+
+  private async xhs(): Promise<void> {
+    const node = this.deps.node();
+    if (node === null || this.xhsRunning) {
+      return;
+    }
+    this.xhsRunning = true;
+    try {
+      const due = await node.api.xhsDue(node.credential);
+      if (due.due) {
+        await node.api.xhsReport(node.credential, await this.readXhs());
+      }
+    } catch (error) {
+      this.deps.log(`小红书没读成：${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      this.xhsRunning = false;
+    }
+  }
+
+  private async readXhs(): Promise<XhsReport> {
+    const window = hiddenWindow(this.deps);
+    try {
+      const read = await readXhs({
+        load: (url) => loadIn(window, url),
+        run: (code) => window.webContents.executeJavaScript(code),
+      }, { script: this.deps.pageScript('xhs'), sleep, log: (line) => this.deps.log(line) });
+      return { requestId: `xhs-${randomUUID()}`, ...read };
     } finally {
       window.destroy();
     }
@@ -184,6 +223,6 @@ export class FeedRunner {
 }
 
 /** 构建好的注入脚本（dist/pages/<名字>.js）。 */
-export function readPageScript(directory: string, name: 'x-timeline' | 'douyin'): string {
+export function readPageScript(directory: string, name: PageScript): string {
   return readFileSync(`${directory}/${name}.js`, 'utf8');
 }
