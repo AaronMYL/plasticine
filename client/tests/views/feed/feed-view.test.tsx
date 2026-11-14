@@ -78,9 +78,16 @@ describe('信息流页', () => {
     const blog = card('本地优先软件的同步难题');
     expect(blog.querySelector('.feed-mark')?.textContent).toBe('慢');
     expect(within(blog).getByRole('heading', { name: '本地优先软件的同步难题' })).toBeTruthy();
-    const image = blog.querySelector<HTMLImageElement>('img.feed-card-image');
+    // 11-14 图片统一：一张整张显示，按比例先占好位置（最宽 720、最高 480），点开看大图。
+    const image = blog.querySelector<HTMLImageElement>('.feed-card-media img');
     expect(image?.getAttribute('src')).toBe('/v2/mail-image?u=c&e=1&s=d');
-    expect(image?.style.aspectRatio).toBe('1 / 0.5');
+    const cell = within(blog).getByRole('button', { name: '查看图片' });
+    expect(cell.style.aspectRatio).toBe('1 / 0.5');
+    fireEvent.click(cell);
+    const viewer = await screen.findByRole('dialog', { name: '看图' });
+    expect(viewer.querySelector('img')?.getAttribute('src')).toBe('/v2/mail-image?u=c&e=1&s=d');
+    fireEvent.keyDown(viewer, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: '看图' })).toBeNull();
     expect(blog.querySelector('time')?.textContent).not.toBe('');
     // 不感兴趣的默认不在里面。
     expect(titles()).toEqual(['把记忆拆成两栏以后', '本地优先软件的同步难题', '多家厂商发布端侧大模型']);

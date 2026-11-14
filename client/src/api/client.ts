@@ -383,7 +383,11 @@ export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
   translate: TranslateApi;
   compose: ComposeApi;
   attachments: AttachmentsApi;
-  links: { preview(url: string, signal?: AbortSignal): Promise<import('./shared.ts').LinkPreview> };
+  links: {
+    preview(url: string, signal?: AbortSignal): Promise<import('./shared.ts').LinkPreview>;
+    /** 回复里的图经服务端转一道的地址（11-14 图片统一）。 */
+    image(url: string): string;
+  };
   moneyDrafts: MoneyDraftsApi;
   clientUpdates: ClientUpdatesApi;
   backups: BackupsApi;

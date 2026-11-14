@@ -160,9 +160,25 @@
   overflow-x: auto;
 }
 
-.feed-article img {
+.feed-article-image {
   display: block;
   max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.feed-article-image:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* 全文里的图整张显示（最宽 720、最高 480，不裁），点开看大图。 */
+.feed-article img {
+  display: block;
+  max-width: min(100%, 720px);
+  max-height: 480px;
   height: auto;
   border-radius: var(--radius);
 }

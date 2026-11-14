@@ -1,0 +1,148 @@
+/*
+ * 看图层（index.tsx，设计稿「图片：显示和打开」）：盖住整个窗口，--bg 底；顶上一条 40 高（第几张 · 出处 · 打开原文 ·
+ * 下载 · 关闭）；图在中间整张显示，左右两边各一个 32 的圆按钮翻页。手机上关闭在左上角、44 高，没有翻页按钮（滑）。
+ */
+
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--fg);
+  animation: image-viewer-in var(--motion-base) var(--ease-out);
+}
+
+.image-viewer:focus {
+  outline: none;
+}
+
+.image-viewer-bar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  padding-top: max(var(--space-1), env(safe-area-inset-top));
+}
+
+.image-viewer-count {
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.image-viewer-caption {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-viewer-gap {
+  flex: 1;
+}
+
+.image-viewer-stage {
+  position: relative;
+  flex: 1;
+  display: grid;
+  /* 一格撑满：图的 max-height: 100% 才量得到台子的高（auto 的行会跟着图长高，竖图就出了底）。 */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--space-4) var(--space-7);
+  touch-action: none;
+  user-select: none;
+  cursor: zoom-in;
+}
+
+.image-viewer-stage[data-zoomed='true'] {
+  cursor: grab;
+}
+
+.image-viewer-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center;
+  animation: image-viewer-pop var(--motion-slow) var(--ease-spring);
+}
+
+.image-viewer-failed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.image-viewer-failed p {
+  margin: 0;
+}
+
+.image-viewer-arrow {
+  position: absolute;
+  top: 50%;
+  border-radius: var(--radius-full);
+  background: var(--tint2);
+  color: var(--fg);
+  translate: 0 -50%;
+}
+
+.image-viewer-arrow[data-side='left'] {
+  left: var(--space-2);
+}
+
+.image-viewer-arrow[data-side='right'] {
+  right: var(--space-2);
+}
+
+.image-viewer-arrow:disabled {
+  opacity: 0.4;
+}
+
+/* 手机：关闭在左上角，第几张居中；图贴满宽，下面留一块给手指。 */
+.image-viewer[data-phone='true'] .image-viewer-bar {
+  padding-left: var(--space-1);
+}
+
+.image-viewer[data-phone='true'] .image-viewer-count {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
+}
+
+.image-viewer[data-phone='true'] .image-viewer-stage {
+  padding: 0 0 var(--space-7);
+}
+
+@keyframes image-viewer-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes image-viewer-pop {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-viewer,
+  .image-viewer-image {
+    animation: none;
+  }
+}

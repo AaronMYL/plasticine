@@ -3,12 +3,14 @@
 
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
+import { imageViewerStore } from '../src/primitives/image-viewer/index.tsx';
 import { toastStore } from '../src/primitives/toast/index.tsx';
 
 afterEach(() => {
   cleanup();
-  // 提示条是全站一条（模块里的状态）：不留到下一条测试。
+  // 提示条、看图层是全站一个（模块里的状态）：不留到下一条测试。
   toastStore.set(null);
+  imageViewerStore.set(null);
 });
 
 const EMPTY_RECT: DOMRect = {

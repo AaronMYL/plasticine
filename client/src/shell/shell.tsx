@@ -45,6 +45,7 @@ import { usePageTitle } from './page-title.ts';
 import { PanelContext, panelTitle, type Panel } from './panel.ts';
 import { MoreDrawer, PhoneBar, phoneFullPage } from './phone-bar.tsx';
 import { ToastHost } from '../primitives/toast/index.tsx';
+import { ImageViewerHost } from '../primitives/image-viewer/index.tsx';
 import { Rail, type NewKind } from './rail.tsx';
 import { HOME, parseHash, routeHash, type Route, type ViewId } from './routes.ts';
 import { MainErrorBoundary } from './main-error-boundary.tsx';
@@ -499,6 +500,7 @@ export function Shell(): ReactNode {
         {palette ? <Palette phone={layout.phone} onClose={() => setPalette(false)} onOpen={openFromPalette} />
           : null}
         {settings.element}
+        <ImageViewerHost />
         <TooltipLayer />
         <ContextMenuLayer add={webChrome.quote} />
       </div>

@@ -5,6 +5,7 @@ import { RULES_MOVE_ROUTES } from './rules-move.ts';
 import { MEMORY_CONFLICT_ROUTES } from './memory-conflicts.ts';
 import { MEMORY_MANAGE_ROUTES } from './memory-manage.ts';
 import { getLinkPreview } from './link-preview.ts';
+import { getProxiedImage } from './image-proxy.ts';
 // The route table (plasticine-code: 路由表一个文件). Every /v2 route, its method, whether it needs a session, and the
 // resource file that handles it. Order matters only where two patterns could match the same path.
 // 2026-11-05 Harness 重做：对话、任务、事、自迭代、启用、度量、遥测、关切、判断 / 预测、采访、≠、专注、提醒 / 日历、成果、
@@ -111,6 +112,7 @@ import {
   SKILL_STORE_PATH,
   TODAY_SETTINGS_PATH,
   TOOL_GROUPS_PATH,
+  IMAGE_PROXY_PATH,
 } from '../../shared/api/index.ts';
 import { createOutboundGrant, editOutboundGrant, getOutboundLog, listOutboundGrants, listOutboundLog,
   revokeOutboundGrant } from './outbound-grants.ts';
@@ -297,6 +299,7 @@ export const ROUTES: readonly Route[] = [
   { method: 'PUT', path: '/v2/conversation/attachments/:id/chunks/:offset', auth: true, handler: uploadChunk },
   { method: 'POST', path: '/v2/conversation/attachments/:id/complete', auth: true, handler: completeUpload },
   { method: 'GET', path: '/v2/link-preview', auth: true, handler: getLinkPreview },
+  { method: 'GET', path: IMAGE_PROXY_PATH, auth: true, handler: getProxiedImage },
   { method: 'GET', path: '/v2/conversation/attachments/:id', auth: true, handler: getAttachment },
   { method: 'GET', path: '/v2/conversation/attachments/:id/content', auth: true, handler: getAttachmentContent },
   { method: 'GET', path: '/v2/conversation/attachments/:id/text', auth: true, handler: getAttachmentText },

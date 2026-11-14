@@ -42,3 +42,33 @@ test('链接预览要求登录，封面返回现有邮件图片代理地址，�
     server.close();
   }
 });
+
+test('回复里的图经服务端转一道（11-14 图片统一）：要登录，只取 http(s)，回图片字节，内网不取', async () => {
+  const png = Buffer.from('89504e470d0a1a0a', 'hex');
+  const server = createServer((_req, res) => {
+    res.writeHead(200, { 'content-type': 'image/png' });
+    res.end(png);
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert.ok(address !== null && typeof address !== 'string');
+  const remote = { resolve: async () => [{ address: '127.0.0.1', family: 4 }],
+    blocked: (value: string) => value !== '127.0.0.1' && isPrivateHost(value) };
+  const app = await startTestApp([], { startTasks: false, mailImages: remote, linkPreviews: remote });
+  try {
+    const cookie = await pair(app);
+    const path = `/v2/image?url=${encodeURIComponent(`http://img.test:${address.port}/chart.png`)}`;
+    assert.equal((await call(app, 'GET', path)).status, 401);
+    const image = await call(app, 'GET', path, { cookie });
+    assert.equal(image.status, 200);
+    assert.deepEqual(Buffer.from(image.body as ArrayBuffer), png);
+    const refused = await call(app, 'GET', `/v2/image?url=${encodeURIComponent('file:///etc/passwd')}`, { cookie });
+    assert.equal(refused.status, 400);
+    const inner = await call(app, 'GET', `/v2/image?url=${encodeURIComponent('http://10.1.1.1/a.png')}`, { cookie });
+    assert.equal(inner.status, 502);
+  } finally {
+    await app.close();
+    server.closeAllConnections();
+    server.close();
+  }
+});

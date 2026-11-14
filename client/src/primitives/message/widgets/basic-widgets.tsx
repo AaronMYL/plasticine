@@ -1,25 +1,24 @@
-// 消息里的图片和表格：只看不答。图片几张排成一格一格，点开看原图；表格放不下就在自己的框里横向滚动，不撑破对话。
+// 消息里的图片和表格：只看不答。图片整张显示、几张排格子，点开看大图；表格放不下就在自己的框里横向滚动，不撑破对话。
 
 import type { ReactNode } from 'react';
 import type { ImageWidget, TableWidget } from '../../../api/shared.ts';
+import { CHAT_IMAGE_BOX, ImageGrid } from '../../image-grid/index.tsx';
 
 export function ImageGallery({ images }: { images: ImageWidget[] }): ReactNode {
   if (images.length === 0) {
     return null;
   }
+  // 11-14 图片统一：和对话里的图同一套排法（一张整张显示，多张排格子），点开是同一个看图层，说明写在看图层顶上；
+  // 只有一张时说明也写在图下面。
+  const only = images.length === 1 ? images[0] : undefined;
   return (
-    <div className="widget-gallery" data-count={Math.min(images.length, 3)}>
-      {images.map((image) => (
-        <figure key={image.id} className="widget-image">
-          <a href={image.src} target="_blank" rel="noreferrer" aria-label={`看原图：${image.alt}`}>
-            <img src={image.src} alt={image.alt} loading="lazy"
-              {...(image.width === undefined ? {} : { width: image.width })}
-              {...(image.height === undefined ? {} : { height: image.height })} />
-          </a>
-          {image.caption === undefined ? null : <figcaption className="text-meta">{image.caption}</figcaption>}
-        </figure>
-      ))}
-    </div>
+    <figure className="widget-gallery">
+      <ImageGrid box={CHAT_IMAGE_BOX} images={images.map((image) => ({ src: image.src, alt: image.alt,
+        caption: image.caption ?? image.alt,
+        ratio: image.width !== undefined && image.height !== undefined && image.width > 0
+          ? image.height / image.width : null }))} />
+      {only?.caption === undefined ? null : <figcaption className="text-meta">{only.caption}</figcaption>}
+    </figure>
   );
 }
 

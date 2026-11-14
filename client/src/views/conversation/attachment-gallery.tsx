@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { previewable, shownAsImage } from '../../api/shared.ts';
 import { fileSize } from '../../primitives/artifact-card/format.ts';
+import { CHAT_IMAGE_BOX, ImageGrid } from '../../primitives/image-grid/index.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { AttachmentDownload } from './attachment-download.tsx';
@@ -18,15 +19,6 @@ export interface AttachmentMedia {
   url: string;
   thumbnailUrl?: string;
   loadContent?: (signal: AbortSignal) => Promise<Blob>;
-}
-
-function PreviewImage({ item }: { item: AttachmentMedia }): ReactNode {
-  const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState(0);
-  return failed ? <div role="alert"><p>图片未能读取。</p>
-    <button type="button" className="secondary-button" onClick={() => { setFailed(false); setAttempt(attempt + 1); }}>
-      重试读取</button></div> : <img key={attempt} className="attachment-viewer-image" src={item.url}
-      alt={item.name} draggable={false} onError={() => setFailed(true)} />;
 }
 
 const SWIPE_CLOSE_PX = 80;
@@ -48,7 +40,6 @@ function Preview({ items, initial, onClose }: { items: readonly AttachmentMedia[
     };
   }, []);
   if (item === undefined) return null;
-  const image = shownAsImage(item.mimeType);
   return createPortal(<dialog ref={dialog} className="attachment-viewer" aria-label="附件预览" aria-modal="true"
     onCancel={(event) => { event.preventDefault(); onClose(); }} onKeyDown={(event) => {
       if (event.key === 'Escape') { event.preventDefault(); onClose(); }
@@ -68,8 +59,7 @@ function Preview({ items, initial, onClose }: { items: readonly AttachmentMedia[
         && Math.abs(touch.clientX - start.current.x) < SWIPE_CLOSE_PX) onClose();
       start.current = null;
     }}>
-      {image ? <PreviewImage key={item.id} item={item} />
-        : <AttachmentFilePreview item={item} />}
+      <AttachmentFilePreview item={item} />
     </div>
     {items.length < 2 ? null : <nav className="attachment-viewer-nav" aria-label="附件切换">
       <IconButton icon="back" label="上一张" disabled={index === 0}
@@ -96,14 +86,12 @@ export function AttachmentGallery({ items }: { items: readonly AttachmentMedia[]
   const images = items.filter((item) => shownAsImage(item.mimeType));
   const files = items.filter((item) => !shownAsImage(item.mimeType));
   const viewable = files.filter((item) => previewable(item.mimeType));
-  const previewItems = selected !== null && shownAsImage(selected.mimeType) ? images : viewable;
   if (items.length === 0) return null;
+  // 图（11-14 统一）：和信息流同一套排法（整块最宽 320、一张最高 400），点开是同一个看图层，顶上能下载。
   return <div className="attachment-gallery">
-    {images.length === 0 ? null : <div className="attachment-image-grid" data-count={images.length}>
-      {images.map((item) => <button key={item.id} type="button" className="attachment-image"
-        aria-label={`查看图片 ${item.name}`} onClick={() => setSelected(item)}>
-        <img src={item.thumbnailUrl ?? item.url} alt={item.name} loading="lazy" /></button>)}
-    </div>}
+    {images.length === 0 ? null : <ImageGrid box={CHAT_IMAGE_BOX} label="图片" images={images.map((item) => ({
+      src: item.url, thumb: item.thumbnailUrl, alt: item.name, caption: item.name,
+      download: { url: item.url, name: item.name } }))} />}
     {files.map((item) => {
       if (!previewable(item.mimeType)) return <DownloadFile key={item.id} item={item} />;
       const pdf = item.mimeType === 'application/pdf' && item.loadContent !== undefined;
@@ -118,8 +106,8 @@ export function AttachmentGallery({ items }: { items: readonly AttachmentMedia[]
         <Icon name="external" size={16} />
       </button>;
     })}
-    {selected === null ? null : <Preview key={selected.id} items={previewItems}
-      initial={Math.max(0, previewItems.findIndex((item) => item.id === selected.id))}
+    {selected === null ? null : <Preview key={selected.id} items={viewable}
+      initial={Math.max(0, viewable.findIndex((item) => item.id === selected.id))}
       onClose={() => setSelected(null)} />}
   </div>;
 }

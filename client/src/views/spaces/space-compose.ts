@@ -51,7 +51,9 @@ export function composeSpaceDocument(input: ComposeInput): string {
     + `<head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${SPACE_CSP}">`
     + '<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer">'
     + `<style>${tokenCss(input.tokens)}${BASE_CSS}${genreCss}${input.mode === 'thumb' ? THUMB_CSS : ''}`
-    + '[data-pz-highlight]{background:var(--tint2);border-radius:8px;scroll-margin:48px}</style>'
+    + '[data-pz-highlight]{background:var(--tint2);border-radius:8px;scroll-margin:48px}'
+    // 点图看大图（11-14 图片统一）：链接里的图照旧是链接。
+    + 'body:not(.pz-thumb) img{cursor:zoom-in}body:not(.pz-thumb) a img{cursor:pointer}</style>'
     + `<script>(${spaceRuntime.toString()})(${JSON.stringify(input.mode)});</script>`
     + `</head><body class="${classes}">${input.body}</body></html>`;
 }

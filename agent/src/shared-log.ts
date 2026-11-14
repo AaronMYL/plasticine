@@ -51,6 +51,7 @@ const EVENTS = {
   mail_parse_failed: '一封邮件的 MIME 解析不了，记成没有正文的一封，原信已存下',
   mail_refetch_broken: '重抓邮件时连接中断，剩下的记成出错，下次重跑再补',
   mail_image_failed: '邮件图片代理没取到图，回了 502',
+  image_proxy_failed: '回复里的图经服务端代取没取到，回了 502',
   favicon_failed: '有个网站的图标这次没取到，标签先画首字母，过一天再试',
   legacy_bookmark_skipped: '旧存档「书签」一组里有一页加不成书签（网址收不了），跳过了，这一页也不再成标签',
   mail_inline_missing: '邮件内嵌图的文件读不到，这张图不显示',

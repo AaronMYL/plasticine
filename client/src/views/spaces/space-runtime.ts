@@ -3,6 +3,7 @@
 // - 字体（Geist、霞鹜文楷按用到的字分片）和插图由外面读好，按字节传进来，这里用 FontFace / blob 地址装上；
 // - 深浅色切换时外面传新的令牌值；
 // - 链接点了交给外面（站外的在 Plasticine 网页标签里开；#/… 和 data-link="类别:id" 是 Plasticine 自己的页面）；
+// - 点图交给外面开看图层（11-14 图片统一）；
 // - ✎ 改字：外面说进入，这里把能改的那几段变成可编辑，改了（停一下或离开这一段）把那一段交回去，Esc 收起；
 // - 目录（顶上横向那一条）跟着滚动高亮、高亮的那一项滚进看得见的地方，点了滚过去；分段控件（.seg button[data-filter]）
 //   和新版式的筛选按钮（.filt > button[data-filter]）筛同一节里带 data-tags 的卡片。
@@ -20,7 +21,9 @@ export type SpaceFrameOut =
   | { pz: 'space'; type: 'escape' }
   | { pz: 'space'; type: 'selection'; text: string; sectionId: string | null; paragraph: number;
       left: number; top: number; bottom: number }
-  | { pz: 'space'; type: 'key'; key: string; meta: boolean; ctrl: boolean; shift: boolean; alt: boolean };
+  | { pz: 'space'; type: 'key'; key: string; meta: boolean; ctrl: boolean; shift: boolean; alt: boolean }
+  /** 点了一张图（11-14 图片统一：点开看大图）：这一页里能看的图（插图写 asset，data: 图写 data），从第 index 张开始。 */
+  | { pz: 'space'; type: 'image'; images: { asset: string; data: string; alt: string }[]; index: number };
 
 export interface SpaceFontFace {
   family: string;
@@ -123,6 +126,16 @@ export function spaceRuntime(mode: SpaceFrameMode): void {
       return;
     }
     const anchor = target?.closest<HTMLAnchorElement>('a[href],a[data-link]') ?? null;
+    // 点图（不在链接里）：交给外面开看图层；改字时不开。
+    const picture = target?.closest<HTMLImageElement>('img') ?? null;
+    if (picture !== null && anchor === null && mode === 'page' && !editing) {
+      const pictures = [...document.querySelectorAll<HTMLImageElement>('img')]
+        .filter((image) => image.closest('a[href],a[data-link]') === null);
+      post({ type: 'image', index: pictures.indexOf(picture), images: pictures.map((image) => ({
+        asset: image.dataset['pzAsset'] ?? '', alt: image.alt,
+        data: (image.getAttribute('src') ?? '').startsWith('data:image/') ? image.getAttribute('src') ?? '' : '' })) });
+      return;
+    }
     if (anchor === null) return;
     event.preventDefault();
     // 改字时点在正在改的字里的链接是放光标，不跳；目录这类不能改的照常。

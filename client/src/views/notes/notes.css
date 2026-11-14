@@ -280,6 +280,57 @@
   border-radius: var(--radius);
 }
 
+/* 笔记里的图（note-image-view.ts）：整张显示；选中了描一圈，右上角出「放大」；只读的点一下就开。 */
+.note-prose .note-image {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.note-prose .note-image img {
+  display: block;
+}
+
+.note-prose .note-image.ProseMirror-selectednode img {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.note-prose[contenteditable='false'] .note-image img {
+  cursor: zoom-in;
+}
+
+.note-image-zoom {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  height: var(--control-sm);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--image-veil);
+  color: var(--image-veil-ink);
+  font-size: var(--text-ui);
+  cursor: pointer;
+  animation: note-image-zoom-in var(--motion-fast) var(--ease-out);
+}
+
+.note-image-zoom:focus-visible {
+  outline: 2px solid var(--image-veil-ink);
+  outline-offset: -4px;
+}
+
+@keyframes note-image-zoom-in {
+  from { opacity: 0; transform: scale(0.9); }
+}
+
+@media (pointer: coarse) {
+  .note-image-zoom {
+    height: var(--touch);
+    padding: 0 var(--space-4);
+  }
+}
+
 .note-prose table {
   border-collapse: collapse;
   display: block;

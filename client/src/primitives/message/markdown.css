@@ -1,6 +1,10 @@
 .markdown { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .markdown p { margin: 0 0 var(--space-2); white-space: pre-wrap; }
 .markdown p:last-child { margin-bottom: 0; }
+/* 带图的那一段（11-14 图片统一）：图整张显示，前后的字照常。 */
+.markdown .markdown-p { margin: 0 0 var(--space-2); white-space: pre-wrap; }
+.markdown .markdown-p:last-child { margin-bottom: 0; }
+.markdown .markdown-image { margin: var(--space-1) 0; white-space: normal; }
 .markdown h1, .markdown h2, .markdown h3, .markdown h4 { font-size: inherit; margin: var(--space-4) 0 var(--space-2); }
 .markdown ul, .markdown ol { margin: var(--space-2) 0; padding-left: var(--space-5); }
 .markdown a { color: var(--fg); text-underline-offset: 3px; }

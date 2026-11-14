@@ -25,6 +25,7 @@ import { when } from '../notes/note-time.ts';
 import { DouyinMark, FeedChartView, FeedText, FeedVideoBody, videoMeta } from './feed-body.tsx';
 import { RedditMark } from './feed-source-list.tsx';
 import { useOps } from '../../state/ops.ts';
+import { FEED_IMAGE_BOX, ImageGrid } from '../../primitives/image-grid/index.tsx';
 
 export interface CardSource {
   name: string;
@@ -190,8 +191,10 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
       {item.kind === 'douyin' ? <FeedVideoBody item={item} /> : <FeedText item={item} />}
       {item.chart == null ? null : <FeedChartView chart={item.chart} />}
       {item.image === null ? null : (
-        <img className="feed-card-image" src={item.image.src} alt="" loading="lazy" referrerPolicy="no-referrer"
-          style={ratio === null ? undefined : { aspectRatio: `1 / ${ratio}` }} />
+        <div className="feed-card-media">
+          <ImageGrid box={FEED_IMAGE_BOX} images={[{ src: item.image.src, ratio,
+            caption: `${source.name}${source.handle === null ? '' : ` · ${source.handle}`}`, original: item.url }]} />
+        </div>
       )}
       <footer className="feed-card-actions">
         <IconButton icon={liked ? 'heart-filled' : 'heart'} label="点赞" aria-pressed={liked} disabled={lockedReact}

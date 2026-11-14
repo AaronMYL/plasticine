@@ -193,13 +193,9 @@
   overflow: hidden;
 }
 
-.feed-card-image {
-  display: block;
-  width: 100%;
-  max-height: 280px;
-  border-radius: var(--radius);
-  object-fit: cover;
-  background: var(--tint2);
+/* 配图（11-14 统一，primitives/image-grid）：一张整张显示、不裁（最宽 720、最高 480），多张排格子，点开看大图。 */
+.feed-card-media {
+  min-width: 0;
 }
 
 .feed-card-actions {

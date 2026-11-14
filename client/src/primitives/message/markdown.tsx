@@ -1,5 +1,7 @@
 import { Fragment, useMemo, type ReactNode } from 'react';
+import { useApiOrNull } from '../../api/context.tsx';
 import { inAppHash } from '../../shell/internal-page.ts';
+import { CHAT_IMAGE_BOX, ImageGrid } from '../image-grid/index.tsx';
 import { cjkMarked } from './cjk-marked.ts';
 import './markdown.css';
 
@@ -51,7 +53,9 @@ function renderToken(token: Token): ReactNode {
       const Tag = `h${token.depth}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
       return <Tag>{children()}</Tag>;
     }
-    case 'paragraph': return <p>{children()}</p>;
+    // 带图的那一段用块（图是一块格子，不能放进 <p>）。
+    case 'paragraph': return token.tokens?.some((child: Token) => child.type === 'image') === true
+      ? <div className="markdown-p">{children()}</div> : <p>{children()}</p>;
     case 'text': return children();
     case 'strong': return <strong>{children()}</strong>;
     case 'em': return <em>{children()}</em>;
@@ -77,7 +81,9 @@ function renderToken(token: Token): ReactNode {
         ? <a href={href} title={token.title ?? undefined} target={href.startsWith('http') ? '_blank' : undefined}
           rel="noreferrer">{children()}</a> : children();
     }
-    case 'image': return <a href={token.href} target="_blank" rel="noreferrer">{token.text || '查看图片'}</a>;
+    case 'image': return /^https?:\/\//i.test(String(token.href))
+      ? <MarkdownImage href={String(token.href)} alt={String(token.text ?? '')} />
+      : <a href={token.href} target="_blank" rel="noreferrer">{token.text || '查看图片'}</a>;
     case 'table': return <div className="markdown-table"><table>
       <thead><tr>{token.header.map((cell: { tokens: Token[] }, index: number) =>
         <th key={index}>{renderTokens(cell.tokens)}</th>)}</tr></thead>
@@ -87,6 +93,20 @@ function renderToken(token: Token): ReactNode {
     </table></div>;
     default: return references(String(token.raw ?? ''));
   }
+}
+
+/**
+ * 回复里的图（11-14 图片统一，Aaron 弹框选）：直接显示，经服务端转一道（api.links.image，和信息流一样不直连外站）；
+ * 和对话里的图一样整张显示（最宽 320、最高 400），点开是同一个看图层，顶上「打开原文」是原图地址。
+ */
+function MarkdownImage({ href, alt }: { href: string; alt: string }): ReactNode {
+  const api = useApiOrNull();
+  // 没有接口（应用外的页面）就不直连外站，照旧给个链接。
+  if (api === null) return <a href={href} target="_blank" rel="noreferrer">{alt === '' ? '查看图片' : alt}</a>;
+  return <div className="markdown-image">
+    <ImageGrid box={CHAT_IMAGE_BOX} images={[{ src: api.links.image(href), alt, caption: alt === '' ? undefined : alt,
+      original: href }]} />
+  </div>;
 }
 
 export function Markdown({ text }: { text: string }): ReactNode {

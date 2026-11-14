@@ -138,6 +138,45 @@ describe('笔记页', () => {
     expect(editor.getMarkdown()).toContain('/v1/notes/assets/a1.png');
   });
 
+  it('笔记里的图：双击开看图，能翻到这篇的别的图；点一下选中后出「放大」', async () => {
+    const markdown = '# 有两张图\n\n![甲](/v2/notes/assets/a1.png)\n\n中间一段。\n\n![乙](/v2/notes/assets/a2.png)';
+    await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', markdown) });
+    const editor = await noteEditor();
+    const images = await waitFor(() => {
+      const found = document.querySelectorAll<HTMLImageElement>('.ProseMirror .note-image img');
+      if (found.length !== 2) { throw new Error('图还没画出来'); }
+      return [...found];
+    });
+    fireEvent.doubleClick(images[1]!);
+    const viewer = await screen.findByRole('dialog', { name: '看图' });
+    expect(viewer.textContent).toContain('2 / 2');
+    fireEvent.click(within(viewer).getByRole('button', { name: '关闭' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '看图' })).toBeNull());
+    expect(screen.queryByRole('button', { name: '放大' })).toBeNull();
+    let first = -1;
+    editor.state.doc.descendants((node, pos) => {
+      if (first < 0 && node.type.name === 'image') { first = pos; }
+    });
+    act(() => { editor.commands.setNodeSelection(first); });
+    fireEvent.click(await screen.findByRole('button', { name: '放大' }));
+    expect((await screen.findByRole('dialog', { name: '看图' })).textContent).toContain('1 / 2');
+    expect(editor.getMarkdown()).toContain('![甲](/v2/notes/assets/a1.png)');
+  });
+
+  it('只读笔记里的图点一下就开', async () => {
+    const markdown = '# 旧版导入\n\n![图](/v1/notes/assets/a1.png)';
+    await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', markdown, { readOnly: true }) });
+    await noteEditor();
+    const img = await waitFor(() => {
+      const found = document.querySelector<HTMLImageElement>('.ProseMirror .note-image img');
+      if (found === null) { throw new Error('图还没画出来'); }
+      return found;
+    });
+    fireEvent.click(img);
+    const viewer = await screen.findByRole('dialog', { name: '看图' });
+    expect(within(viewer).getByRole('img', { name: '图' }).getAttribute('src')).toBe('/v2/notes/assets/a1.png');
+  });
+
   it('只读笔记不能编辑，也没有删除', async () => {
     await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', '# 旧版导入', { readOnly: true }) });
     const editor = await noteEditor();

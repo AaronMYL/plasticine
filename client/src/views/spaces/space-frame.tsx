@@ -10,6 +10,7 @@ import { Value } from 'typebox/value';
 import { useApi } from '../../api/context.tsx';
 import { SPACE_LINK_KINDS, SpaceQuoteAnchorSchema, type SpaceGenre, type SpaceLink } from '../../api/shared.ts';
 import { QuoteAction } from '../../primitives/message/quote-action.tsx';
+import { showImages, type ViewerImage } from '../../primitives/image-viewer/index.tsx';
 import { pushHash } from '../../shell/nav-history.ts';
 import { openExternal } from '../../shell/open-external.ts';
 import { routeHash } from '../../shell/routes.ts';
@@ -145,6 +146,29 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
     const post = (message: Record<string, unknown>, transfer: Transferable[] = []): void => {
       frame.current?.contentWindow?.postMessage({ pz: 'space', ...message }, '*', transfer);
     };
+    // 插图读到的原件：点开看大图时在外面另做一个地址（iframe 里的 blob 地址外面用不了），关页时收回。
+    const blobs = new Map<string, Blob>();
+    const urls: string[] = [];
+    const openImages = (message: Record<string, unknown>): void => {
+      const list = Array.isArray(message['images']) ? message['images'] as unknown[] : [];
+      const clicked = Number(message['index']);
+      const shown: { image: ViewerImage; at: number }[] = [];
+      list.forEach((entry, at) => {
+        if (typeof entry !== 'object' || entry === null) return;
+        const asset = String(Reflect.get(entry, 'asset') ?? '');
+        const data = String(Reflect.get(entry, 'data') ?? '');
+        const alt = String(Reflect.get(entry, 'alt') ?? '');
+        const blob = blobs.get(asset);
+        let src: string | null = null;
+        if (blob !== undefined) {
+          src = URL.createObjectURL(blob);
+          urls.push(src);
+        } else if (data.startsWith('data:image/')) src = data;
+        if (src !== null) shown.push({ image: { src, alt, caption: alt === '' ? undefined : alt }, at });
+      });
+      const start = shown.findIndex((item) => item.at === clicked);
+      if (start >= 0) showImages(shown.map((item) => item.image), start);
+    };
     // 准备好了可能说两遍（自己载完说一遍，外面打招呼又说一遍）：只接第一遍。
     let served = false;
     const ready = (message: Record<string, unknown>): void => {
@@ -164,6 +188,7 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
       const assets = Array.isArray(message['assets']) ? message['assets'].map(String) : [];
       for (const src of assets) {
         void api.spaces.asset(src, controller.signal).then(async (blob) => {
+          blobs.set(src, blob);
           const data = await blob.arrayBuffer();
           if (!controller.signal.aborted) post({ type: 'asset', src, data, mime: blob.type }, [data]);
         }, (cause: unknown) => console.warn('插图没读到，这一页先不显示', cause));
@@ -175,7 +200,9 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
       if (message === null) return;
       if (message['type'] === 'ready') ready(message);
       if (mode === 'thumb') return;
-      if (message['type'] === 'open') {
+      if (message['type'] === 'image') {
+        openImages(message);
+      } else if (message['type'] === 'open') {
         openExternal(String(message['url']), String(message['title'] ?? ''));
       } else if (message['type'] === 'navigate') {
         pushHash(String(message['hash']));
@@ -218,6 +245,7 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
     return () => {
       controller.abort();
       window.removeEventListener('message', listen);
+      for (const url of urls) URL.revokeObjectURL(url);
     };
   }, [api, mode, prepared]);
 

@@ -1,12 +1,6 @@
+/* 图用 primitives/image-grid（整块最宽 320、一张最高 400）；文件一行一个，最宽 420。 */
 .attachment-gallery { display: flex; flex-direction: column; gap: var(--space-2); width: 420px; max-width: 100%; }
-.attachment-gallery:has(.attachment-image-grid[data-count='1']):not(:has(.attachment-file)) { width: 320px; }
-.attachment-image-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1);
-  width: min(420px, 100%); }
-.attachment-image-grid[data-count='1'] { grid-template-columns: minmax(0, 1fr); width: min(320px, 100%); }
-.attachment-image { display: block; min-width: 0; padding: 0; overflow: hidden; border: 1px solid var(--line2);
-  border-radius: var(--radius); background: var(--tint); cursor: pointer; }
-.attachment-image img { display: block; width: 100%; height: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
-.attachment-image-grid[data-count='1'] img { max-height: 320px; aspect-ratio: auto; object-fit: contain; }
+.attachment-gallery:not(:has(.attachment-file)) { width: 320px; }
 .attachment-file { display: flex; align-items: center; gap: var(--space-3); width: min(420px, 100%); min-width: 0;
   box-sizing: border-box; padding: var(--space-2) var(--space-3); border: 1px solid var(--line2);
     border-radius: var(--radius); background: var(--bg);
@@ -31,8 +25,6 @@
   white-space: nowrap; }
 .attachment-viewer-body { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 0;
   padding: var(--space-4); overflow: auto; }
-.attachment-viewer-image { display: block; max-width: 100%; max-height: 100%; object-fit: contain;
-  touch-action: pan-x; }
 .attachment-viewer-nav { display: flex; justify-content: center; align-items: center; gap: var(--space-4);
   padding: var(--space-3); }
 .attachment-pdf-pages { align-self: stretch; display: flex; flex-direction: column; align-items: center;

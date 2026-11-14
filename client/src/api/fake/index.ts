@@ -381,7 +381,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       session.require();
       const url = new URL(address);
       return { url: url.href, site: url.hostname, title: url.hostname, description: '', image: null };
-    } },
+    }, image: (address) => address },
     moneyDrafts,
     clientUpdates,
     backups,

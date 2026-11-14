@@ -171,6 +171,11 @@ describe('发送前的当前页来源', () => {
     expect(card.querySelector('details')?.open).toBe(false);
     // 卡上用掉的截图不在附件里再画一遍。
     expect(screen.getAllByRole('img', { name: '这一页当时的样子' })).toHaveLength(1);
+    // 11-14 图片统一：卡上只露顶上一截，点开看整张，顶上写网页标题、能打开原网页。
+    fireEvent.click(within(card).getByRole('button', { name: '看这一页当时的样子' }));
+    const viewer = await screen.findByRole('dialog', { name: '看图' });
+    expect(viewer.textContent).toContain('协作中的上下文');
+    expect(within(viewer).getByRole('link', { name: '打开原文' }).getAttribute('href')).toMatch(/^https:\/\/example\.org/);
   });
 
   it('取消当前页引用以后再发：这句不带这一页（11-13 Aaron：关了「问这一页」下一句还带着页面）', async () => {

@@ -15,6 +15,7 @@ import { NoteCompositionGuard } from './note-composition.ts';
 import { NoteInputRules } from './note-input-rules.ts';
 import { NoteMarkdown, NoteMarkdownClipboard } from './note-markdown.ts';
 import { currentAssetUrl } from '../../api/shared.ts';
+import { noteImageView } from './note-image-view.ts';
 
 const NoteImage = Image.extend({
   renderHTML({ HTMLAttributes }) {
@@ -22,6 +23,8 @@ const NoteImage = Image.extend({
     const shown = typeof src === 'string' ? { src: currentAssetUrl(src) } : {};
     return ['img', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, shown)];
   },
+  // 编辑器里画成能选中、能放大的图（note-image-view.ts）；复制出去、存回去还是上面的 <img>。
+  addNodeView() { return ({ node, view, getPos }) => noteImageView(node, view, getPos); },
 });
 
 export function noteExtensions(): AnyExtension[] {

@@ -57,6 +57,9 @@ export const DESIGN_TOKENS: readonly string[] = [
   'mail-paper',
   'qr-paper',
   'qr-ink',
+  // 11-14 图片统一：压在照片上的一层（多张图第四格的「+n」）。
+  'image-veil',
+  'image-veil-ink',
   // 第 102 条：类别 / 项目色，深浅各一套（只染小方块、圆点、2px 色条和类别小字）。
   'hue-clay',
   'hue-ochre',
