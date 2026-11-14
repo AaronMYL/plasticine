@@ -23,7 +23,6 @@ it('笔记多选会替换阅读区，移动后列表与最近删除数量同步'
   await waitFor(async () => expect((await app.api.notes.get('a')).folder).toBe('归档'));
   fireEvent.click(screen.getByRole('checkbox', { name: '全选' }));
   fireEvent.click(screen.getByRole('button', { name: '删除' }));
-  fireEvent.click(screen.getByRole('button', { name: '删除 2 项' }));
   await waitFor(() => expect(screen.queryByRole('checkbox', { name: '选择第一篇' })).toBeNull());
   await act(async () => app.state.notesUi.set({ collection: { kind: 'deleted' } }));
   await waitFor(() => expect(screen.getByRole('button', { name: '清空' })).toBeTruthy());
@@ -38,7 +37,6 @@ it('资料库选择空间删除后刷新列表和最近删除，批量还原后�
   await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: `选择${row.title}` }));
   fireEvent.click(screen.getByRole('button', { name: '删除' }));
-  fireEvent.click(screen.getByRole('button', { name: '删除 1 项' }));
   await waitFor(() => expect(screen.queryByRole('checkbox', { name: `选择${row.title}` })).toBeNull());
   expect((await app.api.library.trash()).items.some((item) => item.id === row.id)).toBe(true);
   await act(async () => { window.location.hash = '#/library/trash'; });
@@ -58,7 +56,6 @@ it('文件页多选发送文件与文件夹身份，删除后刷新到最近删�
   await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: '全选' }));
   fireEvent.click(screen.getByRole('button', { name: '删除' }));
-  fireEvent.click(screen.getByRole('button', { name: '删除 2 项' }));
   await waitFor(() => expect(screen.queryByRole('checkbox', { name: '选择说明.txt' })).toBeNull());
   expect((await app.api.library.trash()).items.map((item) => item.kind).sort()).toEqual(['file', 'folder']);
 });
@@ -73,7 +70,6 @@ it('图书馆批量删除与数量同步，选择时只保留一份书目', asyn
   expect(screen.queryByRole('region', { name: '在读' })).toBeNull();
   fireEvent.click(screen.getByRole('checkbox', { name: `选择${books[0]!.title}` }));
   fireEvent.click(screen.getByRole('button', { name: '删除' }));
-  fireEvent.click(screen.getByRole('button', { name: '删除 1 项' }));
   await waitFor(() => expect(screen.queryByRole('checkbox', { name: `选择${books[0]!.title}` })).toBeNull());
   expect((await app.api.books.list()).books).toHaveLength(books.length - 1);
 });

@@ -5,7 +5,6 @@
 import { useState, type ReactNode } from 'react';
 import { errorText } from '../../api/errors.ts';
 import type { FeedNavSource } from '../../api/shared.ts';
-import { IconButton } from '../../shell/icon-button.tsx';
 import type { FeedSegment } from '../../state/feed-ui.ts';
 import { kindChips, type KindGroup } from './feed-kinds.ts';
 import { useSourceActions } from './feed-source-actions.ts';
@@ -43,7 +42,6 @@ export function useKindRefresh(group: KindGroup | null): { busy: boolean; run: (
 
 export function FeedKindHead(props: FeedKindHeadProps): ReactNode {
   const { group, segment } = props;
-  const refresh = useKindRefresh(group);
   const chips = kindChips(group);
   const selected = chips.find((chip) => chip.segment === segment) ?? null;
   const own = selected?.row ?? null;
@@ -73,8 +71,7 @@ export function FeedKindHead(props: FeedKindHeadProps): ReactNode {
     <div className="feed-kind-head">
       <div className="feed-kind-title">
         {props.titled ? <h2 className="feed-top-title">{group.label}</h2> : null}
-        {props.refresh ? <IconButton icon="refresh" label={`刷新${name}`} size={16} disabled={refresh.busy}
-          className="feed-kind-refresh" data-busy={refresh.busy || undefined} onClick={refresh.run} /> : null}
+        {/* 页头不放刷新（11-14 Aaron 定）：这一路在 ⋯ 里「现在刷新」，全部来源在第二栏「信息流」那一行。 */}
         <span className="feed-kind-gap" />
         {menu}
       </div>

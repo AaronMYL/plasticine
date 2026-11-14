@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
+import { RevealMore } from '../../shell/reveal-more.tsx';
 import { ColumnFoot, ColumnHead, ColumnLink, ColumnNote } from '../../shell/columns/column.tsx';
 import { mainChatRoute, mateGroupRoute, mateRoute, sideRoute, skillsRoute, type Route } from '../../shell/routes.ts';
 import { useStore } from '../../state/use-store.ts';
@@ -10,7 +11,8 @@ import { MATE_OP_PREFIXES } from './mate-actions.ts';
 import { groupWaiting } from './group-work.ts';
 import { MainAvatar, MateAvatar, GroupAvatar } from './mate-avatar.tsx';
 import { MateEditor, GroupEditor } from './mate-editor.tsx';
-import { MainEditor, useMainIdentity } from './main-identity.tsx';
+import { useMainIdentity } from './main-identity.tsx';
+import { useLineMenu } from './line-menu.tsx';
 import { LegacyChats } from './legacy-chats.tsx';
 import './mates.css';
 
@@ -19,7 +21,8 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
   const live = useLive();
   const roster = useStore(live.mates.data);
   const lines = useStore(live.lines.list);
-  const [editor, setEditor] = useState<'mate' | 'group' | 'main' | null>(null);
+  const [editor, setEditor] = useState<'mate' | 'group' | null>(null);
+  const menu = useLineMenu(phone, navigate);
   const main = useMainIdentity();
   const [legacy, setLegacy] = useState(false);
   const root = route.view === 'plasticine' && route.mateId == null && route.mateGroupId == null
@@ -27,10 +30,10 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
   return <div className={`mates-roster${phone ? ' mates-roster-phone' : ''}`}>
     {phone ? <header className="mates-phone-head"><h1>{main.name}</h1></header> : <ColumnHead title={main.name} />}
     <div className="column-scroll">
-      <div className="mates-main-row">
+      <div className="column-row">
         <ColumnLink route={mainChatRoute()} current={root} navigate={navigate} label={`${main.name} 主线`}
           lead={<MainAvatar size={28} />} sub="主线">{main.name}</ColumnLink>
-        <IconButton icon="edit" className="mates-main-edit" label="编辑主线" onClick={() => setEditor('main')} />
+        <RevealMore label={`「${main.name}」主线的更多操作`} actions={menu.actions({ kind: 'main' })} />
       </div>
       <PendingOps label="队友待核实的操作" prefixes={MATE_OP_PREFIXES} visible={() => false}
         onRetry={(key) => { void live.mateActions.retry(key); }} />
@@ -47,20 +50,22 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
         const doing = mate.disabledAt !== null ? null
           : working ? `在做「${work[0]?.title ?? ''}」${work.length > 1 ? `等 ${work.length} 件` : ''}`
             : own?.status === 'running' ? '正在回话' : own?.status === 'waiting' ? '等你回答' : null;
-        return <ColumnLink key={mate.id} route={mateRoute(mate.id)} current={route.view === 'plasticine'
-          && (route.mateId === mate.id || route.lineId === mate.lineId)}
+        return <div key={mate.id} className="column-row"><ColumnLink route={mateRoute(mate.id)}
+          current={route.view === 'plasticine' && (route.mateId === mate.id || route.lineId === mate.lineId)}
           navigate={navigate} lead={<MateAvatar mate={mate} />} sub={doing ?? mate.role}
           trail={mate.disabledAt !== null ? <span className="mate-state">已停用</span> : undefined}>
-          {mate.name}</ColumnLink>;
+          {mate.name}</ColumnLink>
+          <RevealMore label={`「${mate.name}」的更多操作`} actions={menu.actions({ kind: 'mate', mate })} /></div>;
       })}
       <div className="mates-section-head"><h3>群组</h3>
         <IconButton icon="plus" label="创建队友群组" onClick={() => setEditor('group')} /></div>
-      {roster.groups.map((group) => <ColumnLink key={group.id} route={mateGroupRoute(group.id)}
-        current={route.mateGroupId === group.id || route.lineId === group.lineId} navigate={navigate}
-        lead={<GroupAvatar mates={roster.mates.filter((mate) => group.mateIds.includes(mate.id))} />}
+      {roster.groups.map((group) => <div key={group.id} className="column-row"><ColumnLink
+        route={mateGroupRoute(group.id)} current={route.mateGroupId === group.id || route.lineId === group.lineId}
+        navigate={navigate} lead={<GroupAvatar mates={roster.mates.filter((mate) => group.mateIds.includes(mate.id))} />}
         sub={`${group.mateIds.length} 位队友`}
         trail={groupWaiting(group, lines.lines) === 0 ? undefined
-          : <span className="mate-wait-count">等你 {groupWaiting(group, lines.lines)}</span>}>{group.name}</ColumnLink>)}
+          : <span className="mate-wait-count">等你 {groupWaiting(group, lines.lines)}</span>}>{group.name}</ColumnLink>
+        <RevealMore label={`「${group.name}」的更多操作`} actions={menu.actions({ kind: 'group', group })} /></div>)}
       {roster.legacyChats.length === 0 ? null : <div className="mates-legacy">
         <button type="button" className="text-button" onClick={() => setLegacy(true)}>整理原来的对话</button>
         {roster.legacyChats.map((chat) => <ColumnLink key={chat.lineId} route={sideRoute(chat.lineId)}
@@ -75,7 +80,7 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
         navigate={navigate} lead={<Icon name="memory" size={20} />}>记忆</ColumnLink>
     </ColumnFoot>
     {editor === 'mate' ? <MateEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
-    {editor === 'main' ? <MainEditor phone={phone} onClose={() => setEditor(null)} /> : null}
+    {menu.dialogs}
     {editor === 'group' ? <GroupEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
     {legacy ? <LegacyChats phone={phone} navigate={navigate} onClose={() => setLegacy(false)} /> : null}
   </div>;

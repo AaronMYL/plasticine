@@ -99,12 +99,13 @@ describe('信息流第二栏 · 来源', () => {
     expect([...card.querySelectorAll('.feed-place')].map((tag) => tag.textContent)).toEqual(['推荐', '书签']);
   });
 
-  it('刷新：这一种名字旁边一个，第二栏「信息流」那一行一个；完了页面顶上浮一句', async () => {
+  it('刷新：这一种在页头 ⋯ 里「现在刷新」，第二栏「信息流」那一行一个；完了浮一条提示', async () => {
     const app = await renderApp({ hash: '#/feed', setup: seed });
     await settle();
     const refresh = vi.spyOn(app.api.feed, 'refreshSource');
     fireEvent.click(within(sources()).getByRole('button', { name: /^Reddit/ }));
-    fireEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: '刷新Reddit' }));
+    fireEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: '「Reddit」的设置' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '现在刷新' }));
     expect(await screen.findByRole('status', {}, { timeout: 2_000 })).toHaveProperty('textContent', '暂无新内容');
     expect(refresh.mock.calls.map((call) => call[0])).toEqual(['src_r']);
     fireEvent.click(within(column()).getByRole('button', { name: '刷新全部来源' }));

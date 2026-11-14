@@ -2,8 +2,10 @@
 // MenuItem：关闭逻辑（use-dismiss.ts）、焦点进出、不出视口、Mac 原生网页垫在下面时的点击分区都现成）。
 // 说明不再进 ⋯：必要的常显，补充的用 ⓘ（info-tip.tsx）。
 // 一列里有的行有次要操作、有的没有：没有的那行留一个同宽、读屏看不见的占位，⋯ 列对齐，不时有时无地错位。
+// 11-14 界面统一（Aaron「右键菜单和“更多”菜单共用同一套操作」）：⋯ 标成这一行的菜单（data-row-menu），所在那一行
+// （列表项、第二栏的一行）标成可右键（data-context-row）：右键、触屏长按这一行，出的就是这个 ⋯ 的菜单（context-menu.tsx）。
 
-import { Fragment, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { IconButton } from './icon-button.tsx';
 import type { IconName } from './icons.tsx';
 import { anchorOf, MenuItem, MenuSeparator, Popover, type PopoverAnchor } from './popover.tsx';
@@ -26,9 +28,19 @@ export interface RevealMoreProps {
   actions?: readonly RevealAction[];
 }
 
+/** ⋯ 所在的「一行」：列表项、表格行、第二栏的一行。页头、标题栏里的 ⋯ 不在行里，不标。 */
+const ROW = 'li, [role="listitem"], [role="row"], .column-row, tr';
+
 export function RevealMore({ label, actions = [] }: RevealMoreProps): ReactNode {
   const button = useRef<HTMLButtonElement>(null);
   const [menu, setMenu] = useState<PopoverAnchor | null>(null);
+  const hasActions = actions.length > 0;
+  useLayoutEffect(() => {
+    const row = hasActions ? button.current?.closest(ROW) ?? null : null;
+    if (row === null || row.hasAttribute('data-context-row')) return undefined;
+    row.setAttribute('data-context-row', '');
+    return () => row.removeAttribute('data-context-row');
+  }, [hasActions]);
   if (actions.length === 0) {
     return <span className="reveal-more reveal-more-slot" aria-hidden="true" />;
   }
@@ -43,23 +55,32 @@ export function RevealMore({ label, actions = [] }: RevealMoreProps): ReactNode 
   };
   return (
     <>
-      <IconButton ref={button} icon="more" className="reveal-more" label={label} title="更多"
+      <IconButton ref={button} icon="more" className="reveal-more" label={label} title="更多" data-row-menu=""
         aria-haspopup="menu" aria-expanded={menu !== null} onClick={click} />
       {menu === null ? null : (
         <Popover anchor={menu} label={label} role="menu" align="end" trigger={button} onClose={close}>
-          {actions.map((action, index) => (
-            <Fragment key={action.label}>
-              {action.danger === true && index > 0 ? <MenuSeparator /> : null}
-              <MenuItem icon={action.icon} label={action.label} disabled={action.disabled === true}
-                danger={action.danger} {...(action.title === undefined ? {} : { title: action.title })}
-                onSelect={() => {
-                  close();
-                  action.onSelect(menu);
-                }} />
-            </Fragment>
-          ))}
+          <ActionItems actions={actions} anchor={menu} onClose={close} />
         </Popover>
       )}
     </>
   );
+}
+
+/**
+ * 一份操作清单画成菜单项：删除这类危险的上面一道分隔线。行尾 ⋯（上面）和打开后右上角的 ⋯ 都用它，
+ * 同一类东西两处出的是同一份（11-14 界面统一）。
+ */
+export function ActionItems({ actions, anchor, onClose }: { actions: readonly RevealAction[]; anchor: PopoverAnchor;
+  onClose: () => void }): ReactNode {
+  return actions.map((action, index) => (
+    <Fragment key={action.label}>
+      {action.danger === true && index > 0 ? <MenuSeparator /> : null}
+      <MenuItem icon={action.icon} label={action.label} disabled={action.disabled === true}
+        danger={action.danger} {...(action.title === undefined ? {} : { title: action.title })}
+        onSelect={() => {
+          onClose();
+          action.onSelect(anchor);
+        }} />
+    </Fragment>
+  ));
 }

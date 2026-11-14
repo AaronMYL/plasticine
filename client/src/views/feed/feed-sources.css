@@ -57,6 +57,20 @@
   opacity: 0;
 }
 
+/* 「信息流」那一行的刷新全部来源一直显示（11-14 Aaron 弹框选「放在侧栏『信息流』那一行」）：数目让到它左边，不藏。 */
+.feed-src-all .feed-src-refresh {
+  opacity: 1;
+}
+
+.feed-src-all .feed-src-main {
+  padding-right: calc(var(--control-sm) + var(--space-3));
+}
+
+.feed-src-all:hover .feed-src-trail,
+.feed-src-all:focus-within .feed-src-trail {
+  opacity: 1;
+}
+
 .feed-src-login {
   height: 22px;
   padding: 0 var(--space-2);

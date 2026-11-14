@@ -1,5 +1,6 @@
 // 资料库（2026-11-08 他定）：订阅挪到资料库按订阅分组、订阅页；空间、图书都能改名、删除，删了进「最近删除」能还原；
 // 地址 #/library、#/library/sub/<id>、#/library/trash，手机上都能开。
+import { toastStore } from '../../../src/primitives/toast/index.tsx';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LIBRARY_HOME, LIBRARY_TRASH, subscriptionRoute } from '../../../src/shell/library-routes.ts';
@@ -76,19 +77,13 @@ describe('资料库第二栏', () => {
     expect((await app.api.spaces.get('sp_visa')).title).toBe('马来西亚签证核查（2026）');
   });
 
-  it('空间行 ⋯ 删除：先问，删了从列表拿掉、进「最近删除」；在那一页还原回来', async () => {
+  it('空间行 ⋯ 删除：不再先问，删了从列表拿掉、进「最近删除」；在那一页还原回来', async () => {
     await open('#/library');
     const aside = column();
     await within(aside).findByRole('link', { name: '悬赏规则草稿' });
     fireEvent.click(within(aside).getByRole('button', { name: '「悬赏规则草稿」的更多操作' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '删除' }));
-    const dialog = screen.getByRole('alertdialog', { name: '删除「悬赏规则草稿」？' });
-    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await act(async () => fireEvent.click(screen.getByRole('menuitem', { name: '删除' })));
     expect(screen.queryByRole('alertdialog')).toBeNull();
-    fireEvent.click(within(aside).getByRole('button', { name: '「悬赏规则草稿」的更多操作' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '删除' }));
-    await act(async () => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button',
-      { name: '删除' })));
     await waitFor(() => expect(within(aside).queryByRole('link', { name: '悬赏规则草稿' })).toBeNull());
     fireEvent.click(within(aside).getByRole('link', { name: /最近删除/ }));
     await screen.findByRole('heading', { level: 1, name: '最近删除' });
@@ -117,7 +112,7 @@ describe('资料库首页（第 8 批第 6 条，设计稿 Library-Spaces）', (
     expect(document.querySelectorAll('.lib-card .space-thumb').length).toBe(count + 3);
   });
 
-  it('卡片 ⋯ 改名在原处改；删除先问', async () => {
+  it('卡片 ⋯ 改名在原处改；删除不再先问，给撤销', async () => {
     const app = await open('#/library');
     const all = await screen.findByRole('region', { name: '全部' });
     fireEvent.click(within(all).getByRole('button', { name: '「AI 信息流核查｜记忆、子代理与商业落地」的更多操作' }));
@@ -127,8 +122,9 @@ describe('资料库首页（第 8 批第 6 条，设计稿 Library-Spaces）', (
     await act(async () => fireEvent.keyDown(field, { key: 'Enter' }));
     await waitFor(async () => expect((await app.api.spaces.get('sp_aifeed')).title).toBe('AI 信息流核查'));
     fireEvent.click(within(all).getByRole('button', { name: '「马来西亚签证核查」的更多操作' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '删除' }));
-    expect(screen.getByRole('alertdialog', { name: '删除「马来西亚签证核查」？' })).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole('menuitem', { name: '删除' })));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    await waitFor(() => expect(toastStore.get()?.text).toBe('已把「马来西亚签证核查」移到最近删除'));
   });
 });
 
@@ -148,7 +144,7 @@ describe('订阅页', () => {
   it('⋯ 暂停之后主按钮「开启定时」回来，点了又开上；设置打开订阅设置浮层', async () => {
     await open('#/library/sub/sub_research');
     await screen.findByRole('heading', { level: 1, name: '认知与神经科学研究周报' });
-    fireEvent.click(screen.getByRole('button', { name: '「认知与神经科学研究周报」的更多操作' }));
+    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: '「认知与神经科学研究周报」的更多操作' }));
     await act(async () => fireEvent.click(screen.getByRole('menuitem', { name: '暂停' })));
     await screen.findByText('每周一 09:00 · 已暂停');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: '开启定时' })));
@@ -161,9 +157,7 @@ describe('订阅页', () => {
     await open('#/books/space/sp_research_1');
     await screen.findByRole('heading', { level: 1 });
     fireEvent.click(screen.getByRole('button', { name: '「研究周报 · 第 1 期」的更多操作' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '删除' }));
-    await act(async () => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button',
-      { name: '删除' })));
+    await act(async () => fireEvent.click(screen.getByRole('menuitem', { name: '删除' })));
     await waitFor(() => expect(window.location.hash).toBe('#/library/sub/sub_research'));
     const issues = await screen.findByRole('list', { name: '往期' });
     await waitFor(() => expect(within(issues).getAllByRole('button')).toHaveLength(1));

@@ -17,7 +17,7 @@ import { RenameField } from '../../shell/rename-field.tsx';
 import { TitlebarActions, TitlebarTitle, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useRoute } from '../../shell/use-route.ts';
 import { useMention } from '../conversation/mention-button.tsx';
-import { useDeleteConfirm, useSpaceActions } from '../library/library-actions.tsx';
+import { useSpaceActions, useUndoableDelete } from '../library/library-actions.tsx';
 import { FOCUS_COMPOSER_EVENT } from '../lines/line-composer.tsx';
 import { useLinkedSpace } from './use-linked-space.ts';
 import { useRead } from '../memory/use-read.ts';
@@ -74,7 +74,7 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   const [renaming, setRenaming] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const actions = useSpaceActions();
-  const confirm = useDeleteConfirm();
+  const undoable = useUndoableDelete();
   const mention = useMention();
   const { route, canGoBack, goBack } = useRoute();
   const titled = useInTitlebar();
@@ -120,7 +120,8 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   const tools = position !== undefined ? null : <SpaceTools space={space} phone={phone} editing={editing}
     onAsk={ask} onEdit={setEditing} onVersions={() => setVersionsOpen(true)}
     onRename={() => setRenaming(true)} onSettings={() => setSheet(true)}
-    onDelete={() => confirm.ask(space.title, () => actions.remove(space.id), leave)} />;
+    onDelete={() => undoable.remove(space.title, () => actions.remove(space.id), () => actions.restore(space.id),
+      leave)} />;
   const back = (): void => (canGoBack ? goBack() : leave());
   let head: ReactNode;
   if (titled) {
@@ -167,7 +168,6 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
       )}
       {editing || position !== undefined || saver.error !== null ? null
         : <ChangeBanner key={`${space.id}:${space.version}`} space={space} onChanged={changed} />}
-      {confirm.dialog}
       {space.html === null ? <LegacySpace space={space} phone={phone} /> : (
         <SpaceFrame className="space-frame" mode="page" label={space.title}
           editing={position === undefined && editing} onQuote={quoteSpace}

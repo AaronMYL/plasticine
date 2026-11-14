@@ -2,7 +2,7 @@
 // 「队友和群组」打开名单切换；队友与群组分别进入长期对话。
 // 原对话地址继续可读。队友的 Soul 在「编辑队友」里改（第13批，原来的「只对它的规则」并进各自的 Soul）。
 
-import { PendingOps, useOp } from '../pending/pending-ops.tsx';
+import { PendingOps } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from '../mates/mate-actions.ts';
 import { useState, type ReactNode } from 'react';
 import { MAIN_LINE_ALIAS } from '../../api/shared.ts';
@@ -13,7 +13,6 @@ import { useLive } from '../../live.tsx';
 import { Popover, MenuItem, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
-import { useOpenPanel } from '../../shell/panel.ts';
 import { TitlebarActions, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { mainLineRoute, parseLineRef, skillsRoute, type Route } from '../../shell/routes.ts';
@@ -21,11 +20,11 @@ import { Conversation } from '../conversation/conversation.tsx';
 import { SideUiProvider } from '../lines/conversation-ui-context.tsx';
 import { LineConversation } from '../lines/line-conversation.tsx';
 import { MatesRoster } from '../mates/mates-roster.tsx';
-import { MateEditor, GroupEditor } from '../mates/mate-editor.tsx';
+import { useLineMenu } from '../mates/line-menu.tsx';
 import { MainAvatar, MateAvatar, GroupAvatar } from '../mates/mate-avatar.tsx';
 import { groupWaiting } from '../mates/group-work.ts';
 import { MateWorkPanel } from '../mates/mate-work-panel.tsx';
-import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
+import { ActionItems } from '../../shell/reveal-more.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { useMainIdentity } from '../mates/main-identity.tsx';
 import { messageAuthor } from '../lines/line-origin.ts';
@@ -84,7 +83,7 @@ export function PlasticinePage(props: PlasticinePageProps): ReactNode {
 function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): ReactNode {
   const [finding, setFinding] = useState(false);
   const [menu, setMenu] = useState<PopoverAnchor | null>(null);
-  const openPanel = useOpenPanel();
+  const lineMenu = useLineMenu(phone, navigate);
   const live = useLive();
   const roster = useStore(live.mates.data);
   // 地址里的那一句（#/plasticine/line:<线>:<序号>）在队友、群组或别的线上时，打开那条线再定位（第13批）。
@@ -94,12 +93,9 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
   const routeLineId = route.lineId ?? (wanted !== null && wanted.lineId !== mainLineId ? wanted.lineId : null);
   const mate = roster.mates.find((item) => item.id === route.mateId
     || (routeLineId != null && item.lineId === routeLineId));
-  const mateOp = useOp(`mates:update:${mate?.id ?? ''}`);
   const group = roster.groups.find((item) => item.id === route.mateGroupId
     || (routeLineId != null && item.lineId === routeLineId));
   const sideId = mate?.lineId ?? group?.lineId ?? routeLineId ?? null;
-  const [editing, setEditing] = useState(false);
-  const [disabling, setDisabling] = useState(false);
   const [division, setDivision] = useState(false);
   const [rosterOpen, setRosterOpen] = useState(false);
   // 手机上的栏目首页：就是主线，底栏还在；队友和群组从右上角进。
@@ -163,17 +159,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
       {group !== undefined && division ? <MateWorkPanel group={group} phone={phone}
         onClose={() => setDivision(false)} /> : null}
       </div>
-      {editing && mate !== undefined ? <MateEditor mate={mate} phone={phone} navigate={navigate}
-        onClose={() => setEditing(false)} /> : null}
-      {editing && group !== undefined ? <GroupEditor group={group} phone={phone} navigate={navigate}
-        onClose={() => setEditing(false)} /> : null}
-      {disabling && mate !== undefined ? <ConfirmDialog title={mate.disabledAt === null ? '停用这位队友？' : '重新启用队友？'}
-        body={mate.disabledAt === null ? '聊天记录会保留，停用后不再接收新任务。' : '这位队友将恢复接收任务。'}
-        busy={mateOp?.status === 'running'} error={mateOp?.error ?? null}
-        confirmLabel={mate.disabledAt === null ? '确认停用' : '重新启用'} onCancel={() => setDisabling(false)}
-        onConfirm={() => { void live.mateActions.update(mate, { disabled: mate.disabledAt === null }).then((result) => {
-          if (result !== null) setDisabling(false);
-        }); }} /> : null}
+      {lineMenu.dialogs}
       {phoneRoot ? (
         <Sheet open={rosterOpen} variant="drawer" title="队友和群组" onClose={() => setRosterOpen(false)}>
           <MatesRoster route={route} phone navigate={(next) => {
@@ -185,15 +171,9 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
       ) : null}
       {menu === null ? null : (
         <Popover anchor={menu} role="menu" align="end" label="对话的更多操作" onClose={() => setMenu(null)}>
-          {mate === undefined && group === undefined ? null : <MenuItem icon="edit"
-            label={mate === undefined ? '编辑群组' : '编辑队友'}
-            onSelect={() => { setMenu(null); setEditing(true); }} />}
-          {mate === undefined ? null : <MenuItem label={mate.disabledAt === null ? '停用队友' : '重新启用'}
-            onSelect={() => { setMenu(null); setDisabling(true); }} />}
-          {sideId === null ? null : <MenuItem icon="back" label="回到主线" onSelect={() => {
-            setMenu(null);
-            navigate(mainLineRoute());
-          }} />}
+          <ActionItems actions={lineMenu.actions(mate !== undefined ? { kind: 'mate', mate }
+            : group !== undefined ? { kind: 'group', group } : { kind: 'main' })} anchor={menu}
+            onClose={() => setMenu(null)} />
           {phoneRoot ? <MenuItem icon="sparkle" label="技能" onSelect={() => {
             setMenu(null);
             navigate(skillsRoute());
@@ -202,10 +182,6 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
             setMenu(null);
             navigate({ view: 'memory', noteId: null });
           }} /> : null}
-          <MenuItem icon="sliders" label="模型设置" onSelect={() => {
-            setMenu(null);
-            openPanel({ kind: 'settings', section: 'ai' });
-          }} />
         </Popover>
       )}
     </div>

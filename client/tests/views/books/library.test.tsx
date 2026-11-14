@@ -1,3 +1,4 @@
+import { toastStore } from '../../../src/primitives/toast/index.tsx';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { seedBooks } from '../../../src/api/fake/seed-books.ts';
@@ -90,18 +91,17 @@ describe('图书馆', () => {
     await waitFor(() => expect(gridTitles()).toContain('栏里导的书'));
   });
 
-  it('删书要先确认（会移到「最近删除」），确认后从图书馆里拿掉，在「最近删除」里能还原', async () => {
+  it('删书不再先问（11-14）：直接从图书馆拿掉、进「最近删除」，提示条上点「撤销」放回来', async () => {
     const app = await library();
     fireEvent.click(screen.getByRole('button', { name: '《庄子》的更多操作' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '删除' }));
-    const dialog = screen.getByRole('alertdialog', { name: '删除「庄子」？' });
-    expect(within(dialog).getByText('会移到「最近删除」，在那里可以还原。')).toBeTruthy();
-    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: '取消' }));
-    await act(async () => fireEvent.click(within(dialog).getByRole('button', { name: '删除' })));
+    await act(async () => fireEvent.click(screen.getByRole('menuitem', { name: '删除' })));
     await waitFor(() => expect(gridTitles()).not.toContain('庄子'));
     expect(screen.queryByRole('alertdialog')).toBeNull();
     const trash = await app.api.library.trash();
     expect(trash.items.map((item) => [item.kind, item.title])).toEqual([['book', '庄子']]);
+    await waitFor(() => expect(toastStore.get()?.text).toBe('已把「庄子」移到最近删除'));
+    await act(async () => toastStore.get()?.action?.run());
+    await waitFor(async () => expect((await app.api.library.trash()).items).toEqual([]));
   });
 
   it('改名在书名那一格原处改：回车存，Esc 不改', async () => {

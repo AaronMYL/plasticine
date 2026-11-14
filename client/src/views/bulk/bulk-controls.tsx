@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { Icon } from '../../shell/icons.tsx';
+import { showToast } from '../../primitives/toast/index.tsx';
 import { bulkKey, type BulkItem, type BulkSelection } from './use-bulk-selection.ts';
 import './bulk.css';
 
@@ -96,6 +97,17 @@ export function BulkBar({ selection, trash = false, folders = [] }: { selection:
   if (!selection.active) return null;
   const disabled = selection.busy || selection.selected.length === 0;
   const ask = (action: 'move' | 'trash' | 'purge'): void => setPending({ action, items: [...selection.selected] });
+  // 删了进「最近删除」、找得回（11-14 Aaron 弹框选「找得回的不确认，给撤销」）：不再先问，删完底部给撤销。
+  const trashNow = (): void => {
+    const items = [...selection.selected];
+    void selection.perform('trash', undefined, items).then((response) => {
+      const done = response?.results.filter((result) => result.ok) ?? [];
+      if (done.length === 0) return;
+      const back = items.filter((item) => done.some((result) => result.kind === item.kind && result.id === item.id));
+      showToast({ text: `已把 ${done.length} 项移到最近删除`, action: { label: '撤销', icon: 'undo',
+        run: () => void selection.perform('restore', undefined, back) } });
+    });
+  };
   return <>
     <div className="bulk-bar" aria-label="批量操作">
       <span className="text-meta">已选 {selection.selected.length}</span>
@@ -108,7 +120,7 @@ export function BulkBar({ selection, trash = false, folders = [] }: { selection:
         <button type="button" className="text-button" disabled={disabled}
           onClick={() => ask('move')}><Icon name="folder" size={16} />移到…</button>
         <button type="button" className="text-button bulk-danger" disabled={disabled}
-          onClick={() => ask('trash')}><Icon name="trash" size={16} />删除</button>
+          onClick={trashNow}><Icon name="trash" size={16} />删除</button>
       </>}
     </div>
     {pending === null ? null : pending.action === 'move' ? <MoveDialog items={pending.items} folders={folders}

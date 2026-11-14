@@ -136,27 +136,6 @@
 
 
 /* 第 12 批：主线那一行右边「编辑主线」，悬停或聚焦时出现。 */
-.mates-main-row {
-  position: relative;
-}
-
-.mates-main-edit {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  opacity: 0;
-  transform: translateY(-50%);
-  transition: opacity var(--motion-fast) var(--ease-out);
-}
-
-.mates-main-row:hover > .mates-main-edit,
-.mates-main-row:focus-within > .mates-main-edit,
-.mates-roster-phone .mates-main-edit {
-  opacity: 1;
-}
-
 /* 新建队友时的现成起点（11-12）：一排小签，点一个填好名字、职责、头像字和颜色。 */
 .mate-presets { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .mate-preset { display: inline-flex; align-items: center; gap: var(--space-2); height: 36px;

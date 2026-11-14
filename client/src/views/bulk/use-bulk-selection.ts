@@ -34,8 +34,9 @@ export function useBulkSelection({ items, run, empty, onChanged, scope }: BulkOp
       : new Set([...current].filter((key) => present.has(key))));
   }, [items]);
   useEffect(() => { setKeys(new Set()); setActive(false); anchor.current = null; }, [scope]);
-  const execute = async (next: Attempt): Promise<void> => {
-    if (running.current) return;
+  /** 跑一次批量：成了返回结果（逐项成没成），没跑或出错是 null（原因在 error 里）。 */
+  const execute = async (next: Attempt): Promise<BatchResponse | null> => {
+    if (running.current) return null;
     running.current = true;
     setBusy(true);
     setError(null);
@@ -50,6 +51,7 @@ export function useBulkSelection({ items, run, empty, onChanged, scope }: BulkOp
       setCanRetry(failed.length > 0);
       attempt.current = { command: { ...next.command, items: failed.map(({ kind, id }) => ({ kind, id })) } };
       onChanged();
+      return response;
     } catch (cause) {
       const conflict = cause instanceof ApiError && cause.status === 409;
       setReport(null);
@@ -57,6 +59,7 @@ export function useBulkSelection({ items, run, empty, onChanged, scope }: BulkOp
       setUncertain(cause instanceof ApiError && cause.kind === 'uncertain');
       setCanRetry(!conflict);
       if (conflict) onChanged();
+      return null;
     } finally {
       running.current = false;
       setBusy(false);
@@ -84,21 +87,21 @@ export function useBulkSelection({ items, run, empty, onChanged, scope }: BulkOp
       anchor.current = key;
     },
     perform: (action: BatchRequest['action'], destination?: string,
-      targets = selected): Promise<void> => {
-      if (targets.length === 0) return Promise.resolve();
+      targets = selected): Promise<BatchResponse | null> => {
+      if (targets.length === 0) return Promise.resolve(null);
       return execute({ command: { requestId: createRequestId(), action,
         items: targets.map(({ kind, id }) => ({ kind, id })),
         ...(destination === undefined ? {} : { destination }) } });
     },
-    empty: (expectCount = items.length): Promise<void> => {
-      if (empty === undefined || expectCount === 0) return Promise.resolve();
+    empty: (expectCount = items.length): Promise<BatchResponse | null> => {
+      if (empty === undefined || expectCount === 0) return Promise.resolve(null);
       const requestId = createRequestId();
       return execute({ command: { requestId, action: 'purge', items: items.map(({ kind, id }) => ({ kind, id })) },
         empty: { requestId, expectCount } });
     },
-    retry: (): Promise<void> => {
+    retry: (): Promise<BatchResponse | null> => {
       const last = attempt.current;
-      if (!canRetry || last === null) return Promise.resolve();
+      if (!canRetry || last === null) return Promise.resolve(null);
       const requestId = uncertain ? last.command.requestId : createRequestId();
       return execute({ command: { ...last.command, requestId },
         ...(last.empty === undefined ? {} : { empty: { ...last.empty, requestId } }) });

@@ -609,3 +609,12 @@ textarea.field-input {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* 触屏上长按一行出这一行的菜单（long-press-menu.ts）：不出系统的选字和链接预览。 */
+@media (pointer: coarse) {
+  [data-context-row] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

@@ -27,7 +27,7 @@ import { spaceRoute } from '../spaces/space-links.ts';
 import { SpaceThumb } from '../spaces/space-thumb.tsx';
 import { spaceWhen } from '../spaces/space-time.ts';
 import { groupSpaces, spaceCategoryLabel } from './space-categories.ts';
-import { useDeleteConfirm, useSpaceActions } from './library-actions.tsx';
+import { useSpaceActions, useUndoableDelete } from './library-actions.tsx';
 import { libraryChanged } from './library-signal.ts';
 import './library.css';
 import './library-grid.css';
@@ -130,11 +130,12 @@ export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (ro
   const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
     onChanged: libraryChanged });
   const actions = useSpaceActions();
-  const confirm = useDeleteConfirm();
+  const undoable = useUndoableDelete();
   const titled = useInTitlebar();
   const { shellPrefs } = useClientState();
   const now = new Date();
-  const remove = (space: SpaceListItem): void => confirm.ask(space.title, () => actions.remove(space.id));
+  const remove = (space: SpaceListItem): void => undoable.remove(space.title, () => actions.remove(space.id),
+    () => actions.restore(space.id));
   const cards = (list: readonly SpaceListItem[]): ReactNode[] => list.map((space) => (
     <SpaceCard key={space.id} space={space} now={now} onDelete={remove} selection={selection} />));
   const ask = <IconButton icon="plus" label="新空间：跟 Plasticine 说"
@@ -162,7 +163,6 @@ export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (ro
       {phone ? <PhoneExtras navigate={navigate} /> : null}
       <BulkBar selection={selection} folders={[...new Set((spaces ?? []).flatMap((space) =>
         space.folder ? [space.folder] : []))]} />
-      {confirm.dialog}
     </div>
   );
 }

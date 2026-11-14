@@ -4,7 +4,7 @@
 
 import { useState, type ReactNode } from 'react';
 import type { SpaceListItem } from '../../api/shared.ts';
-import { useDeleteConfirm, useSpaceActions } from '../../views/library/library-actions.tsx';
+import { useSpaceActions, useUndoableDelete } from '../../views/library/library-actions.tsx';
 import { HueTile } from '../hue.tsx';
 import { LIBRARY_HOME } from '../library-routes.ts';
 import { RenameField } from '../rename-field.tsx';
@@ -56,17 +56,17 @@ function SpaceRow({ space, current, navigate, onDelete }: SpaceRowProps): ReactN
 export function SpaceRows({ spaces, current, navigate }: { spaces: readonly SpaceListItem[];
   current: string | null; navigate: (route: Route) => void }): ReactNode {
   const actions = useSpaceActions();
-  const confirm = useDeleteConfirm();
-  const remove = (space: SpaceListItem): void => confirm.ask(space.title, () => actions.remove(space.id), () => {
-    if (current === space.id) navigate(LIBRARY_HOME);
-  });
+  const undoable = useUndoableDelete();
+  const remove = (space: SpaceListItem): void => undoable.remove(space.title, () => actions.remove(space.id),
+    () => actions.restore(space.id), () => {
+      if (current === space.id) navigate(LIBRARY_HOME);
+    });
   return (
     <>
       {spaces.map((space) => (
         <SpaceRow key={space.id} space={space} current={current === space.id} navigate={navigate}
           onDelete={remove} />
       ))}
-      {confirm.dialog}
     </>
   );
 }

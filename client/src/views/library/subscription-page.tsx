@@ -13,7 +13,7 @@ import { HueTile } from '../../shell/hue.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { LIBRARY_HOME } from '../../shell/library-routes.ts';
-import { RevealMore, type RevealAction } from '../../shell/reveal-more.tsx';
+import { RevealMore } from '../../shell/reveal-more.tsx';
 import { TitlebarTitle } from '../../shell/titlebar.tsx';
 import { useRoute } from '../../shell/use-route.ts';
 import type { Route } from '../../shell/routes.ts';
@@ -21,6 +21,7 @@ import { useRead } from '../memory/use-read.ts';
 import { issueLabel } from '../spaces/issue-text.ts';
 import { spaceRoute } from '../spaces/space-links.ts';
 import { SubscriptionSheet } from '../spaces/subscription-sheet.tsx';
+import { useSubscriptionMenu } from './subscription-menu.tsx';
 import { libraryChanged, useLibraryRevision } from './library-signal.ts';
 import { issueRange, subscriptionLine } from './subscription-text.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
@@ -64,6 +65,7 @@ export function SubscriptionPage({ subscriptionId, phone, navigate }: Subscripti
   const [sheet, setSheet] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ text: string; failed: boolean } | null>(null);
+  const menu = useSubscriptionMenu(phone, navigate, reload);
   if (value === null) {
     return <div className="page lib-page">
       {error === null ? <PageLoading page />
@@ -87,10 +89,7 @@ export function SubscriptionPage({ subscriptionId, phone, navigate }: Subscripti
     requestId: createRequestId(), version: view.version, status }), null);
   const look = subscriptionLook(view.kind);
   const sample = isSample(view);
-  const more: RevealAction[] = [{ icon: 'refresh', label: '现在出一期', disabled: busy, onSelect: runNow }];
-  if (view.status === 'active') {
-    more.push({ icon: 'pause', label: '暂停', disabled: busy, onSelect: () => setStatus('paused') });
-  }
+  const more = menu.actions(view);
   const primary = view.status === 'active' ? null : view.issues.length === 0
     ? <button type="button" className="primary-button" disabled={busy} onClick={runNow}>现在出一期</button>
     : <button type="button" className="primary-button" disabled={busy} onClick={() => setStatus('active')}>
@@ -112,6 +111,7 @@ export function SubscriptionPage({ subscriptionId, phone, navigate }: Subscripti
           <IconButton icon="sliders" label="订阅设置" aria-haspopup="dialog" onClick={() => setSheet(true)} />
           <RevealMore label={`「${view.title}」的更多操作`} actions={more} />
         </div>
+        {menu.dialogs}
       </header>
       {phone && primary !== null ? <div className="lib-sub-primary">{primary}</div> : null}
       {note === null ? null : <p className={note.failed ? 'lib-note is-error' : 'lib-note text-meta'}

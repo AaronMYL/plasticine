@@ -8,7 +8,8 @@ import { renderApp, settle } from '../../helpers.tsx';
 
 it('编辑主线（第13批设计稿）：头像、名字、Soul、模型；画风点「换画风」才出；改的一起存，栏目和输入框提示跟着变', async () => {
   const app = await renderApp({ hash: '#/plasticine' });
-  fireEvent.click(await screen.findByRole('button', { name: '编辑主线' }));
+  fireEvent.click(await screen.findByRole('button', { name: /主线的更多操作$/ }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '编辑主线' }));
   const editor = screen.getByRole('dialog', { name: '编辑主线' });
   expect(within(editor).queryByLabelText('职责')).toBeNull();
   expect(within(editor).queryByLabelText('头像文字')).toBeNull();
@@ -42,7 +43,8 @@ it('编辑主线：夜里自己改过的能看改动、能撤回；你改着没�
     fake.control.souls.seedSelf('main', `${before}\n\n## 说话\n- 讲到数字带上单位。`, '加了一条说话的习惯：数字带单位。',
       new Date(Date.now() - 6 * 60 * 60 * 1000));
   } });
-  fireEvent.click(await screen.findByRole('button', { name: '编辑主线' }));
+  fireEvent.click(await screen.findByRole('button', { name: /主线的更多操作$/ }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '编辑主线' }));
   const editor = screen.getByRole('dialog', { name: '编辑主线' });
   expect(await within(editor).findByText('昨晚整理时自己改了 1 处')).toBeTruthy();
   fireEvent.click(within(editor).getByRole('button', { name: '看改动' }));

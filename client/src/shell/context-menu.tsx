@@ -3,11 +3,13 @@
 // - 一行（标了 data-context-row）：就是这一行的「⋯」（data-row-menu），在右键那一点打开。
 // - 内容区选中了字：「引用 · 复制」；点在一条消息上（data-context-message）：「引用这条 · 加个表情 · 复制这条」。
 // - 左侧栏和图标栏里没有对应菜单的地方：什么都不出，不再给「引用 · 复制」。
-// 右键一按先发 CONTEXT_MENU_EVENT，选中后的小条借它收起：同一时间只出一个浮层。手机（粗指针）不管，交给系统。
+// 右键一按先发 CONTEXT_MENU_EVENT，选中后的小条借它收起：同一时间只出一个浮层。手机（粗指针）不管，交给系统；
+// 手机上长按一行出的是这一行 ⋯ 的菜单（long-press-menu.ts，11-14 界面统一）。
 
 import { useEffect, useState, type ReactNode } from 'react';
 import type { Quote } from '../api/types.ts';
 import { MenuItem, openAt, Popover, pointAnchor, type PopoverAnchor } from './popover.tsx';
+import { useLongPressMenu } from './long-press-menu.ts';
 import { quoteSelection } from './quote-registry.ts';
 
 import { CONTEXT_MENU_EVENT } from './use-context-menu-close.ts';
@@ -95,6 +97,7 @@ export function contextItems(target: Element, x: number, y: number, add: (quote:
 
 export function ContextMenuLayer({ add }: { add: (quote: Quote) => void }): ReactNode {
   const [open, setOpen] = useState<Open | null>(null);
+  useLongPressMenu();
   useEffect(() => {
     const onMenu = (event: MouseEvent): void => {
       if (window.matchMedia?.('(pointer: coarse)').matches === true) return;

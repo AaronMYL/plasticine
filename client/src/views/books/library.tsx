@@ -15,7 +15,7 @@ import { PageHeader } from '../../shell/page-header.tsx';
 import { ReadingTabs } from '../feed/reading-tabs.tsx';
 import { useDismiss } from '../../shell/use-dismiss.ts';
 import { RenameField } from '../../shell/rename-field.tsx';
-import { useDeleteConfirm } from '../library/library-actions.tsx';
+import { useUndoableDelete } from '../library/library-actions.tsx';
 import { libraryChanged } from '../library/library-signal.ts';
 import type { Route } from '../../shell/routes.ts';
 import { BookCover } from './book-cover.tsx';
@@ -111,7 +111,7 @@ function GridItem({ book, onOpen, onDeleted, selection }: GridItemProps): ReactN
   const api = useApi();
   const [menu, setMenu] = useState<'closed' | 'open'>('closed');
   const [renaming, setRenaming] = useState(false);
-  const confirm = useDeleteConfirm();
+  const undoable = useUndoableDelete();
   const item = useRef<HTMLLIElement>(null);
   const more = useRef<HTMLButtonElement>(null);
   // 点外面、Esc、窗口失焦、切页、缩放、滚动都收（use-dismiss.ts）。
@@ -121,12 +121,16 @@ function GridItem({ book, onOpen, onDeleted, selection }: GridItemProps): ReactN
       more.current?.focus();
     }
   } });
-  // 2026-11-08：删了进资料库「最近删除」，能还原；删前照全站一样先问。
+  // 2026-11-08：删了进资料库「最近删除」，能还原；11-14 起不再先问，删完给撤销。
   const remove = (): void => {
     setMenu('closed');
-    confirm.ask(book.title, async () => {
+    undoable.remove(book.title, async () => {
       await api.books.remove(book.id, createRequestId());
       libraryChanged();
+    }, async () => {
+      await api.books.restore(book.id, createRequestId());
+      libraryChanged();
+      onDeleted();
     }, onDeleted);
   };
   const rename = async (title: string): Promise<void> => {
@@ -165,7 +169,6 @@ function GridItem({ book, onOpen, onDeleted, selection }: GridItemProps): ReactN
           </button>
         </div>
       )}
-      {confirm.dialog}
     </li>
   );
 }
