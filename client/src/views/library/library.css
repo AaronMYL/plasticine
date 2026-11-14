@@ -7,17 +7,17 @@
 
 .lib-label {
   margin: 0;
-  padding: 0 0 6px;
+  padding: 0 0 var(--space-2);
   color: var(--fg2);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-weight: 500;
 }
 
 .lib-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   border-bottom: 1px solid var(--line);
 }
 
@@ -28,15 +28,15 @@
 }
 
 .lib-row .rename-field {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .lib-count {
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   font-variant-numeric: tabular-nums;
 }
 
@@ -51,7 +51,7 @@
 }
 
 .lib-trash-link {
-  margin-top: 24px;
+  margin-top: var(--space-5);
 }
 
 /* ---------- 订阅页 ---------- */
@@ -59,8 +59,8 @@
 .lib-sub-head {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding-bottom: 20px;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
   border-bottom: 1px solid var(--line);
 }
 
@@ -71,8 +71,8 @@
 
 .lib-sub-title h1 {
   margin: 0;
-  font-size: 24px;
-  line-height: 32px;
+  font-size: var(--text-title);
+  line-height: var(--text-title-line);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -85,11 +85,11 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .lib-sub-actions > .primary-button {
-  margin-right: 8px;
+  margin-right: var(--space-2);
 }
 
 .lib-sub-actions > .reveal-more {
@@ -101,17 +101,17 @@
 }
 
 .lib-note {
-  margin: 12px 0 0;
+  margin: var(--space-3) 0 0;
 }
 
 .lib-note.is-error {
   color: var(--err);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .lib-sub .block-empty {
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 
 .lib-issues {
@@ -123,9 +123,9 @@
 .lib-issue {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
   width: 100%;
-  padding: 14px 0;
+  padding: var(--space-4) 0;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
@@ -153,10 +153,10 @@
 .lib-issue-n {
   flex: none;
   width: 56px;
-  padding-left: 4px;
+  padding-left: var(--space-1);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   font-variant-numeric: tabular-nums;
 }
 
@@ -169,26 +169,26 @@
 
 .lib-issue-title {
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .lib-sub[data-phone='true'] .lib-sub-head {
-  gap: 10px;
-  padding-bottom: 16px;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
 }
 
 .lib-sub[data-phone='true'] .lib-sub-title h1 {
-  font-size: 22px;
-  line-height: 28px;
+  font-size: var(--text-number);
+  line-height: var(--text-long-line);
 }
 
 .lib-sub-primary {
   display: flex;
-  padding: 16px 0 4px;
+  padding: var(--space-4) 0 var(--space-1);
 }
 
 .lib-sub-primary > .primary-button {
@@ -213,9 +213,9 @@
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) 56px 96px auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 48px;
-  padding: 6px 0;
+  padding: var(--space-2) 0;
   overflow: hidden;
   border-bottom: 1px solid var(--line);
 }
@@ -232,16 +232,16 @@
 
 .lib-trash-title {
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .lib-trash-error {
   color: var(--err);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .lib-trash-kind,
@@ -277,6 +277,6 @@
 .lib-trash-kind,
 .lib-trash-time {
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }

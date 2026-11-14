@@ -70,9 +70,9 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
     </div>
     <ColumnFoot>
       <ColumnLink route={skillsRoute()} current={route.view === 'skills'} navigate={navigate}
-        lead={<Icon name="sparkle" size={18} />}>技能</ColumnLink>
+        lead={<Icon name="sparkle" size={20} />}>技能</ColumnLink>
       <ColumnLink route={{ view: 'memory', noteId: null }} current={route.view === 'memory'}
-        navigate={navigate} lead={<Icon name="memory" size={18} />}>记忆</ColumnLink>
+        navigate={navigate} lead={<Icon name="memory" size={20} />}>记忆</ColumnLink>
     </ColumnFoot>
     {editor === 'mate' ? <MateEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
     {editor === 'main' ? <MainEditor phone={phone} onClose={() => setEditor(null)} /> : null}

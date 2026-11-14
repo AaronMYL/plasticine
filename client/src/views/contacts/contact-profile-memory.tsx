@@ -56,7 +56,7 @@ function Picker({ contact, memory, anchor, onPick, onClose }: { contact: Contact
         </ul>
         {exists ? null : (
           <button type="button" className="popover-item" onClick={() => onPick({ create: fresh })}>
-            <Icon name="plus" size={15} /><span className="popover-item-label">新建人物页「{fresh}」</span>
+            <Icon name="plus" size={16} /><span className="popover-item-label">新建人物页「{fresh}」</span>
           </button>
         )}
       </div>
@@ -89,7 +89,7 @@ export function ContactMemorySection({ contact, memory }: { contact: ContactRow;
             } },
             { label: '解除关联', icon: 'close', onSelect: () => choose({ docId: null }) },
           ]}>
-            <Icon name="more" size={15} />
+            <Icon name="more" size={16} />
           </DropdownMenu>
         )}
       </div>

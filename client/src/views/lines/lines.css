@@ -16,13 +16,13 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 16px 0 8px;
+  padding: var(--space-4) 0 var(--space-2);
 }
 
 .line-column {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   width: min(720px, calc(100% - 48px));
   margin: 0 auto;
 }
@@ -35,13 +35,13 @@
 .line-item {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .line-day {
   color: var(--fg2);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-weight: 500;
   text-align: center;
 }
@@ -49,8 +49,8 @@
 .line-note {
   margin: 0;
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .line-note.is-error {
@@ -62,30 +62,30 @@
 .line-notice {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   color: var(--fg);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .line-notice > svg {
   flex: none;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--fg2);
 }
 
 .line-input-record {
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 22px;
+  font-size: var(--text-ui);
+  line-height: var(--text-body-line);
 }
 
 .line-input-record > summary {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 0;
+  gap: var(--space-2);
+  padding: var(--space-hair) 0;
   list-style: none;
   cursor: pointer;
 }
@@ -105,11 +105,11 @@
 .line-input-record > summary:focus-visible {
   outline: 2px solid var(--fg2);
   outline-offset: 3px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .line-input-text {
-  padding: 6px 0 4px 19px;
+  padding: var(--space-2) 0 var(--space-1) var(--space-4);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -120,30 +120,30 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .line-answer {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
   align-self: stretch;
-  font-size: 15px;
-  line-height: 26px;
+  font-size: var(--text-section);
+  line-height: var(--text-long-line);
   color: var(--fg);
 }
 
 .line-answer .markdown p {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 
 .line-answer .markdown ul,
 .line-answer .markdown ol {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 0 0 10px;
-  padding-left: 20px;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5);
 }
 
 .line-answer .markdown > :last-child {
@@ -151,33 +151,33 @@
 }
 
 .line-answer .markdown code {
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: var(--space-px) var(--space-1);
+  border-radius: var(--radius-sm);
   background: var(--tint2);
 }
 
 .line-thinking {
   align-self: stretch;
-  padding: 2px 0 4px 12px;
+  padding: var(--space-hair) 0 var(--space-1) var(--space-3);
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 /* 「想了 12 秒 ›」「做了 6 步 ›」：一行安静的开关，点开在原地展开。 */
 .line-fold {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   height: 28px;
-  margin-left: -8px;
-  padding: 0 8px;
+  margin-left: calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 18px;
+  font-size: var(--text-ui);
+  line-height: var(--text-caption-line);
   cursor: pointer;
   transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
@@ -201,9 +201,9 @@
 .line-steps {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-hair);
   align-self: stretch;
-  margin: 2px 0 4px;
+  margin: var(--space-hair) 0 var(--space-1);
   padding: 0;
   list-style: none;
 }
@@ -212,7 +212,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
   min-height: 32px;
 }
@@ -234,7 +234,7 @@
   flex: none;
   width: 20px;
   height: 20px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--bg);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
@@ -244,8 +244,8 @@
   flex: none;
   max-width: 55%;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -253,15 +253,15 @@
 .line-step-arrow {
   flex: none;
   color: var(--fg3);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 .line-step-result {
   min-width: 0;
   overflow: hidden;
   color: var(--fg2);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -276,7 +276,7 @@
 .line-state {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
   min-height: 28px;
 }
@@ -286,8 +286,8 @@
   min-width: 0;
   overflow: hidden;
   color: var(--fg2);
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -296,8 +296,8 @@
   flex: none;
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   font-variant-numeric: tabular-nums;
 }
 
@@ -317,12 +317,12 @@
 }
 
 .line-retry {
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .line-spinner {
   flex: none;
-  animation: line-spin 0.9s linear infinite;
+  animation: line-spin var(--motion-spin) linear infinite;
 }
 
 .line-spinner-track {
@@ -350,29 +350,29 @@
 .line-card-wrap {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .line-card {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-hair);
   width: 100%;
   max-width: 560px;
   box-sizing: border-box;
-  padding: 10px 10px 12px 14px;
-  border-radius: 12px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
 .line-card[data-status='idle'] {
-  padding-bottom: 6px;
+  padding-bottom: var(--space-2);
 }
 
 .line-card-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
   min-height: 28px;
 }
@@ -388,8 +388,8 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -397,11 +397,11 @@
 
 .line-card-status {
   margin: 0;
-  padding-left: 26px;
+  padding-left: var(--space-5);
   overflow: hidden;
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -414,15 +414,15 @@
 .line-card-fold {
   display: flex;
   flex-direction: column;
-  padding-left: 18px;
+  padding-left: var(--space-4);
 }
 
 .line-card-note {
   margin: 0;
-  padding-left: 26px;
+  padding-left: var(--space-5);
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .line-card-note.is-error {
@@ -431,13 +431,13 @@
 
 .line-card-action {
   height: 28px;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
 }
 
 /* 手机：字号 16（iOS 不放大），按键 36。 */
 .shell[data-phone='true'] .line-input {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: var(--text-long);
+  line-height: var(--text-section-line);
 }
 
 .shell[data-phone='true'] .line-stop,
@@ -451,7 +451,7 @@
 }
 
 .shell[data-phone='true'] .line-composer-dock {
-  padding: 8px 0 12px;
+  padding: var(--space-2) 0 var(--space-3);
 }
 
 /* 主线里只有建账号时的那条欢迎（11-08 设计稿 First-Main）：从顶上排，不贴底。 */
@@ -461,5 +461,5 @@
 
 /* 等你定的线：要你定卡就地展开在任务卡里（11-11）。 */
 .line-card-ask {
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }

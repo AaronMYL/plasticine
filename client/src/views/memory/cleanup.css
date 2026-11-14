@@ -15,14 +15,14 @@
 .cleanup-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
 }
 
 .cleanup-item input {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .cleanup-item-body {
@@ -30,23 +30,23 @@
   flex: 1;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .cleanup-line {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .cleanup-meta {
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .cleanup-item input {

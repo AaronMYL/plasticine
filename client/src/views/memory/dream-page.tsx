@@ -50,7 +50,7 @@ function ChangeRow({ change, group }: { change: MemoryDreamChangeView; group: (t
   return (
     <li className="dream-row" data-undone={change.undone}>
       <span className={`dream-glyph dream-glyph-${group.tone}`} role="img" aria-label={group.label}>
-        <Icon name={group.icon} size={13} />
+        <Icon name={group.icon} size={14} />
       </span>
       <span className="dream-row-text">
         <span className="dream-row-main">{change.text}</span>

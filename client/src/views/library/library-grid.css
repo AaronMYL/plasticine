@@ -6,39 +6,40 @@
 @media (min-width: 768px) {
   .page.lib-grid-page:not(.page-fill) {
     max-width: 1000px;
-    padding: 32px 48px 40px;
+    padding: var(--space-6) var(--space-7) var(--space-6);
   }
 }
 
 .lib-grid-page {
-  gap: 36px;
+  gap: var(--space-6);
 }
 
 .lib-grid-sec {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .lib-grid-head {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
-  font-size: 15px;
+  font-size: var(--text-section);
   font-weight: 600;
-  line-height: 24px;
+  line-height: var(--text-section-line);
 }
 
 .lib-grid-count {
   color: var(--fg3);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-weight: 400;
-  line-height: 18px;
+  line-height: var(--text-caption-line);
 }
 
-.lib-category-head { margin: 8px 0 0; font-size: 13px; font-weight: 500; line-height: 22px; color: var(--fg2); }
+.lib-category-head { margin: var(--space-2) 0 0; font-size: var(--text-ui); font-weight: 500;
+  line-height: var(--text-body-line); color: var(--fg2); }
 
 .lib-cards {
   display: grid;
@@ -49,24 +50,24 @@
 
 .lib-recent {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .lib-all {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 24px 20px;
+  gap: var(--space-5) var(--space-5);
 }
 
 .lib-card {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .lib-card-link {
   display: block;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
 }
 
 .lib-card-link .space-thumb::after {
@@ -86,24 +87,24 @@
   display: -webkit-box;
   overflow: hidden;
   color: var(--fg);
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 500;
-  line-height: 22px;
+  line-height: var(--text-body-line);
   text-decoration: none;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
 .lib-card .rename-field {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .lib-card-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: -6px;
+  gap: var(--space-2);
+  margin-top: calc(-1 * var(--space-2));
 }
 
 .lib-card-meta .text-meta {
@@ -119,16 +120,16 @@
 
 @media (max-width: 767px) {
   .lib-grid-page {
-    gap: 24px;
+    gap: var(--space-5);
   }
 
   .lib-recent {
     display: flex;
-    gap: 12px;
-    margin-inline: -16px;
+    gap: var(--space-3);
+    margin-inline: calc(-1 * var(--space-4));
     overflow-x: auto;
-    padding: 0 16px 4px;
-    scroll-padding-inline: 16px;
+    padding: 0 var(--space-4) var(--space-1);
+    scroll-padding-inline: var(--space-4);
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
   }
@@ -145,11 +146,11 @@
 
   .lib-all {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 12px;
+    gap: var(--space-4) var(--space-3);
   }
 
   .lib-all .lib-card-title {
-    font-size: 13px;
-    line-height: 20px;
+    font-size: var(--text-ui);
+    line-height: var(--text-ui-line);
   }
 }

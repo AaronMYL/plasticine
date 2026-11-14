@@ -7,8 +7,8 @@
   flex-direction: column;
   justify-content: space-between;
   aspect-ratio: 3 / 4.2;
-  padding: 12px 12px 16px;
-  border-radius: 4px;
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
   background: var(--tint2);
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--fg);
@@ -27,8 +27,8 @@
 }
 
 .bk-cover-title {
-  font-size: 15px;
-  line-height: 22px;
+  font-size: var(--text-section);
+  line-height: var(--text-body-line);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -37,14 +37,14 @@
 .bk-cover[data-vertical='true'] .bk-cover-title {
   align-self: flex-end;
   writing-mode: vertical-rl;
-  font-size: 16px;
-  line-height: 24px;
+  font-size: var(--text-long);
+  line-height: var(--text-section-line);
 }
 
 .bk-cover-foot {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .bk-cover-rule {
@@ -55,8 +55,8 @@
 }
 
 .bk-cover-author {
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   opacity: 0.75;
 }
 
@@ -65,8 +65,8 @@
   right: 8px;
   bottom: 4px;
   font-family: var(--mono);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   opacity: 0.6;
 }
 
@@ -85,7 +85,7 @@
   width: 100%;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: none;
   color: inherit;
   cursor: pointer;
@@ -107,7 +107,7 @@
 }
 
 .bk-import-button {
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .bk-imports {
@@ -121,11 +121,11 @@
 .bk-import {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .bk-import b {
@@ -140,8 +140,8 @@
 
 .bk-import-meta {
   margin-left: auto;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -149,8 +149,8 @@
 .bk-import-note {
   display: block;
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .bk-import-error {
@@ -168,76 +168,76 @@
 .bk-reading-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px 32px;
+  gap: var(--space-5) var(--space-6);
 }
 
 .bk-reading {
   display: grid;
   grid-template-columns: 96px minmax(0, 1fr);
-  gap: 16px;
+  gap: var(--space-4);
   align-items: start;
 }
 
 .bk-reading-text {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 
 .bk-title {
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .bk-author {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .bk-where {
-  margin-top: 8px;
-  font-size: 14px;
-  line-height: 22px;
+  margin-top: var(--space-2);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .bk-progress {
   position: relative;
   height: 2px;
-  margin: 8px 0 4px;
-  border-radius: 2px;
+  margin: var(--space-2) 0 var(--space-1);
+  border-radius: var(--radius-sm);
   background: var(--line2);
 }
 
 .bk-progress > i {
   position: absolute;
   inset: 0 auto 0 0;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--fg);
 }
 
 .bk-reading-meta {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .bk-reading-foot {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 8px;
-  font-size: 12px;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  font-size: var(--text-caption);
   color: var(--fg2);
 }
 
 .bk-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 116px);
-  gap: 24px 28px;
+  gap: var(--space-5) var(--space-6);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -247,14 +247,14 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .bk-item-title {
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 500;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -268,11 +268,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
-  margin-top: -4px;
-  font-size: 12px;
-  line-height: 18px;
+  margin-top: calc(-1 * var(--space-1));
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -302,20 +302,20 @@
 
 /* 文字封面的书名从右上角起（竖排）：在图书馆里让开压在右上角的 ⋯，不盖住第一个字。 */
 .bk-item .bk-cover:not(.bk-cover-image) .bk-cover-title {
-  margin-top: 24px;
+  margin-top: var(--space-5);
 }
 
 .bk-item-menu {
   position: absolute;
   top: 36px;
   right: 0;
-  z-index: 5;
+  z-index: var(--z-menu);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   width: 232px;
-  padding: 8px;
-  border-radius: 8px;
+  padding: var(--space-2);
+  border-radius: var(--radius);
   background: var(--bg);
   box-shadow: var(--lift);
 }
@@ -323,15 +323,15 @@
 .bk-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 32px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: none;
   color: var(--fg);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   text-align: start;
   cursor: pointer;
 }
@@ -346,24 +346,24 @@
 
 .bk-menu-note {
   margin: 0;
-  padding: 4px;
-  font-size: 13px;
-  line-height: 20px;
+  padding: var(--space-1);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .bk-menu-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .bk-drop {
-  margin: 8px 0 0;
-  padding-top: 8px;
+  margin: var(--space-2) 0 0;
+  padding-top: var(--space-2);
   border-top: 1px solid var(--line);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -375,8 +375,8 @@
 }
 
 .bk-phone.page {
-  padding: 16px 16px 96px;
-  gap: 20px;
+  padding: var(--space-4) var(--space-4) 96px; /* 例外：手机底下给底栏和圆球留地方 */
+  gap: var(--space-5);
 }
 
 .bk-phone .bk-reading-list {
@@ -385,18 +385,18 @@
 
 .bk-phone .bk-reading {
   grid-template-columns: 72px minmax(0, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .bk-phone .bk-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px 12px;
+  gap: var(--space-5) var(--space-3);
 }
 
 .bk-progress-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .bk-progress-row .bk-progress {
@@ -406,7 +406,7 @@
 .bk-count {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
   color: var(--fg2);
 }

@@ -53,7 +53,7 @@ function NoModelRow(): ReactNode {
   return (
     <li className="home-wait">
       <div className="home-row-line home-wait-row">
-        <span className="ask-glyph" data-urgent="true" aria-hidden="true"><Icon name="clock" size={13} /></span>
+        <span className="ask-glyph" data-urgent="true" aria-hidden="true"><Icon name="clock" size={14} /></span>
         <span className="home-wait-title">连上模型后，定时的事才会跑</span>
         <button type="button" className="primary-button button-small" onClick={() => setOpen(true)}>去连</button>
       </div>

@@ -5,7 +5,7 @@
   width: 100%;
   max-width: 560px;
   box-sizing: border-box;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line2);
   overflow: hidden;
 }
@@ -13,16 +13,16 @@
 .schedule-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line);
 }
 
 .schedule-head h3 {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 600;
 }
 
@@ -30,14 +30,14 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 22px;
-  padding: 0 8px;
-  border-radius: 6px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-weight: 500;
 }
 
@@ -46,17 +46,17 @@
 }
 
 .schedule-body {
-  padding: 4px 14px;
+  padding: var(--space-1) var(--space-4);
 }
 
 .schedule-kv {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
-  gap: 12px;
-  padding: 9px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   border-top: 1px solid var(--line);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .schedule-kv:first-child {
@@ -65,56 +65,56 @@
 
 .schedule-k {
   color: var(--fg2);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 .schedule-note {
-  margin-left: 4px;
+  margin-left: var(--space-1);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .schedule-people {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .schedule-person {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   height: 28px;
-  padding: 0 10px 0 3px;
-  border-radius: 14px;
+  padding: 0 var(--space-3) 0 var(--space-1);
+  border-radius: var(--radius-lg);
   background: var(--tint2);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 .schedule-foot {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--line);
 }
 
 .schedule-warn {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   margin: 0;
-  padding: 0 0 8px;
-  font-size: 13px;
-  line-height: 20px;
+  padding: 0 0 var(--space-2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .schedule-warn > svg {
   flex: none;
-  margin-top: 2px;
+  margin-top: var(--space-hair);
 }
 
 .schedule-spacer {
@@ -123,5 +123,5 @@
 
 .schedule-answered {
   color: var(--fg2);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }

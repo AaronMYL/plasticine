@@ -8,12 +8,12 @@
   top: 8px;
   right: 8px;
   bottom: 8px;
-  z-index: 40;
+  z-index: var(--z-dialog);
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--layer-float);
   box-shadow: var(--lift);
   overflow: hidden;
@@ -44,7 +44,7 @@
 
 .chat-grip {
   position: absolute;
-  z-index: 2;
+  z-index: var(--z-raised);
   touch-action: none;
 }
 
@@ -63,7 +63,7 @@
 .chat-grip-w > span {
   width: 3px;
   height: 40px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--line2);
   opacity: 0;
   transition: opacity var(--motion-fast) var(--ease-out);

@@ -105,9 +105,9 @@ export function NoteActions({ note, beforeChange, changed, extra = [], label = '
       {extra.map((action) => <button key={action.label} type="button" className="popover-item" onClick={() => {
         hide();
         action.onSelect();
-      }}><Icon name={action.icon} size={15} /><span className="popover-item-label">{action.label}</span></button>)}
+      }}><Icon name={action.icon} size={16} /><span className="popover-item-label">{action.label}</span></button>)}
       <button type="button" className="popover-item" disabled={locked} onClick={() => void mutate('pin')}>
-        <Icon name="pin" size={15} /><span className="popover-item-label">{note.pinned ? '取消置顶' : '置顶'}</span>
+        <Icon name="pin" size={16} /><span className="popover-item-label">{note.pinned ? '取消置顶' : '置顶'}</span>
       </button>
       {note.readOnly ? null : <>
         <MenuSeparator />
@@ -139,14 +139,14 @@ export function NoteActions({ note, beforeChange, changed, extra = [], label = '
       {problem == null ? null : <p role="alert" className="note-error note-actions-error">{problem}</p>}
       {!unresolved ? null : <button type="button" className="popover-item"
         disabled={busy || operation?.status === 'running'} onClick={() => void mutate('pin')}>
-        <Icon name="refresh" size={15} /><span className="popover-item-label">再核实原操作</span>
+        <Icon name="refresh" size={16} /><span className="popover-item-label">再核实原操作</span>
       </button>}
       {remove === undefined || note.readOnly ? null : <>
         <MenuSeparator />
         <button type="button" className="popover-item is-danger" onClick={() => {
           hide();
           remove();
-        }}><Icon name="trash" size={15} /><span className="popover-item-label">删除笔记</span></button>
+        }}><Icon name="trash" size={16} /><span className="popover-item-label">删除笔记</span></button>
       </>}
     </Popover>}
   </>;

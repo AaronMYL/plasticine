@@ -27,10 +27,10 @@
   flex: 1;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   width: 100%;
   min-height: 0;
-  padding: 4px 0 12px;
+  padding: var(--space-1) 0 var(--space-3);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -41,10 +41,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   margin: 0;
-  padding: 2px;
-  border-radius: 12px;
+  padding: var(--space-hair);
+  border-radius: var(--radius-lg);
   list-style: none;
   transition: background-color var(--motion-fast) var(--ease-out);
 }
@@ -63,7 +63,7 @@
 }
 
 .web-strip-item[data-dragging='true'] {
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--layer-float);
   box-shadow: var(--lift);
 }
@@ -76,7 +76,7 @@
   height: 36px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
   cursor: pointer;
@@ -106,8 +106,8 @@
   left: 50%;
   width: 4px;
   height: 4px;
-  margin-left: -2px;
-  border-radius: 50%;
+  margin-left: calc(-1 * var(--space-hair));
+  border-radius: var(--radius-full);
   background: var(--fg);
   content: '';
 }
@@ -121,7 +121,7 @@
   flex: none;
   width: 32px;
   height: 1px;
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   background: var(--line2);
 }
 
@@ -141,15 +141,15 @@
 /* 分组浮出来的那一块：组名 + 一行一个标签（图标 + 标题），宽 280。 */
 .web-strip-pop {
   width: 280px;
-  padding: 6px;
+  padding: var(--space-2);
 }
 
 .web-strip-pop-title {
   margin: 0;
-  padding: 4px 8px 6px;
+  padding: var(--space-1) var(--space-2) var(--space-2);
   color: var(--fg2);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-weight: 500;
 }
 
@@ -162,17 +162,17 @@
 .web-strip-pop-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   min-height: 32px;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-align: left;
   cursor: pointer;
 }

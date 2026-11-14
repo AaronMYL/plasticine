@@ -6,13 +6,13 @@
 .tool {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 /* 手机上浮层是底部抽屉，抽屉本身不留边：页面自己留，且不被抽屉压缩（否则第一行被盖住）。 */
 .sheet-drawer .tool {
   flex: 0 0 auto;
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 /* 手机上一行一律三层：名字和说明 → 细字 → 状态和按钮，不按文字长短忽左忽右。 */
@@ -27,21 +27,22 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .tool-bar-grow {
   flex: 1;
 }
 
-.file-path-form { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-width: 0; }
+.file-path-form { display: flex; align-items: center; gap: var(--space-2); flex: 1 1 200px; min-width: 0; }
 .file-path-form > input { flex: 1; min-width: 0; }
-.file-create > summary { display: flex; align-items: center; gap: 8px; color: var(--fg2); cursor: pointer;
-  font-size: 13px; line-height: 22px; list-style: none; }
+.file-create > summary { display: flex; align-items: center; gap: var(--space-2); color: var(--fg2); cursor: pointer;
+  font-size: var(--text-ui); line-height: var(--text-body-line); list-style: none; }
 .file-create > summary::-webkit-details-marker { display: none; }
-.file-create[open] > summary { margin-bottom: 16px; }
-.file-create > .tool-form + .tool-form { margin-top: 16px; }
-.file-text-content { font-family: var(--mono); font-size: 13px; line-height: 22px; resize: vertical; }
+.file-create[open] > summary { margin-bottom: var(--space-4); }
+.file-create > .tool-form + .tool-form { margin-top: var(--space-4); }
+.file-text-content { font-family: var(--mono); font-size: var(--text-ui); line-height: var(--text-body-line);
+  resize: vertical; }
 .tool-row > .tool-confirm { flex-basis: 100%; }
 .tool-row-main > svg { flex: none; vertical-align: middle; }
 
@@ -49,7 +50,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .tool-form .field {
@@ -73,8 +74,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 12px;
-  padding: 8px 0;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -84,9 +85,9 @@
   flex-basis: 100%;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .tool-row-main {
@@ -120,14 +121,14 @@
 }
 
 @media (max-width: 767px) {
-  .tool-return { margin: 12px 16px 0; }
+  .tool-return { margin: var(--space-3) var(--space-4) 0; }
   .reminder-form > .field:first-child { flex-basis: 100%; }
 }
 
 .tool-row-meta,
 .tool-num {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   font-variant-numeric: tabular-nums;
 }
@@ -138,8 +139,8 @@
 
 .tool-num-strong {
   font-family: var(--mono);
-  font-size: 22px;
-  line-height: 28px;
+  font-size: var(--text-number);
+  line-height: var(--text-long-line);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -147,7 +148,7 @@
 .tool-figures {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 32px;
+  gap: var(--space-4) var(--space-6);
 }
 
 .tool-figure {
@@ -157,8 +158,8 @@
 
 .tool-sub {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -169,42 +170,43 @@
 .tool-frame {
   display: block;
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
   cursor: crosshair;
 }
 
 .tool-select {
   height: 36px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg);
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .tool-body {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .tool-confirm {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 8px;
-  padding: 8px 0;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
 }
 
-.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
-.calendar-grid > .text-meta { padding: 8px; text-align: center; }
-.calendar-day { display: flex; flex-direction: column; align-items: center; gap: 4px;
-  min-height: 64px; padding: 8px 4px; border: 1px solid var(--line); border-radius: 4px;
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-1); }
+.calendar-grid > .text-meta { padding: var(--space-2); text-align: center; }
+.calendar-day { display: flex; flex-direction: column; align-items: center; gap: var(--space-1);
+  min-height: 64px; padding: var(--space-2) var(--space-1); border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
   background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .calendar-day[aria-pressed='true'] { background: var(--tint2); }
 .calendar-day[aria-current='date'] { border-color: var(--accent); font-weight: 600; }
@@ -213,14 +215,14 @@
 
 /* 原型：工具开关固定两行结构（用户视角审查 2026-11-01 第 12 条） */
 .tool-group-row {
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .tool-group-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .tool-group-name {
@@ -235,25 +237,25 @@
 }
 
 .tool-group-name + .info-tip {
-  margin-left: -4px;
+  margin-left: calc(-1 * var(--space-1));
 }
 
 /* 技能说明：名字下面一行小字，两行放不下省略。 */
 .tool-group-desc {
   display: -webkit-box;
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   overflow: hidden;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
 .tool-group-count {
-  margin-left: 8px;
+  margin-left: var(--space-2);
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-weight: 400;
   white-space: nowrap;
 }
@@ -264,7 +266,7 @@
 }
 
 .tool-group-tools {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   overflow-wrap: anywhere;
 }
 
@@ -284,21 +286,22 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-left: auto;
 }
 
 /* 截图记账 · 这周（第二批「记账直接记」）：账本数字下面一行细字，清原图的确认在下一行展开，说清后果。 */
-.money-week { display: flex; flex-direction: column; gap: 4px; }
+.money-week { display: flex; flex-direction: column; gap: var(--space-1); }
 .money-week-line {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 8px;
+  gap: 0 var(--space-2);
   margin: 0;
-  font-size: 13px;
-  line-height: 22px;
+  font-size: var(--text-ui);
+  line-height: var(--text-body-line);
   color: var(--fg2);
 }
-.money-week-warn { flex-basis: 100%; margin: 0; font-size: 13px; line-height: 22px; color: var(--fg); }
-.money-week .tool-confirm { align-items: center; padding: 4px 0; }
+.money-week-warn { flex-basis: 100%; margin: 0; font-size: var(--text-ui); line-height: var(--text-body-line);
+  color: var(--fg); }
+.money-week .tool-confirm { align-items: center; padding: var(--space-1) 0; }

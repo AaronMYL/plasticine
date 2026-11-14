@@ -18,11 +18,11 @@
 .memory-search {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 240px;
   height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
 }
@@ -38,7 +38,7 @@
   outline: 0;
   background: transparent;
   color: var(--fg);
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .memory-search input::placeholder {
@@ -58,20 +58,20 @@
 .dream-entry {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   min-height: 48px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
   border-bottom: 1px solid var(--line);
   border-radius: 0;
   background: none;
   color: var(--fg);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-align: left;
   cursor: pointer;
-  transition: background var(--motion-fast) ease;
+  transition: background var(--motion-fast) var(--ease-out);
 }
 
 .dream-entry:hover {
@@ -91,8 +91,8 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -101,13 +101,13 @@
 /* ---------- 分组的段 ---------- */
 
 .memory-block {
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .memory-block-head {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* ---------- 拿不准的（整节是 Plasticine 推断的：左侧 1px 细线） ---------- */
@@ -115,9 +115,9 @@
 .uncertain-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin: 0;
-  padding: 2px 0 2px 14px;
+  padding: var(--space-hair) 0 var(--space-hair) var(--space-4);
   list-style: none;
   box-shadow: inset 1px 0 0 var(--fg3);
 }
@@ -125,13 +125,13 @@
 .uncertain {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .uncertain-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 34px;
 }
 
@@ -139,13 +139,13 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 /* 依据的 ⓘ 跟在这句话最后一个字后面（折行时也在字后，不跑到行尾）。 */
 .uncertain-text .info-tip {
-  margin-left: 4px;
+  margin-left: var(--space-1);
   vertical-align: -3px;
 }
 
@@ -155,7 +155,7 @@
   flex: none;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .uncertain-fix .field-input {
@@ -167,10 +167,10 @@
 .uncertain-done {
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 4px 8px;
-  padding: 6px 0;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-2) 0;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -190,10 +190,10 @@
 .topic-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
   min-height: 60px;
-  padding: 10px 0;
+  padding: var(--space-3) 0;
   border: 0;
   border-top: 1px solid var(--line);
   border-radius: 0;
@@ -201,7 +201,7 @@
   color: var(--fg);
   text-align: left;
   cursor: pointer;
-  transition: background var(--motion-fast) ease;
+  transition: background var(--motion-fast) var(--ease-out);
 }
 
 .topic-row:hover {
@@ -221,13 +221,13 @@
 }
 
 .topic-row-title {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .topic-row-summary {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -236,14 +236,14 @@
 
 .topic-tier {
   flex: none;
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
 }
 
 .topic-row-full {
   flex: none;
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   color: var(--fg2);
 }
 
@@ -258,48 +258,48 @@
 .memory-doc > .doc-back {
   width: auto;
   align-self: flex-start;
-  margin-bottom: -20px;
+  margin-bottom: calc(-1 * var(--space-5));
 }
 
 .doc-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .doc-summary {
   flex: 1;
   min-width: 12em;
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   color: var(--fg2);
 }
 
 .doc-actions {
   display: inline-flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .doc-meta {
-  margin: -12px 0 0;
-  padding-bottom: 8px;
+  margin: calc(-1 * var(--space-3)) 0 0;
+  padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--line);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .doc-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .doc-section-title {
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
@@ -315,8 +315,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
-  gap: 16px;
-  padding: 8px 0;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -325,18 +325,18 @@
 }
 
 .doc-line-text {
-  font-size: 16px;
-  line-height: 28px;
+  font-size: var(--text-long);
+  line-height: var(--text-long-line);
   overflow-wrap: anywhere;
 }
 
 .doc-line[data-basis='inferred'] .doc-line-text {
-  padding-left: 12px;
+  padding-left: var(--space-3);
   box-shadow: inset 1px 0 0 var(--fg3);
 }
 
 .doc-line-tag {
-  margin-left: 8px;
+  margin-left: var(--space-2);
   vertical-align: 2px;
 }
 
@@ -361,7 +361,7 @@
   }
 
   .memory-doc > .doc-back {
-    margin-bottom: -16px;
+    margin-bottom: calc(-1 * var(--space-4));
   }
 }
 
@@ -376,15 +376,15 @@
 .doc-hard .doc-section-title {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .doc-hard-lines {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
+  gap: var(--space-2) var(--space-5);
   margin: 0;
-  padding: 0 0 16px;
+  padding: 0 0 var(--space-4);
   list-style: none;
   border-bottom: 1px solid var(--line);
 }
@@ -392,9 +392,9 @@
 .doc-hard-line {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  line-height: 22px;
+  gap: var(--space-2);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .doc-hard-line svg {
@@ -429,17 +429,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding-bottom: 8px;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
 }
 
 .doc-meta + .doc-tier {
-  margin-top: -12px;
+  margin-top: calc(-1 * var(--space-3));
 }
 
 @media (max-width: 767px) {
   .doc-tier {
-    margin-bottom: 16px;
+    margin-bottom: var(--space-4);
   }
 }
 
@@ -459,7 +459,7 @@
 .line-editor {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
 }
 
@@ -472,7 +472,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .line-editor-actions .is-error {
@@ -483,15 +483,15 @@
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 /* 总览（11-11）：上下细线，标题行右边「全量整理」。 */
 .memory-overview {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 0;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -503,7 +503,7 @@
 .memory-overview-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .memory-overview-spacer {
@@ -512,6 +512,6 @@
 
 .memory-overview-text {
   margin: 0;
-  font-size: 14px;
-  line-height: 24px;
+  font-size: var(--text-body);
+  line-height: var(--text-section-line);
 }

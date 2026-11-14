@@ -24,7 +24,7 @@ function ImageDraft({ row }: { row: AttachmentDraft }): ReactNode {
   const failed = row.status === 'failed';
   return <div className="conv-attachment-draft" data-image="true" data-failed={failed}>
     <div className="attachment-draft-image">
-      {preview === null ? <Icon name="image" size={24} /> : <img src={preview} alt={`预览 ${row.name}`} />}
+      {preview === null ? <Icon name="image" size={20} /> : <img src={preview} alt={`预览 ${row.name}`} />}
     </div>
     <span className="sr-only">{STATUS[row.status]}</span>
     {loading ? <div className="attachment-draft-progress" role="progressbar"

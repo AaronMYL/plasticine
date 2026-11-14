@@ -61,7 +61,7 @@ function Lead({ item, spaces }: { item: PaletteItem; spaces: ReadonlyMap<string,
   const space = item.lead.spaceId === undefined ? undefined : spaces.get(item.lead.spaceId);
   if (space !== undefined) return <HueTile hue={space.hue} icon={space.icon} size={22} />;
   if (kind === 'side') return <span className="palette-mark"><PlasticineMark size={14} /></span>;
-  if (kind === 'ask') return <span className="palette-plus"><Icon name="plus" size={13} /></span>;
+  if (kind === 'ask') return <span className="palette-plus"><Icon name="plus" size={14} /></span>;
   return <HueTile hue={LEADS[kind].hue} icon={LEADS[kind].icon} size={22} />;
 }
 

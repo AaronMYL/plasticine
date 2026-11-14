@@ -23,7 +23,7 @@ export function TaskCardPreview({ card }: { card: Card }): ReactNode {
       </div>
       <p className="line-ask-task-goal">{card.title === card.goal ? card.goal : `${card.title}，${card.goal}`}</p>
       {card.attachment === null ? null : (
-        <span className="line-ask-task-file"><Icon name="paperclip" size={13} />{card.attachment}</span>
+        <span className="line-ask-task-file"><Icon name="paperclip" size={14} />{card.attachment}</span>
       )}
     </div>
   );

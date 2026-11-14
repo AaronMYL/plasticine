@@ -8,10 +8,17 @@
 // 第 102 条（2026-11-02）视觉放开：去掉单一强调色与颜色数量的限制，保留对比度、深浅色、字号与间距基础档。所以
 // 类别 / 项目色（tokens.css 的 --hue-*）和按它就地设的 --card-hue、--tile-hue 能用，color-mix 只要掺的都是令牌就行；
 // 细线和色条（inset、不模糊、≤ 3px，颜色是令牌或 currentColor）不算阴影。现写色值、浮起的影子、字阶外的字号照旧不过。
+// 11-14 界面统一（Aaron 弹框定「都做成令牌，加自动检查」）：圆角、间距、字号、行高、叠放层级、动效时长和缓动在样式里
+// 只用令牌（var(--radius…)、var(--space-…)、var(--text-…)、var(--z-…)、var(--motion-…)、var(--ease-…)）；写死数字的不过。
+// 真有例外（给圆球和底栏留的地方这类整块的尺寸），在那一行写一句「例外：原因」的注释。
 
 import type { DiffFile } from './diff.ts';
 
-export const TOKEN_VIOLATION_KINDS = ['color', 'shadow', 'font_size', 'token_value'] as const;
+/** 字号令牌（成对的行高是名字后面加 -line）：小签、说明、控件、正文、小标题、长文、数字、标题。 */
+export const TEXT_TOKENS: readonly string[] = ['text-tag', 'text-caption', 'text-ui', 'text-body', 'text-section',
+  'text-long', 'text-number', 'text-title'];
+
+export const TOKEN_VIOLATION_KINDS = ['color', 'shadow', 'font_size', 'token_value', 'number'] as const;
 
 export interface TokenViolation {
   kind: (typeof TOKEN_VIOLATION_KINDS)[number];
@@ -76,6 +83,50 @@ export const DESIGN_TOKENS: readonly string[] = [
   'motion-slow',
   'ease-out',
   'ease-in-out',
+  // 11-14 界面统一：界面数值的令牌（tokens.css 里那一段）。
+  'ease-spring',
+  'motion-spin',
+  'motion-tick',
+  'motion-pulse',
+  'radius-sm',
+  'radius',
+  'radius-lg',
+  'radius-full',
+  'space-px',
+  'space-hair',
+  'space-1',
+  'space-2',
+  'space-3',
+  'space-4',
+  'space-5',
+  'space-6',
+  'space-7',
+  ...TEXT_TOKENS.flatMap((name) => [name, `${name}-line`]),
+  'control-xs',
+  'control-sm',
+  'control',
+  'control-lg',
+  'touch',
+  'icon-xs',
+  'icon-sm',
+  'icon',
+  'icon-lg',
+  'avatar-sm',
+  'avatar',
+  'avatar-lg',
+  'z-under',
+  'z-raised',
+  'z-sticky',
+  'z-menu',
+  'z-sheet',
+  'z-chrome',
+  'z-dialog',
+  'z-over-dialog',
+  'z-window',
+  'z-float',
+  'z-modal',
+  'z-selection',
+  'z-tip',
   // 第 108 条：页面列最宽多少；对话框停在右边展开时页面列让出的宽度（壳在 .shell 上就地设，见 shell/layout.ts）。
   'page-max',
   'chat-reserve',
@@ -215,7 +266,7 @@ function colorMixAllowed(code: string): boolean {
 
 function fontSizeAllowed(value: string, site: boolean): boolean {
   const trimmed = value.trim().replace(/['"`]/g, '').replace(/\s*!important$/, '');
-  if (trimmed === 'inherit' || trimmed === 'var(--read-size)'
+  if (trimmed === 'inherit' || trimmed === 'var(--read-size)' || TEXT_TOKENS.some((name) => trimmed === `var(--${name})`)
     || (site && SITE_FONT_TOKENS.some((name) => trimmed === `var(--${name})`))) {
     return true;
   }
@@ -226,11 +277,72 @@ function fontSizeAllowed(value: string, site: boolean): boolean {
 /** `font: inherit` is fine; a shorthand that sets a size must use one of the sizes. */
 function fontShorthandAllowed(value: string): boolean {
   const trimmed = value.trim();
-  if (trimmed === 'inherit') {
+  if (trimmed === 'inherit' || TEXT_TOKENS.some((name) => trimmed.includes(`var(--${name})`))) {
     return true;
   }
   const size = /(\d+(?:\.\d+)?)(px|rem|em|pt|%)/.exec(trimmed);
   return size !== null && size[2] === 'px' && FONT_SIZES_PX.includes(Number(size[1]));
+}
+
+// 11-14 界面统一：这几类在样式里只用令牌。值里去掉 var(…) 以后还剩数字的就不过（0 和 auto 这类不算数字）。
+const RADIUS_DECL = /(?:^|[\s;{])border(?:-(?:top|bottom)-(?:left|right)|-(?:start|end)-(?:start|end))?-radius\s*:\s*([^;]+)/;
+const SPACE_DECL = new RegExp(String.raw`(?:^|[\s;{])(?:padding|margin|scroll-padding|scroll-margin)(?:-[a-z-]+)?\s*:\s*([^;]+)`
+  + String.raw`|(?:^|[\s;{])(?:row-|column-)?gap\s*:\s*([^;]+)`);
+const LINE_HEIGHT_DECL = /(?:^|[\s;{])line-height\s*:\s*([^;]+)/;
+const Z_DECL = /(?:^|[\s;{])z-index\s*:\s*([^;]+)/;
+const MOTION_DECL = /(?:^|[\s;{])(?:transition|animation)(?:-(?:duration|delay|timing-function))?\s*:\s*([^;]+)/;
+const EXCEPTION = /例外：/;
+
+function withoutTokens(value: string): string {
+  return value.replace(/var\(--[a-z0-9-]+\)/gi, '');
+}
+
+/** 圆角、间距：去掉令牌以后不许再有 px、%（百分比的正圆用 --radius-full）；0 不算。 */
+function hasLength(value: string): boolean {
+  const rest = withoutTokens(value).replace(/(?<![\w.-])-?0*\.?0+(?:px|%|rem|em)(?![\w-])/g, '');
+  return /(?<![\w.-])-?\d*\.?\d+(?:px|%|rem|em)(?![\w-])/.test(rest);
+}
+
+/** 行高：令牌，或者不带单位的 1、0、normal、inherit。 */
+function lineHeightAllowed(value: string): boolean {
+  const rest = withoutTokens(value).trim().replace(/\s*!important$/, '');
+  return rest === '' || /^(?:0|1|normal|inherit)$/.test(rest);
+}
+
+/** 叠放层级：令牌（可以在令牌上加减 1）、auto、0、inherit。 */
+function zIndexAllowed(value: string): boolean {
+  const trimmed = value.trim();
+  return /^(?:auto|0|inherit)$/.test(trimmed) || /^var\(--z-[a-z-]+\)$/.test(trimmed)
+    || /^calc\(var\(--z-[a-z-]+\) [+-] 1\)$/.test(trimmed);
+}
+
+/** 动效：时长只用 --motion-*（0s 不算），缓动只用 --ease-* 或 linear、steps()。 */
+function motionAllowed(value: string): boolean {
+  const rest = withoutTokens(value);
+  if (/(?<![\w.-])\d*\.?\d+m?s\b/.test(rest.replace(/(?<![\w.-])0m?s\b/g, ''))) {
+    return false;
+  }
+  return !/(?<![\w-])(?:ease|ease-in|ease-out|ease-in-out)(?![\w-])|cubic-bezier\(/.test(rest);
+}
+
+function numberViolations(path: string, line: number, code: string, text: string): TokenViolation[] {
+  if (EXCEPTION.test(text) || path === TOKENS_FILE) {
+    return [];
+  }
+  const found: TokenViolation[] = [];
+  const radius = RADIUS_DECL.exec(code);
+  const space = SPACE_DECL.exec(code);
+  const lineHeight = LINE_HEIGHT_DECL.exec(code);
+  const z = Z_DECL.exec(code);
+  const motion = MOTION_DECL.exec(code);
+  if ((radius !== null && hasLength(radius[1] ?? ''))
+    || (space !== null && hasLength(space[1] ?? space[2] ?? ''))
+    || (lineHeight !== null && !lineHeightAllowed(lineHeight[1] ?? ''))
+    || (z !== null && !zIndexAllowed(z[1] ?? ''))
+    || (motion !== null && !motionAllowed(motion[1] ?? ''))) {
+    found.push(violation('number', path, line, text));
+  }
+  return found;
 }
 
 function lineViolations(path: string, line: number, text: string): TokenViolation[] {
@@ -269,6 +381,9 @@ function lineViolations(path: string, line: number, text: string): TokenViolatio
   const shorthand = isCss ? FONT_SHORTHAND.exec(code) : null;
   if (shorthand !== null && !fontShorthandAllowed(shorthand[1] ?? '')) {
     found.push(violation('font_size', path, line, text));
+  }
+  if (isCss && !site) {
+    found.push(...numberViolations(path, line, code, text));
   }
   return found;
 }

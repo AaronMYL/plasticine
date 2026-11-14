@@ -39,7 +39,7 @@ export function HomeStart({ phone }: { phone: boolean }): ReactNode {
       <textarea aria-label="想一起做什么" placeholder="说说你想做的事…" value={text} rows={2}
         maxLength={LINE_MESSAGE_MAX_CHARS} onChange={(event) => inlineDrafts.set(key, event.target.value)} />
       <button type="submit" className="primary-button" aria-label="开始聊" disabled={busy || text.trim() === ''}>
-        <Icon name="send" size={17} /></button>
+        <Icon name="send" size={16} /></button>
     </form>
   </section>;
 }

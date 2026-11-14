@@ -5,13 +5,13 @@
 
 .model-chooser-pop {
   width: 300px;
-  padding: 8px;
+  padding: var(--space-2);
 }
 
 .model-chooser {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -31,8 +31,8 @@
 .model-search > .search-input {
   width: 100%;
   height: 32px;
-  padding-left: 30px;
-  font-size: 13px;
+  padding-left: var(--space-6);
+  font-size: var(--text-ui);
 }
 
 /* 打开弹层时焦点就在搜索框：只把描边加深，不出粗框。 */
@@ -45,31 +45,31 @@
   display: flex;
   flex-direction: column;
   max-height: min(320px, 50vh);
-  margin-top: 2px;
+  margin-top: var(--space-hair);
   overflow-y: auto;
 }
 
 .model-chooser-group {
-  padding: 6px 8px 2px;
+  padding: var(--space-2) var(--space-2) var(--space-hair);
   color: var(--fg2);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-weight: 500;
 }
 
 .model-chooser-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   min-height: 32px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   text-align: left;
   cursor: pointer;
 }
@@ -96,24 +96,24 @@
 
 .model-chooser-empty {
   margin: 0;
-  padding: 8px;
+  padding: var(--space-2);
   color: var(--fg2);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 .model-chooser-thinking {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  padding: 8px 0 0 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding: var(--space-2) 0 0 var(--space-2);
   border-top: 1px solid var(--line);
 }
 
 .model-chooser-label {
   flex: none;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   white-space: nowrap;
 }
 
@@ -126,23 +126,23 @@
 .model-chooser-thinking .segmented-item {
   flex: 1;
   min-width: 0;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
 }
 
 .model-chooser-manage {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 32px;
-  margin-top: 4px;
-  padding: 0 8px;
+  margin-top: var(--space-1);
+  padding: 0 var(--space-2);
   border: 0;
   border-top: 1px solid var(--line);
   border-radius: 0;
   background: transparent;
   color: var(--fg2);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   cursor: pointer;
 }
 

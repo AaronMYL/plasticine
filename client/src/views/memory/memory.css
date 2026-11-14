@@ -12,7 +12,7 @@
 .agreements-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -28,22 +28,22 @@
 .mem-entry {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 0;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .mem-title {
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 600;
 }
 
 .mem-text {
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   overflow-wrap: anywhere;
 }
 
@@ -57,11 +57,11 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
+  gap: var(--space-1) var(--space-2);
 }
 
 .mem-actions {
-  gap: 4px 16px;
+  gap: var(--space-1) var(--space-4);
 }
 
 /* 行尾 ⋯（在对话里提 · 来路 · 修改 · 撤回，2026-11-04 第 2 批）：排在种类、状态那一行的最右边。 */
@@ -70,40 +70,40 @@
 }
 
 .mem-confirm {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .mem-meta,
 .mem-applicability {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   overflow-wrap: anywhere;
 }
 
 .mem-meta {
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
 }
 
 .mem-quote {
   align-self: flex-start;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: var(--space-px) var(--space-2);
+  border-radius: var(--radius-sm);
   background: var(--tint2);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   quotes: '「' '」';
 }
 
 .mem-proposal {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-left: 12px;
+  gap: var(--space-1);
+  padding-left: var(--space-3);
   border-left: 1px solid var(--fg3);
 }
 
@@ -115,8 +115,8 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .mem-diff-removed {
@@ -130,18 +130,18 @@
 .mem-detail {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-left: 12px;
+  gap: var(--space-2);
+  padding-left: var(--space-3);
   border-left: 1px solid var(--line2);
 }
 
 .mem-facts {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
-  gap: 4px 12px;
+  gap: var(--space-1) var(--space-3);
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .mem-facts dt {
@@ -157,7 +157,7 @@
 .change-log {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -167,14 +167,14 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 8px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .change-log-meta {
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   color: var(--fg2);
 }
 

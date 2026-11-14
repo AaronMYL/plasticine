@@ -36,7 +36,7 @@ describe('笔记工具栏固定在顶上', () => {
     expect(rule(noteAiCss, ".note-command-bar[data-expanded='false']")).toMatch(/position:\s*static;/);
     expect(rule(noteAiCss, '.note-command-bar:has(.note-ai-prompt)')).toMatch(/position:\s*static;/);
     expect(rule(notesCss, '.note-pane')).toMatch(/overflow-y:\s*auto;/);
-    expect(rule(notesCss, '.note-pane')).toMatch(/scroll-padding-top:\s*8px;/);
+    expect(rule(notesCss, '.note-pane')).toMatch(/scroll-padding-top:\s*var\(--space-2\);/);
   });
 
   it('量工具栏的高度：写进滚动容器的 scroll-padding-top，光标的 scrollMargin 顶上让开同样的高度', () => {

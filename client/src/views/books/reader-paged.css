@@ -11,7 +11,7 @@
   flex-direction: column;
   overflow: hidden;
   overscroll-behavior: none;
-  padding: 28px 24px 0;
+  padding: var(--space-6) var(--space-5) 0;
   touch-action: pinch-zoom;
 }
 
@@ -29,7 +29,7 @@
   max-width: none;
   margin: 0;
   column-width: var(--page-width, 640px);
-  column-gap: var(--page-gap, 48px);
+  column-gap: var(--page-gap, var(--space-7));
   column-fill: auto;
 }
 
@@ -52,14 +52,14 @@
 .bk-turn {
   position: absolute;
   top: 50%;
-  z-index: 5;
+  z-index: var(--z-sticky);
   display: grid;
   place-items: center;
   width: 36px;
   height: 36px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--layer-float);
   box-shadow: var(--lift);
   color: var(--fg);
@@ -103,5 +103,5 @@
 
 /* 手机：左右各留 24，不画箭头（点两侧、左右滑）。 */
 .bk-phone-reader .bk-page[data-mode='paged'] {
-  padding: 16px 24px 0;
+  padding: var(--space-4) var(--space-5) 0;
 }

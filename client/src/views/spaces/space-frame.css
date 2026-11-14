@@ -21,12 +21,12 @@
 }
 
 .space-ask {
-  gap: 6px;
-  margin-right: 6px;
+  gap: var(--space-2);
+  margin-right: var(--space-2);
 }
 
 .space-done {
-  margin-left: 6px;
+  margin-left: var(--space-2);
 }
 
 .space-edit-toggle[aria-pressed='true'] {
@@ -37,7 +37,7 @@
 
 .space-rename {
   flex: none;
-  padding: 8px 24px;
+  padding: var(--space-2) var(--space-5);
   border-bottom: 1px solid var(--line);
 }
 
@@ -46,9 +46,9 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 52px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
 }
 
 .space-phone-top .icon-button {
@@ -60,11 +60,12 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  padding: 0 4px;
-  font-size: 15px;
+  padding: 0 var(--space-1);
+  font-size: var(--text-section);
   font-weight: 600;
-  line-height: 22px;
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.space-quote-button { position: fixed; z-index: 120; display: flex; gap: 8px; align-items: center; }
+.space-quote-button { position: fixed; z-index: var(--z-selection); display: flex; gap: var(--space-2);
+  align-items: center; }

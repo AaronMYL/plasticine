@@ -5,20 +5,20 @@
 
 .msg-selection-source > .msg-selection {
   position: absolute;
-  z-index: 5;
+  z-index: var(--z-sticky);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   width: max-content;
   min-height: 34px;
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line2);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--layer-float);
   color: var(--fg);
   box-shadow: var(--lift);
-  font-size: 12px;
-  line-height: 20px;
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -34,12 +34,12 @@
 
 .quote-action {
   position: absolute;
-  z-index: 120;
+  z-index: var(--z-selection);
   display: flex;
   flex-direction: column;
   max-width: min(320px, calc(100vw - 16px));
-  padding: 4px;
-  border-radius: 10px;
+  padding: var(--space-1);
+  border-radius: var(--radius-lg);
   background: var(--layer-float);
   color: var(--fg);
   box-shadow: var(--lift);
@@ -53,13 +53,15 @@
 /* 选中后的小条全站一个外壳（11-12 第 1 条）：浮层底、--lift、圆角 10、内边 4，按钮高 28、圆角 6、悬停 --tint2；
    笔记（note-ai.css）和图书（reader-popovers.css）照同一套。 */
 .quote-action button {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 28px; padding: 0 9px; border: 0; border-radius: 6px;
-  background: transparent; color: inherit; font-size: 13px; line-height: 20px; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: 28px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius);
+  background: transparent; color: inherit; font-size: var(--text-ui); line-height: var(--text-ui-line);
+    white-space: nowrap;
 }
 .quote-action button svg { color: var(--fg2); }
 .quote-action button:hover { background: var(--tint2); }
-.quote-action [role='alert'] { padding: 0 10px 8px; font-size: 12px; line-height: 18px; }
+.quote-action [role='alert'] { padding: 0 var(--space-3) var(--space-2); font-size: var(--text-caption);
+  line-height: var(--text-caption-line); }
 @starting-style { .quote-action:not([hidden]) { opacity: 0; transform: translateY(3px); } }
 @media (prefers-reduced-motion: reduce) { .quote-action { transform: none; } }
-.quote-action-row { display: flex; align-items: center; gap: 2px; }
+.quote-action-row { display: flex; align-items: center; gap: var(--space-hair); }

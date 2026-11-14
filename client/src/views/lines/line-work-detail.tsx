@@ -68,7 +68,7 @@ export function LineWorkDetail({ lineId, navigate, task, before, actions, hideCo
         <h2>{task?.title ?? line.title}</h2>
         {project == null ? null : <button type="button" className="work-project text-button"
           onClick={() => navigate({ view: 'projects', projectId: project.id, noteId: null })}>
-          <Icon name="folder" size={13} />{project.title}<Icon name="chevron-right" size={12} /></button>}
+          <Icon name="folder" size={14} />{project.title}<Icon name="chevron-right" size={12} /></button>}
       </header>
       <div className="work-state" role="status" data-status={manual ? 'manual' : line.status}>
         {stateGlyph}<span>{stateText}</span>

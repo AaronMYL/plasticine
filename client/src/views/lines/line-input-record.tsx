@@ -10,7 +10,7 @@ export function LineInputRecord({ message, onQuote }: { message: LineMessageView
   const author = inputAuthor(message.origin);
   return <details className="line-input-record">
     <summary>
-      <Icon name="chevron-right" size={13} />
+      <Icon name="chevron-right" size={14} />
       <span>{author}{message.origin?.kind === 'delegation' ? ' · 任务指令' : ''}</span>
     </summary>
     <QuoteSelection onQuote={onQuote}><div className="line-input-text">{message.text}</div></QuoteSelection>

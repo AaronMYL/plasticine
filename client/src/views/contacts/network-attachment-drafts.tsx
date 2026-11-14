@@ -136,7 +136,7 @@ export function NetworkAttachmentDrafts({ drafts, disabled }: {
       data-image={row.file.type.startsWith('image/')} data-failed={row.error !== null}>
       {row.file.type.startsWith('image/') && row.preview !== null
         ? <div className="attachment-draft-image"><img src={row.preview} alt={`预览 ${row.file.name}`} /></div>
-        : <><Icon name="file" size={24} /><span className="attachment-draft-info"><span>{row.file.name}</span>
+        : <><Icon name="file" size={20} /><span className="attachment-draft-info"><span>{row.file.name}</span>
           <span className="text-meta">{fileSize(row.file.size)}</span></span></>}
       {row.loading ? <div className="attachment-draft-progress" role="progressbar" aria-label={`上传 ${row.file.name}`}
         aria-valuenow={Math.round(row.progress * 100)} aria-valuemin={0} aria-valuemax={100}>

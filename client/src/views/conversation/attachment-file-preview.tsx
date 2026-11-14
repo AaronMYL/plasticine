@@ -28,10 +28,10 @@ export function AttachmentFilePreview({ item, compact = false }: { item: Attachm
     };
   }, [item, readable]);
   if (item.mimeType === 'application/pdf') {
-    return <Suspense fallback={<Icon name="file" size={24} />}><Pdf item={item} compact={compact} /></Suspense>;
+    return <Suspense fallback={<Icon name="file" size={20} />}><Pdf item={item} compact={compact} /></Suspense>;
   }
-  if (!readable) return compact ? <Icon name="file" size={24} /> : <p>这类文件可以下载后打开。</p>;
-  if (error !== null) return compact ? <Icon name="file" size={24} /> : <p role="alert">{error}</p>;
-  if (value === null) return compact ? <Icon name="file" size={24} /> : <p role="status">正在读附件…</p>;
+  if (!readable) return compact ? <Icon name="file" size={20} /> : <p>这类文件可以下载后打开。</p>;
+  if (error !== null) return compact ? <Icon name="file" size={20} /> : <p role="alert">{error}</p>;
+  if (value === null) return compact ? <Icon name="file" size={20} /> : <p role="status">正在读附件…</p>;
   return <pre className="attachment-text-preview">{value}</pre>;
 }

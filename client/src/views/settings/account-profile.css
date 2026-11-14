@@ -8,7 +8,7 @@
 .account-row,
 .account-devices .system-row {
   min-height: 52px;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   box-sizing: border-box;
 }
 
@@ -22,8 +22,8 @@
 .account-device-meta {
   overflow: hidden;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -32,16 +32,16 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .account-device-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--fg3);
 }
 
@@ -54,7 +54,7 @@
 }
 
 .account-edit {
-  padding: 12px 0 16px;
+  padding: var(--space-3) 0 var(--space-4);
   border-bottom: 1px solid var(--line);
   list-style: none;
 }
@@ -62,7 +62,7 @@
 .account-inline {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   max-width: 400px;
 }
 
@@ -70,10 +70,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .account-logout {
   align-self: flex-start;
-  margin-top: 12px;
+  margin-top: var(--space-3);
 }

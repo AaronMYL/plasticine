@@ -28,7 +28,7 @@ export function ScheduleAskCard({ ask, card }: { ask: AskView; card: ScheduleCar
         <HueTile hue="rose" icon="clock" />
         <h3>{head}</h3>
         <span className="schedule-tag" data-urgent={card.outward}>
-          <Icon name={card.outward ? 'lock' : 'check'} size={11} />{ask.kindLabel}
+          <Icon name={card.outward ? 'lock' : 'check'} size={12} />{ask.kindLabel}
         </span>
       </header>
       <div className="schedule-body">
@@ -47,7 +47,7 @@ export function ScheduleAskCard({ ask, card }: { ask: AskView; card: ScheduleCar
       </div>
       <footer className="schedule-foot">
         {ask.detail === null ? null : (
-          <p className="schedule-warn"><Icon name="alert" size={15} /><span>{ask.detail}</span></p>
+          <p className="schedule-warn"><Icon name="alert" size={16} /><span>{ask.detail}</span></p>
         )}
         {ask.status === 'open' ? ask.options.map((option, index) => (
           <button key={option.id} type="button" disabled={busy}

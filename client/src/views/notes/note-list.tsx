@@ -72,7 +72,7 @@ export function NoteList(props: NoteListProps): ReactNode {
           {merged ? <div className="note-list-tools">{props.tools}{bulk}</div> : null}
         </div>}
         {props.selection?.active ? null : <div className="note-search">
-          <Icon name="search" size={15} />
+          <Icon name="search" size={16} />
           <input className="search-input" type="search" aria-label="搜索笔记" placeholder="搜索"
             value={props.query} onChange={(event) => props.onQuery(event.target.value)} />
         </div>}
@@ -107,7 +107,7 @@ export function NoteList(props: NoteListProps): ReactNode {
                     : props.onOpen(note.id)}
                 >
                   <span className="note-row-title">{note.private ? <span aria-label="私密">
-                    <Icon name="lock" size={13} />
+                    <Icon name="lock" size={14} />
                   </span> : null}
                     {note.title === '' ? '未命名' : note.title}
                     {isAiNote(note) ? <AiMark /> : null}

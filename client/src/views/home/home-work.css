@@ -4,10 +4,10 @@
   display: flex;
   align-items: center;
   flex: 1;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
   min-height: 60px;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   border: 0;
   background: transparent;
   color: inherit;
@@ -27,14 +27,14 @@
 .home-result-row:focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: 3px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .home-result-row {
   display: flex;
   width: 100%;
   min-height: 48px;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   border-top: 0;
   border-right: 0;
   border-left: 0;
@@ -49,17 +49,17 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .home-result-unmet {
-  margin-left: 8px;
+  margin-left: var(--space-2);
   color: var(--err);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 /* 手机上一行放不下标题和原因：原因换到标题下面一行，原因本身不被截掉一半。 */
@@ -72,29 +72,29 @@
 
 .home-result-time {
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   flex: none;
 }
 
 .home-results-all {
   margin-left: auto;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-weight: 400;
 }
 
 .home-results-loading {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 16px 0;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
 }
 
 .home-results-loading span {
   width: 70%;
   height: 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--tint);
 }
 
@@ -105,31 +105,31 @@
 .home-results-error {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 20px;
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
 }
 
 .home-start {
-  padding-top: 24px;
+  padding-top: var(--space-5);
 }
 
 .home-start h2 {
-  margin: 0 0 16px;
-  font-size: 24px;
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-title);
   font-weight: 500;
-  line-height: 32px;
+  line-height: var(--text-title-line);
 }
 
 .home-start form {
   display: flex;
   align-items: flex-end;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--line2);
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .home-start textarea {
@@ -141,8 +141,8 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
-  line-height: 24px;
+  font-size: var(--text-body);
+  line-height: var(--text-section-line);
   resize: vertical;
 }
 

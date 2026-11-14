@@ -5,7 +5,7 @@
 .contact-profile {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: var(--space-6);
   min-height: 100%;
 }
 
@@ -13,7 +13,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .profile-names {
@@ -22,47 +22,47 @@
 
 .profile-name {
   margin: 0;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .profile-handle {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   overflow-wrap: anywhere;
 }
 
 .contact-relation .segmented-item.segmented-item {
-  font-size: 13px;
-  padding: 0 10px;
+  font-size: var(--text-ui);
+  padding: 0 var(--space-3);
 }
 
 .profile-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .profile-label {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .profile-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px 12px;
+  gap: var(--space-3) var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .profile-list > li {
@@ -72,7 +72,7 @@
 .profile-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -100,8 +100,8 @@
 }
 
 .profile-meta {
-  font-size: 12px;
-  line-height: 20px;
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
   color: var(--fg2);
 }
 
@@ -109,35 +109,35 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   margin-top: auto;
 }
 
 .profile-safety .profile-safety-button {
   height: 32px;
-  padding: 0 12px;
-  gap: 6px;
-  font-size: 13px;
+  padding: 0 var(--space-3);
+  gap: var(--space-2);
+  font-size: var(--text-ui);
 }
 
 .profile-safety-changed {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .profile-safety-code {
   display: grid;
   grid-template-columns: repeat(3, auto);
-  gap: 6px 16px;
+  gap: var(--space-2) var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 
@@ -161,7 +161,7 @@
 .contact-memory-doc {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--fg);
   font-weight: 500;
   text-decoration: none;
@@ -174,33 +174,33 @@
 }
 
 .contact-memory-lines {
-  margin-top: 6px;
+  margin-top: var(--space-2);
 }
 
 .contact-memory-ask > p {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
   color: var(--fg);
 }
 
 .contact-memory-answers {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .contact-memory-error {
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--err);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .contact-person-picker {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   width: 260px;
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .contact-person-options {
@@ -213,17 +213,17 @@
 
 .contact-person-linked {
   margin-left: auto;
-  padding-left: 8px;
+  padding-left: var(--space-2);
   color: var(--fg3);
-  font-size: 12px;
+  font-size: var(--text-caption);
   white-space: nowrap;
 }
 
 .profile-manage {
   display: flex;
-  gap: 16px;
-  margin-top: 8px;
-  padding-top: 12px;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--line);
 }
 

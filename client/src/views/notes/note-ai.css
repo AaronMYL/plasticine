@@ -3,14 +3,14 @@
 .note-command-bar {
   position: sticky;
   top: -24px;
-  z-index: 5;
+  z-index: var(--z-sticky);
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 8px 16px;
-  margin-top: -8px;
-  padding-top: 8px;
-  padding-bottom: 12px;
+  gap: var(--space-2) var(--space-4);
+  margin-top: calc(-1 * var(--space-2));
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--line);
   background: var(--layer-page);
 }
@@ -30,7 +30,7 @@
 }
 
 .note-format-toolbar {
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .note-ai-tools {
@@ -55,9 +55,9 @@
 .note-ai-switch {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-height: 32px;
-  padding: 0 2px;
+  padding: 0 var(--space-hair);
   color: var(--fg);
   white-space: nowrap;
   cursor: pointer;
@@ -66,16 +66,16 @@
 .note-menu-button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   min-height: 32px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
-  transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
 
 .note-menu-button:hover:not(:disabled),
@@ -91,14 +91,14 @@
 
 .note-ai-prompt {
   display: grid;
-  gap: 8px;
-  margin-top: 12px;
-  padding-left: 12px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-left: var(--space-3);
   border-left: 1px solid var(--fg3);
 }
 
 .note-ai-prompt strong {
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 500;
 }
 
@@ -106,11 +106,11 @@
   max-height: 80px;
   overflow-y: auto;
   margin: 0;
-  padding-left: 8px;
+  padding-left: var(--space-2);
   border-left: 1px solid var(--line2);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -119,33 +119,33 @@
   width: 100%;
   min-width: 0;
   min-height: 72px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   resize: vertical;
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--line2);
-  border-radius: 8px;
+  border-radius: var(--radius);
   font: inherit;
-  line-height: 22px;
+  line-height: var(--text-body-line);
 }
 
 .note-selection-tools {
   position: fixed;
-  z-index: 20;
+  z-index: var(--z-menu);
   background: var(--layer-float);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--lift);
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px;
+  gap: var(--space-hair);
+  padding: var(--space-1);
   max-width: calc(100vw - 16px);
 }
 
 .note-selection-tools > .text-button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   white-space: nowrap;
 }
 
@@ -156,17 +156,20 @@
 /* 补充建议：画在当前段落下方留出的空里（note-suggestions.tsx 用装饰给段落加下边距），不在顶部工具栏。 */
 .note-suggestion {
   position: absolute;
-  padding-left: 12px;
+  padding-left: var(--space-3);
   border-left: 1px solid var(--fg3);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
-.note-suggestion header { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
-.note-suggestion ul { list-style: none; padding: 0; margin: 8px 0; }
-.note-suggestion li { display: flex; align-items: baseline; gap: 8px; padding: 8px; border-radius: 8px; }
+.note-suggestion header { display: flex; align-items: center; justify-content: space-between;
+  font-size: var(--text-caption); }
+.note-suggestion ul { list-style: none; padding: 0; margin: var(--space-2) 0; }
+.note-suggestion li { display: flex; align-items: baseline; gap: var(--space-2); padding: var(--space-2);
+  border-radius: var(--radius); }
 .note-suggestion li:hover { background: var(--tint); }
 .note-suggestion li > span:nth-child(2), .note-suggestion-draft > span { flex: 1; min-width: 0; }
-.note-suggestion-kind { flex: none; padding: 0 4px; border-radius: 4px; font-size: 11px; }
+.note-suggestion-kind { flex: none; padding: 0 var(--space-1); border-radius: var(--radius-sm);
+  font-size: var(--text-tag); }
 .note-suggestion-kind[data-kind='structure'] { color: var(--hue-sky);
   background: color-mix(in srgb, var(--hue-sky) 12%, transparent); }
 .note-suggestion-kind[data-kind='supplement'] { color: var(--hue-teal);
@@ -175,8 +178,8 @@
   background: color-mix(in srgb, var(--hue-ochre) 12%, transparent); }
 .note-suggestion-kind[data-kind='contact'] { color: var(--hue-rose);
   background: color-mix(in srgb, var(--hue-rose) 12%, transparent); }
-.note-suggestion-draft { display: flex; align-items: baseline; gap: 8px; background: var(--tint2);
-  border-radius: 8px; padding: 8px 12px; margin-top: 16px; }
+.note-suggestion-draft { display: flex; align-items: baseline; gap: var(--space-2); background: var(--tint2);
+  border-radius: var(--radius); padding: var(--space-2) var(--space-3); margin-top: var(--space-4); }
 .note-suggestion-draft > span { white-space: pre-wrap; overflow-wrap: anywhere; }
 .note-suggestion button { flex: none; white-space: nowrap; }
 
@@ -185,8 +188,8 @@
   min-width: 0;
   margin: 0;
   color: var(--fg2);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   cursor: pointer;
   overflow-wrap: anywhere;
 }
@@ -202,7 +205,7 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   pointer-events: none;
-  font: 16px / 28px var(--sans);
+  font: var(--text-long) / var(--text-long-line) var(--sans);
 }
 
 /* 中文输入法组字时只藏起来，不改正文和装饰（note-suggestions.tsx）；组完对得上再露出来。 */
@@ -221,12 +224,12 @@
 .note-ghost-accept { display: none; }
 
 .note-ghost-key {
-  margin-left: 6px;
-  padding: 0 4px;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1);
   border: 1px solid var(--line2);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   color: var(--fg3);
-  font: 11px / 16px var(--mono);
+  font: var(--text-tag) / var(--text-tag-line) var(--mono);
   font-style: normal;
   text-indent: 0;
   vertical-align: 2px;
@@ -235,8 +238,8 @@
 .note-ai-error {
   display: grid;
   justify-items: start;
-  gap: 4px;
-  margin-top: 8px;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -247,7 +250,7 @@
 
 @media (max-width: 767px) {
   .note-ai-prompt textarea {
-    font-size: 16px;
+    font-size: var(--text-long);
   }
   .note-ai-tools > .note-toolbar {
     flex-wrap: wrap;
@@ -260,13 +263,13 @@
     display: flex;
     align-items: center;
     height: 32px;
-    margin-top: 4px;
-    padding: 0 12px;
+    margin-top: var(--space-1);
+    padding: 0 var(--space-3);
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius);
     background: var(--tint2);
     color: var(--fg);
-    font: 500 13px / 20px var(--sans);
+    font: 500 var(--text-ui) / var(--text-ui-line) var(--sans);
     font-style: normal;
     text-indent: 0;
     pointer-events: auto;
@@ -279,13 +282,13 @@
     right: 0;
     bottom: calc(64px + env(safe-area-inset-bottom));
     left: 0;
-    z-index: 6;
+    z-index: var(--z-sticky);
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    gap: 12px;
+    gap: var(--space-3);
     height: 48px;
-    padding: 0 16px;
+    padding: 0 var(--space-4);
     border-top: 1px solid var(--line);
     background: var(--bg);
     overflow-x: auto;
@@ -302,7 +305,7 @@
 .note-command-bar {
   flex-wrap: nowrap;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .note-command-bar .note-ai-tools {
   flex: 0 1 auto;
@@ -315,7 +318,7 @@
 .note-bar-end {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-hair);
   margin-left: auto;
   flex: none;
 }
@@ -324,26 +327,26 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   color: var(--fg3);
 }
 .note-save:focus-visible { outline: 2px solid var(--fg2); outline-offset: 1px; }
 .note-save-spin {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 1.5px solid var(--line2);
   border-top-color: var(--fg2);
-  animation: note-save-spin 0.9s linear infinite;
+  animation: note-save-spin var(--motion-spin) linear infinite;
 }
 @keyframes note-save-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .note-save-spin { animation: none; } }
 .note-save-text {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 4px;
-  font-size: 12px;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+  font-size: var(--text-caption);
   color: var(--fg2);
   white-space: nowrap;
 }
@@ -352,17 +355,17 @@
 .note-adopted {
   position: sticky;
   top: 52px;
-  z-index: 6;
+  z-index: var(--z-sticky);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: max-content;
-  margin: 0 auto 8px;
-  padding: 4px 12px;
-  border-radius: 16px;
+  margin: 0 auto var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-lg);
   background: var(--layer-float);
   box-shadow: var(--lift);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 .note-adopted svg { color: var(--fg2); }
 @media (max-width: 767px) {
@@ -384,18 +387,18 @@
   flex: none;
 }
 .note-command-bar .note-ai-tools > .note-toolbar {
-  gap: 6px;
+  gap: var(--space-2);
 }
 @media (min-width: 768px) {
   .note-command-bar {
     flex-wrap: wrap;
-    row-gap: 4px;
+    row-gap: var(--space-1);
   }
 }
 @media (max-width: 767px) {
   .note-command-bar {
     flex-wrap: wrap;
-    row-gap: 4px;
+    row-gap: var(--space-1);
     overflow-x: visible;
   }
   .note-command-bar .note-format-toolbar {
@@ -421,5 +424,5 @@
 
 /* 手机：正文底下让出键盘上方那一行 AI 的高度。 */
 @media (max-width: 767px) {
-  .note-pane { padding-bottom: 104px; }
+  .note-pane { padding-bottom: 104px; } /* 例外：给底下浮着的工具条留地方 */
 }

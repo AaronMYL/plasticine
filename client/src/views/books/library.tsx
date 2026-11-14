@@ -200,7 +200,7 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
     onChanged: () => { reload(); libraryChanged(); } });
   const now = new Date();
   const controls = phone ? (
-    <IconButton icon="upload" label="导入书" size={17} onClick={() => picker.current?.click()} />
+    <IconButton icon="upload" label="导入书" size={20} onClick={() => picker.current?.click()} />
   ) : <>
     <div className="segmented" role="group" aria-label="排序">
       {(Object.keys(SORT_LABELS) as LibrarySort[]).map((value) => (

@@ -148,7 +148,7 @@ function PlainAskCard({ ask, thread }: { ask: AskView; thread: string | null }):
             onClick={() => answer(option.id)}>{option.label}</button>
         ))}
         {detail.consequence === null ? null : (
-          <span className="line-ask-consequence"><Icon name={card === undefined ? 'alert' : 'info'} size={13} />
+          <span className="line-ask-consequence"><Icon name={card === undefined ? 'alert' : 'info'} size={14} />
             {detail.consequence}</span>
         )}
         <span className="line-ask-spacer" />

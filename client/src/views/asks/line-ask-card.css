@@ -3,44 +3,44 @@
 .line-ask {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
   max-width: 560px;
   box-sizing: border-box;
-  padding: 16px;
-  border-radius: 12px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
 .line-ask-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .line-ask-thread {
   overflow: hidden;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .line-ask-question {
   margin: 0;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .line-ask-preview {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
   background: var(--tint);
   box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -48,45 +48,45 @@
 .line-ask-preview-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   color: var(--fg2);
 }
 
 .line-ask-to {
   color: var(--fg);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 500;
 }
 
 .line-ask-subject {
   overflow: hidden;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .line-ask-body {
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   white-space: pre-wrap;
 }
 
 .line-ask-fields {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-hair);
   margin: 0;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .line-ask-fields div {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .line-ask-fields dt {
@@ -102,8 +102,8 @@
 .line-ask-detail {
   margin: 0;
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   white-space: pre-wrap;
 }
 
@@ -111,17 +111,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .line-ask-consequence {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 4px;
+  gap: var(--space-2);
+  margin-left: var(--space-1);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .line-ask-spacer {
@@ -131,7 +131,7 @@
 .line-ask-write {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .line-ask-write .field-input {
@@ -142,17 +142,17 @@
 .line-ask-error {
   margin: 0;
   color: var(--err);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 /* Plasticine 起草的任务卡（Task-Draft）：浅底、细线圈一块，像一张卡的样子。 */
 .line-ask-task {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
   background: var(--tint);
   box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -160,30 +160,30 @@
 .line-ask-task-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .line-ask-task-to {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 500;
 }
 
 .line-ask-task-due {
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .line-ask-task-goal {
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .line-ask-task-file {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }

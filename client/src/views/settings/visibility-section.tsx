@@ -103,7 +103,7 @@ function Chip({ row, tier, pending }: { row: MaterialRow; tier: SharedTier; pend
       <button type="button" className="vis-chip-action" disabled={busy}
         aria-label={pending ? `不要这条建议：${title}` : `收回「${title}」，改回私密`}
         onClick={() => void networkActions.mark(row, pending ? row.tier : 'private')}>
-        <Icon name="close" size={13} />
+        <Icon name="close" size={14} />
       </button>
     </li>
   );
@@ -215,7 +215,7 @@ export function VisibilitySection(): ReactNode {
         <>
           {value.pending === 0 ? null : (
             <div className="vis-suggest" role="group" aria-label="Plasticine 的建议">
-              <span className="vis-suggest-tag"><Icon name="clock" size={13} />等你</span>
+              <span className="vis-suggest-tag"><Icon name="clock" size={14} />等你</span>
               <span className="vis-suggest-text">Plasticine 建议再放开 {value.pending} 样（虚线框的）</span>
               <button type="button" className="primary-button button-small"
                 disabled={declining || confirming.some(isOpenOp)} onClick={() => void networkActions.confirmAll()}>

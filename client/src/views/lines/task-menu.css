@@ -6,11 +6,11 @@
 .task-gone {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 46px;
-  padding: 0 4px 0 0;
+  padding: 0 var(--space-1) 0 0;
   color: var(--fg2);
-  font-size: 13px;
+  font-size: var(--text-ui);
   animation: task-gone-in var(--motion-fast) var(--ease-out);
 }
 
@@ -30,15 +30,15 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 28px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 500;
   cursor: pointer;
 }

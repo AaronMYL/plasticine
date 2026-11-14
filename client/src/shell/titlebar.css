@@ -20,7 +20,7 @@
   grid-column: 1;
   grid-row: 2;
   min-height: 0;
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 
 .shell-panel {
@@ -35,7 +35,7 @@
   min-width: 0;
   min-height: 0;
   overflow: clip;
-  border-top-left-radius: 12px;
+  border-top-left-radius: var(--radius-lg);
   background: var(--bg);
 }
 
@@ -43,10 +43,10 @@
 .shell[data-titled] > .shell-panel::after {
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: var(--z-chrome);
   border-top: 1px solid var(--line2);
   border-left: 1px solid var(--line2);
-  border-top-left-radius: 12px;
+  border-top-left-radius: var(--radius-lg);
   content: '';
   pointer-events: none;
 }
@@ -54,10 +54,10 @@
 .titlebar {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-hair);
   min-width: 0;
   height: 44px;
-  padding: 0 calc(var(--titlebar-controls, 0px) + 12px) 0 var(--titlebar-lights, 12px);
+  padding: 0 calc(var(--titlebar-controls, 0px) + var(--space-3)) 0 var(--titlebar-lights, var(--space-3));
   background: var(--layer-bar);
   user-select: none;
   -webkit-user-select: none;
@@ -74,14 +74,14 @@
 .titlebar .icon-button {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .titlebar-rule {
   flex: none;
   width: 1px;
   height: 16px;
-  margin: 0 10px 0 8px;
+  margin: 0 var(--space-3) 0 var(--space-2);
   background: var(--line2);
 }
 
@@ -91,8 +91,8 @@
   max-width: 480px;
   overflow: hidden;
   color: var(--fg);
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-body);
+  line-height: var(--text-ui-line);
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -102,7 +102,7 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-hair);
   margin-left: auto;
 }
 
@@ -129,7 +129,7 @@
 }
 
 .shell[data-titled] .web-strip {
-  padding-top: 8px;
+  padding-top: var(--space-2);
 }
 
 /*

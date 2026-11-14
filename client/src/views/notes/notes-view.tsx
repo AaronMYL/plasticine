@@ -204,7 +204,7 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
   if (phone && noteId === null && phoneList !== true && !invalid) {
     return (
       <div className="page notes notes-phone-home">
-        <PageHeader title="笔记" phoneTools={<IconButton icon="edit" label="新建" size={17}
+        <PageHeader title="笔记" phoneTools={<IconButton icon="edit" label="新建" size={20}
           disabled={createOp?.status === 'running'} onClick={() => void create()} />} />
         <CreateStatus op={createOp} onRetry={() => void create()} />
         <PendingNoteChanges onDeleted={afterDeleted} />

@@ -110,10 +110,79 @@
 
   --sans: 'Geist', 'PingFang SC', 'MiSans', 'Microsoft YaHei', system-ui, sans-serif;
   --mono: 'Geist Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  /* 转一圈、一秒一跳的进度、定位后闪一下和呼吸（11-14 界面统一）。 */
+  --motion-spin: 900ms;
+  --motion-tick: 1s;
+  --motion-pulse: 1600ms;
+
   /*
-   * 间距（4 / 8 / 12 / 16 / 24 / 32 / 48）、圆角（4 / 8 / 12 / 正圆）、字号直接写令牌表里的值，
-   * 不另起变量名：令牌表只有上面这些名字，新名字要过「要你确认」。
+   * 界面数值的令牌（11-14 界面统一，Aaron 弹框定「都做成令牌，加自动检查」）：样式里的圆角、间距、字号、行高、
+   * 叠放层级、动效时长写死数字的，过不了 agent/src/system/token-check.ts；真有例外，在那一行写「例外：原因」。
    */
+  /* 圆角三档加正圆：4 小签、提示 · 8 按钮、输入框、行、菜单项、chip · 12 卡、弹层、菜单、对话框；里层 = 外层 − 内边距。 */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+  /* 间距 4 · 8 · 12 · 16 · 24 · 32 · 48；组件里面贴边的 1、2。电脑页边上 24、左右 32，手机 16，板块之间 32。 */
+  --space-px: 1px;
+  --space-hair: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  /* 字号和行高成对用：小签 11/16 · 说明 12/18 · 控件 13/20 · 正文 14/22 · 小标题 15/24 · 长文 16/28 · 数字 22/28 · 标题 24/32。 */
+  --text-tag: 11px;
+  --text-tag-line: 16px;
+  --text-caption: 12px;
+  --text-caption-line: 18px;
+  --text-ui: 13px;
+  --text-ui-line: 20px;
+  --text-body: 14px;
+  --text-body-line: 22px;
+  --text-section: 15px;
+  --text-section-line: 24px;
+  --text-long: 16px;
+  --text-long-line: 28px;
+  --text-number: 22px;
+  --text-number-line: 28px;
+  --text-title: 24px;
+  --text-title-line: 32px;
+  /* 控件高度：行里的小图标按钮 24 · chip、分段、小按钮 28 · 按钮、输入框、菜单项、侧栏一行 32 · 搜索框 36 · 触屏 44。 */
+  --control-xs: 24px;
+  --control-sm: 28px;
+  --control: 32px;
+  --control-lg: 36px;
+  --touch: 44px;
+  /* 图标 12 · 14 · 16 · 20（组件里 size 写数字，检查只认这四个）；头像 20 · 28 · 40。 */
+  --icon-xs: 12px;
+  --icon-sm: 14px;
+  --icon: 16px;
+  --icon-lg: 20px;
+  --avatar-sm: 20px;
+  --avatar: 28px;
+  --avatar-lg: 40px;
+  /*
+   * 叠放层级，从下往上：动态背景垫底 · 组件里抬一层 · 页里吸顶的条和浮着的工具条 · 页里的菜单和弹层 · Sheet ·
+   * 窗口边上的东西（圆球、试跑条）· 对话框和手机抽屉 · 盖在对话框上的 · 设置这类大弹框和提示条 · 菜单和弹层 ·
+   * 要你确认的弹框 · 选中文字后的引用按钮 · 悬停提示。
+   */
+  --z-under: -1;
+  --z-raised: 1;
+  --z-sticky: 5;
+  --z-menu: 15;
+  --z-sheet: 20;
+  --z-chrome: 30;
+  --z-dialog: 40;
+  --z-over-dialog: 45;
+  --z-window: 55;
+  --z-float: 60;
+  --z-modal: 70;
+  --z-selection: 120;
+  --z-tip: 1000;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -9,21 +9,21 @@
   width: min(1040px, 100%);
   box-sizing: border-box;
   margin: 0 auto;
-  padding: 24px 32px 48px;
+  padding: var(--space-5) var(--space-6) var(--space-7);
 }
 
 .proj-title-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
 }
 
 .proj-hue-dot {
   flex: none;
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--dot-hue, var(--fg2));
 }
 
@@ -31,33 +31,33 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 24px;
-  line-height: 32px;
+  font-size: var(--text-title);
+  line-height: var(--text-title-line);
   font-weight: 600;
 }
 
 .proj-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 48px;
+  gap: var(--space-7);
 }
 
 .proj-main,
 .proj-side {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: var(--space-6);
   min-width: 0;
 }
 
 .proj-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 24px;
-  margin: 0 0 8px;
-  font-size: 15px;
-  line-height: 24px;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
@@ -76,7 +76,7 @@
 .proj-detail .proj-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
   min-width: 0;
   min-height: 40px;
@@ -94,8 +94,8 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -103,7 +103,7 @@
 .proj-row-error {
   flex: none;
   color: var(--err);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 /* 勾掉：15px 圆圈，勾上是 --fg2 实底。 */
@@ -114,7 +114,7 @@
   width: 15px;
   height: 15px;
   margin: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   box-shadow: inset 0 0 0 1.5px var(--line2);
   appearance: none;
   cursor: pointer;
@@ -133,7 +133,7 @@
   flex: none;
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .proj-due[data-soon='true'] {
@@ -157,7 +157,7 @@
   background: transparent;
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
   outline: none;
 }
 
@@ -172,7 +172,7 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
   outline: none;
 }
 
@@ -184,7 +184,7 @@
   flex: none;
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-variant-numeric: tabular-nums;
 }
 
@@ -197,8 +197,8 @@
 .proj-profile-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 7px 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -206,21 +206,21 @@
   flex: none;
   width: 56px;
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 22px;
+  font-size: var(--text-ui);
+  line-height: var(--text-body-line);
 }
 
 .proj-profile-row dd {
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   overflow-wrap: anywhere;
 }
 
 .proj-note {
-  gap: 10px;
+  gap: var(--space-3);
   cursor: pointer;
 }
 
@@ -251,11 +251,11 @@
 .proj-line {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 0;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .proj-line:last-child {
@@ -269,9 +269,9 @@
 
 /* 对话里定下的事：行尾一个「原话」，回到他说定的那句。 */
 .proj-quote-link {
-  margin-left: 8px;
+  margin-left: var(--space-2);
   color: var(--fg3);
-  font-size: 12px;
+  font-size: var(--text-caption);
   text-decoration: none;
 }
 

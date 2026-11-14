@@ -7,7 +7,7 @@
   align-items: center;
   min-height: 100dvh;
   box-sizing: border-box;
-  padding: 48px 24px;
+  padding: var(--space-7) var(--space-5);
   overflow-y: auto;
   background: var(--bg);
 }
@@ -16,7 +16,7 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  gap: 16px;
+  gap: var(--space-4);
   width: min(400px, 100%);
   margin: auto 0;
 }
@@ -24,57 +24,57 @@
 .ob-col > form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .ob-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  line-height: 24px;
+  gap: var(--space-2);
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .ob-title {
   margin: 0;
-  font-size: 24px;
-  line-height: 32px;
+  font-size: var(--text-title);
+  line-height: var(--text-title-line);
   font-weight: 600;
 }
 
 /* 标题下面那一句（连接模型「用你已有的订阅登录，或者填 key。」）：贴着标题。 */
 .ob-sub {
-  margin: -8px 0 0;
+  margin: calc(-1 * var(--space-2)) 0 0;
   color: var(--fg2);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 /* 字段：名字一行、框一行、框下面一行小字（地址、出错）。 */
 .ob-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .ob-label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 /* 输入框外面一层：前面的 @、后面的状态 / 地址 / 显示密码都在框里；聚焦时整框描深。 */
 .ob-input {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 40px;
-  padding: 0 4px 0 12px;
-  border-radius: 8px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border-radius: var(--radius);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line2);
   transition: box-shadow var(--motion-fast) var(--ease-out);
@@ -98,7 +98,7 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .ob-input > input::placeholder {
@@ -111,7 +111,7 @@
 
 .ob-pre {
   color: var(--fg3);
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 /* 框里最右边：「能用 / 被占了」、地址、显示密码。 */
@@ -119,13 +119,13 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   max-width: 55%;
-  padding-right: 8px;
+  padding-right: var(--space-2);
   overflow: hidden;
   color: var(--fg3);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -150,31 +150,31 @@
 .ob-note {
   margin: 0;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   overflow-wrap: anywhere;
 }
 
 .ob-error {
   margin: 0;
   color: var(--err);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 /* 主按钮：整宽、高 44，和登录页一样。 */
 .ob-big.primary-button {
   width: 100%;
   height: 44px;
-  margin-top: 8px;
-  font-size: 14px;
+  margin-top: var(--space-2);
+  font-size: var(--text-body);
 }
 
 .ob-links {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
   min-height: 24px;
 }
 
@@ -185,14 +185,14 @@
 .ob-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   cursor: pointer;
 }
 
@@ -206,7 +206,7 @@
 .ob-link:focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .ob-link-u {
@@ -222,19 +222,19 @@
 
 .ob-forgot-pop {
   position: absolute;
-  z-index: 20;
+  z-index: var(--z-menu);
   right: 0;
   top: calc(100% + 8px);
   width: 300px;
   max-width: calc(100vw - 48px);
   box-sizing: border-box;
-  padding: 12px 16px;
-  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
   background: var(--layer-float);
   box-shadow: var(--lift);
   color: var(--fg);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   animation: ob-pop-in var(--motion-base) var(--ease-out);
 }
 
@@ -244,7 +244,7 @@
 
 .ob-forgot-pop code {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 @keyframes ob-pop-in {
@@ -259,25 +259,25 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 0 8px;
+  gap: var(--space-2);
+  padding: var(--space-4) 0 var(--space-2);
   text-align: center;
 }
 
 .ob-qr {
   /* 深色模式下也是白底深码（--qr-paper / --qr-ink 两种模式同值）。 */
-  padding: 12px;
-  border-radius: 12px;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
   background: var(--qr-paper);
   border: 1px solid var(--line2);
   line-height: 0;
 }
 
 .ob-address {
-  margin-top: 16px;
+  margin-top: var(--space-4);
   font-family: var(--mono);
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   overflow-wrap: anywhere;
 }
 
@@ -285,10 +285,10 @@
 .ob-row-wait {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   white-space: nowrap;
 }
 
@@ -304,7 +304,8 @@
 
 @media (max-width: 767px) {
   .ob-page {
-    padding: max(80px, calc(env(safe-area-inset-top) + 48px)) 24px 24px;
+    /* 例外：引导页上下的大留白 */ padding: max(80px, calc(env(safe-area-inset-top) + var(--space-7)))
+      var(--space-5) var(--space-5);
   }
 
   .ob-col {
@@ -316,14 +317,14 @@
   }
 
   .ob-input > input {
-    font-size: 16px;
+    font-size: var(--text-long);
   }
 }
 
 /* 不是第一次用时，连接页最下面能先不连、回到 Plasticine（11-09）。 */
 .ob-later {
   align-self: center;
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 
 /* 第一次打开、还没有账号（11-12《首次使用解耦》）：窗口只有中间一列，像主线；Plasticine 打招呼，下面一张描边的
@@ -335,7 +336,7 @@
 .ob-chat-col {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   width: min(640px, 100%);
   margin: auto;
 }
@@ -343,58 +344,58 @@
 .ob-hello {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .ob-hello-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  line-height: 20px;
+  gap: var(--space-2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   font-weight: 600;
 }
 
 .ob-hello p {
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .ob-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px 20px 20px;
-  border-radius: 12px;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line2);
-  animation: ob-rise var(--motion-base, 240ms) var(--ease-out, ease-out);
+  animation: ob-rise var(--motion-base) var(--ease-out);
 }
 
 .ob-card-title {
   margin: 0;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .ob-card-actions {
   display: flex;
-  padding-top: 2px;
+  padding-top: var(--space-hair);
 }
 
 .ob-locked {
   background: var(--tint);
   box-shadow: none;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   color: var(--fg2);
 }
 
 .ob-locked-value {
   color: var(--fg);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 @keyframes ob-rise {
@@ -412,6 +413,6 @@
 
 @media (max-width: 599px) {
   .ob-chat {
-    padding: 32px 20px;
+    padding: var(--space-6) var(--space-5);
   }
 }

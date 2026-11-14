@@ -13,7 +13,7 @@
 /* Plasticine 写的一段：左侧 1px 细线，前面一个 ✦（方向 I：「它写的」用细线，不用颜色）。 */
 .by-ai {
   border-left: 1px solid var(--fg3);
-  padding-left: 12px;
+  padding-left: var(--space-3);
 }
 
 .glyph {
@@ -21,7 +21,7 @@
   flex: none;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   vertical-align: 1px;
 }
 
@@ -31,7 +31,7 @@
 
 .glyph[data-status='run'] {
   background: var(--run);
-  animation: glyph-breathe 1.8s var(--ease-in-out) infinite alternate;
+  animation: glyph-breathe var(--motion-pulse) var(--ease-in-out) infinite alternate;
 }
 
 .glyph[data-status='idle'] {
@@ -72,7 +72,7 @@
   flex: none;
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   box-shadow: inset 0 0 0 1px var(--fg2);
 }
 
@@ -111,9 +111,9 @@
 
 /* 分段控件里的数：取代页头那句「进行 4 · 逾期 1」。 */
 .seg-count {
-  margin-left: 4px;
+  margin-left: var(--space-1);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--text-tag);
   font-variant-numeric: tabular-nums;
   color: var(--fg3);
 }
@@ -122,7 +122,7 @@
 .dry-run-stripe {
   position: absolute;
   inset: 0 0 auto;
-  z-index: 30;
+  z-index: var(--z-chrome);
   height: 3px;
   background: repeating-linear-gradient(-45deg, var(--accent) 0 6px, transparent 6px 12px);
   opacity: 0.7;
@@ -147,7 +147,7 @@ input[type='checkbox'][role='switch'] {
   width: 30px;
   height: 18px;
   margin: 0;
-  border-radius: 9px;
+  border-radius: var(--radius);
   background: var(--line2);
   cursor: pointer;
   transition: background var(--motion-fast) var(--ease-out);
@@ -160,7 +160,7 @@ input[type='checkbox'][role='switch']::after {
   left: 2px;
   width: 14px;
   height: 14px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--bg);
   transition: transform var(--motion-fast) var(--ease-out);
 }

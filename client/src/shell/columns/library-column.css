@@ -32,7 +32,7 @@
 .column-row:hover > .column-item,
 .column-row:focus-within > .column-item,
 .column-row:has(> .reveal-more[aria-expanded='true']) > .column-item {
-  padding-right: 34px;
+  padding-right: var(--space-6);
   background: var(--tint);
 }
 
@@ -48,7 +48,7 @@
   }
 
   .column-row > .column-item {
-    padding-right: 34px;
+    padding-right: var(--space-6);
   }
 }
 

@@ -2,7 +2,7 @@
 .notes > .page-head {
   grid-template-columns: minmax(0, 1fr) auto auto;
   grid-template-areas: 'title controls tools';
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .notes-columns {
@@ -40,11 +40,11 @@
 .note-list-head {
   position: sticky;
   top: -16px;
-  z-index: 2;
+  z-index: var(--z-raised);
   display: grid;
-  gap: 12px;
-  margin-top: -16px;
-  padding-block: 16px 12px;
+  gap: var(--space-3);
+  margin-top: calc(-1 * var(--space-4));
+  padding-block: var(--space-4) var(--space-3);
   background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
@@ -53,10 +53,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 32px;
   min-width: 0;
-  padding-inline: 4px;
+  padding-inline: var(--space-1);
 }
 
 .note-list-heading h2 {
@@ -65,14 +65,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
-  line-height: 22px;
+  font-size: var(--text-caption);
+  line-height: var(--text-body-line);
   font-weight: 500;
 }
 
 .note-list-count {
   flex: none;
-  font: 11px / 18px var(--mono);
+  font: var(--text-tag) / var(--text-caption-line) var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--fg2);
 }
@@ -80,15 +80,15 @@
 .note-collection-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 500;
   cursor: pointer;
 }
@@ -110,12 +110,12 @@
 .note-search {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   min-height: 36px;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--line2);
-  border-radius: 8px;
+  border-radius: var(--radius);
   color: var(--fg2);
 }
 
@@ -130,7 +130,7 @@
   background: transparent;
   box-shadow: none;
   appearance: none;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .note-search:focus-within,
@@ -147,8 +147,8 @@
   position: relative;
   display: flex;
   min-width: 0;
-  border-radius: 8px;
-  transition: background-color 160ms ease;
+  border-radius: var(--radius);
+  transition: background-color var(--motion-fast) var(--ease-out);
 }
 
 .note-list-item:hover {
@@ -167,7 +167,7 @@
 .note-row-title > span[aria-label='私密'] {
   display: inline-flex;
   vertical-align: -1px;
-  margin-right: 4px;
+  margin-right: var(--space-1);
   color: var(--fg2);
 }
 
@@ -190,20 +190,20 @@
 
 .note-actions-field {
   display: grid;
-  gap: 4px;
-  padding: 6px 8px;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-2);
 }
 
 .note-actions-field > label {
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .note-actions-line {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .note-actions-line > .popover-field {
@@ -217,19 +217,19 @@
 }
 
 .note-actions-error {
-  margin: 4px 8px;
-  font-size: 12px;
-  line-height: 18px;
+  margin: var(--space-1) var(--space-2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .note-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 12px;
+  gap: var(--space-1) var(--space-3);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .note-current-folder {
@@ -246,13 +246,13 @@
 }
 
 .notes-detail:not([hidden]) .note-editor {
-  animation: note-content-in 180ms ease-out;
+  animation: note-content-in var(--motion-base) var(--ease-out);
 }
 
 .note-import,
 .note-review {
   border-bottom: 1px solid var(--line);
-  padding-bottom: 12px;
+  padding-bottom: var(--space-3);
 }
 
 .note-toggle-named {
@@ -263,8 +263,8 @@
 .note-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
   color: var(--fg2);
 }
 
@@ -276,19 +276,19 @@
 .note-ai-cursor {
   align-self: flex-start;
   border-left: 1px solid var(--fg2);
-  padding-left: 4px;
+  padding-left: var(--space-1);
   color: var(--fg2);
-  font-size: 11px;
+  font-size: var(--text-tag);
 }
 
 .note-ai-dot {
-  font-size: 16px;
+  font-size: var(--text-long);
 }
 
 .note-chart-block {
   border-block: 1px solid var(--line);
-  padding: 12px 0;
-  font-size: 14px;
+  padding: var(--space-3) 0;
+  font-size: var(--text-body);
 }
 
 .note-import a {
@@ -321,7 +321,7 @@
 }
 
 .notes-columns[data-layout='wide'] .note-pane {
-  padding-left: 32px;
+  padding-left: var(--space-6);
 }
 
 .note-prose th,
@@ -336,7 +336,7 @@
 
 @media (max-width: 767px) {
   .note-search .search-input {
-    font-size: 16px;
+    font-size: var(--text-long);
   }
 }
 
@@ -363,14 +363,14 @@
 
   .note-actions-pop .popover-field {
     height: 40px;
-    font-size: 16px;
+    font-size: var(--text-long);
   }
 }
 
 /* Plasticine 写的笔记：标题后一个 ✦（2026-11-05 设计稿 Notes）。 */
 .note-row-title .ai-mark,
 .note-meta .ai-mark {
-  margin-left: 4px;
+  margin-left: var(--space-1);
   vertical-align: -1px;
 }
 
@@ -386,7 +386,7 @@
 .note-list-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -394,8 +394,8 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 2px;
-  margin-right: -4px;
+  gap: var(--space-hair);
+  margin-right: calc(-1 * var(--space-1));
 }
 
 .note-list-tools .icon-button {
@@ -404,7 +404,7 @@
 }
 
 .note-list-tools > .bulk-header {
-  gap: 2px;
+  gap: var(--space-hair);
   margin-bottom: 0;
 }
 
@@ -413,9 +413,9 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   min-height: 40px;
-  padding: 8px 0 0 20px;
+  padding: var(--space-2) 0 0 var(--space-5);
 }
 
 .notes-detail-bar .notes-back {

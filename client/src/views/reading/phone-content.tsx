@@ -70,7 +70,7 @@ export function PhoneContent({ route, children, quote = null, ready = true, onBa
             <button type="button" className="primary-button" onClick={() => void copy()}>复制链接到电脑</button>
           ) : <button type="button" className="primary-button" onClick={mention}>在对话里提</button>}
           {quote === null ? null
-            : <IconButton icon="link" size={18} label="复制这份内容的链接" onClick={() => void copy()} />}
+            : <IconButton icon="link" size={20} label="复制这份内容的链接" onClick={() => void copy()} />}
         </div>
       </footer>
     </div>
@@ -81,7 +81,7 @@ export function PhoneUnavailable({ route, navigate, onBack }: Omit<PhoneContentP
   const label = navLabel(route.view);
   return (
     <PhoneContent route={route} navigate={navigate} onBack={onBack}>
-      <header className="phone-read-title"><Icon name="file" size={24} /><h1>{label}</h1></header>
+      <header className="phone-read-title"><Icon name="file" size={20} /><h1>{label}</h1></header>
       <section className="phone-read-section">
         <p className="phone-read-unavailable">{label}暂时不能在手机打开。</p>
       </section>

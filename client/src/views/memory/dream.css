@@ -4,9 +4,9 @@
  */
 
 .memory-dream > .dream-date {
-  margin: 0 0 -22px;
-  font-size: 12px;
-  line-height: 18px;
+  margin: 0 0 calc(-1 * var(--space-5));
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -19,8 +19,8 @@
 .dream-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-top: 1px solid var(--line);
 }
 
@@ -53,13 +53,13 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-hair);
   min-width: 0;
 }
 
 .dream-row-main {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .dream-row[data-undone='true'] .dream-row-main {
@@ -69,8 +69,8 @@
 }
 
 .dream-row-previous {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   text-decoration: line-through;
   text-decoration-color: var(--fg3);
@@ -79,9 +79,9 @@
 .dream-source {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -90,8 +90,8 @@
 }
 
 .dream-row-error {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--err);
 }
 
@@ -99,9 +99,9 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-height: 22px;
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--fg2);
 }
 
@@ -109,7 +109,7 @@
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 40px;
   padding: 0;
   border: 0;
@@ -117,7 +117,7 @@
   width: 100%;
   background: transparent;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
 }
 
@@ -132,7 +132,7 @@
   }
 
   .dream-row-actions {
-    margin-left: 28px;
+    margin-left: var(--space-6);
   }
 }
 

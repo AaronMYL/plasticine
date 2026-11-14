@@ -145,7 +145,7 @@ export function TaskCompose({ contact, phone, onClose }: { contact: ContactRow; 
         <div className="task-compose-files">
           {picked === null ? null : (
             <span className="task-compose-file">
-              <Icon name="paperclip" size={13} />{picked.name}
+              <Icon name="paperclip" size={14} />{picked.name}
               <IconButton icon="close" size={12} label={`去掉「${picked.name}」`} onClick={() => setPicked(null)} />
             </span>
           )}
@@ -163,7 +163,7 @@ export function TaskCompose({ contact, phone, onClose }: { contact: ContactRow; 
         </div>
       </div>
       <div className="task-compose-foot">
-        <span className="task-compose-hint"><Icon name="info" size={13} />{consequence(contact, assignee)}</span>
+        <span className="task-compose-hint"><Icon name="info" size={14} />{consequence(contact, assignee)}</span>
         <button type="button" className="text-button text-button-quiet" onClick={onClose}>取消</button>
         <button type="button" className="primary-button" disabled={locked || goal.trim() === ''}
           onClick={() => void send()}>发出</button>

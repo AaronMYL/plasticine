@@ -118,7 +118,7 @@ export function NoteFolders({
     return <button type="button" className="note-folder-button" aria-label={`${label} ${count}`} title={label}
       aria-current={active ? 'true' : undefined} data-ai={target.kind === 'folder' && isAiFolder(target.name)}
       onClick={() => onChange(target)}>
-      <span className="note-folder-icon" aria-hidden="true"><Icon name={folderIcon(target)} size={15} /></span>
+      <span className="note-folder-icon" aria-hidden="true"><Icon name={folderIcon(target)} size={16} /></span>
       <span className="note-folder-name">{label}</span><span className="note-folder-count">{count}</span>
     </button>;
   };
@@ -142,7 +142,7 @@ export function NoteFolders({
             !folder.fixed && !isAiFolder(folder.name)))}
         {column ? <button type="button" className="note-folder-button note-folder-new" disabled={locked}
           onClick={() => edit(null)}>
-          <span className="note-folder-icon" aria-hidden="true"><Icon name="plus" size={15} /></span>
+          <span className="note-folder-icon" aria-hidden="true"><Icon name="plus" size={16} /></span>
           <span className="note-folder-name">新建文件夹</span>
         </button> : null}
       </div>

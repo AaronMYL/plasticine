@@ -4,29 +4,29 @@
 .home {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: var(--space-6);
   width: min(1120px, 100%);
   box-sizing: border-box;
   margin: 0 auto;
-  padding: 24px 40px 48px;
+  padding: var(--space-5) var(--space-6) var(--space-7);
 }
 
 .home[data-device='phone'] {
-  padding: 16px 16px 48px;
+  padding: var(--space-4) var(--space-4) var(--space-7);
 }
 
 .home-cols {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   align-items: start;
-  gap: 40px;
+  gap: var(--space-6);
 }
 
 .home-main,
 .home-side {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: var(--space-6);
   min-width: 0;
 }
 
@@ -38,7 +38,7 @@
 
 .home-section-more {
   margin-left: auto;
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 400;
 }
 
@@ -67,7 +67,7 @@
 .home-greeting {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .home-greeting h1 {
@@ -77,15 +77,15 @@
   align-items: flex-start;
   gap: 0;
   margin: 0;
-  font-size: 24px;
-  line-height: 32px;
+  font-size: var(--text-title);
+  line-height: var(--text-title-line);
   font-weight: 600;
 }
 
 .home-date {
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   font-weight: 400;
 }
 
@@ -101,15 +101,15 @@
 }
 
 .home-greeting[data-phone='true'] .home-date {
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .home-greeting-tools {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-top: 4px;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
 }
 
 .home-greeting-tools .icon-button {
@@ -126,25 +126,25 @@
 .home-section-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 24px;
-  margin: 0 0 8px;
-  font-size: 15px;
-  line-height: 24px;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .home-section-count {
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-weight: 400;
 }
 
 .home-section-link {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-hair);
   padding: 0;
   border: 0;
   background: transparent;
@@ -173,7 +173,7 @@
 .home-row-line {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -190,21 +190,21 @@
 .home-wait-row .ask-glyph {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .home-wait-title {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .home-wait-card {
-  padding: 12px 0 16px 40px;
+  padding: var(--space-3) 0 var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--line);
 }
 
@@ -224,7 +224,7 @@
 .home-doing-text {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 1;
   min-width: 0;
 }
@@ -233,8 +233,8 @@
   flex: none;
   max-width: 260px;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -244,8 +244,8 @@
   min-width: 0;
   overflow: hidden;
   color: var(--fg2);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -256,7 +256,7 @@
 
 .home-doing-elapsed {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .home-doing-row[data-phone='true'] {
@@ -275,8 +275,8 @@
 
 .home-doing-row[data-phone='true'] .home-doing-status {
   width: 100%;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 /* —— 接着看：一排六格 —— */
@@ -284,8 +284,8 @@
 .home-continue {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 4px;
-  margin: 0 -8px;
+  gap: var(--space-1);
+  margin: 0 calc(-1 * var(--space-2));
   padding: 0;
   list-style: none;
 }
@@ -294,14 +294,14 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   height: 100%;
   min-height: 96px;
   box-sizing: border-box;
-  padding: 8px;
+  padding: var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   text-align: left;
@@ -321,8 +321,8 @@
 .home-continue-title {
   display: -webkit-box;
   overflow: hidden;
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   font-weight: 500;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -331,13 +331,13 @@
 .home-continue-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   max-width: 100%;
   margin-top: auto;
   overflow: hidden;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -349,7 +349,7 @@
   width: 88px;
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
   white-space: nowrap;
 }
 
@@ -363,7 +363,7 @@
 .home-today-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--dot-hue, var(--fg2));
 }
 
@@ -371,8 +371,8 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -381,7 +381,7 @@
 .home-today-synced {
   flex: none;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-weight: 400;
   white-space: nowrap;
 }
@@ -412,15 +412,15 @@
 .home-feed-row .feed-mark {
   width: 24px;
   height: 24px;
-  font-size: 11px;
+  font-size: var(--text-tag);
 }
 
 .home-feed-title {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -428,20 +428,20 @@
 .home-feed-time {
   flex: none;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 /* —— 手机 —— */
 
 .home[data-device='phone'] {
-  gap: 24px;
-  padding: 12px 16px 96px;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-4) 96px; /* 例外：手机底下给底栏和圆球留地方 */
 }
 
 .home[data-device='phone'] .home-row-line .button-small {
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
 }
 
 .home[data-device='phone'] .home-wait-row {
@@ -480,8 +480,8 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -493,10 +493,10 @@
 }
 
 .home-review-meta {
-  margin-left: 8px;
+  margin-left: var(--space-2);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 /* 「去回」是带去那段聊天的链接，长得和旁边几行的按钮一样。 */

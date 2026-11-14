@@ -67,7 +67,7 @@ function PlaceCard({ mode, title, detail, icon, selected, disabled, line, onSele
           <span className="desktop-place-dot" aria-hidden="true" />{line.text}</span>}
         {children}
       </span>
-      <span className="desktop-place-icon" aria-hidden="true"><Icon name={icon} size={18} /></span>
+      <span className="desktop-place-icon" aria-hidden="true"><Icon name={icon} size={20} /></span>
     </label>
   );
 }

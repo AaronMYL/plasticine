@@ -11,13 +11,13 @@
  * 「管理来源」最底下的按钮被「首页」盖住。抽屉开着时把主区整层抬到它们上面（底栏、圆球都是 35）。
  */
 .shell[data-phone='true'] .shell-main-area:has(.sheet-drawer) {
-  z-index: 41;
+  z-index: calc(var(--z-dialog) + 1);
 }
 
 .ambient-layer {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-under);
   width: 100%;
   height: 100%;
   pointer-events: none;

@@ -102,7 +102,7 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
           <span className="douyin-sync-meta">{syncLabel}</span>
           <button type="button" className="secondary-button button-small douyin-sync" disabled={busy === 'sync'
             || sync?.state === 'waiting_mac' || sync?.state === 'running'} onClick={() => void store.sync()}>
-            <Icon name="refresh" size={13} />同步
+            <Icon name="refresh" size={14} />同步
           </button>
         </>
       )}>

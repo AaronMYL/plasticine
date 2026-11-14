@@ -14,16 +14,16 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 8px;
-  padding: 16px 24px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
 }
 
 .ct-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -36,16 +36,16 @@
 
 .ct-find {
   flex: none;
-  margin: 0 24px 8px;
+  margin: 0 var(--space-5) var(--space-2);
 }
 
 .ct-items {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 0;
-  padding: 8px 40px 24px;
+  padding: var(--space-2) var(--space-6) var(--space-5);
   /* 窄的时候一句话旁边的悬停操作条会伸出去一点：只竖着滚，不出横向滚动条。 */
   overflow-x: hidden;
   overflow-y: auto;
@@ -64,14 +64,14 @@
 .ct-item {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .cm-day {
   margin: 0;
-  padding-bottom: 8px;
-  font-size: 11px;
-  line-height: 16px;
+  padding-bottom: var(--space-2);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   color: var(--fg2);
   text-align: center;
 }
@@ -79,7 +79,7 @@
 .cm-line {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: min(560px, 88%);
   min-width: 0;
 }
@@ -99,18 +99,18 @@
 
 .cm-bubble {
   min-width: 0;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
 .cm-line[data-side='them'] > .cm-bubble {
-  border-radius: 12px 12px 12px 4px;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
 .cm-line[data-side='me'] > .cm-bubble {
-  border-radius: 12px 12px 4px 12px;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   background: var(--bubble);
 }
 
@@ -119,7 +119,7 @@
 }
 
 .cm-bubble > .ai-mark {
-  margin-right: 6px;
+  margin-right: var(--space-2);
   color: var(--fg2);
 }
 
@@ -148,16 +148,16 @@
 
 .cm-system {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   text-align: center;
 }
 
 .cm-failed {
   flex: none;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--err);
 }
 
@@ -173,14 +173,14 @@
 .cm-exchange {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .cm-fold {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 0;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
 }
 
 .cm-fold-line {
@@ -192,15 +192,15 @@
 .cm-fold-button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   max-width: 70%;
   height: 28px;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
 }
 
@@ -226,7 +226,7 @@
 .cm-exchange-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 /* ---------- 输入框 ---------- */
@@ -235,24 +235,24 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: 8px;
-  padding: 0 24px 24px;
+  gap: var(--space-2);
+  padding: 0 var(--space-5) var(--space-5);
 }
 
 .contact-composer-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .contact-composer-box {
   display: flex;
   flex: 1;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
-  padding: 8px 8px 8px 16px;
-  border-radius: 12px;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
@@ -264,14 +264,14 @@
   flex: 1;
   min-width: 0;
   max-height: 160px;
-  padding: 5px 0;
+  padding: var(--space-1) 0;
   border: 0;
   outline: none;
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   resize: none;
 }
 
@@ -295,7 +295,7 @@
   width: 32px;
   height: 32px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--fg);
   color: var(--bg);
   cursor: pointer;
@@ -314,7 +314,7 @@
 
 .ct-request {
   flex: none;
-  padding: 0 24px 24px;
+  padding: 0 var(--space-5) var(--space-5);
 }
 
 /* —— 第 12 批：一句人话的外壳（表情、悬停条、回的哪一句）—— */
@@ -323,7 +323,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   max-width: min(560px, 88%);
   min-width: 0;
   outline: none;
@@ -345,34 +345,34 @@
 }
 
 .cm-row[data-side='them'] > .cm-reactions {
-  margin-left: 32px;
+  margin-left: var(--space-6);
 }
 
 .cm-reactions {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .cm-reaction {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 24px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--tint);
   color: var(--fg2);
   font-family: inherit;
-  font-size: 13px;
-  line-height: 24px;
+  font-size: var(--text-ui);
+  line-height: var(--text-section-line);
   cursor: pointer;
   transition: background var(--motion-fast) var(--ease-out);
 }
 
 .cm-reaction .mono {
-  font-size: 11px;
+  font-size: var(--text-tag);
 }
 
 .cm-reaction:hover {
@@ -386,11 +386,11 @@
 .cm-hoverbar {
   position: absolute;
   top: 2px;
-  z-index: 2;
+  z-index: var(--z-raised);
   display: flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
+  gap: var(--space-hair);
+  padding: var(--space-hair);
+  border-radius: var(--radius);
   background: var(--layer-float);
   box-shadow: var(--lift);
   opacity: 0;
@@ -425,14 +425,14 @@
 .cm-reply {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   max-width: 100%;
-  margin-bottom: 4px;
-  padding-left: 8px;
+  margin-bottom: var(--space-1);
+  padding-left: var(--space-2);
   box-shadow: inset 2px 0 0 var(--line2);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   white-space: nowrap;
 }
 
@@ -451,11 +451,11 @@
 .contact-reply-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 0 6px 4px;
+  gap: var(--space-2);
+  padding: 0 0 var(--space-2) var(--space-1);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   animation: contact-reply-in var(--motion-fast) var(--ease-out);
 }
 

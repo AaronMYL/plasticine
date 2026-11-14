@@ -200,7 +200,7 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
   }, []);
 
   const leading = tab.openedBy === 'plasticine' ? <AiMark label="Plasticine 打开的" />
-    : <Icon name={url.startsWith('https://') ? 'lock' : 'globe'} size={13} />;
+    : <Icon name={url.startsWith('https://') ? 'lock' : 'globe'} size={14} />;
   const showBookmarks = (anchor: PopoverAnchor): void => popovers.setOpen({ kind: 'bookmarks', anchor });
   const open = popovers.open;
   const openKind = open === null || open.kind === 'bookmarks' ? null : open.kind;

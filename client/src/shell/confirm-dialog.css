@@ -3,28 +3,28 @@
 .confirm-layer {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: var(--z-modal);
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: var(--space-5);
   background: var(--scrim);
 }
 
 .confirm-dialog {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   width: min(400px, 100%);
-  padding: 20px 20px 16px;
-  border-radius: 12px;
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-radius: var(--radius-lg);
   background: var(--layer-float);
   box-shadow: var(--lift);
 }
 
 .confirm-title {
   margin: 0;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -32,22 +32,22 @@
 .confirm-body {
   margin: 0;
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .confirm-error {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   color: var(--err);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 
 .danger-button {
@@ -55,13 +55,13 @@
   align-items: center;
   justify-content: center;
   height: 32px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--err);
   color: var(--bg);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 500;
   cursor: pointer;
   transition: opacity var(--motion-fast) var(--ease-out);
@@ -84,7 +84,7 @@
 @media (pointer: coarse) {
   .confirm-actions > button {
     height: 40px;
-    padding: 0 16px;
+    padding: 0 var(--space-4);
   }
 }
 

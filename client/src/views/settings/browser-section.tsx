@@ -82,7 +82,7 @@ export function BrowserSection(): ReactNode {
         <SectionHead id="settings-logins" title="登录着的网站">
           <span className="login-local text-meta">
             <button type="button" className="icon-button login-local-icon" aria-label={LOCAL_TIP} data-tip={LOCAL_TIP}>
-              <Icon name="lock" size={13} />
+              <Icon name="lock" size={14} />
             </button>
             只在这台电脑
           </span>
@@ -98,7 +98,7 @@ export function BrowserSection(): ReactNode {
         <SectionHead id="settings-login-import" title="导入" />
         <div className="login-import-row">
           <span className="login-site-tile login-import-tile" aria-hidden="true">
-            <Icon name="download" size={15} />
+            <Icon name="download" size={16} />
           </span>
           <span className="login-site-name">从 Chrome 或 Safari 搬一次登录</span>
           <button type="button" className="chip-button" onClick={() => setImporting(true)}>导入…</button>

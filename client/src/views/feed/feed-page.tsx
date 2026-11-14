@@ -151,10 +151,10 @@ function FeedListPage(): ReactNode {
         <>
           <PageHeader title="阅读" phoneSearch={false} phoneTools={(
             <>
-              <IconButton icon="refresh" label={group === null ? '刷新全部来源' : `刷新${group.label}`} size={17}
+              <IconButton icon="refresh" label={group === null ? '刷新全部来源' : `刷新${group.label}`} size={20}
                 disabled={(group === null ? allRefresh : kindRefresh).busy}
                 onClick={(group === null ? allRefresh : kindRefresh).run} />
-              <IconButton icon="filter" label="管理来源" size={17} aria-haspopup="dialog" aria-expanded={filtering}
+              <IconButton icon="filter" label="管理来源" size={20} aria-haspopup="dialog" aria-expanded={filtering}
                 onClick={() => setFiltering(true)} />
             </>
           )} />

@@ -32,7 +32,7 @@ export function WorkSupplement({ line, thread }: { line: LineView; thread: LineT
     });
   };
   return <footer className="work-footer">
-    {line.queued > 0 ? <div className="work-queue" role="status"><Icon name="clock" size={13} />
+    {line.queued > 0 ? <div className="work-queue" role="status"><Icon name="clock" size={14} />
       {line.status === 'paused' ? `${line.queued} 条修改待处理，继续后执行` : `${line.queued} 条补充已排队`}
     </div> : null}
     {failed.map((item) => <div className="work-send-error" role="alert" key={item.requestId}>
@@ -46,7 +46,7 @@ export function WorkSupplement({ line, thread }: { line: LineView; thread: LineT
       <textarea aria-label="补充这件事" placeholder="补充这件事…" rows={2} value={text}
         maxLength={LINE_MESSAGE_MAX_CHARS} onChange={(event) => inlineDrafts.set(key, event.target.value)} />
       <button type="submit" className="work-send" aria-label="发送补充"
-        disabled={busy || text.trim() === '' || failed.length > 0}><Icon name="send" size={17} /></button>
+        disabled={busy || text.trim() === '' || failed.length > 0}><Icon name="send" size={16} /></button>
     </form>
   </footer>;
 }

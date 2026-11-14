@@ -1,7 +1,7 @@
 /* 主区最上面的横条（有新版本、连不上）：全站那一种页内横条（11-14 界面统一），这里只管位置。 */
 .app-banner {
   flex: none;
-  margin: 8px 16px 0;
+  margin: var(--space-2) var(--space-4) 0;
 }
 .client-update-blocker {
   flex-basis: 100%;

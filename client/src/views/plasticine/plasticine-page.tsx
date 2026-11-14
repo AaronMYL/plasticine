@@ -120,7 +120,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
       onClick={() => setFinding((value) => !value)} />}
     {group === undefined ? null : <button type="button" className="mate-work-toggle" aria-label="分工"
       aria-pressed={division} onClick={() => setDivision((value) => !value)}>
-      <Icon name="tasks" size={15} />分工
+      <Icon name="tasks" size={16} />分工
       {groupWaiting(group, lines) === 0 ? null
         : <span className="mate-wait-count">等你 {groupWaiting(group, lines)}</span>}</button>}
     {(

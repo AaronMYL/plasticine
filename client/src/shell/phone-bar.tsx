@@ -41,9 +41,9 @@ const LABELS: Readonly<Record<PhoneTabId, string>> = {
 function TabIcon({ tab }: { tab: PhoneTabId }): ReactNode {
   // 第13批：底栏的 Plasticine 是主线的头像，跟着主线在做什么动。
   if (tab === 'plasticine') return <MainAvatar size={26} />;
-  if (tab === 'more') return <Icon name="more" size={22} />;
+  if (tab === 'more') return <Icon name="more" size={20} />;
   const icon = SECTIONS[tab].icon;
-  return icon === 'mark' ? <PlasticineMark size={22} /> : <Icon name={icon} size={22} />;
+  return icon === 'mark' ? <PlasticineMark size={22} /> : <Icon name={icon} size={20} />;
 }
 
 export function PhoneBar({ route, hidden = false, waiting = 0, onTab }: PhoneBarProps): ReactNode {
@@ -88,7 +88,7 @@ export function MoreDrawer({ open, waiting, onClose, onItem, onSettings }: { ope
         })}
       </ul>
       <button type="button" className="more-settings" onClick={onSettings}>
-        <Icon name="settings" size={18} />
+        <Icon name="settings" size={20} />
         <span>设置</span>
         <Icon name="chevron-right" size={14} />
       </button>

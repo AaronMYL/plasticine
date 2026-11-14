@@ -13,8 +13,8 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
   border-bottom: 1px solid var(--line);
 }
 
@@ -28,21 +28,21 @@
   display: flex;
   flex: 1;
   align-items: baseline;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
 .bk-bar-title strong {
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .bk-bar-title span {
   overflow: hidden;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -55,14 +55,14 @@
   right: -4px;
   min-width: 16px;
   height: 16px;
-  padding: 0 4px;
-  border-radius: 999px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
   background: var(--bg);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg);
   font-family: var(--mono);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-variant-numeric: tabular-nums;
 }
 
@@ -70,10 +70,10 @@
   width: 36px;
   height: 36px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: none;
   color: var(--fg2);
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 500;
   cursor: pointer;
 }
@@ -91,14 +91,14 @@
   position: absolute;
   top: 56px;
   right: 16px;
-  z-index: 15;
+  z-index: var(--z-menu);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   width: 280px;
   max-width: calc(100% - 32px);
-  padding: 12px;
-  border-radius: 12px;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
   background: var(--layer-float);
   box-shadow: var(--lift);
 }
@@ -107,12 +107,12 @@
 .bk-type-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .bk-type-label {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -126,7 +126,7 @@
   flex: 1;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .bk-type-size {
@@ -137,7 +137,7 @@
 /* 另一台设备读到了别处：全站那一种页内横条（11-14 界面统一），这里只管位置。 */
 .bk-banner {
   flex: none;
-  margin: 8px 24px 0;
+  margin: var(--space-2) var(--space-5) 0;
 }
 
 .bk-page {
@@ -145,12 +145,12 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 32px 24px 48px;
+  padding: var(--space-6) var(--space-5) var(--space-7);
 }
 
 /* 页边放批注时把正文往左让出页边那一列（168 + 间隔 24）。 */
 .bk-reader[data-margins='true'] .bk-page {
-  padding-right: 216px;
+  padding-right: 216px; /* 例外：页边留给批注 */
 }
 
 .bk-text {
@@ -160,17 +160,17 @@
 }
 
 .bk-chapter-title {
-  margin: 0 0 4px;
-  font-size: 15px;
-  line-height: 24px;
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
   white-space: pre-wrap;
 }
 
 .bk-chapter-meta {
-  margin: 0 0 24px;
-  font-size: 12px;
-  line-height: 18px;
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -182,43 +182,43 @@
 }
 
 .bk-content p {
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-4);
   text-align: justify;
 }
 
 .bk-content h2,
 .bk-content h3,
 .bk-content h4 {
-  margin: 24px 0 12px;
-  font-size: 15px;
-  line-height: 24px;
+  margin: var(--space-5) 0 var(--space-3);
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .bk-content blockquote {
-  margin: 0 0 16px;
-  padding-left: 16px;
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-4);
   border-left: 1px solid var(--line2);
   color: var(--fg2);
 }
 
 .bk-content ul,
 .bk-content ol {
-  margin: 0 0 16px;
-  padding-left: 24px;
+  margin: 0 0 var(--space-4);
+  padding-left: var(--space-5);
 }
 
 .bk-content pre {
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-4);
   overflow-x: auto;
   font-family: var(--mono);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   white-space: pre-wrap;
 }
 
 .bk-content hr {
-  margin: 24px 0;
+  margin: var(--space-5) 0;
   border: 0;
   border-top: 1px solid var(--line);
 }
@@ -227,17 +227,17 @@
   display: block;
   max-width: 100%;
   height: auto;
-  margin: 16px auto;
+  margin: var(--space-4) auto;
 }
 
 .bk-content rt {
-  font-size: 11px;
+  font-size: var(--text-tag);
   color: var(--fg2);
 }
 
 /* 高亮四色：只做文字底（tokens.css 的 --hl-*）。 */
 .bk-hl {
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--hl-ochre);
   cursor: pointer;
   -webkit-box-decoration-break: clone;
@@ -273,8 +273,8 @@
 }
 
 .bk-flash {
-  border-radius: 2px;
-  animation: bk-flash 1600ms ease-out;
+  border-radius: var(--radius-sm);
+  animation: bk-flash var(--motion-pulse) var(--ease-out);
 }
 
 @keyframes bk-flash {
@@ -293,14 +293,14 @@
 .bk-note-mark {
   display: inline-block;
   min-width: 14px;
-  margin-left: 2px;
+  margin-left: var(--space-hair);
   padding: 0;
   border: 0;
   background: none;
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 11px;
-  line-height: 11px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   vertical-align: super;
   cursor: pointer;
 }
@@ -322,10 +322,10 @@
   position: absolute;
   left: 0;
   width: 168px;
-  padding-left: 8px;
+  padding-left: var(--space-2);
   border-left: 1px solid var(--fg3);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -351,8 +351,8 @@
 
 .bk-margin-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 4px;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
 }
 
 /* ---------- 章末、底栏 ---------- */
@@ -360,9 +360,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-top: 32px;
-  padding-top: 16px;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--line);
 }
 
@@ -377,17 +377,17 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 16px;
-  padding: 10px 24px;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
   border-top: 1px solid var(--line);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 /* 对话栏收起时右下有 48 的圆球：底栏右边让出圆球的位置（手机阅读页不画圆球，不让）。 */
 .shell:not(:has(.chat-column)) .bk-reader:not(.bk-phone-reader) .bk-foot {
-  padding-right: 88px;
+  padding-right: 88px; /* 例外：给右下角的圆球让出地方 */
 }
 
 .bk-foot .bk-progress {
@@ -407,11 +407,11 @@
 
 /* ---------- 手机：标签栏和对话圆钮不画，正文 17/30，左对齐 ---------- */
 .bk-phone-reader .bk-bar {
-  padding: 8px;
+  padding: var(--space-2);
 }
 
 .bk-phone-reader .bk-page {
-  padding: 20px 20px 48px;
+  padding: var(--space-5) var(--space-5) var(--space-7);
 }
 
 .bk-phone-reader .bk-content p {
@@ -419,5 +419,5 @@
 }
 
 .bk-phone-reader .bk-foot {
-  padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+  padding: var(--space-3) var(--space-5) calc(var(--space-3) + env(safe-area-inset-bottom));
 }

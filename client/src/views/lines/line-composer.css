@@ -2,21 +2,21 @@
 
 .line-composer-dock {
   flex: none;
-  padding: 8px 0 24px;
+  padding: var(--space-2) 0 var(--space-5);
 }
 
 .line-composer {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .line-input-box {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border-radius: 12px;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
   background: var(--layer-float);
   box-shadow: inset 0 0 0 1px var(--line2);
   transition: box-shadow var(--motion-fast) var(--ease-out);
@@ -29,7 +29,7 @@
 .line-queue {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -38,16 +38,16 @@
 .line-queued-author {
   flex: none;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .line-queued {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 32px;
-  padding: 0 4px 0 10px;
-  border-radius: 8px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border-radius: var(--radius);
   background: var(--tint2);
 }
 
@@ -61,8 +61,8 @@
   min-width: 0;
   overflow: hidden;
   color: var(--fg2);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -70,18 +70,18 @@
 .line-queued-error {
   flex: none;
   color: var(--err);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .line-queued-now {
   flex: none;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .line-queued-state {
   flex: none;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .line-queued-withdraw {
@@ -92,7 +92,7 @@
 .line-quotes {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .line-input {
@@ -100,13 +100,13 @@
   min-height: 26px;
   max-height: 200px;
   box-sizing: border-box;
-  padding: 4px 4px 0;
+  padding: var(--space-1) var(--space-1) 0;
   border: 0;
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   resize: none;
   field-sizing: content;
   outline: none;
@@ -119,7 +119,7 @@
 .line-input-tools {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .line-input-spacer {
@@ -129,15 +129,15 @@
 .line-model {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 28px;
-  padding: 0 6px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   cursor: pointer;
 }
 
@@ -148,7 +148,7 @@
 
 .line-model-error {
   color: var(--err);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .line-stop,
@@ -160,7 +160,7 @@
   height: 32px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
 }
 
@@ -191,8 +191,8 @@
 
 .line-composer-note {
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .line-composer-note.is-error {
@@ -201,21 +201,24 @@
 
 
 /* 当前页来源在发送前可见，名称和实际范围分开，移除仍保留输入。 */
-.line-page-source { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.line-page-source { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .line-source-chip {
-  display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 32px; padding: 0 4px 0 8px;
-  border-radius: 4px; background: var(--tint2); color: var(--fg2); font-size: 12px; line-height: 18px;
+  display: flex; align-items: center; gap: var(--space-2); min-width: 0; min-height: 32px;
+    padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-sm); background: var(--tint2); color: var(--fg2); font-size: var(--text-caption);
+    line-height: var(--text-caption-line);
 }
 .line-source-chip > svg { flex: none; }
 .line-source-kind { flex: none; }
 .line-source-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg); }
-.line-source-scope { margin-left: auto; flex: none; font-size: 11px; }
+.line-source-scope { margin-left: auto; flex: none; font-size: var(--text-tag); }
 .line-source-chip .icon-button { flex: none; width: 24px; height: 24px; }
-.line-source-error { padding: 0 8px; color: var(--err); font-size: 12px; line-height: 18px; }
-.line-source-actions { display: flex; gap: 16px; }
-.line-source-actions .text-button { font-size: 12px; }
+.line-source-error { padding: 0 var(--space-2); color: var(--err); font-size: var(--text-caption);
+  line-height: var(--text-caption-line); }
+.line-source-actions { display: flex; gap: var(--space-4); }
+.line-source-actions .text-button { font-size: var(--text-caption); }
 @media (max-width: 767px) {
-  .line-source-chip { flex-wrap: wrap; padding-right: 0; gap: 4px 8px; }
+  .line-source-chip { flex-wrap: wrap; padding-right: 0; gap: var(--space-1) var(--space-2); }
   .line-source-chip .line-source-title { flex: 1; }
   .line-source-chip .icon-button { width: 44px; height: 44px; }
   .line-source-actions .text-button { min-height: 44px; }

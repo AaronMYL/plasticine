@@ -46,7 +46,7 @@ const ASK_ICON: Readonly<Record<AskView['kind'], IconName>> = {
 export function AskTag({ ask }: { ask: Pick<AskView, 'kind' | 'kindLabel'> }): ReactNode {
   const urgent = ask.kind === 'act' || ask.kind === 'approve';
   return <span className="ask-glyph" data-urgent={urgent} role="img" aria-label={ask.kindLabel} title={ask.kindLabel}>
-    <Icon name={ASK_ICON[ask.kind]} size={13} />
+    <Icon name={ASK_ICON[ask.kind]} size={14} />
   </span>;
 }
 

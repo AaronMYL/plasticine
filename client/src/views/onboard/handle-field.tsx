@@ -86,7 +86,7 @@ export function HandleField({ id, value, onChange, check, disabled = false }: { 
           spellCheck={false} maxLength={25} aria-invalid={bad || undefined} aria-describedby={`${id}-state ${id}-url`}
           onChange={(event) => onChange(event.target.value.toLowerCase())} />
         <span id={`${id}-state`} className="ob-suffix" data-tone={suffix?.tone ?? ''} role="status">
-          {check.kind === 'ok' ? <Icon name="check" size={13} /> : null}
+          {check.kind === 'ok' ? <Icon name="check" size={14} /> : null}
           {suffix?.text ?? ''}
         </span>
       </div>

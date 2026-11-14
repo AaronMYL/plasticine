@@ -41,7 +41,7 @@ export function PageHeader({ title, meta, controls, phoneTools, phoneSearch = tr
       {controls === undefined ? null : <div className="page-head-controls">{controls}</div>}
       {phone && (phoneSearch || phoneTools !== undefined) ? (
         <div className="page-head-tools">
-          {phoneSearch ? <IconButton icon="search" label="查找内容" size={17}
+          {phoneSearch ? <IconButton icon="search" label="查找内容" size={20}
             onClick={() => openPanel({ kind: 'search' })} /> : null}
           {phoneTools}
         </div>

@@ -258,11 +258,11 @@ describe('悬停提示 · 位置与样式', () => {
     const base = rules.find((rule) => rule.selectorText === '.tooltip');
     expect(base?.style.background).toBe('var(--fg)');
     expect(base?.style.color).toBe('var(--bg)');
-    expect(base?.style.fontSize).toBe('12px');
-    expect(base?.style.lineHeight).toBe('18px');
+    expect(base?.style.fontSize).toBe('var(--text-caption)');
+    expect(base?.style.lineHeight).toBe('var(--text-caption-line)');
     expect(base?.style.fontWeight).toBe('500');
-    expect(base?.style.padding).toBe('4px 8px');
-    expect(base?.style.borderRadius).toBe('4px');
+    expect(base?.style.padding).toBe('var(--space-1) var(--space-2)');
+    expect(base?.style.borderRadius).toBe('var(--radius-sm)');
     expect(base?.style.boxShadow).toBe('');
     expect(base?.style.pointerEvents).toBe('none');
     const sides = rules.filter((rule) => rule.selectorText.startsWith('.tooltip[data-side='));

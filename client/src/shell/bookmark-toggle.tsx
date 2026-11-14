@@ -36,7 +36,7 @@ export function BookmarkToggle({ url, title, onError }: BookmarkToggleProps): Re
   return (
     <button type="button" className="web-address-bookmark" aria-label={label} aria-pressed={on} data-tip={label}
       data-tip-side="bottom" onClick={toggle}>
-      <Icon name={on ? 'bookmark-filled' : 'bookmark'} size={15} />
+      <Icon name={on ? 'bookmark-filled' : 'bookmark'} size={16} />
     </button>
   );
 }

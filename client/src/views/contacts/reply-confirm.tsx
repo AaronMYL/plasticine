@@ -36,7 +36,7 @@ function ReplyConfirmCard({ ask, name, group, onSelf }: { ask: AskView; name: st
     return (
       <section className="reply-confirm" aria-label="等你确认发不发">
         <p className="reply-confirm-head">
-          <span className="reply-confirm-tag"><Icon name="clock" size={13} />等你</span>
+          <span className="reply-confirm-tag"><Icon name="clock" size={14} />等你</span>
           Plasticine 想替你这样发，只有你看得到：
         </p>
         <textarea className="field-input reply-confirm-draft" aria-label="要发的话" rows={2} value={text}
@@ -54,7 +54,7 @@ function ReplyConfirmCard({ ask, name, group, onSelf }: { ask: AskView; name: st
   return (
     <section className="reply-confirm" aria-label={`等你确认怎么回${name}`}>
       <p className="reply-confirm-head">
-        <span className="reply-confirm-tag"><Icon name="clock" size={13} />等你</span>
+        <span className="reply-confirm-tag"><Icon name="clock" size={14} />等你</span>
         {group ? (draft === null ? 'Plasticine 没有把握回这句，等你来回。' : 'Plasticine 拿不准，想这样回：')
           : draft === null ? `Plasticine 没有把握回${name}，等你来回。` : `Plasticine 拿不准，想这样回${name}：`}
       </p>

@@ -8,9 +8,9 @@
   flex: none;
   place-items: center;
   overflow: hidden;
-  border-radius: 4px;
-  font-size: 11px;
-  line-height: 11px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-weight: 600;
 }
 

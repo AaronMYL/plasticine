@@ -2,15 +2,15 @@
    位置由 Floating UI 写 left / top（不用 transform），transform 留给出入场：从所在一侧 3px 外滑进来并淡入，
    出 --motion-fast（120ms），收三分之二（80ms）。减少动态效果时只淡入淡出。 */
 .tooltip {
-  z-index: 1000;
+  z-index: var(--z-tip);
   max-width: 320px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   background: var(--fg);
   color: var(--bg);
   font-family: var(--sans);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   white-space: pre-line;
@@ -61,10 +61,10 @@
   place-items: center;
   width: 24px;
   height: 24px;
-  margin: -4px 0;
+  margin: calc(-1 * var(--space-1)) 0;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--fg2);
   vertical-align: middle;
@@ -87,6 +87,6 @@
   .info-tip {
     width: 32px;
     height: 32px;
-    margin: -8px -4px;
+    margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-1));
   }
 }

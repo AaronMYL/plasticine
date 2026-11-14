@@ -134,7 +134,7 @@ export function AvatarCrop({ file, shape, onCancel, onSave }: AvatarCropProps): 
           <Icon name="image" size={12} />
           <input type="range" min={0} max={100} value={zoom} aria-label="放大缩小"
             onChange={(event) => setZoom(Number(event.target.value))} />
-          <Icon name="image" size={18} />
+          <Icon name="image" size={20} />
         </label>
         {error === null ? null : <p className="avatar-crop-error" role="alert">{error}</p>}
         <div className="avatar-crop-actions">

@@ -58,7 +58,7 @@ function QueueRow({ lineId, item }: { lineId: string; item: QueuedMessageView })
   };
   return (
     <li className="line-queued" aria-label={`排队的消息：${item.text}`}>
-      <span className="line-queued-icon" aria-hidden="true"><Icon name="clock" size={13} /></span>
+      <span className="line-queued-icon" aria-hidden="true"><Icon name="clock" size={14} /></span>
       {item.origin.kind === 'user' ? null : <span className="line-queued-author">{inputAuthor(item.origin)}</span>}
       <span className="line-queued-text">{splitReply(item.text).text}</span>
       {error === null ? null : <span className="line-queued-error" role="alert">{error}</span>}

@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -11,8 +11,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 8px 4px 8px 0;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1) var(--space-2) 0;
 }
 
 /* 别的文件的待发小条（第13批）：后缀 + 名字 + ×；传的时候底下一道进度。 */
@@ -20,16 +20,16 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   box-sizing: border-box;
   height: 30px;
   max-width: min(240px, 100%);
-  padding: 0 3px 0 6px;
+  padding: 0 var(--space-1) 0 var(--space-2);
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: var(--text-caption);
+  line-height: var(--text-tag-line);
 }
 .conv-attachment-chip[data-failed='true'] { box-shadow: inset 0 0 0 1px var(--err); }
 .attachment-chip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -48,13 +48,13 @@
   box-sizing: border-box;
   width: 34px;
   height: 40px;
-  padding-bottom: 5px;
-  border-radius: 6px;
+  padding-bottom: var(--space-1);
+  border-radius: var(--radius);
   background: var(--tint2);
   color: var(--fg2);
-  font-size: 11px;
+  font-size: var(--text-tag);
   font-weight: 600;
-  line-height: 12px;
+  line-height: var(--text-tag-line);
   clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
 }
 .file-ext::before {
@@ -64,10 +64,10 @@
   right: 0;
   width: 9px;
   height: 9px;
-  border-bottom-left-radius: 2px;
+  border-bottom-left-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--fg) 14%, transparent);
 }
-.file-ext[data-small='true'] { width: 16px; height: 20px; padding: 0; border-radius: 3px;
+.file-ext[data-small='true'] { width: 16px; height: 20px; padding: 0; border-radius: var(--radius-sm);
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); }
 .file-ext[data-small='true']::before { width: 6px; height: 6px; }
 
@@ -75,7 +75,7 @@
 .attachment-error {
   display: grid;
   grid-template-rows: 1fr;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   animation: attachment-error-in var(--motion-base) var(--ease-out);
   transition: grid-template-rows var(--motion-base) var(--ease-out), opacity var(--motion-base) var(--ease-out),
     margin-bottom var(--motion-base) var(--ease-out);
@@ -86,14 +86,14 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 4px 5px 12px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--err) 9%, var(--bg));
   color: color-mix(in srgb, var(--err) 78%, var(--fg));
-  font-size: 13px;
-  line-height: 18px;
+  font-size: var(--text-ui);
+  line-height: var(--text-caption-line);
 }
 .attachment-error-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .attachment-error-row .attachment-error-close { flex: none; width: 28px; height: 28px; color: inherit; }
@@ -105,7 +105,7 @@
   height: 2px;
   background: var(--err);
   transform-origin: left;
-  animation: attachment-error-life 6s linear forwards;
+  animation: attachment-error-life 6s linear forwards; /* 例外：出错那一句留 6 秒，进度条跟着走 */
 }
 @keyframes attachment-error-in { from { opacity: 0; transform: translateY(4px); } }
 @keyframes attachment-error-life { from { transform: scaleX(1); } to { transform: scaleX(0); } }
@@ -117,13 +117,13 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   box-sizing: border-box;
   height: 64px;
   max-width: min(220px, 100%);
-  padding: 8px 8px 20px;
+  padding: var(--space-2) var(--space-2) var(--space-5);
   border: 1px solid var(--line2);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--tint);
 }
 .conv-attachment-draft[data-image='true'] { width: 64px; padding: 0; }
@@ -134,15 +134,17 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.attachment-draft-image { width: 100%; height: 100%; overflow: hidden; border-radius: 8px; }
+.attachment-draft-image { width: 100%; height: 100%; overflow: hidden; border-radius: var(--radius); }
 .attachment-draft-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .attachment-draft-actions { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: center;
-  gap: 4px; border-radius: 0 0 8px 8px; background: var(--fg); color: var(--bg); }
-.attachment-draft-actions button { padding: 0 4px; height: 20px; border: 0; background: transparent; color: inherit;
-  font: inherit; font-size: 11px; cursor: pointer; }
+  gap: var(--space-1); border-radius: 0 0 var(--radius) var(--radius); background: var(--fg); color: var(--bg); }
+.attachment-draft-actions button { padding: 0 var(--space-1); height: 20px; border: 0; background: transparent;
+  color: inherit;
+  font: inherit; font-size: var(--text-tag); cursor: pointer; }
 .conv-attachment-draft .attachment-draft-remove { position: absolute; top: -6px; right: -6px; width: 20px;
-  height: 20px; border-radius: 50%; background: var(--fg); color: var(--bg); z-index: 1; }
-.attachment-draft-progress { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 8px;
+  height: 20px; border-radius: var(--radius-full); background: var(--fg); color: var(--bg); z-index: var(--z-raised); }
+.attachment-draft-progress { position: absolute; inset: 0; display: grid; place-items: center;
+  border-radius: var(--radius);
   background: color-mix(in srgb, var(--bg) 70%, transparent); pointer-events: none; }
 .attachment-progress-track { stroke: var(--line2); }
 .attachment-progress-arc { stroke: var(--fg); transform: rotate(-90deg); transform-origin: center;
@@ -156,7 +158,7 @@
 }
 
 .attachment-preview {
-  padding: 16px;
+  padding: var(--space-4);
   overflow: auto;
   overflow-wrap: anywhere;
 }
@@ -166,16 +168,16 @@
   max-width: 100%;
   max-height: 70vh;
   object-fit: contain;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .attachment-thumbnail { border: 0; padding: 0; background: transparent; width: 48px; height: 48px; flex-shrink: 0; }
-.attachment-thumbnail img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+.attachment-thumbnail img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); }
 .attachment-text { white-space: pre-wrap; font: inherit; }
-.attachment-source-options { display: flex; flex-direction: column; gap: 16px; padding: 20px; }
+.attachment-source-options { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); }
 
 .payment-card {
-  padding: 16px;
+  padding: var(--space-4);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -183,13 +185,13 @@
 .payment-fields {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .payment-fields label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -203,6 +205,6 @@
 .payment-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding-top: 12px;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
 }

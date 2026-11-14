@@ -2,7 +2,7 @@
 
 .proj-page {
   container-type: inline-size;
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .proj-new {
@@ -10,7 +10,7 @@
 }
 
 .proj-num {
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--fg);
 }
 
@@ -25,9 +25,9 @@
 .proj-health {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   white-space: nowrap;
 }
@@ -46,33 +46,33 @@
 .proj-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 112px 104px 72px 64px;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .proj-colhead {
-  padding-bottom: 8px;
+  padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--line);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   color: var(--fg2);
 }
 
 .proj-list {
-  margin: -16px 0 0;
+  margin: calc(-1 * var(--space-4)) 0 0;
   padding: 0;
   list-style: none;
 }
 
 .proj-row {
   align-items: start;
-  padding: 16px 0;
+  padding: var(--space-4) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .proj-row-main {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
   padding: 0;
   border: 0;
@@ -86,23 +86,23 @@
 .proj-row-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .proj-name {
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .proj-status {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .proj-next {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -110,17 +110,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 6px;
-  padding-top: 4px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-1) var(--space-2);
+  padding-top: var(--space-1);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .proj-wait {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .proj-due {
@@ -132,7 +132,7 @@
 
 .proj-due-note {
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .proj-overdue .proj-due-note {
@@ -141,13 +141,13 @@
 
 .proj-nodebar {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--space-hair);
 }
 
 .proj-seg {
   width: 10px;
   height: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--line2);
 }
 
@@ -166,18 +166,18 @@
 .proj-nodebar-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .proj-cell-tasks {
-  gap: 4px 8px;
+  gap: var(--space-1) var(--space-2);
 }
 
 .proj-new-form,
 .proj-edit {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   max-width: 40em;
 }
 
@@ -185,28 +185,28 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .proj-error {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--err);
 }
 
 .proj-textarea {
   height: auto;
-  padding: 8px 12px;
-  font-size: 14px;
-  line-height: 22px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   resize: vertical;
 }
 
 .proj-person-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 @container (max-width: 760px) {
@@ -217,13 +217,13 @@
   .proj-row {
     grid-template-columns: 1fr auto;
     grid-template-areas: 'main main' 'nodes due' 'tasks updated';
-    gap: 8px 16px;
+    gap: var(--space-2) var(--space-4);
   }
 
   .proj-row-main { grid-area: main; }
   .proj-cell-nodes { grid-area: nodes; }
   .proj-cell-tasks { grid-area: tasks; }
-  .proj-due { grid-area: due; flex-direction: row; gap: 6px; justify-self: end; }
+  .proj-due { grid-area: due; flex-direction: row; gap: var(--space-2); justify-self: end; }
   .proj-updated { grid-area: updated; justify-self: end; }
 }
 
@@ -234,13 +234,13 @@
 .proj-unfiled-targets {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .project-concerns {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .project-concerns-head {
@@ -257,7 +257,7 @@
 .proj-next {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .proj-health[data-proposed='true'] .dot {

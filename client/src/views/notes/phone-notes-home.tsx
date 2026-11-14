@@ -56,10 +56,10 @@ export function PhoneNotesHome({ onCollection, onOpen }: {
           <li key={row.label}>
             <button type="button" className="phone-folder" data-ai={row.icon === 'sparkle'}
               aria-label={`${row.label} ${row.count}`} onClick={() => onCollection(row.target)}>
-              <Icon name={row.icon} size={17} />
+              <Icon name={row.icon} size={16} />
               <span className="phone-folder-name">{row.label}</span>
               <span className="phone-folder-count">{row.count}</span>
-              <Icon name="chevron-right" size={15} />
+              <Icon name="chevron-right" size={16} />
             </button>
           </li>
         ))}

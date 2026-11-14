@@ -50,7 +50,7 @@ function Actions({ navigate, phone }: { navigate: (route: Route) => void; phone:
   if (phone) {
     return <>
       <IconButton icon="plus" size={20} label="添加技能" onClick={() => navigate(skillsRoute({ pane: 'add' }))} />
-      <IconButton icon="edit" size={18} label="新建技能" onClick={() => navigate(skillsRoute({ pane: 'new' }))} />
+      <IconButton icon="edit" size={20} label="新建技能" onClick={() => navigate(skillsRoute({ pane: 'new' }))} />
     </>;
   }
   return <>
@@ -75,7 +75,7 @@ function List({ data, selected, phone, navigate }: { data: SkillsData; selected:
   }, [all, kind, query]);
   return <section className="skills-list" aria-label="技能目录">
     {phone ? <PageHeader title="技能" phoneSearch={false} phoneTools={<>
-      <IconButton icon="search" size={18} label="找技能" aria-pressed={searching}
+      <IconButton icon="search" size={20} label="找技能" aria-pressed={searching}
         onClick={() => setSearching((value) => !value)} />
       <Actions navigate={navigate} phone />
     </>} /> : <header className="skills-list-head">

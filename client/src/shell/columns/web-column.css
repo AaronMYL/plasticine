@@ -15,8 +15,8 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 4px;
-  padding: 11px 8px 9px 12px;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2) var(--space-2) var(--space-3);
 }
 
 .web-search-field {
@@ -24,10 +24,10 @@
   flex: 1;
   min-width: 0;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   background: var(--bg);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
@@ -41,7 +41,7 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .web-search-field input::placeholder {
@@ -56,10 +56,10 @@
 .web-pins {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
-  padding: 0 12px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   list-style: none;
   transition: background-color var(--motion-fast) var(--ease-out);
 }
@@ -74,7 +74,7 @@
   width: 100%;
   height: 40px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--tint);
   cursor: pointer;
 }
@@ -91,17 +91,17 @@
 .web-group-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: calc(100% - 16px);
   height: 32px;
-  margin: 0 8px;
-  padding: 0 10px;
+  margin: 0 var(--space-2);
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   text-align: left;
   cursor: pointer;
 }
@@ -145,8 +145,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  margin: 0 8px;
-  border-radius: 8px;
+  margin: 0 var(--space-2);
+  border-radius: var(--radius);
   touch-action: none;
 }
 
@@ -169,22 +169,22 @@
   display: flex;
   flex: 1;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
   height: 32px;
-  padding: 0 8px 0 10px;
+  padding: 0 var(--space-2) 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
   text-align: left;
   cursor: pointer;
 }
 
 .web-tab-row[data-indent='true'] {
-  padding-left: 30px;
+  padding-left: var(--space-6);
 }
 
 .web-tab-row:focus-visible {
@@ -207,9 +207,9 @@
   place-items: center;
   width: 22px;
   height: 22px;
-  margin-right: 6px;
+  margin-right: var(--space-2);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg3);
   opacity: 0;
@@ -240,10 +240,10 @@
   position: absolute;
   right: 16px;
   left: 16px;
-  z-index: 3;
+  z-index: var(--z-raised);
   height: 2px;
-  margin-top: -1px;
-  border-radius: 1px;
+  margin-top: calc(-1 * var(--space-px));
+  border-radius: var(--radius-full);
   background: var(--fg);
   pointer-events: none;
 }
@@ -254,12 +254,12 @@
 }
 
 .web-group-rename {
-  padding: 8px;
+  padding: var(--space-2);
 }
 
 .web-group-hues {
   max-width: 200px;
-  padding: 4px 8px 8px;
+  padding: var(--space-1) var(--space-2) var(--space-2);
 }
 
 @media (prefers-reduced-motion: reduce) {

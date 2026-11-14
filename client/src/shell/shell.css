@@ -33,9 +33,9 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 48px;
-  padding: 0 8px 0 16px;
+  padding: 0 var(--space-2) 0 var(--space-4);
   border-bottom: 1px solid var(--line);
 }
 
@@ -44,7 +44,7 @@
   display: flex;
   flex: 1;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   margin: 0;
   color: var(--fg2);
@@ -58,8 +58,8 @@
   min-width: 0;
   overflow: hidden;
   color: var(--fg);
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -73,14 +73,14 @@
   position: fixed;
   right: 24px;
   bottom: 24px;
-  z-index: 35;
+  z-index: var(--z-chrome);
   display: grid;
   place-items: center;
   width: 56px;
   height: 56px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--fg);
   cursor: pointer;
@@ -95,7 +95,7 @@
 
 /* 对话圆球在右下角：贴右边、拉满高的浮层底下让出它；偏左、随内容高的（sheet-fit）碰不到球，不让。 */
 .shell:has(.chat-ball) .sheet-panel:not(.sheet-fit) .sheet-body {
-  padding-bottom: calc(56px + 24px + 16px);
+  padding-bottom: calc(56px + var(--space-5) + var(--space-4)); /* 例外：给右下角的圆球让出地方 */
 }
 
 .chat-ball-badge {
@@ -105,12 +105,12 @@
   display: inline-flex;
   align-items: center;
   height: 18px;
-  padding: 0 6px;
-  border-radius: 9px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius);
   background: var(--accent);
   color: var(--bg);
-  font-size: 11px;
-  line-height: 18px;
+  font-size: var(--text-tag);
+  line-height: var(--text-caption-line);
   font-weight: 500;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -132,7 +132,7 @@
   flex: none;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   height: calc(64px + env(safe-area-inset-bottom));
-  padding: 8px 4px env(safe-area-inset-bottom);
+  padding: var(--space-2) var(--space-1) env(safe-area-inset-bottom);
   border-top: 1px solid var(--line);
   background: var(--layer-side);
 }
@@ -144,12 +144,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 3px;
+  gap: var(--space-1);
   border: 0;
   background: transparent;
   color: var(--fg2);
-  font-size: 11px;
-  line-height: 14px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   cursor: pointer;
   min-width: 0;
   white-space: nowrap;
@@ -164,13 +164,13 @@
   position: fixed;
   right: 16px;
   bottom: calc(56px + 16px + env(safe-area-inset-bottom));
-  z-index: 35;
+  z-index: var(--z-chrome);
   display: grid;
   place-items: center;
   width: 56px;
   height: 56px;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--fg);
   color: var(--bg);
   box-shadow: var(--lift);
@@ -189,13 +189,14 @@
   }
 }
 
-.phone-bar { transition: transform 120ms ease; }
+.phone-bar { transition: transform var(--motion-fast) var(--ease-out); }
 .phone-bar[data-hidden='true']:not(:focus-within) { transform: translateY(100%); }
 @media (prefers-reduced-motion: reduce) {
   .phone-bar { transition: none; }
 }
 
-.content-located { outline: 2px solid var(--fg2); outline-offset: 4px; animation: content-located 220ms ease-out; }
+.content-located { outline: 2px solid var(--fg2); outline-offset: 4px;
+  animation: content-located var(--motion-base) var(--ease-out); }
 @keyframes content-located { from { background-color: var(--tint2); } }
 @media (prefers-reduced-motion: reduce) { .content-located { animation: none; } }
 
@@ -206,7 +207,7 @@
   left: calc(50% + 8px);
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--accent);
 }
 
@@ -217,7 +218,7 @@
 .more-tiles {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -228,16 +229,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 10px 0;
+  padding: var(--space-3) 0;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 13px;
-  line-height: 18px;
+  font-size: var(--text-ui);
+  line-height: var(--text-caption-line);
   cursor: pointer;
 }
 
@@ -251,7 +252,7 @@
   left: calc(50% + 14px);
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--accent);
   outline: 2px solid var(--layer-float);
 }
@@ -259,10 +260,10 @@
 .more-settings {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
   min-height: 48px;
-  margin-top: 12px;
+  margin-top: var(--space-3);
   padding: 0;
   border: 0;
   border-top: 1px solid var(--line);
@@ -295,5 +296,5 @@
 }
 
 .more-drawer .sheet-body {
-  padding: 6px 16px calc(24px + env(safe-area-inset-bottom));
+  padding: var(--space-2) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
 }

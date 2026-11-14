@@ -6,6 +6,6 @@
   content: '';
   width: 62%;
   height: 62%;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--tile-hue) 18%, transparent);
 }

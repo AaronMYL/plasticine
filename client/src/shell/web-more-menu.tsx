@@ -48,7 +48,7 @@ function sections(parts: ReactNode[][]): ReactNode[] {
 function Quick({ icon, label, onSelect }: { icon: IconName; label: string; onSelect: () => void }): ReactNode {
   return (
     <button type="button" role="menuitem" className="web-quick" onClick={onSelect}>
-      <Icon name={icon} size={18} />
+      <Icon name={icon} size={20} />
       <span>{label}</span>
     </button>
   );
@@ -57,7 +57,7 @@ function Quick({ icon, label, onSelect }: { icon: IconName; label: string; onSel
 function ZoomRow({ zoom, onZoom }: { zoom: number; onZoom: (factor: number) => void }): ReactNode {
   return (
     <div className="web-zoom-row">
-      <Icon name="expand" size={15} />
+      <Icon name="expand" size={16} />
       <span className="popover-item-label">缩放</span>
       <span className="web-zoom" role="group" aria-label="缩放">
         <button type="button" role="menuitem" aria-label="缩小" onClick={() => onZoom(zoomStep(zoom, -1))}>−</button>

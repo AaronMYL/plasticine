@@ -6,38 +6,38 @@
 .ai-models {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: var(--space-5);
 }
 
 /* 第13批（设计稿 PredictSettings）：一栏，按用在哪儿分组；每组一个标题，下面一组带细框的行。 */
 .ai-groups {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: var(--space-5);
 }
 
 .ai-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .ai-group-head {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-hair);
 }
 
 .ai-group-title {
   margin: 0;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .ai-list {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
@@ -45,8 +45,8 @@
 .ai-list > .ai-use-group > .ai-use,
 .ai-list .ai-provider,
 .ai-list .tool-group-row {
-  padding-left: 14px;
-  padding-right: 10px;
+  padding-left: var(--space-4);
+  padding-right: var(--space-3);
   border-top: 1px solid var(--line);
   border-bottom: 0;
 }
@@ -65,20 +65,20 @@
 }
 
 .ai-list .tool-group-row {
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
 }
 
 .ai-use-sub {
-  margin-left: 8px;
+  margin-left: var(--space-2);
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .ai-use-static {
   flex: none;
-  padding: 0 8px;
-  font-size: 12px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-caption);
 }
 
 .ai-use-static[data-quiet='true'] {
@@ -86,17 +86,17 @@
 }
 
 .ai-use-error {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   color: var(--err);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .ai-use-select {
   flex: none;
   width: auto;
   height: 30px;
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 .ai-pane {
@@ -108,16 +108,16 @@
 .ai-pane-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 32px;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
 
 .ai-pane-head > h3 {
   flex: 1;
   margin: 0;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
@@ -127,7 +127,7 @@
 
 .ai-use-search > .search-input {
   height: 28px;
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 /* ---------- 左：每家一行 ---------- */
@@ -142,25 +142,25 @@
 
 .ai-provider {
   border-top: 1px solid var(--line);
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .ai-provider-head {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .ai-provider-toggle {
   display: flex;
   flex: 1;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   height: 40px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
@@ -186,7 +186,7 @@
 .ai-provider-method,
 .ai-provider-count {
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   white-space: nowrap;
 }
 
@@ -204,14 +204,14 @@
 .ai-provider-models {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 2px 0 8px 18px;
+  gap: var(--space-2);
+  padding: var(--space-hair) 0 var(--space-2) var(--space-4);
 }
 
 .ai-provider-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 16px;
+  gap: 0 var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -220,9 +220,9 @@
 .ai-provider-model {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 32px;
-  font-size: 14px;
+  font-size: var(--text-body);
   cursor: pointer;
 }
 
@@ -242,8 +242,8 @@
 }
 
 .ai-add {
-  margin-bottom: 12px;
-  padding: 8px 0 12px;
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) 0 var(--space-3);
   border-top: 1px solid var(--line);
 }
 
@@ -265,12 +265,12 @@
 .ai-use-line {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 40px;
 }
 
 .ai-use[data-nested='true'] .ai-use-line {
-  padding-left: 20px;
+  padding-left: var(--space-5);
 }
 
 .ai-list .ai-use[data-nested='true'] {
@@ -292,7 +292,7 @@
 .ai-use-fold {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 40px;
   padding: 0;
   border: 0;
@@ -312,16 +312,16 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   max-width: 62%;
   height: 28px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
 }
 
@@ -353,14 +353,14 @@
 .ai-use-issue {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin: -6px 0 0;
-  padding: 0 8px 8px 0;
+  gap: var(--space-2);
+  margin: calc(-1 * var(--space-2)) 0 0;
+  padding: 0 var(--space-2) var(--space-2) 0;
   color: var(--err);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .ai-use[data-nested='true'] .ai-use-issue {
-  padding-left: 16px;
+  padding-left: var(--space-4);
 }

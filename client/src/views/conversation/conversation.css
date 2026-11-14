@@ -17,8 +17,8 @@
 .model-choice {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-block: 12px;
+  gap: var(--space-3);
+  margin-block: var(--space-3);
 }
 
 .model-choice label {

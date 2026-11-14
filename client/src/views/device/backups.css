@@ -1,15 +1,15 @@
 .backup-detail {
-  padding: 16px;
+  padding: var(--space-4);
   overflow-wrap: anywhere;
 }
 .backup-restore-card {
-  margin: 16px;
+  margin: var(--space-4);
   overflow-wrap: anywhere;
 }
 .backup-restore-card pre {
   white-space: pre-wrap;
   font: inherit;
-  margin: 8px 0;
+  margin: var(--space-2) 0;
 }
 .backup-detail .tool-row {
   flex-wrap: wrap;
@@ -17,16 +17,16 @@
 .backup-comparison {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
+  gap: var(--space-4);
 }
 .backup-comparison section {
   min-width: 0;
 }
 .backup-comparison details {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 .backup-comparison summary {
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
 }

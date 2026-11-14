@@ -14,10 +14,10 @@
 .group-avatar {
   display: inline-grid;
   flex: none;
-  gap: 1px;
-  padding: 2px;
+  gap: var(--space-px);
+  padding: var(--space-hair);
   box-sizing: border-box;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--tint2);
   overflow: hidden;
 }
@@ -43,10 +43,10 @@
   min-height: 0;
   width: 100%;
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--accent) 14%, var(--bg));
   color: var(--fg);
-  font-size: 11px;
+  font-size: var(--text-tag);
   font-weight: 500;
   line-height: 1;
   overflow: hidden;
@@ -70,7 +70,7 @@
 }
 
 .face-stack > * + * {
-  margin-left: -6px;
+  margin-left: calc(-1 * var(--space-2));
 }
 
 .face-stack .contact-avatar {
@@ -81,14 +81,14 @@
 
 .add-menu {
   position: absolute;
-  z-index: var(--layer-float);
+  z-index: var(--z-float);
   top: 44px;
   right: 0;
   display: flex;
   flex-direction: column;
   width: 232px;
-  padding: 6px;
-  border-radius: 12px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
   background: var(--bg);
   box-shadow: var(--lift);
 }
@@ -96,15 +96,15 @@
 .add-menu-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   height: 36px;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
   text-align: left;
   cursor: pointer;
 }
@@ -125,7 +125,7 @@
   display: flex;
   flex: 1;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
@@ -136,7 +136,7 @@
 .ct-head .ct-count {
   color: var(--fg2);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 /* ---------- 一句话：@ 谁的 Plasticine、群里说话的人 ---------- */
@@ -144,8 +144,8 @@
 .cm-mention {
   display: inline-flex;
   align-items: baseline;
-  gap: 1px;
-  margin-right: 4px;
+  gap: var(--space-px);
+  margin-right: var(--space-1);
   font-weight: 500;
 }
 
@@ -154,10 +154,10 @@
 }
 
 .cm-sender {
-  margin: 0 0 2px 32px;
+  margin: 0 0 var(--space-hair) var(--space-6);
   color: var(--fg2);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
 }
 
 .cm-group-line {
@@ -180,7 +180,7 @@
 
 /* 群里 Plasticine 的话上面一行：是谁的。 */
 .cm-ai-owner[data-side='me'] {
-  margin: 0 32px 2px 0;
+  margin: 0 var(--space-6) var(--space-hair) 0;
 }
 
 .cm-group-line[data-side='me'] > .cm-line {
@@ -197,14 +197,14 @@
 
 .mention-menu {
   position: absolute;
-  z-index: var(--layer-float);
+  z-index: var(--z-float);
   bottom: calc(100% + 8px);
   left: 0;
   display: flex;
   flex-direction: column;
   width: 312px;
-  padding: 6px;
-  border-radius: 12px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
   background: var(--bg);
   box-shadow: var(--lift);
 }
@@ -212,15 +212,15 @@
 .mention-option {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   height: 44px;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
   text-align: left;
   cursor: pointer;
 }
@@ -234,7 +234,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--tint2);
   color: var(--fg2);
 }
@@ -242,21 +242,21 @@
 .composer-mentions {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
   max-width: 60%;
-  padding-block: 4px;
+  padding-block: var(--space-1);
 }
 
 .composer-mention {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-hair);
   height: 24px;
-  padding: 0 8px;
-  border-radius: 4px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
   background: var(--tint2);
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -265,16 +265,16 @@
 
 .task-compose {
   position: absolute;
-  z-index: var(--layer-float);
+  z-index: var(--z-float);
   right: 24px;
   bottom: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   width: min(600px, calc(100% - 48px));
   box-sizing: border-box;
-  padding: 16px 16px 16px;
-  border-radius: 12px;
+  padding: var(--space-4) var(--space-4) var(--space-4);
+  border-radius: var(--radius-lg);
   background: var(--bg);
   box-shadow: var(--lift);
 }
@@ -282,10 +282,10 @@
 .task-compose-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
+  gap: var(--space-2);
+  font-size: var(--text-section);
   font-weight: 600;
-  line-height: 24px;
+  line-height: var(--text-section-line);
 }
 
 .task-compose-head > span {
@@ -295,15 +295,15 @@
 .task-compose-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .task-compose-to {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 36px;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .task-compose-select {
@@ -313,17 +313,17 @@
 .task-compose-picker {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   height: 36px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--bg);
   box-shadow: inset 0 0 0 1px var(--fg);
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
   text-align: left;
   cursor: pointer;
 }
@@ -334,21 +334,21 @@
 
 .task-compose-options {
   position: absolute;
-  z-index: var(--layer-float);
+  z-index: var(--z-float);
   top: calc(100% + 4px);
   left: 0;
   display: flex;
   flex-direction: column;
   width: 272px;
-  padding: 6px;
-  border-radius: 12px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
   background: var(--bg);
   box-shadow: var(--lift);
 }
 
 .task-compose-options hr {
   width: 100%;
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   border: 0;
   border-top: 1px solid var(--line);
 }
@@ -356,10 +356,10 @@
 .task-compose-date {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 36px;
-  padding: 0 12px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
 }
@@ -371,7 +371,7 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .task-compose-goal {
@@ -382,35 +382,35 @@
 .task-compose-foot {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .task-compose-foot .task-compose-hint {
   display: inline-flex;
   flex: 1;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .task-compose-files {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .task-compose-file {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   height: 28px;
-  padding: 0 10px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   background: var(--tint2);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 /* ---------- 右边整块：加好友、新建群聊、邀请、新请求 ---------- */
@@ -426,53 +426,53 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 56px;
-  padding: 0 16px 0 24px;
+  padding: 0 var(--space-4) 0 var(--space-5);
   border-bottom: 1px solid var(--line);
 }
 
 .net-pane-head h2 {
   flex: 1;
   margin: 0;
-  font-size: 15px;
+  font-size: var(--text-section);
   font-weight: 600;
-  line-height: 24px;
+  line-height: var(--text-section-line);
 }
 
 .net-pane-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 32px 24px 48px;
+  padding: var(--space-6) var(--space-5) var(--space-7);
 }
 
 .net-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   width: min(480px, 100%);
   margin: 0 auto;
 }
 
 .net-form .field-label {
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 500;
 }
 
 .net-form .field-label small {
   color: var(--fg2);
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 400;
 }
 
 .net-handle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   height: 40px;
-  padding: 0 12px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
@@ -492,37 +492,37 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .net-person {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
 .net-person-name {
   display: flex;
   flex-direction: column;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: var(--text-body);
+  line-height: var(--text-ui-line);
 }
 
 .net-person-name small {
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .net-or {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .net-or::before,
@@ -536,29 +536,29 @@
 .net-scan {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 .net-scan-side {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 500;
 }
 
 .net-copy {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 36px;
-  padding: 0 4px 0 12px;
-  border-radius: 8px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border-radius: var(--radius);
   background: var(--tint2);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 400;
 }
 
@@ -578,23 +578,23 @@
 
 .net-share {
   margin: 0;
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
   background: var(--tint2);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   white-space: pre-wrap;
 }
 
 .net-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .net-actions .net-count {
   color: var(--fg2);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 .net-pick {
@@ -605,7 +605,7 @@
 .net-pick label {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 52px;
   border-bottom: 1px solid var(--line);
   cursor: pointer;
@@ -621,10 +621,10 @@
 .net-search {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 40px;
-  padding: 0 12px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
 }
@@ -637,25 +637,25 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .net-request {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   width: min(440px, 100%);
   box-sizing: border-box;
   margin: 0 auto;
-  padding: 20px;
-  border-radius: 12px;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line2);
 }
 
 .net-request-who {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .net-request-who .net-person-name {
@@ -664,11 +664,11 @@
 }
 
 .net-request-note {
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius);
   background: var(--tint2);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .net-request .segmented {
@@ -681,7 +681,7 @@
 }
 
 .contacts[data-phone='true'] .net-pane-body {
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .contacts[data-phone='true'] .net-form {
@@ -693,31 +693,31 @@
   flex: none;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   color: var(--fg2);
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 .net-wide {
   justify-content: center;
   width: 100%;
   height: 44px;
-  font-size: 15px;
+  font-size: var(--text-section);
 }
 
 /* ---------- 群菜单 ---------- */
 
 .group-menu {
   position: absolute;
-  z-index: var(--layer-float);
+  z-index: var(--z-float);
   top: 48px;
   right: 8px;
   display: flex;
   flex-direction: column;
   width: 292px;
-  padding: 8px;
-  border-radius: 12px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
   background: var(--bg);
   box-shadow: var(--lift);
 }
@@ -725,15 +725,15 @@
 .group-menu-members {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-3);
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .group-menu hr {
   width: 100%;
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   border: 0;
   border-top: 1px solid var(--line);
 }
@@ -741,28 +741,28 @@
 .group-menu-confirm {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius);
   background: var(--tint2);
 }
 
 .group-menu-confirm strong {
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 500;
 }
 
 .group-menu-confirm p {
   margin: 0;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .group-menu-field {
   display: flex;
-  gap: 8px;
-  padding: 4px 8px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
 }
 
 .ct-head {

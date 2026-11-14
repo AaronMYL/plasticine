@@ -107,8 +107,8 @@ function BackupBlock(): ReactNode {
       <ul className="system-rows">
         {rows.map((row) => (
           <li key={row.id} className="system-row" data-status={row.status}>
-            {row.status === 'ready' ? <span className="system-ok"><Icon name="check" size={15} /></span>
-              : <span className="system-row-icon"><Icon name={row.status === 'failed' ? 'alert' : 'clock'} size={15} />
+            {row.status === 'ready' ? <span className="system-ok"><Icon name="check" size={16} /></span>
+              : <span className="system-row-icon"><Icon name={row.status === 'failed' ? 'alert' : 'clock'} size={16} />
               </span>}
             <span className="system-row-title">{relativeTime(row.createdAt, now)} <span className="mono">
               {formatClock(row.createdAt, false, timeZone)}</span></span>

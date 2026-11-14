@@ -52,7 +52,7 @@ function Greeting({ now, phone }: { now: Date; phone: boolean }): ReactNode {
     <header className="home-greeting" data-phone="true">
       {title}
       <div className="home-greeting-tools">
-        <IconButton icon="search" label="查找内容" size={18} onClick={() => openPanel({ kind: 'search' })} />
+        <IconButton icon="search" label="查找内容" size={20} onClick={() => openPanel({ kind: 'search' })} />
         <button type="button" className="avatar home-avatar" aria-label={`设置 · ${name ?? DEFAULT_ACCOUNT_NAME}`}
           onClick={() => openPanel({ kind: 'settings' })}>
           {avatar === null ? accountInitial(name ?? DEFAULT_ACCOUNT_NAME)

@@ -135,3 +135,23 @@ test('官网只用登记的独立令牌，应用不能借官网令牌绕过字�
   ])));
   for (const line of [1, 2, 3, 4, 5, 6]) assert.ok(site.some((item) => item.line === line));
 });
+
+test('界面数值只用令牌（11-14 界面统一）：圆角、间距、行高、叠放层级、动效写死数字的不过，写了「例外：原因」的那一行放过', () => {
+  const diff = addedDiff('client/src/views/device/device.css', [
+    '.a { border-radius: 8px; }',
+    '.b { padding: 10px 16px; }',
+    '.c { gap: var(--space-2); margin: 0 calc(-1 * var(--space-4)); }',
+    '.d { line-height: 22px; }',
+    '.e { line-height: 1; z-index: var(--z-float); }',
+    '.f { z-index: 60; }',
+    '.g { transition: opacity 180ms ease-out; }',
+    '.h { transition: opacity var(--motion-base) var(--ease-out); animation: spin var(--motion-spin) linear infinite; }',
+    '.i { padding-bottom: 96px; } /* 例外：给右下角的圆球让出地方 */',
+    '.j { border-radius: 50%; }',
+    '.k { z-index: calc(var(--z-dialog) + 1); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }',
+    '.l { font-size: var(--text-body); line-height: var(--text-body-line); padding: 0; }',
+  ]);
+  const found = checkTokens(parseDiff(diff));
+  assert.deepEqual(found.map((entry) => [entry.kind, entry.line]),
+    [['number', 1], ['number', 2], ['number', 4], ['number', 6], ['number', 7], ['number', 10]]);
+});

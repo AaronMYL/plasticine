@@ -52,7 +52,7 @@ export function ChangePlace(): ReactNode {
   }
   return (
     <button type="button" className="ob-link" onClick={show}>
-      <Icon name="back" size={13} />换一个地方
+      <Icon name="back" size={14} />换一个地方
     </button>
   );
 }

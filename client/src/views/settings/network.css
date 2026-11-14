@@ -7,9 +7,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
   background: var(--tint2);
 }
 
@@ -17,8 +17,8 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: var(--space-1);
+  font-size: var(--text-caption);
   font-weight: 600;
   color: var(--accent);
 }
@@ -26,30 +26,30 @@
 .vis-suggest-text {
   flex: 1;
   min-width: 12em;
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 .vis-tier {
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .vis-tier-head {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  margin-bottom: 8px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .vis-tier-title {
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 600;
 }
 
 .vis-tier-who {
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--fg2);
 }
 
@@ -57,7 +57,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -66,14 +66,14 @@
 .vis-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   max-width: 100%;
   min-height: 30px;
-  padding: 0 4px 0 10px;
-  border-radius: 8px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border-radius: var(--radius);
   background: var(--layer-float);
   box-shadow: inset 0 0 0 1px var(--line2);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 /* 建议还没确认：虚线框（不靠颜色一样东西区分，形状也不同）。 */
@@ -85,7 +85,7 @@
 
 .vis-chip-kind {
   flex: none;
-  font-size: 11px;
+  font-size: var(--text-tag);
   color: var(--fg2);
 }
 
@@ -104,11 +104,11 @@
   height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
   cursor: pointer;
-  transition: background-color 160ms ease, color 160ms ease;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
 
 .vis-chip-action:hover:not(:disabled) {
@@ -129,25 +129,25 @@
 }
 
 .vis-none {
-  font-size: 13px;
+  font-size: var(--text-ui);
   color: var(--fg2);
 }
 
 .vis-add {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   min-height: 30px;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   cursor: pointer;
-  transition: background-color 160ms ease, color 160ms ease;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
 
 .vis-add:hover,
@@ -159,27 +159,27 @@
 .vis-rest {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 12px 0 0;
-  font-size: 13px;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-ui);
   color: var(--fg2);
 }
 
 .vis-picker {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   width: 288px;
-  padding: 8px;
+  padding: var(--space-2);
 }
 
 .vis-picker-search {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 34px;
-  padding: 0 10px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
 }
@@ -203,7 +203,7 @@
 .vis-picker-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-hair);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -212,16 +212,16 @@
 .vis-picker-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
   min-height: 36px;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   text-align: left;
   cursor: pointer;
 }
@@ -243,8 +243,8 @@
 
 .vis-picker-empty {
   margin: 0;
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-caption);
   color: var(--fg2);
 }
 
@@ -291,15 +291,15 @@
 .notice-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   min-height: 40px;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   border: 0;
   background: transparent;
   color: var(--fg);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-align: left;
   cursor: pointer;
 }
@@ -323,14 +323,14 @@
 }
 
 .notice-time {
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--fg2);
 }
 
 .notice-body {
-  padding: 0 0 12px;
-  font-size: 13px;
-  line-height: 20px;
+  padding: 0 0 var(--space-3);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   color: var(--fg2);
 }
 

@@ -37,8 +37,8 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--sans);
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
@@ -80,14 +80,14 @@ h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 32px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--fg);
   color: var(--bg);
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 500;
   cursor: pointer;
 }
@@ -102,15 +102,15 @@ h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 28px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg);
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
 }
 
@@ -124,7 +124,7 @@ h3 {
   border: 0;
   background: transparent;
   color: var(--fg);
-  font-size: 12px;
+  font-size: var(--text-caption);
   text-decoration: underline;
   text-decoration-color: var(--line2);
   text-underline-offset: 3px;
@@ -150,7 +150,7 @@ h3 {
   height: 32px;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
   cursor: pointer;
@@ -176,12 +176,12 @@ h3 {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .field-label {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -189,14 +189,14 @@ h3 {
 .field-label-row {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 /* 字段下面常显的一句（做了要花钱、收不回这类后果）：12/18 --fg2。 */
 .field-hint {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   white-space: pre-line;
 }
@@ -204,13 +204,13 @@ h3 {
 .field-input,
 .search-input {
   height: 36px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg);
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 /* 第 92 条：来源、时间、w 混着中文时沿用正文字体，数字等宽，避免中文回退到宋体。 */
@@ -233,8 +233,8 @@ h3 {
 textarea.field-input {
   height: auto;
   min-height: 64px;
-  padding: 8px 12px;
-  line-height: 22px;
+  padding: var(--space-2) var(--space-3);
+  line-height: var(--text-body-line);
   resize: vertical;
 }
 
@@ -245,7 +245,7 @@ textarea.field-input {
   flex: none;
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--fg3);
 }
 
@@ -281,10 +281,10 @@ textarea.field-input {
 
 .tag {
   display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 11px;
-  line-height: 16px;
+  padding: var(--space-px) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -314,9 +314,9 @@ textarea.field-input {
 .page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-5);
   min-height: 100%;
-  padding: 24px 32px 48px;
+  padding: var(--space-5) var(--space-6) var(--space-7);
 }
 
 /*
@@ -347,7 +347,7 @@ textarea.field-input {
   grid-template-areas: 'title controls tools';
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .page-head:not(:has(.page-head-controls)) {
@@ -374,26 +374,26 @@ textarea.field-input {
   flex-wrap: wrap;
   align-items: center;
   min-width: 0;
-  gap: 4px 12px;
+  gap: var(--space-1) var(--space-3);
 }
 
 .page-head-title h1 {
-  font-size: 24px;
-  line-height: 32px;
+  font-size: var(--text-title);
+  line-height: var(--text-title-line);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .page-head-meta {
   flex-basis: 100%;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .page-head-status {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -401,7 +401,7 @@ textarea.field-input {
   grid-area: tools;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .page-head-controls {
@@ -409,7 +409,7 @@ textarea.field-input {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -418,13 +418,13 @@ textarea.field-input {
 }
 
 .page-back {
-  margin-left: -8px;
+  margin-left: calc(-1 * var(--space-2));
 }
 
 /* 带返回的页头（手机上一层一层进）：返回和标题同一行，长标题截断，不把标题挤到第二行。 */
 .page-head-title:has(.page-back) {
   flex-wrap: nowrap;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .page-head-title:has(.page-back) h1 {
@@ -442,7 +442,7 @@ textarea.field-input {
 .block {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 /* 段里直接放的按钮按字宽，不拉满一行（拉满像一条输入框）。 */
@@ -453,37 +453,37 @@ textarea.field-input {
 .block-head {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  padding-bottom: 8px;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--line);
 }
 
 /* 段标题后的 ⓘ：和标题垂直居中，不跟着基线往下掉。 */
 .block-head > .info-tip {
   align-self: center;
-  margin-left: -8px;
+  margin-left: calc(-1 * var(--space-2));
 }
 
 .block-title {
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .block-meta {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  line-height: 16px;
+  gap: var(--space-1);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   color: var(--fg2);
 }
 
 .block-empty,
 .gate-note {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -493,7 +493,7 @@ textarea.field-input {
 }
 
 .gate-note {
-  padding: 24px 32px;
+  padding: var(--space-5) var(--space-6);
 }
 
 /* ---------- 警示横幅：--tint2 底、左侧 6px --accent 点、--fg 字、圆角 8，一页最多一条 ---------- */
@@ -502,13 +502,13 @@ textarea.field-input {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
   background: var(--tint2);
   color: var(--fg);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .banner-text {
@@ -524,20 +524,20 @@ textarea.field-input {
 .segmented {
   display: inline-flex;
   flex: none;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
+  gap: var(--space-hair);
+  padding: var(--space-hair);
+  border-radius: var(--radius);
   background: var(--tint2);
 }
 
 .segmented-item {
   height: 28px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
-  font-size: 12px;
+  font-size: var(--text-caption);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -559,7 +559,7 @@ textarea.field-input {
   .page-head {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: 'title tools' 'controls controls';
-    gap: 12px;
+    gap: var(--space-3);
   }
 }
 
@@ -567,11 +567,11 @@ textarea.field-input {
   .page-head {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: 'title tools' 'controls controls';
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .page {
-    padding: 16px 16px 48px;
+    padding: var(--space-4) var(--space-4) var(--space-7);
   }
 
   .page-fill {
@@ -592,7 +592,7 @@ textarea.field-input {
 
   .text-button {
     min-height: 40px;
-    padding-block: 8px;
+    padding-block: var(--space-2);
   }
 
   .page-head-controls {
@@ -601,7 +601,7 @@ textarea.field-input {
 
   .field-input,
   .search-input {
-    font-size: 16px;
+    font-size: var(--text-long);
     min-height: 40px;
   }
 }

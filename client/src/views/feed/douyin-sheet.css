@@ -17,19 +17,19 @@
 }
 
 .douyin-sync-meta {
-  margin-right: 8px;
-  font-size: 12px;
-  line-height: 18px;
+  margin-right: var(--space-2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   white-space: nowrap;
 }
 
-.douyin-sync { display: inline-flex; align-items: center; gap: 6px; margin-right: 4px; }
+.douyin-sync { display: inline-flex; align-items: center; gap: var(--space-2); margin-right: var(--space-1); }
 
 .douyin-filters {
   display: flex;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line);
   flex: none;
 }
@@ -41,10 +41,10 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
 }
@@ -58,7 +58,7 @@
   padding: 0;
   background: none;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
   color: var(--fg);
   outline: none;
 }
@@ -69,7 +69,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 0 16px 12px;
+  padding: 0 var(--space-4) var(--space-3);
   overscroll-behavior: contain;
 }
 
@@ -78,7 +78,7 @@
 .douyin-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   border-bottom: 1px solid var(--line);
 }
 
@@ -87,8 +87,8 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   cursor: pointer;
 }
 
@@ -106,13 +106,13 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .douyin-row-meta {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
   font-variant-numeric: tabular-nums;
 }
@@ -120,29 +120,29 @@
 .douyin-row[data-run='failed'] .douyin-row-meta { color: var(--err); }
 .douyin-row-why { flex: none; color: var(--fg3); }
 
-.douyin-steps { flex: none; display: inline-flex; gap: 2px; }
+.douyin-steps { flex: none; display: inline-flex; gap: var(--space-hair); }
 
 .douyin-steps i {
   display: block;
   width: 12px;
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--line2);
-  transition: background-color var(--motion-slow) ease-out;
+  transition: background-color var(--motion-slow) var(--ease-out);
 }
 
 .douyin-steps i[data-on] { background: var(--fg); }
 .douyin-steps[data-run='running'] i:not([data-on]):first-of-type,
 .douyin-steps[data-run='running'] i[data-on] + i:not([data-on]) { background: var(--run); }
 
-.douyin-more { margin-top: 10px; font-size: 12px; color: var(--fg2); }
+.douyin-more { margin-top: var(--space-3); font-size: var(--text-caption); color: var(--fg2); }
 .douyin-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
 .douyin-note {
-  margin: 12px 0 0;
-  padding: 0 16px;
-  font-size: 12px;
-  line-height: 18px;
+  margin: var(--space-3) 0 0;
+  padding: 0 var(--space-4);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -153,19 +153,19 @@
   flex: none;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--line);
 }
 
-.douyin-picked { flex: 1; font-size: 14px; line-height: 22px; }
+.douyin-picked { flex: 1; font-size: var(--text-body); line-height: var(--text-body-line); }
 
 .douyin-how {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-hair);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -173,7 +173,7 @@
 
 @media (max-width: 767px) {
   .douyin-folder { flex-basis: 120px; }
-  .douyin-row-main { padding: 14px 0; }
+  .douyin-row-main { padding: var(--space-4) 0; }
   .douyin-check { width: 20px; height: 20px; }
   .douyin-sync-meta { display: none; }
 }

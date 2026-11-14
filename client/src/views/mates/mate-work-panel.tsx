@@ -49,7 +49,7 @@ function Person({ mate, lines }: { mate: MateView; lines: LineView[] }): ReactNo
     {active.length === 0 ? null : <ul className="mate-work-rows">
       {active.map((line) => <WorkRow key={line.id} line={line} />)}</ul>}
     {work.done.length === 0 ? null : <details className="mate-work-done">
-      <summary><Icon name="check" size={13} />做完 {work.done.length}<Icon name="chevron-down" size={12} /></summary>
+      <summary><Icon name="check" size={14} />做完 {work.done.length}<Icon name="chevron-down" size={12} /></summary>
       <ul className="mate-work-rows">{work.done.map((line) => <WorkRow key={line.id} line={line} />)}</ul>
     </details>}
   </section>;

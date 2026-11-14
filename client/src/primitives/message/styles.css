@@ -3,9 +3,9 @@
 .msg {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 14px;
-  line-height: 22px;
+  gap: var(--space-1);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   color: var(--fg);
   min-width: 0;
 }
@@ -16,8 +16,8 @@
 
 .msg-bubble {
   max-width: 85%;
-  padding: 8px 12px;
-  border-radius: 12px 12px 4px 12px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   background: var(--bubble);
   min-width: 0;
 }
@@ -29,33 +29,33 @@
 
 /* 结论后面的正文（原来的「理由」，2026-11-05 第 4 条起直接展开）：就是正文 14/22·400，和结论隔一行的距离。 */
 .msg-prose {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   overflow-wrap: anywhere;
 }
 
 .msg-quotes {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 4px;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
 }
 
 .msg-quote {
-  padding: 0 4px;
-  border-radius: 4px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
   background: var(--tint2);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .msg-user-status {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -67,8 +67,8 @@
 
 .msg-conclusion {
   margin: 0;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
@@ -76,20 +76,20 @@
   display: inline-block;
   width: 6px;
   height: 6px;
-  margin-left: 4px;
-  border-radius: 50%;
+  margin-left: var(--space-1);
+  border-radius: var(--radius-full);
   background: var(--run);
   vertical-align: middle;
 }
 
 .msg-tag {
   display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: var(--space-px) var(--space-2);
+  border-radius: var(--radius-sm);
   background: var(--tint2);
   color: var(--fg2);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
   font-weight: 500;
 }
 
@@ -101,30 +101,30 @@
 
 .msg-disagreement {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: baseline;
-  padding-left: 12px;
+  padding-left: var(--space-3);
   border-left: 1px solid var(--fg3);
 }
 
 .msg-cards {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .msg-card-placeholder,
 .msg-run-note {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .msg-error {
   margin: 0;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 /* 还没送到的那句，状态行尾的复制：和状态字一样高，不把这一行撑高。 */
@@ -136,8 +136,8 @@
 
 .msg-copy-error {
   flex-basis: 100%;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--err);
 }
 
@@ -145,16 +145,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 28px;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg2);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
 }
 
@@ -169,7 +169,7 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-caption);
   text-decoration: underline;
   text-decoration-color: var(--line2);
   text-underline-offset: 3px;
@@ -217,20 +217,20 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .msg-run-panel[data-open='true'] .msg-run-panel-inner {
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 
 /* 这一轮的耗时、装入和 Token：明细里的次要信息，12/18 --fg2，和动作列表一样大。 */
 .msg-run-context {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-hair);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -248,16 +248,16 @@
 .msg-process {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   height: 28px;
-  padding: 0 6px;
+  padding: 0 var(--space-2);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--fg2);
   font: inherit;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   cursor: pointer;
   transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
@@ -292,7 +292,7 @@
 .msg-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   min-width: 0;
 }
 
@@ -304,15 +304,15 @@
 .conv-sheet .msg-assistant .msg-body {
   align-self: flex-start;
   max-width: 92%;
-  padding: 8px 12px;
-  border-radius: 12px 12px 12px 4px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
   background: var(--tint2);
 }
 
 .conv-column .msg-assistant .msg-conclusion,
 .conv-sheet .msg-assistant .msg-conclusion {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .conv-column .msg-user .msg-bubble,
@@ -327,11 +327,11 @@
 
 .msg-run-item {
   display: flex;
-  gap: 8px;
-  padding: 4px 0;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
   border-bottom: 1px solid var(--line);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   min-width: 0;
   flex-wrap: wrap;
   overflow-wrap: anywhere;

@@ -4,7 +4,7 @@
 .bk-sheet {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .bk-sheet-tabs {
@@ -15,14 +15,14 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .bk-filter {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .bk-filter .chip-button[aria-pressed='true'] {
@@ -44,10 +44,10 @@
   display: flex;
   justify-content: space-between;
   margin: 0;
-  padding-bottom: 4px;
+  padding-bottom: var(--space-1);
   border-bottom: 1px solid var(--line);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   font-weight: 400;
   color: var(--fg2);
   white-space: pre-wrap;
@@ -67,16 +67,16 @@
 .bk-ann {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 0;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .bk-ann-quote {
   margin: 0;
-  padding-left: 12px;
-  font-size: 14px;
-  line-height: 22px;
+  padding-left: var(--space-3);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 /* 左边那条线用这条高亮的颜色（tokens.css 的 --hl-*，第 100 条）。 */
@@ -102,14 +102,14 @@
 
 .bk-ann-note {
   margin: 0;
-  padding-left: 12px;
-  font-size: 14px;
-  line-height: 22px;
+  padding-left: var(--space-3);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .bk-ann-note > span {
-  margin-right: 12px;
-  font-size: 12px;
+  margin-right: var(--space-3);
+  font-size: var(--text-caption);
   color: var(--fg2);
 }
 
@@ -117,26 +117,26 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 12px;
-  padding-left: 12px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-1) var(--space-3);
+  padding-left: var(--space-3);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .bk-disc {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 0;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
 }
 
 .bk-disc-q,
 .bk-disc-a {
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .bk-disc-a {
@@ -151,16 +151,16 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 18px;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
 .bk-mark-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   cursor: pointer;
 }
 
@@ -171,25 +171,25 @@
 .bk-generating {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .bk-insight-empty {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .bk-ol-row {
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 12px 8px;
+  padding: var(--space-3) var(--space-2);
   border: 0;
   border-bottom: 1px solid var(--line);
   border-radius: 0;
@@ -209,56 +209,56 @@
 }
 
 .bk-ol-vol {
-  font-size: 12px;
-  line-height: 22px;
+  font-size: var(--text-caption);
+  line-height: var(--text-body-line);
   color: var(--fg2);
 }
 
 .bk-ol-body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-hair);
 }
 
 .bk-ol-title {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 600;
 }
 
 .bk-ol-summary {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   color: var(--fg2);
 }
 
 .bk-ol-points {
   display: flex;
   flex-direction: column;
-  margin-top: 6px;
-  font-size: 13px;
-  line-height: 20px;
+  margin-top: var(--space-2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .bk-ol-point::before {
   content: '·';
-  margin-right: 8px;
+  margin-right: var(--space-2);
   color: var(--fg2);
 }
 
 .bk-key {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: none;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-align: start;
   cursor: pointer;
 }
@@ -269,7 +269,7 @@
 
 .bk-key-n {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--fg2);
 }
 
@@ -279,8 +279,8 @@
 }
 
 .bk-key-src {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   color: var(--fg2);
 }
 
@@ -292,16 +292,16 @@
 .bk-hit {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-hair);
   width: 100%;
-  padding: 10px 8px;
+  padding: var(--space-3) var(--space-2);
   border: 0;
   border-bottom: 1px solid var(--line);
   background: none;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   text-align: start;
   cursor: pointer;
 }
@@ -313,8 +313,8 @@
 
 .bk-toc-row .text-meta,
 .bk-hit .text-meta {
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   font-weight: 400;
   color: var(--fg2);
 }
@@ -326,17 +326,17 @@
 .bk-search {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 /* 抽屉的正文区不带内边距（原语 7），这里自己留 16。 */
 .sheet-drawer .bk-sheet,
 .sheet-drawer .bk-search {
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .sheet-drawer .bk-toc {
-  padding: 8px 16px 16px;
+  padding: var(--space-2) var(--space-4) var(--space-4);
 }
 
 .sheet-drawer .bk-sheet-tabs {
@@ -367,15 +367,15 @@
   background: var(--bg);
 }
 .bk-insight-sheet { height: 100%; min-height: 0; gap: 0; overflow: auto; }
-.bk-insight-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+.bk-insight-head { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--line); }
 .bk-insight-head .bk-sheet-tabs { flex: 1; }
 .bk-insight-content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.bk-insight-tools { display: flex; align-items: center; padding: 8px 16px; gap: 8px; }
+.bk-insight-tools { display: flex; align-items: center; padding: var(--space-2) var(--space-4); gap: var(--space-2); }
 .bk-insight-tools .grow { flex: 1; }
 .bk-insight-frame { min-height: 240px; }
 .bk-insight-drawer .bk-insight-sheet { height: 70dvh; }
 @media (min-width: 768px) and (max-width: 1100px) {
   .bk-reader[data-insight-open='true'] { display: flex; }
-  .bk-content-dock { position: absolute; z-index: 2; inset: 0 0 0 auto; width: min(90%, 480px); }
+  .bk-content-dock { position: absolute; z-index: var(--z-raised); inset: 0 0 0 auto; width: min(90%, 480px); }
 }

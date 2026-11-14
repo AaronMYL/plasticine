@@ -4,19 +4,19 @@
 .feed-add {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .feed-add-kinds {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* 手机上是底部抽屉：抽屉本身不留边（primitives/sheet），加来源和来源设置自己留 16。 */
 .sheet-drawer .feed-add,
 .sheet-drawer .feed-set {
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .feed-add-kind {
@@ -24,17 +24,17 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-height: 64px;
-  padding: 8px 4px;
+  padding: var(--space-2) var(--space-1);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--fg2);
   font: inherit;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   cursor: pointer;
   transition: box-shadow var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out),
     background-color var(--motion-fast) var(--ease-out);
@@ -58,7 +58,7 @@
 .feed-add-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   animation: feed-add-in var(--motion-fast) var(--ease-out);
 }
 
@@ -70,16 +70,16 @@
 .feed-add-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .feed-add-field {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   height: 40px;
-  padding: 0 12px;
-  border-radius: 8px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
   box-shadow: inset 0 0 0 1px var(--line2);
   background: var(--bg);
 }
@@ -91,7 +91,7 @@
 .feed-add-prefix {
   color: var(--fg3);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 
 .feed-add-input {
@@ -102,14 +102,14 @@
   background: transparent;
   color: var(--fg);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-body);
   outline: none;
 }
 
 .feed-add-ok {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--ok);
 }
 
@@ -120,27 +120,27 @@
 .feed-add-preview {
   min-height: 40px;
   border-top: 1px solid var(--line);
-  padding-top: 8px;
+  padding-top: var(--space-2);
 }
 
 .feed-add-posts {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 4px 0 0;
+  gap: var(--space-3);
+  margin: var(--space-1) 0 0;
   padding: 0;
   list-style: none;
 }
 
 .feed-add-post {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
   animation: feed-add-in var(--motion-fast) var(--ease-out);
 }
 
 .feed-add-post > .reddit-mark {
-  margin-top: 3px;
+  margin-top: var(--space-1);
 }
 
 .feed-add-post-text {
@@ -150,16 +150,16 @@
 }
 
 .feed-add-post-title {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
 }
 
 .feed-add-post-meta,
 .feed-add-note {
   margin: 0;
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
   font-variant-numeric: tabular-nums;
 }
 
@@ -170,8 +170,8 @@
 .feed-add-foot {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-top: 12px;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--line);
 }
 
@@ -179,32 +179,32 @@
   display: inline-flex;
   flex: 1;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .feed-add-login {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .feed-add-login-state {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
   font-weight: 500;
 }
 
 .feed-add-login-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--fg3);
 }
 
@@ -214,19 +214,19 @@
 
 .feed-add-login-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 4px;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 @media (max-width: 767px) {
   .feed-add-kinds {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    gap: var(--space-2);
   }
 
   .feed-add-kind {
     min-height: 56px;
-    font-size: 11px;
+    font-size: var(--text-tag);
   }
 }
 
@@ -243,7 +243,7 @@
 .feed-set {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .feed-set-status:empty {
@@ -254,23 +254,23 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .feed-set-label {
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .feed-set .field-label,
 .feed-add-body .field-label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   color: var(--fg2);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .feed-set .field-input,
@@ -284,7 +284,7 @@
 .feed-add-body .feed-subscribe {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .feed-add-body .feed-subscribe .field-input {

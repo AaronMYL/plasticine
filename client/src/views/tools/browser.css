@@ -12,7 +12,7 @@
 .browser-tool > :not(.browser-viewport) {
   flex-shrink: 0;
   margin: 0;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
 }
 .browser-toolbar,
 .browser-tabs-row,
@@ -21,27 +21,27 @@
 .browser-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* 小页头：页名 15/24·600 和「← 返回」，不占整个页头的高度（用户视角审查 2026-11-01 P2）。 */
 .browser-head-title {
   flex: 1;
   margin: 0;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
   font-weight: 600;
 }
 
 .browser-return {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 /* 空态和工具栏、地址栏一样留边，不贴主区左边缘。 */
 .browser-viewport > .browser-empty {
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
 }
 .browser-toolbar .chip-button,
 .browser-toolbar .icon-button,
@@ -51,12 +51,12 @@
 }
 
 .browser-more { position: relative; flex: none; }
-.browser-actions-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 8;
-  width: min(256px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 4px;
-  padding: 12px; border-radius: 8px; background: var(--bg); box-shadow: var(--lift); }
-.browser-actions-menu > p { margin-bottom: 8px; }
-.browser-menu-item { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 8px;
-  border: 0; border-radius: 8px; background: transparent; color: var(--fg); font: inherit; text-align: left;
+.browser-actions-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: var(--z-menu);
+  width: min(256px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-3); border-radius: var(--radius); background: var(--bg); box-shadow: var(--lift); }
+.browser-actions-menu > p { margin-bottom: var(--space-2); }
+.browser-menu-item { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: var(--space-2);
+  border: 0; border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; text-align: left;
   cursor: pointer; }
 .browser-menu-item:hover { background: var(--tint); }
 .browser-address {
@@ -65,14 +65,14 @@
   font-family: var(--sans);
 }
 .browser-tabs-row {
-  padding-bottom: 8px;
+  padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--line);
 }
 .browser-tabs {
   display: flex;
   flex: 1;
   min-width: 0;
-  gap: 4px;
+  gap: var(--space-1);
   overflow-x: auto;
 }
 .browser-tab {
@@ -80,7 +80,7 @@
   min-width: 0;
   flex: 0 0 auto;
   max-width: 192px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 .browser-tab:has([aria-selected="true"]) {
   background: var(--tint2);
@@ -92,11 +92,11 @@
   color: var(--fg);
   height: 32px;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .browser-tab-title {
   min-width: 0;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -137,7 +137,7 @@
   padding: 0;
   border: 0;
   resize: none;
-  font-size: 16px;
+  font-size: var(--text-long);
 }
 .browser-wait {
   position: absolute;
@@ -152,14 +152,14 @@
   }
 }
 @media (max-width: 767px) {
-  .browser-tool > .browser-toolbar { gap: 4px; padding: 8px; }
+  .browser-tool > .browser-toolbar { gap: var(--space-1); padding: var(--space-2); }
   .browser-menu-item { min-height: 44px; }
   /* 手机上保留网页后退，前进收起，给地址栏留宽度。 */
   .browser-toolbar .browser-history[aria-label="前进"] {
     display: none;
   }
   .browser-address {
-    font-size: 16px;
+    font-size: var(--text-long);
   }
   .browser-tab {
     max-width: 160px;

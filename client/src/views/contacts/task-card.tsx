@@ -103,7 +103,7 @@ function Deliver({ task, name, detail = false }:
       <div className="nt-actions">
         <button type="button" className="primary-button" disabled={locked || text.trim() === ''}
           onClick={() => void contactActions.deliver(task)}>交付</button>
-        <span className="nt-hint"><Icon name="info" size={13} />交付后 {name} 马上能看到</span>
+        <span className="nt-hint"><Icon name="info" size={14} />交付后 {name} 马上能看到</span>
       </div>
     </div>
   );
@@ -166,7 +166,7 @@ function OutBody({ task, name }: { task: NetworkTaskView; name: string }): React
     case 'offered':
       return (
         <>
-          <Status lead={<Icon name="clock" size={13} />}>等{name}点头</Status>
+          <Status lead={<Icon name="clock" size={14} />}>等{name}点头</Status>
           <div className="nt-actions nt-actions-tight">
             <button type="button" className="text-button" disabled={cancelling}
               onClick={() => void contactActions.cancel(task)}>撤回</button>
@@ -183,7 +183,7 @@ function OutBody({ task, name }: { task: NetworkTaskView; name: string }): React
     case 'delivered':
       return (
         <>
-          <Status lead={task.doer === 'ai' ? <AiMark label={theirAi} /> : <Icon name="check" size={13} />}>
+          <Status lead={task.doer === 'ai' ? <AiMark label={theirAi} /> : <Icon name="check" size={14} />}>
             {task.doer === 'ai' ? theirAi : name}交付了{task.delivery === null ? '' : ` · ${clockTime(task.delivery.at,
               timeZone)}`}
           </Status>
@@ -194,13 +194,13 @@ function OutBody({ task, name }: { task: NetworkTaskView; name: string }): React
     case 'passed':
       return (
         <>
-          <Status lead={<span className="nt-ok"><Icon name="check" size={13} /></span>}>
+          <Status lead={<span className="nt-ok"><Icon name="check" size={14} /></span>}>
             收到了{task.verdict === null ? '' : ` · ${clockTime(task.verdict.at, timeZone)}`}</Status>
           {task.delivery === null ? null : <Folded text={task.delivery.text} />}
         </>
       );
     case 'rejected':
-      return <Status lead={<Icon name="clock" size={13} />}>等对方修改
+      return <Status lead={<Icon name="clock" size={14} />}>等对方修改
         {task.verdict?.note ? ` · ${task.verdict.note}` : ''}</Status>;
     case 'declined':
       return <Status lead={null}>{name}先不接</Status>;
@@ -232,7 +232,7 @@ function InBody({ task, name }: { task: NetworkTaskView; name: string }): ReactN
           补充修改意见</button>}>等你决定</Status>;
       if (task.doer === 'ai') {
         return (
-          <Status lead={task.execution == null ? <Icon name="clock" size={13} />
+          <Status lead={task.execution == null ? <Icon name="clock" size={14} />
             : <WorkStatusGlyph line={task.execution} />} tail={<>
             {task.execution?.status === 'running' ? <Elapsed since={task.activity?.since ?? task.decidedAt} /> : null}
             <button type="button" className="chip-button nt-chip" disabled={stopping}
@@ -245,13 +245,13 @@ function InBody({ task, name }: { task: NetworkTaskView; name: string }): ReactN
     case 'delivered':
       return (
         <>
-          <Status lead={<Icon name="clock" size={13} />}>交给{name}了，等他收
+          <Status lead={<Icon name="clock" size={14} />}>交给{name}了，等他收
             {task.delivery === null ? '' : ` · ${clockTime(task.delivery.at, timeZone)}`}</Status>
           {task.delivery === null ? null : <Folded text={task.delivery.text} />}
         </>
       );
     case 'passed':
-      return <Status lead={<span className="nt-ok"><Icon name="check" size={13} /></span>}>{name}收到了</Status>;
+      return <Status lead={<span className="nt-ok"><Icon name="check" size={14} /></span>}>{name}收到了</Status>;
     case 'declined':
       return <Status lead={null}>你先不接</Status>;
     case 'cancelled':

@@ -248,7 +248,7 @@ export function MenuItem(props: MenuItemProps): ReactNode {
       aria-checked={props.checked} aria-disabled={unavailable ? true : undefined}
       aria-description={props.unavailable}
       onClick={unavailable ? undefined : props.onSelect}>
-      {props.icon === undefined ? null : <Icon name={props.icon} size={15} />}
+      {props.icon === undefined ? null : <Icon name={props.icon} size={16} />}
       {unavailable ? (
         <span className="popover-item-text">
           <span className="popover-item-label">{props.label}</span>
