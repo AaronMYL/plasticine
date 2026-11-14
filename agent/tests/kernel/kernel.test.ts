@@ -7,7 +7,7 @@ import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import { KernelModelError, KernelModels, ProviderLogins, SqliteCredentialStore, TranslateModel }
   from '../../src/kernel/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
-import { FAKE_AUTH_URL, fakeProviders, GOOD_CALLBACK } from './helpers.ts';
+import { FAKE_AUTH_URL, fakeProviders, GOOD_CALLBACK, pickingProvider } from './helpers.ts';
 
 const opened: TestState[] = [];
 
@@ -148,6 +148,23 @@ test('订阅登录：开始拿到授权网址和要交的东西；交回调地�
   assert.equal(kernel.providers()[0]?.connected, 'oauth');
   assert.equal(JSON.stringify(kernel.providers()).includes('access-value-for-tests'), false);
   assert.equal(kernel.effective()?.provider, 'fake-sub');
+  logins.stop();
+});
+
+test('订阅登录：流程先问用哪种方式（OpenAI Codex 那样）时走浏览器那一路，照常给授权网址、能贴回调地址', async () => {
+  const { state } = await fresh();
+  const kernel = new KernelModels({ state, providers: [...fakeProviders().providers, pickingProvider()] });
+  const logins = new ProviderLogins(kernel);
+  const started = await logins.start('fake-pick');
+  assert.equal(started.status, 'waiting');
+  assert.equal(started.url, FAKE_AUTH_URL);
+  assert.equal(started.prompt?.type, 'manual_code');
+  logins.complete(started.id, GOOD_CALLBACK);
+  for (let tries = 0; tries < 50 && logins.get(started.id).status === 'waiting'; tries += 1) {
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  assert.equal(logins.get(started.id).status, 'done');
+  assert.equal(kernel.providers().find((provider) => provider.id === 'fake-pick')?.connected, 'oauth');
   logins.stop();
 });
 

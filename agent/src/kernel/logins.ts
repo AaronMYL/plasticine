@@ -16,6 +16,8 @@ export const LOGIN_TTL_MS = 10 * 60_000;
 export const LOGIN_START_WAIT_MS = 15_000;
 // 出错原因最多回这么长。
 const ERROR_CHARS = 200;
+// 流程让选登录方式时选这一个（pi-ai 里浏览器登录的选项 id）；没有就选第一个（它们都把默认的放第一个）。
+const BROWSER_METHOD = 'browser';
 // 登录完、失败、取消后这条记录留多久，好让客户端读到结果。
 const KEEP_FINISHED_MS = 10 * 60_000;
 
@@ -156,6 +158,14 @@ export class ProviderLogins {
   }
 
   #prompt(session: Session, prompt: AuthPrompt): Promise<string> {
+    // 流程先问用哪种方式登录（pi-ai 的 OpenAI Codex：浏览器 / 设备码）：界面没有选择题、也不显示设备码，直接走浏览器
+    // 那一路——授权网址照常打开，回调由本体收、客户端代收或他贴回来（11-14 Aaron 点 Codex 登录没弹页、按钮点不动）。
+    if (prompt.type === 'select') {
+      const choice = prompt.options.find((option) => option.id === BROWSER_METHOD) ?? prompt.options[0];
+      if (choice !== undefined) {
+        return Promise.resolve(choice.id);
+      }
+    }
     return new Promise((resolve, reject) => {
       const placeholder = 'placeholder' in prompt ? prompt.placeholder ?? null : null;
       session.pending = { prompt, resolve, reject };

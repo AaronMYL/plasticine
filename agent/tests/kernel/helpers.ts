@@ -28,6 +28,38 @@ function withAuth(handle: FauxProviderHandle, name: string, auth: Provider['auth
   };
 }
 
+/** 先列这家订阅登录的两种方式再登录的假流程（11-14：pi-ai 的 OpenAI Codex 登录先问用浏览器还是设备码）。 */
+export function pickingProvider(): Provider {
+  const handle = fauxProvider({ provider: 'fake-pick', models: [{ id: 'pick-model', reasoning: true,
+    contextWindow: 100_000 }] });
+  const login: OAuthAuth = {
+    name: 'Fake 选方式',
+    isSubscription: true,
+    async login(interaction) {
+      const method = await interaction.prompt({ type: 'select', message: '用哪种方式登录',
+        options: [{ id: 'browser', label: '浏览器（默认）' }, { id: 'device_code', label: '设备码' }] });
+      if (method !== 'browser') {
+        throw new Error(`选了不认识的方式：${method}`);
+      }
+      interaction.notify({ type: 'auth_url', url: FAKE_AUTH_URL, instructions: '在浏览器里点同意' });
+      const input = await interaction.prompt({ type: 'manual_code', message: '粘贴浏览器跳转到的地址',
+        placeholder: 'http://localhost:1455/auth/callback', signal: interaction.signal });
+      if (!input.includes('code=ok')) {
+        throw new Error('回调地址里没有授权码');
+      }
+      return { type: 'oauth', access: 'pick-access-for-tests', refresh: 'pick-refresh-for-tests',
+        expires: Date.now() + 3_600_000 };
+    },
+    async refresh(credential) {
+      return credential;
+    },
+    async toAuth(credential) {
+      return { apiKey: credential.access };
+    },
+  };
+  return withAuth(handle, 'Fake 选方式', { oauth: login });
+}
+
 export function fakeProviders(): FakeProviders {
   const deviceIds: string[] = [];
   const oauth = fauxProvider({ provider: 'fake-sub', models: [
