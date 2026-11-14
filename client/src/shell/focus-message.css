@@ -1,0 +1,16 @@
+/* 定位到的那一句（第13批：点通知、点来信里的原话）：底色亮一下再慢慢退，2.4 秒（use-focus-message.ts 同一个数）。 */
+.line-item.is-focused,
+.ct-item.is-focused {
+  border-radius: 12px;
+  animation: focus-flash 2400ms var(--ease-out);
+}
+
+@keyframes focus-flash {
+  0%, 30% { background: var(--tint2); }
+  100% { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-item.is-focused,
+  .ct-item.is-focused { animation: none; background: var(--tint2); }
+}

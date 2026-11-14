@@ -6,6 +6,9 @@ import { PendingOps, useOp } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from '../mates/mate-actions.ts';
 import { useState, type ReactNode } from 'react';
 import { MAIN_LINE_ALIAS } from '../../api/shared.ts';
+
+/** 主线的 id（线的名单还没读到时先当是它；服务端 state/lines.ts 同一个）。 */
+const MAIN_LINE_ID = 'line-main';
 import { useLive } from '../../live.tsx';
 import { Popover, MenuItem, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
@@ -13,7 +16,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { TitlebarActions, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { mainLineRoute, skillsRoute, soulRoute, type Route } from '../../shell/routes.ts';
+import { mainLineRoute, parseLineRef, skillsRoute, soulRoute, type Route } from '../../shell/routes.ts';
 import { Conversation } from '../conversation/conversation.tsx';
 import { SideUiProvider } from '../lines/conversation-ui-context.tsx';
 import { LineConversation } from '../lines/line-conversation.tsx';
@@ -84,12 +87,17 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
   const openPanel = useOpenPanel();
   const live = useLive();
   const roster = useStore(live.mates.data);
+  // 地址里的那一句（#/plasticine/line:<线>:<序号>）在队友、群组或别的线上时，打开那条线再定位（第13批）。
+  const lineList = useStore(live.lines.list).lines;
+  const wanted = parseLineRef(route.messageId);
+  const mainLineId = lineList.find((item) => item.kind === 'main')?.id ?? MAIN_LINE_ID;
+  const routeLineId = route.lineId ?? (wanted !== null && wanted.lineId !== mainLineId ? wanted.lineId : null);
   const mate = roster.mates.find((item) => item.id === route.mateId
-    || (route.lineId != null && item.lineId === route.lineId));
+    || (routeLineId != null && item.lineId === routeLineId));
   const mateOp = useOp(`mates:update:${mate?.id ?? ''}`);
   const group = roster.groups.find((item) => item.id === route.mateGroupId
-    || (route.lineId != null && item.lineId === route.lineId));
-  const sideId = mate?.lineId ?? group?.lineId ?? route.lineId ?? null;
+    || (routeLineId != null && item.lineId === routeLineId));
+  const sideId = mate?.lineId ?? group?.lineId ?? routeLineId ?? null;
   const [editing, setEditing] = useState(false);
   const [disabling, setDisabling] = useState(false);
   const [division, setDivision] = useState(false);

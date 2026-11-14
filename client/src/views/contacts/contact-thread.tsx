@@ -10,6 +10,7 @@ import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { messagesRoute, type Route } from '../../shell/routes.ts';
+import { useFocusMessage } from '../../shell/use-focus-message.ts';
 import { LoadNote } from '../m5b/load-note.tsx';
 import { ContactAvatar } from './contact-avatar.tsx';
 import { ContactComposer } from './contact-composer.tsx';
@@ -54,6 +55,8 @@ export interface ContactThreadProps {
   navigate: (route: Route) => void;
   onToggleProfile: () => void;
   onNewTask: () => void;
+  /** 要定位到的那一句（消息 id）；点通知进来时带着。 */
+  focusMessageId?: string | null;
 }
 
 /** 能发任务卡：互加了的人、还在的群。 */
@@ -124,7 +127,7 @@ function useFollowBottom(count: number, contactId: string) {
       atBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight <= FOLLOW_SLACK;
     }
   };
-  return { list, onScroll };
+  return { list, onScroll, atBottom };
 }
 
 export function ContactThread(props: ContactThreadProps): ReactNode {
@@ -156,10 +159,21 @@ export function ContactThread(props: ContactThreadProps): ReactNode {
     }
   }, [contactActions, contact, lastAt]);
   const replyCards = replyAsksOf(useStore(asks.store).open, contact).length;
-  const { list, onScroll } = useFollowBottom(items.length + replyCards, contact.id);
+  const { list, onScroll, atBottom } = useFollowBottom(items.length + replyCards, contact.id);
+  // 地址里带着这段聊天的某一句（点通知）：往上读到那一句、滚过去、闪一下（第13批）。
+  const focusId = props.focusMessageId ?? null;
+  const loadedFocus = focusId !== null && items.some((item) => item.type === 'message' && item.message.id === focusId);
   const root = useRef<HTMLDivElement>(null);
   const hasMore = earlier.hasMore ?? latest.value?.hasMore ?? false;
   const shown = query === null ? items : findItems(items, query);
+  useFocusMessage(list, focusId === null ? null : {
+    key: `${contact.id}:${focusId}`, ready: latest.value !== null, busy: earlier.status === 'loading',
+    canLoadMore: hasMore && !loadedFocus, loadMore: () => void thread.loadEarlier(),
+    find: (root) => [...root.querySelectorAll<HTMLElement>('.ct-item[data-mid]')]
+      .find((element) => element.dataset['mid'] === focusId) ?? null,
+  }, () => {
+    atBottom.current = false;
+  });
   const loadEarlier = (): void => {
     if (hasMore && list.current !== null && list.current.scrollTop <= 0) {
       void thread.loadEarlier();

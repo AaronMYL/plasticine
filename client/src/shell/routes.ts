@@ -343,6 +343,19 @@ function workRoute(id: string | undefined, sub: string | undefined): Route {
 }
 
 /** 消息里的一条：联系人的 id，或 null（只是列表）。 */
+/** 联系人或群组里的某一句（#/messages/<id>/at/<消息 id>）：打开那段聊天、滚到那一句（第13批）。 */
+export function contactMessageRoute(contactId: string, messageId: string): Route {
+  return { view: 'messages', noteId: null, contactId, messageId };
+}
+
+const LINE_REF = /^line:(.+):(\d+)$/;
+
+/** 「line:<线>:<序号>」→ 哪条线的第几条；不是这个形状就是 null（消息引用、来信里的出处、通知都用这个形状）。 */
+export function parseLineRef(ref: string | null | undefined): { lineId: string; seq: number } | null {
+  const match = ref == null ? null : LINE_REF.exec(ref);
+  return match?.[1] === undefined || match[2] === undefined ? null : { lineId: match[1], seq: Number(match[2]) };
+}
+
 export function messagesRoute(contactId: string | null, pane?: ContactPane): Route {
   return pane === undefined ? { view: 'messages', noteId: null, contactId }
     : { view: 'messages', noteId: null, contactId, contactPane: pane };
@@ -411,6 +424,10 @@ function contactsRoute(id: string | undefined, sub: string | undefined, third?: 
   }
   if (contactId !== null && sub === 'profile') {
     return messagesRoute(contactId, 'profile');
+  }
+  const messageId = sub === 'at' && third !== undefined ? decodedOrNull(third) : null;
+  if (contactId !== null && messageId !== null) {
+    return contactMessageRoute(contactId, messageId);
   }
   return messagesRoute(contactId);
 }
@@ -559,6 +576,7 @@ function contactsHash(route: Route): string {
     return '#/messages';
   }
   const base = productLink('contact', route.contactId);
+  if (route.messageId != null) return `${base}/at/${encodeURIComponent(route.messageId)}`;
   return route.contactPane === 'profile' ? `${base}/profile` : base;
 }
 

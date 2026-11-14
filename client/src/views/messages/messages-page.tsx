@@ -186,6 +186,7 @@ export function MessagesPage({ route, phone, navigate, now = () => new Date() }:
     ? <MailReader contact={contact} phone={phone} now={at} onBack={back} />
     : (
       <ContactThread contact={contact} phone={phone} now={at} navigate={navigate} profileOpen={profileOpen}
+        focusMessageId={route.messageId ?? null}
         onToggleProfile={() => (narrow ? setOverlay(!overlay) : shellPrefs.setContactProfile(!prefs.contactProfile))}
         onNewTask={() => undefined} />
     );

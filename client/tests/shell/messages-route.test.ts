@@ -4,7 +4,8 @@
 // 图标栏：现在、Plasticine、消息、任务 ｜ 网页、信息流 ｜ 笔记、资料库；手机底栏 现在 · Plasticine · 消息 · 笔记 · 更多。
 
 import { describe, expect, it } from 'vitest';
-import { SETTINGS_SECTIONS, navLabel, parseHash, routeHash } from '../../src/shell/routes.ts';
+import { SETTINGS_SECTIONS, contactMessageRoute, navLabel, parseHash, parseLineRef, routeHash }
+  from '../../src/shell/routes.ts';
 import { MORE_ITEMS, PHONE_TABS, RAIL_GROUPS, SECTIONS, phoneTabOf, sectionOf } from '../../src/shell/sections.ts';
 
 describe('地址和栏目', () => {
@@ -21,6 +22,18 @@ describe('地址和栏目', () => {
     expect(parseHash('#/plasticine/msg_1')).toMatchObject({ view: 'plasticine', messageId: 'msg_1' });
     expect(parseHash('#/web/t1')).toMatchObject({ view: 'web', webTabId: 't1' });
     expect(parseHash('#/books/space')).toMatchObject({ view: 'books', spacesList: true });
+  });
+
+  it('定位到一条消息（11-14 第13批：点通知、点来信里的原话）：联系人和群组里那一句、Plasticine 里那一句', () => {
+    expect(parseHash('#/messages/c_linyi/at/m_12')).toMatchObject({ view: 'messages', contactId: 'c_linyi',
+      messageId: 'm_12' });
+    expect(routeHash(parseHash('#/messages/c_linyi/at/m_12'))).toBe('#/messages/c_linyi/at/m_12');
+    expect(routeHash(contactMessageRoute('c_linyi', 'm 12'))).toBe('#/messages/c_linyi/at/m%2012');
+    expect(parseHash('#/plasticine/line%3Aline-mate-1%3A7')).toMatchObject({ view: 'plasticine',
+      messageId: 'line:line-mate-1:7' });
+    expect(parseLineRef('line:line-mate-1:7')).toEqual({ lineId: 'line-mate-1', seq: 7 });
+    expect(parseLineRef('line:line-main:x')).toBeNull();
+    expect(parseLineRef(null)).toBeNull();
   });
 
   it('旧的对话、消息里的 Plasticine、旁聊链接都到 Plasticine 栏目；书签和新标签页到网页', () => {

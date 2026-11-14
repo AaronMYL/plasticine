@@ -291,7 +291,7 @@ function ThreadList({ items: all, contact, now, navigate }: ThreadItemsProps): R
     const separator = day === previousDay ? null : <p className="cm-day mono">{dayLabel(at, timeZone)}</p>;
     previousDay = day;
     return (
-      <div key={itemKey(item)} className="ct-item">
+      <div key={itemKey(item)} className="ct-item" data-mid={item.type === 'message' ? item.message.id : undefined}>
         {separator}
         <Item item={item} contact={contact} now={now} navigate={navigate} openMail={openMail} />
       </div>
