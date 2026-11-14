@@ -96,7 +96,23 @@ function postEntry(post: XPost): NewEntry {
     avatarUrl: httpsOrNull(post.avatar),
     imageUrl: httpsOrNull(post.image),
     imageRatio: post.image === null ? null : post.imageRatio,
+    places: post.places === undefined ? ['following'] : [...new Set(post.places)],
   };
+}
+
+/**
+ * 最新的几条（新的在前）。perPlace：X 的三处各取最新的几条再合起来（第13批），书签里多是旧帖，不按发布时间和关注里的
+ * 新帖一起挤，挤掉了就永远进不来。
+ */
+function newest(entries: readonly NewEntry[], cap: number, perPlace: boolean): NewEntry[] {
+  const byTime = [...entries].sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''));
+  if (!perPlace) { return byTime.slice(0, cap); }
+  const picked = new Set<NewEntry>();
+  for (const place of new Set(byTime.flatMap((entry) => entry.places ?? []))) {
+    const here = byTime.filter((entry) => entry.places?.includes(place) === true);
+    here.slice(0, cap).forEach((entry) => picked.add(entry));
+  }
+  return byTime.filter((entry) => picked.has(entry));
 }
 
 function articleEntry(hit: ReturnType<typeof parseFeed>[number]): NewEntry {
@@ -287,7 +303,7 @@ export class FeedSubscriptions {
       return 0;
     }
     if (source.level === 'off') { return 0; }
-    const added = this.#ingest(source, report.posts.map(postEntry));
+    const added = this.#ingest(source, report.posts.map(postEntry), undefined, true);
     state.feedSourceStatus.succeeded(source.id, at, added);
     return added;
   }
@@ -296,7 +312,7 @@ export class FeedSubscriptions {
    * 一批条目进库：已有的网址、帖子跳过，档位限条数，按发布时间从旧到新写，到达时间逐条加一毫秒——同一批在信息流里
    * 仍是新发的在前（列表按到达时间排）。提交后再通知。
    */
-  #ingest(source: FeedSource, entries: readonly NewEntry[], limit?: number): number {
+  #ingest(source: FeedSource, entries: readonly NewEntry[], limit?: number, perPlace = false): number {
     const { state, now } = this.#options;
     const linked = source.concernId === null ? undefined : state.feedSources.all({ kind: 'interest' })
       .find((row) => row.concernId === source.concernId);
@@ -316,10 +332,8 @@ export class FeedSubscriptions {
             arrivedAt: at.toISOString(), places: entry.places ?? [], body: entry.body ?? null });
         }
       }
-      const fresh = entries.filter((entry) => !known.has(entry.url)
-        && state.feedItems.byDedupeKey(entry.key) === undefined)
-        .sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
-        .slice(0, limit ?? PER_ROUND[source.level])
+      const fresh = newest(entries.filter((entry) => !known.has(entry.url)
+        && state.feedItems.byDedupeKey(entry.key) === undefined), limit ?? PER_ROUND[source.level], perPlace)
         .reverse();
       fresh.forEach((entry, index) => {
         const hit = linked ?? matchInterest(entry.text, interests);

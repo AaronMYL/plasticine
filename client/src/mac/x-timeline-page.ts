@@ -1,8 +1,9 @@
-// 读 X「关注」时间线的注入脚本（第 3 批，用户 11-04 定：用他在 Plasticine 浏览器里的 X 登录，Mac 在线时定时读）。
-// Mac 在一个看不见的网页视图里载入 x.com，用和网页标签同一份登录（同一个网站数据存储），在独立脚本世界里跑这一段：
-// 先切到「关注」那一栏，再一边往下翻一边收帖子——作者、头像、正文、第一张图、时间、链接——交回原生层，原生层交给服务端
-// （agent/shared/api/feed-x.ts 的 XPost）。只读不点别的；广告（没有时间链接的）跳过。scripts/generate-x-timeline-script.ts
-// 把它去掉类型写进 mac/Sources/Plasticine/x-timeline-script.swift，所以这里不 import 运行时的东西。
+// 读 X 时间线的注入脚本（第 3 批，用户 11-04 定：用他在 Plasticine 浏览器里的 X 登录，电脑在线时定时读）。
+// 电脑在一个看不见的网页里载入 x.com，用和网页标签同一份登录（同一个网站数据存储），在独立脚本世界里跑这一段：
+// 先切到「关注」那一栏（第13批起也切「为你推荐」、也读书签页），再一边往下翻一边收帖子——作者、头像、正文、第一张图、
+// 时间、链接——交回去，再交给服务端（agent/shared/api/feed-x.ts 的 XPost）。只读不点别的；广告（没有时间链接的）跳过。
+// scripts/generate-x-timeline-script.ts 把它去掉类型写进 mac/Sources/Plasticine/x-timeline-script.swift，所以这里不
+// import 运行时的东西。
 //
 // X 改版时最先坏的是这些选择器：读不到帖子时原生层报 layout_changed，设置里那一行写「X 改版了」。
 
@@ -20,6 +21,7 @@ const RATIO_MIN = 0.2;
 const RATIO_MAX = 5;
 const STATUS_PATH = /^\/([A-Za-z0-9_]{1,30})\/status\/(\d{1,30})(?:\/|$)/;
 const FOLLOWING_TAB_NAMES = ['Following', '正在关注', '关注', '關注中', 'フォロー中'];
+const RECOMMEND_TAB_NAMES = ['For you', '为你推荐', '推荐', '為你推薦', 'おすすめ'];
 
 function https(raw: string | null | undefined, base: string): string | null {
   if (raw === null || raw === undefined || raw === '') { return null; }
@@ -91,14 +93,24 @@ export function timelineState(doc: Document, location: string): XTimelineState {
   return doc.querySelector('[data-testid="primaryColumn"]') === null ? 'loading' : 'ready';
 }
 
-/** 切到「关注」那一栏：已经在就不点；点了回 true（原生层等它载完再读）。找不到这一栏回 null。 */
-export function chooseFollowing(doc: Document): boolean | null {
+/** 切到叫这几个名字之一的那一栏：已经在就不点；点了回 true（等它载完再读）。找不到这一栏回 null。 */
+function chooseTab(doc: Document, names: readonly string[]): boolean | null {
   const tabs = [...doc.querySelectorAll<HTMLElement>('[role="tablist"] [role="tab"]')];
-  const tab = tabs.find((candidate) => FOLLOWING_TAB_NAMES.includes(candidate.textContent?.trim() ?? ''));
+  const tab = tabs.find((candidate) => names.includes(candidate.textContent?.trim() ?? ''));
   if (tab === undefined) { return null; }
   if (tab.getAttribute('aria-selected') === 'true') { return false; }
   tab.click();
   return true;
+}
+
+/** 切到「关注」那一栏。 */
+export function chooseFollowing(doc: Document): boolean | null {
+  return chooseTab(doc, FOLLOWING_TAB_NAMES);
+}
+
+/** 切到「为你推荐」那一栏（第13批）。 */
+export function chooseRecommend(doc: Document): boolean | null {
+  return chooseTab(doc, RECOMMEND_TAB_NAMES);
 }
 
 /** 长帖在时间线上只露前一段，后面是「显示更多」（11-11 Aaron：信息流里不是完整的内容）。 */
@@ -131,6 +143,7 @@ export function fullText(doc: Document, base: string, id: string): string | null
 export interface XTimelineReader {
   state(): XTimelineState;
   following(): boolean | null;
+  recommend(): boolean | null;
   collect(): number;
   scroll(): void;
   posts(): XTimelinePost[];
@@ -150,6 +163,7 @@ export function installTimelineReader(win: Window): XTimelineReader {
   return {
     state: () => timelineState(win.document, win.location.href),
     following: () => chooseFollowing(win.document),
+    recommend: () => chooseRecommend(win.document),
     collect: () => collectPosts(win.document, win.location.href, seen, truncated),
     scroll: () => win.scrollBy(0, win.innerHeight * 0.9),
     posts: () => [...seen.values()],

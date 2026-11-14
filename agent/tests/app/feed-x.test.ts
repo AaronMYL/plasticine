@@ -84,3 +84,43 @@ test('X 读不到：设置里 X 那一行带原因；订阅和「按关注点搜
   assert.equal(news?.label, '兴趣');
   assert.equal(news?.status, undefined);
 });
+
+function placed(id: string, places: string[] | undefined, hoursAgo: number): Record<string, unknown> {
+  return { ...POST, id, text: `第 ${id} 条`, ...(places === undefined ? {} : { places }),
+    publishedAt: new Date(Date.parse('2026-11-04T06:58:00.000Z') - hoursAgo * 3_600_000).toISOString() };
+}
+
+test('X 三处（第13批）：帖子带在哪几处看到的；每处各取最新的几条（书签里的旧帖不被挤掉）；又在别处看到的并进去', async () => {
+  t = await startTestApp();
+  const cookie = await pair(t);
+  const headers = { authorization: `Bearer ${await pairedNode(t, cookie)}` };
+  // 正在关注 12 条新帖（正常档一轮每处 10 条），书签 2 条很旧的，还有一条没写在哪的（Mac App 还没升级）。
+  const following = Array.from({ length: 12 }, (_, index) => placed(String(1000 + index), ['following'], index));
+  const marked = [placed('2001', ['bookmark'], 300), placed('2002', ['recommend', 'bookmark'], 400)];
+  const report = await call(t, 'POST', '/v2/nodes/feed/x', { headers, body: { requestId: 'x-read-0003',
+    posts: [...following, ...marked, placed('3001', undefined, 0.5)], error: null } });
+  assert.equal(report.status, 200, JSON.stringify(report.body));
+  // 正在关注取最新 10 条（含没写在哪的那条），书签两条、推荐一条（和书签同一条）。
+  assert.deepEqual(report.body, { added: 12 });
+  const items = (): Promise<{ url: string; places?: string[] }[]> => call(t!, 'GET', '/v2/feed?tz=UTC&kind=x&limit=50',
+    { cookie }).then((reply) => (reply.body as { items: { url: string; places?: string[] }[] }).items);
+  const byId = async (id: string): Promise<string[] | undefined> =>
+    (await items()).find((item) => item.url.endsWith(`/${id}`))?.places;
+  assert.deepEqual(await byId('2002'), ['recommend', 'bookmark']);
+  assert.deepEqual(await byId('3001'), ['following']);
+  assert.deepEqual(await byId('1000'), ['following']);
+  assert.equal(await byId('1009'), undefined);
+  assert.equal(await byId('1011'), undefined);
+  const marks = await call(t, 'GET', '/v2/feed?tz=UTC&kind=x&place=bookmark', { cookie });
+  assert.deepEqual((marks.body as { items: { url: string }[] }).items.map((item) => item.url.split('/').at(-1)),
+    ['2001', '2002']);
+  // 下一轮：1000 又在书签里看到了，并进去；不另加一条。
+  const again = await call(t, 'POST', '/v2/nodes/feed/x', { headers, body: { requestId: 'x-read-0004',
+    posts: [placed('1000', ['bookmark'], 0)], error: null } });
+  assert.deepEqual(again.body, { added: 0 });
+  assert.deepEqual(await byId('1000'), ['following', 'bookmark']);
+  const nav = await call(t, 'GET', '/v2/feed/nav?tz=UTC', { cookie });
+  const x = (nav.body as { sources: { kind: string; places?: Record<string, number> }[] }).sources
+    .find((row) => row.kind === 'x');
+  assert.deepEqual(x?.places, { following: 10, recommend: 1, bookmark: 3 });
+});

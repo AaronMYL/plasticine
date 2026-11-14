@@ -1,5 +1,6 @@
 // 信息流里 X 上他关注的人（第 3 批，用户 11-04 定）：用他在 Plasticine 浏览器里的 X 登录，Mac 在线时定时读「关注」
-// 时间线。Mac App 按这个口径实现（mac/Sources/Plasticine/x-timeline-reader.swift）：
+// 时间线。第13批（11-14 Aaron）：桌面客户端读「正在关注」「为你推荐」「书签」三处，一条帖子带上在哪几处看到的（places）；
+// 没写的（Mac App 还只读关注）算「正在关注」。Mac App 按这个口径实现（mac/Sources/Plasticine/x-timeline-reader.swift）：
 //   GET  /v2/nodes/feed/x（节点 Bearer）→ { due, everyMinutes }：到没到读的时候（来源关着就永远不到）；
 //   POST /v2/nodes/feed/x（节点 Bearer）{ requestId, posts, error } → { added }：读到的帖子交给服务端入库，
 //        没读到就只给 error（没登录 / X 改版取不到 / 页面没打开），设置里那一行写原因，不弹卡。
@@ -12,8 +13,11 @@ import { FEED_IMAGE_RATIO_MAX, FEED_IMAGE_RATIO_MIN, FEED_URL_MAX_CHARS } from '
 
 export const FEED_X_PATH = `${API_PREFIX}/nodes/feed/x`;
 
-/** 一次最多交多少条：「关注」时间线往下翻两三屏大约 30–60 条。 */
-export const X_POSTS_MAX = 100;
+/** 一次最多交多少条：每一处往下翻几屏大约 30–60 条，三处加起来。 */
+export const X_POSTS_MAX = 300;
+/** X 上读的三处：正在关注、为你推荐、书签。 */
+export const X_PLACES = ['following', 'recommend', 'bookmark'] as const;
+export type XPlace = (typeof X_PLACES)[number];
 /** 一条帖子正文最多多少字（X 长帖 25 000 字，信息流卡片只要前面这些）。 */
 export const X_TEXT_MAX_CHARS = 4_000;
 
@@ -32,6 +36,8 @@ export const XPostSchema = Type.Object({
   /** 那张图的高 / 宽；量不到就是 null。 */
   imageRatio: OrNull(Type.Number({ minimum: FEED_IMAGE_RATIO_MIN, maximum: FEED_IMAGE_RATIO_MAX })),
   publishedAt: OrNull(IsoTimeSchema),
+  /** 在哪几处看到的（第13批）；不写是「正在关注」。 */
+  places: Type.Optional(Type.Array(Type.Enum(X_PLACES), { minItems: 1, maxItems: X_PLACES.length })),
 }, { additionalProperties: false });
 export type XPost = Static<typeof XPostSchema>;
 

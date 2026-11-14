@@ -9,7 +9,7 @@ test('生成的 Swift 是最新的', () => {
   assert.doesNotThrow(() => generate(true));
 });
 
-test('脚本去掉了类型和 import，装上后给原生层七个方法', () => {
+test('脚本去掉了类型和 import，装上后给原生层八个方法（第13批多一个切「为你推荐」）', () => {
   const script = timelineScript();
   assert.ok(!/^import /m.test(script));
   assert.ok(!/: XPost\b/.test(script));
@@ -17,7 +17,8 @@ test('脚本去掉了类型和 import，装上后给原生层七个方法', () =
     document: { querySelector: () => null, querySelectorAll: () => [] } } as unknown as Record<string, unknown>;
   new Function('window', 'HTMLImageElement', 'HTMLBRElement', script)(window, class {}, class {});
   const reader = window['__plasticineXTimeline'] as Record<string, () => unknown>;
-  assert.deepEqual(Object.keys(reader).sort(), ['collect', 'following', 'fullText', 'posts', 'scroll', 'state', 'truncated']);
+  assert.deepEqual(Object.keys(reader).sort(),
+    ['collect', 'following', 'fullText', 'posts', 'recommend', 'scroll', 'state', 'truncated']);
   assert.equal(reader['state']?.(), 'loading');
   assert.deepEqual(reader['posts']?.(), []);
   assert.deepEqual(reader['truncated']?.(), []);

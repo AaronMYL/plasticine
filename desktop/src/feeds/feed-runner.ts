@@ -1,6 +1,7 @@
 // 信息流要这台电脑做的两样（用他在 Plasticine 浏览器里的登录；登录只在这台电脑上，不进本体）：
-// - X「关注」时间线（agent/shared/api/feed-x.ts，和 Mac 壳 x-timeline-reader.swift 同一套）：每 10 分钟问本体到没到，
-//   到了在一个看不见的窗口里载入 x.com/home，切到「关注」、往下翻几屏、收帖子；只露一段的长帖再载入帖子页补全文，交回。
+// - X 时间线（agent/shared/api/feed-x.ts）：每 10 分钟问本体到没到，到了在一个看不见的窗口里读「正在关注」「为你推荐」
+//   「书签」三处（第13批，x-places.ts），只露一段的长帖再载入帖子页补全文，合起来交回。Mac App 的 x-timeline-reader.swift
+//   还只读「关注」。
 // - 抖音收藏和下载地址（docs/specs/video-parse.md）：每分钟领活，在看不见的窗口里载入 douyin.com，在网页自己的脚本世界
 //   （签名要页面自己的脚本加）里装上 douyin-page 的读取器，翻收藏 / 取地址，交回。
 // 没配对、设备服务暂停时不读；读完就把窗口拆掉。注入的脚本是 client/src/mac/x-timeline-page.ts、douyin-page.ts，
@@ -9,22 +10,16 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { BrowserWindow, type Session } from 'electron';
-import type { DouyinJob, DouyinReport, XPost, XTimelineReport } from '../../../agent/shared/api/index.ts';
+import type { DouyinJob, DouyinReport, XTimelineReport } from '../../../agent/shared/api/index.ts';
 import { DOUYIN_WORKS_PER_REPORT_MAX, X_POSTS_MAX } from '../../../agent/shared/api/index.ts';
 import type { NodeApi } from '../node/node-api.ts';
+import { readXPlaces, type XPage } from './x-places.ts';
 
 const X_ASK_EVERY_MS = 10 * 60_000;
 const DOUYIN_ASK_EVERY_MS = 60_000;
 /** 启动后先等一会儿再问，别和启动时的同步、自更新挤在一起。 */
 const FIRST_ASK_DELAY_MS = 90_000;
 const LOAD_TIMEOUT_MS = 30_000;
-const X_TIMELINE_WAIT_MS = 20_000;
-const X_SWITCH_WAIT_MS = 4_000;
-const X_SCROLL_WAIT_MS = 2_500;
-const X_SCROLLS = 4;
-/** 长帖一次最多补这么多条全文（一条要载一页）；补全文时每条最多等这么久。 */
-const X_EXPAND_MAX = 8;
-const X_EXPAND_WAIT_MS = 10_000;
 /** X 的 isolated world 编号（和界面、标签的 preload 世界错开）。 */
 const X_WORLD = 1_017;
 
@@ -41,20 +36,31 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** 在一个看不见的窗口里载入一页；载入失败回原因。 */
-async function hiddenPage(deps: FeedDeps, url: string): Promise<{ window: BrowserWindow; problem: string | null }> {
+/** 一个看不见的窗口：和网页标签同一份登录，静音，不因为看不见就放慢。 */
+function hiddenWindow(deps: FeedDeps): BrowserWindow {
   const window = new BrowserWindow({ show: false, width: 1280, height: 900, webPreferences: {
     session: deps.session, sandbox: true, contextIsolation: true, backgroundThrottling: false } });
   window.webContents.setUserAgent(deps.userAgent);
   window.webContents.setAudioMuted(true);
+  return window;
+}
+
+/** 在这个窗口里载入一页；载入失败回原因。 */
+async function loadIn(window: BrowserWindow, url: string): Promise<string | null> {
   try {
     await Promise.race([window.loadURL(url), sleep(LOAD_TIMEOUT_MS).then(() => {
       throw new Error('30 秒没载入完');
     })]);
-    return { window, problem: null };
+    return null;
   } catch (error) {
-    return { window, problem: error instanceof Error ? error.message : String(error) };
+    return error instanceof Error ? error.message : String(error);
   }
+}
+
+/** 在一个看不见的窗口里载入一页；载入失败回原因。 */
+async function hiddenPage(deps: FeedDeps, url: string): Promise<{ window: BrowserWindow; problem: string | null }> {
+  const window = hiddenWindow(deps);
+  return { window, problem: await loadIn(window, url) };
 }
 
 export class FeedRunner {
@@ -102,67 +108,17 @@ export class FeedRunner {
   }
 
   private async readX(): Promise<XTimelineReport> {
-    const report = (posts: XPost[], error: XTimelineReport['error']): XTimelineReport =>
-      ({ requestId: `x-${randomUUID()}`, posts: posts.slice(0, X_POSTS_MAX), error });
-    const { window, problem } = await hiddenPage(this.deps, 'https://x.com/home');
+    const window = hiddenWindow(this.deps);
     try {
-      if (problem !== null) {
-        return report([], { code: 'load_failed', detail: problem.slice(0, 300) });
-      }
-      const run = (code: string): Promise<unknown> => window.webContents.executeJavaScriptInIsolatedWorld(X_WORLD,
-        [{ code }]);
-      await run(this.deps.pageScript('x-timeline'));
-      let state = 'loading';
-      for (let waited = 0; waited < X_TIMELINE_WAIT_MS && state === 'loading'; waited += 1_000) {
-        state = String(await run('window.__plasticineX.state()'));
-        if (state === 'loading') {
-          await sleep(1_000);
-        }
-      }
-      if (state !== 'ready') {
-        return report([], { code: state === 'signed_out' ? 'signed_out' : 'layout_changed' });
-      }
-      if (await run('window.__plasticineX.following()') === true) {
-        await sleep(X_SWITCH_WAIT_MS);
-      }
-      for (let index = 0; index < X_SCROLLS; index += 1) {
-        await run('window.__plasticineX.collect()');
-        await run('window.__plasticineX.scroll()');
-        await sleep(X_SCROLL_WAIT_MS);
-      }
-      await run('window.__plasticineX.collect()');
-      const posts = await run('window.__plasticineX.posts()') as XPost[];
-      const truncated = await run('window.__plasticineX.truncated()') as string[];
-      await this.expandX(window, run, posts, truncated);
-      return report(posts, posts.length === 0 ? { code: 'layout_changed' } : null);
+      const page: XPage = {
+        load: (url) => loadIn(window, url),
+        run: (code) => window.webContents.executeJavaScriptInIsolatedWorld(X_WORLD, [{ code }]),
+      };
+      const read = await readXPlaces(page, { script: this.deps.pageScript('x-timeline'), sleep,
+        log: (line) => this.deps.log(line) });
+      return { requestId: `x-${randomUUID()}`, posts: read.posts.slice(0, X_POSTS_MAX), error: read.error };
     } finally {
       window.destroy();
-    }
-  }
-
-  /**
-   * 长帖在时间线上只露一段（11-11 Aaron：信息流里不是完整的内容）：一条条载入帖子页、读全文换上；
-   * 载不出、读不到的留着时间线上那一段，不耽误这一轮交回。
-   */
-  private async expandX(window: BrowserWindow, run: (code: string) => Promise<unknown>, posts: XPost[],
-    truncated: string[]): Promise<void> {
-    for (const id of truncated.slice(0, X_EXPAND_MAX)) {
-      const post = posts.find((candidate) => candidate.id === id);
-      if (post === undefined) { continue; }
-      try {
-        await Promise.race([window.loadURL(`https://x.com/${post.handle}/status/${id}`), sleep(LOAD_TIMEOUT_MS)]);
-        await run(this.deps.pageScript('x-timeline'));
-        for (let waited = 0; waited < X_EXPAND_WAIT_MS; waited += 1_000) {
-          const text = await run(`window.__plasticineX.fullText(${JSON.stringify(id)})`);
-          if (typeof text === 'string' && text.length > post.text.length) {
-            post.text = text;
-            break;
-          }
-          await sleep(1_000);
-        }
-      } catch (error) {
-        this.deps.log(`X 长帖 ${id} 没补上全文：${error instanceof Error ? error.message : String(error)}`);
-      }
     }
   }
 

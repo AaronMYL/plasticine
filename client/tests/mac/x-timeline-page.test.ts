@@ -1,10 +1,10 @@
-// 读 X「关注」时间线的注入脚本（第 3 批）：在仿 X 结构的页面上认出没登录、切到「关注」、收帖子（作者、头像、正文、
-// 第一张图、时间、链接），广告跳过、翻页重复的只算一条。
+// 读 X 时间线的注入脚本（第 3 批；第13批加「为你推荐」和书签）：在仿 X 结构的页面上认出没登录、切到「关注」或
+// 「为你推荐」、收帖子（作者、头像、正文、第一张图、时间、链接），广告跳过、翻页重复的只算一条。
 
 import { Value } from 'typebox/value';
 import { describe, expect, it } from 'vitest';
 import { XPostSchema } from '../../src/api/shared.ts';
-import { chooseFollowing, collectPosts, fullText, readPost, timelineState,
+import { chooseFollowing, chooseRecommend, collectPosts, fullText, readPost, timelineState,
   type XTimelinePost } from '../../src/mac/x-timeline-page.ts';
 
 const BASE = 'https://x.com/home';
@@ -50,6 +50,23 @@ describe('X 时间线注入脚本', () => {
     expect(clicked).toBe(1);
     expect(chooseFollowing(doc)).toBe(false);
     expect(chooseFollowing(page('<div role="tablist"><div role="tab">Lists</div></div>'))).toBeNull();
+  });
+
+  it('切到「为你推荐」（第13批）：认中英文名字，不在就点一下回 true，已经在回 false，找不到回 null', () => {
+    const doc = page(`<div role="tablist"><div role="tab" aria-selected="false">为你推荐</div>
+      <div role="tab" aria-selected="true">正在关注</div></div>`);
+    const recommend = doc.querySelectorAll('[role="tab"]')[0] as HTMLElement;
+    recommend.addEventListener('click', () => recommend.setAttribute('aria-selected', 'true'));
+    expect(chooseRecommend(doc)).toBe(true);
+    expect(chooseRecommend(doc)).toBe(false);
+    expect(chooseRecommend(page('<div role="tablist"><div role="tab" aria-selected="true">For you</div></div>')))
+      .toBe(false);
+    expect(chooseRecommend(page('<div role="tablist"><div role="tab">Lists</div></div>'))).toBeNull();
+  });
+
+  it('书签页（/i/bookmarks）登录了也算能读', () => {
+    expect(timelineState(page('<main data-testid="primaryColumn"></main>'), 'https://x.com/i/bookmarks'))
+      .toBe('ready');
   });
 
   it('一条帖子：作者、@账号、头像、正文（表情换成字）、第一张图、时间和数字标识', () => {
