@@ -10,7 +10,7 @@ function token(accountId: string): string {
   return `header.${payload}.signature`;
 }
 
-type Auth = { auth: { apiKey?: string } } | undefined;
+type Auth = { auth: { apiKey?: string }; source?: string } | undefined;
 
 function models(auths: Record<string, Auth>) {
   return {
@@ -58,7 +58,8 @@ test('OpenAI key：Images 接口；都没连、接口出错、超额都只回一
   const drawn = await keyed.draw('一本摊开的期刊', signal);
   assert.ok('data' in drawn && drawn.data.toString() === 'png');
   const none = new KernelImages({ models: models({}) });
-  assert.deepEqual(await none.draw('图', signal), { error: '没有连能出图的模型（ChatGPT 订阅或 OpenAI API key）' });
+  assert.deepEqual(await none.draw('图', signal),
+    { error: '没有连能出图的登录：在 设置 › AI 里登录「ChatGPT（Codex）」，或填 OpenAI 的 API key' });
   const limited = new KernelImages({ models: models({ openai: { auth: { apiKey: 'sk-test' } } }),
     fetch: (async () => new Response('', { status: 429 })) as typeof fetch });
   assert.deepEqual(await limited.draw('图', signal), { error: '出图额度用完了' });
@@ -67,4 +68,34 @@ test('OpenAI key：Images 接口；都没连、接口出错、超额都只回一
       throw new Error('socket hang up');
     }) as typeof fetch });
   assert.deepEqual(await broken.draw('图', signal), { error: '出图失败：socket hang up' });
+});
+
+test('只有「Sign in with ChatGPT」（OpenAI 的订阅登录）：不去调出图接口，直接说清这种登录出不了图、该连哪个', async () => {
+  // 11-14 服务器实测：这种登录调 Images 接口 401、带出图工具 400，OpenAI 不让订阅登录出图；以前一律报成「登录失效」。
+  let called = false;
+  const images = new KernelImages({ models: models({ openai: { auth: { apiKey: 'oauth-access' }, source: 'OAuth' } }),
+    fetch: (async () => {
+      called = true;
+      return new Response('', { status: 401 });
+    }) as typeof fetch });
+  assert.deepEqual(await images.draw('图', signal), {
+    error: '「Sign in with ChatGPT」这种登录 OpenAI 不让出图：在 设置 › AI 里再登录「ChatGPT（Codex）」就能出图' });
+  assert.equal(called, false);
+});
+
+test('出图接口出错说真实原因：Codex 登录过期、额度用完、接口自己给的说法', async () => {
+  const codex = (response: Response) => new KernelImages({
+    models: models({ 'openai-codex': { auth: { apiKey: token('acct-1') }, source: 'OAuth' } }),
+    codexModel: () => 'gpt-6.1-sol', fetch: (async () => response) as typeof fetch });
+  assert.deepEqual(await codex(new Response('{}', { status: 401 })).draw('图', signal),
+    { error: '「ChatGPT（Codex）」的登录过期了：到 设置 › AI 重新登录' });
+  assert.deepEqual(await codex(new Response('{}', { status: 429 })).draw('图', signal),
+    { error: 'ChatGPT 订阅的出图额度用完了，过一阵再试' });
+  const said = Response.json({ error: { message: 'Tool image_generation is not supported for this plan.' } },
+    { status: 400 });
+  assert.deepEqual(await codex(said).draw('图', signal),
+    { error: '出图接口回了 400：Tool image_generation is not supported for this plan.' });
+  const keyed = new KernelImages({ models: models({ openai: { auth: { apiKey: 'sk-test' } } }),
+    fetch: (async () => Response.json({ detail: 'Invalid key' }, { status: 401 })) as typeof fetch });
+  assert.deepEqual(await keyed.draw('图', signal), { error: 'OpenAI 的 API key 不对或没有出图权限：Invalid key' });
 });

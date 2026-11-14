@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { fauxAssistantMessage } from '@earendil-works/pi-ai';
+import { fauxAssistantMessage, fauxProvider } from '@earendil-works/pi-ai';
 import { KernelModelError, KernelModels, ProviderLogins, SqliteCredentialStore, TranslateModel }
   from '../../src/kernel/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
@@ -68,6 +68,13 @@ test('提供商一律平级：一张列表，各自的连接方式；填 key 只
   assert.equal(reply.stopReason, 'stop');
   await assert.rejects(kernel.setApiKey('nope', 'x'),
     (error: unknown) => error instanceof KernelModelError && error.code === 'not_found');
+});
+
+test('pi 的老 Codex 登录在设置里叫「ChatGPT（Codex）」（11-14：出图走它，和「Sign in with ChatGPT」分得开）', async () => {
+  const { state } = await fresh();
+  const codex = fauxProvider({ provider: 'openai-codex', models: [{ id: 'codex-model', contextWindow: 100_000 }] });
+  const kernel = new KernelModels({ state, providers: [{ ...codex.provider, name: 'OpenAI Codex (legacy)' }] });
+  assert.deepEqual(kernel.providers().map((provider) => provider.name), ['ChatGPT（Codex）']);
 });
 
 test('默认模型：选的那家连着就用它；没连就退到第一家连着的；不存在的模型拒绝', async () => {

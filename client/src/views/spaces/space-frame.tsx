@@ -14,7 +14,7 @@ import { pushHash } from '../../shell/nav-history.ts';
 import { openExternal } from '../../shell/open-external.ts';
 import { routeHash } from '../../shell/routes.ts';
 import { composeSpaceDocument } from './space-compose.ts';
-import { applySpaceEdit, prepareSpace, type PreparedSpace } from './space-document.ts';
+import { applySpaceEdit, prepareSpace, type LetterSigner, type PreparedSpace } from './space-document.ts';
 import { spaceFontFaces } from './space-fonts.ts';
 import { linkRoute } from './space-links.ts';
 import type { SpaceFrameMode } from './space-runtime.ts';
@@ -23,6 +23,22 @@ import { useSpaceTheme } from './space-theme.ts';
 import type { SpaceQuoteAnchor } from './space-quote.ts';
 import '../../primitives/message/quote-selection.css';
 import { useCloseOnContextMenu } from '../../shell/use-context-menu-close.ts';
+import { plasticineMarkSvg } from '../../shell/plasticine-mark.tsx';
+import { useBotEngine } from '../mates/bot/bot-engine.ts';
+import { stillSvg } from '../mates/bot/bot-render.ts';
+import { useMainName, useMainVariant } from '../mates/main-store.ts';
+
+/** 来信署名旁的头像多大（信纸样式里 .lt-sign svg 同一个数）。 */
+const SIGN_MARK_SIZE = 34;
+
+/** 来信的署名：主线现在的名字和它静止的头像；角色引擎还没到时先用 Plasticine 的标记（形状一样）。 */
+function useLetterSigner(): LetterSigner {
+  const name = useMainName();
+  const variant = useMainVariant();
+  const engine = useBotEngine();
+  return useMemo(() => ({ name, mark: engine === null ? plasticineMarkSvg(SIGN_MARK_SIZE)
+    : stillSvg(engine, { kind: 'main', variant }, 'idle', SIGN_MARK_SIZE) }), [name, variant, engine]);
+}
 
 export const SPACE_SANDBOX = 'allow-scripts';
 
@@ -93,8 +109,9 @@ export function SpaceFrame({ space, mode, label, editing = false, onEdit, onEsca
     }
   }
   const { html, genre, title, dateLabel } = source.current;
-  const prepared = useMemo<PreparedSpace>(() => prepareSpace({ html, genre, title, dateLabel }),
-    [html, genre, title, dateLabel]);
+  const signer = useLetterSigner();
+  const prepared = useMemo<PreparedSpace>(() => prepareSpace({ html, genre, title, dateLabel, signer }),
+    [html, genre, title, dateLabel, signer]);
   const srcDoc = useMemo(() => composeSpaceDocument({ body: prepared.body, genre, mode,
     tokens: themeRef.current.tokens, dark: themeRef.current.dark }), [prepared, genre, mode]);
   const handlers = useRef({ onEdit, onEscape, editing, onQuote, highlightParagraph, onBookJump, bookPosition });

@@ -73,9 +73,35 @@ describe('来信', () => {
     expect(doc.querySelector('.lt > .lt-date')?.textContent).toBe('2026 年 11 月 9 日');
     expect(doc.querySelector('.lt > h1.lt-title')?.textContent).toBe('做梦，有了一组数字');
     expect(doc.querySelector('.lt-body > p.lt-lead')?.getAttribute('data-e')).toBe('0');
-    expect(doc.querySelector('.lt-sign')?.textContent).toBe('Plasticine');
+    expect(doc.querySelector('.lt-sign')?.textContent).toBe('— Plasticine');
     expect(doc.querySelector('.lt-sign svg.plasticine-mark')).not.toBeNull();
     expect(doc.querySelector('.lt-title')?.hasAttribute('data-e')).toBe(false);
+  });
+
+  it('署名用主线的名字和头像（11-14：主线改了名就署那个名字）', () => {
+    const prepared = prepareSpace({ html: '<p class="lt-lead">一段。</p>', genre: 'letter', title: '信',
+      dateLabel: '2026 年 11 月 14 日', signer: { name: '卷毛', mark: '<svg class="bot-still"></svg>' } });
+    const doc = frameBody(prepared.body);
+    expect(doc.querySelector('.lt-sign')?.textContent).toBe('— 卷毛');
+    expect(doc.querySelector('.lt-sign svg.bot-still')).not.toBeNull();
+    expect(doc.querySelector('.lt-sign svg.plasticine-mark')).toBeNull();
+  });
+
+  it('旧信：图注里的「Plasticine 生成」换成图上的 ✦ 小标；模型自己画的线稿不再显示（11-14 Aaron 不要线稿）', () => {
+    const html = '<p class="lt-lead">一段。</p>'
+      + '<figure class="lt-fig"><img src="/v2/notes/assets/a.webp" alt="图">'
+      + '<figcaption>夜里回看原话。<span class="lt-credit">Plasticine 生成</span></figcaption></figure>'
+      + '<figure class="lt-fig"><svg class="lt-draw" viewBox="0 0 600 300"><path d="M0 0"/></svg>'
+      + '<figcaption>Plasticine 原创线稿</figcaption></figure><p>正文。</p>';
+    const prepared = prepareSpace({ html, genre: 'letter', title: '信', dateLabel: '' });
+    const doc = frameBody(prepared.body);
+    expect(doc.body.textContent).not.toContain('Plasticine 生成');
+    expect(doc.body.textContent).not.toContain('原创线稿');
+    expect(doc.querySelectorAll('figure.lt-fig')).toHaveLength(1);
+    expect(doc.querySelector('figure.lt-fig > .lt-ai')?.getAttribute('aria-label')).toBe('AI 生成');
+    expect(doc.querySelector('figure.lt-fig figcaption')?.textContent).toBe('夜里回看原话。');
+    // 存回去的是原样：只在显示时换，不改他的信。
+    expect(applySpaceEdit(prepared, 3, '正文改过。')).toContain('Plasticine 生成');
   });
 });
 

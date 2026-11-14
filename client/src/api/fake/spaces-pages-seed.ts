@@ -173,8 +173,9 @@ export const COG_REPORT_HTML =
 export const DREAM_LETTER_HTML =
   '<p class="lt-lead">你给 Plasticine 定的「做梦」——白天只记，夜里把记忆整理成一主题一篇、带双链的记忆库——今天信息流里正好有一篇能对上的原文。我追到了 Anth'
   + 'ropic 11 月 6 日那篇《The components of agent memory》，有一组数字值得你看，也有一处容易读错。</p><figure class="lt-fig"><'
-  + 'img src="/v2/notes/assets/sample-dream.svg" alt="夜里，散落的便签被连成一张整齐的网"><figcaption>夜里回看原话，把记忆理顺，而不是'
-  + '越记越多。<span class="lt-credit">Plasticine 生成</span></figcaption></figure><p>他们说的 dreaming 也不是真做梦，是'
+  + 'img src="/v2/notes/assets/sample-dream.svg" alt="夜里，散落的便签被连成一张整齐的网"><span class="lt-ai" role="img" '
+  + 'aria-label="AI 生成" title="AI 生成"></span><figcaption>夜里回看原话，把记忆理顺，而不是'
+  + '越记越多。</figcaption></figure><p>他们说的 dreaming 也不是真做梦，是'
   + '在两次对话之间回看日志，核对、去重，把持久记忆重写成互相链接的 Wiki。拿 25 道公司文档的问题来测：只靠 Wiki 作答，整理从 2 轮加到 128 轮，满足评分标准的比例从 13% 升'
   + '到 48%。容易读错的就在这里：单独搜索本来就有 53%，搜索加上长成的 Wiki 才到 61%。<b>夜里整理不是替代搜索，是给搜索垫底。</b></p><p>这和你日报里的「昨晚整理」对得'
   + '上：昨晚是 0 条，新加、替换、拿不准都是 0。照这篇的做法，夜里最该动的是「替换」和「拿不准」两栏——回到原话核对旧记忆，而不是往里添新条目。</p><p>同一批里还有一篇讲子代理，是个人经'

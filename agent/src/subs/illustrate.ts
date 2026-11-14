@@ -1,15 +1,15 @@
 // 来信的插图（第 8 批第 6 条）：模型在正文里写一个占位 <figure class="lt-fig" data-illustrate="画面描述">（带图注），
 // 这里照画面描述出一张图、存成 Plasticine 自己的资产（和笔记里的图同一处，/v2/notes/assets/<名字>），把占位换成
-// <img>，图注后面标「Plasticine 生成」。出不了图就把整个占位去掉：这封信不配图，信照样写。一封信只画一张。
+// <img>，图上加 ✦ 小标表示是 AI 画的（11-14 起不在图注里写「Plasticine 生成」）。出不了图就把整个占位去掉：这封信
+// 不配图，信照样写。一封信只画一张。
 
 import type { Illustrator, IllustrationMime } from '../kernel/index.ts';
 import { decodeEntities, escapeHtmlAttribute } from '../../shared/space-html.ts';
+import { LETTER_AI_MARK } from '../../shared/space-page/letter-css.ts';
 
 const PLACEHOLDER = /<figure\b([^>]*)\bdata-illustrate\s*=\s*("([^"]*)"|'([^']*)')([^>]*)>([\s\S]*?)<\/figure>/gi;
-const CAPTION_END = /<\/figcaption>/i;
 const PROMPT_MAX_CHARS = 1_000;
 export const ASSET_PATH = '/v2/notes/assets/';
-export const ILLUSTRATION_CREDIT = 'Plasticine 生成';
 
 export interface IllustrateOptions {
   illustrator: Illustrator | null;
@@ -27,11 +27,8 @@ export interface Illustrated {
 function figureWith(match: RegExpExecArray, src: string, alt: string): string {
   const attrs = `${match[1] ?? ''}${match[5] ?? ''}`.replace(/\s+/g, ' ').trimEnd();
   const inner = match[6] ?? '';
-  const credit = `<span class="lt-credit">${ILLUSTRATION_CREDIT}</span>`;
-  const caption = CAPTION_END.test(inner) ? inner.replace(CAPTION_END, `${credit}</figcaption>`)
-    : `${inner}<figcaption>${credit}</figcaption>`;
   const image = `<img src="${escapeHtmlAttribute(src)}" alt="${escapeHtmlAttribute(alt)}">`;
-  return `<figure${attrs}>${image}${caption}</figure>`;
+  return `<figure${attrs}>${image}${LETTER_AI_MARK}${inner}</figure>`;
 }
 
 /** 有占位就画第一张；其余的占位（一封信只配一张）和画不出来的都去掉。 */

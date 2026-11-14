@@ -58,17 +58,19 @@ export const REPORT_GUIDE = `报告（genre "report"）：按内容自由排版�
 
 /** 来信的信纸和正文怎么写。 */
 export const LETTER_GUIDE = `来信（genre "letter"）：信纸是固定的，日期、题目（就是 title，用霞鹜文楷，短一点像信的题目）、
-署名「Plasticine」都由信纸套上；你只写正文，不写 h1、不写署名：
+署名（你的名字）都由信纸套上；你只写正文，不写 h1、不写署名：
 <p class="lt-lead">第一段：直接落到他的事（他的目标、书单、正在推进的事、他说过的话），一两句说清这封信为什么写给他。</p>
 <figure class="lt-fig" data-illustrate="插图的画面：具体的场景、物件、光线和色调，不要文字"><figcaption>图注一句</figcaption>
 </figure>
 <p>正文段落，<b>最要紧的一句加粗</b>。</p> …
 <p>最后一段留一个下一步（谁、什么时候、做什么）。</p>
-插图：写一个 figure.lt-fig 带 data-illustrate，Plasticine 会照画面描述生成一张，标「Plasticine 生成」。不确定能不能出图时，
-在同一个 figure 里自己画一张内联线稿垫着：<svg class="lt-draw" viewBox="0 0 600 300">…</svg>，只用线条和几块淡色
-（stroke="var(--fg3)"、fill="var(--tint2)"、点睛处 var(--accent)），画和这封信有关的一个具体物件或场景，不写字。
+插图：写一个 figure.lt-fig 带 data-illustrate，会照画面描述画一张。画面画这封信说的那件事：具体的场景、人在做什么、
+关键的物件和光线（例：「夜里书桌前接电话的人，台灯亮着，窗外城市灯火」），不画泛泛的氛围；画里不要字。出不了图那一格
+会自己去掉：不要自己画线稿或别的图垫着，图注也不写「生成」「原创」「线稿」这类字。
 让信里有他自己的东西（每封挑一两样，不要全用）：
-<blockquote class="lt-quote">他这几天说过的一句原话<cite>11 月 9 日 · 在主线里</cite></blockquote>
+<blockquote class="lt-quote">他这几天说过的一句原话<cite><a data-link="message:line:…">11 月 9 日 · 你在主线里说的</a></cite>
+</blockquote>（材料里有这句的出处就照抄进 data-link，点了跳到那一句；没有出处就只写日子和在哪说的，不加链接，也不另写
+「这段原话」之类的链接）
 <ul class="lt-notes"><li><b>周一</b><span>这封信里提到的一件具体的事</span></li>…</ul>（2–4 条，前面是日子、人名或一个词）
 <div class="lt-facts"><div><b>3</b><span>篇读完</span></div><div><b>2</b><span>件等你定</span></div></div>（2–3 个真实的数）
 整封信像写给一个人的信：不用小标题、不用表格和图表，除了上面这几样不堆列表。若下一步是你能替他开始做的，那一段加 data-follow。`;

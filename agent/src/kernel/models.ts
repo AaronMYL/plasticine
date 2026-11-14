@@ -93,6 +93,9 @@ function priceOf(model: Model<Api>): number | null {
 
 const INHERIT: ModelOverride = { model: null, thinking: null };
 
+/** 设置里和 pi-ai 叫法不一样的几家（11-14：pi 的老 Codex 登录叫「ChatGPT（Codex）」，出图走它）。 */
+const PROVIDER_NAMES: Readonly<Record<string, string>> = { 'openai-codex': 'ChatGPT（Codex）' };
+
 export class KernelModels implements ModelSource {
   readonly models: MutableModels;
   readonly credentials: SqliteCredentialStore;
@@ -143,7 +146,7 @@ export class KernelModels implements ModelSource {
       ];
       return [{
         id: provider.id,
-        name: provider.name,
+        name: PROVIDER_NAMES[provider.id] ?? provider.name,
         methods,
         loginLabel: provider.auth.oauth?.loginLabel ?? provider.auth.oauth?.name ?? null,
         connected: this.credentials.connectedType(provider.id),
@@ -200,7 +203,7 @@ export class KernelModels implements ModelSource {
       if (provider === undefined || provider.getModels().length === 0) {
         return [];
       }
-      return [{ id, name: provider.name, connected: this.credentials.connectedType(id) !== null,
+      return [{ id, name: PROVIDER_NAMES[id] ?? provider.name, connected: this.credentials.connectedType(id) !== null,
         models: provider.getModels().map((model) => ({ id: model.id, name: model.name, input: model.input,
           thinkingLevels: getSupportedThinkingLevels(model), price: priceOf(model) })) }];
     });

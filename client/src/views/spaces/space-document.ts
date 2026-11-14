@@ -3,12 +3,15 @@
 //   这份没跑过脚本的原样上换掉那一段再存——页面脚本改过的东西（筛选藏起来的卡片、目录高亮）不会被存进去；
 // - 图表、数字条标成不能改（pz-fixed），✎ 时淡下去；
 // - 插图（/v2/notes/assets/…）换成 data-pz-asset：沙盒里读不了，由外面读好传进去；
-// - 套信纸：来信是「日期 · 题目 · 正文 · 署名 Plasticine」；报告有 3 节以上带 id 的 section 就配右侧目录。
+// - 套信纸：来信是「日期 · 题目 · 正文 · 署名」，署名是主线的名字和头像（11-14，没给就是 Plasticine 和标记）；
+//   旧信里图注的「Plasticine 生成」换成图上的 ✦ 小标，模型自己画的线稿（svg.lt-draw）不显示（11-14 Aaron 不要线稿）——
+//   只在显示的这份上换，存回去的原样不动；报告有 3 节以上带 id 的 section 就配右侧目录。
 // 旧版式（还没重写成网页）的空间在列表里也要缩略图：按结构化文档拼一页报告的开头（legacyPreviewHtml）。
 
 import type { SpaceDoc, SpaceGenre } from '../../api/shared.ts';
 import { plasticineMarkSvg } from '../../shell/plasticine-mark.tsx';
 import { SPACE_PARAGRAPH_SELECTOR } from '../../../../agent/shared/space-selection.ts';
+import { LETTER_AI_MARK } from '../../../../agent/shared/space-page/letter-css.ts';
 
 /** 能在页面上直接改的字。 */
 const EDITABLE = 'p, h1, h2, h3, h4, h5, li, td, th, dt, dd, figcaption, blockquote, .lst > div > span, .chain > span';
@@ -34,6 +37,14 @@ export interface PrepareInput {
   title: string;
   /** 来信的日期（「2026 年 11 月 9 日」）。 */
   dateLabel: string;
+  /** 来信的署名：主线的名字和它静止头像的一段 SVG；不给就署 Plasticine 和标记。 */
+  signer?: LetterSigner;
+}
+
+export interface LetterSigner {
+  name: string;
+  /** 一段 SVG 字（iframe 里用不了组件）。 */
+  mark: string;
 }
 
 function parse(html: string): Document {
@@ -79,10 +90,27 @@ function reportBody(frame: Document): string {
     + `<div class="rp-main">${main}</div>${toc ?? ''}</div></div>`;
 }
 
+/** 旧信显示前换掉的两样：线稿那一格整个不显示；图注里的文字署名换成图上的小标。 */
+function tidyLetter(frame: Document): void {
+  for (const figure of frame.body.querySelectorAll('figure.lt-fig')) {
+    if (figure.querySelector('img') === null && figure.querySelector('svg.lt-draw') !== null) figure.remove();
+  }
+  for (const credit of frame.body.querySelectorAll('figure.lt-fig .lt-credit')) {
+    const figure = credit.closest('figure');
+    credit.remove();
+    if (figure !== null && figure.querySelector(':scope > .lt-ai') === null) {
+      figure.querySelector('img')?.insertAdjacentHTML('afterend', LETTER_AI_MARK);
+    }
+  }
+}
+
 function letterBody(frame: Document, input: PrepareInput): string {
+  tidyLetter(frame);
+  const mark = input.signer?.mark ?? plasticineMarkSvg(24);
+  const name = input.signer?.name ?? 'Plasticine';
   return `<article class="lt"><p class="lt-date">${escapeText(input.dateLabel)}</p>`
     + `<h1 class="lt-title">${escapeText(input.title)}</h1><div class="lt-body">${frame.body.innerHTML}</div>`
-    + `<p class="lt-sign">${plasticineMarkSvg(24)}Plasticine</p></article>`;
+    + `<p class="lt-sign">— ${escapeText(name)}${mark}</p></article>`;
 }
 
 /** 解析、编号、换插图、套版式。 */

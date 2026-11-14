@@ -78,7 +78,8 @@ test('个人回顾写成来信：插图照画面描述出好、存成资产，�
   assert.equal(letter['illustration'], '配好了');
   const space = t.state.spaces.require(String(letter['id']));
   assert.match(space.html ?? '', /<img src="\/v2\/notes\/assets\/a1\.webp"/);
-  assert.match(space.html ?? '', /Plasticine 生成/);
+  assert.match(space.html ?? '', /<span class="lt-ai" role="img" aria-label="AI 生成" title="AI 生成"><\/span>/);
+  assert.doesNotMatch(space.html ?? '', /Plasticine 生成/);
   assert.deepEqual(letters, [['做梦，有了一组数字', '给你写了一封信：你定的「做梦」有了一组数字。']]);
   const plain = subsTools(t.state, () => PORT, () => new Date(), undefined, { lettered });
   const second = await call(plain, 'space_write', { title: '周日的信', genre: 'letter', html: LETTER,

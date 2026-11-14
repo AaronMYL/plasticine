@@ -3,7 +3,9 @@
 // - 连着 ChatGPT 订阅（openai-codex）：走 Codex 的 Responses 接口，带 image_generation 工具、要求必须出图，流式读
 //   image_generation_call 的 result（base64）；路由模型用订阅里他在用的那个对话模型。
 // - 连着 OpenAI API key（openai）：走 Images 接口（/v1/images/generations）。
-// 两家都没连、超时、出错都返回一句原因，不抛：出不了图这封信就不配图，不挡写信。
+// - OpenAI 连的是「Sign in with ChatGPT」（订阅登录，凭证是 OAuth）：OpenAI 不让这种登录出图（11-14 服务器实测，Images
+//   接口 401、出图工具 400），不去调，直接说该连哪个。
+// 都没连、超时、出错都返回一句真实原因，不抛：出不了图这封信就不配图，不挡写信。
 
 import type { Models } from '@earendil-works/pi-ai';
 
@@ -24,8 +26,13 @@ const FORMAT = 'webp';
 const IMAGE_MODEL = 'gpt-image-1';
 // 一张图通常一分钟内出来；再久就当这次出不了。
 export const ILLUSTRATION_TIMEOUT_MS = 150_000;
-const STYLE = '画成安静、温暖的编辑插画：柔和的光，暖米和暖墨为主，少量陶土色点缀；没有文字、没有界面截图、没有人脸特写。';
+// 画风照 Aaron 11-14 给的参考：手绘墨线加水彩、纸的质感、暖色的光，画信里说的那件事。
+const STYLE = '画成手绘墨线加水彩的插画：纸张质感，温暖柔和的光，色调和谐；照描述画具体的场景、人物动作和关键物件，'
+  + '细节丰富但不杂乱；画里不要任何文字，不画界面截图，不画人脸特写。';
 const INSTRUCTIONS = 'You draw one illustration for a personal letter. Always call the image_generation tool once.';
+/** 设置里「ChatGPT（Codex）」那一行的名字（models.ts 里同一个）。 */
+const CODEX_NAME = 'ChatGPT（Codex）';
+const DETAIL_MAX_CHARS = 160;
 
 export interface KernelImagesOptions {
   models: Pick<Models, 'getAuth' | 'getModels'>;
@@ -78,10 +85,30 @@ async function readSse(response: Response): Promise<string | null> {
   return found;
 }
 
-function failure(status: number): string {
-  if (status === 401 || status === 403) return '出图的登录失效或没有权限';
-  if (status === 429) return '出图额度用完了';
-  return `出图接口回了 ${status}`;
+/** 回包里接口自己给的那句说法（OpenAI 是 error.message，Codex 有时是 detail）；读不出来是空的。 */
+async function detailOf(response: Response): Promise<string> {
+  const text = await response.text();
+  try {
+    const json: unknown = JSON.parse(text);
+    const error: unknown = typeof json === 'object' && json !== null ? Reflect.get(json, 'error') : null;
+    const message: unknown = typeof error === 'object' && error !== null ? Reflect.get(error, 'message')
+      : typeof json === 'object' && json !== null ? Reflect.get(json, 'detail') : null;
+    return typeof message === 'string' ? message.trim().slice(0, DETAIL_MAX_CHARS) : '';
+  } catch (error) {
+    if (error instanceof SyntaxError) return '';
+    throw error;
+  }
+}
+
+async function failure(response: Response, route: 'codex' | 'key'): Promise<string> {
+  const detail = await detailOf(response);
+  const { status } = response;
+  if (route === 'codex' && (status === 401 || status === 403)) return `「${CODEX_NAME}」的登录过期了：到 设置 › AI 重新登录`;
+  if (route === 'key' && (status === 401 || status === 403)) {
+    return `OpenAI 的 API key 不对或没有出图权限${detail === '' ? '' : `：${detail}`}`;
+  }
+  if (status === 429) return route === 'codex' ? 'ChatGPT 订阅的出图额度用完了，过一阵再试' : '出图额度用完了';
+  return `出图接口回了 ${status}${detail === '' ? '' : `：${detail}`}`;
 }
 
 export class KernelImages implements Illustrator {
@@ -100,10 +127,13 @@ export class KernelImages implements Illustrator {
         return await this.#codex(codex.auth.apiKey, full, timeout);
       }
       const openai = await this.#options.models.getAuth('openai');
+      if (openai?.source === 'OAuth') {
+        return { error: `「Sign in with ChatGPT」这种登录 OpenAI 不让出图：在 设置 › AI 里再登录「${CODEX_NAME}」就能出图` };
+      }
       if (openai?.auth.apiKey !== undefined) {
         return await this.#images(openai.auth.apiKey, full, timeout);
       }
-      return { error: '没有连能出图的模型（ChatGPT 订阅或 OpenAI API key）' };
+      return { error: `没有连能出图的登录：在 设置 › AI 里登录「${CODEX_NAME}」，或填 OpenAI 的 API key` };
     } catch (error) {
       if (timeout.aborted) return { error: signal.aborted ? '出图取消了' : '出图超时了' };
       return { error: `出图失败：${error instanceof Error ? error.message : String(error)}` };
@@ -129,7 +159,7 @@ export class KernelImages implements Illustrator {
       headers: { 'authorization': `Bearer ${token}`, 'chatgpt-account-id': account, 'originator': 'pi',
         'OpenAI-Beta': 'responses=experimental', 'accept': 'text/event-stream', 'content-type': 'application/json' },
       body: JSON.stringify(body) });
-    if (!response.ok) return { error: failure(response.status) };
+    if (!response.ok) return { error: await failure(response, 'codex') };
     const image = await readSse(response);
     return image === null ? { error: '出图接口没给图' } : { data: Buffer.from(image, 'base64'), mime: 'image/webp' };
   }
@@ -138,7 +168,7 @@ export class KernelImages implements Illustrator {
     const response = await (this.#options.fetch ?? fetch)(IMAGES_URL, { method: 'POST', signal,
       headers: { 'authorization': `Bearer ${key}`, 'content-type': 'application/json' },
       body: JSON.stringify({ model: IMAGE_MODEL, prompt, size: SIZE, output_format: FORMAT, n: 1 }) });
-    if (!response.ok) return { error: failure(response.status) };
+    if (!response.ok) return { error: await failure(response, 'key') };
     const json: unknown = await response.json();
     const first: unknown = typeof json === 'object' && json !== null ? Reflect.get(json, 'data') : null;
     const item: unknown = Array.isArray(first) ? first[0] : null;

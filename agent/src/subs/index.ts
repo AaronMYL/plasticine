@@ -28,7 +28,7 @@ export type { ToolState } from './tools.ts';
 export { SubscriptionTimed } from './timed.ts';
 export type { SubsTimedLines, SubsTimedOptions, SubsTimedState } from './timed.ts';
 export { followUps } from './follow-ups.ts';
-export { ASSET_PATH, ILLUSTRATION_CREDIT, illustrate } from './illustrate.ts';
+export { ASSET_PATH, illustrate } from './illustrate.ts';
 export type { Illustrated, IllustrateOptions } from './illustrate.ts';
 export { REWRITE_ATTEMPTS_MAX, REWRITE_CHANGE, requiredNumbers, SpaceRewriter } from './rewrite.ts';
 export type { RewriteOptions, RewriteResult, RewriteState } from './rewrite.ts';

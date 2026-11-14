@@ -76,7 +76,7 @@ const LETTER = '<p class="lt-lead">开头。</p><figure class="lt-fig" data-illu
   + '<figcaption>夜里回看原话。</figcaption></figure><p>正文。</p>'
   + '<figure class="lt-fig" data-illustrate="第二张"><figcaption>多余的</figcaption></figure>';
 
-test('来信插图：照画面描述出一张、存成资产，图注后标「Plasticine 生成」；多余的占位去掉', async () => {
+test('来信插图：照画面描述出一张、存成资产，图上加 ✦ 小标（不在图注里写「Plasticine 生成」）；多余的占位去掉', async () => {
   const prompts: string[] = [];
   const saved: string[] = [];
   const result = await illustrate(LETTER, { signal: new AbortController().signal,
@@ -93,7 +93,8 @@ test('来信插图：照画面描述出一张、存成资产，图注后标「Pl
   assert.deepEqual(result.outcome, { asset: 'abc.webp' });
   assert.equal(result.html, '<p class="lt-lead">开头。</p><figure class="lt-fig">'
     + '<img src="/v2/notes/assets/abc.webp" alt="夜里，散落的便签被连成一张整齐的网">'
-    + '<figcaption>夜里回看原话。<span class="lt-credit">Plasticine 生成</span></figcaption></figure><p>正文。</p>');
+    + '<span class="lt-ai" role="img" aria-label="AI 生成" title="AI 生成"></span>'
+    + '<figcaption>夜里回看原话。</figcaption></figure><p>正文。</p>');
 });
 
 test('来信插图：出不了图（没连能出图的模型、接口出错）就整个去掉，信照样写', async () => {

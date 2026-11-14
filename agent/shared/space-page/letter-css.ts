@@ -1,7 +1,14 @@
 // 来信的信纸（设计稿 Letter / Phone-Letter，11-09 他确认）：纸色 --bubble；正文 Geist + 系统中文；题目、图注、署名用
 // 霞鹜文楷（按需加载）；题目墨色，只有署名前的 Plasticine 标记带陶土色；一张插图。信纸是固定的：日期、题目、署名由
 // 显示的一端套上，模型只写正文（第一段 lt-lead、插图 lt-fig、其余段落）。11-12 加三样让信有他自己的东西：
-// 他的原话（lt-quote）、这封信里的几件事（lt-notes）、两三个数（lt-facts）；出不了图时模型自己画一张线稿（svg.lt-draw）。
+// 他的原话（lt-quote）、这封信里的几件事（lt-notes）、两三个数（lt-facts）。11-14：不再画线稿（出不了图就不配图）；
+// AI 画的图右上角一个 ✦ 小标（lt-ai，悬停写「AI 生成」），图注里不再写「Plasticine 生成」。
+
+const SPARK = "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m8 1.5 1.7 4.8L14.5 8l-4.8 "
+  + "1.7L8 14.5l-1.7-4.8L1.5 8l4.8-1.7z' fill='black'/%3E%3C/svg%3E";
+
+/** 图上表示「这张是 AI 画的」的小标；出图那一端插在 img 后面，显示的一端给旧信补上。 */
+export const LETTER_AI_MARK = '<span class="lt-ai" role="img" aria-label="AI 生成" title="AI 生成"></span>';
 
 export const LETTER_CSS = `
 html.pz-letter,body.pz-letter{background:var(--bubble)}
@@ -13,11 +20,15 @@ color:var(--fg)}
 .lt-body>p,.lt-body>ul,.lt-body>ol,.lt-body>blockquote{margin-top:22px}
 .lt-body>p.lt-lead,.lt-lead{font-size:19px;line-height:34px;font-weight:500;margin-top:36px}
 .lt-body blockquote{border-left:1px solid var(--fg3);padding-left:14px;color:var(--fg2)}
-.lt-fig{margin:36px -60px 8px}
+.lt-fig{position:relative;margin:36px -60px 8px}
+.lt-ai{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;
+background:color-mix(in srgb,var(--float) 88%,transparent)}
+.lt-ai::after{content:"";position:absolute;inset:7px;background:var(--fg2);
+-webkit-mask:url("data:image/svg+xml,${SPARK}") center/contain no-repeat;
+mask:url("data:image/svg+xml,${SPARK}") center/contain no-repeat}
 .lt-fig img,.lt-fig svg{display:block;width:100%;height:360px;object-fit:cover;border-radius:12px}
 .lt-fig figcaption{font-family:var(--wenkai);font-size:17px;line-height:26px;color:var(--fg2);text-align:center;
 margin-top:14px}
-.lt-fig svg.lt-draw{height:auto;max-height:320px;object-fit:contain;border-radius:0}
 .lt-quote{font-family:var(--wenkai);font-size:24px;line-height:38px;text-align:center;margin:40px 24px 8px;
 color:var(--fg);border:0;padding:0}
 .lt-quote cite{display:block;font-family:var(--sans);font-style:normal;font-size:12px;line-height:18px;
@@ -31,7 +42,6 @@ box-shadow:inset 0 0 0 1px var(--line)}
 .lt-facts>div{text-align:center}
 .lt-facts b{display:block;font-family:var(--wenkai);font-weight:400;font-size:36px;line-height:44px;color:var(--fg)}
 .lt-facts span{font-size:13px;line-height:20px;color:var(--fg2)}
-.lt-credit{display:block;font-family:var(--sans);font-size:11px;line-height:16px;color:var(--fg3);margin-top:2px}
 .lt-sign{display:flex;align-items:center;gap:10px;margin-top:40px;font-family:var(--wenkai);font-size:26px;
 line-height:34px}
 .lt-sign svg{width:24px;height:24px;flex:none}
