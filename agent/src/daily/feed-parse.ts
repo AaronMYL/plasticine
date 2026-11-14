@@ -1,5 +1,5 @@
 // 最小 RSS / Atom XML 读取器：不展开外部实体、不执行 HTML，原文只作选材材料。
-import { DailyError } from './errors.ts';
+import { shownError } from './errors.ts';
 import { cleanUrl } from './urls.ts';
 
 const WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
@@ -15,7 +15,7 @@ const TEXT_BOUNDARIES = new Set([
 interface XmlNode { name: string; attrs: Record<string, string>; children: (XmlNode | string)[] }
 
 function malformed(): never {
-  throw new DailyError('invalid_input', '订阅内容格式不完整，请检查订阅地址后再试。');
+  throw shownError('invalid_input', '订阅内容格式不完整，请检查订阅地址后再试。');
 }
 
 export function xmlText(value: string): string {

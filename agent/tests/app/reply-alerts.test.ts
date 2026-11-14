@@ -24,7 +24,8 @@ test('他发起的那一轮：主线写主线的名字，队友写队友的名�
     say(main.id, 'user', '帮我查三家公司');
     assert.equal(lineReplyAlert(state, main), null, '还没回');
     const reply = state.lineMessages.append(main.id, 'assistant', fauxAssistantMessage('查好了，**三家**都能投。'));
-    assert.deepEqual(lineReplyAlert(state, main), { lineId: main.id, seq: reply.seq, name: '卷毛',
+    // 通知按类型开关（第13批）：带上是主线回复还是队友回复。
+    assert.deepEqual(lineReplyAlert(state, main), { lineId: main.id, kind: 'main', seq: reply.seq, name: '卷毛',
       text: '查好了，**三家**都能投。' });
 
     const mate = new Mates(state, () => h.kernel).create(draft);
@@ -35,6 +36,7 @@ test('他发起的那一轮：主线写主线的名字，队友写队友的名�
     say(mateLine.id, 'user', '简历改好了吗');
     state.lineMessages.append(mateLine.id, 'assistant', fauxAssistantMessage('第二版改好了'));
     assert.equal(lineReplyAlert(state, mateLine)?.name, '求职顾问');
+    assert.equal(lineReplyAlert(state, mateLine)?.kind, 'mate');
 
     const background = state.lines.create({ kind: 'background', parentLineId: main.id, projectId: null,
       title: '后台的事' });

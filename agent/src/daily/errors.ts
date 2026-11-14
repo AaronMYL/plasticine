@@ -8,11 +8,19 @@ export type DailyErrorCode = (typeof DAILY_ERROR_CODES)[number];
 export class DailyError extends Error {
   readonly code: DailyErrorCode;
   readonly field: string | undefined;
+  /** 这句是 daily/ 自己写给人看的（订阅地址打不开、不是订阅源……），接口照原话回；没标的只回一句通用的。 */
+  readonly shown: boolean;
 
-  constructor(code: DailyErrorCode, message: string, field?: string) {
+  constructor(code: DailyErrorCode, message: string, field?: string, shown = false) {
     super(message);
     this.name = 'DailyError';
     this.code = code;
     this.field = field;
+    this.shown = shown;
   }
+}
+
+/** 写给人看的说法（第13批：加订阅、刷新订阅说真实原因，不再归成一句「输入不合要求」）。 */
+export function shownError(code: DailyErrorCode, message: string, field?: string): DailyError {
+  return new DailyError(code, message, field, true);
 }

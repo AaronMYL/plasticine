@@ -2,7 +2,7 @@
 // 写入、迁移、视图与缓存重放都调用这里；不把 URL 解析错误的原文或 cause 带到日志。
 
 import { FEED_URL_MAX_CHARS } from '../../shared/state.ts';
-import { DailyError } from './errors.ts';
+import { shownError } from './errors.ts';
 
 const CREDENTIAL_WORDS = [
   'token', 'secret', 'key', 'sig', 'auth', 'pass', 'pwd', 'session', 'sid', 'cred', 'code', 'bearer', 'jwt', 'otp',
@@ -58,7 +58,7 @@ export function cleanUrlQuery(query: string): string {
   }).join('&');
 }
 
-/** The cleaned link, or a DailyError naming `field`. */
+/** The cleaned link, or a DailyError (shownError) naming `field`. */
 export function cleanUrl(raw: string, field = 'url'): string {
   let url: URL;
   try {
@@ -66,10 +66,10 @@ export function cleanUrl(raw: string, field = 'url'): string {
   } catch {
     // The text itself is not echoed: a malformed link may still carry a token, and errors reach logs.
     // Not even as the cause: node's URL error keeps the input text.
-    throw new DailyError('invalid_input', '链接不是完整的网址；请用 https:// 或 http:// 开头的地址。', field);
+    throw shownError('invalid_input', '链接不是完整的网址；请用 https:// 或 http:// 开头的地址。', field);
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new DailyError('invalid_input', '链接只收 http / https 地址。', field);
+    throw shownError('invalid_input', '链接只收 http / https 地址。', field);
   }
   url.username = '';
   url.password = '';
@@ -82,7 +82,7 @@ export function cleanUrl(raw: string, field = 'url'): string {
   url.hash = '';
   const cleaned = url.toString();
   if (cleaned.length > FEED_URL_MAX_CHARS) {
-    throw new DailyError('invalid_input', `链接超过 ${FEED_URL_MAX_CHARS} 个字符。`, field);
+    throw shownError('invalid_input', `链接超过 ${FEED_URL_MAX_CHARS} 个字符。`, field);
   }
   return cleaned;
 }

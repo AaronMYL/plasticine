@@ -132,8 +132,8 @@ function fromDaily(error: DailyError): ApiError {
     case 'not_found':
       return new ApiError(404, 'not_found', domainErrorText(error.code), { ...field, next: '刷新后再试。' });
     case 'invalid_input':
-      // 第13批：照原话说哪里不对（daily/ 里的说法都是写给人看的），不归成一句「输入不合要求」。
-      return new ApiError(400, 'invalid_request', error.message || domainErrorText(error.code), field);
+      // 第13批：daily/ 标了写给人看的照原话说哪里不对，不归成一句「输入不合要求」；别的照旧不回显原文。
+      return new ApiError(400, 'invalid_request', error.shown ? error.message : domainErrorText(error.code), field);
     case 'conflict':
       return new ApiError(409, 'conflict', domainErrorText(error.code), field);
     case 'rate_limited':

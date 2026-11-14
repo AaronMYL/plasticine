@@ -16,7 +16,7 @@ import { articleEntry, newest, noteEntry, postEntry, redditEntry, type NewEntry 
 import { feedLinkIn, looksLikeFeed, type FeedFetcher } from './feed-fetch.ts';
 import { matchInterest } from './feed-match.ts';
 import { parseFeed } from './feed-parse.ts';
-import { DailyError } from './errors.ts';
+import { DailyError, shownError } from './errors.ts';
 import { siteOf } from './urls.ts';
 import { REDDIT_WINDOW_MS, redditPost, type RedditPost } from './reddit.ts';
 
@@ -125,7 +125,7 @@ export class FeedSubscriptions {
       return 0;
     }
     if (!POLLED_KINDS.some((kind) => kind === source.kind) || source.query === null) {
-      throw new DailyError('invalid_input', '这个来源不能单独刷新。');
+      throw shownError('invalid_input', '这个来源不能单独刷新。');
     }
     await this.settled();
     const before = state.feedSourceStatus.read(source.id)?.checkedAt;
@@ -139,7 +139,7 @@ export class FeedSubscriptions {
   async previewReddit(url: string, signal: AbortSignal): Promise<RedditPost[]> {
     const { fetcher, now } = this.#options;
     if (fetcher === undefined) {
-      throw new DailyError('invalid_input', 'Reddit 抓取还没接上，请稍后再试。');
+      throw shownError('invalid_input', 'Reddit 抓取还没接上，请稍后再试。');
     }
     const page = await fetcher.get(url, signal);
     const posts = parseFeed(page.text, page.url, now(), REDDIT_WINDOW_MS).map(redditPost);

@@ -1,5 +1,5 @@
 // Bing 新闻 / 网页共用现有的受限 XML 读取器；网页日期不可当新闻发布时间。
-import { DailyError } from './errors.ts';
+import { shownError } from './errors.ts';
 import { child, content, elements, local, plain, xml } from './feed-parse.ts';
 import { cleanUrl, siteOf } from './urls.ts';
 
@@ -32,7 +32,7 @@ function parse(source: string, undated: boolean): SearchHit[] {
   const root = xml(source);
   const channel = child(root, 'channel');
   if (local(root) !== 'rss' || channel === undefined) {
-    throw new DailyError('invalid_input', '搜索入口没有返回 RSS，请稍后刷新。');
+    throw shownError('invalid_input', '搜索入口没有返回 RSS，请稍后刷新。');
   }
   const items = elements(channel).filter((entry) => local(entry) === 'item').slice(0, RESULTS_PER_TERM);
   return items.flatMap((entry) => {

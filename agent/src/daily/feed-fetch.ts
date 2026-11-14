@@ -3,7 +3,7 @@ import { lookup } from 'node:dns/promises';
 import { request } from 'node:https';
 import { Readable } from 'node:stream';
 import { checkPublicHttpsUrl, isPrivateHost } from '../cloud-tools/index.ts';
-import { DailyError } from './errors.ts';
+import { DailyError, shownError } from './errors.ts';
 import { feedTitle, plain, tagAttributes } from './feed-parse.ts';
 import { cleanUrl } from './urls.ts';
 
@@ -36,11 +36,11 @@ const publicRequest: FeedRequest = async (raw, signal) => {
   const addresses = await lookup(url.hostname, { all: true });
   signal.throwIfAborted();
   if (addresses.length === 0 || addresses.some((entry) => isPrivateHost(entry.address))) {
-    throw new DailyError('invalid_input', '订阅地址解析到了内网，请换一个公开订阅地址。');
+    throw shownError('invalid_input', '订阅地址解析到了内网，请换一个公开订阅地址。');
   }
   const address = addresses[0];
   if (address === undefined) {
-    throw new DailyError('invalid_input', '订阅地址没有可连接的地址，请稍后再试。');
+    throw shownError('invalid_input', '订阅地址没有可连接的地址，请稍后再试。');
   }
   return new Promise<Response>((resolve, reject) => {
     const req = request({ hostname: address.address, family: address.family, servername: url.hostname,
@@ -60,7 +60,7 @@ const publicRequest: FeedRequest = async (raw, signal) => {
         resolve(new Response(noBody ? null : stream, { status, headers }));
       } catch {
         res.destroy();
-        reject(new DailyError('invalid_input', '订阅响应无法读取，请检查地址。'));
+        reject(shownError('invalid_input', '订阅响应无法读取，请检查地址。'));
       }
     });
     req.on('error', () => reject(new DailyError('unreachable', '连不上这个网站（连接被断开），过一会儿再试。')));
@@ -82,7 +82,7 @@ export class FeedFetcher {
         if (response.body !== null) { await bounded(response.body.cancel(), deadline); }
         const location = response.headers.get('location');
         if (location === null || hop === MAX_REDIRECTS) {
-          throw new DailyError('invalid_input', '订阅跳转超过三次或缺少目标，请改用最终订阅地址。');
+          throw shownError('invalid_input', '订阅跳转超过三次或缺少目标，请改用最终订阅地址。');
         }
         url = cleanUrl(checkPublicHttpsUrl(new URL(location, url).href).href);
         continue;
@@ -93,7 +93,7 @@ export class FeedFetcher {
           throw new DailyError('rate_limited', '对方限流了（请求太频繁），稍后自动再试。');
         }
         if (response.status === 404) {
-          throw new DailyError('invalid_input', '地址打不开（404），请检查名字或地址。');
+          throw shownError('invalid_input', '地址打不开（404），请检查名字或地址。');
         }
         if (response.status === 401 || response.status === 403) {
           throw new DailyError('unreachable', `这个网站拒绝了服务器的访问（${String(response.status)}）。`);
@@ -101,7 +101,7 @@ export class FeedFetcher {
         if (response.status >= 500) {
           throw new DailyError('unreachable', `这个网站出错了（${String(response.status)}），过一会儿再试。`);
         }
-        throw new DailyError('invalid_input', '订阅没有返回可读内容，请检查地址后再试。');
+        throw shownError('invalid_input', '订阅没有返回可读内容，请检查地址后再试。');
       }
       const reader = response.body.getReader();
       const chunks: Uint8Array[] = [];
@@ -115,7 +115,7 @@ export class FeedFetcher {
           }
           bytes += next.value.byteLength;
           if (bytes > MAX_BYTES) {
-            throw new DailyError('invalid_input', '订阅响应超过 2 MB，请使用更小的订阅源。');
+            throw shownError('invalid_input', '订阅响应超过 2 MB，请使用更小的订阅源。');
           }
           chunks.push(next.value);
         }
@@ -124,7 +124,7 @@ export class FeedFetcher {
         await bounded(reader.cancel(), deadline);
       }
     }
-    throw new DailyError('invalid_input', '订阅跳转没有完成，请检查地址。');
+    throw shownError('invalid_input', '订阅跳转没有完成，请检查地址。');
   }
 
   /**
