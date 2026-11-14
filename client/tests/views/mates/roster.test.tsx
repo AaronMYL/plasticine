@@ -112,3 +112,20 @@ it('新建队友时点一个现成的起点：名字、职责、头像角色都�
   fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '校对' } });
   expect(within(presets).getByRole('button', { name: '文字编辑' }).getAttribute('aria-pressed')).toBe('false');
 });
+
+it('编辑已有队友换头像和颜色能保存（11-13：更新不带 Soul，原来报「队友不合要求」）', async () => {
+  const app = await renderApp({ hash: '#/plasticine' });
+  let mate: Awaited<ReturnType<typeof make>> | undefined;
+  await act(async () => { mate = await make(app, '求职顾问'); });
+  fireEvent.click(await screen.findByRole('link', { name: /求职顾问/ }));
+  fireEvent.click(await screen.findByRole('button', { name: '更多' }));
+  fireEvent.click(await screen.findByRole('menuitem', { name: '编辑队友' }));
+  const editor = await screen.findByRole('dialog', { name: '编辑队友' });
+  const picker = within(editor).getByRole('group', { name: '头像' });
+  fireEvent.click(await within(picker).findByRole('button', { name: '丸子头' }));
+  fireEvent.click(within(editor).getByRole('radio', { name: '玫红' }));
+  fireEvent.click(within(editor).getByRole('button', { name: '保存修改' }));
+  await waitFor(async () => expect(await app.api.mates.get(mate!.id)).toMatchObject({ avatar: 'topknot',
+    hue: 'rose', role: '整理资料来源' }));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: '编辑队友' })).toBeNull());
+});

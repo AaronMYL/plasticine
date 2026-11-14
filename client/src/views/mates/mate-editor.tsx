@@ -46,9 +46,11 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
     setDraft((old) => ({ ...old, [field]: value }));
   };
   const submit = async (): Promise<void> => {
-    const body: MateDraft = { name: draft.name.trim(), avatar: draft.avatar, hue: draft.hue, role: draft.role.trim(),
-      soul: draft.soul, purpose: draft.purpose };
-    const result = mate === undefined ? await live.mateActions.create(body) : await live.mateActions.update(mate, body);
+    // 改队友不带 Soul：Soul 在它自己的页面改，更新接口不收这一项（11-13 Aaron 换头像时报「队友不合要求」）。
+    const changes = { name: draft.name.trim(), avatar: draft.avatar, hue: draft.hue, role: draft.role.trim(),
+      purpose: draft.purpose };
+    const result = mate === undefined ? await live.mateActions.create({ ...changes, soul: draft.soul })
+      : await live.mateActions.update(mate, changes);
     if (mounted.current && result !== null && 'role' in result) { onClose(); navigate(mateRoute(result.id)); }
   };
   const title = mate === undefined ? '创建队友' : '编辑队友';

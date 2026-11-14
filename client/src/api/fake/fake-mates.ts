@@ -1,8 +1,8 @@
 import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
-import { autoMateCharacter, DEFAULT_MAIN, MateDraftSchema, MateGroupDraftSchema, SendLineMessageRequestSchema }
-  from '../shared.ts';
+import { autoMateCharacter, DEFAULT_MAIN, MateDraftSchema, MateGroupDraftSchema, SendLineMessageRequestSchema,
+  UpdateMateRequestSchema } from '../shared.ts';
 import type { MateDraft, MateView, MateGroupView, MateGroupDraft, CreateMateRequest, UpdateMateRequest,
   MateHandoffRequest, LegacyChatConvertRequest, LegacyChatProposal, MainIdentity, UpdateMainRequest }
   from '../shared.ts';
@@ -71,6 +71,8 @@ export class FakeMates implements MatesApi {
   }
   async update(id: string, input: UpdateMateRequest): Promise<MateView> {
     this.deps.session.require();
+    // 和服务端一样按接口格式严格查：多一个字段（比如 Soul，它另有自己的接口）也不收。
+    if (!Value.Check(UpdateMateRequestSchema, input)) throw invalid('队友不合要求。请检查字段格式后再试。');
     return this.deps.receipts.run('save', input.requestId, `PATCH /v2/mates/${id}`, () => {
       const current = this.rows.get(id);
       if (current === undefined) throw missing();
