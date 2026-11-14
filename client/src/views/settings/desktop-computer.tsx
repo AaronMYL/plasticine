@@ -15,6 +15,7 @@ import { InfoTip } from '../../shell/info-tip.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { parseDevice, parseUpdate, type DesktopShell, type DesktopState } from './desktop-shell.ts';
 import { SectionHead } from './section-head.tsx';
+import { SettingRow } from './setting-row.tsx';
 import './desktop.css';
 
 const DEVICE_SCOPE = '文件、命令、截屏和点按、日历、提醒事项';
@@ -43,29 +44,28 @@ function UpdateRow({ shell, update, onUpdate }: { shell: DesktopShell; update: U
   const problem = error ?? (state === 'failed' ? update?.problem ?? null : null);
   let action: ReactNode;
   if (state === 'ready') {
-    action = <button type="button" className="primary-button button-small" onClick={install}>重新打开</button>;
+    action = <button type="button" className="primary-button" onClick={install}>重新打开</button>;
   } else if (state === 'available' || (state === 'failed' && update?.available != null)) {
-    action = <button type="button" className="primary-button button-small" onClick={install}>
+    action = <button type="button" className="primary-button" onClick={install}>
       {state === 'failed' ? '重新下载' : '下载并更新'}</button>;
   } else if (state === 'downloading' && update !== null) {
-    action = <button type="button" className="secondary-button button-small" disabled>
+    action = <button type="button" className="secondary-button" disabled>
       在下载 {Math.round(updateFraction(update) * 100)}%</button>;
   } else {
     const working = state === 'checking' || state === 'downloading' || state === 'installing';
-    action = <button type="button" className="secondary-button button-small" disabled={working} onClick={check}>
+    action = <button type="button" className="secondary-button" disabled={working} onClick={check}>
       {WORKING_LABELS[state] ?? '检查更新'}</button>;
   }
+  const sub = state === 'ready' && update?.available != null
+    ? <>新版本 <span className="mono">{update.available}</span> 已下好</>
+    : (state === 'available' || state === 'downloading') && update?.available != null
+      ? <>有新版本 <span className="mono">{update.available}</span></>
+      : <span className="mono">Plasticine {shell.version}</span>;
   return (
-    <div className="desktop-row">
-      <span className="desktop-row-title">客户端</span>
-      {state === 'ready' && update?.available != null
-        ? <span className="desktop-row-meta">新版本 <span className="mono">{update.available}</span> 已下好</span>
-        : (state === 'available' || state === 'downloading') && update?.available != null
-        ? <span className="desktop-row-meta">有新版本 <span className="mono">{update.available}</span></span>
-        : <span className="desktop-row-meta mono">Plasticine {shell.version}</span>}
+    <SettingRow name="客户端" sub={sub}>
       {problem === null ? null : <InfoTip label="更新没成的原因" text={problem} />}
       {action}
-    </div>
+    </SettingRow>
   );
 }
 
@@ -112,17 +112,17 @@ function DeviceRow({ shell, device, onDevice }: { shell: DesktopShell; device: D
     name === 'screen' || name === 'accessibility');
   return (
     <>
-      <div className="desktop-row">
-        <span className="desktop-row-title">让 Plasticine 用这台电脑</span>
-        <span className="desktop-row-meta">{deviceMeta(device)}</span>
+      <SettingRow name="让 Plasticine 用这台电脑" sub={deviceMeta(device)}>
         <input type="checkbox" role="switch" aria-label="让 Plasticine 用这台电脑" checked={on}
           disabled={busy || device === null} onChange={toggle} />
-      </div>
-      {on && missing.length > 0 ? <div className="desktop-row desktop-row-sub">
-        <span className="desktop-row-title">{missing.map((name) => PERMISSION_NAMES[name]).join('、')}没授权</span>
-        {missing.map((name) => <button key={name} type="button" className="secondary-button button-small"
-          onClick={() => shell.device.openPermission(name)}>去授权{missing.length > 1 ? PERMISSION_NAMES[name] : ''}
-        </button>)}
+      </SettingRow>
+      {on && missing.length > 0 ? <div className="set-sub">
+        <SettingRow name={<span className="set-row-error">
+          {missing.map((name) => PERMISSION_NAMES[name]).join('、')}没授权</span>}>
+          {missing.map((name) => <button key={name} type="button" className="secondary-button"
+            onClick={() => shell.device.openPermission(name)}>去授权{missing.length > 1 ? PERMISSION_NAMES[name] : ''}
+          </button>)}
+        </SettingRow>
       </div> : null}
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {device?.problem == null || !on ? null : <p className="block-empty" role="status">{device.problem}</p>}
@@ -142,15 +142,12 @@ export function DesktopComputer({ shell, state, onChange }: { shell: DesktopShel
   return (
     <section className="block" aria-labelledby="settings-desktop-computer">
       <SectionHead id="settings-desktop-computer" title="这台电脑" />
-      <div className="desktop-rows">
-        <UpdateRow shell={shell} update={state.update} onUpdate={(update) => onChange({ update })} />
-        <div className="desktop-row">
-          <span className="desktop-row-title">系统通知</span>
-          <input type="checkbox" role="switch" aria-label="系统通知" checked={state.notifications === true}
-            disabled={state.notifications === null} onChange={toggleNotifications} />
-        </div>
-        <DeviceRow shell={shell} device={state.device} onDevice={(device) => onChange({ device })} />
-      </div>
+      <UpdateRow shell={shell} update={state.update} onUpdate={(update) => onChange({ update })} />
+      <SettingRow name="系统通知">
+        <input type="checkbox" role="switch" aria-label="系统通知" checked={state.notifications === true}
+          disabled={state.notifications === null} onChange={toggleNotifications} />
+      </SettingRow>
+      <DeviceRow shell={shell} device={state.device} onDevice={(device) => onChange({ device })} />
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
     </section>
   );

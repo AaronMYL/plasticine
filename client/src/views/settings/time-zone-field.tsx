@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { deviceTimeZone } from '../../state/time-zone.ts';
 import { isTimeZone } from '../../../../agent/shared/time-zone.ts';
+import { SettingField, SettingSwitch } from './setting-row.tsx';
 
 const KNOWN_ZONES: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'Asia/Shanghai', label: '北京时间 · 北京 / 上海 / 广州' },
@@ -51,6 +52,10 @@ function localPreview(zone: string, now: Date): string {
   return `${clock} · ${offset}`;
 }
 
+/**
+ * 时区（11-14 设置页一种行）：「跟随设备」一行开关，第二行写现在用的时区和那里的时间；关掉后下面缩进一块——
+ * 搜城市或时区（不搜不列，搜了最多 6 个，挑了就收起）、直接填名称。
+ */
 export function TimeZoneField({ value, disabled, onChange }: {
   value: string; disabled: boolean; onChange: (value: string) => void;
 }): ReactNode {
@@ -70,24 +75,18 @@ export function TimeZoneField({ value, disabled, onChange }: {
     const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
+  const preview = <output aria-label="所选时区的当前时间">{label} · {localPreview(zone, now)}</output>;
   return <section className="settings-time-zone" aria-label="时区">
-    <h3 className="block-title">时区</h3>
-    <div className="segmented" role="group" aria-label="时区选择方式">
-      <button type="button" className="segmented-item" aria-pressed={following} disabled={disabled}
-        onClick={() => onChange('')}>跟随设备</button>
-      <button type="button" className="segmented-item" aria-pressed={!following} disabled={disabled}
-        onClick={() => onChange(following ? device : value)}>选择时区</button>
-    </div>
-    <output className="time-zone-now" aria-label="所选时区的当前时间">
-      <span>{label}</span><span className="text-meta">{localPreview(zone, now)}</span>
-    </output>
-    {following ? null : <>
-      <label className="field"><span className="field-label">搜索城市或时区</span>
-        <input type="search" className="search-input" value={query} disabled={disabled}
-          placeholder="例如北京、新加坡、London" onChange={(event) => setQuery(event.target.value)} />
-      </label>
+    <header className="block-head"><h3 className="block-title">时区</h3></header>
+    <SettingSwitch name="跟随设备" checked={following} disabled={disabled} sub={preview}
+      onChange={(on) => onChange(on ? '' : device)} />
+    {following ? null : <div className="set-sub">
+      <SettingField name="搜索城市或时区" htmlFor={`${id}-search`}>
+        <input id={`${id}-search`} type="search" className="search-input" value={query}
+          disabled={disabled} placeholder="北京、新加坡、London" onChange={(event) => setQuery(event.target.value)} />
+      </SettingField>
       {shown.length === 0 ? null : <ul className="time-zone-results" aria-label="可选时区">
-        {shown.map((entry) => <li key={entry.id}><button type="button" className="chip-button time-zone-result"
+        {shown.map((entry) => <li key={entry.id}><button type="button" className="time-zone-result"
           aria-pressed={entry.id === value} disabled={disabled} onClick={() => {
             onChange(entry.id);
             setQuery('');
@@ -96,12 +95,10 @@ export function TimeZoneField({ value, disabled, onChange }: {
         </button></li>)}
       </ul>}
       {term !== '' && shown.length === 0 ? <p className="block-empty">没有找到</p> : null}
-      <details><summary>直接填写时区名称</summary>
-        <label className="field" htmlFor={`${id}-value`}><span className="field-label">时区名称</span>
-          <input id={`${id}-value`} className="field-input field-input-mono" value={value} readOnly={disabled}
-            placeholder="Asia/Shanghai" onChange={(event) => onChange(event.target.value)} />
-        </label>
-      </details>
-    </>}
+      <SettingField name="时区名称" htmlFor={`${id}-value`}>
+        <input id={`${id}-value`} className="field-input field-input-mono" value={value}
+          readOnly={disabled} placeholder="Asia/Shanghai" onChange={(event) => onChange(event.target.value)} />
+      </SettingField>
+    </div>}
   </section>;
 }

@@ -22,10 +22,12 @@ import { useOp } from '../pending/pending-ops.tsx';
 import { joinDraftKey } from './network-store.ts';
 import { AvatarCrop } from './avatar-crop.tsx';
 import { useSettingsDraft } from './settings-dialog-context.ts';
+import { SettingRow } from './setting-row.tsx';
 import './account-profile.css';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
-const AVATAR_SIZE = 44;
+/** 资料页的大头像（11-14 头像三档 20 · 28 · 40）。 */
+const AVATAR_SIZE = 40;
 
 /** 「11月8日」：密码哪天设的。 */
 function dayOf(iso: string, timeZone: string | undefined): string {
@@ -65,10 +67,9 @@ function RenameForm({ name, onDone }: { name: string; onDone: (state: AccountSta
           onChange={(event) => setValue(event.target.value)} />
       </label>
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
-      <div className="account-inline-actions">
-        <button type="button" className="text-button text-button-quiet" onClick={() => onDone(null)}>取消</button>
-        <button type="submit" className="primary-button button-small" disabled={busy || value.trim() === ''}>
-          保存</button>
+      <div className="set-actions">
+        <button type="button" className="secondary-button" onClick={() => onDone(null)}>取消</button>
+        <button type="submit" className="primary-button" disabled={busy || value.trim() === ''}>保存</button>
       </div>
     </form>
   );
@@ -102,9 +103,9 @@ function ClaimHandle({ name, onDone }: { name: string; onDone: () => void }): Re
       {op === undefined || op.status === 'running' ? null : (
         <OpLine op={op} onRetry={(key) => void networkActions.retry(key)} onDismiss={(key) => actionOps.dismiss(key)} />
       )}
-      <div className="account-inline-actions">
-        <button type="button" className="text-button text-button-quiet" onClick={onDone}>取消</button>
-        <button type="submit" className="primary-button button-small"
+      <div className="set-actions">
+        <button type="button" className="secondary-button" onClick={onDone}>取消</button>
+        <button type="submit" className="primary-button"
           disabled={busy || handle === '' || handleBlocks(check)}>起这个</button>
       </div>
     </form>
@@ -141,9 +142,9 @@ function PasswordForm({ needsCurrent, localToken, onDone }: { needsCurrent: bool
         ? <p className="ob-note">至少 {PASSWORD_MIN_CHARS} 位</p> : null}
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       <p className="ob-note">别的设备照常登录着；要哪台退出，在下面的设备里点。</p>
-      <div className="account-inline-actions">
-        <button type="button" className="text-button text-button-quiet" onClick={() => onDone(null)}>取消</button>
-        <button type="submit" className="primary-button button-small" disabled={!ready}>保存</button>
+      <div className="set-actions">
+        <button type="button" className="secondary-button" onClick={() => onDone(null)}>取消</button>
+        <button type="submit" className="primary-button" disabled={!ready}>保存</button>
       </div>
     </form>
   );
@@ -191,20 +192,15 @@ export function AccountProfile(): ReactNode {
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {/* 和中继同步出的错（有才写）：原来在「邀请朋友」那一块，11-13 那块去掉后挪到这里。 */}
       {status?.lastError == null ? null : <p className="block-empty is-error" role="alert">{status.lastError}</p>}
-      {state === null ? null : <ul className="system-rows">
-        <li className="system-row account-row">
-          <FaceAvatar name={name === '' ? '?' : name} avatar={avatar} size={AVATAR_SIZE} />
-          <span className="account-device-main">
-            <span className="system-row-title">{name === '' ? '没起名字' : name}</span>
-            <span className="text-meta account-device-meta">
-              {state.handle === null ? '还没有 @账号' : `@${state.handle}${host === null ? '' : ` · ${host}`}`}
-            </span>
-          </span>
-          {state.handle === null ? <button type="button" className="secondary-button button-small"
+      {state === null ? null : <ul className="account-rows">
+        <SettingRow as="li" lead={<FaceAvatar name={name === '' ? '?' : name} avatar={avatar} size={AVATAR_SIZE} />}
+          name={name === '' ? '没起名字' : name}
+          sub={state.handle === null ? '还没有 @账号' : `@${state.handle}${host === null ? '' : ` · ${host}`}`}>
+          {state.handle === null ? <button type="button" className="secondary-button"
             aria-expanded={editing === 'handle'} onClick={() => setEditing('handle')}>起一个 @账号</button> : null}
           {/* 头像只给网络上的人看：有 @账号才能换。 */}
           {status?.account == null ? null : <>
-            <button type="button" className="secondary-button button-small"
+            <button type="button" className="secondary-button"
               onClick={() => picker.current?.click()}>换头像</button>
             <input ref={picker} type="file" accept="image/*" hidden aria-label="挑一张头像" onChange={(event) => {
               const picked = event.target.files?.[0];
@@ -212,9 +208,9 @@ export function AccountProfile(): ReactNode {
               event.target.value = '';
             }} />
           </>}
-          <button type="button" className="secondary-button button-small"
+          <button type="button" className="secondary-button"
             aria-expanded={editing === 'name'} onClick={() => setEditing('name')}>改名字</button>
-        </li>
+        </SettingRow>
         {cropping === null ? null : <li className="account-edit">
           <AvatarCrop file={cropping} shape="circle" onCancel={() => setCropping(null)} onSave={(dataUrl) => {
             setCropping(null);
@@ -231,14 +227,11 @@ export function AccountProfile(): ReactNode {
           }
         }} /></li> : null}
         {editing === 'handle' ? <li className="account-edit"><ClaimHandle name={name} onDone={reread} /></li> : null}
-        <li className="system-row account-row">
-          <span className="system-row-title">密码</span>
-          <span className="system-row-meta">
-            {setAt !== null ? `${dayOf(setAt, timeZone)}设的` : state.passwordSet ? '' : '还没设'}
-          </span>
-          <button type="button" className="secondary-button button-small" aria-expanded={editing === 'password'}
+        <SettingRow as="li" name="密码"
+          sub={setAt !== null ? `${dayOf(setAt, timeZone)}设的` : state.passwordSet ? undefined : '还没设'}>
+          <button type="button" className="secondary-button" aria-expanded={editing === 'password'}
             onClick={() => setEditing('password')}>{state.passwordSet ? '改密码' : '设密码'}</button>
-        </li>
+        </SettingRow>
         {editing === 'password' ? <li className="account-edit">
           <PasswordForm needsCurrent={state.passwordSet && localToken === null} localToken={localToken}
             onDone={(at) => {

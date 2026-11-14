@@ -153,13 +153,14 @@
   pointer-events: none;
 }
 
-/* 下拉菜单（dropdown-menu.tsx）：手机上一行 40，手指点得准。 */
+/* 下拉菜单（dropdown-menu.tsx）。 */
 .dropdown-menu {
   min-width: 200px;
 }
 
-@media (max-width: 767px) {
-  .dropdown-menu .popover-item {
-    height: 40px;
+/* 触屏上菜单每一项 44 高，手指点得准（11-14 Aaron 弹框选）。 */
+@media (pointer: coarse) {
+  .popover-item {
+    height: var(--touch);
   }
 }

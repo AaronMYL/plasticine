@@ -8,16 +8,22 @@ async function openSection() {
   fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
   fireEvent.click(within(await screen.findByRole('dialog', { name: '设置' })).getByRole('button', { name: '浏览器' }));
   const section = await screen.findByRole('region', { name: '网页翻译' });
-  await within(section).findByRole('combobox', { name: '翻译成' });
+  await within(section).findByRole('button', { name: '翻译成' });
   return { app, section };
+}
+
+/** 11-14 设置页一种行：翻译成、显示都是下拉菜单。 */
+async function pick(section: HTMLElement, name: string, option: string): Promise<void> {
+  fireEvent.click(within(section).getByRole('button', { name }));
+  fireEvent.click(within(await screen.findByRole('menu', { name })).getByRole('menuitemcheckbox', { name: option }));
 }
 
 describe('设置 · 浏览器 · 网页翻译', () => {
   it('模型集中在 AI 设置，翻译成中文、双语对照、用词表开着，总是翻译的网站一个一个列出来', async () => {
     const { section } = await openSection();
-    expect(within(section).queryByRole('combobox', { name: '翻译模型' })).toBeNull();
-    expect((within(section).getByRole('combobox', { name: '翻译成' }) as HTMLSelectElement).value).toBe('zh-CN');
-    expect(within(section).getByRole('button', { name: '双语对照' }).getAttribute('aria-pressed')).toBe('true');
+    expect(within(section).queryByRole('button', { name: '翻译模型' })).toBeNull();
+    expect(within(section).getByRole('button', { name: '翻译成' }).textContent).toBe('中文');
+    expect(within(section).getByRole('button', { name: '显示' }).textContent).toBe('双语对照');
     expect((within(section).getByRole('switch', { name: '用词表' }) as HTMLInputElement).checked).toBe(true);
     const sites = within(section).getByRole('list', { name: '总是翻译' });
     expect(within(sites).getAllByRole('listitem').map((item) => item.textContent))
@@ -28,8 +34,8 @@ describe('设置 · 浏览器 · 网页翻译', () => {
     const { app, section } = await openSection();
     let changed = 0;
     window.addEventListener(TRANSLATE_SETTINGS_CHANGED, () => { changed += 1; });
-    fireEvent.change(within(section).getByRole('combobox', { name: '翻译成' }), { target: { value: 'ja' } });
-    fireEvent.click(within(section).getByRole('button', { name: '只看译文' }));
+    await pick(section, '翻译成', '日本語');
+    await pick(section, '显示', '只看译文');
     fireEvent.click(within(section).getByRole('switch', { name: '用词表' }));
     fireEvent.click(within(section).getByRole('button', { name: '不再总是翻译 x.com' }));
     fireEvent.click(within(section).getByRole('button', { name: '保存网页翻译' }));
@@ -48,7 +54,6 @@ describe('设置 · 浏览器 · 网页翻译', () => {
     expect((await within(section).findByRole('alert')).textContent).toContain('再读一次');
     expect((within(section).getByRole('switch', { name: '用词表' }) as HTMLInputElement).checked).toBe(false);
     fireEvent.click(within(section).getByRole('button', { name: '再读一次网页翻译设置' }));
-    await waitFor(() => expect((within(section).getByRole('combobox', { name: '翻译成' }) as HTMLSelectElement).value)
-      .toBe('en'));
+    await waitFor(() => expect(within(section).getByRole('button', { name: '翻译成' }).textContent).toBe('English'));
   });
 });

@@ -1,0 +1,181 @@
+/*
+ * 设置页的一种行（setting-row.tsx，11-14 设计稿「设置页的布局」）：至少 48 高，行底一条细线；左边名字 14/22、第二行
+ * 状态 12/18；右边控件。下拉是一个描边小按钮（32 高、圆角 8），「值 ›」是一段灰字加箭头。
+ */
+
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 48px; /* 例外：设置页一行至少 48 高（设计稿） */
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.set-row-lead {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg2);
+}
+
+.set-row-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.set-row-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  color: var(--fg);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  overflow-wrap: anywhere;
+}
+
+.set-row-sub {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  overflow-wrap: anywhere;
+}
+
+/* 第二行写出错、后果时用出错色。 */
+.set-row-error {
+  color: var(--err);
+}
+
+.set-row-control {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 60%;
+}
+
+.set-select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  height: var(--control);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.set-select > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-select > svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.set-select:hover:not(:disabled),
+.set-select[data-open='true'] {
+  background: var(--tint);
+}
+
+.set-select:disabled {
+  color: var(--fg3);
+  cursor: default;
+}
+
+.set-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.set-value:hover {
+  background: var(--tint);
+  color: var(--fg);
+}
+
+.set-select:focus-visible,
+.set-value:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* 要打字的：名字在上、框在下占满宽。 */
+.set-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.set-field-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  font-weight: 500;
+}
+
+.set-field .field-input {
+  width: 100%;
+  max-width: none;
+}
+
+/* 行下面展开的一块（「值 ›」点开的）：缩进对齐名字，不另起框。 */
+.set-sub {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.set-sub > .set-row:last-child {
+  border-bottom: 0;
+}
+
+ul.set-sub {
+  margin: 0;
+  list-style: none;
+}
+
+@media (pointer: coarse) {
+  .set-select,
+  .set-value {
+    height: var(--touch);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .set-select,
+  .set-value {
+    transition: none;
+  }
+}

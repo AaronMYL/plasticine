@@ -41,7 +41,7 @@ describe('M4 · 就地写的字按 id 存', () => {
     fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
     const sheet = (): HTMLElement => screen.getByRole('dialog', { name: '设置' });
     fireEvent.click(within(sheet()).getByRole('button', { name: '通用' }));
-    fireEvent.click(await within(sheet()).findByRole('button', { name: '选择时区' }));
+    fireEvent.click(await within(sheet()).findByRole('switch', { name: '跟随设备' }));
     const field = (): HTMLElement => within(sheet()).getByLabelText('时区名称');
     fireEvent.change(field(), { target: { value: 'Asia/Tokyo' } });
     fireEvent.click(within(sheet()).getByRole('button', { name: '关掉设置' }));

@@ -18,8 +18,9 @@ async function openSection(name: '通用'): Promise<HTMLElement> {
 const openGeneral = (): Promise<HTMLElement> => openSection('通用');
 
 describe('设置 · 通知 · 能收到「立刻打断」的设备', () => {
-  const tip = (sheet: HTMLElement): string => within(sheet).getByRole('button', { name: '通知的说明' })
-    .getAttribute('aria-description') ?? '';
+  // 11-14 设置页一种行：说明挂在「这台设备接收系统通知」那一行的 ⓘ 上。
+  const tip = (sheet: HTMLElement): string => within(sheet)
+    .getByRole('button', { name: '这台设备接收系统通知的说明' }).getAttribute('aria-description') ?? '';
 
   it('这台设备开着：开关开着，ⓘ 里写「这台设备能收到」和其他设备要在那台上看，不再常显一行', async () => {
     const device = new FakePushDevice({ permission: 'granted' });

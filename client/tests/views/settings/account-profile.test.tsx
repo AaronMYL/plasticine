@@ -120,7 +120,7 @@ describe('设置 · 账号', () => {
     } });
     const devices = await within(pane()).findByRole('region', { name: '登录着的设备' });
     await within(devices).findByText('书房的 iPhone');
-    expect(within(devices).getByText('这台')).toBeTruthy();
+    expect(within(devices).getByText(/^这台 · /)).toBeTruthy();
     const revoke = vi.spyOn(app.api.devices, 'revoke');
     fireEvent.click(within(devices).getByRole('button', { name: '让「书房的 iPhone」退出' }));
     const confirm = screen.getByRole('alertdialog', { name: '让「书房的 iPhone」退出？' });

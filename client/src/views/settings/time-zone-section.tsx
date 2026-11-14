@@ -45,10 +45,11 @@ export function TimeZoneSection(): ReactNode {
             onChange={(value) => settings.change('timeZone', value)} />
           {problem === null ? null : <p className="block-empty is-error">{problem}</p>}
           {changed && !locked ? (
-            <button type="button" className="primary-button settings-retry" disabled={problem !== null}
-              onClick={() => void settings.save()}>
-              保存
-            </button>
+            <div className="set-actions">
+              <button type="button" className="secondary-button" onClick={() => settings.discard()}>取消</button>
+              <button type="button" className="primary-button" disabled={problem !== null}
+                onClick={() => void settings.save()}>保存</button>
+            </div>
           ) : null}
           <OpLines
             ops={op === undefined ? [] : [op]}

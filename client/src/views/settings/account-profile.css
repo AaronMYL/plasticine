@@ -1,31 +1,10 @@
-/* 设置 · 账号（11-08 设计稿 Settings-Account）：名字一行、密码一行、登录着的设备一行一台；行高 52，行底 1px --line，
-   名字和设备下面一行 12/18 --fg2。就地展开的表单缩进到和名字对齐。 */
+/* 设置 · 账号（11-08 设计稿 Settings-Account；11-14 改用设置页的一种行 setting-row.tsx）：名字一行、密码一行、
+   登录着的设备一行一台。就地展开的表单（改名字、改密码、起 @账号）名字在上、框在下，「取消 · 保存」靠右。 */
 
-.account-profile .system-rows {
-  border-top: 1px solid var(--line);
-}
-
-.account-row,
-.account-devices .system-row {
-  min-height: 52px;
-  padding: var(--space-2) 0;
-  box-sizing: border-box;
-}
-
-.account-device-main {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.account-device-meta {
-  overflow: hidden;
-  color: var(--fg2);
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.account-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .account-device-via {
@@ -48,11 +27,6 @@
 .account-device-via[data-via='direct'] .account-device-dot { background: var(--ok); }
 .account-device-via[data-via='relay'] .account-device-dot { background: var(--run); }
 
-.account-devices .system-row > svg {
-  flex: none;
-  color: var(--fg2);
-}
-
 .account-edit {
   padding: var(--space-3) 0 var(--space-4);
   border-bottom: 1px solid var(--line);
@@ -66,14 +40,3 @@
   max-width: 400px;
 }
 
-.account-inline-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-3);
-}
-
-.account-logout {
-  align-self: flex-start;
-  margin-top: var(--space-3);
-}

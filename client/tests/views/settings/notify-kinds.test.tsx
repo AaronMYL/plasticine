@@ -21,10 +21,18 @@ function mainMessage(seq: number, fields: Partial<LineMessageView>): LineMessage
     attachments: [], widgets: [], createdAt: '2026-11-14T10:00:00.000Z', ...fields };
 }
 
+/** 11-14 设置页一种行：七类收在「通知哪些事」那一行的「7 类 ›」里，点开才出。 */
+async function openKinds(): Promise<HTMLElement> {
+  const value = await screen.findByRole('button', { name: '通知哪些事' });
+  expect(value.textContent).toContain('7 类');
+  fireEvent.click(value);
+  return screen.findByRole('list', { name: '通知哪些事' });
+}
+
 describe('通知按类型开关', () => {
   it('设置里七类各一个开关，默认开着；关掉一类存到服务器上，「等你的事」关着时写后果', async () => {
     const app = await renderApp({ hash: '#/settings/general' });
-    const list = await screen.findByRole('list', { name: '通知哪些事' });
+    const list = await openKinds();
     const switches = within(list).getAllByRole('switch');
     expect(switches.map((item) => item.getAttribute('aria-label'))).toEqual(['等你的事', '联系人消息', '群组消息',
       '主线回复', '队友回复', '来信', '提醒和结果']);
@@ -40,7 +48,7 @@ describe('通知按类型开关', () => {
   it('存不上：开关退回原样，写原因', async () => {
     const app = await renderApp({ hash: '#/settings/general' });
     vi.spyOn(app.api.push, 'saveKinds').mockRejectedValueOnce(new Error('连接中断'));
-    const list = await screen.findByRole('list', { name: '通知哪些事' });
+    const list = await openKinds();
     fireEvent.click(within(list).getByRole('switch', { name: '来信' }));
     expect((await screen.findByText(/没存上/)).textContent).toContain('连接中断');
     expect((within(list).getByRole('switch', { name: '来信' }) as HTMLInputElement).checked).toBe(true);

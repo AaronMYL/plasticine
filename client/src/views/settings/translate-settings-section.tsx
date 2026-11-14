@@ -1,4 +1,5 @@
-// 网页翻译的语言、显示与词表；模型和思考强度集中在设置 · AI。
+// 网页翻译的语言、显示与词表；模型和思考强度集中在设置 · AI。11-14 设置页一种行：翻译成、显示两行下拉，用词表一行开关，
+// 总是翻译的网站一行一个（行尾 × 拿掉）；改了在这一组底部靠右出「取消 · 保存」。
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
@@ -7,16 +8,21 @@ import {
   type TranslateSettingsView, type TranslateTarget,
 } from '../../api/shared.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
-import { Icon } from '../../shell/icons.tsx';
 import { TRANSLATE_SETTINGS_CHANGED } from '../../shell/web-translate-context.tsx';
 import { SectionHead } from './section-head.tsx';
 import { useSettingsDraft } from './settings-dialog-context.ts';
-import './translate-settings.css';
+import { SettingRow, SettingSelect, SettingSwitch, type SelectOption } from './setting-row.tsx';
 
 // 段头的说明：在哪里用、用词表做什么、改了什么时候生效。
 const TRANSLATE_NOTE = '在电脑客户端的网页标签里点地址栏右边的「文A」翻译；只发段落文字，同一段再看不再花额度。\n'
   + '用词表开着时，你的用词按记忆里的词表译。\n'
   + '保存后下一批译文生效，已经插在页面上的译文不变。';
+
+const TARGETS: readonly SelectOption<TranslateTarget>[] = TRANSLATE_TARGETS.map((value) => ({ value,
+  label: TRANSLATE_TARGET_LABELS[value] }));
+const DISPLAYS: readonly SelectOption<TranslateSettingsView['display']>[] = [
+  { value: 'bilingual', label: '双语对照' }, { value: 'translation', label: '只看译文' },
+];
 
 function same(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -85,50 +91,32 @@ export function TranslateSettingsSection(): ReactNode {
         }} />
       </SectionHead>
       {current === null ? null : <>
-        <div className="model-choice">
-          <label>翻译成<select className="field-input" aria-label="翻译成" value={current.target}
-            disabled={busy} onChange={(event) => editSettings({ target: event.target.value as TranslateTarget })}>
-            {TRANSLATE_TARGETS.map((target) => <option key={target} value={target}>
-              {TRANSLATE_TARGET_LABELS[target]}</option>)}
-          </select></label>
-          <div className="translate-settings-field">
-            <span>显示</span>
-            <div className="segmented" role="group" aria-label="显示">
-              {(['bilingual', 'translation'] as const).map((display) => (
-                <button key={display} type="button" className="segmented-item" disabled={busy}
-                  aria-pressed={current.display === display} onClick={() => editSettings({ display })}>
-                  {display === 'bilingual' ? '双语对照' : '只看译文'}
-                </button>
-              ))}
-            </div>
+        <SettingSelect name="翻译成" value={current.target} options={TARGETS} disabled={busy}
+          onChange={(target) => editSettings({ target })} />
+        <SettingSelect name="显示" value={current.display} options={DISPLAYS} disabled={busy}
+          onChange={(display) => editSettings({ display })} />
+        <SettingSwitch name="用词表" checked={current.glossary} disabled={busy}
+          onChange={(glossary) => editSettings({ glossary })} />
+        {current.alwaysSites.length === 0 ? null : <>
+          <SettingRow name="总是翻译" sub={`${current.alwaysSites.length} 个网站`} />
+          <ul className="set-sub translate-sites" aria-label="总是翻译">
+            {current.alwaysSites.map((site) => (
+              <SettingRow key={site} as="li" name={site}>
+                <IconButton icon="close" size={14} label={`不再总是翻译 ${site}`} disabled={busy}
+                  onClick={() => editSettings({
+                    alwaysSites: current.alwaysSites.filter((entry) => entry !== site) })} />
+              </SettingRow>
+            ))}
+          </ul>
+        </>}
+        {changed ? (
+          <div className="set-actions">
+            <button type="button" className="secondary-button" disabled={busy}
+              onClick={() => { setDraft(null); setMessage(null); }}>取消</button>
+            <button type="button" className="primary-button" disabled={busy} aria-label="保存网页翻译"
+              onClick={() => void save()}>{busy ? '正在保存…' : '保存'}</button>
           </div>
-        </div>
-        <label className="translate-settings-field">
-          <span>用词表</span>
-          <input type="checkbox" role="switch" aria-label="用词表" checked={current.glossary} disabled={busy}
-            onChange={(event) => editSettings({ glossary: event.target.checked })} />
-        </label>
-        {current.alwaysSites.length === 0 ? null : (
-          <div className="translate-settings-field translate-settings-wide">
-            <span>总是翻译</span>
-            <ul className="translate-sites" aria-label="总是翻译">
-              {current.alwaysSites.map((site) => (
-                <li key={site} className="translate-site">
-                  <span>{site}</span>
-                  <button type="button" className="translate-site-remove" aria-label={`不再总是翻译 ${site}`}
-                    title="不再总是翻译" disabled={busy} onClick={() => editSettings({
-                      alwaysSites: current.alwaysSites.filter((entry) => entry !== site) })}>
-                    <Icon name="close" size={12} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <button type="button" className="chip-button translate-settings-save" disabled={busy || !changed}
-          aria-label="保存网页翻译" onClick={() => void save()}>
-          {busy ? '正在保存…' : '保存'}
-        </button>
+        ) : null}
       </>}
       {message === null ? null : <p role="status" className="settings-message">{message}</p>}
       {error === null ? null : <p role="alert" className="settings-message">{error}</p>}

@@ -3,6 +3,7 @@ import type { PlasticineIOSBridge } from '../../api/shared.ts';
 import '../../ios/bridge.ts';
 import { hostIosPages, inDesktopApp } from '../../shell/host.ts';
 import { SectionHead } from './section-head.tsx';
+import { SettingRow } from './setting-row.tsx';
 
 export function installationSteps(userAgent: string): string {
   if (/iPhone|iPad|iPod/.test(userAgent)) {
@@ -18,11 +19,18 @@ export function installationSteps(userAgent: string): string {
 function IosSection({ bridge }: { bridge: PlasticineIOSBridge }): ReactNode {
   return <section className="block">
     <SectionHead title="iPhone App" tip="配对、授权的文件夹和地点、各项能力能不能用，都在原生的设置与自检里。" />
-    <div className="settings-ios-actions">
-      <button type="button" className="chip-button" onClick={() => bridge.open('settings')}>设置与自检</button>
-      <button type="button" className="chip-button" onClick={() => bridge.open('photo')}>拍照交给 Plasticine</button>
-      <button type="button" className="chip-button" onClick={() => bridge.open('voice')}>说给 Plasticine</button>
-    </div>
+    <SettingRow name="设置与自检">
+      <button type="button" className="secondary-button" aria-label="设置与自检"
+        onClick={() => bridge.open('settings')}>打开</button>
+    </SettingRow>
+    <SettingRow name="拍照交给 Plasticine">
+      <button type="button" className="secondary-button" aria-label="拍照交给 Plasticine"
+        onClick={() => bridge.open('photo')}>拍照</button>
+    </SettingRow>
+    <SettingRow name="说给 Plasticine">
+      <button type="button" className="secondary-button" aria-label="说给 Plasticine"
+        onClick={() => bridge.open('voice')}>说一句</button>
+    </SettingRow>
   </section>;
 }
 

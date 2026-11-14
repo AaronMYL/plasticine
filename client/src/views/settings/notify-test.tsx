@@ -8,6 +8,7 @@ import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { desktopShell } from './desktop-shell.ts';
+import { SettingRow } from './setting-row.tsx';
 
 const DesktopResultSchema = Type.Object({ shown: Type.Boolean(), error: Type.Union([Type.String(), Type.Null()]) });
 
@@ -33,26 +34,19 @@ export function NotifyTest(): ReactNode {
       setState({ kind: 'failed', reason: errorText(cause) });
     }
   };
+  const sub = state.kind === 'sent' ? <span role="status">发出去了</span>
+    : state.kind === 'failed' ? <span className="set-row-error" role="alert">没弹出来。{state.reason}</span> : undefined;
   return (
-    <div className="settings-notify-test">
-      <div className="settings-notify-row">
-        <span className="settings-notify-label">发一条测试通知</span>
-        {state.kind === 'sent' ? <span className="settings-notify-sent" role="status">发出去了</span> : null}
-        <button type="button" className="chip-button" disabled={state.kind === 'sending'}
-          onClick={() => void send()}>
-          <Icon name="bell" size={14} />{state.kind === 'sending' ? '正在发' : '发一条'}
+    <SettingRow name="发一条测试通知" tip="看这台设备能不能弹出系统通知。" sub={sub}>
+      {state.kind === 'failed' && shell?.notifications.openSettings !== undefined ? (
+        <button type="button" className="secondary-button" onClick={() => shell.notifications.openSettings?.()}>
+          打开系统设置
         </button>
-      </div>
-      {state.kind === 'failed' ? (
-        <div className="settings-notify-fail" role="alert">
-          <p><b>没弹出来。</b>{state.reason}</p>
-          {shell?.notifications.openSettings === undefined ? null : (
-            <button type="button" className="chip-button" onClick={() => shell.notifications.openSettings?.()}>
-              打开系统设置
-            </button>
-          )}
-        </div>
       ) : null}
-    </div>
+      <button type="button" className="secondary-button" disabled={state.kind === 'sending'}
+        onClick={() => void send()}>
+        <Icon name="bell" size={14} />{state.kind === 'sending' ? '正在发' : '发一条'}
+      </button>
+    </SettingRow>
   );
 }

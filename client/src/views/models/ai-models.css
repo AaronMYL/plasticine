@@ -6,20 +6,20 @@
 .ai-models {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
-/* 第13批（设计稿 PredictSettings）：一栏，按用在哪儿分组；每组一个标题，下面一组带细框的行。 */
+/* 第13批（设计稿 PredictSettings）：一栏，按用在哪儿分组。11-14 设置页一种行（设计稿「设置页的布局」）：组标题 15/24，
+   下面一行行，行底一条细线，不再套细框；组和组之间 32。行的样子和 settings/setting-row.css 的 .set-row 一样。 */
 .ai-groups {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 .ai-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -29,6 +29,15 @@
   gap: var(--space-hair);
 }
 
+.ai-group-title,
+.ai-group-head {
+  margin-bottom: var(--space-1);
+}
+
+.ai-group-head > .ai-group-title {
+  margin-bottom: 0;
+}
+
 .ai-group-title {
   margin: 0;
   font-size: var(--text-section);
@@ -36,26 +45,12 @@
   font-weight: 600;
 }
 
-.ai-list {
-  border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line2);
-}
-
 .ai-list > .ai-use,
 .ai-list > .ai-use-group > .ai-use,
 .ai-list .ai-provider,
 .ai-list .tool-group-row {
-  padding-left: var(--space-4);
-  padding-right: var(--space-3);
-  border-top: 1px solid var(--line);
-  border-bottom: 0;
-}
-
-.ai-list > :first-child,
-.ai-list > :first-child > :first-child,
-.ai-list > .ai-provider-list:first-child > .ai-provider:first-child,
-.ai-list .tool:first-child .tool-group-row:first-child {
   border-top: 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .ai-list .tool,
@@ -65,14 +60,18 @@
 }
 
 .ai-list .tool-group-row {
+  min-height: 48px; /* 例外：和设置页一行一样高 */
   padding-top: var(--space-2);
   padding-bottom: var(--space-2);
 }
 
+/* 名字下面一行浅色字（12/18），不和名字挤在一行。 */
 .ai-use-sub {
-  margin-left: var(--space-2);
+  display: block;
   color: var(--fg2);
   font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  white-space: normal;
 }
 
 .ai-use-static {
@@ -110,7 +109,7 @@
   align-items: center;
   gap: var(--space-3);
   min-height: 32px;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .ai-pane-head > h3 {
@@ -141,7 +140,7 @@
 }
 
 .ai-provider {
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   padding: var(--space-1) 0;
 }
 
@@ -158,7 +157,7 @@
   gap: var(--space-2);
   min-width: 0;
   height: 40px;
-  padding: 0 var(--space-1);
+  padding: 0;
   border: 0;
   border-radius: var(--radius);
   background: transparent;
@@ -255,7 +254,7 @@
 }
 
 .ai-use {
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
 .ai-use:focus {
@@ -265,24 +264,22 @@
 .ai-use-line {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-height: 40px;
+  gap: var(--space-4);
+  min-height: 48px; /* 例外：设置页一行至少 48 高（设计稿） */
+  padding: var(--space-2) 0;
 }
 
+/* 折起来的几项点开后：缩进对齐名字（和 .set-sub 一样），不另起底色。 */
 .ai-use[data-nested='true'] .ai-use-line {
-  padding-left: var(--space-5);
-}
-
-.ai-list .ai-use[data-nested='true'] {
-  background: var(--tint);
+  padding-left: var(--space-4);
 }
 
 .ai-use-name {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  overflow-wrap: anywhere;
 }
 
 .ai-use[data-nested='true'] .ai-use-name {
@@ -291,9 +288,8 @@
 
 .ai-use-fold {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 40px;
+  flex-direction: column;
+  align-items: flex-start;
   padding: 0;
   border: 0;
   background: transparent;
@@ -308,20 +304,23 @@
   outline-offset: -2px;
 }
 
+/* 右边的下拉：和设置页的 .set-select 一样（描边小按钮 32 高、圆角 8，字 13/20）。 */
 .ai-use-value {
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: var(--space-1);
-  max-width: 62%;
-  height: 28px;
-  padding: 0 var(--space-2);
+  max-width: 60%;
+  height: var(--control);
+  padding: 0 var(--space-2) 0 var(--space-3);
   border: 0;
   border-radius: var(--radius);
   background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg);
   font: inherit;
-  font-size: var(--text-caption);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   cursor: pointer;
 }
 
@@ -337,7 +336,7 @@
 
 .ai-use-value:hover,
 .ai-use-value[aria-expanded='true'] {
-  background: var(--tint2);
+  background: var(--tint);
   color: var(--fg);
 }
 
@@ -348,6 +347,13 @@
 
 .ai-use-value > svg {
   flex: none;
+  color: var(--fg2);
+}
+
+@media (pointer: coarse) {
+  .ai-use-value {
+    height: var(--touch);
+  }
 }
 
 .ai-use-issue {

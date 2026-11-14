@@ -1,57 +1,17 @@
-/* 设置 · 账号 ·「在别的设备上用」（11-12 设计稿 Devices）：后果一句常显 13/20 --fg2；分段切换；网络那边二维码 120 +
-   网址一行（等宽）和一句提示；自己的网址一栏输入 + 保存。 */
-
-.access-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.access-section .block-head {
-  margin-bottom: calc(-1 * var(--space-3));
-}
+/* 设置 · 账号 ·「在别的设备上用」（11-12 设计稿 Devices；11-14 设置页一种行）：后果一句常显 13/20 --fg2；「连法」一行
+   下拉；网址一行（等宽）；二维码点开在下面；自己的网址框在下、按钮靠右。 */
 
 .access-warning,
-.access-empty,
-.access-hint {
+.access-empty {
   margin: 0;
+  padding: var(--space-2) 0;
   color: var(--fg2);
   font-size: var(--text-ui);
   line-height: var(--text-ui-line);
 }
 
-.access-modes {
-  align-self: flex-start;
-}
-
-.access-net {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
-  animation: access-in var(--motion-base) var(--ease-out);
-}
-
-.access-net .net-qr {
-  flex: none;
-  border-radius: var(--radius);
-  box-shadow: inset 0 0 0 1px var(--line2);
-}
-
-.access-net-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.access-url {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
 .access-url-text {
+  min-width: 0;
   overflow: hidden;
   font-family: var(--mono);
   font-size: var(--text-ui);
@@ -60,37 +20,17 @@
   white-space: nowrap;
 }
 
+.access-qr {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-4);
+}
+
+.access-qr .net-qr {
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
 .access-own {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  animation: access-in var(--motion-base) var(--ease-out);
-}
-
-.access-own-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.access-own-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.access-own-input {
-  flex: 1;
-  max-width: 360px;
-  min-width: 0;
-}
-
-@keyframes access-in {
-  from { opacity: 0; transform: translateY(2px); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .access-net,
-  .access-own { animation: none; }
 }

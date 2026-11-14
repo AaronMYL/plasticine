@@ -9,6 +9,7 @@ import { desktopHelper } from '../../mac/desktop-helper.ts';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { SectionHead } from './section-head.tsx';
+import { SettingRow } from './setting-row.tsx';
 
 /** 负责日历的那台 Mac：没撤销的 Mac 里最近见到的。 */
 export function calendarNode(nodes: readonly NodeView[]): NodeView | null {
@@ -58,14 +59,12 @@ export function CalendarAccess(): ReactNode {
   return (
     <section className="block" aria-labelledby="settings-calendar-access">
       <SectionHead id="settings-calendar-access" title="日历和提醒事项" />
-      <div className="system-row">
-        <span className="system-row-title">{mac === null ? '还没连 Mac' : mac.name}</span>
-        {mac === null ? null : <span className="system-row-meta">{statusText(granted)}</span>}
+      <SettingRow name={mac === null ? '还没连 Mac' : mac.name} sub={mac === null ? undefined : statusText(granted)}>
         {mac === null || granted.calendar && granted.reminders ? null : bridge === null
           ? <InfoTip label="「日历和提醒事项」怎么授权" text="在那台 Mac 上打开 Plasticine，到这里点「去授权」。" />
-          : <button type="button" className="secondary-button button-small" disabled={busy} onClick={authorize}>
+          : <button type="button" className="secondary-button" disabled={busy} onClick={authorize}>
             去授权</button>}
-      </div>
+      </SettingRow>
       {note === null ? null : <p className="block-empty" role="status">{note}</p>}
     </section>
   );

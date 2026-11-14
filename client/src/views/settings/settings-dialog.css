@@ -134,8 +134,8 @@
   flex: 1;
   min-width: 0;
   margin: 0;
-  font-size: var(--text-number);
-  line-height: var(--text-long-line);
+  font-size: var(--text-title);
+  line-height: var(--text-title-line);
   font-weight: 600;
 }
 
@@ -148,15 +148,31 @@
   scrollbar-gutter: stable;
 }
 
-/* 段里各块：小节标题（不再自带下划线）分开，块之间一条细线；正文列不铺满宽屏。 */
+/* 段里各块（11-14 设计稿「设置页的布局」）：组的小标题 15/24，下面一行行（setting-row.tsx）；组和组之间空 32，
+   不画分隔线；正文列不铺满宽屏。 */
 .settings-dialog .settings-content {
   max-width: 600px;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 .settings-dialog .settings-content .block-head {
+  margin-bottom: var(--space-1);
   padding-bottom: 0;
   border-bottom: 0;
+}
+
+.settings-dialog .settings-content .block {
+  gap: 0;
+}
+
+/* AI 那一段整块是几组（模型 · 对话 · 例行……），组和组之间照样空 32。 */
+.settings-dialog .settings-content .block.ai-models {
+  gap: var(--space-6);
+}
+
+/* 组里行以外的一句话（读不到、出错、状态）：和行一样上下留白。 */
+.settings-dialog .settings-content .block > :is(.block-empty, .settings-message, p) {
+  padding: var(--space-2) 0;
 }
 
 /* 模型档位：一行一项，左边名字右边下拉，两项并排（和网页翻译那一块同一种写法）。 */
@@ -185,18 +201,6 @@
   grid-column: 1 / -1;
 }
 
-.settings-dialog .settings-content > .block + .block,
-.settings-dialog .settings-content > .settings-spot + .settings-spot,
-.settings-dialog .settings-content > .block + .settings-spot,
-.settings-dialog .settings-content > .settings-spot + .block {
-  border-top: 1px solid var(--line);
-  padding-top: var(--space-5);
-}
-
-.settings-dialog .settings-content > .block,
-.settings-dialog .settings-content > .settings-spot > .block {
-  gap: var(--space-3);
-}
 
 .settings-dialog .settings-system,
 .settings-dialog .settings-ai {

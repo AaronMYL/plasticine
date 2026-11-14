@@ -1,5 +1,6 @@
 // 设置 · 账号 ·「登录着的设备」（11-08 设计稿 Settings-Account）：用 @账号和密码登录着的设备一行一台——图标、名字、
-// 上次在线；这台标「这台」，别的行尾「退出」。11-08 去掉配对码：不再有「添加设备」（新设备直接用 @账号和密码登录）。
+// 上次在线；这台行尾「退出这台」，别的行尾「退出」（11-14 设置页一种行：「这台」那个字和下面单独的「退出这台」并成
+// 这一行的按钮）。11-08 去掉配对码：不再有「添加设备」（新设备直接用 @账号和密码登录）。
 // 退出别的设备、退出这台都收不回：点了先弹确认框写清后果（11-14 统一：找不回的先确认），再点「退出」才做。
 
 import { useState, type ReactNode } from 'react';
@@ -10,6 +11,7 @@ import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { SectionHead } from './section-head.tsx';
+import { SettingRow } from './setting-row.tsx';
 import './account-profile.css';
 import { Failure, useRead } from './system-read.tsx';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
@@ -57,31 +59,27 @@ export function Devices(): ReactNode {
         tip="经 Cyber Hunter 网络连进来的设备，能直连就直连，打不通走中继，自动切换。" />
       {devices.value === null && devices.error === null ? <PageLoading rows={2} dense /> : null}
       {devices.error === null ? null : <Failure error={devices.error} onReload={devices.reload} />}
-      <ul className="system-rows account-devices" aria-label="登录着的设备">
+      <ul className="account-rows account-devices" aria-label="登录着的设备">
         {rows.map((device) => (
-          <li key={device.id} className="system-row">
-            <Icon name={device.local !== true && PHONE_NAME.test(device.name) ? 'phone' : 'mac'} />
-            <span className="account-device-main">
-              <span className="system-row-title">{deviceLabel(device)}</span>
-              <span className="text-meta account-device-meta">{relativeTime(device.lastSeenAt, now)}</span>
-            </span>
+          <SettingRow key={device.id} as="li" name={deviceLabel(device)}
+            sub={`${device.current ? '这台 · ' : ''}${relativeTime(device.lastSeenAt, now)}`}
+            lead={<Icon name={device.local !== true && PHONE_NAME.test(device.name) ? 'phone' : 'mac'} />}>
             {device.via === undefined ? null : (
               <span className="account-device-via" data-via={device.via}>
                 <span className="account-device-dot" aria-hidden="true" />{VIA_LABEL[device.via]}
               </span>
             )}
-            {device.current ? <span className="system-row-meta">这台</span> : (
-              <button type="button" className="secondary-button button-small" disabled={busy}
+            {device.current ? (
+              <button type="button" className="secondary-button" onClick={() => setConfirm({ kind: 'logout' })}>
+                退出这台</button>
+            ) : (
+              <button type="button" className="secondary-button" disabled={busy}
                 aria-label={`让「${deviceLabel(device)}」退出`}
                 onClick={() => setConfirm({ kind: 'revoke', device })}>退出</button>
             )}
-          </li>
+          </SettingRow>
         ))}
       </ul>
-      {rows.some((device) => device.current) && confirm === null ? (
-        <button type="button" className="text-button text-button-quiet account-logout"
-          onClick={() => setConfirm({ kind: 'logout' })}>退出这台</button>
-      ) : null}
       {confirm === null ? null : (
         <ConfirmDialog title={confirm.kind === 'logout' ? '退出这台？' : `让「${deviceLabel(confirm.device)}」退出？`}
           body={confirmText(confirm)} confirmLabel="退出" busy={busy} error={error}

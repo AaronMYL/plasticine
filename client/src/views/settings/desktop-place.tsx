@@ -125,9 +125,9 @@ export function DesktopPlace({ shell, status, onStatus }: { shell: DesktopShell;
         <div className="desktop-place-foot">
           <p className="desktop-place-note">换过去不搬数据；两边的数据各是各的。</p>
           {pending === null ? null : <>
-            <button type="button" className="secondary-button button-small" disabled={busy}
+            <button type="button" className="secondary-button" disabled={busy}
               onClick={() => select(status.choice.mode)}>取消</button>
-            <button type="submit" className="primary-button button-small" disabled={busy}>
+            <button type="submit" className="primary-button" disabled={busy}>
               {pending === 'remote' ? '换到远程' : `换到${local}`}</button>
           </>}
         </div>

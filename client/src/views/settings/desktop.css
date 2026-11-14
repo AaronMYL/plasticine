@@ -1,4 +1,4 @@
-/* 设置 · 系统里桌面客户端那几行（设计稿 Settings-System）：「跑在哪」两张卡、「这台电脑」三行。 */
+/* 设置 · 系统里桌面客户端那几行（设计稿 Settings-System；11-14 设置页一种行）：「跑在哪」两行、「这台电脑」三行。 */
 
 .desktop-place {
   display: flex;
@@ -7,24 +7,19 @@
 }
 
 .desktop-place-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
+  display: flex;
+  flex-direction: column;
 }
 
+/* 11-14 设置页一种行：「跑在哪」两种也是一行一种（图标 · 名字和状态 · 右边选中的圈），不再是两张卡。 */
 .desktop-place-card {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line2);
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 48px; /* 例外：设置页一行至少 48 高 */
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
   cursor: pointer;
-  transition: box-shadow var(--motion-fast) var(--ease-out);
-}
-
-.desktop-place-card[data-selected='true'] {
-  box-shadow: inset 0 0 0 2px var(--fg);
 }
 
 .desktop-place-card:has(input:disabled) {
@@ -33,8 +28,11 @@
 }
 
 .desktop-place-card input[type='radio'] {
+  order: 3;
   flex: none;
-  margin: var(--space-1) 0 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
   accent-color: var(--fg);
 }
 
@@ -53,7 +51,6 @@
 
 .desktop-place-title {
   font-size: var(--text-body);
-  font-weight: 500;
   line-height: var(--text-body-line);
 }
 
@@ -86,6 +83,7 @@
 .desktop-place-live[data-tone='err'] .desktop-place-dot { background: var(--err); }
 
 .desktop-place-icon {
+  order: -1;
   display: inline-flex;
   flex: none;
   color: var(--fg2);
@@ -100,6 +98,7 @@
   align-items: center;
   gap: var(--space-2);
   min-height: 28px;
+  padding-top: var(--space-3);
 }
 
 .desktop-place-note {
@@ -107,48 +106,4 @@
   margin: 0;
 }
 
-.desktop-rows {
-  display: flex;
-  flex-direction: column;
-}
 
-.desktop-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 44px;
-  border-top: 1px solid var(--line);
-}
-
-.desktop-row-sub {
-  min-height: 36px;
-  border-top: 0;
-  padding-left: var(--space-3);
-}
-
-.desktop-row-sub .desktop-row-title {
-  color: var(--fg2);
-  font-size: var(--text-caption);
-}
-
-.desktop-row-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.desktop-row-meta {
-  flex: none;
-  color: var(--fg2);
-  font-size: var(--text-caption);
-}
-
-@media (max-width: 767px) {
-  .desktop-place-cards {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}

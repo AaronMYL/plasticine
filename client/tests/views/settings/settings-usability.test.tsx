@@ -37,7 +37,8 @@ describe('设置的用户操作路径', () => {
     const appearance = within(panel).getByRole('heading', { name: '外观' });
     expect(appearance.compareDocumentPosition(zone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(panel).queryByRole('button', { name: '保存' })).toBeNull();
-    fireEvent.click(await within(panel).findByRole('button', { name: '选择时区' }));
+    // 11-14 设置页一种行：「跟随设备」一行开关，关掉才出搜索。
+    fireEvent.click(await within(panel).findByRole('switch', { name: '跟随设备' }));
     const search = within(panel).getByRole('searchbox', { name: '搜索城市或时区' });
     // 11-13 Aaron：「选择时区后，下面的时区列表也太长了」——不搜不列，搜了才出，挑了就收起。
     expect(within(panel).queryByRole('list', { name: '可选时区' })).toBeNull();
@@ -49,7 +50,7 @@ describe('设置的用户操作路径', () => {
     expect(within(panel).getByLabelText('所选时区的当前时间').textContent).toContain('UTC+08:00');
     fireEvent.click(within(panel).getByRole('button', { name: '保存' }));
     await waitFor(async () => expect((await app.api.today.settings()).timeZone).toBe('Asia/Shanghai'));
-    fireEvent.click(within(panel).getByRole('button', { name: '跟随设备' }));
+    fireEvent.click(within(panel).getByRole('switch', { name: '跟随设备' }));
     fireEvent.click(within(panel).getByRole('button', { name: '保存' }));
     await waitFor(async () => expect((await app.api.today.settings()).timeZone).toBeNull());
   });

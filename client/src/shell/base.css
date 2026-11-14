@@ -578,20 +578,22 @@ textarea.field-input {
     padding-bottom: 0;
   }
 
+  /* 触屏上能点的地方都是 44（11-14 Aaron 弹框选，原来 40）。 */
   .icon-button {
-    width: 40px;
-    height: 40px;
+    width: var(--touch);
+    height: var(--touch);
   }
 
   .primary-button,
+  .secondary-button,
   .chip-button,
   .segmented-item {
-    min-height: 40px;
+    min-height: var(--touch);
     height: auto;
   }
 
   .text-button {
-    min-height: 40px;
+    min-height: var(--touch);
     padding-block: var(--space-2);
   }
 
@@ -602,7 +604,7 @@ textarea.field-input {
   .field-input,
   .search-input {
     font-size: var(--text-long);
-    min-height: 40px;
+    min-height: var(--touch);
   }
 }
 .mono {

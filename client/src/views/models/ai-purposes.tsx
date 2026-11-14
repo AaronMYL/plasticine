@@ -106,7 +106,7 @@ function ChooserRow({ value, purposes, label, sub, nested = false, children }: {
         <button ref={button} type="button" className="ai-use-value" data-quiet={shown.quiet}
           aria-haspopup="dialog" aria-expanded={anchor !== null} aria-label={`${label}：${shown.text}`}
           onClick={(event) => setAnchor(anchor === null ? anchorOf(event.currentTarget) : null)}>
-          <span>{shown.text}</span><Icon name="chevron-down" size={12} />
+          <span>{shown.text}</span><Icon name="chevron-down" size={14} />
         </button>
         {children}
       </div>
@@ -155,7 +155,7 @@ export function FoldedRows({ value, purposes, label, sub }: { value: ListModelPr
           </button>
           <button type="button" className="ai-use-value" data-quiet={summary.quiet} tabIndex={-1} aria-hidden="true"
             onClick={() => setOpen(!open)}>
-            <span>{summary.text}</span><Icon name={open ? 'chevron-up' : 'chevron-down'} size={12} />
+            <span>{summary.text}</span><Icon name={open ? 'chevron-up' : 'chevron-down'} size={14} />
           </button>
         </div>
       </div>

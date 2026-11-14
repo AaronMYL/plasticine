@@ -38,25 +38,23 @@
 .grant-duration-control .segmented-item { white-space: nowrap; }
 .grant-binding { margin-top: var(--space-3); }
 .grant-expiry-toggle { margin-top: var(--space-2); font-size: var(--text-caption); }
-.outbound-settings { display: flex; flex-direction: column; gap: var(--space-5); min-width: 0; }
+/* 11-14 设置页一种行：授权一行一条（至少 48 高、行底细线，名字 14/22、下面一行 12/18），组和组之间 32。 */
+.outbound-settings { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
 .outbound-settings .block { min-width: 0; }
-.outbound-settings .block-head { margin-bottom: var(--space-2); }
 .outbound-grant { border-bottom: 1px solid var(--line); }
-.outbound-grant-row { display: flex; align-items: center; gap: var(--space-3); min-height: 64px; }
-.outbound-grant-copy { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; flex: 1; }
-.outbound-grant-title { font-size: var(--text-body); line-height: var(--text-body-line); font-weight: 500;
+.outbound-grant-row { display: flex; align-items: center; gap: var(--space-4);
+  min-height: 48px; /* 例外：设置页一行至少 48 高 */
+  padding: var(--space-2) 0; }
+.outbound-grant-copy { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.outbound-grant-title { font-size: var(--text-body); line-height: var(--text-body-line);
   overflow-wrap: anywhere; }
 .outbound-grant-meta, .outbound-ended { color: var(--fg2); font-size: var(--text-caption);
   line-height: var(--text-caption-line);
   font-variant-numeric: tabular-nums; }
 .outbound-grant-row[data-ended='true'] .outbound-grant-title { color: var(--fg3); }
 .outbound-ended { white-space: nowrap; }
-.outbound-inline-edit, .outbound-revoke { padding: var(--space-1) 0 var(--space-4) var(--space-6);
+.outbound-inline-edit { padding: var(--space-1) 0 var(--space-4) var(--space-4);
   animation: grant-open var(--motion-fast) var(--ease-out); }
-.outbound-revoke p { margin: var(--space-1) 0 var(--space-3); font-size: var(--text-ui);
-  line-height: var(--text-ui-line); }
-.outbound-edit-actions { display: flex; gap: var(--space-2); align-items: center; margin-top: var(--space-3);
-  flex-wrap: wrap; }
 .outbound-log { border-bottom: 1px solid var(--line); }
 .outbound-log-row { display: flex; align-items: center; gap: var(--space-3); min-height: 44px; }
 .outbound-log-row time { width: 88px; flex: none; color: var(--fg2); font-size: var(--text-caption);
@@ -79,12 +77,12 @@
   .grant-field { grid-template-columns: 56px minmax(0, 1fr); gap: var(--space-2); }
   .grant-duration-control { gap: var(--space-1); }
   .grant-duration-control .segmented-item { padding-inline: var(--space-2); font-size: var(--text-caption); }
-  .outbound-inline-edit, .outbound-revoke { padding-left: 0; }
+  .outbound-inline-edit { padding-left: 0; }
   .outbound-grant-row { gap: var(--space-2); }
   .outbound-log-row { flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) 0; }
   .outbound-log-row time { width: 100%; }
   .outbound-log-status { margin-left: var(--space-6); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .grant-field-editor, .outbound-inline-edit, .outbound-revoke, .outbound-log-body { animation: none; }
+  .grant-field-editor, .outbound-inline-edit, .outbound-log-body { animation: none; }
 }

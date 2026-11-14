@@ -23,10 +23,12 @@ describe('在别的设备上用', () => {
     const region = await section();
     expect(region.textContent).toContain('登录的人能用这台电脑做事。');
     await within(region).findByText('https://you.cyberhunter.top');
-    expect(within(region).getByRole('img', { name: '二维码：https://you.cyberhunter.top' })).toBeTruthy();
     expect(within(region).getByRole('button', { name: '复制网址' })).toBeTruthy();
-    expect(within(region).getByRole('button', { name: 'Cyber Hunter 网络' }).getAttribute('aria-pressed'))
-      .toBe('true');
+    expect(within(region).getByRole('button', { name: '连法' }).textContent).toBe('Cyber Hunter 网络');
+    // 二维码收在「手机扫码登录」那一行，点开才出。
+    expect(within(region).queryByRole('img', { name: /二维码/ })).toBeNull();
+    fireEvent.click(within(region).getByRole('button', { name: '二维码' }));
+    expect(within(region).getByRole('img', { name: '二维码：https://you.cyberhunter.top' })).toBeTruthy();
   });
 
   it('没 @账号：说一句去起，不给二维码', async () => {
@@ -39,7 +41,8 @@ describe('在别的设备上用', () => {
   it('自己的网址：http 不收；https 存下，再进来默认这一边；「不用了」清掉', async () => {
     const app = await renderApp({ hash: '#/settings/account', setup: joined });
     const region = await section();
-    fireEvent.click(await within(region).findByRole('button', { name: '我自己的网址' }));
+    fireEvent.click(await within(region).findByRole('button', { name: '连法' }));
+    fireEvent.click(await screen.findByRole('menuitemcheckbox', { name: '我自己的网址' }));
     const form = within(region).getByRole('form', { name: '我自己的网址' });
     fireEvent.change(within(form).getByLabelText('网址'), { target: { value: 'http://192.168.1.5:8790' } });
     fireEvent.click(within(form).getByRole('button', { name: '保存' }));

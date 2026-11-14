@@ -14,16 +14,24 @@ describe('同时做几件事', () => {
   it('默认自动，写着现在几件；选 5 件马上存，再选回自动', async () => {
     const app = await renderApp({ hash: '#/settings/ai' });
     const region = await section();
-    const select = await within(region).findByRole<HTMLSelectElement>('combobox', { name: '同时做几件事' });
-    expect(select.value).toBe('auto');
-    expect(select.selectedOptions[0]?.textContent).toBe('自动（现在 3 件）');
-    expect([...select.options].map((option) => option.value)).toEqual(['auto', '1', '2', '3', '4', '5', '6', '7', '8']);
+    const pick = async (name: string | RegExp): Promise<void> => {
+      fireEvent.click(within(region).getByRole('button', { name: '同时做几件事' }));
+      const menu = await screen.findByRole('menu', { name: '同时做几件事' });
+      fireEvent.click(within(menu).getByRole('menuitemcheckbox', { name }));
+    };
+    const button = await within(region).findByRole('button', { name: '同时做几件事' });
+    expect(button.textContent).toBe('自动（现在 3 件）');
+    fireEvent.click(button);
+    const menu = await screen.findByRole('menu', { name: '同时做几件事' });
+    expect(within(menu).getAllByRole('menuitemcheckbox').map((item) => item.textContent))
+      .toEqual(['自动（现在 3 件）', '1 件', '2 件', '3 件', '4 件', '5 件', '6 件', '7 件', '8 件']);
+    fireEvent.keyDown(menu, { key: 'Escape' });
     const save = vi.spyOn(app.api.account, 'setWorkLimit');
-    fireEvent.change(select, { target: { value: '5' } });
-    await waitFor(() => expect(select.value).toBe('5'));
+    await pick('5 件');
+    await waitFor(() => expect(within(region).getByRole('button', { name: '同时做几件事' }).textContent)
+      .toBe('5 件'));
     expect(save).toHaveBeenCalledWith(5);
-    fireEvent.change(select, { target: { value: 'auto' } });
-    await waitFor(() => expect(select.value).toBe('auto'));
-    expect(save).toHaveBeenLastCalledWith('auto');
+    await pick(/^自动/);
+    await waitFor(() => expect(save).toHaveBeenLastCalledWith('auto'));
   });
 });

@@ -15,6 +15,7 @@ import { useStore } from '../../state/use-store.ts';
 import { BACKUP_KIND, backupCountLabel } from './backup-labels.ts';
 import { localTime } from './format.ts';
 import { fileSize } from '../../primitives/artifact-card/format.ts';
+import { SettingRow, ValueButton } from '../settings/setting-row.tsx';
 import './backups.css';
 const STATUS = {
   queued: '排队',
@@ -148,10 +149,13 @@ export function Backups({ trigger = false }: { trigger?: boolean }): ReactNode {
       ))}
     </>
   );
-  const sheetTrigger = (
-    <button className="text-button" type="button" onClick={() => setOpen(true)}>
-      {trigger ? '全部备份' : '查看本机备份'}
-    </button>
+  // 设置 · 系统里是一行「全部备份」（11-14 设置页一种行），行尾「按对象恢复 ›」开浮层。
+  const sheetTrigger = trigger ? (
+    <SettingRow name="全部备份">
+      <ValueButton label="全部备份" value="按对象恢复" onClick={() => setOpen(true)} />
+    </SettingRow>
+  ) : (
+    <button className="text-button" type="button" onClick={() => setOpen(true)}>查看本机备份</button>
   );
   const Wrapper = trigger ? 'div' : 'section';
   return (

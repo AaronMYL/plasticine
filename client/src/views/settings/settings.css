@@ -22,7 +22,6 @@
 .settings textarea.field-input { min-height: 96px; }
 
 .settings .block { min-width: 0; }
-.settings .block + .block { border-top: 1px solid var(--line); padding-top: var(--space-5); }
 .settings .field { width: 100%; max-width: 32em; }
 .settings .block-head > .icon-button { margin-left: auto; }
 .settings .block-empty { max-width: 44em; }
@@ -72,38 +71,30 @@
 .settings-connection-status dt { color: var(--fg2); }
 .settings-connection-status dd { margin: 0; }
 
-.settings-time-zone { display: flex; flex-direction: column; gap: var(--space-3); }
-.settings-time-zone .segmented { align-self: flex-start; }
-/* 现在用的时区和那里的时间一行常显：看一眼就能核对，不再写「跟随设备的时区设置」「确认后点保存」。 */
-.time-zone-now {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-3);
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
-}
-.time-zone-results { display: flex; flex-direction: column; max-height: 240px; overflow: auto;
-  gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
-.time-zone-result { display: flex; flex-direction: column; align-items: flex-start;
-  width: 100%; height: auto; min-height: 48px; padding: var(--space-2) var(--space-3); text-align: left; }
-.time-zone-result[aria-pressed='true'] { background: var(--tint2); }
-.time-zone-result .text-meta { color: var(--fg2); font-size: var(--text-caption); }
-.settings-time-zone details > summary { cursor: pointer; color: var(--fg2); font-size: var(--text-caption); }
-.settings-time-zone details > .field { margin-top: var(--space-3); }
+/* 时区（time-zone-field.tsx）：「跟随设备」一行，关掉后下面缩进：搜索框、搜到的几条、直接填名称。 */
+.settings-time-zone { display: flex; flex-direction: column; }
+.time-zone-results { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.time-zone-result { display: flex; flex-direction: column; align-items: flex-start; width: 100%;
+  min-height: 48px; /* 例外：和设置页一行一样高 */
+  padding: var(--space-2) 0; border: 0; border-bottom: 1px solid var(--line); background: transparent;
+  color: var(--fg); font: inherit; font-size: var(--text-body); line-height: var(--text-body-line);
+  text-align: left; cursor: pointer; }
+.time-zone-result:hover { background: var(--tint); }
+.time-zone-result[aria-pressed='true'] { font-weight: 500; }
+.time-zone-result .text-meta { color: var(--fg2); font-size: var(--text-caption);
+  line-height: var(--text-caption-line); }
+/* 设置里改了要保存的那几处：按钮在这一组的底部靠右。 */
+.set-actions { display: flex; justify-content: flex-end; gap: var(--space-2); padding-top: var(--space-3); }
 @media (max-width: 767px) {
   .settings-content > .block,
   .settings .block-title,
   .settings-ai-choice { scroll-margin-top: 64px; } /* 例外：跳到这一段时让开顶上吸着的标题 */
   .settings .model-choice { grid-template-columns: minmax(0, 1fr); }
   .settings-switch { min-height: 40px; }
-  .settings-time-zone details > summary { min-height: 40px; padding-block: var(--space-3); }
 }
 
-/* iPhone App 里的三个原生入口：一行排不下就换行。 */
-.settings-ios-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
 
-/* 第 3 批 设置 · 浏览器：登录着的网站一行（字母方块 · 名字 · 域名 · 日子 · ⋯）、导入一行、导入登录弹层。 */
+/* 第 3 批 设置 · 浏览器：登录着的网站一行（字母方块 · 名字，第二行域名 · 日子 · ⋯）、导入一行、导入登录弹层。 */
 .login-local {
   display: inline-flex;
   align-items: center;
@@ -117,18 +108,6 @@
   padding: 0;
 }
 
-.login-site,
-.login-import-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 44px;
-}
-
-.login-site {
-  border-bottom: 1px solid var(--line);
-}
-
 .login-site-tile {
   flex: none;
   width: 24px;
@@ -140,31 +119,6 @@
   color: var(--fg2);
   font-size: var(--text-tag);
   font-weight: 600;
-}
-
-.login-import-tile {
-  width: 28px;
-  height: 28px;
-}
-
-.login-site-name {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
-}
-
-.login-site-host {
-  width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.login-site-day {
-  width: 48px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .login-import {
@@ -218,11 +172,7 @@
   color: var(--err);
 }
 
-@media (max-width: 767px) {
-  .login-site-host {
-    display: none;
-  }
-}
+
 
 .login-local-icon {
   width: 24px;
@@ -257,92 +207,31 @@
   font-size: var(--text-caption);
 }
 
-.system-facts {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) 72px minmax(0, 1fr);
-  align-items: center;
-  gap: 0 var(--space-3);
-  margin: 0;
-}
-
-.system-facts dt {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  color: var(--fg2);
-  font-size: var(--text-ui);
-}
-
-.system-facts dd {
-  margin: 0;
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
-}
-
 .system-warn {
   margin: 0 0 var(--space-2);
   color: var(--err);
   font-size: var(--text-ui);
 }
 
-.system-rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* 设置 · 系统（11-14 设置页一种行）：只读的值写在行尾（13/20 --fg2）；备份一行一份，前面一个状态记号。 */
+.set-row-value {
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  text-align: right;
 }
 
-.system-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 44px;
-  border-bottom: 1px solid var(--line);
+.system-backup-mark {
+  display: inline-flex;
   color: var(--fg2);
 }
 
-.system-row-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--fg);
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.system-row-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex: none;
-  color: var(--fg2);
-  font-size: var(--text-caption);
-}
-
-.system-ok {
-  display: inline-flex;
+.system-backup-mark[data-status='ready'] {
   color: var(--ok);
 }
 
-.system-row-icon {
-  display: inline-flex;
-}
-
-.backups-trigger {
-  margin-top: var(--space-1);
-}
-
-@media (max-width: 767px) {
-  .system-facts {
-    grid-template-columns: 72px minmax(0, 1fr);
-  }
-}
-
-.system-head-gap {
-  flex: 1;
+.system-backup-mark[data-status='failed'] {
+  color: var(--err);
 }
 
 .system-code {
@@ -411,22 +300,5 @@
   pointer-events: none;
 }
 
-/* 测试通知（第13批，设计稿 Notify）：一行「发一条测试通知 · 发一条」；没弹出来时下面一块说原因、给「打开系统设置」。 */
-.settings-notify-test { display: flex; flex-direction: column; gap: var(--space-2); }
-.settings-notify-row { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-body);
-  line-height: var(--text-body-line); }
-.settings-notify-label { flex: 1; }
-.settings-notify-sent { font-size: var(--text-caption); line-height: var(--text-caption-line); color: var(--fg2); }
-.settings-notify-fail { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2);
-  padding: var(--space-3);
-  border-radius: var(--radius); background: color-mix(in srgb, var(--err) 8%, transparent); font-size: var(--text-ui);
-    line-height: var(--text-ui-line); }
-.settings-notify-fail p { margin: 0; color: var(--err); }
-.settings-notify-fail b { font-weight: 600; }
-
 /* 隐私与授权 ·「先问你」（第13批）：硬线只读，一行一个、带锁，和记忆文档里原来的样子一样。 */
-.hard-lines { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: 0; padding: 0;
-  list-style: none; }
-.hard-line { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-body);
-  line-height: var(--text-body-line); }
-.hard-line svg { flex: none; color: var(--fg2); }
+.hard-lines { margin: 0; padding: 0; list-style: none; }

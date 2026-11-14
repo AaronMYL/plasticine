@@ -93,8 +93,9 @@ describe('授权范围交互', () => {
       .toEqual(['contact-one', 'contact-two']));
     fireEvent.click(within(section).getByRole('button', { name: /授权操作/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: '撤销授权' }));
-    expect(within(section).getByText(/已经发出的内容不会收回/)).toBeTruthy();
-    fireEvent.click(within(section).getByRole('button', { name: '确认撤销' }));
+    const confirm = screen.getByRole('alertdialog', { name: '撤销这条授权？' });
+    expect(within(confirm).getByText(/已经发出的内容不会收回/)).toBeTruthy();
+    fireEvent.click(within(confirm).getByRole('button', { name: '撤销' }));
     await waitFor(async () => expect((await app.api.outbound.grants())[0]?.revokedAt).not.toBeNull());
     expect(await within(section).findByText('已撤销')).toBeTruthy();
     const logs = screen.getByRole('region', { name: '自动发出的' });

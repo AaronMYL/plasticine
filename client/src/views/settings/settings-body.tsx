@@ -1,5 +1,5 @@
 // 设置弹框里一段的内容（11-13 Aaron 看过设计稿定的六段，见 routes.ts SETTINGS_SECTIONS）：
-//   通用 = 外观 · 动态背景（11-13）· 时区 · 通知（第13批加测试通知）· 装到主屏幕（11-13 去掉「提建议或反馈」；
+//   通用 = 外观（含动态背景，11-14 并进来）· 时区 · 通知（第13批加测试通知）· 装到主屏幕（11-13 去掉「提建议或反馈」；
 //   11-14 去掉「通知记录」：Aaron 说线上的太长了，只去入口，记录不删）；
 //   账号 = 名字、头像、@账号、密码 · 在别的设备上用 · 登录着的设备（11-13 去掉「邀请朋友」，头像并进名字那一行）；
 //   AI = 模型（提供商平级）· 同时做几件事 · 技能 · 工具开关；
@@ -9,24 +9,18 @@
 // 段名是弹框右边的标题，段里每块用自己的小节标题分开，不加说明段落。从别处带着 focus 打开时滚到那一块并把焦点给它。
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { useLive } from '../../live.tsx';
-import { useStore } from '../../state/use-store.ts';
 import type { SettingsFocus } from '../../shell/panel.ts';
 import type { SettingsSection } from '../../shell/routes.ts';
 import { AccountProfile } from './account-profile.tsx';
 import { AccessSection } from './access-section.tsx';
-import { AmbientSection } from './ambient-section.tsx';
 import { HardLinesSection } from './hard-lines-section.tsx';
-import { NotifyKindsSection } from './notify-kinds-section.tsx';
-import { NotifyTest } from './notify-test.tsx';
+import { NotificationSection } from './notification-section.tsx';
 import { AppearanceSection } from './appearance-section.tsx';
 import { BrowserSection } from './browser-section.tsx';
 import { Devices } from './devices-block.tsx';
 import { InstallSection } from './install-section.tsx';
 import { ModelsSection } from '../models/models-section.tsx';
-import type { PushSwitchStatus } from './push-switch.ts';
 import { SearchEngineSection } from './search-engine-section.tsx';
-import { SectionHead } from './section-head.tsx';
 import { SystemSection } from './system-section.tsx';
 import { TimeZoneSection } from './time-zone-section.tsx';
 import { TranslateSettingsSection } from './translate-settings-section.tsx';
@@ -50,66 +44,6 @@ const SECTION_CLASS: Partial<Record<SettingsSection, string>> = {
   ai: ' settings-ai',
 };
 
-/** 通知 ⓘ 里这台设备的说法，按开关状态。 */
-const INTERRUPT_TEXT: Readonly<Record<PushSwitchStatus, string>> = {
-  checking: '正在看这台设备',
-  working: '这台设备正在设置',
-  on: '这台设备能收到',
-  native: '这台电脑的客户端能收到',
-  unregistered: '这台设备订阅了但服务端还没收下',
-  off: '这台设备收不到',
-  denied: '这台设备收不到（通知被拒绝）',
-  unsupported: '这台设备收不到（浏览器不支持）',
-};
-
-/** 开着、能收到时开关本身就说清了；只有收不到、在路上这些才常显一句（零、默认不显示）。 */
-const QUIET_STATUSES: readonly PushSwitchStatus[] = ['on', 'native', 'off'];
-
-function NotificationSection(): ReactNode {
-  const live = useLive();
-  const state = useStore(live.push.store);
-  const checked = state.status === 'on' || state.status === 'unregistered' || state.status === 'native';
-  const disabled = state.status === 'checking' || state.status === 'working'
-    || state.status === 'unsupported' || state.status === 'native';
-  const toggle = (): void => {
-    if (checked) {
-      void live.push.disable();
-    } else {
-      void live.push.enable();
-    }
-  };
-  /*
-   * 用户视角审查 2026-11-01 第 15 条：/v2/push/subscriptions 只回这台设备订没订（PushStatusSchema），
-   * 没有列所有订阅的接口，所以只写这台的状态，不编台数。通知用来做什么、别的设备去哪看是补充，进段标题后的 ⓘ。
-   * 《优化清单》第 12 条（11-06）：通知都是主线上的一条消息，开着的设备再弹一条系统通知；不再发邮件。
-   */
-  const tip = 'Plasticine 的通知都发在和它的对话里；开着这个开关，这台设备再弹一条系统通知，点开回到对应内容。'
-    + '其他设备的状态要在那台设备上看。'
-    + `\n这台设备：${INTERRUPT_TEXT[state.status]}。`;
-  return (
-    <section className="block" aria-labelledby="settings-notify">
-      <SectionHead id="settings-notify" title="通知" tip={tip} />
-      <label className="settings-switch">
-        <input type="checkbox" role="switch" checked={checked} disabled={disabled} onChange={toggle} />
-        <span>这台设备接收系统通知</span>
-      </label>
-      {QUIET_STATUSES.includes(state.status) ? null : <p className="block-empty">{INTERRUPT_TEXT[state.status]}</p>}
-      {state.message === null ? null : (
-        <p className="settings-message" role={state.status === 'off' || state.status === 'on' ? 'status' : 'alert'}>
-          {state.message}
-        </p>
-      )}
-      {state.status === 'unregistered' ? (
-        <button type="button" className="chip-button settings-retry" onClick={() => void live.push.retry()}>
-          再登记一次
-        </button>
-      ) : null}
-      {checked ? <NotifyTest /> : null}
-      <NotifyKindsSection />
-    </section>
-  );
-}
-
 /** 一块能被 focus 定位到的地方（旧地址 #/settings/feed 这类、别处的「去设置」）。 */
 function Spot({ name, children }: { name: SettingsFocus; children: ReactNode }): ReactNode {
   return <div className="settings-spot" data-settings-focus={name} tabIndex={-1}>{children}</div>;
@@ -120,7 +54,6 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
     case 'general':
       return <>
         <AppearanceSection />
-        <AmbientSection />
         <Spot name="time-zone"><TimeZoneSection /></Spot>
         <Spot name="notify"><NotificationSection /></Spot>
         <InstallSection />

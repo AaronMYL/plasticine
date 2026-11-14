@@ -4,6 +4,7 @@ import { errorText, isUncertain } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { OutboundGrant, OutboundGrantInput, OutboundLog } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { GrantFields } from '../outbound/grant-fields.tsx';
@@ -99,21 +100,19 @@ export function OutboundSettings(): ReactNode {
             {edit?.row.id !== row.id ? null : <div className="outbound-inline-edit">
               <GrantFields value={edit.draft} onChange={(draft) => setEdit({ ...edit, draft })}
                 choices={choices} disabled={busy} />
-              <div className="outbound-edit-actions"><button type="button" className="primary-button"
-                disabled={busy || !validGrant(edit.draft)} onClick={() => {
+              <div className="set-actions"><button type="button" className="secondary-button" disabled={busy}
+                onClick={() => setEdit(null)}>取消</button><button type="button" className="primary-button"
+                disabled={busy || !validGrant(edit.draft)} aria-label="保存授权" onClick={() => {
                   void write(`edit:${row.id}:${JSON.stringify(edit.draft)}`, (requestId) => api.outbound.edit(row.id,
                     { requestId, version: edit.row.version, patch: edit.draft }));
-                }}>保存授权</button><button type="button" className="secondary-button" disabled={busy}
-                  onClick={() => setEdit(null)}>取消修改</button></div>
+                }}>保存</button></div>
             </div>}
-            {revoke !== row.id ? null : <div className="outbound-revoke" role="group" aria-label="确认撤销授权">
-              <p>撤销后，后续发送需要重新确认；已经发出的内容不会收回。</p>
-              <div className="outbound-edit-actions"><button type="button" className="danger-button" disabled={busy}
-                onClick={() => { void write(`revoke:${row.id}:${row.version}`, (requestId) =>
-                  api.outbound.revoke(row.id, { requestId, version: row.version })); }}>确认撤销</button>
-                <button type="button" className="secondary-button" disabled={busy}
-                  onClick={() => setRevoke(null)}>取消</button></div>
-            </div>}
+            {revoke !== row.id ? null : <ConfirmDialog title="撤销这条授权？" confirmLabel="撤销" busy={busy}
+              body="撤销后，后续发送需要重新确认；已经发出的内容不会收回。" error={error}
+              onCancel={() => setRevoke(null)} onConfirm={() => {
+                void write(`revoke:${row.id}:${row.version}`, (requestId) =>
+                  api.outbound.revoke(row.id, { requestId, version: row.version }));
+              }} />}
           </div>;
         })}
       </div>
