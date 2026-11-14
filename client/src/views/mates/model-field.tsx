@@ -32,11 +32,11 @@ export function withMainChoice(value: ListModelProvidersResponse, pending: Choos
       thinking: pending.thinking ?? item.effective?.thinking ?? 'medium' } }) };
 }
 
-/** 主线那一格：模型名（分思考档的带上档位）+ 哪一家；跟默认时写「跟默认」+ 默认在用的。 */
+/** 主线那一格：模型名（分思考档的带上档位）+ 哪一家；跟默认时写「跟默认」+ 主线实际在用的（思考档可能单独设过）。 */
 export function mainModelText(value: ListModelProvidersResponse): { name: string; meta: string } {
   const view = value.purposes.find((item) => item.purpose === 'main');
   const chosen = view?.chosen.model ?? null;
-  if (chosen === null) return { name: '跟默认', meta: choiceLabel(value) ?? '先连接模型' };
+  if (chosen === null) return { name: '跟默认', meta: choiceLabel(value, 'main') ?? '先连接模型' };
   const provider = value.providers.find((item) => item.id === chosen.provider);
   const model = provider?.models.find((item) => item.id === chosen.model);
   const thinking = view?.effective?.thinking ?? null;
