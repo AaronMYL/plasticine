@@ -81,6 +81,6 @@ test('X 读不到：设置里 X 那一行带原因；订阅和「按关注点搜
   assert.equal(x?.ref, 'x:following');
   assert.equal(x?.status?.error, '在 Plasticine 浏览器里登录 X');
   const news = others.find((source) => source.ref === 'internal:news');
-  assert.equal(news?.label, '按关注点搜新闻');
+  assert.equal(news?.label, '兴趣');
   assert.equal(news?.status, undefined);
 });

@@ -346,116 +346,9 @@
   margin: 16px 16px 0;
 }
 
-/*
- * 第 6 批第 8、9 条：正文的中文 / 展开 / 原文、小图表、抖音收藏的几条要点。展开时高度由 useHeightMorph 平滑过渡；
- * 截出来的开头末尾两行渐隐（遮罩只用透明度，颜色取哪个令牌都一样）。
- */
-.feed-text {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-}
-
-.feed-card-text.is-faded {
-  -webkit-mask-image: linear-gradient(to bottom, var(--fg) calc(100% - 44px), transparent);
-  mask-image: linear-gradient(to bottom, var(--fg) calc(100% - 44px), transparent);
-}
-
-.feed-text[data-mode='full'] .feed-card-text.is-post,
-.feed-text[data-mode='original'] .feed-card-text.is-post {
-  -webkit-line-clamp: unset;
-  display: block;
-}
-
-.feed-text-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 16px;
-  margin-top: -2px;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--fg2);
-}
-
-.feed-text-toggle,
-.feed-text-link {
-  appearance: none;
-  border: 0;
-  padding: 0;
-  background: none;
-  font: inherit;
-  cursor: pointer;
-}
-
-.feed-text-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 500;
-  color: var(--fg);
-}
-
-.feed-text-from {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.feed-text-link {
-  color: var(--fg2);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color var(--motion-fast) ease-out;
-}
-
-.feed-text-link:hover,
-.feed-text-toggle:hover { color: var(--fg); }
-
-.feed-text-toggle:focus-visible,
-.feed-text-link:focus-visible {
-  outline: 2px solid var(--fg3);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-.feed-chart {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-}
-
-.feed-chart svg { display: block; overflow: visible; }
-.feed-chart-line { fill: none; stroke: var(--card-hue); stroke-width: 2; stroke-linejoin: round; }
-.feed-chart-bar { fill: var(--card-hue); }
-.feed-chart-axis { stroke: var(--line2); stroke-width: 1; }
-
-.feed-chart-caption {
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--fg2);
-}
-
-.feed-points {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 12px;
-  line-height: 20px;
-  color: var(--fg2);
-}
-
 .feed-mark.hue-tile {
   background: color-mix(in srgb, var(--tile-hue) var(--hue-wash), transparent);
   color: var(--tile-hue);
-}
-
-@media (max-width: 767px) {
-  .feed-text-toggle,
-  .feed-text-link { min-height: 32px; }
 }
 
 
@@ -478,20 +371,9 @@
   font-weight: 600;
 }
 
-/* 11-12 第 3 条：接着读与刷新。 */
+/* 11-12 第 3 条：接着读（往上拉的刷新第13批去掉了）。 */
 .feed-board { position: relative; }
 .feed-sentinel { height: 1px; }
-.feed-pull {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 48px;
-  overflow: hidden;
-  color: var(--fg2);
-  font-size: 12px;
-  transition: height var(--motion-base) var(--ease-out), opacity var(--motion-base) var(--ease-out);
-}
 .feed-spin {
   width: 14px;
   height: 14px;
@@ -501,34 +383,20 @@
   animation: feed-spin 0.9s linear infinite;
 }
 @keyframes feed-spin { to { transform: rotate(360deg); } }
-.feed-new-pill {
-  position: sticky;
-  top: 8px;
-  z-index: 5;
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 16px;
-  background: var(--layer-float);
-  box-shadow: var(--lift);
-  color: var(--fg);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  animation: feed-pill-in var(--motion-base) var(--ease-out);
-}
-@keyframes feed-pill-in { from { opacity: 0; transform: translateY(-4px); } }
 .feed-more-state { display: flex; flex-direction: column; gap: 12px; padding: 16px 0 8px; }
 .feed-skeleton { display: flex; flex-direction: column; gap: 8px; }
 .feed-skeleton span { height: 10px; border-radius: 5px; background: var(--tint2); }
 .feed-skeleton span:nth-child(1) { width: 60%; height: 14px; }
 .feed-skeleton span:nth-child(2) { width: 96%; }
 .feed-skeleton span:nth-child(3) { width: 82%; }
-.feed-more-line { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: var(--fg2); font-size: 12px; }
+.feed-more-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--fg2);
+  font-size: 12px;
+}
 .feed-end {
   display: flex;
   align-items: center;
@@ -541,6 +409,5 @@
 }
 .feed-end::before, .feed-end::after { content: ''; width: 48px; height: 1px; background: var(--line2); }
 @media (prefers-reduced-motion: reduce) {
-  .feed-spin, .feed-new-pill { animation: none; }
-  .feed-pull { transition: none; }
+  .feed-spin { animation: none; }
 }

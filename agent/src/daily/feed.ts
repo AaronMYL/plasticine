@@ -17,8 +17,10 @@ export type FeedState = Pick<StateService, 'feedItems' | 'feedSources'>;
  */
 export const BUILT_IN_SOURCES = {
   manual: { ref: 'internal:manual', kind: 'internal', label: '手动添加' },
-  x: { ref: 'x:following', kind: 'x', label: 'X · 你关注的人' },
-  news: { ref: 'internal:news', kind: 'internal', label: '按关注点搜新闻' },
+  x: { ref: 'x:following', kind: 'x', label: 'X' },
+  news: { ref: 'internal:news', kind: 'internal', label: '兴趣' },
+  // 第13批：小红书（首页推荐 + 自己的收藏，电脑客户端用他的登录读）。
+  xhs: { ref: 'xhs:feed', kind: 'xhs', label: '小红书' },
 } as const;
 
 /** 停掉的站内来源（任务、项目）：库里的来源行留着，信息源列表不再列出。 */

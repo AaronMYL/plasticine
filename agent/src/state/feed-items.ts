@@ -11,6 +11,7 @@ import {
   type FeedItem,
   type FeedItemInput,
   type FeedItemPatch,
+  type FeedPlace,
   type Page,
 } from '../../shared/state.ts';
 import type { Params } from './db.ts';
@@ -43,6 +44,8 @@ const COLUMNS: ColumnMap = {
   avatarUrl: 'text',
   imageUrl: 'text',
   imageRatio: 'real',
+  places: 'json',
+  body: 'json',
 };
 
 const DEFAULTS = {
@@ -63,6 +66,8 @@ const DEFAULTS = {
   avatarUrl: null,
   imageUrl: null,
   imageRatio: null,
+  places: [],
+  body: null,
 };
 
 const SPEC: StoreSpec<typeof FeedItemSchema, typeof FeedItemInputSchema, typeof FeedItemPatchSchema> = {
@@ -108,6 +113,8 @@ export interface FeedPageFilter {
   kind?: (typeof FEED_FILTER_KINDS)[number];
   /** 第 7 批第 10 条：第二栏点一个订阅 / Reddit 版块，只看这一个来源。 */
   sourceId?: string;
+  /** 第13批：只看在这一处看到的（X 的关注 / 推荐 / 书签，小红书的推荐 / 收藏）。 */
+  place?: FeedPlace;
 }
 
 // 分段筛选：X、订阅、Reddit、抖音按来源的种类；新闻是其余站外收集的（手动添加的 origin 是 manual，不算）。
@@ -115,10 +122,12 @@ const KIND_CLAUSES: Readonly<Record<(typeof FEED_FILTER_KINDS)[number], string>>
   x: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'x')",
   rss: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'rss')",
   news: `origin = 'feed' AND source_id NOT IN (SELECT id FROM feed_sources
-    WHERE kind IN ('x', 'rss', 'douyin', 'reddit'))`,
+    WHERE kind IN ('x', 'rss', 'douyin', 'reddit', 'xhs'))`,
   douyin: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'douyin')",
   reddit: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'reddit')",
+  xhs: "source_id IN (SELECT id FROM feed_sources WHERE kind = 'xhs')",
 };
+const IN_PLACE = 'EXISTS (SELECT 1 FROM json_each(places) WHERE value = $place)';
 
 export interface AddedFeedItem {
   item: FeedItem;
@@ -153,6 +162,10 @@ function whereOf(filter: FeedPageFilter): { where: string; params: Params } {
   if (filter.sourceId !== undefined) {
     clauses.push('source_id = $source_id');
     params['source_id'] = filter.sourceId;
+  }
+  if (filter.place !== undefined) {
+    clauses.push(IN_PLACE);
+    params['place'] = filter.place;
   }
   clauses.push(filter.includeHidden === true ? LISTED : SHOWN);
   return { where: clauses.join(' AND '), params };
@@ -200,11 +213,19 @@ export function createFeedItemStore(context: StoreContext) {
       return urls;
     },
     byDedupeKey,
+    /**
+     * 同一条（dedupe key 一样）再来拿回原来那条；第13批：在另一处又看到的把那一处并进去，以前没存全文的补上全文。
+     */
     add(input: FeedItemInput, options: CreateOptions = {}): AddedFeedItem {
       return context.db.transaction(() => {
         const existing = byDedupeKey(input.dedupeKey);
         if (existing !== undefined) {
-          return { item: existing, created: false };
+          const more = (input.places ?? []).filter((place) => !existing.places.includes(place));
+          const body = existing.body === null && (input.body ?? null) !== null ? input.body : undefined;
+          if (more.length === 0 && body === undefined) return { item: existing, created: false };
+          return { item: store.update(existing.id, existing.version, {
+            ...(more.length === 0 ? {} : { places: [...existing.places, ...more] }),
+            ...(body === undefined ? {} : { body }) }), created: false };
         }
         return { item: store.create(input, undefined, cleanLinkData(options)), created: true };
       });
@@ -230,7 +251,7 @@ export function createFeedItemStore(context: StoreContext) {
     },
     /** 第 8 条第二栏：[from, before) 里进来的、显示着的条目按来路数（x / rss / news / douyin / manual）。 */
     countByKind(from: string, before: string): Record<(typeof FEED_FILTER_KINDS)[number] | 'manual', number> {
-      const counts = { x: 0, rss: 0, news: 0, douyin: 0, reddit: 0, manual: 0 };
+      const counts = { x: 0, rss: 0, news: 0, douyin: 0, reddit: 0, xhs: 0, manual: 0 };
       const range = { from, before };
       const span = 'arrived_at >= $from AND arrived_at < $before';
       for (const kind of FEED_FILTER_KINDS) {
@@ -242,6 +263,19 @@ export function createFeedItemStore(context: StoreContext) {
         AND origin = 'manual'`, range);
       counts.manual = Number(manual?.['n'] ?? 0);
       return counts;
+    },
+    /** 这个来源一共收过几条（不管看没看、隐没隐藏）：博客收得少时再往前多导入几篇（第13批）。 */
+    countForSource(sourceId: string): number {
+      return Number(context.db.get('SELECT count(*) AS n FROM feed_items WHERE source_id = $source',
+        { source: sourceId })?.['n'] ?? 0);
+    },
+    /** 第13批：一个来源（X、小红书）[from, before) 里进来的、显示着的条目按在哪一处看到的数。 */
+    countByPlace(sourceId: string, from: string, before: string): Partial<Record<FeedPlace, number>> {
+      const rows = context.db.all(`SELECT p.value AS place, count(*) AS n
+        FROM feed_items, json_each(feed_items.places) p
+        WHERE source_id = $source AND arrived_at >= $from AND arrived_at < $before AND ${SHOWN}
+        GROUP BY p.value`, { source: sourceId, from, before });
+      return Object.fromEntries(rows.map((row) => [String(row['place']), Number(row['n'])]));
     },
     /** 第 7 批第 10 条第二栏每个来源一行：[from, before) 里进来的、显示着的条目按来源数。 */
     countBySource(from: string, before: string): Map<string, number> {

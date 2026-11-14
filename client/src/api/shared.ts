@@ -28,6 +28,9 @@ export {
   RULES_DOC_ID,
 } from '../../../agent/shared/state.ts';
 export type { ProjectBrief, ProjectPerson } from '../../../agent/shared/state.ts';
+// 第13批：信息流条目在哪一处看到的（X、小红书），订阅文章的全文。
+export { FEED_PLACE_LABELS, FEED_PLACES } from '../../../agent/shared/state.ts';
+export type { FeedBlock, FeedPlace } from '../../../agent/shared/state.ts';
 // 书签（第 110 条）：保存的分组里的一页、上限。
 export {
   BOOKMARK_GROUP_TABS_MAX,

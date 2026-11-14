@@ -114,6 +114,8 @@ export interface ParsedFeedItem {
   /** 第 3 批瀑布流的配图：附件、media:content / thumbnail，或正文里第一张图；只要 https 的。 */
   image: string | null;
   author: string | null;
+  /** 第13批：订阅里给的全文 HTML（content:encoded、Atom content，没有就是摘要），读成一段段存（article-blocks.ts）。 */
+  html: string;
 }
 
 const IMAGE_FILE = /\.(?:jpe?g|png|gif|webp|avif)(?:[?#]|$)/i;
@@ -175,7 +177,7 @@ function absolute(raw: string, base: string): string {
   }
 }
 
-/** windowMs：只要这么近的条目（默认两天；Reddit「本周最佳」要放宽到一周多）。 */
+/** windowMs：只要这么近的条目（默认两天；Reddit「本周最佳」要放宽到一周多；博客第一次导入不限，给 Infinity）。 */
 export function parseFeed(source: string, base: string, now: Date, windowMs: number = WINDOW_MS): ParsedFeedItem[] {
   const root = xml(source);
   const atom = local(root) === 'feed';
@@ -206,7 +208,8 @@ export function parseFeed(source: string, base: string, now: Date, windowMs: num
     const rich = content(child(entry, 'encoded') ?? child(entry, 'content')) || body;
     items.push({ title: plain(content(child(entry, 'title'))).slice(0, 1_000) || '（没有标题）', url,
       text: plain(body).slice(0, 12_000),
-      publishedAt: new Date(at).toISOString(), image: imageOf(entry, rich, linkBase), author: authorOf(entry) });
+      publishedAt: new Date(at).toISOString(), image: imageOf(entry, rich, linkBase), author: authorOf(entry),
+      html: rich.slice(0, 400_000) });
   }
   return items.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }

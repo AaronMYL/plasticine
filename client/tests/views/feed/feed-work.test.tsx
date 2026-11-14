@@ -94,8 +94,8 @@ describe('信息流工作链', () => {
   it('加关注点同时出探索方向，快速重复只建一条；最近来源屏蔽后能恢复', async () => {
     const app = await renderApp({ hash: '#/feed', setup });
     await row();
-    // 第 7 批第 10 条：关注点在第二栏「按关注点的新闻」的 ⋯ → 设置… 里。
-    fireEvent.click(await screen.findByRole('button', { name: '「按关注点的新闻」的操作' }));
+    // 第 7 批第 10 条：关注点在第二栏「兴趣」（第13批改名）的 ⋯ → 设置… 里。
+    fireEvent.click(await screen.findByRole('button', { name: '「兴趣」的操作' }));
     fireEvent.click(screen.getByRole('menuitem', { name: '设置…' }));
     fireEvent.click(await screen.findByRole('button', { name: '加关注点' }));
     fireEvent.change(screen.getByLabelText('关注点名字'), { target: { value: '学习方法' } });

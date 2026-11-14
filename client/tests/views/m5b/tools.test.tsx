@@ -223,7 +223,8 @@ function openToolSwitches(): HTMLElement {
   fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
   const sheet = screen.getByRole('dialog', { name: '设置' });
   fireEvent.click(within(sheet).getByRole('button', { name: 'AI' }));
-  return within(sheet).getByRole('region', { name: '工具开关' });
+  // 第13批设置 · AI 按用在哪儿分组：工具组在最后的「工具和技能」里。
+  return within(sheet).getByRole('region', { name: '工具和技能' });
 }
 
 describe('工具开关', () => {

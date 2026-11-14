@@ -1,6 +1,7 @@
-// 「加来源」对话框（第 7 批第 10 条，他定；设计稿 Feed-Add）：第二栏顶上的 + 是唯一入口。顶上五种：网址 · Reddit ·
-// 关注点 · X 关注 · 抖音收藏。网址就是原来的加订阅（自己找订阅地址）；Reddit 填版块名、先看三条；关注点是原来的表单；
-// X、抖音收藏要他在电脑上的 Plasticine 浏览器里登录，这里写登录状态、给「去登录」。
+// 「加来源」对话框（第 7 批第 10 条，他定；设计稿 Feed-Add；第13批改名、加小红书）：第二栏顶上的 + 开它，Reddit、博客那一行
+// 的 ⋯ 也能开。顶上六种：博客 · Reddit · 兴趣 · X · 小红书 · 抖音收藏。博客就是原来的加订阅（给网址，自己找订阅地址）；
+// Reddit 填版块名、先看三条；兴趣是原来的关注点表单；X、小红书、抖音收藏要他在电脑上的 Plasticine 浏览器里登录，这里写登录
+// 状态、给「去登录」。
 
 import type { ReactNode } from 'react';
 import { useClientState } from '../../state/context.tsx';
@@ -15,18 +16,21 @@ import { RedditAdd } from './reddit-add.tsx';
 import './feed-add.css';
 
 const KIND_LABELS: Readonly<Record<FeedAddKind, string>> = {
-  url: '网址',
+  url: '博客',
   reddit: 'Reddit',
-  interest: '关注点',
-  x: 'X 关注',
+  interest: '兴趣',
+  x: 'X',
+  xhs: '小红书',
   douyin: '抖音收藏',
 };
 const KIND_ICONS: Readonly<Record<Exclude<FeedAddKind, 'reddit'>, IconName>> = {
-  url: 'link', interest: 'globe', x: 'hash', douyin: 'play',
+  url: 'link', interest: 'globe', x: 'hash', xhs: 'heart', douyin: 'play',
 };
 const LOGIN_TEXT: Readonly<Record<LoginKind, { on: string; off: string; how: string }>> = {
   x: { on: '已登录 X', off: '还没登录 X',
-    how: '电脑在线时，每 2 小时读一次你在 X 上关注的人。' },
+    how: '电脑在线时，每 2 小时读一次「正在关注」「为你推荐」和书签。' },
+  xhs: { on: '已登录小红书', off: '还没登录小红书',
+    how: '电脑在线时，每 2 小时读一次首页「推荐」和你的收藏。' },
   douyin: { on: '已登录抖音', off: '还没登录抖音',
     how: '同步时读你的抖音收藏，你勾选的才处理，处理好的进信息流。' },
 };
@@ -82,6 +86,7 @@ export function FeedAdd({ onClose, onDouyin }: { onClose: () => void; onDouyin: 
         {kind === 'reddit' ? <RedditAdd onAdded={onClose} onCancel={onClose} /> : null}
         {kind === 'interest' ? <FeedInterest alwaysOpen /> : null}
         {kind === 'x' ? <LoginPanel kind="x" /> : null}
+        {kind === 'xhs' ? <LoginPanel kind="xhs" /> : null}
         {kind === 'douyin' ? <LoginPanel kind="douyin" onDouyin={onDouyin} /> : null}
       </div>
     </div>

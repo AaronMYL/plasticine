@@ -74,8 +74,8 @@ export function attachFeedStreams(deps: AppDeps): void {
   });
 }
 
-export function itemView(deps: Pick<AppDeps, 'state' | 'm5b'>, item: FeedItem): FeedItemView {
-  return feedItemView(deps.state, item, deps.m5b.mailImages.signer);
+export function itemView(deps: Pick<AppDeps, 'state' | 'm5b'>, item: FeedItem, full = false): FeedItemView {
+  return feedItemView(deps.state, item, deps.m5b.mailImages.signer, full);
 }
 
 function itemWrite<T>(deps: AppDeps, id: string, write: () => T): T {
@@ -117,7 +117,7 @@ function cleanFeedReply(context: RequestContext, reply: Reply): Reply {
 export function getFeedItem(context: RequestContext): Reply {
   requireAuth(context);
   const { state } = context.deps;
-  const body: FeedItemResponse = { item: itemView(context.deps, state.feedItems.require(param(context, 'id'))) };
+  const body: FeedItemResponse = { item: itemView(context.deps, state.feedItems.require(param(context, 'id')), true) };
   return { status: 200, body };
 }
 
@@ -140,6 +140,7 @@ export function listFeed(context: RequestContext): Reply {
     ...(query.saved === undefined ? {} : { saved: query.saved }),
     ...(query.kind === undefined ? {} : { kind: query.kind }),
     ...(query.sourceId === undefined ? {} : { sourceId: query.sourceId }),
+    ...(query.place === undefined ? {} : { place: query.place }),
   };
   // One more than asked shows whether another page follows.
   const page = state.feedItems.listPage(filter, { limit: limit + 1, offset });
@@ -167,6 +168,7 @@ export function listFeedSources(context: RequestContext): Reply {
   // 第 3 批：X 和「按关注点搜新闻」两行一直在（设置里能开关）；第一次列来源时建出来。
   daily.subscriptions.builtIn('x');
   daily.subscriptions.builtIn('news');
+  daily.subscriptions.builtIn('xhs');
   const sources = state.feedSources.all();
   const statuses = state.feedSourceStatus.all();
   const view = (source: FeedSource) => feedSourceView(source, statuses.get(source.id));

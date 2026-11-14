@@ -51,7 +51,12 @@ function listed(item: FeedItemView): boolean {
 
 /** 条目从哪一路来，按来源的种类推（和服务端 feedItemKind 一样）。 */
 function itemKindOf(kind: FeedSourceView['kind'] | undefined): FeedItemView['kind'] {
-  return kind === 'x' || kind === 'rss' || kind === 'douyin' || kind === 'reddit' ? kind : 'news';
+  return kind === 'x' || kind === 'rss' || kind === 'douyin' || kind === 'reddit' || kind === 'xhs' ? kind : 'news';
+}
+
+/** 列表里不带全文（和服务端一样，读一条才给）。 */
+function listed1(item: FeedItemView): FeedItemView {
+  return Object.fromEntries(Object.entries(item).filter(([key]) => key !== 'body')) as FeedItemView;
 }
 
 export type FeedItemSeed = Pick<FeedItemView, 'id' | 'title'> & Partial<FeedItemView>;
@@ -70,6 +75,7 @@ export interface FakeFeedDeps {
 export const MANUAL_SOURCE_ID = 'src_manual';
 export const X_SOURCE_ID = 'src_x';
 export const NEWS_SOURCE_ID = 'src_news';
+export const XHS_SOURCE_ID = 'src_xhs';
 export const DOUYIN_SOURCE_ID = 'src_douyin';
 /** 和服务端 FEED_SOURCE_EVERY_MS 一样：订阅和 X 每 2 小时。 */
 const EVERY_MINUTES = 120;
@@ -129,9 +135,10 @@ export class FakeFeed implements FeedApi {
         && dayIn(new Date(item.arrivedAt), timeZone) === dayIn(this.deps.now(), timeZone),
       seedSource: (seed) => this.seedSource(seed) });
     this.seedSource({ id: MANUAL_SOURCE_ID, kind: 'internal', label: '手动添加' });
-    // 第 3 批：和服务端一样，X 和「按关注点搜新闻」两行内置来源一直在。
-    this.seedSource({ id: X_SOURCE_ID, kind: 'x', label: 'X · 你关注的人', ref: 'x:following' });
-    this.seedSource({ id: NEWS_SOURCE_ID, kind: 'internal', label: '按关注点搜新闻', ref: 'internal:news' });
+    // 和服务端一样，内置来源（X、兴趣、小红书、抖音收藏）一直在。
+    this.seedSource({ id: X_SOURCE_ID, kind: 'x', label: 'X', ref: 'x:following' });
+    this.seedSource({ id: NEWS_SOURCE_ID, kind: 'internal', label: '兴趣', ref: 'internal:news' });
+    this.seedSource({ id: XHS_SOURCE_ID, kind: 'xhs', label: '小红书', ref: 'xhs:feed' });
     this.seedSource({ id: DOUYIN_SOURCE_ID, kind: 'douyin', label: '抖音收藏', ref: 'douyin:favorites' });
   }
 
@@ -215,10 +222,11 @@ export class FakeFeed implements FeedApi {
       .filter((item) => query.origin === undefined || item.origin === query.origin)
       .filter((item) => query.kind === undefined || item.kind === query.kind)
       .filter((item) => query.sourceId === undefined || item.sourceId === query.sourceId)
+      .filter((item) => query.place === undefined || (item.places ?? []).includes(query.place))
       .filter((item) => query.day === undefined || dayIn(new Date(item.arrivedAt), timeZone) === query.day)
       .sort(compareFeedItems);
     return {
-      items: all.slice(offset, offset + limit),
+      items: all.slice(offset, offset + limit).map(listed1),
       nextOffset: offset + limit < all.length ? offset + limit : null,
       newToday: this.newToday(timeZone),
     };

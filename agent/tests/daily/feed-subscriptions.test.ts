@@ -45,6 +45,11 @@ test('订阅直接进信息流不经选材：配图、去重、少档每次三�
   let reads = 0;
   const source = t.state.feedSources.create({ kind: 'rss', label: '慢工博客', level: 'less',
     query: 'https://blog.example.test/feed' });
+  // 已经收过十篇的老订阅（第13批：收得少的博客会往前多导入几篇，这里看的是之后每一轮的条数）。
+  for (let index = 0; index < 10; index += 1) {
+    t.state.feedItems.add({ sourceId: source.id, origin: 'feed', title: `旧文 ${index}`, dedupeKey: `old-${index}`,
+      url: `https://blog.example.test/old/${index}`, day: '2026-11-03', arrivedAt: '2026-11-03T08:00:00.000Z' });
+  }
   const added: string[] = [];
   const subscriptions = new FeedSubscriptions({ state: t.state, now: () => at,
     fetcher: new FeedFetcher({ request: async () => {
@@ -54,7 +59,7 @@ test('订阅直接进信息流不经选材：配图、去重、少档每次三�
   try {
     assert.equal(subscriptions.scan(), 'started');
     await subscriptions.settled();
-    const first = t.state.feedItems.listPage({}, {});
+    const first = t.state.feedItems.listPage({}, {}).slice(0, 3);
     // 少档一次三条：最新的三篇，列表里新发的在前。
     assert.deepEqual(first.map((item) => item.title), ['文章 1', '文章 2', '文章 3']);
     assert.equal(first[0]?.imageUrl, 'https://img.example.test/1.jpg');
@@ -92,7 +97,7 @@ test('抓不到把原因记在这个订阅上，下一次抓到了就清掉；�
   try {
     subscriptions.scan();
     await subscriptions.settled();
-    assert.match(t.state.feedSourceStatus.read(source.id)?.error ?? '', /订阅没有返回可读内容/);
+    assert.equal(t.state.feedSourceStatus.read(source.id)?.error, '这个网站出错了（503），过一会儿再试。');
     broken = false;
     at = new Date(Date.parse(AT) + FEED_SOURCE_EVERY_MS);
     subscriptions.scan();

@@ -400,7 +400,7 @@ test('信息流只放站外资讯：任务、项目的旧条目留在库里，�
   const listed = json(await call(t, 'GET', '/v2/feed/sources', { cookie }));
   // 第 3 批：X 和「按关注点搜新闻」两行内置来源一直在（设置里「信息流来源」能开关）。
   assert.deepEqual((listed['others'] as Body[]).map((source) => source['label']).sort(),
-    ['X · 你关注的人', '手动添加', '按关注点搜新闻', '站外订阅']);
+    ['X', '兴趣', '手动添加', '站外订阅']);
   assert.deepEqual((listed['recentSites'] as Body[]).map((site) => site['site']).sort(),
     ['feed.example', 'manual.example']);
   const lead = t.state.feedItems.latestForConcern(concern.id);

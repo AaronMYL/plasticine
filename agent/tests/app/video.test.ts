@@ -31,7 +31,7 @@ async function pairedNode(app: TestApp, cookie: string): Promise<string> {
   return String(json(reply)['credential']);
 }
 
-test('第二栏：全部 + 每个来源一行（内置的 X、抖音收藏、按关注点的新闻），带今天新来的个数', async () => {
+test('第二栏：全部 + 每个来源一行（内置的兴趣、X、小红书、抖音收藏），带今天新来的个数', async () => {
   t = await startTestApp();
   const cookie = await pair(t);
   const added = await call(t, 'POST', '/v2/feed/items', { cookie,
@@ -43,8 +43,8 @@ test('第二栏：全部 + 每个来源一行（内置的 X、抖音收藏、按
   const body = json(nav);
   assert.equal(body['all'], 1);
   const sources = body['sources'] as { kind: string; label: string; count: number; problem: string | null }[];
-  assert.deepEqual(sources.map((source) => source.kind), ['x', 'douyin', 'news']);
-  assert.deepEqual(sources.map((source) => source.label), ['X 关注', '抖音收藏', '按关注点的新闻']);
+  assert.deepEqual(sources.map((source) => source.kind), ['news', 'x', 'xhs', 'douyin']);
+  assert.deepEqual(sources.map((source) => source.label), ['兴趣', 'X', '小红书', '抖音收藏']);
   assert.ok(sources.every((source) => source.count === 0 && source.problem === null));
   // 抖音同步排着、电脑不在线：那一行写出来。
   await call(t, 'POST', '/v2/video/douyin/sync', { cookie, body: { requestId: 'douyin-sync-nav' } });

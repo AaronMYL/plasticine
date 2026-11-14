@@ -56,19 +56,28 @@ export class FakeFeedSources {
   nav(timeZone: string): FeedNavResponse {
     const fresh = [...this.rows.items.values()].filter((item) => this.rows.freshToday(item, timeZone));
     const live = [...this.rows.sources.values()].filter((source) => !this.rows.removed.has(source.id));
+    const places = (source: FeedSourceView): Record<string, number> => {
+      const counts: Record<string, number> = {};
+      for (const item of fresh.filter((entry) => entry.sourceId === source.id)) {
+        for (const place of item.places ?? []) counts[place] = (counts[place] ?? 0) + 1;
+      }
+      return counts;
+    };
     const row = (kind: FeedNavSource['kind'], source: FeedSourceView | undefined, count: number):
       FeedNavSource[] => source === undefined ? [] : [{ kind, source, count,
       label: kind === 'rss' || kind === 'reddit' ? source.label : FEED_NAV_LABELS[kind],
-      problem: kind === 'douyin' ? null : source.status?.error ?? null }];
+      problem: kind === 'douyin' ? null : source.status?.error ?? null,
+      ...(kind === 'x' || kind === 'xhs' ? { places: places(source) } : {}) }];
     const ofKind = (kind: FeedItemView['kind']): number => fresh.filter((item) => item.kind === kind).length;
     const bySource = (id: string): number => fresh.filter((item) => item.sourceId === id).length;
     const builtIn = (ref: string): FeedSourceView | undefined => live.find((source) => source.ref === ref);
     return {
       all: fresh.length,
       sources: [
-        ...row('x', builtIn('x:following'), ofKind('x')),
-        ...row('douyin', builtIn('douyin:favorites'), ofKind('douyin')),
         ...row('news', builtIn('internal:news'), ofKind('news')),
+        ...row('x', builtIn('x:following'), ofKind('x')),
+        ...row('xhs', builtIn('xhs:feed'), ofKind('xhs')),
+        ...row('douyin', builtIn('douyin:favorites'), ofKind('douyin')),
         ...live.filter((source) => source.kind === 'reddit')
           .flatMap((source) => row('reddit', source, bySource(source.id))),
         ...live.filter((source) => source.kind === 'rss')

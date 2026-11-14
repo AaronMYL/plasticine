@@ -101,6 +101,10 @@ export function ReadingColumn({ route, navigate }: { route: Route; navigate: (ro
           onDouyin={() => {
             toList();
             feedUi.setDouyinOpen(true);
+          }}
+          onAdd={(kind) => {
+            toList();
+            feedUi.openAdd(kind);
           }} />
       </div>
     </>

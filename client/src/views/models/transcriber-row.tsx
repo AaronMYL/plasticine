@@ -17,7 +17,8 @@ export function TranscriberRow(): ReactNode {
     <div className="ai-use">
       <div className="ai-use-line">
         <span className="ai-use-name">本地转写<span className="ai-use-sub">视频转文字{
-          status.state === 'absent' || status.state === 'failed' ? ` · ${aboutSize(status.totalBytes)}` : ''}</span></span>
+          status.state === 'absent' || status.state === 'failed' ? ` · ${aboutSize(status.totalBytes)}` : ''
+        }</span></span>
         {status.state === 'ready'
           ? <span className="ai-use-static">{status.source === 'env' ? '服务器上配好的' : '已装好'}</span>
           : status.state === 'installing' ? <span className="ai-use-static" role="status">正在装 · {percent}%</span>

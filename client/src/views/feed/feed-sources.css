@@ -1,5 +1,6 @@
-/* 信息流的来源列表（feed-source-list.tsx，第 7 批第 10 条）：第二栏和手机筛选抽屉共用。一行就是第二栏的 .column-item，
-   行尾的 ⋯（和「登录」）叠在右边：悬停、键盘进来、菜单开着时淡出来，同时行尾的个数淡掉让位。手机上没有悬停，⋯ 一直在。 */
+/* 信息流的来源列表（feed-source-list.tsx，第 7 批第 10 条；第13批按种类一行）：第二栏和手机抽屉共用。一行就是第二栏的
+   .column-item，行尾的 ⋯（和「登录」、信息流那一行的刷新）叠在右边：悬停、键盘进来、菜单开着时淡出来，同时行尾的个数淡掉
+   让位。手机上没有悬停，⋯ 和刷新一直在。 */
 
 .feed-srcs {
   margin: 0;
@@ -46,13 +47,13 @@
 
 .feed-src:hover .feed-src-more,
 .feed-src:focus-within .feed-src-more,
-.feed-src[data-open] .feed-src-more {
+.feed-src:has([aria-expanded='true']) .feed-src-more {
   opacity: 1;
 }
 
 .feed-src:hover .feed-src-trail,
 .feed-src:focus-within .feed-src-trail,
-.feed-src[data-open] .feed-src-trail {
+.feed-src:has([aria-expanded='true']) .feed-src-trail {
   opacity: 0;
 }
 
@@ -198,4 +199,17 @@
   .feed-src-login {
     transition: none;
   }
+}
+
+/* 每种来源一个色点（第13批设计稿「阅读来源与筛选」），放在 16 的图标位里。 */
+.feed-kind-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: 4px;
+  border-radius: 50%;
+}
+
+.feed-src-all .feed-src-main {
+  width: calc(100% - 16px);
 }

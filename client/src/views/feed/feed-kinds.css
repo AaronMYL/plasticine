@@ -1,0 +1,168 @@
+/* 一种来源的页头和筛选、刷新完浮的那一句（第13批，设计稿「阅读来源与筛选」「阅读手机」）。 */
+
+.feed-kind-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feed-kind-head.is-compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.feed-kind-head.is-compact .feed-chips-scroll {
+  flex: 1;
+  min-width: 0;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+.feed-kind-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+}
+
+.feed-kind-title .feed-top-title {
+  margin-right: 4px;
+  font-size: 22px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+.feed-kind-gap {
+  flex: 1;
+}
+
+.feed-kind-refresh[data-busy] svg {
+  animation: feed-spin 0.9s linear infinite;
+}
+
+.feed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feed-chips-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 0 16px;
+  scrollbar-width: none;
+}
+
+.feed-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 15px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
+}
+
+.feed-chip:hover {
+  background: var(--tint);
+}
+
+.feed-chip[aria-pressed='true'] {
+  background: var(--fg);
+  box-shadow: none;
+  color: var(--bg);
+}
+
+.feed-chip:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.feed-chip-count {
+  font-size: 12px;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 刷新完浮的那一句：贴着页面顶上居中，往下读着时也在视口顶上。 */
+.feed-toast-slot {
+  position: sticky;
+  top: 8px;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  height: 0;
+  margin-bottom: -24px;
+  pointer-events: none;
+}
+
+.feed-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--fg);
+  box-shadow: var(--lift);
+  color: var(--bg);
+  font-size: 13px;
+  white-space: nowrap;
+  animation: feed-toast-in var(--motion-base) var(--ease-out);
+  transition: opacity var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out);
+}
+
+.feed-toast[data-failed] {
+  background: var(--layer-float);
+  color: var(--err);
+}
+
+.feed-toast[data-leaving] {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+@keyframes feed-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@media (max-width: 767px) {
+  .feed-chip {
+    height: 32px;
+  }
+
+  .feed-toast {
+    max-width: calc(100vw - 32px);
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-toast,
+  .feed-kind-refresh[data-busy] svg {
+    animation: none;
+  }
+
+  .feed-chip,
+  .feed-toast {
+    transition: none;
+  }
+}

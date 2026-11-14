@@ -1,5 +1,5 @@
-/* 「加来源」（feed-add.tsx，设计稿 Feed-Add）：顶上五个种类一排方块（图标 + 两字名字，选中的描边加深），下面是那一种的
-   表单；Reddit 的输入框前缀 r/、排序分段、三条预览、底部提示 + 取消 / 添加。 */
+/* 「加来源」（feed-add.tsx，设计稿 Feed-Add；第13批六种）：顶上六个种类一排方块（图标 + 名字，选中的描边加深；手机上
+   三个一排两排），下面是那一种的表单；Reddit 的输入框前缀 r/、排序分段、三条预览、底部提示 + 取消 / 添加。 */
 
 .feed-add {
   display: flex;
@@ -9,8 +9,14 @@
 
 .feed-add-kinds {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
+}
+
+/* 手机上是底部抽屉：抽屉本身不留边（primitives/sheet），加来源和来源设置自己留 16。 */
+.sheet-drawer .feed-add,
+.sheet-drawer .feed-set {
+  padding: 16px;
 }
 
 .feed-add-kind {
@@ -214,6 +220,7 @@
 
 @media (max-width: 767px) {
   .feed-add-kinds {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
 

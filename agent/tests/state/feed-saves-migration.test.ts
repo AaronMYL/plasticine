@@ -14,7 +14,8 @@ import type { StoreContext } from '../../src/state/object-store.ts';
 import { steppingClock } from './helpers.ts';
 
 // 讲的是 0058 之前的历史：只跑到 0058（0059 起的清理在 retire-migration.test.ts）。
-const MIGRATIONS = EVERY_MIGRATION.filter((entry) => entry.id < '0059');
+// 条目用现在的存储写：0138 加的位置、全文列要一起跑上（只加列，和这里看的迁移不相干），放在最后。
+const MIGRATIONS = EVERY_MIGRATION.filter((entry) => entry.id < '0059' || entry.id === '0138-feed-places-body');
 
 const REMOVED_AT = '2026-11-03T12:00:00.000Z';
 
@@ -36,8 +37,10 @@ test('0051：信息流收藏从书签移走（只记删除时间）；书签页�
   const db = openDatabase(MEMORY_DATABASE);
   try {
     const now = steppingClock();
-    // 条目用现在的存储写进去：它要 0054 加的作者、配图列，先把 0054 一起跑上（只加列，和 0045–0051 不相干）。
-    migrate(db, MIGRATIONS.filter((entry) => entry.id < '0045' || entry.id === '0054-feed-sources-x'), now);
+    // 条目用现在的存储写进去：它要 0054 加的作者、配图列和 0138 加的位置、全文列，先把它们一起跑上（只加列，
+    // 和 0045–0051 不相干）。
+    const columns = (id: string): boolean => id === '0054-feed-sources-x' || id === '0138-feed-places-body';
+    migrate(db, MIGRATIONS.filter((entry) => entry.id < '0045' || columns(entry.id)), now);
     let n = 0;
     const context: StoreContext = { db, now, newId: () => `id-${(n += 1)}` };
     const sources = createFeedSourceStore(context);
@@ -53,7 +56,7 @@ test('0051：信息流收藏从书签移走（只记删除时间）；书签页�
     const feedUnsaved = add('feed', '2026-10-28T03:00:00.000Z');
     const later = add('later', null);
     const back = add('back', '2026-10-28T04:00:00.000Z');
-    migrate(db, MIGRATIONS.filter((entry) => entry.id < '0051' || entry.id === '0054-feed-sources-x'), now);
+    migrate(db, MIGRATIONS.filter((entry) => entry.id < '0051' || columns(entry.id)), now);
     const bookmarks = createBookmarkStore(context);
 
     // 0045 之后：书签页删掉一条（服务端连带清了收藏）；信息流里取消一条（服务端连带删了书签）。

@@ -7,6 +7,8 @@ import {
   FEED_FILTER_KINDS,
   FEED_ITEM_KINDS,
   FEED_ORIGINS,
+  FEED_PLACES,
+  FeedBlockSchema,
   FEED_REACTIONS,
   FEED_SOURCE_KINDS,
   FEED_SOURCE_LEVELS,
@@ -106,6 +108,12 @@ export const FeedItemViewSchema = Type.Object({
   chart: Type.Optional(OrNull(FeedChartSchema)),
   /** 第 9 条：抖音收藏总结来的条目——视频多长、图文还是视频、走到哪了。 */
   video: Type.Optional(OrNull(FeedVideoViewSchema)),
+  /** 第13批：在哪一处看到的（X 的关注 / 推荐 / 书签，小红书的推荐 / 收藏），卡片上一处一个标。 */
+  places: Type.Optional(Type.Array(Type.Enum(FEED_PLACES))),
+  /** 第13批：有没有存下的全文（订阅文章）；有就点开读全文。 */
+  hasBody: Type.Optional(Type.Boolean()),
+  /** 全文只在读一条（GET /v2/feed/items/:id）时给，列表里不带。 */
+  body: Type.Optional(OrNull(Type.Array(FeedBlockSchema))),
 });
 export type FeedItemView = Static<typeof FeedItemViewSchema>;
 
@@ -123,6 +131,8 @@ export const FeedListQuerySchema = Type.Object(
     kind: Type.Optional(Type.Enum(FEED_FILTER_KINDS)),
     /** 第 7 批第 10 条：只看这一个来源（第二栏的一个订阅 / Reddit 版块）。 */
     sourceId: Type.Optional(IdSchema),
+    /** 第13批：只看在这一处看到的（X、小红书的筛选）。 */
+    place: Type.Optional(Type.Enum(FEED_PLACES)),
     tz: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
     limit: Type.Optional(PageLimitSchema),
     offset: Type.Optional(Type.Integer({ minimum: 0 })),
@@ -252,17 +262,19 @@ export type FeedSourceResponse = Static<typeof FeedSourceResponseSchema>;
  * 第 7 批第 10 条（他定）：信息流的第二栏——顶上「全部」「收藏」，下面「来源」每个来源一行：X 关注、抖音收藏、按关注点的
  * 新闻（内置三种），每个订阅、每个 Reddit 版块各一行。个数是今天新来的（他的时区），「全部」= 各来源之和再加手动添加的。
  */
-export const FEED_NAV_KINDS = ['x', 'douyin', 'news', 'rss', 'reddit'] as const;
+export const FEED_NAV_KINDS = ['news', 'x', 'xhs', 'douyin', 'reddit', 'rss'] as const;
 export type FeedNavKind = (typeof FEED_NAV_KINDS)[number];
+/** 第13批（11-14 Aaron）：「X 关注」改「X」，「按关注点的新闻」改「兴趣」，加「小红书」；订阅叫「博客」。 */
 export const FEED_NAV_LABELS: Readonly<Record<FeedNavKind, string>> = {
-  x: 'X 关注',
+  news: '兴趣',
+  x: 'X',
+  xhs: '小红书',
   douyin: '抖音收藏',
-  news: '按关注点的新闻',
-  rss: 'RSS',
   reddit: 'Reddit',
+  rss: '博客',
 };
-/** 内置的三种：没有删除。 */
-export const FEED_BUILT_IN_NAV_KINDS: readonly FeedNavKind[] = ['x', 'douyin', 'news'];
+/** 内置的四种：没有删除。 */
+export const FEED_BUILT_IN_NAV_KINDS: readonly FeedNavKind[] = ['news', 'x', 'xhs', 'douyin'];
 export const FeedNavQuerySchema = Type.Object({
   tz: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
 }, { additionalProperties: false });
@@ -277,6 +289,8 @@ export const FeedNavSourceSchema = Type.Object({
   count: Type.Integer({ minimum: 0 }),
   /** 上次没取到的原因（行尾小红点，悬停看）；抖音是同步的状态（等电脑上线、没做成）。没有就是 null。 */
   problem: OrNull(Type.String()),
+  /** 第13批：X、小红书今天新来的按在哪一处看到的数（筛选上的数）；别的来源没有。 */
+  places: Type.Optional(Type.Record(Type.String(), Type.Integer({ minimum: 0 }))),
 });
 export type FeedNavSource = Static<typeof FeedNavSourceSchema>;
 export const FeedNavResponseSchema = Type.Object({

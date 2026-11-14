@@ -11,15 +11,34 @@ import { hueVar } from '../../shell/hue.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { useHeightMorph } from '../../shell/motion.ts';
 import { feedText } from './feed-text.ts';
+import { ArticleBody, useArticle } from './feed-article.tsx';
+import './feed-body.css';
 
 type Mode = 'lead' | 'full' | 'original';
 
-/** 标题 + 正文 + 展开 / 原文切换。 */
+/** 标题 + 正文 + 展开 / 原文切换；存了全文的博客文章多一个「读全文」（第13批）。 */
 export function FeedText({ item }: { item: FeedItemView }): ReactNode {
   const text = feedText(item);
   const [mode, setMode] = useState<Mode>('lead');
   const ref = useRef<HTMLDivElement>(null);
-  useHeightMorph(ref, mode);
+  const { article, load, close } = useArticle(item.id);
+  useHeightMorph(ref, `${mode}:${article.state}`);
+  if (article.state === 'ready' || article.state === 'loading' || article.state === 'failed') {
+    return (
+      <div ref={ref} className="feed-text" data-mode="article">
+        <h3 className="feed-card-title">{item.title}</h3>
+        {article.state === 'ready' ? <ArticleBody blocks={article.blocks} />
+          : article.state === 'loading' ? <p className="feed-article-note" role="status">正在读全文</p>
+            : <p className="feed-article-note is-error" role="alert">{article.error}{' '}
+              <button type="button" className="text-button" onClick={load}>再读一次</button></p>}
+        <div className="feed-text-tools">
+          <button type="button" className="feed-text-toggle" aria-expanded={true} onClick={close}>
+            收起<Icon name="chevron-up" size={12} />
+          </button>
+        </div>
+      </div>
+    );
+  }
   const post = item.kind === 'x';
   const body = mode === 'lead' ? text.lead : mode === 'full' ? text.full : text.original;
   const title = mode === 'original' ? item.title : text.title;
@@ -33,8 +52,13 @@ export function FeedText({ item }: { item: FeedItemView }): ReactNode {
         <p className={['feed-card-text', post ? 'is-post' : '', mode === 'lead' && text.faded ? 'is-faded' : '']
           .filter(Boolean).join(' ')}>{body}</p>
       )}
-      {text.expandable || canSwitch ? (
+      {text.expandable || canSwitch || item.hasBody === true ? (
         <div className="feed-text-tools">
+          {item.hasBody === true && mode === 'lead' ? (
+            <button type="button" className="feed-text-toggle" aria-expanded={false} onClick={load}>
+              读全文<Icon name="chevron-down" size={12} />
+            </button>
+          ) : null}
           {text.expandable && mode === 'lead' ? (
             <button type="button" className="feed-text-toggle" aria-expanded={false} onClick={() => setMode('full')}>
               展开<Icon name="chevron-down" size={12} />

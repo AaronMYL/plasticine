@@ -36,6 +36,7 @@ export function feedItemKind(item: Pick<FeedItem, 'origin'>, source: FeedSource 
   if (source?.kind === 'rss') { return 'rss'; }
   if (source?.kind === 'douyin') { return 'douyin'; }
   if (source?.kind === 'reddit') { return 'reddit'; }
+  if (source?.kind === 'xhs') { return 'xhs'; }
   return 'news';
 }
 
@@ -64,8 +65,19 @@ export function feedVideoView(work: VideoWorkRow | undefined): FeedVideoView | n
     points: work.digest?.points ?? [], related: work.digest?.related ?? [] };
 }
 
+/** 全文里的图也走服务端代理（和卡片配图一样不直连原站）；代理不了的图不放。 */
+function bodyView(images: FeedImageSigner | null, body: FeedItem['body']): NonNullable<FeedItemView['body']> | null {
+  if (body === null) return null;
+  return body.flatMap((block) => {
+    if (block.t !== 'img') return [block];
+    const src = proxied(images, block.src ?? null);
+    return src === null ? [] : [{ ...block, src }];
+  });
+}
+
+/** full：读一条时带上全文（第13批）；列表里只说有没有。 */
 export function feedItemView(state: FeedViewState, item: FeedItem,
-  images: FeedImageSigner | null): FeedItemView {
+  images: FeedImageSigner | null, full = false): FeedItemView {
   const source = state.feedSources.get(item.sourceId);
   const translation = state.feedTranslations.get(item.id);
   const image = proxied(images, item.imageUrl);
@@ -98,6 +110,9 @@ export function feedItemView(state: FeedViewState, item: FeedItem,
     zh: feedZhView(translation),
     chart: translation?.state === 'done' || translation?.state === 'skipped' ? translation.chart : null,
     video: source?.kind === 'douyin' ? feedVideoView(state.videoWorks.byFeedItem(item.id)) : null,
+    places: item.places,
+    hasBody: item.body !== null && item.body.length > 0,
+    ...(full ? { body: bodyView(images, item.body) } : {}),
   });
 }
 

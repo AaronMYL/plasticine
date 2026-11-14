@@ -35,6 +35,11 @@ describe('信息流卡片上的字', () => {
     expect(text.full).toBe(LONG_EN);
   });
 
+  it('正文和标题一字不差（小红书只有标题的笔记）：不再重复一遍', () => {
+    const text = feedText(item({ kind: 'xhs', title: '桌面整理：一块木板', summary: ' 桌面整理：一块木板 ' }));
+    expect(text).toMatchObject({ lead: '', full: '', expandable: false, title: '桌面整理：一块木板' });
+  });
+
   it('按句子断开：中文句号、英文句号都认；找不到句子边界才硬切并加省略号', () => {
     expect(cutAtSentence('第一句很长很长。第二句也很长很长。第三句。', 12)).toEqual({ text: '第一句很长很长。', cut: true });
     expect(cutAtSentence('短的。', 12)).toEqual({ text: '短的。', cut: false });

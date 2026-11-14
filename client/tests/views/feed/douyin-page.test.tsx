@@ -6,8 +6,8 @@ const TITLE = '普通人做指数定投的三个误区';
 
 async function open(width = 1440) {
   const app = await renderApp({ hash: '#/feed', width });
-  if (width < 768) fireEvent.click(screen.getByRole('button', { name: '筛选' }));
-  const area = width < 768 ? await screen.findByRole('dialog', { name: '筛选' })
+  if (width < 768) fireEvent.click(screen.getByRole('button', { name: '管理来源' }));
+  const area = width < 768 ? await screen.findByRole('dialog', { name: '管理来源' })
     : screen.getByRole('complementary', { name: '阅读' });
   fireEvent.click(await within(area).findByRole('button', { name: /^抖音收藏/ }));
   return app;

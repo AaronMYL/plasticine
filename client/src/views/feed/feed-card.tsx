@@ -4,9 +4,11 @@
 // 实心。11-04 他定：整张卡不挂浮框（划过就冒太吵）——来自哪一路由头像 / 站点方块 + 名字说清；挑这条的理由（新闻才有）
 // 收进头部一个 ⓘ 按钮的 tooltip。点了「不感兴趣」，落定后整张卡就地收成一条矮的占位（照 X 的「不再推荐 · 撤销」），
 // 高度平滑过渡；点「撤销」恢复原卡。焦点跟着走：收起时到「撤销」，恢复时回「不感兴趣」。
-// 动作没了结时那几个按钮锁住，卡底出「再核实」「重发」。
+// 动作没了结时那几个按钮锁住，卡底出「再核实」「重发」。第13批：X、小红书在哪一处看到的（关注 / 推荐 / 书签 / 收藏）
+// 在名字后面各一个小标，两处都有就两个。
 
 import { useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { FEED_PLACE_LABELS } from '../../api/shared.ts';
 import type { FeedItemView } from '../../api/types.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { OpLines } from '../../primitives/task-row/op-line.tsx';
@@ -47,6 +49,10 @@ export function sourceOf(item: FeedItemView): CardSource {
   if (item.kind === 'reddit') {
     // 第 7 批第 13 条：Reddit 圆标 + r/版块 + u/作者。
     return { name: item.sourceLabel, handle: item.author?.name ?? null, avatar: null, round: true };
+  }
+  if (item.kind === 'xhs') {
+    // 第13批：小红书笔记写作者，第二行「小红书」。
+    return { name: item.author?.name ?? '小红书', handle: '小红书', avatar: item.author?.avatar ?? null, round: true };
   }
   return { name: item.site ?? item.sourceLabel, handle: null, avatar: null, round: false };
 }
@@ -169,6 +175,9 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
           <span className="feed-card-name">{source.name}</span>
           {source.handle === null ? null : <span className="feed-card-handle">{source.handle}</span>}
         </div>
+        {(item.places ?? []).map((place) => (
+          <span key={place} className="feed-place">{FEED_PLACE_LABELS[place]}</span>
+        ))}
         <time className="feed-card-time" dateTime={at}>
           {phone ? relativeTime(at, new Date()) : when(at, new Date(), timeZone)}
         </time>

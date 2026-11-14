@@ -98,7 +98,10 @@ export async function addReddit(context: RequestContext): Promise<Reply> {
     if (source.query !== url) {
       source = state.feedSources.update(source.id, source.version, { query: url });
     }
-    afterCommit(() => { subscriptions(context).scan(); });
+    // 第13批：预览时取到的直接存进来，加完马上有内容（不再等下一轮、也不怕下一轮被限流）。
+    afterCommit(() => {
+      if (subscriptions(context).ingestPreview(source.id) === 0) subscriptions(context).scan();
+    });
     const reply: FeedSourceResponse = { source: feedSourceView(source) };
     return { status: 201, body: reply };
   }, { bodyDigest: raw.digest });

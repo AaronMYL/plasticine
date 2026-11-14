@@ -132,11 +132,14 @@ function fromDaily(error: DailyError): ApiError {
     case 'not_found':
       return new ApiError(404, 'not_found', domainErrorText(error.code), { ...field, next: '刷新后再试。' });
     case 'invalid_input':
-      return new ApiError(400, 'invalid_request', domainErrorText(error.code), field);
+      // 第13批：照原话说哪里不对（daily/ 里的说法都是写给人看的），不归成一句「输入不合要求」。
+      return new ApiError(400, 'invalid_request', error.message || domainErrorText(error.code), field);
     case 'conflict':
       return new ApiError(409, 'conflict', domainErrorText(error.code), field);
     case 'rate_limited':
       return new ApiError(429, 'too_many_attempts', error.message, { ...field, next: '过一会儿再试。' });
+    case 'unreachable':
+      return new ApiError(502, 'unreachable', error.message, { ...field, next: '过一会儿再试。' });
   }
 }
 

@@ -15,7 +15,7 @@ type FeedRequest = (url: string, signal: AbortSignal) => Promise<Response>;
 // DNS、响应头和正文共用一个总截止时间；注入的传输即使忽略 signal，也不会无限等下去。
 export function bounded<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const abort = () => reject(new DailyError('invalid_input', '信息流抓取或选材超时或已取消，请稍后再试。'));
+    const abort = () => reject(new DailyError('unreachable', '对方太久没回应（超时），过一会儿再试。'));
     work.then((value) => {
       signal.removeEventListener('abort', abort);
       resolve(value);
@@ -63,7 +63,7 @@ const publicRequest: FeedRequest = async (raw, signal) => {
         reject(new DailyError('invalid_input', '订阅响应无法读取，请检查地址。'));
       }
     });
-    req.on('error', () => reject(new DailyError('invalid_input', '订阅抓取失败，请稍后再试。')));
+    req.on('error', () => reject(new DailyError('unreachable', '连不上这个网站（连接被断开），过一会儿再试。')));
     req.end();
   });
 };
@@ -94,6 +94,12 @@ export class FeedFetcher {
         }
         if (response.status === 404) {
           throw new DailyError('invalid_input', '地址打不开（404），请检查名字或地址。');
+        }
+        if (response.status === 401 || response.status === 403) {
+          throw new DailyError('unreachable', `这个网站拒绝了服务器的访问（${String(response.status)}）。`);
+        }
+        if (response.status >= 500) {
+          throw new DailyError('unreachable', `这个网站出错了（${String(response.status)}），过一会儿再试。`);
         }
         throw new DailyError('invalid_input', '订阅没有返回可读内容，请检查地址后再试。');
       }
@@ -135,7 +141,8 @@ export class FeedFetcher {
       if ((attrs['rel'] ?? '').toLowerCase().split(/\s+/).includes('alternate')
         && /^application\/(rss|atom)\+xml$/i.test(attrs['type'] ?? '') && attrs['href']) {
         const url = cleanUrl(checkPublicHttpsUrl(new URL(attrs['href'], page.url).href).href);
-        return { url, title: attrs['title']?.trim() || titleOf(page.text) };
+        // 网站名优先：订阅链接上写的常是「Recent Entries」「RSS」这类（第13批，阮一峰的博客就是）。
+        return { url, title: siteName(page.text) ?? (attrs['title']?.trim() || null) };
       }
     }
     for (const candidate of commonFeedUrls(page.url)) {
@@ -183,6 +190,17 @@ function titleOf(text: string): string | null {
   const match = /<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(text);
   const title = match === null ? '' : plain(match[1] ?? '').slice(0, 200);
   return title === '' ? null : title;
+}
+
+/** 页面自己写的网站名：og:site_name，没有就 <title>。 */
+function siteName(html: string): string | null {
+  for (const tag of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const attrs = tagAttributes(tag[0]);
+    if ((attrs['property'] ?? attrs['name'])?.toLowerCase() === 'og:site_name' && attrs['content']?.trim()) {
+      return plain(attrs['content']).slice(0, 200);
+    }
+  }
+  return titleOf(html);
 }
 
 export function commonFeedUrls(pageUrl: string): string[] {

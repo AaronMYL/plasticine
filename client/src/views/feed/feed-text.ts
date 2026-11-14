@@ -53,7 +53,9 @@ export function cutAtSentence(text: string, max: number): { text: string; cut: b
 
 export function feedText(item: Pick<FeedItemView, 'kind' | 'title' | 'summary' | 'zh'>): FeedText {
   const post = item.kind === 'x';
-  const original = post ? item.summary || item.title : item.summary;
+  // 第13批：正文和标题一字不差（小红书只有标题的笔记）就不再重复一遍。
+  const same = !post && item.summary.trim() === item.title.trim();
+  const original = post ? item.summary || item.title : same ? '' : item.summary;
   const zh = item.zh ?? null;
   const translated = zh !== null && zh.state === 'done' && zh.text !== null && zh.text !== '';
   const full = translated ? zh.text ?? original : original;

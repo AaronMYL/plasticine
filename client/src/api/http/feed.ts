@@ -129,6 +129,7 @@ export class HttpFeed implements FeedApi {
         saved: query.saved,
         kind: query.kind,
         sourceId: query.sourceId,
+        place: query.place,
         tz: query.tz,
         limit: query.limit,
         offset: query.offset,

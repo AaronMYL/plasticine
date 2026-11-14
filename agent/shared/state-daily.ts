@@ -42,8 +42,11 @@ export type Registration = Static<typeof RegistrationSchema>;
 // internal = 站内（手动添加、「按关注点搜新闻」这个总开关；任务、关切两个站内来源 2026-11-04 起停收）；
 // blocked_site = 不要的网站；rss = 订阅；x = X 上他关注的人（第 3 批 11-04：Mac 在线时读他登录着的「关注」时间线）；
 // douyin = 抖音收藏（第 6 批第 9 条：他勾选处理、总结好的进信息流）；reddit = 一个 Reddit 版块（第 7 批第 13 条：
-// 服务器直接取版块的 Atom，query 存那个地址，排序就在地址里）。
-export const FEED_SOURCE_KINDS = ['interest', 'internal', 'blocked_site', 'rss', 'x', 'douyin', 'reddit'] as const;
+// 服务器直接取版块的 Atom，query 存那个地址，排序就在地址里）；xhs = 小红书（第13批：电脑客户端用他在 Plasticine
+// 浏览器里的登录读首页「推荐」和自己的「收藏」）。
+export const FEED_SOURCE_KINDS = [
+  'interest', 'internal', 'blocked_site', 'rss', 'x', 'douyin', 'reddit', 'xhs',
+] as const;
 export const FEED_SOURCE_LEVELS = ['more', 'normal', 'less', 'off'] as const;
 export const FeedSourceInputSchema = Type.Object(
   {
@@ -86,9 +89,29 @@ export const FEED_REACTIONS = ['like', 'dislike'] as const;
  * x → x，rss → rss，reddit → reddit，手动添加 → manual，其余站外收集的（关注点搜索、迁移来的旧条目）→ news。
  * 页头分段按它筛（不含 manual）。
  */
-export const FEED_ITEM_KINDS = ['x', 'rss', 'news', 'manual', 'douyin', 'reddit'] as const;
-export const FEED_FILTER_KINDS = ['x', 'rss', 'news', 'douyin', 'reddit'] as const satisfies
+export const FEED_ITEM_KINDS = ['x', 'rss', 'news', 'manual', 'douyin', 'reddit', 'xhs'] as const;
+export const FEED_FILTER_KINDS = ['x', 'rss', 'news', 'douyin', 'reddit', 'xhs'] as const satisfies
   readonly (typeof FEED_ITEM_KINDS)[number][];
+/**
+ * 第13批：一条是在那一路的哪一处看到的——X 的「正在关注」「为你推荐」「书签」，小红书的「推荐」「收藏」。同一条在两处都
+ * 看到就两个都记（卡片上两个标）。订阅、Reddit、抖音没有这一说，是空的。
+ */
+export const FEED_PLACES = ['following', 'recommend', 'bookmark', 'saved'] as const;
+export type FeedPlace = (typeof FEED_PLACES)[number];
+export const FEED_PLACE_LABELS: Readonly<Record<FeedPlace, string>> = {
+  following: '关注', recommend: '推荐', bookmark: '书签', saved: '收藏',
+};
+/** 订阅文章的全文（第13批）：一段段存，不存 HTML——段落、小标题、引用、列表项、代码、图。 */
+export const FEED_BLOCK_TYPES = ['p', 'h', 'quote', 'li', 'code', 'img'] as const;
+export const FeedBlockSchema = Type.Object({
+  t: Type.Enum(FEED_BLOCK_TYPES),
+  /** 文字（图是图注，可以是空的）。 */
+  text: Type.String({ maxLength: 20_000 }),
+  /** 图的地址（只要 https）。 */
+  src: Type.Optional(Type.String({ pattern: '^https://', maxLength: 3_000 })),
+}, { additionalProperties: false });
+export type FeedBlock = Static<typeof FeedBlockSchema>;
+export const FEED_BODY_MAX_BLOCKS = 400;
 // 旧信息流的长摘要完整保留，最多 100 000 字符。
 export const FEED_TEXT_MAX_CHARS = 100_000;
 export const FEED_URL_MAX_CHARS = 3_000;
@@ -120,6 +143,9 @@ export const FeedItemInputSchema = Type.Object(
     avatarUrl: Type.Optional(Nullable(FeedImageLinkSchema)),
     imageUrl: Type.Optional(Nullable(FeedImageLinkSchema)),
     imageRatio: Type.Optional(Nullable(Type.Number({ minimum: FEED_IMAGE_RATIO_MIN, maximum: FEED_IMAGE_RATIO_MAX }))),
+    // 第13批：在哪一处看到的（X、小红书）；订阅文章的全文。
+    places: Type.Optional(Type.Array(Type.Enum(FEED_PLACES), { maxItems: FEED_PLACES.length })),
+    body: Type.Optional(Nullable(Type.Array(FeedBlockSchema, { maxItems: FEED_BODY_MAX_BLOCKS }))),
   },
   STRICT,
 );
@@ -134,6 +160,9 @@ export const FeedItemPatchSchema = Type.Partial(
     note: Nullable(Type.String({ maxLength: 10_000 })),
     seenAt: Nullable(IsoTimeSchema),
     concernId: Nullable(IdSchema),
+    // 第13批：同一条又在另一处看到（关注里有、后来进了书签）就把那一处并进来；以前没存全文的再抓到时补上。
+    places: Type.Array(Type.Enum(FEED_PLACES), { maxItems: FEED_PLACES.length }),
+    body: Nullable(Type.Array(FeedBlockSchema, { maxItems: FEED_BODY_MAX_BLOCKS })),
   }),
   STRICT,
 );

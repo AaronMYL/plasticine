@@ -304,15 +304,15 @@ export class FeedStore {
       interests: rows.filter((source) => source.kind === 'interest'),
       blocked: rows.filter((source) => source.kind === 'blocked_site'),
       others: rows.filter((source) => source.kind === 'internal' || source.kind === 'rss' || source.kind === 'x'
-        || source.kind === 'reddit'),
+        || source.kind === 'reddit' || source.kind === 'xhs'),
     };
   }
 
   private query(offset: number): FeedListQuery {
-    const { includeHidden, savedOnly, kind, sourceId } = this.ui.store.get();
+    const { includeHidden, savedOnly, kind, sourceId, place } = this.ui.store.get();
     return { tz: this.timeZone, offset, ...(includeHidden ? { includeHidden } : {}),
       ...(savedOnly ? { saved: true } : {}), ...(kind === null ? {} : { kind }),
-      ...(sourceId === null ? {} : { sourceId }) };
+      ...(sourceId === null ? {} : { sourceId }), ...(place === null ? {} : { place }) };
   }
 
   private accept(item: FeedItemView): boolean {
@@ -326,9 +326,10 @@ export class FeedStore {
 
   /** 按现在的条件服务端列不列它：不感兴趣（没开「连不感兴趣的一起看」）、只看收藏时没收藏、分段在别的那一路。 */
   private hiddenByQuery(item: FeedItemView): boolean {
-    const { includeHidden, savedOnly, kind, sourceId } = this.ui.store.get();
+    const { includeHidden, savedOnly, kind, sourceId, place } = this.ui.store.get();
     return (item.reaction === 'dislike' && !includeHidden) || (savedOnly && !item.saved)
-      || (kind !== null && item.kind !== kind) || (sourceId !== null && item.sourceId !== sourceId);
+      || (kind !== null && item.kind !== kind) || (sourceId !== null && item.sourceId !== sourceId)
+      || (place !== null && !(item.places ?? []).includes(place));
   }
 
   /**

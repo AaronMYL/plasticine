@@ -123,6 +123,7 @@ export function FeedSourceSettings({ row, onClose, onDouyin }: { row: FeedNavSou
       {row.kind === 'rss' || row.kind === 'reddit' ? <SourceForm row={row} onDone={onClose} /> : null}
       {row.kind === 'news' ? <FeedSources /> : null}
       {row.kind === 'x' ? <LoginPanel kind="x" /> : null}
+      {row.kind === 'xhs' ? <LoginPanel kind="xhs" /> : null}
       {row.kind === 'douyin' ? <LoginPanel kind="douyin" onDouyin={onDouyin} /> : null}
     </div>
   );

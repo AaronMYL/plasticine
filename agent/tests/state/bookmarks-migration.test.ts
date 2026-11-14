@@ -14,14 +14,16 @@ import type { StoreContext } from '../../src/state/object-store.ts';
 import { steppingClock } from './helpers.ts';
 
 // 讲的是 0058 之前的历史：只跑到 0058（0059 起的清理在 retire-migration.test.ts）。
-const MIGRATIONS = EVERY_MIGRATION.filter((entry) => entry.id < '0059');
+// 条目用现在的存储写：0138 加的位置、全文列要一起跑上（只加列，和这里看的迁移不相干），放在最后。
+const MIGRATIONS = EVERY_MIGRATION.filter((entry) => entry.id < '0059' || entry.id === '0138-feed-places-body');
 
 test('0044 的库：收藏着的信息流迁成书签，项目跟着条目，没收藏的不迁；旧行不动，重跑不重复', () => {
   const db = openDatabase(MEMORY_DATABASE);
   try {
     const now = steppingClock();
     // 条目用现在的存储写进去：它要 0054 加的作者、配图列，先把 0054 一起跑上（只加列，和 0045 不相干）。
-    const feedColumns = (entry: { id: string }): boolean => entry.id === '0054-feed-sources-x';
+    const feedColumns = (entry: { id: string }): boolean => entry.id === '0054-feed-sources-x'
+      || entry.id === '0138-feed-places-body';
     migrate(db, MIGRATIONS.filter((entry) => entry.id < '0045' || feedColumns(entry)), now);
     let n = 0;
     const context: StoreContext = { db, now, newId: () => `id-${(n += 1)}` };

@@ -26,7 +26,7 @@ describe('窄屏页头布局', () => {
   // 2026-11-05 设计稿 Phone-Notes / Phone-Feed：手机首层页头只有标题和右边几个图标，没有第二行控件。
   it.each([
     ['#/notes', ['查找内容', '新建']],
-    ['#/feed', ['筛选']],
+    ['#/feed', ['刷新全部来源', '管理来源']],
   ] as const)('390 宽 %s：标题一行，右边是 %j', async (hash, tools) => {
     applyStyles(390);
     await renderApp({ width: 390, hash });

@@ -6,6 +6,14 @@
   isolation: isolate;
 }
 
+/*
+ * 第13批：主区自成一层以后，手机上从底下升起的抽屉（Sheet 的 drawer，挂在主区里）压不住底栏的几个标签和右下角的圆球，
+ * 「管理来源」最底下的按钮被「首页」盖住。抽屉开着时把主区整层抬到它们上面（底栏、圆球都是 35）。
+ */
+.shell[data-phone='true'] .shell-main-area:has(.sheet-drawer) {
+  z-index: 41;
+}
+
 .ambient-layer {
   position: absolute;
   inset: 0;

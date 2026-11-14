@@ -53,19 +53,21 @@ export function useFeedNav(): FeedNavData {
   return { nav, error };
 }
 
-/** 要登录的两种来源和它们的网站。 */
+/** 要登录的几种来源和它们的网站（第13批加小红书）。 */
 export const LOGIN_SITES = {
   x: { url: 'https://x.com/login', title: 'X', login: '登录 X', open: '打开 X', hosts: ['x.com', 'twitter.com'] },
   douyin: { url: 'https://www.douyin.com/', title: '抖音', login: '登录抖音', open: '打开抖音',
     hosts: ['douyin.com'] },
+  xhs: { url: 'https://www.xiaohongshu.com/explore', title: '小红书', login: '登录小红书', open: '打开小红书',
+    hosts: ['xiaohongshu.com'] },
 } as const;
 export type LoginKind = keyof typeof LOGIN_SITES;
 
 export function isLoginKind(kind: FeedNavSource['kind']): kind is LoginKind {
-  return kind === 'x' || kind === 'douyin';
+  return kind === 'x' || kind === 'douyin' || kind === 'xhs';
 }
 
-/** 电脑上登录着哪几种：{ x, douyin }；没有桌面桥（网页、手机）是 null。读不到也当不知道。 */
+/** 电脑上登录着哪几种：{ x, douyin, xhs }；没有桌面桥（网页、手机）是 null。读不到也当不知道。 */
 export function useSiteLogins(): Readonly<Record<LoginKind, boolean>> | null {
   const [logins] = useState(hostLogins);
   const [state, setState] = useState<Readonly<Record<LoginKind, boolean>> | null>(null);
@@ -81,7 +83,10 @@ export function useSiteLogins(): Readonly<Record<LoginKind, boolean>> | null {
         }
         const has = (hosts: readonly string[]): boolean => raw.sites.some((site) => hosts
           .some((host) => site.host === host || site.host.endsWith(`.${host}`)));
-        if (live) setState({ x: has(LOGIN_SITES.x.hosts), douyin: has(LOGIN_SITES.douyin.hosts) });
+        if (live) {
+          setState({ x: has(LOGIN_SITES.x.hosts), douyin: has(LOGIN_SITES.douyin.hosts),
+            xhs: has(LOGIN_SITES.xhs.hosts) });
+        }
       }).catch((cause: unknown) => {
         console.warn('没读到电脑上的登录状态', cause);
       });

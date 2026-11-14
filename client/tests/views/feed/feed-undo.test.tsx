@@ -100,7 +100,7 @@ describe('信息流卡底：不感兴趣可撤销', () => {
     fireEvent.click(within(card('同步难题')).getByRole('button', { name: '不感兴趣' }));
     await within(card('同步难题')).findByRole('button', { name: '撤销' });
     const column = screen.getByRole('complementary', { name: '阅读' });
-    fireEvent.click(within(column).getByRole('button', { name: /^按关注点的新闻/ }));
+    fireEvent.click(within(column).getByRole('button', { name: /^兴趣/ }));
     await settle();
     fireEvent.click(within(column).getByRole('button', { name: /^信息流/ }));
     await waitFor(() => expect(titles()).toEqual([]));

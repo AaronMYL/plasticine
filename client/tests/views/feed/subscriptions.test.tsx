@@ -1,5 +1,5 @@
 // 加订阅（第 3 批 11-04）：他只给网址（没写协议当 https），名字由服务端从订阅源取；失败保留地址和原请求标识，重试用同一个。
-// 第 7 批第 10 条：在「加来源」的「网址」里，加上就关掉对话框，第二栏多一行。
+// 第 7 批第 10 条：在「加来源」的「网址」（第13批叫「博客」）里，加上就关掉对话框，第二栏多出「博客」，进去顶上有这个站。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
@@ -22,7 +22,9 @@ it('加来源里只填网址就能加订阅；失败保留地址并显示服务�
   fireEvent.click(within(form).getByRole('button', { name: '添加' }));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: '加来源' })).toBeNull());
   const column = screen.getByRole('complementary', { name: '阅读' });
-  expect(await within(column).findByRole('button', { name: /^news\.example\.test/ })).toBeTruthy();
+  fireEvent.click(await within(column).findByRole('button', { name: /^博客/ }));
+  const chips = await within(screen.getByRole('main')).findByRole('group', { name: '看哪一处' });
+  expect(within(chips).getByRole('button', { name: /^news\.example\.test/ })).toBeTruthy();
   expect(subscribe.mock.calls[0]?.[0]).toMatchObject({ url: 'https://news.example.test' });
   expect(subscribe.mock.calls[1]?.[0].requestId).toBe(subscribe.mock.calls[0]?.[0].requestId);
   expect((await app.api.feed.sources()).others.some((source) => source.kind === 'rss'

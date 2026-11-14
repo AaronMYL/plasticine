@@ -5,7 +5,7 @@
 // 一份。手机没有第二栏：页头标题「阅读」，下面分段切信息流和图书馆，「筛选」抽屉里是同一份来源列表和 ⋯。
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { FeedNavSource, FeedSourcesResponse } from '../../api/shared.ts';
+import { FEED_NAV_KINDS, FEED_NAV_LABELS, type FeedNavSource } from '../../api/shared.ts';
 import type { FeedItemView } from '../../api/types.ts';
 import { useLive } from '../../live.tsx';
 import type { ActionOp } from '../../state/action-ops.ts';
@@ -23,37 +23,23 @@ import { FeedCard } from './feed-card.tsx';
 import { DouyinPage } from './douyin-page.tsx';
 import { DouyinSheet } from './douyin-sheet.tsx';
 import { FeedAdd } from './feed-add.tsx';
+import { FeedKindHead, useKindRefresh } from './feed-kind-head.tsx';
+import { kindGroups, kindOfSegment } from './feed-kinds.ts';
 import { useFeedNav } from './feed-nav-data.ts';
 import { FeedSourceList } from './feed-source-list.tsx';
 import { FeedSourceSettings } from './feed-source-settings.tsx';
 import { FeedTarget } from './feed-target.tsx';
+import { FeedToast } from './feed-toast.tsx';
 import './feed.css';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import { ReadingTabs } from './reading-tabs.tsx';
-import { COLLECT_AFTER_MS, MoreState, NewItemsPill, newCount, PullIndicator, scrollerOf, useAutoMore,
-  usePullRefresh } from './feed-pager.tsx';
-
-/** 来源最近一次去抓的时间（各来源 checkedAt 里最晚的）；一个都没抓过是 null。 */
-function lastCollect(sources: FeedSourcesResponse | null): number | null {
-  const times = [sources?.interests, sources?.blocked, sources?.others].flatMap((list) => list ?? [])
-    .map((source) => source.status?.checkedAt).filter((at): at is string => at !== undefined).map(Date.parse);
-  return times.length === 0 ? null : Math.max(...times);
-}
-
-const SEGMENT_LABELS: Readonly<Record<Exclude<FeedSegment, `source:${string}`>, string>> = {
-  all: '信息流',
-  saved: '收藏',
-  x: 'X 关注',
-  rss: 'RSS',
-  news: '按关注点的新闻',
-  douyin: '抖音收藏',
-  reddit: 'Reddit',
-};
+import { MoreState, useAutoMore } from './feed-pager.tsx';
 
 const EMPTY_TEXT: Readonly<Record<string, string>> = {
   all: '还没有内容。点第二栏顶上的 + 加个来源，有了就出现在这里。',
   x: '还没有 X 上的内容。',
-  news: '还没有新闻。',
+  xhs: '还没有小红书上的内容。',
+  news: '还没有按兴趣找到的新闻。',
   douyin: '还没有处理过的抖音收藏。',
   saved: '还没有收藏。',
 };
@@ -64,17 +50,32 @@ export function FeedPage(): ReactNode {
   return route.feedItemId == null ? <FeedListPage /> : <FeedTarget key={route.feedItemId} id={route.feedItemId} />;
 }
 
-/** 手机的「筛选」抽屉：和电脑第二栏同一份来源列表（每行的 ⋯ 也在），底下「加来源」。 */
-function PhoneFilter({ segment, onShow, onAdd, onSettings, onDouyin }: { segment: FeedSegment;
+/** 手机的「管理来源」抽屉：和电脑第二栏同一份来源列表（每行的 ⋯ 也在），底下「加来源」。 */
+function PhoneFilter({ segment, onShow, onAdd, onSettings, onDouyin, onAddKind }: { segment: FeedSegment;
   onShow: (segment: FeedSegment) => void; onAdd: () => void; onSettings: (row: FeedNavSource) => void;
-  onDouyin: () => void }): ReactNode {
+  onDouyin: () => void; onAddKind: (kind: 'reddit' | 'url') => void }): ReactNode {
   const { nav, error } = useFeedNav();
   return (
     <div className="feed-filter">
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       <FeedSourceList nav={nav} segment={segment} onList onShow={onShow} onSettings={onSettings}
-        onDouyin={onDouyin} />
+        onDouyin={onDouyin} onAdd={onAddKind} />
       <button type="button" className="secondary-button feed-filter-add" onClick={onAdd}>加来源</button>
+    </div>
+  );
+}
+
+/** 手机上种类那一排（设计稿「阅读手机」）：全部、兴趣、X、小红书、抖音收藏、Reddit、博客，横着滑。 */
+function PhoneKinds({ kinds, current, onShow }: { kinds: readonly (typeof FEED_NAV_KINDS)[number][];
+  current: FeedSegment | null; onShow: (segment: FeedSegment) => void }): ReactNode {
+  return (
+    <div className="feed-chips feed-chips-scroll" role="group" aria-label="看哪一种">
+      <button type="button" className="feed-chip" aria-pressed={current === 'all'} onClick={() => onShow('all')}>
+        全部</button>
+      {kinds.map((kind) => (
+        <button key={kind} type="button" className="feed-chip" aria-pressed={current === kind}
+          onClick={() => onShow(kind)}>{FEED_NAV_LABELS[kind]}</button>
+      ))}
     </div>
   );
 }
@@ -96,40 +97,25 @@ function FeedListPage(): ReactNode {
   const sources = useStore(live.feed.sources);
   const refresh = useStore(live.feed.refresh.state);
   const ui = useStore(feedUi.store);
+  const { nav } = useFeedNav();
   const segment = segmentOf(ui);
   const phone = usePhone();
   const adding = ui.sourcesOpen;
   const douyin = ui.douyinOpen;
   const setAdding = (open: boolean): void => feedUi.setSourcesOpen(open);
   const setDouyin = (open: boolean): void => feedUi.setDouyinOpen(open);
-  // 手机（设计稿 Phone-Feed）：页头只有标题和「筛选」，分段和「加来源」收进筛选的抽屉。
+  // 手机（设计稿「阅读手机」）：页头是「阅读」、刷新和「管理来源」，下面一排种类、一排这一种的筛选。
   const [filtering, setFiltering] = useState(false);
-  const board = useRef<HTMLElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
-  const [fresh, setFresh] = useState(0);
+  const groups = kindGroups(nav);
+  const kind = kindOfSegment(segment, nav);
+  const group = groups.find((entry) => entry.kind === kind) ?? null;
+  const kindRefresh = useKindRefresh(group);
+  // 第13批：去掉下拉刷新（Aaron）；刷新在第二栏「信息流」那一行、这一种的名字旁边，手机在页头。
+  const allRefresh = useKindRefresh(nav === null ? null : { kind: 'news', label: '', rows: nav.sources, count: 0,
+    problem: null, paused: false });
   useAutoMore(sentinel, segment !== 'douyin' && data.status === 'ready' && data.nextOffset !== null
     && !data.loadingMore && data.moreError === null, () => void live.feed.more());
-  const pull = usePullRefresh(board, async () => {
-    const before = new Set(live.feed.data.get().items.map((item) => item.id));
-    await live.feed.reload();
-    const added = newCount(before, live.feed.data.get().items);
-    const last = lastCollect(live.feed.sources.get().sources);
-    const collecting = last === null || Date.now() - last > COLLECT_AFTER_MS;
-    if (collecting) {
-      // 抓完有新的：往下读着时浮一条「n 条新内容」，在顶上的话新内容已经在最前面了。
-      void live.feedActions.refresh().then(() => {
-        const found = newCount(before, live.feed.data.get().items);
-        const top = (scrollerOf(board.current)?.scrollTop ?? 0) < 120;
-        if (found > added && !top) setFresh(found);
-      }, (cause: unknown) => console.warn('信息流后台去来源抓新内容没成', cause));
-    }
-    if (added > 0) return `${added} 条新内容`;
-    return collecting ? '正在去来源找新的' : '暂无新内容';
-  });
-  const jumpTop = (): void => {
-    setFresh(0);
-    scrollerOf(board.current)?.scrollTo({ top: 0, behavior: 'smooth' });
-  };
   useEffect(() => {
     live.feed.settleDismissed();
     live.feed.open();
@@ -152,28 +138,40 @@ function FeedListPage(): ReactNode {
     if ('itemId' in request) { return itemIds.has(request.itemId); }
     return 'sourceId' in request && sourceIds.has(request.sourceId);
   };
-  // 桌面客户端里来源名写在标题栏里（11-08），主区不再画只写着来源名的那条顶栏。
+  // 桌面客户端里名字写在标题栏里（11-08），主区不再画只写着名字的那条顶栏。
   const titled = useInTitlebar();
   const loading = data.status === 'idle' || data.status === 'loading';
-  const viewed = ui.sourceId === null ? undefined : sources.sources?.others.find((row) => row.id === ui.sourceId);
-  const label = segment.startsWith('source:') ? viewed?.label ?? '' : SEGMENT_LABELS[segment as 'all'];
-  const empty = ui.sourceId === null ? EMPTY_TEXT[segment] ?? EMPTY_TEXT['all'] : EMPTY_SOURCE;
+  const label = segment === 'saved' ? '收藏' : group?.label ?? '信息流';
+  const empty = ui.sourceId === null ? EMPTY_TEXT[kind ?? segment] ?? EMPTY_TEXT['all'] : EMPTY_SOURCE;
   const settings = ui.settingsSource;
+  const show = (next: FeedSegment): void => void live.feed.setSegment(next);
+  const addKind = (next: 'reddit' | 'url'): void => feedUi.openAdd(next);
   return (
     <div className={`page feed${segment === 'douyin' ? ' page-fill feed-douyin' : ''}`}>
+      <FeedToast />
       {phone ? (
         <>
           <PageHeader title="阅读" phoneSearch={false} phoneTools={(
-            <IconButton icon="filter" label="筛选" size={17} aria-haspopup="dialog" aria-expanded={filtering}
-              aria-pressed={segment !== 'all'} onClick={() => setFiltering(true)} />
+            <>
+              <IconButton icon="refresh" label={group === null ? '刷新全部来源' : `刷新${group.label}`} size={17}
+                disabled={(group === null ? allRefresh : kindRefresh).busy}
+                onClick={(group === null ? allRefresh : kindRefresh).run} />
+              <IconButton icon="filter" label="管理来源" size={17} aria-haspopup="dialog" aria-expanded={filtering}
+                onClick={() => setFiltering(true)} />
+            </>
           )} />
           <ReadingTabs current="feed" />
+          <PhoneKinds kinds={groups.map((entry) => entry.kind)} current={kind ?? (segment === 'all' ? 'all' : null)}
+            onShow={show} />
         </>
-      ) : titled ? (label === '' ? null : <TitlebarTitle text={label} />) : (
+      ) : titled ? <TitlebarTitle text={label} /> : group === null ? (
         <header className="feed-top">
           <h2 className="feed-top-title">{label}</h2>
         </header>
-      )}
+      ) : null}
+      {group === null || group.kind === 'douyin' ? null : <FeedKindHead group={group} segment={segment}
+        titled={!phone && !titled} refresh={!phone} onShow={show} onSettings={(row) => feedUi.setSettingsSource(row)}
+        onDouyin={() => setDouyin(true)} onAdd={addKind} />}
       <PendingOps
         label="还没了结的信息流操作"
         prefixes={['feed:']}
@@ -189,9 +187,7 @@ function FeedListPage(): ReactNode {
         </p>
       )}
       {segment === 'douyin' ? <DouyinPage phone={phone} onSelect={() => setDouyin(true)} />
-        : <section className="feed-board" aria-label="条目" ref={board}>
-        <NewItemsPill count={fresh} onJump={jumpTop} />
-        <PullIndicator phase={pull} />
+        : <section className="feed-board" aria-label="条目">
         {loading ? <PageLoading /> : null}
         {data.status === 'ready' && data.items.length === 0 ? <p className="block-empty">{empty}</p>
           : null}
@@ -201,10 +197,10 @@ function FeedListPage(): ReactNode {
           : <MoreState loading={data.loadingMore} end={data.nextOffset === null} error={data.moreError}
             onRetry={() => void live.feed.more()} />}
       </section>}
-      <Sheet open={filtering} variant="drawer" className="sheet-fit" title="筛选"
+      <Sheet open={filtering} variant="drawer" className="sheet-fit" title="管理来源"
         onClose={() => setFiltering(false)}>
         <PhoneFilter segment={segment} onShow={(next) => {
-          void live.feed.setSegment(next);
+          show(next);
           setFiltering(false);
         }} onAdd={() => {
           setFiltering(false);
@@ -215,6 +211,9 @@ function FeedListPage(): ReactNode {
         }} onDouyin={() => {
           setFiltering(false);
           setDouyin(true);
+        }} onAddKind={(next) => {
+          setFiltering(false);
+          addKind(next);
         }} />
       </Sheet>
       <Sheet open={adding} variant={phone ? 'drawer' : 'panel'} className="sheet-fit" title="加来源"

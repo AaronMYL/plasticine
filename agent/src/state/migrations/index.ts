@@ -4,6 +4,7 @@ import { migration as mateCharacters } from './0134-mate-characters.ts';
 import { migration as predictionLoop } from './0135-prediction-loop.ts';
 import { migration as mateLooks } from './0136-mate-looks.ts';
 import { migration as loopMessagePredict } from './0137-loop-message-predict.ts';
+import { migration as feedPlacesBody } from './0138-feed-places-body.ts';
 // The ordered list of schema migrations. Append only: a shipped migration is never edited or removed.
 
 import { migration as lineArchive } from './0066-line-archive.ts';
@@ -222,6 +223,7 @@ export const MIGRATIONS: readonly Migration[] = [
   predictionLoop,
   mateLooks,
   loopMessagePredict,
+  feedPlacesBody,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

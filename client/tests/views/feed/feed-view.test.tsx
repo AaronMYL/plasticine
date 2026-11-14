@@ -25,8 +25,8 @@ function titles(): (string | null)[] {
   return within(board()).queryAllByRole('listitem').map((row) => row.getAttribute('aria-label'));
 }
 
-/** 看哪一路在第二栏选（第 7 批第 10 条）：全部 · 收藏 · 每个来源一行（X 关注、抖音收藏、按关注点的新闻、每个订阅）。 */
-const SOURCES: Readonly<Record<string, string>> = { 全部: '信息流', X: 'X 关注', 订阅: '慢工博客', 新闻: '按关注点的新闻',
+/** 看哪一路在第二栏选（第 7 批第 10 条；第13批每种一行）：全部 · 收藏 · 兴趣、X、小红书、抖音收藏、Reddit、博客。 */
+const SOURCES: Readonly<Record<string, string>> = { 全部: '信息流', X: 'X', 订阅: '博客', 新闻: '兴趣',
   抖音: '抖音收藏', 收藏: '收藏' };
 
 function column(): HTMLElement {
@@ -37,11 +37,11 @@ function segment(name: string): HTMLElement {
   return within(column()).getByRole('button', { name: new RegExp(`^${SOURCES[name] ?? name}`) });
 }
 
-/** 关注点（多少、搜什么）在第二栏「按关注点的新闻」那一行 ⋯ 的「设置…」里。 */
+/** 关注点（多少、搜什么）在第二栏「兴趣」那一行 ⋯ 的「设置…」里。 */
 function openSources(): HTMLElement {
-  fireEvent.click(within(column()).getByRole('button', { name: '「按关注点的新闻」的操作' }));
+  fireEvent.click(within(column()).getByRole('button', { name: '「兴趣」的操作' }));
   fireEvent.click(screen.getByRole('menuitem', { name: '设置…' }));
-  return within(main()).getByRole('dialog', { name: '按关注点的新闻 · 设置' });
+  return within(main()).getByRole('dialog', { name: '兴趣 · 设置' });
 }
 
 function ago(hours: number): string {
@@ -86,7 +86,7 @@ describe('信息流页', () => {
     expect(titles()).toEqual(['把记忆拆成两栏以后', '本地优先软件的同步难题', '多家厂商发布端侧大模型']);
   });
 
-  it('分段：X · 订阅 · 新闻 · 收藏 各只列那一路；分着段时新到别路的一条不混进来', async () => {
+  it('分段：X · 博客 · 兴趣 · 收藏 各只列那一路；分着段时新到别路的一条不混进来', async () => {
     const app = await renderApp({ hash: '#/feed', setup: seed });
     await settle();
     expect(segment('全部').getAttribute('aria-current')).toBe('page');

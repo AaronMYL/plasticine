@@ -5,7 +5,7 @@
 
 import { createHash } from 'node:crypto';
 import type { XPost, XTimelineDue, XTimelineReport } from '../../shared/api/feed-x.ts';
-import type { FeedItem, FeedItemInput, FeedSource } from '../../shared/state.ts';
+import type { FeedBlock, FeedItem, FeedItemInput, FeedPlace, FeedSource } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { errorCategory, failureText, safeLog } from '../shared-log.ts';
 import { BACKGROUND_TIME_ZONE, localDay } from './days.ts';
@@ -16,6 +16,7 @@ import { parseFeed } from './feed-parse.ts';
 import { safeUrl } from './link-data.ts';
 import { DailyError } from './errors.ts';
 import { REDDIT_WINDOW_MS, redditPost, type RedditPost } from './reddit.ts';
+import { articleBlocks } from './article-blocks.ts';
 
 /** 用户 11-04：「不花钱、频率低，比如每 2 小时」——订阅和 X 一样。 */
 export const FEED_SOURCE_EVERY_MS = 2 * 60 * 60 * 1000;
@@ -25,12 +26,16 @@ const PER_ROUND: Readonly<Record<FeedSource['level'], number>> = { more: 40, nor
 const ARTICLE_SUMMARY_CHARS = 400;
 // X 帖子没有标题：取正文第一行的前这些字当标题（读屏念、问 Plasticine 时引用）。
 const POST_TITLE_CHARS = 60;
-// Reddit 限流（429）后先停这么久再取 Reddit 的版块，再碰上就翻倍，最多停到下一个两小时。
+// Reddit 限流（429）后这个版块先停这么久再取，再碰上就翻倍，最多停到下一个两小时（第13批：只停那一个版块，不停整组）。
 const REDDIT_BACKOFF_MS = 30 * 60 * 1000;
 // 一轮里两个 Reddit 版块之间隔一会儿，别一下子连着打。
 const REDDIT_GAP_MS = 2_000;
 /** 加 Reddit 来源时的预览：最新几条。 */
 export const REDDIT_PREVIEW_COUNT = 3;
+/** 预览取到的留多久：这么久里加上这个版块，就把预览取到的直接存进来（第13批），不再取一次。 */
+const PREVIEW_KEPT_MS = 15 * 60 * 1000;
+/** 博客第一次抓：导入最近这么多篇，不管是不是两天内发的（第13批，阮一峰的只收到一篇）。 */
+const FIRST_IMPORT = 10;
 const POLLED_KINDS = ['rss', 'reddit'] as const;
 
 export const X_READ_ERROR_TEXT: Readonly<Record<NonNullable<XTimelineReport['error']>['code'], string>> = {
@@ -44,6 +49,10 @@ interface NewEntry {
   title: string;
   url: string;
   summary: string;
+  /** 订阅文章的全文（一段段）；没有就是 null。 */
+  body?: FeedBlock[] | null;
+  /** 在哪一处看到的（X、小红书）。 */
+  places?: FeedPlace[];
   /** 拿来匹配关注点的文字。 */
   text: string;
   publishedAt: string | null;
@@ -59,6 +68,8 @@ export interface FeedSubscriptionsOptions {
   now: () => Date;
   fetcher?: FeedFetcher;
   onAdded?: (item: FeedItem) => void;
+  /** 两个 Reddit 版块之间隔多久（测试给 0）。 */
+  redditGapMs?: number;
 }
 
 function clip(text: string, max: number): string {
@@ -89,9 +100,11 @@ function postEntry(post: XPost): NewEntry {
 }
 
 function articleEntry(hit: ReturnType<typeof parseFeed>[number]): NewEntry {
+  const body = articleBlocks(hit.html, hit.url);
   return {
     key: `rss:${createHash('sha256').update(hit.url).digest('hex')}`,
     title: hit.title, url: hit.url, summary: clip(hit.text, ARTICLE_SUMMARY_CHARS),
+    body: body.length === 0 ? null : body,
     text: `${hit.title}\n${hit.text}`, publishedAt: hit.publishedAt, author: hit.author, authorHandle: null,
     avatarUrl: null, imageUrl: httpsOrNull(hit.image), imageRatio: null,
   };
@@ -122,16 +135,18 @@ export class FeedSubscriptions {
   readonly #options: FeedSubscriptionsOptions;
   readonly #controller = new AbortController();
   #running: Promise<void> | null = null;
-  /** Reddit 限流以后到这个时刻之前不取 Reddit；连着限流时停得更久。 */
-  #redditPausedUntil = 0;
-  #redditBackoffMs = REDDIT_BACKOFF_MS;
+  /** 限流了的 Reddit 版块到这个时刻之前不取；连着限流时停得更久（按版块记，第13批）。 */
+  readonly #redditPausedUntil = new Map<string, number>();
+  readonly #redditBackoffMs = new Map<string, number>();
+  /** 加版块前预览取到的（按订阅地址），加上了就直接存进来。 */
+  readonly #previews = new Map<string, { at: number; posts: RedditPost[] }>();
 
   constructor(options: FeedSubscriptionsOptions) {
     this.#options = options;
   }
 
-  /** X 和「按关注点搜新闻」两个内置来源（设置里各一行）；第一次要时建，之后拿回同一行。 */
-  builtIn(key: 'x' | 'news'): FeedSource {
+  /** X、小红书和「兴趣」（按关注点搜新闻）三个内置来源（设置里各一行）；第一次要时建，之后拿回同一行。 */
+  builtIn(key: 'x' | 'news' | 'xhs'): FeedSource {
     const { ref, kind, label } = BUILT_IN_SOURCES[key];
     return this.#options.state.feedSources.ensure({ ref, kind, label, level: 'normal' });
   }
@@ -151,7 +166,7 @@ export class FeedSubscriptions {
     const now = this.#options.now().getTime();
     const due = POLLED_KINDS.flatMap((kind) => this.#options.state.feedSources.all({ kind }))
       .filter((source) => source.query !== null && this.#due(source)
-        && (source.kind !== 'reddit' || now >= this.#redditPausedUntil));
+        && (source.kind !== 'reddit' || now >= (this.#redditPausedUntil.get(source.id) ?? 0)));
     if (due.length === 0) { return 'skipped'; }
     this.#running = this.#poll(due).finally(() => { this.#running = null; });
     return 'started';
@@ -159,12 +174,12 @@ export class FeedSubscriptions {
 
   /**
    * 「现在刷新」（第 7 批第 10 条）：订阅和 Reddit 马上取这一个（上一轮还在跑就等它跑完再取），回这次加了几条；
-   * X 由电脑客户端读，把它记成到点，客户端下次来问时就去读。
+   * X、小红书由电脑客户端读，把它记成到点，客户端下次来问时就去读。
    */
   async refreshNow(sourceId: string): Promise<number> {
     const { state } = this.#options;
     const source = state.feedSources.require(sourceId);
-    if (source.kind === 'x') {
+    if (source.kind === 'x' || source.kind === 'xhs') {
       state.feedSourceStatus.expire(source.id);
       return 0;
     }
@@ -186,7 +201,23 @@ export class FeedSubscriptions {
       throw new DailyError('invalid_input', 'Reddit 抓取还没接上，请稍后再试。');
     }
     const page = await fetcher.get(url, signal);
-    return parseFeed(page.text, page.url, now(), REDDIT_WINDOW_MS).map(redditPost).slice(0, REDDIT_PREVIEW_COUNT);
+    const posts = parseFeed(page.text, page.url, now(), REDDIT_WINDOW_MS).map(redditPost);
+    this.#previews.set(url, { at: now().getTime(), posts });
+    return posts.slice(0, REDDIT_PREVIEW_COUNT);
+  }
+
+  /** 刚加上的 Reddit 版块：预览时取到的直接存进来（十五分钟内的），加完马上有内容。回存了几条。 */
+  ingestPreview(sourceId: string): number {
+    const { state, now } = this.#options;
+    const source = state.feedSources.require(sourceId);
+    const preview = source.query === null ? undefined : this.#previews.get(source.query);
+    if (source.query === null || preview === undefined || preview.at + PREVIEW_KEPT_MS < now().getTime()) {
+      return 0;
+    }
+    this.#previews.delete(source.query);
+    const added = this.#ingest(source, preview.posts.map(redditEntry));
+    state.feedSourceStatus.succeeded(source.id, now().toISOString(), added);
+    return added;
   }
 
   async settled(): Promise<void> {
@@ -204,28 +235,38 @@ export class FeedSubscriptions {
     for (const source of sources) {
       if (this.#controller.signal.aborted || fetcher === undefined) { return; }
       if (source.kind === 'reddit') {
-        if (!asked && now().getTime() < this.#redditPausedUntil) { continue; }
-        if (reddit > 0) { await wait(REDDIT_GAP_MS, this.#controller.signal); }
+        if (!asked && now().getTime() < (this.#redditPausedUntil.get(source.id) ?? 0)) { continue; }
+        if (reddit > 0) { await wait(this.#options.redditGapMs ?? REDDIT_GAP_MS, this.#controller.signal); }
         reddit += 1;
       }
       try {
         const page = await fetcher.get(source.query ?? '', this.#controller.signal);
+        // 博客收得还少（第一次抓、或者以前只收两天内的只收到一两篇）：不限两天，导入到最近十篇为止。
+        const first = source.kind === 'rss' && state.feedItems.countForSource(source.id) < FIRST_IMPORT;
         const entries = source.kind === 'reddit'
           ? parseFeed(page.text, page.url, now(), REDDIT_WINDOW_MS).map((hit) => redditEntry(redditPost(hit)))
-          : parseFeed(page.text, page.url, now()).map(articleEntry);
-        const added = this.#ingest(state.feedSources.require(source.id), entries);
+          : parseFeed(page.text, page.url, now(), first ? Infinity : undefined).map(articleEntry);
+        const added = this.#ingest(state.feedSources.require(source.id), entries,
+          first ? FIRST_IMPORT - state.feedItems.countForSource(source.id) : undefined);
         state.feedSourceStatus.succeeded(source.id, now().toISOString(), added);
-        if (source.kind === 'reddit') { this.#redditBackoffMs = REDDIT_BACKOFF_MS; }
+        if (source.kind === 'reddit') { this.#redditBackoffMs.delete(source.id); }
       } catch (error) {
         if (this.#controller.signal.aborted) { return; }
-        state.feedSourceStatus.failed(source.id, now().toISOString(), failureText(error));
-        if (source.kind === 'reddit' && error instanceof DailyError && error.code === 'rate_limited') {
-          this.#redditPausedUntil = now().getTime() + this.#redditBackoffMs;
-          this.#redditBackoffMs = Math.min(this.#redditBackoffMs * 2, FEED_SOURCE_EVERY_MS);
-        }
+        state.feedSourceStatus.failed(source.id, now().toISOString(), this.#failure(source, error));
         safeLog('warn', 'feed_subscription_failed', { objectId: source.id, category: errorCategory(error), error });
       }
     }
+  }
+
+  /** 没取到的原因；Reddit 限流时只停这一个版块，写清几分钟后再取。 */
+  #failure(source: FeedSource, error: unknown): string {
+    if (source.kind !== 'reddit' || !(error instanceof DailyError) || error.code !== 'rate_limited') {
+      return failureText(error);
+    }
+    const backoff = this.#redditBackoffMs.get(source.id) ?? REDDIT_BACKOFF_MS;
+    this.#redditPausedUntil.set(source.id, this.#options.now().getTime() + backoff);
+    this.#redditBackoffMs.set(source.id, Math.min(backoff * 2, FEED_SOURCE_EVERY_MS));
+    return `Reddit 限流，${String(Math.round(backoff / 60_000))} 分钟后再取`;
   }
 
   /** Mac 来问到没到读 X 的时候。 */
@@ -255,7 +296,7 @@ export class FeedSubscriptions {
    * 一批条目进库：已有的网址、帖子跳过，档位限条数，按发布时间从旧到新写，到达时间逐条加一毫秒——同一批在信息流里
    * 仍是新发的在前（列表按到达时间排）。提交后再通知。
    */
-  #ingest(source: FeedSource, entries: readonly NewEntry[]): number {
+  #ingest(source: FeedSource, entries: readonly NewEntry[], limit?: number): number {
     const { state, now } = this.#options;
     const linked = source.concernId === null ? undefined : state.feedSources.all({ kind: 'interest' })
       .find((row) => row.concernId === source.concernId);
@@ -267,10 +308,18 @@ export class FeedSubscriptions {
     const added: FeedItem[] = [];
     state.transaction(() => {
       const known = state.feedItems.knownUrls();
+      // 已经有的不另加一条：在别处又看到的（关注里有、又进了书签）把那一处并进去，以前没存全文的补上全文。
+      for (const entry of entries) {
+        if (((entry.places ?? []).length > 0 || (entry.body ?? null) !== null)
+          && state.feedItems.byDedupeKey(entry.key) !== undefined) {
+          state.feedItems.add({ sourceId: source.id, origin: 'feed', title: entry.title, dedupeKey: entry.key, day,
+            arrivedAt: at.toISOString(), places: entry.places ?? [], body: entry.body ?? null });
+        }
+      }
       const fresh = entries.filter((entry) => !known.has(entry.url)
         && state.feedItems.byDedupeKey(entry.key) === undefined)
         .sort((a, b) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? ''))
-        .slice(0, PER_ROUND[source.level])
+        .slice(0, limit ?? PER_ROUND[source.level])
         .reverse();
       fresh.forEach((entry, index) => {
         const hit = linked ?? matchInterest(entry.text, interests);
@@ -280,6 +329,8 @@ export class FeedSubscriptions {
           publishedAt: entry.publishedAt, arrivedAt: new Date(at.getTime() + index).toISOString(),
           author: entry.author, authorHandle: entry.authorHandle, avatarUrl: entry.avatarUrl,
           imageUrl: entry.imageUrl, imageRatio: entry.imageRatio,
+          ...(entry.places === undefined ? {} : { places: entry.places }),
+          ...(entry.body === undefined ? {} : { body: entry.body }),
         };
         const result = state.feedItems.add(input);
         known.add(entry.url);
