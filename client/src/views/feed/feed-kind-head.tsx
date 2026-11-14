@@ -10,7 +10,7 @@ import type { FeedSegment } from '../../state/feed-ui.ts';
 import { kindChips, type KindGroup } from './feed-kinds.ts';
 import { useSourceActions } from './feed-source-actions.ts';
 import { SourceMenu } from './feed-source-menu.tsx';
-import { showFeedToast } from './feed-toast.tsx';
+import { showResultToast } from '../../primitives/toast/index.tsx';
 import './feed-kinds.css';
 
 export interface FeedKindHeadProps {
@@ -35,8 +35,8 @@ export function useKindRefresh(group: KindGroup | null): { busy: boolean; run: (
     run: () => {
       if (group === null || busy) return;
       setBusy(true);
-      actions.refreshAll(group.rows, group.label).then((result) => showFeedToast(result.text, result.failed),
-        (cause: unknown) => showFeedToast(errorText(cause), true)).finally(() => setBusy(false));
+      actions.refreshAll(group.rows, group.label).then((result) => showResultToast(result.text, result.failed),
+        (cause: unknown) => showResultToast(errorText(cause), true)).finally(() => setBusy(false));
     },
   };
 }

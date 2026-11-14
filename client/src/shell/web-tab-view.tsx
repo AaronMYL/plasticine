@@ -116,26 +116,6 @@ function usePopoverToggle(): { open: Open; setOpen: (open: Open) => void; toggle
   return { open, setOpen: setOpenState, toggle, close };
 }
 
-function NoticeRow({ actions, web }: { actions: WebPageActions; web: WebChrome | null }): ReactNode {
-  const notice = actions.notice;
-  if (notice === null) {
-    return null;
-  }
-  return (
-    <div className="web-notice" role={notice.kind === 'error' ? 'alert' : 'status'} data-kind={notice.kind}>
-      <span className="web-notice-text">{notice.text}</span>
-      {notice.kind === 'saved' && web !== null ? (
-        <button type="button" className="chip-button" onClick={() => {
-          actions.dismiss();
-          web.openNote(notice.noteId);
-        }}>打开</button>
-      ) : null}
-      {notice.kind === 'busy' ? null
-        : <IconButton icon="close" label="知道了" onClick={actions.dismiss} />}
-    </div>
-  );
-}
-
 export interface WebTabViewProps {
   tab: WebTab;
   native: NativeWebTabs | null;
@@ -231,12 +211,10 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
         onBookmarkError={actions.report} historyInMenu={phone}
         {...(native?.tools.has('extract_marks') !== true || !native.tools.has('extract_images') ? {} : {
           onExtract: () => { setReading(false); extract.toggle(); }, extracting: extract.open })} />
-      {/* 查找条和那一句浮在网页右上角，不把网页往下推（不跳布局）；盖在原生网页上，报成 hitRegions。 */}
-      {(finding && native !== null) || actions.notice !== null ? (
+      {/* 查找条浮在网页右上角，不把网页往下推（不跳布局）；盖在原生网页上，报成 hitRegions。 */}
+      {finding && native !== null ? (
         <div className="web-floats" data-phone={phone} {...{ [HIT_REGION_ATTRIBUTE]: 'web-floats' }}>
-          {finding && native !== null ? <WebFindBar tabId={tab.id} native={native} onClose={() => setFinding(false)} />
-            : null}
-          <NoticeRow actions={actions} web={web} />
+          <WebFindBar tabId={tab.id} native={native} onClose={() => setFinding(false)} />
         </div>
       ) : null}
       <div className="web-content"><div className="web-frame" ref={frameRef}>

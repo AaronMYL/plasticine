@@ -421,8 +421,7 @@ button.web-address-host:focus-visible {
   top: 64px;
 }
 
-.web-find,
-.web-notice {
+.web-find {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -459,20 +458,9 @@ button.web-address-host:focus-visible {
   font-size: 12px;
 }
 
-.web-find .icon-button,
-.web-notice .icon-button {
+.web-find .icon-button {
   width: 28px;
   height: 28px;
-}
-
-.web-notice-text {
-  min-width: 0;
-  padding: 0 4px;
-  color: var(--fg2);
-}
-
-.web-notice[data-kind='error'] .web-notice-text {
-  color: var(--err);
 }
 
 /* ---------- 阅读模式：笔记长文的排版，一栏 680 ---------- */

@@ -105,6 +105,8 @@
   --motion-slow: 260ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* 弹层、菜单、提示条出现时从 0.96 轻弹到 1（11-14 界面统一，Aaron 弹框选「放开：轻微缩放和弹性」）。 */
+  --ease-spring: cubic-bezier(0.3, 1.3, 0.6, 1);
 
   --sans: 'Geist', 'PingFang SC', 'MiSans', 'Microsoft YaHei', system-ui, sans-serif;
   --mono: 'Geist Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;

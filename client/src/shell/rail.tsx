@@ -1,5 +1,6 @@
-// 图标栏（《优化清单》第 2 条，11-07 设计稿 kit.mjs 的 rail；11-08 第 7 批改名、图书单独一栏）：72 宽、--layer-bar 底，
-// 最左一条放顶层入口——首页、Plasticine、消息、任务 ｜ 网页、信息流 ｜ 笔记、图书、资料库（组间只留空隙）；
+// 图标栏（《优化清单》第 2 条，11-07 设计稿 kit.mjs 的 rail；11-08 第 7 批改名、图书单独一栏；11-14 界面统一定 56 宽、
+// 不分组）：56 宽、--layer-bar 底，最左一条放顶层入口——首页、Plasticine、消息、任务、网页、阅读、笔记、资料库，
+// 间距都一样（数据上还按三组排，画的时候不留组间空隙）；
 // 底部 ⌘K、新建、头像（打开设置弹框；换过头像画那张，没有画名字的第一个字）。
 // 「任务」有事等他时带一个陶土点（全站只这一个意思）。悬停浮出名字（悬停提示层，data-tip）。
 // Mac 客户端隐藏标题栏时交通灯落在图标栏顶上：壳告诉界面（host.ts 的窗口外观）才留出那一块；网页里不画假的灯。
@@ -65,8 +66,8 @@ export function Rail(props: RailProps): ReactNode {
                     data-tip-side="right" aria-current={props.section === id ? 'page' : undefined}
                     onClick={() => props.onSection(id)}>
                     {/* 第13批：Plasticine 这一格是主线的头像，跟着主线在做什么动（11-14 Aaron）。 */}
-                    {id === 'plasticine' ? <MainAvatar size={26} /> : item.icon === 'mark'
-                      ? <PlasticineMark size={20} /> : <Icon name={item.icon} size={18} />}
+                    {id === 'plasticine' ? <MainAvatar size={24} /> : item.icon === 'mark'
+                      ? <PlasticineMark size={20} /> : <Icon name={item.icon} size={20} />}
                     {flagged ? <span className="rail-dot" aria-hidden="true" /> : null}
                   </button>
                 </li>
@@ -79,11 +80,11 @@ export function Rail(props: RailProps): ReactNode {
         <UpdateButton />
         <button type="button" className="rail-item" aria-label="搜索和切换" data-tip="搜索和切换 ⌘K"
           data-tip-side="right" onClick={props.onSearch}>
-          <Icon name="search" size={18} />
+          <Icon name="search" size={20} />
         </button>
         <button type="button" className="rail-item" aria-label="新建…" data-tip="新建" data-tip-side="right"
           aria-expanded={menu !== null} onClick={(event) => setMenu(anchorOf(event.currentTarget))}>
-          <Icon name="plus" size={18} />
+          <Icon name="plus" size={20} />
         </button>
         <button type="button" className="rail-item rail-account"
           aria-label={offline ? `设置 · ${props.accountName} · ${CONNECTION_TEXT[props.connection]}`

@@ -95,8 +95,8 @@ export function ClientUpdateBanner(): ReactNode {
   }
   const compatible = target.protocol.min <= 2 && target.protocol.max >= 2;
   return (
-    <div className="client-update-banner" role="status">
-      <span>有新版本 · </span>
+    <div className="banner app-banner" role="status">
+      <span>有新版本</span>
       <button type="button" className="text-button" disabled={busy || !compatible} onClick={() => void refresh()}>
         {busy ? '正在保存和核实' : unsaved ? '先保存草稿再刷新' : '刷新'}
       </button>

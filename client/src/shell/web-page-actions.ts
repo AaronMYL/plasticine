@@ -1,6 +1,6 @@
 // 网页工具条上要等原生、要等服务端的几样（第 2 批「浏览器」，设计稿 Web-Menu / Web-Ask）：截图（可见部分 / 整页，
 // 给 Plasticine 或存进笔记）、整页存进笔记（剪藏，带来源）、圈一块（变成对话框输入框里的引用片）、打印、下载、复制链接。
-// 一次只做一样；做的时候、做完存进了笔记、出错了在工具条下面一行说一句（role=status），出错写原因和下一步。
+// 一次只做一样；做的时候、做完存进了笔记、出错了用全站那一种提示条说一句（11-14 界面统一），出错写原因和下一步。
 // 交给 Plasticine 的（截图、圈的一块）不另外说：对话框展开、输入框里就看得到。
 
 import { useEffect, useRef, useState } from 'react';
@@ -8,15 +8,13 @@ import { useApi } from '../api/context.tsx';
 import { errorText } from '../api/errors.ts';
 import { createRequestId } from '../api/request-id.ts';
 import type { NoteImageRequest } from '../api/shared.ts';
+import { dismissToast, showToast } from '../primitives/toast/index.tsx';
 import { readPageSnapshot } from '../views/conversation/ask-this-page.tsx';
 import type { WebChrome } from './web-chrome.ts';
 import type { NativeWebTabs } from './use-native-web-tabs.ts';
 import { circleQuote, circleResult, clipMarkdown, imageFile, noteHeader, screenshotMarkdown } from './web-tools.ts';
 
-/** 「存进了笔记」这一句留多久（毫秒）：够看一眼、点「打开」。 */
-export const NOTICE_MS = 6_000;
-
-export type WebNotice =
+type WebNotice =
   | { kind: 'busy'; text: string }
   | { kind: 'saved'; text: string; noteId: string; noteTitle: string }
   | { kind: 'error'; text: string };
@@ -31,8 +29,6 @@ export interface WebPage {
 }
 
 export interface WebPageActions {
-  notice: WebNotice | null;
-  dismiss: () => void;
   /** 别处（地址框里的书签按钮）没成：在这里说一句。 */
   report: (text: string) => void;
   capture: (scope: CaptureScope, target: CaptureTarget) => void;
@@ -58,19 +54,11 @@ function base64Of(file: File): Promise<string> {
 export function useWebPageActions(page: WebPage, native: NativeWebTabs | null, web: WebChrome | null):
   WebPageActions {
   const api = useApi();
-  const [notice, setNotice] = useState<WebNotice | null>(null);
   const [circling, setCircling] = useState(false);
   const latest = useRef(page);
   latest.current = page;
   const busy = useRef(false);
 
-  useEffect(() => {
-    if (notice?.kind !== 'saved') {
-      return undefined;
-    }
-    const timer = window.setTimeout(() => setNotice(null), NOTICE_MS);
-    return () => window.clearTimeout(timer);
-  }, [notice]);
   const circlingRef = useRef(circling);
   circlingRef.current = circling;
   const nativeRef = useRef(native);
@@ -97,6 +85,20 @@ export function useWebPageActions(page: WebPage, native: NativeWebTabs | null, w
     window.addEventListener('keydown', escape);
     return () => window.removeEventListener('keydown', escape);
   }, [circling]);
+
+  const setNotice = (notice: WebNotice | null): void => {
+    if (notice === null) {
+      dismissToast();
+    } else if (notice.kind === 'busy') {
+      showToast({ text: notice.text, persist: true });
+    } else if (notice.kind === 'error') {
+      showToast({ text: notice.text, tone: 'error' });
+    } else {
+      const chrome = web;
+      showToast(chrome === null ? { text: notice.text }
+        : { text: notice.text, action: { label: '打开', run: () => chrome.openNote(notice.noteId) } });
+    }
+  };
 
   const run = (busyText: string, job: () => Promise<WebNotice | null>, failure: string): void => {
     if (busy.current) {
@@ -179,8 +181,6 @@ export function useWebPageActions(page: WebPage, native: NativeWebTabs | null, w
   };
 
   return {
-    notice,
-    dismiss: () => setNotice(null),
     report: (text) => setNotice({ kind: 'error', text }),
     capture,
     clip,

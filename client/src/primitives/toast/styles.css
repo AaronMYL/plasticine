@@ -1,0 +1,97 @@
+/*
+ * 提示条（11-14 界面统一）：主区底部居中、离底 24；手机上在底栏上面（主区本来就停在底栏上面）。
+ * 浮层底色、圆角 12、一种阴影；出现时从 0.96 轻弹到 1，收起时淡出；系统开「减少动态效果」时不动。
+ */
+
+.toast-slot {
+  position: absolute;
+  right: 0;
+  bottom: 24px;
+  left: 0;
+  z-index: 55;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 40px;
+  max-width: 560px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 20px;
+  pointer-events: auto;
+  animation: toast-in var(--motion-slow) var(--ease-spring) both;
+}
+
+.toast[data-leaving] {
+  animation: toast-out var(--motion-base) var(--ease-out) both;
+}
+
+.toast-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.toast-action {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toast-action:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.shell[data-phone='true'] .toast-slot {
+  bottom: 16px;
+}
+
+.shell[data-phone='true'] .toast-action {
+  min-height: 44px;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast[data-leaving] {
+    animation: none;
+  }
+}

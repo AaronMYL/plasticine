@@ -4,7 +4,7 @@
 // - 网页版：同样的东西放在页头一行；手机：返回 + 那几样，不显示底栏（phone-bar.tsx 的 phoneFullPage）。
 // - 修改两条路：跟 Plasticine 说（「让 Plasticine 改」把这一页引用进对话、打开对话框），或者点 ✎ 在页面上直接改字
 //   （自动存，Esc 或「完成」收起，space-saver.ts）。
-// - Plasticine 刚改过这一期时，页底一条「这一期改好了：…… 以后都这样 / 撤销」（space-toast.tsx）。
+// - Plasticine 刚改过这一期时，内容最上面一条横条「这一期改好了：…… 以后都这样 / 撤销」（space-change-banner.tsx）。
 // 还没重写成网页的旧版式照旧显示（space-legacy.tsx），只读。
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
@@ -27,7 +27,7 @@ import { spaceRoute } from './space-links.ts';
 import { useSpaceSaver } from './space-saver.ts';
 import { markSpaceSeen } from './space-seen.ts';
 import { letterDate } from './space-time.ts';
-import { ChangeToast } from './space-toast.tsx';
+import { ChangeBanner } from './space-change-banner.tsx';
 import { SpaceTools } from './space-tools.tsx';
 import { SubscriptionSheet } from './subscription-sheet.tsx';
 import { useSpaceQuote } from './space-quote.ts';
@@ -156,6 +156,17 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
             reload();
           })} onDone={() => setRenaming(false)} />
       </div> : null}
+      {saver.error === null ? null : (
+        <div className="banner space-banner" role="alert">
+          <span className="banner-text">改的字没存上：{saver.error}</span>
+          <button type="button" className="text-button" onClick={() => {
+            setSaved(null);
+            reload();
+          }}>再读一次</button>
+        </div>
+      )}
+      {editing || position !== undefined || saver.error !== null ? null
+        : <ChangeBanner key={`${space.id}:${space.version}`} space={space} onChanged={changed} />}
       {confirm.dialog}
       {space.html === null ? <LegacySpace space={space} phone={phone} /> : (
         <SpaceFrame className="space-frame" mode="page" label={space.title}
@@ -164,17 +175,6 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
           space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
             dateLabel: letterDate(space.createdAt) }} onEdit={saver.save} onEscape={stopEditing} />
       )}
-      {saver.error === null ? null : (
-        <div className="space-toast" role="alert">
-          <span className="grow">改的字没存上：{saver.error}</span>
-          <button type="button" className="text-button" onClick={() => {
-            setSaved(null);
-            reload();
-          }}>再读一次</button>
-        </div>
-      )}
-      {editing || position !== undefined || saver.error !== null ? null
-        : <ChangeToast key={`${space.id}:${space.version}`} space={space} onChanged={changed} />}
       {!versionsOpen || current === null ? null : <SpaceVersions space={current} phone={phone}
         onClose={() => setVersionsOpen(false)} onChanged={changed} onSelect={(version) => {
           setVersionsOpen(false);

@@ -55,10 +55,10 @@ export function RulesMoveBanner({ navigate }: { navigate: (route: Route) => void
   const count = useRulesMove().data?.items.length ?? 0;
   if (count === 0) return null;
   return (
-    <div className="rules-move-banner" role="region" aria-label="规则搬家">
-      <p className="rules-move-banner-text"><strong>规则搬家：{count} 条等你勾。</strong>
+    <div className="banner rules-move-banner" role="region" aria-label="规则搬家">
+      <p className="banner-text rules-move-banner-text"><strong>规则搬家：{count} 条等你勾。</strong>
         说话方式进各自的 Soul，你说过的偏好进「关于你」，硬线和授权留在设置里。</p>
-      <button type="button" className="primary-button button-small" onClick={() => navigate(soulRoute())}>去勾</button>
+      <button type="button" className="text-button" onClick={() => navigate(soulRoute())}>去勾</button>
     </div>
   );
 }

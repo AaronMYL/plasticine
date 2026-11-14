@@ -181,7 +181,7 @@ describe('⋯ 菜单里的工具', () => {
     expect(screen.getByRole('complementary', { name: '对话框' })).toBeTruthy();
   });
 
-  it('截整页存进笔记：笔记里有标题、来源和图，工具条下面说「截图存进了笔记」，点「打开」开这篇笔记', async () => {
+  it('截整页存进笔记：笔记里有标题、来源和图，提示条说「截图存进了笔记」，点「打开」开这篇笔记', async () => {
     install(ALL_TOOLS, (tool) => (tool.kind === 'capture' ? { type: 'image/png', base64: PNG } : true));
     const app = await renderApp();
     await openArticle(app);
@@ -193,7 +193,7 @@ describe('⋯ 菜单里的工具', () => {
     expect(note.markdown).toContain('# 本地优先软件的同步难题');
     expect(note.markdown).toContain(`(${ARTICLE})`);
     expect(note.markdown).toMatch(/!\[截图\]\(\/v2\/notes\/assets\/.+\.png\)/);
-    fireEvent.click(within(notice.closest('.web-notice') as HTMLElement).getByRole('button', { name: '打开' }));
+    fireEvent.click(within(notice.closest('.toast') as HTMLElement).getByRole('button', { name: '打开' }));
     await waitFor(() => expect(window.location.hash).toBe(`#/notes/${note.id}`));
   });
 

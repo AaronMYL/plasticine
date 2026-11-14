@@ -26,7 +26,7 @@ export function ConnectionBanner(): ReactNode {
     return null;
   }
   return (
-    <div className="client-update-banner connection-banner text-meta" role="status" aria-live="polite">
+    <div className="banner app-banner connection-banner" role="status" aria-live="polite">
       <span className="dot dot-closed" aria-hidden="true" />
       {status === 'connecting' ? '正在重新连接…' : '未连接 · 正在重连，这期间看到的可能不是最新的'}
     </div>

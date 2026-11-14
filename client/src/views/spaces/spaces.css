@@ -250,64 +250,16 @@ button.space-crumb:hover {
   border-left-color: var(--fg);
 }
 
-/* 页底那一条：Plasticine 刚改好这一期。 */
-.space-toast {
-  position: absolute;
-  bottom: 24px;
-  left: 120px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: min(640px, calc(100% - 144px));
-  box-sizing: border-box;
-  padding: 10px 12px 10px 16px;
-  border-radius: 12px;
-  background: var(--layer-float);
-  box-shadow: var(--lift);
-  font-size: 14px;
-  line-height: 22px;
-  animation: space-toast-in var(--motion-base) var(--ease-out);
+/* 内容最上面的横条（这一期刚改好、改的字没存上）：用全站那一种页内横条，这里只管和左右对齐。 */
+.space-page > .banner {
+  flex: none;
+  margin: 8px 32px 0;
 }
 
 .space-top .grow,
-.space-toast .grow,
 .sub-foot .grow {
   flex: 1;
   min-width: 0;
-}
-
-.space-toast-button {
-  height: 26px;
-  padding: 0 10px;
-  font-size: 12px;
-}
-
-.space-toast-countdown {
-  position: absolute;
-  right: 12px;
-  bottom: 0;
-  left: 12px;
-  height: 2px;
-  background: var(--fg3);
-  transform-origin: left;
-  animation: space-toast-countdown linear forwards;
-}
-
-@keyframes space-toast-countdown {
-  to { transform: scaleX(0); }
-}
-
-@keyframes space-toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .space-toast {
-    animation: none;
-  }
 }
 
 .space-page[data-phone='true'] .space-scroll {
@@ -318,11 +270,8 @@ button.space-crumb:hover {
   padding: 0 8px 0 16px;
 }
 
-.space-page[data-phone='true'] .space-toast {
-  right: 12px;
-  bottom: 12px;
-  left: 12px;
-  width: auto;
+.space-page[data-phone='true'] > .banner {
+  margin: 8px 16px 0;
 }
 
 .space-page[data-phone='true'] .space-headline {

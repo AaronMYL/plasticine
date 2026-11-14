@@ -29,7 +29,6 @@ import { useFeedNav } from './feed-nav-data.ts';
 import { FeedSourceList } from './feed-source-list.tsx';
 import { FeedSourceSettings } from './feed-source-settings.tsx';
 import { FeedTarget } from './feed-target.tsx';
-import { FeedToast } from './feed-toast.tsx';
 import './feed.css';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import { ReadingTabs } from './reading-tabs.tsx';
@@ -148,7 +147,6 @@ function FeedListPage(): ReactNode {
   const addKind = (next: 'reddit' | 'url'): void => feedUi.openAdd(next);
   return (
     <div className={`page feed${segment === 'douyin' ? ' page-fill feed-douyin' : ''}`}>
-      <FeedToast />
       {phone ? (
         <>
           <PageHeader title="阅读" phoneSearch={false} phoneTools={(

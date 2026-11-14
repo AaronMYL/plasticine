@@ -1,33 +1,20 @@
-.client-update-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--line);
-  font-size: 12px;
-  line-height: 18px;
+/* 主区最上面的横条（有新版本、连不上）：全站那一种页内横条（11-14 界面统一），这里只管位置。 */
+.app-banner {
+  flex: none;
+  margin: 8px 16px 0;
 }
 .client-update-blocker {
   flex-basis: 100%;
   color: var(--fg2);
 }
-.dry-run-banner,
 .connection-banner {
   flex-wrap: nowrap;
-  white-space: nowrap;
-  color: var(--fg2);
 }
-.connection-banner {
-  align-items: center;
-  gap: 8px;
-  color: var(--fg);
-}
-.shell-main-area:has(.client-update-banner) {
+.shell-main-area:has(.app-banner) {
   display: flex;
   flex-direction: column;
 }
-.shell-main-area:has(.client-update-banner) > .shell-main {
+.shell-main-area:has(.app-banner) > .shell-main {
   flex: 1;
   min-height: 0;
   height: auto;

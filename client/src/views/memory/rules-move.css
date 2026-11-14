@@ -39,7 +39,6 @@
   .move-bar-note { display: none; }
 }
 /* 记忆首页的提示条（设计稿 Memory）：浅陶土底，一句话 + 「去勾」。 */
-.rules-move-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px;
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg)); color: var(--fg); }
-.rules-move-banner-text { flex: 1; min-width: 0; margin: 0; font-size: 14px; line-height: 22px; }
+/* 「规则搬家」那一条：全站那一种页内横条（11-14 界面统一，不再用强调色淡底）。 */
+.rules-move-banner-text { margin: 0; }
 .rules-move-banner-text strong { font-weight: 600; }

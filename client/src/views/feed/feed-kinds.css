@@ -99,70 +99,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 刷新完浮的那一句：贴着页面顶上居中，往下读着时也在视口顶上。 */
-.feed-toast-slot {
-  position: sticky;
-  top: 8px;
-  z-index: 6;
-  display: flex;
-  justify-content: center;
-  height: 0;
-  margin-bottom: -24px;
-  pointer-events: none;
-}
-
-.feed-toast {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 10px;
-  background: var(--fg);
-  box-shadow: var(--lift);
-  color: var(--bg);
-  font-size: 13px;
-  white-space: nowrap;
-  animation: feed-toast-in var(--motion-base) var(--ease-out);
-  transition: opacity var(--motion-base) var(--ease-out), transform var(--motion-base) var(--ease-out);
-}
-
-.feed-toast[data-failed] {
-  background: var(--layer-float);
-  color: var(--err);
-}
-
-.feed-toast[data-leaving] {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-
-@keyframes feed-toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-}
-
 @media (max-width: 767px) {
   .feed-chip {
     height: 32px;
   }
-
-  .feed-toast {
-    max-width: calc(100vw - 32px);
-    white-space: normal;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feed-toast,
   .feed-kind-refresh[data-busy] svg {
     animation: none;
   }
 
-  .feed-chip,
-  .feed-toast {
+  .feed-chip {
     transition: none;
   }
 }

@@ -134,20 +134,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 另一台设备读到了别处：全站那一种页内横条（11-14 界面统一），这里只管位置。 */
 .bk-banner {
-  display: flex;
   flex: none;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 24px;
-  border-bottom: 1px solid var(--line);
-}
-
-.bk-banner-text {
-  flex: 1;
-  min-width: 0;
-  font-size: 14px;
-  line-height: 22px;
+  margin: 8px 24px 0;
 }
 
 .bk-page {

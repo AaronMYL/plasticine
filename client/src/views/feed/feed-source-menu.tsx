@@ -9,7 +9,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { anchorOf, MenuItem, MenuSeparator, Popover, type PopoverAnchor } from '../../shell/popover.tsx';
 import type { FeedSegment } from '../../state/feed-ui.ts';
 import { useSourceActions } from './feed-source-actions.ts';
-import { showFeedToast } from './feed-toast.tsx';
+import { showResultToast } from '../../primitives/toast/index.tsx';
 
 type Open = { kind: 'menu' | 'confirm'; anchor: PopoverAnchor } | null;
 
@@ -41,14 +41,14 @@ export function SourceMenu({ rows, label, name, add, onSettings, onDouyin, onBus
   const run = (work: () => Promise<void>): void => {
     setBusy(true);
     onBusy?.(true);
-    work().catch((cause: unknown) => showFeedToast(errorText(cause), true)).finally(() => {
+    work().catch((cause: unknown) => showResultToast(errorText(cause), true)).finally(() => {
       setBusy(false);
       onBusy?.(false);
     });
   };
   const refresh = (): void => run(async () => {
     const result = await actions.refreshAll(rows, name);
-    showFeedToast(result.text, result.failed);
+    showResultToast(result.text, result.failed);
   });
   const close = (): void => setOpen(null);
   const toggle = (): void => {

@@ -1,6 +1,7 @@
 /*
- * 图标栏（11-07 设计稿 kit.mjs .rail）：72 宽、--layer-bar 底；入口 40×40 圆角 8，图标 18（Plasticine 标记 20），
- * 当前那一个 --tint2 底、--fg；组间 10 空隙。底部 ⌘K、新建、头像。桌面客户端的红绿灯在标题栏里（titlebar.tsx）。
+ * 图标栏（11-07 设计稿 kit.mjs .rail；11-14 界面统一 Aaron 弹框定 56 宽、不分组）：56 宽、--layer-bar 底；入口 40×40
+ * 圆角 8，图标都 20，间距都 4（不再分组、没有组间空隙）；当前那一个 --tint2 底、--fg。底部 ⌘K、新建、头像。
+ * 桌面客户端的红绿灯在标题栏里（titlebar.tsx）。
  */
 
 .rail {
@@ -8,15 +9,15 @@
   flex: none;
   flex-direction: column;
   align-items: center;
-  width: 72px;
-  padding: 14px 0;
+  width: 56px;
+  padding: 12px 0;
   background: var(--layer-bar);
 }
 
 .rail-groups {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
 .rail-group,

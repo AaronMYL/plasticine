@@ -56,13 +56,13 @@ export interface OtherDeviceBannerProps {
 export function OtherDeviceBanner(props: OtherDeviceBannerProps): ReactNode {
   const { progress } = props;
   return (
-    <div className="bk-banner" role="status">
+    <div className="banner bk-banner" role="status">
       <span className="dot dot-run" aria-hidden="true" />
-      <span className="bk-banner-text text-meta">
+      <span className="banner-text">
         {`${progress.deviceLabel} 上读到 ${chapterShort(props.chapterTitle)} · ${percentText(progress.percent)}`}
         {`（${readingTime(progress.updatedAt, props.now)}）`}
       </span>
-      <button type="button" className="chip-button" onClick={props.onJump}>跳过去</button>
+      <button type="button" className="text-button" onClick={props.onJump}>跳过去</button>
       <button type="button" className="text-button text-button-quiet" onClick={props.onStay}>留在这里</button>
     </div>
   );

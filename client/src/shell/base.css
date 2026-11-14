@@ -507,8 +507,8 @@ textarea.field-input {
   border-radius: 8px;
   background: var(--tint2);
   color: var(--fg);
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 13px;
+  line-height: 20px;
 }
 
 .banner-text {

@@ -3,9 +3,12 @@
 
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
+import { toastStore } from '../src/primitives/toast/index.tsx';
 
 afterEach(() => {
   cleanup();
+  // 提示条是全站一条（模块里的状态）：不留到下一条测试。
+  toastStore.set(null);
 });
 
 const EMPTY_RECT: DOMRect = {

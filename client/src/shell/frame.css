@@ -52,9 +52,9 @@ body:has(.shell[data-native-web='true']),
   background: transparent;
 }
 
-/* 壳不铺底以后，面板左上角圆角外那一点（图标栏 72 宽、标题栏 44 高，圆角 12）露出窗口底色：只在那 12 × 12 垫 --layer-bar。 */
+/* 壳不铺底以后，面板左上角圆角外那一点（图标栏 56 宽、标题栏 44 高，圆角 12）露出窗口底色：只在那 12 × 12 垫 --layer-bar。 */
 .shell[data-native-web='true'][data-titled] {
-  background: linear-gradient(var(--layer-bar), var(--layer-bar)) 72px 44px / 12px 12px no-repeat;
+  background: linear-gradient(var(--layer-bar), var(--layer-bar)) 56px 44px / 12px 12px no-repeat;
 }
 
 .shell[data-native-web='true'] .web-bar {

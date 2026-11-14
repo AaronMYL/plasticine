@@ -17,7 +17,7 @@ import { KIND_HUES, kindGroups, kindOfSegment, type KindGroup } from './feed-kin
 import { isLoginKind, LOGIN_SITES, useSiteLogins, type LoginKind } from './feed-nav-data.ts';
 import { useSourceActions } from './feed-source-actions.ts';
 import { SourceMenu } from './feed-source-menu.tsx';
-import { showFeedToast } from './feed-toast.tsx';
+import { showResultToast } from '../../primitives/toast/index.tsx';
 import './feed-sources.css';
 
 /** Reddit 的圆标（橙底白字 r），卡片头、加来源对话框共用。 */
@@ -72,8 +72,8 @@ export function FeedSourceList(props: FeedSourceListProps): ReactNode {
   const refreshAll = (): void => {
     if (props.nav === null || refreshing) return;
     setRefreshing(true);
-    actions.refreshAll(props.nav.sources).then((result) => showFeedToast(result.text, result.failed),
-      (cause: unknown) => showFeedToast(String(cause), true)).finally(() => setRefreshing(false));
+    actions.refreshAll(props.nav.sources).then((result) => showResultToast(result.text, result.failed),
+      (cause: unknown) => showResultToast(String(cause), true)).finally(() => setRefreshing(false));
   };
   return (
     <>
