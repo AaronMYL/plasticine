@@ -67,11 +67,14 @@ test('附件上传查回和事件保留用户文件名，错误与系统摘要�
     };
     const expected = { ...attachment, error: CLEAN_LINK_TEXT, summary: CLEAN_LINK_TEXT };
     for (const path of [
-      '/v2/conversation/attachments', '/v2/conversation/attachments/attachment-1',
+      '/v2/conversation/attachments/attachment-1', '/v2/conversation/attachments/attachment-1/complete',
       '/v2/conversation/attachments/requests/upload-1',
     ]) {
       assert.deepEqual(cleanOutboundJson(attachment, responseTextPolicy(path, attachment, state)), expected);
     }
+    const opened = { attachment, received: 0 };
+    assert.deepEqual(cleanOutboundJson(opened, responseTextPolicy('/v2/conversation/attachments/uploads', opened,
+      state)), { attachment: expected, received: 0 }, '分块上传第一步回的那一份也留文件名');
     const event = { type: 'attachment_changed' as const, attachment };
     assert.deepEqual(cleanOutboundJson(event, eventTextPolicy(event, state)), { ...event, attachment: expected });
     const other = responseTextPolicy('/v2/runs/run-1', attachment, state);

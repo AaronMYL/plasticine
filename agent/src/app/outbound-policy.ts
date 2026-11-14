@@ -86,7 +86,9 @@ export function responseTextPolicy(pathname: string, body: unknown, state: TextS
     note(fields, root);
     note(fields, root?.['current']);
     each(root?.['notes'], (entry) => note(fields, entry));
-  } else if (/^\/v2\/conversation\/attachments(?:\/(?:requests\/)?[^/]+)?\/?$/.test(pathname)) {
+  } else if (/^\/v2\/conversation\/attachments\/uploads\/?$/.test(pathname)) {
+    attachment(fields, root?.['attachment']);
+  } else if (/^\/v2\/conversation\/attachments(?:\/(?:requests\/)?[^/]+)?(?:\/complete)?\/?$/.test(pathname)) {
     attachment(fields, root);
   } else if (/^\/v2\/agreements(?:\/[^/]+(?:\/(?:edit|confirm))?)?\/?$/.test(pathname)) {
     const keys = ['text', 'scope', 'userQuote'];

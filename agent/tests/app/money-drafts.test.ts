@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { type TextStep } from '../brain/helpers.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
+import { call, json, pair, startTestApp, uploadAttachment, type TestApp } from './helpers.ts';
 
 // 《置信度与做事方式改动方案》第二批「记账直接记」：
 //   识别清楚 + 商户以前归过类 → 直接入账，不打扰；新商户或类别拿不准 → 按最像的类别入账、标「待看」，不弹卡；
@@ -30,9 +29,8 @@ function reading(candidate: Record<string, unknown>): TextStep {
 
 async function upload(app: TestApp, cookie: string, name: string, salt: string): Promise<string> {
   const data = Buffer.concat([Buffer.from(PNG, 'base64'), Buffer.from(salt)]);
-  const image = json(await call(app, 'POST', '/v2/conversation/attachments', { cookie, body: {
-    requestId: `image-${name}`, name: `${name}.png`, mimeType: 'image/png', bytes: data.length,
-    sha256: createHash('sha256').update(data).digest('hex'), content: data.toString('base64') } }));
+  const image = await uploadAttachment(app, cookie, { requestId: `image-${name}`, name: `${name}.png`,
+    mimeType: 'image/png', content: data });
   return String(image['id']);
 }
 

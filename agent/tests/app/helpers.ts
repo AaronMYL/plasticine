@@ -3,6 +3,7 @@
 // 用 respond() 给它剧本；旁路的模型调用（笔记、翻译、信息流…）走 scriptedText，剧本是 startTestApp 的第一个参数。
 
 import { createModels, fauxProvider, type FauxProviderHandle, type FauxResponseStep } from '@earendil-works/pi-ai';
+import { createHash } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -383,4 +384,29 @@ export function heldStep(answer: string): { step: TextStep; started: Promise<voi
     return { text: answer, complete: true };
   };
   return { step, started, release: () => release() };
+}
+
+/**
+ * 对话附件分块上传走一遍（第13批）：报文件 → 一块块传 → 传完核对；回最后那一步的回答（附件的样子）。
+ */
+export async function uploadAttachment(t: TestApp, cookie: string, input: { requestId: string; mimeType: string;
+  content: Buffer; name?: string }): Promise<Record<string, unknown>> {
+  const meta = { requestId: input.requestId, mimeType: input.mimeType, name: input.name ?? '资料',
+    bytes: input.content.length, sha256: createHash('sha256').update(input.content).digest('hex') };
+  const opened = await call(t, 'POST', '/v2/conversation/attachments/uploads', { cookie, body: meta });
+  if (opened.status !== 201) throw new Error(`报附件没成（${opened.status}）：${JSON.stringify(opened.body)}`);
+  const id = String((json(opened)['attachment'] as Record<string, unknown>)['id']);
+  let received = Number(json(opened)['received']);
+  while (received < input.content.length) {
+    const response = await fetch(`${t.base}/v2/conversation/attachments/${id}/chunks/${received}`, {
+      method: 'PUT', headers: { cookie, 'content-type': 'application/octet-stream' },
+      body: new Uint8Array(input.content.subarray(received, received + 4 * 1024 * 1024)),
+    });
+    const body = await response.json() as Record<string, unknown>;
+    if (response.status !== 200) throw new Error(`传附件没成（${response.status}）：${JSON.stringify(body)}`);
+    received = Number(body['received']);
+  }
+  const done = await call(t, 'POST', `/v2/conversation/attachments/${id}/complete`, { cookie });
+  if (done.status !== 200) throw new Error(`附件没传完（${done.status}）：${JSON.stringify(done.body)}`);
+  return json(done);
 }

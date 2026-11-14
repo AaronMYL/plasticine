@@ -4,7 +4,8 @@
 
 import type { AskDesk } from '../attention/index.ts';
 import type { PermissionGate, Tool, ToolRegistry } from '../brain/index.ts';
-import { adaptLegacyTool, conversationSearchTool, forgetTool, LineKernel, legacySayings, rememberTool,
+import { adaptLegacyTool, attachmentReadTool, conversationSearchTool, forgetTool, LineKernel, legacySayings,
+  rememberTool,
   serverCommandTool, type Compactor, type KernelTool, type Later, type ModelSource, type SubmitHoldPort }
   from '../lines/index.ts';
 import type { MessageWidget } from '../../shared/api/message-widgets.ts';
@@ -98,6 +99,8 @@ function legacyTools(parts: LineParts, legacy: LegacyParts): KernelTool[] {
   tools.push(rememberTool(parts.state), forgetTool(parts.state));
   // 翻对话（第 17、20 条）：只读，查统一全文索引里所有线上的原话。
   tools.push(conversationSearchTool(parts.state));
+  // 读他发的附件（第13批）：按附件说明里的 id 读上传时读好的正文。
+  tools.push(attachmentReadTool(parts.state));
   return tools;
 }
 

@@ -1,6 +1,6 @@
 // 图片附件送给能看图的模型（2026-11-05）：库里存的用户消息只记附件的名字和 id（不存图，库不跟着变大），每次装上下文时，
 // 模型的 input 带 image 才按 id 读出图，作为图片段接在那句话后面；不能看图的模型照旧只看到附件说明
-// （正文用 attachment_text 读）。
+// （正文用 attachment_read 读）。
 
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import type { ImageContent, Model, Api, UserMessage } from '@earendil-works/pi-ai';
@@ -12,6 +12,8 @@ import { attachmentIds } from './messages.ts';
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 export type ImagesOf = (ids: readonly string[]) => ImageContent[];
+// 附件第13批起任意类型都能传；送给模型的图只要这三种（GIF、HEIC、SVG 这些模型多半不收，照旧只有附件说明）。
+const MODEL_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 
 export function seesImages(model: Model<Api>): boolean {
   return model.input.includes('image');
@@ -41,7 +43,7 @@ export function withImages(messages: AgentMessage[], imagesOf: ImagesOf, seqOf: 
 export function imagesOf(state: Pick<StateService, 'attachments'>, ids: readonly string[]): ImageContent[] {
   return ids.flatMap((id) => {
     const attachment = state.attachments.get(id);
-    if (attachment === null || attachment.status !== 'ready' || !attachment.mimeType.startsWith('image/')
+    if (attachment === null || attachment.status !== 'ready' || !MODEL_IMAGE_TYPES.has(attachment.mimeType)
       || attachment.bytes > IMAGE_MAX_BYTES) {
       return [];
     }

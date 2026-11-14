@@ -1,36 +1,35 @@
 import { useRef, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import { ATTACHMENT_ACCEPT } from '../../api/shared.ts';
-import { fileSize } from '../../primitives/artifact-card/format.ts';
+import { shownAsImage } from '../../api/shared.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import type { AttachmentDraft } from '../../state/attachment-drafts.ts';
 import { useComposerAttachments } from '../lines/conversation-ui-context.tsx';
+import { FileExt } from './file-ext.tsx';
 
 const STATUS = { reading: '正在读文件', uploading: '正在上传', ready: '已就绪', failed: '未就绪' } as const;
 
-export function AttachmentDraftTile({ row }: { row: AttachmentDraft }): ReactNode {
+function percent(row: AttachmentDraft): number {
+  return Math.round((row.progress ?? 0) * 100);
+}
+
+/** 图：缩略图方块，能替换、重试。 */
+function ImageDraft({ row }: { row: AttachmentDraft }): ReactNode {
   const api = useApi();
   const attachments = useComposerAttachments();
   const input = useRef<HTMLInputElement>(null);
-  const image = (row.mimeType ?? row.meta?.mimeType ?? row.remote?.mimeType ?? '').startsWith('image/');
-  const preview = attachments.preview(row.id) ?? (image && row.remote !== null
-    ? api.attachments.contentUrl(row.remote.id) : null);
-  const bytes = row.bytes ?? row.meta?.bytes ?? row.remote?.bytes;
+  const preview = attachments.preview(row.id) ?? (row.remote !== null ? api.attachments.contentUrl(row.remote.id)
+    : null);
   const loading = row.status === 'reading' || row.status === 'uploading';
   const failed = row.status === 'failed';
-  return <div className="conv-attachment-draft" data-image={image} data-failed={failed}>
-    {image ? <div className="attachment-draft-image">
+  return <div className="conv-attachment-draft" data-image="true" data-failed={failed}>
+    <div className="attachment-draft-image">
       {preview === null ? <Icon name="image" size={24} /> : <img src={preview} alt={`预览 ${row.name}`} />}
-    </div> : <>
-      <Icon name="file" size={24} />
-      <div className="attachment-draft-info"><span>{row.name}</span>
-        <span className="text-meta">{bytes === undefined ? STATUS[row.status] : fileSize(bytes)}</span></div>
-    </>}
+    </div>
     <span className="sr-only">{STATUS[row.status]}</span>
     {loading ? <div className="attachment-draft-progress" role="progressbar"
       aria-label={`${STATUS[row.status]} ${row.name}`}
-      aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((row.progress ?? 0) * 100)}>
+      aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent(row)}>
       <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
         <circle className="attachment-progress-track" cx="14" cy="14" r="11" fill="none" strokeWidth="2" />
         <circle className="attachment-progress-arc" cx="14" cy="14" r="11" fill="none" strokeWidth="2"
@@ -42,7 +41,7 @@ export function AttachmentDraftTile({ row }: { row: AttachmentDraft }): ReactNod
       {failed ? <button type="button" aria-label={`重试上传 ${row.name}`}
         onClick={() => void attachments.retry(row.id, api.attachments)}>重试</button> : null}
     </div>
-    <input ref={input} type="file" hidden accept={ATTACHMENT_ACCEPT} aria-label={`替换附件 ${row.name}`}
+    <input ref={input} type="file" hidden accept="image/*" aria-label={`替换附件 ${row.name}`}
       onChange={(event) => {
         const file = event.target.files?.[0];
         if (file !== undefined) void attachments.replace(row.id, file, api.attachments);
@@ -50,6 +49,32 @@ export function AttachmentDraftTile({ row }: { row: AttachmentDraft }): ReactNod
       }} />
     <IconButton icon="close" className="attachment-draft-remove" label={`移除附件 ${row.name}`}
       onClick={() => attachments.cancel(row.id)} />
-    {row.error === null ? null : <span className="attachment-draft-error" role="alert">{row.error}</span>}
   </div>;
+}
+
+/** 别的文件：一枚小条，后缀 + 名字 + ×；传的时候底下一道进度，没传成标红、能重试（原因在输入框上方那一行）。 */
+function FileDraft({ row, mime }: { row: AttachmentDraft; mime: string }): ReactNode {
+  const api = useApi();
+  const attachments = useComposerAttachments();
+  const loading = row.status === 'reading' || row.status === 'uploading';
+  const failed = row.status === 'failed';
+  return <div className="conv-attachment-chip" data-failed={failed}>
+    <FileExt name={row.name} mime={mime} small />
+    <span className="attachment-chip-name">{row.name}</span>
+    <span className="sr-only">{STATUS[row.status]}</span>
+    {failed ? <IconButton icon="refresh" size={12} className="attachment-chip-button" label={`重试上传 ${row.name}`}
+      title={row.error ?? '重试上传'} onClick={() => void attachments.retry(row.id, api.attachments)} /> : null}
+    <IconButton icon="close" size={12} className="attachment-chip-button" label={`移除附件 ${row.name}`}
+      onClick={() => attachments.cancel(row.id)} />
+    {loading ? <span className="attachment-chip-progress" role="progressbar"
+      aria-label={`${STATUS[row.status]} ${row.name}`} aria-valuemin={0} aria-valuemax={100}
+      aria-valuenow={percent(row)}>
+      <span style={{ transform: `scaleX(${row.progress ?? 0})` }} />
+    </span> : null}
+  </div>;
+}
+
+export function AttachmentDraftTile({ row }: { row: AttachmentDraft }): ReactNode {
+  const mime = row.mimeType ?? row.meta?.mimeType ?? row.remote?.mimeType ?? '';
+  return shownAsImage(mime) ? <ImageDraft row={row} /> : <FileDraft row={row} mime={mime} />;
 }

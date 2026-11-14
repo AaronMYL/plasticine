@@ -1,8 +1,14 @@
 import { Value } from 'typebox/value';
 import type { AttachmentsApi } from '../client.ts';
 import { ApiError } from '../errors.ts';
-import { UploadAttachmentRequestSchema, type AttachmentView, type UploadAttachmentRequest } from '../shared.ts';
+import { UploadAttachmentMetaSchema, type AttachmentView, type UploadAttachmentMeta } from '../shared.ts';
 import type { FakeSession } from './fake-session.ts';
+
+function base64Of(bytes: Uint8Array): string {
+  const chunks: string[] = [];
+  for (let at = 0; at < bytes.length; at += 8192) chunks.push(String.fromCharCode(...bytes.subarray(at, at + 8192)));
+  return btoa(chunks.join(''));
+}
 
 export class FakeAttachments implements AttachmentsApi {
   private readonly session: FakeSession;
@@ -16,26 +22,29 @@ export class FakeAttachments implements AttachmentsApi {
     this.now = now;
   }
 
-  async upload(input: UploadAttachmentRequest): Promise<AttachmentView> {
+  async upload(meta: UploadAttachmentMeta, data: Blob, _signal?: AbortSignal,
+    onProgress?: (fraction: number) => void): Promise<AttachmentView> {
     this.session.require();
-    if (!Value.Check(UploadAttachmentRequestSchema, input)) {
+    if (!Value.Check(UploadAttachmentMetaSchema, meta) || data.size !== meta.bytes) {
       throw new ApiError({ kind: 'failed', code: 'invalid_request', message: '附件格式或大小不合要求。' });
     }
-    const previous = this.requests.get(input.requestId);
+    const previous = this.requests.get(meta.requestId);
     if (previous !== undefined) {
       const row = this.require(previous);
-      if (row.sha256 !== input.sha256 || row.bytes !== input.bytes) {
+      if (row.sha256 !== meta.sha256 || row.bytes !== meta.bytes) {
         throw new ApiError({ kind: 'conflict', code: 'duplicate', message: '上传标识已用于另一份内容。' });
       }
       return row;
     }
-    const id = `attachment-${input.requestId}`;
+    const content = base64Of(new Uint8Array(await data.arrayBuffer()));
+    onProgress?.(1);
+    const id = `attachment-${meta.requestId}`;
     const row: AttachmentView = {
       id,
-      name: input.name,
-      mimeType: input.mimeType,
-      bytes: input.bytes,
-      sha256: input.sha256,
+      name: meta.name,
+      mimeType: meta.mimeType,
+      bytes: meta.bytes,
+      sha256: meta.sha256,
       status: 'ready',
       truncated: false,
       error: null,
@@ -43,8 +52,8 @@ export class FakeAttachments implements AttachmentsApi {
       summary: null,
     };
     this.rows.set(id, row);
-    this.contents.set(id, input.content);
-    this.requests.set(input.requestId, id);
+    this.contents.set(id, content);
+    this.requests.set(meta.requestId, id);
     return row;
   }
 
@@ -63,7 +72,8 @@ export class FakeAttachments implements AttachmentsApi {
     this.session.require();
     const row = this.require(id);
     const encoded = this.contents.get(id);
-    const text = row.status !== 'ready' || row.mimeType.startsWith('image/') || encoded === undefined ? null
+    const readable = row.mimeType.startsWith('text/') || row.mimeType === 'application/json';
+    const text = row.status !== 'ready' || !readable || encoded === undefined ? null
       : new TextDecoder().decode(Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0)));
     return { text, characters: text === null ? 0 : Array.from(text).length, truncated: row.truncated };
   }

@@ -29,5 +29,5 @@ export const xhrUpload: UploadLike = (url, init, progress) => new Promise((resol
     return;
   }
   signal?.addEventListener('abort', abort, { once: true });
-  request.send(typeof init.body === 'string' ? init.body : null);
+  request.send(typeof init.body === 'string' || init.body instanceof Blob ? init.body : null);
 });

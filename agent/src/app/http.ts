@@ -102,6 +102,22 @@ export async function readRawBody(req: IncomingMessage, maxBytes: number = MAX_B
   if (!/^application\/json\b/i.test(type)) {
     throw new ApiError(415, 'invalid_content_type', '请求体要是 JSON（Content-Type: application/json）。');
   }
+  return collectBody(req, maxBytes);
+}
+
+/**
+ * 原样的二进制请求体（附件分块上传，第13批）：要 Content-Type: application/octet-stream（表单发不出这种请求，跨站
+ * 的 PUT 也过不了浏览器的预检）。
+ */
+export async function readBinaryBody(req: IncomingMessage, maxBytes: number): Promise<Buffer> {
+  const type = req.headers['content-type'] ?? '';
+  if (!/^application\/octet-stream\b/i.test(type)) {
+    throw new ApiError(415, 'invalid_content_type', '请求体要是原始字节（Content-Type: application/octet-stream）。');
+  }
+  return collectBody(req, maxBytes);
+}
+
+async function collectBody(req: IncomingMessage, maxBytes: number): Promise<Buffer> {
   const tooLarge = (): ApiError =>
     new ApiError(413, 'payload_too_large', `请求体超过 ${Math.round(maxBytes / 1024 / 1024)} MB。`);
   const declared = Number(req.headers['content-length'] ?? '0');

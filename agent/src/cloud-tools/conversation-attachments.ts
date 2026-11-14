@@ -7,6 +7,13 @@ import {
   type AttachmentMime,
 } from '../../shared/attachments.ts';
 import { CloudToolError } from './errors.ts';
+import { OFFICE_TYPES, officeText } from './office-text.ts';
+
+/** PDF、Office 文件超过这么大就不读正文（附件照样发，模型只知道名字和类型）。 */
+const PARSE_MAX_BYTES = 30 * 1024 * 1024;
+/** 文字类最多看这么多字节（够 9 000 字）。 */
+const TEXT_SCAN_BYTES = 64 * 1024;
+const KNOWN_IMAGES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 
 const failure = () => new CloudToolError('invalid_input', '附件无法读取。请核对类型、文件完整性或是否为扫描版 PDF。');
 const PdfResult = Type.Object({ ok: Type.Literal(true), text: Type.String(), truncated: Type.Boolean() });
@@ -80,6 +87,25 @@ export function imageMatches(type: AttachmentMime, data: Buffer): boolean {
   );
 }
 
+/** 读正文要原件开头多少字节：图要整份核对，PDF、Office 不太大才读整份，文字类看开头一截，别的不读（0）。 */
+export function extractionBytes(type: string, bytes: number): number {
+  if (KNOWN_IMAGES.has(type)) return bytes;
+  if (type === 'application/pdf' || OFFICE_TYPES[type] !== undefined) return bytes <= PARSE_MAX_BYTES ? bytes : 0;
+  if (type.startsWith('text/') || type === 'application/json') return Math.min(bytes, TEXT_SCAN_BYTES + 1);
+  return 0;
+}
+
+function clipped(text: string): { text: string; truncated: boolean } {
+  const chars = Array.from(text);
+  return chars.length <= CONVERSATION_ATTACHMENT_TEXT_LIMIT ? { text, truncated: false }
+    : { text: chars.slice(0, CONVERSATION_ATTACHMENT_TEXT_LIMIT).join(''), truncated: true };
+}
+
+/**
+ * 读一份对话附件的正文（第13批起任意类型）：三种图核对字节、不读字；PDF、Word、Excel、PowerPoint 读出文字；文字类
+ * 按 UTF-8 读；别的类型、太大的、读不出字的都是 text null（附件照样能发，模型只知道名字、类型和大小）。只有认得的图
+ * 字节对不上、取消了才抛错。
+ */
 export async function extractConversationAttachment(
   type: AttachmentMime,
   data: Buffer,
@@ -88,29 +114,36 @@ export async function extractConversationAttachment(
   if (signal.aborted || data.length === 0 || data.length > CONVERSATION_ATTACHMENT_MAX_BYTES) {
     throw failure();
   }
-  if (type.startsWith('image/')) {
+  const none = { text: null, truncated: false };
+  if (KNOWN_IMAGES.has(type)) {
     if (!imageMatches(type, data)) {
       throw failure();
     }
-    return { text: null, truncated: false };
+    return none;
   }
   if (type === 'application/pdf') {
-    if (data.toString('ascii', 0, 5) !== '%PDF-') {
-      throw failure();
+    if (data.length > PARSE_MAX_BYTES || data.toString('ascii', 0, 5) !== '%PDF-') return none;
+    try {
+      return await pdfText(data, signal);
+    } catch (error) {
+      if (signal.aborted) throw error;
+      return none;
     }
-    return pdfText(data, signal);
   }
+  const office = OFFICE_TYPES[type];
+  if (office !== undefined) {
+    const text = data.length > PARSE_MAX_BYTES ? null : officeText(office, data);
+    return text === null || text.trim() === '' ? none : clipped(text);
+  }
+  if (!type.startsWith('text/') && type !== 'application/json') return none;
   let text: string;
   try {
-    text = new TextDecoder('utf-8', { fatal: true }).decode(data);
+    text = new TextDecoder('utf-8', { fatal: true }).decode(data.subarray(0, TEXT_SCAN_BYTES),
+      { stream: data.length > TEXT_SCAN_BYTES });
   } catch {
-    throw failure();
+    return none;
   }
-  if (text.includes('\0')) {
-    throw failure();
-  }
-  return {
-    text: text.slice(0, CONVERSATION_ATTACHMENT_TEXT_LIMIT),
-    truncated: text.length > CONVERSATION_ATTACHMENT_TEXT_LIMIT,
-  };
+  if (text.includes('\0')) return none;
+  const result = clipped(text);
+  return { text: result.text, truncated: result.truncated || data.length > TEXT_SCAN_BYTES };
 }

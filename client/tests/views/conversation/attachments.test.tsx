@@ -16,9 +16,9 @@ it('图片选中立即显示本机缩略图，替换会取消旧上传并保持�
   let oldSignal: AbortSignal | undefined;
   let release = (): void => undefined;
   const gate = new Promise<void>((resolve) => { release = resolve; });
-  vi.spyOn(app.api.attachments, 'upload').mockImplementation(async (input, signal) => {
+  vi.spyOn(app.api.attachments, 'upload').mockImplementation(async (input, data, signal) => {
     if (input.name === '原图.png') { oldSignal = signal; await gate; }
-    return upload(input);
+    return upload(input, data);
   });
   fireEvent.change(screen.getByLabelText('选择对话附件'), { target: { files: [
     new File(['png'], '原图.png', { type: 'image/png' }),
@@ -42,7 +42,8 @@ it('上传进度使用传输回执，失败后用同一文件重试，不用重�
   const upload = app.api.attachments.upload.bind(app.api.attachments);
   let fail = (): void => undefined;
   const gate = new Promise<void>((_resolve, reject) => { fail = () => reject(new Error('连接中断')); });
-  const send = vi.spyOn(app.api.attachments, 'upload').mockImplementationOnce(async (_input, _signal, progress) => {
+  const send = vi.spyOn(app.api.attachments, 'upload').mockImplementationOnce(async (_input, _data, _signal,
+    progress) => {
     progress?.(0.4);
     await gate;
     throw new Error('不会到这里');
@@ -95,9 +96,9 @@ it('移除正在上传的附件立即消失，迟到结果不会恢复它或留�
   const upload = app.api.attachments.upload.bind(app.api.attachments);
   let finish: () => void = () => undefined;
   const gate = new Promise<void>((resolve) => { finish = resolve; });
-  vi.spyOn(app.api.attachments, 'upload').mockImplementation(async (input) => {
+  vi.spyOn(app.api.attachments, 'upload').mockImplementation(async (input, data) => {
     await gate;
-    return upload(input);
+    return upload(input, data);
   });
   fireEvent.change(screen.getByLabelText('选择对话附件'), {
     target: { files: [new File(['文稿'], '未完成.txt', { type: 'text/plain' })] },
@@ -131,9 +132,9 @@ it('上传未就绪不静默丢文件发送，取消后迟到回执不加回输�
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
-  vi.spyOn(app.api.attachments, 'upload').mockImplementation(async (input) => {
+  vi.spyOn(app.api.attachments, 'upload').mockImplementation(async (input, data) => {
     await gate;
-    return upload(input);
+    return upload(input, data);
   });
   fireEvent.change(screen.getByLabelText('选择对话附件'), {
     target: { files: [new File(['文稿'], '待传.txt', { type: 'text/plain' })] },
@@ -148,4 +149,63 @@ it('上传未就绪不静默丢文件发送，取消后迟到回执不加回输�
   });
   await waitFor(() => expect(screen.queryByText('待传.txt')).toBeNull());
   expect(app.state.attachments.active()).toHaveLength(0);
+});
+
+it('任意类型都能加（第13批）：压缩包是一枚小条（文件形状 + 名字），发出去以后在对话里点了直接下载', async () => {
+  const app = await renderApp({ hash: '#/conversation' });
+  fireEvent.change(screen.getByLabelText('选择对话附件'), {
+    target: { files: [new File(['PK zip'], '全部素材.zip', { type: 'application/zip' })] },
+  });
+  await waitFor(() => expect(app.state.attachments.ready()).toBe(true));
+  const chip = screen.getByText('全部素材.zip').closest('.conv-attachment-chip');
+  expect(chip?.querySelector('.file-ext')).not.toBeNull();
+  expect(app.state.attachments.active()[0]?.remote?.mimeType).toBe('application/zip');
+  fireEvent.click(screen.getByRole('button', { name: '发送' }));
+  const link = await screen.findByRole('link', { name: '下载 全部素材.zip' });
+  expect(link.getAttribute('download')).toBe('全部素材.zip');
+  expect(link.querySelector('.file-ext')?.textContent).toBe('ZIP');
+});
+
+it('超过 100 MB、空文件不加，输入框上方一行写清是哪一份；× 能关，关了不占地方', async () => {
+  const app = await renderApp({ hash: '#/conversation' });
+  const big = new File(['x'], '全部素材.zip', { type: 'application/zip' });
+  Object.defineProperty(big, 'size', { value: 101 * 1024 * 1024 });
+  fireEvent.change(screen.getByLabelText('选择对话附件'), {
+    target: { files: [big, new File([], '空.txt', { type: 'text/plain' })] },
+  });
+  const alert = await screen.findByRole('alert');
+  expect(alert.textContent).toContain('「全部素材.zip」超过 100 MB，没有加上；「空.txt」是空文件，没有加上');
+  expect(app.state.attachments.active()).toHaveLength(0);
+  fireEvent.click(screen.getByRole('button', { name: '关掉这条提示' }));
+  await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+  expect(app.state.attachments.error.get()).toBeNull();
+});
+
+it('提示 6 秒后自己收', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    const app = await renderApp({ hash: '#/conversation' });
+    act(() => app.state.attachments.error.set('「表.xlsx」没传上去：连接中断'));
+    expect(screen.getByRole('alert').textContent).toContain('「表.xlsx」没传上去');
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    expect(screen.queryByRole('alert')).not.toBeNull();
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+    expect(screen.queryByRole('alert')).toBeNull();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('没传上去的写在那一行（哪一份、为什么），重新传成功后收起', async () => {
+  const app = await renderApp({ hash: '#/conversation' });
+  const upload = app.api.attachments.upload.bind(app.api.attachments);
+  vi.spyOn(app.api.attachments, 'upload').mockRejectedValueOnce(new Error('连接中断')).mockImplementation(upload);
+  fireEvent.change(screen.getByLabelText('选择对话附件'), {
+    target: { files: [new File(['a,b'], '投递记录.csv', { type: 'text/csv' })] },
+  });
+  expect((await screen.findByRole('alert')).textContent).toContain('「投递记录.csv」没传上去：连接中断');
+  fireEvent.click(screen.getByRole('button', { name: '重试上传 投递记录.csv' }));
+  await waitFor(() => expect(app.state.attachments.ready()).toBe(true));
+  await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
 });

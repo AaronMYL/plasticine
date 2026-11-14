@@ -11,6 +11,16 @@ test('PDF 真抽字、纯文本标截断；错误类型、乱码与取消不假�
   assert.equal(text.truncated, true);
   assert.equal(text.text?.length, 9_000);
   await assert.rejects(extractConversationAttachment('image/png', Buffer.from('<html>'), signal));
-  await assert.rejects(extractConversationAttachment('text/plain', Buffer.from([0xff]), signal));
   await assert.rejects(extractConversationAttachment('application/pdf', textPdf('cancel'), AbortSignal.abort()));
+});
+
+test('第13批任意类型：读不出字的不算错，附件照样能发（模型只知道名字和类型）', async () => {
+  const signal = new AbortController().signal;
+  const none = { text: null, truncated: false };
+  assert.deepEqual(await extractConversationAttachment('text/plain', Buffer.from([0xff]), signal), none);
+  assert.deepEqual(await extractConversationAttachment('application/zip', Buffer.from('PK...'), signal), none);
+  assert.deepEqual(await extractConversationAttachment('image/gif', Buffer.from('GIF89a'), signal), none);
+  assert.deepEqual(await extractConversationAttachment('application/pdf', Buffer.from('not a pdf'), signal), none);
+  assert.deepEqual(await extractConversationAttachment(
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', Buffer.from('broken'), signal), none);
 });

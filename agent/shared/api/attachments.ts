@@ -20,15 +20,21 @@ export const UploadAttachmentMetaSchema = Type.Object(
   { additionalProperties: false },
 );
 export type UploadAttachmentMeta = Static<typeof UploadAttachmentMetaSchema>;
-export const UploadAttachmentRequestSchema = Type.Object(
-  {
-    ...UploadAttachmentMetaSchema.properties,
-    content: Type.String({
-      minLength: 4,
-      maxLength: Math.ceil(CONVERSATION_ATTACHMENT_MAX_BYTES / 3) * 4,
-      pattern: '^[A-Za-z0-9+/]*={0,2}$',
-    }),
-  },
-  { additionalProperties: false },
-);
-export type UploadAttachmentRequest = Static<typeof UploadAttachmentRequestSchema>;
+/**
+ * 分块上传（第13批）：先 POST /uploads 报这份文件（同一个 requestId 再报回同一行和已经收到多少字节），再按顺序
+ * PUT /:id/chunks/:offset 一块块传原始字节（每块 ≤ ATTACHMENT_CHUNK_BYTES），最后 POST /:id/complete 核对大小和摘要、
+ * 读出能读的正文。断了就从「已经收到多少」接着传。
+ */
+export const ATTACHMENT_UPLOADS_PATH = `${ATTACHMENTS_PATH}/uploads`;
+export const attachmentChunkPath = (id: string, offset: number): string =>
+  `${ATTACHMENTS_PATH}/${encodeURIComponent(id)}/chunks/${offset}`;
+export const attachmentCompletePath = (id: string): string => `${ATTACHMENTS_PATH}/${encodeURIComponent(id)}/complete`;
+export const AttachmentUploadSchema = Type.Object({
+  attachment: AttachmentViewSchema,
+  received: Type.Integer({ minimum: 0, maximum: CONVERSATION_ATTACHMENT_MAX_BYTES }),
+}, { additionalProperties: false });
+export type AttachmentUpload = Static<typeof AttachmentUploadSchema>;
+export const AttachmentChunkResultSchema = Type.Object({
+  received: Type.Integer({ minimum: 0, maximum: CONVERSATION_ATTACHMENT_MAX_BYTES }),
+}, { additionalProperties: false });
+export type AttachmentChunkResult = Static<typeof AttachmentChunkResultSchema>;

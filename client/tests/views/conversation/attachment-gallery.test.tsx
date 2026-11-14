@@ -51,11 +51,13 @@ it('缩略图用于聊天网格，原件用于大图；大图失败可以原址�
   expect(dialog.getByRole('img').getAttribute('src')).toBe(images[0]!.url);
 });
 
-it('二进制文件不渲染成乱码，保留下载入口', () => {
+it('看不了的文件（压缩包）不开预览：后缀 + 名字 + 大小，点了直接下载（第13批）', () => {
   render(<AttachmentGallery items={[{ id: 'archive-file', name: '资料.zip', mimeType: 'application/zip',
     bytes: 200, url: 'https://example.test/archive.zip' }]} />);
-  fireEvent.click(screen.getByRole('button', { name: '预览文件 资料.zip' }));
-  const dialog = within(screen.getByRole('dialog'));
-  expect(dialog.getByText('这类文件可以下载后打开。')).toBeTruthy();
-  expect(dialog.getByRole('link', { name: '下载' }).getAttribute('download')).toBe('资料.zip');
+  const link = screen.getByRole('link', { name: '下载 资料.zip' });
+  expect(link.getAttribute('download')).toBe('资料.zip');
+  expect(link.getAttribute('href')).toBe('https://example.test/archive.zip');
+  expect(link.querySelector('.file-ext')?.textContent).toBe('ZIP');
+  expect(link.textContent).toContain('资料.zip');
+  expect(screen.queryByRole('button', { name: /预览文件/ })).toBeNull();
 });

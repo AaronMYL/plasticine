@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { chmodSync, linkSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, closeSync, createReadStream, linkSync, mkdirSync, openSync, readFileSync, readSync,
+  rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Type } from 'typebox';
 import { AttachmentViewSchema, type AttachmentView } from '../../shared/attachments.ts';
@@ -10,6 +11,14 @@ import type { StoreContext } from './object-store.ts';
 import type { Row } from './db.ts';
 
 const Wrapped = Type.Object({ metadata: AttachmentViewSchema });
+/** 没传完的分块上传，过了这么久（下次启动时）把收到的那一截清掉。 */
+const STALE_PART_MS = 24 * 60 * 60 * 1000;
+
+async function fileDigest(path: string): Promise<string> {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(path)) hash.update(chunk as Buffer);
+  return hash.digest('hex');
+}
 
 export function createAttachmentStore(context: StoreContext, directory: string | undefined) {
   const { db } = context;
@@ -31,6 +40,21 @@ export function createAttachmentStore(context: StoreContext, directory: string |
     }
     return join(directory, `${id}.bin`);
   };
+  /** 分块上传收到的那一截（传完、核对过摘要才变成 `${id}.bin`）。 */
+  const part = (id: string): string => `${path(id)}.part`;
+  const received = (row: AttachmentView): number => {
+    if (row.status === 'ready') return row.bytes;
+    if (row.status !== 'uploading') return 0;
+    try {
+      return statSync(part(row.id)).size;
+    } catch {
+      return 0;
+    }
+  };
+  const ensureDirectory = (): void => {
+    mkdirSync(directory ?? '', { recursive: true, mode: 0o700 });
+    chmodSync(directory ?? '', 0o700);
+  };
   const save = (row: AttachmentView, text: string | null): AttachmentView => {
     checked(AttachmentViewSchema, row, 'invalid_input', '附件');
     db.run('UPDATE attachments SET metadata = $metadata, text_content = $text WHERE id = $id', {
@@ -44,11 +68,86 @@ export function createAttachmentStore(context: StoreContext, directory: string |
     get,
     require,
     recoverUploads(): AttachmentView[] {
+      // 一天前开的、没传完的分块上传：收到的那一截清掉（同一标识再传从头来）。
+      const stale = new Date(Date.parse(context.now()) - STALE_PART_MS).toISOString();
+      for (const row of db.all("SELECT metadata FROM attachments WHERE json_extract(metadata, '$.status') "
+        + "IN ('uploading', 'failed') AND json_extract(metadata, '$.createdAt') < $stale", { stale }).map(read)) {
+        rmSync(part(row.id), { force: true });
+      }
       return db.transaction(() => db
         .all("SELECT metadata FROM attachments WHERE json_extract(metadata, '$.status') = 'uploading'")
         .map(read)
         .map((row) => save({ ...row, status: 'failed',
           error: '附件上传被重启中断，请重新上传或移除待发引用。' }, null)));
+    },
+    /** 这份已经收到多少字节（传完的是全部；断了从这里接着传）。 */
+    received(id: string): number {
+      return received(require(id));
+    },
+    /**
+     * 接上一块。offset 要正好是已经收到的字节数，不是就什么都不写、回现在收到多少（重发的、乱序的块照这个数接着传）；
+     * 多出报的大小算错。
+     */
+    appendChunk(id: string, offset: number, data: Buffer): number {
+      const row = require(id);
+      if (row.status !== 'uploading') {
+        throw new StateError('invalid_input', '这份附件不在上传中，请重新开始上传。');
+      }
+      const have = received(row);
+      if (offset !== have) return have;
+      if (data.length === 0 || have + data.length > row.bytes) {
+        throw new StateError('invalid_input', '这一块超出了报的文件大小。');
+      }
+      ensureDirectory();
+      appendFileSync(part(id), data, { mode: 0o600 });
+      return have + data.length;
+    },
+    /** 传完了：核对大小和摘要，对上了存成原件（状态还是上传中，读完正文再 finish）；摘要不对就清掉重传。 */
+    async completeUpload(id: string): Promise<AttachmentView> {
+      const row = require(id);
+      if (row.status === 'ready') return row;
+      if (row.status !== 'uploading') {
+        throw new StateError('invalid_input', '这份附件不在上传中，请重新开始上传。');
+      }
+      const have = received(row);
+      if (have !== row.bytes) {
+        throw new StateError('invalid_input', `附件还没传完（收到 ${have} / ${row.bytes} 字节）。`);
+      }
+      const source = part(id);
+      if (await fileDigest(source) !== row.sha256) {
+        rmSync(source, { force: true });
+        throw new StateError('invalid_input', '附件传的时候坏了（摘要对不上），请重新上传。');
+      }
+      const target = path(id);
+      try {
+        linkSync(source, target);
+      } catch (cause) {
+        if (!(cause instanceof Error && 'code' in cause && cause.code === 'EEXIST')) {
+          throw new StateError('invalid_input', '附件原件没有存好，请用同一标识重试。');
+        }
+        if (await fileDigest(target) !== row.sha256) {
+          throw new StateError('corrupt_record', '附件原件校验不通过。');
+        }
+      } finally {
+        rmSync(source, { force: true });
+      }
+      return row;
+    },
+    /** 读刚存好的原件开头 limit 个字节（读正文用，还没 finish 也能读）。 */
+    readStored(id: string, limit: number): Buffer {
+      const handle = openSync(path(id), 'r');
+      try {
+        const buffer = Buffer.alloc(Math.max(0, Math.min(limit, statSync(path(id)).size)));
+        let at = 0;
+        while (at < buffer.length) {
+          const read = readSync(handle, buffer, at, buffer.length - at, at);
+          if (read === 0) break;
+          at += read;
+        }
+        return buffer.subarray(0, at);
+      } finally {
+        closeSync(handle);
+      }
     },
     findUpload(requestId: string): AttachmentView | null {
       const row = db.get('SELECT metadata FROM attachments WHERE request_id = $requestId', { requestId });
@@ -111,8 +210,7 @@ export function createAttachmentStore(context: StoreContext, directory: string |
         throw new StateError('invalid_input', '附件大小或摘要不匹配。');
       }
       const target = path(id);
-      mkdirSync(directory ?? '', { recursive: true, mode: 0o700 });
-      chmodSync(directory ?? '', 0o700);
+      ensureDirectory();
       const temporary = `${target}.${randomUUID()}.tmp`;
       try {
         writeFileSync(temporary, data, { flag: 'wx', mode: 0o600 });

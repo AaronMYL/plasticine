@@ -25,7 +25,7 @@ import { capturePageSnapshot, withSnapshot } from '../conversation/page-snapshot
 import { splitReply } from '../../api/shared.ts';
 import { useComposerAttachments, useConversationUi } from './conversation-ui-context.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { AttachmentChips, AttachmentComposer } from '../conversation/attachment-composer.tsx';
+import { AttachmentChips, AttachmentComposer, AttachmentError } from '../conversation/attachment-composer.tsx';
 import { AskPageToggle, PageSource, PAGE_UNREAD_NOTE, usePageContext }
   from '../conversation/ask-page-toggle.tsx';
 import { ModelPicker } from '../models/model-picker.tsx';
@@ -241,6 +241,7 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
       }}>
       {quoteLimit === null ? null : <p className="line-composer-note is-error" role="alert">{quoteLimit}</p>}
       {sendError === null ? null : <p className="line-composer-note is-error" role="alert">{sendError}</p>}
+      <AttachmentError />
       <div className="line-input-box" aria-busy={preparing}>
         {thread.queue.length === 0 ? null : (
           <ul className="line-queue" aria-label="排队的消息">

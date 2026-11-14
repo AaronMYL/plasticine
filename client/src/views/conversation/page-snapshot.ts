@@ -9,7 +9,7 @@ import type { AttachmentView } from '../../api/shared.ts';
 import type { CurrentTab } from '../../shell/current-tab-context.ts';
 import { hostWebTabs } from '../../shell/host.ts';
 import { imageFile } from '../../shell/web-tools.ts';
-import { base64Of, readFileBytes } from '../../state/attachment-bytes.ts';
+import { readFileBytes } from '../../state/attachment-bytes.ts';
 
 /** 截图附件的名字开头（后面跟这一页的标题）。 */
 export const PAGE_SNAPSHOT_NAME = '网页快照';
@@ -69,7 +69,7 @@ export async function capturePageSnapshot(tab: Pick<CurrentTab, 'id' | 'kind' | 
     const buffer = await readFileBytes(file);
     const view = await api.upload({ requestId: createRequestId(), name: file.name,
       mimeType: file.type === 'image/png' ? 'image/png' : 'image/jpeg', bytes: file.size,
-      sha256: await sha256Of(buffer), content: base64Of(buffer) });
+      sha256: await sha256Of(buffer) }, file);
     return view.status === 'ready' ? view : null;
   } catch (cause) {
     console.warn('没截到这一页的快照，这句照常发（卡上只有标题和网址）', cause);

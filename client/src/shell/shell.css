@@ -83,7 +83,6 @@
   border-radius: 50%;
   background: transparent;
   color: var(--fg);
-  filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--fg) 26%, transparent));
   cursor: pointer;
 }
 

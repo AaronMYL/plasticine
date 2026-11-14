@@ -1,4 +1,5 @@
-// 附件草稿字节留 IndexedDB，操作标识和小元数据留 sessionStorage；不把 10 MiB 图片塞进操作日志。
+// 附件草稿字节留 IndexedDB（只留 10 MiB 以内的，大的只在这一页里传），操作标识和小元数据留 sessionStorage；不把图片
+// 塞进操作日志。
 export class AttachmentBytes {
   private readonly cache = new Map<string, string>();
   private readonly factory: IDBFactory | null;
@@ -70,4 +71,11 @@ export function base64Of(buffer: ArrayBuffer): string {
     chunks.push(String.fromCharCode(...bytes.subarray(i, i + 8192)));
   }
   return btoa(chunks.join(''));
+}
+
+export function blobOf(base64: string, type: string): Blob {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type });
 }

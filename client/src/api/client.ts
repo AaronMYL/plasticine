@@ -31,7 +31,7 @@ export interface ClientUpdatesApi {
 }
 import type {
   AttachmentView,
-  UploadAttachmentRequest,
+  UploadAttachmentMeta,
 } from './shared.ts';
 import type {
   MoneyDraftView,
@@ -56,7 +56,8 @@ export interface MoneyDraftsApi {
 export interface AttachmentsApi {
   text(id: string, signal?: AbortSignal): Promise<import('./shared.ts').AttachmentTextView>;
   lookup(requestId: string, signal?: AbortSignal): Promise<AttachmentView | null>;
-  upload(input: UploadAttachmentRequest, signal?: AbortSignal, onProgress?: (fraction: number) => void):
+  /** 分块上传（第13批）：报文件、一块块传（断了从已经收到的地方接着传）、传完核对；回最后那一份的样子。 */
+  upload(meta: UploadAttachmentMeta, data: Blob, signal?: AbortSignal, onProgress?: (fraction: number) => void):
     Promise<AttachmentView>;
   get(id: string, signal?: AbortSignal): Promise<AttachmentView>;
   contentUrl(id: string): string;

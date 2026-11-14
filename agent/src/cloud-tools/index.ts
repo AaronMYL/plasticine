@@ -17,7 +17,7 @@ import { unconnectedTransports, type CloudTransports } from './transports.ts';
 
 export { ownNoticeTitle } from './own-notice.ts';
 export { ATTACHMENT_MAX_BYTES, attachmentText, CONVERTED_TYPES, extensionOf, TEXT_TYPES } from './attachments.ts';
-export { extractConversationAttachment, imageMatches } from './conversation-attachments.ts';
+export { extractConversationAttachment, extractionBytes, imageMatches } from './conversation-attachments.ts';
 export { checkAction, CloudBrowser, FRAME_MAX_PX, KEY_PATTERN, SCROLL_MAX_PX, TYPE_MAX_CHARS } from './browser.ts';
 export type { BrowserObservation, BrowserSink, BrowserView } from './browser.ts';
 export { CdpBrowser } from './cdp-browser.ts';

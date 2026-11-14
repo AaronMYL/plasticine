@@ -1,6 +1,6 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import { ATTACHMENT_ACCEPT } from '../../api/shared.ts';
+import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { useComposerAttachments } from '../lines/conversation-ui-context.tsx';
 import { useStore } from '../../state/use-store.ts';
@@ -30,7 +30,6 @@ export function AttachmentComposer(): ReactNode {
         multiple
         hidden
         aria-label="选择对话附件"
-        accept={ATTACHMENT_ACCEPT}
         onChange={(event) => {
           add(event.target.files);
           event.target.value = '';
@@ -63,15 +62,47 @@ export function AttachmentComposer(): ReactNode {
 export function AttachmentChips(): ReactNode {
   const attachments = useComposerAttachments();
   const rows = useStore(attachments.store).filter((row) => !row.canceled);
-  const error = useStore(attachments.error);
-  return (
-    <>
-      {error === null ? null : <p role="alert">{error}</p>}
-      {rows.length === 0 ? null : (
-        <div className="conv-attachments" aria-label="已选附件">
-          {rows.map((row) => <AttachmentDraftTile key={row.id} row={row} />)}
-        </div>
-      )}
-    </>
+  return rows.length === 0 ? null : (
+    <div className="conv-attachments" aria-label="已选附件">
+      {rows.map((row) => <AttachmentDraftTile key={row.id} row={row} />)}
+    </div>
   );
+}
+
+/** 提示停这么久自己收；收的动画这么长（和 --motion-base 一致）。 */
+export const ATTACHMENT_ERROR_MS = 6000;
+const LEAVE_MS = 180;
+
+/**
+ * 附件的提示（第13批）：输入框上方一行，写清是哪一份、为什么；带 ×，6 秒后自己收，收了不占地方。重新传成功、
+ * 发出去以后也清掉（attachment-drafts）。
+ */
+export function AttachmentError(): ReactNode {
+  const attachments = useComposerAttachments();
+  const error = useStore(attachments.error);
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    setLeaving(false);
+    if (error === null) return undefined;
+    const timer = setTimeout(() => setLeaving(true), ATTACHMENT_ERROR_MS);
+    return () => clearTimeout(timer);
+  }, [error]);
+  useEffect(() => {
+    if (!leaving || error === null) return undefined;
+    const timer = setTimeout(() => {
+      if (attachments.error.get() === error) attachments.error.set(null);
+    }, LEAVE_MS);
+    return () => clearTimeout(timer);
+  }, [attachments, error, leaving]);
+  if (error === null) return null;
+  return <div className="attachment-error" data-leaving={leaving} role="alert">
+    <div className="attachment-error-clip">
+      <div className="attachment-error-row">
+        <span className="attachment-error-text">{error}</span>
+        <IconButton icon="close" className="attachment-error-close" label="关掉这条提示"
+          onClick={() => setLeaving(true)} />
+        <span key={error} className="attachment-error-life" aria-hidden="true" />
+      </div>
+    </div>
+  </div>;
 }

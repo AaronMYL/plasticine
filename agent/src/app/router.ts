@@ -123,8 +123,8 @@ import { TRANSLATE_MODEL_PATH, TRANSLATE_PATH, TRANSLATE_SETTINGS_PATH } from '.
 import { confirmAgreement, editAgreement, getAgreement, listAgreements } from './agreements.ts';
 import { ApiError } from './api-error.ts';
 import { answerAsk, askAboutAsk, deferAsk, feedbackAsk, getAsk, listAsks } from './asks.ts';
-import { getAttachment, getAttachmentContent, getAttachmentText, lookupAttachment, uploadAttachment }
-  from './attachments.ts';
+import { completeUpload, getAttachment, getAttachmentContent, getAttachmentText, lookupAttachment, openUpload,
+  uploadChunk } from './attachments.ts';
 import { getBackstage, setBackstageRule } from './backstage.ts';
 import { createBackup, getBackup, getRestorePreview, listBackups, previewRestore, restoreBackup } from './backups.ts';
 import { createBookAnnotation, deleteBookAnnotation, dismissKeyPoint, exportBookNotes, generateBookInsight,
@@ -282,7 +282,9 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: TRANSLATE_PATH, auth: true, handler: translatePage },
   // 附件（线里发的图和文件、记账截图）。
   { method: 'GET', path: '/v2/conversation/attachments/requests/:requestId', auth: true, handler: lookupAttachment },
-  { method: 'POST', path: '/v2/conversation/attachments', auth: true, handler: uploadAttachment },
+  { method: 'POST', path: '/v2/conversation/attachments/uploads', auth: true, handler: openUpload },
+  { method: 'PUT', path: '/v2/conversation/attachments/:id/chunks/:offset', auth: true, handler: uploadChunk },
+  { method: 'POST', path: '/v2/conversation/attachments/:id/complete', auth: true, handler: completeUpload },
   { method: 'GET', path: '/v2/link-preview', auth: true, handler: getLinkPreview },
   { method: 'GET', path: '/v2/conversation/attachments/:id', auth: true, handler: getAttachment },
   { method: 'GET', path: '/v2/conversation/attachments/:id/content', auth: true, handler: getAttachmentContent },

@@ -1,5 +1,5 @@
 // 一次 HTTP 请求怎么发、回答怎么读（《实施方案》第 5 节四条约定），各资源文件都经这里：
-// - 同源 cookie 会话（credentials: same-origin），请求体一律 JSON。
+// - 同源 cookie 会话（credentials: same-origin），请求体一律 JSON（附件分块上传的那一块是原样字节）。
 // - 超时、断网：写操作算「回执不确定」（kind = uncertain），由调用方用同一个 requestId 去查或重发；读操作算失败。
 //   这里不自动重发：没带标识的请求重发可能做两次，带标识的由界面决定什么时候核实。
 // - 回答先过 shared 里的 schema（typebox Value.Check），不过就当格式错误，不拿来用。
@@ -55,6 +55,8 @@ export interface RequestSpec<T extends TSchema> {
    * 给了它就不看 body。
    */
   rawBody?: string;
+  /** 原样的字节（附件分块上传）：发成 application/octet-stream；给了它就不看 body 和 rawBody。 */
+  binaryBody?: Blob;
   /** 调用方显式指定的附加请求头。 */
   headers?: Readonly<Record<string, string>>;
   /** 2xx 回答的 schema。 */
@@ -226,7 +228,10 @@ export class Transport {
       signal: controller.signal,
     };
     const bodyText = spec.rawBody ?? (spec.body === undefined ? undefined : JSON.stringify(spec.body));
-    if (bodyText !== undefined) {
+    if (spec.binaryBody !== undefined) {
+      headers['content-type'] = 'application/octet-stream';
+      init.body = spec.binaryBody;
+    } else if (bodyText !== undefined) {
       headers['content-type'] = 'application/json';
       init.body = bodyText;
     }

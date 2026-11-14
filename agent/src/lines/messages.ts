@@ -86,7 +86,7 @@ declare module '@earendil-works/pi-agent-core' {
   }
 }
 
-/** 用户消息里附件那一句：只列名字和 id，正文用 attachment_text 读。 */
+/** 用户消息里附件那一句：只列名字和 id，正文用 attachment_read 按 id 读（第13批前写的是 attachment_text）。 */
 export interface AttachmentNote {
   id: string;
   name: string;
@@ -110,7 +110,7 @@ export function userMessage(text: string, attachments: readonly AttachmentNote[]
     role: 'user',
     content: [
       { type: 'text', text },
-      { type: 'text', text: `${ATTACHMENT_NOTE_START}${names}；id：${ids}；正文用 attachment_text 读］` },
+      { type: 'text', text: `${ATTACHMENT_NOTE_START}${names}；id：${ids}；正文用 attachment_read 读］` },
     ],
     timestamp: at,
   };

@@ -10,8 +10,108 @@
 .conv-attachments {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 8px 4px 12px 0;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px 8px 0;
+}
+
+/* 别的文件的待发小条（第13批）：后缀 + 名字 + ×；传的时候底下一道进度。 */
+.conv-attachment-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 30px;
+  max-width: min(240px, 100%);
+  padding: 0 3px 0 6px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  font-size: 12px;
+  line-height: 16px;
+}
+.conv-attachment-chip[data-failed='true'] { box-shadow: inset 0 0 0 1px var(--err); }
+.attachment-chip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conv-attachment-chip .attachment-chip-button { flex: none; width: 22px; height: 22px; }
+.attachment-chip-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--line); }
+.attachment-chip-progress > span { display: block; height: 100%; background: var(--fg); transform-origin: left;
+  transition: transform var(--motion-base) var(--ease-out); }
+
+/* 折角的文件图标，上面写后缀。角用 clip-path 剪掉，不靠底色盖。 */
+.file-ext {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 34px;
+  height: 40px;
+  padding-bottom: 5px;
+  border-radius: 6px;
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 12px;
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+}
+.file-ext::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-bottom-left-radius: 2px;
+  background: color-mix(in srgb, var(--fg) 14%, transparent);
+}
+.file-ext[data-small='true'] { width: 16px; height: 20px; padding: 0; border-radius: 3px;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%); }
+.file-ext[data-small='true']::before { width: 6px; height: 6px; }
+
+/* 附件的提示：输入框上方一行，带 ×，6 秒后自己收（第13批）；收的时候高度一起收，不占地方。 */
+.attachment-error {
+  display: grid;
+  grid-template-rows: 1fr;
+  margin-bottom: 8px;
+  animation: attachment-error-in var(--motion-base) var(--ease-out);
+  transition: grid-template-rows var(--motion-base) var(--ease-out), opacity var(--motion-base) var(--ease-out),
+    margin-bottom var(--motion-base) var(--ease-out);
+}
+.attachment-error[data-leaving='true'] { grid-template-rows: 0fr; margin-bottom: 0; opacity: 0; }
+.attachment-error-clip { min-height: 0; overflow: hidden; }
+.attachment-error-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px 5px 12px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--err) 9%, var(--bg));
+  color: color-mix(in srgb, var(--err) 78%, var(--fg));
+  font-size: 13px;
+  line-height: 18px;
+}
+.attachment-error-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.attachment-error-row .attachment-error-close { flex: none; width: 28px; height: 28px; color: inherit; }
+.attachment-error-life {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--err);
+  transform-origin: left;
+  animation: attachment-error-life 6s linear forwards;
+}
+@keyframes attachment-error-in { from { opacity: 0; transform: translateY(4px); } }
+@keyframes attachment-error-life { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .attachment-error { animation: none; transition: none; }
+  .attachment-error-life { animation: none; opacity: 0.5; }
 }
 .conv-attachment-draft {
   position: relative;
@@ -47,8 +147,6 @@
 .attachment-progress-track { stroke: var(--line2); }
 .attachment-progress-arc { stroke: var(--fg); transform: rotate(-90deg); transform-origin: center;
   transition: stroke-dashoffset var(--motion-base); }
-.attachment-draft-error { position: absolute; top: 100%; left: 0; max-width: 100%; font-size: 11px;
-  line-height: 16px; color: var(--err); }
 .conv-attachment-draft .sr-only {
   position: absolute;
   width: 1px;

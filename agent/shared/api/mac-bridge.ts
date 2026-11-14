@@ -25,14 +25,14 @@
 //           对话框里列出来；同一个 actionId 先报 run，做完报 done，提交没放行报 wait，没做成报 err。
 
 import { Type, type Static } from 'typebox';
-import { CONVERSATION_ATTACHMENT_MAX_BYTES, CONVERSATION_ATTACHMENT_MAX_COUNT } from './attachments.ts';
+import { CONVERSATION_ATTACHMENT_MAX_COUNT, INLINE_ATTACHMENT_MAX_BYTES } from './attachments.ts';
 import { PageOperateEventSchema } from './page-operate.ts';
 import { WebTabIconEventSchema } from './desktop-bridge.ts';
 
 export const MacAttachFilesSchema = Type.Array(Type.Object({
   name: Type.String({ minLength: 1 }),
   type: Type.String(),
-  base64: Type.String({ maxLength: Math.ceil(CONVERSATION_ATTACHMENT_MAX_BYTES / 3) * 4 }),
+  base64: Type.String({ maxLength: Math.ceil(INLINE_ATTACHMENT_MAX_BYTES / 3) * 4 }),
 }, { additionalProperties: false }), { maxItems: CONVERSATION_ATTACHMENT_MAX_COUNT });
 export type MacAttachedFile = Static<typeof MacAttachFilesSchema>[number];
 

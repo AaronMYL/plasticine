@@ -1,19 +1,20 @@
 import { Type, type Static } from 'typebox';
 import { Value } from 'typebox/value';
 import type { AttachmentsApi } from '../api/client.ts';
-import { errorText } from '../api/errors.ts';
+import { ApiError, errorText } from '../api/errors.ts';
 import { createRequestId } from '../api/request-id.ts';
 import {
   AttachmentViewSchema,
   UploadAttachmentMetaSchema,
-  attachmentMime,
+  conversationMime,
+  shownAsImage,
   CONVERSATION_ATTACHMENT_MAX_BYTES,
   CONVERSATION_ATTACHMENT_MAX_COUNT,
+  INLINE_ATTACHMENT_MAX_BYTES,
   type AttachmentView,
-  type AttachmentMime,
 } from '../api/shared.ts';
 import type { ActionOps } from './action-ops.ts';
-import { AttachmentBytes, readFileBytes, base64Of } from './attachment-bytes.ts';
+import { AttachmentBytes, readFileBytes, base64Of, blobOf } from './attachment-bytes.ts';
 import type { KeyValueStorage } from './outbox.ts';
 import { Store } from './store.ts';
 
@@ -33,6 +34,19 @@ export type AttachmentDraft = Static<typeof DraftSchema>;
 type Draft = AttachmentDraft;
 const DraftsSchema = Type.Array(DraftSchema);
 const STORAGE_KEY = 'plasticine.attachment-drafts';
+const MAX_MB = Math.round(CONVERSATION_ATTACHMENT_MAX_BYTES / 1024 / 1024);
+
+/** 没传成的原因：接口给的原话；别的错误只取那句话（提示里已经写了「没传上去」，不再加「出错了」）。 */
+function reasonOf(cause: unknown): string {
+  if (cause instanceof ApiError) return errorText(cause);
+  return cause instanceof Error ? cause.message : String(cause);
+}
+
+/** 提示里的文件名：太长的截掉中间。 */
+function quoted(name: string): string {
+  const chars = Array.from(name);
+  return `「${chars.length <= 40 ? name : `${chars.slice(0, 24).join('')}…${chars.slice(-12).join('')}`}」`;
+}
 
 function read(storage: KeyValueStorage | null): Draft[] {
   try {
@@ -97,29 +111,30 @@ export class AttachmentDrafts {
     return this.add([file], api, id);
   }
 
+  /**
+   * 任意类型都收（第13批）；超过 100 MB、空文件、超过 5 份的不加，提示里写清是哪一份、为什么（「xx.zip」超过
+   * 100 MB，没有加上）。
+   */
   async add(files: File[], api: AttachmentsApi, replaceId?: string): Promise<void> {
     this.error.set(null);
     const replaceAt = replaceId === undefined ? -1 : this.active().findIndex((row) => row.id === replaceId);
     if (replaceId !== undefined && replaceAt === -1) return;
     if (this.active().length + files.length - Number(replaceAt !== -1) > CONVERSATION_ATTACHMENT_MAX_COUNT) {
-      this.error.set('一条消息最多 5 份附件。');
+      this.error.set(`一条消息最多 ${CONVERSATION_ATTACHMENT_MAX_COUNT} 份附件。`);
       return;
     }
-    const reserved: { file: File; id: string; mimeType: AttachmentMime }[] = [];
+    const reserved: { file: File; id: string; mimeType: string }[] = [];
+    const refused: string[] = [];
     for (const file of files) {
-      const mimeType = attachmentMime(file.type, file.name);
-      if (
-        mimeType === null ||
-        file.size === 0 ||
-        file.size > CONVERSATION_ATTACHMENT_MAX_BYTES
-      ) {
-        this.error.set('只支持 PNG、JPEG、WebP、纯文本和 PDF；每份最多 10 MiB，不能是空文件。');
+      const mimeType = conversationMime(file.type, file.name);
+      if (file.size === 0 || file.size > CONVERSATION_ATTACHMENT_MAX_BYTES) {
+        refused.push(`${quoted(file.name)}${file.size === 0 ? '是空文件' : `超过 ${MAX_MB} MB`}，没有加上`);
         continue;
       }
       const id = createRequestId();
       if (replaceId !== undefined) this.cancel(replaceId);
       this.files.set(id, file);
-      if (mimeType.startsWith('image/') && typeof URL.createObjectURL === 'function') {
+      if (shownAsImage(mimeType) && typeof URL.createObjectURL === 'function') {
         this.previews.set(id, URL.createObjectURL(file));
       }
       this.store.set((items) => {
@@ -138,16 +153,16 @@ export class AttachmentDrafts {
       });
       reserved.push({ file, id, mimeType });
     }
+    if (refused.length > 0) this.error.set(refused.join('；'));
     for (const { file, id, mimeType } of reserved) await this.prepare(file, id, mimeType, api);
   }
 
-  private async prepare(file: File, id: string, mimeType: AttachmentMime, api: AttachmentsApi): Promise<void> {
+  private async prepare(file: File, id: string, mimeType: string, api: AttachmentsApi): Promise<void> {
     this.patch(id, { status: 'reading', error: null });
     try {
       const buffer = await readFileBytes(file);
       const hash = await crypto.subtle.digest('SHA-256', buffer);
       const sha256 = Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, '0')).join('');
-      const content = base64Of(buffer);
       if (this.find(id)?.canceled || this.find(id) === undefined) {
         return;
       }
@@ -155,19 +170,20 @@ export class AttachmentDrafts {
         meta: {
           requestId: id,
           name: file.name.slice(0, 200),
-          mimeType: mimeType as AttachmentMime,
+          mimeType,
           bytes: file.size,
           sha256,
         },
       });
-      await this.bytes.put(id, content);
+      // 小的留一份在本机（页面重新载入后还能重传）；大的只在这一页里传，重新载入要重新选。
+      if (file.size <= INLINE_ATTACHMENT_MAX_BYTES) await this.bytes.put(id, base64Of(buffer));
       if (this.find(id) === undefined || this.find(id)?.canceled) {
         await this.bytes.remove(id);
         return;
       }
       await this.retry(id, api);
     } catch (cause) {
-      this.patch(id, { status: 'failed', error: errorText(cause) });
+      this.failed(id, reasonOf(cause));
     }
   }
 
@@ -176,8 +192,9 @@ export class AttachmentDrafts {
     if (draft === undefined || this.controllers.has(id)) return;
     if (draft.meta === null) {
       const file = this.files.get(id);
-      const mime = file === undefined ? null : attachmentMime(file.type, file.name);
-      if (draft.status === 'failed' && file !== undefined && mime !== null) await this.prepare(file, id, mime, api);
+      if (draft.status === 'failed' && file !== undefined) {
+        await this.prepare(file, id, conversationMime(file.type, file.name), api);
+      }
       return;
     }
     const key = `attachment:${id}:upload`;
@@ -213,26 +230,29 @@ export class AttachmentDrafts {
       if (request.kind !== 'attachment_upload') {
         throw new Error('附件操作不匹配。');
       }
-      const content = await this.bytes.get(id);
-      if (content === null) {
-        throw new Error('没有读到附件草稿原件，请移除这一项后重新选择。');
+      const data = await this.data(id, request.body.mimeType);
+      if (data === null) {
+        throw new Error('页面重新载入过，这一份要重新选择。');
       }
-      // 暂存此前失败时，重试先确保存好；哈希及原请求不变。
-      await this.bytes.put(id, content);
-      const remote = await api.upload({ ...request.body, content }, controller.signal,
+      const remote = await api.upload(request.body, data, controller.signal,
         (fraction) => this.patch(id, { progress: Math.max(0, Math.min(1, fraction)) }));
       this.ops.succeed(key);
       if (this.find(id)?.canceled) {
         this.remove(id);
+      } else if (remote.status === 'ready') {
+        this.patch(id, { remote, status: 'ready', error: null });
+        // 重新传成功了，之前那条提示就收起来。
+        if (!this.active().some((item) => item.status === 'failed')) this.error.set(null);
       } else {
-        this.patch(id, { remote, status: remote.status === 'ready' ? 'ready' : 'failed', error: remote.error });
+        this.patch(id, { remote });
+        this.failed(id, remote.error ?? '服务端没收下这一份');
       }
     } catch (cause) {
       if (this.find(id) === undefined) {
         this.ops.succeed(key);
       } else {
         this.ops.fail(key, cause);
-        this.patch(id, { status: 'failed', error: errorText(cause) });
+        this.failed(id, reasonOf(cause));
       }
     } finally {
       this.controllers.delete(id);
@@ -257,6 +277,7 @@ export class AttachmentDrafts {
     if (!this.ready()) {
       return [];
     }
+    this.error.set(null);
     const rows = this.active().flatMap((item) => (item.remote === null ? [] : [item.remote]));
     for (const draft of this.active()) {
       this.remove(draft.id);
@@ -282,6 +303,21 @@ export class AttachmentDrafts {
           }),
         ),
     ]);
+  }
+
+  /** 这一份的字节：这一页里选的文件还在就用它，不然用本机留着的那份（只有小的留了）。 */
+  private async data(id: string, mimeType: string): Promise<Blob | null> {
+    const file = this.files.get(id);
+    if (file !== undefined) return file;
+    const content = await this.bytes.get(id);
+    return content === null ? null : blobOf(content, mimeType);
+  }
+
+  /** 这一份没传成：草稿标红，输入框上方那一行写清是哪一份、为什么。 */
+  private failed(id: string, reason: string): void {
+    const name = this.find(id)?.name ?? '附件';
+    this.patch(id, { status: 'failed', error: reason });
+    this.error.set(`${quoted(name)}没传上去：${reason}`);
   }
 
   private find(id: string): Draft | undefined {

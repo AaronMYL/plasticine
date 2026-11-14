@@ -25,6 +25,7 @@ export type { AskToolHost } from './ask-tools.ts';
 export { rememberTool } from './remember-tool.ts';
 export { conversationSearchTool } from './search-tool.ts';
 export { forgetTool } from './forget-tool.ts';
+export { attachmentReadTool } from './attachment-read-tool.ts';
 export type { SubmitHoldPort } from './page-submit-tool.ts';
 export { COMPACTION_KEEP_RECENT_TOKENS, COMPACTION_RESERVE_TOKENS, contextTokens, createCompactor, findCut,
   serializeForSummary } from './compaction.ts';
