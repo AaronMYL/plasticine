@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { eventTextPolicy, responseTextPolicy } from '../../src/app/outbound-policy.ts';
+import { responseTextPolicy } from '../../src/app/outbound-policy.ts';
 import { cleanOutboundJson } from '../../src/outbound.ts';
 import { memoryState } from '../brain/helpers.ts';
 import { CLEAN_LINK_TEXT, CREDENTIAL_LINK_TEXT } from '../url-fixtures.ts';
@@ -75,8 +75,6 @@ test('附件上传查回和事件保留用户文件名，错误与系统摘要�
     const opened = { attachment, received: 0 };
     assert.deepEqual(cleanOutboundJson(opened, responseTextPolicy('/v2/conversation/attachments/uploads', opened,
       state)), { attachment: expected, received: 0 }, '分块上传第一步回的那一份也留文件名');
-    const event = { type: 'attachment_changed' as const, attachment };
-    assert.deepEqual(cleanOutboundJson(event, eventTextPolicy(event, state)), { ...event, attachment: expected });
     const other = responseTextPolicy('/v2/runs/run-1', attachment, state);
     assert.equal(cleanOutboundJson(attachment, other).name, CLEAN_LINK_TEXT);
   } finally {

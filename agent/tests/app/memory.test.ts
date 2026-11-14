@@ -6,7 +6,7 @@ import type { MemoryEntryInput } from '../../shared/state.ts';
 import { Type } from 'typebox';
 import { defineTool } from '../../src/brain/tools/registry.ts';
 import { brainChange } from '../state/helpers.ts';
-import { CLEAN_LINK_TEXT, CREDENTIAL_LINK_TEXT } from '../url-fixtures.ts';
+import { CREDENTIAL_LINK_TEXT } from '../url-fixtures.ts';
 import { call, json, openEvents, pair, startTestApp, type TestApp } from './helpers.ts';
 import { newRequestId } from './signing.ts';
 
@@ -36,14 +36,14 @@ function entry(app: TestApp, overrides: Partial<MemoryEntryInput> = {}) {
   return app.state.memory.create(input, brainChange());
 }
 
-test('自述原话在记忆接口原样返回，同条记忆的模型适用条件继续清洗', async () => {
+test('记忆接口回给他自己的设备都是原样（11-14 起自己用不清洗）：自述原话和模型写的适用条件里的链接都不动', async () => {
   const { t: app, cookie } = await start();
   const quote = entry(app, {
     text: CREDENTIAL_LINK_TEXT, kind: 'quote', basis: 'self_reported', applicability: CREDENTIAL_LINK_TEXT,
   });
   const detail = json(await call(app, 'GET', `/v2/memory/entries/${quote.id}`, { cookie }));
   assert.equal((detail['entry'] as Record<string, unknown>)['text'], CREDENTIAL_LINK_TEXT);
-  assert.equal((detail['entry'] as Record<string, unknown>)['applicability'], CLEAN_LINK_TEXT);
+  assert.equal((detail['entry'] as Record<string, unknown>)['applicability'], CREDENTIAL_LINK_TEXT);
 });
 
 test('记忆三栏一次拿到：原话、解释、约定各自第一页', async () => {

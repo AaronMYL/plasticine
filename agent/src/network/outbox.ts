@@ -11,6 +11,7 @@ import { changeOf, groupChange, requireIdentity, signerOf, touchContact, type Ne
 import { sealEnvelope } from '../../protocol/crypto.ts';
 import { RelayCallError } from '../../protocol/relay-client.ts';
 import { settleNetworkOutbound, settleMessageOutbound } from '../outbound/index.ts';
+import { cleanOutboundJson } from '../outbound.ts';
 
 /** 5 秒起、每次翻倍、最长 10 分钟，8 次（合起来二十来分钟）：对方中继重启、网络抖一下都等得过去。 */
 export const OUTBOX_MAX_ATTEMPTS = 8;
@@ -143,7 +144,8 @@ export class Outbox {
       to: contact.accountId,
       sentAt: message.sentAt,
       kind: message.kind,
-      plaintext: message.payload ?? {},
+      // 发给别人的信洗掉链接里像凭据的参数（11-14 Aaron 定「自己用不清洗，分享出去才清洗」）；本机记的那一行是原样。
+      plaintext: cleanOutboundJson(message.payload ?? {}),
       recipientEncryptionKey: contact.encryptionKey,
       senderSigningPrivateKey: identity.signingPrivateKey,
     });

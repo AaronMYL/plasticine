@@ -39,7 +39,7 @@ function fakeBrowser(options: { cutNext?: () => boolean } = {}) {
   return { transport, actions };
 }
 
-test('浏览器需要登录；HTTP 和 HTTPS 经 cleanUrl 导航，拒绝其他协议，PNG 不缓存', async () => {
+test('浏览器需要登录；HTTP 和 HTTPS 核对后照原网址导航（11-14），拒绝其他协议，PNG 不缓存', async () => {
   const fake = fakeBrowser();
   t = await startTestApp([], { cloudTransports: { browser: fake.transport } });
   assert.equal((await call(t, 'GET', '/v2/browser')).status, 401);
@@ -50,7 +50,7 @@ test('浏览器需要登录；HTTP 和 HTTPS 经 cleanUrl 导航，拒绝其他�
     requestId: newRequestId('op'), instanceId, url: 'http://example.com/a?keyword=a%20b&token=discard',
   } });
   assert.equal(opened.status, 200);
-  assert.equal((json(opened)['browser'] as BrowserViewDto).url, 'http://example.com/a?keyword=a%20b');
+  assert.equal((json(opened)['browser'] as BrowserViewDto).url, 'http://example.com/a?keyword=a%20b&token=discard');
   const invalid = await call(t, 'POST', '/v2/browser/open', { cookie, body: {
     requestId: newRequestId('op'), instanceId, url: 'file:///tmp/example',
   } });

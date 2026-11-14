@@ -53,12 +53,12 @@ test('没登录 401；加网页书签 201，同一个网址再加回 200 和原�
   assert.deepEqual((await list(app, cookie)).map((row) => row['title']), ['Show HN 规则']);
 });
 
-test('网页只收 http(s)：去掉账号密码和口令参数，# 后面留着，出口也不裁；页面要 #/ 地址', async () => {
+test('网页只收 http(s)：原样存、原样回（11-14 起自己用不清洗），# 后面留着；页面要 #/ 地址', async () => {
   const { app, cookie } = await start();
-  const web = await add(app, cookie, { kind: 'web', title: '单页应用',
-    target: 'https://user:pass@app.example.com/?token=abc&page=2#/inbox' });
-  assert.equal(web['target'], 'https://app.example.com/?page=2#/inbox');
-  assert.equal(app.state.bookmarks.require(String(web['id'])).target, 'https://app.example.com/?page=2#/inbox');
+  const target = 'https://user:pass@app.example.com/?token=abc&page=2#/inbox';
+  const web = await add(app, cookie, { kind: 'web', title: '单页应用', target });
+  assert.equal(web['target'], target);
+  assert.equal(app.state.bookmarks.require(String(web['id'])).target, target);
   const bad = await call(app, 'POST', '/v2/bookmarks', { cookie, body: { requestId: newRequestId('bm'), kind: 'web',
     title: '本地文件', target: 'file:///etc/hosts' } });
   assert.equal(bad.status, 400);

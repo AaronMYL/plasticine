@@ -22,12 +22,19 @@ export const XHS_PLACES = ['recommend', 'saved'] as const;
 export type XhsPlace = (typeof XHS_PLACES)[number];
 /** 笔记和用户的标识：24 位十六进制。 */
 export const XHS_ID_PATTERN = '^[0-9a-f]{24}$';
+/** 网页版打开笔记要带的 xsec_token：小红书给的一串（实测 46 位，字母数字和 base64 的符号）。 */
+export const XHS_TOKEN_PATTERN = '^[A-Za-z0-9+/=_-]{1,200}$';
 
 const HttpsSchema = Type.String({ pattern: '^https://', maxLength: FEED_URL_MAX_CHARS });
 
 export const XhsNoteSchema = Type.Object({
-  /** 笔记的标识。网页版链接里的 xsec_token 不交：存下的链接按 10-28 的清洗规则不带像令牌的参数（daily/urls.ts）。 */
+  /** 笔记的标识。 */
   id: Type.String({ pattern: XHS_ID_PATTERN }),
+  /**
+   * 网页版打开这条笔记要带的 xsec_token（不带的多半跳 404）；读不到就不给。11-14 Aaron 定「自己用不清洗，分享出去才
+   * 清洗」以后才交，存进链接里，分享出去时洗掉。
+   */
+  xsecToken: Type.Optional(Type.String({ pattern: XHS_TOKEN_PATTERN })),
   title: Type.String({ maxLength: XHS_TITLE_MAX_CHARS }),
   author: Type.String({ minLength: 1, maxLength: 100 }),
   avatar: OrNull(HttpsSchema),

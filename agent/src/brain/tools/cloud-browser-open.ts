@@ -1,4 +1,4 @@
-// cloud_browser_open：在共享浏览器当前标签导航，HTTP/HTTPS 地址经 cleanUrl。用户随时可以接手。
+// cloud_browser_open：在共享浏览器当前标签导航，HTTP/HTTPS 地址经 checkUrl 核对（11-14 起不清洗）。用户随时可以接手。
 
 import { BrowserNavigationSchema } from '../../../shared/api/index.ts';
 import type { BrowserView } from '../../cloud-tools/index.ts';

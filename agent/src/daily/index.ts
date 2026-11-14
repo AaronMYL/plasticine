@@ -23,7 +23,7 @@ export type { DiscoveredFeed } from './feed-fetch.ts';
 export { FEED_SOURCE_EVERY_MS, FeedSubscriptions, X_READ_ERROR_TEXT } from './feed-subscriptions.ts';
 export { ComputerFetches, handOffText } from './computer-fetch.ts';
 export { sourceSearchTerms } from './feed-candidates.ts';
-export { BookmarkDesk, cleanBookmarkUrl } from './bookmarks.ts';
+export { BookmarkDesk, checkBookmarkUrl } from './bookmarks.ts';
 export type { BookmarkDeskOptions, BookmarkState, NewBookmark } from './bookmarks.ts';
 export { BACKGROUND_TIME_ZONE, dayRange, dayStartOf, localDay, localDayStart } from './days.ts';
 export { DAILY_ERROR_CODES, DailyError } from './errors.ts';
@@ -34,8 +34,8 @@ export { InboxDesk, INBOX_PAGE_DEFAULT, PREVIEW_MAX_CHARS, previewOf, replyActio
 export type { InboxDeskOptions, InboxFlags, InboxSink } from './inbox.ts';
 export { InterestDesk } from './interests.ts';
 export type { InterestState } from './interests.ts';
-export { cleanUrl, cleanUrlQuery, isCredentialParam, siteOf } from './urls.ts';
-export { cleanLinkData, cleanLinkText, cleanSite, cleanSourceLinks, safeUrl } from './link-data.ts';
+export { checkUrl, cleanUrlQuery, isCredentialParam, linkKey, siteOf } from './urls.ts';
+export { checkLinkData, checkLinkText, cleanSite, checkSourceLinks, safeUrl } from './link-data.ts';
 
 export interface DailyOptions {
   state: StateService;

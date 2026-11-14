@@ -16,7 +16,6 @@ import { bookmarkKey, suggestProject, type SuggestionCandidate } from '../../sha
 import type { AfterCommit } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
 import { DailyError } from './errors.ts';
-import { cleanUrlQuery } from './urls.ts';
 
 export type BookmarkState = Pick<StateService, 'bookmarks' | 'projects' | 'transaction'>;
 
@@ -42,24 +41,17 @@ function candidate(bookmark: Bookmark): SuggestionCandidate {
     projectId: bookmark.projectId, snapshot: bookmark.snapshot };
 }
 
-/** 网页书签的网址：只收 http(s)，去掉账号密码和像口令的参数；# 后面的留着（单页应用靠它定位）。 */
-export function cleanBookmarkUrl(raw: string, field = 'target'): string {
+/** 网页书签的网址：只收 http(s)，原样留着（11-14 起自己用不清洗；# 后面的单页应用靠它定位）。 */
+export function checkBookmarkUrl(raw: string, field = 'target'): string {
   let url: URL;
   try {
     url = new URL(raw.trim());
   } catch {
-    // 不把原文带进错误：坏网址里也可能夹着口令（同 urls.ts 的 cleanUrl）。
+    // 不把原文带进错误：坏网址里也可能夹着口令（同 urls.ts 的 checkUrl）。
     throw new DailyError('invalid_input', '网址不完整；请用 https:// 或 http:// 开头的地址。', field);
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new DailyError('invalid_input', '网页书签只收 http / https 地址。', field);
-  }
-  url.username = '';
-  url.password = '';
-  const query = url.search.slice(1);
-  const cleaned = cleanUrlQuery(query);
-  if (cleaned !== query) {
-    url.search = cleaned;
   }
   return url.toString();
 }
@@ -185,7 +177,7 @@ export class BookmarkDesk {
     for (const item of items) {
       let url: string;
       try {
-        url = cleanBookmarkUrl(item.url, 'items');
+        url = checkBookmarkUrl(item.url, 'items');
       } catch (error) {
         if (!(error instanceof DailyError)) {
           throw error;
@@ -222,7 +214,7 @@ export class BookmarkDesk {
     const base = { title, projectId: input.projectId ?? null, snapshot, snapshotChars };
     if (input.kind === 'group') {
       const tabs = (input.tabs ?? []).map((tab) => ({ ...tab,
-        target: tab.kind === 'web' ? cleanBookmarkUrl(tab.target, 'tabs') : pageTarget(tab.target, 'tabs') }));
+        target: tab.kind === 'web' ? checkBookmarkUrl(tab.target, 'tabs') : pageTarget(tab.target, 'tabs') }));
       if (tabs.length === 0) {
         throw new DailyError('invalid_input', '保存的分组里至少要有一页。', 'tabs');
       }
@@ -231,7 +223,7 @@ export class BookmarkDesk {
     if (input.target === undefined) {
       throw new DailyError('invalid_input', '书签要有网址或页面地址。', 'target');
     }
-    const target = input.kind === 'web' ? cleanBookmarkUrl(input.target) : pageTarget(input.target);
+    const target = input.kind === 'web' ? checkBookmarkUrl(input.target) : pageTarget(input.target);
     return { ...base, kind: input.kind, target, tabs: [] };
   }
 

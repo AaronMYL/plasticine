@@ -65,12 +65,21 @@ describe('小红书取数脚本', () => {
       feedItem(C, '广告', 'normal', 'ad')]) } });
     expect(notes).toEqual([
       { id: A, title: '桌面整理', author: '收纳小周', avatar: 'https://sns-avatar-qc.xhscdn.com/a.jpg',
-        image: 'https://sns-webpic-qc.xhscdn.com/c.webp', imageRatio: 1.333, video: false },
+        image: 'https://sns-webpic-qc.xhscdn.com/c.webp', imageRatio: 1.333, video: false, xsecToken: 'AB123=' },
       expect.objectContaining({ id: B, video: true }),
     ]);
     for (const note of notes) {
       expect(Value.Check(XhsNoteSchema, { ...note, places: ['recommend'] })).toBe(true);
     }
+  });
+
+  it('打开笔记要带的 xsec_token（11-14）：初始数据里的和卡片封面链接上的都认，认不出的不给', () => {
+    expect(exploreNotes({ feed: { feeds: ref([feedItem(A, '一篇')]) } })[0]?.xsecToken).toBe('AB123=');
+    const odd = { ...feedItem(B, '两篇'), xsecToken: 'not a token' };
+    expect(exploreNotes({ feed: { feeds: ref([odd]) } })[0]).not.toHaveProperty('xsecToken');
+    const doc = page(card(C, '三篇'));
+    const section = doc.querySelector('section.note-item');
+    expect(section === null ? null : cardNote(section, EXPLORE)?.xsecToken).toBe('AB');
   });
 
   it('主页初始数据：只取收藏那一页（笔记、收藏、赞过排第二），认出自己的标识', () => {
@@ -87,7 +96,7 @@ describe('小红书取数脚本', () => {
       { hidden: true }));
     expect(cardNote(doc.querySelectorAll('section.note-item')[1]!, EXPLORE)).toEqual({ id: B, title: '翻出来的',
       author: '厨房小记', avatar: 'https://sns-avatar-qc.xhscdn.com/b.jpg',
-      image: `https://sns-webpic-qc.xhscdn.com/${B}.webp`, imageRatio: 1.25, video: true });
+      image: `https://sns-webpic-qc.xhscdn.com/${B}.webp`, imageRatio: 1.25, video: true, xsecToken: 'AB' });
     const seen = new Map<string, XhsListedNote>();
     expect(collectNotes(doc, EXPLORE, { feed: { feeds: ref([feedItem(A, '桌面整理')]) } }, seen)).toBe(2);
     expect([...seen.values()].map((note) => note.title)).toEqual(['桌面整理', '翻出来的']);

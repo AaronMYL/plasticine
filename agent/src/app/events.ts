@@ -3,19 +3,16 @@
 // also carries the task and card events (shared/api/task-events.ts).
 
 import type { HubStreamEvent } from '../../shared/api/index.ts';
-import { cleanOutboundJson } from '../outbound.ts';
-import type { StateService } from '../state/index.ts';
 import { stillAuthenticated } from './auth.ts';
 import { SSE_MAX_PENDING_BYTES, SSE_RETRY_MS } from './config.ts';
 import { requireAuth, type HandlerResult, type RequestContext } from './context.ts';
 import type { HubEvent } from './event-hub.ts';
-import { cleanFeedItemView } from './daily-views.ts';
-import { eventTextPolicy } from './outbound-policy.ts';
+import { checkFeedItemView } from './daily-views.ts';
 
-function frame(event: HubStreamEvent, id: string | null, state: StateService): string {
+/** 事件流只给他自己的设备：链接不清洗（11-14 起自己用不清洗），信息流条目的链接先核对一遍。 */
+function frame(event: HubStreamEvent, id: string | null): string {
   const idLine = id === null ? '' : `id: ${id}\n`;
-  const cleaned = event.type === 'feed_item_changed' ? { ...event, item: cleanFeedItemView(event.item) } : event;
-  const body = cleanOutboundJson(cleaned, eventTextPolicy(cleaned, state));
+  const body = event.type === 'feed_item_changed' ? { ...event, item: checkFeedItemView(event.item) } : event;
   return `${idLine}event: ${event.type}\ndata: ${JSON.stringify(body)}\n\n`;
 }
 
@@ -68,11 +65,11 @@ export function streamEvents(context: RequestContext): HandlerResult {
       end();
       return;
     }
-    res.write(frame(entry.event, entry.id, context.deps.state));
+    res.write(frame(entry.event, entry.id));
   };
   const opened = hub.subscribe(owner, resumeFrom, write, end);
   subscription = opened;
-  res.write(frame({ type: 'ready', resync: opened.resync }, startId, context.deps.state));
+  res.write(frame({ type: 'ready', resync: opened.resync }, startId));
   for (const entry of opened.replay) {
     write(entry);
   }

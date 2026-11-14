@@ -11,7 +11,13 @@ import { sendBytes, sendJson } from './http.ts';
 import { responseTextPolicy } from './outbound-policy.ts';
 import { matchRoute } from './router.ts';
 
-async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse): Promise<HandlerResult> {
+/** 谁在问：他自己的设备（会话或节点）回原链接，不清洗（11-14 Aaron 定「自己用不清洗，分享出去才清洗」）。 */
+interface Asker {
+  own: boolean;
+}
+
+async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse, asker: Asker):
+  Promise<HandlerResult> {
   const url = new URL(req.url ?? '/', 'http://localhost');
   const match = matchRoute(req.method ?? 'GET', url.pathname);
   if (match.kind === 'none') {
@@ -29,10 +35,11 @@ async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse)
   if (auth !== null) {
     deps.devicePaths.see(auth.device.id, req);
   }
+  asker.own = auth !== null || match.route.node === true;
   return match.route.handler({ req, res, url, params: match.params, auth, deps });
 }
 
-function writeError(deps: AppDeps, pathname: string, res: ServerResponse, error: unknown): void {
+function writeError(deps: AppDeps, pathname: string, res: ServerResponse, error: unknown, own: boolean): void {
   const mapped = toApiError(error);
   if (mapped.unexpected) {
     // 路径本身也可能带凭据或用户内容，只记录受控错误类别。
@@ -43,14 +50,16 @@ function writeError(deps: AppDeps, pathname: string, res: ServerResponse, error:
     return;
   }
   const body = mapped.error.body();
-  sendJson(res, mapped.error.status, body, {}, responseTextPolicy(pathname, body, deps.state));
+  sendJson(res, mapped.error.status, body, {}, own ? undefined : responseTextPolicy(pathname, body, deps.state), null,
+    !own);
 }
 
 async function handle(deps: AppDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
   let pathname = '';
+  const asker: Asker = { own: false };
   try {
     pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
-    const result = await respond(deps, req, res);
+    const result = await respond(deps, req, res, asker);
     if (result === 'streamed') {
       return;
     }
@@ -60,12 +69,12 @@ async function handle(deps: AppDeps, req: IncomingMessage, res: ServerResponse):
         ...(result.bytes.noStore === undefined ? {} : { noStore: result.bytes.noStore }) });
     } else {
       const body = result.body ?? null;
-      const policy = responseTextPolicy(pathname, body, deps.state);
+      const policy = asker.own ? undefined : responseTextPolicy(pathname, body, deps.state);
       const encoding = sensitivePath(pathname) ? null : pickEncoding(req.headers['accept-encoding']);
-      sendJson(res, result.status, body, result.headers ?? {}, policy, encoding);
+      sendJson(res, result.status, body, result.headers ?? {}, policy, encoding, !asker.own);
     }
   } catch (error) {
-    writeError(deps, pathname, res, error);
+    writeError(deps, pathname, res, error, asker.own);
   }
 }
 

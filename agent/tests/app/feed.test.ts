@@ -29,7 +29,7 @@ function oldLinks(app: TestApp, table: string, id: string, fields: Record<string
   }
 }
 
-test('手动添加信息流条目：没登录 401；不是 http(s) 的链接 400；像令牌的参数去掉后存下', async () => {
+test('手动添加信息流条目：没登录 401；不是 http(s) 的链接 400；链接原样存下（11-14 起自己用不清洗）', async () => {
   t = await startTestApp();
   const body = { requestId: newRequestId('add'), title: '一篇文章', url: 'javascript:alert(1)' };
   assert.equal((await call(t, 'POST', '/v2/feed/items', { body })).status, 401);
@@ -43,37 +43,37 @@ test('手动添加信息流条目：没登录 401；不是 http(s) 的链接 400
   const added = await call(t, 'POST', '/v2/feed/items', { cookie, body: good });
   assert.equal(added.status, 201, JSON.stringify(added.body));
   const item = json(added)['item'] as Body;
-  assert.equal(item['url'], 'https://example.com/a?id=1');
+  assert.equal(item['url'], 'https://example.com/a?id=1&token=abc');
   assert.equal(item['originLabel'], '手动添加');
   assert.equal((await call(t, 'POST', '/v2/feed/items', { cookie, body: good })).headers.get(REPLAYED_HEADER), '1');
   assert.equal(t.state.feedItems.page({}, {}).length, 1);
 });
 
-test('连写凭据在手动添加、信息流读取和 SSE 里均已清洗，userinfo 和片段不会返回', async () => {
+test('自己用不清洗（11-14）：连写凭据的链接在手动添加、信息流读取和 SSE 里回给他自己的设备都是原链接', async () => {
   t = await startTestApp();
   const cookie = await pair(t);
   const events = await openEvents(t, cookie);
+  const raws = CREDENTIAL_PARAMS.map((name) => `https://user:pass@example.com/a?${name}=abc&page=2#token=abc`);
   try {
-    for (const name of CREDENTIAL_PARAMS) {
+    for (const raw of raws) {
       const response = await call(t, 'POST', '/v2/feed/items', { cookie, body: {
-        requestId: newRequestId('clean'), title: '合成文章',
-        url: `https://user:pass@example.com/a?${name}=abc&page=2#token=abc`,
+        requestId: newRequestId('clean'), title: '合成文章', url: raw,
       } });
       assert.equal(response.status, 201);
-      assert.equal((json(response)['item'] as Body)['url'], 'https://example.com/a?page=2');
+      assert.equal((json(response)['item'] as Body)['url'], raw);
       const event = (await events.next('feed_item_changed')).event;
       assert.ok(event.type === 'feed_item_changed');
-      assert.equal(event.item.url, 'https://example.com/a?page=2');
+      assert.equal(event.item.url, raw);
     }
     const response = await call(t, 'GET', '/v2/feed', { cookie });
     assert.equal(response.status, 200);
-    assert.doesNotMatch(JSON.stringify(response.body), /user:pass|token=abc|authkey|accesstoken|AUTH_KEY/);
+    assert.deepEqual((json(response)['items'] as Body[]).map((item) => item['url']).sort(), [...raws].sort());
   } finally {
     events.close();
   }
 });
 
-test('修复前存下的链接在读取与 SSE 输出时清洗，非法链接不回显且原记录保留', async (context) => {
+test('旧记录里的链接读取与 SSE 都回原样（11-14 起自己用不清洗），非法链接不回显且原记录保留', async (context) => {
   const logs = captureLogs(context);
   t = await startTestApp();
   const cookie = await pair(t);
@@ -93,25 +93,25 @@ test('修复前存下的链接在读取与 SSE 输出时清洗，非法链接不
         requestId: newRequestId('save'), version: 1, saved: true,
       } });
       assert.equal(response.status, 200);
-      const expected = url === invalidUrl ? null : 'https://example.com/a?page=2';
+      const expected = url === invalidUrl ? null : url;
       assert.equal((json(response)['item'] as Body)['url'], expected);
       const event = (await events.next('feed_item_changed')).event;
       assert.ok(event.type === 'feed_item_changed');
       assert.equal(event.item.url, expected);
       assert.equal(event.item.site, expected === null ? null : 'example.com');
-      assert.equal(t.state.feedItems.require(item.id).url, url, '输出清洗不改写旧记录');
+      assert.equal(t.state.feedItems.require(item.id).url, url, '输出不改写旧记录');
     }
     const response = await call(t, 'GET', '/v2/feed', { cookie });
     assert.equal(response.status, 200);
-    assertNoPrivateText(response.body);
-    assert.doesNotMatch(JSON.stringify(response.body), /user:pass|token=abc|authkey|accesstoken|AUTH_KEY/);
+    // 非法链接的原文（夹着私事）不回显；合法的原链接照回。
+    assert.doesNotMatch(JSON.stringify(response.body), /私事|hunter2/);
     assertNoPrivateText(logs);
   } finally {
     events.close();
   }
 });
 
-test('旧信息流请求的幂等回放也清洗链接，保留原缓存且不重复执行', async () => {
+test('旧信息流请求的幂等回放：链接核对后照原样回（11-14 起自己用不清洗），保留原缓存且不重复执行', async () => {
   t = await startTestApp();
   const cookie = await pair(t);
   const added = json(await call(t, 'POST', '/v2/feed/items', { cookie, body: {
@@ -143,9 +143,8 @@ test('旧信息流请求的幂等回放也清洗链接，保留原缓存且不�
     assert.equal(replay.headers.get(REPLAYED_HEADER), '1');
     assert.equal(replay.status, operation === 'conflict' ? 409 : 200);
     const item = json(replay)[operation === 'conflict' ? 'current' : 'item'] as Body;
-    assert.equal(item['url'], 'https://example.com/a?page=2');
+    assert.equal(item['url'], new URL(rawUrl).href);
     assert.equal(item['site'], 'example.com');
-    assert.doesNotMatch(JSON.stringify(replay.body), /user:pass|token=abc|authkey|accesstoken/);
     assert.deepEqual(t.state.apiRequests.find(requestId)?.body, body, '历史缓存保持原样');
   }
   assert.equal(t.state.feedItems.require(id).version, 1);
@@ -172,7 +171,7 @@ test('recentSites 从清洗后的条目 URL 分组，忽略旧 site 原文、非
   assert.doesNotMatch(JSON.stringify(response.body), /user:pass|token|next=|#|https/);
 });
 
-test('嵌套 URL、长令牌和 JWT 在手动添加、数据库、来源和实时与重连 SSE 中均已去掉', async () => {
+test('嵌套 URL、长令牌和 JWT 的链接：存原样，他自己设备的读取、实时与重连 SSE 都回原样（11-14）', async () => {
   t = await startTestApp();
   const cookie = await pair(t);
   const events = await openEvents(t, cookie);
@@ -182,13 +181,14 @@ test('嵌套 URL、长令牌和 JWT 在手动添加、数据库、来源和实�
       requestId: newRequestId('safe'), title: '文章', url: unsafeUrl(),
     } });
     assert.equal(response.status, 201);
+    const raw = new URL(unsafeUrl()).href;
     const item = json(response)['item'] as Body;
-    assert.equal(item['url'], SAFE_URL);
-    assert.equal(t.state.feedItems.require(String(item['id'])).url, SAFE_URL);
+    assert.equal(item['url'], raw);
+    assert.equal(t.state.feedItems.require(String(item['id'])).url, raw);
     const event = (await events.next('feed_item_changed')).event;
     assert.ok(event.type === 'feed_item_changed');
-    assert.equal(event.item.url, SAFE_URL);
-    // 模拟缓冲区里的旧事件，连重放都必须在发送边界再次清洗。
+    assert.equal(event.item.url, raw);
+    // 缓冲区里的旧事件重放也照原样，站点从链接算主机。
     t.app.deps.hub.publish({ type: 'feed_item_changed', item: {
       ...event.item, url: unsafeUrl(), site: unsafeUrl(), sourceLabel: unsafeUrl(),
     } });
@@ -197,9 +197,9 @@ test('嵌套 URL、长令牌和 JWT 在手动添加、数据库、来源和实�
       await replay.next('feed_item_changed');
       const old = (await replay.next('feed_item_changed')).event;
       assert.ok(old.type === 'feed_item_changed');
-      assert.equal(old.item.url, SAFE_URL);
+      assert.equal(old.item.url, raw);
       assert.equal(old.item.site, 'example.com');
-      assert.equal(old.item.sourceLabel, SAFE_URL);
+      assert.equal(old.item.sourceLabel, unsafeUrl());
     } finally {
       replay.close();
     }
@@ -208,7 +208,7 @@ test('嵌套 URL、长令牌和 JWT 在手动添加、数据库、来源和实�
   }
 });
 
-test('来源接口、修改回执与旧缓存的来源冲突快照都清洗完整 URL', async () => {
+test('来源接口、修改回执与旧缓存的来源冲突快照：不要的网站只留主机，查询原样（11-14 起自己用不清洗）', async () => {
   t = await startTestApp();
   const cookie = await pair(t);
   const source = t.state.feedSources.create({ kind: 'blocked_site', label: 'example.com' });
@@ -217,7 +217,7 @@ test('来源接口、修改回执与旧缓存的来源冲突快照都清洗完�
   const response = json(await call(t, 'GET', '/v2/feed/sources', { cookie }));
   const view = (response['blocked'] as Body[])[0] ?? {};
   assert.equal(view['label'], 'example.com');
-  assert.equal(view['query'], SAFE_URL);
+  assert.equal(view['query'], raw);
   for (const conflict of [false, true]) {
     const requestId = newRequestId('source-cache');
     const path = `/v2/feed/sources/${source.id}/level`;
@@ -232,7 +232,7 @@ test('来源接口、修改回执与旧缓存的来源冲突快照都清洗完�
     assert.equal(replay.headers.get(REPLAYED_HEADER), '1');
     const cleaned = json(replay)[conflict ? 'current' : 'source'] as Body;
     assert.equal(cleaned['label'], 'example.com');
-    assert.equal(cleaned['query'], SAFE_URL);
+    assert.equal(cleaned['query'], raw);
       assert.deepEqual(cleaned['searchTerms'], []);
   }
   assert.equal(t.state.feedSources.require(source.id).version, 1);
@@ -272,7 +272,8 @@ test('普通文章链接在手动添加、读取、来源、旧缓存和 SSE 重
       });
       const cached = await call(t, 'POST', path, { cookie, body: { requestId, version: 1, saved: true } });
       assert.equal(cached.headers.get(REPLAYED_HEADER), '1');
-      assert.equal((json(cached)['item'] as Body)['url'], url);
+      // 回执里存的是什么就回什么（核对过的原链接）。
+      assert.equal((json(cached)['item'] as Body)['url'], dirty.url);
       const interest = await call(t, 'POST', '/v2/feed/sources', { cookie, body: {
         requestId: newRequestId('article-source'), label: '文章关注点', query: url,
       } });

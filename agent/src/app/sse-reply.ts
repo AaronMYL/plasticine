@@ -2,7 +2,6 @@
 // 加补播缓冲，打字时一秒好几段的增量会挤掉别的事件，也会推到别的设备上）。头等第一段字到了再发：那之前失败（没连
 // 模型、额度用完）照旧回普通的错误回答。页面断开（打字作废、换段）就叫停模型。
 
-import { cleanOutboundJson } from '../outbound.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import { toApiError } from './api-error.ts';
 import type { HandlerResult, RequestContext } from './context.ts';
@@ -27,8 +26,8 @@ export async function streamReply<Done>(context: RequestContext,
       res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store',
         connection: 'keep-alive', 'x-accel-buffering': 'no' });
     }
-    // 出口清洗和普通回答一样（链接里的账号密码）；最终文字在 done 里整段再清一次。
-    res.write(`data: ${JSON.stringify(cleanOutboundJson(event))}\n\n`);
+    // 只回给发请求的这一页（他自己的设备）：链接不清洗（11-14 起自己用不清洗）。
+    res.write(`data: ${JSON.stringify(event)}\n\n`);
   };
   try {
     const view = await run(controller.signal, (delta) => write({ type: 'text', delta }));

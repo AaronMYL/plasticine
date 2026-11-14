@@ -1,5 +1,6 @@
 // 日志保留明确的事件、运行位置和实际异常；调用方不把凭据对象交给日志。
 import { createHash } from 'node:crypto';
+import { cleanOutboundText } from './link-clean.ts';
 
 const EVENTS = {
   invalid_log_event: '日志事件不在白名单内',
@@ -192,8 +193,9 @@ export function safeLog(level: 'log' | 'warn' | 'error', event: LogEvent, fields
       entry['category'] = logCategory(category);
     }
     const error = ownValue(fields, 'error');
-    if (error !== undefined) { entry['errorMessage'] = failureText(error); }
-    if (error instanceof Error) { entry['errorStack'] = error.stack; }
+    // 日志里的链接洗掉像凭据的参数（11-14 起库里存原链接，抓取出错的说法里可能带着它）。
+    if (error !== undefined) { entry['errorMessage'] = cleanOutboundText(failureText(error)); }
+    if (error instanceof Error && error.stack !== undefined) { entry['errorStack'] = cleanOutboundText(error.stack); }
     for (const key of ['stepKey', 'logPath']) {
       const value = ownValue(fields, key);
       if (typeof value === 'string') { entry[key] = value; }

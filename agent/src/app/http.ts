@@ -17,13 +17,15 @@ export function sendJson(
   preserve?: PreserveOutboundField,
   /** 浏览器收的压缩编码（server.ts 按请求头挑，带凭据的接口给 null）；不给就不压。 */
   encoding: Encoding | null = null,
+  /** 回给他自己设备的不清洗链接（11-14 起自己用不清洗）；别人能看到的（没会话的请求）照旧清洗。 */
+  clean = true,
 ): void {
   if (status === 204) {
     res.writeHead(status, { 'cache-control': 'no-store', ...headers });
     res.end();
     return;
   }
-  const text = JSON.stringify(cleanOutboundJson(body, preserve));
+  const text = JSON.stringify(clean ? cleanOutboundJson(body, preserve) : body);
   const packed = compressText(text, encoding);
   if (packed !== null) {
     res.writeHead(status, {

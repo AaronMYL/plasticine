@@ -23,6 +23,15 @@ test('安全日志只输出受控字段，不序列化异常、额外字段或�
   assertNoPrivateText(lines);
 });
 
+test('日志里的异常说法洗掉链接里像凭据的参数（11-14 起库里存原链接，抓取出错时说法里可能带着它）', (context) => {
+  const lines = captureLogs(context);
+  const error = new Error('fetch failed: https://news.example.test/feed?token=abc&page=2');
+  safeLog('warn', 'feed_source_failed', { category: errorCategory(error), error });
+  assert.equal(lines.length, 1);
+  assert.equal(lines.join('\n').includes('token=abc'), false);
+  assert.match(lines.join('\n'), /news\.example\.test\/feed\?page=2/);
+});
+
 test('安全日志不能通过对象或非字符串异常的序列化钩子输出原文', (context) => {
   const lines = captureLogs(context);
   const poison = { toString: () => { throw privateError(); } };

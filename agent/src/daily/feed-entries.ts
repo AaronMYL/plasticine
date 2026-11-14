@@ -9,6 +9,7 @@ import { articleBlocks } from './article-blocks.ts';
 import type { parseFeed } from './feed-parse.ts';
 import { safeUrl } from './link-data.ts';
 import type { RedditPost } from './reddit.ts';
+import { linkKey } from './urls.ts';
 
 // 订阅文章的摘要：卡片上只放开头这些字，点开原文看全文。
 const ARTICLE_SUMMARY_CHARS = 400;
@@ -78,20 +79,32 @@ export function newest(entries: readonly NewEntry[], cap: number, perPlace: bool
 }
 
 /** 小红书的一条笔记（第13批）：列表里只有标题，正文不重复标题。 */
+/** 笔记的网页链接：带上 xsec_token（不带的多半跳 404；11-14 起存原链接，分享出去时洗掉）。 */
+export function noteLink(note: Pick<XhsNote, 'id' | 'xsecToken'>): string {
+  const page = `https://www.xiaohongshu.com/explore/${note.id}`;
+  return note.xsecToken === undefined ? page
+    : `${page}?xsec_token=${encodeURIComponent(note.xsecToken)}&xsec_source=pc_feed`;
+}
+
 export function noteEntry(note: XhsNote): NewEntry {
   const title = note.title.trim() === '' ? `${note.author}的笔记` : note.title.trim();
   return {
-    key: `xhs:${note.id}`, title, url: `https://www.xiaohongshu.com/explore/${note.id}`, summary: title,
+    key: `xhs:${note.id}`, title, url: noteLink(note), summary: title,
     text: title, publishedAt: null, author: note.author, authorHandle: null, avatarUrl: httpsOrNull(note.avatar),
     imageUrl: httpsOrNull(note.image), imageRatio: note.image === null ? null : note.imageRatio,
     places: [...new Set(note.places)],
   };
 }
 
+/** 按链接认同一条：用洗过的样子（10-28 到 11-14 存的是洗过的链接，键要和那时一样）。 */
+function linkHash(url: string): string {
+  return createHash('sha256').update(linkKey(url)).digest('hex');
+}
+
 export function articleEntry(hit: ReturnType<typeof parseFeed>[number]): NewEntry {
   const body = articleBlocks(hit.html, hit.url);
   return {
-    key: `rss:${createHash('sha256').update(hit.url).digest('hex')}`,
+    key: `rss:${linkHash(hit.url)}`,
     title: hit.title, url: hit.url, summary: clip(hit.text, ARTICLE_SUMMARY_CHARS),
     body: body.length === 0 ? null : body,
     text: `${hit.title}\n${hit.text}`, publishedAt: hit.publishedAt, author: hit.author, authorHandle: null,
@@ -101,7 +114,7 @@ export function articleEntry(hit: ReturnType<typeof parseFeed>[number]): NewEntr
 
 export function redditEntry(post: RedditPost): NewEntry {
   return {
-    key: `reddit:${createHash('sha256').update(post.url).digest('hex')}`,
+    key: `reddit:${linkHash(post.url)}`,
     title: post.title, url: post.url, summary: clip(post.text, ARTICLE_SUMMARY_CHARS),
     text: `${post.title}\n${post.text}`, publishedAt: post.publishedAt, author: post.author, authorHandle: null,
     avatarUrl: null, imageUrl: httpsOrNull(post.image), imageRatio: null,

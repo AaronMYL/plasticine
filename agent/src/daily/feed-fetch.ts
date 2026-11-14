@@ -5,7 +5,7 @@ import { Readable } from 'node:stream';
 import { checkPublicHttpsUrl, isPrivateHost } from '../cloud-tools/index.ts';
 import { DailyError, shownError } from './errors.ts';
 import { feedTitle, plain, tagAttributes } from './feed-parse.ts';
-import { cleanUrl } from './urls.ts';
+import { checkUrl } from './urls.ts';
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const TIMEOUT_MS = 15_000;
@@ -74,7 +74,7 @@ export class FeedFetcher {
 
   async get(raw: string, signal: AbortSignal): Promise<{ text: string; url: string }> {
     const deadline = AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)]);
-    let url = cleanUrl(checkPublicHttpsUrl(raw).href);
+    let url = checkUrl(checkPublicHttpsUrl(raw).href);
     for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
       deadline.throwIfAborted();
       const response = await bounded(this.#request(url, deadline), deadline);
@@ -84,7 +84,7 @@ export class FeedFetcher {
         if (location === null || hop === MAX_REDIRECTS) {
           throw shownError('invalid_input', '订阅跳转超过三次或缺少目标，请改用最终订阅地址。');
         }
-        url = cleanUrl(checkPublicHttpsUrl(new URL(location, url).href).href);
+        url = checkUrl(checkPublicHttpsUrl(new URL(location, url).href).href);
         continue;
       }
       if (!response.ok || response.body === null) {
@@ -176,7 +176,7 @@ export function feedLinkIn(html: string, pageUrl: string): DiscoveredFeed | null
     const attrs = tagAttributes(tag[0]);
     if ((attrs['rel'] ?? '').toLowerCase().split(/\s+/).includes('alternate')
       && /^application\/(rss|atom)\+xml$/i.test(attrs['type'] ?? '') && attrs['href']) {
-      const url = cleanUrl(checkPublicHttpsUrl(new URL(attrs['href'], pageUrl).href).href);
+      const url = checkUrl(checkPublicHttpsUrl(new URL(attrs['href'], pageUrl).href).href);
       return { url, title: siteName(html) ?? (attrs['title']?.trim() || null) };
     }
   }

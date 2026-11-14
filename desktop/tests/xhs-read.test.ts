@@ -57,6 +57,14 @@ test('先首页收推荐，再到自己主页的收藏那一页收收藏；同�
     [['1', ['recommend']], ['2', ['recommend', 'saved']], ['3', ['saved']]]);
 });
 
+test('打开笔记要带的 xsec_token 跟着交（11-14）：首页那一条没有、收藏那一页有的，补上', async () => {
+  const withToken = (id: string, xsecToken: string): XhsListedNote => ({ ...note(id), xsecToken });
+  const page = fakeXhs({ notes: { explore: [note('1'), withToken('2', 'AB2=')], profile: [withToken('1', 'AB1=')] } });
+  const report = await readXhs(page, OPTIONS);
+  assert.deepEqual(report.notes.map((one) => [one.id.replace(/^0+/, ''), one.xsecToken]),
+    [['1', 'AB1='], ['2', 'AB2=']]);
+});
+
 test('没登录、要验证：停下说原因，不再载别的页', async () => {
   const signedOut = fakeXhs({ states: { 'https://www.xiaohongshu.com/explore': 'signed_out' }, notes: {} });
   assert.deepEqual(await readXhs(signedOut, OPTIONS), { notes: [], error: { code: 'signed_out' } });

@@ -7,7 +7,7 @@ import type { AfterCommit } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
 import { dayRange, localDay } from './days.ts';
 import { DailyError } from './errors.ts';
-import { cleanUrl, siteOf } from './urls.ts';
+import { checkUrl, siteOf } from './urls.ts';
 
 export type FeedState = Pick<StateService, 'feedItems' | 'feedSources'>;
 
@@ -102,7 +102,7 @@ export class FeedDesk {
 
   /** 手动添加的写入边界：链接在这里清洗。 */
   #store(input: FeedItemInput): { item: FeedItem; created: boolean } {
-    const url = input.url == null ? null : cleanUrl(input.url);
+    const url = input.url == null ? null : checkUrl(input.url);
     return this.#state.feedItems.add({ ...input, url, site: url === null ? null : siteOf(url) });
   }
 }

@@ -12,7 +12,7 @@ import {
   type FeedSourcePatch,
   type Page,
 } from '../../shared/state.ts';
-import { cleanLinkData, cleanSourceLinks } from '../daily/index.ts';
+import { checkLinkData, checkSourceLinks } from '../daily/index.ts';
 import { OBJECT_META_COLUMNS, type ColumnMap } from './codec.ts';
 import { allPages, ObjectStore, type StoreContext, type StoreSpec } from './object-store.ts';
 
@@ -64,16 +64,16 @@ export function createFeedSourceStore(context: StoreContext) {
     require: store.require.bind(store),
     update(id: string, version: number, patch: FeedSourcePatch): FeedSource {
       const current = store.require(id);
-      const cleaned = cleanSourceLinks({ ...patch, kind: current.kind, label: patch.label ?? current.label });
+      const cleaned = checkSourceLinks({ ...patch, kind: current.kind, label: patch.label ?? current.label });
       const { kind: _kind, ...fields } = cleaned;
       return store.update(id, version, fields);
     },
     byRef,
     create: (input: FeedSourceInput, options: CreateOptions = {}): FeedSource =>
-      store.create(cleanSourceLinks(input), undefined, cleanLinkData(options)),
+      store.create(checkSourceLinks(input), undefined, checkLinkData(options)),
     /** The source with `input.ref`, made the first time it is asked for; a removed one comes back as it was asked. */
     ensure(input: FeedSourceInput & { ref: string }): FeedSource {
-      const cleaned = cleanSourceLinks(input);
+      const cleaned = checkSourceLinks(input);
       return context.db.transaction(() => {
         const found = byRef(cleaned.ref);
         if (found === undefined) {

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import {
-  cleanUrl,
+  checkUrl,
+  linkKey,
   createDaily,
   DailyError,
   dayRange,
@@ -29,14 +30,15 @@ afterEach(async () => {
   await t.cleanup();
 });
 
-test('链接先校验：用户名密码去掉，不是 http(s) 的拒收；像凭据的参数和片段去掉，别的参数留着', () => {
-  assert.equal(cleanUrl('https://me:secret@example.com/a'), 'https://example.com/a');
-  assert.throws(() => cleanUrl('javascript:alert(1)'), DailyError);
-  assert.throws(() => cleanUrl('不是网址 token=abc'), (error: unknown) => {
+test('链接只校验不清洗（11-14 起自己用不清洗）：不是 http(s) 的拒收、错误里不带原文；参数和片段都留着', () => {
+  const raw = 'https://me:secret@example.com/p?id=7&access_token=abc&X-Amz-Signature=s&keyword=ai#top';
+  assert.equal(checkUrl(raw), raw);
+  assert.throws(() => checkUrl('javascript:alert(1)'), DailyError);
+  assert.throws(() => checkUrl('不是网址 token=abc'), (error: unknown) => {
     return error instanceof DailyError && !error.message.includes('token=abc');
   });
-  const cleaned = cleanUrl('https://example.com/p?id=7&access_token=abc&X-Amz-Signature=s&keyword=ai#top');
-  assert.equal(cleaned, 'https://example.com/p?id=7&keyword=ai');
+  // 比对去重用的样子还是洗过的。
+  assert.equal(linkKey(raw), 'https://example.com/p?id=7&keyword=ai');
 });
 
 test('今天按用户时区算：上海 10-27 16:30 是 10-27，这天从 UTC 10-26 16:00 开始', () => {
@@ -113,22 +115,21 @@ for (const sample of [
 test('凭据参数名归一后按子串认，keyword、page 留着', () => {
   const query = 'accessToken=1&client_secret=2&X-Api-Key=3&id_token=4&signature=5&keyword=ai&page=2';
   const raw = `https://example.com/a?${query}`;
-  assert.equal(cleanUrl(raw), 'https://example.com/a?keyword=ai&page=2');
-  assert.equal(cleanUrl('https://example.com/a?sessionId=9&apiKey=8&monkey=1'), 'https://example.com/a?monkey=1');
+  assert.equal(linkKey(raw), 'https://example.com/a?keyword=ai&page=2');
+  assert.equal(linkKey('https://example.com/a?sessionId=9&apiKey=8&monkey=1'), 'https://example.com/a?monkey=1');
 });
 
-test('手动添加统一清洗连写凭据、userinfo 和片段，存储与事件一致', () => {
+test('手动添加存原链接（11-14 起自己用不清洗）：凭据参数、userinfo 和片段都留着，存储与事件一致', () => {
   const urls: (string | null)[] = [];
   daily.feed.attach({ itemChanged: (item) => urls.push(item.url) });
-  for (const name of CREDENTIAL_PARAMS) {
-    const item = daily.feed.addManual({
-      requestId: `manual-${name}`, title: '合成文章',
-      url: `https://user:pass@example.com/a?${name}=abc&page=2#token=abc`,
-    }, 'UTC', immediately);
-    assert.equal(item.url, 'https://example.com/a?page=2');
+  const raws = CREDENTIAL_PARAMS.map((name) => `https://user:pass@example.com/a?${name}=abc&page=2#token=abc`);
+  for (const [index, raw] of raws.entries()) {
+    const item = daily.feed.addManual({ requestId: `manual-${index}`, title: '合成文章', url: raw }, 'UTC',
+      immediately);
+    assert.equal(item.url, raw);
     assert.equal(t.state.feedItems.require(item.id).url, item.url);
   }
-  assert.deepEqual(urls, CREDENTIAL_PARAMS.map(() => 'https://example.com/a?page=2'));
+  assert.deepEqual(urls, raws);
 });
 
 test('参数白名单只豁免完整名称，带凭据后缀仍删除，分隔符和编码都不能绕过', () => {
@@ -137,6 +138,6 @@ test('参数白名单只豁免完整名称，带凭据后缀仍删除，分隔�
     'access.token=x', 'a_u-t.hkey=x', '%61ccesstoken=x', 'bearer=x', 'jwt=x', 'otp=x', 'sid=x',
     'credential=x', 'password=x', 'passcode=x', 'authkey=x', 'authkey=y',
   ].join('&');
-  assert.equal(cleanUrl(`https://example.com/?${query}`),
+  assert.equal(linkKey(`https://example.com/?${query}`),
     'https://example.com/?keyword=ai&monkey=1&passage=2&author=3');
 });

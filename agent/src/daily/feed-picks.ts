@@ -2,7 +2,7 @@ import { Value } from 'typebox/value';
 import { FeedSelectionSchema, type FeedSelection, type FeedSelectionInput,
   type FeedSelector } from '../../shared/feed-selection.ts';
 import { bounded } from './feed-fetch.ts';
-import { cleanLinkData } from './link-data.ts';
+import { checkLinkData } from './link-data.ts';
 import { DailyError } from './errors.ts';
 import { failureText } from '../shared-log.ts';
 
@@ -23,7 +23,7 @@ export async function pickFeed(input: FeedSelectionInput, select: FeedSelector, 
   const interests = new Set(input.interests.map((item) => item.id));
   try {
     const deadline = AbortSignal.any([signal, AbortSignal.timeout(SELECT_TIMEOUT_MS)]);
-    const selected = await bounded(select(cleanLinkData(input), deadline), deadline);
+    const selected = await bounded(select(checkLinkData(input), deadline), deadline);
     signal.throwIfAborted();
     if (!Value.Check(FeedSelectionSchema, selected) || selected.items.some((pick) => !candidates.has(pick.id))) {
       throw new DailyError('invalid_input', '选材结果无法核对，请稍后刷新。');

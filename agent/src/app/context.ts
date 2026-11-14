@@ -137,6 +137,10 @@ export interface Route {
   path: string;
   /** False only for logging in and the health check; every other route answers 401 without a session. */
   auth: boolean;
+  /**
+   * 节点自己验 Bearer 的接口（他自己的电脑来问）：和带会话的一样回原链接（11-14 起自己用不清洗）；验不过照旧报错。
+   */
+  node?: boolean;
   handler: Handler;
 }
 

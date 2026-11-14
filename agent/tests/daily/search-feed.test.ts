@@ -22,15 +22,15 @@ test('搜索词：未改过的迁移关注点按分隔符拆两项，自己加�
   assert.deepEqual(searchTerms({ label: 'A', query: null, custom: false }), ['A']);
 });
 
-test('新闻和网页 RSS：还原 Bing 链接、清洗网址、保留来源与时间，网页标无日期', () => {
+test('新闻和网页 RSS：还原 Bing 链接、链接原样（11-14 起自己用不清洗）、保留来源与时间，网页标无日期', () => {
   const link = `https://www.bing.com/news/apiclick.aspx?url=${encodeURIComponent(`${ARTICLE}&token=remove#part`)}`;
   const news = parseNewsRss(wrap(item(link)));
-  assert.deepEqual(news, [{ title: '新的 消息', url: ARTICLE, text: '摘要 & 正文',
+  assert.deepEqual(news, [{ title: '新的 消息', url: `${ARTICLE}&token=remove#part`, text: '摘要 & 正文',
     publishedAt: AT, site: '来源站', undated: false }]);
   assert.equal(parseSearchRss(wrap(item(ARTICLE)))[0]?.publishedAt, null);
   assert.equal(parseSearchRss(wrap(item(ARTICLE)))[0]?.undated, true);
   assert.equal(parseNewsRss(wrap(item('https://notbing.com/path?url=https%3A%2F%2Fexample.test')))[0]?.url,
-    'https://notbing.com/path');
+    'https://notbing.com/path?url=https%3A%2F%2Fexample.test');
   assert.throws(() => parseNewsRss('<html>不是 RSS</html>'));
   assert.throws(() => parseNewsRss('<!DOCTYPE rss><rss/>'));
 });

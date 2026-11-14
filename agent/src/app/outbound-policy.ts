@@ -1,6 +1,6 @@
 // 用户自己的可编辑原文只回给已认证的本人，不能在出口改写，否则编辑器读回再保存会损坏数据。
-// 豁免绑定具体路由 / 事件的字段，不因任意对象带有 content、markdown 或 role 就放行。
-import type { HubStreamEvent } from '../../shared/api/index.ts';
+// 豁免绑定具体路由的字段，不因任意对象带有 content、markdown 或 role 就放行。
+// 11-14 起回给他自己设备的（会话、节点）整个不清洗（server.ts），这里只在清洗时用上；事件流只给他自己的设备，也不清洗。
 import type { PreserveOutboundField } from '../outbound.ts';
 import type { StateService } from '../state/index.ts';
 
@@ -182,21 +182,4 @@ function lineBody(fields: PreservedFields, root: JsonObject | undefined): void {
   queuedMessage(fields, root?.['queued']);
   queuedMessage(fields, root?.['item']);
   each(root?.['queue'], (entry) => queuedMessage(fields, entry));
-}
-
-/** 实时与重放共用同一出口；模型增量、模型消息、工具结果和信息流事件没有豁免。 */
-export function eventTextPolicy(event: HubStreamEvent, state: TextState): PreserveOutboundField {
-  const fields: PreservedFields = new WeakMap();
-  if (event.type === 'attachment_changed') {
-    attachment(fields, event.attachment);
-  } else if (event.type === 'ask_answered' && event.ask.answer !== null) {
-    fields.set(event.ask.answer, new Set(['text', 'label']));
-  } else if (event.type === 'memory_entry_changed') {
-    memory(fields, event.entry, state);
-  } else if (event.type === 'agreement_changed') {
-    userFields(fields, event.agreement, state, ['text', 'scope', 'userQuote']);
-  } else if (event.type === 'line_message' || event.type === 'line_queue') {
-    lineBody(fields, object(event));
-  }
-  return (parent, key) => fields.get(parent)?.has(key) ?? false;
 }

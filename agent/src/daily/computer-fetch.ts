@@ -97,12 +97,17 @@ export function handOffText(kind: string, error: unknown): string | null {
   return '服务器连不上这个网站（连接被断开），已让在线的电脑去取';
 }
 
-/** 电脑也没取到：来源那一行写两边都没取到和电脑那边的原因。 */
-export function computerFailureText(error: ComputerFetchReport['error']): string {
+/**
+ * 电脑也没取到：来源那一行写两边都没取到和电脑那边的原因。Reddit 被限流的补一句怎么办（11-14：电脑带着 Plasticine
+ * 浏览器里的 Reddit 登录去取）。
+ */
+export function computerFailureText(error: ComputerFetchReport['error'], kind = ''): string {
   if (error === null) { return '服务器和电脑都没取到'; }
   const why = error.code === 'http_error' ? `对方回了 ${String(error.status ?? '错误')}`
     : error.code === 'too_large' ? '正文超过 2 MB'
       : error.code === 'refused' ? '电脑不替服务器取这种地址'
         : error.detail?.trim() || '页面没打开';
-  return `服务器和电脑都没取到（${why}）`;
+  const hint = kind === 'reddit' && error.code === 'http_error' && error.status === 429
+    ? '；在电脑上的 Plasticine 浏览器里登录 Reddit，电脑会带着登录去取' : '';
+  return `服务器和电脑都没取到（${why}）${hint}`;
 }

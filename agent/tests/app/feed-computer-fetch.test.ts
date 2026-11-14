@@ -87,3 +87,19 @@ test('加博客时服务器连不上：没电脑在线照常报错；电脑在�
     jobId: feedJob?.id, page: { url: 'https://blog.example.test/zh/feed/', text: FEED }, error: null } });
   assert.deepEqual(stale.body, { ok: true });
 });
+
+test('电脑领到的网址是原样（11-14 起自己用不清洗）：带 token 的私有订阅地址照原样给自己的电脑去取', async () => {
+  t = await startTestApp([], { startTasks: false, feedFetcher: new FeedFetcher({ request: async () => {
+    throw new DailyError('unreachable', '连不上这个网站（连接被断开），过一会儿再试。');
+  } }) });
+  const cookie = await pair(t);
+  const headers = { authorization: `Bearer ${await pairedNode(t, cookie)}` };
+  assert.deepEqual((await call(t, 'GET', '/v2/nodes/feed/fetch', { headers })).body, { jobs: [] });
+  const url = 'https://blog.example.test/zh/feed/?token=private123&page=1';
+  const added = await call(t, 'POST', '/v2/feed/sources/subscriptions', { cookie, body: {
+    requestId: newRequestId('add'), url } });
+  assert.equal(added.status, 201, JSON.stringify(added.body));
+  assert.equal((json(added)['source'] as { query: string }).query, url);
+  const jobs = json(await call(t, 'GET', '/v2/nodes/feed/fetch', { headers }))['jobs'] as { url: string }[];
+  assert.equal(jobs[0]?.url, url);
+});

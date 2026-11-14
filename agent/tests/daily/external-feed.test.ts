@@ -14,9 +14,9 @@ const rss = (count = 1) => '<rss><channel>' + Array.from({ length: count }, (_, 
   + `<pubDate>${AT}</pubDate><description><![CDATA[<p>原文 ${i}</p>]]></description></item>`).join('')
   + '</channel></rss>';
 
-test('RSS / Atom 样本：只取最近两天，清洗链接，拒绝 DTD 和坏 XML', () => {
+test('RSS / Atom 样本：只取最近两天，链接原样（11-14 起自己用不清洗），拒绝 DTD 和坏 XML', () => {
   assert.equal(parseFeed(rss(), 'https://news.example.test/feed', new Date(AT))[0]?.url,
-    'https://news.example.test/articles/0?page=1');
+    'https://news.example.test/articles/0?token=remove&page=1');
   const atom = '<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>中文</title>'
     + '<link rel="alternate" href="/story"/><updated>2026-10-27T00:00:00Z</updated>'
     + '<content type="html">&lt;p&gt;正文&lt;/p&gt;</content></entry></feed>';

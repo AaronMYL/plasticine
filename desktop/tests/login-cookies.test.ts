@@ -21,6 +21,14 @@ test('抖音看 sessionid / sessionid_ss / sid_guard，X 看 auth_token；值是
   ]), ['douyin.com', 'twitter.com']);
 });
 
+test('Reddit 只认 reddit_session：不登录时也有的 token_v2 不算（11-14）', () => {
+  assert.deepEqual(loggedInSites([
+    { domain: '.reddit.com', name: 'token_v2', value: 'a' },
+    { domain: '.reddit.com', name: 'loid', value: 'b' },
+  ]), []);
+  assert.deepEqual(loggedInSites([{ domain: '.reddit.com', name: 'reddit_session', value: 'c' }]), ['reddit.com']);
+});
+
 test('别的网站：名字像登录凭证的才算，CSRF、访客、分析统计的不算', () => {
   assert.deepEqual(loggedInSites([
     { domain: 'github.com', name: 'user_session', value: 'a' },

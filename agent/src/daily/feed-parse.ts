@@ -1,6 +1,6 @@
 // 最小 RSS / Atom XML 读取器：不展开外部实体、不执行 HTML，原文只作选材材料。
 import { shownError } from './errors.ts';
-import { cleanUrl } from './urls.ts';
+import { checkUrl } from './urls.ts';
 
 const WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
 const MAX_DEPTH = 40;
@@ -202,7 +202,7 @@ export function parseFeed(source: string, base: string, now: Date, windowMs: num
     }
     const entryBase = absolute(entry.attrs['xml:base'] ?? channelBase, channelBase);
     const linkBase = absolute(linkNode?.attrs['xml:base'] ?? entryBase, entryBase);
-    const url = cleanUrl(absolute(link, linkBase));
+    const url = checkUrl(absolute(link, linkBase));
     const body = content(child(entry, 'description') ?? child(entry, 'summary')
       ?? child(entry, 'content') ?? child(entry, 'encoded'));
     const rich = content(child(entry, 'encoded') ?? child(entry, 'content')) || body;

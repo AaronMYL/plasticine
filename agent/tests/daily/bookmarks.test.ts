@@ -11,7 +11,7 @@ import {
   suggestProject,
   type SuggestionCandidate,
 } from '../../shared/bookmarks.ts';
-import { cleanBookmarkUrl, DailyError } from '../../src/daily/index.ts';
+import { checkBookmarkUrl, DailyError } from '../../src/daily/index.ts';
 
 const CHROME_EXPORT = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
 <!-- This is an automatically generated file. -->
@@ -87,9 +87,10 @@ test('同一个网址算同一条：主机名不分大小写、末尾空的 # �
   assert.equal(bookmarkHost('#/notes/n1'), null);
 });
 
-test('网页书签的网址：去掉账号密码和像口令的参数，# 留着；不是 http(s) 不收，错误里不带原文', () => {
-  assert.equal(cleanBookmarkUrl('https://u:p@example.com/a?access_token=1&q=2#top'), 'https://example.com/a?q=2#top');
-  assert.throws(() => cleanBookmarkUrl('ftp://example.com/'), DailyError);
-  assert.throws(() => cleanBookmarkUrl('https://[secret-token'), (error: unknown) =>
+test('网页书签的网址：原样存（11-14 起自己用不清洗），# 留着；不是 http(s) 不收，错误里不带原文', () => {
+  assert.equal(checkBookmarkUrl('https://u:p@example.com/a?access_token=1&q=2#top'),
+    'https://u:p@example.com/a?access_token=1&q=2#top');
+  assert.throws(() => checkBookmarkUrl('ftp://example.com/'), DailyError);
+  assert.throws(() => checkBookmarkUrl('https://[secret-token'), (error: unknown) =>
     error instanceof DailyError && !error.message.includes('secret'));
 });

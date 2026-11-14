@@ -1,7 +1,8 @@
 // 电脑替服务器取一个网址（第13批，11-14 Aaron：「优先服务器抓，抓不到再改由在线的电脑重试」；
 // agent/shared/api/feed-computer-fetch.ts）：服务器连不上、被限流的博客和 Reddit，由在线的电脑用自己的网络取回正文交回，
-// 解析、入库在服务端。只取 https 的公网地址（不替它碰本机、内网，跳转到内网的也不交回），跟着跳转，不带登录信息；
-// 超过 2 MB 不要。
+// 解析、入库在服务端。只取 https 的公网地址（不替它碰本机、内网，跳转到内网的也不交回），跟着跳转；超过 2 MB 不要。
+// 登录信息只给 Reddit 带（11-14 Aaron 定「用 Plasticine 里的 Reddit 登录去取」：不登录服务器和电脑都被限流），
+// 别的网站不带。
 
 import { isIP } from 'node:net';
 import type { ComputerFetchJob, ComputerFetchReport } from '../../../agent/shared/api/index.ts';
@@ -42,6 +43,12 @@ export function allowed(raw: string): boolean {
     && !privateAddress(host);
 }
 
+/** Reddit 的地址：带上他在 Plasticine 浏览器里的 Reddit 登录去取。 */
+export function withLogin(raw: string): boolean {
+  const host = new URL(raw).hostname.toLowerCase();
+  return host === 'reddit.com' || host.endsWith('.reddit.com');
+}
+
 /** 读正文，超过上限就停。 */
 async function readText(response: Response): Promise<string | null> {
   if (response.body === null) { return ''; }
@@ -68,7 +75,7 @@ export async function fetchForServer(fetcher: Fetcher, job: ComputerFetchJob):
   if (!allowed(job.url)) { return { page: null, error: { code: 'refused' } }; }
   let response: Response;
   try {
-    response = await fetcher(job.url, { redirect: 'follow', credentials: 'omit',
+    response = await fetcher(job.url, { redirect: 'follow', credentials: withLogin(job.url) ? 'include' : 'omit',
       signal: AbortSignal.timeout(TIMEOUT_MS) });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);

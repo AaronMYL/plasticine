@@ -25,7 +25,8 @@ test('加网站发现 RSS，来源可见可调档；回执重放不用再访问�
     assert.equal((await call(t, 'POST', path, { cookie, body: { ...body, label: '另一个名字' } })).status, 409);
     const source = json(first)['source'] as { id: string; kind: string; query: string; version: number };
     assert.equal(source.kind, 'rss');
-    assert.equal(source.query, 'https://news.example.test/atom');
+    // 11-14 起自己用不清洗：订阅地址带的参数留着（私有订阅要它）。
+    assert.equal(source.query, 'https://news.example.test/atom?token=remove');
     const list = json(await call(t, 'GET', '/v2/feed/sources', { cookie }))['others'] as { id: string }[];
     assert.ok(list.some((row) => row.id === source.id));
     assert.equal((await call(t, 'POST', `/v2/feed/sources/${source.id}/level`, { cookie,

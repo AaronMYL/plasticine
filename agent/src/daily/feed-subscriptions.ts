@@ -17,7 +17,7 @@ import { feedLinkIn, looksLikeFeed, type FeedFetcher } from './feed-fetch.ts';
 import { matchInterest } from './feed-match.ts';
 import { parseFeed } from './feed-parse.ts';
 import { DailyError, shownError } from './errors.ts';
-import { siteOf } from './urls.ts';
+import { linkKey, siteOf } from './urls.ts';
 import { REDDIT_WINDOW_MS, redditPost, type RedditPost } from './reddit.ts';
 
 /** 用户 11-04：「不花钱、频率低，比如每 2 小时」——订阅和 X 一样。 */
@@ -226,7 +226,7 @@ export class FeedSubscriptions {
     if (source === undefined || state.feedSources.removed(source.id) || source.level === 'off') { return true; }
     try {
       if (report.page === null) {
-        state.feedSourceStatus.failed(source.id, now().toISOString(), computerFailureText(report.error));
+        state.feedSourceStatus.failed(source.id, now().toISOString(), computerFailureText(report.error, source.kind));
       } else if (job.purpose.discover && !looksLikeFeed(report.page.text)) {
         this.#discovered(source, report.page);
       } else {
@@ -323,15 +323,16 @@ export class FeedSubscriptions {
     const added: FeedItem[] = [];
     state.transaction(() => {
       const known = state.feedItems.knownUrls();
-      // 已经有的不另加一条：在别处又看到的（关注里有、又进了书签）把那一处并进去，以前没存全文的补上全文。
+      // 已经有的不另加一条：在别处又看到的（关注里有、又进了书签）把那一处并进去，以前没存全文的补上全文，
+      // 以前存的是洗过的链接的换成原链接（11-14 起自己用不清洗）。
       for (const entry of entries) {
-        if (((entry.places ?? []).length > 0 || (entry.body ?? null) !== null)
-          && state.feedItems.byDedupeKey(entry.key) !== undefined) {
+        if (state.feedItems.byDedupeKey(entry.key) !== undefined) {
           state.feedItems.add({ sourceId: source.id, origin: 'feed', title: entry.title, dedupeKey: entry.key, day,
-            arrivedAt: at.toISOString(), places: entry.places ?? [], body: entry.body ?? null });
+            arrivedAt: at.toISOString(), places: entry.places ?? [], body: entry.body ?? null, url: entry.url });
         }
       }
-      const fresh = newest(entries.filter((entry) => !known.has(entry.url)
+      // 比对用洗过的样子（knownUrls 也是）。
+      const fresh = newest(entries.filter((entry) => !known.has(linkKey(entry.url))
         && state.feedItems.byDedupeKey(entry.key) === undefined), limit ?? PER_ROUND[source.level], perPlace)
         .reverse();
       fresh.forEach((entry, index) => {
@@ -346,7 +347,7 @@ export class FeedSubscriptions {
           ...(entry.body === undefined ? {} : { body: entry.body }),
         };
         const result = state.feedItems.add(input);
-        known.add(entry.url);
+        known.add(linkKey(entry.url));
         if (result.created) { added.push(result.item); }
       });
     });

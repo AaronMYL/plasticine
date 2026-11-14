@@ -163,6 +163,8 @@ export const FeedItemPatchSchema = Type.Partial(
     // 第13批：同一条又在另一处看到（关注里有、后来进了书签）就把那一处并进来；以前没存全文的再抓到时补上。
     places: Type.Array(Type.Enum(FEED_PLACES), { maxItems: FEED_PLACES.length }),
     body: Nullable(Type.Array(FeedBlockSchema, { maxItems: FEED_BODY_MAX_BLOCKS })),
+    // 11-14 起存原链接：以前存的是洗过的（比如小红书笔记少了 xsec_token），再抓到时换成原链接。
+    url: Nullable(Type.String({ pattern: '^https?://', maxLength: FEED_URL_MAX_CHARS })),
   }),
   STRICT,
 );

@@ -4,7 +4,7 @@
 
 import type { FeedSource } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { cleanLinkData } from './link-data.ts';
+import { checkLinkData } from './link-data.ts';
 
 /** 新加的关注点的分组键前缀。 */
 export const INTEREST_GROUP_PREFIX = 'interest:';
@@ -20,7 +20,7 @@ export class InterestDesk {
 
   /** Inside the caller's transaction (an idempotent request). */
   add(input: { label: string; query?: string }): { source: FeedSource } {
-    input = cleanLinkData(input);
+    input = checkLinkData(input);
     // A user-added 关注点 starts at 多 (1ca0391 daily.ts: level 'more' for the user's own).
     const created = this.#state.feedSources.create({
       kind: 'interest',

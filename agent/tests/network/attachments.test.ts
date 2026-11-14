@@ -241,3 +241,20 @@ test('发件箱失败后重试原消息，不重建附件或重复收件；非�
   assert.equal((await call(p.b.app, 'GET', path, { cookie: p.b.cookie })).status, 409);
   assert.equal(p.b.app.state.networkAttachments.bytes(attachment.id), null);
 });
+
+test('发给联系人的信洗掉链接里像凭据的参数（11-14 自己用不清洗、分享出去才清洗）；本机记的那一行是原样', async () => {
+  const p = await peers();
+  const link = 'https://www.xiaohongshu.com/explore/6614a2b3000000001a0123ab?xsec_token=AB123%3D&page=2';
+  const sent = await call(p.a.app, 'POST', `/v2/contacts/${p.ab.id}/messages`, { cookie: p.a.cookie,
+    body: { requestId: 'send-link', text: `看这个 ${link}`, attachmentIds: [] } });
+  assert.equal(sent.status, 201, JSON.stringify(sent.body));
+  await p.a.app.app.deps.network.flushOutbox();
+  const outgoing = p.envelopes.find((item) => item.kind === 'text')!;
+  const clear = openEnvelope(outgoing, p.a.identity.signingPublicKey, p.b.identity.encryptionPrivateKey);
+  assert.ok(clear.ok);
+  const wire = JSON.stringify(clear);
+  assert.equal(wire.includes('xsec_token'), false);
+  assert.ok(wire.includes('https://www.xiaohongshu.com/explore/6614a2b3000000001a0123ab?page=2'));
+  const mine = p.a.app.state.contactMessages.recent(p.ab.id, 10).find((row) => row.kind === 'text')!;
+  assert.ok(JSON.stringify(mine.payload).includes(link), '本机记的是原样');
+});

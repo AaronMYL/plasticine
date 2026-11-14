@@ -85,6 +85,27 @@ test('小红书：没有节点凭证 401；节点问到点、交笔记入库；�
   assert.equal(json(await call(t, 'GET', '/v2/nodes/feed/xhs', { headers }))['due'], true);
 });
 
+test('小红书笔记带着 xsec_token 交来（11-14）：链接带上它（不带的多半跳 404）；以前没带的再看到时补上', async () => {
+  t = await startTestApp();
+  const cookie = await pair(t);
+  const headers = { authorization: `Bearer ${await pairedNode(t, cookie)}` };
+  const first = await call(t, 'POST', '/v2/nodes/feed/xhs', { headers, body: { requestId: 'xhs-token-0001',
+    notes: [note(A, ['recommend'])], error: null } });
+  assert.deepEqual(first.body, { added: 1 });
+  const again = await call(t, 'POST', '/v2/nodes/feed/xhs', { headers, body: { requestId: 'xhs-token-0002',
+    notes: [{ ...note(A, ['recommend']), xsecToken: 'AB123=' }, { ...note(B, ['saved']), xsecToken: 'CD4/5=' }],
+    error: null } });
+  assert.equal(again.status, 200, JSON.stringify(again.body));
+  const items = json(await call(t, 'GET', '/v2/feed?tz=UTC&kind=xhs', { cookie }))['items'] as ItemBody[];
+  assert.deepEqual(items.map((item) => item.url).sort(), [
+    `https://www.xiaohongshu.com/explore/${A}?xsec_token=AB123%3D&xsec_source=pc_feed`,
+    `https://www.xiaohongshu.com/explore/${B}?xsec_token=CD4%2F5%3D&xsec_source=pc_feed`,
+  ]);
+  const bad = await call(t, 'POST', '/v2/nodes/feed/xhs', { headers, body: { requestId: 'xhs-token-0003',
+    notes: [{ ...note(A, ['recommend']), xsecToken: 'not a token' }], error: null } });
+  assert.equal(bad.status, 400);
+});
+
 test('小红书读不到：没登录、要验证，来源那一行写原因', async () => {
   t = await startTestApp();
   const cookie = await pair(t);

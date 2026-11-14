@@ -15,6 +15,8 @@ const SITE_CREDENTIALS: Readonly<Record<string, readonly string[]>> = {
   'weibo.cn': ['SUB'],
   'bilibili.com': ['SESSDATA'],
   'xiaohongshu.com': ['web_session'],
+  // 不登录时 Reddit 也种 token_v2（匿名的），只认登录后才有的 reddit_session。
+  'reddit.com': ['reddit_session'],
 };
 
 /** 名字像登录凭证：会话、令牌、登录、用户身份。 */

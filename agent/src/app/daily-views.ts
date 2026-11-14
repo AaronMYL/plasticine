@@ -11,17 +11,16 @@ import type { FeedItem, FeedSource } from '../../shared/state.ts';
 import { isSimplifiedChinese, languageName, type FeedZhView } from '../../shared/feed-translation.ts';
 import type { FeedSourceStatus, FeedTranslationRow, SettingsRead, StateService, VideoWorkRow }
   from '../state/index.ts';
-import { BUILT_IN_SOURCES, cleanSourceLinks, safeUrl, siteOf, sourceSearchTerms } from '../daily/index.ts';
-import { cleanOutboundJson } from '../outbound.ts';
+import { BUILT_IN_SOURCES, checkSourceLinks, safeUrl, siteOf, sourceSearchTerms } from '../daily/index.ts';
 
 export function feedItemLinks(item: Pick<FeedItem, 'id' | 'url'>): Pick<FeedItemView, 'url' | 'site'> {
-  // 已迁条目重跑时会跳过；旧记录、旧缓存与 SSE 输出也必须清洗，不改写历史记录。
+  // 旧记录、旧缓存与 SSE 输出里的链接也先核对一遍（无效的不给），不改写历史记录；11-14 起不清洗，回原链接。
   const url = safeUrl(item.url);
   return { url, site: url === null ? null : siteOf(url) };
 }
 
-export function cleanFeedItemView(item: FeedItemView): FeedItemView {
-  return { ...cleanOutboundJson(item), ...feedItemLinks(item) };
+export function checkFeedItemView(item: FeedItemView): FeedItemView {
+  return { ...item, ...feedItemLinks(item) };
 }
 
 /** 外部图片的代理签名（app/mail-view.ts 那套：服务端签名、/v2/mail-image 代取）；没接上就不给图。 */
@@ -81,7 +80,7 @@ export function feedItemView(state: FeedViewState, item: FeedItem,
   const source = state.feedSources.get(item.sourceId);
   const translation = state.feedTranslations.get(item.id);
   const image = proxied(images, item.imageUrl);
-  return cleanFeedItemView({
+  return checkFeedItemView({
     id: item.id,
     origin: item.origin,
     kind: feedItemKind(item, source),
@@ -119,7 +118,7 @@ export function feedItemView(state: FeedViewState, item: FeedItem,
 const BUILT_IN_REFS: ReadonlySet<string> = new Set(Object.values(BUILT_IN_SOURCES).map((source) => source.ref));
 
 export function feedSourceView(source: FeedSource, status?: FeedSourceStatus): FeedSourceView {
-  return cleanSourceLinks({
+  return checkSourceLinks({
     id: source.id,
     kind: source.kind,
     label: source.label,

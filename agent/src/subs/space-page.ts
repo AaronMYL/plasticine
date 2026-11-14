@@ -11,6 +11,8 @@ import {
   type SpaceGenre,
 } from '../../shared/state.ts';
 import { findAll, hasAttribute, hasClass, parseHtml, textOf, type HtmlElement } from '../../shared/space-html.ts';
+import { cleanOutboundText } from '../link-clean.ts';
+import { EXTERNAL_LINK } from '../link-text.ts';
 import { SubsError } from './errors.ts';
 import { sanitizeSpaceHtml, type SanitizedHtml } from './space-sanitize.ts';
 
@@ -27,9 +29,18 @@ export interface SpaceEdit {
   newText: string;
 }
 
-/** 清洗并核对一页；不合规抛 SubsError（一句能照着改的话）。 */
+/** 清洗过的网页里的链接：& 写成了 &amp;，先还原再洗（不然参数名会粘上 amp;），洗完再写回。 */
+function cleanHtmlLinks(html: string): string {
+  return html.replace(EXTERNAL_LINK, (raw) => cleanOutboundText(raw.replaceAll('&amp;', '&')).replaceAll('&', '&amp;'));
+}
+
+/**
+ * 清洗并核对一页；不合规抛 SubsError（一句能照着改的话）。来信里的链接洗掉像凭据的参数（11-14 Aaron 定「写进来信时
+ * 清洗」），报告里的照原样。
+ */
 export function checkSpacePage(genre: SpaceGenre, html: string): SanitizedHtml {
-  const cleaned = sanitizeSpaceHtml(html);
+  const sanitized = sanitizeSpaceHtml(html);
+  const cleaned = genre === 'letter' ? { ...sanitized, html: cleanHtmlLinks(sanitized.html) } : sanitized;
   if (cleaned.html.length > SPACE_HTML_MAX_CHARS) {
     throw new SubsError('invalid', `正文太长了（${cleaned.html.length} 字符，上限 ${SPACE_HTML_MAX_CHARS}）：`
       + '图表用内联 SVG 但别塞原始数据表，长的拆成几个空间。');

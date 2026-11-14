@@ -1,5 +1,6 @@
 // 第13批（11-14 Aaron：「优先服务器抓，抓不到再改由在线的电脑重试」）：电脑替服务器取一个网址——只取 https 的公网地址
-// （不替它碰本机、内网），跟着跳转，不带登录信息；取到回跳转后的地址和正文，超过 2 MB、对方回错、载不出都回原因。
+// （不替它碰本机、内网），跟着跳转，只给 Reddit 带登录信息（11-14）；取到回跳转后的地址和正文，超过 2 MB、对方回错、
+// 载不出都回原因。
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -16,6 +17,19 @@ test('取到：回跳转后的地址和正文；不带登录信息', async () =>
   assert.deepEqual(result, { page: { url: 'https://blog.example.test/feed/', text: '<rss></rss>' }, error: null });
   assert.equal(seen[0]?.credentials, 'omit');
   assert.equal(seen[0]?.redirect, 'follow');
+});
+
+test('Reddit 带上 Plasticine 浏览器里的登录去取（11-14 Aaron 定：不登录服务器和电脑都被限流），别的网站不带', async () => {
+  const seen: Array<[string, RequestCredentials | undefined]> = [];
+  const fetcher = async (url: string, init?: RequestInit): Promise<Response> => {
+    seen.push([url, init?.credentials]);
+    return Object.defineProperty(new Response('{}'), 'url', { value: url });
+  };
+  for (const url of ['https://www.reddit.com/r/LocalLLaMA/new.json', 'https://old.reddit.com/r/x/.rss',
+    'https://reddit.com/r/x/.rss', 'https://notreddit.com/feed', 'https://reddit.com.example.test/feed']) {
+    await fetchForServer(fetcher, { ...JOB, url });
+  }
+  assert.deepEqual(seen.map(([, credentials]) => credentials), ['include', 'include', 'include', 'omit', 'omit']);
 });
 
 test('不替服务器碰本机、内网和 http 地址', async () => {

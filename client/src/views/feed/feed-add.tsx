@@ -1,7 +1,7 @@
 // 「加来源」对话框（第 7 批第 10 条，他定；设计稿 Feed-Add；第13批改名、加小红书）：第二栏顶上的 + 开它，Reddit、博客那一行
 // 的 ⋯ 也能开。顶上六种：博客 · Reddit · 兴趣 · X · 小红书 · 抖音收藏。博客就是原来的加订阅（给网址，自己找订阅地址）；
 // Reddit 填版块名、先看三条；兴趣是原来的关注点表单；X、小红书、抖音收藏要他在电脑上的 Plasticine 浏览器里登录，这里写登录
-// 状态、给「去登录」。
+// 状态、给「去登录」；Reddit 也写（11-14：服务器取不到的版块，电脑用这个登录去取）。
 
 import type { ReactNode } from 'react';
 import { useClientState } from '../../state/context.tsx';
@@ -33,6 +33,8 @@ const LOGIN_TEXT: Readonly<Record<LoginKind, { on: string; off: string; how: str
     how: '电脑在线时，每 2 小时读一次首页「推荐」和你的收藏。' },
   douyin: { on: '已登录抖音', off: '还没登录抖音',
     how: '同步时读你的抖音收藏，你勾选的才处理，处理好的进信息流。' },
+  reddit: { on: '已登录 Reddit', off: '还没登录 Reddit',
+    how: '服务器取不到的版块（被限流），电脑在线时用这个登录去取。' },
 };
 
 function stateText(kind: LoginKind, signedIn: boolean | null): string {
@@ -42,8 +44,12 @@ function stateText(kind: LoginKind, signedIn: boolean | null): string {
   return signedIn ? LOGIN_TEXT[kind].on : LOGIN_TEXT[kind].off;
 }
 
-/** X / 抖音：登录状态（电脑上看得到）+ 去登录；抖音多一个「选收藏…」。 */
-export function LoginPanel({ kind, onDouyin }: { kind: LoginKind; onDouyin?: () => void }): ReactNode {
+/**
+ * X / 抖音：登录状态（电脑上看得到）+ 去登录；抖音多一个「选收藏…」。Reddit 的登录不是必须的（服务器取不到才用上），
+ * 「去登录」用次要按钮，主操作留给加版块。
+ */
+export function LoginPanel({ kind, onDouyin, optional = false }: { kind: LoginKind; onDouyin?: () => void;
+  optional?: boolean }): ReactNode {
   const logins = useSiteLogins();
   const signedIn = logins?.[kind] ?? null;
   const text = LOGIN_TEXT[kind];
@@ -56,7 +62,7 @@ export function LoginPanel({ kind, onDouyin }: { kind: LoginKind; onDouyin?: () 
       <p className="feed-add-note">{text.how}</p>
       <div className="feed-add-login-actions">
         {signedIn === null ? null : (
-          <button type="button" className={signedIn ? 'secondary-button' : 'primary-button'}
+          <button type="button" className={signedIn || optional ? 'secondary-button' : 'primary-button'}
             onClick={() => openLogin(kind)}>{signedIn ? LOGIN_SITES[kind].open : '去登录'}</button>
         )}
         {onDouyin === undefined ? null : (
@@ -83,7 +89,10 @@ export function FeedAdd({ onClose, onDouyin }: { onClose: () => void; onDouyin: 
       </div>
       <div className="feed-add-body" role="tabpanel" aria-label={KIND_LABELS[kind]} key={kind}>
         {kind === 'url' ? <FeedSubscription onAdded={onClose} /> : null}
-        {kind === 'reddit' ? <RedditAdd onAdded={onClose} onCancel={onClose} /> : null}
+        {kind === 'reddit' ? <>
+          <LoginPanel kind="reddit" optional />
+          <RedditAdd onAdded={onClose} onCancel={onClose} />
+        </> : null}
         {kind === 'interest' ? <FeedInterest alwaysOpen /> : null}
         {kind === 'x' ? <LoginPanel kind="x" /> : null}
         {kind === 'xhs' ? <LoginPanel kind="xhs" /> : null}

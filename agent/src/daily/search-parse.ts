@@ -1,7 +1,7 @@
 // Bing 新闻 / 网页共用现有的受限 XML 读取器；网页日期不可当新闻发布时间。
 import { shownError } from './errors.ts';
 import { child, content, elements, local, plain, xml } from './feed-parse.ts';
-import { cleanUrl, siteOf } from './urls.ts';
+import { checkUrl, siteOf } from './urls.ts';
 
 // 沿用 1ca0391：每词最多十五条新闻，标题与摘要仅供一次选材。
 const RESULTS_PER_TERM = 15;
@@ -21,7 +21,7 @@ function unwrapLink(raw: string): string | null {
     const outer = new URL(raw.trim());
     const inner = outer.searchParams.get('url');
     const bing = /(^|\.)bing\.com$/i.test(outer.hostname);
-    return cleanUrl(bing && inner ? new URL(inner).href : outer.href);
+    return checkUrl(bing && inner ? new URL(inner).href : outer.href);
   } catch {
     // 单个无效链接不是新闻，其他条目仍可用；不把外部原文送入日志。
     return null;

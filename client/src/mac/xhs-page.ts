@@ -18,6 +18,7 @@ const AUTHOR_MAX = 100;
 const RATIO_MIN = 0.2;
 const RATIO_MAX = 5;
 const ID = /^[0-9a-f]{24}$/;
+const TOKEN = /^[A-Za-z0-9+/=_-]{1,200}$/;
 const NOTE_PATH = /\/(?:explore|discovery\/item|search_result|user\/profile\/[0-9a-f]{24})\/([0-9a-f]{24})(?:[/?#]|$)/;
 const SAVED_TAB_NAMES = ['收藏', 'Collections', 'Saved'];
 
@@ -72,6 +73,11 @@ function ratio(width: unknown, height: unknown): number | null {
   return value >= RATIO_MIN && value <= RATIO_MAX ? Math.round(value * 1000) / 1000 : null;
 }
 
+/** 打开笔记要带的 xsec_token：认得出才给（XhsNote 里是可选的）。 */
+function token(value: unknown): { xsecToken: string } | Record<string, never> {
+  return typeof value === 'string' && TOKEN.test(value) ? { xsecToken: value } : {};
+}
+
 /** 初始数据里的一条：首页是 { id, modelType, noteCard }，主页的收藏是 { noteCard } 或直接摊开的那一层。 */
 export function stateNote(raw: unknown): XhsListedNote | null {
   const item = object(unwrap(raw));
@@ -91,6 +97,7 @@ export function stateNote(raw: unknown): XhsListedNote | null {
     image,
     imageRatio: image === null ? null : ratio(cover['width'], cover['height']),
     video: card['type'] === 'video',
+    ...token(item['xsecToken'] ?? card['xsecToken']),
   };
 }
 
@@ -113,12 +120,15 @@ export function myId(state: unknown): string | null {
 /** 页面上的一张笔记卡片（往下翻出来的）。 */
 export function cardNote(section: Element, base: string): XhsListedNote | null {
   let id = '';
+  let xsec: string | null = null;
+  // 第一条指向笔记的链接定是哪一条；xsec_token 常在封面那条链接上，往后接着找同一条笔记的。
   for (const link of section.querySelectorAll('a[href]')) {
-    const match = NOTE_PATH.exec(new URL(link.getAttribute('href') ?? '', base).pathname);
-    if (match !== null) {
-      id = match[1] ?? '';
-      break;
-    }
+    const href = new URL(link.getAttribute('href') ?? '', base);
+    const match = NOTE_PATH.exec(href.pathname);
+    if (match === null || (id !== '' && match[1] !== id)) { continue; }
+    id = match[1] ?? '';
+    xsec = href.searchParams.get('xsec_token');
+    if (xsec !== null && xsec !== '') { break; }
   }
   const author = text(section.querySelector('.author .name, .author-wrapper .name, .name')?.textContent, AUTHOR_MAX);
   if (!ID.test(id) || author === '') { return null; }
@@ -134,6 +144,7 @@ export function cardNote(section: Element, base: string): XhsListedNote | null {
     imageRatio: image === null ? null
       : ratio(section.getAttribute('data-width'), section.getAttribute('data-height')),
     video: section.querySelector('.play-icon, [class*="play-icon"]') !== null,
+    ...token(xsec),
   };
 }
 
@@ -171,13 +182,21 @@ function shown(element: Element): boolean {
   return true;
 }
 
-/** 收一遍：初始数据（首页读推荐，主页读收藏那一页）+ 页面上看得见的卡片，按笔记标识去重，先见到的为准。 */
+/**
+ * 收一遍：初始数据（首页读推荐，主页读收藏那一页）+ 页面上看得见的卡片，按笔记标识去重，先见到的为准；先见到的没有
+ * xsec_token、后见到的有，补上。
+ */
 export function collectNotes(doc: Document, base: string, state: unknown, seen: Map<string, XhsListedNote>): number {
   const fromState = new URL(base).pathname.startsWith('/user/profile') ? savedNotes(state) : exploreNotes(state);
   const fromCards = [...doc.querySelectorAll('section.note-item')].filter(shown)
     .map((section) => cardNote(section, base));
   for (const note of [...fromState, ...fromCards]) {
-    if (note !== null && !seen.has(note.id)) { seen.set(note.id, note); }
+    if (note === null) { continue; }
+    const known = seen.get(note.id);
+    if (known === undefined) { seen.set(note.id, note); }
+    else if (known.xsecToken === undefined && note.xsecToken !== undefined) {
+      seen.set(note.id, { ...known, xsecToken: note.xsecToken });
+    }
   }
   return seen.size;
 }

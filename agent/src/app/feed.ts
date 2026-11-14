@@ -29,9 +29,9 @@ import {
   type InterestResponse,
 } from '../../shared/api/index.ts';
 import {
-  cleanLinkData,
-  cleanSourceLinks,
-  cleanUrl,
+  checkLinkData,
+  checkSourceLinks,
+  checkUrl,
   DailyError,
   dayRange,
   FEED_SOURCE_EVERY_MS,
@@ -45,7 +45,7 @@ import type { FeedItem, FeedSource } from '../../shared/state.ts';
 import { StateError } from '../state/index.ts';
 import { ApiError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type AppDeps, type Reply, type RequestContext } from './context.ts';
-import { cleanFeedItemView, feedItemKind, feedItemView, feedSourceView } from './daily-views.ts';
+import { checkFeedItemView, feedItemKind, feedItemView, feedSourceView } from './daily-views.ts';
 import { readJsonBody, readJsonBodyWithDigest } from './http.ts';
 import { idempotent } from './idempotency.ts';
 import { checkInput, queryObject } from './validate.ts';
@@ -87,7 +87,7 @@ function itemWrite<T>(deps: AppDeps, id: string, write: () => T): T {
   return withCurrent(write, () => itemView(deps, read()), () => read().version);
 }
 
-/** 旧缓存会绕过视图构造；条目、来源和冲突快照统一清洗，不重做动作或改写缓存。 */
+/** 旧缓存会绕过视图构造；条目、来源和冲突快照统一核对链接（11-14 起不清洗），不重做动作或改写缓存。 */
 const PRE_SEARCH_SOURCE_SCHEMA = Type.Omit(FeedSourceViewSchema, ['searchTerms']);
 // 第 3 批之前的条目回执还没有 kind / author / image：补上（kind 按存的来源推，没有图），不重做操作。
 const PRE_CARD_ITEM_SCHEMA = Type.Omit(FeedItemViewSchema, ['kind', 'author', 'image']);
@@ -96,22 +96,22 @@ function cleanFeedReply(context: RequestContext, reply: Reply): Reply {
   if (typeof reply.body !== 'object' || reply.body === null) {
     return reply;
   }
-  const body: Record<string, unknown> = cleanLinkData({ ...reply.body });
+  const body: Record<string, unknown> = checkLinkData({ ...reply.body });
   for (const key of ['item', 'source', 'current']) {
     const item = body[key];
     if (Value.Check(FeedItemViewSchema, item)) {
-      body[key] = cleanFeedItemView(item);
+      body[key] = checkFeedItemView(item);
     } else if (Value.Check(PRE_CARD_ITEM_SCHEMA, item)) {
       const source = context.deps.state.feedSources.get(item.sourceId);
-      body[key] = cleanFeedItemView({ ...item, kind: feedItemKind(item, source), author: null, image: null });
+      body[key] = checkFeedItemView({ ...item, kind: feedItemKind(item, source), author: null, image: null });
     } else if (Value.Check(FeedSourceViewSchema, item)) {
-      body[key] = cleanSourceLinks(item);
+      body[key] = checkSourceLinks(item);
     } else if (Value.Check(PRE_SEARCH_SOURCE_SCHEMA, item)) {
       // 升级前的回执还没有 searchTerms；补齐新视图，但不重做操作或改写旧缓存。
       const stored = context.deps.state.feedSources.get(item.id);
       const terms = stored === undefined ? [item.query ?? item.label]
         : sourceSearchTerms({ ...stored, label: item.label, query: item.query });
-      body[key] = cleanSourceLinks({ ...item, searchTerms: item.kind === 'interest' ? terms : [] });
+      body[key] = checkSourceLinks({ ...item, searchTerms: item.kind === 'interest' ? terms : [] });
     }
   }
   return { ...reply, body };
@@ -234,7 +234,7 @@ function addViaComputer(context: RequestContext, body: { requestId: string; url:
     throw new DailyError('unreachable', `${error.message.replace(/，?过一会儿再试。?$/, '。')}`
       + '开着电脑上的 Plasticine 再加一次，会改由电脑去取。');
   }
-  const url = cleanUrl(checkPublicHttpsUrl(body.url).href);
+  const url = checkUrl(checkPublicHttpsUrl(body.url).href);
   const label = body.label?.trim() || siteOf(url);
   return cleanFeedReply(context, idempotent(context, body.requestId, (afterCommit) => {
     const source = state.feedSources.ensure({ kind: 'rss', label: label.slice(0, 200), query: url, level: 'normal',

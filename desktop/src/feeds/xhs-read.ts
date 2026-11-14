@@ -57,12 +57,14 @@ async function collect(page: XhsPage, options: XhsReadOptions): Promise<XhsListe
   return await page.run('window.__plasticineXhs.notes()') as XhsListedNote[];
 }
 
-/** 把这一处读到的并进去：已有的加上这一处。 */
+/** 把这一处读到的并进去：已有的加上这一处；已有的没有 xsec_token 的补上这一处读到的。 */
 function merge(into: Map<string, XhsNote>, notes: readonly XhsListedNote[], place: XhsPlace): void {
   for (const note of notes) {
     const known = into.get(note.id);
+    const xsec = known?.xsecToken ?? note.xsecToken;
     into.set(note.id, known === undefined ? { ...note, places: [place] }
-      : { ...known, places: known.places.includes(place) ? known.places : [...known.places, place] });
+      : { ...known, places: known.places.includes(place) ? known.places : [...known.places, place],
+        ...(xsec === undefined ? {} : { xsecToken: xsec }) });
   }
 }
 

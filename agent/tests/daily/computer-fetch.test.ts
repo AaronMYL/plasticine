@@ -82,7 +82,8 @@ test('Reddit 限流时电脑去取；电脑也没取到，来源那一行写两�
     const [job] = computer.lease();
     subscriptions.fetchedByComputer({ requestId: 'ff-report-0003', jobId: job?.id ?? '', page: null,
       error: { code: 'http_error', status: 429 } });
-    assert.equal(t.state.feedSourceStatus.read(source.id)?.error, '服务器和电脑都没取到（对方回了 429）');
+    assert.equal(t.state.feedSourceStatus.read(source.id)?.error,
+      '服务器和电脑都没取到（对方回了 429）；在电脑上的 Plasticine 浏览器里登录 Reddit，电脑会带着登录去取');
   } finally {
     await subscriptions.stop();
     await t.cleanup();

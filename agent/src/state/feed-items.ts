@@ -15,7 +15,7 @@ import {
   type Page,
 } from '../../shared/state.ts';
 import type { Params } from './db.ts';
-import { cleanLinkData, cleanUrl, safeUrl, siteOf } from '../daily/index.ts';
+import { checkLinkData, checkUrl, linkKey, safeUrl, siteOf } from '../daily/index.ts';
 import { OBJECT_META_COLUMNS, type ColumnMap } from './codec.ts';
 import { ObjectStore, type StoreContext, type StoreSpec } from './object-store.ts';
 
@@ -79,14 +79,26 @@ const SPEC: StoreSpec<typeof FeedItemSchema, typeof FeedItemInputSchema, typeof 
   columns: COLUMNS,
   defaults: DEFAULTS,
   derive(values) {
-    const cleaned = cleanLinkData(values);
+    const cleaned = checkLinkData(values);
     if ('url' in values || 'site' in values) {
-      const url = typeof values['url'] === 'string' ? cleanUrl(values['url']) : null;
+      const url = typeof values['url'] === 'string' ? checkUrl(values['url']) : null;
       return { ...cleaned, url, site: url === null ? null : siteOf(url) };
     }
     return cleaned;
   },
 };
+
+/** 新链接只是在同一页上把以前洗掉的参数补回来（旧的参数都在、多了几个）时回新链接，不然 null。 */
+function fuller(existing: string | null, incoming: string | null): string | null {
+  const old = safeUrl(existing);
+  const next = safeUrl(incoming);
+  if (old === null || next === null || old === next) return null;
+  const was = new URL(old);
+  const now = new URL(next);
+  if (was.origin !== now.origin || was.pathname !== now.pathname) return null;
+  const kept = [...was.searchParams].every(([name, value]) => now.searchParams.getAll(name).includes(value));
+  return kept && [...now.searchParams].length > [...was.searchParams].length ? next : null;
+}
 
 const NEWEST_FIRST = 'arrived_at DESC, id DESC';
 // 信息流页的列表：按天、同一天里命中关注点（concern_id 有值）的在前、再按到达新的在前。规则和客户端用的比较函数在
@@ -203,18 +215,22 @@ export function createFeedItemStore(context: StoreContext) {
         FROM feed_items WHERE reaction IS NOT NULL AND reaction_at >= $since GROUP BY source_id`, { since });
       return new Map(rows.map((row) => [String(row['source_id']), Number(row['score'])]));
     },
-    /** 包括已隐藏、已看过和迁移条目，URL 清洗后再比对，不能只查新抓取器的 dedupe key。 */
+    /**
+     * 包括已隐藏、已看过和迁移条目，不能只查新抓取器的 dedupe key。回的是洗过的样子（linkKey）：10-28 到 11-14 存的是洗过的
+     * 链接，之后存原链接，拿 linkKey(新链接) 来比才对得上。
+     */
     knownUrls(): Set<string> {
       const urls = new Set<string>();
       for (const row of context.db.all('SELECT DISTINCT url FROM feed_items WHERE url IS NOT NULL')) {
         const url = safeUrl(String(row['url']));
-        if (url !== null) { urls.add(url); }
+        if (url !== null) { urls.add(linkKey(url)); }
       }
       return urls;
     },
     byDedupeKey,
     /**
-     * 同一条（dedupe key 一样）再来拿回原来那条；第13批：在另一处又看到的把那一处并进去，以前没存全文的补上全文。
+     * 同一条（dedupe key 一样）再来拿回原来那条；第13批：在另一处又看到的把那一处并进去，以前没存全文的补上全文；
+     * 以前存的是洗过的链接、这回带着原链接的（比如小红书笔记的 xsec_token），换成原链接（11-14 起自己用不清洗）。
      */
     add(input: FeedItemInput, options: CreateOptions = {}): AddedFeedItem {
       return context.db.transaction(() => {
@@ -222,12 +238,13 @@ export function createFeedItemStore(context: StoreContext) {
         if (existing !== undefined) {
           const more = (input.places ?? []).filter((place) => !existing.places.includes(place));
           const body = existing.body === null && (input.body ?? null) !== null ? input.body : undefined;
-          if (more.length === 0 && body === undefined) return { item: existing, created: false };
+          const url = fuller(existing.url, input.url ?? null);
+          if (more.length === 0 && body === undefined && url === null) return { item: existing, created: false };
           return { item: store.update(existing.id, existing.version, {
             ...(more.length === 0 ? {} : { places: [...existing.places, ...more] }),
-            ...(body === undefined ? {} : { body }) }), created: false };
+            ...(body === undefined ? {} : { body }), ...(url === null ? {} : { url }) }), created: false };
         }
-        return { item: store.create(input, undefined, cleanLinkData(options)), created: true };
+        return { item: store.create(input, undefined, checkLinkData(options)), created: true };
       });
     },
     /** Newest first (回来时的汇总按它读到更早的为止、关切的线索也按它)。 */

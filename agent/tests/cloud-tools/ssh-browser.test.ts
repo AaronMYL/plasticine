@@ -100,14 +100,13 @@ function fakeBrowser(landing: string): { transport: BrowserTransport; actions: B
   };
 }
 
-test('云端浏览器：没开页面时不能操作；开了以后记下的网址去掉查询串；页面上的字截短', async () => {
+test('云端浏览器：没开页面时不能操作；开了以后记下原网址（11-14 起自己用不清洗）；页面上的字截短', async () => {
   const fake = fakeBrowser('https://example.com/a?token=secret');
   const browser = new CloudBrowser({ transport: fake.transport, now: () => new Date('2026-10-27T01:00:00Z') });
   assert.equal(browser.view().open, false);
   await assert.rejects(browser.act({ kind: 'back' }, signal), /还没有打开页面/);
   const view = await browser.open('https://example.com/a?token=secret', signal);
-  assert.equal(view.url, 'https://example.com/a');
-  assert.equal(JSON.stringify(view).includes('secret'), false);
+  assert.equal(view.url, 'https://example.com/a?token=secret');
   const after = await browser.act({ kind: 'click', x: 10, y: 20 }, signal);
   assert.equal(after.lastAction, '点了 (10, 20)');
   await assert.rejects(browser.act({ kind: 'click', x: -1, y: 0 }, signal), CloudToolError);

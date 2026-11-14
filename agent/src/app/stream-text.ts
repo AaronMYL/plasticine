@@ -1,7 +1,7 @@
-// 线的流式回答（line_text）在发出前清洗链接（outbound.ts）：一个链接可能被切在两段增量之间，没闭合的那一截先留着，
-// 等到边界、或这条线有了别的事件（这一条写进库、开始一步、状态变了）再连同清洗后的尾巴一起发。发布和补播走同一个出口。
+// 线的流式回答（line_text）里一个链接可能被切在两段增量之间：没闭合的那一截先留着，等到边界、或这条线有了别的事件
+// （这一条写进库、开始一步、状态变了）再连同尾巴一起发，界面上链接不会半截闪一下。发布和补播走同一个出口。
+// 11-14 起不再清洗链接（事件只给他自己的设备，自己用不清洗）。
 import type { HubStreamEvent } from '../../shared/api/index.ts';
-import { cleanOutboundText } from '../outbound.ts';
 
 type Delta = Extract<HubStreamEvent, { type: 'line_text' }>;
 const BOUNDARY = /[\s<>"'`\\，。；（）【】]/g;
@@ -35,7 +35,7 @@ export class StreamText {
         end = text.length - (possibleStart?.[0].length ?? 0);
       }
       this.#tails.set(event.lineId, { ...event, delta: text.slice(end) });
-      return [{ ...event, delta: cleanOutboundText(text.slice(0, end)) }];
+      return [{ ...event, delta: text.slice(0, end) }];
     }
     const lineId = lineOf(event);
     return [...(lineId === null ? [] : this.#flush(lineId)), event];
@@ -44,6 +44,6 @@ export class StreamText {
   #flush(lineId: string): Delta[] {
     const tail = this.#tails.get(lineId);
     this.#tails.delete(lineId);
-    return tail === undefined || tail.delta === '' ? [] : [{ ...tail, delta: cleanOutboundText(tail.delta) }];
+    return tail === undefined || tail.delta === '' ? [] : [tail];
   }
 }

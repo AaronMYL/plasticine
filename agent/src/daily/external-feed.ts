@@ -10,6 +10,7 @@ import { BUILT_IN_SOURCES } from './feed.ts';
 import type { DiscoveredFeed, FeedFetcher } from './feed-fetch.ts';
 import { collectCandidates } from './feed-candidates.ts';
 import { pickFeed } from './feed-picks.ts';
+import { linkKey } from './urls.ts';
 
 const FETCH_HOUR = 7;
 
@@ -124,7 +125,7 @@ export class ExternalFeed {
       const known = state.feedItems.knownUrls();
       for (const picked of result.picks) {
         const candidate = candidates.find((item) => item.id === picked.id);
-        if (candidate === undefined || known.has(candidate.url)) { continue; }
+        if (candidate === undefined || known.has(linkKey(candidate.url))) { continue; }
         const source = state.feedSources.require(picked.sourceId ?? candidate.sourceId);
         if (source.level === 'off') { continue; }
         const { item, created } = state.feedItems.add({ sourceId: source.id, origin: 'feed',
@@ -132,7 +133,7 @@ export class ExternalFeed {
           topic: source.kind === 'interest' ? source.label : null, concernId: source.concernId,
           summary: picked.summary, why: picked.why, dedupeKey: `rss:${candidate.id}`, day,
           arrivedAt: now().toISOString() });
-        known.add(candidate.url);
+        known.add(linkKey(candidate.url));
         if (created) { added.push(item); }
       }
       this.#finish(day, requestId, added.length, errors.join('\n') || null);

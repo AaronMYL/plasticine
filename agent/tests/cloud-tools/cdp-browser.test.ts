@@ -210,8 +210,8 @@ test('真实传输经回环 WebSocket 导航、前后退、刷新、输入中文
   const browser = new CloudBrowser({ transport, now: () => new Date() });
   const url = 'http://example.com/a?keyword=a%20b&keyword=C&token=discard';
   await browser.open(url, signal());
-  assert.equal(fake.commands.find((c) => c.method === 'Page.navigate')?.params['url'],
-    'http://example.com/a?keyword=a%20b&keyword=C');
+  // 11-14 起自己用不清洗：照原网址导航。
+  assert.equal(fake.commands.find((c) => c.method === 'Page.navigate')?.params['url'], url);
   await assert.rejects(browser.open('file:///tmp/example', signal()));
   await browser.act({ kind: 'click', x: 100, y: 200 }, signal());
   await browser.act({ kind: 'move', x: 20, y: 30 }, signal());

@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import type { ServerEvent } from '../../shared/api/index.ts';
 import type { LineMessageView } from '../../shared/api/lines.ts';
 import { EventHub, type HubEvent } from '../../src/app/event-hub.ts';
-import { cleanOutboundText } from '../../src/outbound.ts';
 
 const started = (noteId: string): ServerEvent => ({ type: 'note_invalidated', noteId });
 
@@ -16,7 +15,7 @@ function answer(lineId: string): LineMessageView {
 
 const OWNER = { sessionId: 'session-1', deviceId: 'device-1' };
 
-test('线的流式回答：链接跨分片时完整清洗，重连补播与这一条结束时得到同一段文字', () => {
+test('线的流式回答：链接跨分片时留到完整再发（11-14 起不清洗，原样），重连补播与这一条结束时得到同一段文字', () => {
   const hub = new EventHub(100, 'text');
   const seen: HubEvent[] = [];
   hub.subscribe(OWNER, null, (event) => seen.push(event), () => undefined);
@@ -27,7 +26,10 @@ test('线的流式回答：链接跨分片时完整清洗，重连补播与这�
   hub.publish({ type: 'line_message', message: answer('line-main') });
   const textOf = (entries: HubEvent[]) => entries.map(({ event }) =>
     event.type === 'line_text' ? event.delta : '').join('');
-  assert.equal(textOf(seen), cleanOutboundText(parts.join('')));
+  assert.equal(textOf(seen), parts.join(''));
+  // 链接没闭合前不发出半截：发出去的每一段里，链接都是整的。
+  assert.ok(seen.some(({ event }) => event.type === 'line_text'
+    && event.delta.includes('https://reader:example@demo.test/a?accessToken=example&x=1#part')));
   const replay = hub.subscribe(OWNER, seen[1]?.id ?? null, () => undefined, () => undefined).replay;
   assert.equal(textOf([...seen.slice(0, 2), ...replay]), textOf(seen));
 });
@@ -48,7 +50,7 @@ test('两条线同时流式：各自的尾巴各自留，不串到另一条线',
   assert.equal(of('b'), '乙说完了。');
   assert.equal(of('a'), '甲说 ');
   hub.publish({ type: 'line_message', message: answer('a') });
-  assert.equal(of('a'), cleanOutboundText('甲说 https://a.test/?token='));
+  assert.equal(of('a'), '甲说 https://a.test/?token=');
 });
 
 test('事件 id 带批次和序号，订阅者按发布顺序收到', () => {

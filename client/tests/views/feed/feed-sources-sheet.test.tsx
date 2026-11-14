@@ -32,6 +32,11 @@ describe('信息流 · 加来源 Sheet', () => {
     expect(within(sheet).getByRole('form', { name: '加订阅' })).toBeTruthy();
     fireEvent.click(within(sheet).getByRole('tab', { name: '小红书' }));
     expect(within(sheet).getByRole('tabpanel', { name: '小红书' }).textContent).toContain('首页「推荐」和你的收藏');
+    // 11-14：Reddit 也写在电脑上的 Plasticine 浏览器里登录（服务器取不到的版块，电脑用这个登录去取）。
+    fireEvent.click(within(sheet).getByRole('tab', { name: 'Reddit' }));
+    const reddit = within(sheet).getByRole('tabpanel', { name: 'Reddit' }).textContent ?? '';
+    expect(reddit).toContain('在电脑上的 Plasticine 浏览器里登录 Reddit');
+    expect(reddit).toContain('电脑在线时用这个登录去取');
     fireEvent.click(within(sheet).getByRole('tab', { name: '兴趣' }));
     expect(within(sheet).getByRole('region', { name: '加关注点' })).toBeTruthy();
     expect(open.getAttribute('aria-expanded')).toBe('true');

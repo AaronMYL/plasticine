@@ -60,14 +60,17 @@ export const LOGIN_SITES = {
     hosts: ['douyin.com'] },
   xhs: { url: 'https://www.xiaohongshu.com/explore', title: '小红书', login: '登录小红书', open: '打开小红书',
     hosts: ['xiaohongshu.com'] },
+  // 11-14 Aaron 定：服务器取不到的版块，电脑用这个登录去取（不登录也会被限流）。
+  reddit: { url: 'https://www.reddit.com/login/', title: 'Reddit', login: '登录 Reddit', open: '打开 Reddit',
+    hosts: ['reddit.com'] },
 } as const;
 export type LoginKind = keyof typeof LOGIN_SITES;
 
 export function isLoginKind(kind: FeedNavSource['kind']): kind is LoginKind {
-  return kind === 'x' || kind === 'douyin' || kind === 'xhs';
+  return kind === 'x' || kind === 'douyin' || kind === 'xhs' || kind === 'reddit';
 }
 
-/** 电脑上登录着哪几种：{ x, douyin, xhs }；没有桌面桥（网页、手机）是 null。读不到也当不知道。 */
+/** 电脑上登录着哪几种：{ x, douyin, xhs, reddit }；没有桌面桥（网页、手机）是 null。读不到也当不知道。 */
 export function useSiteLogins(): Readonly<Record<LoginKind, boolean>> | null {
   const [logins] = useState(hostLogins);
   const [state, setState] = useState<Readonly<Record<LoginKind, boolean>> | null>(null);
@@ -85,7 +88,7 @@ export function useSiteLogins(): Readonly<Record<LoginKind, boolean>> | null {
           .some((host) => site.host === host || site.host.endsWith(`.${host}`)));
         if (live) {
           setState({ x: has(LOGIN_SITES.x.hosts), douyin: has(LOGIN_SITES.douyin.hosts),
-            xhs: has(LOGIN_SITES.xhs.hosts) });
+            xhs: has(LOGIN_SITES.xhs.hosts), reddit: has(LOGIN_SITES.reddit.hosts) });
         }
       }).catch((cause: unknown) => {
         console.warn('没读到电脑上的登录状态', cause);

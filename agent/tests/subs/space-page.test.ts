@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { spaceHtmlText } from '../../shared/space-html.ts';
 import { followTexts, pageSummary, sanitizeSpaceHtml } from '../../src/subs/index.ts';
-import { dropDeadMessageLinks } from '../../src/subs/space-page.ts';
+import { checkSpacePage, dropDeadMessageLinks } from '../../src/subs/space-page.ts';
 import { illustrate } from '../../src/subs/illustrate.ts';
 
 test('清洗：外链脚本、iframe、object、embed、表单、base、meta（含跳转）、link 去掉，并说清去掉了什么', () => {
@@ -119,4 +119,15 @@ test('链到原对话的出处：那一条找不到（编的、删了、形状�
   assert.equal(dropDeadMessageLinks(html, (ref) => live.has(ref)),
     '<blockquote class="lt-quote">先把框架读懂。<cite><a data-link="message:line:main:12">11 月 12 日</a>'
     + '</cite></blockquote><p>见这段原话，还有一段和<a data-link="project:p1">项目</a>。</p>');
+});
+
+test('来信里的链接洗掉像凭据的参数（11-14 Aaron 定「写进来信时清洗」）；报告里的照原样', () => {
+  const link = 'https://www.xiaohongshu.com/explore/6614a2b3000000001a0123ab?xsec_token=AB123%3D&amp;page=2';
+  const page = `<p class="lt-lead">今天看到一篇 <a href="${link}">笔记</a>，原文在 ${link} 。</p>`
+    + '<p>第二段，写满一些字，免得被当成空的正文。第二段，写满一些字，免得被当成空的正文。</p>';
+  const letter = checkSpacePage('letter', page).html;
+  assert.equal(letter.includes('xsec_token'), false);
+  assert.ok(letter.includes('https://www.xiaohongshu.com/explore/6614a2b3000000001a0123ab?page=2'));
+  const report = checkSpacePage('report', `<h1>报告</h1>${page}`).html;
+  assert.ok(report.includes('xsec_token=AB123%3D'));
 });

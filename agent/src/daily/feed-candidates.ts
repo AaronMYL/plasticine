@@ -13,7 +13,7 @@ import { BUILT_IN_SOURCES } from './feed.ts';
 import { cleanSite } from './link-data.ts';
 import { searchNews } from './search-feed.ts';
 import type { SearchHit } from './search-parse.ts';
-import { cleanUrl } from './urls.ts';
+import { checkUrl, linkKey } from './urls.ts';
 
 // 10-29 沿用旧版上限与计分；不是共同状态里表示证据来源的 w。
 const INTEREST_LIMIT = 8;
@@ -92,16 +92,18 @@ export async function collectCandidates(state: StateService, fetcher: FeedFetche
   let failures = 0;
   const errors: string[] = [];
   const add = (hit: SearchHit, source: FeedSource, via: string): boolean => {
-    const url = cleanUrl(hit.url);
+    const url = checkUrl(hit.url);
+    // 比对去重用洗过的样子：以前存的是洗过的链接。
+    const key = linkKey(url);
     const host = new URL(url).hostname.replace(/^www\./, '');
     const at = hit.publishedAt === null ? null : Date.parse(hit.publishedAt);
-    if (seen.has(url) || blocked.has(host) || blocked.has(cleanSite(hit.site)?.replace(/^www\./, ''))
+    if (seen.has(key) || blocked.has(host) || blocked.has(cleanSite(hit.site)?.replace(/^www\./, ''))
       || !looksLikeArticle(url) || (at !== null && (at < now.getTime() - ARTICLE_WINDOW_MS || at > now.getTime()))
       || banned.some((word) => hit.title.includes(word) || hit.text.includes(word))) {
       return false;
     }
-    seen.add(url);
-    candidates.push({ ...hit, url, id: createHash('sha256').update(url).digest('hex'),
+    seen.add(key);
+    candidates.push({ ...hit, url, id: createHash('sha256').update(key).digest('hex'),
       sourceId: source.id, sourceLabel: source.label, via, weight: weight(source) });
     return true;
   };
