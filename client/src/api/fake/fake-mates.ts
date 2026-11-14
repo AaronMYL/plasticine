@@ -1,8 +1,8 @@
 import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
-import { autoMateCharacter, DEFAULT_MAIN, MateDraftSchema, MateGroupDraftSchema, SendLineMessageRequestSchema,
-  UpdateMateRequestSchema } from '../shared.ts';
+import { autoMateCharacter, DEFAULT_MAIN, DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT, MateDraftSchema,
+  MateGroupDraftSchema, SendLineMessageRequestSchema, UpdateMateRequestSchema } from '../shared.ts';
 import type { MateDraft, MateView, MateGroupView, MateGroupDraft, CreateMateRequest, UpdateMateRequest,
   MateHandoffRequest, LegacyChatConvertRequest, LegacyChatProposal, MainIdentity, UpdateMainRequest }
   from '../shared.ts';
@@ -36,12 +36,12 @@ export class FakeMates implements MatesApi {
         .map((line) => ({ lineId: line.id, title: line.title, updatedAt: line.updatedAt })),
       main: structuredClone(this.main) };
   }
-  /** 主线的名字（第 12 批；头像固定，11-13）。 */
-  main: MainIdentity = { ...DEFAULT_MAIN };
+  /** 主线的名字和画风（第 12 批；脸固定是漩涡，画风可以换，11-13）。 */
+  main: MainIdentity = { ...DEFAULT_MAIN, variant: DEFAULT_MATE_VARIANT };
   async updateMain(input: UpdateMainRequest): Promise<{ main: MainIdentity }> {
     this.deps.session.require();
     return this.deps.receipts.run('save', input.requestId, 'POST /v2/main', () => {
-      this.main = { name: input.name.trim() };
+      this.main = { name: input.name.trim(), variant: input.variant ?? this.main.variant ?? DEFAULT_MATE_VARIANT };
       return { main: structuredClone(this.main) };
     });
   }
@@ -56,7 +56,8 @@ export class FakeMates implements MatesApi {
     const id = `mate-${++this.serial}`;
     const lineId = previousLineId ?? `line-${id}`;
     const at = this.deps.now().toISOString();
-    const mate = { ...draft, id, lineId, version: 1, createdAt: at, updatedAt: at, disabledAt: null };
+    const mate: MateView = { ...draft, variant: draft.variant ?? DEFAULT_MATE_VARIANT,
+      face: draft.face ?? DEFAULT_MATE_FACE, id, lineId, version: 1, createdAt: at, updatedAt: at, disabledAt: null };
     this.rows.set(id, mate);
     this.deps.rules?.(id, draft.soul);
     if (previousLineId === undefined) {
@@ -78,7 +79,8 @@ export class FakeMates implements MatesApi {
       if (current === undefined) throw missing();
       if (current.version !== input.version) throw conflict();
       const draft: MateDraft = { name: input.name ?? current.name, avatar: input.avatar ?? current.avatar,
-        hue: input.hue ?? current.hue, role: input.role ?? current.role, soul: current.soul,
+        hue: input.hue ?? current.hue, variant: input.variant ?? current.variant, face: input.face ?? current.face,
+        role: input.role ?? current.role, soul: current.soul,
         purpose: input.purpose === undefined ? current.purpose : input.purpose };
       if (!Value.Check(MateDraftSchema, draft)) throw invalid('请核对名字、职责和 Soul。');
       const next = { ...current, ...draft, version: current.version + 1, updatedAt: this.deps.now().toISOString(),

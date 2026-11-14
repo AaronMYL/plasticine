@@ -117,7 +117,7 @@ describe('主线头像', () => {
 
   it('静止的那一张：泥团是强调色，漩涡是页面底色（深色主题下和图标一样是深色的线）', async () => {
     const engine = await loadBotEngine();
-    const svg = stillSvg(engine, { kind: 'main' }, 'idle', 28);
+    const svg = stillSvg(engine, { kind: 'main', variant: 'solid' }, 'idle', 28);
     expect(svg).toContain('var(--accent)');
     const face = /<g data-plasticine-face="">[\s\S]*?<\/g>/.exec(svg)?.[0] ?? '';
     expect(face).toContain('fill="var(--bg)"');
@@ -128,7 +128,7 @@ describe('主线头像', () => {
 
   it('队友：身体是选的颜色，眼睛是页面底色；同一个只画一次', async () => {
     const engine = await loadBotEngine();
-    const look = { kind: 'mate', character: 'fox', hue: 'indigo' } as const;
+    const look = { kind: 'mate', character: 'fox', hue: 'indigo', variant: 'solid', face: 'cute' } as const;
     const svg = stillSvg(engine, look, 'idle', 28);
     expect(svg).toContain('var(--hue-indigo)');
     expect(svg).toContain('var(--bg)');

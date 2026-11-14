@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotAvatar } from '../../../../src/views/mates/bot/bot-avatar.tsx';
 import { loadBotEngine } from '../../../../src/views/mates/bot/bot-engine.ts';
 
-const fox = { kind: 'mate', character: 'fox', hue: 'indigo' } as const;
+const fox = { kind: 'mate', character: 'fox', hue: 'indigo', variant: 'solid', face: 'cute' } as const;
 
 function avatar(container: HTMLElement): HTMLElement {
   const found = container.querySelector<HTMLElement>('.bot-avatar');
@@ -44,7 +44,7 @@ describe('头像', () => {
 
   it('只要静止的、系统减少动态效果：都画那一刻的样子，不动', async () => {
     await loadBotEngine();
-    const still = render(<BotAvatar look={{ kind: 'main' }} size={28} state="failed" still />);
+    const still = render(<BotAvatar look={{ kind: 'main', variant: 'solid' }} size={28} state="failed" still />);
     expect(avatar(still.container).getAttribute('style')).not.toContain('--plasticine-fg');
     expect(avatar(still.container).innerHTML).toContain('var(--accent)');
     still.unmount();

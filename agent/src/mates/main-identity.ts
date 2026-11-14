@@ -1,22 +1,28 @@
-// 第 12 批：主线的名字（11-12 Aaron 定：主线 AI 的名字可以自己起）。存在 kernel_settings 一个键里；头像固定（11-13）；
+// 第 12 批：主线的名字（11-12 Aaron 定：主线 AI 的名字可以自己起）。存在 kernel_settings 一个键里；头像是泥团加漩涡，
+// 画风可以换（11-13）；
 // 新名字用在栏目、主线、署名、输入框提示、它的自称和发给好友的资料（aiName）；窗口标题、安装包、官网等产品名不变。
 
 import { Value } from 'typebox/value';
 import { DEFAULT_MAIN, DEFAULT_MAIN_NAME, MainIdentitySchema, type MainIdentity } from '../../shared/api/mates.ts';
+import { DEFAULT_MATE_VARIANT } from '../../shared/api/mate-characters.ts';
 import type { StateService } from '../state/index.ts';
 
 const KEY = 'main_identity';
 
 export type MainIdentityState = Pick<StateService, 'kernelSettings'>;
 
+/** 读出来的总带着画风：没换过就是扁平。 */
 export function mainIdentity(state: MainIdentityState): MainIdentity {
   const stored = state.kernelSettings.get(KEY);
-  return Value.Check(MainIdentitySchema, stored) ? stored : DEFAULT_MAIN;
+  const found = Value.Check(MainIdentitySchema, stored) ? stored : DEFAULT_MAIN;
+  return { name: found.name, variant: found.variant ?? DEFAULT_MATE_VARIANT };
 }
 
+/** 只改名字（没带画风）时画风照旧。 */
 export function setMainIdentity(state: MainIdentityState, input: MainIdentity): MainIdentity {
   const name = input.name.trim();
-  const next: MainIdentity = { name: name.length < 2 ? DEFAULT_MAIN_NAME : name };
+  const next: MainIdentity = { name: name.length < 2 ? DEFAULT_MAIN_NAME : name,
+    variant: input.variant ?? mainIdentity(state).variant ?? DEFAULT_MATE_VARIANT };
   state.kernelSettings.set(KEY, next);
   return next;
 }

@@ -1,5 +1,5 @@
 // 第 12 批：主线的名字可以自己起。改名后队友列表带着它、主线的提示词里自称用它；加入了网络就再发一次资料，
-// 每个好友那边收到 aiName；没改过（还叫 Plasticine）时 aiName 是 null。
+// 每个好友那边收到 aiName；没改过（还叫 Plasticine）时 aiName 是 null。画风可以换（11-13），没换过是扁平。
 
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
@@ -7,6 +7,7 @@ import { generateIdentityKeys } from '../../src/network/index.ts';
 import { identitySection } from '../../src/lines/prompt.ts';
 import { aiNameOf } from '../../src/mates/main-identity.ts';
 import { call, json, pair, startTestApp, type TestApp } from '../app/helpers.ts';
+import { newRequestId } from '../app/signing.ts';
 import { post, type Body } from './helpers.ts';
 
 const opened: TestApp[] = [];
@@ -33,14 +34,14 @@ async function joined(): Promise<{ t: TestApp; cookie: string; contactId: string
 test('没改过：队友列表里主线叫 Plasticine，发给好友的 aiName 是 null', async () => {
   const { t, cookie } = await joined();
   const list = json(await call(t, 'GET', '/v2/mates', { cookie }));
-  assert.deepEqual(list['main'], { name: 'Plasticine' });
+  assert.deepEqual(list['main'], { name: 'Plasticine', variant: 'solid' });
   assert.equal(aiNameOf(t.state), null);
 });
 
 test('改名：列表带新名字，提示词自称用它，资料再发给每个好友（带 aiName）', async () => {
   const { t, cookie, contactId } = await joined();
   const reply = await post(t, cookie, '/v2/main', { name: '阿泥' });
-  assert.deepEqual(reply['main'], { name: '阿泥' });
+  assert.deepEqual(reply['main'], { name: '阿泥', variant: 'solid' });
   const list = json(await call(t, 'GET', '/v2/mates', { cookie }));
   assert.equal((list['main'] as Body)['name'], '阿泥');
   assert.match(identitySection(undefined, '阿泥'), /^你叫阿泥/);
@@ -48,4 +49,15 @@ test('改名：列表带新名字，提示词自称用它，资料再发给每�
   const sent = t.state.contactMessages.outboxDue('9999-12-31T00:00:00.000Z', 50)
     .find((row) => row.kind === 'profile' && row.contactId === contactId);
   assert.equal((sent?.payload as Body | undefined)?.['aiName'], '阿泥');
+});
+
+test('换画风：存下来，只改名字时画风照旧；不认识的画风不收', async () => {
+  const { t, cookie } = await joined();
+  const reply = await post(t, cookie, '/v2/main', { name: '阿泥', variant: 'origami' });
+  assert.deepEqual(reply['main'], { name: '阿泥', variant: 'origami' });
+  const renamed = await post(t, cookie, '/v2/main', { name: '小泥' });
+  assert.deepEqual(renamed['main'], { name: '小泥', variant: 'origami' });
+  const bad = await call(t, 'POST', '/v2/main', { cookie, body: { requestId: newRequestId('rq'), name: '小泥',
+    variant: 'crisp' } });
+  assert.equal(bad.status, 400);
 });

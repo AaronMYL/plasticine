@@ -144,8 +144,25 @@
 /* 编辑队友的头像（11-13）：左边大头像，右边角色格子和颜色。 */
 .mate-form-look { align-items: flex-start; flex-wrap: nowrap; }
 .mate-form-look-side { display: flex; flex: 1; flex-direction: column; gap: 8px; min-width: 0; }
-.character-picker { display: flex; flex-direction: column; gap: 8px; height: 196px; overflow-y: auto; padding: 6px;
-  border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+/* 「角色 · 画风 · 脸型」切换同一块格子（11-13 设计稿）：三样一样高，切过去不跳；换的时候淡入。 */
+.look-picker { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look-picker-tabs { align-self: flex-start; }
+.look-grid { height: 196px; overflow-y: auto; padding: 6px; border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--line); animation: look-grid-in 160ms ease-out; }
+.look-grid-fit { height: auto; animation: none; }
+@keyframes look-grid-in { from { opacity: 0; transform: translateY(2px); } }
+@media (prefers-reduced-motion: reduce) { .look-grid { animation: none; } }
+/* 手机上一排放五个：画风、脸型四排，格子高一点，一屏看全。 */
+@media (max-width: 600px) { .look-grid { height: 240px; } .look-grid-fit { height: auto; } }
+.character-picker { display: flex; flex-direction: column; gap: 8px; }
+.look-choices { display: flex; flex-wrap: wrap; gap: 2px; }
+.look-choice { display: flex; flex-direction: column; align-items: center; gap: 1px; width: 48px; padding: 4px 0;
+  border: 0; border-radius: 8px; background: transparent; color: var(--fg2); font-size: 11px; line-height: 15px;
+  cursor: pointer; transition: background-color 120ms ease-out, color 120ms ease-out; }
+.look-choice:hover { background: var(--tint2); }
+.look-choice[aria-pressed='true'] { background: var(--tint2); box-shadow: inset 0 0 0 1.5px var(--fg);
+  color: var(--fg); }
+.look-choice-name { white-space: nowrap; }
 .character-family { display: flex; flex-direction: column; gap: 2px; }
 .character-family-name { padding: 0 4px; font-size: 11px; color: var(--fg3); }
 .character-family-items { display: flex; flex-wrap: wrap; gap: 2px; }

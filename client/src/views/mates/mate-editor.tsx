@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { DEFAULT_MATE_CHARACTER, MODEL_PURPOSES, PROJECT_HUES, type MateDraft, type MateView, type MateGroupView,
-  type MateGroupDraft } from '../../api/shared.ts';
+import { DEFAULT_MATE_CHARACTER, DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT, MODEL_PURPOSES, PROJECT_HUES,
+  type MateDraft, type MateView, type MateGroupView, type MateGroupDraft } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { HueSwatches } from '../../primitives/hue-swatches/index.tsx';
 import { HUE_NAMES } from '../../shell/hue.tsx';
@@ -12,11 +12,11 @@ import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { mateGroupRoute, mateRoute, type Route } from '../../shell/routes.ts';
 import { useOp } from '../pending/pending-ops.tsx';
-import { CharacterPicker } from './bot/character-picker.tsx';
+import { LookPicker } from './bot/look-picker.tsx';
 import { MateAvatar } from './mate-avatar.tsx';
 
-export const EMPTY_MATE: MateDraft = { name: '', role: '', avatar: DEFAULT_MATE_CHARACTER, hue: 'sky', purpose: null,
-  soul: '' };
+export const EMPTY_MATE: MateDraft = { name: '', role: '', avatar: DEFAULT_MATE_CHARACTER, hue: 'sky',
+  variant: DEFAULT_MATE_VARIANT, face: DEFAULT_MATE_FACE, purpose: null, soul: '' };
 
 /**
  * 新建队友时的几个现成起点（11-12，Aaron：「让配置更直观」）：点一个填好名字、职责、头像角色和颜色，再照自己的事改。
@@ -47,7 +47,8 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
   };
   const submit = async (): Promise<void> => {
     // 改队友不带 Soul：Soul 在它自己的页面改，更新接口不收这一项（11-13 Aaron 换头像时报「队友不合要求」）。
-    const changes = { name: draft.name.trim(), avatar: draft.avatar, hue: draft.hue, role: draft.role.trim(),
+    const changes = { name: draft.name.trim(), avatar: draft.avatar, hue: draft.hue,
+      variant: draft.variant ?? DEFAULT_MATE_VARIANT, face: draft.face ?? DEFAULT_MATE_FACE, role: draft.role.trim(),
       purpose: draft.purpose };
     const result = mate === undefined ? await live.mateActions.create({ ...changes, soul: draft.soul })
       : await live.mateActions.update(mate, changes);
@@ -70,12 +71,13 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
           </div>
         )}
         <div className="mate-form-identity mate-form-look">
-          {/* 换了角色或颜色弹一下：重新挂上，做完的那一下（11-13 设计稿）。 */}
-          <MateAvatar key={`${draft.avatar}:${draft.hue}`} mate={draft} size={56} picked={picked} />
+          {/* 换了角色、画风、脸型或颜色弹一下：重新挂上，做完的那一下（11-13 设计稿）。 */}
+          <MateAvatar key={`${draft.avatar}:${draft.hue}:${draft.variant}:${draft.face}`} mate={draft} size={56}
+            picked={picked} />
           <div className="mate-form-look-side">
-            <span className="mate-form-label">头像</span>
-            <CharacterPicker value={draft.avatar} hue={draft.hue}
-              onChange={(avatar) => { setPicked(true); patch('avatar', avatar); }} />
+            <LookPicker look={{ avatar: draft.avatar, hue: draft.hue, variant: draft.variant ?? DEFAULT_MATE_VARIANT,
+              face: draft.face ?? DEFAULT_MATE_FACE }}
+              onChange={(change) => { setPicked(true); setDraft((old) => ({ ...old, ...change })); }} />
             <span className="mate-form-label">颜色</span>
             <HueSwatches label="颜色" hues={PROJECT_HUES} names={HUE_NAMES} value={draft.hue}
               onChange={(hue) => { setPicked(true); patch('hue', hue); }} /></div></div>

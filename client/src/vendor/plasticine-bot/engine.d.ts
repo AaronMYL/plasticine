@@ -9,6 +9,7 @@ export interface CharacterOptions {
   shape?: string;
   state?: string;
   face?: string;
+  variant?: string;
   seed?: string;
   ink?: InkPaint | null;
   reducedMotion?: boolean;
@@ -36,6 +37,7 @@ export interface StaticOptions {
   shape?: string;
   state?: string;
   face?: string;
+  variant?: string;
   sizePx?: number;
   ink?: InkPaint | null;
   eyeColor?: string;
@@ -116,3 +118,7 @@ export const STATE_CUTE_MOUTH: Record<string, string>;
 export const CUTE_MOUTHS: Record<string, unknown>;
 export const SHAPE_IDS: readonly string[];
 export const SHAPE_FAMILIES: readonly { id: string; label: { en: string; zh: string }; shapes: readonly string[] }[];
+/** 矢量画风（扁平、线条、玻璃……），按引擎的顺序。 */
+export const VECTOR_VARIANTS: readonly string[];
+/** 全部脸型（胶囊眼、萌脸、豆豆眼……），按引擎的顺序。 */
+export const FACE_STYLES: readonly string[];

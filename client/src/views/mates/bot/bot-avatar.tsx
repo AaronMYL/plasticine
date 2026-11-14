@@ -43,7 +43,7 @@ export function BotAvatar({ look, size, state = 'idle', still = false }: BotAvat
   const [live, setLive] = useState(false);
   const host = useRef<HTMLSpanElement>(null);
   const controller = useRef<CharacterController | null>(null);
-  const { shape, face } = engineShape(look);
+  const { shape, face, variant } = engineShape(look);
 
   // 动起来立刻换；停下来等落定。
   useEffect(() => {
@@ -62,14 +62,14 @@ export function BotAvatar({ look, size, state = 'idle', still = false }: BotAvat
   useLayoutEffect(() => {
     const element = host.current;
     if (!live || engine === null || element === null) return undefined;
-    const character = engine.createCharacter(element, { shape, face, state: 'idle', seed: shape,
+    const character = engine.createCharacter(element, { shape, face, variant, state: 'idle', seed: shape,
       entryEffects: false, autoPause: true });
     controller.current = character;
     return () => {
       character.destroy();
       controller.current = null;
     };
-  }, [live, engine, shape, face]);
+  }, [live, engine, shape, face, variant]);
 
   useEffect(() => {
     const character = controller.current;

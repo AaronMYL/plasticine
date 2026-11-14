@@ -1,7 +1,7 @@
 import { Type, type Static } from 'typebox';
 import { IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { MODEL_PURPOSE_IDS } from './model-purposes.ts';
-import { MATE_CHARACTERS } from './mate-characters.ts';
+import { MATE_CHARACTERS, MATE_FACES, MATE_VARIANTS } from './mate-characters.ts';
 import { PROJECT_HUES } from './project-tag.ts';
 import { RECORD_META } from '../state-common.ts';
 import { LineViewSchema } from './lines.ts';
@@ -15,13 +15,17 @@ export const MateDraftSchema = Type.Object({
   /** 头像是 Plasticine-bot 的一个角色（11-13，原来是头像文字）；颜色是 hue。 */
   avatar: Type.Enum(MATE_CHARACTERS),
   hue: Type.Enum(PROJECT_HUES),
+  /** 画风和脸型（11-13）：不给就是扁平、萌脸；存下来的队友两项都有。 */
+  variant: Type.Optional(Type.Enum(MATE_VARIANTS)),
+  face: Type.Optional(Type.Enum(MATE_FACES)),
   role: Type.String({ minLength: 2, maxLength: 160 }),
   soul: Type.String({ maxLength: 20_000 }),
   purpose: Type.Union([Type.Enum(MODEL_PURPOSE_IDS), Type.Null()]),
 }, STRICT);
 export type MateDraft = Static<typeof MateDraftSchema>;
 export const MateViewSchema = Type.Object({ ...RECORD_META, ...MateDraftSchema.properties,
-  lineId: IdSchema, disabledAt: Type.Union([IsoTimeSchema, Type.Null()]) }, STRICT);
+  variant: Type.Enum(MATE_VARIANTS), face: Type.Enum(MATE_FACES), lineId: IdSchema,
+  disabledAt: Type.Union([IsoTimeSchema, Type.Null()]) }, STRICT);
 export type MateView = Static<typeof MateViewSchema>;
 export const MateGroupDraftSchema = Type.Object({ name: Type.String({ minLength: 2, maxLength: 60 }),
   mateIds: Type.Array(IdSchema, { minItems: 2, maxItems: 6, uniqueItems: true }) }, STRICT);
@@ -32,12 +36,14 @@ export type MateGroupView = Static<typeof MateGroupViewSchema>;
 export const LegacyChatSchema = Type.Object({ lineId: IdSchema, title: Type.String(),
   updatedAt: IsoTimeSchema }, STRICT);
 /**
- * 第 12 批：主线的名字。头像固定是 Plasticine 的泥团、漩涡当脸，颜色跟强调色（11-13 Aaron 定，原来的头像字和颜色去掉）。
+ * 第 12 批：主线的名字。头像是 Plasticine 的泥团、漩涡当脸，颜色跟强调色（11-13 Aaron 定，原来的头像字和颜色去掉）；
+ * 画风可以换（11-13），没换过就是扁平。
  */
 export const MAIN_PATH = '/v2/main';
 export const DEFAULT_MAIN_NAME = 'Plasticine';
 export const MainIdentitySchema = Type.Object({
   name: Type.String({ minLength: 2, maxLength: 20 }),
+  variant: Type.Optional(Type.Enum(MATE_VARIANTS)),
 }, STRICT);
 export type MainIdentity = Static<typeof MainIdentitySchema>;
 export const DEFAULT_MAIN: MainIdentity = { name: DEFAULT_MAIN_NAME };

@@ -54,3 +54,21 @@ export function autoMateCharacter(seed: string, taken: ReadonlySet<string> = new
   }
   return AUTO_MATE_CHARACTERS[start] ?? DEFAULT_MATE_CHARACTER;
 }
+
+/**
+ * 画风和脸型（11-13 Aaron 定）：角色之外还能换引擎的 16 种矢量画风（不要像素和颜文字，它们不跟颜色令牌）和 16 种脸型。
+ * 顺序和打包进来的引擎 VECTOR_VARIANTS、FACE_STYLES 一致，client 的测试核对两边。主线也能换画风，脸固定是漩涡。
+ */
+export const MATE_VARIANTS = [
+  'solid', 'outline', 'glass', 'sticker', 'paper', 'soft', 'riso', 'pencil',
+  'marker', 'crayon', 'watercolor', 'neon', 'chalk', 'origami', 'relief', 'gothic',
+] as const;
+export type MateVariant = (typeof MATE_VARIANTS)[number];
+export const DEFAULT_MATE_VARIANT: MateVariant = 'solid';
+
+export const MATE_FACES = [
+  'capsule', 'cute', 'eyes', 'line', 'brow', 'glossy', 'sparkle', 'button',
+  'shades', 'droopy', 'bigmouth', 'pie', 'screen', 'symbol', 'teardrop', 'specs',
+] as const;
+export type MateFace = (typeof MATE_FACES)[number];
+export const DEFAULT_MATE_FACE: MateFace = 'cute';

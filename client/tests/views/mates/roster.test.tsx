@@ -17,7 +17,7 @@ it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', a
   const picked = within(colors).getAllByRole('radio')[2]!;
   fireEvent.click(picked);
   expect(picked.getAttribute('aria-checked')).toBe('true');
-  const picker = within(editor).getByRole('group', { name: '头像' });
+  const picker = within(editor).getByRole('group', { name: '角色' });
   fireEvent.click(await within(picker).findByRole('button', { name: '狐狸' }));
   expect(within(picker).getByRole('button', { name: '狐狸' }).getAttribute('aria-pressed')).toBe('true');
   fireEvent.click(within(editor).getByRole('button', { name: '创建队友' }));
@@ -105,7 +105,7 @@ it('新建队友时点一个现成的起点：名字、职责、头像角色都�
   fireEvent.click(within(presets).getByRole('button', { name: '文字编辑' }));
   expect((within(editor).getByLabelText('名字') as HTMLInputElement).value).toBe('文字编辑');
   expect((within(editor).getByLabelText('职责') as HTMLTextAreaElement).value).toMatch(/^改稿、润色/);
-  const picker = within(editor).getByRole('group', { name: '头像' });
+  const picker = within(editor).getByRole('group', { name: '角色' });
   expect((await within(picker).findByRole('button', { name: '兔子' })).getAttribute('aria-pressed')).toBe('true');
   expect(within(editor).queryByLabelText('头像文字')).toBeNull();
   expect(within(presets).getByRole('button', { name: '文字编辑' }).getAttribute('aria-pressed')).toBe('true');
@@ -113,7 +113,7 @@ it('新建队友时点一个现成的起点：名字、职责、头像角色都�
   expect(within(presets).getByRole('button', { name: '文字编辑' }).getAttribute('aria-pressed')).toBe('false');
 });
 
-it('编辑已有队友换头像和颜色能保存（11-13：更新不带 Soul，原来报「队友不合要求」）', async () => {
+it('编辑已有队友换角色、画风、脸型和颜色能保存（11-13：更新不带 Soul，原来报「队友不合要求」）', async () => {
   const app = await renderApp({ hash: '#/plasticine' });
   let mate: Awaited<ReturnType<typeof make>> | undefined;
   await act(async () => { mate = await make(app, '求职顾问'); });
@@ -121,11 +121,19 @@ it('编辑已有队友换头像和颜色能保存（11-13：更新不带 Soul，
   fireEvent.click(await screen.findByRole('button', { name: '更多' }));
   fireEvent.click(await screen.findByRole('menuitem', { name: '编辑队友' }));
   const editor = await screen.findByRole('dialog', { name: '编辑队友' });
-  const picker = within(editor).getByRole('group', { name: '头像' });
-  fireEvent.click(await within(picker).findByRole('button', { name: '丸子头' }));
+  const tabs = within(editor).getByRole('group', { name: '头像' });
+  const characters = within(editor).getByRole('group', { name: '角色' });
+  fireEvent.click(await within(characters).findByRole('button', { name: '丸子头' }));
+  fireEvent.click(within(tabs).getByRole('button', { name: '画风' }));
+  expect(within(editor).queryByRole('group', { name: '角色' })).toBeNull();
+  fireEvent.click(within(within(editor).getByRole('group', { name: '画风' })).getByRole('button', { name: '折纸' }));
+  fireEvent.click(within(tabs).getByRole('button', { name: '脸型' }));
+  const faces = within(editor).getByRole('group', { name: '脸型' });
+  expect(within(faces).getByRole('button', { name: '萌脸' }).getAttribute('aria-pressed')).toBe('true');
+  fireEvent.click(within(faces).getByRole('button', { name: '眼镜脸' }));
   fireEvent.click(within(editor).getByRole('radio', { name: '玫红' }));
   fireEvent.click(within(editor).getByRole('button', { name: '保存修改' }));
   await waitFor(async () => expect(await app.api.mates.get(mate!.id)).toMatchObject({ avatar: 'topknot',
-    hue: 'rose', role: '整理资料来源' }));
+    hue: 'rose', variant: 'origami', face: 'specs', role: '整理资料来源' }));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: '编辑队友' })).toBeNull());
 });

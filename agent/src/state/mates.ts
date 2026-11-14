@@ -1,6 +1,7 @@
 import { Type, type Static } from 'typebox';
 import { MateDraftSchema, MateViewSchema, MateGroupDraftSchema, MateGroupViewSchema,
   type MateGroupView } from '../../shared/api/mates.ts';
+import { DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT } from '../../shared/api/mate-characters.ts';
 import { IdSchema, IsoTimeSchema } from '../../shared/api/common.ts';
 import { RECORD_META_COLUMNS } from './codec.ts';
 import { StateError } from './errors.ts';
@@ -17,8 +18,9 @@ const GroupPatch = Type.Partial(MateGroupDraftSchema);
 export function createMateStores(context: StoreContext) {
   const mates = new ObjectStore(context, { table: 'mates', schema: MateViewSchema,
     input: MateInput, patch: MatePatch,
-    columns: { ...RECORD_META_COLUMNS, name: 'text', avatar: 'text', hue: 'text', role: 'text', soul: 'text',
-      purpose: 'text', lineId: 'text', disabledAt: 'text' }, defaults: { disabledAt: null } });
+    columns: { ...RECORD_META_COLUMNS, name: 'text', avatar: 'text', hue: 'text', variant: 'text', face: 'text',
+      role: 'text', soul: 'text', purpose: 'text', lineId: 'text', disabledAt: 'text' },
+    defaults: { variant: DEFAULT_MATE_VARIANT, face: DEFAULT_MATE_FACE, disabledAt: null } });
   const groups = new ObjectStore(context, { table: 'mate_groups', schema: MateGroupViewSchema,
     input: GroupInput, patch: GroupPatch,
     columns: { ...RECORD_META_COLUMNS, name: 'text', mateIds: 'json', lineId: 'text' }, defaults: {} });

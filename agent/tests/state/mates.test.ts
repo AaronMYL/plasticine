@@ -24,3 +24,20 @@ test('队友和群组分别保存身份及对话线，停用保留全部数据�
       lineId: groupLine.id }));
   } finally { await fixture.cleanup(); }
 });
+
+test('队友的画风和脸型：不给就是扁平、萌脸，改了存下来，不认识的不收', async () => {
+  const fixture = await openTestState();
+  try {
+    const { state } = fixture;
+    const line = state.lines.create({ kind: 'side', parentLineId: null, projectId: null, title: '设计队友' });
+    const mate = state.mates.create({ name: '设计队友', avatar: 'fox', hue: 'rose', role: '画界面', soul: '',
+      purpose: null, lineId: line.id });
+    assert.equal(mate.variant, 'solid');
+    assert.equal(mate.face, 'cute');
+    const changed = state.mates.update(mate.id, mate.version, { variant: 'watercolor', face: 'sparkle' });
+    assert.deepEqual([changed.variant, changed.face], ['watercolor', 'sparkle']);
+    assert.deepEqual([state.mates.require(mate.id).variant, state.mates.require(mate.id).face],
+      ['watercolor', 'sparkle']);
+    assert.throws(() => state.mates.update(mate.id, changed.version, { variant: 'crisp' as 'solid' }));
+  } finally { await fixture.cleanup(); }
+});

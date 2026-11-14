@@ -24,6 +24,8 @@ export const ENGINE_EXPORTS = [
   'CUTE_MOUTHS',
   'SHAPE_IDS',
   'SHAPE_FAMILIES',
+  'VECTOR_VARIANTS',
+  'FACE_STYLES',
 ] as const;
 
 export function entrySource(distIndex: string): string {

@@ -2,14 +2,17 @@
 
 import type { FakeLines } from './fake-lines.ts';
 import type { FakeMates } from './fake-mates.ts';
-import type { MateCharacter, MateView } from '../shared.ts';
+import type { MateCharacter, MateFace, MateVariant, MateView } from '../shared.ts';
 
 export async function seedTeamScene({ mates, lines }: { mates: FakeMates; lines: FakeLines }, now: Date): Promise<void> {
-  const make = (name: string, avatar: MateCharacter, hue: string, role: string) => mates.create({
-    requestId: `scene-team-${avatar}`, name, avatar, hue: hue as MateView['hue'], role, soul: '', purpose: null });
-  const [pm, design, dev, test] = await Promise.all([make('产品经理', 'bob', 'plum', '把需求整理成规格'),
-    make('设计师', 'curly', 'rose', '出界面设计稿'), make('开发工程师', 'bot', 'sky', '照规格写代码'),
-    make('测试工程师', 'hedgehog', 'teal', '按验收标准逐条测')]);
+  // 画风、脸型各不一样（11-13），截图里能看出能换。
+  const make = (name: string, look: [MateCharacter, MateVariant, MateFace], hue: string, role: string) => mates.create({
+    requestId: `scene-team-${look[0]}`, name, avatar: look[0], variant: look[1], face: look[2],
+    hue: hue as MateView['hue'], role, soul: '', purpose: null });
+  const [pm, design, dev, test] = await Promise.all([make('产品经理', ['bob', 'relief', 'specs'], 'plum', '把需求整理成规格'),
+    make('设计师', ['curly', 'watercolor', 'sparkle'], 'rose', '出界面设计稿'),
+    make('开发工程师', ['bot', 'solid', 'screen'], 'sky', '照规格写代码'),
+    make('测试工程师', ['hedgehog', 'sticker', 'cute'], 'teal', '按验收标准逐条测')]);
   const group = await mates.groups.create({ requestId: 'scene-team-group', name: '软件开发',
     mateIds: [pm.id, design.id, dev.id, test.id] });
   const ago = (minutes: number): string => new Date(now.getTime() - minutes * 60_000).toISOString();
