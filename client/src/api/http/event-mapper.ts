@@ -33,6 +33,8 @@ export class ServerEventMapper {
         return [{ type: 'space.changed', spaceId: event.spaceId }];
       case 'video_changed':
         return [{ type: 'video.changed' }];
+      case 'transcriber_changed':
+        return [{ type: 'transcriber.changed', status: event.status }];
       case 'web_tabs_changed':
         return [{ type: 'webTabs.changed', version: event.version }];
       case 'bookmarks_changed':

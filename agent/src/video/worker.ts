@@ -1,6 +1,7 @@
 // 视频解析的排队（《优化清单》第 9 条）：他勾选的、对话里交来的作品排着，一条条往前走。排进后台线的并发上限（3）里跑：
 // 同时在跑的后台线加上在跑的视频不超过 3（slots 由装配给：3 减去正在跑的后台线）；转写最吃 CPU，一次只转一条。
 // 抖音作品要 Mac 取下载地址时停在「等 Mac」，Mac 交回再排上。进程重启时还标着「在跑」的放回排队，从停下的那一步接着走。
+// 要转写而本地转写还没装的停在「等转写装好」（第13批，不下载视频），装好以后 resumeTranscribing 排回去。
 
 import { DouyinResolvedSchema, type DouyinResolved } from '../../shared/api/video.ts';
 import { Value } from 'typebox/value';
@@ -117,6 +118,15 @@ export class VideoWorker {
     return next;
   }
 
+  /** 本地转写装好了：在等它的排回去接着走。返回排上的条数。 */
+  resumeTranscribing(): number {
+    const count = this.#state.videoWorks.requeueWaitingTranscriber();
+    if (count > 0) {
+      this.kick();
+    }
+    return count;
+  }
+
   /** Mac 没取到（没登录、作品没了）：这一条记成没做成。 */
   macFailed(workId: string, reason: string): void {
     const work = this.#state.videoWorks.byWork('douyin', workId);
@@ -166,6 +176,10 @@ export class VideoWorker {
       const end = await advanceWork(id, this.#ports, this.#controller.signal);
       if (end === 'waiting_mac') {
         this.#notify(works.advance(id, { run: 'waiting_mac' }));
+        return;
+      }
+      if (end === 'waiting_transcriber') {
+        this.#notify(works.advance(id, { run: 'idle', error: null }));
         return;
       }
       const done = works.advance(id, { run: 'idle' });

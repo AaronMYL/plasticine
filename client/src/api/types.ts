@@ -156,6 +156,8 @@ export type LiveEvent =
   | { type: 'calendar.changed' }
   /** 第 9 条：抖音收藏 / 视频解析有一条变了，勾选清单重读。 */
   | { type: 'video.changed' }
+  /** 第13批：本地转写装的进度和结果。 */
+  | { type: 'transcriber.changed'; status: import('./shared.ts').TranscriberStatus }
   | { type: 'space.changed'; spaceId: string }
   /** 11-08：竖排标签的摆放在别的设备上改了（version 是改完的版本）。 */
   | { type: 'webTabs.changed'; version: number }

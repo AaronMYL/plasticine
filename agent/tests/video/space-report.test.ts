@@ -68,10 +68,10 @@ test('视频解析把大纲关键帧存成资产并关联空间，重试已总�
         calls.frames.push(seconds); return { data: 'ZnJhbWU=', mimeType: 'image/png' };
       },
     },
-    transcriber: { name: 'fake', transcribe: async () => {
+    transcriber: () => ({ name: 'fake', transcribe: async () => {
       calls.transcribe += 1;
       return { lines: [{ start: 0, text: '示例逐字稿内容' }], audioSeconds: 90, peakMb: 1, engine: 'fake' };
-    } },
+    } }),
     digester: { summarize: async () => ({ summary: '先记录，再展开一次清楚的协作。',
       outline: ['[00:00] 开场', '[00:30] 方法'], points: ['记录重要决定。'], related: [] }),
     readImages: async () => { throw new Error('不读图'); } },

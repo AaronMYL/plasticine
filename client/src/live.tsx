@@ -23,6 +23,7 @@ import { DeviceWrites } from './views/device/device-writes.ts';
 import { FeedActions } from './views/feed/feed-actions.ts';
 import { FeedStore } from './views/feed/feed-store.ts';
 import { DouyinStore } from './views/feed/douyin-store.ts';
+import { TranscriberStore } from './views/feed/transcriber-store.ts';
 import { LinesStore } from './views/lines/line-store.ts';
 import { MatesStore } from './views/mates/mates-store.ts';
 import { MateActions } from './views/mates/mate-actions.ts';
@@ -62,6 +63,8 @@ export interface Live {
   feedActions: FeedActions;
   /** 第 6 批第 9 条：抖音收藏的勾选清单。 */
   douyin: DouyinStore;
+  /** 第13批：本地转写装没装（抖音收藏的安装卡、设置 · AI）。 */
+  transcriber: TranscriberStore;
   /** 设置 · 系统：设备、运行情况、备份、版本。 */
   devices: DeviceStore;
   deviceWrites: DeviceWrites;
@@ -147,6 +150,7 @@ function createLive(api: PlasticineApi, parts: ClientParts, push: PushSwitch): L
     feedActions: new FeedActions({ api, store: feed, ops: actionOps, drafts: inlineDrafts, ui: feedUi,
       timeZone: timeZone.get() }),
     douyin: new DouyinStore(api, hub),
+    transcriber: new TranscriberStore(api, hub),
     devices,
     deviceWrites,
     m5b,

@@ -6,7 +6,8 @@
 // 收藏夹里的作品 /aweme/v1/web/collects/video/list/、作品详情 /aweme/v1/web/aweme/detail/。只读，不点、不改任何东西。
 //
 //   list：先翻收藏夹，再按收藏时间翻收藏作品（新的在前），翻到 sinceIds 里的（上次同步过的）就停；只要标题、作者、
-//         收藏时间、列表位置、链接这些，不取下载地址；full 全量回填时不在 sinceIds 停下。
+//         收藏时间、列表位置、链接这些，不取下载地址；full 全量回填时不在 sinceIds 停下。翻到「没有更多」才算完，
+//         中间的空页（失效的作品）接着翻。
 //   resolve：取一条作品的下载地址（无水印的视频地址、图文的图片、自带字幕）。地址可能绑登录或 IP，服务器上下载不了就记原因。
 //
 // 第四段 Electron 壳实现原生那一侧：载入页面、注入这段、按 jobs 调 installDouyinReader 的方法、把结果 POST 回去。
@@ -23,6 +24,9 @@ const IMAGES_MAX = 40;
 const PAGE_COUNT = 18;
 /** 防止接口异常无限翻页；到达上限仍有下一页时明确报错，不把截断列表当全量结果。 */
 const PAGES_MAX = 1_000;
+/** 收藏夹一页要几个、最多翻几页（一个人很少有上百个收藏夹）。 */
+const FOLDER_PAGE_COUNT = 50;
+const FOLDER_PAGES_MAX = 20;
 /** 抖音图文作品的 aweme_type。 */
 const IMAGE_POST_TYPES = new Set([2, 68, 150]);
 /** 网页版的固定参数（TikTokDownloader 的 PARAMS 里同样这些）。 */
@@ -201,7 +205,8 @@ async function pages(call: DouyinCall, path: string, base: Readonly<Record<strin
       if (stop(aweme)) { return; }
       take(aweme);
     }
-    if (Number(body['has_more']) !== 1 || list.length === 0) { return; }
+    // 空页不算翻完：失效（删了、设私密）的作品抖音还算在条数里，那一页就可能是空的（第13批，收藏少了约 170 条）。
+    if (Number(body['has_more']) !== 1) { return; }
     const nextCursor = String(body['cursor'] ?? body['max_cursor'] ?? '0');
     if (nextCursor === cursor) { throw new Error('layout_changed'); }
     cursor = nextCursor;
@@ -215,11 +220,18 @@ export async function listFavorites(call: DouyinCall, sinceIds: readonly string[
   const known = new Set(sinceIds);
   const works = new Map<string, DouyinListedWork>();
   const folders: DouyinFolderView[] = [];
-  const foldersBody = object(await call('/aweme/v1/web/collects/list/', { cursor: '0', count: '50' }));
-  if (signedOut(foldersBody)) { throw new Error('signed_out'); }
-  for (const raw of array(foldersBody['collects_list'])) {
-    const folder = folderOf(raw);
-    if (folder !== null) { folders.push(folder); }
+  let folderCursor = '0';
+  for (let page = 0; page < FOLDER_PAGES_MAX; page += 1) {
+    const body = object(await call('/aweme/v1/web/collects/list/',
+      { cursor: folderCursor, count: String(FOLDER_PAGE_COUNT) }));
+    if (signedOut(body)) { throw new Error('signed_out'); }
+    for (const raw of array(body['collects_list'])) {
+      const folder = folderOf(raw);
+      if (folder !== null && !folders.some((known) => known.id === folder.id)) { folders.push(folder); }
+    }
+    const next = String(body['cursor'] ?? '');
+    if (Number(body['has_more']) !== 1 || next === '' || next === folderCursor) { break; }
+    folderCursor = next;
   }
   let listPosition = 0;
   const add = (folderId: string | null) => (aweme: unknown): void => {

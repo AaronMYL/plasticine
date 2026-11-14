@@ -1,4 +1,4 @@
-// 视频解析与抖音收藏的三张表（0095，《优化清单》第 9 条）：作品、收藏夹、要 Mac 做的事。
+// 视频解析与抖音收藏的三张表（0095，《优化清单》第 9 条）：作品、收藏夹、要 Mac 做的事（video-mac-jobs.ts）。
 // 只存和读，不判断该做什么（那在 video/）。作品按 (platform, work_id) 去重；stage 只往前走。
 
 import { randomUUID } from 'node:crypto';
@@ -22,6 +22,7 @@ import {
 import type { Row } from './db.ts';
 import { StateError } from './errors.ts';
 import type { StoreContext } from './object-store.ts';
+import { createMacJobStore } from './video-mac-jobs.ts';
 
 export interface VideoWorkRow {
   id: string;
@@ -93,19 +94,8 @@ export interface VideoPageFilter {
   platform: VideoPlatform;
   folder?: string;
   q?: string;
-}
-
-export interface MacJobRow {
-  id: string;
-  kind: 'list' | 'resolve';
-  workId: string | null;
-  state: 'waiting' | 'taken' | 'done' | 'failed';
-  error: string | null;
-  createdAt: string;
-  takenAt: string | null;
-  finishedAt: string | null;
-  full: boolean;
-  sequenceBase: number | null;
+  /** 没整理 = 还没有总结；已整理 = 有总结。 */
+  phase?: 'todo' | 'done';
 }
 
 function nullableText(row: Row, key: string): string | null {
@@ -170,38 +160,6 @@ function decodeWork(row: Row): VideoWorkRow {
   };
 }
 
-/** list 任务复用 work_id 存取数上下文，resolve 任务仍存作品 ID；无需增加任务表字段。 */
-function listContext(row: Row): { full: boolean; sequenceBase: number | null } {
-  if (row['kind'] !== 'list' || row['work_id'] === null) { return { full: false, sequenceBase: null }; }
-  const value: unknown = JSON.parse(String(row['work_id']));
-  if (typeof value !== 'object' || value === null || !('full' in value) || !('sequenceBase' in value)
-    || typeof value.full !== 'boolean' || !Number.isSafeInteger(value.sequenceBase)) {
-    throw new StateError('corrupt_record', '翻收藏任务的顺序上下文无效。');
-  }
-  return { full: value.full, sequenceBase: Number(value.sequenceBase) };
-}
-
-/** 一次取数预留一百万个列表位置，与 DouyinListedWorkSchema 的上限一致。 */
-const COLLECTION_SEQUENCE_SPAN = 1_000_000;
-
-function decodeJob(row: Row): MacJobRow {
-  const state = (['waiting', 'taken', 'done', 'failed'] as const).find((value) => value === row['state']);
-  if (state === undefined) {
-    throw new StateError('corrupt_record', `video_mac_jobs.state 不认识：${String(row['state'])}`);
-  }
-  return {
-    id: String(row['id']),
-    kind: row['kind'] === 'list' ? 'list' : 'resolve',
-    workId: row['kind'] === 'list' ? null : nullableText(row, 'work_id'),
-    ...listContext(row),
-    state,
-    error: nullableText(row, 'error'),
-    createdAt: String(row['created_at']),
-    takenAt: nullableText(row, 'taken_at'),
-    finishedAt: nullableText(row, 'finished_at'),
-  };
-}
-
 function stageIndex(stage: VideoStage): number {
   return VIDEO_STAGES.indexOf(stage);
 }
@@ -239,6 +197,9 @@ function createVideoWorkStore(context: StoreContext) {
     if (q !== '') {
       clauses.push("(title LIKE $q ESCAPE '\\' OR author LIKE $q ESCAPE '\\' OR caption LIKE $q ESCAPE '\\')");
       params['q'] = `%${escapeLike(q)}%`;
+    }
+    if (filter.phase !== undefined) {
+      clauses.push(filter.phase === 'done' ? "stage = 'summarized'" : "stage <> 'summarized'");
     }
     return { sql: clauses.join(' AND '), params };
   };
@@ -319,6 +280,15 @@ function createVideoWorkStore(context: StoreContext) {
       { ...params, limit, offset });
       return { works: rows.map(decodeWork), total };
     },
+    /** 「全部 / 没整理 / 已整理」三个数：按收藏夹和搜索筛，不按整理到哪筛。 */
+    counts(filter: Omit<VideoPageFilter, 'phase'>): { all: number; todo: number; done: number } {
+      const { sql, params } = where(filter);
+      const row = db.get(`SELECT count(*) AS n, COALESCE(sum(stage = 'summarized'), 0) AS done
+        FROM video_works WHERE ${sql}`, params);
+      const all = Number(row?.['n'] ?? 0);
+      const done = Number(row?.['done'] ?? 0);
+      return { all, todo: all - done, done };
+    },
     /** 收藏夹里的全部 id（「处理整个收藏夹」）。 */
     idsInFolder(platform: VideoPlatform, folder: string): string[] {
       return db.all(`SELECT id FROM video_works WHERE platform = $platform
@@ -396,6 +366,13 @@ function createVideoWorkStore(context: StoreContext) {
         return require(id);
       });
     },
+    /**
+     * 本地转写装好了：在等它的（要它走、没在动、还没转写，见 waitingTranscriber）排回去。返回排上的条数。
+     */
+    requeueWaitingTranscriber(): number {
+      return db.run(`UPDATE video_works SET run = 'queued', error = NULL, version = version + 1, updated_at = $at
+        WHERE want = 'full' AND run = 'idle' AND stage IN ('synced', 'previewed')`, { at: context.now() });
+    },
     /** 重启时把还标着在跑的放回排队（进程没了，活没做完）。 */
     requeueRunning(): number {
       return db.run(`UPDATE video_works SET run = 'queued', version = version + 1, updated_at = $at
@@ -425,74 +402,6 @@ function createVideoFolderStore(context: StoreContext) {
   };
 }
 
-function createMacJobStore(context: StoreContext) {
-  const { db } = context;
-  const newListContext = (full: boolean): string => {
-    const latestWork = Number(db.get('SELECT MAX(collect_seq) AS n FROM video_works')?.['n'] ?? 0);
-    const latestJob = Number(db.get(`SELECT MAX(CASE WHEN json_valid(work_id)
-      THEN json_extract(work_id, '$.sequenceBase') END) AS n FROM video_mac_jobs WHERE kind = 'list'`)?.['n'] ?? 0);
-    return JSON.stringify({ full, sequenceBase: Math.max(latestWork, latestJob) + COLLECTION_SEQUENCE_SPAN });
-  };
-  const get = (id: string): MacJobRow | undefined => {
-    const row = db.get('SELECT * FROM video_mac_jobs WHERE id = $id', { id });
-    return row === undefined ? undefined : decodeJob(row);
-  };
-  return {
-    get,
-    /** 排一件；同样的活（同一种、同一条作品）还没了结就不另排，回那一件。 */
-    queue(kind: 'list' | 'resolve', workId: string | null, full = false): MacJobRow {
-      return db.transaction(() => {
-        const open = db.all(`SELECT * FROM video_mac_jobs WHERE kind = $kind
-          AND ($kind = 'list' OR work_id IS $work) AND state IN ('waiting', 'taken') ORDER BY created_at`,
-        { kind, work: workId }).map(decodeJob).find((job) => kind !== 'list' || !full || job.full);
-        if (open !== undefined) { return open; }
-        const id = `macjob_${randomUUID()}`;
-        const work = kind === 'list' ? newListContext(full) : workId;
-        db.run(`INSERT INTO video_mac_jobs (id, kind, work_id, state, created_at)
-          VALUES ($id, $kind, $work, 'waiting', $at)`, { id, kind, work, at: context.now() });
-        return get(id)!;
-      });
-    },
-    /** Mac 来取：排着的全给；取走超过 staleBefore 还没交回的再给一次（Mac 中途掉线）。 */
-    take(staleBefore: string, limit: number): MacJobRow[] {
-      return db.transaction(() => {
-        const rows = db.all(`SELECT * FROM video_mac_jobs WHERE state = 'waiting'
-          OR (state = 'taken' AND taken_at < $stale) ORDER BY created_at LIMIT $limit`,
-        { stale: staleBefore, limit }).map(decodeJob);
-        for (const job of rows) {
-          if (job.kind === 'list' && job.sequenceBase === null) {
-            db.run('UPDATE video_mac_jobs SET work_id = $context WHERE id = $id',
-              { id: job.id, context: newListContext(true) });
-          }
-          db.run("UPDATE video_mac_jobs SET state = 'taken', taken_at = $at WHERE id = $id",
-            { id: job.id, at: context.now() });
-        }
-        return rows.map((job) => get(job.id)!);
-      });
-    },
-    finish(id: string, error: string | null): void {
-      db.run(`UPDATE video_mac_jobs SET state = $state, error = $error, finished_at = $at
-        WHERE id = $id AND state IN ('waiting', 'taken')`,
-      { id, state: error === null ? 'done' : 'failed', error, at: context.now() });
-    },
-    /** 最近一次翻收藏（界面上「上次同步」和这一次在不在等 Mac）。 */
-    lastList(): { open: MacJobRow | null; lastDoneAt: string | null; lastFailed: MacJobRow | null } {
-      const open = db.get(`SELECT * FROM video_mac_jobs WHERE kind = 'list' AND state IN ('waiting', 'taken')
-        ORDER BY created_at DESC LIMIT 1`);
-      const done = db.get(`SELECT finished_at FROM video_mac_jobs WHERE kind = 'list' AND state = 'done'
-        ORDER BY finished_at DESC LIMIT 1`);
-      const latest = db.get(`SELECT * FROM video_mac_jobs WHERE kind = 'list' AND state IN ('done', 'failed')
-        ORDER BY finished_at DESC LIMIT 1`);
-      const latestJob = latest === undefined ? null : decodeJob(latest);
-      return {
-        open: open === undefined ? null : decodeJob(open),
-        lastDoneAt: done === undefined ? null : nullableText(done, 'finished_at'),
-        lastFailed: latestJob?.state === 'failed' ? latestJob : null,
-      };
-    },
-  };
-}
-
 export function createVideoStores(context: StoreContext) {
   return {
     videoWorks: createVideoWorkStore(context),
@@ -502,5 +411,12 @@ export function createVideoStores(context: StoreContext) {
 }
 
 export type VideoWorkStore = ReturnType<typeof createVideoWorkStore>;
+
+/**
+ * 在等本地转写装好（第13批）：库里不另存一种状态——要它走（want = full）、没在动（idle）、还没转写的就是。
+ * 没装转写时 worker 把要转写的这样停下（不下载视频），装好以后 requeueWaitingTranscriber 排回去。
+ */
+export function waitingTranscriber(work: Pick<VideoWorkRow, 'want' | 'run' | 'stage'>): boolean {
+  return work.want === 'full' && work.run === 'idle' && (work.stage === 'synced' || work.stage === 'previewed');
+}
 export type VideoFolderStore = ReturnType<typeof createVideoFolderStore>;
-export type MacJobStore = ReturnType<typeof createMacJobStore>;

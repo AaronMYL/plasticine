@@ -10,6 +10,7 @@ import { AttachmentViewSchema } from '../attachments.ts';
 import { MoneyDraftViewSchema } from './money-drafts.ts';
 import { ContactItemEventSchema, ContactsChangedEventSchema } from './contacts.ts';
 import { NotifyEventSchema, NotifyKindsChangedEventSchema } from './push.ts';
+import { TranscriberChangedEventSchema } from './video.ts';
 
 export const EVENTS_PATH = `${API_PREFIX}/events`;
 
@@ -31,6 +32,8 @@ export const ServerEventSchema = Type.Union([
   Type.Object({ type: Type.Literal('calendar_changed') }),
   // 第 9 条：抖音收藏 / 视频解析有一条变了（同步到了、走了一步）：界面重读那一页。
   Type.Object({ type: Type.Literal('video_changed') }),
+  // 第13批：本地转写装的进度和结果。
+  TranscriberChangedEventSchema,
   // 竖排网页标签的摆放（11-08 起存在本体里）在别的设备上改了：version 比自己手上的新就重读。
   Type.Object({ type: Type.Literal('web_tabs_changed'), version: Type.Integer({ minimum: 0 }) }),
   // 书签（第 8 批第 1 条，各设备同一份）在别处改了：重读列表。

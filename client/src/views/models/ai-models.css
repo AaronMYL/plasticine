@@ -85,6 +85,13 @@
   color: var(--fg2);
 }
 
+.ai-use-error {
+  margin: 4px 0 0;
+  color: var(--err);
+  font-size: 12px;
+  line-height: 18px;
+}
+
 .ai-use-select {
   flex: none;
   width: auto;

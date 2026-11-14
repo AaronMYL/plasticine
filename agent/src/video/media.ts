@@ -9,6 +9,7 @@ import { extname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { PublicFetcher, type PublicRequest } from '../cloud-tools/index.ts';
+import { wavSeconds } from './wav.ts';
 
 /** 一条视频最多下这么大：抖音 10 分钟 1080p 约 150 MB。 */
 export const VIDEO_DOWNLOAD_MAX_BYTES = 600 * 1024 * 1024;
@@ -62,32 +63,41 @@ export async function fetchImage(url: string, signal: AbortSignal): Promise<{ da
   return { data: image.data.toString('base64'), mimeType: image.type === 'image/jpg' ? 'image/jpeg' : image.type };
 }
 
-function run(command: string, args: readonly string[], signal: AbortSignal, timeoutMs: number): Promise<string> {
+/** 程序没起来时说缺了什么、缺了它做不了什么（第13批：原因写成人话）。 */
+const MISSING: Readonly<Record<string, string>> = {
+  'ffmpeg': '这台机器上没有 ffmpeg，抽不了视频里的声音。装好本地转写会一起带上它。',
+  'yt-dlp': '这台机器上没有 yt-dlp，下不了这个网站的视频。',
+};
+
+/** label 是给人看的名字（ffmpeg），command 是真跑的路径（组件里的 ffmpeg 是一条完整路径）。 */
+function run(label: string, command: string, args: readonly string[], signal: AbortSignal, timeoutMs: number):
+  Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
-      stdio: ['ignore', 'pipe', 'pipe'] });
+      stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     let out = '';
     let err = '';
     child.stdout.on('data', (chunk: Buffer) => { out = `${out}${chunk.toString('utf8')}`.slice(-100_000); });
     child.stderr.on('data', (chunk: Buffer) => { err = `${err}${chunk.toString('utf8')}`.slice(-2_000); });
-    child.on('error', (cause) => reject(new MediaError(`${command} 没起来（服务器上装了吗？）`, { cause })));
+    child.on('error', (cause) => reject(new MediaError((cause as NodeJS.ErrnoException).code === 'ENOENT'
+      ? MISSING[label] ?? `这台机器上没有 ${label}。` : `${label} 没起来：${cause.message}`, { cause })));
     child.on('close', (code) => {
       if (code === 0) {
         resolve(out);
       } else {
         const last = err.trim().split('\n').at(-1)?.replace(/https?:\/\/\S+/g, '<链接>').slice(0, 200) ?? '';
-        reject(new MediaError(`${command} 没做成（退出码 ${String(code)}）：${last}`));
+        reject(new MediaError(`${label} 没做成（退出码 ${String(code)}）：${last}`));
       }
     });
   });
 }
 
-/** 从本次解析下载的文件截一张关键帧，不重新联网。 */
-export async function extractFrame(input: string, seconds: number, signal: AbortSignal):
+/** 从本次解析下载的文件截一张关键帧，不重新联网。ffmpeg 是要跑的那一份（组件里的或系统里的）。 */
+export async function extractFrame(input: string, seconds: number, signal: AbortSignal, ffmpeg = 'ffmpeg'):
   Promise<{ data: string; mimeType: string }> {
   const output = `${input}.frame.jpg`;
   try {
-    await run('ffmpeg', ['-nostdin', '-loglevel', 'error', '-y', '-ss', String(seconds), '-i', input,
+    await run('ffmpeg', ffmpeg, ['-nostdin', '-loglevel', 'error', '-y', '-ss', String(seconds), '-i', input,
       '-frames:v', '1', '-vf', 'scale=960:-2', '-q:v', '3', output], signal, FFMPEG_TIMEOUT_MS);
     return { data: (await readFile(output)).toString('base64'), mimeType: 'image/jpeg' };
   } finally {
@@ -95,21 +105,12 @@ export async function extractFrame(input: string, seconds: number, signal: Abort
   }
 }
 
-/** 抽成 16kHz 单声道 16 位 wav（transcribe.py 要的样子）。回音频秒数（ffprobe 读不到就是 null）。 */
-export async function extractAudio(input: string, output: string, signal: AbortSignal): Promise<number | null> {
-  await run('ffmpeg', ['-nostdin', '-loglevel', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000',
+/** 抽成 16kHz 单声道 16 位 wav（转写要的样子）。回音频秒数（从 wav 文件头读，读不出是 null）。 */
+export async function extractAudio(input: string, output: string, signal: AbortSignal, ffmpeg = 'ffmpeg'):
+  Promise<number | null> {
+  await run('ffmpeg', ffmpeg, ['-nostdin', '-loglevel', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000',
     '-sample_fmt', 's16', output], signal, FFMPEG_TIMEOUT_MS);
-  try {
-    const probe = await run('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', output],
-      signal, FFMPEG_TIMEOUT_MS);
-    const seconds = Number(probe.trim());
-    return Number.isFinite(seconds) ? seconds : null;
-  } catch (cause) {
-    if (cause instanceof MediaError) {
-      return null;
-    }
-    throw cause;
-  }
+  return wavSeconds(output);
 }
 
 export interface WebVideo {
@@ -129,7 +130,7 @@ export async function fetchWebVideo(url: string, directory: string, signal: Abor
     await downloadTo(url, file, signal);
     return { video: file, subtitles: [], title: null, caption: '', durationSeconds: null, author: null };
   }
-  const info = await run('yt-dlp', ['--no-playlist', '--no-progress', '--write-subs', '--write-auto-subs',
+  const info = await run('yt-dlp', 'yt-dlp', ['--no-playlist', '--no-progress', '--write-subs', '--write-auto-subs',
     '--sub-langs', 'zh.*,en.*', '--sub-format', 'vtt/srt', '-f', 'ba/b', '--max-filesize', '600M',
     '--print-json', '-o', join(directory, 'media.%(ext)s'), url], signal, YT_DLP_TIMEOUT_MS);
   const meta = parseInfo(info);

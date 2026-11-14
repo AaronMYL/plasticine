@@ -91,7 +91,8 @@ import { assembleTimed } from './assemble-timed.ts';
 import { heartbeatChecklistTool } from '../heartbeat/index.ts';
 import { cachedConflicts, CalendarSync, calendarTools } from '../calendar/index.ts';
 import { interestHit } from '../../shared/feed-order.ts';
-import { VIDEO_SKILL_NAME, createVideo, publishToFeed, transcriberFromEnv, type Transcriber, type VideoMedia }
+import { VIDEO_SKILL_NAME, createVideo, publishToFeed, transcriberFromEnv, type KitPlan, type KitPorts,
+  type Transcriber, type VideoMedia }
   from '../video/index.ts';
 
 export interface AssembleOptions {
@@ -135,6 +136,8 @@ export interface AssembleOptions {
   transcriber?: Transcriber | null;
   /** 第 9 条：下载、抽音频（测试给假的）。 */
   videoMedia?: VideoMedia;
+  /** 第13批：本地转写组件下哪几样、怎么下（测试给假的；不给按这台机器的系统去 GitHub 下）。 */
+  transcriberKit?: { plan?: KitPlan | null; ports?: Partial<KitPorts> };
   /** 第 113 条：这台实例在网络上的那一头。 */
   network?: NetworkAssembly;
   /** 新内核（2026-11-05 Harness 重做）：线和它的模型。主对话就是主线。 */
@@ -269,6 +272,8 @@ export function assembleApp(options: AssembleOptions): App {
   const video = createVideo({ state, now, stateDirectory: options.stateDirectory, text,
     transcriber: options.transcriber === undefined ? transcriberFromEnv(process.env) : options.transcriber,
     ...(options.videoMedia === undefined ? {} : { media: options.videoMedia }),
+    ...(options.transcriberKit === undefined ? {} : { kit: options.transcriberKit }),
+    transcriberChanged: (status) => hub.publish({ type: 'transcriber_changed', status }),
     slots: () => late.get().backgroundLimit()
       - state.lines.withStatus(['running']).filter((line) => line.kind === 'background').length,
     interests: () => state.feedSources.all().filter((source) => source.kind === 'interest' && source.level !== 'off')

@@ -8,11 +8,12 @@ import {
   type DouyinFolderView,
   type DouyinJob,
   type DouyinListResponse,
+  type DouyinPhaseFilter,
   type DouyinReport,
   type DouyinSyncView,
   type VideoWorkView,
 } from '../../shared/api/index.ts';
-import type { StateService, VideoWorkRow } from '../state/index.ts';
+import { waitingTranscriber, type StateService, type VideoWorkRow } from '../state/index.ts';
 import type { VideoWorker } from './worker.ts';
 
 /** Mac 取走一件活多久没交回就再给一次（Mac 中途掉线、页面没载出来）。 */
@@ -43,7 +44,8 @@ export function videoWorkView(work: VideoWorkRow): VideoWorkView {
     title: shortVideoTitle(work.title) || work.title, author: work.author,
     collectedAt: work.collectSeq === null ? null : work.collectedAt,
     durationSeconds: work.durationSeconds, coverUrl: work.coverUrl,
-    folderIds: work.folderIds, stage: work.stage, want: work.want, run: work.run, error: work.error,
+    folderIds: work.folderIds, stage: work.stage, want: work.want,
+    run: waitingTranscriber(work) ? 'waiting_transcriber' : work.run, error: work.error,
     feedItemId: work.feedItemId, spaceId: work.spaceId, version: work.version };
 }
 
@@ -89,12 +91,16 @@ export class DouyinFavorites {
     return this.syncView();
   }
 
-  list(filter: { folder?: string; q?: string }, limit: number, offset: number): DouyinListResponse {
+  list(filter: { folder?: string; q?: string; phase?: DouyinPhaseFilter }, limit: number, offset: number):
+    DouyinListResponse {
     const page = this.#state.videoWorks.page({ platform: 'douyin', ...filter }, limit, offset);
     const folders: DouyinFolderView[] = this.#state.videoFolders.list('douyin');
+    const counted = { ...(filter.folder === undefined ? {} : { folder: filter.folder }),
+      ...(filter.q === undefined ? {} : { q: filter.q }) };
     return {
       works: page.works.map(videoWorkView),
       total: page.total,
+      counts: this.#state.videoWorks.counts({ platform: 'douyin', ...counted }),
       nextOffset: offset + page.works.length < page.total ? offset + page.works.length : null,
       folders,
       sync: this.syncView(),

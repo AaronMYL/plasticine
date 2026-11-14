@@ -292,6 +292,11 @@ export interface FeedApi {
   /** POST /v2/video/douyin/process：处理勾选的（处理过的不重复）。 */
   douyinProcess(input: import('./shared.ts').DouyinProcessRequest):
     Promise<import('./shared.ts').DouyinProcessResponse>;
+  /** GET /v2/video/transcriber：本地转写装没装（第13批）。 */
+  transcriber(signal?: AbortSignal): Promise<import('./shared.ts').TranscriberResponse>;
+  /** POST /v2/video/transcriber/install：在后台装本地转写（装着、装好的不重来）。 */
+  installTranscriber(input: import('./shared.ts').TranscriberInstallRequest):
+    Promise<import('./shared.ts').TranscriberResponse>;
   /** GET /v2/feed/sources：关注点 · 不要的 · 其他站内来源· 最近来源。 */
   sources(signal?: AbortSignal): Promise<FeedSourcesResponse>;
   /** POST /v2/feed/items?tz=：手动加一条链接（标「手动添加」）。 */

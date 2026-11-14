@@ -7,7 +7,6 @@ import type { DouyinResolved, VideoDigest } from '../../shared/api/video.ts';
 import type { VideoWorkRow } from '../../src/state/index.ts';
 import {
   DouyinFavorites,
-  NO_TRANSCRIBER_TEXT,
   publishToFeed,
   resultText,
   VideoWorker,
@@ -16,6 +15,7 @@ import {
   type VideoMedia,
 } from '../../src/video/index.ts';
 import { publishVideoSpace } from '../../src/video/space-report.ts';
+import { videoWorkView } from '../../src/video/douyin.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 
 let t: TestState;
@@ -39,7 +39,7 @@ interface Calls {
   transcribed: number;
 }
 
-function fakes(options: { transcriber?: boolean } = {}) {
+function fakes(options: { transcriber?: boolean; downloadFails?: boolean } = {}) {
   const calls: Calls = { summaries: [], images: 0, downloads: [], transcribed: 0 };
   const digester: VideoDigester = {
     async summarize(input) {
@@ -52,7 +52,11 @@ function fakes(options: { transcriber?: boolean } = {}) {
     },
   };
   const media: VideoMedia = {
-    async download(url) { calls.downloads.push(url); return 1000; },
+    async download(url) {
+      calls.downloads.push(url);
+      if (options.downloadFails === true) throw new Error('远程服务器回了 403。');
+      return 1000;
+    },
     async extractAudio() { return 222; },
     async fetchText() { return '1\n00:00:01,000 --> 00:00:02,000\n自带字幕第一句\n'; },
     async fetchImage() { return { data: 'aGk=', mimeType: 'image/jpeg' }; },
@@ -67,20 +71,23 @@ function fakes(options: { transcriber?: boolean } = {}) {
       return { lines: [{ start: 0, text: '本地转写第一句' }], audioSeconds: 222, peakMb: 512, engine: 'fake' };
     },
   };
-  return { calls, digester, media, transcriber: options.transcriber === false ? null : transcriber };
+  return { calls, digester, media, transcriber: options.transcriber === false ? null : transcriber, real: transcriber };
 }
 
-function setup(options: { transcriber?: boolean; slots?: () => number } = {}) {
+function setup(options: { transcriber?: boolean; downloadFails?: boolean; slots?: () => number } = {}) {
   const parts = fakes(options);
   const summarized: VideoWorkRow[] = [];
+  let transcriber = parts.transcriber;
   const worker = new VideoWorker({ state: t.state, slots: options.slots ?? (() => 3),
     summarized: (work) => summarized.push(work),
-    ports: { media: parts.media, digester: parts.digester, transcriber: parts.transcriber, interests: () => ['理财'],
+    ports: { media: parts.media, digester: parts.digester, transcriber: () => transcriber, interests: () => ['理财'],
       tempRoot: temp, now: () => Date.now(),
       saveImage: (image) => t.state.notes.writeAsset(Buffer.from(image.data, 'base64'), image.mimeType).name,
       publish: (work) => { publishVideoSpace(t.state, work); } } });
   const douyin = new DouyinFavorites({ state: t.state, worker, now: () => new Date() });
-  return { ...parts, worker, douyin, summarized };
+  /** 装好本地转写。 */
+  const install = (): void => { transcriber = parts.real; };
+  return { ...parts, worker, douyin, summarized, install };
 }
 
 function listed(workId: string, caption = '') {
@@ -123,7 +130,7 @@ test('抖音视频不先看标题配文：直接排给 Mac 取地址、停在等
 });
 
 test('没做成的抖音作品重来：丢掉过期的下载地址，排给 Mac 重新取', async () => {
-  const s = setup({ transcriber: false });
+  const s = setup({ downloadFails: true });
   const work = listed('7300000000000000008');
   t.state.videoWorks.advance(work.id, { resolved: RESOLVED('7300000000000000008') });
   s.douyin.process({ ids: [work.id] });
@@ -170,15 +177,41 @@ test('图文作品：读图里的文字，结合配文总结', async () => {
   assert.match(t.state.spaces.require(done.spaceId!).html ?? '', /原图 1/);
 });
 
-test('没装本地转写：记成没做成并写原因；Mac 没登录：等 Mac 的那条也记原因', async () => {
+test('没装本地转写：视频不取地址、不下载，停在「等转写装好」；装好以后自动接着走', async () => {
   const s = setup({ transcriber: false });
-  const work = listed('7300000000000000005');
-  t.state.videoWorks.advance(work.id, { resolved: RESOLVED('7300000000000000005') });
+  const known = t.state.videoWorks.advance(listed('7300000000000000005').id, { kind: 'video' });
+  const resolved = listed('7300000000000000015');
+  t.state.videoWorks.advance(resolved.id, { resolved: RESOLVED('7300000000000000015') });
+  s.douyin.process({ ids: [known.id, resolved.id] });
+  await s.worker.settled();
+  for (const id of [known.id, resolved.id]) {
+    const row = t.state.videoWorks.require(id);
+    assert.deepEqual([row.run, row.want, row.stage, row.error], ['idle', 'full', 'synced', null]);
+    assert.equal(videoWorkView(row).run, 'waiting_transcriber');
+  }
+  assert.deepEqual(s.calls.downloads, [], '没装转写不下载视频');
+  assert.deepEqual(s.douyin.jobs(), [], '知道是视频的不让电脑去取地址');
+  assert.match(resultText(t.state.videoWorks.require(known.id)), /要先装本地转写/);
+  s.install();
+  assert.equal(s.worker.resumeTranscribing(), 2);
+  await s.worker.settled();
+  assert.equal(t.state.videoWorks.require(resolved.id).stage, 'summarized');
+  assert.equal(t.state.videoWorks.require(known.id).run, 'waiting_mac', '装好以后先让电脑取地址');
+  assert.deepEqual(s.calls.downloads, ['https://v3-web.douyinvod.com/x/video.mp4']);
+});
+
+test('图文作品不用转写：没装也照常解析', async () => {
+  const s = setup({ transcriber: false });
+  const work = listed('7300000000000000016');
+  t.state.videoWorks.advance(work.id, { resolved: RESOLVED('7300000000000000016', { kind: 'images', videoUrl: null,
+    images: ['https://p3.douyinpic.com/a.jpg'] }) });
   s.douyin.process({ ids: [work.id] });
   await s.worker.settled();
-  assert.equal(t.state.videoWorks.require(work.id).run, 'failed');
-  assert.equal(t.state.videoWorks.require(work.id).error, NO_TRANSCRIBER_TEXT);
+  assert.equal(t.state.videoWorks.require(work.id).stage, 'summarized');
+});
 
+test('Mac 没登录：等 Mac 的那条记原因', async () => {
+  const s = setup();
   const other = listed('7300000000000000006');
   s.douyin.process({ ids: [other.id] });
   await s.worker.settled();

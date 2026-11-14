@@ -256,7 +256,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const memory = new FakeMemory({ session, bus, receipts, agreements, now });
   const deviceKeys = new FakeDeviceKeys({ session, faults, now });
   const projects = new FakeProjects({ session, bus, receipts, lines: () => lines.all(), now });
-  const feed = new FakeFeed({ session, bus, receipts, now,
+  const feed = new FakeFeed({ session, bus, receipts, now, installStepMs: options.streamStepMs > 0 ? 900 : 0,
     publishWork: (work) => spaces.ensureGenerated({ id: `space-${work.id}`, title: work.title,
       category: 'report', sourceUrl: work.url, bookId: null,
       html: renderVideoPage({ ...work, collectSeq: 1, transcript: '[00:00] 定投需要稳定的节奏。\n[00:30] 留意回撤和风险。',

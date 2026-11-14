@@ -7,7 +7,7 @@ import type { RefreshFeedRequest, FeedRefresh, AddInterestRequest, InterestRespo
 import type { FeedApi } from '../client.ts';
 import { compareFeedItems } from '../../../../agent/shared/feed-order.ts';
 import { searchTerms } from '../../../../agent/shared/feed-search.ts';
-import type { AddSubscriptionRequest } from '../shared.ts';
+import type { AddSubscriptionRequest, TranscriberInstallRequest, TranscriberResponse } from '../shared.ts';
 import {
   type AddRedditRequest,
   type DeleteFeedSourceRequest,
@@ -59,6 +59,7 @@ export type FeedSourceSeed = Pick<FeedSourceView, 'id' | 'kind' | 'label'> & Par
 
 export interface FakeFeedDeps {
   publishWork?: NonNullable<FakeDouyinDeps['publishWork']>;
+  installStepMs?: number;
   session: FakeSession;
   bus: FakeEventBus;
   receipts: FakeReceipts;
@@ -271,6 +272,14 @@ export class FakeFeed implements FeedApi {
 
   douyinProcess(input: DouyinProcessRequest): Promise<DouyinProcessResponse> {
     return this.douyinRows.process(input);
+  }
+
+  transcriber(): Promise<TranscriberResponse> {
+    return this.douyinRows.transcriberStatus();
+  }
+
+  installTranscriber(input: TranscriberInstallRequest): Promise<TranscriberResponse> {
+    return this.douyinRows.installTranscriber(input);
   }
 
   async sources(): Promise<FeedSourcesResponse> {

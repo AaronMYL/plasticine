@@ -34,6 +34,11 @@ import {
   type DouyinSyncRequest,
   type DouyinSyncResponse,
   type FeedNavResponse,
+  TRANSCRIBER_INSTALL_PATH,
+  TRANSCRIBER_PATH,
+  TranscriberResponseSchema,
+  type TranscriberInstallRequest,
+  type TranscriberResponse,
 } from '../shared.ts';
 import {
   FEED_ITEMS_PATH,
@@ -179,7 +184,7 @@ export class HttpFeed implements FeedApi {
 
   douyin(query: DouyinListQuery, signal?: AbortSignal): Promise<DouyinListResponse> {
     return this.transport.request({ method: 'GET', path: DOUYIN_PATH,
-      query: { folder: query.folder, q: query.q, limit: query.limit, offset: query.offset },
+      query: { folder: query.folder, q: query.q, phase: query.phase, limit: query.limit, offset: query.offset },
       schema: DouyinListResponseSchema, what: '读抖音收藏', lostAs: 'failed', signal });
   }
 
@@ -191,6 +196,16 @@ export class HttpFeed implements FeedApi {
   douyinProcess(body: DouyinProcessRequest): Promise<DouyinProcessResponse> {
     return this.transport.request({ method: 'POST', path: DOUYIN_PROCESS_PATH, body,
       schema: DouyinProcessResponseSchema, what: '处理抖音收藏', lostAs: 'uncertain' });
+  }
+
+  transcriber(signal?: AbortSignal): Promise<TranscriberResponse> {
+    return this.transport.request({ method: 'GET', path: TRANSCRIBER_PATH, schema: TranscriberResponseSchema,
+      what: '读本地转写装没装', lostAs: 'failed', signal });
+  }
+
+  installTranscriber(body: TranscriberInstallRequest): Promise<TranscriberResponse> {
+    return this.transport.request({ method: 'POST', path: TRANSCRIBER_INSTALL_PATH, body,
+      schema: TranscriberResponseSchema, what: '安装本地转写', lostAs: 'uncertain' });
   }
 
   async sources(signal?: AbortSignal): Promise<FeedSourcesResponse> {

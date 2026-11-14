@@ -7,8 +7,9 @@ import {
   DouyinJobsResponseSchema,
   DouyinListResponseSchema,
   FeedNavResponseSchema,
+  TranscriberResponseSchema,
 } from '../../shared/api/index.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
+import { call, json, openEvents, pair, startTestApp, type TestApp } from './helpers.ts';
 import { newDeviceKey, newRequestId, registerKey, signedCall } from './signing.ts';
 
 let t: TestApp | undefined;
@@ -111,4 +112,85 @@ test('收藏关联同一份空间，资料库修改后读最新版本，不重�
   assert.equal(view['version'], edited.version);
   assert.equal(view['html'], edited.html);
   assert.equal(t.state.videoWorks.require(work.id).transcript, '原逐字稿');
+});
+
+test('抖音收藏的三个数按全部收藏算，「没整理 / 已整理」在服务端筛，不只算读出来的那一页', async () => {
+  t = await startTestApp();
+  const cookie = await pair(t);
+  const ids = Array.from({ length: 5 }, (_, index) => t!.state.videoWorks.upsert({ platform: 'douyin',
+    workId: `73000000000000001${index}`, url: `https://www.douyin.com/video/73000000000000001${index}`,
+    title: `示例收藏 ${index}`, collectSeq: 100 - index }).work.id);
+  t.state.videoWorks.advance(ids[4]!, { stage: 'summarized', transcript: '逐字稿',
+    digest: { summary: '最早收藏的那一条整理好了。', outline: [], points: [], related: [] } });
+  const first = json(await call(t, 'GET', '/v2/video/douyin?limit=2', { cookie }));
+  assert.ok(Value.Check(DouyinListResponseSchema, first), JSON.stringify(first));
+  assert.deepEqual(first['counts'], { all: 5, todo: 4, done: 1 });
+  assert.equal((first['works'] as unknown[]).length, 2);
+  const done = json(await call(t, 'GET', '/v2/video/douyin?phase=done&limit=2', { cookie }));
+  assert.deepEqual((done['works'] as { title: string }[]).map((work) => work.title), ['示例收藏 4']);
+  assert.equal(done['total'], 1);
+  assert.equal(done['nextOffset'], null);
+  assert.deepEqual(done['counts'], { all: 5, todo: 4, done: 1 }, '三个数不跟着筛选变');
+  const todo = json(await call(t, 'GET', '/v2/video/douyin?phase=todo&limit=3&offset=3', { cookie }));
+  assert.deepEqual((todo['works'] as { title: string }[]).map((work) => work.title), ['示例收藏 3']);
+  assert.equal(todo['total'], 4);
+  const searched = json(await call(t, 'GET', '/v2/video/douyin?q=4', { cookie }));
+  assert.deepEqual(searched['counts'], { all: 1, todo: 0, done: 1 }, '搜索时三个数按搜到的算');
+  assert.equal((await call(t, 'GET', '/v2/video/douyin?phase=running', { cookie })).status, 400);
+});
+
+test('本地转写：没装时视频停在「等转写装好」不下载；点安装后台装、推进度，装好接着走', async () => {
+  const { createHash } = await import('node:crypto');
+  const { mkdir, writeFile } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const content = Buffer.from('假的组件');
+  const sha256 = createHash('sha256').update(content).digest('hex');
+  const plan = { files: [{ name: 'kit.tar.bz2', url: 'https://example.test/kit.tar.bz2', bytes: content.length,
+    sha256, into: 'sherpa', unpack: { kind: 'tar.bz2' as const, members: ['rt/bin/asr'] } }],
+  binary: 'sherpa/rt/bin/asr', model: 'model/m.onnx', tokens: 'model/t.txt', vad: 'model/v.onnx', ffmpeg: 'ffmpeg/f' };
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => { release = resolve; });
+  t = await startTestApp([], { transcriberKit: { plan, ports: {
+    async download(_url, file, _signal, bytes) {
+      await held;
+      await writeFile(file, content);
+      bytes(content.length);
+    },
+    async untar(_archive, into, members) {
+      for (const member of members) {
+        await mkdir(join(into, member, '..'), { recursive: true });
+        await writeFile(join(into, member), '程序');
+      }
+    },
+    async check() {},
+  } } });
+  const cookie = await pair(t);
+  const work = t.state.videoWorks.upsert({ platform: 'douyin', workId: '7300000000000000020',
+    url: 'https://www.douyin.com/video/7300000000000000020', title: '一条视频收藏', kind: 'video' }).work;
+  const before = json(await call(t, 'GET', '/v2/video/transcriber', { cookie }));
+  assert.ok(Value.Check(TranscriberResponseSchema, before), JSON.stringify(before));
+  assert.deepEqual((before['status'] as { state: string; totalBytes: number }),
+    { state: 'absent', source: null, totalBytes: content.length, doneBytes: 0, step: null, error: null });
+  await call(t, 'POST', '/v2/video/douyin/process', { cookie, body: { requestId: 'douyin-proc-kit', ids: [work.id] } });
+  await t.app.deps.video.worker.settled();
+  const waiting = json(await call(t, 'GET', '/v2/video/douyin', { cookie }))['works'] as { run: string }[];
+  assert.equal(waiting[0]?.run, 'waiting_transcriber');
+  const events = await openEvents(t, cookie);
+  const install = await call(t, 'POST', '/v2/video/transcriber/install', { cookie,
+    body: { requestId: 'transcriber-install-01' } });
+  assert.equal(install.status, 202, JSON.stringify(install.body));
+  assert.equal((json(install)['status'] as { state: string }).state, 'installing');
+  const progress = await events.next('transcriber_changed');
+  assert.equal((progress.event as { status: { state: string } }).status.state, 'installing');
+  release();
+  await t.app.deps.video.kit.settled();
+  for (;;) {
+    const frame = await events.next('transcriber_changed');
+    if ((frame.event as { status: { state: string } }).status.state === 'ready') break;
+  }
+  events.close();
+  await t.app.deps.video.worker.settled();
+  assert.equal(t.state.videoWorks.require(work.id).run, 'waiting_mac', '装好以后接着走：先让电脑取地址');
+  const after = json(await call(t, 'GET', '/v2/video/transcriber', { cookie }))['status'] as { state: string };
+  assert.deepEqual([after.state, (after as { source?: string }).source], ['ready', 'kit']);
 });

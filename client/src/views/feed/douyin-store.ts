@@ -2,7 +2,7 @@
 // 他勾选的几条、同步（排给 Mac）、处理选中的。打开着时服务端说「变了」（video.changed）就重读，进度条跟着走。
 // 勾选只在这台设备上：已经要处理过的（want = full）一开始就勾着。
 
-import type { DouyinListResponse, VideoWorkView } from '../../api/shared.ts';
+import type { DouyinListQuery, DouyinListResponse, DouyinPhaseFilter, VideoWorkView } from '../../api/shared.ts';
 import type { PlasticineApi } from '../../api/client.ts';
 import { errorText } from '../../api/errors.ts';
 import type { EventsHub } from '../../api/events-hub.ts';
@@ -21,6 +21,8 @@ export interface DouyinState {
   error: string | null;
   folder: string | null;
   query: string;
+  /** 整理到哪了（没整理 / 已整理）；null 是全部。在服务端筛（第13批）。 */
+  phase: DouyinPhaseFilter | null;
   selected: ReadonlySet<string>;
   busy: 'sync' | 'process' | 'more' | null;
   /** 刚做完一件事的一句话（「排上了 3 条」）。 */
@@ -28,7 +30,14 @@ export interface DouyinState {
 }
 
 const INITIAL: DouyinState = { status: 'idle', data: null, works: [], error: null, folder: null, query: '',
-  selected: new Set(), busy: null, notice: null };
+  phase: null, selected: new Set(), busy: null, notice: null };
+
+/** 收藏夹、搜索、整理到哪了 → 查询参数（不带页码）。 */
+function filterOf(state: Pick<DouyinState, 'folder' | 'query' | 'phase'>): DouyinListQuery {
+  return { ...(state.folder === null ? {} : { folder: state.folder }),
+    ...(state.query.trim() === '' ? {} : { q: state.query.trim() }),
+    ...(state.phase === null ? {} : { phase: state.phase }) };
+}
 
 export class DouyinStore {
   readonly state = new Store<DouyinState>(INITIAL);
@@ -66,11 +75,11 @@ export class DouyinStore {
     this.#controller?.abort();
     const controller = new AbortController();
     this.#controller = controller;
-    const { folder, query, works } = this.state.get();
+    const { works } = this.state.get();
+    const filter = filterOf(this.state.get());
     this.state.set((state) => ({ ...state, status: fresh ? 'loading' : state.status, error: null }));
     try {
       const wanted = fresh ? DOUYIN_PAGE : Math.max(DOUYIN_PAGE, works.length);
-      const filter = { ...(folder === null ? {} : { folder }), ...(query.trim() === '' ? {} : { q: query.trim() }) };
       let data = await this.#api.feed.douyin({ ...filter, limit: Math.min(wanted, DOUYIN_PAGE_MAX), offset: 0 },
         controller.signal);
       const refreshed = [...data.works];
@@ -95,19 +104,30 @@ export class DouyinStore {
     }
   }
 
+  /** 接着读下一页（滚到底自动调）；同一时间只读一页。 */
   async more(): Promise<void> {
-    const { data, works, folder, query } = this.state.get();
-    if (data?.nextOffset == null) {
+    const current = this.state.get();
+    if (current.data?.nextOffset == null || current.busy === 'more' || current.status === 'loading') {
       return;
     }
+    const filter = filterOf(current);
     this.state.set((state) => ({ ...state, busy: 'more' }));
     try {
-      const next = await this.#api.feed.douyin({ limit: DOUYIN_PAGE, offset: works.length,
-        ...(folder === null ? {} : { folder }), ...(query.trim() === '' ? {} : { q: query.trim() }) });
-      this.state.set((state) => ({ ...state, data: next, works: [...state.works, ...next.works], busy: null }));
+      const next = await this.#api.feed.douyin({ ...filter, limit: DOUYIN_PAGE, offset: current.works.length });
+      this.state.set((state) => {
+        if (JSON.stringify(filterOf(state)) !== JSON.stringify(filter)) return { ...state, busy: null };
+        return { ...state, data: next, works: [...state.works, ...next.works], busy: null };
+      });
     } catch (cause) {
       this.state.set((state) => ({ ...state, busy: null, error: errorText(cause) }));
     }
+  }
+
+  /** 换「整理到哪了」：先清掉上一个筛选读出来的，再从头读。 */
+  setPhase(phase: DouyinPhaseFilter | null): Promise<void> {
+    this.state.set((state) => ({ ...state, phase, works: [], status: 'loading',
+      data: state.data === null ? null : { ...state.data, nextOffset: null } }));
+    return this.load(true);
   }
 
   setFolder(folder: string | null): void {

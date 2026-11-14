@@ -34,9 +34,15 @@ export const VIDEO_STAGE_LABELS: Readonly<Record<VideoStage, string>> = {
 };
 /** 他要它走到哪：none 只同步了标题；full 预览后不够就转写、再总结。 */
 export const VIDEO_WANTS = ['none', 'full'] as const;
-/** 现在在不在动：排着、等 Mac 取下载地址、在跑、没做成。 */
+/** 现在在不在动：排着、等 Mac 取下载地址、在跑、没做成。库里存的就是这几种。 */
 export const VIDEO_RUNS = ['idle', 'queued', 'waiting_mac', 'running', 'failed'] as const;
 export type VideoRun = (typeof VIDEO_RUNS)[number];
+/**
+ * 给界面看的多一种：等本地转写装好（第13批）。库里不另存：要它走（want = full）、没在动（idle）、还没转写的就是在等转写，
+ * 见 video/douyin.ts 的 videoWorkView。没装转写时视频不下载，装好自动接着走。
+ */
+export const VIDEO_VIEW_RUNS = [...VIDEO_RUNS, 'waiting_transcriber'] as const;
+export type VideoViewRun = (typeof VIDEO_VIEW_RUNS)[number];
 export const VIDEO_KINDS = ['video', 'images'] as const;
 export const TRANSCRIPT_SOURCES = ['caption', 'subtitle', 'local', 'images'] as const;
 
@@ -111,7 +117,7 @@ export const VideoWorkViewSchema = Type.Object({
   folderIds: Type.Array(Type.String()),
   stage: Type.Enum(VIDEO_STAGES),
   want: Type.Enum(VIDEO_WANTS),
-  run: Type.Enum(VIDEO_RUNS),
+  run: Type.Enum(VIDEO_VIEW_RUNS),
   /** 没做成的一句话原因。 */
   error: OrNull(Type.String()),
   feedItemId: OrNull(IdSchema),
@@ -127,10 +133,15 @@ export const DouyinFolderViewSchema = Type.Object({
 });
 export type DouyinFolderView = Static<typeof DouyinFolderViewSchema>;
 
-/** GET /v2/video/douyin?folder=&q=&limit=&offset= — 收藏，按抖音收藏列表顺序。 */
+/** 整理到哪了：没整理 = 还没有总结（含排着、在跑的），已整理 = 有总结。 */
+export const DOUYIN_PHASES = ['todo', 'done'] as const;
+export type DouyinPhaseFilter = (typeof DOUYIN_PHASES)[number];
+
+/** GET /v2/video/douyin?folder=&q=&phase=&limit=&offset= — 收藏，按抖音收藏列表顺序。 */
 export const DouyinListQuerySchema = Type.Object({
   folder: Type.Optional(Type.String({ minLength: 1, maxLength: 60 })),
   q: Type.Optional(Type.String({ maxLength: 200 })),
+  phase: Type.Optional(Type.Enum(DOUYIN_PHASES)),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200 })),
   offset: Type.Optional(Type.Integer({ minimum: 0 })),
 }, { additionalProperties: false });
@@ -149,6 +160,12 @@ export const DouyinListResponseSchema = Type.Object({
   works: Type.Array(VideoWorkViewSchema),
   /** 符合筛选的总条数（「还有 n 条」）。 */
   total: Type.Integer({ minimum: 0 }),
+  /** 「全部 / 没整理 / 已整理」三个数：按收藏夹和搜索算全部收藏，不跟着整理到哪的筛选变（第13批）。 */
+  counts: Type.Object({
+    all: Type.Integer({ minimum: 0 }),
+    todo: Type.Integer({ minimum: 0 }),
+    done: Type.Integer({ minimum: 0 }),
+  }, { additionalProperties: false }),
   nextOffset: NextOffsetSchema,
   folders: Type.Array(DouyinFolderViewSchema),
   sync: DouyinSyncViewSchema,
@@ -180,6 +197,41 @@ export const DouyinProcessResponseSchema = Type.Object({
   queued: Type.Integer({ minimum: 0 }),
 });
 export type DouyinProcessResponse = Static<typeof DouyinProcessResponseSchema>;
+
+// ---------- 本地转写（第13批：第一次用时问一句再下载） ----------
+
+export const TRANSCRIBER_PATH = `${VIDEO_PATH}/transcriber`;
+export const TRANSCRIBER_INSTALL_PATH = `${TRANSCRIBER_PATH}/install`;
+/**
+ * 本地转写装没装：ready 能转写；absent 还没装；installing 正在装；failed 上次没装成（error 写原因）；
+ * unsupported 这种系统没有现成的组件（只能在服务器上自己配，见环境变量）。
+ */
+export const TRANSCRIBER_STATES = ['ready', 'absent', 'installing', 'failed', 'unsupported'] as const;
+export const TranscriberStatusSchema = Type.Object({
+  state: Type.Enum(TRANSCRIBER_STATES),
+  /** 能转写时用的是哪一份：env 服务器上自己配的（环境变量，优先），kit Plasticine 装的组件。 */
+  source: OrNull(Type.Enum(['env', 'kit'])),
+  /** 要下载多少字节：装之前就知道（「约 220 MB」）。 */
+  totalBytes: Type.Integer({ minimum: 0 }),
+  /** 已经下了多少。 */
+  doneBytes: Type.Integer({ minimum: 0 }),
+  /** 正在装的哪一步：下载、解开。 */
+  step: OrNull(Type.Enum(['download', 'unpack'])),
+  error: OrNull(Type.String()),
+}, { additionalProperties: false });
+export type TranscriberStatus = Static<typeof TranscriberStatusSchema>;
+/** GET /v2/video/transcriber、POST /v2/video/transcriber/install → { status } */
+export const TranscriberResponseSchema = Type.Object({ status: TranscriberStatusSchema });
+export type TranscriberResponse = Static<typeof TranscriberResponseSchema>;
+/** POST /v2/video/transcriber/install → 202 { status }：开始在后台装（装着、装好的不重来）。 */
+export const TranscriberInstallRequestSchema = Type.Object({ requestId: RequestIdSchema },
+  { additionalProperties: false });
+export type TranscriberInstallRequest = Static<typeof TranscriberInstallRequestSchema>;
+/** 装的进度和结果（约一秒一次）；装好以后在等转写的作品自动接着走（另有 video_changed）。 */
+export const TranscriberChangedEventSchema = Type.Object({
+  type: Type.Literal('transcriber_changed'),
+  status: TranscriberStatusSchema,
+});
 
 // ---------- Mac 这一头（节点 Bearer） ----------
 

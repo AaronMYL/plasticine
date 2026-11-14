@@ -13,6 +13,7 @@ import { TOOL_GROUPS_NOTE, ToolGroupsView } from '../tools/tool-groups-view.tsx'
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { connectRequest } from './ai-providers.tsx';
 import { FoldedRows, MergedRow, PurposeRow } from './ai-purposes.tsx';
+import { TranscriberRow } from './transcriber-row.tsx';
 
 const NOTES: readonly ModelPurpose[] = ['note_predict', 'note_interject', 'note_polish', 'note_organize',
   'note_correct', 'note_format', 'note_chart', 'note_custom'];
@@ -80,6 +81,7 @@ export function AiGroups(): ReactNode {
           <MergedRow value={value} purposes={['book_digest', 'book_outline', 'book_key_points']} label="图书"
             sub="章节归纳、大纲、重点" />
           <MergedRow value={value} purposes={['web_extract', 'video_digest']} label="网页提取和视频解析" />
+          <TranscriberRow />
           <ImageRow value={value} />
         </Group>
         <Group id="ai-group-memory" title="记忆和记账">

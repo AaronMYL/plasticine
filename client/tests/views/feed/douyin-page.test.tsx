@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderApp } from '../../helpers.tsx';
 
 const TITLE = '普通人做指数定投的三个误区';
@@ -70,12 +70,12 @@ describe('抖音收藏整理', () => {
       .includes(work.run));
     const filters = within(list).getByRole('group', { name: '整理到哪了' });
     fireEvent.click(within(filters).getByRole('button', { name: /^已整理/ }));
-    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(
-      works.filter((work) => work.stage === 'summarized').length));
+    const done = (await app.api.feed.douyin({ phase: 'done' })).works;
+    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(done.length));
     fireEvent.click(within(filters).getByRole('button', { name: /^全部/ }));
     fireEvent.click(within(list).getByRole('button', { name: '整理几条' }));
     if (todo.length === 0) return;
-    fireEvent.click(within(list).getByRole('checkbox', { name: `选「${todo[0]!.title}」` }));
+    fireEvent.click(await within(list).findByRole('checkbox', { name: `选「${todo[0]!.title}」` }));
     fireEvent.click(within(list).getByRole('button', { name: '整理这 1 条' }));
     await waitFor(() => expect(process).toHaveBeenCalledWith(expect.objectContaining({ ids: [todo[0]!.id] })));
   });
@@ -89,5 +89,90 @@ describe('抖音收藏整理', () => {
     fireEvent.error(image!);
     await waitFor(() => expect(row.querySelector('.dy-work-thumb img')).toBeNull());
     expect(row.querySelector('.dy-work-thumb svg')).not.toBeNull();
+  });
+});
+
+describe('抖音收藏的三个数和接着读', () => {
+  const observers: { callback: IntersectionObserverCallback; elements: Element[] }[] = [];
+  class StubObserver {
+    readonly entry: { callback: IntersectionObserverCallback; elements: Element[] };
+    constructor(callback: IntersectionObserverCallback) {
+      this.entry = { callback, elements: [] };
+      observers.push(this.entry);
+    }
+    observe(element: Element): void { this.entry.elements.push(element); }
+    unobserve(): void {}
+    disconnect(): void { this.entry.elements = []; }
+    takeRecords(): IntersectionObserverEntry[] { return []; }
+  }
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    observers.length = 0;
+  });
+  const reachBottom = (list: HTMLElement): void => {
+    for (const entry of observers) {
+      const inside = entry.elements.filter((element) => list.contains(element));
+      if (inside.length === 0) continue;
+      entry.callback(inside.map((target) => ({ isIntersecting: true, target }) as IntersectionObserverEntry),
+        {} as IntersectionObserver);
+    }
+  };
+
+  it('全部 / 没整理 / 已整理按全部收藏数；已整理的排得再靠后也筛得出来', async () => {
+    await open();
+    const list = await screen.findByRole('region', { name: '抖音收藏列表' });
+    const filters = within(list).getByRole('group', { name: '整理到哪了' });
+    await waitFor(() => expect(within(filters).getByRole('button', { name: /^全部/ }).textContent).toContain('1434'));
+    expect(within(filters).getByRole('button', { name: /^没整理/ }).textContent).toContain('1431');
+    expect(within(filters).getByRole('button', { name: /^已整理/ }).textContent).toContain('3');
+    fireEvent.click(within(filters).getByRole('button', { name: /^已整理/ }));
+    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(3));
+  });
+
+  it('滚到底自动接着读，不用点「更多收藏」', async () => {
+    vi.stubGlobal('IntersectionObserver', StubObserver);
+    const app = await open();
+    const fetch = vi.spyOn(app.api.feed, 'douyin');
+    const list = await screen.findByRole('region', { name: '抖音收藏列表' });
+    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(50));
+    expect(within(list).queryByRole('button', { name: '更多收藏' })).toBeNull();
+    act(() => reachBottom(list));
+    await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(100));
+    expect(fetch).toHaveBeenCalledWith(expect.objectContaining({ offset: 50 }));
+  });
+});
+
+describe('本地转写没装时先问一句', () => {
+  const WAITING = '城市骑行路线推荐';
+
+  it('在等转写的视频标「等转写装好」，点开是安装卡；点安装后台装好，接着整理', async () => {
+    const app = await open();
+    const install = vi.spyOn(app.api.feed, 'installTranscriber');
+    const list = await screen.findByRole('region', { name: '抖音收藏列表' });
+    const row = await within(list).findByRole('button', { name: new RegExp(`^${WAITING}`) });
+    expect(row.textContent).toContain('等转写装好');
+    fireEvent.click(row);
+    const card = await screen.findByRole('region', { name: '本地转写' });
+    expect(within(card).getByRole('heading', { name: '解析视频要先装本地转写' })).toBeTruthy();
+    expect(card.textContent).toContain('约 220 MB');
+    fireEvent.click(within(card).getByRole('button', { name: '安装' }));
+    await waitFor(() => expect(install).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByRole('region', { name: '本地转写' })).toBeNull());
+    await waitFor(() => expect(within(list).getByRole('button', { name: new RegExp(`^${WAITING}`) }).textContent)
+      .toContain('在整理'));
+  });
+
+  it('没整理的视频点「处理作品」先问；点「先不」不处理、不下视频', async () => {
+    const app = await open();
+    const process = vi.spyOn(app.api.feed, 'douyinProcess');
+    const list = await screen.findByRole('region', { name: '抖音收藏列表' });
+    const works = (await app.api.feed.douyin({})).works;
+    const todo = works.find((work) => work.kind === 'video' && work.stage !== 'summarized' && work.run === 'idle')!;
+    fireEvent.click(await within(list).findByRole('button', { name: new RegExp(`^${todo.title}`) }));
+    fireEvent.click(await screen.findByRole('button', { name: '处理作品' }));
+    const card = await screen.findByRole('region', { name: '本地转写' });
+    fireEvent.click(within(card).getByRole('button', { name: '先不' }));
+    expect(screen.queryByRole('region', { name: '本地转写' })).toBeNull();
+    expect(process).not.toHaveBeenCalled();
   });
 });

@@ -1,0 +1,17 @@
+/* 装本地转写的卡（第13批设计稿「抖音收藏」右边那张）。 */
+.kit-card { width: min(400px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 20px;
+  border-radius: 14px; background: var(--layer-float); box-shadow: var(--lift); }
+.kit-card h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; }
+.kit-card p { margin: 0; color: var(--fg2); font-size: 14px; line-height: 22px; }
+.kit-card .kit-error { color: var(--err); font-size: 13px; line-height: 20px; }
+.kit-actions { display: flex; gap: 8px; }
+.kit-progress-line { display: flex; align-items: center; gap: 8px; color: var(--fg2); font-size: 13px;
+  line-height: 20px; font-variant-numeric: tabular-nums; }
+.kit-progress-line > span:first-child { flex: 1; }
+.kit-percent { font-family: var(--mono); font-size: 12px; }
+.kit-bar { height: 6px; overflow: hidden; border-radius: 3px; background: var(--tint2); }
+.kit-bar i { display: block; height: 100%; border-radius: 3px; background: var(--run); transform-origin: left;
+  transition: transform var(--motion-slow) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) {
+  .kit-bar i { transition: none; }
+}

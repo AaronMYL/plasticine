@@ -20,6 +20,7 @@ const RUN_TEXT: Readonly<Record<VideoWorkView['run'], string | null>> = {
   waiting_mac: '等电脑上线',
   running: '在处理',
   failed: '没做成',
+  waiting_transcriber: '等转写装好',
 };
 
 function dayText(iso: string | null, timeZone: string): string | null {

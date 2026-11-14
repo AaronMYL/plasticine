@@ -1,8 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
-import type { VideoWorkView } from '../../api/shared.ts';
+import type { DouyinPhaseFilter, VideoWorkView } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
@@ -16,6 +16,8 @@ import { spaceRoute } from '../spaces/space-links.ts';
 import { letterDate } from '../spaces/space-time.ts';
 import { useLinkedSpace } from '../spaces/use-linked-space.ts';
 import { useSpaceQuote } from '../spaces/space-quote.ts';
+import { MoreState, useAutoMore } from './feed-pager.tsx';
+import { TranscriberCard } from './transcriber-card.tsx';
 import '../spaces/space-frame.css';
 import './douyin-page.css';
 
@@ -25,14 +27,19 @@ function meta(work: VideoWorkView, timeZone: string): string {
   return [work.author, date].filter(Boolean).join(' · ');
 }
 
-/** 整理到哪了（11-11 第 11 批设计稿「P3 抖音」）：已整理 = 有总结；在整理 = 排着或在跑；其余没整理。 */
-export type DouyinPhase = 'todo' | 'running' | 'done';
-export const PHASE_LABELS: Readonly<Record<DouyinPhase, string>> = { todo: '没整理', running: '在整理', done: '已整理' };
+/**
+ * 整理到哪了（11-11 第 11 批设计稿「P3 抖音」）：已整理 = 有总结；在整理 = 排着或在跑；等转写装好 = 点过处理、本地转写
+ * 还没装（第13批）；其余没整理。
+ */
+export type DouyinPhase = 'todo' | 'running' | 'waiting' | 'done';
+export const PHASE_LABELS: Readonly<Record<DouyinPhase, string>> = { todo: '没整理', running: '在整理',
+  waiting: '等转写装好', done: '已整理' };
 export function phaseOf(work: VideoWorkView): DouyinPhase {
   if (work.stage === 'summarized') return 'done';
+  if (work.run === 'waiting_transcriber') return 'waiting';
   return ['queued', 'running', 'waiting_mac'].includes(work.run) ? 'running' : 'todo';
 }
-type Filter = 'all' | 'todo' | 'done';
+type Filter = 'all' | DouyinPhaseFilter;
 const FILTER_LABELS: Readonly<Record<Filter, string>> = { all: '全部', todo: '没整理', done: '已整理' };
 
 /** 时长 1:05 这样写；不知道就空。 */
@@ -46,10 +53,15 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
   const api = useApi();
   const live = useLive();
   const mention = useMention();
+  const { status: kit, error: installError } = useStore(live.transcriber.state);
+  useEffect(() => live.transcriber.open(), [live.transcriber]);
   const { value: space, error, reload } = useLinkedSpace(work.spaceId ?? null);
   const quote = useSpaceQuote(space);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // 视频要本地转写：没装时先问一句（asking），点「先不」就不下视频（later）。
+  const [asking, setAsking] = useState(false);
+  const [later, setLater] = useState(false);
   const process = async (): Promise<void> => {
     setBusy(true);
     setProblem(null);
@@ -59,6 +71,13 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
     } catch (cause) { setProblem(errorText(cause)); }
     finally { setBusy(false); }
   };
+  const missing = kit !== null && kit.state !== 'ready';
+  const start = (): void => {
+    if (work.kind === 'video' && missing && kit.state !== 'installing') setAsking(true);
+    else void process();
+  };
+  const waiting = work.run === 'waiting_transcriber';
+  const showKit = kit !== null && missing && !later && (asking || waiting);
   const running = ['queued', 'running', 'waiting_mac'].includes(work.run);
   return <section className="dy-detail" aria-label="收藏详情">
     <header className="dy-detail-head">
@@ -77,13 +96,18 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
       : space?.html != null ? <SpaceFrame className="space-frame" label={space.title} mode="page" onQuote={quote}
         space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
           dateLabel: letterDate(space.createdAt) }} />
-        : <div className="dy-unprocessed"><h2>{work.title}</h2>
-          {work.stage === 'summarized' ? <p role="status">正在整理报告…</p>
-            : running ? <p role="status">{work.run === 'waiting_mac' ? '等电脑上线' : '正在处理…'}</p>
-              : <button type="button" className="primary-button" disabled={busy}
-                onClick={() => void process()}>{work.run === 'failed' ? '重新处理' : '处理作品'}</button>}
-          {problem ?? work.error ? <p className="is-error" role="alert">{problem ?? work.error}</p> : null}
-        </div>}
+        : showKit ? <div className="dy-kit"><TranscriberCard status={kit} error={installError}
+          onLater={() => { setAsking(false); setLater(true); }}
+          onInstall={() => void live.transcriber.install(waiting ? undefined : process)} /></div>
+          : <div className="dy-unprocessed"><h2>{work.title}</h2>
+            {work.stage === 'summarized' ? <p role="status">正在整理报告…</p>
+              : running ? <p role="status">{work.run === 'waiting_mac' ? '等电脑上线' : '正在处理…'}</p>
+                : waiting ? <p role="status">等本地转写装好{' '}
+                  <button type="button" className="text-button" onClick={() => setLater(false)}>安装</button></p>
+                  : <button type="button" className="primary-button" disabled={busy}
+                    onClick={start}>{work.run === 'failed' ? '重新处理' : '处理作品'}</button>}
+            {problem ?? work.error ? <p className="is-error" role="alert">{problem ?? work.error}</p> : null}
+          </div>}
   </section>;
 }
 
@@ -121,7 +145,8 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
   const state = useStore(store.state);
   const timeZone = useTimeZone();
   const [selected, setSelected] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>('all');
+  const filter: Filter = state.phase ?? 'all';
+  const sentinel = useRef<HTMLDivElement>(null);
   const [picking, setPicking] = useState(false);
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [running, setRunning] = useState(false);
@@ -131,10 +156,10 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
   useEffect(() => {
     if (!phone && current === null && state.works[0] !== undefined) setSelected(state.works[0].id);
   }, [phone, current, state.works]);
-  const counts: Record<Filter, number> = { all: state.works.length,
-    todo: state.works.filter((work) => phaseOf(work) !== 'done').length,
-    done: state.works.filter((work) => phaseOf(work) === 'done').length };
-  const shown = state.works.filter((work) => filter === 'all' || (filter === 'done') === (phaseOf(work) === 'done'));
+  const counts = state.data?.counts ?? null;
+  const shown = state.works;
+  const end = state.data?.nextOffset == null;
+  useAutoMore(sentinel, state.status === 'ready' && !end && state.busy !== 'more', () => void store.more());
   const stopPicking = (): void => {
     setPicking(false);
     setPicked(new Set());
@@ -155,8 +180,8 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
         <div className="segmented" role="group" aria-label="整理到哪了">
           {(Object.keys(FILTER_LABELS) as Filter[]).map((key) => (
             <button key={key} type="button" className="segmented-item" aria-pressed={filter === key}
-              onClick={() => setFilter(key)}>
-              {FILTER_LABELS[key]} <span className="dy-count">{counts[key]}</span>
+              onClick={() => { if (key !== filter) void store.setPhase(key === 'all' ? null : key); }}>
+              {FILTER_LABELS[key]}{counts === null ? null : <> <span className="dy-count">{counts[key]}</span></>}
             </button>
           ))}
         </div>
@@ -179,10 +204,12 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
             if (on) next.add(work.id); else next.delete(work.id);
             return next;
           })} /></li>)}
-      </ul>{state.data?.nextOffset != null ? <button type="button" className="text-button dy-more"
-        disabled={state.busy === 'more'} onClick={() => void store.more()}>更多收藏</button> : null}
-      {state.works.length === 0 ? <p className="block-empty">{state.status === 'loading' ? '正在读收藏…' : '还没有同步收藏'}</p>
-        : null}</div>
+      </ul>
+      <div ref={sentinel} className="dy-sentinel" aria-hidden="true" />
+      {state.works.length === 0 ? <p className="block-empty">{state.status === 'loading' ? '正在读收藏…'
+        : filter === 'all' ? '还没有同步收藏' : `没有${FILTER_LABELS[filter]}的收藏`}</p>
+        : <MoreState loading={state.busy === 'more'} end={false} error={null} onRetry={() => void store.more()} />}
+      </div>
       {picking ? <footer className="dy-pick-bar">
         <span>{picked.size === 0 ? '勾选没整理的' : `选了 ${picked.size} 条`}</span>
         {problem === null ? null : <span className="is-error" role="alert">{problem}</span>}

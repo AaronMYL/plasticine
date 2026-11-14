@@ -3,6 +3,8 @@
 //      别的网站交给 yt-dlp，直链直接下。不再先拿标题和配文预览（「已预览」只留在旧数据里）。
 //   2. 图文：读每张图里的文字，结合配文总结。抖音视频：不看标题、配文和自带字幕，直接下载、抽音频、本地转写
 //      （一次只转一条）。别的网站的视频照旧先用自带字幕，没有再本地转写。
+//      还没装本地转写（第13批）：抖音视频不取地址、不下载，停在「等转写装好」；别的网站的视频没有自带字幕时也停在这里。
+//      装好以后接着走（worker.resumeTranscribing）。
 //   3. 总结：逐字稿 + 大纲、核心观点、和他兴趣有关的重点。
 // 每一步写进库再走下一步，进程重启后从停下的那一步接着走；临时文件做完就删。
 
@@ -32,8 +34,8 @@ export interface PipelinePorts {
   works: Pick<VideoWorkStore, 'require' | 'advance'>;
   media: VideoMedia;
   digester: VideoDigester;
-  /** 没配本地转写就是 null：没有自带字幕的视频记「这台机器还没装转写」。 */
-  transcriber: Transcriber | null;
+  /** 现在能用的本地转写（装好组件以后才有）；null 时要转写的停在「等转写装好」。 */
+  transcriber: () => Transcriber | null;
   /** 转写一次只跑一条（2 核机器）：拿到这把锁再转。 */
   transcribeLock: <T>(work: () => Promise<T>) => Promise<T>;
   interests: () => string[];
@@ -45,10 +47,16 @@ export interface PipelinePorts {
   publish?: (work: VideoWorkRow) => void;
 }
 
-/** 走到哪停下了：summarized 做完、waiting_mac 等 Mac 交下载地址。 */
-export type PipelineEnd = 'summarized' | 'waiting_mac';
+/** 走到哪停下了：summarized 做完、waiting_mac 等 Mac 交下载地址、waiting_transcriber 等本地转写装好。 */
+export type PipelineEnd = 'summarized' | 'waiting_mac' | 'waiting_transcriber';
 
-export const NO_TRANSCRIBER_TEXT = '这台机器还没装本地转写，转不了这条（见 docs/specs/video-parse.md）。';
+/** 要转写了，本地转写还没装。 */
+class NeedsTranscriber extends Error {}
+
+/** 抖音的视频一定要本地转写（图文不用；不知道是哪种的先让 Mac 取地址看看）。 */
+function douyinVideo(work: VideoWorkRow): boolean {
+  return work.platform === 'douyin' && (work.resolved?.kind ?? work.kind) === 'video';
+}
 
 function inputOf(work: VideoWorkRow, interests: readonly string[]): DigestInput {
   return { title: work.title, caption: work.caption, author: work.author, interests };
@@ -64,13 +72,21 @@ export async function advanceWork(id: string, ports: PipelinePorts, signal: Abor
   try {
     let media: string | null = null;
     if (work.stage !== 'transcribed') {
+      if (douyinVideo(work) && ports.transcriber() === null) {
+        return 'waiting_transcriber';
+      }
       if (work.platform === 'douyin' && work.resolved === null) {
         ports.askMac(work);
         return 'waiting_mac';
       }
-      media = work.platform === 'douyin'
-        ? await fromDouyin(work, work.resolved!, directory, ports, signal)
-        : await fromWeb(work, directory, ports, signal);
+      try {
+        media = work.platform === 'douyin'
+          ? await fromDouyin(work, work.resolved!, directory, ports, signal)
+          : await fromWeb(work, directory, ports, signal);
+      } catch (cause) {
+        if (cause instanceof NeedsTranscriber) return 'waiting_transcriber';
+        throw cause;
+      }
       work = ports.works.require(id);
     }
     const digest = work.digest ?? await ports.digester.summarize({ ...inputOf(work, ports.interests()),
@@ -121,7 +137,10 @@ async function fromDouyin(work: VideoWorkRow, resolved: DouyinResolved, director
     return null;
   }
   if (resolved.videoUrl === null) {
-    throw new Error('Mac 没取到这条的视频地址。');
+    throw new Error('电脑上没取到这条的视频地址。');
+  }
+  if (ports.transcriber() === null) {
+    throw new NeedsTranscriber();
   }
   const started = ports.now();
   const file = join(directory, 'video.mp4');
@@ -154,9 +173,9 @@ async function fromWeb(work: VideoWorkRow, directory: string, ports: PipelinePor
 
 async function localTranscript(work: VideoWorkRow, media: string, directory: string, ports: PipelinePorts,
   signal: AbortSignal, downloadMs: number): Promise<void> {
-  const transcriber = ports.transcriber;
+  const transcriber = ports.transcriber();
   if (transcriber === null) {
-    throw new Error(NO_TRANSCRIBER_TEXT);
+    throw new NeedsTranscriber();
   }
   const audio = join(directory, 'audio.wav');
   const seconds = await ports.media.extractAudio(media, audio, signal);

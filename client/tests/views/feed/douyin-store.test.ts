@@ -24,3 +24,38 @@ describe('收藏清单刷新', () => {
     expect(calls.mock.calls.map(([query]) => [query.limit, query.offset])).toEqual([[200, 0], [50, 200]]);
   });
 });
+
+describe('整理到哪了', () => {
+  it('在服务端筛，三个数按全部收藏算；接着读带着同一个筛选', async () => {
+    const fake = createFakeApi({ seed: false, streamStepMs: 0 });
+    fake.control.session.signInForDevelopment('测试机');
+    const calls = vi.spyOn(fake.api.feed, 'douyin');
+    const store = new DouyinStore(fake.api, new EventsHub(fake.api.events));
+    await store.load(true);
+    expect(store.state.get().data?.counts).toEqual({ all: 1434, todo: 1431, done: 3 });
+    await store.setPhase('done');
+    const done = store.state.get().works;
+    expect(done).toHaveLength(3);
+    expect(done.every((work) => work.stage === 'summarized')).toBe(true);
+    expect(calls.mock.lastCall?.[0]).toMatchObject({ phase: 'done', offset: 0 });
+    expect(store.state.get().data?.counts).toEqual({ all: 1434, todo: 1431, done: 3 });
+    await store.setPhase('todo');
+    await store.more();
+    expect(calls.mock.lastCall?.[0]).toMatchObject({ phase: 'todo', offset: 50 });
+    expect(store.state.get().works.some((work) => work.stage === 'summarized')).toBe(false);
+    await store.setPhase(null);
+    expect(calls.mock.lastCall?.[0]).not.toHaveProperty('phase');
+  });
+
+  it('换筛选时先清掉上一个筛选读出来的，不让旧条目闪一下', async () => {
+    const fake = createFakeApi({ seed: false, streamStepMs: 0 });
+    fake.control.session.signInForDevelopment('测试机');
+    const store = new DouyinStore(fake.api, new EventsHub(fake.api.events));
+    await store.load(true);
+    const pending = store.setPhase('done');
+    expect(store.state.get().works).toEqual([]);
+    expect(store.state.get().status).toBe('loading');
+    await pending;
+    expect(store.state.get().works).toHaveLength(3);
+  });
+});

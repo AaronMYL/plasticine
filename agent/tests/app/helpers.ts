@@ -102,6 +102,8 @@ export interface TestAppOptions {
   favicons?: FaviconFetchOptions;
   /** The development dry run (default on, as in the service until it is switched on). */
   dryRun?: boolean;
+  /** 第13批：本地转写组件（不给时下载一律失败，测试不出网）。 */
+  transcriberKit?: AssembleOptions['transcriberKit'];
   /** 第 113 条：网络那一头；测试默认不自己收发（autoSync false）、不调分身的模型（proxy false）。 */
   network?: AssembleOptions['network'];
   /** 线的装配：不给就用假提供商；给了就整个换掉（工具、压缩、并发）。 */
@@ -156,6 +158,9 @@ export async function startTestApp(steps: TextStep[] = [], options: TestAppOptio
     ...(options.linkPreviews === undefined ? {} : { linkPreviews: options.linkPreviews }),
     ...(options.skillShop === undefined ? {} : { skillShop: options.skillShop }),
     ...(options.favicons === undefined ? {} : { favicons: options.favicons }),
+    transcriberKit: options.transcriberKit ?? { ports: { download: async () => {
+      throw new Error('测试不出网：要装本地转写就给假的 transcriberKit');
+    } } },
     vapidKeys,
     vapidSubject: 'https://plasticine.test',
     pushTransport,

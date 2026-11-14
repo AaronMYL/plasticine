@@ -48,6 +48,8 @@ import {
   FEED_NAV_PATH,
   DOUYIN_NODE_PATH,
   DOUYIN_PATH,
+  TRANSCRIBER_INSTALL_PATH,
+  TRANSCRIBER_PATH,
   DOUYIN_PROCESS_PATH,
   DOUYIN_SYNC_PATH,
   FEED_REFRESH_PATH,
@@ -157,7 +159,8 @@ import { getFeedRefresh, refreshFeed } from './feed-refresh.ts';
 import { addFeedComment, blockFeedSite, listFeedComments, retryFeedComment } from './feed-work.ts';
 import { FEED_X_PATH, getXTimelineDue, reportXTimeline } from './feed-x.ts';
 import { addReddit, deleteFeedSource, previewReddit, refreshFeedSource, updateFeedSource } from './feed-sources.ts';
-import { douyinJobs, listDouyin, processDouyin, reportDouyin, syncDouyin } from './video.ts';
+import { douyinJobs, getTranscriber, installTranscriber, listDouyin, processDouyin, reportDouyin, syncDouyin }
+  from './video.ts';
 import {
   addFeedItem,
   addInterest,
@@ -494,6 +497,9 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: DOUYIN_PROCESS_PATH, auth: true, handler: processDouyin },
   { method: 'GET', path: DOUYIN_NODE_PATH, auth: false, handler: douyinJobs },
   { method: 'POST', path: DOUYIN_NODE_PATH, auth: false, handler: reportDouyin },
+  // 第13批：本地转写组件（第一次解析视频时问过他再下）。
+  { method: 'GET', path: TRANSCRIBER_PATH, auth: true, handler: getTranscriber },
+  { method: 'POST', path: TRANSCRIBER_INSTALL_PATH, auth: true, handler: installTranscriber },
   // 记账、站内信、工具组、文件、浏览器。
   { method: 'GET', path: MONEY_PATH, auth: true, handler: getMoney },
   { method: 'GET', path: MONEY_STATS_PATH, auth: true, handler: getMoneyStats },

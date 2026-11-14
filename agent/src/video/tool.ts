@@ -4,7 +4,7 @@
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { VIDEO_PARSE_TOOL, VIDEO_STAGE_LABELS, VideoParseArgsSchema } from '../../shared/api/video.ts';
 import { checkedArgs, type KernelTool } from '../lines/index.ts';
-import type { StateService, VideoWorkRow } from '../state/index.ts';
+import { waitingTranscriber, type StateService, type VideoWorkRow } from '../state/index.ts';
 import { videoTarget } from './links.ts';
 import type { VideoWorker } from './worker.ts';
 
@@ -23,6 +23,10 @@ function list(title: string, items: readonly string[]): string[] {
 export function resultText(work: VideoWorkRow): string {
   if (work.run === 'waiting_mac') {
     return `「${work.title}」排着：要他电脑上的抖音登录状态取下载地址，电脑上线后自动接着做。不用再调。`;
+  }
+  if (waitingTranscriber(work)) {
+    return `「${work.title}」要先装本地转写才能解析：请他到「设置 › AI」的「本地转写」那一行点「安装」`
+      + '（只装一次，装在 Plasticine 所在的机器上），装好自动接着解析。不用再调。';
   }
   if (work.run === 'failed') {
     return `「${work.title}」没解析成：${work.error ?? '原因没记下'}`;

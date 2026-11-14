@@ -78,6 +78,31 @@ describe('抖音收藏的取数脚本', () => {
     expect(calls.filter((entry) => entry.includes('listcollection'))).toHaveLength(2);
   });
 
+  it('翻到空页不当翻完：抖音说还有就接着翻，一直翻到「没有更多」', async () => {
+    const call: DouyinCall = async (path, params) => {
+      if (path.includes('collects/list')) { return { collects_list: [] }; }
+      const page = Number(params['cursor']);
+      // 失效（删了、设私密）的作品抖音还算在条数里，那几页回来是空的。
+      const list = page >= 1 && page <= 3 ? [] : [{ ...AWEME, aweme_id: String(7300000000000000001n + BigInt(page)) }];
+      return { aweme_list: list, has_more: page < 5 ? 1 : 0, cursor: String(page + 1) };
+    };
+    const result = await listFavorites(call, []);
+    expect(result.works.map((work) => work.workId)).toEqual(['7300000000000000001', '7300000000000000005',
+      '7300000000000000006']);
+  });
+
+  it('收藏夹多过一页也翻完', async () => {
+    const call: DouyinCall = async (path, params) => {
+      if (path.includes('collects/list')) {
+        return params['cursor'] === '0'
+          ? { collects_list: [{ collects_id_str: '1', collects_name: '学习' }], has_more: 1, cursor: '1' }
+          : { collects_list: [{ collects_id_str: '2', collects_name: '做饭' }], has_more: 0, cursor: '2' };
+      }
+      return { aweme_list: [], has_more: 0 };
+    };
+    expect((await listFavorites(call, [])).folders.map((folder) => folder.name)).toEqual(['学习', '做饭']);
+  });
+
   it('没登录、作品没了分别报出来', async () => {
     await expect(listFavorites(async () => ({ status_code: 8 }), [])).rejects.toThrow('signed_out');
     await expect(resolveWork(async () => ({ status_code: 0, aweme_detail: null }), '7300000000000000001'))
