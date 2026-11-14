@@ -12,11 +12,15 @@ it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', a
   fireEvent.click(await screen.findByRole('button', { name: '添加队友' }));
   const editor = screen.getByRole('dialog', { name: '创建队友' });
   fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '资料研究员' } });
-  fireEvent.change(within(editor).getByLabelText('职责'), { target: { value: '核对来源和整理资料' } });
+  expect(within(editor).queryByLabelText('职责')).toBeNull();
+  fireEvent.change(within(editor).getByLabelText('Soul'), { target: { value: '你是我的资料研究员：核对来源和整理资料。' } });
   const colors = within(editor).getByRole('radiogroup', { name: '颜色' });
   const picked = within(colors).getAllByRole('radio')[2]!;
   fireEvent.click(picked);
   expect(picked.getAttribute('aria-checked')).toBe('true');
+  // 第13批：平时只有签和颜色，点「角色」才出格子。
+  expect(within(editor).queryByRole('group', { name: '角色' })).toBeNull();
+  fireEvent.click(within(within(editor).getByRole('group', { name: '头像' })).getByRole('button', { name: '角色' }));
   const picker = within(editor).getByRole('group', { name: '角色' });
   fireEvent.click(await within(picker).findByRole('button', { name: '狐狸' }));
   expect(within(picker).getByRole('button', { name: '狐狸' }).getAttribute('aria-pressed')).toBe('true');
@@ -25,6 +29,9 @@ it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', a
   const first = (await app.api.mates.list()).mates[0]!;
   expect(first.hue).toBe('sky');
   expect(first.avatar).toBe('fox');
+  // 第13批：职责从 Soul 第一段来，Soul 就是写的那段。
+  expect(first.role).toBe('核对来源和整理资料');
+  expect(app.control.souls.textOf(first.id)).toBe('你是我的资料研究员：核对来源和整理资料。');
   await waitFor(() => expect(window.location.hash).toBe(`#/plasticine/mate/${first.id}`));
   await act(async () => { await make(app, '编辑队友'); });
   fireEvent.click(await screen.findByRole('button', { name: '创建队友群组' }));
@@ -56,13 +63,13 @@ it('手机名单的记忆入口打开目录并能返回', async () => {
   expect(await screen.findByRole('textbox', { name: '问一句' })).toBeTruthy();
 });
 
-it('Soul 并进记忆的「规则」（11-11）：名单底下只有「记忆」；旧地址打开规则', async () => {
+it('名单底下只有「记忆」；旧的 Soul 地址打开规则搬家（11-11 Soul 并进规则，第13批规则搬进各自的 Soul）', async () => {
   await renderApp({ width: 390, hash: '#/plasticine' });
   fireEvent.click(await screen.findByRole('button', { name: '队友和群组' }));
   expect(await screen.findByRole('link', { name: '记忆' })).toBeTruthy();
   expect(screen.queryByRole('link', { name: 'Soul' })).toBeNull();
   window.location.hash = '#/plasticine/soul';
-  expect(await screen.findByRole('heading', { name: '规则' })).toBeTruthy();
+  expect(await screen.findByRole('heading', { name: '规则搬家' })).toBeTruthy();
 });
 
 it('创建队友发出后关闭表单，晚到回执不会把用户从当前页面拉走', async () => {
@@ -74,7 +81,7 @@ it('创建队友发出后关闭表单，晚到回执不会把用户从当前页�
   fireEvent.click(await screen.findByRole('button', { name: '添加队友' }));
   const editor = screen.getByRole('dialog', { name: '创建队友' });
   fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '校稿队友' } });
-  fireEvent.change(within(editor).getByLabelText('职责'), { target: { value: '核对文字' } });
+  fireEvent.change(within(editor).getByLabelText('Soul'), { target: { value: '你是我的校稿队友：核对文字。' } });
   fireEvent.click(within(editor).getByRole('button', { name: '创建队友' }));
   fireEvent.click(within(editor).getByRole('button', { name: '关掉创建队友' }));
   act(() => { window.location.hash = '#/notes'; });
@@ -97,14 +104,15 @@ it('队友正在做事时，名单第二行写在做什么；空着时写职责�
     .toContain('在做「查三家中继的价格」'));
 });
 
-it('新建队友时点一个现成的起点：名字、职责、头像角色都填好，还能再改（11-12，11-13 头像换成角色）', async () => {
+it('新建队友时点一个现成的起点：名字、Soul 开头、头像角色都填好，还能再改（11-12，11-13 头像换成角色）', async () => {
   await renderApp({ hash: '#/plasticine' });
   fireEvent.click(await screen.findByRole('button', { name: '添加队友' }));
   const editor = screen.getByRole('dialog', { name: '创建队友' });
   const presets = within(editor).getByRole('group', { name: '从一个现成的开始' });
   fireEvent.click(within(presets).getByRole('button', { name: '文字编辑' }));
   expect((within(editor).getByLabelText('名字') as HTMLInputElement).value).toBe('文字编辑');
-  expect((within(editor).getByLabelText('职责') as HTMLTextAreaElement).value).toMatch(/^改稿、润色/);
+  expect((within(editor).getByLabelText('Soul') as HTMLTextAreaElement).value).toMatch(/^你是我的文字编辑：改稿、润色/);
+  fireEvent.click(within(within(editor).getByRole('group', { name: '头像' })).getByRole('button', { name: '角色' }));
   const picker = within(editor).getByRole('group', { name: '角色' });
   expect((await within(picker).findByRole('button', { name: '兔子' })).getAttribute('aria-pressed')).toBe('true');
   expect(within(editor).queryByLabelText('头像文字')).toBeNull();
@@ -122,6 +130,7 @@ it('编辑已有队友换角色、画风、脸型和颜色能保存（11-13：�
   fireEvent.click(await screen.findByRole('menuitem', { name: '编辑队友' }));
   const editor = await screen.findByRole('dialog', { name: '编辑队友' });
   const tabs = within(editor).getByRole('group', { name: '头像' });
+  fireEvent.click(within(tabs).getByRole('button', { name: '角色' }));
   const characters = within(editor).getByRole('group', { name: '角色' });
   fireEvent.click(await within(characters).findByRole('button', { name: '丸子头' }));
   fireEvent.click(within(tabs).getByRole('button', { name: '画风' }));
@@ -135,5 +144,29 @@ it('编辑已有队友换角色、画风、脸型和颜色能保存（11-13：�
   fireEvent.click(within(editor).getByRole('button', { name: '保存修改' }));
   await waitFor(async () => expect(await app.api.mates.get(mate!.id)).toMatchObject({ avatar: 'topknot',
     hue: 'rose', variant: 'origami', face: 'specs', role: '整理资料来源' }));
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: '编辑队友' })).toBeNull());
+});
+
+it('编辑队友改 Soul（第13批）：另存一份，职责跟着第一段变；模型选「跟主线一样」或某一项', async () => {
+  const app = await renderApp({ hash: '#/plasticine' });
+  let mate: Awaited<ReturnType<typeof make>> | undefined;
+  await act(async () => { mate = await make(app, '求职顾问'); });
+  fireEvent.click(await screen.findByRole('link', { name: /求职顾问/ }));
+  fireEvent.click(await screen.findByRole('button', { name: '更多' }));
+  expect(screen.queryByRole('menuitem', { name: '只对它的规则' })).toBeNull();
+  fireEvent.click(await screen.findByRole('menuitem', { name: '编辑队友' }));
+  const editor = await screen.findByRole('dialog', { name: '编辑队友' });
+  const soul = within(editor).getByLabelText('Soul') as HTMLTextAreaElement;
+  await waitFor(() => expect(soul.value).toBe('你是我的求职顾问：整理资料来源。'));
+  expect(within(editor).getByText('还没有自己改过')).toBeTruthy();
+  fireEvent.change(soul, { target: { value: '你是我的求职顾问：简历和投递。\n\n## 说话\n- 先给要改的那一句。' } });
+  const model = within(editor).getByLabelText('模型') as HTMLSelectElement;
+  expect(model.value).toBe('');
+  expect([...model.options].map((option) => option.text)).not.toContain('和「主线」一样');
+  fireEvent.change(model, { target: { value: 'translation' } });
+  fireEvent.click(within(editor).getByRole('button', { name: '保存修改' }));
+  await waitFor(async () => expect(await app.api.mates.get(mate!.id)).toMatchObject({ role: '简历和投递',
+    purpose: 'translation' }));
+  await waitFor(() => expect(app.control.souls.textOf(mate!.id)).toContain('- 先给要改的那一句。'));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: '编辑队友' })).toBeNull());
 });

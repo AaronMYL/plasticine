@@ -34,8 +34,9 @@ describe('记忆 · 主题目录', () => {
       expect(regions).toEqual(['memory-uncertain', 'topics-about_you', 'topics-project', 'topics-person',
         'topics-topic']);
       const pinned = within(main()).getByRole('region', { name: '你' });
+      // 第13批：「规则」那一份不在目录里，还没搬的在顶上的规则搬家提示条里。
       expect(within(pinned).getAllByRole('button').map((button) => button.textContent?.split(/身份|你明说/)[0]))
-        .toEqual(['关于你', '规则']);
+        .toEqual(['关于你']);
       expect(within(main()).getByRole('button', { name: /周屿.*Cyber Hunter 的合作者/ })).toBeTruthy();
     });
 
@@ -118,18 +119,20 @@ describe('记忆 · 主题目录', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/projects/project_hunter'));
   });
 
-  it('规则（原「主线的 Soul」）：最前面是硬线（带锁、ⓘ 说明）；旧地址 #/memory/agreements、#/memory/terms 都打开它',
-    async () => {
-      await renderApp({ hash: '#/memory/agreements', setup: seed });
-      expect(await within(main()).findByRole('heading', { level: 1, name: '规则' })).toBeTruthy();
-      const hard = within(main()).getByRole('region', { name: /^先问你/ });
-      expect(within(hard).getAllByRole('listitem').map((item) => item.textContent))
-        .toEqual(['花钱', '以本人名义对外答应或发出', '删除和其他做了就撤不回的', '权限变化', '必须本人做的']);
-      expect(within(hard).getByRole('button', { name: '先问你的说明' }).getAttribute('aria-description'))
-        .toMatch(/不管有没有把握/);
-      window.location.hash = '#/memory/terms';
-      expect(await within(main()).findByRole('heading', { level: 1, name: '规则' })).toBeTruthy();
-    });
+  it('旧地址 #/memory/agreements、#/memory/terms 打开规则搬家；硬线挪到设置 · 隐私与授权（第13批）', async () => {
+    await renderApp({ hash: '#/memory/agreements', setup: seed });
+    expect(await within(main()).findByRole('heading', { level: 1, name: '规则搬家' })).toBeTruthy();
+    window.location.hash = '#/memory/terms';
+    expect(await within(main()).findByRole('heading', { level: 1, name: '规则搬家' })).toBeTruthy();
+    window.location.hash = '#/settings/grants';
+    const dialog = await screen.findByRole('dialog', { name: '设置' });
+    fireEvent.click(within(dialog).getByRole('button', { name: '隐私与授权' }));
+    const hard = await within(dialog).findByRole('region', { name: '先问你' });
+    expect(within(hard).getAllByRole('listitem').map((item) => item.textContent))
+      .toEqual(['花钱', '以本人名义对外答应或发出', '删除和其他做了就撤不回的', '权限变化', '必须本人做的']);
+    expect(within(hard).getByRole('button', { name: '先问你的说明' }).getAttribute('aria-description'))
+      .toMatch(/不管有没有把握/);
+  });
 
   it('带 id 的旧词表链接 #/memory/terms/<id> 单独读那一条（只读引用页，不再有词表编辑）', async () => {
     await renderApp({ hash: '#/memory/terms/agr_term', setup: (fake) => {

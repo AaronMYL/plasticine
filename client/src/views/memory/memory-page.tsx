@@ -15,7 +15,7 @@ import { PageHeader } from '../../shell/page-header.tsx';
 import { CleanupPage } from './cleanup-page.tsx';
 import { ConflictsPage } from './conflicts-page.tsx';
 import { DreamPage } from './dream-page.tsx';
-import { RulesPage } from './rules-page.tsx';
+import { RulesMovePage } from './rules-move-page.tsx';
 import { ObjectFocus } from './object-focus.tsx';
 import { PendingCognition } from './pending-cognition.tsx';
 import { TopicDocPage } from './topic-doc.tsx';
@@ -58,11 +58,11 @@ export function MemoryPage(props: MemoryPageProps): ReactNode {
   }
   if (route.memoryConflicts === true) return <ConflictsPage navigate={navigate} onBack={onBack} />;
   if (route.memoryCleanup === true) return <CleanupPage onBack={onBack} />;
-  // 规则（原 Soul，11-11）：#/memory/rules、目录里那一行、旧的约定和词表地址都到这里。
+  // 规则（原 Soul，11-11）：第13批起是规则搬家——#/memory/rules、只对某位队友的规则、规则那份文档、旧的约定和词表
+  // 地址都到这里，勾了的搬进各自的 Soul 或「关于你」。
   if (route.memoryRules === true || route.topicId === RULES_DOC_ID || route.termId === null
     || (route.objectType === 'agreement' && route.objectId == null)) {
-    return <RulesPage key={route.mateId ?? 'all'} mateId={route.mateId ?? null} phone={phone} navigate={navigate}
-      onBack={onBack} />;
+    return <RulesMovePage navigate={navigate} onBack={onBack} />;
   }
   if (route.topicId != null) {
     return <TopicDocPage topicId={route.topicId} navigate={navigate} phone={phone} onBack={onBack} route={route} />;

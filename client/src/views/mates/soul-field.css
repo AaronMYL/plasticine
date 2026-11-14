@@ -1,0 +1,48 @@
+/* 编辑弹框里的 Soul（第13批设计稿 Editor）：等宽字、记号强调色；影子和输入框排版一模一样，叠在一起。 */
+.soul-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.soul-field-label { font-size: 13px; color: var(--fg2); }
+.soul-text { position: relative; height: clamp(200px, calc(100dvh - 620px), 330px); border-radius: 10px;
+  background: var(--layer-float); box-shadow: inset 0 0 0 1px var(--line2);
+  transition: box-shadow var(--motion-fast) var(--ease-out); }
+.soul-text:has(.soul-text-input:focus-visible) { box-shadow: inset 0 0 0 1.5px var(--fg); }
+.soul-text[data-readonly='true'] { background: var(--tint); }
+.soul-text-mirror, .soul-text .soul-text-input { position: absolute; inset: 0; box-sizing: border-box; width: 100%;
+  height: 100%; margin: 0; padding: 12px 14px; border: 0; border-radius: 10px; font-family: var(--mono);
+  font-size: 13px; font-weight: 400; line-height: 21px; letter-spacing: 0; white-space: pre-wrap;
+  overflow-wrap: anywhere; word-break: normal; tab-size: 2; overflow-y: auto; scrollbar-gutter: stable; }
+.soul-text-mirror { overflow: hidden; color: var(--fg); pointer-events: none; }
+.soul-text .soul-text-input { resize: none; background: transparent; color: transparent; caret-color: var(--fg);
+  -webkit-text-fill-color: transparent; outline: none; }
+.soul-text .soul-text-input::placeholder { color: var(--fg3); -webkit-text-fill-color: var(--fg3); }
+.soul-text-mark { color: var(--accent); }
+.soul-field-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12px;
+  color: var(--fg2); }
+.soul-field-link { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: transparent;
+  color: var(--accent); font: inherit; font-size: 12px; cursor: pointer; }
+.soul-field-link:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 3px; }
+.soul-field-link:disabled { color: var(--fg3); cursor: default; }
+.soul-field-link:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; border-radius: 4px; }
+.soul-field-state { margin: 0; font-size: 12px; color: var(--fg2); }
+.soul-field-state.is-error { color: var(--err); }
+
+/* 看改动：就地展开，删的在前、加的在后，没动的淡一点。 */
+.soul-diff { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; padding: 10px 12px;
+  border-radius: 10px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line);
+  animation: soul-diff-in var(--motion-base) var(--ease-out); }
+@keyframes soul-diff-in { from { opacity: 0; transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .soul-diff { animation: none; } }
+.soul-diff-note { margin: 0; font-size: 13px; line-height: 20px; color: var(--fg); }
+.soul-diff-state { margin: 0; font-size: 12px; color: var(--fg2); }
+.soul-diff-state.is-error { color: var(--err); }
+.soul-diff-lines { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none;
+  font-family: var(--mono); font-size: 12px; line-height: 20px; }
+.soul-diff-line { display: flex; gap: 8px; padding: 0 6px; border-radius: 4px; color: var(--fg3); }
+.soul-diff-line[data-kind='add'] { background: var(--hl-sage); color: var(--fg); }
+.soul-diff-line[data-kind='remove'] { background: var(--hl-rose); color: var(--fg); }
+.soul-diff-line[data-kind='skip'] { font-family: var(--sans); color: var(--fg3); }
+.soul-diff-sign { flex: none; width: 10px; }
+.soul-diff-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 600px) {
+  .soul-text { height: clamp(200px, calc(100dvh - 420px), 300px); }
+}

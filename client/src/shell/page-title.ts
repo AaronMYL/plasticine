@@ -39,7 +39,7 @@ export function usePageTitle(): (route: Route) => string {
     if (route.view === 'memory' && route.memoryDream === true) {
       return '昨晚整理了什么';
     }
-    if (route.view === 'memory' && route.memoryRules === true) return '规则';
+    if (route.view === 'memory' && route.memoryRules === true) return '规则搬家';
     if (route.view === 'memory' && route.memoryConflicts === true) return '说法冲突';
     if (route.view === 'books' && (route.spaceId != null || route.spacesList === true)) {
       return navLabel('library');

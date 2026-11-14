@@ -65,6 +65,8 @@ const EVENTS = {
   space_rewrite_failed: '一个旧空间按新版式重写没成，留着旧版，下次启动再试',
   feed_subscription_failed: '一个订阅这次没抓到，原因记在设置那一行，两小时后再试',
   feed_computer_fetch_failed: '电脑替服务器取回的订阅没读成，原因记在来源那一行',
+  soul_night_failed: '夜里看自己的 Soul 时这一份没看成，下一晚再看；别的照常',
+  soul_night_skipped: '夜里想改 Soul，但改得太多（只许小改），这一次没收',
   sse_failed: '事件推送失败，已关闭对应连接',
   after_commit_failed: '请求已提交，后续动作失败',
   request_failed: '请求处理失败',

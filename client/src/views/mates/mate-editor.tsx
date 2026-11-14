@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { DEFAULT_MATE_CHARACTER, DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT, MODEL_PURPOSES, PROJECT_HUES,
+import { DEFAULT_MATE_CHARACTER, DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT, mateRoleOf, mateSoulOpening, PROJECT_HUES,
   type MateDraft, type MateView, type MateGroupView, type MateGroupDraft } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { HueSwatches } from '../../primitives/hue-swatches/index.tsx';
@@ -12,8 +12,12 @@ import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { mateGroupRoute, mateRoute, type Route } from '../../shell/routes.ts';
 import { useOp } from '../pending/pending-ops.tsx';
-import { LookPicker } from './bot/look-picker.tsx';
+import { LookGrid, LookTabs, type LookTab } from './bot/look-picker.tsx';
+import type { MateActions } from './mate-actions.ts';
 import { MateAvatar } from './mate-avatar.tsx';
+import { MateModelField } from './model-field.tsx';
+import { SoulField } from './soul-field.tsx';
+import { useSoulDoc } from './use-soul-doc.ts';
 
 export const EMPTY_MATE: MateDraft = { name: '', role: '', avatar: DEFAULT_MATE_CHARACTER, hue: 'sky',
   variant: DEFAULT_MATE_VARIANT, face: DEFAULT_MATE_FACE, purpose: null, soul: '' };
@@ -40,68 +44,78 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
   const cached = op?.request;
   const [draft, setDraft] = useState<MateDraft>(() => ({ ...EMPTY_MATE, ...mate,
     ...(cached?.kind === 'mate_create' || cached?.kind === 'mate_update' ? cached.body : {}) }));
+  // 第13批：职责不再单独填，Soul 第一段就是（「你是我的……：管什么」）；新建时 Soul 跟着建，改的时候另存一份。
+  const soul = useSoulDoc(mate?.id ?? null, cached?.kind === 'mate_create' ? cached.body.soul : '');
+  const [problem, setProblem] = useState<string | null>(null);
   const locked = op !== undefined && isOpenOp(op);
   const [picked, setPicked] = useState(false);
+  const [lookTab, setLookTab] = useState<LookTab | null>(null);
   const patch = <K extends keyof MateDraft>(field: K, value: MateDraft[K]): void => {
     setDraft((old) => ({ ...old, [field]: value }));
   };
+  const finish = async (result: Awaited<ReturnType<MateActions['create']>>): Promise<void> => {
+    if (!mounted.current || result === null || !('role' in result)) return;
+    const failed = await soul.save();
+    if (!mounted.current) return;
+    setProblem(failed);
+    if (failed === null) { onClose(); navigate(mateRoute(result.id)); }
+  };
   const submit = async (): Promise<void> => {
-    // 改队友不带 Soul：Soul 在它自己的页面改，更新接口不收这一项（11-13 Aaron 换头像时报「队友不合要求」）。
-    const changes = { name: draft.name.trim(), avatar: draft.avatar, hue: draft.hue,
-      variant: draft.variant ?? DEFAULT_MATE_VARIANT, face: draft.face ?? DEFAULT_MATE_FACE, role: draft.role.trim(),
-      purpose: draft.purpose };
-    const result = mate === undefined ? await live.mateActions.create({ ...changes, soul: draft.soul })
-      : await live.mateActions.update(mate, changes);
-    if (mounted.current && result !== null && 'role' in result) { onClose(); navigate(mateRoute(result.id)); }
+    setProblem(null);
+    const name = draft.name.trim();
+    const derived = mateRoleOf(name, soul.text);
+    const role = Array.from(derived).length >= 2 ? derived : mate?.role ?? name;
+    const changes = { name, avatar: draft.avatar, hue: draft.hue, variant: draft.variant ?? DEFAULT_MATE_VARIANT,
+      face: draft.face ?? DEFAULT_MATE_FACE, role, purpose: draft.purpose };
+    await finish(mate === undefined ? await live.mateActions.create({ ...changes, soul: soul.text.trim() })
+      : await live.mateActions.update(mate, changes));
   };
   const title = mate === undefined ? '创建队友' : '编辑队友';
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
-    title={title} onClose={onClose} className="mate-editor-sheet">
+    title={title} onClose={onClose} className="mate-editor-sheet soul-editor-sheet">
     <form className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       <fieldset disabled={locked}>
         {mate !== undefined ? null : (
           <div className="mate-presets" role="group" aria-label="从一个现成的开始">
             {MATE_PRESETS.map((preset) => (
               <button key={preset.name} type="button" className="mate-preset"
-                aria-pressed={draft.name === preset.name && draft.role === preset.role}
-                onClick={() => setDraft((old) => ({ ...old, ...preset }))}>
+                aria-pressed={draft.name === preset.name && soul.text === mateSoulOpening(preset.name, preset.role)}
+                onClick={() => {
+                  setDraft((old) => ({ ...old, ...preset }));
+                  soul.setText(mateSoulOpening(preset.name, preset.role));
+                }}>
                 <MateAvatar mate={preset} size={24} still />{preset.name}
               </button>
             ))}
           </div>
         )}
-        <div className="mate-form-identity mate-form-look">
+        <div className="editor-look">
           {/* 换了角色、画风、脸型或颜色弹一下：重新挂上，做完的那一下（11-13 设计稿）。 */}
-          <MateAvatar key={`${draft.avatar}:${draft.hue}:${draft.variant}:${draft.face}`} mate={draft} size={56}
-            picked={picked} />
-          <div className="mate-form-look-side">
-            <LookPicker look={{ avatar: draft.avatar, hue: draft.hue, variant: draft.variant ?? DEFAULT_MATE_VARIANT,
-              face: draft.face ?? DEFAULT_MATE_FACE }}
-              onChange={(change) => { setPicked(true); setDraft((old) => ({ ...old, ...change })); }} />
-            <span className="mate-form-label">颜色</span>
+          <span className="editor-look-box">
+            <MateAvatar key={`${draft.avatar}:${draft.hue}:${draft.variant}:${draft.face}`} mate={draft} size={52}
+              picked={picked} /></span>
+          <div className="editor-look-side">
+            <LookTabs tab={lookTab} onTab={setLookTab} />
             <HueSwatches label="颜色" hues={PROJECT_HUES} names={HUE_NAMES} value={draft.hue}
               onChange={(hue) => { setPicked(true); patch('hue', hue); }} /></div></div>
+        {lookTab === null ? null : <LookGrid tab={lookTab} look={{ avatar: draft.avatar, hue: draft.hue,
+          variant: draft.variant ?? DEFAULT_MATE_VARIANT, face: draft.face ?? DEFAULT_MATE_FACE }}
+          onChange={(change) => { setPicked(true); setDraft((old) => ({ ...old, ...change })); }} />}
         <label>名字<input required minLength={2} maxLength={40} autoFocus value={draft.name}
           onChange={(event) => patch('name', event.target.value)} /></label>
-        <label>职责<textarea required minLength={2} maxLength={160} rows={3} value={draft.role}
-          placeholder="管什么事、做完交回什么。比如：查公开资料、核对来源，交回带出处的要点。"
-          onChange={(event) => patch('role', event.target.value)} /></label>
-        <label>模型配置<select value={draft.purpose ?? ''}
-          onChange={(event) => patch('purpose', (event.target.value || null) as MateDraft['purpose'])}>
-          <option value="">跟主线</option>
-          {MODEL_PURPOSES.map((purpose) => <option key={purpose.id} value={purpose.id}>{purpose.label}</option>)}
-        </select></label>
+        <SoulField owner={mate?.id ?? null} doc={soul}
+          placeholder={'你是我的……：管什么事、做完交回什么。\n\n## 说话\n- 先说结论，再说依据。'} />
+        <MateModelField purpose={draft.purpose} onChange={(purpose) => patch('purpose', purpose)} />
       </fieldset>
-      {op === undefined ? null : <OpLine op={op} onRetry={() => {
-        void live.mateActions.retry(key).then((result) => {
-          if (mounted.current && result !== null && 'role' in result) { onClose(); navigate(mateRoute(result.id)); }
-        });
-      }}
+      {op === undefined ? null : <OpLine op={op}
+        onRetry={() => { void live.mateActions.retry(key).then(finish); }}
         onDismiss={() => state.actionOps.dismiss(key)} />}
+      {problem === null ? null : <p className="line-note" role="alert">Soul 没有存上：{problem}</p>}
       <div className="mate-form-actions">
         <button type="button" className="secondary-button" onClick={onClose}>取消</button>
-        <button className="primary-button" disabled={locked || draft.name.trim().length < 2
-          || draft.role.trim().length < 2}>{mate === undefined ? '创建队友' : '保存修改'}</button></div>
+        <button className="primary-button" disabled={locked || soul.loading || soul.error !== null
+          || draft.name.trim().length < 2 || soul.text.trim().length < 2}>
+          {mate === undefined ? '创建队友' : '保存修改'}</button></div>
     </form>
   </Sheet></div>, document.body);
 }

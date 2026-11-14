@@ -86,7 +86,7 @@ export interface Route {
   topicId?: string | null;
   /** 「昨晚整理了什么」（#/memory/dream，第 10、16 条）。 */
   memoryDream?: boolean;
-  /** 记忆里的「规则」（#/memory/rules[/<队友>]，11-11 原 Soul 并进来）；带队友时只看只对它的。 */
+  /** 记忆里的「规则」（#/memory/rules[/<队友>]，11-11 原 Soul 并进来）；第13批起打开规则搬家，带队友的旧地址也一样。 */
   memoryRules?: boolean;
   /** 说法冲突（#/memory/conflicts，11-11）。 */
   memoryConflicts?: boolean;
@@ -375,7 +375,7 @@ export function mateRoute(mateId: string): Route { return { view: 'plasticine', 
 export function mateGroupRoute(mateGroupId: string): Route {
   return { view: 'plasticine', noteId: null, mateGroupId };
 }
-/** 记忆里的「规则」（原 Soul，11-11）；带队友时先筛出只对它的。 */
+/** 规则搬家（第13批；原来是记忆里的「规则」，11-11）。带队友的旧地址照样认，打开的是同一页。 */
 export function soulRoute(mateId: string | null = null): Route {
   return { view: 'memory', noteId: null, memoryRules: true, mateId };
 }

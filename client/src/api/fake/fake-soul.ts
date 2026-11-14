@@ -74,6 +74,25 @@ export class FakeSoul implements SoulApi {
     });
   }
 
+  /** 还在「规则」里的（规则搬家读它，第13批）。 */
+  live(): SoulLine[] {
+    return structuredClone(this.value.lines);
+  }
+
+  /** 搬走几条（规则搬家）：从「规则」里拿掉；版本对不上的报冲突。 */
+  take(moves: readonly { id: string; version: number }[]): SoulLine[] {
+    const taken = moves.map((move) => {
+      const line = this.value.lines.find((item) => item.id === move.id && item.version === move.version);
+      if (line === undefined) throw new ApiError({ kind: 'conflict', status: 409, code: 'version_conflict',
+        message: '这条规则刚改过或已经搬走，请刷新后再搬。' });
+      return line;
+    });
+    const ids = new Set(taken.map((line) => line.id));
+    this.value.lines = this.value.lines.filter((line) => !ids.has(line.id));
+    this.changed(this.value);
+    return structuredClone(taken);
+  }
+
   /** 种几条只对某位队友的规则（截图和测试用）。 */
   seedLines(lines: readonly Omit<SoulLine, 'version' | 'at' | 'sources'>[]): void {
     const at = this.now().toISOString();

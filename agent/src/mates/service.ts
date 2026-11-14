@@ -6,14 +6,14 @@ import { LegacyChatProposalSchema, type LegacyChatConvertRequest, type LegacyCha
 import type { TextModels } from '../kernel/text.ts';
 import { LineError, type After, type LineKernel, type SendInput, type SendResult } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
-import { adoptMateSoul } from '../brain/mate-rules.ts';
+import { mateSoulOpening } from '../../shared/soul-text.ts';
 import { autoMateCharacter } from '../../shared/api/mate-characters.ts';
 import { claimPendingGroupTask } from './group-tasks.ts';
 import { mainIdentity } from './main-identity.ts';
 
 const immediate: After = (action) => action();
 type MateState = Pick<StateService, 'mates' | 'mateGroups' | 'lines' | 'lineMessages' | 'transaction' | 'memoryDocs'
-  | 'memoryCuration' | 'projects' | 'kernelSettings'>;
+  | 'memoryCuration' | 'projects' | 'kernelSettings' | 'souls'>;
 
 export class Mates {
   readonly #state: MateState;
@@ -36,10 +36,11 @@ export class Mates {
       const line = existingLineId === undefined
         ? this.#kernel().openSide({ title: draft.name, topic: null }, after)
         : this.#kernel().view(this.#legacy(existingLineId).id);
-      const mate = this.#state.mates.create({ ...draft, lineId: line.id });
+      // 第13批：建队友时写的那段就是它的 Soul（不再拆成规则）；没写就照职责起一个开头。队友表里那一列不再用。
+      const soul = draft.soul.trim();
+      const mate = this.#state.mates.create({ ...draft, soul: '', lineId: line.id });
       this.#state.lines.update(line.id, { mateId: mate.id, title: mate.name, modelPurpose: mate.purpose ?? 'main' });
-      // 建队友时写的那段规矩进记忆的「规则」，只对这位队友（11-11）；之后在记忆页改。
-      adoptMateSoul(this.#state, mate.id, draft.soul);
+      this.#state.souls.ensure(mate.id, soul === '' ? mateSoulOpening(mate.name, mate.role) : soul);
       return mate;
     });
   }

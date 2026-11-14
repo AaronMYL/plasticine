@@ -31,7 +31,7 @@ describe('任务栏目', () => {
     // 心跳有自己的弹层（heartbeat-sheet.test.tsx）；没登记弹层的（做梦）用默认的。
     fireEvent.click(await screen.findByRole('button', { name: '打开：做梦' }));
     const sheet = await screen.findByRole('dialog', { name: '做梦' });
-    expect(within(sheet).getByText('每晚整理记忆')).toBeTruthy();
+    expect(within(sheet).getByText('每晚整理记忆和 Soul')).toBeTruthy();
     expect(within(sheet).getByText('整理了 11 条')).toBeTruthy();
     expect(within(sheet).getByRole('switch', { name: '做梦：开着' })).toBeTruthy();
   });

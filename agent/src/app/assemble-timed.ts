@@ -3,6 +3,8 @@
 
 import { loopReadings } from '../loop/readings.ts';
 import { writeSelfNotes } from '../loop/self-notes.ts';
+import { soulNight } from '../brain/soul-night.ts';
+import { mainIdentity } from '../mates/main-identity.ts';
 import { randomUUID } from 'node:crypto';
 import type { NoticeInput } from '../attention/index.ts';
 import { Dreamer, type DreamSkills } from '../brain/index.ts';
@@ -85,6 +87,8 @@ export function assembleTimed(parts: TimedParts): TimedAssembly {
   const text = parts.text;
   const dreamNight = new DreamNight({ state, now, zone, changed, limit: () => parts.lines().backgroundLimit(),
     selfNotes: (at, signal) => writeSelfNotes(state, text, at, signal),
+    souls: (from, to, signal) => soulNight(state, text, mainIdentity(state).name, from.toISOString(),
+      to.toISOString(), signal),
     dreamer: () => (text === null ? null : new Dreamer({ state, models: text, skills: dreamSkills(parts.skills),
       now,
       // 做梦时发现的没了结的事进「任务 · 建议」，他点了才做（11-12 主动性一批）。

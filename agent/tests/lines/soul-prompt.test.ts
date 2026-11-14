@@ -7,36 +7,36 @@ import { ensureRulesDoc } from '../../src/brain/memory-doc-writes.ts';
 import { adoptMateSouls } from '../../src/brain/mate-rules.ts';
 import { startKernel } from './helpers.ts';
 
-test('每次请求先共用规则后只对这位队友的规则，队友的规则明确优先，别的队友的不给；编辑下一次就生效', async () => {
+test('每位读自己的 Soul（第13批）：建队友时写的那段就是它的 Soul，别的队友看不到；主线读主线那份；改了下一次就生效', async () => {
   const h = await startKernel();
   try {
     const state = h.handle.state;
     ensureRulesDoc(state);
     const mates = new Mates(state, () => h.kernel);
     const mate = mates.create({ name: '资料编辑', avatar: 'bunny' as const, hue: 'sky', role: '核对资料',
-      soul: '这类报告使用简短列表。', purpose: null });
+      soul: '你是我的资料编辑。\n\n## 说话\n- 这类报告使用简短列表。', purpose: null });
     const line = state.lines.require(mate.lineId);
     const other = mates.create({ name: '旅行顾问', avatar: 'penguin' as const, hue: 'teal', role: '订行程',
-      soul: '- 只订直飞航班。', purpose: null });
+      soul: '', purpose: null });
     const before = linePrompt(state, line);
-    assert.ok(before.indexOf('## 规则') < before.indexOf('## 只对你的规则'));
-    assert.match(before, /冲突时，以这几条为准/);
-    assert.doesNotMatch(before, /只订直飞航班/);
-    assert.match(linePrompt(state, state.lines.require(other.lineId)), /只订直飞航班/);
-    const view = soulView(state).lines.find((item) => item.text === '这类报告使用简短列表。')!;
-    assert.equal(view.scopeKind, 'mate');
-    assert.equal(view.scopeRef, mate.id);
-    assert.equal(view.source, 'mate');
+    assert.ok(before.indexOf('## 你的 Soul') < before.indexOf('## 规则'));
+    assert.match(before, /这类报告使用简短列表/);
+    assert.equal(soulView(state).lines.some((item) => item.text.includes('简短列表')), false, '不再拆成规则');
+    const otherPrompt = linePrompt(state, state.lines.require(other.lineId));
+    assert.doesNotMatch(otherPrompt, /简短列表/);
+    assert.match(otherPrompt, /你是我的旅行顾问：订行程。/, '没写就照职责起个开头');
+    // 主线派活看每位 Soul 的第一段。
+    assert.match(linePrompt(state, state.lines.main()), /- 资料编辑（[^）]+）：你是我的资料编辑。/);
+    assert.match(linePrompt(state, state.lines.main()), /你不是聊天机器人/);
+    const soul = state.souls.get(mate.id)!;
+    state.souls.write(mate.id, soul.version, '你是我的资料编辑。\n\n## 说话\n- 先说结论，再给原始资料。', 'user', '你改的');
+    const after = linePrompt(state, line);
+    assert.match(after, /先说结论，再给原始资料/);
+    assert.doesNotMatch(after, /简短列表/);
     const first = soulView(state).lines[0]!;
     changeSoul(state, { requestId: 'line-soul-edit', action: 'edit', id: first.id, version: first.version,
       text: '先说结论，再给原始资料。', section: 'speaking' }, { actor: 'user', ref: 'device-fixture' });
-    const after = linePrompt(state, line);
-    assert.match(after, /先说结论，再给原始资料/);
-    assert.doesNotMatch(after, /直接讲内容，先说结论。/);
-    assert.match(after, /这类报告使用简短列表/);
-    changeSoul(state, { requestId: 'line-soul-scope', action: 'scope', id: view.id, version: view.version,
-      scopeKind: 'all', scopeRef: null }, { actor: 'user', ref: 'device-fixture' });
-    assert.match(linePrompt(state, state.lines.require(other.lineId)), /这类报告使用简短列表/);
+    assert.match(linePrompt(state, state.lines.require(other.lineId)), /## 规则[\s\S]*先说结论，再给原始资料/);
   } finally { await h.close(); }
 });
 

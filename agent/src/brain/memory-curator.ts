@@ -5,7 +5,7 @@
 // 重启时还在做的改回排队。
 
 import type { AssistantMessage } from '@earendil-works/pi-ai';
-import { RULES_DOC_ID, type MemoryEntry, type MemoryJob, type MemoryJobResult } from '../../shared/state.ts';
+import { YOU_DOC_ID, type MemoryEntry, type MemoryJob, type MemoryJobResult } from '../../shared/state.ts';
 import { lineRef, type StateService } from '../state/index.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import { askJson, type BookModel } from './book-model.ts';
@@ -48,11 +48,13 @@ const RULES = [
   '同一件事有变化（用户纠正、情况变了）用 revise 改那一行，不另加一行；用户要忘掉就 retire 并写 "forget":true；',
   '用户说某件事不再成立就 retire。你自己推出来的（用户没有直接说的）只能用 infer 提出来并写清 why，用户确认后才算。',
   '项目里定下的事写进那个项目文档的 decision 段（"section":"decision"），其余都是 note。',
-  `用户要 Plasticine 怎么做事的规矩写进 ${RULES_DOC_ID}（「规则」），不写进关于你：用户明说的`,
-  '（“以后都……”“别再……”“每次……”“不要……”）直接 add，写成给 Plasticine 的一句规矩（主语省掉）；',
-  '从用户的纠正里推出来、他没明说以后都这样的，只能 infer；同一条规矩说法变了 revise 那一行，新旧冲突按最新的。',
-  '花钱、对外答应或发出、删除和撤不回的、权限变化、必须用户本人做的，这几条硬线文档里已经有，不用写。',
-  `用户自己的说法和专有名词（他说的某个词是什么意思、某个名字指谁或指什么）也写进 ${RULES_DOC_ID}，`,
+  // 第13批三层（11-14 Aaron 选「按三层分」）：他说过的偏好是记忆，进「关于你」；说话方式和相处的判断在各自的 Soul
+  // （夜里自己改）；硬线和授权在产品里。「规则」只剩还没搬走的旧条目，不再往里写。
+  `用户要 Plasticine 怎么做事的偏好写进 ${YOU_DOC_ID}（「关于你」）：用户明说的`,
+  '（“以后都……”“别再……”“每次……”“不要……”）直接 add，写成一句他的偏好（主语省掉）；',
+  '从用户的纠正里推出来、他没明说以后都这样的，只能 infer；同一条偏好说法变了 revise 那一行，新旧冲突按最新的。',
+  '花钱、对外答应或发出、删除和撤不回的、权限变化、必须用户本人做的，这几条硬线产品里已经有，不用写。',
+  `用户自己的说法和专有名词（他说的某个词是什么意思、某个名字指谁或指什么）也写进 ${YOU_DOC_ID}，`,
   '一个词一行，写成「X」指的是 …：用户明说的直接 add；从用法里猜出来的只能 infer；意思变了 revise 那一行。',
   '操作：{"op":"add","doc":文档标识,"section":"note","text":一行,"sources":[来源标识]}；',
   '{"op":"revise","line":行标识,"text":新的一行,"sources":[…]}；{"op":"retire","line":行标识,"forget":false,"sources":[…]}；',
@@ -77,7 +79,7 @@ const TURN_SYSTEM = [
   `{"op":"add","doc":文档标识,"text":一行,"sources":[…]}；同一件事他改口用 {"op":"revise","line":行标识,"text":…,"sources":[…]}；`,
   '没有合适的文档用 {"op":"new_doc","ref":短名,"kind":"person"/"topic"/"skill","title":名字,"summary":一句话：',
   '这篇讲什么、什么时候该读}；他把已经记住的又说了一遍用 {"op":"restated","line":行标识,"sources":[…]}。',
-  `他要 Plasticine 怎么做事的规矩写进 ${RULES_DOC_ID}；他的说法和专有名词也写进 ${RULES_DOC_ID}，写成「X」指的是 …。`,
+  `他要 Plasticine 怎么做事的偏好写进 ${YOU_DOC_ID}；他的说法和专有名词也写进 ${YOU_DOC_ID}，写成「X」指的是 …。`,
   '一行提到另一篇文档时写 [[那篇的名字]]。推断、合并、退休都不要做。',
   'used：Plasticine 这次的回复实际用到了材料里哪几行（只列确实用上的行标识）。',
   '只输出 JSON：{"notes":[…],"remember":[…],"used":[…]}；没有值得记的就 {"notes":[],"remember":[],"used":[…]}。',

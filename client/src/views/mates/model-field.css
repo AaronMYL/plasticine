@@ -1,0 +1,18 @@
+/* 编辑弹框里的「模型」一格（第13批设计稿 Editor）：和输入框一样的边框，模型名在左，哪一家或在用的浅色在右。 */
+.model-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.model-field-label { font-size: 13px; color: var(--fg2); }
+.model-field-box { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; height: 42px;
+  padding: 0 10px 0 12px; border: 1px solid var(--line2); border-radius: 8px; background: var(--bg); color: var(--fg);
+  font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out); }
+.model-field-box:hover:not(:disabled) { background: var(--tint); }
+.model-field-box:disabled { cursor: default; color: var(--fg3); }
+button.model-field-box:focus-visible, .model-field-box:has(.model-field-select:focus-visible) {
+  outline: 2px solid var(--fg); outline-offset: 2px; }
+.model-field-name { flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.model-field-meta { flex: 1; min-width: 0; overflow: hidden; color: var(--fg2); font-size: 12px;
+  text-overflow: ellipsis; white-space: nowrap; }
+.model-field-box > svg { flex: none; color: var(--fg2); }
+/* 队友那一格：原生的下拉盖在整格上、看不见，点哪里都打开它，键盘照常。 */
+.mate-form .model-field-select { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0;
+  opacity: 0; cursor: pointer; appearance: none; }

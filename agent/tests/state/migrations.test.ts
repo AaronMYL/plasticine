@@ -30,7 +30,7 @@ const AFTER_RETIRE = ['0063-line-message-meta', '0064-network-groups', '0065-lin
   '0125-library-purge', '0126-outbound-grants', '0127-network-attachments', '0128-mates', '0129-space-writer',
   '0130-memory-scope', '0131-video-cover', '0132-memory-cleanups', '0133-contact-links',
   '0134-mate-characters', '0135-prediction-loop', '0136-mate-looks',
-  '0137-loop-message-predict', '0138-feed-places-body'];
+  '0137-loop-message-predict', '0138-feed-places-body', '0139-souls'];
 
 // M5 乙路的迁移（排在甲路的 0011 后面）。
 const GAPS = [

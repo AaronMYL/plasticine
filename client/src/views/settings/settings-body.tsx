@@ -3,7 +3,7 @@
 //   11-14 去掉「通知记录」：Aaron 说线上的太长了，只去入口，记录不删）；
 //   账号 = 名字、头像、@账号、密码 · 在别的设备上用 · 登录着的设备（11-13 去掉「邀请朋友」，头像并进名字那一行）；
 //   AI = 模型（提供商平级）· 同时做几件事 · 技能 · 工具开关；
-//   隐私与授权 = 对外可见（只列放开的）· 对外授权 · 自动发出的；
+//   隐私与授权 = 先问你（硬线，第13批从规则页挪来）· 对外可见（只列放开的）· 对外授权 · 自动发出的；
 //   浏览器 = 搜索引擎 · 登录着的网站 · 导入 · 网页翻译；
 //   系统 = 版本 · 运行情况 · 替你动手的电脑 · 备份（设计稿 Settings-System）。
 // 段名是弹框右边的标题，段里每块用自己的小节标题分开，不加说明段落。从别处带着 focus 打开时滚到那一块并把焦点给它。
@@ -16,6 +16,7 @@ import type { SettingsSection } from '../../shell/routes.ts';
 import { AccountProfile } from './account-profile.tsx';
 import { AccessSection } from './access-section.tsx';
 import { AmbientSection } from './ambient-section.tsx';
+import { HardLinesSection } from './hard-lines-section.tsx';
 import { NotifyKindsSection } from './notify-kinds-section.tsx';
 import { NotifyTest } from './notify-test.tsx';
 import { AppearanceSection } from './appearance-section.tsx';
@@ -142,6 +143,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
       return <SystemSection />;
     case 'grants':
       return <>
+        <HardLinesSection />
         <Spot name="visibility"><VisibilitySection /></Spot>
         <OutboundSettings />
       </>;

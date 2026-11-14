@@ -1,6 +1,7 @@
 // 「昨晚整理了什么」（《优化清单》第 10、16 条，11-06 定，设计稿 Plasticine-Dream）：夜里的整理读了今天的记录，写进主题文档。
 // 一次整理 = 一组变更：新加、替换（旧说法划掉）、拿不准（两个候选，挑一个）、走不通的路。每条带出处，新加 / 替换可撤销。
 // 每组先摆 3 条，其余收在「其余 n 条」里。整理逻辑是后面一批；没有整理时记忆页不出现入口，直接打开这页说一句。
+// 第13批：最后一组是这一夜主线和队友各自改的 Soul（dream-souls.tsx），能看改动、能撤回。
 
 import { useEffect, useState, type ReactNode } from 'react';
 import type { MemoryDreamChangeView, MemoryDreamView, MemoryLineSource } from '../../api/shared.ts';
@@ -9,6 +10,7 @@ import { useStore } from '../../state/use-store.ts';
 import { Icon, type IconName } from '../../shell/icons.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
 import type { Route } from '../../shell/routes.ts';
+import { DreamSouls } from './dream-souls.tsx';
 import './dream.css';
 
 // 每组先摆几条（设计稿）。
@@ -122,6 +124,7 @@ export function DreamPage({ navigate, onBack }: { navigate: (route: Route) => vo
       <PageHeader title={`昨晚整理了 ${dream.changes.length} 条`} onBack={back} />
       {GROUPS.map((group) => <Group key={group.kind} group={group}
         changes={dream.changes.filter((change) => change.kind === group.kind)} />)}
+      <DreamSouls finishedAt={dream.finishedAt} />
     </div>
   );
 }

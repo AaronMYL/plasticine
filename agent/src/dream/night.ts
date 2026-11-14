@@ -1,4 +1,5 @@
-// 「做梦」定时（《优化清单》第 10 条夜里那一半，11-06 定）：每晚凌晨 1 点（他所在地的时区）整理一次记忆，列在「任务 ·
+// 「做梦」定时（《优化清单》第 10 条夜里那一半，11-06 定；第13批加上各自看一遍 Soul）：每晚凌晨 1 点（他所在地的时区）
+// 整理一次记忆，列在「任务 ·
 // 定时」，花名册里也有它；只能关，不能删。当天没有新对话就跳过；某晚失败了，下一晚从上次整理到的地方接着读，把那段补上。
 // 和后台线共用并发上限 3：后台线满着就等十分钟再看。整理本身在 brain/ 的 Dreamer（用途 dream 的便宜模型）。
 
@@ -36,6 +37,11 @@ export interface DreamNightOptions {
    * 失败只记日志，不算这一晚没整理成。
    */
   selfNotes?: (now: Date, signal: AbortSignal) => Promise<boolean>;
+  /**
+   * 第13批：整理完记忆，主线和每位队友各看一遍自己的 Soul，按这一天的相处小改（brain/soul-night.ts）。回改了几份；
+   * 失败只记日志，不算这一晚没整理成。
+   */
+  souls?: (from: Date, to: Date, signal: AbortSignal) => Promise<number>;
 }
 
 function memoText(slot: TimedSlot, key: string): string | null {
@@ -95,10 +101,30 @@ export class DreamNight {
     await this.#running;
   }
 
-  /** 整理一晚：从上次整理到的地方读到现在；之后写说明书（不管记忆这一晚整理成没有）。 */
+  /** 整理一晚：从上次整理到的地方读到现在；之后看各自的 Soul、写说明书（不管记忆这一晚整理成没有）。 */
   async run(now: Date): Promise<void> {
     await this.#dream(now);
+    await this.#souls(now);
     await this.#selfNotes(now);
+  }
+
+  async #souls(now: Date): Promise<void> {
+    if (this.#options.souls === undefined) {
+      return;
+    }
+    try {
+      const changed = await this.#options.souls(new Date(now.getTime() - DAY_MS), now,
+        AbortSignal.timeout(NIGHT_TIMEOUT_MS));
+      if (changed > 0) {
+        const slot = this.slot();
+        const note = `${slot.lastNote ?? ''}${slot.lastNote ? '；' : ''}Soul 改了 ${String(changed)} 份`;
+        this.#options.state.timedSlots.update(slot.id, slot.version, { lastNote: Array.from(note).slice(0, 300)
+          .join('') });
+        this.#options.changed?.([]);
+      }
+    } catch (error) {
+      safeLog('warn', 'soul_night_failed', { category: errorCategory(error) });
+    }
   }
 
   async #selfNotes(now: Date): Promise<void> {
@@ -153,7 +179,7 @@ export class DreamNight {
       id: DREAM_SLOT_ID,
       source: 'dream',
       title: '做梦',
-      summary: '每晚整理记忆',
+      summary: '每晚整理记忆和 Soul',
       icon: 'moon',
       hue: 'olive',
       nextAt: slot.enabled ? slot.nextAt : null,

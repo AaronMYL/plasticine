@@ -5,7 +5,7 @@
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { FlipList } from '../../shell/flip-list.tsx';
-import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { MEMORY_TOPIC_GROUP_LABELS, TIER_LABELS } from '../../api/shared.ts';
 import type { MemoryDreamSummary, MemoryTopicKind, MemoryTopicView, UncertainItem } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
@@ -20,7 +20,7 @@ import { conflictsRoute, mainLineRoute, type Route } from '../../shell/routes.ts
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
 import { MemorySearch } from './memory-search.tsx';
-import { MemoryOverview, TeammatesBlock } from './memory-overview.tsx';
+import { MemoryOverview, RulesMoveBanner } from './memory-overview.tsx';
 import { uncertainKey } from './topics-store.ts';
 import './topics.css';
 
@@ -164,9 +164,10 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
     void live.memoryTopics.open();
   }, [live.memoryTopics]);
   const list = data.list;
-  // 空的一页不在目录里出现（11-11：「个人」项目的记忆并进了关于你，人物页等勾了才有内容）；关于你和规则总在。
+  // 空的一页不在目录里出现（11-11：「个人」项目的记忆并进了关于你，人物页等勾了才有内容）；关于你总在。
+  // 第13批：「规则」那一份不在目录里了——还没搬的在顶上的规则搬家提示条里。
   const groups = (list?.groups ?? []).map((group) => ({ ...group, topics: group.topics.filter((topic) =>
-    topic.lineCount > 0 || topic.kind === 'about_you' || topic.kind === 'rules') }))
+    topic.kind !== 'rules' && (topic.lineCount > 0 || topic.kind === 'about_you')) }))
     .filter((group) => group.topics.length > 0);
   const uncertain = list?.uncertain.slice(0, UNCERTAIN_SHOWN_MAX) ?? [];
   const searching = query.trim() !== '';
@@ -178,6 +179,7 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
       {searching ? <MemorySearch.Results query={query} navigate={navigate} /> : list === null
         ? <PageLoading /> : (
           <>
+            <RulesMoveBanner navigate={navigate} />
             <MemoryOverview navigate={navigate}>
               <ConflictsEntry navigate={navigate} />
               {list.dream === null ? null : <DreamEntry dream={list.dream} navigate={navigate} />}
@@ -193,9 +195,8 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
                 </FlipList>
               </section>
             )}
-            {groups.map((group) => (<Fragment key={group.kind}>
-              {group.kind === 'topic' ? <TeammatesBlock navigate={navigate} /> : null}
-              <section className="block memory-block topic-group"
+            {groups.map((group) => (
+              <section key={group.kind} className="block memory-block topic-group"
                 aria-labelledby={`topics-${group.kind}`}>
                 <div className="memory-block-head">
                   <h2 id={`topics-${group.kind}`} className="block-title">{MEMORY_TOPIC_GROUP_LABELS[group.kind]}</h2>
@@ -205,8 +206,7 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
                   {group.topics.map((topic) => <TopicRow key={topic.id} topic={topic} navigate={navigate} />)}
                 </FlipList>
               </section>
-            </Fragment>))}
-            {groups.some((group) => group.kind === 'topic') ? null : <TeammatesBlock navigate={navigate} />}
+            ))}
           </>
         )}
     </div>

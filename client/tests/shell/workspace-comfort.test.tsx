@@ -37,8 +37,9 @@ it('页里点链接走一步：⌘[ 后退回到原页和阅读位置', async ()
   const main = screen.getByRole('main');
   main.scrollTop = 240;
   fireEvent.scroll(main);
-    fireEvent.click(await within(main).findByRole('button', { name: /^规则/ }));
-  await waitFor(() => expect(window.location.hash).toBe('#/memory/topics/memdoc-rules'));
+  // 第13批：「规则」那一份不在目录里了，点「关于你」。
+  fireEvent.click(await within(main).findByRole('button', { name: /^关于你/ }));
+  await waitFor(() => expect(window.location.hash).toBe('#/memory/topics/t_you'));
   fireEvent.keyDown(window, { key: '[', metaKey: true });
   await waitFor(() => expect(window.location.hash).toBe('#/memory'));
   expect(screen.getByRole('main').scrollTop).toBe(240);

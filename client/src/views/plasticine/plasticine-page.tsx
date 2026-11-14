@@ -1,6 +1,6 @@
 // Plasticine 主区：电脑默认主线；手机点「Plasticine」也直接进主线（11-12 全量优化，Aaron 定），队友和群组从右上角
 // 「队友和群组」打开名单切换；队友与群组分别进入长期对话。
-// 原对话地址继续可读，Soul 是同一栏目里的规则页。
+// 原对话地址继续可读。队友的 Soul 在「编辑队友」里改（第13批，原来的「只对它的规则」并进各自的 Soul）。
 
 import { PendingOps, useOp } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from '../mates/mate-actions.ts';
@@ -16,7 +16,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { TitlebarActions, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { mainLineRoute, parseLineRef, skillsRoute, soulRoute, type Route } from '../../shell/routes.ts';
+import { mainLineRoute, parseLineRef, skillsRoute, type Route } from '../../shell/routes.ts';
 import { Conversation } from '../conversation/conversation.tsx';
 import { SideUiProvider } from '../lines/conversation-ui-context.tsx';
 import { LineConversation } from '../lines/line-conversation.tsx';
@@ -188,8 +188,6 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
           {mate === undefined && group === undefined ? null : <MenuItem icon="edit"
             label={mate === undefined ? '编辑群组' : '编辑队友'}
             onSelect={() => { setMenu(null); setEditing(true); }} />}
-          {mate === undefined ? null : <MenuItem icon="sparkle" label="只对它的规则"
-            onSelect={() => { setMenu(null); navigate(soulRoute(mate.id)); }} />}
           {mate === undefined ? null : <MenuItem label={mate.disabledAt === null ? '停用队友' : '重新启用'}
             onSelect={() => { setMenu(null); setDisabling(true); }} />}
           {sideId === null ? null : <MenuItem icon="back" label="回到主线" onSelect={() => {

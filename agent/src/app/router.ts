@@ -1,5 +1,7 @@
 import { composeOutcome, predictCompose } from './compose.ts';
 import { SOUL_ROUTES } from './soul.ts';
+import { SOULS_ROUTES } from './souls.ts';
+import { RULES_MOVE_ROUTES } from './rules-move.ts';
 import { MEMORY_CONFLICT_ROUTES } from './memory-conflicts.ts';
 import { MEMORY_MANAGE_ROUTES } from './memory-manage.ts';
 import { getLinkPreview } from './link-preview.ts';
@@ -233,6 +235,8 @@ export const HEALTH_PATH = '/v2/health';
 
 export const ROUTES: readonly Route[] = [
   ...SOUL_ROUTES,
+  ...SOULS_ROUTES,
+  ...RULES_MOVE_ROUTES,
   ...MEMORY_CONFLICT_ROUTES,
   ...MEMORY_MANAGE_ROUTES,
   { method: 'GET', path: OUTBOUND_GRANTS_PATH, auth: true, handler: listOutboundGrants },

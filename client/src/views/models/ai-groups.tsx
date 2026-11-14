@@ -69,7 +69,7 @@ export function AiGroups(): ReactNode {
         </Group>
         <Group id="ai-group-routine" title="例行">
           <PurposeRow value={value} purpose="heartbeat" label="心跳" />
-          <PurposeRow value={value} purpose="dream" label="做梦" sub="每晚整理记忆" />
+          <PurposeRow value={value} purpose="dream" label="做梦" sub="每晚整理记忆和 Soul" />
           <PurposeRow value={value} purpose="review" label="回顾" sub="日报、周报" />
           <PurposeRow value={value} purpose="researcher" label="研究员" sub="订阅周报" />
         </Group>

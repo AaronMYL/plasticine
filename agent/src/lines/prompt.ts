@@ -9,6 +9,9 @@ import { ACT_OR_ASK_PROMPT } from '../../shared/act-or-ask.ts';
 import { memoryDocsSection, rulesDocSection, todaySection } from '../brain/index.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import { DEFAULT_MAIN_NAME } from '../../shared/api/mates.ts';
+import { SOUL_OWNER_MAIN } from '../../shared/api/souls.ts';
+import { MAIN_SOUL_OPENING, soulFirstParagraph } from '../../shared/soul-text.ts';
+import { soulText } from '../mates/souls.ts';
 import { mainIdentity } from '../mates/main-identity.ts';
 import { daySection } from './day-context.ts';
 import { statusSection, type StatusState } from './self-status.ts';
@@ -16,7 +19,8 @@ import { loopSection } from '../loop/prompt.ts';
 import { BACKGROUND_HANDOFF, SIDE_TOPIC_HINT, TALK_STYLE } from './talk-style.ts';
 
 export type PromptState = Pick<StateService, 'memoryDocs' | 'projects' | 'memoryJournal' | 'lineDays'>
-  & Partial<Pick<StateService, 'mates' | 'mateGroups' | 'lineMessages' | 'kernelSettings' | 'loop'>> & StatusState;
+  & Partial<Pick<StateService, 'mates' | 'mateGroups' | 'lineMessages' | 'kernelSettings' | 'loop' | 'souls'>>
+  & StatusState;
 
 /** publicUrl：他打开 Plasticine 的网页地址（app/public-url.ts）；没给就不写（测试里的内核）。 */
 /** name：主线的名字（第 12 批，他可以自己起）；还叫 Plasticine 时照旧写。 */
@@ -92,10 +96,28 @@ function lineSection(line: LineRow): string {
   ].join('\n');
 }
 
+/**
+ * 你的 Soul（第13批，11-14 Aaron：主线和每位队友各一份，只写「我是谁」；用第二人称，「你」是你，「我」是他）：
+ * 主线、旁聊、主线开的后台线读主线那份；队友和交给队友的后台线读那位队友的。
+ */
+export function soulSection(state: PromptState, line: LineRow): string {
+  const owner = line.mateId ?? SOUL_OWNER_MAIN;
+  const stored = state.souls?.get(owner)?.text;
+  // 没存过的（新装、测试里的内核）照起步的样子：主线是那一段，队友是「你是我的……」加职责。
+  const text = stored ?? (state.mates === undefined ? (owner === SOUL_OWNER_MAIN ? MAIN_SOUL_OPENING : '')
+    : soulText({ mates: state.mates }, owner));
+  if (text.trim() === '') {
+    return '';
+  }
+  return ['## 你的 Soul', '下面是你自己：性格、说话方式、看重什么、和他相处中形成的判断。按它做你自己；'
+    + '这份由他和你一起改，你每晚整理时可以改（只写「你是谁」，不写任务进度和零散事实）。', text.trim()].join('\n');
+}
+
 export function linePrompt(state: PromptState, line: LineRow, publicUrl?: string, now: Date = new Date()): string {
   return [
     identitySection(publicUrl, state.kernelSettings === undefined ? undefined
       : mainIdentity({ kernelSettings: state.kernelSettings }).name),
+    soulSection(state, line),
     ACT_OR_ASK_PROMPT,
     rulesDocSection(state, line.mateId ?? null),
     mateSection(state, line),
@@ -116,12 +138,17 @@ function mateSection(state: PromptState, line: LineRow): string {
   const group = line.mateGroupId == null ? undefined : state.mateGroups?.get(line.mateGroupId);
   const active = state.mates?.active() ?? [];
   const roster = active.filter((entry) => group === undefined || group.mateIds.includes(entry.id));
-  const parts = ['## 队友协作', ...roster.map((entry) => `- ${entry.name}（${entry.id}）：${entry.role}`)];
+  // 主线派活看每位 Soul 的第一段（第13批：职责并进了 Soul 的开头）；还没有 Soul 的照旧看职责。
+  const duty = (entry: { id: string; role: string }): string => {
+    const first = state.souls === undefined ? '' : soulFirstParagraph(state.souls.get(entry.id)?.text ?? '');
+    return first === '' ? entry.role : first;
+  };
+  const parts = ['## 队友协作', ...roster.map((entry) => `- ${entry.name}（${entry.id}）：${duty(entry)}`)];
   if (group !== undefined) parts.push(`当前群组：${group.name}。未点名时按职责判断由哪位队友回答，`
     + '用 mate_handoff 指派；交接保留目标和来源。');
   if (mate !== undefined) {
-    // 队友专属的规则在「规则」那一段里（11-11：原来的自由文字 Soul 拆成了只对这位队友的规则）。
-    parts.push(`当前身份：${mate.name}。职责：${mate.role}`);
+    // 你是谁在上面「你的 Soul」那一段（第13批）；还没搬进 Soul 的只对这位队友的规则在「规则」那一段里。
+    parts.push(`当前身份：${mate.name}。`);
     if (line.id !== mate.lineId && state.lineMessages !== undefined) {
       const recent = state.lineMessages.page(mate.lineId, null, 8).rows;
       if (recent.length > 0) parts.push('## 这位队友最近的独立对话（保留原角色）',

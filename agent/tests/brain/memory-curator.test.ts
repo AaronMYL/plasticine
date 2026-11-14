@@ -121,7 +121,8 @@ test('他明说记住的当场写进主题文档（下一轮就在上下文里�
   const remembered = state.memoryJournal.open();
   assert.deepEqual(remembered.map((entry) => [entry.kind, entry.lineId, entry.docId]),
     lines.map((line) => ['remembered', line.id, RULES_DOC_ID]));
-  assert.match(requests[0]?.system ?? '', /说法[\s\S]*专有名词[\s\S]*memdoc-rules[\s\S]*「X」指的是/);
+  // 第13批三层：他说的偏好和说法进「关于你」，不再往「规则」里写。
+  assert.match(requests[0]?.system ?? '', /说法[\s\S]*专有名词[\s\S]*memdoc-you[\s\S]*「X」指的是/);
   assert.match(requests[0]?.system ?? '', /\[\[那篇的名字\]\]/);
   assert.equal(state.agreements.list({ kind: 'term' }, { limit: 10, offset: 0 }).length, 0);
 });

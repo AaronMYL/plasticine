@@ -423,3 +423,8 @@
   border-radius: 8px; background: color-mix(in srgb, var(--err) 8%, transparent); font-size: 13px; line-height: 20px; }
 .settings-notify-fail p { margin: 0; color: var(--err); }
 .settings-notify-fail b { font-weight: 600; }
+
+/* 隐私与授权 ·「先问你」（第13批）：硬线只读，一行一个、带锁，和记忆文档里原来的样子一样。 */
+.hard-lines { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; padding: 0; list-style: none; }
+.hard-line { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; line-height: 22px; }
+.hard-line svg { flex: none; color: var(--fg2); }

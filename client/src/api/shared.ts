@@ -28,6 +28,18 @@ export {
   RULES_DOC_ID,
 } from '../../../agent/shared/state.ts';
 export type { ProjectBrief, ProjectPerson } from '../../../agent/shared/state.ts';
+// 第13批：Soul 的文字小工具（第一段、逐行比对、改了几处、往一节里加一条）。
+export {
+  appendToSection,
+  diffSoul,
+  MAIN_SOUL_OPENING,
+  mateRoleOf,
+  mateSoulOpening,
+  SOUL_TEXT_MAX_CHARS,
+  soulChangeCount,
+  soulFirstParagraph,
+  type SoulDiffLine,
+} from '../../../agent/shared/soul-text.ts';
 // 第13批：信息流条目在哪一处看到的（X、小红书），订阅文章的全文。
 export { FEED_PLACE_LABELS, FEED_PLACES } from '../../../agent/shared/state.ts';
 export type { FeedBlock, FeedPlace } from '../../../agent/shared/state.ts';

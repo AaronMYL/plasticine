@@ -1,0 +1,45 @@
+/* 规则搬家（第13批设计稿 RulesMove）：按去处分组，一条一块浅底卡片，去处是右边一枚小下拉；底下一条常显。 */
+.move-group { display: flex; flex-direction: column; gap: 6px; }
+.move-group-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 0 2px; }
+.move-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.move-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px;
+  background: var(--layer-float); box-shadow: inset 0 0 0 1px var(--line); }
+.move-item-main { display: flex; flex: 1; align-items: center; gap: 12px; min-width: 0; cursor: pointer; }
+.move-item-main input { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--fg); }
+.move-item-text { flex: 1; min-width: 0; font-size: 14px; line-height: 22px; color: var(--fg);
+  transition: color var(--motion-fast) var(--ease-out); }
+.move-item[data-on='false'] .move-item-text { color: var(--fg2); }
+.move-item-source { flex: none; font-size: 11px; color: var(--fg2); white-space: nowrap; }
+.move-dest { position: relative; display: inline-flex; flex: none; align-items: center; gap: 4px; max-width: 200px;
+  height: 28px; padding: 0 6px 0 10px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--line2); color: var(--fg);
+  font-size: 12px; white-space: nowrap; transition: background-color var(--motion-fast) var(--ease-out); }
+.move-dest > span { overflow: hidden; text-overflow: ellipsis; }
+.move-dest > svg { flex: none; color: var(--fg2); }
+.move-dest:hover { background: var(--tint); }
+.move-dest:has(select:focus-visible) { outline: 2px solid var(--fg); outline-offset: 2px; }
+.move-dest select { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0;
+  opacity: 0; cursor: pointer; appearance: none; }
+.move-more { align-self: flex-start; padding: 2px 12px; border: 0; background: transparent; color: var(--fg2);
+  font: inherit; font-size: 12px; cursor: pointer; }
+.move-more:hover { color: var(--fg); }
+.move-more:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; border-radius: 4px; }
+.move-done { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+/* 底下一条：跟着页面滚，到底贴住主区下沿。 */
+.move-bar { position: sticky; bottom: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  margin-inline: -32px; padding: 12px 32px; border-top: 1px solid var(--line); background: var(--layer-float); }
+.move-bar-count { font-size: 13px; font-weight: 500; color: var(--fg); }
+.move-bar-note { font-size: 12px; color: var(--fg2); }
+.move-bar-space { flex: 1; }
+@media (max-width: 767px) {
+  .move-item { flex-wrap: wrap; row-gap: 6px; }
+  .move-item-main { flex-basis: 100%; }
+  .move-item-source { margin-left: 28px; }
+  .move-dest { margin-left: auto; }
+  .move-bar { margin-inline: -16px; padding: 10px 16px; }
+  .move-bar-note { display: none; }
+}
+/* 记忆首页的提示条（设计稿 Memory）：浅陶土底，一句话 + 「去勾」。 */
+.rules-move-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg)); color: var(--fg); }
+.rules-move-banner-text { flex: 1; min-width: 0; margin: 0; font-size: 14px; line-height: 22px; }
+.rules-move-banner-text strong { font-weight: 600; }

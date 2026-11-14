@@ -1,9 +1,9 @@
 import { FakeMates } from './fake-mates.ts';
 import { FakeSoul } from './fake-soul.ts';
+import { FakeSouls } from './fake-souls.ts';
 import { seedMemoryScene } from './memory-scene-seed.ts';
 import { seedOfferScene } from './offer-seed.ts';
 import { seedTeamScene } from './team-scene-seed.ts';
-import { inferSoulSection, ruleTexts } from '../../../../agent/shared/soul.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
 import { renderVideoPage } from '../../../../agent/shared/video-space-page.ts';
@@ -86,6 +86,8 @@ export interface FakeControl {
   mates: FakeMates;
   /** 记忆里的「规则」和说法冲突（11-11）。 */
   soul: FakeSoul;
+  /** 主线和每位队友的 Soul、规则搬家（第13批）。 */
+  souls: FakeSouls;
   outbound: FakeOutbound;
   networkAttachments: FakeNetworkAttachments;
   /** 新内核（2026-11-05）：线和模型连接。 */
@@ -235,8 +237,9 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const notes = new FakeNotes({ session, bus, faults, now });
   const lines = new FakeLines({ session, bus, receipts, now, stepMs: options.streamStepMs,
     note: (noteId) => notes.peek(noteId), feedItem: (id) => feed.find(id) });
-  let addMateRules: (mateId: string, text: string) => void = () => undefined;
-  const mates = new FakeMates({ session, lines, receipts, now, rules: (id, text) => addMateRules(id, text) });
+  // 第13批：建队友时那段文字就是它的 Soul（假 Soul 接上），不再拆成规则。
+  let addMateSoul: (mateId: string, text: string) => void = () => undefined;
+  const mates = new FakeMates({ session, lines, receipts, now, souls: (id, text) => addMateSoul(id, text) });
   // 本地开发时导入书、生成大纲各等一会儿，看得到「正在导入」「正在逐章归纳」；测试（streamStepMs 0）不等。
   const books = new FakeBooks({ session, bus, notes, now, messages: () => lines.messagesOf(MAIN_LINE_ID),
     workMs: options.streamStepMs > 0 ? BOOK_WORK_MS : 0,
@@ -269,9 +272,9 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const today = new FakeToday({ session, receipts });
   const memoryTopics = new FakeMemoryTopics({ session, receipts, now });
   const soul = new FakeSoul(session, receipts, now, (view) => memoryTopics.applySoul(view));
-  addMateRules = (mateId, text) => soul.seedLines(ruleTexts(text).map((rule, index) => ({
-    id: `soul-mate-${mateId}-${index}`, text: rule, section: inferSoulSection(rule), source: 'mate',
-    scopeKind: 'mate', scopeRef: mateId })));
+  const souls = new FakeSouls({ session, receipts, now, mainName: () => mates.main.name, mates: () => mates.rowsNow(),
+    rules: soul, aboutYou: (text) => { memoryTopics.edits.add('t_you', text); } });
+  addMateSoul = (mateId, text) => souls.ensure(mateId, text);
   const spaces = new FakeSpaces({ session, receipts, now, bus, dream: () => memoryTopics.currentDream() });
   const nodes = new FakeNodes({ session, bus, receipts, faults, now });
   const m5b = createFakeM5b({ session, bus, receipts, notes, now });
@@ -334,7 +337,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     memoryTopics.seed();
     // ?scene=memory：两位队友各有只对它的规则，外加一处说法冲突（11-11 第二步截图用）。
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'memory') {
-      seedMemoryScene({ mates, soul }, now());
+      seedMemoryScene({ mates, soul, souls }, now());
     }
     // ?scene=team：四位队友、一个群组、各种状态的事（11-13 分工面板截图用）。
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'team') {
@@ -357,7 +360,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     }
   }
   const api: PlasticineApi = {
-    mates, mateGroups: mates.groups, soul, outbound, networkAttachments,
+    mates, mateGroups: mates.groups, soul, souls, outbound, networkAttachments,
     lines,
     tasks,
     modelProviders,
@@ -407,7 +410,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   return {
     api,
     control: {
-      mates, soul, outbound, networkAttachments,
+      mates, soul, souls, outbound, networkAttachments,
       lines,
       tasks,
       modelProviders,

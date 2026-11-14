@@ -368,6 +368,8 @@ export interface SearchApi {
 export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
   networkAttachments: NetworkAttachmentsApi;
   soul: import('./soul-client.ts').SoulApi;
+  /** 第13批：主线和每位队友的 Soul、规则搬家。 */
+  souls: import('./souls-client.ts').SoulsApi;
   outbound: import('./outbound-client.ts').OutboundApi;
   /** 新内核（2026-11-05）：线和模型连接。 */
   lines: import('./lines-client.ts').LinesApi;

@@ -21,7 +21,8 @@ test('0138：旧条目的位置是空的、没有全文；内置的 X 和「按�
     db.run(`INSERT INTO feed_items (id, created_at, updated_at, version, source_id, origin, title, summary, why,
       dedupe_key, day, arrived_at) VALUES ('item_1', $at, $at, 1, 'src_x', 'feed', '旧帖子', '', '', 'x:1',
       '2026-11-13', $at)`, { at });
-    assert.deepEqual(migrate(db, MIGRATIONS, () => at), ['0138-feed-places-body']);
+    assert.deepEqual(migrate(db, MIGRATIONS.filter((entry) => entry.id <= '0138-feed-places-body'), () => at),
+      ['0138-feed-places-body']);
     const item = db.all('SELECT places, body FROM feed_items WHERE id = $id', { id: 'item_1' })[0];
     assert.deepEqual({ ...item }, { places: '[]', body: null });
     const labels = db.all('SELECT id, label, version FROM feed_sources ORDER BY id').map((row) => ({ ...row }));

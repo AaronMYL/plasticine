@@ -2,7 +2,7 @@ import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
 import { autoMateCharacter, DEFAULT_MAIN, DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT, MateDraftSchema,
-  MateGroupDraftSchema, SendLineMessageRequestSchema, UpdateMateRequestSchema } from '../shared.ts';
+  MateGroupDraftSchema, mateSoulOpening, SendLineMessageRequestSchema, UpdateMateRequestSchema } from '../shared.ts';
 import type { MateDraft, MateView, MateGroupView, MateGroupDraft, CreateMateRequest, UpdateMateRequest,
   MateHandoffRequest, LegacyChatConvertRequest, LegacyChatProposal, MainIdentity, UpdateMainRequest }
   from '../shared.ts';
@@ -12,8 +12,8 @@ import type { FakeReceipts } from './receipts.ts';
 
 interface Deps {
   session: FakeSession; lines: FakeLines; receipts: FakeReceipts; now: () => Date;
-  /** 建队友时那段文字拆成只对它的规则（11-11，假 Soul 接上）。 */
-  rules?: (mateId: string, soul: string) => void;
+  /** 建队友时那段文字就是它的 Soul（第13批）；没写就照职责起一个开头。 */
+  souls?: (mateId: string, soul: string) => void;
 }
 const invalid = (message: string) => new ApiError({ kind: 'invalid', status: 400, code: 'invalid_request', message });
 const missing = () => new ApiError({ kind: 'not_found', status: 404, code: 'not_found', message: '没有这位队友。' });
@@ -58,13 +58,17 @@ export class FakeMates implements MatesApi {
     const at = this.deps.now().toISOString();
     const mate: MateView = { ...draft, variant: draft.variant ?? DEFAULT_MATE_VARIANT,
       face: draft.face ?? DEFAULT_MATE_FACE, id, lineId, version: 1, createdAt: at, updatedAt: at, disabledAt: null };
-    this.rows.set(id, mate);
-    this.deps.rules?.(id, draft.soul);
+    this.rows.set(id, { ...mate, soul: '' });
+    this.deps.souls?.(id, draft.soul.trim() === '' ? mateSoulOpening(draft.name, draft.role) : draft.soul);
     if (previousLineId === undefined) {
       this.deps.lines.put(this.deps.lines.blank(lineId, 'side', draft.name, { mateId: id }));
     }
     else this.deps.lines.change(lineId, { mateId: id, title: draft.name });
-    return structuredClone(mate);
+    return structuredClone(this.rows.get(id)!);
+  }
+  /** 现在的队友（假 Soul 认名字用）。 */
+  rowsNow(): MateView[] {
+    return [...this.rows.values()];
   }
   async create({ requestId, ...draft }: CreateMateRequest): Promise<MateView> {
     this.deps.session.require();

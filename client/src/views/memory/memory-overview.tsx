@@ -1,16 +1,15 @@
 // 记忆首页的两块（11-11 记忆改版，设计稿「记忆首页」）：
 // - 总览：最近一次全量整理写的一段话，右边「全量整理」；正在整理时按钮换成一句状态；有清单没看就是「整理清单 n 条」入口。
 // 总览里还挂着「说法冲突」「昨晚整理」两个入口，连成一块，不在中间空一截。
-// - 队友：每位队友一行，点进去是只对它的规则（规则页按这位队友筛），共用的规则不再混在里面。
+// - 规则搬家的提示条（第13批）：原来的「队友」一节（只对它的规则）去掉，规则还没搬完时在页面最上面提示。
 
 import { useState, type ReactNode } from 'react';
-import { useLive } from '../../live.tsx';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { cleanupRoute, soulRoute, type Route } from '../../shell/routes.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { useStore } from '../../state/use-store.ts';
-import { MateAvatar } from '../mates/mate-avatar.tsx';
 import { useCleanup } from './use-cleanup.ts';
+import { useRulesMove } from './use-rules-move.ts';
+import './rules-move.css';
 
 export function MemoryOverview({ navigate, now = new Date(), children }:
   { navigate: (route: Route) => void; now?: Date; children?: ReactNode }): ReactNode {
@@ -48,30 +47,18 @@ export function MemoryOverview({ navigate, now = new Date(), children }:
   );
 }
 
-export function TeammatesBlock({ navigate }: { navigate: (route: Route) => void }): ReactNode {
-  const live = useLive();
-  const mates = useStore(live.mates.data).mates;
-  if (mates.length === 0) return null;
+/**
+ * 规则搬家的提示条（第13批设计稿 Memory）：「规则」里还有没搬的才出现，点「去勾」进规则搬家；都搬完了就没有了。
+ * 原来这里是「队友」一节（点进去是只对它的规则），队友的规则并进各自的 Soul 以后去掉。
+ */
+export function RulesMoveBanner({ navigate }: { navigate: (route: Route) => void }): ReactNode {
+  const count = useRulesMove().data?.items.length ?? 0;
+  if (count === 0) return null;
   return (
-    <section className="block memory-block topic-group" aria-labelledby="topics-mates">
-      <div className="memory-block-head">
-        <h2 id="topics-mates" className="block-title">队友</h2>
-        <span className="block-meta text-mono">{mates.length}</span>
-      </div>
-      <ul className="topic-list">
-        {mates.map((mate) => (
-          <li key={mate.id}>
-            <button type="button" className="topic-row" onClick={() => navigate(soulRoute(mate.id))}>
-              <MateAvatar mate={mate} size={20} still />
-              <span className="topic-row-text">
-                <span className="topic-row-title">{mate.name}</span>
-                <span className="topic-row-summary">{mate.role.replace(/[。；;.\s]+$/u, '')}；只对它的规则在这里</span>
-              </span>
-              <span className="topic-row-chevron" aria-hidden="true"><Icon name="chevron-right" size={14} /></span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="rules-move-banner" role="region" aria-label="规则搬家">
+      <p className="rules-move-banner-text"><strong>规则搬家：{count} 条等你勾。</strong>
+        说话方式进各自的 Soul，你说过的偏好进「关于你」，硬线和授权留在设置里。</p>
+      <button type="button" className="primary-button button-small" onClick={() => navigate(soulRoute())}>去勾</button>
+    </div>
   );
 }
