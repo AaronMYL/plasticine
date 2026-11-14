@@ -32,3 +32,14 @@ test('内联 svg 算图表；脚本和样式里的字不算正文', () => {
     + '<svg viewBox="0 0 10 10"></svg><div class="lst"></div>';
   assert.equal(reportTooPlain(page), null);
 });
+
+test('第 13 批新版式的块一样算：大数、案例、核查的判定和逐条', () => {
+  const head = '<p class="rp-kick"><b>研究快照</b></p>'
+    + '<header class="rp-hero"><div><h1 class="rp-h1">结论</h1></div></header>';
+  const research = `${head}<section class="rp-sec">${PARAGRAPH.repeat(4)}<div class="rp-pulse"></div>`
+    + '<div class="rp-cases"><article class="rp-case"></article></div></section>';
+  assert.equal(reportTooPlain(research), null);
+  const check = `${head}<div class="rp-verdict"></div><section class="rp-sec">${PARAGRAPH.repeat(4)}`
+    + '<div class="rp-facts"><article class="rp-fact"></article></div></section>';
+  assert.equal(reportTooPlain(check), null);
+});

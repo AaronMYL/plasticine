@@ -36,17 +36,30 @@ describe('报告', () => {
     expect(prepared.editable).toBe(7);
     expect(doc.querySelector('figure.ch')?.classList.contains('pz-fixed')).toBe(true);
     expect(doc.querySelector('.rp-stats')?.classList.contains('pz-fixed')).toBe(true);
-    expect(doc.querySelector('.rp > header.rp-hero')).not.toBeNull();
-    const toc = [...doc.querySelectorAll('.rp-toc a')].map((link) => [link.textContent, link.getAttribute('href')]);
+    expect(doc.querySelector('.rp > header.rp-hero:first-child')).not.toBeNull();
+    expect(doc.querySelector('.rp > header.rp-hero + .rp-stats'), '旧报告块里的数字条挪到大标题下面').not.toBeNull();
+    const toc = [...doc.querySelectorAll('.rp-nav a')].map((link) => [link.textContent, link.getAttribute('href')]);
     expect(toc).toEqual([['先看结论', '#a'], ['本期研究', '#b'], ['来源', '#c']]);
+    expect(doc.querySelector('.rp-nav')?.nextElementSibling?.id, '目录在第一节前面').toBe('a');
+  });
+
+  it('新版式：出处行在大标题上面、数字条在下面，照写的顺序；目录放在第一节前面', () => {
+    const html = '<p class="rp-kick"><b>研究快照 · 第 3 期</b><span>资料截至 10 月 9 日</span></p>'
+      + '<header class="rp-hero"><div><h1 class="rp-h1">别追<em>风口</em></h1><p class="rp-deck">导语</p></div>'
+      + '<aside class="rp-brief"><p class="lb">核心判断</p><p>一句</p></aside></header>'
+      + '<div class="rp-stats"><div class="rp-stat"><div class="v"><b>$169</b></div><div class="l">中位数</div></div></div>'
+      + ['一', '二', '三'].map((name, index) => `<section class="rp-sec" id="s${index}"><div class="rp-sh">`
+        + `<span class="no">0${index + 1} / ${name}</span><h2>${name}</h2></div><p>正文</p></section>`).join('');
+    const doc = frameBody(prepareSpace({ html, genre: 'report', title: '研究', dateLabel: '' }).body);
+    expect([...doc.querySelectorAll('.rp > *')].map((element) => element.className))
+      .toEqual(['rp-kick', 'rp-hero', 'rp-stats pz-fixed', 'rp-nav', 'rp-sec', 'rp-sec', 'rp-sec']);
   });
 
   it('不到 3 节不配目录；插图（Plasticine 自己的资产）换成外面传进去的', () => {
     const prepared = prepareSpace({ html: '<p>一段。</p><img src="/v2/notes/assets/a.webp" alt="图">'
       + '<img src="data:image/png;base64,AA" alt="内嵌">', genre: 'report', title: '核查', dateLabel: '' });
     const doc = frameBody(prepared.body);
-    expect(doc.querySelector('.rp-toc')).toBeNull();
-    expect(doc.querySelector('.rp-body')?.classList.contains('no-toc')).toBe(true);
+    expect(doc.querySelector('.rp-nav')).toBeNull();
     const asset = doc.querySelector('img[alt="图"]');
     expect([asset?.getAttribute('src'), asset?.getAttribute('data-pz-asset')])
       .toEqual([null, '/v2/notes/assets/a.webp']);

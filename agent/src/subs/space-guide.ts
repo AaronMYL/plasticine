@@ -13,37 +13,59 @@ export const SPACE_RULES = [
   '少量交互可以写内联 <script>（只在这一页里跑）；筛选用现成的分段控件，不用自己写。',
 ].join('');
 
-/** 报告的版式和现成的类。 */
+/** 报告的版式和现成的类（第 13 批新版式，照 Aaron 给的参考）。 */
 export const REPORT_GUIDE = `报告（genre "report"）：按内容自由排版，用得上什么就用什么。报告不是文字堆砌：先定这一页要让他
 一眼看到什么（结论、数、对比、先后），每一节按内容的形状选块，段落只用来把块连起来；长报告只有段落会被退回重排。结构：
-<header class="rp-hero">
-  <p class="rp-kick"><b>出处 · 第 N 期</b><span>2026.11.02—11.08</span><span>标签</span></p>
-  <h1 class="rp-h1">一句结论当大标题。</h1>
-  <div class="rp-stats">（数字条，2–4 个）<div class="rp-stat"><div class="v"><b>2</b><i>篇</i></div>
-    <div class="l"><span class="sq" style="--h:var(--hue-sky)"></span>说明</div></div>…</div>
-</header>
+<p class="rp-kick"><b>出处 · 第 N 期</b><span>资料截至 11 月 8 日</span><span>标签</span><span class="end">约 8 分钟读完</span></p>
+<header class="rp-hero"><div><h1 class="rp-h1">一句结论当大标题，<em>最要紧的几个字</em></h1>
+  <p class="rp-deck">一两句导语：这份看了什么、要回答什么。</p></div>
+  <aside class="rp-brief"><p class="lb">核心判断</p><p>一段判断</p></aside>（可选，深色一块）</header>
+<div class="rp-stats">（数字条，2–4 个）<div class="rp-stat"><div class="v"><b>2.41</b><i>%</i></div>
+  <div class="l">说明</div></div>…</div>
 <section class="rp-sec" id="英文短词" data-toc="目录里的短名">
-  <div class="rp-sh"><span class="no">01</span><h2>小节标题</h2></div> …正文 <p>…
+  <div class="rp-sh"><span class="no">01 / 短名</span><h2>这一节的结论</h2><p>一句说明（可选）</p></div> …
 </section>
-有 3 节以上带 id 的 section，右侧目录自动生成（data-toc 是目录里的名字，不写就用 h2）。现成的块：
+有 3 节以上带 id 的 section，顶上自动配一条目录（data-toc 是目录里的名字，不写就用 h2），不用自己写目录。
+研究类常用的块：
+- 一个大数配几个小数：<div class="rp-pulse"><article class="rp-big"><b>2.41%</b><div><h3>这个数是什么</h3><p>怎么算的
+  </p><a class="rp-src" href="https://…">出处 · 日期</a></div></article><div class="rp-rail"><div class="rp-stat">…</div>
+  …</div></div>
+- 要点格（3–5 格）：<div class="rp-points"><article><span class="n">01</span><h3>一句</h3><p>说明</p></article>…</div>
+- 图配旁注：<div class="rp-duo"><figure class="ch">…</figure><aside class="rp-note"><h3>怎么读</h3><ul><li><b>要点</b>
+  说明</li></ul></aside></div>
+- 能筛选的案例：<div class="filt"><button class="on" data-filter="*">全部<span class="c">10</span></button>
+  <button data-filter="AI">AI<span class="c">2</span></button></div>，同一节里的卡写 data-tags="AI"；卡片
+  <div class="rp-cases"><article class="rp-case" data-tags="AI"><span class="n">01</span><div><h3>名字</h3>
+  <p class="who">几个人 · 做什么</p><div class="tags"><span class="stt">标签</span></div><p class="hl">$105K / 月</p>
+  <p class="tx">经过</p><p class="take"><b>借鉴：</b>…</p><span class="cav">口径或时间</span><a class="rp-src" href="…">
+  出处</a></div></article>…</div>
+- 几条方向（编号自动）：<div class="rp-steps"><article><div><h3>方向</h3><p class="fit">契合：…</p></div>
+  <div class="two"><div><h4>机会与切口</h4><p>…</p></div><div class="risk"><h4>主要风险</h4><p>…</p></div></div>
+  </article>…</div>
+- 两两对照：<div class="rp-grid2"><article><span class="tg">标签</span><h3>…</h3><p>…</p></article>…</div>
+- 还没查清的：<div class="rp-open"><article><h3>缺口</h3><p>为什么还不能下结论</p></article>…</div>
+核查类（核对一段说法、一篇文章）常用的块：
+- 判定一览（放在 rp-hero 后面，代替数字条）：<div class="rp-verdict"><div><b>0</b><span>完全错误</span></div>…</div>
+- 先改正的说法：<div class="rp-fix"><div><s>原来的说法</s><span>该怎么说</span></div>…</div>
+- 逐条判定：<div class="rp-facts"><article class="rp-fact"><div class="top"><h3>1. 原说法</h3>
+  <span class="rp-badge ok">属实</span></div><p>依据</p><div class="rp-srcs"><a href="https://…">出处</a></div></article>
+  …</div>（rp-badge 加 part 是部分属实、no 是不对）
+- 算一笔：<div class="rp-num"><div><small>口径</small>算式</div><b>结果</b></div>
+- 时间线：<div class="rp-time"><div><time>2025 年 5 月</time><h3>发生了什么</h3><p>…</p></div>…</div>
+- 拆开判断：<div class="rp-dec"><article><h3>一件事</h3><p>怎么看</p></article>…</div>；给他的提醒：
+  <div class="rp-call"><h3>一句</h3><p>…</p></div>
+两类都能用的：
 - 结论卡：<div class="cards2"><article class="rcard"><div class="tags"><span class="stt">标签</span></div>
   <h3>一句话</h3><p class="tx">说明</p><dl class="vd"><dt>要点</dt><dd>…</dd></dl></article>…</div>（cards3 是三列）
+- 图表：<figure class="ch"><figcaption class="ch-h"><b>图名</b><span class="meta">单位</span>
+  <span class="ch-legend"><span><i class="lg-sq"></i>系列</span><span><i class="lg-sq" style="--h:var(--accent)"></i>
+  对照</span></span></figcaption> 图 <p class="ch-src">来源 [1]</p></figure>。横条现成：<div class="brow">
+  <span class="bl">类别</span><span class="track"><i class="gl" style="left:50%"></i><i class="b" style="width:83%"></i>
+  <i class="b2" style="width:12%"></i></span><span class="bv">83%<i>12%</i></span></div>（b2 是第二个系列，没有就不写；
+  b lo 是浅色对照），刻度 <div class="ax"><span></span><span class="tk"><span style="left:0">0</span>…</span><span></span>
+  </div>。别的图（折线、散点、时间段）用内联 <svg viewBox="…">，线和点用 var(--hue-sky) 等，字用 <text>；数一个都不能编。
 - 状态小签：<span class="stt"><span class="sq" style="--h:var(--hue-sky)"></span>已同行评审</span>；sq 加 pre 是斜纹
   （未评审 / 预印本），加 watch 是空心（待追踪）。
-- 能筛选的卡片：<div class="filt"><div class="seg"><button class="on" data-filter="*">全部<span class="c">4</span>
-  </button><button data-filter="深读">深读<span class="c">2</span></button></div></div>，同一节里的卡片写
-  data-tags="深读"；卡片 <article class="paper" data-tags="…"><div class="tags">…</div><h4>标题</h4>
-  <p class="en">原题</p><p class="meta">作者 · 期刊 · 日期</p><p class="nx"><b>下一步要核</b> …</p></article>
-  （paper dim 是虚线框，给次要的）。
-- 出处一行：<div class="rp-meta"><span class="stt">…</span><span>期刊 · 日期 · 作者</span><a href="…">原文</a></div>
-- 关键数字：<div class="facts"><div><b>13</b><span>名患者</span></div>…</div>
-- 图表：<figure class="ch"><figcaption class="ch-h"><b>图名</b><span class="meta">单位</span>
-  <span class="ch-legend"><span><i class="lg-dot"></i>系列</span></span></figcaption> 图 <p class="ch-src">来源 [1]</p>
-  </figure>。横条现成：<div class="brow"><span class="bl">类别</span><span class="track"><i class="gl" style="left:50%">
-  </i><i class="b" style="width:83%"></i><i class="wh" style="left:68%;width:30%"></i></span><span class="bv">83%
-  <i>±15</i></span></div>（b lo 是浅色对照），刻度 <div class="ax"><span></span><span class="tk"><span style="left:0">0</span>
-  …</span><span></span></div>。别的图（折线、散点、时间线）用内联 <svg viewBox="…">，线和点用 var(--hue-sky) 等，
-  字用 <text>；数一个都不能编。
 - 流程：<div class="chain"><span>A</span><i class="i-arrow"></i><span>B</span></div>
 - 对照表：<table class="rt"><thead><tr><th>…</th></tr></thead><tbody><tr><td>…</td><td class="f2">…</td></tr>
   </tbody></table>
@@ -53,7 +75,8 @@ export const REPORT_GUIDE = `报告（genre "report"）：按内容自由排版�
   <div><i class="i-alert"></i>读不到的<span class="r">原因</span></div></div>
 - Plasticine 自己的判断：<div class="byai"><p>✦ …</p></div>；次要的一段 <p class="sub">。
 - 来源索引（最后一节）：<div class="srcs"><a href="https://…"><span class="n">1</span><span>说明</span>
-  <span class="d">域名</span></a>…</div>；正文里用 [1] 指它。
+  <span class="d">网站或类别</span></a>…</div>；正文里用 [1] 指它。最后一节末尾可以写口径和时效：
+  <div class="rp-foot"><p><b>口径：</b>…</p><p>…</p></div>
 - 值得他点了就开始做的事，那一条加 data-follow（会进「任务 · 建议」）。`;
 
 /** 来信的信纸和正文怎么写。 */
@@ -62,7 +85,7 @@ export const LETTER_GUIDE = `来信（genre "letter"）：信纸是固定的，�
 <p class="lt-lead">第一段：直接落到他的事（他的目标、书单、正在推进的事、他说过的话），一两句说清这封信为什么写给他。</p>
 <figure class="lt-fig" data-illustrate="插图的画面：具体的场景、物件、光线和色调，不要文字"><figcaption>图注一句</figcaption>
 </figure>
-<p>正文段落，<b>最要紧的一句加粗</b>。</p> …
+<p>正文段落，<mark>最要紧的那几个字</mark>像荧光笔划过（一封信一两处）。</p> …
 <p>最后一段留一个下一步（谁、什么时候、做什么）。</p>
 插图：写一个 figure.lt-fig 带 data-illustrate，会照画面描述画一张。画面画这封信说的那件事：具体的场景、人在做什么、
 关键的物件和光线（例：「夜里书桌前接电话的人，台灯亮着，窗外城市灯火」），不画泛泛的氛围；画里不要字。出不了图那一格

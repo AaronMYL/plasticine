@@ -5,6 +5,7 @@
 
 import { EMPTY_SPACE_DOC, type SpaceDoc, type SpaceGenre, type SpaceKind, type Subscription } from '../shared.ts';
 import { AIFEED_REPORT_HTML } from './spaces-aifeed-seed.ts';
+import { CHECK_STYLE_HTML, RESEARCH_STYLE_HTML } from './spaces-style-seed.ts';
 import { COG_REPORT_HTML, DREAM_ART_SVG, DREAM_LETTER_HTML } from './spaces-pages-seed.ts';
 
 export interface SeedSpace {
@@ -126,6 +127,10 @@ export function spaceSeeds(now: Date): SeedSpace[] {
       subscriptionId: COG_ID, issueNumber: 1, edition: null, genre: 'report', html: COG_REPORT_HTML }, 5.2),
     page({ id: 'sp_aifeed', title: 'AI 信息流核查｜记忆、子代理与商业落地', kind: 'space', subscriptionId: null,
       issueNumber: null, edition: null, genre: 'report', html: AIFEED_REPORT_HTML }, 0.95),
+    page({ id: 'sp_style_research', title: '街角咖啡馆靠什么活下来', kind: 'space', subscriptionId: null,
+      issueNumber: null, edition: null, genre: 'report', html: RESEARCH_STYLE_HTML }, 1.2),
+    page({ id: 'sp_style_check', title: '阳台光伏能省一半电费吗', kind: 'space', subscriptionId: null,
+      issueNumber: null, edition: null, genre: 'report', html: CHECK_STYLE_HTML }, 1.4),
     issue('sp_research_2', '研究周报 · 第 2 期', ISSUE_TWO, RESEARCH_ID, 2, null, 30, [
       legacy(ISSUE_TWO), legacy(ISSUE_TWO, '图从 4 张减到 1 张', '每期最多 1 张图')]),
     issue('sp_daily_1107', '日报 · 11月7日', daily, REVIEW_ID, 2, 'daily', 6),

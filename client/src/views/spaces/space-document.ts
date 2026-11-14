@@ -5,7 +5,8 @@
 // - 插图（/v2/notes/assets/…）换成 data-pz-asset：沙盒里读不了，由外面读好传进去；
 // - 套信纸：来信是「日期 · 题目 · 正文 · 署名」，署名是主线的名字和头像（11-14，没给就是 Plasticine 和标记）；
 //   旧信里图注的「Plasticine 生成」换成图上的 ✦ 小标，模型自己画的线稿（svg.lt-draw）不显示（11-14 Aaron 不要线稿）——
-//   只在显示的这份上换，存回去的原样不动；报告有 3 节以上带 id 的 section 就配右侧目录。
+//   只在显示的这份上换，存回去的原样不动；报告有 3 节以上带 id 的 section 就在第一节前面配一条吸顶的横向目录
+//   （第 13 批新版式）；旧报告写在大标题块里的出处行和数字条挪到大标题上下，和新版式一样。
 // 旧版式（还没重写成网页）的空间在列表里也要缩略图：按结构化文档拼一页报告的开头（legacyPreviewHtml）。
 
 import type { SpaceDoc, SpaceGenre } from '../../api/shared.ts';
@@ -69,25 +70,36 @@ function numberEditable(doc: Document): number {
   return index;
 }
 
-function tocOf(doc: Document): string | null {
+/**
+ * 3 节以上带 id 的 section：在第一节前面放一条横向目录（data-toc 是目录里的名字，不写用 h2）。模型自己写的目录不用，
+ * 由这里按节重配。
+ */
+function addNav(doc: Document): void {
+  doc.body.querySelectorAll('nav.rp-nav').forEach((nav) => nav.remove());
   const sections = [...doc.body.querySelectorAll<HTMLElement>(':scope > section[id], :scope > .rp-sec[id]')];
   if (sections.length < TOC_MIN_SECTIONS) {
-    return null;
+    return;
   }
   const links = sections.map((section) => {
     const label = section.dataset['toc'] ?? section.querySelector('h2')?.textContent ?? section.id;
     return `<a href="#${encodeURIComponent(section.id)}">${escapeText(label.trim())}</a>`;
   }).join('');
-  return `<aside class="rp-toc"><nav aria-label="目录">${links}</nav></aside>`;
+  sections[0]?.insertAdjacentHTML('beforebegin', `<nav class="rp-nav" aria-label="目录">${links}</nav>`);
 }
 
 function reportBody(frame: Document): string {
-  const hero = frame.body.querySelector(':scope > header.rp-hero');
-  hero?.remove();
-  const toc = tocOf(frame);
-  const main = frame.body.innerHTML;
-  return `<div class="rp">${hero?.outerHTML ?? ''}<div class="rp-body${toc === null ? ' no-toc' : ''}">`
-    + `<div class="rp-main">${main}</div>${toc ?? ''}</div></div>`;
+  const body = frame.body;
+  const hero = body.querySelector(':scope > header.rp-hero');
+  if (hero !== null) {
+    // 大标题块在最上；出处行在它上面、数字条在它下面（旧报告写在块里面，挪出来）。
+    body.prepend(hero);
+    const kick = hero.querySelector(':scope > .rp-kick') ?? body.querySelector(':scope > .rp-kick');
+    if (kick !== null) hero.before(kick);
+    const stats = hero.querySelector(':scope > .rp-stats');
+    if (stats !== null) hero.after(stats);
+  }
+  addNav(frame);
+  return `<div class="rp">${body.innerHTML}</div>`;
 }
 
 /** 旧信显示前换掉的两样：线稿那一格整个不显示；图注里的文字署名换成图上的小标。 */

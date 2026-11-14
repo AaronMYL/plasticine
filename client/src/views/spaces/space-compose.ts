@@ -16,22 +16,22 @@ export const SPACE_CSP = "default-src 'none'; script-src 'unsafe-inline'; style-
 // 缩略图（1200 宽渲染再缩小）里字太小看不清：开头那几样放大一点，像设计稿 Library-Spaces 的样子。
 const THUMB_CSS = `
 body.pz-thumb{overflow:hidden}
-body.pz-thumb .rp-toc{display:none}
-body.pz-thumb .rp-body{grid-template-columns:minmax(0,1fr)}
+body.pz-thumb .rp-nav{display:none}
 body.pz-thumb .rp{max-width:none;padding:0 80px}
-body.pz-thumb .rp-hero{padding-top:64px}
-body.pz-thumb .rp-kick{font-size:22px;line-height:32px}
-body.pz-thumb .rp-h1{font-size:56px;line-height:72px;max-width:1000px}
-body.pz-thumb .rp-stats{border-top-width:3px}
+body.pz-thumb .rp-kick{font-size:22px;line-height:32px;padding:32px 0 24px}
+body.pz-thumb .rp-hero{padding:56px 0 40px}
+body.pz-thumb .rp-h1{font-size:64px;line-height:76px;max-width:1000px}
+body.pz-thumb .rp-deck{font-size:28px;line-height:42px}
 body.pz-thumb .rp-stat .v b{font-size:48px;line-height:60px}
 body.pz-thumb .rp-stat .l{font-size:22px;line-height:30px}
 body.pz-thumb .lt{max-width:960px;padding-top:64px}
-body.pz-thumb .lt-date{font-size:22px;line-height:32px}
-body.pz-thumb .lt-title{font-size:84px;line-height:100px}
+body.pz-thumb .lt-date{font-size:26px;line-height:36px}
+body.pz-thumb .lt-title{font-size:92px;line-height:108px}
 body.pz-thumb .lt-body{font-size:26px;line-height:44px}
 body.pz-thumb .lt-body>p.lt-lead{display:none}
-body.pz-thumb .lt-fig{margin:36px 0 0}
-body.pz-thumb .lt-fig img{height:300px;border-radius:20px}
+body.pz-thumb .lt-fig{margin:40px 0 0}
+body.pz-thumb .lt-fig::before{display:none}
+body.pz-thumb .lt-fig img{height:300px;aspect-ratio:auto;border-radius:20px;transform:none}
 body.pz-thumb .lt-fig figcaption{display:none}
 `;
 

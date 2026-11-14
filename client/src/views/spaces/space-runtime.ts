@@ -4,7 +4,8 @@
 // - 深浅色切换时外面传新的令牌值；
 // - 链接点了交给外面（站外的在 Plasticine 网页标签里开；#/… 和 data-link="类别:id" 是 Plasticine 自己的页面）；
 // - ✎ 改字：外面说进入，这里把能改的那几段变成可编辑，改了（停一下或离开这一段）把那一段交回去，Esc 收起；
-// - 目录跟着滚动高亮、点了滚过去；分段控件（.seg button[data-filter]）筛同一节里带 data-tags 的卡片。
+// - 目录（顶上横向那一条）跟着滚动高亮、高亮的那一项滚进看得见的地方，点了滚过去；分段控件（.seg button[data-filter]）
+//   和新版式的筛选按钮（.filt > button[data-filter]）筛同一节里带 data-tags 的卡片。
 // 整个函数原样转成字符串放进 srcdoc：不许用外面的变量和导入，也不能用类型以外的 TypeScript 语法。
 
 export type SpaceFrameMode = 'page' | 'thumb';
@@ -108,9 +109,9 @@ export function spaceRuntime(mode: SpaceFrameMode): void {
 
   const onClick = (event: MouseEvent): void => {
     const target = event.target instanceof Element ? event.target : null;
-    const filter = target?.closest<HTMLElement>('.seg button[data-filter]') ?? null;
+    const filter = target?.closest<HTMLElement>('.seg button[data-filter], .filt > button[data-filter]') ?? null;
     if (filter !== null && !editing) {
-      const group = filter.closest('.seg');
+      const group = filter.closest('.seg, .filt');
       const scope = filter.closest('section,[data-filter-scope]') ?? document.body;
       const value = filter.dataset['filter'] ?? '*';
       group?.querySelectorAll('button[data-filter]').forEach((button) => button.classList.toggle('on',
@@ -141,7 +142,7 @@ export function spaceRuntime(mode: SpaceFrameMode): void {
   };
 
   const watchToc = (): void => {
-    const links = [...document.querySelectorAll<HTMLAnchorElement>('.rp-toc a[href^="#"]')];
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('.rp-nav a[href^="#"]')];
     if (links.length === 0 || typeof IntersectionObserver === 'undefined') return;
     const byId = new Map(links.map((link) => [decodeURIComponent((link.getAttribute('href') ?? '').slice(1)), link]));
     const visible = new Set<string>();
@@ -149,6 +150,11 @@ export function spaceRuntime(mode: SpaceFrameMode): void {
       const first = [...byId.keys()].find((id) => visible.has(id));
       if (first === undefined) return;
       byId.forEach((link, id) => link.classList.toggle('on', id === first));
+      const active = byId.get(first);
+      const nav = active?.parentElement;
+      if (active !== undefined && nav != null && nav.scrollWidth > nav.clientWidth) {
+        nav.scrollTo({ left: active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2, behavior: 'smooth' });
+      }
     };
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
