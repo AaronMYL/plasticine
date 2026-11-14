@@ -232,17 +232,7 @@
   flex: 1;
 }
 
-/* —— 子代理的卡（.sub）—— */
-
-.line-conv .line-card {
-  max-width: none;
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  gap: var(--space-hair);
-}
-
-.line-conv .line-card[data-status='idle'] {
-  padding-bottom: var(--space-3);
-}
+/* —— 子代理的卡（.sub）：内容卡（shell/cards.css，11-14 卡片统一），最宽 560、内边距 16 —— */
 
 .line-card-steps {
   padding: 0;

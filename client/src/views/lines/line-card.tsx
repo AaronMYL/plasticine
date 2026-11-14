@@ -64,7 +64,7 @@ export function LineCard({ line, result, stopped = false }: { line: LineView; re
   }
   return (
     <div className="line-card-wrap">
-      <article className="line-card" data-status={line.status} aria-label={`线：${line.title}`}>
+      <article className="line-card content-card" data-status={line.status} aria-label={`线：${line.title}`}>
         <div className="line-card-head">
           <span className="line-card-lead"><WorkStatusGlyph line={line} /></span>
           <button type="button" className="line-card-title nt-work-link" aria-label={`查看工作：${line.title}`}

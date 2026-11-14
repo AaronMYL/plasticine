@@ -1,34 +1,10 @@
-/* 定时卡（设计稿 Plasticine-Schedule）：--line2 描边、圆角 12、最宽 560；头、身、脚之间 1px 细线；身是「标签 72 · 内容」
-   一行一项；名单是浅底圆头像小块；后果一句常显在按钮上面；以他名义发出的「要你授权」用陶土橙描边。 */
-
-.schedule-card {
-  width: 100%;
-  max-width: 560px;
-  box-sizing: border-box;
-  border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line2);
-  overflow: hidden;
-}
-
-.schedule-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--line);
-}
-
-.schedule-head h3 {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
-  font-weight: 600;
-}
+/* 定时卡（设计稿 Plasticine-Schedule）：11-14 起是内容卡（shell/cards.css）；身是「标签 72 · 内容」一行一项、项和项之间
+   细线；名单是浅底圆头像小块；后果一句常显在按钮上面；以他名义发出的「要你授权」用陶土橙描边。 */
 
 .schedule-tag {
   display: inline-flex;
   flex: none;
+  margin-left: auto;
   align-items: center;
   gap: var(--space-1);
   height: 22px;
@@ -43,10 +19,6 @@
 
 .schedule-tag[data-urgent='true'] {
   box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.schedule-body {
-  padding: var(--space-1) var(--space-4);
 }
 
 .schedule-kv {
@@ -92,22 +64,11 @@
   font-size: var(--text-ui);
 }
 
-.schedule-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line);
-}
-
 .schedule-warn {
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  width: 100%;
   margin: 0;
-  padding: 0 0 var(--space-2);
   font-size: var(--text-ui);
   line-height: var(--text-ui-line);
 }
@@ -115,10 +76,6 @@
 .schedule-warn > svg {
   flex: none;
   margin-top: var(--space-hair);
-}
-
-.schedule-spacer {
-  flex: 1 1 auto;
 }
 
 .schedule-answered {

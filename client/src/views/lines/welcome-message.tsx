@@ -165,14 +165,14 @@ export function WelcomeMessage({ lineId, message }: { lineId: string; message: L
       </header>
       <p className="welcome-text">{lead}</p>
       {showCard ? (
-        <section className="welcome-card" aria-label="连上一个模型">
+        <section className="welcome-card content-card" aria-label="连上一个模型">
           <div className="welcome-card-head">
-            <h2 className="welcome-card-title">连上一个模型</h2>
+            <h2 className="content-card-title">连上一个模型</h2>
             <span className="welcome-card-sub">用已有的订阅登录，或者填 key</span>
           </div>
           {pending === null ? null : <p className="welcome-pending">连上后接着做「{pending.label}」</p>}
           <ConnectCard onConnected={onConnected} />
-          <div className="welcome-card-foot">
+          <div className="content-card-actions">
             <button type="button" className="text-button text-button-quiet" onClick={skip}>跳过</button>
           </div>
         </section>

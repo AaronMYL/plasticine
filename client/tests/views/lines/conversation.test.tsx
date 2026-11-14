@@ -171,7 +171,8 @@ describe('样刊附的「开启定时」卡（第 7 批第 14 条）', () => {
     const card = await screen.findByRole('region', { name: '每周五 08:00 出一期 · 认知科学与意识研究周报' });
     expect(within(card).getByRole('link', { name: '看认知科学与意识研究周报第 1 期' }).getAttribute('href'))
       .toBe('#/books/space/space-1');
-    expect(within(card).getAllByRole('button').map((button) => button.textContent)).toEqual(['开启定时', '再改改']);
+    // 11-14 内容卡：按钮靠右，主按钮在最右。
+    expect(within(card).getAllByRole('button').map((button) => button.textContent)).toEqual(['再改改', '开启定时']);
     fireEvent.click(within(card).getByRole('button', { name: '开启定时' }));
     await waitFor(async () => expect((await app.api.asks.get('ask-sample')).answer?.optionId).toBe('start'));
     await waitFor(() => expect(screen.queryByRole('region', { name: /每周五 08:00 出一期/ })).toBeNull());

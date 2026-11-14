@@ -105,7 +105,7 @@ export function BackupRestoreCard({ id }: { id: string }): ReactNode {
   const pending = op !== undefined && op.status !== 'failed';
   const localDraft = row?.kind === 'note' && noteDrafts.has(row.objectId);
   return (
-    <section className="ask-card backup-restore-card" aria-label="按对象恢复确认">
+    <section className="ask-card content-card backup-restore-card" aria-label="按对象恢复确认">
       <div className="ask-card-head">
         <span className="tag tag-outline">等你确认</span>
       </div>
@@ -148,15 +148,7 @@ export function BackupRestoreCard({ id }: { id: string }): ReactNode {
           {row.status === 'pending' && row.blocked.length === 0 ? (
             <>
               {localDraft ? <p role="alert">这篇笔记还有本地草稿，请先回笔记页保存或处理冲突。</p> : null}
-              <div className="ask-options">
-                <button
-                  className="primary-button"
-                  type="button"
-                  disabled={pending || localDraft}
-                  onClick={() => void restore()}
-                >
-                  确认恢复
-                </button>
+              <div className="content-card-actions">
                 {row.askId === null ? null : (
                   <button
                     className="text-button"
@@ -171,6 +163,14 @@ export function BackupRestoreCard({ id }: { id: string }): ReactNode {
                     先不
                   </button>
                 )}
+                <button
+                  className="primary-button"
+                  type="button"
+                  disabled={pending || localDraft}
+                  onClick={() => void restore()}
+                >
+                  确认恢复
+                </button>
               </div>
             </>
           ) : null}

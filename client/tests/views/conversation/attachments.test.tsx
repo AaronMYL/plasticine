@@ -163,7 +163,7 @@ it('任意类型都能加（第13批）：压缩包是一枚小条（文件形�
   fireEvent.click(screen.getByRole('button', { name: '发送' }));
   const link = await screen.findByRole('link', { name: '下载 全部素材.zip' });
   expect(link.getAttribute('download')).toBe('全部素材.zip');
-  expect(link.querySelector('.file-ext')?.textContent).toBe('ZIP');
+  expect(link.querySelector('.row-card-mark')?.textContent).toBe('ZIP');
 });
 
 it('超过 100 MB、空文件不加，输入框上方一行写清是哪一份；× 能关，关了不占地方', async () => {

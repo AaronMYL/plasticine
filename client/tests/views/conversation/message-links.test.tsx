@@ -12,17 +12,19 @@ describe('对话中的链接卡', () => {
     ]);
   });
 
-  it('外链展示服务端标题、摘要和代理封面，站内对象卡不抓网页', async () => {
+  it('外链是一行卡：服务端标题、站点和代理封面（11-14 卡片统一，摘要不写）；站内对象卡不抓网页', async () => {
     const fake = createFakeApi({ seed: false, streamStepMs: 0 });
     const preview = vi.spyOn(fake.api.links, 'preview').mockResolvedValue({ url: 'https://example.test/article',
       title: '样例文章', site: '示例站', description: '一段简短摘要', image: '/v2/mail-image?sample=1' });
     render(<ApiProvider api={fake.api}><MessageContent text={'https://example.test/article\n[旅行笔记](#/notes/n1)'} />
     </ApiProvider>);
     expect(await screen.findByText('样例文章')).toBeTruthy();
-    expect(screen.getByText('一段简短摘要')).toBeTruthy();
-    expect(screen.getByRole('link', { name: /样例文章/ }).querySelector('.message-link-cover')?.getAttribute('src'))
+    expect(screen.getByText('示例站')).toBeTruthy();
+    expect(screen.queryByText('一段简短摘要')).toBeNull();
+    expect(screen.getByRole('link', { name: /样例文章/ }).querySelector('.row-card-mark img')?.getAttribute('src'))
       .toBe('/v2/mail-image?sample=1');
     const internal = screen.getByRole('link', { name: /旅行笔记/ });
+    expect(internal.textContent).toContain('笔记');
     expect(internal.getAttribute('href')).toBe('#/notes/n1');
     expect(internal.getAttribute('target')).toBeNull();
     expect(preview).toHaveBeenCalledTimes(1);

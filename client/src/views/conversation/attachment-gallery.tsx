@@ -7,7 +7,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { AttachmentDownload } from './attachment-download.tsx';
 import { AttachmentFilePreview } from './attachment-file-preview.tsx';
-import { attachmentExt, FileExt } from './file-ext.tsx';
+import { attachmentExt } from './file-ext.tsx';
 import './attachment-gallery.css';
 
 /** 对话和联系人消息共用；加载原件仍由各自已认证的 API 负责。 */
@@ -71,13 +71,21 @@ function Preview({ items, initial, onClose }: { items: readonly AttachmentMedia[
   </dialog>, document.body);
 }
 
-/** 看不了的文件（压缩包、表格、录音……第13批）：后缀 + 名字 + 大小，点了直接下载。 */
+/** 文件那一行（11-14 一行卡）：左边后缀或 PDF 第一页，名字一行，下面「后缀 · 大小」。 */
+function FileRow({ item, mark, end }: { item: AttachmentMedia; mark: ReactNode; end: 'download' | 'chevron-right' }):
+  ReactNode {
+  return <>
+    <span className="row-card-mark" aria-hidden="true">{mark}</span>
+    <span className="row-card-text"><span className="row-card-title">{item.name}</span>
+      <span className="row-card-meta">{attachmentExt(item.name, item.mimeType)} · {fileSize(item.bytes)}</span></span>
+    <span className="row-card-end"><Icon name={end} size={16} /></span>
+  </>;
+}
+
+/** 看不了的文件（压缩包、表格、录音……第13批）：点了直接下载。 */
 function DownloadFile({ item }: { item: AttachmentMedia }): ReactNode {
-  return <a className="attachment-file" href={item.url} download={item.name} aria-label={`下载 ${item.name}`}>
-    <span className="attachment-file-thumb" data-ext="true"><FileExt name={item.name} mime={item.mimeType} /></span>
-    <span className="attachment-file-info"><span>{item.name}</span>
-      <span className="text-meta">{fileSize(item.bytes)}</span></span>
-    <Icon name="download" size={16} />
+  return <a className="row-card attachment-file" href={item.url} download={item.name} aria-label={`下载 ${item.name}`}>
+    <FileRow item={item} mark={attachmentExt(item.name, item.mimeType)} end="download" />
   </a>;
 }
 
@@ -95,15 +103,10 @@ export function AttachmentGallery({ items }: { items: readonly AttachmentMedia[]
     {files.map((item) => {
       if (!previewable(item.mimeType)) return <DownloadFile key={item.id} item={item} />;
       const pdf = item.mimeType === 'application/pdf' && item.loadContent !== undefined;
-      return <button key={item.id} type="button" className="attachment-file"
+      return <button key={item.id} type="button" className="row-card attachment-file"
         aria-label={`预览文件 ${item.name}`} onClick={() => setSelected(item)}>
-        <span className="attachment-file-thumb" aria-hidden="true" data-ext={!pdf}>
-          {pdf ? <AttachmentFilePreview item={item} compact /> : <FileExt name={item.name} mime={item.mimeType} />}
-        </span>
-        <span className="attachment-file-info"><span>{item.name}</span>
-          <span className="text-meta">{pdf ? `${attachmentExt(item.name, item.mimeType)} · ` : ''}
-            {fileSize(item.bytes)}</span></span>
-        <Icon name="external" size={16} />
+        <FileRow item={item} end="chevron-right"
+          mark={pdf ? <AttachmentFilePreview item={item} compact /> : attachmentExt(item.name, item.mimeType)} />
       </button>;
     })}
     {selected === null ? null : <Preview key={selected.id} items={viewable}

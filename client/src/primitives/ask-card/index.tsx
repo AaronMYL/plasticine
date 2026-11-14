@@ -56,13 +56,15 @@ export function AskCardFrame({ ask, children, label }: {
   children: ReactNode;
   label?: string;
 }): ReactNode {
-  return <section className="ask-card" data-kind={ask.kind} aria-label={label ?? `${ask.kindLabel}：${ask.question}`}>
-    <header className="ask-card-head">
+  // 11-14 卡片统一：内容卡（shell/cards.css），头一行小签 + 问题，是哪件任务的写在下面一行。
+  return <section className="ask-card content-card" data-kind={ask.kind}
+    aria-label={label ?? `${ask.kindLabel}：${ask.question}`}>
+    <header className="content-card-head">
       <AskTag ask={ask} />
-      {ask.taskTitle == null || ask.question.includes(ask.taskTitle) ? null
-        : <span className="ask-card-task">{ask.taskTitle}</span>}
+      <p className="ask-question content-card-title">{ask.question}</p>
     </header>
-    <p className="ask-question">{ask.question}</p>
+    {ask.taskTitle == null || ask.question.includes(ask.taskTitle) ? null
+      : <p className="ask-card-task">{ask.taskTitle}</p>}
     {children}
   </section>;
 }

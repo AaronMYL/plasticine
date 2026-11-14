@@ -1,0 +1,153 @@
+/*
+ * 对话里的卡只有两种（11-14 界面统一，Aaron 弹框选「统一成两种」，设计稿「对话框里的图片和卡片」）：
+ * - 一行卡（.row-card）：链接、笔记任务这些东西、文件、报告、网页。高 64；左边 40 的方块（站点图标、类型图标、缩略图或
+ *   后缀）；标题一行 14/22，下面一行来源 12/18；点整张打开。
+ * - 内容卡（.content-card）：要你定、对外授权、订阅、日程、后台线、欢迎。内边距 16；头一行小签 + 标题；按钮在底部靠右，
+ *   和弹框一样，主按钮最多一个、放最右；一句后果或归属写在按钮那一行的左边。
+ * 都是透明底、细描边、圆角 12，最宽 560，对话框窄就占满；卡和卡之间 8；卡里的图圆角 8。手机上内容卡的按钮并排、44 高。
+ */
+
+.row-card,
+.content-card {
+  width: 100%;
+  max-width: 560px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+}
+
+/* ---------- 一行卡 ---------- */
+
+.row-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  /* 和页面同底（看着是透明的），动态背景从卡下面过时不透出来压住字。 */
+  background: var(--bg);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.row-card:hover {
+  box-shadow: inset 0 0 0 1px var(--line2), inset 0 0 0 100vmax var(--tint);
+}
+
+.row-card:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.row-card-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--tint2);
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+  font-weight: 600;
+}
+
+.row-card-mark > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.row-card-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.row-card-title,
+.row-card-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-card-title {
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.row-card-meta {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.row-card-end {
+  flex: none;
+  color: var(--fg2);
+}
+
+/* ---------- 内容卡 ---------- */
+
+.content-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.content-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.content-card-title {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.content-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* 按钮那一行左边的一句（后果、归哪个项目）：把按钮推到右边。 */
+.content-card-note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  margin-right: auto;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+@media (max-width: 767px) {
+  .content-card-actions > :is(button, a) {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .content-card-note {
+    flex-basis: 100%;
+  }
+}

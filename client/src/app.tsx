@@ -21,6 +21,7 @@ import './tokens.css';
 import './shell/base.css';
 import './shell/secondary-button.css';
 import './shell/avatar.css';
+import './shell/cards.css';
 
 export interface AppProps {
   api: PlasticineApi;

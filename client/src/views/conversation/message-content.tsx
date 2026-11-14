@@ -2,7 +2,8 @@ import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { useApiOrNull } from '../../api/context.tsx';
 import type { LinkPreview } from '../../api/shared.ts';
 import { Markdown } from '../../primitives/message/markdown.tsx';
-import { Icon } from '../../shell/icons.tsx';
+import { HueTile, KIND_STYLE, type HueName } from '../../shell/hue.tsx';
+import { Icon, type IconName } from '../../shell/icons.tsx';
 import { inAppHash } from '../../shell/internal-page.ts';
 import { SiteIcon } from '../../shell/site-icon.tsx';
 import './message-links.css';
@@ -64,26 +65,39 @@ function LinkCard({ href, label }: { href: string; label: string }): ReactNode {
   const host = new URL(href).hostname;
   // 服务端封面必须走本站代理；即使回答里意外给了原站地址也不让浏览器直连。
   const cover = preview?.image?.startsWith('/v2/mail-image?') === true ? preview.image : null;
-  return <a className="message-link-card" href={href} target="_blank" rel="noreferrer" data-preview-failed={failed}>
-    <span className="message-link-copy">
-      <span className="message-link-site text-meta"><SiteIcon url={href} title={host} />{preview?.site ?? host}</span>
-      <span className="message-link-title">{preview?.title || label || href}</span>
-      {preview?.description ? <span className="message-link-description">{preview.description}</span> : null}
+  // 11-14 一行卡：左边 40 的方块是封面（没有就是站点图标），标题一行，下面一行站点。
+  return <a className="row-card message-link-card" href={href} target="_blank" rel="noreferrer"
+    data-preview-failed={failed}>
+    <span className="row-card-mark">
+      {cover === null || imageFailed ? <SiteIcon url={href} title={host} size={20} />
+        : <img src={cover} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} />}
     </span>
-    {cover === null || imageFailed ? null : <img className="message-link-cover" src={cover} alt=""
-      loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} />}
+    <span className="row-card-text">
+      <span className="row-card-title">{preview?.title || label || href}</span>
+      <span className="row-card-meta">{preview?.site ?? host}</span>
+    </span>
+    <span className="row-card-end"><Icon name="external" size={16} /></span>
   </a>;
 }
 
+/** 站内的东西：名字、类别色和图标（和首页卡同一套，shell/hue.tsx）。 */
+const OBJECT_KINDS: Readonly<Record<string, { name: string; hue: HueName; icon: IconName }>> = {
+  notes: { name: '笔记', ...KIND_STYLE.note }, books: { name: '图书', ...KIND_STYLE.book },
+  tasks: { name: '任务', ...KIND_STYLE.task }, library: { name: '资料库', hue: 'ochre', icon: 'library' },
+  memory: { name: '记忆', hue: 'plum', icon: 'memory' }, projects: { name: '项目', ...KIND_STYLE.project },
+  plasticine: { name: '对话', hue: 'clay', icon: 'conversation' },
+  messages: { name: '消息', hue: 'sky', icon: 'conversation' },
+};
+
 function ObjectCard({ href, label }: { href: string; label: string }): ReactNode {
-  const kind = href.split('/')[1] ?? '';
-  const names: Readonly<Record<string, string>> = { notes: '笔记', books: '图书', tasks: '任务', library: '资料库',
-    memory: '记忆', projects: '项目', plasticine: '对话', messages: '消息' };
-  const name = names[kind] ?? '查看内容';
-  return <a className="object-reference message-object-card" href={href}>
-    <Icon name={kind === 'notes' ? 'notes' : 'file'} size={20} />
-    <span><span className="text-meta">{name}</span><span>{label || name}</span></span>
-    <Icon name="chevron-right" size={16} />
+  const kind = OBJECT_KINDS[href.split('/')[1] ?? ''] ?? { name: '查看内容', hue: 'ink', icon: 'file' };
+  return <a className="object-reference row-card message-object-card" href={href}>
+    <HueTile hue={kind.hue} icon={kind.icon} size={40} />
+    <span className="row-card-text">
+      <span className="row-card-title">{label || kind.name}</span>
+      <span className="row-card-meta">{kind.name}</span>
+    </span>
+    <span className="row-card-end"><Icon name="chevron-right" size={16} /></span>
   </a>;
 }
 

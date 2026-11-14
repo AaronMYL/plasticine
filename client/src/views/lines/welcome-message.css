@@ -131,13 +131,8 @@
   color: var(--fg2);
 }
 
+/* 连模型那张是内容卡（shell/cards.css，11-14 卡片统一）。 */
 .welcome-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-5) var(--space-3);
-  border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line2);
   animation: welcome-rise var(--motion-base) var(--ease-out);
 }
 
@@ -146,13 +141,6 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-3);
-}
-
-.welcome-card-title {
-  margin: 0;
-  font-size: var(--text-section);
-  line-height: var(--text-section-line);
-  font-weight: 600;
 }
 
 .welcome-card-sub,
@@ -166,11 +154,6 @@
 .welcome-pending {
   font-size: var(--text-ui);
   line-height: var(--text-ui-line);
-}
-
-.welcome-card-foot {
-  display: flex;
-  justify-content: flex-end;
 }
 
 @keyframes welcome-rise {

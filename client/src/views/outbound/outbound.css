@@ -1,7 +1,5 @@
-.outbound-card { max-width: 640px; gap: var(--space-4); }
-.outbound-card-head { display: flex; align-items: flex-start; gap: var(--space-3); }
-.outbound-card-head > div { min-width: 0; flex: 1; }
-.outbound-consequence { margin: var(--space-1) 0 0; font-size: var(--text-ui); line-height: var(--text-ui-line); }
+/* 对外授权卡是内容卡（shell/cards.css，11-14 卡片统一）：最宽 560，按钮靠右。 */
+.outbound-consequence { margin: 0; font-size: var(--text-ui); line-height: var(--text-ui-line); }
 .grant-fields { display: flex; flex-direction: column; min-width: 0; }
 .grant-field { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--space-3);
   padding: var(--space-3) 0;

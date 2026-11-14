@@ -84,7 +84,7 @@ it('看不了的文件（压缩包）不开预览：后缀 + 名字 + 大小，�
   const link = screen.getByRole('link', { name: '下载 资料.zip' });
   expect(link.getAttribute('download')).toBe('资料.zip');
   expect(link.getAttribute('href')).toBe('https://example.test/archive.zip');
-  expect(link.querySelector('.file-ext')?.textContent).toBe('ZIP');
+  expect(link.querySelector('.row-card-mark')?.textContent).toBe('ZIP');
   expect(link.textContent).toContain('资料.zip');
   expect(screen.queryByRole('button', { name: /预览文件/ })).toBeNull();
 });

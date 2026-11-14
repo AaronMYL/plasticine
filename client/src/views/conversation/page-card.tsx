@@ -1,5 +1,6 @@
 // 「问这一页」发出去的那句里的网页卡（11-13 Aaron 弹框选「快照卡」）：上面是这一页当时的截图（有才画），下面一行是
 // 网站图标、标题、域名；点这一行摊开「带给 Plasticine 的内容」原文——原来这段给 AI 的结构数据直接露在引用片里，太乱。
+// 11-14 卡片统一：下面那一行是一行卡的样子（40 的方块、标题一行、来源一行），截图只留顶上一截，点开看整张。
 
 import type { ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
@@ -37,12 +38,12 @@ export function PageCard({ quote, page }: { quote: QuoteChip; page: PageQuoteInf
       )}
       <details className="page-card-detail">
         <summary aria-label={`${page.title}，${hostOf(page.url)}，${scope}；查看带给 Plasticine 的内容`}>
-          <SiteIcon url={page.url} title={page.title} size={20} />
-          <span className="page-card-text">
-            <span className="page-card-title" title={page.title}>{page.title}</span>
-            <span className="page-card-meta">{hostOf(page.url)} · {scope}</span>
+          <span className="row-card-mark"><SiteIcon url={page.url} title={page.title} size={20} /></span>
+          <span className="row-card-text">
+            <span className="row-card-title">{page.title}</span>
+            <span className="row-card-meta">{hostOf(page.url)} · {scope}</span>
           </span>
-          <Icon name="chevron-down" size={14} />
+          <Icon name="chevron-down" size={16} />
         </summary>
         <pre className="page-card-raw" tabIndex={0} aria-label="带给 Plasticine 的内容">{quote.text}</pre>
       </details>

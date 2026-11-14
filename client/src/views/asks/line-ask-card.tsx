@@ -129,33 +129,33 @@ function PlainAskCard({ ask, thread }: { ask: AskView; thread: string | null }):
   const label = card === undefined ? thread : `以你的名义发给${card.to.name}`;
   const question = card === undefined ? ask.question : `把这张任务卡发给${card.to.name}？`;
   return (
-    <section className="line-ask" data-kind={ask.kind} aria-label={`${ask.kindLabel}：${question}`}>
-      <header className="line-ask-head">
+    <section className="line-ask content-card" data-kind={ask.kind} aria-label={`${ask.kindLabel}：${question}`}>
+      <header className="content-card-head">
         <AskTag ask={ask} />
-        {label === null || label === undefined ? null : <span className="line-ask-thread">{label}</span>}
+        <h3 className="content-card-title">{question}</h3>
       </header>
-      <h3 className="line-ask-question">{question}</h3>
+      {label === null || label === undefined ? null : <p className="line-ask-thread">{label}</p>}
       {card === undefined ? null : <TaskCardPreview card={card} />}
       {detail.args === null || card !== undefined ? null : <Preview args={detail.args} />}
       {detail.rest === null ? null : <p className="line-ask-detail">{detail.rest}</p>}
       {choices.length === 0 ? <WriteAnswer busy={busy} onSend={(text) => void live.asks.answer(ask, { text })} />
         : null}
-      <div className="line-ask-actions">
-        {choices.map((option, index) => (
-          <button key={option.id} type="button" disabled={busy}
-            className={index === 0 ? 'primary-button' : 'secondary-button'}
-            aria-label={option.recommended ? `${option.label}（推荐）` : undefined}
-            onClick={() => answer(option.id)}>{option.label}</button>
-        ))}
+      {/* 11-14 内容卡：后果一句在左，按钮靠右，主按钮在最右（和弹框一样）。 */}
+      <div className="content-card-actions">
         {detail.consequence === null ? null : (
-          <span className="line-ask-consequence"><Icon name={card === undefined ? 'alert' : 'info'} size={14} />
+          <span className="content-card-note"><Icon name={card === undefined ? 'alert' : 'info'} size={14} />
             {detail.consequence}</span>
         )}
-        <span className="line-ask-spacer" />
         <button type="button" className="text-button text-button-quiet" disabled={busy}
           onClick={() => (deny === undefined ? void live.asks.defer(ask) : answer(deny.id))}>
           {deny?.label ?? '先不'}
         </button>
+        {[...choices].reverse().map((option) => (
+          <button key={option.id} type="button" disabled={busy}
+            className={option === choices[0] ? 'primary-button' : 'secondary-button'}
+            aria-label={option.recommended ? `${option.label}（推荐）` : undefined}
+            onClick={() => answer(option.id)}>{option.label}</button>
+        ))}
       </div>
       {work?.error == null ? null : <p className="line-ask-error" role="alert">{work.error}</p>}
     </section>

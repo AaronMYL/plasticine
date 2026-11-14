@@ -1,6 +1,7 @@
 // 对话里的定时卡（《优化清单》第 3 条，设计稿 Plasticine-Schedule）：Plasticine 起草，他点确认才生效。
 // 头：图标块 · 「每天 15:00 · 抖音续火花」· 要你授权（以他名义发出的）；身：对谁（名单）· 发什么 · 什么时候（他所在地的时间）·
 // 在哪做 · 结果；脚：以他名义发出的常显后果，确认 · 改名单，行尾写归哪个项目。答过了按钮收起，写他选了什么。
+// 11-14 卡片统一：是内容卡（shell/cards.css），头、身、脚之间不再画线；归哪个项目在按钮那一行左边，按钮靠右。
 
 import type { ReactNode } from 'react';
 import type { AskView } from '../../api/types.ts';
@@ -23,10 +24,10 @@ export function ScheduleAskCard({ ask, card }: { ask: AskView; card: ScheduleCar
   const busy = work?.busy === true || ask.status !== 'open';
   const head = `${card.when} · ${card.title}`;
   return (
-    <section className="schedule-card" aria-label={`${ask.kindLabel}：${head}`}>
-      <header className="schedule-head">
+    <section className="schedule-card content-card" aria-label={`${ask.kindLabel}：${head}`}>
+      <header className="content-card-head">
         <HueTile hue="rose" icon="clock" />
-        <h3>{head}</h3>
+        <h3 className="content-card-title">{head}</h3>
         <span className="schedule-tag" data-urgent={card.outward}>
           <Icon name={card.outward ? 'lock' : 'check'} size={12} />{ask.kindLabel}
         </span>
@@ -45,18 +46,18 @@ export function ScheduleAskCard({ ask, card }: { ask: AskView; card: ScheduleCar
         {card.place === null ? null : <Row label="在哪做">{card.place}</Row>}
         <Row label="结果">{card.report}</Row>
       </div>
-      <footer className="schedule-foot">
-        {ask.detail === null ? null : (
-          <p className="schedule-warn"><Icon name="alert" size={16} /><span>{ask.detail}</span></p>
-        )}
-        {ask.status === 'open' ? ask.options.map((option, index) => (
+      {ask.detail === null ? null : (
+        <p className="schedule-warn"><Icon name="alert" size={16} /><span>{ask.detail}</span></p>
+      )}
+      {/* 11-14 内容卡：归哪个项目在左，按钮靠右、主按钮最右。 */}
+      <footer className="content-card-actions">
+        <span className="content-card-note">归「{card.projectName}」</span>
+        {ask.status === 'open' ? [...ask.options].reverse().map((option) => (
           <button key={option.id} type="button" disabled={busy}
-            className={index === 0 ? 'primary-button' : 'secondary-button'}
+            className={option === ask.options[0] ? 'primary-button' : 'secondary-button'}
             aria-label={option.recommended ? `${option.label}（推荐）` : undefined}
             onClick={() => void live.asks.answer(ask, { optionId: option.id })}>{option.label}</button>
         )) : <span className="schedule-answered">{ask.answer?.label ?? '已答'}</span>}
-        <span className="schedule-spacer" />
-        <span className="schedule-note">归「{card.projectName}」</span>
       </footer>
       {work?.error == null ? null : <p className="line-ask-error" role="alert">{work.error}</p>}
     </section>
