@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { ComposePredictor, type ComposeContext } from '../../src/brain/index.ts';
+import { COMPOSE_SYSTEM } from '../../src/brain/compose-predictor.ts';
 import { MIN_DECIDED } from '../../src/loop/tally.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 import { scriptedText } from './helpers.ts';
@@ -18,6 +19,12 @@ const talk = (myTurn: boolean): ComposeContext => ({ with: 'Plasticine', myTurn,
   { who: 'me', name: '他', text: '它是什么时候装上的？' },
   { who: 'other', name: 'Plasticine', text: '10 月 28 日装的，是你自己下的。' },
 ] });
+
+test('the prompt always asks for a guess: a wrong one costs nothing (11-14 live: told to give nothing when unsure, the '
+  + 'model gave nothing every time)', () => {
+  assert.doesNotMatch(COMPOSE_SYSTEM, /输出空/);
+  assert.match(COMPOSE_SYSTEM, /一定给出一句/);
+});
 
 test('empty draft when it is not his turn: no guess and no model call', async () => {
   const model = scriptedText(['不该被调']);
