@@ -1,26 +1,5 @@
-/* 记忆里的「规则」和「说法冲突」（11-11 第二步设计稿 M2 / M3 / M4）：平铺的行、细线分隔，不用卡片；只有冲突里的
-   几条并排成块，现在生效的那条描一圈绿。颜色都用令牌。 */
-
-.rules-page {
-  flex-direction: row;
-  gap: 0;
-  min-height: 100%;
-  padding: 0;
-}
-
-@media (min-width: 768px) {
-  .rules-page.page:not(.page-fill) {
-    max-width: none;
-  }
-}
-
-.rules-main {
-  flex: 1;
-  min-width: 0;
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 32px 40px 80px;
-}
+/* 记忆的「说法冲突」页和记忆页顶上的冲突提示条（11-11 第二步设计稿 M3）：平铺的行、细线分隔，不用卡片；只有冲突里的
+   几条并排成块，现在生效的那条描一圈绿。颜色都用令牌。第13批规则页换成规则搬家，旧规则页的样式去掉了。 */
 
 .rules-crumb {
   display: flex;
@@ -39,13 +18,6 @@
   color: var(--fg);
 }
 
-.rules-filter {
-  margin: 4px 0 8px;
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-.rules-conflicts,
 .memory-conflicts {
   display: flex;
   align-items: center;
@@ -66,77 +38,14 @@
   box-sizing: border-box;
 }
 
-.rules-conflicts > svg:first-child,
 .memory-conflicts > svg:first-child {
   flex: none;
   color: var(--accent);
 }
 
-.rules-conflicts > span,
 .memory-conflicts-text {
   flex: 1;
   min-width: 0;
-}
-
-.rules-section {
-  margin-top: 28px;
-}
-
-.rules-section h2 {
-  margin: 0 0 4px;
-  font-size: 15px;
-  line-height: 24px;
-  font-weight: 600;
-}
-
-.rules-section ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rule-row-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background var(--motion-fast) var(--ease-out);
-}
-
-.rule-row-main:hover {
-  background: var(--tint);
-}
-
-.rule-row[data-selected='true'] .rule-row-main {
-  background: var(--tint2);
-}
-
-.rule-bullet {
-  color: var(--fg3);
-  line-height: 24px;
-}
-
-.rule-text {
-  flex: 1;
-  min-width: 0;
-  font-size: 15px;
-  line-height: 24px;
-  overflow-wrap: anywhere;
-}
-
-.rule-conflict {
-  display: inline-grid;
-  place-items: center;
-  height: 24px;
-  color: var(--accent);
 }
 
 .rule-chip {
@@ -162,190 +71,7 @@
   white-space: nowrap;
 }
 
-.rule-day {
-  width: 40px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.rules-add {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin-top: 16px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--fg2);
-  font: inherit;
-  font-size: 14px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.rules-add:hover {
-  background: var(--tint);
-  color: var(--fg);
-}
-
-.rule-editor {
-  margin: 8px 0 12px;
-}
-
-.rule-editor textarea {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 84px;
-  padding: 10px 12px;
-  border: 1px solid var(--line2);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  font-size: 15px;
-  line-height: 24px;
-  resize: vertical;
-}
-
-.rule-editor-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.rule-editor-actions .segmented {
-  margin-right: auto;
-}
-
 .rules-error {
-  color: var(--err);
-}
-
-.rules-history {
-  margin: 12px 0;
-  padding: 12px 0;
-  border-block: 1px solid var(--line);
-}
-
-.rules-history ol {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rules-history li {
-  display: flex;
-  gap: 16px;
-  padding: 6px 0;
-  font-size: 13px;
-}
-
-.rules-history time {
-  margin-left: auto;
-  color: var(--fg2);
-  white-space: nowrap;
-}
-
-.rules-aside {
-  position: sticky;
-  top: 0;
-  flex: none;
-  align-self: flex-start;
-  width: 360px;
-  min-height: 100%;
-  padding: 24px;
-  border-left: 1px solid var(--line);
-  box-sizing: border-box;
-  animation: rules-aside-in var(--motion-fast) var(--ease-out);
-}
-
-@keyframes rules-aside-in {
-  from {
-    opacity: 0;
-    transform: translateX(8px);
-  }
-}
-
-.rule-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.rule-detail-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.rule-detail-head > :first-child {
-  flex: 1;
-  min-width: 0;
-}
-
-.rule-detail-text {
-  margin: 0;
-  font-size: 16px;
-  line-height: 26px;
-  font-weight: 500;
-}
-
-.rule-label {
-  margin: 0 0 6px;
-  color: var(--fg2);
-  font-size: 12px;
-  line-height: 18px;
-  font-weight: 500;
-}
-
-.rule-detail p {
-  margin: 0;
-}
-
-.rule-source {
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--tint);
-  font-size: 14px;
-  line-height: 22px;
-}
-
-.rule-source a {
-  color: inherit;
-}
-
-.rule-scope {
-  box-sizing: border-box;
-  width: 100%;
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--line2);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  font-size: 14px;
-}
-
-.rule-changes {
-  margin: 0;
-  padding: 0;
-  color: var(--fg2);
-  font-size: 13px;
-  line-height: 22px;
-  list-style: none;
-}
-
-.rule-detail-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.rule-delete {
   color: var(--err);
 }
 
@@ -435,39 +161,6 @@
   display: flex;
   gap: 16px;
   margin-top: 10px;
-}
-
-@media (max-width: 700px) {
-  .rules-main {
-    padding: 16px 16px 90px;
-  }
-
-  .rule-row-main {
-    flex-wrap: wrap;
-    padding-inline: 4px;
-  }
-
-  .rule-text {
-    flex-basis: calc(100% - 24px);
-  }
-
-  .rule-row-main .rule-chip {
-    margin-left: 18px;
-  }
-
-  .rule-day {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rules-aside {
-    animation: none;
-  }
-}
-
-.rule-detail[data-sheet='true'] {
-  padding: 4px 16px 24px;
 }
 
 @media (max-width: 700px) {
