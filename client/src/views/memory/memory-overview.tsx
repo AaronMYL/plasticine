@@ -34,7 +34,8 @@ export function MemoryOverview({ navigate, now = new Date(), children }:
             });
           }}>全量整理</button>}
       </div>
-      {overview === null || overview.text.trim() === '' ? null : <p className="memory-overview-text">{overview.text}</p>}
+      {overview === null || overview.text.trim() === '' ? null
+        : <p className="memory-overview-text">{overview.text}</p>}
       {error === null ? null : <p className="text-meta is-error" role="alert">{error}</p>}
       {pending === 0 ? null : (
         <button type="button" className="topic-row memory-overview-list" onClick={() => navigate(cleanupRoute())}>

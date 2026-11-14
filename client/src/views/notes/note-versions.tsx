@@ -4,6 +4,7 @@ import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import type { NoteVersionText, NoteVersionView } from '../../api/shared.ts';
 import { Sheet } from '../../primitives/sheet/index.tsx';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { PHONE_BELOW } from '../../shell/layout.ts';
 import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 import { useStore } from '../../state/use-store.ts';
@@ -144,25 +145,9 @@ export function NoteVersions({
               </button>
             )}
             {!confirm ? null : (
-              <div className="ask-card">
-                <div className="ask-card-head">
-                  <span className="tag tag-outline">等你确认</span>
-                </div>
-                <p className="ask-question">恢复到第 {preview.version} 版？会先保存当前草稿，已有版本都会保留。</p>
-                <div className="ask-options">
-                  <button
-                    type="button"
-                    className="primary-button"
-                    disabled={busy || saveState.status === 'conflict'}
-                    onClick={() => void restore()}
-                  >
-                    确认恢复
-                  </button>
-                  <button type="button" className="text-button" onClick={() => setConfirm(false)}>
-                    先不
-                  </button>
-                </div>
-              </div>
+              <ConfirmDialog title={`恢复到第 ${preview.version} 版？`} body="会先保存当前草稿，已有版本都会保留。"
+                confirmLabel="恢复" tone="primary" busy={busy || saveState.status === 'conflict'}
+                onCancel={() => setConfirm(false)} onConfirm={() => void restore()} />
             )}
           </>
         )}

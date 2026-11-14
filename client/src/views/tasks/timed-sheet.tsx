@@ -6,6 +6,7 @@ import { useState, type ComponentType, type ReactNode } from 'react';
 import type { TeammateView, TimedRowView, TimedSource } from '../../api/shared.ts';
 import { useTimeZone } from '../../live.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { StatusGlyph } from '../../shell/glyph.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { nextText } from './task-format.ts';
@@ -52,17 +53,13 @@ function DefaultTimed({ row, actions, close }: TimedSheetProps): ReactNode {
           }}>看这条线做了什么</button>
         </Field>
       )}
-      {!row.canRemove ? null : removing ? (
-        <div className="tasks-confirm" role="group" aria-label="删掉这个定时任务">
-          <span>删掉后不再到点，已经做过的结果还在。</span>
-          <button type="button" className="primary-button button-small" disabled={busy}
-            onClick={() => void actions.remove(row.id).then(close)}>删掉</button>
-          <button type="button" className="text-button text-button-quiet" onClick={() => setRemoving(false)}>算了</button>
-        </div>
-      ) : (
+      {!row.canRemove ? null : (
         <button type="button" className="secondary-button button-small tasks-remove"
-          onClick={() => setRemoving(true)}>删掉</button>
+          onClick={() => setRemoving(true)}>删除</button>
       )}
+      {removing ? <ConfirmDialog title={`删除「${row.title}」？`} body="删除后不再到点，已经做过的结果还在。"
+        confirmLabel="删除" busy={busy} onCancel={() => setRemoving(false)}
+        onConfirm={() => void actions.remove(row.id).then(close)} /> : null}
       {actions.failed?.id === row.id ? <p className="tasks-error" role="alert">{actions.failed.text}</p> : null}
     </div>
   );
@@ -71,6 +68,7 @@ function DefaultTimed({ row, actions, close }: TimedSheetProps): ReactNode {
 function MateBody({ mate, rows, actions }: { mate: TeammateView; rows: TimedRowView[]; actions: TaskActions })
   : ReactNode {
   const busy = actions.busy === mate.id;
+  const [stopping, setStopping] = useState(false);
   return (
     <div className="tasks-sheet-body">
       <Field label="进行中">{mate.now === '' ? '—' : mate.now}</Field>
@@ -80,12 +78,12 @@ function MateBody({ mate, rows, actions }: { mate: TeammateView; rows: TimedRowV
         </ul>
       </Field>
       {mate.canStop ? (
-        <div className="tasks-confirm">
-          <span>叫停后它管的定时都停下，正在做的这一轮也停；要再开在定时里拨开关。</span>
-          <button type="button" className="primary-button button-small" disabled={busy}
-            onClick={() => void actions.stopTeammate(mate.id)}>叫停</button>
-        </div>
+        <button type="button" className="secondary-button button-small tasks-remove" disabled={busy}
+          onClick={() => setStopping(true)}>叫停</button>
       ) : null}
+      {stopping ? <ConfirmDialog title={`叫停${mate.name}？`} confirmLabel="叫停" busy={busy}
+        body="它管的定时都停下，正在做的这一轮也停；要再开在定时里拨开关。" onCancel={() => setStopping(false)}
+        onConfirm={() => void actions.stopTeammate(mate.id).then(() => setStopping(false))} /> : null}
       {actions.failed?.id === mate.id ? <p className="tasks-error" role="alert">{actions.failed.text}</p> : null}
     </div>
   );

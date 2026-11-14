@@ -1,7 +1,7 @@
 // 联系人页的两个浮层（原语 7 · Sheet，电脑浮在主区里、手机从底下推上来）：发任务（标题、要做到什么、验收看到什么、期限）和
 // 加联系人（@handle、一句话）。字在 inline-drafts，发出去拿到结果才清；没了结时锁住，下面一行能核实或重发。
 
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import type { ContactRow } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
@@ -47,6 +47,7 @@ export function TaskSheet({ contact, open, phone, onClose }: { contact: ContactR
   const drafts = useStore(inlineDrafts.store);
   const op = useOp(contactOpKey(contact.id, 'task'));
   const locked = op !== undefined && isOpenOp(op);
+  const formId = useId();
   const filled = (['title', 'goal', 'acceptance'] as const)
     .every((field) => (drafts.get(taskDraftKey(contact.id, field)) ?? '').trim() !== '');
   const submit = async (): Promise<void> => {
@@ -54,9 +55,13 @@ export function TaskSheet({ contact, open, phone, onClose }: { contact: ContactR
       onClose();
     }
   };
+  const footer = <>
+    <button type="button" className="secondary-button" onClick={onClose}>取消</button>
+    <button type="submit" form={formId} className="primary-button" disabled={locked || !filled}>发出去</button></>;
   return (
-    <Sheet open={open} variant={phone ? 'drawer' : 'panel'} title={`发任务给${contact.name}`} onClose={onClose}>
-      <form className="contact-sheet-form" onSubmit={(event) => {
+    <Sheet open={open} variant={phone ? 'drawer' : 'panel'} title={`发任务给${contact.name}`} onClose={onClose}
+      footer={footer}>
+      <form id={formId} className="contact-sheet-form" onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}>
@@ -64,9 +69,6 @@ export function TaskSheet({ contact, open, phone, onClose }: { contact: ContactR
           <DraftField key={field} draftKey={taskDraftKey(contact.id, field)} label={label} disabled={locked}
             {...(multiline === undefined ? {} : { multiline })} {...(type === undefined ? {} : { type })} />
         ))}
-        <button type="submit" className="primary-button contact-sheet-submit" disabled={locked || !filled}>
-          发出去
-        </button>
         {op === undefined || op.status === 'running' ? null : (
           <OpLine op={op} onRetry={(key) => void contactActions.retry(key)}
             onDismiss={(key) => actionOps.dismiss(key)} />
@@ -83,6 +85,7 @@ export function AddContactSheet({ open, phone, onClose, onAdded }: { open: boole
   const drafts = useStore(inlineDrafts.store);
   const op = useOp(CONTACT_ADD_OP_KEY);
   const locked = op !== undefined && isOpenOp(op);
+  const formId = useId();
   const handle = (drafts.get(addDraftKey('handle')) ?? '').trim();
   const submit = async (): Promise<void> => {
     const id = await contactActions.add();
@@ -91,17 +94,17 @@ export function AddContactSheet({ open, phone, onClose, onAdded }: { open: boole
       onAdded(id);
     }
   };
+  const footer = <>
+    <button type="button" className="secondary-button" onClick={onClose}>取消</button>
+    <button type="submit" form={formId} className="primary-button" disabled={locked || handle === ''}>添加</button></>;
   return (
-    <Sheet open={open} variant={phone ? 'drawer' : 'panel'} title="加联系人" onClose={onClose}>
-      <form className="contact-sheet-form" onSubmit={(event) => {
+    <Sheet open={open} variant={phone ? 'drawer' : 'panel'} title="加联系人" onClose={onClose} footer={footer}>
+      <form id={formId} className="contact-sheet-form" onSubmit={(event) => {
         event.preventDefault();
         void submit();
       }}>
         <DraftField draftKey={addDraftKey('handle')} label="@handle" placeholder="linyi" disabled={locked} />
         <DraftField draftKey={addDraftKey('note')} label="一句话" disabled={locked} />
-        <button type="submit" className="primary-button contact-sheet-submit" disabled={locked || handle === ''}>
-          添加
-        </button>
         {op === undefined || op.status === 'running' ? null : (
           <OpLine op={op} onRetry={(key) => void contactActions.retry(key)}
             onDismiss={(key) => actionOps.dismiss(key)} />

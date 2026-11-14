@@ -257,7 +257,7 @@ button.space-crumb:hover {
 }
 
 .space-top .grow,
-.sub-foot .grow {
+.sub-sheet .sheet-foot .grow {
   flex: 1;
   min-width: 0;
 }
@@ -423,26 +423,10 @@ button.space-crumb:hover {
   font-size: var(--text-caption);
 }
 
-.sub-foot {
-  position: sticky;
-  bottom: -16px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: var(--space-3) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line);
-  background: var(--bg);
-}
-
 .sheet-drawer.sub-sheet .sheet-body {
   padding: 0 var(--space-4);
 }
 
-.sheet-drawer .sub-foot {
-  bottom: 0;
-  margin: var(--space-3) calc(-1 * var(--space-4)) 0;
-}
 
 .sub-latest {
   display: flex;

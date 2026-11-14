@@ -3,7 +3,7 @@
 // 第13批（设计稿 Editor）：编辑主线和编辑队友一个样子——头像、名字、Soul、模型；「换画风」点开才出画风格子。
 // 名字和画风、Soul、模型分三处存，依次存，哪一步没存上就停在那一步、写原因，已经存上的不回滚。
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useApi } from '../../api/context.tsx';
 import { createRequestId } from '../../api/request-id.ts';
@@ -32,6 +32,7 @@ export function MainEditor({ phone, onClose }: { phone: boolean; onClose: () => 
   const [looking, setLooking] = useState(false);
   const [picked, setPicked] = useState(false);
   const [busy, setBusy] = useState(false);
+  const formId = useId();
   const [problem, setProblem] = useState<string | null>(null);
   const mounted = useRef(true);
   useEffect(() => () => { mounted.current = false; }, []);
@@ -61,9 +62,13 @@ export function MainEditor({ phone, onClose }: { phone: boolean; onClose: () => 
     if (failed === null) onClose();
     else setProblem(failed);
   };
+  const footer = <>
+    <button type="button" className="secondary-button" onClick={onClose}>取消</button>
+    <button type="submit" form={formId} className="primary-button" disabled={busy || name.length < 2 || soul.loading
+      || soul.error !== null || soul.text.trim().length < 2}>保存修改</button></>;
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
-    title="编辑主线" onClose={onClose} className="mate-editor-sheet soul-editor-sheet">
-    <form className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+    title="编辑主线" onClose={onClose} className="mate-editor-sheet soul-editor-sheet" footer={footer}>
+    <form id={formId} className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       <fieldset disabled={busy}>
         <div className="editor-look">
           <span className="editor-look-box"><MainAvatar key={draft.variant} variant={draft.variant} size={52}
@@ -85,10 +90,6 @@ export function MainEditor({ phone, onClose }: { phone: boolean; onClose: () => 
         <MainModelField pending={model} onPick={setModel} />
       </fieldset>
       {problem === null ? null : <p className="line-note" role="alert">{problem}</p>}
-      <div className="mate-form-actions">
-        <button type="button" className="secondary-button" onClick={onClose}>取消</button>
-        <button className="primary-button" disabled={busy || name.length < 2 || soul.loading
-          || soul.error !== null || soul.text.trim().length < 2}>保存修改</button></div>
     </form>
   </Sheet></div>, document.body);
 }

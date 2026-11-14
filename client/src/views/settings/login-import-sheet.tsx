@@ -90,9 +90,19 @@ export function LoginImportSheet({ logins, open, onClose, onImported }: {
       setPhase({ kind: 'problem', text: '导入没成：电脑那边出了错，稍后再试。' });
     });
   };
+  const footer = <>
+    <button type="button" className={phase.kind === 'done' ? 'primary-button' : 'secondary-button'}
+      onClick={onClose}>{phase.kind === 'done' ? '好的' : '先不'}</button>
+    {phase.kind === 'done' ? null : (
+      <button type="button" className="primary-button"
+        disabled={phase.kind === 'busy' || chosen?.available !== true} onClick={start}>
+        {phase.kind === 'busy' ? '正在导入…' : '导入'}
+      </button>
+    )}</>;
   return (
     <Sheet open={open} variant={phone ? 'drawer' : 'panel'} title="导入登录" onClose={onClose} className="sheet-fit"
-      state={sources === null ? (failed === null ? 'loading' : 'failed') : 'ready'} error={failed ?? undefined}>
+      state={sources === null ? (failed === null ? 'loading' : 'failed') : 'ready'} error={failed ?? undefined}
+      footer={footer}>
       <div className="login-import">
         <div role="radiogroup" aria-label="从哪儿导入" className="login-import-sources">
           {(sources ?? []).map((source) => (
@@ -117,15 +127,6 @@ export function LoginImportSheet({ logins, open, onClose, onImported }: {
             ) : null}
           </p>
         ) : null}
-        <div className="login-import-actions">
-          <button type="button" className="text-button" onClick={onClose}>{phase.kind === 'done' ? '好的' : '先不'}</button>
-          {phase.kind === 'done' ? null : (
-            <button type="button" className="primary-button"
-              disabled={phase.kind === 'busy' || chosen?.available !== true} onClick={start}>
-              {phase.kind === 'busy' ? '正在导入…' : '导入'}
-            </button>
-          )}
-        </div>
       </div>
     </Sheet>
   );

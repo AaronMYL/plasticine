@@ -4,11 +4,6 @@
   overflow: hidden;
 }
 
-.sheet-panel.work-sheet {
-  right: 16px;
-  width: min(560px, calc(100% - 32px));
-}
-
 .work-sheet .sheet-body {
   display: flex;
   padding: 0;

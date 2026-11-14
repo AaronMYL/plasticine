@@ -141,7 +141,7 @@ describe('信息流第二栏 · 来源', () => {
     await settle();
     openOne('r/neuroscience');
     fireEvent.click(screen.getByRole('menuitem', { name: '删除' }));
-    const confirm = screen.getByRole('dialog', { name: '删除「r/neuroscience」' });
+    const confirm = screen.getByRole('alertdialog', { name: '删除「r/neuroscience」？' });
     expect(confirm.textContent).toContain('收藏过的留在「收藏」里');
     fireEvent.click(within(confirm).getByRole('button', { name: '删除' }));
     await waitFor(() => expect(rowNames()).not.toContain('Reddit'));

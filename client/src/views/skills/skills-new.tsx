@@ -10,6 +10,7 @@ import { MAIN_LINE_ALIAS, SKILL_BODY_MAX_CHARS, SKILL_SAID_MAX_CHARS, SKILL_TITL
 import { useLive } from '../../live.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
@@ -105,17 +106,15 @@ function Form({ draft, written, onChange, onSave, onDrop, busy, error }: { draft
         onChange={set('body')} />
     </label>
     {error === null ? null : <p className="skills-error" role="alert">{error}</p>}
-    {dropping ? <div className="skill-confirm" role="alertdialog" aria-label="不要这份草稿">
-      <span className="skill-confirm-text">草稿没存，丢了找不回来</span>
-      <button type="button" className="text-button text-button-quiet" onClick={() => setDropping(false)}>接着写</button>
-      <button type="button" className="primary-button button-small" onClick={onDrop}>不要了</button>
-    </div> : <div className="skill-preview-actions">
+    {dropping ? <ConfirmDialog title="不要这份草稿？" body="草稿没存，丢了找不回来。" confirmLabel="不要了"
+      cancelLabel="接着写" onCancel={() => setDropping(false)} onConfirm={onDrop} /> : null}
+    <div className="skill-preview-actions">
       <button type="submit" className="primary-button" disabled={!ready || busy}>{busy ? '正在存…' : '保存'}</button>
       <button type="button" className="secondary-button" disabled={!ready || busy} onClick={() => onSave(true)}>
         保存并试一次</button>
       <button type="button" className="text-button text-button-quiet" disabled={busy}
         onClick={() => { if (dirty) { setDropping(true); } else { onDrop(); } }}>不要了</button>
-    </div>}
+    </div>
   </form>;
 }
 

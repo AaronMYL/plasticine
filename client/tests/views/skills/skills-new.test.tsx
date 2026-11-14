@@ -89,7 +89,7 @@ describe('技能 · 新建', () => {
     const form = await screen.findByRole('form', { name: '技能草稿' });
     fireEvent.change(field(form, '名字'), { target: { value: '草稿' } });
     fireEvent.click(within(form).getByRole('button', { name: '不要了' }));
-    const confirm = within(form).getByRole('alertdialog', { name: '不要这份草稿' });
+    const confirm = screen.getByRole('alertdialog', { name: '不要这份草稿？' });
     expect(confirm.textContent).toContain('丢了找不回来');
     expect(window.location.hash).toBe('#/skills/new');
     fireEvent.click(within(confirm).getByRole('button', { name: '不要了' }));

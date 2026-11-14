@@ -1,7 +1,7 @@
 // 一个来源的「设置…」（第 7 批第 10 条，第二栏一行的 ⋯ 里开）：订阅改名字、网址、档位；Reddit 改排序、档位；按关注点的
 // 新闻是关注点编辑器；X、抖音收藏是登录状态 + 去登录（抖音多一个「选收藏…」）。上次取到的时间、没取到的原因写在顶上。
 
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
@@ -14,6 +14,7 @@ import {
   type UpdateFeedSourceRequest,
 } from '../../api/shared.ts';
 import type { FeedSourceView } from '../../api/types.ts';
+import { SheetFooter } from '../../primitives/sheet/index.tsx';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { when } from '../notes/note-time.ts';
 import { LoginPanel } from './feed-add.tsx';
@@ -61,6 +62,7 @@ function SourceForm({ row, onDone }: { row: FeedNavSource; onDone: () => void })
   const source = row.source;
   const reddit = row.kind === 'reddit' && source.query !== null ? redditFeedOf(source.query) : null;
   const [label, setLabel] = useState(source.label);
+  const formId = useId();
   const [url, setUrl] = useState(source.query ?? '');
   const [sort, setSort] = useState<RedditSort | null>(reddit?.sort ?? null);
   const [level, setLevel] = useState<Level | null>(source.level === 'off' ? null : source.level);
@@ -88,7 +90,7 @@ function SourceForm({ row, onDone }: { row: FeedNavSource; onDone: () => void })
     }
   };
   return (
-    <form className="feed-add-form" aria-label={`「${row.label}」的设置`} onSubmit={(event) => {
+    <form id={formId} className="feed-add-form" aria-label={`「${row.label}」的设置`} onSubmit={(event) => {
       event.preventDefault();
       void save();
     }}>
@@ -106,11 +108,12 @@ function SourceForm({ row, onDone }: { row: FeedNavSource; onDone: () => void })
       <Segmented label="多少" value={level} onChange={setLevel}
         options={LEVELS.map((entry) => ({ value: entry.level, label: entry.label }))} />
       {error === null ? null : <p className="feed-add-note is-error" role="alert">{error}</p>}
-      <footer className="feed-add-foot">
+      <SheetFooter className="feed-add-foot">
         <span className="feed-add-hint" />
-        <button type="button" className="text-button" onClick={onDone}>取消</button>
-        <button type="submit" className="primary-button" disabled={!changed || busy}>{busy ? '正在存…' : '保存'}</button>
-      </footer>
+        <button type="button" className="secondary-button" onClick={onDone}>取消</button>
+        <button type="submit" form={formId} className="primary-button" disabled={!changed || busy}>
+          {busy ? '正在存…' : '保存'}</button>
+      </SheetFooter>
     </form>
   );
 }

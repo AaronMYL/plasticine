@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Icon, type IconName } from '../../shell/icons.tsx';
 import { isAiFolder } from './ai-folder.ts';
 import { useApi } from '../../api/context.tsx';
@@ -68,6 +68,7 @@ export function NoteFolders({
   const { folders, error: loadError, reload } = useNoteFolders();
   const drafts = useStore(inlineDrafts.store);
   const [managing, setManaging] = useState(false);
+  const formId = useId();
   const operation = useOp(OP);
   const locked = operation !== undefined && isOpenOp(operation);
   const sent = locked && operation.request.kind === 'note_folder' ? operation.request.body : null;
@@ -157,7 +158,7 @@ export function NoteFolders({
   const pending = <PendingOps label="还没了结的文件夹操作" prefixes={[OP]} visible={() => false}
     onRetry={() => void run()} />;
   const form = editing === null ? null : (
-    <form className="note-folder-edit" onSubmit={(event) => {
+    <form id={formId} className="note-folder-edit" onSubmit={(event) => {
       event.preventDefault();
       void run((requestId) => editing === '' ? { action: 'create', name: name.trim(), requestId }
         : { action: 'rename', name: editing, next: name.trim(), requestId });
@@ -165,13 +166,6 @@ export function NoteFolders({
       {pending}
       <label>文件夹名称<input className="search-input" value={name} maxLength={100} disabled={locked}
         onChange={(event) => inlineDrafts.set(`${OP}:name`, event.target.value)} /></label>
-      <div className="note-toolbar">
-        <button className="primary-button" type="submit" disabled={locked || !name.trim()}>
-          {editing === '' ? '创建文件夹' : '保存名称'}
-        </button>
-        <button type="button" className="text-button" disabled={locked}
-          onClick={() => { close(); onClose?.(); }}>取消</button>
-      </div>
       {editing === '' ? null : <>
         <div className="note-folder-position"><span>位置</span>
           {([-1, 1] as const).map((direction) => <IconButton key={direction}
@@ -194,13 +188,19 @@ export function NoteFolders({
       </>}
     </form>
   );
+  const footer = editing === null ? undefined : <>
+    <button type="button" className="secondary-button" disabled={locked}
+      onClick={() => { close(); onClose?.(); }}>取消</button>
+    <button className="primary-button" type="submit" form={formId} disabled={locked || !name.trim()}>
+      {editing === '' ? '创建文件夹' : '保存名称'}
+    </button></>;
   return <>
     {operation === undefined || managing ? null : <div className="notes-folder-pending">{pending}</div>}
     {inline ? navigation(true) : null}
     <Sheet open={open || managing} variant={phone ? 'drawer' : 'panel'} onClose={closePanel}
       title={managing ? editing === '' ? '新建文件夹' : '管理文件夹' : '文件夹'}
       actions={managing ? undefined : <IconButton icon="plus" label="新建文件夹" disabled={locked}
-        onClick={() => edit(null)} />}>
+        onClick={() => edit(null)} />} footer={managing ? footer : undefined}>
       {managing ? form : navigation(false)}
     </Sheet>
   </>;

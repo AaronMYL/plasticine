@@ -339,7 +339,7 @@
 /* 用到模型时弹的连模型小窗：上面引着刚才那句。 */
 .connect-sheet-layer {
   position: fixed;
-  inset: 0;
+  inset: var(--titlebar-room, 0px) 0 0;
   z-index: var(--z-over-dialog);
 }
 

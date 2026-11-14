@@ -2,7 +2,7 @@
 // 让服务端代取最新三条预览（取不到就地写原因）；排序 热门 / 最新 / 本周最佳；「添加」。服务器直接取，不用登录；英文帖子
 // 会翻成中文（ⓘ）。
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
@@ -13,6 +13,7 @@ import {
   type RedditPreviewResponse,
   type RedditSort,
 } from '../../api/shared.ts';
+import { SheetFooter } from '../../primitives/sheet/index.tsx';
 import { useLive } from '../../live.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { relativeTime } from '../../shell/relative-time.ts';
@@ -62,6 +63,7 @@ export function RedditAdd({ onAdded, onCancel }: { onAdded: () => void; onCancel
   const api = useApi();
   const live = useLive();
   const [text, setText] = useState('');
+  const formId = useId();
   const [sort, setSort] = useState<RedditSort>('hot');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export function RedditAdd({ onAdded, onCancel }: { onAdded: () => void; onCancel
   };
   const now = new Date();
   return (
-    <form className="feed-add-form" aria-label="加 Reddit 版块" onSubmit={(event) => {
+    <form id={formId} className="feed-add-form" aria-label="加 Reddit 版块" onSubmit={(event) => {
       event.preventDefault();
       void add();
     }}>
@@ -124,14 +126,15 @@ export function RedditAdd({ onAdded, onCancel }: { onAdded: () => void; onCancel
         )}
       </div>
       {error === null ? null : <p className="feed-add-note is-error" role="alert">{error}</p>}
-      <footer className="feed-add-foot">
+      <SheetFooter className="feed-add-foot">
         <span className="feed-add-hint">
           英文帖子会翻成中文
           <InfoTip label="怎么取" text="服务器直接取这个版块的公开内容，不用登录；每 2 小时取一次。" side="top" />
         </span>
-        <button type="button" className="text-button" onClick={onCancel}>取消</button>
-        <button type="submit" className="primary-button" disabled={!ok || busy}>{busy ? '正在加…' : '添加'}</button>
-      </footer>
+        <button type="button" className="secondary-button" onClick={onCancel}>取消</button>
+        <button type="submit" form={formId} className="primary-button" disabled={!ok || busy}>
+          {busy ? '正在加…' : '添加'}</button>
+      </SheetFooter>
     </form>
   );
 }

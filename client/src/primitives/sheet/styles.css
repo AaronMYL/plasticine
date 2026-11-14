@@ -1,4 +1,6 @@
-/* 原语 7 · 浮层 / 抽屉。面板 --bg 加 --lift、圆角 12，背后 --scrim；不用玻璃、不用半透明面板。 */
+/* 原语 7 · 浮层 / 抽屉。面板 --bg 加 --lift、圆角 12，背后 --scrim；不用玻璃、不用半透明面板。
+   11-14 统一（设计稿「弹框、浮层、抽屉」）：头 56（标题左 24、右上角只有关闭），内边距 24，「取消 · 保存」在底部靠右；
+   手机抽屉顶上把手，头 52，按钮并排、44 高。 */
 
 .sheet-scrim {
   background: var(--scrim);
@@ -32,15 +34,15 @@
   outline: none;
 }
 
-/* 上、右、下各离主区 16，默认 560 宽，主区不够宽就占满（第 54 条）。 */
+/* 上、右、下各离主区 16，默认 560 宽，主区不够宽就占满（第 54 条）。对话框开着时停在它左边（--dock-room 由对话框报）。 */
 .sheet-panel {
   position: absolute;
   top: 16px;
-  right: 16px;
+  right: calc(var(--dock-room, 0px) + 16px);
   bottom: 16px;
   z-index: var(--z-sheet);
-  width: min(560px, calc(100% - 32px));
-  animation: sheet-in var(--motion-base) var(--ease-out);
+  width: max(320px, min(560px, calc(100% - 32px - var(--dock-room, 0px))));
+  animation: sheet-in var(--motion-slow) var(--ease-out);
 }
 
 .sheet-drawer {
@@ -57,7 +59,8 @@
 }
 
 .sheet-handle {
-  width: 32px;
+  flex: none;
+  width: 36px;
   height: 4px;
   margin: var(--space-2) auto 0;
   border-radius: var(--radius-sm);
@@ -69,7 +72,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
   border-bottom: 1px solid var(--line);
   flex: none;
 }
@@ -100,8 +103,8 @@
 .sheet-close {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: var(--control);
+  height: var(--control);
   border: 0;
   border-radius: var(--radius);
   background: transparent;
@@ -122,7 +125,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: var(--space-4);
+  padding: var(--space-5);
   overscroll-behavior: contain;
   overflow-wrap: anywhere;
 }
@@ -133,9 +136,59 @@
   padding: 0;
 }
 
+.sheet-drawer .sheet-head {
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-5);
+  border-bottom: 0;
+}
+
 .sheet-drawer .sheet-head .icon-button {
-  width: 40px;
-  height: 40px;
+  width: var(--touch);
+  height: var(--touch);
+}
+
+/* 底部的按钮：不随内容滚，靠右；手机上并排各占一半、44 高（第 11 张设计稿）。 */
+.sheet-foot {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.sheet-foot:empty {
+  display: none;
+}
+
+/* 不在浮层里的表单（SheetFooter 原地画）：按钮靠右。 */
+.sheet-foot-inline {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sheet-drawer .sheet-foot {
+  padding: var(--space-3) var(--space-5);
+}
+
+.sheet-drawer .sheet-foot {
+  flex-wrap: wrap;
+}
+
+.sheet-drawer .sheet-foot > button {
+  flex: 1;
+  height: var(--touch);
+}
+
+/* 底部除了按钮还有一句（状态、提示）：手机上它占一整行，按钮在下面并排；空的不占地方。 */
+.sheet-drawer .sheet-foot > :not(button) {
+  flex-basis: 100%;
+}
+
+.sheet-drawer .sheet-foot > :not(button):empty {
+  display: none;
 }
 
 .sheet-note {
@@ -149,10 +202,11 @@
   color: var(--err);
 }
 
+/* 侧边浮层从右边滑进来。 */
 @keyframes sheet-in {
   from {
     opacity: 0;
-    transform: translateX(8px);
+    transform: translateX(var(--space-6));
   }
 }
 

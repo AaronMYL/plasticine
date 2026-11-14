@@ -5,6 +5,7 @@
 import { useState, type ReactNode } from 'react';
 import type { TimedRowView } from '../../api/shared.ts';
 import { useTimeZone } from '../../live.tsx';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { StatusGlyph } from '../../shell/glyph.tsx';
 import { HueTile } from '../../shell/hue.tsx';
 import { Icon } from '../../shell/icons.tsx';
@@ -38,7 +39,7 @@ function DeskRow({ row, actions, open, navigate }: RowProps): ReactNode {
     more.push({ icon: 'thread', label: '看它的线', onSelect: () => openPanel({ kind: 'work', lineId: row.lineId! }) });
   }
   if (row.canRemove) {
-    more.push({ icon: 'trash', label: '删掉', onSelect: () => setRemoving(true) });
+    more.push({ icon: 'trash', label: '删除', onSelect: () => setRemoving(true) });
   }
   const click = (): void => (row.askId !== null ? navigate(mainLineRoute()) : open(row));
   return (
@@ -65,12 +66,9 @@ function DeskRow({ row, actions, open, navigate }: RowProps): ReactNode {
         </span>
       </div>
       {removing ? (
-        <div className="tasks-confirm" role="group" aria-label={`删掉「${row.title}」`}>
-          <span>删掉后不再到点，已经做过的结果还在。</span>
-          <button type="button" className="primary-button button-small" disabled={actions.busy === row.id}
-            onClick={() => void actions.remove(row.id).then(() => setRemoving(false))}>删掉</button>
-          <button type="button" className="text-button text-button-quiet" onClick={() => setRemoving(false)}>算了</button>
-        </div>
+        <ConfirmDialog title={`删除「${row.title}」？`} body="删除后不再到点，已经做过的结果还在。" confirmLabel="删除"
+          busy={actions.busy === row.id} onCancel={() => setRemoving(false)}
+          onConfirm={() => void actions.remove(row.id).then(() => setRemoving(false))} />
       ) : null}
       {actions.failed?.id === row.id ? <p className="tasks-error" role="alert">{actions.failed.text}</p> : null}
     </li>

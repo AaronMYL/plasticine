@@ -41,7 +41,7 @@ describe('技能页', () => {
     const detail = await screen.findByRole('article', { name: '周报整理' });
     expect(within(detail).getByText('用过 4 次')).toBeTruthy();
     fireEvent.click(within(detail).getByRole('button', { name: '删除「周报整理」' }));
-    const confirm = within(detail).getByRole('alertdialog', { name: '删除「周报整理」' });
+    const confirm = screen.getByRole('alertdialog', { name: '删除「周报整理」？' });
     expect(confirm.textContent).toContain('正在用它的线不受影响');
     fireEvent.click(within(confirm).getByRole('button', { name: '删除' }));
     await waitFor(() => expect(window.location.hash).toBe('#/skills'));

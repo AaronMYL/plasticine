@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { errorText } from '../../api/errors.ts';
 import type { NodeView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { RevealMore } from '../../shell/reveal-more.tsx';
@@ -47,15 +48,11 @@ export function NodeDevices(): ReactNode {
         ))}
       </ul>
       {confirm === null ? null : (
-        <div className="settings-confirm" role="alertdialog" aria-label={`撤销「${confirm.name}」`}>
-          <span className="settings-confirm-text">撤销后这台电脑不再替你做设备上的事。</span>
-          <button type="button" className="text-button text-button-quiet" disabled={busy}
-            onClick={() => setConfirm(null)}>取消</button>
-          <button type="button" className="primary-button button-small" disabled={busy}
-            onClick={() => revoke(confirm)}>确定撤销</button>
-        </div>
+        <ConfirmDialog title={`撤销「${confirm.name}」？`} body="撤销后这台电脑不再替你做设备上的事。"
+          confirmLabel="撤销" busy={busy} error={error} onConfirm={() => revoke(confirm)}
+          onCancel={() => { setConfirm(null); setError(null); }} />
       )}
-      {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
+      {error === null || confirm !== null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
     </section>
   );
 }

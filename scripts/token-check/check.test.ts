@@ -147,7 +147,8 @@ test('界面数值只用令牌（11-14 界面统一）：圆角、间距、行�
     '.e { line-height: 1; z-index: var(--z-float); }',
     '.f { z-index: 60; }',
     '.g { transition: opacity 180ms ease-out; }',
-    '.h { transition: opacity var(--motion-base) var(--ease-out); animation: spin var(--motion-spin) linear infinite; }',
+    '.h { transition: opacity var(--motion-base) var(--ease-out);'
+      + ' animation: spin var(--motion-spin) linear infinite; }',
     '.i { padding-bottom: 96px; } /* 例外：给右下角的圆球让出地方 */',
     '.j { border-radius: 50%; }',
     '.k { z-index: calc(var(--z-dialog) + 1); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }',

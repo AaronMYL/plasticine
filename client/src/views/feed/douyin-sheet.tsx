@@ -6,7 +6,7 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { VIDEO_STAGE_LABELS, VIDEO_STAGES, type VideoWorkView } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
-import { Sheet } from '../../primitives/sheet/index.tsx';
+import { Sheet, SheetFooter } from '../../primitives/sheet/index.tsx';
 import { HueTile } from '../../shell/hue.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
@@ -143,7 +143,7 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
             </button>
           ) : null}
         </div>
-        <footer className="douyin-foot">
+        <SheetFooter className="douyin-foot">
           <span className="douyin-picked" role="status">{state.notice ?? <>已选 <Count n={selected.size} /> 条</>}</span>
           <span className="douyin-how">
             <InfoTip label="怎么处理" side="top"
@@ -151,7 +151,7 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
           </span>
           <button type="button" className="primary-button button-small" disabled={selected.size === 0
             || busy === 'process'} onClick={() => void store.process()}>处理选中的</button>
-        </footer>
+        </SheetFooter>
       </div>
     </Sheet>
   );

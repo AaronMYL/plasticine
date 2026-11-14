@@ -14,6 +14,7 @@ import { SETTINGS_SECTION_LABELS, SettingsBody } from './settings-body.tsx';
 import { SettingsDrafts, SettingsDraftsContext, SettingsGoContext } from './settings-dialog-context.ts';
 import { useDialogFocus } from './settings-dialog-focus.ts';
 import { searchSettings } from './settings-index.ts';
+import '../../shell/dialog.css';
 import './settings-dialog.css';
 
 /** 查找跳到的那一块闪多久。 */
@@ -69,21 +70,20 @@ function reversed(frames: Keyframe[]): Keyframe[] {
   return [...frames].reverse();
 }
 
+/** 「有没保存的修改」：统一的居中小弹框（shell/dialog.css），盖住设置弹框；手机上贴底。 */
 function UnsavedAsk({ onKeep, onDiscard }: { onKeep: () => void; onDiscard: () => void }): ReactNode {
   const id = useId();
-  const box = useRef<HTMLDivElement>(null);
   const keep = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
     // 焦点给「继续编辑」（回车就是继续编辑）；鼠标点出来的不画焦点环，键盘 Tab 起来照常有。
     keep.current?.focus({ focusVisible: false });
-    play(box.current, PANEL_ENTER, MOTION.fast);
   }, []);
   return (
-    <div className="settings-ask-layer">
-      <div ref={box} className="settings-ask" role="alertdialog" aria-modal="true" aria-labelledby={id}>
-        <h3 id={id} className="settings-ask-title">有没保存的修改</h3>
-        <div className="settings-ask-actions">
-          <button type="button" className="chip-button settings-ask-discard" onClick={onDiscard}>放弃修改</button>
+    <div className="dialog-layer settings-ask-layer">
+      <div className="dialog" role="alertdialog" aria-modal="true" aria-labelledby={id}>
+        <h3 id={id} className="dialog-title">有没保存的修改</h3>
+        <div className="dialog-actions">
+          <button type="button" className="secondary-button settings-ask-discard" onClick={onDiscard}>放弃修改</button>
           <button ref={keep} type="button" className="primary-button" onClick={onKeep}>继续编辑</button>
         </div>
       </div>

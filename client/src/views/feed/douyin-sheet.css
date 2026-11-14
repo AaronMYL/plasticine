@@ -149,16 +149,10 @@
 .douyin-scroll .douyin-note { padding: 0; }
 .douyin-note.is-error { color: var(--err); }
 
-.douyin-foot {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line);
-}
-
+/* 底部（已选 n 条 · ⓘ · 处理选中的）交给浮层底部那一条（SheetFooter）；手机上三样也排在一行。 */
 .douyin-picked { flex: 1; font-size: var(--text-body); line-height: var(--text-body-line); }
+
+.sheet-drawer .sheet-foot > :is(.douyin-picked, .douyin-how) { flex-basis: auto; }
 
 .douyin-how {
   display: inline-flex;

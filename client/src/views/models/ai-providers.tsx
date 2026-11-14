@@ -1,10 +1,11 @@
 // 设置 · AI 左边「模型」（《优化清单》第 13 条，设计稿 Settings-AI）：连着的每家一行——状态点、名字、订阅 / API key、
 // n 个启用、展开后勾选要用的几个（勾了马上存，没勾的不出现在任何选择器里）；没连的收进「添加提供商」。
-// 重新登录、换 key、断开在行尾 ⋯；断开先问一句。
+// 重新登录、换 key、断开在行尾 ⋯；断开先弹确认框写清后果。
 
 import { useEffect, useState, type ReactNode } from 'react';
 import type { ModelProviderView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { Store } from '../../state/store.ts';
@@ -21,19 +22,18 @@ const FILTER_FROM = 12;
 function ConfirmLogout({ provider, onDone }: { provider: ModelProviderView; onDone: () => void }): ReactNode {
   const live = useLive();
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const name = providerName(provider);
   return (
-    <div className="settings-confirm" role="alertdialog" aria-label={`断开 ${name}`}>
-      <span className="settings-confirm-text">断开 <b>{name}</b>？用它的功能会回到默认</span>
-      {error === null ? null : <span className="connect-error" role="alert">{error}</span>}
-      <button type="button" className="text-button text-button-quiet" onClick={onDone}>取消</button>
-      <button type="button" className="primary-button button-small" onClick={() => {
+    <ConfirmDialog title={`断开 ${name}？`} body="用它的功能会回到默认模型；要再用得重新登录或填 key。"
+      confirmLabel="断开" busy={busy} error={error} onCancel={onDone} onConfirm={() => {
+        setBusy(true);
         void live.models.logout(provider.id).then((problem) => {
+          setBusy(false);
           setError(problem);
           if (problem === null) onDone();
         });
-      }}>断开</button>
-    </div>
+      }} />
   );
 }
 

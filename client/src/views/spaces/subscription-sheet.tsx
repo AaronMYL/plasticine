@@ -92,8 +92,8 @@ export function SubscriptionSheet(props: SubscriptionSheetProps): ReactNode {
       ...(view.kind === 'review' ? { edition: 'daily' as const } : {}) })
       .then(() => setRan(true), (cause: unknown) => setProblem(errorText(cause))).finally(() => setBusy(false));
   };
-  const footer = view === null || tab !== 'settings' ? null : (
-    <footer className="sub-foot">
+  const footer = view === null || tab !== 'settings' ? undefined : (
+    <>
       {problem === null ? (ran ? <span className="text-meta grow" role="status">在写了，写好会出现在往期里</span>
         : <span className="grow" />) : <span className="sub-problem grow" role="alert">{problem}</span>}
       {view.status === 'active' ? <button type="button" className="text-button text-button-quiet" disabled={busy}
@@ -103,13 +103,13 @@ export function SubscriptionSheet(props: SubscriptionSheetProps): ReactNode {
           onClick={() => setStatus('active')}>开定时</button> : null}
       </>}
       <button type="button" className="primary-button" disabled={busy || draft === null} onClick={save}>保存</button>
-    </footer>
+    </>
   );
   const tabs: [Tab, string][] = [['latest', '最新一期'], ['issues', '往期'], ['settings', '设置']];
   return (
     <Sheet open={props.open} variant={props.phone ? 'drawer' : 'panel'} title={view?.title ?? '订阅'}
       onClose={props.onClose} state={view === null ? (error === null ? 'loading' : 'failed') : undefined}
-      error={error ?? undefined} className="sub-sheet">
+      error={error ?? undefined} className="sub-sheet" footer={footer}>
       {view === null || settings === null ? null : <>
         <div className="sub-head">
           <HueTile hue={view.kind === 'review' ? 'teal' : 'sky'} icon={view.kind === 'review' ? 'sparkle' : 'chart'} />
@@ -126,7 +126,6 @@ export function SubscriptionSheet(props: SubscriptionSheetProps): ReactNode {
         {tab === 'settings' ? <div className="sub-fields">
           <SubscriptionFields settings={settings} onChange={setDraft} />
         </div> : null}
-        {footer}
       </>}
     </Sheet>
   );

@@ -738,27 +738,6 @@
   border-top: 1px solid var(--line);
 }
 
-.group-menu-confirm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border-radius: var(--radius);
-  background: var(--tint2);
-}
-
-.group-menu-confirm strong {
-  font-size: var(--text-body);
-  font-weight: 500;
-}
-
-.group-menu-confirm p {
-  margin: 0;
-  color: var(--fg2);
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
-}
-
 .group-menu-field {
   display: flex;
   gap: var(--space-2);

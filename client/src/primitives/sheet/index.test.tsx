@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { Sheet, type SheetContentState, type SheetVariant } from './index.tsx';
+import { Sheet, SheetFooter, type SheetContentState, type SheetVariant } from './index.tsx';
 
 function Harness({ variant, state }: { variant: SheetVariant; state?: SheetContentState }): ReactNode {
   const [open, setOpen] = useState(false);
@@ -93,6 +93,38 @@ describe('浮层原语', () => {
     expect(document.activeElement).toBe(save);
     screen.getByRole('button', { name: '背后的按钮' }).focus();
     expect(document.activeElement).toBe(screen.getByRole('dialog'));
+  });
+
+  it('「取消 · 保存」在底部，表单外面的提交按钮用 form 属性也能交；读着时不画底部', () => {
+    const save = vi.fn((event: { preventDefault: () => void }) => event.preventDefault());
+    const { container, rerender } = render(
+      <Sheet open variant="panel" title="改名" onClose={() => undefined}
+        footer={<><button type="button">取消</button><button type="submit" form="rename">保存</button></>}>
+        <form id="rename" onSubmit={save}><input aria-label="名字" /></form>
+      </Sheet>,
+    );
+    const foot = container.querySelector('.sheet-foot');
+    expect(foot?.textContent).toBe('取消保存');
+    expect(container.querySelector('.sheet-body')?.contains(foot ?? null)).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    expect(save).toHaveBeenCalledOnce();
+    rerender(<Sheet open variant="panel" title="改名" state="loading" onClose={() => undefined}
+      footer={<button type="button">保存</button>} />);
+    expect(container.querySelector('.sheet-foot')).toBeNull();
+  });
+
+  it('浮层深处的表单用 SheetFooter 把按钮交到底部；不在浮层里就原地画', () => {
+    const Form = (): ReactNode => <form id="tag"><input aria-label="标签" />
+      <SheetFooter><button type="submit" form="tag">加上</button></SheetFooter></form>;
+    const { container, unmount } = render(<Sheet open variant="drawer" title="加标签" onClose={() => undefined}>
+      <Form /></Sheet>);
+    const add = screen.getByRole('button', { name: '加上' });
+    expect(add.closest('.sheet-foot')).not.toBeNull();
+    expect(add.closest('form')).toBeNull();
+    expect(container.ownerDocument.querySelector('.sheet-body .sheet-foot')).toBeNull();
+    unmount();
+    render(<Form />);
+    expect(screen.getByRole('button', { name: '加上' }).closest('.sheet-foot-inline')).not.toBeNull();
   });
 
   it('有多层浮层时 Escape 只关闭最上层', () => {

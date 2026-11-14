@@ -62,6 +62,10 @@ function morphKeyframes(element: HTMLElement): Keyframe[] {
     : [{ clipPath: clip, opacity: 0.6 }, { clipPath: 'inset(0px 0px 0px 0px round 12px)', opacity: 1 }];
 }
 
+/** 对话框占掉的右边宽度（含它离窗口右边的 8）：浮层的 right、宽度都扣掉它。 */
+export const DOCK_ROOM = '--dock-room';
+const DOCK_GAP = 8;
+
 export interface ChatDialogProps {
   /** 手机：全屏，没有调宽。 */
   fullscreen: boolean;
@@ -76,6 +80,13 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
   const dialog = useRef<HTMLElement>(null);
   const drag = useRef<DragState | null>(null);
   const frame = clampChatFrame(dragFrame ?? props.frame, viewport());
+  // 主区右侧的浮层停在对话框左边（11-14 统一：对话框浮在页面上，浮层不能被它盖住）：报出对话框占了右边多宽，拖宽时跟着走。
+  useLayoutEffect(() => {
+    if (fullscreen) return undefined;
+    const root = document.documentElement;
+    root.style.setProperty(DOCK_ROOM, `${frame.width + DOCK_GAP}px`);
+    return () => { root.style.removeProperty(DOCK_ROOM); };
+  }, [fullscreen, frame.width]);
 
   // 展开：从圆球长出来；焦点进输入框（键盘用户直接能打字）。
   useLayoutEffect(() => {

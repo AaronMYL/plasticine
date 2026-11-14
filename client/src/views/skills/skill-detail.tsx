@@ -1,10 +1,11 @@
-// 一个技能：叫什么、什么时候用、用过几次、哪来的、方法全文；不是随应用的能删（后果常显，点了才删）。
+// 一个技能：叫什么、什么时候用、用过几次、哪来的、方法全文；不是随应用的能删（先弹确认框写清后果）。
 
 import { useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { SkillRow } from '../../api/shared.ts';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { SkillReader } from './skill-reader.tsx';
@@ -18,18 +19,14 @@ function ConfirmRemove({ skill, onDone, onCancel }: { skill: SkillRow; onDone: (
   const [error, setError] = useState<string | null>(null);
   const label = skillLabel(skill);
   return (
-    <div className="skill-confirm" role="alertdialog" aria-label={`删除「${label}」`}>
-      <span className="skill-confirm-text">删除 <b>{label}</b>？以后 Plasticine 不再选用；正在用它的线不受影响</span>
-      {error === null ? null : <span className="skills-error" role="alert">{error}</span>}
-      <button type="button" className="text-button text-button-quiet" disabled={busy} onClick={onCancel}>取消</button>
-      <button type="button" className="primary-button button-small" disabled={busy} onClick={() => {
+    <ConfirmDialog title={`删除「${label}」？`} body="以后 Plasticine 不再选用它；正在用它的线不受影响。"
+      confirmLabel="删除" busy={busy} error={error} onCancel={onCancel} onConfirm={() => {
         setBusy(true);
         api.skills.remove(skill.name, createRequestId()).then(onDone, (cause: unknown) => {
           setBusy(false);
           setError(errorText(cause));
         });
-      }}>删除</button>
-    </div>
+      }} />
   );
 }
 

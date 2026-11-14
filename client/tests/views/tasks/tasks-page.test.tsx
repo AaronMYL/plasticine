@@ -19,10 +19,10 @@ describe('任务栏目', () => {
       expect(board.timed.find((row) => row.id === 'schedule:douyin')?.enabled).toBe(false);
     });
     fireEvent.click(within(list).getByRole('button', { name: '「同步抖音收藏」的更多操作' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: '删掉' }));
-    const confirm = screen.getByRole('group', { name: '删掉「同步抖音收藏」' });
-    expect(within(confirm).getByText('删掉后不再到点，已经做过的结果还在。')).toBeTruthy();
-    fireEvent.click(within(confirm).getByRole('button', { name: '删掉' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: '删除' }));
+    const confirm = screen.getByRole('alertdialog', { name: '删除「同步抖音收藏」？' });
+    expect(within(confirm).getByText('删除后不再到点，已经做过的结果还在。')).toBeTruthy();
+    fireEvent.click(within(confirm).getByRole('button', { name: '删除' }));
     await waitFor(() => expect(screen.queryByText('同步抖音收藏')).toBeNull());
   });
 

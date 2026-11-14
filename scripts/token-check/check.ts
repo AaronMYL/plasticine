@@ -127,9 +127,11 @@ export const DESIGN_TOKENS: readonly string[] = [
   'z-modal',
   'z-selection',
   'z-tip',
-  // 第 108 条：页面列最宽多少；对话框停在右边展开时页面列让出的宽度（壳在 .shell 上就地设，见 shell/layout.ts）。
+  // 第 108 条：页面列最宽多少。11-14：对话框浮在右边时占掉的宽（对话框就地设在根元素上，主区右侧的浮层停在它左边）；
+  // 桌面客户端标题栏的高（壳就地设在根元素上，盖住整个窗口的弹框层从它下面开始）。
   'page-max',
-  'chat-reserve',
+  'dock-room',
+  'titlebar-room',
   // 11-08 桌面客户端标题栏（shell/titlebar.tsx 在 .titlebar 上就地设）：左边红绿灯让出的宽度（壳报的
   // trafficLightInset）、右边 Windows 窗口按钮让出的宽度（壳报的 controlsRight）。
   'titlebar-lights',
@@ -266,7 +268,8 @@ function colorMixAllowed(code: string): boolean {
 
 function fontSizeAllowed(value: string, site: boolean): boolean {
   const trimmed = value.trim().replace(/['"`]/g, '').replace(/\s*!important$/, '');
-  if (trimmed === 'inherit' || trimmed === 'var(--read-size)' || TEXT_TOKENS.some((name) => trimmed === `var(--${name})`)
+  if (trimmed === 'inherit' || trimmed === 'var(--read-size)'
+    || TEXT_TOKENS.some((name) => trimmed === `var(--${name})`)
     || (site && SITE_FONT_TOKENS.some((name) => trimmed === `var(--${name})`))) {
     return true;
   }
@@ -285,9 +288,10 @@ function fontShorthandAllowed(value: string): boolean {
 }
 
 // 11-14 界面统一：这几类在样式里只用令牌。值里去掉 var(…) 以后还剩数字的就不过（0 和 auto 这类不算数字）。
-const RADIUS_DECL = /(?:^|[\s;{])border(?:-(?:top|bottom)-(?:left|right)|-(?:start|end)-(?:start|end))?-radius\s*:\s*([^;]+)/;
-const SPACE_DECL = new RegExp(String.raw`(?:^|[\s;{])(?:padding|margin|scroll-padding|scroll-margin)(?:-[a-z-]+)?\s*:\s*([^;]+)`
-  + String.raw`|(?:^|[\s;{])(?:row-|column-)?gap\s*:\s*([^;]+)`);
+const RADIUS_DECL = new RegExp(String.raw`(?:^|[\s;{])border(?:-(?:top|bottom)-(?:left|right)`
+  + String.raw`|-(?:start|end)-(?:start|end))?-radius\s*:\s*([^;]+)`);
+const SPACE_DECL = new RegExp(String.raw`(?:^|[\s;{])(?:padding|margin|scroll-padding|scroll-margin)`
+  + String.raw`(?:-[a-z-]+)?\s*:\s*([^;]+)|(?:^|[\s;{])(?:row-|column-)?gap\s*:\s*([^;]+)`);
 const LINE_HEIGHT_DECL = /(?:^|[\s;{])line-height\s*:\s*([^;]+)/;
 const Z_DECL = /(?:^|[\s;{])z-index\s*:\s*([^;]+)/;
 const MOTION_DECL = /(?:^|[\s;{])(?:transition|animation)(?:-(?:duration|delay|timing-function))?\s*:\s*([^;]+)/;

@@ -280,16 +280,6 @@
   cursor: default;
 }
 
-.tasks-confirm {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0 0 var(--space-3) var(--space-6);
-  font-size: var(--text-ui);
-  line-height: var(--text-ui-line);
-}
-
 /* 建议：图标块 · ✦ 标题 500 · 为什么 · 三个按钮。 */
 .tasks-idea {
   align-items: flex-start;
@@ -384,11 +374,6 @@
 .tasks-sheet-list li {
   display: flex;
   flex-direction: column;
-}
-
-.tasks-sheet-body .tasks-confirm {
-  padding: var(--space-3) 0 0;
-  border-top: 1px solid var(--line);
 }
 
 .tasks-remove {

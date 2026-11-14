@@ -37,8 +37,12 @@ export function LegacyChats({ phone, navigate, onClose }: { phone: boolean; navi
       onClose(); navigate(result.mate === null ? mainChatRoute() : mateRoute(result.mate.id));
     }
   };
+  const footer = proposal === null ? undefined : <>
+    <button type="button" className="secondary-button" disabled={busy} onClick={() => setMerge(true)}>并回主线</button>
+    <button type="button" className="primary-button" disabled={busy || proposal.draft.name.trim().length < 2
+      || proposal.draft.role.trim().length < 2} onClick={() => { void convert('mate'); }}>确认转成队友</button></>;
   return createPortal(<div className="mate-editor-layer"><Sheet open modal variant={phone ? 'drawer' : 'panel'}
-    title="整理原来的对话" onClose={onClose} className="mate-editor-sheet">
+    title="整理原来的对话" onClose={onClose} className="mate-editor-sheet" footer={footer}>
     <div className="mate-form">
       {busy && proposal === null ? <p role="status">正在整理这段对话…</p> : null}
       {proposal === null ? roster.legacyChats.map((chat) => <button key={chat.lineId} type="button"
@@ -49,10 +53,6 @@ export function LegacyChats({ phone, navigate, onClose }: { phone: boolean; navi
             draft: { ...proposal.draft, name: event.target.value } })} /></label>
           <label>职责<textarea value={proposal.draft.role} onChange={(event) => setProposal({ ...proposal,
             draft: { ...proposal.draft, role: event.target.value } })} /></label>
-          <div className="mate-form-actions"><button type="button" className="secondary-button" disabled={busy}
-            onClick={() => setMerge(true)}>并回主线</button>
-            <button type="button" className="primary-button" disabled={busy || proposal.draft.name.trim().length < 2
-              || proposal.draft.role.trim().length < 2} onClick={() => { void convert('mate'); }}>确认转成队友</button></div>
         </>}
       {error === null ? null : <p role="alert">{error}</p>}
       <PendingOps label="对话整理结果" prefixes={['mates:convert:']} visible={() => false}

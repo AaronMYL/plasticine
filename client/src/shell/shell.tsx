@@ -80,6 +80,9 @@ import { useQuoteCommands } from './use-quote-commands.ts';
 
 type SheetPanel = Exclude<Panel, { kind: 'settings' } | { kind: 'search' }>;
 
+/** 桌面客户端标题栏的高（有标题栏时才设）：盖住整个窗口的弹框层从它下面开始。 */
+const TITLEBAR_ROOM = '--titlebar-room';
+
 function PanelBody({ panel, navigate }: { panel: SheetPanel; navigate: (route: Route) => void }): ReactNode {
   switch (panel.kind) {
     case 'work': return <WorkDetail {...panel} navigate={navigate} />;
@@ -191,6 +194,13 @@ export function Shell(): ReactNode {
   const [hasWindowChrome] = useState(() => hostWindowChrome() !== null);
   const titled = hasWindowChrome && !layout.phone;
   const titlebar = useTitlebarState(titled);
+  // 盖住整个窗口的弹框层（编辑队友这类）从标题栏下面开始：不盖窗口按钮，浮层和主区里的一样高（titlebar.css 的 44）。
+  useLayoutEffect(() => {
+    if (!titled) return undefined;
+    const root = document.documentElement;
+    root.style.setProperty(TITLEBAR_ROOM, '44px');
+    return () => { root.style.removeProperty(TITLEBAR_ROOM); };
+  }, [titled]);
 
   const go = useCallback((next: Route): void => {
     if (next.view !== lastPage.current.view) {

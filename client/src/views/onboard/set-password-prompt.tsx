@@ -8,6 +8,7 @@ import { errorText } from '../../api/errors.ts';
 import { PASSWORD_MIN_CHARS, type AccountState } from '../../api/shared.ts';
 import { hostLocalGrant } from '../../shell/host.ts';
 import { PasswordField } from './onboard-parts.tsx';
+import '../../shell/dialog.css';
 import './set-password.css';
 
 /** 「以后再说」的时间记在这台设备上。 */
@@ -53,19 +54,20 @@ function PasswordDialog({ state, onClose }: { state: AccountState; onClose: (lat
   };
   const who = state.handle === null ? '' : `给 @${state.handle} `;
   return (
-    <div className="set-password-scrim" role="presentation" onKeyDown={(event) => {
+    <div className="dialog-layer set-password-scrim" role="presentation" onKeyDown={(event) => {
       if (event.key === 'Escape' && !busy) onClose(true);
     }}>
-      <form className="set-password" role="dialog" aria-modal="true" aria-labelledby={titleId} onSubmit={submit}>
-        <h2 id={titleId} className="set-password-title">{who}设一个密码</h2>
-        <p className="set-password-text">以后新设备用 @账号和密码登录，不再要配对码。已登录的设备不受影响。</p>
+      <form className="dialog set-password" role="dialog" aria-modal="true" aria-labelledby={titleId}
+        onSubmit={submit}>
+        <h2 id={titleId} className="dialog-title">{who}设一个密码</h2>
+        <p className="dialog-text">以后新设备用 @账号和密码登录，不再要配对码。已登录的设备不受影响。</p>
         <PasswordField id="set-password-new" label="密码" value={password} autoComplete="new-password" autoFocus
           disabled={busy} onChange={(value) => { setPassword(value); setError(null); }} />
         {password.length > 0 && password.length < PASSWORD_MIN_CHARS
           ? <p className="ob-note">至少 {PASSWORD_MIN_CHARS} 位</p> : null}
         {error === null ? null : <p className="ob-error" role="alert">{error}</p>}
-        <div className="set-password-actions">
-          <button type="button" className="text-button text-button-quiet" disabled={busy}
+        <div className="dialog-actions">
+          <button type="button" className="secondary-button" disabled={busy}
             onClick={() => onClose(true)}>以后再说</button>
           <button type="submit" className="primary-button" disabled={!ready}>{busy ? '正在设…' : '设好了'}</button>
         </div>

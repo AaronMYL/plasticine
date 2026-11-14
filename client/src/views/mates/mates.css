@@ -19,9 +19,11 @@
 .mates-roster-phone .column-item-sub { padding-top: var(--space-1); font-size: var(--text-caption); }
 .mates-roster-phone .column-foot { display: flex; border-top: 0; padding: var(--space-4) 0; }
 .mates-roster-phone .column-foot .column-item { flex: 1; justify-content: center; border-bottom: 0; }
-.mate-editor-layer { position: fixed; inset: 0; z-index: var(--z-modal); }
-.mate-editor-sheet.sheet-panel { top: 10%; bottom: auto; right: calc(50% - 240px); width: 480px; max-height: 80dvh; }
-.mate-form { display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-5); }
+/* 编辑队友、群组、主线（11-14 统一）：和别的浮层一样停在主区右侧、560 宽，「取消 · 保存」在浮层底部；盖住整个窗口
+   （标题栏除外），点遮罩、Esc、× 都关。 */
+.mate-editor-layer { position: fixed; inset: var(--titlebar-room, 0px) 0 0; z-index: var(--z-modal); }
+.mate-form { display: flex; flex-direction: column; gap: var(--space-5); }
+.sheet-drawer .mate-form { padding: var(--space-5); }
 .mate-form fieldset { display: flex; flex-direction: column; gap: var(--space-5); margin: 0; padding: 0; border: 0; }
 .mate-form label { display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-ui);
   color: var(--fg2); }
@@ -32,7 +34,6 @@
 .mate-form textarea { resize: vertical; }
 .mate-form-hue { display: flex; flex-basis: 100%; flex-direction: column; gap: var(--space-2); }
 .mate-form-label { font-size: var(--text-ui); color: var(--fg2); }
-.mate-form-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
 .mate-form-caption { margin: 0; color: var(--fg2); font-size: var(--text-caption); }
 .mate-form .mate-check { flex-direction: row; align-items: center; gap: var(--space-3); color: var(--fg); }
 .mate-check input { accent-color: var(--accent); }
@@ -174,19 +175,12 @@
 .character-choice:hover { background: var(--tint2); }
 .character-choice[aria-pressed='true'] { background: var(--tint2); box-shadow: inset 0 0 0 1.5px var(--fg); }
 .character-choice-art, .character-choice-art > svg { display: block; width: 30px; height: 30px; }
-/* 第13批（设计稿 Editor）：编辑主线、编辑队友多了 Soul，宽一点、高一点；头像放在一块浅底上，右边是签（主线「换画风」，
-   队友「角色 · 画风 · 脸型」）和颜色，点了签才在下面出格子；取消、保存贴在底下。 */
-.soul-editor-sheet.sheet-panel { top: 6%; right: calc(50% - 280px); width: 560px; max-height: 88dvh; }
-.soul-editor-sheet .mate-form { padding-bottom: 0; }
+/* 第13批（设计稿 Editor）：编辑主线、编辑队友多了 Soul；头像放在一块浅底上，右边是签（主线「换画风」，
+   队友「角色 · 画风 · 脸型」）和颜色，点了签才在下面出格子。 */
 .soul-editor-sheet .mate-form fieldset { gap: var(--space-4); }
-.soul-editor-sheet .mate-form-actions { position: sticky; bottom: 0; z-index: var(--z-raised);
-  margin: 0 calc(-1 * var(--space-5)); padding: var(--space-3) var(--space-5);
-  border-top: 1px solid var(--line); background: var(--bg); }
 .editor-look { display: flex; align-items: center; gap: var(--space-4); }
 .editor-look-box { display: grid; flex: none; place-items: center; width: 72px; height: 72px;
   border-radius: var(--radius-lg);
   background: var(--layer-side); }
 .editor-look-side { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
-@media (max-width: 600px) {
-  .soul-editor-sheet .mate-form-actions { margin: 0 calc(-1 * var(--space-4)); padding: var(--space-3) var(--space-4); }
-}
+

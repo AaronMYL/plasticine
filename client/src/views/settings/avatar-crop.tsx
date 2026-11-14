@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { Icon } from '../../shell/icons.tsx';
+import '../../shell/dialog.css';
 import './avatar-crop.css';
 
 /** 取景区 320、取景框 240（设计稿）；保存成 256 的方图。 */
@@ -104,13 +105,13 @@ export function AvatarCrop({ file, shape, onCancel, onSave }: AvatarCropProps): 
     ? `M${VIEW / 2 - FRAME / 2},${VIEW / 2} a${FRAME / 2},${FRAME / 2} 0 1,0 ${FRAME},0 a${FRAME / 2},${FRAME / 2} 0 1,0 -${FRAME},0`
     : `M${(VIEW - FRAME) / 2},${(VIEW - FRAME) / 2} h${FRAME} v${FRAME} h-${FRAME} z`;
   return (
-    <div className="avatar-crop-scrim" role="presentation" onKeyDown={(event) => {
+    <div className="dialog-layer" role="presentation" onKeyDown={(event) => {
       if (event.key === 'Escape') {
         onCancel();
       }
     }}>
-      <div className="avatar-crop" role="dialog" aria-modal="true" aria-label="裁剪头像">
-        <h2 className="avatar-crop-title">裁剪头像</h2>
+      <div className="dialog avatar-crop" role="dialog" aria-modal="true" aria-label="裁剪头像">
+        <h2 className="dialog-title">裁剪头像</h2>
         <div className="avatar-crop-view" onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
           drag.current = { x: event.clientX, y: event.clientY, from: shown };
@@ -136,9 +137,9 @@ export function AvatarCrop({ file, shape, onCancel, onSave }: AvatarCropProps): 
             onChange={(event) => setZoom(Number(event.target.value))} />
           <Icon name="image" size={20} />
         </label>
-        {error === null ? null : <p className="avatar-crop-error" role="alert">{error}</p>}
-        <div className="avatar-crop-actions">
-          <button type="button" className="text-button text-button-quiet" onClick={onCancel}>取消</button>
+        {error === null ? null : <p className="dialog-error" role="alert">{error}</p>}
+        <div className="dialog-actions">
+          <button type="button" className="secondary-button" onClick={onCancel}>取消</button>
           <button type="button" className="primary-button" disabled={size === null} onClick={save}>保存</button>
         </div>
       </div>

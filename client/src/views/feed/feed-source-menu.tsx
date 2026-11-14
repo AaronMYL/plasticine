@@ -5,6 +5,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { errorText } from '../../api/errors.ts';
 import { FEED_BUILT_IN_NAV_KINDS, type FeedNavSource } from '../../api/shared.ts';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { anchorOf, MenuItem, MenuSeparator, Popover, type PopoverAnchor } from '../../shell/popover.tsx';
 import type { FeedSegment } from '../../state/feed-ui.ts';
@@ -92,18 +93,11 @@ export function SourceMenu({ rows, label, name, add, onSettings, onDouyin, onBus
       </Popover>
     ) : null}
     {open?.kind === 'confirm' && row !== null ? (
-      <Popover anchor={open.anchor} label={`删除「${row.label}」`} role="dialog" align="start" trigger={more}
-        onClose={close} initialFocus="first" className="feed-src-confirm">
-        <p className="feed-src-confirm-title">删除「{row.label}」？</p>
-        <p className="feed-src-confirm-text">不再抓取；它带来的条目从信息流移除，收藏过的留在「收藏」里。</p>
-        <div className="feed-src-confirm-actions">
-          <button type="button" className="secondary-button button-small" onClick={close}>取消</button>
-          <button type="button" className="secondary-button button-small feed-danger" onClick={() => {
-            close();
-            run(() => actions.remove(row, afterRemove));
-          }}>删除</button>
-        </div>
-      </Popover>
+      <ConfirmDialog title={`删除「${row.label}」？`} confirmLabel="删除" onCancel={close}
+        body="不再抓取；它带来的条目从信息流移除，收藏过的留在「收藏」里。" onConfirm={() => {
+          close();
+          run(() => actions.remove(row, afterRemove));
+        }} />
     ) : null}
   </>;
 }

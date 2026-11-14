@@ -123,10 +123,10 @@ describe('设置 · 账号', () => {
     expect(within(devices).getByText('这台')).toBeTruthy();
     const revoke = vi.spyOn(app.api.devices, 'revoke');
     fireEvent.click(within(devices).getByRole('button', { name: '让「书房的 iPhone」退出' }));
-    const confirm = within(devices).getByRole('alertdialog', { name: '让「书房的 iPhone」退出' });
+    const confirm = screen.getByRole('alertdialog', { name: '让「书房的 iPhone」退出？' });
     expect(confirm.textContent).toContain('要用 @账号和密码重新登录');
     expect(revoke).not.toHaveBeenCalled();
-    fireEvent.click(within(confirm).getByRole('button', { name: '确定退出' }));
+    fireEvent.click(within(confirm).getByRole('button', { name: '退出' }));
     await waitFor(() => expect(within(devices).queryByText('书房的 iPhone')).toBeNull());
     expect(revoke).toHaveBeenCalledTimes(1);
   });
@@ -137,12 +137,12 @@ describe('设置 · 账号', () => {
     await within(devices).findByText('测试机');
     const logout = vi.spyOn(app.api.session, 'logout');
     fireEvent.click(within(devices).getByRole('button', { name: '退出这台' }));
-    const confirm = within(devices).getByRole('alertdialog', { name: '退出这台' });
+    const confirm = screen.getByRole('alertdialog', { name: '退出这台？' });
     expect(confirm.textContent).toContain('退出后要用 @账号和密码重新登录');
     fireEvent.click(within(confirm).getByRole('button', { name: '取消' }));
     expect(logout).not.toHaveBeenCalled();
     fireEvent.click(within(devices).getByRole('button', { name: '退出这台' }));
-    fireEvent.click(within(devices).getByRole('button', { name: '确定退出' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '退出' }));
     expect(await screen.findByRole('main', { name: '登录' })).toBeTruthy();
   });
 

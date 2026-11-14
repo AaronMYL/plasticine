@@ -1,11 +1,12 @@
 // 设置 · 账号 ·「登录着的设备」（11-08 设计稿 Settings-Account）：用 @账号和密码登录着的设备一行一台——图标、名字、
 // 上次在线；这台标「这台」，别的行尾「退出」。11-08 去掉配对码：不再有「添加设备」（新设备直接用 @账号和密码登录）。
-// 退出别的设备、退出这台都收不回：点了先常显后果，再点「确定」才做。
+// 退出别的设备、退出这台都收不回：点了先弹确认框写清后果（11-14 统一：找不回的先确认），再点「退出」才做。
 
 import { useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import type { DeviceView } from '../../api/shared.ts';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { relativeTime } from '../../shell/relative-time.ts';
 import { SectionHead } from './section-head.tsx';
@@ -82,16 +83,11 @@ export function Devices(): ReactNode {
           onClick={() => setConfirm({ kind: 'logout' })}>退出这台</button>
       ) : null}
       {confirm === null ? null : (
-        <div className="settings-confirm" role="alertdialog"
-          aria-label={confirm.kind === 'logout' ? '退出这台' : `让「${deviceLabel(confirm.device)}」退出`}>
-          <span className="settings-confirm-text">{confirmText(confirm)}</span>
-          <button type="button" className="text-button text-button-quiet" disabled={busy}
-            onClick={() => setConfirm(null)}>取消</button>
-          <button type="button" className="primary-button button-small" disabled={busy}
-            onClick={() => perform(confirm)}>确定退出</button>
-        </div>
+        <ConfirmDialog title={confirm.kind === 'logout' ? '退出这台？' : `让「${deviceLabel(confirm.device)}」退出？`}
+          body={confirmText(confirm)} confirmLabel="退出" busy={busy} error={error}
+          onCancel={() => { setConfirm(null); setError(null); }} onConfirm={() => perform(confirm)} />
       )}
-      {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
+      {error === null || confirm !== null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
     </section>
   );
 }

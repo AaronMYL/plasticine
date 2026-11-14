@@ -1,37 +1,13 @@
-/* 裁剪头像（2026-11-05 设计稿 Avatar）：遮罩上一个浮起的小框（圆角 12、--lift），取景区 320 方、框外压暗，滑杆两头
-   一小一大两个图标，右下「取消」「保存」。 */
-
-.avatar-crop-scrim {
-  position: fixed;
-  z-index: var(--z-modal);
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--scrim);
-}
+/* 裁剪头像（2026-11-05 设计稿 Avatar）：统一的居中小弹框（shell/dialog.css，11-14），取景区 320 方、框外压暗，
+   滑杆两头一小一大两个图标，右下「取消」「保存」。 */
 
 .avatar-crop {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-4);
-  width: 400px;
-  max-width: calc(100vw - 32px);
-  box-sizing: border-box;
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: var(--bg);
-  box-shadow: var(--lift);
-}
-
-.avatar-crop-title {
-  margin: 0;
-  font-size: var(--text-section);
-  font-weight: 600;
-  line-height: var(--text-section-line);
 }
 
 .avatar-crop-view {
   position: relative;
+  align-self: center;
   width: 320px;
   height: 320px;
   max-width: 100%;
@@ -79,14 +55,3 @@
   accent-color: var(--fg);
 }
 
-.avatar-crop-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-}
-
-.avatar-crop-error {
-  margin: 0;
-  color: var(--err);
-  font-size: var(--text-caption);
-}

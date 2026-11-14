@@ -218,12 +218,6 @@
   color: var(--err);
 }
 
-.login-import-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-}
-
 @media (max-width: 767px) {
   .login-site-host {
     display: none;

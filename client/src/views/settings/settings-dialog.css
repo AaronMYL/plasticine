@@ -217,44 +217,10 @@
   outline: none;
 }
 
-/* 「有没保存的修改」：盖住弹框，中间一小块；两个按钮，主的「继续编辑」在右。 */
+/* 「有没保存的修改」：统一的居中小弹框，只盖住设置弹框；两个按钮，主的「继续编辑」在右。 */
 .settings-ask-layer {
   position: absolute;
-  inset: 0;
   z-index: var(--z-menu);
-  display: grid;
-  place-items: center;
-  padding: var(--space-5);
-  background: var(--scrim);
-}
-
-.settings-ask {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  width: min(320px, 100%);
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: var(--layer-float);
-  box-shadow: var(--lift);
-}
-
-.settings-ask-title {
-  margin: 0;
-  font-size: var(--text-section);
-  line-height: var(--text-section-line);
-  font-weight: 600;
-}
-
-.settings-ask-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-}
-
-.settings-ask-actions > button {
-  height: 32px;
-  padding: 0 var(--space-3);
 }
 
 .settings-ask-discard {

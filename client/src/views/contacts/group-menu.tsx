@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ContactRow } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
+import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { AvatarCrop } from '../settings/avatar-crop.tsx';
@@ -113,28 +114,23 @@ export function GroupMenu({ group, onLeft }: { group: ContactRow; onLeft: () => 
             event.target.value = '';
           }} />
           <hr />
-          {step === 'leave' ? (
-            <div className="group-menu-confirm" role="alertdialog" aria-label={`退出「${group.name}」？`}>
-              <strong>退出「{group.name}」？</strong>
-              <p>退出后收不到这个群的消息；你发过的卡留在群里</p>
-              <div className="net-actions">
-                <button type="button" className="primary-button" onClick={() => {
-                  void contactActions.leaveGroup(group).then((left) => {
-                    if (left) {
-                      done();
-                      onLeft();
-                    }
-                  });
-                }}>退出</button>
-                <button type="button" className="text-button text-button-quiet" onClick={() => setStep('menu')}>
-                  取消</button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" role="menuitem" className="add-menu-item" onClick={() => setStep('leave')}>
-              <Icon name="back" size={16} />退出群</button>
-          )}
+          <button type="button" role="menuitem" className="add-menu-item" onClick={() => {
+            setOpen(false);
+            setStep('leave');
+          }}>
+            <Icon name="back" size={16} />退出群</button>
         </div>
+      ) : null}
+      {step === 'leave' ? (
+        <ConfirmDialog title={`退出「${group.name}」？`} body="退出后收不到这个群的消息；你发过的卡留在群里。"
+          confirmLabel="退出" onCancel={() => setStep('menu')} onConfirm={() => {
+            void contactActions.leaveGroup(group).then((left) => {
+              if (left) {
+                done();
+                onLeft();
+              }
+            });
+          }} />
       ) : null}
       {cropping === null ? null : (
         <AvatarCrop file={cropping} shape="square" onCancel={() => setCropping(null)} onSave={(dataUrl) => {

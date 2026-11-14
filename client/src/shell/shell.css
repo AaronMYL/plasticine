@@ -93,9 +93,10 @@
   outline-offset: 2px;
 }
 
-/* 对话圆球在右下角：贴右边、拉满高的浮层底下让出它；偏左、随内容高的（sheet-fit）碰不到球，不让。 */
-.shell:has(.chat-ball) .sheet-panel:not(.sheet-fit) .sheet-body {
-  padding-bottom: calc(56px + var(--space-5) + var(--space-4)); /* 例外：给右下角的圆球让出地方 */
+/* 对话圆球在右下角：贴右边、拉满高的浮层停在它上面（底部的「取消 · 保存」不被盖住）；偏左、随内容高的（sheet-fit）
+   碰不到球，不让。 */
+.shell:has(.chat-ball) .sheet-panel:not(.sheet-fit) {
+  bottom: calc(56px + var(--space-5) + var(--space-2)); /* 例外：圆球 56 高、离底 24，再空 8 */
 }
 
 .chat-ball-badge {

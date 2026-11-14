@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { DEFAULT_MATE_CHARACTER, DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT, mateRoleOf, mateSoulOpening, PROJECT_HUES,
   type MateDraft, type MateView, type MateGroupView, type MateGroupDraft } from '../../api/shared.ts';
@@ -50,6 +50,7 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
   const locked = op !== undefined && isOpenOp(op);
   const [picked, setPicked] = useState(false);
   const [lookTab, setLookTab] = useState<LookTab | null>(null);
+  const formId = useId();
   const patch = <K extends keyof MateDraft>(field: K, value: MateDraft[K]): void => {
     setDraft((old) => ({ ...old, [field]: value }));
   };
@@ -71,9 +72,14 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
       : await live.mateActions.update(mate, changes));
   };
   const title = mate === undefined ? '创建队友' : '编辑队友';
+  const footer = <>
+    <button type="button" className="secondary-button" onClick={onClose}>取消</button>
+    <button type="submit" form={formId} className="primary-button" disabled={locked || soul.loading
+      || soul.error !== null || draft.name.trim().length < 2 || soul.text.trim().length < 2}>
+      {mate === undefined ? '创建队友' : '保存修改'}</button></>;
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
-    title={title} onClose={onClose} className="mate-editor-sheet soul-editor-sheet">
-    <form className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+    title={title} onClose={onClose} className="mate-editor-sheet soul-editor-sheet" footer={footer}>
+    <form id={formId} className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       <fieldset disabled={locked}>
         {mate !== undefined ? null : (
           <div className="mate-presets" role="group" aria-label="从一个现成的开始">
@@ -111,11 +117,6 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
         onRetry={() => { void live.mateActions.retry(key).then(finish); }}
         onDismiss={() => state.actionOps.dismiss(key)} />}
       {problem === null ? null : <p className="line-note" role="alert">Soul 没有存上：{problem}</p>}
-      <div className="mate-form-actions">
-        <button type="button" className="secondary-button" onClick={onClose}>取消</button>
-        <button className="primary-button" disabled={locked || soul.loading || soul.error !== null
-          || draft.name.trim().length < 2 || soul.text.trim().length < 2}>
-          {mate === undefined ? '创建队友' : '保存修改'}</button></div>
     </form>
   </Sheet></div>, document.body);
 }
@@ -132,15 +133,21 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
   const [draft, setDraft] = useState<MateGroupDraft>(() => ({ name: group?.name ?? '', mateIds: group?.mateIds ?? [],
     ...(cached?.kind === 'mate_group_create' || cached?.kind === 'mate_group_update' ? cached.body : {}) }));
   const locked = op !== undefined && isOpenOp(op);
+  const formId = useId();
   const submit = async (): Promise<void> => {
     const body = { name: draft.name.trim(), mateIds: [...draft.mateIds] };
     const result = group === undefined ? await live.mateActions.createGroup(body)
       : await live.mateActions.updateGroup(group, body);
     if (mounted.current && result !== null && 'mateIds' in result) { onClose(); navigate(mateGroupRoute(result.id)); }
   };
+  const footer = <>
+    <button type="button" className="secondary-button" onClick={onClose}>取消</button>
+    <button type="submit" form={formId} className="primary-button" disabled={locked || draft.name.trim().length < 2
+      || draft.mateIds.length < 2}>{group === undefined ? '创建群组' : '保存修改'}</button></>;
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
-    title={group === undefined ? '创建群组' : '编辑群组'} onClose={onClose} className="mate-editor-sheet">
-    <form className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+    title={group === undefined ? '创建群组' : '编辑群组'} onClose={onClose} className="mate-editor-sheet"
+    footer={footer}>
+    <form id={formId} className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       <fieldset disabled={locked}><label>群组名字<input required minLength={2} maxLength={60} value={draft.name}
         onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
         <legend className="sr-only">选择队友</legend>
@@ -160,11 +167,6 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
         });
       }}
         onDismiss={() => state.actionOps.dismiss(key)} />}
-      <div className="mate-form-actions">
-        <button type="button" className="secondary-button" onClick={onClose}>取消</button>
-        <button className="primary-button" disabled={locked || draft.name.trim().length < 2
-          || draft.mateIds.length < 2}>
-          {group === undefined ? '创建群组' : '保存修改'}</button></div>
     </form>
   </Sheet></div>, document.body);
 }

@@ -5,6 +5,7 @@ import { RevealMore } from '../../shell/reveal-more.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { showToast } from '../../primitives/toast/index.tsx';
 import { bulkKey, type BulkItem, type BulkSelection } from './use-bulk-selection.ts';
+import '../../shell/dialog.css';
 import './bulk.css';
 
 const KIND_NAMES = { note: '笔记', space: '空间', book: '图书', folder: '文件夹', file: '文件' } as const;
@@ -78,14 +79,14 @@ function MoveDialog({ items, folders, onMove, onClose }: { items: readonly BulkI
     else ref.current?.setAttribute('open', '');
     return () => { if (before.current instanceof HTMLElement) before.current.focus(); };
   }, []);
-  return createPortal(<dialog ref={ref} className="bulk-move-dialog" aria-label="移动所选项目"
+  return createPortal(<dialog ref={ref} className="dialog bulk-move-dialog" aria-label="移动所选项目"
     onCancel={(event) => { event.preventDefault(); onClose(); }}>
-    <form onSubmit={(event) => { event.preventDefault(); onMove(value.trim()); }}>
-      <h2 className="confirm-title">移动 {items.length} 项</h2>
+    <form className="bulk-move-form" onSubmit={(event) => { event.preventDefault(); onMove(value.trim()); }}>
+      <h2 className="dialog-title">移动 {items.length} 项</h2>
       <label className="field">目标文件夹<input autoFocus className="field-input" list={id} value={value}
         onChange={(event) => setValue(event.target.value)} /></label>
       <datalist id={id}>{folders.map((name) => <option key={name} value={name} />)}</datalist>
-      <div className="confirm-actions"><button type="button" className="secondary-button" onClick={onClose}>
+      <div className="dialog-actions"><button type="button" className="secondary-button" onClick={onClose}>
         取消</button><button type="submit" className="primary-button">移动</button></div>
     </form>
   </dialog>, document.body);

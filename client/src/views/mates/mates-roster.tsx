@@ -61,7 +61,8 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
         <IconButton icon="plus" label="创建队友群组" onClick={() => setEditor('group')} /></div>
       {roster.groups.map((group) => <div key={group.id} className="column-row"><ColumnLink
         route={mateGroupRoute(group.id)} current={route.mateGroupId === group.id || route.lineId === group.lineId}
-        navigate={navigate} lead={<GroupAvatar mates={roster.mates.filter((mate) => group.mateIds.includes(mate.id))} />}
+        navigate={navigate}
+        lead={<GroupAvatar mates={roster.mates.filter((mate) => group.mateIds.includes(mate.id))} />}
         sub={`${group.mateIds.length} 位队友`}
         trail={groupWaiting(group, lines.lines) === 0 ? undefined
           : <span className="mate-wait-count">等你 {groupWaiting(group, lines.lines)}</span>}>{group.name}</ColumnLink>

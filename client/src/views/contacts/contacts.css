@@ -341,10 +341,6 @@
   gap: var(--space-3);
 }
 
-.contact-sheet-submit {
-  align-self: flex-start;
-}
-
 /* ---------- 手机：每一步一整页 ---------- */
 
 .contacts[data-phone='true'] {

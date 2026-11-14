@@ -37,7 +37,7 @@ describe('连接模型', () => {
     expect(within(adding).queryByRole('listitem', { name: 'ChatGPT' })).toBeNull();
     fireEvent.click(within(chatgpt).getByRole('button', { name: '管理 ChatGPT' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: '断开' }));
-    const confirm = screen.getByRole('alertdialog', { name: '断开 ChatGPT' });
+    const confirm = screen.getByRole('alertdialog', { name: '断开 ChatGPT？' });
     fireEvent.click(within(confirm).getByRole('button', { name: '断开' }));
     await waitFor(async () => expect((await app.api.modelProviders.list()).providers
       .find((item) => item.id === 'openai')?.connected).toBeNull());
@@ -49,7 +49,7 @@ describe('连接模型', () => {
     const chatgpt = within(connected).getByRole('listitem', { name: 'ChatGPT' });
     fireEvent.click(within(chatgpt).getByRole('button', { name: '管理 ChatGPT' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: '断开' }));
-    const confirm = screen.getByRole('alertdialog', { name: '断开 ChatGPT' });
+    const confirm = screen.getByRole('alertdialog', { name: '断开 ChatGPT？' });
     fireEvent.click(within(confirm).getByRole('button', { name: '断开' }));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(screen.queryByRole('main', { name: '连接模型' })).toBeNull();

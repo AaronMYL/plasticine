@@ -138,37 +138,8 @@
   font-size: var(--text-section);
 }
 
-/* ⋯ 菜单的「删除」用出错色；删除前的确认是一张贴着 ⋯ 的小卡。 */
+/* ⋯ 菜单的「删除」用出错色；删除前弹统一的确认框（11-14）。 */
 .feed-src-menu .popover-separator + .popover-item {
-  color: var(--err);
-}
-
-.feed-src-confirm {
-  width: 264px;
-  padding: var(--space-4);
-}
-
-.feed-src-confirm-title {
-  margin: 0;
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
-  font-weight: 600;
-}
-
-.feed-src-confirm-text {
-  margin: var(--space-1) 0 var(--space-3);
-  color: var(--fg2);
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
-}
-
-.feed-src-confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-}
-
-.secondary-button.feed-danger {
   color: var(--err);
 }
 

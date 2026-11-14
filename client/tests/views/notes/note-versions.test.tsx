@@ -49,7 +49,8 @@ describe('笔记版本', () => {
     expect(current.getText()).toContain('未保存的字');
     expect((await app.api.notes.get('n1')).markdown).toBe('# 当前稿');
     fireEvent.click(within(sheet).getByRole('button', { name: '以此版恢复' }));
-    fireEvent.click(within(sheet).getByRole('button', { name: '确认恢复' }));
+    fireEvent.click(within(screen.getByRole('alertdialog', { name: /^恢复到第/ }))
+      .getByRole('button', { name: '恢复' }));
     await waitFor(() => expect(current.getText().trim()).toBe('初稿'));
     const history = await app.api.noteVersions.versions('n1');
     expect(history.versions.map((row) => row.version)).toEqual([4, 3, 2, 1]);
@@ -73,7 +74,8 @@ describe('笔记版本', () => {
     fireEvent.click(await within(sheet).findByRole('button', { name: /查看第 1 版/ }));
     await within(sheet).findByLabelText('历史正文');
     fireEvent.click(within(sheet).getByRole('button', { name: '以此版恢复' }));
-    fireEvent.click(within(sheet).getByRole('button', { name: '确认恢复' }));
+    fireEvent.click(within(screen.getByRole('alertdialog', { name: /^恢复到第/ }))
+      .getByRole('button', { name: '恢复' }));
     await waitFor(() => expect(app.state.actionOps.hasPending()).toBe(true));
     fireEvent.click(await screen.findByRole('button', { name: '再核实' }));
     await waitFor(() => expect(app.state.actionOps.hasPending()).toBe(false));
