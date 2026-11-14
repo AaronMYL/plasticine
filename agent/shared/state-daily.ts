@@ -119,6 +119,13 @@ export const FEED_URL_MAX_CHARS = 3_000;
 export const FEED_IMAGE_RATIO_MIN = 0.2;
 export const FEED_IMAGE_RATIO_MAX = 5;
 const FeedImageLinkSchema = Type.String({ pattern: '^https://', maxLength: FEED_URL_MAX_CHARS });
+/** 封面以外的图最多几张（11-14 只有 X 的帖子带，一条最多四张）。 */
+export const FEED_MORE_IMAGES_MAX = 3;
+export const FeedImageSchema = Type.Object({
+  url: FeedImageLinkSchema,
+  ratio: Nullable(Type.Number({ minimum: FEED_IMAGE_RATIO_MIN, maximum: FEED_IMAGE_RATIO_MAX })),
+}, STRICT);
+export type FeedImage = Static<typeof FeedImageSchema>;
 export const FeedItemInputSchema = Type.Object(
   {
     sourceId: IdSchema,
@@ -143,6 +150,8 @@ export const FeedItemInputSchema = Type.Object(
     avatarUrl: Type.Optional(Nullable(FeedImageLinkSchema)),
     imageUrl: Type.Optional(Nullable(FeedImageLinkSchema)),
     imageRatio: Type.Optional(Nullable(Type.Number({ minimum: FEED_IMAGE_RATIO_MIN, maximum: FEED_IMAGE_RATIO_MAX }))),
+    // 11-14 图片统一：封面（imageUrl）以外的图，按顺序；只有 X 的帖子有。
+    moreImages: Type.Optional(Type.Array(FeedImageSchema, { maxItems: FEED_MORE_IMAGES_MAX })),
     // 第13批：在哪一处看到的（X、小红书）；订阅文章的全文。
     places: Type.Optional(Type.Array(Type.Enum(FEED_PLACES), { maxItems: FEED_PLACES.length })),
     body: Type.Optional(Nullable(Type.Array(FeedBlockSchema, { maxItems: FEED_BODY_MAX_BLOCKS }))),
@@ -165,6 +174,8 @@ export const FeedItemPatchSchema = Type.Partial(
     body: Nullable(Type.Array(FeedBlockSchema, { maxItems: FEED_BODY_MAX_BLOCKS })),
     // 11-14 起存原链接：以前存的是洗过的（比如小红书笔记少了 xsec_token），再抓到时换成原链接。
     url: Nullable(Type.String({ pattern: '^https?://', maxLength: FEED_URL_MAX_CHARS })),
+    // 11-14 图片统一：以前只存了封面的 X 帖子，再看到时补上别的图。
+    moreImages: Type.Array(FeedImageSchema, { maxItems: FEED_MORE_IMAGES_MAX }),
   }),
   STRICT,
 );

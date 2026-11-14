@@ -4,7 +4,7 @@
 import { createHash } from 'node:crypto';
 import type { XPost } from '../../shared/api/feed-x.ts';
 import type { XhsNote } from '../../shared/api/feed-xhs.ts';
-import type { FeedBlock, FeedPlace } from '../../shared/state.ts';
+import { FEED_MORE_IMAGES_MAX, type FeedBlock, type FeedImage, type FeedPlace } from '../../shared/state.ts';
 import { articleBlocks } from './article-blocks.ts';
 import type { parseFeed } from './feed-parse.ts';
 import { safeUrl } from './link-data.ts';
@@ -33,6 +33,8 @@ export interface NewEntry {
   avatarUrl: string | null;
   imageUrl: string | null;
   imageRatio: number | null;
+  /** 封面以外的图（X 的帖子，11-14 起）。 */
+  moreImages?: FeedImage[];
 }
 
 function clip(text: string, max: number): string {
@@ -45,8 +47,21 @@ function httpsOrNull(raw: string | null | undefined): string | null {
   return url !== null && url.startsWith('https://') ? url : null;
 }
 
+/** 帖子里的图（只要 https 的，重复的去掉）：新版客户端给 images，旧版只给第一张。 */
+function postImages(post: XPost): FeedImage[] {
+  const given = post.images ?? (post.image === null ? [] : [{ url: post.image, ratio: post.imageRatio }]);
+  const seen = new Set<string>();
+  return given.flatMap((image) => {
+    const url = httpsOrNull(image.url);
+    if (url === null || seen.has(url)) return [];
+    seen.add(url);
+    return [{ url, ratio: image.ratio }];
+  });
+}
+
 export function postEntry(post: XPost): NewEntry {
   const firstLine = post.text.split('\n').find((line) => line.trim() !== '') ?? '';
+  const [cover, ...rest] = postImages(post);
   return {
     key: `x:${post.id}`,
     title: firstLine === '' ? `@${post.handle}` : clip(firstLine, POST_TITLE_CHARS),
@@ -57,8 +72,9 @@ export function postEntry(post: XPost): NewEntry {
     author: post.author,
     authorHandle: post.handle,
     avatarUrl: httpsOrNull(post.avatar),
-    imageUrl: httpsOrNull(post.image),
-    imageRatio: post.image === null ? null : post.imageRatio,
+    imageUrl: cover?.url ?? null,
+    imageRatio: cover?.ratio ?? null,
+    moreImages: rest.slice(0, FEED_MORE_IMAGES_MAX),
     places: post.places === undefined ? ['following'] : [...new Set(post.places)],
   };
 }

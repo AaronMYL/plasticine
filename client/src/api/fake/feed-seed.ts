@@ -57,8 +57,13 @@ export function seedFeedBoard(feed: FakeFeed, now: Date): void {
     { id: 'fb_memory', title: '把记忆拆成「你说过的」和「它推出来的」两栏以后', sourceId: X_SOURCE_ID, author: lin,
       url: 'https://x.com/linjian_dev/status/1850000000000000001',
       summary: '把记忆拆成「你说过的」和「它推出来的」两栏以后，纠错次数降了一半。截图是两周的数。',
-      image: { src: picture(0.62, ['#dfe4dc', '#b9c4b4', '#587559']), ratio: 0.62 }, arrivedAt: ago(1.5),
-      places: ['following', 'bookmark'], ...hit },
+      image: { src: picture(0.62, ['#dfe4dc', '#b9c4b4', '#587559']), ratio: 0.62 },
+      // 11-14 图片统一：X 的帖子一条最多四张。
+      moreImages: [
+        { src: picture(1, ['#e4e2ea', '#c9c5d4', '#5a6b85']), ratio: 1 },
+        { src: picture(1.3, ['#e7e3da', '#cfc8b8', '#cc7d5e']), ratio: 1.3 },
+        { src: picture(0.75, ['#e8dccd', '#cdb59a', '#a98b6d']), ratio: 0.75 },
+      ], arrivedAt: ago(1.5), places: ['following', 'bookmark'], ...hit },
     { id: 'fb_edge', title: '多家厂商发布端侧大模型', sourceId: 'src_ai', site: 'news.example.com',
       url: 'https://news.example.com/edge-models', summary: '新一代手机芯片能在本地跑百亿参数模型，延迟和隐私都受益。',
       why: '你关注「个人 AI」，端侧模型和你的 Mac 本地能力有关。', arrivedAt: ago(2) },

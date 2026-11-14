@@ -7,8 +7,9 @@ enum XTimelineScript {
 if (window.__plasticineXTimeline) return;
 // 读 X 时间线的注入脚本（第 3 批，用户 11-04 定：用他在 Plasticine 浏览器里的 X 登录，电脑在线时定时读）。
 // 电脑在一个看不见的网页里载入 x.com，用和网页标签同一份登录（同一个网站数据存储），在独立脚本世界里跑这一段：
-// 先切到「关注」那一栏（第13批起也切「为你推荐」、也读书签页），再一边往下翻一边收帖子——作者、头像、正文、第一张图、
-// 时间、链接——交回去，再交给服务端（agent/shared/api/feed-x.ts 的 XPost）。只读不点别的；广告（没有时间链接的）跳过。
+// 先切到「关注」那一栏（第13批起也切「为你推荐」、也读书签页），再一边往下翻一边收帖子——作者、头像、正文、
+// 图（11-14 起最多四张）、时间、链接——交回去，再交给服务端（agent/shared/api/feed-x.ts 的 XPost）。
+// 只读不点别的；广告（没有时间链接的）跳过。
 // scripts/generate-x-timeline-script.ts 把它去掉类型写进 mac/Sources/Plasticine/x-timeline-script.swift，所以这里不
 // import 运行时的东西。
 //
@@ -16,9 +17,10 @@ if (window.__plasticineXTimeline) return;
 
 /** 交给服务端的一条帖子（agent/shared/api/feed-x.ts 的 XPost；这里只 import 类型，生成脚本时会去掉）。 */
 
-// 和 feed-x.ts 的 X_TEXT_MAX_CHARS、state-daily.ts 的 FEED_IMAGE_RATIO_MIN / MAX 一致（注入脚本里不能 import 常量；
-// 测试按服务端的 schema 核对）。
+// 和 feed-x.ts 的 X_TEXT_MAX_CHARS、X_IMAGES_MAX，state-daily.ts 的 FEED_IMAGE_RATIO_MIN / MAX 一致（注入脚本里不能
+// import 常量；测试按服务端的 schema 核对）。
 const TEXT_MAX_CHARS = 4_000;
+const IMAGES_MAX = 4;
 const RATIO_MIN = 0.2;
 const RATIO_MAX = 5;
 const STATUS_PATH = /^\/([A-Za-z0-9_]{1,30})\/status\/(\d{1,30})(?:\/|$)/;
@@ -61,6 +63,18 @@ function ratioOf(image                  )                {
   return ratio >= RATIO_MIN && ratio <= RATIO_MAX ? Math.round(ratio * 1000) / 1000 : null;
 }
 
+/** 帖子里的图：按顺序最多四张，同一张不重复（11-14 图片统一：信息流里一条显示多张）。 */
+function photosOf(article         , base        )                                          {
+  const photos                                          = [];
+  for (const photo of article.querySelectorAll                  ('[data-testid="tweetPhoto"] img')) {
+    const url = https(photo.getAttribute('src'), base);
+    if (url === null || photos.some((known) => known.url === url)) { continue; }
+    photos.push({ url, ratio: ratioOf(photo) });
+    if (photos.length === IMAGES_MAX) { break; }
+  }
+  return photos;
+}
+
 /** 一条帖子；广告、没有状态链接的（没有 time 的那种）、作者认不出的给 null。 */
 function readPost(article         , base        )                       {
   const time = article.querySelector('time[datetime]');
@@ -71,7 +85,7 @@ function readPost(article         , base        )                       {
   const names = article.querySelector('[data-testid="User-Name"]');
   const author = names?.querySelector('a[href] span')?.textContent?.trim() || handle;
   const avatar = article.querySelector                  ('[data-testid="Tweet-User-Avatar"] img');
-  const photo = article.querySelector                  ('[data-testid="tweetPhoto"] img');
+  const images = photosOf(article, base);
   const at = Date.parse(time.getAttribute('datetime') ?? '');
   return {
     id: match[2] ?? '',
@@ -79,8 +93,9 @@ function readPost(article         , base        )                       {
     author: author.slice(0, 200),
     avatar: https(avatar?.getAttribute('src'), base),
     text: textOf(article.querySelector('[data-testid="tweetText"]')),
-    image: https(photo?.getAttribute('src'), base),
-    imageRatio: photo === null ? null : ratioOf(photo),
+    image: images[0]?.url ?? null,
+    imageRatio: images[0]?.ratio ?? null,
+    images,
     publishedAt: Number.isFinite(at) ? new Date(at).toISOString() : null,
   };
 }

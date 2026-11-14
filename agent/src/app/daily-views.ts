@@ -80,6 +80,10 @@ export function feedItemView(state: FeedViewState, item: FeedItem,
   const source = state.feedSources.get(item.sourceId);
   const translation = state.feedTranslations.get(item.id);
   const image = proxied(images, item.imageUrl);
+  const moreImages = item.moreImages.flatMap((more) => {
+    const src = proxied(images, more.url);
+    return src === null ? [] : [{ src, ratio: more.ratio }];
+  });
   return checkFeedItemView({
     id: item.id,
     origin: item.origin,
@@ -87,6 +91,7 @@ export function feedItemView(state: FeedViewState, item: FeedItem,
     author: item.author === null ? null
       : { name: item.author, handle: item.authorHandle, avatar: proxied(images, item.avatarUrl) },
     image: image === null ? null : { src: image, ratio: item.imageRatio },
+    moreImages,
     originLabel: FEED_ORIGIN_LABELS[item.origin],
     title: item.title,
     ...feedItemLinks(item),

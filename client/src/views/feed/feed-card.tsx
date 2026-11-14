@@ -166,7 +166,10 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
   const source = sourceOf(item);
   const hit = item.concernId !== null;
   const at = item.publishedAt ?? item.arrivedAt;
-  const ratio = item.image?.ratio ?? null;
+  // 11-14 图片统一：封面和别的图（X 的帖子一条最多四张）一起排成格子，点开一起翻。
+  const caption = `${source.name}${source.handle === null ? '' : ` · ${source.handle}`}`;
+  const pictures = [...(item.image === null ? [] : [item.image]), ...item.moreImages]
+    .map((image) => ({ src: image.src, ratio: image.ratio, caption, original: item.url }));
   const liked = item.reaction === 'like';
   return (
     <>
@@ -190,11 +193,8 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
         {item.topic ?? item.sourceLabel}</span> : null}
       {item.kind === 'douyin' ? <FeedVideoBody item={item} /> : <FeedText item={item} />}
       {item.chart == null ? null : <FeedChartView chart={item.chart} />}
-      {item.image === null ? null : (
-        <div className="feed-card-media">
-          <ImageGrid box={FEED_IMAGE_BOX} images={[{ src: item.image.src, ratio,
-            caption: `${source.name}${source.handle === null ? '' : ` · ${source.handle}`}`, original: item.url }]} />
-        </div>
+      {pictures.length === 0 ? null : (
+        <div className="feed-card-media"><ImageGrid box={FEED_IMAGE_BOX} images={pictures} /></div>
       )}
       <footer className="feed-card-actions">
         <IconButton icon={liked ? 'heart-filled' : 'heart'} label="点赞" aria-pressed={liked} disabled={lockedReact}

@@ -22,6 +22,16 @@ export type XPlace = (typeof X_PLACES)[number];
 export const X_TEXT_MAX_CHARS = 4_000;
 
 const HttpsSchema = Type.String({ pattern: '^https://', maxLength: FEED_URL_MAX_CHARS });
+const RatioSchema = Type.Number({ minimum: FEED_IMAGE_RATIO_MIN, maximum: FEED_IMAGE_RATIO_MAX });
+
+/** 一条帖子最多交几张图（X 一条最多四张）。 */
+export const X_IMAGES_MAX = 4;
+export const XImageSchema = Type.Object({
+  url: HttpsSchema,
+  /** 高 / 宽；量不到就是 null。 */
+  ratio: OrNull(RatioSchema),
+}, { additionalProperties: false });
+export type XImage = Static<typeof XImageSchema>;
 
 export const XPostSchema = Type.Object({
   /** 帖子的数字标识（链接里 /status/ 后面那一段）。 */
@@ -34,7 +44,12 @@ export const XPostSchema = Type.Object({
   /** 帖子里的第一张图。 */
   image: OrNull(HttpsSchema),
   /** 那张图的高 / 宽；量不到就是 null。 */
-  imageRatio: OrNull(Type.Number({ minimum: FEED_IMAGE_RATIO_MIN, maximum: FEED_IMAGE_RATIO_MAX })),
+  imageRatio: OrNull(RatioSchema),
+  /**
+   * 帖子里的图，按顺序最多四张，第一张就是 image（11-14 Aaron 弹框选「只改 X，其余只放封面」：一条显示多张）。
+   * 旧版客户端不给，就只有 image 那一张。
+   */
+  images: Type.Optional(Type.Array(XImageSchema, { maxItems: X_IMAGES_MAX })),
   publishedAt: OrNull(IsoTimeSchema),
   /** 在哪几处看到的（第13批）；不写是「正在关注」。 */
   places: Type.Optional(Type.Array(Type.Enum(X_PLACES), { minItems: 1, maxItems: X_PLACES.length })),

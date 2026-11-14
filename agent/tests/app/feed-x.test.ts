@@ -124,3 +124,43 @@ test('X 三处（第13批）：帖子带在哪几处看到的；每处各取最�
     .find((row) => row.kind === 'x');
   assert.deepEqual(x?.places, { following: 10, recommend: 1, bookmark: 3 });
 });
+
+test('X 一条多张图（11-14 图片统一）：按顺序存四张，界面拿到封面和另外三张代理地址；以前只存了封面的再读到补上', async () => {
+  t = await startTestApp();
+  const cookie = await pair(t);
+  const headers = { authorization: `Bearer ${await pairedNode(t, cookie)}` };
+  const media = (name: string): string => `https://pbs.twimg.com/media/${name}.jpg`;
+  const images = [{ url: media('a'), ratio: 0.6 }, { url: media('b'), ratio: 1 }, { url: media('c'), ratio: null },
+    { url: media('d'), ratio: 1.25 }];
+  // 旧版客户端只给 image 的一条，和新版给 images 的一条。
+  const old = { ...POST, id: '4001', image: media('z'), imageRatio: 0.5 };
+  const fresh = { ...POST, id: '4002', image: media('a'), imageRatio: 0.6, images };
+  const report = await call(t, 'POST', '/v2/nodes/feed/x', { headers,
+    body: { requestId: 'x-read-0005', posts: [old, fresh], error: null } });
+  assert.deepEqual(report.body, { added: 2 });
+  type Shown = { url: string; image: { src: string; ratio: number | null } | null;
+    moreImages: { src: string; ratio: number | null }[] };
+  const shown = async (id: string): Promise<Shown | undefined> => {
+    const list = await call(t!, 'GET', '/v2/feed?tz=UTC&kind=x', { cookie });
+    assert.ok(Value.Check(FeedListResponseSchema, list.body));
+    return (list.body as { items: Shown[] }).items.find((item) => item.url.endsWith(`/${id}`));
+  };
+  const proxiedOf = (src: string): string => new URL(src, 'http://local').searchParams.get('u') ?? '';
+  const four = await shown('4002');
+  assert.equal(proxiedOf(four?.image?.src ?? ''), media('a'));
+  assert.deepEqual(four?.moreImages.map((image) => [proxiedOf(image.src), image.ratio]),
+    [[media('b'), 1], [media('c'), null], [media('d'), 1.25]]);
+  assert.deepEqual((await shown('4001'))?.moreImages, []);
+  // 新版客户端又读到 4001（这回有三张）：封面不动，补上另外两张；再读一遍不再改。
+  const again = { ...old, images: [{ url: media('z'), ratio: 0.5 }, { url: media('y'), ratio: 1 },
+    { url: media('x'), ratio: null }] };
+  assert.deepEqual((await call(t, 'POST', '/v2/nodes/feed/x', { headers,
+    body: { requestId: 'x-read-0006', posts: [again], error: null } })).body, { added: 0 });
+  const filled = await shown('4001');
+  assert.equal(proxiedOf(filled?.image?.src ?? ''), media('z'));
+  assert.deepEqual(filled?.moreImages.map((image) => proxiedOf(image.src)), [media('y'), media('x')]);
+  // 超过四张的 400（客户端最多交四张）。
+  assert.equal((await call(t, 'POST', '/v2/nodes/feed/x', { headers, body: { requestId: 'x-read-0007',
+    posts: [{ ...fresh, id: '4003', images: [...images, { url: media('e'), ratio: null }] }], error: null } })).status,
+  400);
+});

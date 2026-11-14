@@ -44,6 +44,7 @@ const COLUMNS: ColumnMap = {
   avatarUrl: 'text',
   imageUrl: 'text',
   imageRatio: 'real',
+  moreImages: 'json',
   places: 'json',
   body: 'json',
 };
@@ -66,6 +67,7 @@ const DEFAULTS = {
   avatarUrl: null,
   imageUrl: null,
   imageRatio: null,
+  moreImages: [],
   places: [],
   body: null,
 };
@@ -239,10 +241,16 @@ export function createFeedItemStore(context: StoreContext) {
           const more = (input.places ?? []).filter((place) => !existing.places.includes(place));
           const body = existing.body === null && (input.body ?? null) !== null ? input.body : undefined;
           const url = fuller(existing.url, input.url ?? null);
-          if (more.length === 0 && body === undefined && url === null) return { item: existing, created: false };
+          // 以前只存了封面的帖子（11-14 以前、旧版客户端读的）再读到时补上别的图。
+          const images = existing.moreImages.length > 0 ? []
+            : (input.moreImages ?? []).filter((image) => image.url !== existing.imageUrl);
+          if (more.length === 0 && body === undefined && url === null && images.length === 0) {
+            return { item: existing, created: false };
+          }
           return { item: store.update(existing.id, existing.version, {
             ...(more.length === 0 ? {} : { places: [...existing.places, ...more] }),
-            ...(body === undefined ? {} : { body }), ...(url === null ? {} : { url }) }), created: false };
+            ...(body === undefined ? {} : { body }), ...(url === null ? {} : { url }),
+            ...(images.length === 0 ? {} : { moreImages: images }) }), created: false };
         }
         return { item: store.create(input, undefined, checkLinkData(options)), created: true };
       });

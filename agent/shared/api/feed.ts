@@ -81,6 +81,8 @@ export const FeedItemViewSchema = Type.Object({
   kind: Type.Enum(FEED_ITEM_KINDS),
   author: OrNull(FeedAuthorViewSchema),
   image: OrNull(FeedImageViewSchema),
+  /** 封面以外的图，按顺序（11-14 图片统一：X 的帖子一条最多四张）；别的来源是空的。 */
+  moreImages: Type.Array(FeedImageViewSchema, { maxItems: 3 }),
   originLabel: Type.String(),
   title: Type.String(),
   url: OrNull(Type.String()),

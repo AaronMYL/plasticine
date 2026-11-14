@@ -437,6 +437,7 @@ export class FakeFeed implements FeedApi {
       kind,
       author: null,
       image: null,
+      moreImages: [],
       originLabel: FEED_ORIGIN_LABELS[origin],
       url: null,
       site: null,

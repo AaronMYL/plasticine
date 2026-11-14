@@ -328,7 +328,8 @@ export class FeedSubscriptions {
       for (const entry of entries) {
         if (state.feedItems.byDedupeKey(entry.key) !== undefined) {
           state.feedItems.add({ sourceId: source.id, origin: 'feed', title: entry.title, dedupeKey: entry.key, day,
-            arrivedAt: at.toISOString(), places: entry.places ?? [], body: entry.body ?? null, url: entry.url });
+            arrivedAt: at.toISOString(), places: entry.places ?? [], body: entry.body ?? null, url: entry.url,
+            moreImages: entry.moreImages ?? [] });
         }
       }
       // 比对用洗过的样子（knownUrls 也是）。
@@ -343,6 +344,7 @@ export class FeedSubscriptions {
           publishedAt: entry.publishedAt, arrivedAt: new Date(at.getTime() + index).toISOString(),
           author: entry.author, authorHandle: entry.authorHandle, avatarUrl: entry.avatarUrl,
           imageUrl: entry.imageUrl, imageRatio: entry.imageRatio,
+          ...(entry.moreImages === undefined ? {} : { moreImages: entry.moreImages }),
           ...(entry.places === undefined ? {} : { places: entry.places }),
           ...(entry.body === undefined ? {} : { body: entry.body }),
         };

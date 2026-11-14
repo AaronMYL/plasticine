@@ -15,7 +15,9 @@ import { steppingClock } from './helpers.ts';
 
 // 讲的是 0058 之前的历史：只跑到 0058（0059 起的清理在 retire-migration.test.ts）。
 // 条目用现在的存储写：0138 加的位置、全文列要一起跑上（只加列，和这里看的迁移不相干），放在最后。
-const MIGRATIONS = EVERY_MIGRATION.filter((entry) => entry.id < '0059' || entry.id === '0138-feed-places-body');
+// 条目用现在的存储写：0138、0140 加的列要一起跑上（只加列）。
+const MIGRATIONS = EVERY_MIGRATION.filter((entry) => entry.id < '0059' || entry.id === '0138-feed-places-body'
+  || entry.id === '0140-feed-more-images');
 
 const REMOVED_AT = '2026-11-03T12:00:00.000Z';
 
@@ -39,7 +41,8 @@ test('0051：信息流收藏从书签移走（只记删除时间）；书签页�
     const now = steppingClock();
     // 条目用现在的存储写进去：它要 0054 加的作者、配图列和 0138 加的位置、全文列，先把它们一起跑上（只加列，
     // 和 0045–0051 不相干）。
-    const columns = (id: string): boolean => id === '0054-feed-sources-x' || id === '0138-feed-places-body';
+    const columns = (id: string): boolean => id === '0054-feed-sources-x' || id === '0138-feed-places-body'
+      || id === '0140-feed-more-images';
     migrate(db, MIGRATIONS.filter((entry) => entry.id < '0045' || columns(entry.id)), now);
     let n = 0;
     const context: StoreContext = { db, now, newId: () => `id-${(n += 1)}` };

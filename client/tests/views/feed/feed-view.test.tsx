@@ -57,7 +57,9 @@ function seed(fake: FakeApi): void {
     why: '你在留意端侧模型。' });
   feed.seedItem({ id: 'f_post', title: '把记忆拆成两栏以后', sourceId: 'src_x', origin: 'feed', arrivedAt: ago(1),
     url: 'https://x.com/linjian_dev/status/1', summary: '把记忆拆成两栏以后\n纠错次数降了一半。',
-    author: { name: '林间', handle: 'linjian_dev', avatar: '/v2/mail-image?u=a&e=1&s=b' } });
+    author: { name: '林间', handle: 'linjian_dev', avatar: '/v2/mail-image?u=a&e=1&s=b' },
+    image: { src: '/v2/mail-image?u=p1&e=1&s=q', ratio: 1 },
+    moreImages: [{ src: '/v2/mail-image?u=p2&e=1&s=q', ratio: 1 }, { src: '/v2/mail-image?u=p3&e=1&s=q', ratio: null }] });
   feed.seedItem({ id: 'f_blog', title: '本地优先软件的同步难题', sourceId: 'src_blog', origin: 'feed',
     site: 'blog.example.org', url: 'https://blog.example.org/p/1', summary: '联网之后该听谁的？', arrivedAt: ago(2),
     image: { src: '/v2/mail-image?u=c&e=1&s=d', ratio: 0.5 } });
@@ -89,6 +91,15 @@ describe('信息流页', () => {
     fireEvent.keyDown(viewer, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: '看图' })).toBeNull();
     expect(blog.querySelector('time')?.textContent).not.toBe('');
+    // X 的帖子一条多张图（11-14）：排成格子，点哪张从哪张开，一起翻，「打开原文」是帖子。
+    const cells = within(post).getAllByRole('button', { name: /^查看图片/ });
+    expect(cells).toHaveLength(3);
+    fireEvent.click(cells[1]!);
+    const album = await screen.findByRole('dialog', { name: '看图' });
+    expect(album.textContent).toContain('2 / 3');
+    expect(within(album).getByRole('link', { name: '打开原文' }).getAttribute('href'))
+      .toBe('https://x.com/linjian_dev/status/1');
+    fireEvent.keyDown(album, { key: 'Escape' });
     // 不感兴趣的默认不在里面。
     expect(titles()).toEqual(['把记忆拆成两栏以后', '本地优先软件的同步难题', '多家厂商发布端侧大模型']);
   });

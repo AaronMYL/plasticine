@@ -1,5 +1,5 @@
 // 读 X 时间线的注入脚本（第 3 批；第13批加「为你推荐」和书签）：在仿 X 结构的页面上认出没登录、切到「关注」或
-// 「为你推荐」、收帖子（作者、头像、正文、第一张图、时间、链接），广告跳过、翻页重复的只算一条。
+// 「为你推荐」、收帖子（作者、头像、正文、图（11-14 起最多四张）、时间、链接），广告跳过、翻页重复的只算一条。
 
 import { Value } from 'typebox/value';
 import { describe, expect, it } from 'vitest';
@@ -10,11 +10,11 @@ import { chooseFollowing, chooseRecommend, collectPosts, fullText, readPost, tim
 const BASE = 'https://x.com/home';
 
 function tweet(options: { id: string; handle: string; name: string; text: string; photo?: string; ad?: boolean;
-  more?: boolean }) {
+  more?: boolean; photos?: string[] }) {
   const time = options.ad === true ? '' : `<a href="/${options.handle}/status/${options.id}">`
     + `<time datetime="2026-11-04T06:58:00.000Z">1h</time></a>`;
-  const photo = options.photo === undefined ? ''
-    : `<div data-testid="tweetPhoto"><img src="${options.photo}" alt="Image"></div>`;
+  const photo = [...(options.photo === undefined ? [] : [options.photo]), ...(options.photos ?? [])]
+    .map((src) => `<div data-testid="tweetPhoto"><img src="${src}" alt="Image"></div>`).join('');
   return `<article data-testid="tweet">
     <div data-testid="Tweet-User-Avatar"><img src="https://pbs.twimg.com/profile_images/1/${options.handle}.jpg"></div>
     <div data-testid="User-Name"><a href="/${options.handle}"><span>${options.name}</span></a>
@@ -77,9 +77,24 @@ describe('X 时间线注入脚本', () => {
       id: '1850000000000000001', handle: 'mayabuilds', author: 'Maya Chen',
       avatar: 'https://pbs.twimg.com/profile_images/1/mayabuilds.jpg', text: 'shipped 🚀 41 tasks',
       image: 'https://pbs.twimg.com/media/abc?format=jpg', imageRatio: null,
+      images: [{ url: 'https://pbs.twimg.com/media/abc?format=jpg', ratio: null }],
       publishedAt: '2026-11-04T06:58:00.000Z',
     } satisfies XTimelinePost);
     expect(Value.Check(XPostSchema, post)).toBe(true);
+  });
+
+  it('多张图（11-14 图片统一）：按顺序最多四张，同一张不重复，不是 https 的不要；第一张也写在 image', () => {
+    const media = (name: string): string => `https://pbs.twimg.com/media/${name}?format=jpg`;
+    const doc = page(tweet({ id: '3', handle: 'mayabuilds', name: 'Maya Chen', text: '五张图',
+      photos: [media('a'), 'http://insecure.test/b.jpg', media('c'), media('a'), media('d'), media('e'), media('f')] }));
+    const post = readPost(doc.querySelector('article') as Element, BASE)!;
+    expect(post.images?.map((image) => image.url)).toEqual([media('a'), media('c'), media('d'), media('e')]);
+    expect(post.image).toBe(media('a'));
+    expect(Value.Check(XPostSchema, post)).toBe(true);
+    const plain = readPost(page(tweet({ id: '4', handle: 'mayabuilds', name: 'Maya Chen', text: '没图' }))
+      .querySelector('article') as Element, BASE)!;
+    expect(plain.images).toEqual([]);
+    expect(plain.image).toBeNull();
   });
 
   it('收帖子：广告（没有时间链接）跳过；翻页又出现的同一条只算一次', () => {
