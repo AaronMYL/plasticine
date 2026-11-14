@@ -38,24 +38,33 @@ describe('设置 · AI 模型选择', () => {
     expect(within(options).getByRole('group', { name: 'Claude' })).toBeTruthy();
   });
 
-  it('各用哪个：默认在最上，成组的折成一行点开再分开配，跟默认是浅色；搜功能只留对得上的', async () => {
-    await renderApp({ hash: '#/settings/ai', setup: seed });
-    const first = await screen.findByRole('button', { name: /^默认：/ });
-    expect(first.getAttribute('aria-label')).toBe('默认：GPT-5.5 · 较高');
-    const notes = screen.getByRole('button', { name: '笔记 · 8 项' });
-    expect(notes.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('button', { name: /^润色：/ })).toBeNull();
-    fireEvent.click(notes);
-    expect(screen.getByRole('button', { name: /^润色：/ }).getAttribute('data-quiet')).toBe('true');
-    expect(screen.queryByRole('button', { name: '队友：跟主线' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '主线和队友 · 3 项' }));
-    expect(screen.getByRole('button', { name: '队友：跟主线' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '输入建议：跟续写' })).toBeTruthy();
-    fireEvent.change(screen.getByRole('searchbox', { name: '搜功能' }), { target: { value: '心跳' } });
-    expect(screen.getByRole('button', { name: /^心跳：/ })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /^默认：/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^翻译：/ })).toBeNull();
-  });
+  it('按用在哪儿分组（第13批）：默认模型在「模型」里；笔记 8 项折成一行点开再分开配，跟默认是浅色；合成的一行一起改',
+    async () => {
+      const app = await renderApp({ hash: '#/settings/ai', setup: seed });
+      const first = await screen.findByRole('button', { name: /^默认模型：/ });
+      expect(first.getAttribute('aria-label')).toBe('默认模型：GPT-5.5 · 较高');
+      const pane = within(screen.getByRole('dialog', { name: '设置' }));
+      for (const title of ['对话', '例行', '笔记、阅读和资料', '记忆和记账', '工具和技能']) {
+        expect(pane.getByRole('region', { name: title })).toBeTruthy();
+      }
+      const notes = screen.getByRole('button', { name: '笔记 · 8 项' });
+      expect(notes.getAttribute('aria-expanded')).toBe('false');
+      expect(screen.queryByRole('button', { name: /^润色：/ })).toBeNull();
+      fireEvent.click(notes);
+      expect(screen.getByRole('button', { name: /^润色：/ }).getAttribute('data-quiet')).toBe('true');
+      expect(screen.getByRole('button', { name: '队友：跟主线' })).toBeTruthy();
+      const predict = within(pane.getByRole('region', { name: '对话' }));
+      expect(predict.getByRole('button', { name: '输入建议：跟续写' })).toBeTruthy();
+      expect(predict.getByRole('switch', { name: '输入建议' })).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: '信息流：跟默认' }));
+      const chooser = await screen.findByRole('dialog', { name: '信息流用的模型' });
+      fireEvent.click(within(chooser).getByRole('option', { name: 'Claude Haiku 5' }));
+      await waitFor(async () => {
+        const purposes = (await app.api.modelProviders.list()).purposes;
+        expect(['feed_selection', 'feed_comment'].map((id) => purposes.find((item) => item.purpose === id)
+          ?.chosen.model?.model)).toEqual(['claude-haiku-5', 'claude-haiku-5']);
+      });
+    });
 
   it('心跳、做梦没单独设时用默认那一家里启用的最便宜的模型、低档', async () => {
     await renderApp({ hash: '#/settings/ai', setup: seed });
@@ -90,8 +99,8 @@ describe('设置 · AI 模型选择', () => {
         thinking: 'high' });
       fake.control.modelProviders.seedConfig([{ provider: 'groq', models: ['llama-5-70b'] }]);
     } });
-    fireEvent.click(await screen.findByRole('button', { name: /^默认：/ }));
-    const chooser = await screen.findByRole('dialog', { name: '默认用的模型' });
+    fireEvent.click(await screen.findByRole('button', { name: /^默认模型：/ }));
+    const chooser = await screen.findByRole('dialog', { name: '默认模型用的模型' });
     expect(within(chooser).queryByRole('option', { name: '跟默认' })).toBeNull();
     fireEvent.click(within(chooser).getByRole('option', { name: 'Llama 5 70B' }));
     await waitFor(async () => expect((await app.api.modelProviders.list()).chosen)

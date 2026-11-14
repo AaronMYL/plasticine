@@ -1,17 +1,17 @@
-// 设置 · AI 右边「各用哪个」（《优化清单》第 13 条，设计稿 Settings-AI）：默认在最上；每个功能一行，点右边的模型
-// 出共用的选模型弹层，选了马上存。笔记 8 项、图书 3 项这类成组的折成一行，点开再分开配；「跟默认」用浅色字。
+// 设置 · AI 的一行行「用哪个模型」（《优化清单》第 13 条；第13批 11-14 Aaron「该归类该放一起的就放一起」，照设计稿
+// PredictSettings 按用在哪儿分组，分组在 ai-groups.tsx）：点右边的模型出共用的选模型弹层，选了马上存；「跟默认」用浅色字。
+// 几个功能合成一行的（信息流、图书、记忆整理……）一起改；笔记 8 项折成一行，点开再分开配。
 // 选到的模型后来取消启用、或那家断开：这一行回到默认，下面写一句原因（只有出错写字）。
 
 import { useRef, useState, type ReactNode } from 'react';
 import {
-  MODEL_PURPOSE_GROUPS, MODEL_PURPOSES, purposeInfo, THINKING_LABELS,
-  type ListModelProvidersResponse, type ModelChoiceView, type ModelPurpose, type ModelPurposeGroup,
+  purposeInfo, THINKING_LABELS,
+  type ListModelProvidersResponse, type ModelChoiceView, type ModelPurpose,
 } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { StatusGlyph } from '../../shell/glyph.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
-import { useStore } from '../../state/use-store.ts';
 import { inheritLabel, ModelChooserPopover, type ChooserChange } from './model-chooser.tsx';
 
 interface Shown {
@@ -55,32 +55,60 @@ function issueOf(value: ListModelProvidersResponse, purpose: ModelPurpose | null
     : value.purposes.find((item) => item.purpose === purpose)?.issue ?? null;
 }
 
-function PurposeRow({ value, purpose, label, nested = false }: { value: ListModelProvidersResponse;
-  purpose: ModelPurpose | null; label: string; nested?: boolean }): ReactNode {
+interface RowProps {
+  value: ListModelProvidersResponse;
+  /** null 是默认模型那一行。 */
+  purpose: ModelPurpose | null;
+  label: string;
+  /** 名字后面的一句浅色说明（设计稿里的「日报、周报」这类）。 */
+  sub?: string;
+  nested?: boolean;
+  /** 右边模型后面再放的东西（输入建议的开关）。 */
+  children?: ReactNode;
+}
+
+export function PurposeRow({ value, purpose, label, sub, nested = false, children }: RowProps): ReactNode {
+  return <ChooserRow value={value} purposes={purpose === null ? null : [purpose]} label={label} sub={sub}
+    nested={nested}>{children}</ChooserRow>;
+}
+
+/** 几个功能合成的一行（信息流的选材和评论、图书三项……）：显示它们共同的选择，选了一起改。 */
+export function MergedRow({ value, purposes, label, sub }: { value: ListModelProvidersResponse;
+  purposes: readonly ModelPurpose[]; label: string; sub?: string }): ReactNode {
+  return <ChooserRow value={value} purposes={purposes} label={label} sub={sub} />;
+}
+
+function ChooserRow({ value, purposes, label, sub, nested = false, children }: {
+  value: ListModelProvidersResponse; purposes: readonly ModelPurpose[] | null; label: string; sub?: string | undefined;
+  nested?: boolean; children?: ReactNode }): ReactNode {
   const live = useLive();
   const button = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const shown = shownOf(value, purpose);
-  const issue = error ?? issueOf(value, purpose);
+  const first = purposes?.[0] ?? null;
+  const shown = purposes === null || purposes.length === 1 ? shownOf(value, first) : groupSummary(value, purposes);
+  const issue = error ?? (purposes === null ? issueOf(value, null)
+    : purposes.map((id) => issueOf(value, id)).find((text) => text !== null) ?? null);
   const choose = (change: ChooserChange): void => {
-    const work = purpose === null
+    const work = purposes === null
       ? change.model === null ? Promise.resolve(null)
         : live.models.chooseDefault({ ...change.model, thinking: change.thinking ?? 'medium' })
-      : live.models.choosePurpose(purpose, change);
+      : live.models.choosePurposes(purposes, change);
     void work.then(setError);
   };
-  const focus = purpose === 'translation' ? 'translation-model' : undefined;
+  const focus = first === 'translation' ? 'translation-model' : undefined;
   return (
     <div className="ai-use" data-nested={nested} data-settings-focus={focus} tabIndex={focus === undefined ? undefined
       : -1}>
       <div className="ai-use-line">
-        <span className="ai-use-name">{label}</span>
+        <span className="ai-use-name">{label}{sub === undefined ? null : <span className="ai-use-sub">{sub}</span>}
+        </span>
         <button ref={button} type="button" className="ai-use-value" data-quiet={shown.quiet}
           aria-haspopup="dialog" aria-expanded={anchor !== null} aria-label={`${label}：${shown.text}`}
           onClick={(event) => setAnchor(anchor === null ? anchorOf(event.currentTarget) : null)}>
           <span>{shown.text}</span><Icon name="chevron-down" size={12} />
         </button>
+        {children}
       </div>
       {issue === null ? null : (
         <p className="ai-use-issue" role={error === null ? undefined : 'alert'}>
@@ -89,7 +117,7 @@ function PurposeRow({ value, purpose, label, nested = false }: { value: ListMode
       )}
       {anchor === null ? null : (
         <ModelChooserPopover anchor={anchor} label={`${label}用的模型`} trigger={button} value={value}
-          purpose={purpose} onChoose={choose} onClose={() => setAnchor(null)} />
+          purpose={first} onChoose={choose} onClose={() => setAnchor(null)} />
       )}
     </div>
   );
@@ -110,75 +138,30 @@ function groupSummary(value: ListModelProvidersResponse, ids: readonly ModelPurp
   return { text: `${own} 项单独设`, quiet: false };
 }
 
-function GroupRows({ value, group, ids, query }: { value: ListModelProvidersResponse; group: ModelPurposeGroup;
-  ids: readonly ModelPurpose[]; query: string }): ReactNode {
-  const hasIssue = ids.some((id) => issueOf(value, id) !== null);
+/** 笔记 8 项折成一行（设计稿：「笔记 · 续写、补充建议等 8 项」，右边写共同的或「n 项单独设」）；点开一项项配。 */
+export function FoldedRows({ value, purposes, label, sub }: { value: ListModelProvidersResponse;
+  purposes: readonly ModelPurpose[]; label: string; sub?: string }): ReactNode {
+  const hasIssue = purposes.some((id) => issueOf(value, id) !== null);
   const [open, setOpen] = useState(hasIssue);
-  const label = MODEL_PURPOSE_GROUPS[group];
-  const searching = query !== '';
-  const members = searching && !label.toLowerCase().includes(query)
-    ? ids.filter((id) => purposeInfo(id).label.toLowerCase().includes(query)) : ids;
-  if (members.length === 0) {
-    return null;
-  }
-  const expanded = open || searching;
-  const summary = groupSummary(value, ids);
+  const summary = groupSummary(value, purposes);
   return (
     <div className="ai-use-group">
       <div className="ai-use">
         <div className="ai-use-line">
-          <button type="button" className="ai-use-name ai-use-fold" aria-expanded={expanded}
-            onClick={() => setOpen(!expanded)}>
-            {label} · {ids.length} 项
-            {hasIssue && !expanded ? <StatusGlyph status="err" label="有一项出错" /> : null}
+          <button type="button" className="ai-use-name ai-use-fold" aria-expanded={open}
+            aria-label={`${label} · ${purposes.length} 项`} onClick={() => setOpen(!open)}>
+            {label}{sub === undefined ? null : <span className="ai-use-sub">{sub}</span>}
+            {hasIssue && !open ? <StatusGlyph status="err" label="有一项出错" /> : null}
           </button>
           <button type="button" className="ai-use-value" data-quiet={summary.quiet} tabIndex={-1} aria-hidden="true"
-            onClick={() => setOpen(!expanded)}>
-            <span>{summary.text}</span><Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={12} />
+            onClick={() => setOpen(!open)}>
+            <span>{summary.text}</span><Icon name={open ? 'chevron-up' : 'chevron-down'} size={12} />
           </button>
         </div>
       </div>
-      {expanded ? members.map((id) => (
+      {open ? purposes.map((id) => (
         <PurposeRow key={id} value={value} purpose={id} label={purposeInfo(id).label} nested />
       )) : null}
     </div>
-  );
-}
-
-export function AiPurposes(): ReactNode {
-  const live = useLive();
-  const data = useStore(live.models.store);
-  const [query, setQuery] = useState('');
-  const value = data.value;
-  const needle = query.trim().toLowerCase();
-  const matches = (text: string): boolean => needle === '' || text.toLowerCase().includes(needle);
-  const seen = new Set<ModelPurposeGroup>();
-  return (
-    <section className="ai-pane" aria-labelledby="ai-uses-title">
-      <div className="ai-pane-head">
-        <h3 id="ai-uses-title">各用哪个</h3>
-        <label className="model-search ai-use-search">
-          <Icon name="search" size={13} />
-          <input type="search" className="search-input" aria-label="搜功能" placeholder="搜功能" value={query}
-            onChange={(event) => setQuery(event.target.value)} />
-        </label>
-      </div>
-      {value === null ? null : (
-        <div className="ai-use-list">
-          {matches('默认') ? <PurposeRow value={value} purpose={null} label="默认" /> : null}
-          {MODEL_PURPOSES.map(({ id, label, group }) => {
-            if (group === null) {
-              return matches(label) ? <PurposeRow key={id} value={value} purpose={id} label={label} /> : null;
-            }
-            if (seen.has(group)) {
-              return null;
-            }
-            seen.add(group);
-            const ids = MODEL_PURPOSES.filter((item) => item.group === group).map((item) => item.id);
-            return <GroupRows key={group} value={value} group={group} ids={ids} query={needle} />;
-          })}
-        </div>
-      )}
-    </section>
   );
 }

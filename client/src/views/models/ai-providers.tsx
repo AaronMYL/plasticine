@@ -2,11 +2,12 @@
 // n 个启用、展开后勾选要用的几个（勾了马上存，没勾的不出现在任何选择器里）；没连的收进「添加提供商」。
 // 重新登录、换 key、断开在行尾 ⋯；断开先问一句。
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { ModelProviderView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { RevealMore } from '../../shell/reveal-more.tsx';
+import { Store } from '../../state/store.ts';
 import { useStore } from '../../state/use-store.ts';
 import { providerName } from './model-store.ts';
 import { Connected, KeyForm, LoginFlow } from './provider-connect.tsx';
@@ -95,7 +96,10 @@ function ProviderBlock({ provider, open, onToggle, onAction }: { provider: Model
   );
 }
 
-export function AiProviders(): ReactNode {
+/** 别处（设置 · AI 的「出图」那一行）请这里开始连某一家：设成那家的 id。 */
+export const connectRequest = new Store<string | null>(null);
+
+export function AiProviders({ children }: { children?: ReactNode }): ReactNode {
   const live = useLive();
   const data = useStore(live.models.store);
   const [step, setStep] = useState<Step>(null);
@@ -105,6 +109,13 @@ export function AiProviders(): ReactNode {
   const connected = providers.filter((item) => item.connected !== null);
   const others = providers.filter((item) => item.connected === null);
   const act = (provider: ModelProviderView, action: ProviderAction): void => setStep({ kind: action, provider });
+  const requested = useStore(connectRequest);
+  useEffect(() => {
+    const provider = requested === null ? undefined : providers.find((item) => item.id === requested);
+    if (provider === undefined) return;
+    connectRequest.set(null);
+    setStep({ kind: provider.methods.includes('oauth') ? 'login' : 'key', provider });
+  }, [requested, providers]);
   const close = (): void => setStep(null);
   const connectedNow = (provider: ModelProviderView): void => {
     setStep({ kind: 'done', provider });
@@ -143,16 +154,19 @@ export function AiProviders(): ReactNode {
           }} /> : null}
         </div>
       )}
-      <ul className="ai-provider-list" aria-label="连着的提供商">
-        {connected.map((provider) => (
-          <ProviderBlock key={provider.id} provider={provider} open={open.has(provider.id)} onAction={act}
-            onToggle={() => setOpen((current) => {
-              const next = new Set(current);
-              if (!next.delete(provider.id)) next.add(provider.id);
-              return next;
-            })} />
-        ))}
-      </ul>
+      <div className="ai-list">
+        <ul className="ai-provider-list" aria-label="连着的提供商">
+          {connected.map((provider) => (
+            <ProviderBlock key={provider.id} provider={provider} open={open.has(provider.id)} onAction={act}
+              onToggle={() => setOpen((current) => {
+                const next = new Set(current);
+                if (!next.delete(provider.id)) next.add(provider.id);
+                return next;
+              })} />
+          ))}
+        </ul>
+        {children}
+      </div>
     </section>
   );
 }

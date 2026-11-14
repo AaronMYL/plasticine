@@ -12,8 +12,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
 import type { SettingsFocus } from '../../shell/panel.ts';
-import { routeHash, skillsRoute, type SettingsSection } from '../../shell/routes.ts';
-import { TOOL_GROUPS_NOTE, ToolGroupsView } from '../tools/tool-groups-view.tsx';
+import type { SettingsSection } from '../../shell/routes.ts';
 import { AccountProfile } from './account-profile.tsx';
 import { AccessSection } from './access-section.tsx';
 import { AmbientSection } from './ambient-section.tsx';
@@ -24,11 +23,9 @@ import { BrowserSection } from './browser-section.tsx';
 import { Devices } from './devices-block.tsx';
 import { InstallSection } from './install-section.tsx';
 import { ModelsSection } from '../models/models-section.tsx';
-import { ComposePredictSection } from './compose-predict-section.tsx';
 import type { PushSwitchStatus } from './push-switch.ts';
 import { SearchEngineSection } from './search-engine-section.tsx';
 import { SectionHead } from './section-head.tsx';
-import { WorkLimitSection } from './work-limit-section.tsx';
 import { SystemSection } from './system-section.tsx';
 import { TimeZoneSection } from './time-zone-section.tsx';
 import { TranslateSettingsSection } from './translate-settings-section.tsx';
@@ -112,27 +109,6 @@ function NotificationSection(): ReactNode {
   );
 }
 
-/** 技能 11-13 搬到自己的一页（Plasticine 栏里）；这里留一行入口，去了以后设置弹框自己收起。 */
-function SkillsLink(): ReactNode {
-  return (
-    <section className="block" aria-labelledby="settings-skills">
-      <SectionHead id="settings-skills" title="技能">
-        <a className="text-button settings-skills-link" href={routeHash(skillsRoute())}>打开技能页</a>
-      </SectionHead>
-    </section>
-  );
-}
-
-function ToolSwitches(): ReactNode {
-  // 用户视角审查 2026-11-01 已定第 3 条：工具开关从工具组挪到这里。
-  return (
-    <section className="block" aria-labelledby="settings-tool-groups">
-      <SectionHead id="settings-tool-groups" title="工具开关" tip={TOOL_GROUPS_NOTE} />
-      <ToolGroupsView note={false} />
-    </section>
-  );
-}
-
 /** 一块能被 focus 定位到的地方（旧地址 #/settings/feed 这类、别处的「去设置」）。 */
 function Spot({ name, children }: { name: SettingsFocus; children: ReactNode }): ReactNode {
   return <div className="settings-spot" data-settings-focus={name} tabIndex={-1}>{children}</div>;
@@ -149,13 +125,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
         <InstallSection />
       </>;
     case 'ai':
-      return <>
-        <ModelsSection />
-        <ComposePredictSection />
-        <WorkLimitSection />
-        <SkillsLink />
-        <ToolSwitches />
-      </>;
+      return <ModelsSection />;
     case 'browser':
       return <>
         <SearchEngineSection />

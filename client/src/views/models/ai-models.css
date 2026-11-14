@@ -4,10 +4,92 @@
  */
 
 .ai-models {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 24px 32px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+/* 第13批（设计稿 PredictSettings）：一栏，按用在哪儿分组；每组一个标题，下面一组带细框的行。 */
+.ai-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.ai-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-group-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ai-group-title {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.ai-list {
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.ai-list > .ai-use,
+.ai-list > .ai-use-group > .ai-use,
+.ai-list .ai-provider,
+.ai-list .tool-group-row {
+  padding-left: 14px;
+  padding-right: 10px;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.ai-list > :first-child,
+.ai-list > :first-child > :first-child,
+.ai-list > .ai-provider-list:first-child > .ai-provider:first-child,
+.ai-list .tool:first-child .tool-group-row:first-child {
+  border-top: 0;
+}
+
+.ai-list .tool,
+.ai-list .tool-groups {
+  margin: 0;
+  padding: 0;
+}
+
+.ai-list .tool-group-row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.ai-use-sub {
+  margin-left: 8px;
+  color: var(--fg2);
+  font-size: 12px;
+}
+
+.ai-use-static {
+  flex: none;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.ai-use-static[data-quiet='true'] {
+  color: var(--fg2);
+}
+
+.ai-use-select {
+  flex: none;
+  width: auto;
+  height: 30px;
+  font-size: 13px;
 }
 
 .ai-pane {
@@ -181,7 +263,11 @@
 }
 
 .ai-use[data-nested='true'] .ai-use-line {
-  padding-left: 16px;
+  padding-left: 20px;
+}
+
+.ai-list .ai-use[data-nested='true'] {
+  background: var(--tint);
 }
 
 .ai-use-name {

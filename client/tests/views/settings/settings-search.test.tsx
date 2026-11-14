@@ -10,20 +10,21 @@ describe('设置里的查找', () => {
     expect(searchSettings('  ')).toEqual([]);
     expect(searchSettings('备份').map((entry) => entry.title)).toEqual(['备份']);
     expect(searchSettings('深色').map((entry) => entry.title)).toEqual(['外观']);
-    expect(searchSettings('模型').map((entry) => entry.title).slice(0, 2)).toEqual(['模型', '各用哪个']);
+    expect(searchSettings('模型').map((entry) => entry.title)[0]).toBe('模型');
+    expect(searchSettings('出图').map((entry) => entry.title)).toEqual(['笔记、阅读和资料']);
     expect(searchSettings('chrome').map((entry) => entry.title)).toEqual(['导入']);
   });
 
-  it('打「并发」：列出「同时做几件事 · AI」，点了到 AI 那一段、那一块标出来，查找框清空', async () => {
+  it('打「并发」：列出「对话 · AI」（同时做几件事在对话那一组），点了到 AI 那一段、那一块标出来，查找框清空', async () => {
     await renderApp({ hash: '#/settings/general' });
     const pane = await screen.findByRole('dialog', { name: '设置' });
     fireEvent.change(within(pane).getByRole('searchbox', { name: '搜设置' }), { target: { value: '并发' } });
     const results = within(pane).getByRole('list', { name: '找到的设置' });
-    const item = within(results).getByRole('button', { name: /同时做几件事/ });
-    expect(item.textContent).toBe('同时做几件事AI');
+    const item = within(results).getByRole('button', { name: /对话/ });
+    expect(item.textContent).toBe('对话AI');
     fireEvent.click(item);
     await waitFor(() => expect(window.location.hash).toBe('#/settings/ai'));
-    const block = await within(pane).findByRole('region', { name: '同时做几件事' });
+    const block = await within(pane).findByRole('region', { name: '对话' });
     await waitFor(() => expect(block.getAttribute('data-found')).toBe('true'));
     expect((within(pane).getByRole('searchbox', { name: '搜设置' }) as HTMLInputElement).value).toBe('');
     expect(within(pane).queryByRole('list', { name: '找到的设置' })).toBeNull();

@@ -121,6 +121,13 @@ export class ModelStore {
     return this.saveFresh({ version: value.version, purposes: [{ purpose, chosen }] });
   }
 
+  /** 几个功能合成的一行（第13批设置 · AI 分组）：一起改成同一个。 */
+  async choosePurposes(purposes: readonly ModelPurpose[], chosen: ModelOverride): Promise<string | null> {
+    const value = this.store.get().value;
+    if (value === null) return NOT_READ;
+    return this.saveFresh({ version: value.version, purposes: purposes.map((purpose) => ({ purpose, chosen })) });
+  }
+
   /** 设置 · AI 的「默认」那一行：全局默认（模型和思考都要有）。 */
   async chooseDefault(choice: ModelChoiceView): Promise<string | null> {
     const value = this.store.get().value;

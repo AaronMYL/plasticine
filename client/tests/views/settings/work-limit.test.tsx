@@ -1,4 +1,5 @@
-// 设置 · AI「同时做几件事」（11-12 全量优化第 2 条）：默认自动、写着现在几件；选了数马上存。
+// 设置 · AI「同时做几件事」（11-12 全量优化第 2 条；第13批起是「对话」分组里的一行）：默认自动、写着现在几件；选了数
+// 马上存。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -6,7 +7,7 @@ import { renderApp } from '../../helpers.tsx';
 
 async function section(): Promise<HTMLElement> {
   const pane = await screen.findByRole('dialog', { name: '设置' });
-  return within(pane).findByRole('region', { name: '同时做几件事' });
+  return within(pane).findByRole('region', { name: '对话' });
 }
 
 describe('同时做几件事', () => {

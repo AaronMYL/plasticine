@@ -250,16 +250,20 @@
   -webkit-line-clamp: 2;
 }
 
-.tool-group-details {
-  margin-top: 4px;
+.tool-group-count {
+  margin-left: 8px;
+  color: var(--fg2);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
-.tool-group-details summary {
-  cursor: pointer;
-  width: fit-content;
+.tool-group-head > .tool-group-expand {
+  width: 28px;
+  height: 28px;
 }
 
-.tool-group-details p {
+.tool-group-tools {
   margin: 4px 0 0;
   overflow-wrap: anywhere;
 }
