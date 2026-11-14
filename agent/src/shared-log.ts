@@ -29,6 +29,7 @@ const EVENTS = {
   push_failed: '系统通知发送失败，卡仍在对话和清单里',
   push_rejected: '系统通知被推送服务拒收',
   ask_notify_failed: '卡的系统通知失败，记录已保存',
+  message_alert_push_failed: '新消息的系统通知没发出去',
   project_notice_failed: '项目的逾期或停滞提醒没发到主线上，下次扫描再发；项目页照常显示',
   attention_publish_failed: '注意力变化已保存，事件推送失败',
   scan_failed: '定时扫描失败，下一轮再试',

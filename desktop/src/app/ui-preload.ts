@@ -122,6 +122,8 @@ const bridge = {
   notifications: {
     enabled: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.notificationsEnabled),
     setEnabled: (enabled: boolean): Promise<unknown> => ipcRenderer.invoke(CHANNELS.notificationsSet, enabled),
+    test: (): Promise<unknown> => ipcRenderer.invoke(CHANNELS.notificationsTest),
+    openSettings: (): void => ipcRenderer.send(CHANNELS.notificationsSettings),
   },
   webTabs,
   windowChrome: { current: chromeCurrent },

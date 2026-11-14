@@ -67,6 +67,9 @@ export class ServerEventMapper {
         return [{ type: 'contacts.changed', waiting: event.waiting, unread: event.unread }];
       case 'contact_item':
         return [{ type: 'contact.item', contactId: event.contactId, item: event.item }];
+      case 'notify':
+        return [{ type: 'notify', title: event.title, body: event.body, url: event.url, tag: event.tag,
+          conversation: event.conversation }];
     }
   }
 }

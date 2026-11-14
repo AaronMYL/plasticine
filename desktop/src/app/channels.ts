@@ -5,6 +5,8 @@ export const CHANNELS = {
   notify: 'desktop:notify',
   notificationsEnabled: 'desktop:notifications-enabled',
   notificationsSet: 'desktop:notifications-set',
+  notificationsTest: 'desktop:notifications-test',
+  notificationsSettings: 'desktop:notifications-settings',
   serverStatus: 'desktop:server-status',
   serverChoose: 'desktop:server-choose',
   serverLocalGrant: 'desktop:server-local-grant',

@@ -33,6 +33,9 @@ import {
   AskDesk,
   Notices,
   Presenter,
+  MessageAlerts,
+  Presence,
+  type ContactAlert,
   ProjectWatch,
   PushService,
   routeAsks,
@@ -69,6 +72,7 @@ import { agreementView, memoryEntryView } from './cognition-views.ts';
 import { assembleLines, type LineAssembly } from './assemble-lines.ts';
 import { publicUrlSource } from './public-url.ts';
 import { publishNetworkChange } from './contact-streams.ts';
+import { contactAlerts, lineReplyAlert } from './reply-alerts.ts';
 import { taskCardTool } from './task-card-tool.ts';
 import { messageTools } from './message-tools.ts';
 import { linePort } from './subscriptions.ts';
@@ -183,6 +187,9 @@ export function assembleApp(options: AssembleOptions): App {
   const now = options.now ?? (() => new Date());
   ensureRulesDoc(state);
   const hub = options.hub ?? new EventHub();
+  // 第13批：新消息通知（他正看着的那段不通知）；推送服务在下面装好后才有，线和联系人的回调晚取。
+  const presence = new Presence();
+  let messageAlerts: MessageAlerts | null = null;
   // 第 7 条（11-07 定）：个人回顾是一个订阅，日报每天早上 8 点、周报周日晚上，按他所在地的时区；没有就建上。
   ensureReviewSubscription(state, state.dailySettings.read().settings.timeZone ?? BACKGROUND_TIME_ZONE);
   const text = withMainSoul(options.text ?? kernelText(options.lines.models, now), state);
@@ -251,7 +258,7 @@ export function assembleApp(options: AssembleOptions): App {
     model: options.memoryCuration === false ? null : { models: text } });
   let tunnel: TunnelService | undefined;
   const network = createNetwork(options, { state, now, desk, hub, text, late, record,
-    joined: () => tunnel?.wake() });
+    joined: () => tunnel?.wake(), alert: (alert) => messageAlerts?.contact(alert) });
   const tunnelSettings = options.network?.tunnel;
   if (tunnelSettings !== undefined) {
     tunnel = new TunnelService({ ...tunnelSettings, stateDirectory: options.stateDirectory,
@@ -344,6 +351,11 @@ export function assembleApp(options: AssembleOptions): App {
       submits: devices.actions,
       widgets: (recorder) => createShowWidgetsTool(createWidgetFacts(state, m5b.life), recorder) },
     turnEnded: (line, outcome) => {
+      // 第13批：他自己发起的那一轮回完了（主线、队友、群组、旁聊）：通知「谁 + 回复开头」。
+      const alert = outcome === 'done' ? lineReplyAlert(state, line) : null;
+      if (alert !== null) {
+        messageAlerts?.line(alert);
+      }
       // 旁聊和主线一样是他直接说话的地方（第 17 条）：聊出来的也进记忆整理。
       if (outcome === 'done' && line.kind !== 'background') {
         memoryCurator.enqueueLineTurn(line.id);
@@ -369,6 +381,7 @@ export function assembleApp(options: AssembleOptions): App {
     ...(options.pushTransport === undefined ? {} : { transport: options.pushTransport }),
   });
   presenter.setNotifier(push);
+  messageAlerts = new MessageAlerts({ presence, push, now, publish: (event) => hub.publish(event) });
   // 通知统一成「主线一条消息 + 系统通知」（《优化清单》第 12 条）：不再发任何通知邮件。
   // 第 7 批第 14 条：样刊出来附「开启定时 / 再改改」卡；确认写在主线上，「再改改」交给主线问他。
   const sampleCards = new SampleCards({ state, desk, notice: (input) => { lines.notice(input); },
@@ -437,6 +450,7 @@ export function assembleApp(options: AssembleOptions): App {
     desk,
     presenter,
     push,
+    presence,
     now,
     hub,
     ...(options.sseHeartbeatMs === undefined ? {} : { sseHeartbeatMs: options.sseHeartbeatMs }),
@@ -478,6 +492,8 @@ interface NetworkParts {
   record: (input: RecordInput) => void;
   /** 加入网络以后（叫醒隧道）。 */
   joined: () => void;
+  /** 第13批：对方发来的一句该通知时（推送服务装好以前是空的）。 */
+  alert: (alert: ContactAlert) => void;
 }
 
 /** 第 113 条：联系人与网络。进来的人话、AI 话记成来源；「让 Plasticine 做」开一条后台线；改动提交以后推给界面。 */
@@ -517,8 +533,14 @@ function createNetwork(options: AssembleOptions, parts: NetworkParts): NetworkSe
     ...(settings.fetch === undefined ? {} : { fetch: settings.fetch }),
     responder: settings.responder !== false,
     recordSource: (message, contact) => parts.record(contactTrigger(message, contact)),
-    changed: (change) => publishNetworkChange({ state, hub, activity: (task) => network.taskActivity(task),
-      execution: (task) => network.taskExecution(task) }, change),
+    changed: (change) => {
+      publishNetworkChange({ state, hub, activity: (task) => network.taskActivity(task),
+        execution: (task) => network.taskExecution(task) }, change);
+      // 第13批：对方本人发来的文字（一对一、群里）通知「谁 + 开头」，同一个群连着来的合成一条。
+      for (const alert of contactAlerts(state, change)) {
+        parts.alert(alert);
+      }
+    },
     onJoined: parts.joined,
   });
   return network;

@@ -20,6 +20,7 @@ import { Markdown } from '../../primitives/message/markdown.tsx';
 import { MateReport } from '../mates/mate-report.tsx';
 import { parseLineRef, sideRoute } from '../../shell/routes.ts';
 import { lineItemForSeq, useFocusMessage } from '../../shell/use-focus-message.ts';
+import { useViewing } from '../../state/viewing.ts';
 import { useRoute } from '../../shell/use-route.ts';
 import { useStore } from '../../state/use-store.ts';
 import { Icon } from '../../shell/icons.tsx';
@@ -262,6 +263,7 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
     }
   }, [data.hasMore, live.lines, lineId]);
   // 地址里带着这条线的某一句（点通知、点来信里的原话）：读到那一句、滚过去、闪一下（第13批）。
+  useViewing(line === null ? null : `line:${line.id}`);
   const { route } = useRoute();
   const wanted = parseLineRef(route.messageId);
   const focusSeq = wanted !== null && line !== null && wanted.lineId === line.id ? wanted.seq : null;

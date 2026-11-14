@@ -19,6 +19,7 @@ import { hostNotify, inDesktopApp } from '../../shell/host.ts';
 import { isDeferredStandaloneAsk, LETTER_BRIEF, MAIN_THREAD_PATH, NOTICE_TITLE, PUSH_BODY, reportBrief,
   type LineMessageView } from '../../api/shared.ts';
 import type { LiveEvent } from '../../api/types.ts';
+import { lookingAt } from '../../state/viewing.ts';
 
 /**
  * checking 正在看这台设备的订阅 · unsupported 浏览器不支持 · denied 权限被拒 · off 关着 · on 开着 ·
@@ -223,6 +224,10 @@ export class PushSwitch {
       this.onLineEvent(event.event, mainLineId);
       return;
     }
+    if (event.type === 'notify') {
+      this.onNotify(event);
+      return;
+    }
     if (!inDesktopApp() || event.type !== 'ask.created' || event.ask.channel !== 'interrupt'
       || event.ask.status !== 'open' || isDeferredStandaloneAsk(event.ask)
       || this.notified.has(event.ask.id)) { return; }
@@ -249,6 +254,23 @@ export class PushSwitch {
       this.notified.add(key);
     } catch {
       this.store.set({ status: 'native', message: '系统通知没能发出，请在和 Plasticine 的对话里查看。' });
+    }
+  }
+
+  /**
+   * 第13批的新消息（联系人、群组、主线和队友的回复）：服务端说该通知了，桌面客户端自己弹；他正在窗口里看着这段就
+   * 不弹。点开去那一句（url 是 /#/…）。
+   */
+  private onNotify(event: Extract<LiveEvent, { type: 'notify' }>): void {
+    const key = `${event.tag}|${event.url}`;
+    if (!inDesktopApp() || this.notified.has(key) || lookingAt(event.conversation)) {
+      return;
+    }
+    try {
+      hostNotify(event.title, event.body, event.url.replace(/^\//, ''));
+      this.notified.add(key);
+    } catch {
+      this.store.set({ status: 'native', message: '系统通知没能发出，请在对话里查看新消息。' });
     }
   }
 

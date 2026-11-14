@@ -3,6 +3,7 @@
 // 邮件兜底的开关接口（/v2/notifications/mail-fallback）《优化清单》第 12 条起删了：通知不再发邮件，表和历史数据留着。
 
 import {
+  PresenceRequestSchema,
   SubscribePushRequestSchema,
   UnsubscribePushRequestSchema,
   type PushKeyResponse,
@@ -45,6 +46,20 @@ export async function subscribePush(context: RequestContext): Promise<Reply> {
     };
     return { status: 201, body: response };
   });
+}
+
+/** POST /v2/push/test：给这台设备发一条测试通知（第13批），回发出几条、没发成的原因。 */
+export async function testPush(context: RequestContext): Promise<Reply> {
+  const auth = requireAuth(context);
+  return { status: 200, body: await context.deps.push.test(auth.device.id) };
+}
+
+/** POST /v2/presence：这台设备正开着哪段对话（null 是没在看）；新消息通知不打扰他正看着的那段（第13批）。 */
+export async function reportPresence(context: RequestContext): Promise<Reply> {
+  const auth = requireAuth(context);
+  const body = checkInput(PresenceRequestSchema, await readJsonBody(context.req), '在看哪段对话');
+  context.deps.presence.report(auth.device.id, body.conversation, context.deps.now());
+  return { status: 200, body: { ok: true } };
 }
 
 /** DELETE /v2/push/subscriptions */

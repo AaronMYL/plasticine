@@ -35,6 +35,10 @@ export interface ShellServices {
   notify(title: string, body: string, hash: string): void;
   notificationsEnabled(): boolean;
   setNotifications(enabled: boolean): boolean;
+  /** 第13批：发一条测试通知，等系统回话（notify-test.ts）。 */
+  testNotification(): Promise<unknown>;
+  /** 打开系统的通知设置页。 */
+  openNotificationSettings(): void;
   serverStatus(): unknown;
   chooseServer(choice: ServerChoice): Promise<unknown>;
   /** 本机令牌：frameUrl 是发起方主 frame 当前的地址，不是本机同源回 null（account-client.ts 的 localGrantFor）。 */
@@ -147,6 +151,10 @@ export function registerBridge(services: ShellServices): void {
     }
   });
   handle(CHANNELS.notificationsEnabled, () => services.notificationsEnabled());
+  handle(CHANNELS.notificationsTest, () => services.testNotification());
+  on(CHANNELS.notificationsSettings, () => {
+    services.openNotificationSettings();
+  });
   handle(CHANNELS.notificationsSet, (enabled) => (typeof enabled === 'boolean'
     ? services.setNotifications(enabled) : invalid(CHANNELS.notificationsSet)));
   handle(CHANNELS.serverStatus, () => services.serverStatus(), true);

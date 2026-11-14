@@ -75,3 +75,38 @@ export const PushPayloadSchema = Type.Object({
   tag: Type.String(),
 });
 export type PushPayload = Static<typeof PushPayloadSchema>;
+
+// ---------- 新消息通知（第13批，11-14 Aaron 定） ----------
+// 联系人的新消息、群组的新消息、主线回复、队友回复：写谁发的 + 消息开头，点开定位到那一句。网页推送用上面的
+// PushPayload；桌面客户端（Mac、Windows）收不到网页推送，由界面收到 notify 事件后自己弹（窗口在前台、正开着这段就不弹）。
+
+/** 哪段对话：line:<线 id>，或 contact:<联系人或群的 id>。 */
+export const ConversationKeySchema = Type.String({ pattern: '^(line|contact):.+$', maxLength: 200 });
+
+export const NotifyEventSchema = Type.Object({
+  type: Type.Literal('notify'),
+  title: Type.String(),
+  body: Type.String(),
+  url: Type.String({ pattern: '^/' }),
+  tag: Type.String(),
+  conversation: ConversationKeySchema,
+});
+export type NotifyEvent = Static<typeof NotifyEventSchema>;
+
+/**
+ * POST /v2/presence：页面在前台时报一次自己正开着哪段对话（切走、页面到后台报 null）；服务端据此不通知他正看着的那段。
+ * 一分钟左右报一次，90 秒没报就当没在看。
+ */
+export const PRESENCE_PATH = `${API_PREFIX}/presence`;
+export const PresenceRequestSchema = Type.Object({ conversation: Nullable(ConversationKeySchema) },
+  { additionalProperties: false });
+export type PresenceRequest = Static<typeof PresenceRequestSchema>;
+
+/** POST /v2/push/test：给这台设备发一条测试通知；回这台设备的订阅最近一次的结果（失败写原因）。 */
+export const PUSH_TEST_PATH = `${PUSH_PATH}/test`;
+export const PushTestResponseSchema = Type.Object({
+  sent: Type.Integer({ minimum: 0 }),
+  error: Nullable(Type.String()),
+});
+export type PushTestResponse = Static<typeof PushTestResponseSchema>;
+export const TEST_NOTICE_BODY = '测试通知：能看到这一条，通知就是通的。';

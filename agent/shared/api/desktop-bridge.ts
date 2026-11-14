@@ -205,8 +205,12 @@ export interface PlasticineDesktopBridge {
   version: string;
   platform: DesktopPlatform;
   notify(title: string, body: string, hash: string): void;
-  /** 系统通知开关（设置 · 系统）；关着时 notify 不弹。 */
-  notifications: { enabled(): Promise<unknown>; setEnabled(enabled: boolean): Promise<unknown> };
+  /**
+   * 系统通知开关（设置 · 系统）；关着时 notify 不弹。test 发一条测试通知、回 { shown, error }（第13批）；openSettings
+   * 打开系统的通知设置页。旧版客户端没有这两样。
+   */
+  notifications: { enabled(): Promise<unknown>; setEnabled(enabled: boolean): Promise<unknown>;
+    test?(): Promise<unknown>; openSettings?(): void };
   webTabs: PlasticineMacWebTabs;
   windowChrome: PlasticineMacWindowChrome;
   translate: PlasticineMacTranslate;

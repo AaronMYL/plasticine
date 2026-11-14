@@ -31,6 +31,8 @@ import { readHostProfile } from './host-profile.ts';
 import { installMenu, installTray, type MenuActions, type MenuState } from './app-menu.ts';
 import { attachContextMenu, attachQuoteShortcut } from './context-menu.ts';
 import { registerBridge } from './bridge-ipc.ts';
+import { NOTIFICATION_SETTINGS_URLS, testNotice } from './notify-test.ts';
+import { TEST_NOTICE_BODY } from '../../../agent/shared/api/push.ts';
 import { CHANNELS } from './channels.ts';
 import { desktopPaths, type ShellPlatform } from './desktop-paths.ts';
 import { legacyChoice } from './legacy-settings.ts';
@@ -182,7 +184,16 @@ async function start(): Promise<void> {
       main.show();
       events.navigate(hash);
     });
+    // Electron 42 起 macOS 通知没被系统允许会走 failed（以前什么都不记，11-14 查 Mac 收不到时没有线索）。
+    notice.on('failed', (_event, error) => log(`系统通知没弹出来：${error}`));
     notice.show();
+  };
+  const testNotification = (): Promise<unknown> => testNotice(
+    () => new Notification({ title: 'Plasticine', body: TEST_NOTICE_BODY }),
+    { supported: Notification.isSupported(), enabled: settings.get().notifications });
+  const openNotificationSettings = (): void => {
+    const url = NOTIFICATION_SETTINGS_URLS[platform];
+    if (url !== undefined) void shell.openExternal(url);
   };
   // 查到新版提醒一次（同一版不重复）；下载、重开由他点侧栏的更新按钮。
   let announced: string | null = null;
@@ -203,6 +214,7 @@ async function start(): Promise<void> {
     info: () => ({ version, platform: platform === 'darwin' ? 'macos' : platform === 'win32' ? 'windows' : 'linux',
       tools: [...SHELL_TOOLS] }),
     ui: () => ui, allowedOrigin: () => place.target(), startPage: () => place.startPageUrl(), notify,
+    testNotification, openNotificationSettings,
     notificationsEnabled: () => settings.get().notifications,
     setNotifications: (enabled) => settings.update((value) => ({ ...value, notifications: enabled })).notifications,
     serverStatus: () => place.status(), chooseServer: (choice) => place.choose(choice),

@@ -2,8 +2,11 @@
 
 import type { PushApi } from '../client.ts';
 import {
+  PRESENCE_PATH,
   PUSH_KEY_PATH,
   PUSH_SUBSCRIPTIONS_PATH,
+  PUSH_TEST_PATH,
+  PushTestResponseSchema,
   PushKeyResponseSchema,
   SubscribePushResponseSchema,
   UnsubscribePushResponseSchema,
@@ -16,7 +19,10 @@ import type {
   UnsubscribePushResponse,
 } from '../types.ts';
 import type { Transport } from './transport.ts';
-import { PushStatusSchema, type PushStatus } from '../shared.ts';
+import { PushStatusSchema, type PushStatus, type PushTestResponse } from '../shared.ts';
+import { Type } from 'typebox';
+
+const PresenceAckSchema = Type.Object({ ok: Type.Boolean() });
 
 export class HttpPush implements PushApi {
   private readonly transport: Transport;
@@ -50,6 +56,16 @@ export class HttpPush implements PushApi {
       what: '登记系统通知',
       lostAs: 'uncertain',
     });
+  }
+
+  test(): Promise<PushTestResponse> {
+    return this.transport.request({ method: 'POST', path: PUSH_TEST_PATH, body: {}, schema: PushTestResponseSchema,
+      what: '发测试通知', lostAs: 'failed' });
+  }
+
+  async presence(conversation: string | null): Promise<void> {
+    await this.transport.request({ method: 'POST', path: PRESENCE_PATH, body: { conversation },
+      schema: PresenceAckSchema, what: '报正在看哪段对话', lostAs: 'failed' });
   }
 
   async unsubscribe(input: UnsubscribePushRequest): Promise<UnsubscribePushResponse> {

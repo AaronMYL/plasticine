@@ -175,6 +175,8 @@ export type LiveEvent =
   | ContactsLiveEvent
   /** 新内核的线（2026-11-05）：服务端 line_* 事件原样带过来。 */
   | { type: 'line'; event: import('./shared.ts').LineStreamEvent }
+  /** 第13批：一条新消息该通知（桌面客户端自己弹；url 是站内地址，conversation 是哪段对话）。 */
+  | { type: 'notify'; title: string; body: string; url: string; tag: string; conversation: string }
   | { type: 'resync' };
 
 /**

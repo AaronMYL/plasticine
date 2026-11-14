@@ -7,7 +7,7 @@ import { createServer, type Server } from 'node:http';
 import { adoptMateSouls, BookInsightService, ComposePredictor, ensureDefaultProjects, ensureMemoryDocs, NoteAssistant,
   PageTranslator,
   type GlossaryTerm, type MemoryCurator, type PaymentReader } from '../brain/index.ts';
-import type { AskDesk, Presenter, PushService, ScanScheduler } from '../attention/index.ts';
+import { Presence, type AskDesk, type Presenter, type PushService, type ScanScheduler } from '../attention/index.ts';
 import type { Daily } from '../daily/index.ts';
 import type { DeviceService } from '../devices/index.ts';
 import type { IntakeDesk } from '../intake/index.ts';
@@ -56,6 +56,8 @@ export interface AppOptions {
   desk: AskDesk;
   presenter: Presenter;
   push: PushService;
+  /** 第13批：哪台设备正开着哪段对话；不给就新建一份（测试）。 */
+  presence?: Presence;
   now?: () => Date;
   hub?: EventHub;
   sseHeartbeatMs?: number;
@@ -188,6 +190,7 @@ export function createApp(options: AppOptions): App {
     hub,
     desk: options.desk,
     push: options.push,
+    presence: options.presence ?? new Presence(),
     sseHeartbeatMs: options.sseHeartbeatMs ?? SSE_HEARTBEAT_MS,
     pairingLimiter: new AttemptLimiter(PAIRING_FAILURE_LIMIT, PAIRING_FAILURE_WINDOW_MS, () => now().getTime()),
     passwordLimiter: new SourceLimiter({ perSource: PASSWORD_FAILURE_LIMIT, global: PASSWORD_GLOBAL_FAILURE_LIMIT,

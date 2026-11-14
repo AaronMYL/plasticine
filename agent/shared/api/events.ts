@@ -9,6 +9,7 @@ import { API_PREFIX, IdSchema } from './common.ts';
 import { AttachmentViewSchema } from '../attachments.ts';
 import { MoneyDraftViewSchema } from './money-drafts.ts';
 import { ContactItemEventSchema, ContactsChangedEventSchema } from './contacts.ts';
+import { NotifyEventSchema } from './push.ts';
 
 export const EVENTS_PATH = `${API_PREFIX}/events`;
 
@@ -39,6 +40,8 @@ export const ServerEventSchema = Type.Union([
   // 联系人（第 113 条）：列表变了、某个联系人的聊天里多了或变了一项。
   ContactsChangedEventSchema,
   ContactItemEventSchema,
+  // 第13批：一条新消息该通知（桌面客户端自己弹；网页推送服务端另发）。
+  NotifyEventSchema,
   ReadyEventSchema,
 ]);
 export type ServerEvent = Static<typeof ServerEventSchema>;

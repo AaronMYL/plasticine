@@ -112,8 +112,9 @@ describe('地址和栏目', () => {
     expect(parseHash('#/settings/network')).toEqual({ view: 'settings', noteId: null, settingsSection: 'account' });
     expect(parseHash('#/settings/visibility')).toEqual({ view: 'settings', noteId: null, settingsSection: 'grants',
       settingsFocus: 'visibility' });
+    // 11-14 去掉「通知记录」：旧链接落到通用里的「通知」。
     expect(parseHash('#/settings/notices')).toEqual({ view: 'settings', noteId: null, settingsSection: 'general',
-      settingsFocus: 'notices' });
+      settingsFocus: 'notify' });
     expect(parseHash('#/settings/nonsense')).toEqual({ view: 'settings', noteId: null });
   });
 });

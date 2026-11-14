@@ -3,7 +3,7 @@
 import type { Video } from '../video/index.ts';
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http';
 import type { Device, Session } from '../../shared/state.ts';
-import type { AskDesk, PushService, ScanScheduler } from '../attention/index.ts';
+import type { AskDesk, Presence, PushService, ScanScheduler } from '../attention/index.ts';
 import type { BookInsightService, ComposePredictor, MemoryCurator, NoteAssistant, PageTranslator, PaymentReader }
   from '../brain/index.ts';
 import type { Daily } from '../daily/index.ts';
@@ -53,6 +53,8 @@ export interface AppDeps {
   hub: EventHub;
   desk: AskDesk;
   push: PushService;
+  /** 第13批：哪台设备正开着哪段对话（新消息通知不打扰他正看着的那段）。 */
+  presence: Presence;
   /** How often an open event stream re-checks its session and sends a keep-alive (config.ts SSE_HEARTBEAT_MS). */
   sseHeartbeatMs: number;
   /** Wrong node pairing codes, counted across all callers. */

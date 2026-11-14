@@ -1,5 +1,5 @@
 // 设置的六段（11-13 Aaron 看过设计稿定的重排）和其中两块：对外可见（隐私与授权里；只列放开的，三栏各自「添加」，
-// 建议是虚线框的小片）、通知记录（通用里；原 Plasticine 通知）。「邀请朋友」11-13 去掉（入网早就不要邀请码了）。
+// 建议是虚线框的小片）。「邀请朋友」11-13 去掉（入网早就不要邀请码了）；「通知记录」11-14 去掉（旧链接落到「通知」）。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -33,7 +33,8 @@ describe('设置 · 分段', () => {
     expect(await within(pane()).findByRole('heading', { level: 3, name: '对外可见' })).toBeTruthy();
     expect(within(pane()).getByRole('region', { name: '对外授权' })).toBeTruthy();
     fireEvent.click(within(nav).getByRole('button', { name: '通用' }));
-    expect(await within(pane()).findByRole('heading', { level: 3, name: '通知记录' })).toBeTruthy();
+    expect(await within(pane()).findByRole('heading', { level: 3, name: '通知' })).toBeTruthy();
+    expect(within(pane()).queryByRole('heading', { level: 3, name: '通知记录' })).toBeNull();
   });
 });
 
@@ -103,36 +104,10 @@ describe('设置 · 对外可见', () => {
   });
 });
 
-describe('设置 · 通知记录', () => {
-  it('列出 Plasticine 自己的通知（邮件不在这里）；没读的标一个点，点开看全文并标成读过', async () => {
-    const app = await renderApp({ hash: '#/settings/notices', setup: seed });
-    const notices = await within(pane()).findByRole('list', { name: '通知' });
-    expect(within(notices).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(notices).queryByText(/实例将于/)).toBeNull();
-    const backup = within(notices).getByRole('button', { name: /本机备份做好了/ });
-    expect(within(backup).getByRole('img', { name: '没读' })).toBeTruthy();
-    fireEvent.click(backup);
-    expect(await within(notices).findByText(/可以在「设置 · 系统」里按对象恢复/)).toBeTruthy();
-    await waitFor(() => expect(app.control.m5b.inbox.find('inbox_notice_backup')?.read).toBe(true));
-    await settle();
-  });
-
-  it('通知记录读失败：说原因并给「再读一次」，不显示成空（原站内信浮层的同一条，第 113 条挪到这里）', async () => {
-    const failing = { on: true };
-    await renderApp({ hash: '#/settings/notices', setup: (fake) => {
-      seed(fake);
-      const list = fake.api.inbox.list.bind(fake.api.inbox);
-      vi.spyOn(fake.api.inbox, 'list').mockImplementation(async (...args) => {
-        if (failing.on) {
-          throw new ApiError({ kind: 'failed', code: 'internal_error', message: '服务暂时不可用。', status: 503 });
-        }
-        return list(...args);
-      });
-    } });
-    const alert = await within(pane()).findByRole('alert');
-    expect(within(pane()).queryByText('还没有通知')).toBeNull();
-    failing.on = false;
-    fireEvent.click(within(alert).getByRole('button', { name: '再读一次' }));
-    expect(await within(pane()).findByRole('list', { name: '通知' })).toBeTruthy();
+describe('设置 · 通知（11-14 去掉「通知记录」）', () => {
+  it('旧的「通知记录」链接落到通用里的「通知」，那一块不在了', async () => {
+    await renderApp({ hash: '#/settings/notices', setup: seed });
+    expect(await within(pane()).findByRole('heading', { level: 3, name: '通知' })).toBeTruthy();
+    expect(within(pane()).queryByRole('heading', { level: 3, name: '通知记录' })).toBeNull();
   });
 });

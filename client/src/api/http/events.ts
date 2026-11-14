@@ -29,6 +29,7 @@ export const EVENT_SOURCE_CLOSED = 2;
 // 用 Record 列出全部事件：shared 里多了一种而这里没写，typecheck 就不过。
 const STREAM_EVENT_TYPES: Readonly<Record<EveryStreamEvent['type'], true>> = {
   ready: true,
+  notify: true,
   attachment_changed: true,
   money_draft_changed: true,
   client_version_changed: true,

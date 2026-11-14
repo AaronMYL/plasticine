@@ -10,7 +10,7 @@ import type {
 } from '../types.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeReceipts } from './receipts.ts';
-import type { PushStatus } from '../shared.ts';
+import type { PushStatus, PushTestResponse } from '../shared.ts';
 
 /** 未压缩的 P-256 公钥是 65 字节，base64url 87 个字符；假的就是 0x04 开头、其余全 0。 */
 export const FAKE_VAPID_PUBLIC_KEY = `BA${'A'.repeat(85)}`;
@@ -67,6 +67,22 @@ export class FakePush implements PushApi {
     return this.deps.receipts.run('push', input.requestId, 'DELETE /v2/push/subscriptions', () => ({
       removed: this.endpoints.delete(input.endpoint),
     }));
+  }
+
+  /** 假实现里没有推送服务：这台设备订阅了就当发出去了。 */
+  async test(): Promise<PushTestResponse> {
+    this.deps.session.require();
+    const deviceId = this.deps.session.currentSession()?.device.id;
+    const mine = [...this.endpoints.keys()].filter((endpoint) => this.owners.get(endpoint) === deviceId).length;
+    return mine === 0 ? { sent: 0, error: '这台设备还没打开系统通知' } : { sent: mine, error: null };
+  }
+
+  /** 测试用：最近报过的「正在看哪段对话」。 */
+  watching: string | null = null;
+
+  async presence(conversation: string | null): Promise<void> {
+    this.deps.session.require();
+    this.watching = conversation;
   }
 
   /** 测试用：服务端现在登记着的 endpoint。 */

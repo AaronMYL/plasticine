@@ -31,6 +31,7 @@ import { CognitionActions, settleCognitionDraft } from './views/memory/cognition
 import { ModelStore } from './views/models/model-store.ts';
 import { DailySettingsStore } from './views/settings/daily-settings.ts';
 import { PushSwitch } from './views/settings/push-switch.ts';
+import { startPresenceReport } from './state/viewing.ts';
 import { SignedSender } from './views/signing/signed-sender.ts';
 import { MemoryTopicsStore } from './views/memory/topics-store.ts';
 import { BookmarkStore } from './views/bookmarks/bookmark-store.ts';
@@ -185,12 +186,15 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
     const stopZoneReport = startTimeZoneReport(api.tasks);
     const stopNativePush = live.hub.on((event) => live.push.onEvent(event,
       live.lines.lineOf(MAIN_LINE_ALIAS)?.id ?? null));
+    // 第13批：页面在前台时报正开着哪段对话，服务端不推他正看着的那段。
+    const stopPresence = startPresenceReport((conversation) => api.push.presence(conversation));
     live.hub.start();
     void live.push.start();
     // 直连通了（api/direct/direct-link.tsx）：事件流断开重连一次，下一条就从直连走。
     const toDirect = (): void => live.hub.reconnect();
     window.addEventListener(DIRECT_OPEN_EVENT, toDirect);
     return () => {
+      stopPresence();
       window.removeEventListener(DIRECT_OPEN_EVENT, toDirect);
       stopNotes();
       stopChapters();

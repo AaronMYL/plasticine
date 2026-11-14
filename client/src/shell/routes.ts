@@ -169,7 +169,8 @@ const LEGACY_SETTINGS: Readonly<Record<string, { section: SettingsSection; focus
   network: { section: 'account' },
   privacy: { section: 'grants' },
   visibility: { section: 'grants', focus: 'visibility' },
-  notices: { section: 'general', focus: 'notices' },
+  // 11-14 去掉了「通知记录」：旧链接落到通用里的「通知」。
+  notices: { section: 'general', focus: 'notify' },
 };
 
 function settingsLink(segment: string | undefined): Route {

@@ -413,3 +413,13 @@
   transform: translateY(-50%);
   pointer-events: none;
 }
+
+/* 测试通知（第13批，设计稿 Notify）：一行「发一条测试通知 · 发一条」；没弹出来时下面一块说原因、给「打开系统设置」。 */
+.settings-notify-test { display: flex; flex-direction: column; gap: 8px; }
+.settings-notify-row { display: flex; align-items: center; gap: 12px; font-size: 14px; line-height: 22px; }
+.settings-notify-label { flex: 1; }
+.settings-notify-sent { font-size: 12px; line-height: 18px; color: var(--fg2); }
+.settings-notify-fail { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px;
+  border-radius: 8px; background: color-mix(in srgb, var(--err) 8%, transparent); font-size: 13px; line-height: 20px; }
+.settings-notify-fail p { margin: 0; color: var(--err); }
+.settings-notify-fail b { font-weight: 600; }

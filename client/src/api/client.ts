@@ -64,6 +64,7 @@ export interface AttachmentsApi {
 }
 import type {
   PushStatus,
+  PushTestResponse,
 } from './shared.ts';
 import type { SignedResult, SignedSend, SignedTarget } from './signed-targets.ts';
 import type {
@@ -189,6 +190,10 @@ export interface PushApi {
   subscribe(input: SubscribePushRequest): Promise<SubscribePushResponse>;
   /** DELETE /v2/push/subscriptions：退订。 */
   unsubscribe(input: UnsubscribePushRequest): Promise<UnsubscribePushResponse>;
+  /** POST /v2/push/test：给这台设备发一条测试通知（第13批）。 */
+  test(): Promise<PushTestResponse>;
+  /** POST /v2/presence：这台设备正开着哪段对话（null 是没在看）；他正看着的那段来新消息不通知（第13批）。 */
+  presence(conversation: string | null): Promise<void>;
 }
 
 export interface MemoryApi {

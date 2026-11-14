@@ -13,7 +13,7 @@ import { AttentionError } from './errors.ts';
 import type { Notifier } from './presenter.ts';
 import { decodeSubscriberKeys, encryptPayload, vapidAuthorization, type VapidKeys } from './web-push-crypto.ts';
 
-import { PUSH_BODY } from '../../shared/api/index.ts';
+import { NOTICE_TITLE, PUSH_BODY, TEST_NOTICE_BODY, type PushTestResponse } from '../../shared/api/index.ts';
 export { PUSH_BODY } from '../../shared/api/index.ts';
 // How long the push service keeps an undelivered notification: a day; after that the card is still in 等你 anyway.
 export const PUSH_TTL_SECONDS = 24 * 60 * 60;
@@ -127,6 +127,22 @@ export class PushService implements Notifier {
       return device !== undefined && device.revokedAt === null;
     });
     await Promise.all(targets.map((subscription) => this.#send(subscription, body)));
+  }
+
+  /**
+   * 测试通知（第13批，设置 · 通用 · 通知「发一条测试通知」）：只发给这台设备的订阅；回发出几条，没发成就带推送服务
+   * 给的原因（和订阅上记的那句一样）。
+   */
+  async test(deviceId: string): Promise<PushTestResponse> {
+    const targets = this.#state.pushSubscriptions.active().filter((row) => row.deviceId === deviceId);
+    if (targets.length === 0) return { sent: 0, error: '这台设备还没打开系统通知' };
+    const payload = { title: NOTICE_TITLE, body: TEST_NOTICE_BODY, url: '/', tag: 'push-test' };
+    const body = Buffer.from(JSON.stringify(cleanOutboundJson(payload)), 'utf8');
+    const results = await Promise.all(targets.map((subscription) => this.#send(subscription, body)));
+    const failed = targets.find((_subscription, index) => results[index] !== 'delivered');
+    return { sent: results.filter((result) => result === 'delivered').length,
+      error: failed === undefined ? null
+        : this.#state.pushSubscriptions.byEndpoint(failed.endpoint)?.lastError ?? '推送服务没收下' };
   }
 
   /** Only about the subscription the request went to: a re-subscribed endpoint keeps its new state. */

@@ -282,3 +282,15 @@ test('推送服务不通：记下失败、写日志，卡照样在清单里', as
   assert.equal(h.state.asks.get(ask.id)?.status, 'open');
   assert.match(h.state.pushSubscriptions.byEndpoint('https://push.example.com/send/abc')?.lastError ?? '', /发送失败/);
 });
+
+test('测试通知（第13批）：只发给这台设备的订阅，回发出几条、没发成的原因；没开通知就直说', async () => {
+  const mac = device('Mac');
+  const phone = device('iPhone');
+  assert.deepEqual(await push.test(mac), { sent: 0, error: '这台设备还没打开系统通知' });
+  push.subscribe(mac, 'https://push.example/mac', fakeBrowser().keys);
+  push.subscribe(phone, 'https://push.example/phone', fakeBrowser().keys);
+  assert.deepEqual(await push.test(mac), { sent: 1, error: null });
+  assert.deepEqual(sent.map((item) => item.endpoint), ['https://push.example/mac']);
+  status = 500;
+  assert.deepEqual(await push.test(mac), { sent: 0, error: '推送服务拒收（HTTP 500）' });
+});

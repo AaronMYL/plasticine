@@ -11,6 +11,7 @@ import { useStore } from '../../state/use-store.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { messagesRoute, type Route } from '../../shell/routes.ts';
 import { useFocusMessage } from '../../shell/use-focus-message.ts';
+import { useViewing } from '../../state/viewing.ts';
 import { LoadNote } from '../m5b/load-note.tsx';
 import { ContactAvatar } from './contact-avatar.tsx';
 import { ContactComposer } from './contact-composer.tsx';
@@ -161,6 +162,7 @@ export function ContactThread(props: ContactThreadProps): ReactNode {
   const replyCards = replyAsksOf(useStore(asks.store).open, contact).length;
   const { list, onScroll, atBottom } = useFollowBottom(items.length + replyCards, contact.id);
   // 地址里带着这段聊天的某一句（点通知）：往上读到那一句、滚过去、闪一下（第13批）。
+  useViewing(`contact:${contact.id}`);
   const focusId = props.focusMessageId ?? null;
   const loadedFocus = focusId !== null && items.some((item) => item.type === 'message' && item.message.id === focusId);
   const root = useRef<HTMLDivElement>(null);
