@@ -34,6 +34,8 @@ test('his turn: a whole sentence from the conversation, through the compose mode
   const view = await predictor.predict('', talk(true), signal(), (delta) => streamed.push(delta));
   assert.equal(view.text, '那现在还用得着吗？');
   assert.equal(model.requests[0]?.purpose, 'compose_predict');
+  // 关不掉思考的模型也有字可出：和续写一样给 2048。
+  assert.equal(model.requests[0]?.maxOutputTokens, 2048);
   const payload = JSON.parse(String(model.requests[0]?.messages[0]?.content)) as Record<string, unknown>;
   assert.equal(payload['在和谁说'], 'Plasticine');
   assert.deepEqual(payload['最近的消息'], [{ 谁: '他', 说: '它是什么时候装上的？' },

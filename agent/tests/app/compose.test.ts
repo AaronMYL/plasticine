@@ -11,7 +11,7 @@ let t: TestApp;
 let cookie: string;
 
 before(async () => {
-  t = await startTestApp(['那现在还用得着吗？', '好，周四晚上我看第一版']);
+  t = await startTestApp(['那现在还用得着吗？', '好的，我去看看', '好，周四晚上我看第一版']);
   cookie = await pair(t);
 });
 after(() => t.close());
@@ -48,6 +48,16 @@ test('main line: after his own message it is not his turn; after Plasticine answ
   assert.deepEqual(json(await report('kept')), { resolved: true });
   assert.deepEqual(json(await report('rejected')), { resolved: false });
   assert.equal(t.state.loop.tallies('message_predict')[0]?.kept, 1);
+});
+
+test('main line: a background report that came back last counts as Plasticine speaking, so it is his turn', async () => {
+  const main = MAIN_LINE_ID;
+  t.state.lineMessages.append(main, 'user', { role: 'user', content: '帮我加几个信息源', timestamp: 2 },
+    { origin: { kind: 'user', userText: '帮我加几个信息源' } });
+  assert.deepEqual(done(await predict({ kind: 'line', id: main })), { text: '' });
+  t.state.lineMessages.append(main, 'lineReport', { role: 'lineReport', lineId: 'line-feeds', title: '加信息源',
+    outcome: 'done', text: '六个来源都加好了。', timestamp: 3 });
+  assert.equal(done(await predict({ kind: 'line', id: main })).text, '好的，我去看看');
 });
 
 test('a contact: the friend spoke last, so it is his turn', async () => {

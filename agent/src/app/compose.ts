@@ -30,6 +30,8 @@ function lineContext(context: RequestContext, id: string): ComposeContext {
       return [{ who: 'me', name: '他', text: message.origin.userText ?? message.text }];
     }
     if (message.role === 'assistant') return [{ who: 'other', name, text: message.text }];
+    // 后台线做完回来的汇报：主线上他最后看到的常常就是这一条，算 Plasticine 说的。
+    if (message.role === 'lineReport') return [{ who: 'other', name, text: message.text }];
     return [];
   });
   const myTurn = turns.at(-1)?.who === 'other' && !BUSY.has(page.line.status) && page.queue.length === 0;

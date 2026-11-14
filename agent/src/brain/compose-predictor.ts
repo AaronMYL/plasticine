@@ -12,8 +12,11 @@ import { PredictText } from './note-overlap.ts';
 /** 带最近这么多句；每句最多这么长。 */
 export const COMPOSE_TURNS = 16;
 const TURN_CHARS = 400;
-/** 一句消息够了；最终文字再截到这么长。 */
-const OUTPUT_TOKENS = 160;
+/**
+ * 和续写一样给足：有的模型关不掉思考（「不开」会落到「低」），思考也算在这里面，给少了想完就没字了（11-14 线上
+ * 实测 160 时一个字都不出）。最后只要第一行，再截到 OUTPUT_CHARS。
+ */
+export const COMPOSE_OUTPUT_TOKENS = 2048;
 const OUTPUT_CHARS = 200;
 
 export interface ComposeTurn {
@@ -76,7 +79,7 @@ export class ComposePredictor {
         system: COMPOSE_SYSTEM + (habits === '' ? '' : `\n\n${habits}`),
         messages: [{ role: 'user', content: JSON.stringify(payload) }],
         purpose: 'compose_predict',
-        maxOutputTokens: OUTPUT_TOKENS,
+        maxOutputTokens: COMPOSE_OUTPUT_TOKENS,
       }, AbortSignal.any([signal, timeout]), deltas);
     } catch (cause) {
       signal.throwIfAborted();
