@@ -17,6 +17,7 @@ import { TOOL_GROUPS_NOTE, ToolGroupsView } from '../tools/tool-groups-view.tsx'
 import { AccountProfile } from './account-profile.tsx';
 import { AccessSection } from './access-section.tsx';
 import { AmbientSection } from './ambient-section.tsx';
+import { NotifyKindsSection } from './notify-kinds-section.tsx';
 import { NotifyTest } from './notify-test.tsx';
 import { AppearanceSection } from './appearance-section.tsx';
 import { BrowserSection } from './browser-section.tsx';
@@ -106,6 +107,7 @@ function NotificationSection(): ReactNode {
         </button>
       ) : null}
       {checked ? <NotifyTest /> : null}
+      <NotifyKindsSection />
     </section>
   );
 }

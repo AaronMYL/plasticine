@@ -38,6 +38,7 @@ import {
   type ContactAlert,
   ProjectWatch,
   PushService,
+  readNotifyKinds,
   routeAsks,
   ScanScheduler,
   type AskResolver,
@@ -343,7 +344,7 @@ export function assembleApp(options: AssembleOptions): App {
         // 第 8 批第 6 条：来信写好了，主线里 Plasticine 说一句、带来信卡；系统通知只说「给你写了一封信」。
         lettered: (space, say) => {
           lines.letter({ key: `letter:${space.id}`, text: say, spaceId: space.id, title: space.title });
-          notices.announce({ body: LETTER_BRIEF, url: MAIN_THREAD_PATH, tag: `letter:${space.id}` });
+          notices.announce({ body: LETTER_BRIEF, url: MAIN_THREAD_PATH, tag: `letter:${space.id}` }, 'letter');
         } }),
       ...calendarTools({ state, devices: devices.actions, sync: calendar, now, zone: calendarZone })],
     askTools: tasks.askTools(),
@@ -378,10 +379,13 @@ export function assembleApp(options: AssembleOptions): App {
     keys: options.vapidKeys,
     subject: options.vapidSubject,
     now,
+    // 第13批：设置里关掉的那一类通知不推（所有设备一起）。
+    kinds: () => readNotifyKinds(state),
     ...(options.pushTransport === undefined ? {} : { transport: options.pushTransport }),
   });
   presenter.setNotifier(push);
-  messageAlerts = new MessageAlerts({ presence, push, now, publish: (event) => hub.publish(event) });
+  messageAlerts = new MessageAlerts({ presence, push, now, publish: (event) => hub.publish(event),
+    allowed: (kind) => readNotifyKinds(state)[kind] });
   // 通知统一成「主线一条消息 + 系统通知」（《优化清单》第 12 条）：不再发任何通知邮件。
   // 第 7 批第 14 条：样刊出来附「开启定时 / 再改改」卡；确认写在主线上，「再改改」交给主线问他。
   const sampleCards = new SampleCards({ state, desk, notice: (input) => { lines.notice(input); },

@@ -4,7 +4,7 @@
 // 群 2 分钟内连着来的合成一条「n 条新消息」，同一个 tag，新的换掉旧的。
 // 网页推送（iPhone 主屏幕网页、浏览器）走 PushService；桌面客户端收不到网页推送，发一个 notify 事件让界面自己弹。
 
-import type { NotifyEvent, PushPayload } from '../../shared/api/push.ts';
+import type { NotifyEvent, NotifyKind, PushPayload } from '../../shared/api/push.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import type { Presence } from './presence.ts';
 
@@ -27,6 +27,8 @@ export interface ContactAlert {
 
 export interface LineAlert {
   lineId: string;
+  /** 主线和旁聊是 main，队友和队友群组是 mate（按类型开关用）。 */
+  kind: Extract<NotifyKind, 'main' | 'mate'>;
   seq: number;
   /** 主线的名字、队友的名字或群组名。 */
   name: string;
@@ -38,6 +40,8 @@ export interface MessageAlertsOptions {
   push: { announce(payload: PushPayload): Promise<unknown> };
   publish: (event: NotifyEvent) => void;
   now: () => Date;
+  /** 这一类开着没有（第13批，设置里按类型开关）；不给就都开着。关着的连合并计数也不记。 */
+  allowed?: (kind: NotifyKind) => boolean;
 }
 
 /** 消息开头：去掉 Markdown 记号（标题、加粗、链接、代码），并成一行，太长截断加「…」。 */
@@ -65,6 +69,7 @@ export class MessageAlerts {
   contact(alert: ContactAlert): boolean {
     const brief = alertBrief(alert.text);
     const conversation = `contact:${alert.contactId}`;
+    if (this.#options.allowed?.(alert.group ? 'group' : 'contact') === false) return false;
     if (brief === '' || this.#options.presence.viewing(conversation, this.#options.now())) {
       this.#bursts.delete(alert.contactId);
       return false;
@@ -86,6 +91,7 @@ export class MessageAlerts {
   line(alert: LineAlert): boolean {
     const brief = alertBrief(alert.text);
     const conversation = `line:${alert.lineId}`;
+    if (this.#options.allowed?.(alert.kind) === false) return false;
     if (brief === '' || this.#options.presence.viewing(conversation, this.#options.now())) return false;
     const url = `/#/plasticine/${encodeURIComponent(`line:${alert.lineId}:${alert.seq}`)}`;
     this.#send({ title: alert.name, body: brief, url, tag: `line-${alert.lineId}` }, conversation);

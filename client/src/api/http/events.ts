@@ -30,6 +30,7 @@ export const EVENT_SOURCE_CLOSED = 2;
 const STREAM_EVENT_TYPES: Readonly<Record<EveryStreamEvent['type'], true>> = {
   ready: true,
   notify: true,
+  notify_kinds_changed: true,
   attachment_changed: true,
   money_draft_changed: true,
   client_version_changed: true,

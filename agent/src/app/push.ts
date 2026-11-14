@@ -3,6 +3,7 @@
 // 邮件兜底的开关接口（/v2/notifications/mail-fallback）《优化清单》第 12 条起删了：通知不再发邮件，表和历史数据留着。
 
 import {
+  NotifyKindsSchema,
   PresenceRequestSchema,
   SubscribePushRequestSchema,
   UnsubscribePushRequestSchema,
@@ -10,6 +11,7 @@ import {
   type SubscribePushResponse,
   type UnsubscribePushResponse,
 } from '../../shared/api/index.ts';
+import { readNotifyKinds, writeNotifyKinds } from '../attention/index.ts';
 import { withCurrent } from './conflict.ts';
 import { requireAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
@@ -60,6 +62,21 @@ export async function reportPresence(context: RequestContext): Promise<Reply> {
   const body = checkInput(PresenceRequestSchema, await readJsonBody(context.req), '在看哪段对话');
   context.deps.presence.report(auth.device.id, body.conversation, context.deps.now());
   return { status: 200, body: { ok: true } };
+}
+
+/** GET /v2/push/kinds：通知按类型的开关（第13批）；没设过是都开着。 */
+export function notifyKinds(context: RequestContext): Reply {
+  requireAuth(context);
+  return { status: 200, body: readNotifyKinds(context.deps.state) };
+}
+
+/** PUT /v2/push/kinds：整份存，所有设备一起生效；别的设备在事件流上收到 notify_kinds_changed。 */
+export async function saveNotifyKinds(context: RequestContext): Promise<Reply> {
+  requireAuth(context);
+  const body = checkInput(NotifyKindsSchema, await readJsonBody(context.req), '通知开关');
+  const kinds = writeNotifyKinds(context.deps.state, body);
+  context.deps.hub.publish({ type: 'notify_kinds_changed', kinds });
+  return { status: 200, body: kinds };
 }
 
 /** DELETE /v2/push/subscriptions */

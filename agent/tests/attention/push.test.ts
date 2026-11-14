@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { Value } from 'typebox/value';
-import { PushPayloadSchema } from '../../shared/api/index.ts';
+import { NOTIFY_KINDS_DEFAULT, PushPayloadSchema, type NotifyKinds } from '../../shared/api/index.ts';
 import {
   AttentionError,
   generateVapidKeys,
@@ -293,4 +293,22 @@ test('测试通知（第13批）：只发给这台设备的订阅，回发出几
   assert.deepEqual(sent.map((item) => item.endpoint), ['https://push.example/mac']);
   status = 500;
   assert.deepEqual(await push.test(mac), { sent: 0, error: '推送服务拒收（HTTP 500）' });
+});
+
+test('按类型关掉的不推（第13批）：等你的事关了卡不推，来信关了来信不推；没标类型的照推', async () => {
+  const kinds: NotifyKinds = { ...NOTIFY_KINDS_DEFAULT, ask: false, letter: false };
+  const gated = new PushService({ state: h.state, keys: generateVapidKeys(), subject: 'https://plasticine.test',
+    now: h.clock.now, kinds: () => kinds,
+    transport: async (endpoint, request) => { sent.push({ endpoint, request }); return { status }; } });
+  h.presenter.setNotifier(gated);
+  gated.subscribe(device('手机'), 'https://push.example/kinds', fakeBrowser().keys);
+  await gated.notify(raise());
+  await gated.announce({ title: 'Plasticine', body: '给你写了一封信', url: '/', tag: 'letter:1' }, 'letter');
+  assert.equal(sent.length, 0);
+  await gated.announce({ title: 'Plasticine', body: '服务器磁盘空间不足', url: '/', tag: 'disk' }, 'notice');
+  await gated.announce({ title: 'Plasticine', body: '测试', url: '/', tag: 'x' });
+  assert.equal(sent.length, 2);
+  kinds.ask = true;
+  await gated.notify(raise({ question: '再问一件' }));
+  assert.ok(sent.length >= 3, '打开以后照推');
 });

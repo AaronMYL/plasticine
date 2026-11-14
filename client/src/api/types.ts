@@ -177,6 +177,8 @@ export type LiveEvent =
   | { type: 'line'; event: import('./shared.ts').LineStreamEvent }
   /** 第13批：一条新消息该通知（桌面客户端自己弹；url 是站内地址，conversation 是哪段对话）。 */
   | { type: 'notify'; title: string; body: string; url: string; tag: string; conversation: string }
+  // 第13批：通知按类型的开关在别的设备上改了。
+  | { type: 'notify.kinds'; kinds: import('./shared.ts').NotifyKinds }
   | { type: 'resync' };
 
 /**

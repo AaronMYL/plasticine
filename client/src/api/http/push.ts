@@ -2,6 +2,8 @@
 
 import type { PushApi } from '../client.ts';
 import {
+  NOTIFY_KINDS_PATH,
+  NotifyKindsSchema,
   PRESENCE_PATH,
   PUSH_KEY_PATH,
   PUSH_SUBSCRIPTIONS_PATH,
@@ -19,7 +21,7 @@ import type {
   UnsubscribePushResponse,
 } from '../types.ts';
 import type { Transport } from './transport.ts';
-import { PushStatusSchema, type PushStatus, type PushTestResponse } from '../shared.ts';
+import { PushStatusSchema, type NotifyKinds, type PushStatus, type PushTestResponse } from '../shared.ts';
 import { Type } from 'typebox';
 
 const PresenceAckSchema = Type.Object({ ok: Type.Boolean() });
@@ -66,6 +68,17 @@ export class HttpPush implements PushApi {
   async presence(conversation: string | null): Promise<void> {
     await this.transport.request({ method: 'POST', path: PRESENCE_PATH, body: { conversation },
       schema: PresenceAckSchema, what: '报正在看哪段对话', lostAs: 'failed' });
+  }
+
+  kinds(signal?: AbortSignal): Promise<NotifyKinds> {
+    return this.transport.request({ method: 'GET', path: NOTIFY_KINDS_PATH, schema: NotifyKindsSchema,
+      what: '读通知开关', lostAs: 'failed', signal });
+  }
+
+  saveKinds(kinds: NotifyKinds): Promise<NotifyKinds> {
+    // 整份存、后到的盖掉先到的：重发一次结果一样，没拿到回答也算失败（界面退回原样，让他再点一次）。
+    return this.transport.request({ method: 'PUT', path: NOTIFY_KINDS_PATH, body: kinds, schema: NotifyKindsSchema,
+      what: '存通知开关', lostAs: 'failed' });
   }
 
   async unsubscribe(input: UnsubscribePushRequest): Promise<UnsubscribePushResponse> {

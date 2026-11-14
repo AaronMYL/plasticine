@@ -16,8 +16,8 @@ import type { DeviceSubscription, PushDevice, PushPermission } from '../../api/p
 import { createRequestId } from '../../api/request-id.ts';
 import { Store } from '../../state/store.ts';
 import { hostNotify, inDesktopApp } from '../../shell/host.ts';
-import { isDeferredStandaloneAsk, LETTER_BRIEF, MAIN_THREAD_PATH, NOTICE_TITLE, PUSH_BODY, reportBrief,
-  type LineMessageView } from '../../api/shared.ts';
+import { isDeferredStandaloneAsk, LETTER_BRIEF, MAIN_THREAD_PATH, NOTICE_TITLE, NOTIFY_KINDS_DEFAULT, PUSH_BODY,
+  reportBrief, type LineMessageView, type NotifyKind, type NotifyKinds } from '../../api/shared.ts';
 import type { LiveEvent } from '../../api/types.ts';
 import { lookingAt } from '../../state/viewing.ts';
 
@@ -66,14 +66,49 @@ export class PushSwitch {
   /** 每开始一个操作加一；回执回来时代次变了，就是过期操作，不写状态。 */
   private generation = 0;
   private readonly notified = new Set<string>();
+  /** 通知按类型的开关（第13批，所有设备一起，存在服务器上）：读到之前当都开着。 */
+  readonly kinds = new Store<NotifyKinds>({ ...NOTIFY_KINDS_DEFAULT });
+  /** 读不到、存不上开关时那一句；下次读到或存好清掉。 */
+  readonly kindsError = new Store<string | null>(null);
+  /** 存开关是一份一份接着存的：后点的那一下要等前一次回来，回来的顺序和点的顺序一样。 */
+  private kindsSaving: Promise<unknown> = Promise.resolve();
 
   constructor(api: PlasticineApi, device: PushDevice) {
     this.api = api;
     this.device = device;
   }
 
+  /** 读一次按类型的开关（服务器上那份）。 */
+  async loadKinds(): Promise<void> {
+    try {
+      this.kinds.set(await this.api.push.kinds());
+      this.kindsError.set(null);
+    } catch (cause) {
+      this.kindsError.set(`读不到通知开关：${errorText(cause)}`);
+    }
+  }
+
+  /** 开、关一类：界面马上变，存不上就退回原样并说原因。 */
+  setKind(kind: NotifyKind, on: boolean): Promise<void> {
+    const before = this.kinds.get();
+    const next = { ...before, [kind]: on };
+    this.kinds.set(next);
+    const work = this.kindsSaving.then(async () => {
+      try {
+        this.kinds.set(await this.api.push.saveKinds(this.kinds.get()));
+        this.kindsError.set(null);
+      } catch (cause) {
+        this.kinds.set({ ...this.kinds.get(), [kind]: before[kind] });
+        this.kindsError.set(`没存上：${errorText(cause)}`);
+      }
+    });
+    this.kindsSaving = work;
+    return work;
+  }
+
   /** 看这台设备现在开没开；开着就把订阅再交一次（登录换过会话也接得上）。不弹权限框。 */
   async start(): Promise<void> {
+    void this.loadKinds();
     const generation = this.next('checking');
     if (inDesktopApp()) { this.settle(generation, 'native', null); return; }
     const reason = this.device.unsupportedReason();
@@ -228,7 +263,11 @@ export class PushSwitch {
       this.onNotify(event);
       return;
     }
-    if (!inDesktopApp() || event.type !== 'ask.created' || event.ask.channel !== 'interrupt'
+    if (event.type === 'notify.kinds') {
+      this.kinds.set(event.kinds);
+      return;
+    }
+    if (!inDesktopApp() || event.type !== 'ask.created' || !this.kinds.get().ask || event.ask.channel !== 'interrupt'
       || event.ask.status !== 'open' || isDeferredStandaloneAsk(event.ask)
       || this.notified.has(event.ask.id)) { return; }
     try {
@@ -245,6 +284,8 @@ export class PushSwitch {
     const message = event.message;
     const key = `line:${message.lineId}:${message.seq}`;
     const brief = mainLineBrief(message);
+    // 第13批按类型开关：来信、提醒和结果（系统通知、没做成的后台线）关了就不弹，消息照常在主线上。
+    if (!this.kinds.get()[message.role === 'letter' ? 'letter' : 'notice']) return;
     // 同一条（部件作答后重推、断线补发）只弹一次；补发的是断线时漏掉的，照样弹。
     if (brief === null || this.notified.has(key)) {
       return;

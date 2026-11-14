@@ -6,7 +6,7 @@
 // 同一件按 key 只发一次：key 记成回执的动作标识（和以前通知信的动作标识一样，寄过信的那件不在主线上补发）；主线没写成
 // 时回执跟着回滚，下次扫描再发；推送失败只记日志，主线上那条照样在。
 
-import { NOTICE_TITLE, type PushPayload } from '../../shared/api/push.ts';
+import { NOTICE_TITLE, type NotifyKind, type PushPayload } from '../../shared/api/push.ts';
 import { errorCategory, safeLog } from '../shared-log.ts';
 import type { StateService } from '../state/index.ts';
 
@@ -23,6 +23,9 @@ export interface NoticeInput {
   url: string;
 }
 
+/** 主线通知是哪一类（第13批按类型开关）：来信，或提醒和结果（定时任务、心跳、后台没做成、磁盘快满）。 */
+export type NoticeKind = Extract<NotifyKind, 'letter' | 'notice'>;
+
 /** 发一件通知；返回这次是不是新发的（同一件发过就是 false）。 */
 export interface NoticePoster {
   post(input: NoticeInput): boolean;
@@ -32,7 +35,7 @@ export interface NoticesOptions {
   state: Pick<StateService, 'receipts' | 'transaction'>;
   /** 主线上写一条（lines/ 的 LineKernel.notice）。 */
   post: (input: NoticeInput) => void;
-  push: { announce(payload: PushPayload): Promise<unknown> };
+  push: { announce(payload: PushPayload, kind?: NotifyKind): Promise<unknown> };
   now: () => Date;
 }
 
@@ -63,9 +66,9 @@ export class Notices implements NoticePoster {
     return fresh;
   }
 
-  /** 只发系统通知（消息已经在主线上了，比如后台线贴回的结果）。 */
-  announce(input: { body: string; url: string; tag: string }): void {
-    const work = this.#options.push.announce({ title: NOTICE_TITLE, ...input });
+  /** 只发系统通知（消息已经在主线上了，比如后台线贴回的结果、来信）。 */
+  announce(input: { body: string; url: string; tag: string }, kind: NoticeKind = 'notice'): void {
+    const work = this.#options.push.announce({ title: NOTICE_TITLE, ...input }, kind);
     const pending: Promise<void> = work.then(() => undefined, (error: unknown) => {
       safeLog('error', 'notice_push_failed', { category: errorCategory(error) });
     }).finally(() => {

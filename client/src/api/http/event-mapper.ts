@@ -70,6 +70,8 @@ export class ServerEventMapper {
       case 'notify':
         return [{ type: 'notify', title: event.title, body: event.body, url: event.url, tag: event.tag,
           conversation: event.conversation }];
+      case 'notify_kinds_changed':
+        return [{ type: 'notify.kinds', kinds: event.kinds }];
     }
   }
 }

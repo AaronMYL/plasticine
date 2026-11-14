@@ -4,7 +4,7 @@
 // The push service gets an encrypted body (RFC 8291) and a VAPID token (RFC 8292); nothing of it is logged.
 
 import { ASK_KIND_LABELS } from '../../shared/api/asks.ts';
-import type { PushPayload } from '../../shared/api/push.ts';
+import type { NotifyKind, NotifyKinds, PushPayload } from '../../shared/api/push.ts';
 import type { Ask, PushSubscription } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { cleanOutboundJson } from '../outbound.ts';
@@ -52,6 +52,8 @@ export interface PushServiceOptions {
   subject: string;
   transport?: PushTransport;
   now?: () => Date;
+  /** 通知按类型的开关（第13批）：关掉的那一类不推；不给就都推。 */
+  kinds?: () => NotifyKinds;
 }
 
 export function payloadFor(ask: Ask): PushPayload {
@@ -69,6 +71,7 @@ export class PushService implements Notifier {
   readonly #subject: string;
   readonly #transport: PushTransport;
   readonly #now: () => Date;
+  readonly #kinds: (() => NotifyKinds) | undefined;
 
   constructor(options: PushServiceOptions) {
     this.#state = options.state;
@@ -76,6 +79,7 @@ export class PushService implements Notifier {
     this.#subject = options.subject;
     this.#transport = options.transport ?? fetchTransport;
     this.#now = options.now ?? (() => new Date());
+    this.#kinds = options.kinds;
   }
 
   get publicKey(): string {
@@ -113,14 +117,16 @@ export class PushService implements Notifier {
 
   /** One notification for the card to every subscription of a device that is still paired. */
   async notify(ask: Ask): Promise<void> {
-    await this.announce(payloadFor(ask));
+    await this.announce(payloadFor(ask), 'ask');
   }
 
   /**
    * One system notification to every subscription of a device that is still paired: interrupting cards and the main
    * line's notices (attention/notices.ts) both go out this way. The payload is one sentence and a site path only.
+   * A kind he switched off in 设置 · 通用 · 通知 (第13批) is not sent at all.
    */
-  async announce(payload: PushPayload): Promise<void> {
+  async announce(payload: PushPayload, kind?: NotifyKind): Promise<void> {
+    if (kind !== undefined && this.#kinds?.()[kind] === false) return;
     const body = Buffer.from(JSON.stringify(cleanOutboundJson(payload)), 'utf8');
     const targets = this.#state.pushSubscriptions.active().filter((subscription) => {
       const device = this.#state.devices.get(subscription.deviceId);

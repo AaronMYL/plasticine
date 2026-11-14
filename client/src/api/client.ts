@@ -195,6 +195,10 @@ export interface PushApi {
   test(): Promise<PushTestResponse>;
   /** POST /v2/presence：这台设备正开着哪段对话（null 是没在看）；他正看着的那段来新消息不通知（第13批）。 */
   presence(conversation: string | null): Promise<void>;
+  /** GET /v2/push/kinds：通知按类型的开关（第13批，所有设备一起）。 */
+  kinds(signal?: AbortSignal): Promise<import('./shared.ts').NotifyKinds>;
+  /** PUT /v2/push/kinds：整份存；回存好的那份。 */
+  saveKinds(kinds: import('./shared.ts').NotifyKinds): Promise<import('./shared.ts').NotifyKinds>;
 }
 
 export interface MemoryApi {

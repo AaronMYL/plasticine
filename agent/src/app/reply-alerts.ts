@@ -22,7 +22,8 @@ export function lineReplyAlert(state: LineAlertState, line: LineRow): LineAlert 
   const text = state.lineMessages.said(`line:${line.id}:${reply.seq}`)?.text ?? '';
   const named = line.mateId != null ? state.mates.get(line.mateId)?.name
     : line.mateGroupId != null ? state.mateGroups.get(line.mateGroupId)?.name : undefined;
-  return { lineId: line.id, seq: reply.seq, name: named ?? mainIdentity(state).name, text };
+  const kind = line.mateId != null || line.mateGroupId != null ? 'mate' : 'main';
+  return { lineId: line.id, kind, seq: reply.seq, name: named ?? mainIdentity(state).name, text };
 }
 
 /** 一次联系人改动里该通知的那几句（对方本人发来的、还没读的文字）。 */

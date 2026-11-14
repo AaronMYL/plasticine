@@ -9,7 +9,7 @@ import { API_PREFIX, IdSchema } from './common.ts';
 import { AttachmentViewSchema } from '../attachments.ts';
 import { MoneyDraftViewSchema } from './money-drafts.ts';
 import { ContactItemEventSchema, ContactsChangedEventSchema } from './contacts.ts';
-import { NotifyEventSchema } from './push.ts';
+import { NotifyEventSchema, NotifyKindsChangedEventSchema } from './push.ts';
 
 export const EVENTS_PATH = `${API_PREFIX}/events`;
 
@@ -42,6 +42,8 @@ export const ServerEventSchema = Type.Union([
   ContactItemEventSchema,
   // 第13批：一条新消息该通知（桌面客户端自己弹；网页推送服务端另发）。
   NotifyEventSchema,
+  // 第13批：通知按类型的开关在别处改了（桌面客户端自己弹的卡和主线通知按它过滤）。
+  NotifyKindsChangedEventSchema,
   ReadyEventSchema,
 ]);
 export type ServerEvent = Static<typeof ServerEventSchema>;

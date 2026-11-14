@@ -1,0 +1,72 @@
+/* 设置 · 通用 · 通知 ·「通知哪些事」：小标题 + ⓘ，下面一组带细框的行，名字在左、开关在右（设计稿 NotifyTypes）。 */
+.notify-kinds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.notify-kinds-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.notify-kinds-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.notify-kinds-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.notify-kinds-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.notify-kinds-row:first-child {
+  border-top: 0;
+}
+
+.notify-kinds-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notify-kinds-warn {
+  grid-column: 1 / -1;
+  margin: 4px 0 1px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--err);
+  animation: notify-kinds-warn-in var(--motion-base) var(--ease-out);
+}
+
+@keyframes notify-kinds-warn-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notify-kinds-warn {
+    animation: none;
+  }
+}

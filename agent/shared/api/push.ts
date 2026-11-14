@@ -110,3 +110,29 @@ export const PushTestResponseSchema = Type.Object({
 });
 export type PushTestResponse = Static<typeof PushTestResponseSchema>;
 export const TEST_NOTICE_BODY = '测试通知：能看到这一条，通知就是通的。';
+
+// ---------- 按类型开关（第13批，11-14 Aaron：「通知消息可以按类型在设置中开关」） ----------
+// 七类，所有设备一起生效（存在服务器的设置里）；关掉的那一类只是不弹系统通知，对话和消息里照常有、红点照常亮。
+// ask 等你的事（要你同意、回答的卡）、contact 联系人消息、group 群组消息、main 主线回复（旁聊也算）、mate 队友回复、
+// letter 来信、notice 提醒和结果（定时任务和心跳的结果、后台没做成的活、服务器磁盘快满）。
+
+/** GET 读、PUT 整份存（PUT 回存好的那份，并在事件流上发 notify_kinds_changed）。 */
+export const NOTIFY_KINDS_PATH = `${PUSH_PATH}/kinds`;
+export const NotifyKindsSchema = Type.Object({
+  ask: Type.Boolean(),
+  contact: Type.Boolean(),
+  group: Type.Boolean(),
+  main: Type.Boolean(),
+  mate: Type.Boolean(),
+  letter: Type.Boolean(),
+  notice: Type.Boolean(),
+}, { additionalProperties: false });
+export type NotifyKinds = Static<typeof NotifyKindsSchema>;
+export type NotifyKind = keyof NotifyKinds;
+/** 没设过就是都开着。 */
+export const NOTIFY_KINDS_DEFAULT: NotifyKinds = Object.freeze({ ask: true, contact: true, group: true, main: true,
+  mate: true, letter: true, notice: true });
+export const NotifyKindsChangedEventSchema = Type.Object({
+  type: Type.Literal('notify_kinds_changed'),
+  kinds: NotifyKindsSchema,
+});

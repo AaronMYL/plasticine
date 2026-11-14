@@ -10,7 +10,7 @@ import type {
 } from '../types.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeReceipts } from './receipts.ts';
-import type { PushStatus, PushTestResponse } from '../shared.ts';
+import { NOTIFY_KINDS_DEFAULT, type NotifyKinds, type PushStatus, type PushTestResponse } from '../shared.ts';
 
 /** 未压缩的 P-256 公钥是 65 字节，base64url 87 个字符；假的就是 0x04 开头、其余全 0。 */
 export const FAKE_VAPID_PUBLIC_KEY = `BA${'A'.repeat(85)}`;
@@ -83,6 +83,20 @@ export class FakePush implements PushApi {
   async presence(conversation: string | null): Promise<void> {
     this.deps.session.require();
     this.watching = conversation;
+  }
+
+  /** 通知按类型的开关（第13批）；测试可以直接改。 */
+  storedKinds: NotifyKinds = { ...NOTIFY_KINDS_DEFAULT };
+
+  async kinds(): Promise<NotifyKinds> {
+    this.deps.session.require();
+    return { ...this.storedKinds };
+  }
+
+  async saveKinds(kinds: NotifyKinds): Promise<NotifyKinds> {
+    this.deps.session.require();
+    this.storedKinds = { ...kinds };
+    return { ...this.storedKinds };
   }
 
   /** 测试用：服务端现在登记着的 endpoint。 */

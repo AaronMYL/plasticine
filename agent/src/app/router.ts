@@ -95,6 +95,7 @@ import {
   PUSH_KEY_PATH,
   PUSH_SUBSCRIPTIONS_PATH,
   PUSH_TEST_PATH,
+  NOTIFY_KINDS_PATH,
   PRESENCE_PATH,
   SEARCH_PATH,
   SESSION_PATH,
@@ -212,7 +213,8 @@ import { createNote, deleteNote, getNote, getNoteAsset, getNoteVersion, listNote
   from './notes.ts';
 import { addProjectTodo, createProject, editProject, editProjectTodo, fileProjectItem, getProject, listProjects,
   setProjectHealth, unfileProjectItem } from './projects.ts';
-import { pushKey, pushStatus, reportPresence, subscribePush, testPush, unsubscribePush } from './push.ts';
+import { notifyKinds, pushKey, pushStatus, reportPresence, saveNotifyKinds, subscribePush, testPush, unsubscribePush }
+  from './push.ts';
 import { search } from './search.ts';
 import { currentSession, logout } from './session.ts';
 import { getSystemOperations } from './system-operations.ts';
@@ -374,6 +376,8 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: PUSH_SUBSCRIPTIONS_PATH, auth: true, handler: subscribePush },
   { method: 'DELETE', path: PUSH_SUBSCRIPTIONS_PATH, auth: true, handler: unsubscribePush },
   { method: 'POST', path: PUSH_TEST_PATH, auth: true, handler: testPush },
+  { method: 'GET', path: NOTIFY_KINDS_PATH, auth: true, handler: notifyKinds },
+  { method: 'PUT', path: NOTIFY_KINDS_PATH, auth: true, handler: saveNotifyKinds },
   { method: 'POST', path: PRESENCE_PATH, auth: true, handler: reportPresence },
   // 旧的记忆条目（memory_entries）只读，留给记忆文档里链回的原话。
   { method: 'GET', path: MEMORY_PATH, auth: true, handler: getMemoryBoard },
