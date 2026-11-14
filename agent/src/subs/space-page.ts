@@ -107,6 +107,17 @@ export function pageSummary(title: string, genre: SpaceGenre, html: string):
   return { headline: h1 === undefined ? title : clip(textOf(h1), HEADLINE_MAX), stats: statsOf(tree) };
 }
 
+const MESSAGE_LINK = /<a\b[^>]*?\sdata-link\s*=\s*(["'])message:([^"']*)\1[^>]*>([\s\S]*?)<\/a>/gi;
+
+/**
+ * 链到原对话（data-link="message:line:<线>:<序号>"）的出处，那一条找不到（模型编的、删了、形状不对）就去掉链接、
+ * 留下字：点了跳不到那句原话的链接不放（11-14 Aaron）。
+ */
+export function dropDeadMessageLinks(html: string, exists: (ref: string) => boolean): string {
+  return html.replace(MESSAGE_LINK, (whole: string, _quote: string, ref: string, inner: string) =>
+    (exists(ref) ? whole : inner));
+}
+
 /** 「值得跟进」：网页里标了 data-follow 的那几条（列表项或一段）。 */
 export function followTexts(html: string): string[] {
   return findAll(parseHtml(html), (element) => hasAttribute(element, 'data-follow'))

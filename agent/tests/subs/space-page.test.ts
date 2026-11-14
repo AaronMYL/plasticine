@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { spaceHtmlText } from '../../shared/space-html.ts';
 import { followTexts, pageSummary, sanitizeSpaceHtml } from '../../src/subs/index.ts';
+import { dropDeadMessageLinks } from '../../src/subs/space-page.ts';
 import { illustrate } from '../../src/subs/illustrate.ts';
 
 test('清洗：外链脚本、iframe、object、embed、表单、base、meta（含跳转）、link 去掉，并说清去掉了什么', () => {
@@ -108,4 +109,14 @@ test('来信插图：出不了图（没连能出图的模型、接口出错）�
   const plain = await illustrate('<p>没有占位</p>', { illustrator: null, save: () => 'x',
     signal: new AbortController().signal });
   assert.equal(plain.outcome, null);
+});
+
+test('链到原对话的出处：那一条找不到（编的、删了、形状不对）就去掉链接、字留着（11-14 Aaron：跳不到那句原话就别放链接）', () => {
+  const live = new Set(['line:main:12']);
+  const html = '<blockquote class="lt-quote">先把框架读懂。<cite><a data-link="message:line:main:12">11 月 12 日</a>'
+    + '</cite></blockquote><p>见<a data-link="message:line:main:999">这段原话</a>，'
+    + '<a data-link=\'message:乱写的\'>还有一段</a>和<a data-link="project:p1">项目</a>。</p>';
+  assert.equal(dropDeadMessageLinks(html, (ref) => live.has(ref)),
+    '<blockquote class="lt-quote">先把框架读懂。<cite><a data-link="message:line:main:12">11 月 12 日</a>'
+    + '</cite></blockquote><p>见这段原话，还有一段和<a data-link="project:p1">项目</a>。</p>');
 });

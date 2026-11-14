@@ -24,11 +24,12 @@ import { researchDraft } from './defaults.ts';
 import { SubsError } from './errors.ts';
 import { illustrate, type Illustrated } from './illustrate.ts';
 import { reportTooPlain } from './page-richness.ts';
+import { dropDeadMessageLinks } from './space-page.ts';
 import { runSubscription, type RunPort, type RunState } from './run.ts';
 import { LETTER_GUIDE, REPORT_GUIDE, SPACE_RULES } from './space-guide.ts';
 import { changeSubscription, editSpace, writeSpace, type SpaceWritten } from './writes.ts';
 
-export type ToolState = RunState & Pick<StateService, 'transaction' | 'dailySettings' | 'notes'>;
+export type ToolState = RunState & Pick<StateService, 'transaction' | 'dailySettings' | 'notes' | 'lineMessages'>;
 
 /** 网页版空间的几处外接：出图、存插图、来信写好后在主线说一句。 */
 export interface SpacePageHooks {
@@ -113,7 +114,8 @@ export function subsTools(state: ToolState, port: () => RunPort, now: () => Date
         const art = args.genre === 'letter'
           ? await illustrate(args.html, { illustrator: pages.illustrator ?? null, save: saveAsset, signal })
           : { html: args.html, outcome: null };
-        const result = writeSpace(state, { ...args, html: art.html, lineId: scope.lineId }, 'ai');
+        const html = dropDeadMessageLinks(art.html, (ref) => state.lineMessages.said(ref) !== undefined);
+        const result = writeSpace(state, { ...args, html, lineId: scope.lineId }, 'ai');
         const { space } = result;
         if (args.id === undefined && space.subscriptionId !== null) {
           issued?.(space.subscriptionId);
