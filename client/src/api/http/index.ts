@@ -11,6 +11,7 @@ import { createOutboundHttp } from './outbound.ts';
 
 import { HttpLines, HttpModelProviders } from './lines.ts';
 import { HttpTasks } from './tasks.ts';
+import { HttpCompose } from './compose.ts';
 import { HttpTranslate } from './translate.ts';
 import type { PlasticineApi } from '../client.ts';
 import { HttpAccount } from './account.ts';
@@ -82,6 +83,7 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     search: new HttpSearch(transport),
     systems: new HttpSystems(transport),
     translate: new HttpTranslate(transport),
+    compose: new HttpCompose(transport),
     session,
     account: new HttpAccount(transport),
     devices: new HttpDevices(transport),

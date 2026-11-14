@@ -338,6 +338,14 @@ export interface TranslateApi {
   saveModel(body: import('./shared.ts').SetTranslateModelRequest): Promise<import('./shared.ts').TranslateModelView>;
 }
 
+/** 预测消息（11-13）：对话和消息输入框里的输入建议；边生成边给字，最后给整段和闭环的 id。 */
+export interface ComposeApi {
+  predict(target: import('./shared.ts').ComposeTarget, draft: string, onText: (delta: string) => void,
+    signal?: AbortSignal): Promise<import('./shared.ts').ComposePredictView>;
+  /** 采纳了还是没要：只报，不等结果改界面。 */
+  outcome(input: import('./shared.ts').ComposeOutcome): Promise<void>;
+}
+
 export interface SearchApi {
   query(input: import('./shared.ts').SearchQuery, signal?: AbortSignal): Promise<import('./shared.ts').SearchResponse>;
 }
@@ -356,6 +364,7 @@ export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
   mates: import('./mates-client.ts').MatesApi;
   mateGroups: import('./mates-client.ts').MateGroupsApi;
   translate: TranslateApi;
+  compose: ComposeApi;
   attachments: AttachmentsApi;
   links: { preview(url: string, signal?: AbortSignal): Promise<import('./shared.ts').LinkPreview> };
   moneyDrafts: MoneyDraftsApi;

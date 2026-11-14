@@ -24,7 +24,8 @@ describe('壳偏好 · 悬浮对话框', () => {
       chatCollapsedByView: { today: true }, chatWidth: 400, chatFrame: { width: 'wide' } }));
     const upgraded = new ShellPrefs(storage).store.get();
     expect(upgraded).toEqual({ sidebarCollapsed: true, chatOpen: null, chatFrame: CHAT_FRAME_DEFAULT,
-      phoneChatOpen: false, contactProfile: true, askPage: false, collapsedColumns: [], bookmarksCollapsed: false });
+      phoneChatOpen: false, contactProfile: true, askPage: false, collapsedColumns: [], bookmarksCollapsed: false,
+      composePredict: true });
     new ShellPrefs(storage).setChatOpen(true);
     expect(JSON.parse(storage.getItem('plasticine:shell-prefs') ?? '{}')).not.toHaveProperty('chatWidth');
   });

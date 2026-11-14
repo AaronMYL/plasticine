@@ -57,3 +57,11 @@ test('a grant needs his device and the card he answered', async () => {
   state.loop.selfNotes.write('排日程这类他基本原样收下。');
   assert.equal(state.loop.selfNotes.latest()?.text, '排日程这类他基本原样收下。');
 });
+
+test('0137 rebuilds the records table with the message area and keeps every row as it was', async () => {
+  const { state } = await open();
+  const id = state.loop.record({ area: 'message_predict', topic: '输入建议', expected: '好，周四见' });
+  assert.ok(id !== null);
+  assert.equal(state.loop.resolveById('message_predict', id, 'kept'), true);
+  assert.equal(state.loop.tallies('message_predict')[0]?.kept, 1);
+});

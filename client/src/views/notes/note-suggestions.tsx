@@ -19,6 +19,7 @@ import { useEditorDom } from './editor-dom.ts';
 import { noteComposing } from './note-composition.ts';
 import { InlineSuggestion, type Suggestion } from './note-inline-suggestion.tsx';
 import { LoopReports } from './note-loop-reports.ts';
+import { imeBusy, PREDICT_PAUSE_MS } from '../compose/predict-rules.ts';
 import { followTyping, ghostPosition, remaining, startPrediction, withDelta, withFinal,
   type LivePrediction } from './note-predict-live.ts';
 import { flushSuggestionSpace, SUGGESTION_KINDS, suggestionSpacePlugin, unregisterSuggestionSpace,
@@ -28,7 +29,7 @@ import { flushSuggestionSpace, SUGGESTION_KINDS, suggestionSpacePlugin, unregist
  * 停下就有（2026-11-09）：0.4 秒。拼音打字时候选、空格之间的间隔大多在这以内，再短会在每个词之间都发一次；
  * 灰字边生成边画、照着打不作废，等到的主要是模型出第一个字的时间。
  */
-export const NOTE_PREDICT_PAUSE_MS = 400;
+export const NOTE_PREDICT_PAUSE_MS = PREDICT_PAUSE_MS;
 /** 补充：光标停在段尾约 3 秒（2026-11-09 他定）。 */
 export const NOTE_INTERJECT_PAUSE_MS = 3000;
 const COMPOSITION_SETTLE_MS = 30;
@@ -191,7 +192,7 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     // 排在所有扩展前面：编号 / 待办列表自己也认 Tab（缩进一级），有建议时 Tab 先给采用（2026-11-03 用户反馈）。
     editor.registerPlugin(suggestionSpacePlugin((_view, event) => {
       const visible = shownRef.current;
-      if (event.isComposing || composing.current || noteComposing(editor)
+      if (imeBusy(event, composing.current || noteComposing(editor))
         || (visible.predict === null && visible.interject === null)) {
         return false;
       }
@@ -200,7 +201,12 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
         handlers.current.adopt('predict');
         return true;
       }
-      if (event.key === 'Escape') { handlers.current.dropAll(); return true; }
+      // 和输入建议一样（predict-rules.ts）：Esc 收起算他看见了、不要。
+      if (event.key === 'Escape') {
+        for (const kind of SUGGESTION_KINDS) reports.current?.rejected(kind);
+        handlers.current.dropAll();
+        return true;
+      }
       return false;
     }), (plugin, plugins) => [plugin, ...plugins]);
     return () => unregisterSuggestionSpace(editor);

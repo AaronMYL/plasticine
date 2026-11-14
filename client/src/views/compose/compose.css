@@ -1,0 +1,63 @@
+/* 预测消息（11-13）：输入框和浅色字叠在同一个格子里（compose-field.tsx）。 */
+.compose-field {
+  display: grid;
+  min-width: 0;
+}
+
+.compose-field > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+/* 输入框拉伸到格子的高度：浅色字折到下一行时，框跟着长，光标和打字照常。 */
+.compose-field > textarea {
+  align-self: stretch;
+}
+
+.compose-ghost-layer {
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  /* 输入框的 field-sizing / max-height 是给打字用的，这一层按内容长，最高和输入框一样。 */
+  height: auto;
+  animation: compose-ghost-in var(--motion-fast) var(--ease-out);
+}
+
+.compose-ghost-draft {
+  color: transparent;
+}
+
+.compose-ghost {
+  color: var(--fg3);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* 手机上点得到：一条很淡的虚线下划线，告诉他这几个字能点。 */
+.shell[data-phone='true'] .compose-ghost {
+  text-decoration: underline dotted var(--line2);
+  text-underline-offset: 4px;
+}
+
+.compose-ghost-key {
+  margin-left: 6px;
+  padding: 0 4px;
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+  color: var(--fg3);
+  font-size: 11px;
+  line-height: 16px;
+  vertical-align: 1px;
+}
+
+@keyframes compose-ghost-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compose-ghost-layer {
+    animation: none;
+  }
+}

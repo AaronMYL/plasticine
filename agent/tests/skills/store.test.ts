@@ -145,6 +145,18 @@ test('删技能：装上的挪到 .removed 留底、目录里没了；内置的�
     && error.reason === 'not_found');
 });
 
+test('同一毫秒里换装再删：留底名字撞了就加序号，两份都在', () => {
+  const at = new Date('2026-11-14T06:02:54.920Z');
+  const skills = new SkillStore({ stateDirectory: dir.directory, builtinDirectory: join(dir.directory, 'builtin'),
+    now: () => at });
+  const files = { 'SKILL.md': Buffer.from(content()).toString('base64') };
+  skills.install('diagnose', files, 'user');
+  skills.install('diagnose', files, 'user', true);
+  skills.remove('diagnose');
+  assert.deepEqual(readdirSync(join(dir.directory, 'skills', '.removed')).sort(),
+    ['diagnose-2026-11-14T06-02-54-920Z', 'diagnose-2026-11-14T06-02-54-920Z-2']);
+});
+
 test('写、审 Plasticine 自己代码的开发技能（agent/skills）不进运行时的技能目录（《优化清单》第 1 条）', () => {
   const skills = new SkillStore({ stateDirectory: dir.directory });
   const names = skills.search().skills.map((skill) => skill.name);

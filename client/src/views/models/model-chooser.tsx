@@ -37,9 +37,10 @@ interface Option {
 const keyOf = (ref: { provider: string; model: string } | null | undefined): string =>
   ref == null ? '' : `${ref.provider}/${ref.model}`;
 
-/** 「跟默认」「跟主线」：没单独设时跟谁。 */
+/** 「跟默认」「跟主线」「跟续写」：没单独设时跟谁。 */
 export function inheritLabel(purpose: ModelPurpose): string {
-  return purposeInfo(purpose).fallback === 'main' ? '跟主线' : '跟默认';
+  const { fallback } = purposeInfo(purpose);
+  return fallback === 'main' ? '跟主线' : fallback === 'note_predict' ? '跟续写' : '跟默认';
 }
 
 export function chooserOptions(value: ListModelProvidersResponse, purpose: ModelPurpose | null): Option[] {

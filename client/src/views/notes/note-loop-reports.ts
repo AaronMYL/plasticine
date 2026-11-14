@@ -5,8 +5,9 @@
 import type { NoteAssistOutcome } from '../../api/shared.ts';
 import type { SuggestionKind } from './note-suggestion-space.ts';
 
-/** 摆出来不到这么久就撤下的不算「没要」。 */
-export const MIN_VISIBLE_MS = 1500;
+import { MIN_VISIBLE_MS } from '../compose/predict-rules.ts';
+
+export { MIN_VISIBLE_MS };
 
 type Send = (outcome: NoteAssistOutcome) => void;
 
@@ -53,6 +54,14 @@ export class LoopReports {
       } else if (visible) {
         this.#send({ area: AREA[kind], loopId: each, outcome: 'rejected' });
       }
+    }
+  }
+
+  /** Esc 收起：他看见了、不要，不管摆了多久都算没要（和输入建议一样）。 */
+  rejected(kind: SuggestionKind): void {
+    const current = this.#take(kind);
+    for (const id of current?.ids ?? []) {
+      this.#send({ area: AREA[kind], loopId: id, outcome: 'rejected' });
     }
   }
 

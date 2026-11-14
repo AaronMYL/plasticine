@@ -10,6 +10,7 @@ export type SelfNotesState = Pick<StateService, 'loop'>;
 
 const AREA_NAMES: Readonly<Record<LoopArea, string>> = {
   note_predict: '笔记续写', note_supplement: '笔记补充建议', suggestion: '建议卡', ask: '推出来的确认卡',
+  message_predict: '输入建议',
 };
 const CORRECTIONS_SHOWN = 20;
 const NOTES_MAX_TOKENS = 1200;

@@ -1,6 +1,6 @@
 // 地上的小动物（11-13 Aaron：兔子、狐狸、小狗、猫咪）：各有各的脾气；朝左时画面镜像、宽度不变。水流的水波会散。
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CRITTER_ART, CRITTER_KINDS, mirrorFrame } from '../../../src/shell/ambient/critter-art.ts';
 import { covered, poseOf, relocateCritters } from '../../../src/shell/ambient/critters.ts';
 import { figureById, GROUP_PREY } from '../../../src/shell/ambient/figures.ts';
@@ -82,6 +82,23 @@ describe('动态背景 · 地上的小动物', () => {
     relocateCritters(world, false);
     expect(cat.mode).toBe('wander');
     expect(covered(rects, cat.tx, cat.ty, cat.size)).toBe(0);
+  });
+
+  it('随手试的几处都压着字：扫一遍整块地方，还是挑到空地方', () => {
+    const world = land('cat');
+    const rects = Array.from({ length: 20 }, (_, i) => ({ x: 20, y: i * 34 + 10, w: 700, h: 22 }));
+    world.quietRects = rects;
+    for (const c of world.critters) {
+      c.x = 300;
+      c.y = 300;
+    }
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    try {
+      relocateCritters(world, true);
+    } finally {
+      random.mockRestore();
+    }
+    for (const c of world.critters) expect(covered(rects, c.x, c.y, c.size)).toBe(0);
   });
 
   it('走着是走路的样子，睡着是睡觉的样子', () => {

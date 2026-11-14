@@ -74,6 +74,7 @@ export { createReadInboxTool } from './tools/read-inbox.ts';
 export type { InboxReader } from './tools/read-inbox.ts';
 export { createFeedSelector } from './feed-selection.ts';
 export { NoteAssistant } from './note-assistant.ts';
+export { ComposePredictor, type ComposeContext, type ComposeTurn } from './compose-predictor.ts';
 export { PageTranslator, TRANSLATE_CONCURRENCY } from './page-translator.ts';
 export type { GlossaryTerm, PageTranslateInput, PageTranslatorDeps } from './page-translator.ts';
 export { createNoteTools } from './tools/notes.ts';

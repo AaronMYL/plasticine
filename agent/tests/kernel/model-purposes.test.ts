@@ -30,9 +30,9 @@ async function setup() {
   return { kernel, fakes, state: handle.state };
 }
 
-test('28 个实际用途分别解析：模型和思考各自继承，改主对话不改全局', async () => {
+test('29 个实际用途分别解析：模型和思考各自继承，改主对话不改全局', async () => {
   const { kernel } = await setup();
-  assert.equal(MODEL_PURPOSES.length, 28);
+  assert.equal(MODEL_PURPOSES.length, 29);
   assert.ok(MODEL_PURPOSES.some((entry) => entry.id === 'web_extract' && entry.label === '网页提取'));
   kernel.configure({ version: kernel.settings().version, purposes: [
     { purpose: 'main', chosen: { model: { provider: 'fake-key', model: 'key-model' }, thinking: null } },
@@ -45,6 +45,15 @@ test('28 个实际用途分别解析：模型和思考各自继承，改主对�
   assert.deepEqual(kernel.effective('note_polish'), { provider: 'fake-sub', model: 'sub-small', thinking: 'high' });
   assert.equal(kernel.chosen()?.model, 'sub-small');
   assert.equal(kernel.effective('agent')?.model, 'sub-small');
+});
+
+test('输入建议（11-13）不单选就跟续写用同一个模型，不开思考；续写换了它跟着换', async () => {
+  const { kernel } = await setup();
+  kernel.configure({ version: kernel.settings().version, purposes: [
+    { purpose: 'note_predict', chosen: { model: { provider: 'fake-key', model: 'key-model' }, thinking: null } },
+  ] });
+  assert.equal(kernel.effective('compose_predict')?.model, 'key-model');
+  assert.equal(kernel.effective('compose_predict')?.provider, 'fake-key');
 });
 
 test('旧翻译明确选择保留；新设置优先，旧接口和新接口同一真源、版本冲突不覆盖', async () => {

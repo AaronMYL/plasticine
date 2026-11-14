@@ -1,3 +1,4 @@
+import { composeOutcome, predictCompose } from './compose.ts';
 import { SOUL_ROUTES } from './soul.ts';
 import { MEMORY_CONFLICT_ROUTES } from './memory-conflicts.ts';
 import { MEMORY_MANAGE_ROUTES } from './memory-manage.ts';
@@ -88,6 +89,8 @@ import {
   NODES_PATH,
   NOTE_ASSETS_PATH,
   NOTES_PATH,
+  COMPOSE_OUTCOME_PATH,
+  COMPOSE_PREDICT_PATH,
   PROJECTS_PATH,
   PUSH_KEY_PATH,
   PUSH_SUBSCRIPTIONS_PATH,
@@ -343,6 +346,8 @@ export const ROUTES: readonly Route[] = [
   { method: 'GET', path: `${NOTES_PATH}/:id/import`, auth: true, handler: getNoteImport },
   { method: 'POST', path: `${NOTES_PATH}/:id/assist`, auth: true, handler: assistNote },
   { method: 'POST', path: `${NOTES_PATH}/:id/assist/outcome`, auth: true, handler: assistOutcome },
+  { method: 'POST', path: COMPOSE_PREDICT_PATH, auth: true, handler: predictCompose },
+  { method: 'POST', path: COMPOSE_OUTCOME_PATH, auth: true, handler: composeOutcome },
   { method: 'GET', path: NOTES_PATH, auth: true, handler: listNotes },
   { method: 'POST', path: NOTES_PATH, auth: true, handler: createNote },
   { method: 'POST', path: `${NOTES_PATH}/:id/unlock`, auth: true, handler: unlockNote },

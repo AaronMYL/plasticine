@@ -39,7 +39,9 @@ describe('假联系人 · 列表与聊天', () => {
     expect(exchange).toMatchObject({ type: 'exchange', count: 6, summary: '对齐了表格格式和退货口径' });
     const task = page.items.find((item) => item.type === 'task' && item.task.state === 'in_progress');
     expect(task).toMatchObject({ task: { stage: 2, doer: 'ai', direction: 'out' } });
-    expect(page.suggestion).toBe('好，周四晚上我看第一版');
+    // 11-13：原来的「预测一句」挪到了输入建议的假接口（fake-compose.ts）。
+    expect(await api.compose.predict({ kind: 'contact', id: 'c_linyi' }, '好，', () => undefined))
+      .toMatchObject({ text: '周四晚上我看第一版' });
   });
 
   it('发一句：同一个 requestId 重发只记一句；问对方的 Plasticine 标 toAi；推 contact.item 和 contacts.changed', async () => {

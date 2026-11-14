@@ -2,7 +2,7 @@
 // 每类事只记三个数——原样收下、改了、不要（不拍脑袋定权重：没记录时当五五开，也就是 Beta(1,1)，数据自己把它拉过去）。
 // 攒够 MIN_DECIDED 条才改变行为；没攒够的和原来一模一样。这里只有纯函数，存取在 state/loop.ts，接线在各处。
 
-export const LOOP_AREAS = ['note_predict', 'note_supplement', 'suggestion', 'ask'] as const;
+export const LOOP_AREAS = ['note_predict', 'note_supplement', 'suggestion', 'ask', 'message_predict'] as const;
 export type LoopArea = (typeof LOOP_AREAS)[number];
 export const LOOP_OUTCOMES = ['kept', 'changed', 'rejected'] as const;
 export type LoopOutcome = (typeof LOOP_OUTCOMES)[number];

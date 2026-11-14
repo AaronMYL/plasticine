@@ -159,12 +159,11 @@ describe('消息 · 和人的聊天', () => {
     expect(within(log).queryByText('可以，我发一条任务给你。')).toBeNull();
   });
 
-  it('发一句：Enter 发出，落在右边；预测一句是灰字，Tab 采用', async () => {
+  it('发一句：Enter 发出，落在右边（输入建议的浅色字见 compose-predict.test.tsx）', async () => {
     await open('#/messages/c_linyi');
     const input = await screen.findByRole('textbox', { name: '发给林一' }) as HTMLTextAreaElement;
-    expect(input.placeholder).toBe('好，周四晚上我看第一版');
-    fireEvent.keyDown(input, { key: 'Tab' });
-    expect(input.value).toBe('好，周四晚上我看第一版');
+    expect(input.placeholder).toBe('发给林一');
+    fireEvent.change(input, { target: { value: '好，周四晚上我看第一版' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     const sent = await within(chat('林一')).findByText('好，周四晚上我看第一版');
     expect(sent.closest('.cm-line')?.getAttribute('data-side')).toBe('me');

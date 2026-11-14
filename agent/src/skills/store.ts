@@ -247,7 +247,11 @@ export class SkillStore {
   #moveOut(name: string): void {
     const removed = join(this.#root, '.removed');
     mkdirSync(removed, { recursive: true, mode: 0o700 });
-    renameSync(join(this.#root, name), join(removed, `${name}-${this.#now().toISOString().replace(/[:.]/g, '-')}`));
+    const stamp = `${name}-${this.#now().toISOString().replace(/[:.]/g, '-')}`;
+    // 同一毫秒里换装再删（或连删两次）会撞名：后面加序号，留底不丢。
+    let target = join(removed, stamp);
+    for (let index = 2; existsSync(target); index += 1) target = join(removed, `${stamp}-${index}`);
+    renameSync(join(this.#root, name), target);
   }
 
   /**

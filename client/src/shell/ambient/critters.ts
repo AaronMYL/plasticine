@@ -202,6 +202,23 @@ function emptySpot(world: World, size: number, pick: (tries: number) => { x: num
       least = area;
     }
   }
+  return least > 0 ? sweepSpot(world, size, best, least) : best;
+}
+
+const SWEEP_STEP = 40;
+
+/** 随手试的几处都压着字（字占了大半屏）：按格子扫一遍整块地方，挑叠得最少的，免得停在字上。 */
+function sweepSpot(world: World, size: number, best: { x: number; y: number }, least: number):
+  { x: number; y: number } {
+  for (let y = 70; y <= world.height - 10 && least > 0; y += SWEEP_STEP) {
+    for (let x = 40; x <= world.width - 40 && least > 0; x += SWEEP_STEP) {
+      const area = covered(world.quietRects, x, y, size);
+      if (area < least) {
+        best = { x, y };
+        least = area;
+      }
+    }
+  }
   return best;
 }
 

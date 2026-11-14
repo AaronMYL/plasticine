@@ -21,6 +21,7 @@ import { BrowserSection } from './browser-section.tsx';
 import { Devices } from './devices-block.tsx';
 import { InstallSection } from './install-section.tsx';
 import { ModelsSection } from '../models/models-section.tsx';
+import { ComposePredictSection } from './compose-predict-section.tsx';
 import { NoticesSection } from './notices-section.tsx';
 import type { PushSwitchStatus } from './push-switch.ts';
 import { SearchEngineSection } from './search-engine-section.tsx';
@@ -147,6 +148,7 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
     case 'ai':
       return <>
         <ModelsSection />
+        <ComposePredictSection />
         <WorkLimitSection />
         <SkillsLink />
         <ToolSwitches />

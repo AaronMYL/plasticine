@@ -41,12 +41,12 @@ describe('联系人的真实现', () => {
     const { http, calls } = api(
       json(200, { contacts: [ROW], requests: 1, waiting: 0, unread: 0 }),
       json(200, { contact: ROW, tierCap: null, deliveries: [], said: [], safetyCode: '12345', safetyChanged: false }),
-      json(200, { items: [{ type: 'message', message }], hasMore: false, suggestion: '好' }),
+      json(200, { items: [{ type: 'message', message }], hasMore: false }),
       json(200, { message }),
     );
     expect((await http.contacts.list()).requests).toBe(1);
     expect((await http.contacts.get('c_lin')).safetyCode).toBe('12345');
-    expect((await http.contacts.messages('c_lin', { before: AT })).suggestion).toBe('好');
+    expect((await http.contacts.messages('c_lin', { before: AT })).hasMore).toBe(false);
     const sent = await http.contacts.send('c_lin', { requestId: 'req_send_0001', text: '能接吗', target: 'ai' });
     expect(sent.toAi).toBe(true);
     expect(calls.map((call) => [call.method, call.url])).toEqual([

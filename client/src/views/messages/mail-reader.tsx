@@ -146,7 +146,7 @@ export function MailReader({ contact, phone, now, onBack }: MailReaderProps): Re
         </div>
       </div>
       {replying ? (
-        <ContactComposer contact={contact} suggestion={latest.value?.suggestion ?? null} phone={phone}
+        <ContactComposer contact={contact} predict={false} phone={phone}
           onNewTask={null} />
       ) : null}
       {menu === null ? null : (

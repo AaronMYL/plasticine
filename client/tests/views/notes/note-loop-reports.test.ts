@@ -30,4 +30,14 @@ describe('预测闭环：补充和续写的结果', () => {
     loop.dropped('predict');
     expect(sent).toEqual([]);
   });
+
+  it('Esc 收起（和输入建议对齐）：不管摆了多久都算没要', () => {
+    const { sent, loop } = reports();
+    loop.shown('interject', ['a', 'b']);
+    loop.rejected('interject');
+    expect(sent).toEqual([{ area: 'note_supplement', loopId: 'a', outcome: 'rejected' },
+      { area: 'note_supplement', loopId: 'b', outcome: 'rejected' }]);
+    loop.rejected('interject');
+    expect(sent).toHaveLength(2);
+  });
 });

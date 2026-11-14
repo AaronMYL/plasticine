@@ -54,6 +54,7 @@ import { FakeWebTabs } from './fake-web-tabs.ts';
 import { demoWebTabsLayout } from './tabs-seed.ts';
 import { seedContacts } from './contacts-seed.ts';
 import { netSceneOf, seedNetworkScene } from './network-seed.ts';
+import { FakeCompose } from './fake-compose.ts';
 import { FakeContacts } from './fake-contacts.ts';
 import { FakeNetwork, FakeVisibility } from './fake-network.ts';
 import { FakeNetworkTasks } from './fake-network-tasks.ts';
@@ -363,6 +364,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     search: new FakeSearch({ session, notes, lines, memoryTopics, agreements, feed, bookmarks, now, spaces, books }),
     systems,
     translate: new FakeTranslate(session, modelProviders),
+    compose: new FakeCompose(session, contacts),
     session,
     account,
     devices: session,

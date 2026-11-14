@@ -223,8 +223,6 @@ export const ContactMessagesQuerySchema = Type.Object({ before: Type.Optional(Is
 export const ContactMessagesResponseSchema = Type.Object({
   items: Type.Array(ContactThreadItemSchema),
   hasMore: Type.Boolean(),
-  /** 预测一句：有就给，输入框灰字，Tab 采用。 */
-  suggestion: OrNull(Type.String()),
 });
 export type ContactMessagesResponse = Static<typeof ContactMessagesResponseSchema>;
 

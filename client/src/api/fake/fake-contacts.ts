@@ -174,13 +174,17 @@ export class FakeContacts implements ContactsApi {
   async messages(id: string, query: { before?: string }): Promise<ContactMessagesResponse> {
     this.deps.session.require();
     if (isGroupId(id)) {
-      return { ...page(this.groupChats.items(id), query.before), suggestion: null };
+      return page(this.groupChats.items(id), query.before);
     }
     const record = this.people.get(id);
     const items = record === undefined ? sourceItems(this.group(id), this.mailHtml)
       : personItems(record, this.tasks);
-    const suggestion = record?.suggestion ?? null;
-    return { ...page(items, query.before), suggestion };
+    return page(items, query.before);
+  }
+
+  /** 预测消息的假接口用：种子里给这位联系人写好的那句（发过一句以后就没有了）。 */
+  cannedReply(id: string): string | null {
+    return this.people.get(id)?.suggestion ?? null;
   }
 
   async mailBody(id: string, mailId: string): Promise<MailBodyResponse> {

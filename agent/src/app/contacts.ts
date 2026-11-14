@@ -108,12 +108,12 @@ export function listContactMessages(context: RequestContext): Reply {
   if (isGroupId(id)) {
     requireGroupRow(context.deps, id);
     const thread = groupThread(state, id, query.before, taskActivity(context.deps), taskExecution(context.deps));
-    const body: ContactMessagesResponse = { ...thread, suggestion: null };
+    const body: ContactMessagesResponse = thread;
     return { status: 200, body };
   }
   requirePerson(context.deps, id);
   const thread = personThread(state, id, query.before, taskActivity(context.deps), taskExecution(context.deps));
-  const body: ContactMessagesResponse = { ...thread, suggestion: null };
+  const body: ContactMessagesResponse = thread;
   return { status: 200, body };
 }
 

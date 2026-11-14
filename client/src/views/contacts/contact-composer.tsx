@@ -1,6 +1,7 @@
 // 聊天底下的输入框（第 113 条；2026-11-05 设计稿 Mention）：打「@」出一个小菜单——对方本人、对方的 Plasticine、
 // 我的 Plasticine（群里是每个人、每个人的 Plasticine 和我的）。挑了谁的 Plasticine，框里开头一个「@✦…的 Plasticine」
-// 小签，这句就是让那个 Plasticine 在这段聊天里回答；不 @ 就是和人说话。空着时灰字是「预测一句」候选（Tab 采用）。
+// 小签，这句就是让那个 Plasticine 在这段聊天里回答；不 @ 就是和人说话。
+// 11-13 预测消息：框里的浅色字是输入建议（和主线同一套，use-compose-predict.ts）；@ 了谁的 Plasticine、来信不出。
 // 11-13 Aaron 用群聊后提的：菜单里要有群里的人（原来只有各人的 Plasticine）；一句能 @ 好几个（人写进字里，Plasticine
 // 是并排的小签）；@ 后面接着打字是在菜单里找。
 // Enter 发、Shift+Enter 换行、中文输入法选字时不发；小签在、字空着时按退格去掉小签。邮件联系人发 = 回最近一封。
@@ -23,14 +24,17 @@ import { NetworkAttachmentDrafts, useNetworkAttachmentDrafts } from './network-a
 import './network-attachments.css';
 import { FaceAvatar } from './contact-avatar.tsx';
 import { setContactReply, useContactReply } from './contact-reply.ts';
+import { ComposeField } from '../compose/compose-field.tsx';
+import { useComposePredict } from '../compose/use-compose-predict.ts';
 
 /** 输入框最多长到这么高（px），再多就在框里滚。 */
 const COMPOSER_MAX_HEIGHT = 160;
 
 export interface ContactComposerProps {
   contact: ContactRow;
-  suggestion: string | null;
   phone: boolean;
+  /** 来信回复（邮箱）不猜：给 false。 */
+  predict?: boolean;
   onNewTask: (() => void) | null;
 }
 
@@ -68,10 +72,7 @@ export function mentionChoices(contact: ContactRow, mainName = 'Plasticine'): Me
   ];
 }
 
-function placeholderOf(contact: ContactRow, suggestion: string | null): string {
-  if (suggestion !== null) {
-    return suggestion;
-  }
+function placeholderOf(contact: ContactRow): string {
   const gap = /^[A-Za-z0-9]/.test(contact.name) ? ' ' : '';
   return contact.kind === 'mail' ? `回 ${contact.name}` : `发给${gap}${contact.name}`;
 }
@@ -116,12 +117,14 @@ function MentionMenu({ choices, active, onPick }: { choices: readonly MentionCho
   );
 }
 
-export function ContactComposer({ contact, suggestion, phone, onNewTask }: ContactComposerProps): ReactNode {
+export function ContactComposer({ contact, phone, onNewTask, predict: canPredict = true }: ContactComposerProps)
+  : ReactNode {
   const { contactActions } = useLive();
   const attachments = useNetworkAttachmentDrafts(contact.id);
   const files = useRef<HTMLInputElement>(null);
   const supportsFiles = contact.kind === 'person' || contact.kind === 'group';
-  const { inlineDrafts, actionOps } = useClientState();
+  const { inlineDrafts, actionOps, shellPrefs } = useClientState();
+  const predictOn = useStore(shellPrefs.store).composePredict;
   const drafts = useStore(inlineDrafts.store);
   const key = contactOpKey(contact.id, 'send');
   const op = useOp(key);
@@ -133,7 +136,10 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
   const text = drafts.get(key) ?? '';
   const locked = op !== undefined && isOpenOp(op);
   const target = targets[0] ?? null;
-  const offered = target !== null || text !== '' ? null : suggestion;
+  const predict = useComposePredict({ target: canPredict && predictOn && target === null
+    && (contact.kind === 'person' || contact.kind === 'group') ? { kind: 'contact', id: contact.id } : null,
+  draft: text, input, change: (value) => { inlineDrafts.set(key, value); requestAnimationFrame(grow); } });
+  const [scrollTop, setScrollTop] = useState(0);
   const all = mentionChoices(contact, useMainName());
   const choices = menu === null ? [] : matchMentions(all, menu.typed, group ? targets : []);
   const reply = useContactReply(contact.id);
@@ -208,10 +214,7 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
       setTargets(targets.slice(0, -1));
       return;
     }
-    if (event.key === 'Tab' && offered !== null) {
-      event.preventDefault();
-      inlineDrafts.set(key, offered);
-      requestAnimationFrame(grow);
+    if (predict.keyDown(event)) {
       return;
     }
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -248,8 +251,11 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
           {targets.length === 0 ? null : <span className="composer-mentions">{targets.map((entry) => (
             <span key={entry.id} className="composer-mention">@<AiMark label={entry.label} />{entry.label}</span>
           ))}</span>}
+          <ComposeField inputClass="contact-composer-input" draft={text} ghost={predict.ghost} phone={phone}
+            onAccept={predict.accept} scrollTop={scrollTop}>
           <textarea ref={input} className="contact-composer-input" rows={1} value={text} disabled={locked}
-            aria-label={label} placeholder={target === null ? placeholderOf(contact, offered) : ''}
+            aria-label={label} placeholder={target === null && predict.ghost === null ? placeholderOf(contact) : ''}
+            onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
             onChange={(event) => {
               inlineDrafts.set(key, event.target.value);
               const typed = mentionQuery(event.target.value, event.target.selectionStart);
@@ -262,8 +268,7 @@ export function ContactComposer({ contact, suggestion, phone, onNewTask }: Conta
             }}
             onBlur={() => setMenu(null)}
             onKeyDown={onKey} />
-          {offered !== null && !phone ? <span className="contact-composer-key mono" aria-hidden="true">Tab</span>
-            : null}
+          </ComposeField>
           {phone ? null : <SendButton disabled={sendDisabled} onSend={() => void send()} />}
         </div>
         {phone ? <SendButton disabled={sendDisabled} onSend={() => void send()} /> : null}

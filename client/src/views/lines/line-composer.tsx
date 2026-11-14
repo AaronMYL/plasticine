@@ -31,6 +31,8 @@ import { AskPageToggle, PageSource, PAGE_UNREAD_NOTE, usePageContext }
 import { ModelPicker } from '../models/model-picker.tsx';
 import { StopButton } from './line-parts.tsx';
 import { inputAuthor } from './line-origin.ts';
+import { ComposeField } from '../compose/compose-field.tsx';
+import { useComposePredict } from '../compose/use-compose-predict.ts';
 import './line-composer.css';
 
 /** 浏览器在输入法组合期间按键给的 keyCode（老 Safari 不设 isComposing，只给这个）。 */
@@ -112,6 +114,11 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
   const purpose = mate !== undefined ? mate.purpose ?? 'main'
     : thread.line?.mateGroupId != null ? 'main' : side ? 'side' : 'main';
   const composing = useRef(false);
+  // 预测消息（11-13）：设置 · AI 的开关开着、这位队友没停用就猜；发送前浅色字不算草稿。
+  const predictOn = useStore(state.shellPrefs.store).composePredict;
+  const predict = useComposePredict({ target: predictOn && !disabledMate ? { kind: 'line', id: lineId } : null,
+    draft, input, change: (value) => conversationUi.setDraft(value) });
+  const [scrollTop, setScrollTop] = useState(0);
   const shortcutId = useId();
   const page = usePageContext(askPage);
   const currentTab = useCurrentTab();
@@ -253,10 +260,13 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
         {askPage ? <PageSource context={page} /> : null}
         {disabledMate ? <p className="line-note">这位队友已停用，记录仍可查看。</p> : null}
         {mentions.popup}
+        <ComposeField inputClass="line-input" draft={draft} ghost={predict.ghost} phone={phone}
+          onAccept={predict.accept} scrollTop={scrollTop}>
         <textarea ref={input} className="line-input" aria-label="问一句" aria-describedby={shortcutId}
           aria-controls={mentions.listId}
           aria-activedescendant={mentions.selectedId} disabled={disabledMate}
-          placeholder={side ? '接着说…' : `回复 ${mainName}`} rows={1} value={draft}
+          placeholder={predict.ghost !== null ? '' : side ? '接着说…' : `回复 ${mainName}`} rows={1} value={draft}
+          onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
           onChange={(event) => { if (askPage) state.dockTargets.protectCurrent();
             conversationUi.setDraft(event.target.value); mentions.update(event.target.selectionStart); }}
           onPaste={(event) => {
@@ -268,7 +278,8 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
           }}
           onCompositionStart={() => { composing.current = true; }}
           onCompositionEnd={() => { composing.current = false; }}
-          onKeyDown={(event) => { if (!mentions.keyDown(event)) onKeyDown(event); }} />
+          onKeyDown={(event) => { if (!mentions.keyDown(event) && !predict.keyDown(event)) onKeyDown(event); }} />
+        </ComposeField>
         <div className="line-input-tools">
           <AttachmentComposer />
           <ModelPicker purpose={purpose} />

@@ -6,7 +6,8 @@
 // thinking：没单独选思考档时用这一档，不跟 fallback 的档。2026-11-09 他定：笔记续写、主动补充不开思考（要停下就有）；
 // 模型不支持「关」就用它支持的最低档（model-resolve.ts 夹档，不算问题）。
 
-export const MODEL_PURPOSE_FALLBACKS = ['default', 'main', 'cheap'] as const;
+// note_predict：跟「续写」（11-13 预测消息：输入建议默认和笔记续写用同一个模型）。
+export const MODEL_PURPOSE_FALLBACKS = ['default', 'main', 'cheap', 'note_predict'] as const;
 export type ModelPurposeFallback = (typeof MODEL_PURPOSE_FALLBACKS)[number];
 
 export const MODEL_PURPOSE_GROUPS = {
@@ -28,6 +29,8 @@ interface PurposeEntry {
 export const MODEL_PURPOSES = [
   { id: 'main', label: '主线', group: 'chat', fallback: 'default' },
   { id: 'side', label: '队友', group: 'chat', fallback: 'main' },
+  // 预测消息（11-13）：对话和消息输入框里的输入建议；不单选就跟「续写」用同一个模型，不开思考。
+  { id: 'compose_predict', label: '输入建议', group: 'chat', fallback: 'note_predict', thinking: 'off' },
   { id: 'agent', label: '后台线（子代理）', group: null, fallback: 'default' },
   { id: 'heartbeat', label: '心跳', group: null, fallback: 'cheap' },
   { id: 'dream', label: '做梦', group: null, fallback: 'cheap' },

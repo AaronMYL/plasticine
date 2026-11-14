@@ -4,7 +4,7 @@ import type { Video } from '../video/index.ts';
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http';
 import type { Device, Session } from '../../shared/state.ts';
 import type { AskDesk, PushService, ScanScheduler } from '../attention/index.ts';
-import type { BookInsightService, MemoryCurator, NoteAssistant, PageTranslator, PaymentReader }
+import type { BookInsightService, ComposePredictor, MemoryCurator, NoteAssistant, PageTranslator, PaymentReader }
   from '../brain/index.ts';
 import type { Daily } from '../daily/index.ts';
 import type { DeviceService } from '../devices/index.ts';
@@ -39,6 +39,8 @@ export interface AppDeps {
   /** 旁路的模型调用（kernel/text.ts）：笔记、翻译、图书、记账截图、分身、记忆整理。 */
   text: TextModels;
   noteAssistant: NoteAssistant;
+  /** 预测消息（11-13）：对话和消息输入框里的输入建议。 */
+  composePredictor: ComposePredictor;
   /** 网页翻译（2026-11-03 沉浸式翻译）：段落 → 译文，查缓存、排前台。 */
   translator: PageTranslator;
   /** 图书的大纲与重点（2026-11-01）。 */

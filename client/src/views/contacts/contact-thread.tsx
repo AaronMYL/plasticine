@@ -194,14 +194,14 @@ export function ContactThread(props: ContactThreadProps): ReactNode {
             ?.focus();
         }} /> : null}
       </div>
-      <ThreadFoot {...withCompose} suggestion={latest.value?.suggestion ?? null} />
+      <ThreadFoot {...withCompose} />
       {composing && canSendTask(contact)
         ? <TaskCompose contact={contact} phone={phone} onClose={() => setComposing(false)} /> : null}
     </div>
   );
 }
 
-function ThreadFoot(props: ContactThreadProps & { suggestion: string | null }): ReactNode {
+function ThreadFoot(props: ContactThreadProps): ReactNode {
   const { contact, phone } = props;
   if (contact.state === 'request') {
     return (
@@ -215,5 +215,5 @@ function ThreadFoot(props: ContactThreadProps & { suggestion: string | null }): 
     return null;
   }
   const newTask = canSendTask(contact) ? props.onNewTask : null;
-  return <ContactComposer contact={contact} suggestion={props.suggestion} phone={phone} onNewTask={newTask} />;
+  return <ContactComposer contact={contact} phone={phone} onNewTask={newTask} />;
 }

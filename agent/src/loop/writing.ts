@@ -21,15 +21,23 @@ function clip(text: string): string {
   return chars.length <= SAMPLE_MAX ? chars.join('') : `${chars.slice(0, SAMPLE_MAX - 1).join('')}…`;
 }
 
-/** 续写：有结果的攒够了，给几句他收下过的和没要的原样，照前者的长度和口气写。 */
-export function predictHabits(state: LoopState): string {
-  const tally = state.loop.tallies('note_predict').find((row) => row.topic === PREDICT_TOPIC);
+/** 预测消息（11-13）：对话和消息输入框里的输入建议，记在 message_predict 这一处、这一类。 */
+export const MESSAGE_TOPIC = '输入建议';
+const HABIT_SUBJECTS: Readonly<Record<'note_predict' | 'message_predict', { topic: string; label: string }>> = {
+  note_predict: { topic: PREDICT_TOPIC, label: '续写' },
+  message_predict: { topic: MESSAGE_TOPIC, label: '输入建议' },
+};
+
+/** 续写、输入建议：有结果的攒够了，给几句他收下过的和没要的原样，照前者的长度和口气写。 */
+export function predictHabits(state: LoopState, area: 'note_predict' | 'message_predict' = 'note_predict'): string {
+  const { topic, label } = HABIT_SUBJECTS[area];
+  const tally = state.loop.tallies(area).find((row) => row.topic === topic);
   if (tally === undefined || tally.decided < MIN_DECIDED) {
     return '';
   }
-  const kept = state.loop.samples('note_predict', ['kept'], KEPT_SAMPLES);
-  const dropped = state.loop.samples('note_predict', ['rejected'], DROPPED_SAMPLES);
-  const parts = ['他以前对续写的反应（照他收下过的长度和口气写，避开他没要的写法）：'];
+  const kept = state.loop.samples(area, ['kept'], KEPT_SAMPLES);
+  const dropped = state.loop.samples(area, ['rejected'], DROPPED_SAMPLES);
+  const parts = [`他以前对${label}的反应（照他收下过的长度和口气写，避开他没要的写法）：`];
   if (kept.length > 0) {
     parts.push('他收下过的：', ...kept.map((sample) => `- 「${clip(sample.expected)}」`));
   }
@@ -55,12 +63,13 @@ export function supplementHabits(state: LoopState): string {
   ].join('\n');
 }
 
-/** 记下这次给出去的续写，回一个 id 给界面报结果；没有库（测试）或没字时不记。 */
-export function recordPrediction(state: LoopState | undefined, text: string): string | undefined {
+/** 记下这次给出去的续写（或输入建议），回一个 id 给界面报结果；没有库（测试）或没字时不记。 */
+export function recordPrediction(state: LoopState | undefined, text: string,
+  area: 'note_predict' | 'message_predict' = 'note_predict'): string | undefined {
   if (state === undefined || text.trim() === '') {
     return undefined;
   }
-  return state.loop.record({ area: 'note_predict', topic: PREDICT_TOPIC, expected: text }) ?? undefined;
+  return state.loop.record({ area, topic: HABIT_SUBJECTS[area].topic, expected: text }) ?? undefined;
 }
 
 /** 记下这次给出去的每一条补充，id 贴在那一条上。 */

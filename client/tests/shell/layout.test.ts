@@ -12,6 +12,7 @@ const AUTO: ShellPrefsState = {
   askPage: false,
   collapsedColumns: [],
   bookmarksCollapsed: false,
+  composePredict: true,
 };
 
 describe('壳怎么折（悬浮对话框，设计稿 2026-11-03）', () => {

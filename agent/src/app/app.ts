@@ -4,7 +4,8 @@
 // close the connections. Closing the library is the caller's last step.
 
 import { createServer, type Server } from 'node:http';
-import { adoptMateSouls, BookInsightService, ensureDefaultProjects, ensureMemoryDocs, NoteAssistant, PageTranslator,
+import { adoptMateSouls, BookInsightService, ComposePredictor, ensureDefaultProjects, ensureMemoryDocs, NoteAssistant,
+  PageTranslator,
   type GlossaryTerm, type MemoryCurator, type PaymentReader } from '../brain/index.ts';
 import type { AskDesk, Presenter, PushService, ScanScheduler } from '../attention/index.ts';
 import type { Daily } from '../daily/index.ts';
@@ -177,6 +178,7 @@ export function createApp(options: AppOptions): App {
     text: options.text,
     bookInsights,
     noteAssistant: new NoteAssistant(options.text, options.state),
+    composePredictor: new ComposePredictor(options.text, options.state),
     translator,
     moneyDrafts: options.moneyDrafts,
     paymentReader: options.paymentReader,

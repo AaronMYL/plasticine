@@ -44,6 +44,8 @@ export interface ShellPrefsState {
   collapsedColumns: readonly string[];
   /** 网页栏里「书签」一节收起来了没有（第 8 批第 1 条：整节能收起、记住）。默认展开。 */
   bookmarksCollapsed: boolean;
+  /** 对话和消息输入框里的输入建议开没开（11-13 预测消息，设置 · AI 里的开关）。默认开着，只在这台设备记住。 */
+  composePredict: boolean;
 }
 
 /** 把对话框放回窗口里：大小在上下限之间，整个框都在窗口里（离边至少 16）。 */
@@ -73,7 +75,8 @@ export class ShellPrefs {
   readonly store: Store<ShellPrefsState>;
   constructor(storage: KeyValueStorage | null = null) {
     const initial: ShellPrefsState = { sidebarCollapsed: null, chatOpen: null, chatFrame: CHAT_FRAME_DEFAULT,
-      phoneChatOpen: false, contactProfile: true, askPage: false, collapsedColumns: [], bookmarksCollapsed: false };
+      phoneChatOpen: false, contactProfile: true, askPage: false, collapsedColumns: [], bookmarksCollapsed: false,
+      composePredict: true };
     try {
       const saved: unknown = JSON.parse(storage?.getItem('plasticine:shell-prefs') ?? 'null');
       if (saved !== null && typeof saved === 'object') {
@@ -98,6 +101,9 @@ export class ShellPrefs {
         }
         if ('bookmarksCollapsed' in saved && typeof saved.bookmarksCollapsed === 'boolean') {
           initial.bookmarksCollapsed = saved.bookmarksCollapsed;
+        }
+        if ('composePredict' in saved && typeof saved.composePredict === 'boolean') {
+          initial.composePredict = saved.composePredict;
         }
       }
     } catch (cause) {
@@ -128,6 +134,10 @@ export class ShellPrefs {
 
   setPhoneChatOpen(open: boolean): void {
     this.store.set((state) => ({ ...state, phoneChatOpen: open }));
+  }
+
+  setComposePredict(on: boolean): void {
+    this.store.set((state) => ({ ...state, composePredict: on }));
   }
 
   setContactProfile(open: boolean): void {

@@ -97,3 +97,4 @@ export * from './mate-characters.ts';
 export * from './web-extract.ts';
 export * from '../network-attachments.ts';
 export * from './direct.ts';
+export * from './compose.ts';

@@ -159,8 +159,7 @@ export function inboxThread(state: StateService, contact: InboxContact, before: 
   const oldest = messages.at(-1);
   const hasMore = oldest !== undefined
     && state.inboxMessages.thread(filterOf(contact), oldest.receivedAt, 1).length > 0;
-  return { items: views.map((message): ContactThreadItem => ({ type: 'message', message })), hasMore,
-    suggestion: null };
+  return { items: views.map((message): ContactThreadItem => ({ type: 'message', message })), hasMore };
 }
 
 export function inboxDetail(row: ContactRow): ContactDetail {
