@@ -27,7 +27,7 @@
   border-radius: var(--radius-lg);
   background: var(--layer-float);
   box-shadow: inset 0 0 0 1px var(--line);
-  }
+}
 .move-item-main {
   display: flex;
   flex: 1;
@@ -73,7 +73,7 @@
   font-size: var(--text-caption);
   white-space: nowrap;
   transition: background-color var(--motion-fast) var(--ease-out);
-    }
+}
 .move-dest > span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -98,7 +98,7 @@
   opacity: 0;
   cursor: pointer;
   appearance: none;
-  }
+}
 .move-more {
   align-self: flex-start;
   padding: var(--space-hair) var(--space-3);
@@ -108,7 +108,7 @@
   font: inherit;
   font-size: var(--text-caption);
   cursor: pointer;
-  }
+}
 .move-more:hover { color: var(--fg); }
 .move-more:focus-visible {
   outline: 2px solid var(--fg);

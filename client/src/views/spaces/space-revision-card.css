@@ -15,7 +15,7 @@
   color: var(--fg2);
   background: var(--tint2);
   flex: none;
-  }
+}
 .space-revision-summary {
   display: flex;
   flex: 1;

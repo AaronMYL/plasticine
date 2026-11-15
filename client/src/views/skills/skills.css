@@ -213,7 +213,7 @@
   line-height: var(--text-caption-line);
   color: var(--fg2);
   overflow-wrap: anywhere;
-  }
+}
 
 .skill-reader {
   display: flex;

@@ -227,7 +227,7 @@
   border-radius: 0 0 var(--radius) var(--radius);
   background: var(--fg);
   color: var(--bg);
-  }
+}
 .attachment-draft-actions button {
   padding: 0 var(--space-1);
   height: 20px;
@@ -237,7 +237,7 @@
   font: inherit;
   font-size: var(--text-tag);
   cursor: pointer;
-  }
+}
 .conv-attachment-draft .attachment-draft-remove {
   position: absolute;
   top: -6px;
@@ -248,7 +248,7 @@
   background: var(--fg);
   color: var(--bg);
   z-index: var(--z-raised);
-  }
+}
 .attachment-draft-progress {
   position: absolute;
   inset: 0;
@@ -257,7 +257,7 @@
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--bg) 70%, transparent);
   pointer-events: none;
-  }
+}
 .attachment-progress-track { stroke: var(--line2); }
 .attachment-progress-arc {
   stroke: var(--fg);

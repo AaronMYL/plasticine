@@ -110,7 +110,7 @@
     color: var(--fg);
   font: inherit;
   font-size: var(--text-body);
-  }
+}
 .mate-form textarea { resize: vertical; }
 .mate-form-hue {
   display: flex;
@@ -197,7 +197,7 @@
   font-size: var(--text-long);
   line-height: var(--text-body-line);
   font-weight: 600;
-  }
+}
 .mate-work-stat dt {
   display: flex;
   align-items: center;
@@ -205,7 +205,7 @@
   color: var(--fg2);
   font-size: var(--text-caption);
   line-height: var(--text-caption-line);
-  }
+}
 .mate-work-block { padding-top: var(--space-3); }
 .mate-work-label {
   margin: 0 0 var(--space-hair);
@@ -213,7 +213,7 @@
   font-size: var(--text-tag);
   line-height: var(--text-tag-line);
   font-weight: 600;
-  }
+}
 .mate-work-rows {
   display: flex;
   flex-direction: column;
@@ -245,7 +245,7 @@
   color: var(--fg);
   text-align: left;
   cursor: pointer;
-  }
+}
 .mate-work-open:focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: 2px;
@@ -298,7 +298,7 @@
   font-size: var(--text-caption);
   list-style: none;
   cursor: pointer;
-  }
+}
 .mate-work-done > summary::-webkit-details-marker { display: none; }
 .mate-work-done > summary > svg:first-child { color: var(--ok); }
 .mate-work-done > summary > svg:last-child {
@@ -382,7 +382,7 @@
   margin-bottom: var(--space-2);
   color: var(--fg2);
   font-size: var(--text-caption);
-  }
+}
 .mate-mention-menu {
   position: absolute;
   bottom: calc(100% - 8px);
@@ -397,7 +397,7 @@
   background: var(--layer-float);
   box-shadow: var(--lift);
   animation: sheet-in var(--motion-base) var(--ease-out);
-  }
+}
 .mate-mention-menu button {
   display: flex;
   align-items: center;
@@ -412,7 +412,7 @@
     font-size: var(--text-ui);
   text-align: left;
   cursor: pointer;
-  }
+}
 .mate-mention-menu button[aria-selected='true'] { background: var(--tint); }
 .mate-mention-menu small {
   display: block;
@@ -434,7 +434,7 @@
   font-size: var(--text-caption);
   color: var(--fg2);
   margin: var(--space-2) 0;
-  }
+}
 .mate-handoff-goal {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -486,7 +486,7 @@
   font: inherit;
   font-size: var(--text-ui);
   cursor: pointer;
-  }
+}
 .mate-preset:hover { background: var(--tint); }
 .mate-preset[aria-pressed='true'] {
   box-shadow: inset 0 0 0 2px var(--fg);
@@ -501,7 +501,7 @@
   border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line);
   animation: look-grid-in var(--motion-base) var(--ease-out);
-  }
+}
 .look-grid-fit {
   height: auto;
   animation: none;

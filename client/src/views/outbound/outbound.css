@@ -16,7 +16,7 @@
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--line);
   align-items: start;
-  }
+}
 .grant-field-label {
   color: var(--fg2);
   font-size: var(--text-ui);
@@ -35,7 +35,7 @@
   background: transparent;
   text-align: left;
   color: var(--fg);
-  }
+}
 .grant-field-trigger > span {
   min-width: 0;
   overflow: hidden;
@@ -64,7 +64,7 @@
   font-size: var(--text-caption);
   line-height: 1;
   font-weight: 500;
-  }
+}
 .grant-avatar-small {
   width: 20px;
   height: 20px;
@@ -102,7 +102,7 @@
   background: var(--tint2);
   border-radius: var(--radius);
   font-size: var(--text-ui);
-  }
+}
 .grant-recipient .text-button {
   display: inline-flex;
   padding: var(--space-hair);
@@ -186,14 +186,14 @@
   text-overflow: ellipsis;
   font-size: var(--text-ui);
   line-height: var(--text-ui-line);
-  }
+}
 .outbound-log-row .text-button { flex: none; }
 .outbound-log-status {
   margin: calc(-1 * var(--space-hair)) 0 var(--space-2) 132px; /* 例外：和上面那一列的字对齐 */
   color: var(--fg2);
   font-size: var(--text-caption);
   line-height: var(--text-caption-line);
-  }
+}
 .outbound-log-status[data-error='true'] { color: var(--err); }
 .outbound-log-body {
   padding: var(--space-2) 0 var(--space-4);
@@ -212,7 +212,7 @@
   font-family: var(--sans);
   font-size: var(--text-body);
   line-height: var(--text-body-line);
-  }
+}
 @keyframes grant-open {
   from {
     opacity: 0;

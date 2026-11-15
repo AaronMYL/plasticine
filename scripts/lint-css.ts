@@ -63,3 +63,39 @@ export function crowdedCssLines(source: string): number[] {
   });
   return found;
 }
+
+/** 单独一行的收尾 `}` 没和这条规则开头那一行（选择器换了行就是选择器的第一行）对齐的行号（从 1 起）。 */
+export function misalignedCssBraces(source: string): number[] {
+  const found: number[] = [];
+  const openers: string[] = [];
+  // 上一条声明或规则刚结束：下一行有字的就是新规则（或新声明）的第一行
+  let fresh = true;
+  let start = '';
+  cssSkeleton(source).split('\n').forEach((line, index) => {
+    const text = line.trim();
+    if (text === '') {
+      return;
+    }
+    const indent = /^[ \t]*/.exec(line)?.[0] ?? '';
+    if (text === '}') {
+      const opener = openers.pop();
+      if (opener !== undefined && opener !== indent) {
+        found.push(index + 1);
+      }
+      fresh = true;
+      return;
+    }
+    if (fresh) {
+      start = indent;
+    }
+    for (const ch of text) {
+      if (ch === '{') {
+        openers.push(start);
+      } else if (ch === '}') {
+        openers.pop();
+      }
+    }
+    fresh = /[{};]$/.test(text);
+  });
+  return found;
+}

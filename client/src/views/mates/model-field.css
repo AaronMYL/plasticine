@@ -35,7 +35,7 @@
 button.model-field-box:focus-visible, .model-field-box:has(.model-field-select:focus-visible) {
   outline: 2px solid var(--fg);
   outline-offset: 2px;
-  }
+}
 .model-field-name {
   flex: none;
   max-width: 60%;
@@ -51,7 +51,7 @@ button.model-field-box:focus-visible, .model-field-box:has(.model-field-select:f
   font-size: var(--text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
-  }
+}
 .model-field-box > svg {
   flex: none;
   color: var(--fg2);
@@ -67,4 +67,4 @@ button.model-field-box:focus-visible, .model-field-box:has(.model-field-select:f
   opacity: 0;
   cursor: pointer;
   appearance: none;
-  }
+}

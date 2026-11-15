@@ -54,7 +54,7 @@
   font-size: var(--text-ui);
   line-height: var(--text-body-line);
   list-style: none;
-  }
+}
 .file-create > summary::-webkit-details-marker { display: none; }
 .file-create[open] > summary { margin-bottom: var(--space-4); }
 .file-create > .tool-form + .tool-form { margin-top: var(--space-4); }
@@ -248,7 +248,7 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
-  }
+}
 .calendar-day[aria-pressed='true'] { background: var(--tint2); }
 .calendar-day[aria-current='date'] {
   border-color: var(--accent);

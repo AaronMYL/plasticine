@@ -40,7 +40,7 @@
   tab-size: 2;
   overflow-y: auto;
   scrollbar-gutter: stable;
-  }
+}
 .soul-text-mirror {
   overflow: hidden;
   color: var(--fg);
@@ -53,7 +53,7 @@
   caret-color: var(--fg);
   -webkit-text-fill-color: transparent;
   outline: none;
-  }
+}
 .soul-text .soul-text-input::placeholder {
   color: var(--fg3);
   -webkit-text-fill-color: var(--fg3);
@@ -78,7 +78,7 @@
   font: inherit;
   font-size: var(--text-caption);
   cursor: pointer;
-  }
+}
 .soul-field-link:hover:not(:disabled) {
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -144,7 +144,7 @@
   font-family: var(--mono);
   font-size: var(--text-caption);
   line-height: var(--text-ui-line);
-  }
+}
 .soul-diff-line {
   display: flex;
   gap: var(--space-2);

@@ -67,7 +67,7 @@
   border-radius: var(--radius);
   background: var(--bg);
   box-shadow: var(--lift);
-  }
+}
 .browser-actions-menu > p { margin-bottom: var(--space-2); }
 .browser-menu-item {
   display: flex;

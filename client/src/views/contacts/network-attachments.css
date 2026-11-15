@@ -5,7 +5,7 @@
   gap: var(--space-1);
   max-width: min(560px, 88%);
   min-width: 0;
-  }
+}
 .cm-media-message[data-side='me'] {
   align-self: flex-end;
   align-items: flex-end;
@@ -38,7 +38,7 @@
   font-size: var(--text-caption);
   line-height: var(--text-caption-line);
   overflow-wrap: anywhere;
-  }
+}
 .contact-media-error .text-button { margin-left: var(--space-2); }
 .contact-attachment-drafts { margin: 0 var(--space-1); }
 .contact-attachment-drafts:has([data-failed='true']) { padding-bottom: var(--space-6); }

@@ -145,7 +145,7 @@
   line-height: var(--text-body-line);
   text-align: left;
   cursor: pointer;
-  }
+}
 .time-zone-result:hover { background: var(--tint); }
 .time-zone-result[aria-pressed='true'] { font-weight: 500; }
 .time-zone-result .text-meta {

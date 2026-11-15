@@ -12,7 +12,7 @@
   min-height: 0;
   border-left: 1px solid var(--line);
   background: var(--bg);
-  }
+}
 .web-extract header {
   display: flex;
   align-items: center;
@@ -48,7 +48,7 @@
   background: transparent;
   font: inherit;
   line-height: var(--text-section-line);
-  }
+}
 .web-extract-point::before {
   content: '';
   position: absolute;
@@ -58,7 +58,7 @@
   width: 4px;
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--hue-ochre) 24%, transparent);
-  }
+}
 .web-extract footer {
   padding: var(--space-4);
   border-top: 1px solid var(--line);

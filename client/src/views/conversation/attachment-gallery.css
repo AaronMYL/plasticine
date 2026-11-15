@@ -28,7 +28,7 @@
   border: 0;
   background: var(--bg);
   color: var(--fg);
-  }
+}
 .attachment-viewer[open] {
   display: flex;
   flex-direction: column;
@@ -56,7 +56,7 @@
   min-height: 0;
   padding: var(--space-4);
   overflow: auto;
-  }
+}
 .attachment-viewer-nav {
   display: flex;
   justify-content: center;
@@ -69,10 +69,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: min(1000px, 100%);
+  width: min(1000px, 100%); /* 例外：看图层，不是页面内容 */
   gap: var(--space-3);
-  }
-  /* 例外：看图层，不是页面内容 */
+}
 .attachment-pdf-pages canvas {
   display: block;
   max-width: 100%;

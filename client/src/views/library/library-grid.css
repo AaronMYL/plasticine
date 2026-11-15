@@ -44,7 +44,7 @@
   font-weight: 500;
   line-height: var(--text-body-line);
   color: var(--fg2);
-  }
+}
 
 .lib-cards {
   display: grid;

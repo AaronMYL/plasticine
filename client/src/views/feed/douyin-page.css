@@ -26,7 +26,7 @@
   padding: var(--space-3) var(--space-4);
   min-height: 64px;
   border-bottom: 1px solid var(--line);
-  }
+}
 .dy-index-head { flex-wrap: wrap; }
 .dy-index-head .segmented {
   overflow-x: auto;
@@ -64,7 +64,7 @@
   border-bottom: 1px solid var(--line);
   background: transparent;
   color: var(--fg);
-  }
+}
 .dy-work[aria-current='true'] { background: var(--tint2); }
 .dy-work-text {
   flex: 1;
@@ -81,7 +81,7 @@
   border-radius: var(--radius);
   background: var(--tint2);
   color: var(--fg2);
-  }
+}
 .dy-work-thumb img {
   position: absolute;
   inset: 0;
@@ -94,7 +94,7 @@
   border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--fg);
-  }
+}
 .dy-work-length {
   position: absolute;
   right: 4px;
@@ -115,7 +115,7 @@
   line-height: var(--text-ui-line);
   color: var(--fg2);
   box-shadow: inset 0 0 0 1px var(--line2);
-  }
+}
 label.dy-work { cursor: pointer; }
 .dy-work[data-picked] { background: var(--tint); }
 /* 多选（11-14 和资料库一套）：顶上一行全选 · 已选 n · 完成，底下浮条。 */
@@ -134,14 +134,14 @@ label.dy-work { cursor: pointer; }
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow-wrap: anywhere;
-  }
+}
 .dy-work-meta {
   display: block;
   color: var(--fg2);
   font-size: var(--text-caption);
   line-height: var(--text-caption-line);
   margin-top: var(--space-1);
-  }
+}
 .dy-detail {
   min-width: 0;
   min-height: 0;

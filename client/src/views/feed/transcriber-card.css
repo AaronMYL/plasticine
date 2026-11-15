@@ -8,7 +8,7 @@
   border-radius: var(--radius-lg);
   background: var(--layer-float);
   box-shadow: var(--lift);
-  }
+}
 .kit-card h2 {
   margin: 0;
   font-size: var(--text-long);
@@ -38,7 +38,7 @@
   font-size: var(--text-ui);
   line-height: var(--text-ui-line);
   font-variant-numeric: tabular-nums;
-  }
+}
 .kit-progress-line > span:first-child { flex: 1; }
 .kit-percent {
   font-family: var(--mono);

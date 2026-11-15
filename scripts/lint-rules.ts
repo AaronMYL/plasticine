@@ -2,7 +2,7 @@
 // Kept separate from the file walker so each rule can be tested on plain strings.
 
 import { explicitAnys } from './lint-any.ts';
-import { crowdedCssLines } from './lint-css.ts';
+import { crowdedCssLines, misalignedCssBraces } from './lint-css.ts';
 import { scan, type Token } from './lint-scan.ts';
 import { MAX_TERNARY_DEPTH, crowdedStatements, deepTernaries, skippedTests } from './lint-statements.ts';
 
@@ -177,6 +177,10 @@ export function lintSource(source: string, options: LintOptions): LintFinding[] 
   for (const line of options.isCss === true ? crowdedCssLines(source) : []) {
     const message = 'CSS 一行一条声明：展开成每条一行';
     findings.push({ line, rule: 'css-one-declaration', message, severity: 'error' });
+  }
+  for (const line of options.isCss === true ? misalignedCssBraces(source) : []) {
+    const message = '收尾的 } 和这条规则开头那一行对齐';
+    findings.push({ line, rule: 'css-brace-indent', message, severity: 'error' });
   }
 
   return findings.sort((a, b) => a.line - b.line);

@@ -79,7 +79,7 @@
   height: 30px;
   border-radius: var(--radius);
   background: var(--layer-float);
-  }
+}
 @media (pointer: coarse) {
   .bulk-bar {
     gap: var(--space-3);

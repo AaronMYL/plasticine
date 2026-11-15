@@ -107,6 +107,16 @@ test('CSS 一行一条声明：挤了两条、或一行两个花括号块就报�
   assert.deepEqual(css('/* a: b; c: d; */\n.a:hover { color: red; }'), []);
 });
 
+test('CSS 收尾的花括号和开头那一行对齐：缩进不对就报；嵌在 @media 里的照它自己那一层算', () => {
+  const css = (source: string) => lintSource(source, { checkCode: false, isCss: true }).map((f) => f.rule);
+  assert.deepEqual(css('.a {\n  color: red;\n  }'), ['css-brace-indent']);
+  assert.deepEqual(css('.a {\n  color: red;\n}'), []);
+  assert.deepEqual(css('@media (min-width: 600px) {\n  .a {\n    color: red;\n  }\n}'), []);
+  assert.deepEqual(css('@media (min-width: 600px) {\n  .a {\n    color: red;\n}\n}'), ['css-brace-indent']);
+  assert.deepEqual(css('.a,\n  .b {\n  color: red;\n}'), []);
+  assert.deepEqual(css('.a,\n  .b {\n  color: red;\n  }'), ['css-brace-indent']);
+});
+
 test('文件名不用里程碑、批次：m5b-…、第13批-… 报，普通名字不报', () => {
   assert.ok(isMilestoneName('agent/src/app/m5b-services.ts'));
   assert.ok(isMilestoneName('client/src/state/m4-action-requests.ts'));

@@ -35,7 +35,7 @@
   flex-direction: column;
   gap: var(--space-3);
   margin: var(--space-4) 0 var(--space-5);
-  }
+}
 .mate-work-tasks:empty { margin: 0; }
 .mate-work-panel .mate-group-task h3 {
   margin: 0;

@@ -43,7 +43,7 @@
   border: 1px solid var(--line2);
   border-radius: var(--radius);
   font-size: var(--text-caption);
-  }
+}
 .markdown code {
   font-family: var(--mono);
   font-size: var(--text-ui);
