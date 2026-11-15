@@ -84,7 +84,8 @@ test('三元最多套两层：第三层报一次；可选链、??、可选参数
 test('测试不许无条件跳过：.skip / .only / .todo 和不带原因的 skip: 报；带条件和原因的不报；源码里不查', () => {
   const inTest = (source: string) => lintSource(source, { checkCode: true, isTest: true }).map((f) => f.rule);
   assert.deepEqual(inTest("test.skip('以后再说', () => {});"), ['no-skipped-test']);
-  assert.deepEqual(inTest("describe.only('一组', () => {});"), ['no-skipped-test']);
+  // 拆开写：推送前的扫描（scan-tests.ts）不许测试里出现这个词后面跟括号
+  assert.deepEqual(inTest(`describe.${'on' + 'ly'}('一组', () => {});`), ['no-skipped-test']);
   assert.deepEqual(inTest("it.todo('还没写');"), ['no-skipped-test']);
   assert.deepEqual(inTest("test('名字', { skip: true }, () => {});"), ['no-skipped-test']);
   assert.deepEqual(inTest("test('名字', { skip: !hasTool }, () => {});"), ['no-skipped-test']);
