@@ -1,6 +1,7 @@
 // Applies lint-rules.ts to the named files, or the whole repository when none are supplied.
 // Exits 1 when an error is found; warnings are only printed.
 
+import { existsSync, readFileSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import { extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +13,12 @@ const ROOT_DIR = resolve(ROOT);
 const SKIPPED_DIRS = new Set(['.git', 'node_modules', 'dist', 'coverage', 'vendor']);
 // 只在仓库根上跳过的目录：mac 是 Swift 工程，docs 是文档。按名字跳会把 agent/src/skills、client/src/mac 也漏掉。
 const SKIPPED_ROOT_DIRS = new Set(['.claude', 'docs', 'mac']);
+// 拷了这套 lint 的别的仓库（私有仓库）在 scripts/lint-local.json 里登记自己可以超长的文件：{ "longFiles": { 路径: 原因 } }。
+// 规则文件两边一字不差，各自的名单放各自的仓库。
+const LOCAL_FILE = join(ROOT, 'scripts/lint-local.json');
+const LOCAL_LONG_FILES: Record<string, string> = existsSync(LOCAL_FILE)
+  ? (JSON.parse(readFileSync(LOCAL_FILE, 'utf8')) as { longFiles?: Record<string, string> }).longFiles ?? {}
+  : {};
 const CODE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs']);
 const TEXT_EXTENSIONS = new Set(['.css', '.sh', '.ps1', '.html']);
 
@@ -39,8 +46,9 @@ async function main(): Promise<number> {
     }
     const path = relative(ROOT, file).replaceAll('\\', '/');
     const source = await readFile(file, 'utf8');
-    const findings = lintSource(source,
-      { checkCode: isCode, isTest: isTestFile(path), isCss: extension === '.css', path });
+    const longReason = LOCAL_LONG_FILES[path];
+    const findings = lintSource(source, { checkCode: isCode, isTest: isTestFile(path), isCss: extension === '.css',
+      path, ...(longReason === undefined ? {} : { longReason }) });
     if (isMilestoneName(path)) {
       findings.unshift({ line: 1, rule: 'file-name', message: '文件名不用里程碑、批次：改成说它是什么', severity: 'error' });
     }

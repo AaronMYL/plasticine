@@ -33,6 +33,9 @@ test('源码超过 500 行：登记过「只干一件事」的文件只提醒，
   assert.deepEqual(lintSource(long, { checkCode: false, path: listed })
     .map((f) => [f.rule, f.severity]), [['file-length', 'warning']]);
   assert.deepEqual(lintSource(long, { checkCode: false, isTest: true }), []);
+  // 别的仓库（私有仓库）自己登记的：走 lint.ts 读到的 scripts/lint-local.json，原因从 longReason 传进来
+  assert.deepEqual(lintSource(long, { checkCode: false, path: 'scripts/own.ts', longReason: '只能是一个文件' })
+    .map((f) => [f.rule, f.severity]), [['file-length', 'warning']]);
   // CSS 一行一条声明，上限 800
   const css = (lines: number) => lintSource('a {}\n'.repeat(lines), { checkCode: false, isCss: true, path: 'x.css' });
   assert.deepEqual(css(MAX_CSS_LINES), []);

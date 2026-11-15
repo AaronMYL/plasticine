@@ -53,6 +53,8 @@ export interface LintOptions {
   isCss?: boolean;
   /** Repository-relative path with forward slashes, for LONG_FILES_ALLOWED. */
   path?: string;
+  /** 这个仓库自己登记的「可以超过上限」的原因（lint.ts 从 scripts/lint-local.json 读）。 */
+  longReason?: string;
 }
 
 /** Test files: `*.test.ts` anywhere, and everything under a `tests` directory (helpers, fixtures). */
@@ -129,7 +131,7 @@ export function lintSource(source: string, options: LintOptions): LintFinding[] 
 
   const maxLines = options.isCss === true ? MAX_CSS_LINES : MAX_FILE_LINES;
   if (options.isTest !== true && lineCount > maxLines) {
-    const reason = options.path === undefined ? undefined : LONG_FILES_ALLOWED[options.path];
+    const reason = options.longReason ?? (options.path === undefined ? undefined : LONG_FILES_ALLOWED[options.path]);
     findings.push({
       line: maxLines + 1,
       rule: 'file-length',
