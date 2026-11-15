@@ -40,7 +40,7 @@ function ReferencedPage({ type, id, phone, route, navigate, onBack }: MemoryPage
     <ObjectFocus key={`${type}:${id}`} id={id} type={type} readOnly onQuote={setQuote} />
   </PhoneContent>;
   return (
-    <div className="page agreements-page">
+    <div className="page page-read agreements-page">
       <PageHeader title="记忆" />
       {type === 'agreement' ? <PendingCognition /> : null}
       <ObjectFocus key={`${type}:${id}`} id={id} type={type} />

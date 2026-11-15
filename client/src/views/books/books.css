@@ -96,11 +96,7 @@
   outline-offset: 2px;
 }
 
-/* ---------- 图书馆 ---------- */
-.bk-library {
-  max-width: 1040px;
-}
-
+/* ---------- 图书馆（宽度是管的那一种，见 shell/base.css 的 .page） ---------- */
 .bk-library[data-dragging='true'] {
   outline: 2px dashed var(--line2);
   outline-offset: -8px;

@@ -1,4 +1,5 @@
-/* 和 Plasticine 的对话（2026-11-05 设计稿 Main / Steps / Waiting）：正文列最宽 720 居中，输入框和正文列同宽；
+/* 和 Plasticine 的对话（2026-11-05 设计稿 Main / Steps / Waiting）：正文列居中，输入框和正文列同宽，最宽是读的那一种
+   （11-15 内容区两种宽度：跟着主区变，720 → 860）；
    你的话是 --bubble 气泡（primitives/message），Plasticine 的回复是普通文字，15/26。 */
 
 .line-conv {
@@ -23,7 +24,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  width: min(720px, calc(100% - 48px));
+  width: min(var(--page-read), calc(100% - 48px));
   margin: 0 auto;
 }
 

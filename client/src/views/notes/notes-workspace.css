@@ -289,10 +289,6 @@
   padding-top: 0;
 }
 
-.notes-columns[data-layout='wide'] .note-pane {
-  padding-left: var(--space-6);
-}
-
 .note-prose th,
 .note-prose td {
   min-width: 4em;

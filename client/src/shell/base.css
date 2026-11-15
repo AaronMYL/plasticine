@@ -331,13 +331,21 @@ textarea.field-input {
 
 /*
  * 标题条和正文在主区里同列居中。2026-11-07 用户要求所有页面都用覆盖式对话，浮窗的开合与大小不参与页面排版。
- * 铺满型页面（page-fill：笔记、对话）和任务看板不受限。
+ * 11-15 内容区两种宽度（Aaron 弹框定，设计稿「内容区宽度：两种，跟着屏幕变」）：管的页（列表、卡片、表格）用
+ * --page-manage；读的页（一段一段往下读的字）加 .page-read 用 --page-read；都跟着主区宽度连续变，两边留
+ * --page-gutter（主区 750 以下 24，1050 以上 48，中间跟着变）。铺满型页面（page-fill：笔记、对话、消息）
+ * 和任务看板不受限，里面读的那一列自己用 --page-read。
  */
 @media (min-width: 768px) {
   .page:not(.page-fill) {
     width: 100%;
-    max-width: calc(var(--page-max) + 64px);
+    max-width: calc(var(--page-manage) + 2 * var(--page-gutter));
     margin-inline: auto;
+    padding-inline: var(--page-gutter);
+  }
+
+  .page.page-read:not(.page-fill) {
+    max-width: calc(var(--page-read) + 2 * var(--page-gutter));
   }
 
   .page:has(.tasks-page[data-view='board']):not(.page-fill) {

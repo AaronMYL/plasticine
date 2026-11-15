@@ -3,10 +3,10 @@
  * 四列；卡片是缩略图 + 标题（两行）+「报告 / 来信 · 时间」和 ⋯。手机上「最近」一排横滑（每张 220 宽），「全部」两列。
  */
 
+/* 宽度是管的那一种（11-15 内容区两种宽度，见 shell/base.css 的 .page）；上下多留一点。 */
 @media (min-width: 768px) {
   .page.lib-grid-page:not(.page-fill) {
-    max-width: 1000px;
-    padding: var(--space-6) var(--space-7) var(--space-6);
+    padding-block: var(--space-6);
   }
 }
 

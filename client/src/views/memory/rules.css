@@ -72,11 +72,6 @@
 
 /* ---------- 说法冲突 ---------- */
 
-.conflicts-page {
-  max-width: 880px;
-  margin: 0 auto;
-}
-
 .conflict {
   padding: var(--space-5) 0 var(--space-5);
   border-bottom: 1px solid var(--line);

@@ -92,8 +92,15 @@
   --layer-side: #f1eee8;
   --layer-bar: #e3e0da;
   --layer-page: var(--bg);
-  /* 页面正文列最宽多少（标题条同宽，在主区里居中；见 shell/base.css 的 .page）。 */
-  --page-max: 880px;
+  /*
+   * 内容区两种宽度（11-15 Aaron 弹框定，设计稿「内容区宽度：两种，跟着屏幕变」）：跟着主区（workspace 容器）的宽度
+   * 连续变，在主区里居中、页头同宽（见 shell/base.css 的 .page）。读的（一段一段往下读的字）主区 970 → 720、
+   * 1130 → 760、1610 以上 860 封顶；管的（列表、卡片、表格）970 → 810、1130 → 880、1610 → 1090，最宽 1120。
+   * 两边留 --page-gutter：主区 750 以下 24、1050 以上 48，中间跟着变（手机 16，见 base.css）。
+   */
+  --page-read: clamp(560px, 25cqi + 480px, 860px);
+  --page-manage: clamp(720px, 45cqi + 370px, 1120px);
+  --page-gutter: clamp(var(--space-5), 8cqi - 36px, var(--space-7));
   --layer-float: #ffffff;
   /* 连接状态灯：绿 = 已连接，黄 = 连接中，红 = 未连接；只染 8px 的点（图形对比度 ≥ 3:1），旁边总有悬停文字和读屏文字。 */
   --signal-on: #3f8f55;

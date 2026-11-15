@@ -221,7 +221,7 @@ export function TopicDocPage({ topicId, navigate, now = new Date(), phone = fals
     </PhoneContent>;
   }
   return (
-    <div className="page memory-doc">
+    <div className="page page-read memory-doc">
       <button type="button" className="text-button text-button-quiet doc-back"
         onClick={() => navigate({ view: 'memory', noteId: null })}>‹ 记忆目录</button>
       <PageHeader title={doc?.topic.title ?? '记忆'} />

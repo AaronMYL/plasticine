@@ -131,9 +131,11 @@ export const DESIGN_TOKENS: readonly string[] = [
   'z-modal',
   'z-selection',
   'z-tip',
-  // 第 108 条：页面列最宽多少。11-14：对话框浮在右边时占掉的宽（对话框就地设在根元素上，主区右侧的浮层停在它左边）；
+  // 第 108 条：页面列最宽多少（11-15 改成两种宽度和两边留白）。11-14：对话框浮在右边时占掉的宽（对话框就地设在根元素上，主区右侧的浮层停在它左边）；
   // 桌面客户端标题栏的高（壳就地设在根元素上，盖住整个窗口的弹框层从它下面开始）。
-  'page-max',
+  'page-read',
+  'page-manage',
+  'page-gutter',
   'dock-room',
   'titlebar-room',
   // 11-08 桌面客户端标题栏（shell/titlebar.tsx 在 .titlebar 上就地设）：左边红绿灯让出的宽度（壳报的

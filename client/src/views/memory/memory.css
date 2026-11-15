@@ -3,10 +3,9 @@
  * 没有卡片、没有阴影。「它提议」= 左侧 1px --fg3 细线 + 小签；diff 删去的 --fg2 删除线。
  */
 
-/* 约定那一段：一栏，阅读列宽同首页（约 760px）、靠左。 */
+/* 约定那一段：一栏，读的页（11-15 内容区两种宽度：.page-read），页头和正文同宽。 */
 .agreements-page > :not(.page-head) {
   width: 100%;
-  max-width: 760px;
 }
 
 .agreements-list {

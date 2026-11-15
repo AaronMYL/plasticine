@@ -130,9 +130,12 @@
   min-width: 0;
 }
 
+/* 详情在右边那一栏里居中，最宽是管的那一种（11-15 内容区两种宽度）。 */
 .skills-main > .skill-detail {
-  max-width: 760px;
-  padding: var(--space-5) var(--space-6) var(--space-7);
+  width: 100%;
+  max-width: calc(var(--page-manage) + 2 * var(--page-gutter));
+  margin-inline: auto;
+  padding: var(--space-5) var(--page-gutter) var(--space-7);
 }
 
 .skills-main-head { padding: var(--space-5) var(--space-4) 0; }
@@ -426,8 +429,10 @@ textarea.field-input.skills-said { min-height: 120px; }
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: 760px;
+  width: 100%;
+  max-width: var(--page-manage);
   min-height: 100%;
+  margin-inline: auto;
   animation: skills-in var(--motion-base) var(--ease-out);
 }
 

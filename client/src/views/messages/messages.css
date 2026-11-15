@@ -1,7 +1,7 @@
 /*
  * 消息（2026-11-04 第 2 批，设计稿 Messages / Mail / Phone-Messages）：在联系人那套样式（contacts.css）上改的几处——
  * 左栏 320、标题下面一条撑满的分段控件；Plasticine 那一条是 --fg 实底的「P」方块；右边和 Plasticine 的记录顶上一行 56；
- * 邮件阅读区：主题当标题（24/32），发件人一行，正文是一块白纸（mail.css），居中最宽 720。
+ * 邮件阅读区：主题当标题（24/32），发件人一行，正文是一块白纸（mail.css），居中，最宽是读的那一种（11-15）。
  */
 
 .messages .contacts-list,
@@ -109,7 +109,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: 720px;
+  max-width: var(--page-read);
   margin: 0 auto;
 }
 

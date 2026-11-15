@@ -6,10 +6,9 @@
 }
 
 .proj-detail {
-  width: min(1040px, 100%);
+  width: 100%;
   box-sizing: border-box;
   margin: 0 auto;
-  padding: var(--space-5) var(--space-6) var(--space-7);
 }
 
 .proj-title-row {

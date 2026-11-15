@@ -153,9 +153,10 @@
   padding-right: 216px; /* 例外：页边留给批注 */
 }
 
+/* 正文是读的那一列（11-15 内容区两种宽度：跟着主区变）。 */
 .bk-text {
   position: relative;
-  max-width: 640px;
+  max-width: var(--page-read);
   margin: 0 auto;
 }
 

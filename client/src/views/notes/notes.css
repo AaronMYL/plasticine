@@ -134,7 +134,7 @@
   /* 锚点跳转、查找定位停在固定工具栏下面（工具栏高度由 use-sticky-tools.ts 量好写进 scroll-padding-top）。 */
   scroll-padding-top: var(--space-2);
   /* 上内边距 24：固定的工具栏（sticky 按内边距以内算）用 top: -24px 贴到滚动区的最上沿（note-ai.css）。 */
-  padding: var(--space-5) 0 var(--space-7) var(--space-5);
+  padding: var(--space-5) var(--page-gutter) var(--space-7);
   scrollbar-width: thin;
   overscroll-behavior: contain;
 }
@@ -147,11 +147,12 @@
   top: 0;
 }
 
+/* 正文是读的那一列（11-15 内容区两种宽度）：跟着主区宽度变，在正文区里居中。 */
 .note-editor {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  max-width: 620px;
+  max-width: var(--page-read);
   margin-inline: auto;
 }
 

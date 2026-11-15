@@ -47,7 +47,7 @@ button.space-crumb:hover {
 }
 
 .space-article {
-  flex: 0 1 640px;
+  flex: 0 1 var(--page-read);
   min-width: 0;
 }
 

@@ -8,16 +8,9 @@
   width: 100%;
 }
 
-/* 11-15 界面统一（设计稿「记忆页：底部不压列表，加回页头」）：内容最宽 760，页头和它对齐。 */
-@media (min-width: 768px) {
-  .page.memory-topics:not(.page-fill) {
-    max-width: calc(760px + 64px);
-  }
-}
-
+/* 一篇记忆是读的页（11-15 内容区两种宽度：.page-read），页头和正文同宽。 */
 .memory-doc > :not(.page-head) {
   width: 100%;
-  max-width: 760px;
 }
 
 /* ---------- 页头搜索（设计稿 Plasticine-Memory：240 宽；样子是统一的搜索框 search-field，11-14） ---------- */
