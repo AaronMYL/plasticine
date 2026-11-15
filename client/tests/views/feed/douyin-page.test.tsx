@@ -75,9 +75,31 @@ describe('抖音收藏整理', () => {
     fireEvent.click(within(filters).getByRole('button', { name: /^全部/ }));
     fireEvent.click(within(list).getByRole('button', { name: '整理几条' }));
     if (todo.length === 0) return;
+    // 多选和资料库一套（11-14 设计稿「多选：都用资料库那一套」）：顶上全选 · 已选 n · 完成，底下浮条放操作。
     fireEvent.click(await within(list).findByRole('checkbox', { name: `选「${todo[0]!.title}」` }));
-    fireEvent.click(within(list).getByRole('button', { name: '整理这 1 条' }));
+    const bar = within(list).getByRole('group', { name: '批量操作' });
+    expect(within(bar).getByText('已选 1')).toBeTruthy();
+    fireEvent.click(within(list).getByRole('checkbox', { name: '全选没整理的' }));
+    const pickable = within(list).getAllByRole('checkbox', { name: /^选「/ })
+      .filter((box) => !(box as HTMLInputElement).disabled);
+    expect(within(bar).getByText(`已选 ${pickable.length}`)).toBeTruthy();
+    fireEvent.click(within(list).getByRole('checkbox', { name: '全选没整理的' }));
+    expect(within(bar).getByText('已选 0')).toBeTruthy();
+    fireEvent.click(within(list).getByRole('checkbox', { name: `选「${todo[0]!.title}」` }));
+    fireEvent.click(within(bar).getByRole('button', { name: '整理' }));
     await waitFor(() => expect(process).toHaveBeenCalledWith(expect.objectContaining({ ids: [todo[0]!.id] })));
+    await waitFor(() => expect(within(list).queryByRole('group', { name: '批量操作' })).toBeNull());
+  });
+
+  it('多选里点「完成」退出，勾过的清掉', async () => {
+    await open();
+    const list = await screen.findByRole('region', { name: '抖音收藏列表' });
+    await within(list).findByRole('button', { name: new RegExp(`^${TITLE}`) });
+    fireEvent.click(within(list).getByRole('button', { name: '整理几条' }));
+    expect(within(list).queryByRole('button', { name: '整理几条' })).toBeNull();
+    fireEvent.click(within(list).getByRole('button', { name: '完成' }));
+    expect(within(list).queryByRole('group', { name: '批量操作' })).toBeNull();
+    expect(within(list).getByRole('button', { name: '整理几条' })).toBeTruthy();
   });
 
   it('有封面画封面，封面打不开退回播放符号；标题最多两行', async () => {

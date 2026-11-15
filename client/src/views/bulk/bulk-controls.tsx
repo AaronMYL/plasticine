@@ -110,7 +110,7 @@ export function BulkBar({ selection, trash = false, folders = [] }: { selection:
     });
   };
   return <>
-    <div className="bulk-bar" aria-label="批量操作">
+    <div className="bulk-bar" role="group" aria-label="批量操作">
       <span className="text-meta">已选 {selection.selected.length}</span>
       {trash ? <>
         <button type="button" className="text-button" disabled={disabled}

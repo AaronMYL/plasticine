@@ -18,6 +18,7 @@ import { useSpaceQuote } from '../spaces/space-quote.ts';
 import { MoreState, useAutoMore } from './feed-pager.tsx';
 import { TranscriberCard } from './transcriber-card.tsx';
 import '../spaces/space-frame.css';
+import '../bulk/bulk.css';
 import './douyin-page.css';
 import { bodyDate } from '../../shell/time-text.ts';
 
@@ -133,7 +134,8 @@ function WorkRow({ work, timeZone, current, picking, picked, onOpen, onPick }: {
   </>;
   if (picking) {
     return <label className="dy-work" data-picked={picked || undefined}>
-      <input type="checkbox" checked={picked} disabled={phase !== 'todo'} aria-label={`选「${work.title}」`}
+      <input type="checkbox" className="bulk-check" checked={picked} disabled={phase !== 'todo'}
+        aria-label={`选「${work.title}」`}
         onChange={(event) => onPick(event.target.checked)} />
       {body}
     </label>;
@@ -168,6 +170,13 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
     setPicking(false);
     setPicked(new Set());
   };
+  // 多选和资料库一套（11-14 设计稿「多选：都用资料库那一套」）：只有没整理的能勾，全选也只勾它们。
+  const pickable = shown.filter((work) => phaseOf(work) === 'todo').map((work) => work.id);
+  const allPicked = pickable.length > 0 && pickable.every((id) => picked.has(id));
+  const all = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (all.current !== null) all.current.indeterminate = picked.size > 0 && !allPicked;
+  }, [picked.size, allPicked, picking]);
   const processPicked = async (): Promise<void> => {
     setRunning(true);
     setProblem(null);
@@ -190,14 +199,21 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
           ))}
         </div>
         <span className="dy-index-tools">
-          <button type="button" className="text-button" aria-pressed={picking}
-            onClick={() => picking ? stopPicking() : setPicking(true)}>{picking ? '取消' : '整理几条'}</button>
+          {picking ? null : <button type="button" className="text-button" onClick={() => setPicking(true)}>
+            整理几条</button>}
           <IconButton icon="check" label="选要同步的收藏" onClick={onSelect} />
           <button type="button" className="secondary-button button-small" disabled={state.busy === 'sync'
             || state.data?.sync.state === 'waiting_mac' || state.data?.sync.state === 'running'}
             onClick={() => void store.sync()}>同步</button>
         </span>
       </header>
+      {picking ? <div className="bulk-header dy-bulk-head">
+        <label className="bulk-all"><input ref={all} type="checkbox" className="bulk-check" checked={allPicked}
+          disabled={pickable.length === 0 || running} aria-label="全选没整理的"
+          onChange={() => setPicked(allPicked ? new Set() : new Set(pickable))} />全选</label>
+        <span className="text-meta">已选 {picked.size}</span>
+        <button type="button" className="text-button" disabled={running} onClick={stopPicking}>完成</button>
+      </div> : null}
       {state.error ?? state.data?.sync.error ? <p className="block-empty is-error" role="alert">
         {state.error ?? state.data?.sync.error}</p> : null}
       <div className="dy-index-scroll"><ul className="dy-works">
@@ -214,12 +230,12 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
         : filter === 'all' ? '还没有同步收藏' : `没有${FILTER_LABELS[filter]}的收藏`}</p>
         : <MoreState loading={state.busy === 'more'} end={false} error={null} onRetry={() => void store.more()} />}
       </div>
-      {picking ? <footer className="dy-pick-bar">
-        <span>{picked.size === 0 ? '勾选没整理的' : `已选 ${picked.size} 条`}</span>
+      {picking ? <div className="bulk-bar dy-bulk-bar" role="group" aria-label="批量操作">
+        <span className="text-meta">已选 {picked.size}</span>
         {problem === null ? null : <span className="is-error" role="alert">{problem}</span>}
-        <button type="button" className="primary-button button-small" disabled={picked.size === 0 || running}
-          onClick={() => void processPicked()}>{`整理这 ${picked.size} 条`}</button>
-      </footer> : null}
+        <button type="button" className="text-button" disabled={picked.size === 0 || running}
+          onClick={() => void processPicked()}><Icon name="sparkle" size={16} />整理</button>
+      </div> : null}
     </section>
     {current === null ? null : <Detail key={current.id} work={current} phone={phone} back={() => setSelected(null)} />}
   </div>;

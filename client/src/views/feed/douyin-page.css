@@ -28,11 +28,10 @@
   font-size: var(--text-caption); line-height: var(--text-ui-line);
   color: var(--fg2); box-shadow: inset 0 0 0 1px var(--line2); }
 label.dy-work { cursor: pointer; }
-.dy-work[data-picked] { background: var(--tint2); }
-.dy-pick-bar { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line);
-  font-size: var(--text-ui); }
-.dy-pick-bar > span:first-child { flex: 1; }
+.dy-work[data-picked] { background: var(--tint); }
+/* 多选（11-14 和资料库一套）：顶上一行全选 · 已选 n · 完成，底下浮条。 */
+.dy-bulk-head { margin: 0; padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--line); }
+.dy-bulk-bar { margin: var(--space-3) auto; }
 .dy-work strong { display: -webkit-box; overflow: hidden; font-size: var(--text-body);
   line-height: var(--text-body-line); font-weight: 500;
   -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
