@@ -4,7 +4,8 @@ import type { FakeLines } from './fake-lines.ts';
 import type { FakeMates } from './fake-mates.ts';
 import type { MateCharacter, MateFace, MateVariant, MateView } from '../shared.ts';
 
-export async function seedTeamScene({ mates, lines }: { mates: FakeMates; lines: FakeLines }, now: Date): Promise<void> {
+export async function seedTeamScene({ mates, lines }: { mates: FakeMates; lines: FakeLines },
+  now: Date): Promise<void> {
   // 画风、脸型各不一样（11-13），截图里能看出能换。
   const make = (name: string, look: [MateCharacter, MateVariant, MateFace], hue: string, role: string) => mates.create({
     requestId: `scene-team-${look[0]}`, name, avatar: look[0], variant: look[1], face: look[2],

@@ -36,10 +36,6 @@ function closed(what: string): ApiError {
   return new ApiError(409, 'conflict', `这个${what}已经答过了。`, { next: '刷新对话看现在的状态。' });
 }
 
-function yuan(cents: number): string {
-  return `¥${(cents / 100).toFixed(2)}`;
-}
-
 function confirmMoney(card: MoneyCard, money: MoneyDesk, afterCommit: AfterCommit): MoneyCard {
   if (card.currency !== BASE_CURRENCY) {
     throw new ApiError(409, 'conflict', '记账卡只记人民币；外币请打开记账页记（要填汇率）。');

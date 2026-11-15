@@ -12,7 +12,10 @@ import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writ
 import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 
 let t: TestApp | undefined;
-afterEach(async () => { await t?.close(); t = undefined; });
+afterEach(async () => {
+  await t?.close();
+  t = undefined;
+});
 
 function said(app: TestApp, text: string) {
   return addLine(app.state, { docId: YOU_DOC_ID, text, basis: 'stated', anchors: [{ kind: 'message', ref: 'msg-1' }] },

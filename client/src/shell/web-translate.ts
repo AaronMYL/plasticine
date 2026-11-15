@@ -41,7 +41,8 @@ export interface TabTranslation {
   firstScreenMs: number | null;
 }
 
-const OFF: TabTranslation = { status: 'off', run: null, url: '', blocked: false, reason: null, chars: 0, pending: 0, done: 0,
+const OFF: TabTranslation = { status: 'off', run: null, url: '', blocked: false, reason: null, chars: 0, pending: 0,
+  done: 0,
   failed: 0, cachedChars: 0, firstScreenMs: null };
 
 type RequestEvent = Extract<TranslateEvent, { type: 'request' }>;

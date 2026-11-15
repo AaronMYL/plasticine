@@ -151,7 +151,10 @@ export function ProjectList({ navigate }: { navigate: (route: Route) => void }):
   return (
     <div className="page proj-page">
       <PageHeader title="项目" controls={controls} />
-      {creating ? <NewProject onCancel={() => setCreating(false)} onCreated={(id) => { reload(); open(id); }} /> : null}
+      {creating ? <NewProject onCancel={() => setCreating(false)} onCreated={(id) => {
+        reload();
+        open(id);
+      }} /> : null}
       {error === null ? null : (
         <p className="proj-error" role="alert">
           {error} <button type="button" className="text-button" onClick={reload}>再读一次</button>

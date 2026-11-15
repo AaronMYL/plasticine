@@ -24,8 +24,9 @@ export function QuotePreview({ quote, onRemove }: { quote: QuoteChip; onRemove?:
   const space = quote.spaceReference;
   const reference = quote.noteReference;
   const book = quote.bookReference;
-  const scope = quote.kind === 'message' ? '选文' : book !== undefined || reference?.scope === 'selection' ? '选段'
-    : reference?.scope === 'full' ? '全文' : '摘要';
+  const whole = reference?.scope === 'full' ? '全文' : '摘要';
+  const part = book !== undefined || reference?.scope === 'selection' ? '选段' : whole;
+  const scope = quote.kind === 'message' ? '选文' : part;
   const label = book === undefined ? quote.label : shortBookLabel(quote.label);
   const characters = quoteCharacters(quote.text).toLocaleString('zh-CN');
   const source: Route | null = book === undefined ? null : { view: 'books', noteId: null, bookId: book.bookId,

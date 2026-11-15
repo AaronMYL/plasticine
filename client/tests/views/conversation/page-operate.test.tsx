@@ -2,11 +2,9 @@
 // - 引用片：原生会「感知」时带页面结构（大纲 + 带编号的元素），写明网页标签和编号版本，脑按编号操作；不会时照旧带正文。
 // - 对话框里列出 Plasticine 在当前标签上做过的步（状态符 + 一句），别的标签的步不出现。
 
-import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PagePerception } from '../../../src/api/shared.ts';
-import { CurrentTabContext, type CurrentTab } from '../../../src/shell/current-tab-context.ts';
-import { ClientStateProvider, createClientState } from '../../../src/state/context.tsx';
+import { type CurrentTab } from '../../../src/shell/current-tab-context.ts';
 import { currentPageQuote, perceptionQuoteText } from '../../../src/views/conversation/ask-this-page.tsx';
 
 const PERCEPTION: PagePerception = {

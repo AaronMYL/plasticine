@@ -1,3 +1,6 @@
+// 假的笔记：带版本保护（version 不符就 409 带当前那一版）、按 request_id 幂等、删除只是记下删除时间。
+// 笔记的形状是 shared/api 的 NoteView；搜索和真实现一样检查可读正文。
+
 import { FakeBatchReceipts, fakeBatch, checkTrashCount } from './fake-batch.ts';
 import { createRequestId } from '../request-id.ts';
 import {
@@ -5,9 +8,6 @@ import {
   type NoteAssistView, type NoteFolderCommand, type NoteFoldersView, type NoteImageRequest, type NoteImageView,
   type NoteImportView, type NotesBatchRequest, type NoteSupplement,
 } from '../shared.ts';
-// 假的笔记：带版本保护（version 不符就 409 带当前那一版）、按 request_id 幂等、删除只是记下删除时间。
-// 笔记的形状是 shared/api 的 NoteView；搜索和真实现一样检查可读正文。
-
 import type { NotesApi } from '../client.ts';
 import { ApiError, NoteConflictError } from '../errors.ts';
 import type { CreateNoteRequest, NoteMetaView, NoteSearch, NoteView, SaveNoteRequest } from '../types.ts';

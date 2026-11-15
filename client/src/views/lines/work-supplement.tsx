@@ -42,7 +42,10 @@ export function WorkSupplement({ line, thread }: { line: LineView; thread: LineT
       <button type="button" className="text-button" disabled={busy}
         onClick={() => live.lines.discard(line.id, item.requestId)}>编辑后重发</button>
     </div>)}
-    <form className="work-compose" onSubmit={(event) => { event.preventDefault(); send(); }}>
+    <form className="work-compose" onSubmit={(event) => {
+      event.preventDefault();
+      send();
+    }}>
       <textarea aria-label="补充这件事" placeholder="补充这件事…" rows={2} value={text}
         maxLength={LINE_MESSAGE_MAX_CHARS} onChange={(event) => inlineDrafts.set(key, event.target.value)} />
       <button type="submit" className="work-send" aria-label="发送补充"

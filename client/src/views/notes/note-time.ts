@@ -1,8 +1,6 @@
 // 笔记列表的分组（照旧版 NotesPage 的 groupByDay 重写）。每一行的时间用全站一种写法（shell/time-text.ts，11-14）。
 
 import type { NoteMetaView } from '../../api/types.ts';
-import { timeInput } from '../../primitives/message/states.ts';
-import { deviceTimeZone } from '../../state/time-zone.ts';
 
 const DAY_MS = 86_400_000;
 /** 「前 7 天」这一组的范围。 */

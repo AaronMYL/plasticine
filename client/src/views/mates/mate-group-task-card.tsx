@@ -38,7 +38,9 @@ export function MateGroupTaskCard({ line }: { line: LineView }): ReactNode {
   const result = thread.messages.findLast((message) => message.role === 'assistant' && message.text.trim() !== '')
     ?.text ?? line.lastAnswer;
   const claim = async (mateId: string): Promise<void> => {
-    setMenu(null); setReading(true); setError(null);
+    setMenu(null);
+    setReading(true);
+    setError(null);
     try {
       await live.lines.loadLatest(line.id);
       const current = live.lines.thread(line.id).get();

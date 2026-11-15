@@ -2,7 +2,6 @@
 // 一行按版本换；合计、排序、所在的分类可能变了的，再拉一份按服务端的校准（不自己猜）。
 
 import type { PlasticineApi } from '../../api/client.ts';
-import { errorText } from '../../api/errors.ts';
 import type { EventsHub } from '../../state/events-hub.ts';
 import type {
   BrowserViewDto,
@@ -18,7 +17,7 @@ import type {
 import type { LiveEvent } from '../../api/types.ts';
 import { Store } from '../../state/store.ts';
 import { deviceTimeZone as localTimeZone } from '../../state/time-zone.ts';
-import { replaceByVersion, ResourceStore, type Merge, type Resource } from '../../state/resource-store.ts';
+import { replaceByVersion, ResourceStore, type Merge } from '../../state/resource-store.ts';
 
 const NO_CHANGE = null;
 

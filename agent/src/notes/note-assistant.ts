@@ -66,6 +66,17 @@ export class NoteAssistant {
     this.#state = state;
   }
 
+  /** 预测闭环攒下的习惯：续写和补充建议各一份，别的动作没有。 */
+  #habits(action: NoteAssistRequest['action']): string {
+    if (this.#state === undefined) {
+      return '';
+    }
+    if (action === 'predict') {
+      return predictHabits(this.#state);
+    }
+    return action === 'interject' ? supplementHabits(this.#state) : '';
+  }
+
   /**
    * onText：要边生成边看的调用方给（笔记续写，2026-11-09 他定「第一个字出来就画灰字」）。只有续写交增量：开头和光标前
    * 重复的先去掉；送出的是最终文字的开头，结尾在返回的最终文字里收拾。其余动作照旧只给最终文字。
@@ -99,9 +110,7 @@ export class NoteAssistant {
     };
     const boundary = brief ? CURSOR_BOUNDARY : SCOPE_BOUNDARY[scope];
     // 预测闭环（11-13）：他以前收下 / 没要的，攒够了才写进来；没攒够是空串，提示照旧。
-    const habits = this.#state === undefined ? ''
-      : input.action === 'predict' ? predictHabits(this.#state)
-        : input.action === 'interject' ? supplementHabits(this.#state) : '';
+    const habits = this.#habits(input.action);
     const timeout = AbortSignal.timeout(noteAssistTimeoutMs(input));
     const requestSignal = AbortSignal.any([signal, timeout]);
     let answer;

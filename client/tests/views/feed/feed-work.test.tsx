@@ -105,7 +105,6 @@ describe('信息流工作链', () => {
     fireEvent.click(add);
     await screen.findByRole('listitem', { name: '学习方法' });
     const sources = await app.api.feed.sources();
-    const added = sources.interests.find((source) => source.label === '学习方法')!;
     expect(sources.interests.filter((source) => source.label === '学习方法')).toHaveLength(1);
     const recent = screen.getByRole('list', { name: '最近来源' });
     fireEvent.click(within(recent).getByRole('button', { name: '屏蔽' }));

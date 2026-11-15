@@ -7,7 +7,10 @@ import { call, cookieFrom, json, pair, startTestApp, type TestApp } from './help
 import { newDeviceKey, newRequestId, registerKey } from './signing.ts';
 
 let app: TestApp | undefined;
-afterEach(async () => { await app?.close(); app = undefined; });
+afterEach(async () => {
+  await app?.close();
+  app = undefined;
+});
 
 async function fixture() {
   const t = await startTestApp([], { startTasks: false });

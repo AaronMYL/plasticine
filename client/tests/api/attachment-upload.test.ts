@@ -20,10 +20,16 @@ it('真实上传路径报告已传输比例并响应取消，使用原JSON和同
     url = '';
     aborted = false;
     constructor() { calls.push(this); }
-    open(method: string, url: string) { this.method = method; this.url = url; }
+    open(method: string, url: string) {
+      this.method = method;
+      this.url = url;
+    }
     setRequestHeader(key: string, value: string) { this.headers.set(key, value); }
     send(body: unknown) { this.body = body; }
-    abort() { this.aborted = true; this.onabort?.(); }
+    abort() {
+      this.aborted = true;
+      this.onabort?.();
+    }
   }
   vi.stubGlobal('XMLHttpRequest', FakeXhr);
   const progress = vi.fn();

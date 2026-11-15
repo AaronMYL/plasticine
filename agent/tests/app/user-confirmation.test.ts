@@ -9,7 +9,10 @@ import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 import { newDeviceKey, newRequestId, registerKey } from './signing.ts';
 
 let app: TestApp | undefined;
-afterEach(async () => { await app?.close(); app = undefined; });
+afterEach(async () => {
+  await app?.close();
+  app = undefined;
+});
 
 const PATH = '/v2/tool-groups/inbox';
 
@@ -122,7 +125,10 @@ test('读取确认请求体期间登出，正文收完也不写入或保存成�
   const reply = Promise.withResolvers<number>();
   const slow = request(`${t.base}${PATH}`, { method: 'POST', headers: {
     cookie, 'content-type': 'application/json', 'content-length': Buffer.byteLength(text),
-  } }, (response) => { response.resume(); reply.resolve(response.statusCode ?? 0); });
+  } }, (response) => {
+    response.resume();
+    reply.resolve(response.statusCode ?? 0);
+  });
   slow.on('error', reply.reject);
   try {
     slow.write(text.slice(0, -1));

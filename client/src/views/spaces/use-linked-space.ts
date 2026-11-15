@@ -19,7 +19,10 @@ export function useLinkedSpace(spaceId: string | null) {
     void api.spaces.get(spaceId, controller.signal).then((space) => {
       if (!controller.signal.aborted) setValue(space);
     }, (cause: unknown) => {
-      if (!controller.signal.aborted) { setValue(null); setError(errorText(cause)); }
+      if (!controller.signal.aborted) {
+        setValue(null);
+        setError(errorText(cause));
+      }
     });
     return () => controller.abort();
   }, [api, spaceId, revision]);
@@ -29,7 +32,10 @@ export function useLinkedSpace(spaceId: string | null) {
       if (event.type === 'resync' || event.type === 'space.changed' && event.spaceId === spaceId) reload();
     });
     window.addEventListener('focus', reload);
-    return () => { stop(); window.removeEventListener('focus', reload); };
+    return () => {
+      stop();
+      window.removeEventListener('focus', reload);
+    };
   }, [live.hub, spaceId, reload]);
   return { value: value?.id === spaceId ? value : null, error, reload };
 }

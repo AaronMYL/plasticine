@@ -235,7 +235,8 @@ describe('service worker · 直连', () => {
     new Function('self', 'caches', 'fetch', source)(self, fakeCaches(), network);
     const fetchEvent = async (request: Request, clientId = page.id): Promise<Response | undefined> => {
       let responded: Promise<Response> | undefined;
-      listeners.get('fetch')?.({ request, clientId, respondWith: (promise: Promise<Response>) => { responded = promise; } });
+      listeners.get('fetch')?.({ request, clientId,
+        respondWith: (promise: Promise<Response>) => { responded = promise; } });
       return responded === undefined ? undefined : await responded;
     };
     return { fetchEvent, page, network };

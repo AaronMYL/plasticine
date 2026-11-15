@@ -9,7 +9,8 @@ import type { MemoryCleanup, MemoryCleanupItem, MemoryDoc, MemoryLine } from '..
 import type { TextModels } from '../../kernel/index.ts';
 import type { StateService } from '../../state/index.ts';
 import { askJson } from '../../books/index.ts';
-import { addLine, docEvent, mergeLines, retireLine, reviseLine, scopeOf, type Writer } from '../docs/memory-doc-writes.ts';
+import { addLine, docEvent, mergeLines, retireLine, reviseLine, scopeOf,
+  type Writer } from '../docs/memory-doc-writes.ts';
 import { findContradictions } from './memory-contradictions.ts';
 import { errorCategory, safeLog } from '../../util/index.ts';
 

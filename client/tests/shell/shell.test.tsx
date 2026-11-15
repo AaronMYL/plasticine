@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { RAIL_GROUPS, SECTIONS } from '../../src/shell/sections.ts';
 import { fakeScrollableLists, renderApp, sayInMain, setViewportWidth, settle, HOME_HEADING } from '../helpers.tsx';
 

@@ -30,9 +30,13 @@ export function useMateMentions({ lineId, draft, input, change }: { lineId: stri
   useDismiss({ open: shown, inside: [panel, input], onDismiss: () => setOpen(false) });
   const choose = (name: string): void => {
     const next = `${draft.slice(0, start)}@${name} ${draft.slice(caret)}`;
-    change(next); setOpen(false);
-    queueMicrotask(() => { input.current?.focus(); input.current?.setSelectionRange(start + name.length + 2,
-      start + name.length + 2); });
+    change(next);
+    setOpen(false);
+    queueMicrotask(() => {
+      input.current?.focus();
+      input.current?.setSelectionRange(start + name.length + 2,
+      start + name.length + 2);
+    });
   };
   const keyDown = (event: KeyboardEvent<HTMLTextAreaElement>): boolean => {
     if (!shown || event.nativeEvent.isComposing || event.keyCode === 229) return false;
@@ -43,12 +47,25 @@ export function useMateMentions({ lineId, draft, input, change }: { lineId: stri
     }
     if (event.key === 'Enter' || event.key === 'Tab') {
       const mate = matches[active];
-      if (mate !== undefined) { event.preventDefault(); choose(mate.name); return true; }
+      if (mate !== undefined) {
+        event.preventDefault();
+        choose(mate.name);
+        return true;
+      }
     }
-    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setOpen(false); return true; }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      return true;
+    }
     return false;
   };
-  return { update: (next) => { setCaret(next); setOpen(true); setSelected(0); }, keyDown,
+  return { update: (next) => {
+    setCaret(next);
+    setOpen(true);
+    setSelected(0);
+  }, keyDown,
     listId: shown ? id : undefined, selectedId: shown ? `${id}-${active}` : undefined,
     popup: !shown ? null : <div ref={panel} id={id} className="mate-mention-menu" role="listbox" aria-label="选择队友">
       {matches.map((mate, index) => <button key={mate.id} id={`${id}-${index}`} type="button" role="option"

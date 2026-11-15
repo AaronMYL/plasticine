@@ -29,7 +29,10 @@ export function restoreNotes(storage: KeyValueStorage | null, owner: string, now
   try {
     const raw = storage?.getItem(NOTE_CACHE_STORAGE_KEY);
     if (raw == null) { return empty; }
-    if (raw.length > NOTE_CACHE_MAX_CHARS) { clearStoredNotes(storage); return empty; }
+    if (raw.length > NOTE_CACHE_MAX_CHARS) {
+      clearStoredNotes(storage);
+      return empty;
+    }
     const value: unknown = JSON.parse(raw);
     if (!Value.Check(StoredSchema, value) || value.owner !== owner) {
       clearStoredNotes(storage);

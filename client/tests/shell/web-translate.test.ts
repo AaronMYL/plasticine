@@ -38,7 +38,10 @@ function setup(alwaysSites: string[] = []) {
   let runs = 0;
   const translator = new WebTranslator({ api, bridge, telemetry: new Telemetry((record) => records.push(record), true),
     ask: (quote) => asked.push(quote), schedule: (callback) => later.push(callback),
-    newRun: () => { runs += 1; return `run-${runs}`; } });
+    newRun: () => {
+      runs += 1;
+      return `run-${runs}`;
+    } });
   return { translator, calls, bridge, records, later, asked, settings: () => settings };
 }
 

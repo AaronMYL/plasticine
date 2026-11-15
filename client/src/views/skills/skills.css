@@ -3,7 +3,10 @@
 .settings-skills-link { margin-left: auto; }
 .skills-gap { flex: 1; }
 
-.skills-root { height: 100%; min-height: 0; }
+.skills-root {
+  height: 100%;
+  min-height: 0;
+}
 
 .skills-page,
 .skills-add,
@@ -48,7 +51,11 @@
   font-weight: 600;
 }
 
-.skills-kinds { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.skills-kinds {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow-x: auto;
+}
 .skills-search { flex: none; }
 
 .skill-cards,
@@ -78,7 +85,10 @@
 
 .skill-card:hover,
 .skill-card[aria-current='page'] { background: var(--tint); }
-.skill-card:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+.skill-card:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
 
 .skill-card-head {
   display: flex;
@@ -191,15 +201,33 @@
   line-height: var(--text-ui-line);
 }
 
-.skills-fold summary { width: fit-content; cursor: pointer; font-size: var(--text-caption); color: var(--fg2); }
-.skills-fold p { margin: var(--space-1) 0 0; font-size: var(--text-caption); line-height: var(--text-caption-line);
-  color: var(--fg2); overflow-wrap: anywhere; }
+.skills-fold summary {
+  width: fit-content;
+  cursor: pointer;
+  font-size: var(--text-caption);
+  color: var(--fg2);
+}
+.skills-fold p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+  overflow-wrap: anywhere;
+  }
 
-.skill-reader { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.skill-reader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
 .skill-reader .text-meta { overflow-wrap: anywhere; }
 .skill-method { min-width: 0; }
 .skill-method .markdown { overflow-wrap: anywhere; }
-.skill-method pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.skill-method pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 
 /* ---------- 添加 ---------- */
 
@@ -224,8 +252,15 @@
   gap: var(--space-2);
 }
 
-.store-cats .chip-button { padding: 0 var(--space-3); border-radius: var(--radius-lg); color: var(--fg2); }
-.store-cats .chip-button[aria-pressed='true'] { background: var(--tint); color: var(--fg); }
+.store-cats .chip-button {
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-lg);
+  color: var(--fg2);
+}
+.store-cats .chip-button[aria-pressed='true'] {
+  background: var(--tint);
+  color: var(--fg);
+}
 
 .store-grid {
   display: grid;
@@ -252,7 +287,10 @@
 
 .store-card:hover { background: var(--tint); }
 .store-card[aria-pressed='true'] { box-shadow: inset 0 0 0 2px var(--fg); }
-.store-card:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.store-card:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
 
 .store-card-title {
   font-size: var(--text-section);
@@ -283,7 +321,10 @@
 }
 
 @keyframes skills-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 }
 
 .skill-preview h3 {
@@ -320,7 +361,11 @@
 }
 
 .skills-from .primary-button { align-self: flex-start; }
-.skills-from-lead { margin: 0; font-size: var(--text-body); line-height: var(--text-body-line); }
+.skills-from-lead {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
 
 /* ---------- 新建 ---------- */
 
@@ -396,7 +441,10 @@ textarea.field-input.skills-said { min-height: 120px; }
 .skills-done-row:hover,
 .skills-done-row[aria-pressed='true'] { background: var(--tint); }
 .skills-done-row[aria-pressed='true'] { box-shadow: inset 0 0 0 1px var(--line2); }
-.skills-done-row > svg { flex: none; color: var(--fg2); }
+.skills-done-row > svg {
+  flex: none;
+  color: var(--fg2);
+}
 
 .skills-done-title {
   flex: 1;
@@ -448,7 +496,10 @@ textarea.field-input.skills-said { min-height: 120px; }
 }
 
 .skills-form > .skills-field { flex: none; }
-.skills-field-name { flex: none; width: 220px; }
+.skills-field-name {
+  flex: none;
+  width: 220px;
+}
 .skills-form > .skills-field-grow { flex: 1; }
 
 textarea.field-input.skills-body {
@@ -460,12 +511,20 @@ textarea.field-input.skills-body {
 
 /* 主区窄的时候（对话框开着占了右边一块）：目录、先看、说给 Plasticine 这几栏都收窄，卡片排一列。 */
 @container workspace (max-width: 860px) {
-  .skills-page > .skills-list { width: 280px; padding-inline: var(--space-2); }
+  .skills-page > .skills-list {
+    width: 280px;
+    padding-inline: var(--space-2);
+  }
   .skills-main > .skill-detail { padding: var(--space-5) var(--space-5) var(--space-7); }
   .skills-add-main { padding: var(--space-5) var(--space-4) var(--space-6); }
-  .skills-add > .skill-preview { width: 300px; padding: var(--space-5) var(--space-5) var(--space-6); }
-  .skills-new[data-single='false'] > .skills-new-ask { width: 300px;
-    padding: var(--space-5) var(--space-4) var(--space-6); }
+  .skills-add > .skill-preview {
+    width: 300px;
+    padding: var(--space-5) var(--space-5) var(--space-6);
+  }
+  .skills-new[data-single='false'] > .skills-new-ask {
+    width: 300px;
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
   .skills-new-form { padding: var(--space-5) var(--space-5) var(--space-6); }
   .skills-new[data-mode='write'] > .skills-new-form { padding-inline: var(--space-4); }
   .skills-form-pair { flex-direction: column; }
@@ -486,7 +545,10 @@ textarea.field-input.skills-body {
   animation: skills-in var(--motion-base) var(--ease-out);
 }
 .skills-new[data-single='true'] > .skills-new-ask { flex: 1; }
-.skills-new[data-single='true'] > .skills-new-ask > .skills-form { flex: 1 0 auto; min-height: 0; }
+.skills-new[data-single='true'] > .skills-new-ask > .skills-form {
+  flex: 1 0 auto;
+  min-height: 0;
+}
 .skills-new[data-single='true'] .skills-form-pair { flex-direction: column; }
 .skills-new[data-single='true'] .skills-field-name { width: auto; }
 
@@ -497,7 +559,10 @@ textarea.field-input.skills-body {
 .skills-new[data-phone='true'] > .skills-new-ask { padding: var(--space-3) var(--space-4) var(--space-6); }
 .skills-add[data-phone='true'] .store-grid { grid-template-columns: minmax(0, 1fr); }
 .skills-add[data-phone='true'] .store-card { min-height: 0; }
-.skills-new[data-phone='true'] .skills-tell-go { align-self: stretch; height: 44px; }
+.skills-new[data-phone='true'] .skills-tell-go {
+  align-self: stretch;
+  height: 44px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .skills-add > .skill-preview,

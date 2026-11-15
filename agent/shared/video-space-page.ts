@@ -86,9 +86,12 @@ export function renderVideoPage(work: VideoPageWork, timeZone = 'Asia/Shanghai')
     return `<p id="transcript-${index}">${time === null ? text(line)
       : `<time>${text(time.label)}</time>${text(time.content)}`}</p>`;
   }).join('');
+  // 概要是空的、或者就是标题，就不再写一遍
+  const plainLead = digest.summary.trim() === '' || digest.summary.trim() === videoTitle(work);
   return `<style>${CSS}</style><article class="vr"><header><div class="vr-meta"><b>`
-    + `${work.platform === 'douyin' ? '抖音收藏' : '视频总结'}</b>${metadata}</div><h1>${text(videoTitle(work))}</h1>${digest.summary.trim() === ''
-      || digest.summary.trim() === videoTitle(work) ? '' : `<p class="vr-lead">${text(digest.summary)}</p>`}</header>${frames === '' ? '' : `<div class="vr-frames">${frames}</div>`}`
+    + `${work.platform === 'douyin' ? '抖音收藏' : '视频总结'}</b>${metadata}</div><h1>${text(videoTitle(work))}</h1>`
+    + `${plainLead ? '' : `<p class="vr-lead">${text(digest.summary)}</p>`}</header>`
+    + `${frames === '' ? '' : `<div class="vr-frames">${frames}</div>`}`
     + `<div class="vr-cols"><section><h2>大纲</h2><ol class="vr-list">${outline}</ol></section>`
     + `<section><h2>核心观点</h2><ol class="vr-list">${points}</ol>${related}</section></div>`
     + `<details class="vr-transcript"><summary>逐字稿 `

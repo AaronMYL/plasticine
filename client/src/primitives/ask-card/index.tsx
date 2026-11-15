@@ -8,7 +8,6 @@ import { useState, type ReactNode } from 'react';
 import type { AskView } from '../../api/types.ts';
 import { ASK_BASIS_LABELS } from '../../api/shared.ts';
 import { OpLines, type OpView } from '../task-row/op-line.tsx';
-import { formatClock } from '../message/index.tsx';
 import { Icon, type IconName } from '../../shell/icons.tsx';
 import { AiMark } from '../../shell/glyph.tsx';
 import './styles.css';
@@ -45,7 +44,8 @@ const ASK_ICON: Readonly<Record<AskView['kind'], IconName>> = {
 
 export function AskTag({ ask }: { ask: Pick<AskView, 'kind' | 'kindLabel'> }): ReactNode {
   const urgent = ask.kind === 'act' || ask.kind === 'approve';
-  return <span className="ask-glyph" data-urgent={urgent} role="img" aria-label={ask.kindLabel} data-tip={ask.kindLabel}>
+  return <span className="ask-glyph" data-urgent={urgent} role="img" aria-label={ask.kindLabel}
+    data-tip={ask.kindLabel}>
     <Icon name={ASK_ICON[ask.kind]} size={14} />
   </span>;
 }

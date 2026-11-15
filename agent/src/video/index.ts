@@ -119,8 +119,14 @@ export function createVideo(options: VideoOptions) {
       worker.start();
       if (kit.transcriber() !== null) resume();
     },
-    stop: async () => { await kit.stop(); await worker.stop(); },
-    scans: [{ name: '视频解析', run: () => { backfill(); worker.kick(); } }],
+    stop: async () => {
+      await kit.stop();
+      await worker.stop();
+    },
+    scans: [{ name: '视频解析', run: () => {
+      backfill();
+      worker.kick();
+    } }],
   };
 }
 

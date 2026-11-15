@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { renderApp, memoryStorage } from '../../helpers.tsx';
+import { renderApp } from '../../helpers.tsx';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -17,7 +17,10 @@ it('图片选中立即显示本机缩略图，替换会取消旧上传并保持�
   let release = (): void => undefined;
   const gate = new Promise<void>((resolve) => { release = resolve; });
   vi.spyOn(app.api.attachments, 'upload').mockImplementation(async (input, data, signal) => {
-    if (input.name === '原图.png') { oldSignal = signal; await gate; }
+    if (input.name === '原图.png') {
+      oldSignal = signal;
+      await gate;
+    }
     return upload(input, data);
   });
   fireEvent.change(screen.getByLabelText('选择对话附件'), { target: { files: [
@@ -32,7 +35,10 @@ it('图片选中立即显示本机缩略图，替换会取消旧上传并保持�
   expect(oldSignal?.aborted).toBe(true);
   expect(app.state.attachments.active().map((row) => row.name)).toEqual(['新图.png', '笔记.txt']);
   expect(revoke).toHaveBeenCalledWith('blob:3');
-  await act(async () => { release(); await gate; });
+  await act(async () => {
+    release();
+    await gate;
+  });
   await waitFor(() => expect(app.state.attachments.ready()).toBe(true));
   expect(screen.queryByRole('img', { name: '预览 原图.png' })).toBeNull();
 });
@@ -53,7 +59,10 @@ it('上传进度使用传输回执，失败后用同一文件重试，不用重�
   });
   await waitFor(() => expect(screen.getByRole('progressbar', { name: '正在上传 草稿.txt' })
     .getAttribute('aria-valuenow')).toBe('40'));
-  await act(async () => { fail(); await gate.catch(() => undefined); });
+  await act(async () => {
+    fail();
+    await gate.catch(() => undefined);
+  });
   fireEvent.click(await screen.findByRole('button', { name: '重试上传 草稿.txt' }));
   await waitFor(() => expect(app.state.attachments.ready()).toBe(true));
   expect(send).toHaveBeenCalledTimes(2);
@@ -109,7 +118,10 @@ it('移除正在上传的附件立即消失，迟到结果不会恢复它或留�
   expect(screen.queryByText(/已移除的上传/)).toBeNull();
   expect(app.state.attachments.hasAny()).toBe(false);
   expect(screen.queryByRole('alert')).toBeNull();
-  await act(async () => { finish(); await gate; });
+  await act(async () => {
+    finish();
+    await gate;
+  });
   await waitFor(() => expect(app.state.actionOps.store.get()).toHaveLength(0));
   expect(app.state.attachments.hasAny()).toBe(false);
 });

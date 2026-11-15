@@ -1,5 +1,5 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { expect, it, vi } from 'vitest';
+import { screen, within } from '@testing-library/react';
+import { expect, it } from 'vitest';
 import { renderApp } from '../../helpers.tsx';
 
 it('精确记忆链接能读列表页外的整理前原话：只读显示原文和出处', async () => {

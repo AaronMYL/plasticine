@@ -26,7 +26,8 @@ function provider(id: string, name: string, oauth: string | null, models: FakeMo
 
 const PROVIDERS: readonly FakeProvider[] = [
   provider('openai', 'OpenAI', 'Sign in with ChatGPT', [model('gpt-5.5', 'GPT-5.5', 35),
-    model('gpt-5.5-mini', 'GPT-5.5 mini', 2.6), model('gpt-5.5-pro', 'GPT-5.5 Pro', 210), model('gpt-5.4', 'GPT-5.4', 17.5)]),
+    model('gpt-5.5-mini', 'GPT-5.5 mini', 2.6), model('gpt-5.5-pro', 'GPT-5.5 Pro', 210),
+      model('gpt-5.4', 'GPT-5.4', 17.5)]),
   provider('anthropic', 'Anthropic', 'Sign in with Claude', [model('claude-opus-5', 'Claude Opus 5', 30),
     model('claude-sonnet-5', 'Claude Sonnet 5', 12), model('claude-haiku-5', 'Claude Haiku 5', 0.6)]),
   provider('deepseek', 'DeepSeek', null, [model('deepseek-v4', 'DeepSeek V4', 5.3)]),

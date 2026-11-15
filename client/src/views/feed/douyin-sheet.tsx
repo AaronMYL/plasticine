@@ -94,8 +94,8 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
   const left = data === null ? 0 : data.total - works.length;
   const waitingMac = data !== null && !data.macOnline
     && (sync?.state === 'waiting_mac' || works.some((work) => work.run === 'waiting_mac'));
-  const syncLabel = sync?.state === 'waiting_mac' ? '等电脑上线' : sync?.state === 'running' ? '正在同步'
-    : sync?.lastAt == null ? '还没同步过' : `上次同步 ${dayText(sync.lastAt, timeZone) ?? ''}`;
+  const lastSync = sync?.lastAt == null ? '还没同步过' : `上次同步 ${dayText(sync.lastAt, timeZone) ?? ''}`;
+  const syncLabel = sync?.state === 'waiting_mac' ? '等电脑上线' : sync?.state === 'running' ? '正在同步' : lastSync;
   const folders = useMemo(() => data?.folders ?? [], [data]);
   return (
     <Sheet open={open} variant={phone ? 'drawer' : 'panel'} title="抖音收藏" onClose={onClose}

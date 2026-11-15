@@ -2,11 +2,10 @@
 // 建议是虚线框的小片）。「邀请朋友」11-13 去掉（入网早就不要邀请码了）；「通知记录」11-14 去掉（旧链接落到「通知」）。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { ApiError } from '../../../src/api/errors.ts';
+import { describe, expect, it } from 'vitest';
 import { seedContacts } from '../../../src/api/fake/contacts-seed.ts';
 import type { FakeApi } from '../../../src/api/fake/index.ts';
-import { NOW, renderApp, settle } from '../../helpers.tsx';
+import { NOW, renderApp } from '../../helpers.tsx';
 
 function seed(fake: FakeApi): void {
   const { contacts, toolGroups, network, visibility } = fake.control;

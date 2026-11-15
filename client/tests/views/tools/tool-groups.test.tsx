@@ -7,14 +7,10 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../../src/api/errors.ts';
 import type { FakeApi } from '../../../src/api/fake/index.ts';
-import { memoryStorage, renderApp, seedNote, settle } from '../../helpers.tsx';
+import { memoryStorage, renderApp, settle } from '../../helpers.tsx';
 import toolsCss from '../../../src/views/tools/tools.css?raw';
 
 afterEach(() => vi.useRealTimers());
-
-function main(): HTMLElement {
-  return screen.getByRole('main');
-}
 
 function openTool(name: string): HTMLElement {
   // 工具入口在网页栏目的开始页里（11-07 新标签页并进网页栏目）。
@@ -245,8 +241,6 @@ describe('工具开关', () => {
     expect(after?.enabled).toBe(!group.enabled);
   });
 });
-
-
 
 // 《置信度与做事方式改动方案》第二批「记账直接记」：截图直接入账以后，账本顶上一行这周的汇总；
 // 清掉已记账的原图是删除（硬线），先说清后果再删。

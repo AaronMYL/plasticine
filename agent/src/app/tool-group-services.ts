@@ -1,13 +1,13 @@
+// M5 乙路的服务装在一处：记账（life/）、云端工具（cloud-tools/）、文件页（artifacts/）、站内信（daily/inbox.ts）、通知信，
+// 以及它们给线的工具（按工具组开关，开关在 tool_groups，用户确认字段）和外环的定时扫描（收信）。
+// assemble.ts 只调这里的 createToolGroupServices，不碰各模块内部。
+
 import {
   attachmentText, createCloudBrowserActTool, createCloudBrowserObserveTool, createCloudBrowserOpenTool,
   createCloudBrowserReadTool, createCloudSshRunTool, createCloudTools, FaviconFetcher, LinkPreviewFetcher,
   MailImageFetcher, MailImageSigner, type CloudTools, type CloudTransports, type FaviconFetchOptions,
   type InternalBrowserCookie, type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
-// M5 乙路的服务装在一处：记账（life/）、云端工具（cloud-tools/）、文件页（artifacts/）、站内信（daily/inbox.ts）、通知信，
-// 以及它们给线的工具（按工具组开关，开关在 tool_groups，用户确认字段）和外环的定时扫描（收信）。
-// assemble.ts 只调这里的 createToolGroupServices，不碰各模块内部。
-
 import type { InboxMessage } from '../../shared/state.ts';
 import { createAttachmentTextTool, type Tool } from '../tools/index.ts';
 import { createListInboxTool, createReadInboxTool } from '../intake/index.ts';

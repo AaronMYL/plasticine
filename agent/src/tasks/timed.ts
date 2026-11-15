@@ -42,8 +42,9 @@ export function teammatesFromRows(rows: readonly TimedRowView[], look: (row: Tim
     const looks = members.map(look);
     const running = looks.find((item) => item.activity !== null);
     const glyphs = members.map((row) => row.last?.glyph ?? 'idle');
-    const glyph = running !== undefined ? 'run' : glyphs.includes('wait') ? 'wait' : glyphs.includes('err') ? 'err'
-      : members.every((row) => !row.enabled) ? 'pause' : 'idle';
+    const resting = members.every((row) => !row.enabled) ? 'pause' : 'idle';
+    const waiting = glyphs.includes('wait') ? 'wait' : glyphs.includes('err') ? 'err' : resting;
+    const glyph = running !== undefined ? 'run' : waiting;
     const latest = members.find((row) => row.last !== null)?.last?.text;
     return {
       id,

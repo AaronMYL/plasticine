@@ -1,6 +1,6 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { memoryStorage, renderApp } from '../../helpers.tsx';
+import { renderApp } from '../../helpers.tsx';
 
 async function openSettings(section: 'AI' | '通用' = 'AI') {
   fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));

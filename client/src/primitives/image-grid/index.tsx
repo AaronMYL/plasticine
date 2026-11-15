@@ -56,7 +56,8 @@ export function ImageGrid({ images, box, label }: { images: readonly GridImage[]
     const style: CSSProperties = ratio === null || ratio <= 0
       ? { maxWidth: `min(100%, ${box.width}px)`, maxHeight: box.height }
       : { width: `min(100%, ${box.width}px, ${Math.round(box.height / ratio)}px)`, aspectRatio: `1 / ${ratio}` };
-    return <div className="image-grid image-grid-one" aria-label={label} role={label === undefined ? undefined : 'group'}>
+    return <div className="image-grid image-grid-one" aria-label={label}
+      role={label === undefined ? undefined : 'group'}>
       <Cell image={first} index={0} total={1} more={0} cover={false} style={style} onOpen={() => open(0)} />
     </div>;
   }

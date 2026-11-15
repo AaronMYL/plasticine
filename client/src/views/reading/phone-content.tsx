@@ -6,13 +6,11 @@ import { quoteLimitMessage } from '../../api/shared.ts';
 import { errorText } from '../../api/errors.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useRememberedScroll } from '../../state/use-remembered-scroll.ts';
-import { useStore } from '../../state/use-store.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
-import { HOME, navLabel, parseHash, routeHash, type Route } from '../../shell/routes.ts';
+import { HOME, navLabel, routeHash, type Route } from '../../shell/routes.ts';
 import { useRoute } from '../../shell/use-route.ts';
 import { useNavHistory } from '../../shell/nav-history.ts';
-import { useOpenPanel } from '../../shell/panel.ts';
 import './phone-content.css';
 
 export interface PhoneContentProps {
@@ -28,14 +26,16 @@ export function PhoneContent({ route, children, quote = null, ready = true, onBa
   : ReactNode {
   const targetState = useClientState();
   const { shellPrefs } = targetState;
-  const openPanel = useOpenPanel();
   const history = useRoute();
   const nav = useNavHistory();
   const hash = routeHash(route);
   const scroll = useRememberedScroll<HTMLDivElement>(`phone-content:${hash}`, ready);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => { setMessage(null); setError(null); }, [hash]);
+  useEffect(() => {
+    setMessage(null);
+    setError(null);
+  }, [hash]);
   const back = (): void => {
     if (onBack !== undefined && nav.canBack) onBack();
     else if (history.canGoBack) history.goBack();
@@ -52,7 +52,10 @@ export function PhoneContent({ route, children, quote = null, ready = true, onBa
   const mention = (): void => {
     if (quote === null) return;
     const limit = quoteLimitMessage([...currentComposer(targetState).ui.store.get().quotes, quote]);
-    if (limit !== null) { setError(limit); return; }
+    if (limit !== null) {
+      setError(limit);
+      return;
+    }
     currentComposer(targetState).ui.addQuote(quote);
     shellPrefs.setPhoneChatOpen(true);
   };

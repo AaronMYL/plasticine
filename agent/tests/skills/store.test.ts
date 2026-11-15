@@ -9,7 +9,8 @@ let dir: Awaited<ReturnType<typeof tempDirectory>>;
 beforeEach(async () => { dir = await tempDirectory(); });
 afterEach(async () => { await dir.cleanup(); });
 const source = { actionId: 'write-1', runId: 'run-1', taskId: 'task-1' };
-const content = (body = '先读取现场，再运行诊断。') => `---\nname: diagnose\ndescription: >-\n  诊断服务器\n  并核实结果。\nmetadata:\n  author: Plasticine\n---\n# 诊断\n${body}\n`;
+const content = (body = '先读取现场，再运行诊断。') => '---\nname: diagnose\ndescription: >-\n  诊断服务器\n  并核实结果。\n'
+  + `metadata:\n  author: Plasticine\n---\n# 诊断\n${body}\n`;
 const store = () => new SkillStore({ stateDirectory: dir.directory, builtinDirectory: join(dir.directory, 'builtin') });
 
 test('标准 Agent Skills 目录只先给目录摘要，正文和引用按需加载', () => {
@@ -171,7 +172,8 @@ test('程序自己装进数据目录的技能（视频解析）算随应用的�
   writeFileSync(join(root, 'SKILL.md'), '---\nname: video-parse\ndescription: 解析视频\n---\n# 视频解析\n调工具。\n');
   const skills = new SkillStore({ stateDirectory: dir.directory, builtinDirectory: join(dir.directory, 'builtin'),
     shipped: ['video-parse'] });
-  assert.deepEqual(skills.search().skills.map((skill) => [skill.name, skill.source.kind]), [['video-parse', 'builtin']]);
+  assert.deepEqual(skills.search().skills.map((skill) => [skill.name, skill.source.kind]),
+    [['video-parse', 'builtin']]);
   assert.throws(() => skills.remove('video-parse'), (error: unknown) => error instanceof SkillRemoveError
     && error.reason === 'builtin');
   // 没登记成随程序装的，照旧是装上的、能删。

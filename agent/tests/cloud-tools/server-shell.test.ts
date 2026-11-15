@@ -30,7 +30,10 @@ test('Windows 用 PowerShell 跑写进动作目录的脚本文件，输出改成
 
 test('结束进程树：POSIX 杀整个进程组，进程已经没了不算错', () => {
   const killed: Array<[number, string]> = [];
-  killProcessTree(42, 'linux', { kill: (pid, signal) => { killed.push([pid, String(signal)]); return true; } });
+  killProcessTree(42, 'linux', { kill: (pid, signal) => {
+    killed.push([pid, String(signal)]);
+    return true;
+  } });
   assert.deepEqual(killed, [[-42, 'SIGKILL']]);
   const gone = Object.assign(new Error('no such process'), { code: 'ESRCH' });
   assert.doesNotThrow(() => killProcessTree(42, 'linux', { kill: () => { throw gone; } }));
@@ -40,7 +43,10 @@ test('结束进程树：POSIX 杀整个进程组，进程已经没了不算错',
 
 test('结束进程树：Windows 用 taskkill /T /F 连子进程一起结束', () => {
   const calls: string[][] = [];
-  killProcessTree(42, 'win32', { run: (command, args) => { calls.push([command, ...args]); return { status: 0 }; } });
+  killProcessTree(42, 'win32', { run: (command, args) => {
+    calls.push([command, ...args]);
+    return { status: 0 };
+  } });
   assert.deepEqual(calls, [['taskkill', '/pid', '42', '/T', '/F']]);
   // 128：进程已经结束，不算错。
   assert.doesNotThrow(() => killProcessTree(42, 'win32', { run: () => ({ status: 128 }) }));

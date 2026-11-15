@@ -88,9 +88,15 @@ export class LineKernel implements LineControl, SideControl {
             && (tool.lineKinds === undefined || tool.lineKinds.includes(scope.kind))).map((tool) => tool.create(scope)),
         meta: (name) => meta.get(name),
       }),
-      purpose: (line) => line.sealedPrompt !== null ? 'network_reply'
-        : line.mateId != null ? this.#state.mates.require(line.mateId).purpose ?? 'main'
-          : line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind),
+      purpose: (line) => {
+        if (line.sealedPrompt !== null) {
+          return 'network_reply';
+        }
+        if (line.mateId != null) {
+          return this.#state.mates.require(line.mateId).purpose ?? 'main';
+        }
+        return line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind);
+      },
       prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.(), this.#now()),
         productMap(this.#tools.filter((tool) => (tool.enabled?.() ?? true)
           && (tool.lineKinds === undefined || tool.lineKinds.includes(line.kind)))),

@@ -61,11 +61,15 @@ test('视频解析把大纲关键帧存成资产并关联空间，重试已总�
     works: t.state.videoWorks, tempRoot: dirname(t.path), now: () => 0, interests: () => [], askMac: () => undefined,
     transcribeLock: async <T>(run: () => Promise<T>) => run(),
     media: {
-      download: async () => { calls.download += 1; return 1; }, extractAudio: async () => 90,
+      download: async () => {
+        calls.download += 1;
+        return 1;
+      }, extractAudio: async () => 90,
       fetchText: async () => '', fetchImage: async () => ({ data: 'aW1hZ2U=', mimeType: 'image/png' }),
       readText: async () => '', webVideo: async () => { throw new Error('不走网页'); },
       extractFrame: async (_file: string, seconds: number) => {
-        calls.frames.push(seconds); return { data: 'ZnJhbWU=', mimeType: 'image/png' };
+        calls.frames.push(seconds);
+        return { data: 'ZnJhbWU=', mimeType: 'image/png' };
       },
     },
     transcriber: () => ({ name: 'fake', transcribe: async () => {

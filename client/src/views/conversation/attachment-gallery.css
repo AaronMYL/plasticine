@@ -1,29 +1,107 @@
 /* 图用 primitives/image-grid（整块最宽 320、一张最高 400）；文件一行一个，是一行卡（shell/cards.css，最宽 560）。 */
-.attachment-gallery { display: flex; flex-direction: column; gap: var(--space-2); width: 560px; max-width: 100%; }
+.attachment-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 560px;
+  max-width: 100%;
+}
 .attachment-gallery:not(:has(.attachment-file)) { width: 320px; }
-.attachment-pdf-compact { width: 100%; height: 100%; overflow: hidden; }
-.attachment-pdf-compact canvas { display: block; width: 100%; }
-.attachment-viewer { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none;
-  margin: 0; padding: 0; border: 0; background: var(--bg); color: var(--fg); }
-.attachment-viewer[open] { display: flex; flex-direction: column; }
+.attachment-pdf-compact {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.attachment-pdf-compact canvas {
+  display: block;
+  width: 100%;
+}
+.attachment-viewer {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bg);
+  color: var(--fg);
+  }
+.attachment-viewer[open] {
+  display: flex;
+  flex-direction: column;
+}
 .attachment-viewer::backdrop { background: var(--scrim); }
-.attachment-viewer-head { display: flex; align-items: center; gap: var(--space-3);
+.attachment-viewer-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--line); }
-.attachment-viewer-head > span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
-  white-space: nowrap; }
-.attachment-viewer-body { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 0;
-  padding: var(--space-4); overflow: auto; }
-.attachment-viewer-nav { display: flex; justify-content: center; align-items: center; gap: var(--space-4);
-  padding: var(--space-3); }
-.attachment-pdf-pages { align-self: stretch; display: flex; flex-direction: column; align-items: center;
-  width: min(1000px, 100%); gap: var(--space-3); } /* 例外：看图层，不是页面内容 */
-.attachment-pdf-pages canvas { display: block; max-width: 100%; }
-.attachment-pdf-pages nav { display: flex; align-items: center; justify-content: center; gap: var(--space-3);
-  padding: var(--space-3); }
-.attachment-text-preview { align-self: stretch; width: 100%; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere;
-  font: inherit; }
+  border-bottom: 1px solid var(--line);
+}
+.attachment-viewer-head > span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attachment-viewer-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: var(--space-4);
+  overflow: auto;
+  }
+.attachment-viewer-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3);
+}
+.attachment-pdf-pages {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(1000px, 100%);
+  gap: var(--space-3);
+  }
+  /* 例外：看图层，不是页面内容 */
+.attachment-pdf-pages canvas {
+  display: block;
+  max-width: 100%;
+}
+.attachment-pdf-pages nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+.attachment-text-preview {
+  align-self: stretch;
+  width: 100%;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+}
 
-.attachment-download { display: flex; flex-direction: column; align-items: flex-end; max-width: 180px; }
+.attachment-download {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 180px;
+}
 
-.attachment-download-error { font-size: var(--text-caption); line-height: var(--text-caption-line); color: var(--err); }
+.attachment-download-error {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--err);
+}

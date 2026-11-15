@@ -12,7 +12,10 @@ type OutboundState = Pick<StateService, 'outboundGrants' | 'outboundLog' | 'line
 export class OutboundAuthorizer {
   readonly #state: OutboundState;
   readonly #now: () => Date;
-  constructor(state: OutboundState, now: () => Date) { this.#state = state; this.#now = now; }
+  constructor(state: OutboundState, now: () => Date) {
+    this.#state = state;
+    this.#now = now;
+  }
 
   matches(grant: OutboundGrant, scope: OutboundContext, spec: OutboundSpec): boolean {
     if (!Value.Check(OutboundSpecSchema, spec) || grant.legacyScheduleId !== null || !grant.enabled

@@ -68,7 +68,8 @@ describe('抖音收藏的取数脚本', () => {
       if (path.includes('listcollection')) {
         return params['cursor'] === '0'
           ? { status_code: 0, aweme_list: [AWEME, NOTE], has_more: 1, cursor: '2' }
-          : { status_code: 0, aweme_list: [older, { ...AWEME, aweme_id: '7300000000000000010' }], has_more: 1, cursor: '4' };
+          : { status_code: 0, aweme_list: [older, { ...AWEME, aweme_id: '7300000000000000010' }], has_more: 1,
+            cursor: '4' };
       }
       return { status_code: 0, aweme_list: [AWEME], has_more: 0 };
     };

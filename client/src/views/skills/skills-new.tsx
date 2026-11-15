@@ -59,7 +59,9 @@ function Tell({ busy, said, onSaid, onDraft }: { busy: boolean; said: string; on
         </li>)}
       </ul>
       <button type="button" className="secondary-button skills-tell-go" disabled={busy || lineId === null}
-        onClick={() => { if (lineId !== null) { onDraft({ lineId, ...(said.trim() === '' ? {} : { said: said.trim() }) }); } }}>
+        onClick={() => {
+          if (lineId !== null) { onDraft({ lineId, ...(said.trim() === '' ? {} : { said: said.trim() }) }); }
+        }}>
         {busy && lineId !== null ? '正在整理…' : '把这件事的做法整理成技能'}</button>
     </>}
   </div>;
@@ -149,7 +151,10 @@ export function SkillsNew({ phone, single, navigate, onBack, onSaved }: SkillsNe
     api.skills.create({ requestId: createRequestId(), title, name: draft.name, description: draft.description.trim(),
       body: draft.body.trim() }).then((result) => {
       setSaving(false);
-      if (!tryIt) { onSaved(result.skill); return; }
+      if (!tryIt) {
+        onSaved(result.skill);
+        return;
+      }
       conversations.forLine(MAIN_LINE_ALIAS).ui.setDraft(`用「${title === '' ? draft.name : title}」这个技能试一次：`);
       navigate(mainLineRoute());
     }, (cause: unknown) => {

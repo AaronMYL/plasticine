@@ -3,7 +3,7 @@
 // 电脑上先只画主区；手机照稿子在标题下放分段控件。等你就是那几张要你定卡本身，在这里就地答。
 
 import { useState, type ReactNode } from 'react';
-import type { TasksBoardResponse, TeammateView, TimedRowView } from '../../api/shared.ts';
+import type { TasksBoardResponse, TimedRowView } from '../../api/shared.ts';
 import { PageHeader } from '../../shell/page-header.tsx';
 import { routeHash, TASKS_SECTIONS, type Route, type TasksSection } from '../../shell/routes.ts';
 import { LineAskCard } from '../asks/line-ask-card.tsx';

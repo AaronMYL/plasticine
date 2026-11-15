@@ -25,7 +25,10 @@ test('评论回复失败再遇通知失败，两份具体原因都留下，不�
     assert.equal(rows[1]?.status, 'failed');
     assert.match(rows[1]?.error ?? '', /模型请求额度已经用完/);
     assert.match(rows[1]?.error ?? '', /事件连接已经关闭/);
-  } finally { await service.stop(); state.close(); }
+  } finally {
+    await service.stop();
+    state.close();
+  }
 });
 
 test('连续评论逐条回复，各自上下文截止到当时那句，不把后发评论塞进前一条', async () => {
@@ -48,5 +51,9 @@ test('连续评论逐条回复，各自上下文截止到当时那句，不把�
     assert.deepEqual(inputs[1]?.previous.map((row) => row.text), ['一', '回复一']);
     assert.deepEqual(inputs[2]?.previous.map((row) => row.text), ['一', '回复一', '二', '回复二']);
     assert.equal(service.list(item.id).length, 6);
-  } finally { gate.resolve(); await service.stop(); state.close(); }
+  } finally {
+    gate.resolve();
+    await service.stop();
+    state.close();
+  }
 });

@@ -32,7 +32,8 @@ test('旧库从创建事件追溯原对话与消息，worker 子任务继承来�
     const before = db.all('SELECT id, title, status, version FROM tasks ORDER BY id');
     assert.deepEqual(migrate(db, MIGRATIONS, steppingClock()), ['0029-task-origins', '0030-task-workchain',
       '0031-note-folders', '0032-cognition-work', '0033-systems-work', '0034-feed-comments',
-      '0035-brief-disagreements', '0036-mail-fallback', '0037-books', '0038-projects', '0040-memory-docs', '0041-task-contracts',
+      '0035-brief-disagreements', '0036-mail-fallback', '0037-books', '0038-projects', '0040-memory-docs',
+        '0041-task-contracts',
       '0042-device-lanes',
       '0043-things', '0044-message-widgets', '0045-bookmarks', '0046-translations', '0047-contacts-network',
       '0048-own-notices', '0049-own-notice-twins',

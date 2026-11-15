@@ -45,8 +45,11 @@ export function FeedKindHead(props: FeedKindHeadProps): ReactNode {
   const chips = kindChips(group);
   const selected = chips.find((chip) => chip.segment === segment) ?? null;
   const own = selected?.row ?? null;
-  const add = own !== null ? undefined : group.kind === 'reddit' ? { label: '加版块…', onAdd: () => props.onAdd('reddit') }
-    : group.kind === 'rss' ? { label: '加博客…', onAdd: () => props.onAdd('url') } : undefined;
+  const adds: Partial<Record<typeof group.kind, { label: string; onAdd: () => void }>> = {
+    reddit: { label: '加版块…', onAdd: () => props.onAdd('reddit') },
+    rss: { label: '加博客…', onAdd: () => props.onAdd('url') },
+  };
+  const add = own !== null ? undefined : adds[group.kind];
   const name = own?.label ?? group.label;
   const menu = <SourceMenu rows={own === null ? group.rows : [own]} label={`「${name}」的设置`} name={name}
     className="feed-kind-more" {...(add === undefined ? {} : { add })} onSettings={props.onSettings}

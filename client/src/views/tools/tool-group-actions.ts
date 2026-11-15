@@ -17,7 +17,6 @@ import type {
 } from '../../api/shared.ts';
 import type { ActionOps, ActionRequest } from '../../state/action-ops.ts';
 import type { InlineDrafts } from '../../state/inline-drafts.ts';
-import { fromTimeInput } from '../../primitives/message/states.ts';
 import {
   BROWSER_ACT_OP_KEY,
   BROWSER_OPEN_OP_KEY,
@@ -295,7 +294,7 @@ export class ToolGroupActions {
   }
 
   private async sendMore(request: ActionRequest): Promise<void> {
-    const { api, stores, drafts } = this.deps;
+    const { api, stores } = this.deps;
     switch (request.kind) {
       case 'inbox_flags': {
         const { message, unread } = await api.inbox.setFlags(request.messageId, request.body);

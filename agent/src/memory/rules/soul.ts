@@ -3,7 +3,8 @@ import { SOUL_SECTIONS, type ChangeSoulRequest, type SoulChange, type SoulLine, 
 import { inferSoulSection } from '../../../shared/soul.ts';
 import { RULES_DOC_ID, RULES_DOC_TITLE, type MemoryLine } from '../../../shared/state.ts';
 import { StateError, type StateService } from '../../state/index.ts';
-import { addLine, docEvent, ensureRulesDoc, reviseLine, type DocState, type Writer } from '../docs/memory-doc-writes.ts';
+import { addLine, docEvent, ensureRulesDoc, reviseLine, type DocState,
+  type Writer } from '../docs/memory-doc-writes.ts';
 
 type SoulState = Pick<StateService, 'memoryDocs'>;
 const HISTORY_LIMIT = 100;

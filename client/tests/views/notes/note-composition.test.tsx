@@ -82,7 +82,10 @@ describe('组字闸门', () => {
     const current = await app.api.notes.get('n1');
     const saved = await app.api.notes.save('n1', { markdown: '别处写的新版本', version: current.version,
       requestId: 'remote-1' });
-    await act(async () => { app.state.notesCache.remember(saved); await Promise.resolve(); });
+    await act(async () => {
+      app.state.notesCache.remember(saved);
+      await Promise.resolve();
+    });
     expect(editor.getText()).toContain('原来的正文');
     act(() => { dom.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })); });
     await waitFor(() => expect(editor.getText()).toContain('别处写的新版本'));

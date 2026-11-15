@@ -80,7 +80,8 @@ function PhoneRow({ row, open, navigate }: RowProps): ReactNode {
   const timeZone = useTimeZone();
   const meta = row.askId !== null ? `${row.summary.split(' · ')[0]} · ${row.last?.text ?? ''}`
     : [row.nextAt === null ? null : `下次 ${nextText(row.nextAt, new Date(), timeZone)}`,
-      row.last === null ? null : `上次${/^[A-Za-z0-9]/.test(row.last.text) ? ' ' : ''}${row.last.text}`].filter((part) => part !== null).join(' · ');
+      row.last === null ? null : `上次${/^[A-Za-z0-9]/.test(row.last.text) ? ' ' : ''}${row.last.text}`]
+      .filter((part) => part !== null).join(' · ');
   return (
     <li>
       <button type="button" className="tasks-row tasks-phone-row" aria-label={`打开：${row.title}`}

@@ -164,7 +164,10 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
       : editor.state.selection.from === value.range.from && editor.state.selection.to === value.range.to);
   const adopt = (kind: SuggestionKind, item?: NoteSupplement): void => {
     const value = shownRef.current[kind];
-    if (value === null || !current(value)) { drop(kind); return; }
+    if (value === null || !current(value)) {
+      drop(kind);
+      return;
+    }
     if (kind === 'interject' && item === undefined) return;
     reports.current?.kept(kind, kind === 'predict' ? predictLoopId.current : item?.loopId);
     // 采用会改正文，另一条的位置随之作废，两条一起撤下。
@@ -247,7 +250,10 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     const stopTimers = (): void => {
       for (const kind of SUGGESTION_KINDS) {
         const timer = timers[kind];
-        if (timer !== null) { clearTimeout(timer); timers[kind] = null; }
+        if (timer !== null) {
+          clearTimeout(timer);
+          timers[kind] = null;
+        }
       }
     };
     const eligible = (): boolean => !disposed && !paused && !editor.isDestroyed && editor.isEditable
@@ -274,7 +280,10 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
         if (!mine() || live.current === null) { return; }
         latest.current.onError(null);
         const final = withFinal(live.current, view.markdown);
-        if (final === null || remaining(final) === '') { drop('predict'); return; }
+        if (final === null || remaining(final) === '') {
+          drop('predict');
+          return;
+        }
         live.current = final;
         predictLoopId.current = view.loopId;
         showPrediction();
@@ -363,7 +372,10 @@ export function NoteSuggestions({ editor, noteId, predict, interject, paused, on
     const endComposition = (): void => {
       const finish = (): void => {
         if (disposed || editor.isDestroyed) { return; }
-        if (noteComposing(editor)) { settled = setTimeout(finish, COMPOSITION_SETTLE_MS); return; }
+        if (noteComposing(editor)) {
+          settled = setTimeout(finish, COMPOSITION_SETTLE_MS);
+          return;
+        }
         settled = null;
         composing.current = false;
         flushSuggestionSpace(editor);

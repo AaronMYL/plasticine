@@ -45,7 +45,9 @@ it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', a
 });
 
 it('Plasticine 栏标题一直写「Plasticine」，技能和记忆在标题那一行右边（11-15 Aaron 弹框定，设计稿 23）', async () => {
-  await renderApp({ hash: '#/plasticine', setup: (fake) => { fake.control.mates.main = { ...fake.control.mates.main, name: '卷毛' }; } });
+  await renderApp({ hash: '#/plasticine', setup: (fake) => {
+    fake.control.mates.main = { ...fake.control.mates.main, name: '卷毛' };
+  } });
   const column = await screen.findByRole('complementary', { name: 'Plasticine' });
   const head = column.querySelector<HTMLElement>('.column-head');
   if (head === null) throw new Error('没有标题行');
@@ -94,7 +96,10 @@ it('创建队友发出后关闭表单，晚到回执不会把用户从当前页�
   const original = app.api.mates.create.bind(app.api.mates);
   let release: (() => void) | undefined;
   const waiting = new Promise<void>((resolve) => { release = resolve; });
-  vi.spyOn(app.api.mates, 'create').mockImplementation(async (body) => { await waiting; return original(body); });
+  vi.spyOn(app.api.mates, 'create').mockImplementation(async (body) => {
+    await waiting;
+    return original(body);
+  });
   fireEvent.click(await screen.findByRole('button', { name: '添加队友' }));
   const editor = screen.getByRole('dialog', { name: '创建队友' });
   fireEvent.change(within(editor).getByLabelText('名字'), { target: { value: '校稿队友' } });

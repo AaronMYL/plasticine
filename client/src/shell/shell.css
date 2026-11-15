@@ -193,10 +193,21 @@
   .phone-bar { transition: none; }
 }
 
-.content-located { outline: 2px solid var(--fg2); outline-offset: 4px;
-  animation: content-located var(--motion-base) var(--ease-out); }
-@keyframes content-located { from { background-color: var(--tint2); } }
-@media (prefers-reduced-motion: reduce) { .content-located { animation: none; } }
+.content-located {
+  outline: 2px solid var(--fg2);
+  outline-offset: 4px;
+  animation: content-located var(--motion-base) var(--ease-out);
+}
+@keyframes content-located {
+  from {
+    background-color: var(--tint2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .content-located {
+    animation: none;
+  }
+}
 
 /* 手机底栏「更多」上的点、抽屉（设计稿 Phone-More）：四格类别色图标块 + 名字，下面一行设置。 */
 .phone-tab-dot {

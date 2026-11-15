@@ -1,10 +1,10 @@
-import { SOUL_SECTIONS, SOUL_SECTION_LABELS } from '../../../shared/api/soul.ts';
-import { soulSectionOf } from '../rules/soul.ts';
 // 记忆文档进上下文（docs/specs/memory-docs.md 第 4 节；《优化清单》第 16 条 11-06 改）：每轮固定只读总目录、「关于你」、
 // 「怎么替你做事」、当前项目的档案，加上白天的「今天的记录」；其余由模型按目录用 read_memory_doc 挑着读。
 // 总目录由代码生成，不让模型写：每篇一行（名字 + 开头那句简介），按类型分组。每次请求都从库里重读。
 // 搜索默认只搜现行；问「以前怎么定的」时带上归档。
 
+import { SOUL_SECTIONS, SOUL_SECTION_LABELS } from '../../../shared/api/soul.ts';
+import { soulSectionOf } from '../rules/soul.ts';
 import { hardLinesForModel } from '../../../shared/rules-doc.ts';
 import { RULES_DOC_ID, YOU_DOC_ID, type MemoryDoc, type MemoryDocKind, type MemoryJournalKind,
   type MemoryLine } from '../../../shared/state.ts';

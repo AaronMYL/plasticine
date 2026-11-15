@@ -1,12 +1,12 @@
+// 文件（工具组的一项，《UI 方案》第 9 节）：状态目录里的工作目录。一层一层点进去；文件可以下载、上传（按类型和大小收，
+// 服务端再核）、新建文件夹；改名 / 移动、删除都要打一遍现在的名字（删除进回收，回收里能还原）。确认那一句和新名字存在
+// inline-drafts。读失败说原因并给「再读一次」。
+
 import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
 import { useBulkSelection } from '../bulk/use-bulk-selection.ts';
 import { libraryBatch } from '../bulk/bulk-api.ts';
 import { libraryChanged } from '../library/library-signal.ts';
 import { useLibraryTrash } from '../../shell/columns/library-subscriptions.tsx';
-// 文件（工具组的一项，《UI 方案》第 9 节）：状态目录里的工作目录。一层一层点进去；文件可以下载、上传（按类型和大小收，
-// 服务端再核）、新建文件夹；改名 / 移动、删除都要打一遍现在的名字（删除进回收，回收里能还原）。确认那一句和新名字存在
-// inline-drafts。读失败说原因并给「再读一次」。
-
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import type { FileEntryView } from '../../api/shared.ts';
@@ -92,7 +92,11 @@ function Trash(): ReactNode {
   const { toolGroups } = useLive();
   const { trash, error } = useLibraryTrash();
   const entries = (trash?.items ?? []).filter((item) => item.kind === 'file' || item.kind === 'folder');
-  const changed = (): void => { libraryChanged(); void toolGroups.files.reset(); void toolGroups.trash.reload(); };
+  const changed = (): void => {
+    libraryChanged();
+    void toolGroups.files.reset();
+    void toolGroups.trash.reload();
+  };
   const selection = useBulkSelection({ items: entries, run: (input) => libraryBatch(api.library, input),
     onChanged: changed });
   return <section className="block" aria-label="回收">
@@ -140,7 +144,11 @@ export function FilesView(): ReactNode {
   const bulkItems = (listing?.entries ?? []).map((entry) => ({
     kind: entry.kind === 'directory' ? 'folder' as const : 'file' as const, id: entry.path, title: entry.name }));
   const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
-    scope: folder, onChanged: () => { void toolGroups.files.reset(); void toolGroups.trash.reload(); libraryChanged(); } });
+    scope: folder, onChanged: () => {
+      void toolGroups.files.reset();
+      void toolGroups.trash.reload();
+      libraryChanged();
+    } });
   return (
     <div className="tool">
       <PendingOps
@@ -150,7 +158,10 @@ export function FilesView(): ReactNode {
         onRetry={(key) => void toolGroupActions.retry(key)}
       />
       <div className="tool-bar">
-        <form className="file-path-form" onSubmit={(event) => { event.preventDefault(); go(pathDraft.trim()); }}>
+        <form className="file-path-form" onSubmit={(event) => {
+          event.preventDefault();
+          go(pathDraft.trim());
+        }}>
           <input className="field-input" aria-label="文件路径" placeholder="工作目录或服务器绝对路径" value={pathDraft}
             onChange={(event) => setPathDraft(event.target.value)} />
           <button type="submit" className="text-button">前往</button>
@@ -171,7 +182,10 @@ export function FilesView(): ReactNode {
             event.target.value = '';
             setTooBig(null);
             void (async () => { for (const file of selected) {
-              if (file.size > UPLOAD_MAX_BYTES) { setTooBig(`「${file.name}」超过 20 MB，没有传。`); continue; }
+              if (file.size > UPLOAD_MAX_BYTES) {
+                setTooBig(`「${file.name}」超过 20 MB，没有传。`);
+                continue;
+              }
               await toolGroupActions.upload(folder, file);
             } })();
           }}
@@ -226,7 +240,8 @@ export function FilesView(): ReactNode {
           <li key={entry.path} className="tool-row file-row" aria-label={entry.name} data-bulk={selection.active}
             onClickCapture={(event) => {
               if (selection.active && !(event.target instanceof HTMLInputElement)) {
-                event.preventDefault(); event.stopPropagation();
+                event.preventDefault();
+                event.stopPropagation();
                 selection.toggle({ kind: entry.kind === 'directory' ? 'folder' : 'file',
                   id: entry.path, title: entry.name }, event.shiftKey);
               }

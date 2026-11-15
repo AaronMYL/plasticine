@@ -5,7 +5,8 @@ import { useRef, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, t
 import { Icon } from '../../shell/icons.tsx';
 import './styles.css';
 
-type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange' | 'className' | 'aria-label'>;
+type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'value' | 'onChange' | 'className' | 'aria-label'>;
 
 export interface SearchFieldProps extends InputProps {
   /** 读屏名字；不另给 placeholder 时也是框里的提示字。 */

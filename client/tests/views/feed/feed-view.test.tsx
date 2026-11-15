@@ -59,7 +59,8 @@ function seed(fake: FakeApi): void {
     url: 'https://x.com/linjian_dev/status/1', summary: '把记忆拆成两栏以后\n纠错次数降了一半。',
     author: { name: '林间', handle: 'linjian_dev', avatar: '/v2/mail-image?u=a&e=1&s=b' },
     image: { src: '/v2/mail-image?u=p1&e=1&s=q', ratio: 1 },
-    moreImages: [{ src: '/v2/mail-image?u=p2&e=1&s=q', ratio: 1 }, { src: '/v2/mail-image?u=p3&e=1&s=q', ratio: null }] });
+    moreImages: [{ src: '/v2/mail-image?u=p2&e=1&s=q', ratio: 1 },
+      { src: '/v2/mail-image?u=p3&e=1&s=q', ratio: null }] });
   feed.seedItem({ id: 'f_blog', title: '本地优先软件的同步难题', sourceId: 'src_blog', origin: 'feed',
     site: 'blog.example.org', url: 'https://blog.example.org/p/1', summary: '联网之后该听谁的？', arrivedAt: ago(2),
     image: { src: '/v2/mail-image?u=c&e=1&s=d', ratio: 0.5 } });

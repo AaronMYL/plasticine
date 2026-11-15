@@ -28,7 +28,11 @@ async function start(t: TestContext, script: TextStep[]): Promise<{ app: TestApp
   const app = await startTestApp(script, { startTasks: false });
   let vite: ViteDevServer | undefined;
   let browser: LocalBrowser | undefined;
-  t.after(async () => { await browser?.close(); await vite?.close(); await app.close(); });
+  t.after(async () => {
+    await browser?.close();
+    await vite?.close();
+    await app.close();
+  });
   vite = await createServer({ root: fileURLToPath(new URL('..', import.meta.url)), logLevel: 'error',
     cacheDir: join(app.directory, 'vite-cache'),
     server: { hmr: false, host: '127.0.0.1', port: 0, proxy: { '/v2': { target: app.base } } } });
@@ -92,7 +96,8 @@ async function key(page: Cdp, name: 'Tab' | 'Escape', code: number): Promise<voi
 
 test('键入、粘贴、复制 Markdown：中文里的记号照样转换，转换能撤销重做，存下来的不带实体', async (t) => {
   const { app, page } = await start(t, Array.from({ length: 60 }, () => ''));
-  await page.evaluate(`localStorage.setItem('plasticine.notes-ui', JSON.stringify({ predict: false, interject: false }))`);
+  const quiet = JSON.stringify({ predict: false, interject: false });
+  await page.evaluate(`localStorage.setItem('plasticine.notes-ui', ${JSON.stringify(quiet)})`);
 
   await open(page, app, '');
   await typeKeys(page, '这是**加粗**的字');
@@ -194,7 +199,8 @@ for (const [where, position] of [['文字中间', 9], ['段尾', 18]] as const) 
     await page.evaluate(`(() => { window.ends = []; window.odd = 0;
       ${EDITOR}.view.dom.addEventListener('compositionend', (event) => window.ends.push(event.data));
       ${EDITOR}.on('transaction', ({ transaction }) => {
-        if (${EDITOR}.view.composing && !transaction.docChanged && !transaction.selectionSet) window.odd += 1; }); })(); 0`);
+        if (${EDITOR}.view.composing && !transaction.docChanged && !transaction.selectionSet) window.odd += 1;
+      }); })(); 0`);
     await page.evaluate(`${EDITOR}.chain().focus().setTextSelection(${position}).run()`);
     await pause(250);
     for (const text of ['n', 'ni', 'nih', 'niha', 'nihao', 'niha', 'nih', 'niha', 'nihao']) {

@@ -111,7 +111,8 @@ function FromFiles({ busy, onLook, onError }: { busy: boolean;
       onError(`一个技能最多 ${SKILL_UPLOAD_MAX_FILES} 个文件，这里有 ${picked.length} 个。`);
       return;
     }
-    Promise.all(picked.map(async (file) => ({ path: file.webkitRelativePath === '' ? file.name : file.webkitRelativePath,
+    Promise.all(picked.map(async (file) => ({
+      path: file.webkitRelativePath === '' ? file.name : file.webkitRelativePath,
       content: await file.text() }))).then(onLook, () => onError('文件没读出来，再挑一次。'));
   };
   return <div className="skills-from">
@@ -164,7 +165,10 @@ export function SkillsAdd({ phone, single, onBack, onSaved, onChanged, onOpen }:
     preview={shown.preview} badge={shown.entry === undefined ? undefined : SOURCES[shown.entry.source]}
     updatedAt={shown.entry?.updatedAt} onOpen={tab === 'store' ? onOpen : undefined}
     onInstalled={(skill) => {
-      if (tab !== 'store') { onSaved(skill); return; }
+      if (tab !== 'store') {
+        onSaved(skill);
+        return;
+      }
       onChanged();
       setTurn((value) => value + 1);
     }} />;

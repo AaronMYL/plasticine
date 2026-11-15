@@ -49,7 +49,10 @@ export function NodeDevices(): ReactNode {
       {confirm === null ? null : (
         <ConfirmDialog title={`撤销「${confirm.name}」？`} body="撤销后这台电脑不再替你做设备上的事。"
           confirmLabel="撤销" busy={busy} error={error} onConfirm={() => revoke(confirm)}
-          onCancel={() => { setConfirm(null); setError(null); }} />
+          onCancel={() => {
+            setConfirm(null);
+            setError(null);
+          }} />
       )}
       {error === null || confirm !== null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
     </section>

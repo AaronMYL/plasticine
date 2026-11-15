@@ -27,7 +27,10 @@ export function useNoteList(query: string, collection: NoteCollection): {
     let release: (() => void) | undefined;
     const timer = setTimeout(() => { release = notesCache.observeList(api.notes, search); },
       query.trim() === '' ? 0 : SEARCH_DEBOUNCE_MS);
-    return () => { clearTimeout(timer); release?.(); };
+    return () => {
+      clearTimeout(timer);
+      release?.();
+    };
   }, [api, notesCache, search, query]);
   const retry = (): void => { void notesCache.loadList(api.notes, search, true); };
   return { notes: value.notes, error: value.error, retry };

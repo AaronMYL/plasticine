@@ -62,7 +62,8 @@ export const NoteCompositionGuard = Extension.create({
 
 /** 不改正文、不改选区、不改待用格式、不滚动，也没带任何标记的事务。 */
 export function emptyTransaction(transaction: Transaction): boolean {
-  if (transaction.docChanged || transaction.selectionSet || transaction.storedMarksSet || transaction.scrolledIntoView) {
+  if (transaction.docChanged || transaction.selectionSet || transaction.storedMarksSet
+    || transaction.scrolledIntoView) {
     return false;
   }
   const meta: unknown = Reflect.get(transaction, 'meta');

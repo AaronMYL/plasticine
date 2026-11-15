@@ -1,6 +1,5 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { SearchResponse } from '../../../src/api/shared.ts';
 import { parseHash, phoneRoute, routeHash } from '../../../src/shell/routes.ts';
 import { PHONE_TABS } from '../../../src/shell/sections.ts';
 import { renderApp } from '../../helpers.tsx';

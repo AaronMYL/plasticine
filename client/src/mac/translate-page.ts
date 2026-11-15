@@ -480,7 +480,10 @@ export function installPageTranslator(host: TranslatorHost): PageTranslator {
         mutations = new view.MutationObserver((records) => {
           cancelSettle?.();
           const pending = [...records];
-          cancelSettle = host.schedule(() => { cancelSettle = null; settle(pending); }, MUTATION_SETTLE_MS);
+          cancelSettle = host.schedule(() => {
+            cancelSettle = null;
+            settle(pending);
+          }, MUTATION_SETTLE_MS);
         });
         mutations.observe(body, { childList: true, subtree: true, characterData: true });
       }

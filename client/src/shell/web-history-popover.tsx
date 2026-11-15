@@ -69,7 +69,8 @@ export function WebHistoryPopover(props: WebHistoryPopoverProps): ReactNode {
                     <SiteIcon url={visit.url} title={visit.title} />
                     <span className="web-pop-text">
                       <span className="web-pop-title">{visit.title === '' ? visit.url : visit.title}</span>
-                      {visit.title === '' ? null : <span className="web-pop-host">{hostOf(visit.url) || visit.url}</span>}
+                      {visit.title === '' ? null
+                        : <span className="web-pop-host">{hostOf(visit.url) || visit.url}</span>}
                     </span>
                     <time className="web-pop-meta" dateTime={visit.at}>{clock(new Date(visit.at))}</time>
                   </button>

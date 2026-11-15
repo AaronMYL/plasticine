@@ -53,7 +53,8 @@ export function demoWebTabsLayout(now: Date): WebTabsLayout {
 }
 
 function svg(body: string): string {
-  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${body}</svg>`)}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${body}</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 /** 演示用的网站图标（示意，不是各家真的图标）：有的有底色，有的是透明底（深色模式下要看得见）。 */

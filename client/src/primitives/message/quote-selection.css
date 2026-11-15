@@ -49,19 +49,48 @@
     display var(--motion-fast) allow-discrete;
 }
 .quote-action[data-fixed='true'] { position: fixed; }
-.quote-action[hidden] { display: none; opacity: 0; transform: translateY(3px); }
+.quote-action[hidden] {
+  display: none;
+  opacity: 0;
+  transform: translateY(3px);
+}
 /* 选中后的小条全站一个外壳（11-12 第 1 条）：浮层底、--lift、圆角 10、内边 4，按钮高 28、圆角 6、悬停 --tint2；
    笔记（note-ai.css）和图书（reader-popovers.css）照同一套。 */
 .quote-action button {
-  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
-  min-height: 28px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius);
-  background: transparent; color: inherit; font-size: var(--text-ui); line-height: var(--text-ui-line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
     white-space: nowrap;
 }
 .quote-action button svg { color: var(--fg2); }
 .quote-action button:hover { background: var(--tint2); }
-.quote-action [role='alert'] { padding: 0 var(--space-3) var(--space-2); font-size: var(--text-caption);
-  line-height: var(--text-caption-line); }
-@starting-style { .quote-action:not([hidden]) { opacity: 0; transform: translateY(3px); } }
-@media (prefers-reduced-motion: reduce) { .quote-action { transform: none; } }
-.quote-action-row { display: flex; align-items: center; gap: var(--space-hair); }
+.quote-action [role='alert'] {
+  padding: 0 var(--space-3) var(--space-2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+@starting-style {
+  .quote-action:not([hidden]) {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quote-action {
+    transform: none;
+  }
+}
+.quote-action-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-hair);
+}

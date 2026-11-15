@@ -81,10 +81,21 @@
   margin: 0;
 }
 
-.feed-chart svg { display: block; overflow: visible; }
-.feed-chart-line { fill: none; stroke: var(--card-hue); stroke-width: 2; stroke-linejoin: round; }
+.feed-chart svg {
+  display: block;
+  overflow: visible;
+}
+.feed-chart-line {
+  fill: none;
+  stroke: var(--card-hue);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
 .feed-chart-bar { fill: var(--card-hue); }
-.feed-chart-axis { stroke: var(--line2); stroke-width: 1; }
+.feed-chart-axis {
+  stroke: var(--line2);
+  stroke-width: 1;
+}
 
 .feed-chart-caption {
   font-size: var(--text-caption);

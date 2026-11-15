@@ -112,7 +112,8 @@ test('界面填的四样拼成 SKILL.md，再读得回名字；脚本的认法',
 });
 
 test('草稿：从模型回的话里抠出 JSON，短名不合规就修；缺方法的不要', () => {
-  const draft = parseDraft('```json\n{"title":"会议纪要","name":"Meeting Notes","description":"收到转写时","body":"1. 通读。"}\n```');
+  const draft = parseDraft('```json\n{"title":"会议纪要","name":"Meeting Notes","description":"收到转写时",'
+    + '"body":"1. 通读。"}\n```');
   assert.deepEqual(draft, { title: '会议纪要', name: 'meeting-notes', description: '收到转写时', body: '1. 通读。' });
   assert.equal(parseDraft('{"title":"周报","name":"周报","description":"每周五","body":"1. 列。"}').name, '');
   assert.throws(() => parseDraft('写不出来'), /没写成/);

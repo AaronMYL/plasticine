@@ -40,7 +40,8 @@ export function MoneyEditor({ entry, ledger, onClose }: {
       amountCents: amount, kind: fields.kind as MoneyEntryView['kind'], categoryId: fields.category || null,
       accountId: fields.account || null, toAccountId: fields.kind === 'transfer' ? fields.toAccount || null : null,
       merchant: fields.merchant || null, note: fields.note || null, occurredAt: at, review: false })) {
-      editDrafts.clear(key); onClose();
+      editDrafts.clear(key);
+      onClose();
     }
   };
   return <div className="inline-edit" aria-label="编辑这笔账">

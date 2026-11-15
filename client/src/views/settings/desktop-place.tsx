@@ -117,7 +117,8 @@ export function DesktopPlace({ shell, status, onStatus }: { shell: DesktopShell;
           <PlaceCard mode="remote" title="远程" detail={hostOf(status.choice.remoteUrl)} icon="cloud"
             selected={shown === 'remote'} disabled={busy} line={liveLine(status, 'remote')}
             onSelect={() => select('remote')}>
-            {needsAddress ? <input className="field desktop-place-address" type="text" inputMode="url" autoComplete="url"
+            {needsAddress ? <input className="field desktop-place-address" type="text" inputMode="url"
+              autoComplete="url"
               aria-label="远程地址" placeholder="https://you.cyberhunter.top" value={address}
               onChange={(event) => setAddress(event.target.value)} /> : null}
           </PlaceCard>

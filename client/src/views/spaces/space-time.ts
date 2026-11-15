@@ -2,15 +2,6 @@
 // 一律按本机时区。
 
 import type { SpaceGenre } from '../../api/shared.ts';
-import { timeInput } from '../../primitives/message/states.ts';
-import { deviceTimeZone } from '../../state/time-zone.ts';
-
-const DAY_MS = 86_400_000;
-
-function parts(iso: string, timeZone: string): { day: string; time: string } {
-  const local = timeInput(iso, timeZone);
-  return { day: local.slice(0, 10), time: local.slice(11) };
-}
 
 /** 体裁的名字（卡片下面那一行）；旧版式按报告算。 */
 export function genreLabel(genre: SpaceGenre | null): string {

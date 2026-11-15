@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { Editor } from '@tiptap/core';
 import { describe, expect, it, vi } from 'vitest';
 import { renderApp, seedNote, settle } from '../../helpers.tsx';
-import { aiOn, toggleAi } from './ai-switch.ts';
+import { toggleAi } from './ai-switch.ts';
 
 async function noteEditor(): Promise<Editor> {
   return waitFor(() => {

@@ -26,7 +26,10 @@ function runner(t: { after(fn: () => void): void }, options: { tabs?: TabActionP
   const asked: string[] = [];
   const tabs: TabActionPort = options.tabs ?? { available: () => true, run: async () => ({ tabs: [], viewing: null }) };
   const run = new DeviceActionRunner({ helper, tabs, guard: new DeviceGuard(), paths: realPathSystem('linux', dir),
-    localRoots: () => [dir], confirm: async (message) => { asked.push(message); return options.confirm ?? false; },
+    localRoots: () => [dir], confirm: async (message) => {
+      asked.push(message);
+      return options.confirm ?? false;
+    },
     openExternal: async () => undefined, trash: async (path) => { rmSync(path); },
     readUrl: async () => ({ text: '', truncated: false }),
     now: () => new Date('2026-11-08T00:00:00.000Z'), log: () => undefined });

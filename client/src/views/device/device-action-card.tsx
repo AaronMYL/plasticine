@@ -21,7 +21,10 @@ export function DeviceActionCard({ ask }: { ask: AskView }): ReactNode {
     drafts={{ answer: drafts.get(answerKey) ?? '', ask: drafts.get(askKey) ?? '' }}
     onDraft={(slot, text) => inlineDrafts.set(slot === 'answer' ? answerKey : askKey, text)}
     onOption={(optionId) => {
-      if (ask.requiresSignature && optionId !== 'adopt') { void live.asks.answer(ask, { optionId }); return; }
+      if (ask.requiresSignature && optionId !== 'adopt') {
+        void live.asks.answer(ask, { optionId });
+        return;
+      }
       void live.signer.send(key, ask.requiresSignature ? '确认这项选择' : '逐次授权设备动作', ask.question,
         { kind: 'device_action_answer', askId: ask.id }, (requestId) => ({ requestId, optionId }));
     }}

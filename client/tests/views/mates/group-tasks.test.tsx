@@ -90,7 +90,10 @@ it('领取后 SSE 未到，任务 GET 的新状态也同步更新聊天和分工
   const next: LineView = { ...line, mateId: app.first.id, status: 'queued',
     updatedAt: new Date(Date.parse(line.updatedAt) + 1_000).toISOString() };
   let claimed = false;
-  vi.spyOn(app.api.mates, 'handoff').mockImplementation(async () => { claimed = true; return { line: next }; });
+  vi.spyOn(app.api.mates, 'handoff').mockImplementation(async () => {
+    claimed = true;
+    return { line: next };
+  });
   vi.spyOn(app.api.mateGroups, 'listTasks').mockImplementation(async () => ({ lines: [claimed ? next : line] }));
   const panel = screen.getByRole('complementary', { name: '群组分工' });
   fireEvent.click(within(panel).getByRole('button', { name: '选择领取队友' }));

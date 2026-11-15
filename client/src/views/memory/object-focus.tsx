@@ -22,7 +22,10 @@ export function ObjectFocus({ id, type, readOnly = false, onQuote }: { id: strin
   }, [api, id, type]);
   const { value, error, reload } = useRead(read);
   useEffect(() => {
-    if (value === null) { onQuote?.(null); return; }
+    if (value === null) {
+      onQuote?.(null);
+      return;
+    }
     const item = value.kind === 'memory' ? value.detail.entry : value.detail.agreement;
     const label = value.kind === 'agreement' ? value.detail.agreement.title ?? '这条约定' : '来源原话';
     const route: Route = { view: 'memory', noteId: null, objectId: id,

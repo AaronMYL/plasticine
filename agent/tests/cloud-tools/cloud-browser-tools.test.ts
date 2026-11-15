@@ -15,7 +15,10 @@ import { toolContext } from '../tools/helpers.ts';
 test('先观察截图与元素再操作：观察带图、页面是外部资料，点击发到同一个标签', async (t) => {
   const fake = await fakeCdp();
   const browser = new CloudBrowser({ transport: new CdpBrowser({ endpoint: fake.endpoint }), now: () => new Date() });
-  t.after(async () => { browser.close(); await fake.close(); });
+  t.after(async () => {
+    browser.close();
+    await fake.close();
+  });
   const signal = AbortSignal.timeout(3_000);
   await createCloudBrowserOpenTool(browser).execute({ url: 'https://example.test/work' },
     toolContext('c1', { signal }));
@@ -35,7 +38,10 @@ test('先观察截图与元素再操作：观察带图、页面是外部资料�
 test('工具组关掉就不提供；打开、读页面走真实 CDP，操作不用逐次批准', async (t) => {
   const fake = await fakeCdp();
   const browser = new CloudBrowser({ transport: new CdpBrowser({ endpoint: fake.endpoint }), now: () => new Date() });
-  t.after(async () => { browser.close(); await fake.close(); });
+  t.after(async () => {
+    browser.close();
+    await fake.close();
+  });
   const tools = [createCloudBrowserOpenTool(browser), createCloudBrowserReadTool(browser),
     createCloudBrowserActTool(browser)];
   const registry = new ToolRegistry();
@@ -56,7 +62,10 @@ test('工具组关掉就不提供；打开、读页面走真实 CDP，操作不�
 test('脑的一步被用户接手时报错写明「用户接手了」，不当成做完了', async (t) => {
   const fake = await fakeCdp();
   const browser = new CloudBrowser({ transport: new CdpBrowser({ endpoint: fake.endpoint }), now: () => new Date() });
-  t.after(async () => { browser.close(); await fake.close(); });
+  t.after(async () => {
+    browser.close();
+    await fake.close();
+  });
   await browser.userOpen('http://example.com/', AbortSignal.timeout(3_000));
   fake.hold('Input.insertText');
   const result = assert.rejects(createCloudBrowserActTool(browser).execute({ action: { kind: 'type',

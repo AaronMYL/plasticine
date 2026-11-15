@@ -10,8 +10,8 @@ export function fakeLineDetails(line: LineView, messages: readonly LineMessageVi
   project: LineDetailsResponse['project'], query: LineDetailsQuery): LineDetailsResponse {
   const first = messages.find((message) => message.role === 'user');
   const origin = first === undefined ? undefined : origins.get(messageRef(line.id, first.seq));
-  const source = first === undefined ? undefined : origin?.kind === 'user' ? first
-    : origin?.ref === undefined ? undefined : lookup(origin.ref);
+  const referred = origin?.ref === undefined ? undefined : lookup(origin.ref);
+  const source = first === undefined ? undefined : origin?.kind === 'user' ? first : referred;
   const sourceOrigin = source === undefined ? undefined : origins.get(messageRef(source.lineId, source.seq));
   const sourceText = sourceOrigin?.userText ?? source?.text ?? '';
   const request = first === undefined ? null : { text: first.text, source:

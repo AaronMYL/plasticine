@@ -33,9 +33,11 @@ export function settleMessageOutbound(state: Pick<StateService, 'contactMessages
   const status = messages.length === 0 || failed.length === messages.length ? 'failed'
     : failed.length > 0 ? 'unknown' : 'sent';
   const reason = failed.map((message) => message.error).filter(Boolean).join('；').slice(0, 1000);
-  const summary = messages.length === 0 ? '没有可接收消息的对象。'
-    : status === 'sent' ? '中继已接收发给全部对象的消息。'
-      : status === 'failed' ? `消息没有发出：${reason || '发件箱确认发送失败。'}`
-        : `部分对象发送失败：${reason || '请逐个核对联系人消息记录。'}`;
+  const said = {
+    sent: '中继已接收发给全部对象的消息。',
+    failed: `消息没有发出：${reason || '发件箱确认发送失败。'}`,
+    unknown: `部分对象发送失败：${reason || '请逐个核对联系人消息记录。'}`,
+  };
+  const summary = messages.length === 0 ? '没有可接收消息的对象。' : said[status];
   for (const log of logs) state.outboundLog.finish(log.id, { status, summary, sourceRef });
 }

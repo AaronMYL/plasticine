@@ -91,15 +91,26 @@ function dreamSummary(state: StateService): MemoryDreamSummary | null {
     replace: count('replace'), unsure: count('unsure'), deadEnd: count('dead_end') };
 }
 
+/** 这一行凭什么写下的：系统给的、联系人说的、推测的、约定里的、他的原话。 */
+function basisOf(line: MemoryLine): MemoryDocLine['basis'] {
+  if (line.anchors.every((anchor) => anchor.kind === 'system')) {
+    return 'system';
+  }
+  if (line.basis === 'contact_stated') {
+    return 'contact';
+  }
+  if (line.basis !== 'stated') {
+    return 'inferred';
+  }
+  return line.anchors.some((anchor) => anchor.kind === 'agreement' || anchor.kind === 'term') ? 'agreement' : 'quote';
+}
+
 function lineView(state: StateService, line: MemoryLine, pending: ReadonlySet<string>): MemoryDocLine {
   return {
     id: line.id,
     version: line.version,
     text: line.text,
-    basis: line.anchors.every((anchor) => anchor.kind === 'system') ? 'system'
-      : line.basis === 'contact_stated' ? 'contact'
-      : line.basis !== 'stated' ? 'inferred'
-      : line.anchors.some((anchor) => anchor.kind === 'agreement' || anchor.kind === 'term') ? 'agreement' : 'quote',
+    basis: basisOf(line),
     sources: sourcesOf(state, line.anchors) as [MemoryLineSource, ...MemoryLineSource[]],
     uncertainId: line.inferenceId !== null && pending.has(line.inferenceId) ? line.inferenceId : null,
     links: linksOf(state, line.text),

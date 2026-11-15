@@ -3,7 +3,7 @@
 // 开关已经说清的（开着能收到、关着收不到）不再常显一行，只有被拒绝、不支持、没登记上这些才写。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { FakePushDevice } from '../../../src/api/fake/fake-push-device.ts';
 import { FAKE_VAPID_PUBLIC_KEY } from '../../../src/api/fake/fake-push.ts';
 import { renderApp, settle } from '../../helpers.tsx';

@@ -34,7 +34,10 @@ export function SkillReader({ descriptor }: { descriptor: SkillDescriptor }): Re
     {files.length < 2 ? null : <>
       <label className="field-label" htmlFor={id}>查看技能文件</label>
       <select id={id} className="field-input" value={path} onChange={(event) => {
-        setPath(event.target.value); setOffset(0); setPage(null); setText('');
+        setPath(event.target.value);
+        setOffset(0);
+        setPage(null);
+        setText('');
       }}>
         {files.map((file) => <option key={file}>{file}</option>)}
       </select>

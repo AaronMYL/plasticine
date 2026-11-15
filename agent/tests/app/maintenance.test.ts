@@ -157,7 +157,8 @@ test('整理规则：一行拆成几行，照抄来源和范围、存原文；�
   assert.equal(live[0]?.basis, 'stated');
   assert.notEqual(h.state.memoryDocs.lines.require(stale.id).archivedAt, null, '进归档，不是删除');
   assert.equal(runMaintenance(deps(), request).replayed, true);
-  assert.equal(h.state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.supersedes.includes(old.id)).length, 1);
+  assert.equal(h.state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.supersedes.includes(old.id)).length,
+    1);
 });
 
 test('memory.move 把几行挪到别的文档；memory.cleanup.add 放进整理清单等勾选，不注明来处', () => {
@@ -208,7 +209,8 @@ test('suggestions.dismiss：把还摆着的几条建议收起，结果里记下�
 });
 
 test('inbox.archive：把巡查、反馈、采访留下的来信归档（不删），邮件不动；结果里记下归档了哪几封', () => {
-  const add = (source: 'patrol' | 'feedback' | 'interview' | 'email', title: string) => h.state.inboxMessages.add({ source,
+  const add = (source: 'patrol' | 'feedback' | 'interview' | 'email',
+    title: string) => h.state.inboxMessages.add({ source,
     fromAddress: source === 'email' ? 'lin@example.test' : 'plasticine', fromName: null, title, body: title,
     receivedAt: '2026-11-07T05:00:00.000Z', attachments: [] }).message;
   const patrol = add('patrol', '首页头条可以换成「等你」的事');

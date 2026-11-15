@@ -1,14 +1,14 @@
+// The wiring of the whole service in one place, used by main.ts and by the tests alike. 2026-11-05 Harness 重做：对话就是
+// 新内核的主线（lines/），要花时间的事开后台线；旧的对话轮、任务、事、自迭代、验收和它们的扫描都删了。这里装：卡桌和
+// 它的推送、设备服务、云端工具与站内信、记账、信息流、图书、记忆整理、联系人与网络、进门的规则（命中开后台线）、
+// 本机备份，以及新内核本身和它带的业务工具。
+
 import { offerResolver } from '../loop/index.ts';
 import { withMainSoul } from './soul-text.ts';
 import {
   createServerCommandTools, ServerCommands, type CloudTransports, type FaviconFetchOptions,
   type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
-// The wiring of the whole service in one place, used by main.ts and by the tests alike. 2026-11-05 Harness 重做：对话就是
-// 新内核的主线（lines/），要花时间的事开后台线；旧的对话轮、任务、事、自迭代、验收和它们的扫描都删了。这里装：卡桌和
-// 它的推送、设备服务、云端工具与站内信、记账、信息流、图书、记忆整理、联系人与网络、进门的规则（命中开后台线）、
-// 本机备份，以及新内核本身和它带的业务工具。
-
 import { autoOnlyPermissionGate, createShowWidgetsTool, getTimeTool, ToolRegistry, type Tool } from '../tools/index.ts';
 import { ensureRulesDoc, createMemoryDocTools, MemoryCurator } from '../memory/index.ts';
 import { createBookTools } from '../books/index.ts';
@@ -29,7 +29,6 @@ import {
   Presenter,
   MessageAlerts,
   Presence,
-  type ContactAlert,
   ProjectWatch,
   PushService,
   readNotifyKinds,
@@ -39,13 +38,13 @@ import {
   type PushTransport,
   type VapidKeys,
 } from '../attention/index.ts';
-import { bookmarkTrigger, contactTrigger, deviceTrigger, ensureIntake, feedTrigger, IntakeDesk, mailTrigger, ruleGoal,
+import { bookmarkTrigger, deviceTrigger, ensureIntake, feedTrigger, IntakeDesk, mailTrigger, ruleGoal,
   type RecordInput } from '../intake/index.ts';
 import { kernelText, type Illustrator, type TextModels } from '../kernel/index.ts';
 import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
 import { MateGroupTasks, mateGroupTaskTools, Mates, mateTools } from '../mates/index.ts';
 import type { LineKernel } from '../lines/index.ts';
-import { DEFAULT_RELAY_URL, NetworkService, TunnelService, type TunnelServiceOptions } from '../network/index.ts';
+import { TunnelService, type TunnelServiceOptions } from '../network/index.ts';
 import { Tasks } from '../tasks/index.ts';
 import { BackupService, ClientReleases } from '../system/index.ts';
 import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
@@ -56,8 +55,7 @@ import { createApp, type App } from './app.ts';
 import { agreementView, memoryEntryView } from './cognition-views.ts';
 import { assembleLines, type LineAssembly } from './assemble-lines.ts';
 import { publicUrlSource } from './public-url.ts';
-import { publishNetworkChange } from './contact-streams.ts';
-import { contactAlerts, lineReplyAlert } from './reply-alerts.ts';
+import { lineReplyAlert } from './reply-alerts.ts';
 import { taskCardTool } from './task-card-tool.ts';
 import { messageTools } from './message-tools.ts';
 import { linePort } from './subscriptions.ts';
@@ -65,6 +63,7 @@ import { ensureReviewSubscription, SampleCards, subsTools } from '../subs/index.
 import { libraryTools } from '../library/index.ts';
 import { scanDiskNotice } from './disk-notice.ts';
 import { reportAnnouncement } from './report-announcement.ts';
+import { createNetwork } from './assemble-network.ts';
 import { EventHub } from './event-hub.ts';
 import { MAC_DOWNLOADS_DIR, MacDownloads } from './mac-updates.ts';
 import { createToolGroupServices, toolGroupScans, toolGroupTools, toolEnabled } from './tool-group-services.ts';
@@ -477,68 +476,4 @@ function publishRestored(state: StateService, hub: EventHub, kind: BackupObjectK
   } else {
     hub.publish({ type: 'memory_entry_changed', entry: memoryEntryView(state.memory.require(id)) });
   }
-}
-
-interface NetworkParts {
-  state: StateService;
-  now: () => Date;
-  desk: AskDesk;
-  hub: EventHub;
-  text: TextModels;
-  late: LateLines;
-  record: (input: RecordInput) => void;
-  /** 加入网络以后（叫醒隧道）。 */
-  joined: () => void;
-  /** 第13批：对方发来的一句该通知时（推送服务装好以前是空的）。 */
-  alert: (alert: ContactAlert) => void;
-}
-
-/** 第 113 条：联系人与网络。进来的人话、AI 话记成来源；「让 Plasticine 做」开一条后台线；改动提交以后推给界面。 */
-function createNetwork(options: AssembleOptions, parts: NetworkParts): NetworkService {
-  const { state, hub, late } = parts;
-  const settings = options.network ?? {};
-  const network: NetworkService = new NetworkService({
-    state,
-    now: parts.now,
-    desk: parts.desk,
-    lines: {
-      open: (input, after) => late.get().open({ title: input.title, goal: input.goal, projectId: null,
-        parentLineId: null, origin: { kind: 'network' },
-        ...(input.sealedPrompt === undefined ? {} : { sealedPrompt: input.sealedPrompt }) },
-      after).id,
-      send: (lineId, text, after) => {
-        late.get().send(lineId, { text, origin: { kind: 'network' } }, after);
-      },
-      answer: (lineId) => late.get().answer(lineId),
-      status: (lineId) => late.get().status(lineId),
-      activity: (lineId) => late.get().activity(lineId),
-      execution: (lineId) => {
-        if (late.get().status(lineId) === null) {
-          return null;
-        }
-        const { status, pauseReason, outcome, pausedUntil, failure, queued } = late.get().view(lineId);
-        return { status, pauseReason, outcome, pausedUntil, failure, queued };
-      },
-      halt: (lineId) => {
-        late.get().halt(lineId);
-      },
-      settled: () => late.get().settled(),
-    },
-    relayUrl: settings.relayUrl ?? DEFAULT_RELAY_URL,
-    autoSync: settings.autoSync ?? true,
-    ...(settings.pollWaitSeconds === undefined ? {} : { pollWaitSeconds: settings.pollWaitSeconds }),
-    ...(settings.fetch === undefined ? {} : { fetch: settings.fetch }),
-    responder: settings.responder !== false,
-    recordSource: (message, contact) => parts.record(contactTrigger(message, contact)),
-    changed: (change) => {
-      publishNetworkChange({ state, hub, activity: (task) => network.taskActivity(task),
-        execution: (task) => network.taskExecution(task) }, change);
-      // 第13批：对方本人发来的文字（一对一、群里）通知「谁 + 开头」，同一个群连着来的合成一条。
-      for (const alert of contactAlerts(state, change)) {
-        parts.alert(alert);
-      }
-    },
-    onJoined: parts.joined,
-  });
-  return network;
 }

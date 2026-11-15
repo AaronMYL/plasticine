@@ -53,7 +53,10 @@ it('暂缓独立卡的延迟出卡事件不触发 Mac 通知，新的卡仍照�
 it('__plasticineAttachFiles 按 attachments.add 上传，保留草稿并展开聚焦输入框', async () => {
   window.plasticineDesktop = { version: '1', notify: vi.fn() };
   const app = await renderApp({ hash: '#/notes', width: 1440 });
-  act(() => { app.state.shellPrefs.setChatOpen(false); app.state.conversationUi.setDraft('一起读'); });
+  act(() => {
+    app.state.shellPrefs.setChatOpen(false);
+    app.state.conversationUi.setDraft('一起读');
+  });
   expect(screen.queryByLabelText('问一句')).toBeNull();
   await act(async () => {
     await window.__plasticineAttachFiles?.([{ name: '资料.txt', type: 'text/plain',

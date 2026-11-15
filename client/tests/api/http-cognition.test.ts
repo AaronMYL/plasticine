@@ -3,7 +3,6 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { agreementView, memoryEntryView } from '../../src/api/fake/cognition-views.ts';
-import { ApiError, ConflictError } from '../../src/api/errors.ts';
 import { createHttpApi } from '../../src/api/http/index.ts';
 import type { FetchLike, ResponseLike } from '../../src/api/http/transport.ts';
 import type { LiveEvent } from '../../src/api/types.ts';

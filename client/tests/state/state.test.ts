@@ -5,7 +5,7 @@ import { ConversationUi } from '../../src/state/conversation-ui.ts';
 import { NoteDrafts } from '../../src/state/note-drafts.ts';
 import { CREATE_NOTE_OP, deleteNoteOp, NOTE_OPS_STORAGE_KEY, NoteOps } from '../../src/state/note-ops.ts';
 import { Outbox, OUTBOX_STORAGE_KEY, type KeyValueStorage } from '../../src/state/outbox.ts';
-import { clampChatFrame, ShellPrefs } from '../../src/state/shell-prefs.ts';
+import { clampChatFrame } from '../../src/state/shell-prefs.ts';
 import { Store } from '../../src/state/store.ts';
 import { ViewScroll } from '../../src/state/view-scroll.ts';
 

@@ -110,7 +110,10 @@ export class CloudBrowser {
 
   open(raw: string, signal: AbortSignal, scope?: string): Promise<BrowserView> {
     return this.#run(true, signal, async (limited) => {
-      if (scope !== undefined) { await this.#selectTask(scope, limited, true); this.#tasks.invalidate(scope); }
+      if (scope !== undefined) {
+        await this.#selectTask(scope, limited, true);
+        this.#tasks.invalidate(scope);
+      }
       return this.#open(raw, limited);
     });
   }

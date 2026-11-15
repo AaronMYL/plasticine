@@ -46,7 +46,10 @@ test('搜索单词失败只记一次且不拖累另一词，所有过滤规则�
     assert.equal(calls, 1);
     assert.match(t.state.feedFetchRuns.read(DAY)?.error ?? '', /1 个搜索词或订阅没抓到.*假失败/);
     assert.equal(t.state.feedItems.page({}, {}).length, 0);
-  } finally { await desk.stop(); await t.cleanup(); }
+  } finally {
+    await desk.stop();
+    await t.cleanup();
+  }
 });
 
 test('只写已判断相关的两条，不补无关新闻；来源带实际关注点和探索方向；订阅不进选材', async () => {
@@ -65,8 +68,10 @@ test('只写已判断相关的两条，不补无关新闻；来源带实际关�
       assert.ok(input.candidates.some((row) => row.via === '搜索'));
       // 第 3 批（11-04）：订阅直接进信息流（feed-subscriptions.ts），不再交给模型挑。
       assert.ok(!input.candidates.some((row) => row.url.startsWith('https://rss.example.test/')));
-      return { items: input.candidates.slice(0, 2).map((row) => ({ id: row.id, sourceId: input.interests[0]?.id ?? null, summary: '中文摘要。第二句。',
-        why: '你关注技术。', event: row.id })) };
+      return { items: input.candidates.slice(0, 2).map((row) => ({
+        id: row.id, sourceId: input.interests[0]?.id ?? null, summary: '中文摘要。第二句。',
+        why: '你关注技术。', event: row.id,
+      })) };
     },
   });
   try {
@@ -84,7 +89,10 @@ test('只写已判断相关的两条，不补无关新闻；来源带实际关�
     t.state.feedItems.update(hidden.id, hidden.version, { reaction: 'dislike' });
     assert.equal(t.state.feedItems.reactionScores('2026-09-29T00:00:00Z').get(interest.id), -2);
     assert.equal(t.state.feedItems.reactionScores('2026-11-01T00:00:00Z').size, 0);
-  } finally { await desk.stop(); await t.cleanup(); }
+  } finally {
+    await desk.stop();
+    await t.cleanup();
+  }
 });
 
 test('模型不可用不写未经判断的新闻，搜索只取前八个非关闭关注点', async () => {
@@ -123,7 +131,10 @@ test('模型不可用不写未经判断的新闻，搜索只取前八个非关�
       const status = news === undefined ? undefined : t.state.feedSourceStatus.read(news.id);
       if (unavailable) { assert.match(status?.error ?? '', /选材未完成：假模型离线/); }
       else { assert.equal(status?.error, null); }
-    } finally { await desk.stop(); await t.cleanup(); }
+    } finally {
+      await desk.stop();
+      await t.cleanup();
+    }
   }
 });
 
@@ -169,7 +180,10 @@ test('停机取消忽略信号的模型；待排队刷新保留，重建服务�
   let called = false;
   const fetcher = new FeedFetcher({ request: async () => new Response(rss(story(1))) });
   const desk = new ExternalFeed({ state: t.state, now: () => new Date(AT), fetcher,
-    select: async () => { called = true; return new Promise(() => {}); } });
+    select: async () => {
+      called = true;
+      return new Promise(() => {});
+    } });
   try {
     desk.queueRefresh('stop-one');
     desk.resume();
@@ -187,6 +201,9 @@ test('停机取消忽略信号的模型；待排队刷新保留，重建服务�
       assert.equal(t.state.feedItems.page({}, {}).length, 0);
       assert.equal(next.queueRefresh('stop-one').status, 'failed');
     } finally { await next.stop(); }
-  } finally { await desk.stop(); await t.cleanup(); }
+  } finally {
+    await desk.stop();
+    await t.cleanup();
+  }
 });
 

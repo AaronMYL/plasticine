@@ -14,7 +14,10 @@ const Answer = Type.Object({ keptBlocks: Type.Array(Type.Integer({ minimum: 0 })
   points: WebExtractPointsSchema }, { additionalProperties: false });
 export class WebExtractError extends Error {
   readonly code: 'empty' | 'invalid' | 'deleted';
-  constructor(code: 'empty' | 'invalid' | 'deleted', message: string) { super(message); this.code = code; }
+  constructor(code: 'empty' | 'invalid' | 'deleted', message: string) {
+    super(message);
+    this.code = code;
+  }
 }
 export async function extractWebPage(models: TextModels, input: WebExtractInput, signal: AbortSignal)
   : Promise<WebExtractView> {

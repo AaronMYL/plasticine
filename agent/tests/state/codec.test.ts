@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { Type } from 'typebox';
 import { checked, columnName, decodeRow, encodeRow, normalizeTimes, readRow } from '../../src/state/codec.ts';
 import { StateError } from '../../src/state/errors.ts';
-import { brainChange, openTestState, throwsState } from './helpers.ts';
+import { openTestState, throwsState } from './helpers.ts';
 
 const COLUMNS = { chatId: 'text', active: 'boolean', replyLayers: 'json', retryBudget: 'integer' } as const;
 

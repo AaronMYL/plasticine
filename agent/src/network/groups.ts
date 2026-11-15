@@ -46,7 +46,8 @@ function snapshot(context: NetworkContext, group: Group, op: 'sync' | 'leave'): 
 }
 
 /** 发给群里别的每个人（跳过自己、拉黑了的、没有钥匙的）。 */
-export function fanOut(context: NetworkContext, group: Group, send: (contact: Contact) => void, extra: string[] = []): void {
+export function fanOut(context: NetworkContext, group: Group, send: (contact: Contact) => void,
+  extra: string[] = []): void {
   const identity = requireIdentity(context);
   const accounts = new Set([...context.state.groupMembers.current(group.id).map((member) => member.accountId),
     ...extra]);

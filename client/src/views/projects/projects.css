@@ -223,8 +223,16 @@
   .proj-row-main { grid-area: main; }
   .proj-cell-nodes { grid-area: nodes; }
   .proj-cell-tasks { grid-area: tasks; }
-  .proj-due { grid-area: due; flex-direction: row; gap: var(--space-2); justify-self: end; }
-  .proj-updated { grid-area: updated; justify-self: end; }
+  .proj-due {
+    grid-area: due;
+    flex-direction: row;
+    gap: var(--space-2);
+    justify-self: end;
+  }
+  .proj-updated {
+    grid-area: updated;
+    justify-self: end;
+  }
 }
 
 .proj-unfiled-row {

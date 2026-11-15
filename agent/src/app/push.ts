@@ -12,7 +12,6 @@ import {
   type UnsubscribePushResponse,
 } from '../../shared/api/index.ts';
 import { readNotifyKinds, writeNotifyKinds } from '../attention/index.ts';
-import { withCurrent } from './conflict.ts';
 import { requireAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';

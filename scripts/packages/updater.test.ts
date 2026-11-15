@@ -47,7 +47,10 @@ function fake(health: boolean[] = [true]): Fake {
         writeFileSync(join(into, path), content);
       }
     },
-    async restart(command) { restarts.push([...command]); return 0; },
+    async restart(command) {
+      restarts.push([...command]);
+      return 0;
+    },
     async healthy() { return health.shift() ?? true; },
     now: () => new Date('2026-11-05T13:00:00Z'),
     log: (line) => logs.push(line),

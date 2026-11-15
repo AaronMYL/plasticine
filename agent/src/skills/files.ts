@@ -38,7 +38,10 @@ export function readSkillFiles(directory: string): SkillFiles {
       if (entry.name.startsWith('.')) { continue; }
       const path = skillPath(relative === '' ? entry.name : `${relative}/${entry.name}`);
       if (entry.isSymbolicLink()) { throw new Error(`Skill 资源 ${path} 是链接，无法固定一个可复现的版本。`); }
-      if (entry.isDirectory()) { visit(path); continue; }
+      if (entry.isDirectory()) {
+        visit(path);
+        continue;
+      }
       if (!entry.isFile()) { throw new Error(`Skill 资源 ${path} 不是普通文件。`); }
       const target = join(directory, path);
       checkSize(bytes + statSync(target).size, Object.keys(files).length + 1);

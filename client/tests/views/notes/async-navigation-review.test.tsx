@@ -1,9 +1,8 @@
 import type { Editor } from '@tiptap/core';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
-import { NotesUi } from '../../../src/state/notes-ui.ts';
 import { AUTOSAVE_DELAY_MS } from '../../../src/views/notes/note-saver.ts';
-import { memoryStorage, renderApp, seedNote, settle } from '../../helpers.tsx';
+import { renderApp, seedNote, settle } from '../../helpers.tsx';
 
 it('纯阅读和选中文字不会把编辑器补的空段落写回原文或增加笔记版本', async () => {
   const markdown = '# 只打开阅读\n\n- [ ] 保留原样的待办';
@@ -49,7 +48,8 @@ it('新建回执迟到时保存创建结果，但用户已离开的页面不被�
 
 it('删除已生效而回执迟到，打开另一篇后仍停留在新笔记', async () => {
   const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => {
-    seedNote(fake, 'n1', '# 待删除'); seedNote(fake, 'n2', '# 正在阅读的另一篇');
+    seedNote(fake, 'n1', '# 待删除');
+    seedNote(fake, 'n2', '# 正在阅读的另一篇');
   } });
   await screen.findByRole('textbox', { name: '笔记正文' });
   const gate = Promise.withResolvers<void>();

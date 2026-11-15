@@ -132,7 +132,8 @@ function AddButton({ rows, tier }: { rows: readonly MaterialRow[]; tier: SharedT
         <Popover anchor={anchor} label={`放到${TIER_LABELS[tier]}`} role="dialog" trigger={button} className="vis-picker"
           onClose={close}>
           <SearchField label="找记忆、项目、笔记、空间" value={query} onChange={setQuery} />
-          {found.length === 0 ? <p className="vis-picker-empty">{query.trim() === '' ? '没有还能放开的了' : `没找到「${query.trim()}」。`}</p>
+          {found.length === 0
+            ? <p className="vis-picker-empty">{query.trim() === '' ? '没有还能放开的了' : `没找到「${query.trim()}」。`}</p>
             : (
               <ul className="vis-picker-list" aria-label="能放开的">
                 {found.slice(0, PICKER_SHOWN).map((row) => (

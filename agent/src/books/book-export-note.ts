@@ -6,7 +6,8 @@ function quoteBlock(text: string): string {
   return text.split('\n').map((line) => (line === '' ? '>' : `> ${line}`)).join('\n');
 }
 
-export function bookNotesMarkdown(book: BookRecord, annotations: readonly BookAnnotation[], exportedAt: string): string {
+export function bookNotesMarkdown(book: BookRecord, annotations: readonly BookAnnotation[],
+  exportedAt: string): string {
   const lines: string[] = [`# 《${book.title}》读书笔记`, ''];
   const byline = [book.author, `${annotations.length} 条标注`, `导出于 ${exportedAt.slice(0, 10)}`];
   lines.push(byline.filter((part) => part !== null).join(' · '), '');

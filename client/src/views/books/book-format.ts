@@ -1,10 +1,7 @@
 // 图书页上的几种写法：百分比、「昨天 22:14」、章名的短写（「卷一　闺房记乐」→「卷一」）、全书位置。
 
 import type { BookTocEntry, BookView } from '../../api/shared.ts';
-import { timeInput } from '../../primitives/message/states.ts';
-import { deviceTimeZone } from '../../state/time-zone.ts';
 
-const DAY_MS = 86_400_000;
 // 「读完」的线：最后一屏常常停在 99% 多一点，算读完。
 const FINISHED_AT = 0.995;
 // 中文阅读速度按每分钟 400 字估（「本章约 9 分钟」）；只给个量级，不精确。
@@ -27,7 +24,6 @@ export function isReading(book: Pick<BookView, 'progress'>): boolean {
   const percent = book.progress?.percent ?? 0;
   return book.progress !== null && percent > 0 && percent < FINISHED_AT;
 }
-
 
 /** 章名第一段：「卷一　闺房记乐」→「卷一」；没有空格就是整个章名。 */
 export function chapterShort(title: string): string {

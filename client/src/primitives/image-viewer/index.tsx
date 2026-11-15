@@ -157,9 +157,19 @@ function ImageViewer({ shown, onClose }: { shown: Shown; onClose: () => void }):
   return createPortal(
     <div ref={box} className="image-viewer" role="dialog" aria-modal="true" aria-label="看图" tabIndex={-1}
       data-phone={phone} onKeyDown={(event) => {
-        if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); }
-        if (event.key === 'ArrowLeft') { event.preventDefault(); flip(-1); }
-        if (event.key === 'ArrowRight') { event.preventDefault(); flip(1); }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          onClose();
+        }
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          flip(-1);
+        }
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          flip(1);
+        }
       }}>
       <header className="image-viewer-bar">
         {phone ? <IconButton icon="close" label="关掉" size={20} onClick={onClose} /> : null}

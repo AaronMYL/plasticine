@@ -134,5 +134,8 @@ test('评论回复等待中用户改了档位，迟到回复不盖过用户的�
     await t.app.deps.daily.comments?.settled();
     assert.equal(t.state.feedSources.require(source.id).level, 'off');
     assert.match(t.app.deps.daily.comments!.list(item.id)[1]?.text ?? '', /保留较新的档位/);
-  } finally { finish?.(); await t.close(); }
+  } finally {
+    finish?.();
+    await t.close();
+  }
 });

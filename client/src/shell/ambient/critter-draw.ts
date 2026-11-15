@@ -14,8 +14,10 @@ const mirrored = new Map<string, readonly string[]>();
 function frameOf(c: Critter): readonly string[] {
   const pose: Pose = poseOf(c);
   const frames = CRITTER_ART[c.kind].frames[pose];
-  const index = pose === 'walk'
-    ? (c.kind === 'rabbit' ? (c.lift > 2 ? 1 : 0) : Math.floor(c.phase) % frames.length) : 0;
+  // 兔子走路是跳：离地了用第二帧；别的按步子轮着来
+  const hop = c.lift > 2 ? 1 : 0;
+  const step = c.kind === 'rabbit' ? hop : Math.floor(c.phase) % frames.length;
+  const index = pose === 'walk' ? step : 0;
   const frame = frames[index] ?? frames[0]!;
   if (c.facing === 1) return frame;
   const key = `${c.kind}:${pose}:${index}`;

@@ -86,10 +86,14 @@ function moveInMenu(panel: HTMLElement, key: string): boolean {
   }
   const index = items.findIndex((item) => item === document.activeElement);
   const last = items.length - 1;
-  const next = key === 'Home' ? 0 : key === 'End' ? last
-    : key === 'ArrowDown' ? (index < 0 || index === last ? 0 : index + 1)
-      : key === 'ArrowUp' ? (index <= 0 ? last : index - 1) : null;
-  if (next === null) {
+  const target: Partial<Record<string, number>> = {
+    Home: 0,
+    End: last,
+    ArrowDown: index < 0 || index === last ? 0 : index + 1,
+    ArrowUp: index <= 0 ? last : index - 1,
+  };
+  const next = target[key];
+  if (next === undefined) {
     return false;
   }
   items[next]?.focus();

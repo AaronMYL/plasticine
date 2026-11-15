@@ -145,6 +145,13 @@ function FeedListPage(): ReactNode {
   const settings = ui.settingsSource;
   const show = (next: FeedSegment): void => void live.feed.setSegment(next);
   const addKind = (next: 'reddit' | 'url'): void => feedUi.openAdd(next);
+  // 电脑上顶上那一条：名字在标题栏里就不画；看全部时画一条只写名字的顶栏；看某一类时由 FeedKindHead 画
+  const plainTop = group === null ? (
+    <header className="feed-top">
+      <h2 className="feed-top-title">{label}</h2>
+    </header>
+  ) : null;
+  const desktopTop = titled ? <TitlebarTitle text={label} /> : plainTop;
   return (
     <div className={`page feed${segment === 'douyin' ? ' page-fill feed-douyin' : ''}`}>
       {phone ? (
@@ -162,11 +169,7 @@ function FeedListPage(): ReactNode {
           <PhoneKinds kinds={groups.map((entry) => entry.kind)} current={kind ?? (segment === 'all' ? 'all' : null)}
             onShow={show} />
         </>
-      ) : titled ? <TitlebarTitle text={label} /> : group === null ? (
-        <header className="feed-top">
-          <h2 className="feed-top-title">{label}</h2>
-        </header>
-      ) : null}
+      ) : desktopTop}
       {group === null || group.kind === 'douyin' ? null : <FeedKindHead group={group} segment={segment}
         titled={!phone && !titled} refresh={!phone} onShow={show} onSettings={(row) => feedUi.setSettingsSource(row)}
         onDouyin={() => setDouyin(true)} onAdd={addKind} />}

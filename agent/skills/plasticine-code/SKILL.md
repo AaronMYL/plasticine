@@ -33,23 +33,26 @@ description: 写、改、审 Plasticine 的代码时使用：代码规矩的正�
 
 ## 底线（违反任何一条 `npm run check` 不过）
 
-1. **行宽 ≤ 120，一行一个语句**。`{ a(); b(); }` 这种一行写完的要展开；CSS 一行一条声明。只有一个语句的短块可以留在一行
-   （`if (x) { return; }`）。
+1. **行宽 ≤ 120，一行一个语句**。`{ a(); b(); }` 这种一行写完的要展开；CSS 一行一条声明，花括号不和声明挤一行。
+   只有一个语句的短块、只有一条声明的短规则可以留在一行（`if (x) { return; }`、`.a { color: red; }`）。
 2. **三元最多套两层**（`a ? b : c ? d : e`）。再多就改成 `if`、查表或拆成小函数。
 3. **不吞错误**：空的 `catch {}` 不许出现。`catch` 里要么处理、要么带上下文抛出、要么写日志并让状态变成「结果待核实」。
 4. **模块之间只经 `index.ts` 往来**（`agent/src/`）：不引别的模块的内部文件，模块里的文件不绕自己的 `index.ts`；
    `agent/src/` 根上不放散文件；每个模块都有 `index.ts`，开头几行注释写这个模块管什么；文件顶层不读别的模块的常量。
 5. **界面分层只能往下引**（`client/src/`）：`api/` 不引别的层，`state/` 只引 `api/`，`primitives/` 不引 `views/`；
    页面和零件里不直接 `fetch` 本体的接口；测试文件不放在 `src/` 里。
-6. **类型**：TypeScript 开到最严（`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`）；不写 `any`；只用
-   可擦除语法（不用 `enum`、`namespace`、参数属性），相对导入写 `.ts` 后缀，类型导入用 `import type`。
-7. **测试不许跳过**：没有 `skip`、`only`、`todo`。暂时修不了的，删掉这条测试并在提交里说明，不留跳过。
+6. **类型**：TypeScript 开到最严（`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、
+   `noUnusedLocals`——没用到的导入和变量删掉）；不写 `any`；只用可擦除语法（不用 `enum`、`namespace`、参数属性），
+   相对导入写 `.ts` 后缀，类型导入用 `import type`。
+7. **测试不许无条件跳过**：没有 `.skip`、`.only`、`.todo`。暂时修不了的，删掉这条测试并在提交里说明，不留跳过。
+   只在某种系统、装了某个工具才能跑的，写成带原因的条件跳过（`{ skip: 有工具 ? false : '这台机器没有装 ffmpeg' }`）——
+   报告里看得见它没跑，比假装通过老实。
 8. **文件名说它是什么**：不用里程碑、批次当名字（`m5b-…`、`第13批-…`）。
 9. **一份代码只有一处**：同一段逻辑不放两份；私有仓库从公开仓库拷来的文件必须和原件一字不差（私有仓库的检查守着）。
 
-**一个文件一个职责**是软规矩：源码超过 500 行时 lint 提醒（不算失败），看看它是不是干了不止一件事——是就按职责拆，不是就
-留着。已经确认只有一件事、可以超过 500 行的文件登记在 `scripts/lint-rules.ts` 的 `LONG_FILES_ALLOWED` 里，写明原因；
-不在名单里的源码文件超过 500 行不过。测试文件不限长度。
+**一个文件一个职责**：源码超过 500 行（CSS 一行一条声明、本来就长，上限 800 行）先看它是不是干了不止一件事——是就按
+职责拆。确认只干一件事、拆开反而要来回翻的，登记在 `scripts/lint-rules.ts` 的 `LONG_FILES_ALLOWED` 里并写明原因
+（lint 只提醒）；不在名单里的超过上限不过。测试文件不限长度。
 
 ## 代码长什么样
 
@@ -121,11 +124,12 @@ description: 写、改、审 Plasticine 的代码时使用：代码规矩的正�
 
 | 规矩 | 检查 |
 |---|---|
-| 行宽、一行一个语句、三元层数、空 catch、any、文件长度、CSS 一行一条声明、文件名不用里程碑 | `scripts/lint.ts`（规则在 `scripts/lint-rules.ts`，测试 `lint-rules.test.ts`） |
-| 类型、可擦除语法 | `npm run typecheck`（`tsconfig.json`、`client/tsconfig.json`） |
+| 行宽、一行一个语句、三元层数、空 catch、any、文件长度、CSS 一行一条声明、文件名不用里程碑、测试不许无条件跳过 | `scripts/lint.ts`（规则在 `scripts/lint-rules.ts`、`lint-statements.ts`、`lint-css.ts`，测试 `lint-rules.test.ts`） |
+| 类型、可擦除语法、没用到的导入和变量 | `npm run typecheck`（`tsconfig.json`、`client/tsconfig.json`） |
 | 模块只经 `index.ts` 往来、根上不放散文件 | `agent/tests/structure/module-boundary.test.ts` |
-| 界面分层只能往下引 | `client/tests/structure-layers.test.ts` |
-| 不许跳过测试 | `agent/tests/structure/no-skipped-tests.test.ts` |
+| 界面分层只能往下引、不直接 fetch、测试不放 src/ | `client/tests/structure-layers.test.ts` |
+| 提交信息第一行不超过 72 个字 | `agent/tests/structure/commit-message.test.ts` |
+| 界面令牌检查器只有一份 | `scripts/token-check/`（云端和提交前检查用同一份） |
 | Apache-2.0 文件的引用边界 | `agent/tests/shared/license-boundary.test.ts` |
 | 日志只经 `util/` | `agent/tests/util/log.test.ts` |
 | 界面的令牌、用词、图标、布局 | 见 plasticine-visual 的 `page-spec.md` 末尾 |

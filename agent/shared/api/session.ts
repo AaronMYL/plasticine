@@ -2,7 +2,7 @@
 // 配对码登录下掉了）。会话只在 HttpOnly Cookie 里。
 
 import { Type, type Static } from 'typebox';
-import { API_PREFIX, IsoTimeSchema, RequestIdSchema } from './common.ts';
+import { API_PREFIX, IsoTimeSchema } from './common.ts';
 import { DeviceViewSchema } from './devices.ts';
 
 export const SESSION_PATH = `${API_PREFIX}/session`;

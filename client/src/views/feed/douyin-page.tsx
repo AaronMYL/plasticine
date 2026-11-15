@@ -84,6 +84,41 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
   const waiting = work.run === 'waiting_transcriber';
   const showKit = kit !== null && missing && !later && (asking || waiting);
   const running = ['queued', 'running', 'waiting_mac'].includes(work.run);
+  /** 还没整理的作品现在到哪一步了：整理中、处理中、等转写装好，或者一个「处理作品」按钮。 */
+  const progress = (): ReactNode => {
+    if (work.stage === 'summarized') return <p role="status">正在整理报告…</p>;
+    if (running) return <p role="status">{work.run === 'waiting_mac' ? '等电脑上线' : '正在处理…'}</p>;
+    if (waiting) {
+      return <p role="status">等本地转写装好{' '}
+        <button type="button" className="text-button" onClick={() => setLater(false)}>安装</button></p>;
+    }
+    return <button type="button" className="primary-button" disabled={busy}
+      onClick={start}>{work.run === 'failed' ? '重新处理' : '处理作品'}</button>;
+  };
+  /** 正文：读不到、整理好的空间、装本地转写的卡、还没整理。 */
+  const body = (): ReactNode => {
+    if (error !== null) {
+      return <p className="block-empty is-error" role="alert">{error}{' '}
+        <button type="button" className="text-button" onClick={reload}>再读一次</button></p>;
+    }
+    if (space?.html != null) {
+      return <SpaceFrame className="space-frame" label={space.title} mode="page" onQuote={quote}
+        space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
+          dateLabel: bodyDate(space.createdAt) }} />;
+    }
+    if (showKit) {
+      return <div className="dy-kit"><TranscriberCard status={kit} error={installError}
+        onLater={() => {
+          setAsking(false);
+          setLater(true);
+        }}
+        onInstall={() => void live.transcriber.install(waiting ? undefined : process)} /></div>;
+    }
+    return <div className="dy-unprocessed"><h2>{work.title}</h2>
+      {progress()}
+      {problem ?? work.error ? <p className="is-error" role="alert">{problem ?? work.error}</p> : null}
+    </div>;
+  };
   return <section className="dy-detail" aria-label="收藏详情">
     <header className="dy-detail-head">
       {phone ? <IconButton icon="back" label="返回收藏列表" onClick={back} /> : null}
@@ -96,23 +131,7 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
         <IconButton icon="external" label="在资料库打开" onClick={() => pushHash(routeHash(spaceRoute(space.id)))} />
       </>}
     </header>
-    {error !== null ? <p className="block-empty is-error" role="alert">{error}{' '}
-      <button type="button" className="text-button" onClick={reload}>再读一次</button></p>
-      : space?.html != null ? <SpaceFrame className="space-frame" label={space.title} mode="page" onQuote={quote}
-        space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
-          dateLabel: bodyDate(space.createdAt) }} />
-        : showKit ? <div className="dy-kit"><TranscriberCard status={kit} error={installError}
-          onLater={() => { setAsking(false); setLater(true); }}
-          onInstall={() => void live.transcriber.install(waiting ? undefined : process)} /></div>
-          : <div className="dy-unprocessed"><h2>{work.title}</h2>
-            {work.stage === 'summarized' ? <p role="status">正在整理报告…</p>
-              : running ? <p role="status">{work.run === 'waiting_mac' ? '等电脑上线' : '正在处理…'}</p>
-                : waiting ? <p role="status">等本地转写装好{' '}
-                  <button type="button" className="text-button" onClick={() => setLater(false)}>安装</button></p>
-                  : <button type="button" className="primary-button" disabled={busy}
-                    onClick={start}>{work.run === 'failed' ? '重新处理' : '处理作品'}</button>}
-            {problem ?? work.error ? <p className="is-error" role="alert">{problem ?? work.error}</p> : null}
-          </div>}
+    {body()}
   </section>;
 }
 
@@ -159,7 +178,10 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
   const [running, setRunning] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const current = state.works.find((work) => work.id === selected) ?? null;
-  useEffect(() => { store.open(); return () => store.close(); }, [store]);
+  useEffect(() => {
+    store.open();
+    return () => store.close();
+  }, [store]);
   useEffect(() => {
     if (!phone && current === null && state.works[0] !== undefined) setSelected(state.works[0].id);
   }, [phone, current, state.works]);

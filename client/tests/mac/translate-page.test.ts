@@ -10,7 +10,8 @@ import { Value } from 'typebox/value';
 const ARTICLE = `
 <header><nav><a href="/">Field Notes</a> <a href="/archive">Archive</a> <a href="/about">About</a></nav></header>
 <main><article>
-  <header><h1 id="title">What a personal agent should remember</h1><p id="meta">November 2, 2026 · 9 min read</p></header>
+  <header><h1 id="title">What a personal agent should remember</h1>
+    <p id="meta">November 2, 2026 · 9 min read</p></header>
   <p id="p1">Most agents forget everything the moment a conversation ends. The usual fix is a bigger memory.</p>
   <h2 id="h2">Remember decisions, not transcripts</h2>
   <p id="p2">A useful memory looks less like a <a href="/r">recording</a> and more like a notebook.</p>
@@ -332,7 +333,8 @@ describe('一直加载的页面', () => {
     fake.enter(byId('t1'), 'visible');
     fake.flush();
     const later = requests(fake.posts).at(-1)!;
-    expect(later.items.map((item) => item.text)).toEqual(['Second post arrived later.', 'First post, edited by its author.']);
+    expect(later.items.map((item) => item.text)).toEqual(['Second post arrived later.',
+      'First post, edited by its author.']);
   });
 });
 
@@ -366,7 +368,8 @@ describe('悬停工具条', () => {
     node.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
     button('重译').click();
     const again = requests(fake.posts).at(-1)!;
-    expect(again).toMatchObject({ fresh: true, priority: 'visible', items: [{ id, text: 'Most agents forget everything.' }] });
+    expect(again).toMatchObject({ fresh: true, priority: 'visible',
+      items: [{ id, text: 'Most agents forget everything.' }] });
     expect(byId('a').querySelector('plasticine-tr')?.getAttribute('data-state')).toBe('pending');
     translator.stop();
     expect(document.querySelector('plasticine-toolbar')).toBeNull();

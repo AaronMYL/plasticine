@@ -14,7 +14,10 @@ const PAGES: Record<string, string> = { [`${RAW}/index.json`]: JSON.stringify(IN
   [`${RAW}/meeting-notes/SKILL.md`]: DOC };
 
 let t: TestApp | undefined;
-afterEach(async () => { await t?.close(); t = undefined; });
+afterEach(async () => {
+  await t?.close();
+  t = undefined;
+});
 
 async function started(steps: Parameters<typeof startTestApp>[0] = []): Promise<{ t: TestApp; cookie: string }> {
   t = await startTestApp(steps, { startTasks: false, skillShop: { fetchText: async (url) => {

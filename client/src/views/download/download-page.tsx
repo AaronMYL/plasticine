@@ -94,7 +94,10 @@ function GoSignIn({ navigate }: { navigate: (url: string) => void }): ReactNode 
       <div className="download-signin-row">
         <input id="download-who" className="field-input" value={value} autoFocus autoCapitalize="none"
           spellCheck={false} inputMode="email" placeholder="@账号"
-          onChange={(event) => { setValue(event.target.value); setError(null); }} />
+          onChange={(event) => {
+            setValue(event.target.value);
+            setError(null);
+          }} />
         <button type="submit" className="primary-button">去登录</button>
       </div>
       {error === null ? null : <p className="download-error" role="alert">{error}</p>}
@@ -116,7 +119,9 @@ function DesktopButton({ platform, desktop, onRetry }: { platform: 'mac' | 'wind
   return (
     <>
       {asset === null ? <button type="button" className="primary-button download-main" disabled>
-        <BusyText busy={desktop.kind === 'loading'}><Icon name="download" size={16} />{`${name} 版还没有`}</BusyText></button> : (
+        <BusyText busy={desktop.kind === 'loading'}>
+          <Icon name="download" size={16} />{`${name} 版还没有`}
+        </BusyText></button> : (
         <a className="primary-button download-main" href={asset.url}><Icon name="download" size={16} />下载 {name} 版</a>
       )}
       {desktop.kind === 'ready' && asset !== null

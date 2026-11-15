@@ -78,11 +78,17 @@ export function NoteFolders({
   const locked = operation !== undefined && isOpenOp(operation);
   const sent = locked && operation.request.kind === 'note_folder' ? operation.request.body : null;
   const mode = drafts.get(`${OP}:mode`);
-  const editing = sent !== null ? sent.action === 'create' ? '' : sent.name
-    : mode === 'new' ? '' : mode === 'existing' ? drafts.get(`${OP}:folder`) ?? null : null;
+  // 正在改哪个文件夹：发出去还没了结的按发出去的算；否则看草稿——新建是空名字，改已有的是那个文件夹
+  const sentName = sent === null || sent.action === 'create' ? '' : sent.name;
+  const drafted = mode === 'existing' ? drafts.get(`${OP}:folder`) ?? null : null;
+  const draftName = mode === 'new' ? '' : drafted;
+  const editing = sent !== null ? sentName : draftName;
   const name = sent !== null ? sent.action === 'rename' ? sent.next : sent.name : drafts.get(`${OP}:name`) ?? '';
   const destination = sent?.action === 'remove' ? sent.destination : drafts.get(`${OP}:destination`) ?? '笔记';
-  const closePanel = (): void => { setManaging(false); onClose?.(); };
+  const closePanel = (): void => {
+    setManaging(false);
+    onClose?.();
+  };
   const close = (): void => {
     for (const field of FIELDS) { inlineDrafts.clear(`${OP}:${field}`); }
     setManaging(false);
@@ -200,7 +206,10 @@ export function NoteFolders({
   );
   const footer = editing === null ? undefined : <>
     <button type="button" className="secondary-button" disabled={locked}
-      onClick={() => { close(); onClose?.(); }}>取消</button>
+      onClick={() => {
+        close();
+        onClose?.();
+      }}>取消</button>
     <button className="primary-button" type="submit" form={formId} disabled={locked || !name.trim()}>
       {editing === '' ? '创建文件夹' : '保存名称'}
     </button></>;

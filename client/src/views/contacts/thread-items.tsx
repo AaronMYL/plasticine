@@ -85,7 +85,8 @@ function MyAi({ message, group }: { message: ContactMessageView; group: boolean 
       {group ? <InfoTip text={GROUP_AI_TIP} label="你的 Plasticine 在群里怎么答" /> : null}
     </div>
   );
-  return group ? <div className="cm-group-line" data-side="me"><AiOwner label={`我的 ${mainName}`} side="me" />{line}</div>
+  return group
+    ? <div className="cm-group-line" data-side="me"><AiOwner label={`我的 ${mainName}`} side="me" />{line}</div>
     : line;
 }
 

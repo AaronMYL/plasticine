@@ -5,17 +5,16 @@
 import { useStore } from '../../state/use-store.ts';
 import { mateRoute, routeHash } from '../../shell/routes.ts';
 import { MateAvatar } from '../mates/mate-avatar.tsx';
-import { useState, type CSSProperties, type ReactNode } from 'react';
-import type { LineView, TaskProjectView, TeammateView } from '../../api/shared.ts';
+import { useState, type ReactNode } from 'react';
+import type { LineView, TaskProjectView } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { StatusGlyph } from '../../shell/glyph.tsx';
 import { hueVar } from '../../shell/hue.tsx';
-import { Icon } from '../../shell/icons.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { useNow } from '../lines/line-time.ts';
 import { DeletedTask, TaskMenu, taskPhase } from '../lines/task-menu.tsx';
 import { unmetText, WorkLineAction, WorkStatusGlyph, workStatusText } from '../lines/work-status.tsx';
-import { runningFor, timedIcon } from './task-format.ts';
+import { runningFor } from './task-format.ts';
 import { timeText } from '../../shell/time-text.ts';
 
 function ProjectDot({ project }: { project: TaskProjectView | undefined }): ReactNode {
@@ -34,10 +33,15 @@ function TaskLine({ line, project, now, onDeleted }: { line: LineView; project: 
   const open = (): void => openPanel({ kind: 'work', lineId: line.id });
   const phase = taskPhase(line);
   const unmet = line.outcome === 'done' ? line.unmet ?? null : null;
-  const meta = phase === 'active' ? workStatusText(line, timeZone)
-    : phase === 'paused' ? workStatusText(line, timeZone)
-      : unmet !== null ? unmetText(unmet) : line.outcome === 'stopped' ? '已停止'
-        : line.status === 'failed' ? line.failure ?? '这次没有完成' : line.lastAnswer ?? workStatusText(line, timeZone);
+  /** 第二行：在做、停着的写状态；结束了的写没达成的原因、已停止、失败原因，或者最后那句回答。 */
+  const metaOf = (): string => {
+    if (phase === 'active' || phase === 'paused') return workStatusText(line, timeZone);
+    if (unmet !== null) return unmetText(unmet);
+    if (line.outcome === 'stopped') return '已停止';
+    if (line.status === 'failed') return line.failure ?? '这次没有完成';
+    return line.lastAnswer ?? workStatusText(line, timeZone);
+  };
+  const meta = metaOf();
   return (
     <li className="tasks-row tasks-run-row" data-phase={phase} data-context-row="">
       <span className="tasks-lead">

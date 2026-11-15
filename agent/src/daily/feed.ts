@@ -6,7 +6,6 @@ import type { FeedItem, FeedItemInput, FeedSource } from '../../shared/state.ts'
 import type { AfterCommit } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
 import { dayRange, localDay } from './days.ts';
-import { DailyError } from './errors.ts';
 import { checkUrl, siteOf } from './urls.ts';
 
 export type FeedState = Pick<StateService, 'feedItems' | 'feedSources'>;

@@ -1,6 +1,7 @@
 // Starts the service. Run by systemd as the plasticine user (agent/deploy/plasticine-app.service):
 //   PLASTICINE_STATE=/home/plasticine/state/agent node agent/src/app/main.ts
-// Environment: PLASTICINE_STATE (required: holds plasticine.sqlite, notes/, books/, files/, the Web Push VAPID key file),
+// Environment: PLASTICINE_STATE (required: holds plasticine.sqlite, notes/, books/, files/, the Web Push VAPID key
+// file),
 // PLASTICINE_PORT (default 8790), PLASTICINE_DRY_RUN (`0` turns the development dry run off, decision 8),
 // PLASTICINE_VAPID_SUBJECT (the contact push services see; default the site's address),
 // PLASTICINE_NETWORK_URL (the Cyber Hunter relay this instance talks to, decision 113; default https://cyberhunter.top;

@@ -320,7 +320,10 @@
 }
 
 @keyframes note-image-zoom-in {
-  from { opacity: 0; transform: scale(0.9); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
 }
 
 @media (pointer: coarse) {

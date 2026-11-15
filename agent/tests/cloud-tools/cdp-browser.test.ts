@@ -16,7 +16,10 @@ test('自身会话先写入精确站点 Cookie，再导航；不清理外部网�
     path: '/', httpOnly: true, secure: true, sameSite: 'Strict' as const, expires: 2_000_000_000 };
   const browser = new CdpBrowser({ endpoint: fake.endpoint, internalCookies: () => [cookie],
     internalUrl: 'https://plasticine.test/' });
-  t.after(async () => { browser.close(); await fake.close(); });
+  t.after(async () => {
+    browser.close();
+    await fake.close();
+  });
   const page = await browser.open('https://plasticine.test/#/notes', signal());
   const set = fake.commands.findIndex((command) => command.method === 'Storage.setCookies');
   const navigate = fake.commands.findIndex((command) => command.method === 'Page.navigate');

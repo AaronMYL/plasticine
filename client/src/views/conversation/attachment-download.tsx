@@ -9,14 +9,18 @@ export function AttachmentDownload({ item }: { item: AttachmentMedia }): ReactNo
   useEffect(() => () => pending.current?.abort(), []);
   if (item.loadContent === undefined) return <a href={item.url} download={item.name} className="text-button">下载</a>;
   const download = async (): Promise<void> => {
-    const abort = new AbortController(); pending.current = abort;
-    setBusy(true); setError(null);
+    const abort = new AbortController();
+    pending.current = abort;
+    setBusy(true);
+    setError(null);
     try {
       const blob = await item.loadContent!(abort.signal);
       if (abort.signal.aborted) return;
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url; link.download = item.name; link.click();
+      link.href = url;
+      link.download = item.name;
+      link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (cause) { if (!abort.signal.aborted) setError(errorText(cause)); }
     finally { if (!abort.signal.aborted) setBusy(false); }

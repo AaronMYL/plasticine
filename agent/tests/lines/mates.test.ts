@@ -40,7 +40,10 @@ test('主线自动分派的队友晚完成也继续汇总；用户叫停后只�
         paused ? '材料回来后一起整理。' : '综合资料，结论已经整理好了。');
       assert.equal(h.kernel.view('main').status, paused ? 'paused' : 'idle');
       assert.equal(h.kernel.read('main', 30).messages.filter((message) => message.role === 'lineReport').length, 1);
-    } finally { gate.resolve('结束'); await h.close(); }
+    } finally {
+      gate.resolve('结束');
+      await h.close();
+    }
   }
 });
 
@@ -84,7 +87,10 @@ test('和队友直接说话不占后台位置，四位同时开始；模型和�
     await h.kernel.settled();
     assert.equal(h.kernel.view(all[3]!.lineId).status, 'idle');
     assert.equal(h.handle.state.lineQueue.queued(all[3]!.lineId).length, 0);
-  } finally { gate.resolve('结束'); await h.close(); }
+  } finally {
+    gate.resolve('结束');
+    await h.close();
+  }
 });
 
 test('主线点名只启动对应队友，保留用户原话并把完整答案以交接消息送回', async () => {

@@ -15,7 +15,8 @@ import type { StateService } from '../../state/index.ts';
 import { askJson } from '../../books/index.ts';
 import { dreamSources, journalRef, rounds, transcripts, type Transcript } from './dream-material.ts';
 import { CurationOpSchema, planCuration, type CurationSource } from '../curation/memory-curation-ops.ts';
-import { applyPlan, directory, relatedLines, snapshot, touchedDocs, type WrittenOp } from '../curation/memory-curation-work.ts';
+import { applyPlan, directory, relatedLines, snapshot, touchedDocs,
+  type WrittenOp } from '../curation/memory-curation-work.ts';
 import { errorCategory, safeLog } from '../../util/index.ts';
 import { findContradictions } from '../curation/memory-contradictions.ts';
 import { ensureMemoryDocs, type Writer } from '../docs/memory-doc-writes.ts';

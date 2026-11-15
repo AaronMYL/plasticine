@@ -103,10 +103,12 @@ export function handOffText(kind: string, error: unknown): string | null {
  */
 export function computerFailureText(error: ComputerFetchReport['error'], kind = ''): string {
   if (error === null) { return '服务器和电脑都没取到'; }
-  const why = error.code === 'http_error' ? `对方回了 ${String(error.status ?? '错误')}`
-    : error.code === 'too_large' ? '正文超过 2 MB'
-      : error.code === 'refused' ? '电脑不替服务器取这种地址'
-        : error.detail?.trim() || '页面没打开';
+  const known: Partial<Record<string, string>> = {
+    http_error: `对方回了 ${String(error.status ?? '错误')}`,
+    too_large: '正文超过 2 MB',
+    refused: '电脑不替服务器取这种地址',
+  };
+  const why = known[error.code] ?? (error.detail?.trim() || '页面没打开');
   const hint = kind === 'reddit' && error.code === 'http_error' && error.status === 429
     ? '；在电脑上的 Plasticine 浏览器里登录 Reddit，电脑会带着登录去取' : '';
   return `服务器和电脑都没取到（${why}）${hint}`;

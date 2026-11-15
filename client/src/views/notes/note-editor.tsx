@@ -20,7 +20,6 @@ import { useTelemetry } from '../../telemetry.ts';
 import { noteExtensions } from './editor-extensions.ts';
 import { NoteSaver } from './note-saver.ts';
 import { noteComposing, trackComposition } from './note-composition.ts';
-import { CLIENT_BUILD_ID } from '../../shell/client-update.tsx';
 import { useEditorDom } from './editor-dom.ts';
 import { useNoteSync } from './use-note-sync.ts';
 import { NoteReview, type NoteProposal } from './note-review.tsx';
@@ -37,10 +36,8 @@ import { NoteVersions } from './note-versions.tsx';
 import { PHONE_BELOW } from '../../shell/layout.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { buildNoteQuote } from './note-quote.ts';
-import { useOpenPanel } from '../../shell/panel.ts';
 import { locateContent } from '../../shell/locate-content.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { useRoute } from '../../shell/use-route.ts';
 import { useQuoteHandler } from '../../shell/quote-registry.ts';
 
 /** 「已采用修改 · 定位」停多久。 */
@@ -74,10 +71,8 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
   const api = useApi();
   const telemetry = useTelemetry();
   const timeZone = useTimeZone();
-  const openPanel = useOpenPanel();
   const targetState = useClientState();
   const { noteOps, shellPrefs, notesUi } = targetState;
-  const { route } = useRoute();
   const saver = useSaver(note);
   const saveState = useStore(saver.state);
   const deleteKey = deleteNoteOp(note.id);
@@ -166,15 +161,20 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
     await saver.flush();
     if (editor.isDestroyed) return;
     if (targetState.dockTargets.store.get().lineId !== quoteTarget) {
-      setQuoteStatus('对话对象变了，请重新引用。'); return;
+      setQuoteStatus('对话对象变了，请重新引用。');
+      return;
     }
     if (!saver.readyForRefresh() || !document.eq(editor.state.doc)) {
-      setQuoteStatus('正文仍在修改或尚未保存，处理保存状态后再引用。'); return;
+      setQuoteStatus('正文仍在修改或尚未保存，处理保存状态后再引用。');
+      return;
     }
     try {
       composer.ui.addQuote(buildNoteQuote(saver.current(), !hasSelection ? {}
         : { selection: selected, selectionKey: `${from}_${to}` }));
-    } catch (cause) { setQuoteStatus(errorText(cause)); return; }
+    } catch (cause) {
+      setQuoteStatus(errorText(cause));
+      return;
+    }
     setQuoteStatus(null);
     telemetry.track('note.quoted', { selection: hasSelection });
     if (from !== to) { editor.commands.setTextSelection(to); }
@@ -311,7 +311,8 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
         }} onKeep={() => setProposal(null)} />}
       {adopted ? <p className="note-adopted" role="status"><Icon name="check" size={14} />已采用修改{' '}
         <button type="button" className="text-button" onClick={() => {
-          locateContent(changedParagraph.current); setAdopted(false);
+          locateContent(changedParagraph.current);
+          setAdopted(false);
         }}>定位</button></p> : null}
       <EditorContent editor={editor} className="note-body" />
       {aiChanged ? <span className="note-ai-cursor" role="status">Plasticine · 已写入这里</span> : null}

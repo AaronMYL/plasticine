@@ -1,7 +1,7 @@
 // 第 115 条：维护入口命令行。参数变成一条维护命令；db.read 只读打开库、只收查询；连不上服务时说清是入口没开。
 
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';

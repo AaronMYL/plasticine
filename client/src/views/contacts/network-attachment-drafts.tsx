@@ -56,13 +56,15 @@ function createDrafts(api: NetworkAttachmentsApi) {
   const patch = (id: string, change: Partial<Draft>): void => store.set((data) => ({ ...data,
     rows: data.rows.map((row) => row.id === id ? { ...row, ...change } : row) }));
   const remove = (id: string): void => {
-    pending.get(id)?.abort(); pending.delete(id);
+    pending.get(id)?.abort();
+    pending.delete(id);
     const row = store.get().rows.find((item) => item.id === id);
     if (row?.preview != null) URL.revokeObjectURL(row.preview);
     store.set((data) => ({ ...data, rows: data.rows.filter((item) => item.id !== id) }));
   };
   const upload = async (row: Draft): Promise<void> => {
-    const abort = new AbortController(); pending.set(row.id, abort);
+    const abort = new AbortController();
+    pending.set(row.id, abort);
     patch(row.id, { loading: true, error: null, progress: 0 });
     try {
       let payload = row.payload;
@@ -94,17 +96,20 @@ function createDrafts(api: NetworkAttachmentsApi) {
       const replaceAt = replace === undefined ? -1 : rows.findIndex((row) => row.id === replace);
       if (replace !== undefined && replaceAt === -1) return;
       if (rows.length + files.length - Number(replaceAt !== -1) > 5) {
-        store.set((data) => ({ ...data, error: '一条消息最多五份附件。' })); return;
+        store.set((data) => ({ ...data, error: '一条消息最多五份附件。' }));
+        return;
       }
       if (files.some((file) => file.size === 0 || file.size > NETWORK_ATTACHMENT_MAX_BYTES)) {
-        store.set((data) => ({ ...data, error: '每份附件最多 25 MB，空文件不能发送。' })); return;
+        store.set((data) => ({ ...data, error: '每份附件最多 25 MB，空文件不能发送。' }));
+        return;
       }
       if (replace !== undefined) remove(replace);
       const added: Draft[] = files.map((file) => ({ id: createRequestId(), file,
         preview: typeof URL.createObjectURL === 'function' ? URL.createObjectURL(file) : null,
         progress: 0, loading: true, error: null, remote: null, payload: null }));
       store.set((data) => {
-        const next = [...data.rows]; next.splice(replaceAt === -1 ? next.length : replaceAt, 0, ...added);
+        const next = [...data.rows];
+        next.splice(replaceAt === -1 ? next.length : replaceAt, 0, ...added);
         return { rows: next, error: null };
       });
       for (const row of added) void upload(row);
@@ -118,9 +123,15 @@ export function useNetworkAttachmentDrafts(threadId: string) {
   const { networkAttachments: api } = useApi();
   const drafts = useMemo(() => {
     let threads = draftsByApi.get(api);
-    if (threads === undefined) { threads = new Map(); draftsByApi.set(api, threads); }
+    if (threads === undefined) {
+      threads = new Map();
+      draftsByApi.set(api, threads);
+    }
     let row = threads.get(threadId);
-    if (row === undefined) { row = createDrafts(api); threads.set(threadId, row); }
+    if (row === undefined) {
+      row = createDrafts(api);
+      threads.set(threadId, row);
+    }
     return row;
   }, [api, threadId]);
   const { rows, error } = useStore(drafts.store);
@@ -148,7 +159,8 @@ export function NetworkAttachmentDrafts({ drafts, disabled }: {
       <div className="attachment-draft-actions">
         <label className="contact-attachment-replace">替换<input type="file" hidden disabled={disabled}
           aria-label={`替换附件 ${row.file.name}`} onChange={(event) => {
-            const file = event.target.files?.[0]; if (file !== undefined) drafts.add([file], row.id);
+            const file = event.target.files?.[0];
+            if (file !== undefined) drafts.add([file], row.id);
           }} /></label>
         {row.error === null ? null : <button type="button" disabled={disabled} onClick={() => drafts.retry(row.id)}
           aria-label={`重试上传 ${row.file.name}`}>重试</button>}</div>

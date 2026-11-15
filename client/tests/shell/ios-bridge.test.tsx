@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { isPlasticineIOS } from '../../src/ios/bridge.ts';
 import { renderApp } from '../helpers.tsx';

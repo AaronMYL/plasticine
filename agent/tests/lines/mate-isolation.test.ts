@@ -145,7 +145,10 @@ test('队友回合不占后台位置；停用会中止本人并保留排着的�
     assert.equal(h.handle.state.lineQueue.queued(c.lineId).length, 1);
     // 四条同时开跑，先后不定：只看是这四件、各一次。
     assert.deepEqual([...started].sort(), ['丙', '乙', '后台', '甲'].sort());
-  } finally { gate.resolve('完成'); await h.close(); }
+  } finally {
+    gate.resolve('完成');
+    await h.close();
+  }
 });
 
 test('发起交接的队友仍能读取交回的完整工作，但不因此能控制承接队友', async () => {

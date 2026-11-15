@@ -179,7 +179,10 @@ button.web-address-host:focus-visible {
 }
 
 .web-menu .popover-item,
-.web-menu .web-zoom-row { gap: var(--space-3); padding-inline: var(--space-3); }
+.web-menu .web-zoom-row {
+  gap: var(--space-3);
+  padding-inline: var(--space-3);
+}
 
 .popover.web-pop .web-pop-search {
   box-sizing: border-box;

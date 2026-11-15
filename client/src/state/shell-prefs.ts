@@ -72,7 +72,8 @@ function readFrame(saved: unknown): ChatFrame | null {
   const [width, height, right, bottom] = values as number[];
   // 11-15 以前存的没有 full：那时对话框都是整高。
   const full = (saved as Record<string, unknown>)['full'];
-  return { width: width!, height: height!, right: right!, bottom: bottom!, full: typeof full === 'boolean' ? full : true };
+  return { width: width!, height: height!, right: right!, bottom: bottom!, full: typeof full === 'boolean' ? full
+    : true };
 }
 
 export class ShellPrefs {

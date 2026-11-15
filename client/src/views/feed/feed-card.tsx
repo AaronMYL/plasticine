@@ -18,7 +18,6 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { useHeightMorph } from '../../shell/motion.ts';
-import { usePhone } from '../../shell/use-viewport-width.ts';
 import { useMention } from '../conversation/mention-button.tsx';
 import { DouyinMark, FeedChartView, FeedText, FeedVideoBody, videoMeta } from './feed-body.tsx';
 import { RedditMark } from './feed-source-list.tsx';
@@ -156,7 +155,6 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
   const live = useLive();
   const timeZone = useTimeZone();
   // 手机（设计稿 Phone-Feed）写「1 小时前」，电脑照旧写钟点。
-  const phone = usePhone();
   const actions = live.feedActions;
   const mention = useMention();
   const discuss = (itemId: string): void => {

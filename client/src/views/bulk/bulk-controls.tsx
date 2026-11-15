@@ -22,7 +22,10 @@ export function purgeSummary(items: readonly BulkItem[]): string {
 export function BulkCheck({ selection, item }: { selection: BulkSelection; item: BulkItem }): ReactNode {
   return selection.active ? <input type="checkbox" className="bulk-check" checked={selection.checked(item)}
     disabled={selection.busy} aria-label={`选择${item.title}`} onChange={() => undefined}
-    onClick={(event) => { event.stopPropagation(); selection.toggle(item, event.shiftKey); }} /> : null;
+    onClick={(event) => {
+      event.stopPropagation();
+      selection.toggle(item, event.shiftKey);
+    }} /> : null;
 }
 
 export function BulkHeader({ selection, items, trash = false, allowEmpty = true, onEmpty }: {
@@ -80,8 +83,14 @@ function MoveDialog({ items, folders, onMove, onClose }: { items: readonly BulkI
     return () => { if (before.current instanceof HTMLElement) before.current.focus(); };
   }, []);
   return createPortal(<dialog ref={ref} className="dialog bulk-move-dialog" aria-label="移动所选项目"
-    onCancel={(event) => { event.preventDefault(); onClose(); }}>
-    <form className="bulk-move-form" onSubmit={(event) => { event.preventDefault(); onMove(value.trim()); }}>
+    onCancel={(event) => {
+      event.preventDefault();
+      onClose();
+    }}>
+    <form className="bulk-move-form" onSubmit={(event) => {
+      event.preventDefault();
+      onMove(value.trim());
+    }}>
       <h2 className="dialog-title">移动 {items.length} 项</h2>
       <label className="field">目标文件夹<input autoFocus className="field-input" list={id} value={value}
         onChange={(event) => setValue(event.target.value)} /></label>
@@ -126,12 +135,14 @@ export function BulkBar({ selection, trash = false, folders = [] }: { selection:
     </div>
     {pending === null ? null : pending.action === 'move' ? <MoveDialog items={pending.items} folders={folders}
       onClose={() => setPending(null)} onMove={(destination) => {
-        setPending(null); void selection.perform('move', destination, pending.items);
+        setPending(null);
+        void selection.perform('move', destination, pending.items);
       }} /> : <ConfirmDialog title={`${pending.action === 'purge' ? '永久删除' : '删除'}这 ${pending.items.length} 项？`}
       body={pending.action === 'purge' ? purgeSummary(pending.items) : '会移到「最近删除」，在那里可以还原。'}
       confirmLabel={`${pending.action === 'purge' ? '永久删除' : '删除'} ${pending.items.length} 项`}
       onCancel={() => setPending(null)} onConfirm={() => {
-        setPending(null); void selection.perform(pending.action, undefined, pending.items);
+        setPending(null);
+        void selection.perform(pending.action, undefined, pending.items);
       }} />}
   </>;
 }

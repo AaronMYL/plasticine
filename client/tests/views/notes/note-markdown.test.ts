@@ -57,7 +57,8 @@ function copied(target: Editor, text?: string): string {
       }
       return index < 0;
     });
-    target.view.dispatch(target.state.tr.setSelection(TextSelection.create(target.state.doc, from, from + text.length)));
+    target.view.dispatch(target.state.tr.setSelection(TextSelection.create(target.state.doc, from, from
+      + text.length)));
   }
   const slice = target.state.selection.content();
   return target.view.someProp('clipboardTextSerializer', (serialize) => serialize(slice, target.view)) ?? '';

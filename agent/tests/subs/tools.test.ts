@@ -8,7 +8,10 @@ import { openTestState, type TestState } from '../state/helpers.ts';
 
 let t: TestState;
 let opened: string[];
-beforeEach(async () => { t = await openTestState(); opened = []; });
+beforeEach(async () => {
+  t = await openTestState();
+  opened = [];
+});
 afterEach(async () => { await t.cleanup(); });
 
 const PORT: RunPort = {

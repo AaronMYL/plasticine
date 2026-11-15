@@ -22,7 +22,10 @@ class FakeChannel {
     this.readyState = 'closed';
     this.onclose?.();
   }
-  openNow(): void { this.readyState = 'open'; this.onopen?.(); }
+  openNow(): void {
+    this.readyState = 'open';
+    this.onopen?.();
+  }
   reply(data: string | Uint8Array): void {
     this.onmessage?.({ data: typeof data === 'string' ? data : data.slice().buffer });
   }

@@ -30,7 +30,10 @@ export function useRememberedScroll<T extends HTMLElement>(
     // 主区的段落会异步到达：在浏览器确实能放下原阅读位置后再结束恢复。
     const observer = new MutationObserver(restore);
     if (restored.current !== key) observer.observe(element, { childList: true, subtree: true, characterData: true });
-    const takeOver = () => { restored.current = key; observer.disconnect(); };
+    const takeOver = () => {
+      restored.current = key;
+      observer.disconnect();
+    };
     element.addEventListener('wheel', takeOver, { passive: true });
     element.addEventListener('touchstart', takeOver, { passive: true });
     return () => {

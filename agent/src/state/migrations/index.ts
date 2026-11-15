@@ -1,3 +1,5 @@
+// The ordered list of schema migrations. Append only: a shipped migration is never edited or removed.
+
 import { migration as networkAttachments } from './0127-network-attachments.ts';
 import { migration as contactLinks } from './0133-contact-links.ts';
 import { migration as mateCharacters } from './0134-mate-characters.ts';
@@ -7,8 +9,6 @@ import { migration as loopMessagePredict } from './0137-loop-message-predict.ts'
 import { migration as feedPlacesBody } from './0138-feed-places-body.ts';
 import { migration as souls } from './0139-souls.ts';
 import { migration as feedMoreImages } from './0140-feed-more-images.ts';
-// The ordered list of schema migrations. Append only: a shipped migration is never edited or removed.
-
 import { migration as lineArchive } from './0066-line-archive.ts';
 import { migration as searchIndex } from './0067-search-index.ts';
 import { migration as memoryLayers } from './0070-memory-layers.ts';

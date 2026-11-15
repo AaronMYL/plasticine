@@ -434,8 +434,8 @@ const perceive = () => {
   const signature = JSON.stringify([copy.outerHTML, values]);
   // 页面没变（地址和大纲一样、元素还是那几个）就沿用上一次的编号版本：「问这一页」每发一句都感知一次，没变的页面
   // 不让脑手里的编号作废。
-  const same = store.signature === signature && store.digest === digest && store.url === location.href && store.elements.length === elements.length
-    && store.elements.every((el, index) => el === elements[index]);
+  const same = store.signature === signature && store.digest === digest && store.url === location.href
+    && store.elements.length === elements.length && store.elements.every((el, index) => el === elements[index]);
   if (!same) {
     store.version = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }

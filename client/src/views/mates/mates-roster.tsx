@@ -70,9 +70,9 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
         const own = lines.lines.find((line) => line.id === mate.lineId);
         // 第二行平时写职责；它正在做事时写在做什么（11-12：协作状态看得见，不只是一个点）。在做事的那个点去掉了：
         // 头像自己会动（11-13）。
-        const doing = mate.disabledAt !== null ? null
-          : working ? `在做「${work[0]?.title ?? ''}」${work.length > 1 ? `等 ${work.length} 件` : ''}`
-            : own?.status === 'running' ? '正在回话' : own?.status === 'waiting' ? '等你回答' : null;
+        const talking = own?.status === 'running' ? '正在回话' : own?.status === 'waiting' ? '等你回答' : null;
+        const busy = working ? `在做「${work[0]?.title ?? ''}」${work.length > 1 ? `等 ${work.length} 件` : ''}` : talking;
+        const doing = mate.disabledAt !== null ? null : busy;
         return <div key={mate.id} className="column-row"><ColumnLink route={mateRoute(mate.id)}
           current={route.view === 'plasticine' && (route.mateId === mate.id || route.lineId === mate.lineId)}
           navigate={navigate} lead={<MateAvatar mate={mate} />} sub={doing ?? mate.role}

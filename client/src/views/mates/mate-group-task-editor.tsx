@@ -13,7 +13,10 @@ export function MateGroupTaskEditor({ group, phone, onClose }: { group: MateGrou
   const live = useLive();
   const state = useClientState();
   const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const key = `mate-groups:task:create:${group.id}`;
   const op = useOp(key);
   const [text, setText] = useState(op?.request.kind === 'mate_group_task_create' ? op.request.body.text : '');
@@ -29,7 +32,10 @@ export function MateGroupTaskEditor({ group, phone, onClose }: { group: MateGrou
       发布任务</button></>;
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
     title="发布群任务" onClose={onClose} className="mate-editor-sheet" footer={footer}>
-    <form id={formId} className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+    <form id={formId} className="mate-form" onSubmit={(event) => {
+      event.preventDefault();
+      void submit();
+    }}>
       <label>任务内容<textarea autoFocus rows={6} value={text} disabled={locked}
         onChange={(event) => setText(event.target.value)} /></label>
       {op === undefined ? null : <OpLine op={op} onDismiss={(id) => state.actionOps.dismiss(id)}

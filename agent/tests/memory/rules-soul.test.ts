@@ -8,7 +8,11 @@ import { memoryState } from '../tools/helpers.ts';
 
 const states: ReturnType<typeof memoryState>[] = [];
 afterEach(() => { for (const state of states.splice(0)) state.close(); });
-function setup() { const state = memoryState(); states.push(state); return state; }
+function setup() {
+  const state = memoryState();
+  states.push(state);
+  return state;
+}
 const writer = { actor: 'user' as const, ref: 'device-fixture' };
 
 test('新安装的 Soul 默认按三节展示，来源为系统且只创建一次', () => {

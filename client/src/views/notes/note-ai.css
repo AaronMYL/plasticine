@@ -161,27 +161,68 @@
   font-size: var(--text-body);
   line-height: var(--text-body-line);
 }
-.note-suggestion header { display: flex; align-items: center; justify-content: space-between;
-  font-size: var(--text-caption); }
-.note-suggestion ul { list-style: none; padding: 0; margin: var(--space-2) 0; }
-.note-suggestion li { display: flex; align-items: baseline; gap: var(--space-2); padding: var(--space-2);
-  border-radius: var(--radius); }
+.note-suggestion header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-caption);
+}
+.note-suggestion ul {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-2) 0;
+}
+.note-suggestion li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius);
+}
 .note-suggestion li:hover { background: var(--tint); }
-.note-suggestion li > span:nth-child(2), .note-suggestion-draft > span { flex: 1; min-width: 0; }
-.note-suggestion-kind { flex: none; padding: 0 var(--space-1); border-radius: var(--radius-sm);
-  font-size: var(--text-tag); }
-.note-suggestion-kind[data-kind='structure'] { color: var(--hue-sky);
-  background: color-mix(in srgb, var(--hue-sky) 12%, transparent); }
-.note-suggestion-kind[data-kind='supplement'] { color: var(--hue-teal);
-  background: color-mix(in srgb, var(--hue-teal) 12%, transparent); }
-.note-suggestion-kind[data-kind='example'] { color: var(--hue-ochre);
-  background: color-mix(in srgb, var(--hue-ochre) 12%, transparent); }
-.note-suggestion-kind[data-kind='contact'] { color: var(--hue-rose);
-  background: color-mix(in srgb, var(--hue-rose) 12%, transparent); }
-.note-suggestion-draft { display: flex; align-items: baseline; gap: var(--space-2); background: var(--tint2);
-  border-radius: var(--radius); padding: var(--space-2) var(--space-3); margin-top: var(--space-4); }
-.note-suggestion-draft > span { white-space: pre-wrap; overflow-wrap: anywhere; }
-.note-suggestion button { flex: none; white-space: nowrap; }
+.note-suggestion li > span:nth-child(2), .note-suggestion-draft > span {
+  flex: 1;
+  min-width: 0;
+}
+.note-suggestion-kind {
+  flex: none;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-tag);
+}
+.note-suggestion-kind[data-kind='structure'] {
+  color: var(--hue-sky);
+  background: color-mix(in srgb, var(--hue-sky) 12%, transparent);
+}
+.note-suggestion-kind[data-kind='supplement'] {
+  color: var(--hue-teal);
+  background: color-mix(in srgb, var(--hue-teal) 12%, transparent);
+}
+.note-suggestion-kind[data-kind='example'] {
+  color: var(--hue-ochre);
+  background: color-mix(in srgb, var(--hue-ochre) 12%, transparent);
+}
+.note-suggestion-kind[data-kind='contact'] {
+  color: var(--hue-rose);
+  background: color-mix(in srgb, var(--hue-rose) 12%, transparent);
+}
+.note-suggestion-draft {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  background: var(--tint2);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  margin-top: var(--space-4);
+  }
+.note-suggestion-draft > span {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.note-suggestion button {
+  flex: none;
+  white-space: nowrap;
+}
 
 .note-suggestion p {
   flex: 0 1 auto;
@@ -330,7 +371,10 @@
   border-radius: var(--radius);
   color: var(--fg3);
 }
-.note-save:focus-visible { outline: 2px solid var(--fg2); outline-offset: 1px; }
+.note-save:focus-visible {
+  outline: 2px solid var(--fg2);
+  outline-offset: 1px;
+}
 .note-save-spin {
   width: 12px;
   height: 12px;
@@ -339,8 +383,16 @@
   border-top-color: var(--fg2);
   animation: note-save-spin var(--motion-spin) linear infinite;
 }
-@keyframes note-save-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .note-save-spin { animation: none; } }
+@keyframes note-save-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-save-spin {
+    animation: none;
+  }
+}
 .note-save-text {
   display: inline-flex;
   align-items: center;
@@ -369,7 +421,10 @@
 }
 .note-adopted svg { color: var(--fg2); }
 @media (max-width: 767px) {
-  .note-command-bar { overflow-x: auto; scrollbar-width: none; }
+  .note-command-bar {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
   .note-command-bar::-webkit-scrollbar { display: none; }
 }
 

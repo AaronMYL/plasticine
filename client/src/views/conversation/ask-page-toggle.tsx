@@ -136,16 +136,28 @@ export function usePageContext(enabled = true): PageContext {
     const already = sent.some((quote) => quote.id === result.quote.id && quote.text === result.quote.text);
     return already || previous?.id === result.quote.id && previous.text === result.quote.text ? null : result.quote;
   };
-  const remove = (): void => { revision.current += 1; shellPrefs.setAskPage(false); };
+  const remove = (): void => {
+    revision.current += 1;
+    shellPrefs.setAskPage(false);
+  };
   return { available, on, title,
     scope: titleOnly ? '仅标题和链接' : active?.result?.scope ?? '读取中…',
     loading: !titleOnly && (active === null || active.loading),
     error: titleOnly ? null : active?.error ?? null,
     blocked: available && on && !titleOnly && (active === null || active.loading || active.error !== null),
-    toggle: () => { setOnlyTitle(null); shellPrefs.setAskPage(!on); },
+    toggle: () => {
+      setOnlyTitle(null);
+      shellPrefs.setAskPage(!on);
+    },
     remove,
-    retry: () => { setOnlyTitle(null); void read(pageBudget([]) ?? 0, true).catch(() => undefined); },
-    titleOnly: () => { revision.current += 1; setOnlyTitle(key); },
+    retry: () => {
+      setOnlyTitle(null);
+      void read(pageBudget([]) ?? 0, true).catch(() => undefined);
+    },
+    titleOnly: () => {
+      revision.current += 1;
+      setOnlyTitle(key);
+    },
     quoteFor,
     committed: (quote) => { if (quote !== null) lastSent.current = quote; },
   };

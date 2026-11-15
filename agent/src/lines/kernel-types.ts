@@ -1,6 +1,6 @@
-import type { ImageContent } from '@earendil-works/pi-ai';
 // 新内核门面用到的类型和常量：装配选项、拒绝的错误、发消息的结果。
 
+import type { ImageContent } from '@earendil-works/pi-ai';
 import type { LineInputOrigin, LineMessageView, LineStreamEvent, LineView, QueuedMessageView }
   from '../../shared/api/lines.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';

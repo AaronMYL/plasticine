@@ -22,10 +22,18 @@ export async function changeNoteFolder(context: RequestContext): Promise<Reply> 
     const { folders } = context.deps.state.notes;
     let body;
     switch (input.action) {
-      case 'create': body = folders.create(input.name); break;
-      case 'rename': body = folders.rename(input.name, input.next); break;
-      case 'move': body = folders.move(input.name, input.direction); break;
-      case 'remove': body = folders.remove(input.name, input.destination); break;
+      case 'create':
+        body = folders.create(input.name);
+        break;
+      case 'rename':
+        body = folders.rename(input.name, input.next);
+        break;
+      case 'move':
+        body = folders.move(input.name, input.direction);
+        break;
+      case 'remove':
+        body = folders.remove(input.name, input.destination);
+        break;
     }
     context.deps.hub.publish({ type: 'note_invalidated', noteId: 'folders' });
     return { status: 200, body };

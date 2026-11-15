@@ -2,12 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { Value } from 'typebox/value';
 import {
-  AnswerAskResponseSchema,
-  AskListResponseSchema,
-  PushKeyResponseSchema,
-  REPLAYED_HEADER,
-  type AskView,
-  type PushPayload,
+  AskListResponseSchema, PushKeyResponseSchema, type AskView, type PushPayload,
 } from '../../shared/api/index.ts';
 import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import { fakeBrowser } from '../attention/helpers.ts';

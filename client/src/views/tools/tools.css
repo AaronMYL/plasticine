@@ -34,17 +34,41 @@
   flex: 1;
 }
 
-.file-path-form { display: flex; align-items: center; gap: var(--space-2); flex: 1 1 200px; min-width: 0; }
-.file-path-form > input { flex: 1; min-width: 0; }
-.file-create > summary { display: flex; align-items: center; gap: var(--space-2); color: var(--fg2); cursor: pointer;
-  font-size: var(--text-ui); line-height: var(--text-body-line); list-style: none; }
+.file-path-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.file-path-form > input {
+  flex: 1;
+  min-width: 0;
+}
+.file-create > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+  cursor: pointer;
+  font-size: var(--text-ui);
+  line-height: var(--text-body-line);
+  list-style: none;
+  }
 .file-create > summary::-webkit-details-marker { display: none; }
 .file-create[open] > summary { margin-bottom: var(--space-4); }
 .file-create > .tool-form + .tool-form { margin-top: var(--space-4); }
-.file-text-content { font-family: var(--mono); font-size: var(--text-ui); line-height: var(--text-body-line);
-  resize: vertical; }
+.file-text-content {
+  font-family: var(--mono);
+  font-size: var(--text-ui);
+  line-height: var(--text-body-line);
+  resize: vertical;
+}
 .tool-row > .tool-confirm { flex-basis: 100%; }
-.tool-row-main > svg { flex: none; vertical-align: middle; }
+.tool-row-main > svg {
+  flex: none;
+  vertical-align: middle;
+}
 
 .tool-form {
   display: flex;
@@ -202,15 +226,38 @@
   padding: var(--space-2) 0;
 }
 
-.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-1); }
-.calendar-grid > .text-meta { padding: var(--space-2); text-align: center; }
-.calendar-day { display: flex; flex-direction: column; align-items: center; gap: var(--space-1);
-  min-height: 64px; padding: var(--space-2) var(--space-1); border: 1px solid var(--line);
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+.calendar-grid > .text-meta {
+  padding: var(--space-2);
+  text-align: center;
+}
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 64px;
+  padding: var(--space-2) var(--space-1);
+  border: 1px solid var(--line);
     border-radius: var(--radius-sm);
-  background: transparent; color: inherit; font: inherit; cursor: pointer; }
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  }
 .calendar-day[aria-pressed='true'] { background: var(--tint2); }
-.calendar-day[aria-current='date'] { border-color: var(--accent); font-weight: 600; }
-.tool-row > .inline-edit { flex-basis: 100%; width: 100%; }
+.calendar-day[aria-current='date'] {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.tool-row > .inline-edit {
+  flex-basis: 100%;
+  width: 100%;
+}
 .tool-row:has(> .inline-edit) { flex-wrap: wrap; }
 
 /* 原型：工具开关固定两行结构（用户视角审查 2026-11-01 第 12 条） */
@@ -291,7 +338,11 @@
 }
 
 /* 截图记账 · 这周（第二批「记账直接记」）：账本数字下面一行细字，清原图的确认在下一行展开，说清后果。 */
-.money-week { display: flex; flex-direction: column; gap: var(--space-1); }
+.money-week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
 .money-week-line {
   display: flex;
   flex-wrap: wrap;
@@ -302,6 +353,14 @@
   line-height: var(--text-body-line);
   color: var(--fg2);
 }
-.money-week-warn { flex-basis: 100%; margin: 0; font-size: var(--text-ui); line-height: var(--text-body-line);
-  color: var(--fg); }
-.money-week .tool-confirm { align-items: center; padding: var(--space-1) 0; }
+.money-week-warn {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--text-ui);
+  line-height: var(--text-body-line);
+  color: var(--fg);
+}
+.money-week .tool-confirm {
+  align-items: center;
+  padding: var(--space-1) 0;
+}

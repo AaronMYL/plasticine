@@ -50,7 +50,8 @@ test('main line: after his own message it is not his turn; after Plasticine answ
   assert.equal(t.state.loop.tallies('message_predict')[0]?.kept, 1);
 });
 
-test('main line: a background report that came back last counts as Plasticine speaking, so it is his turn', async () => {
+test('main line: a background report that came back last counts as Plasticine speaking, so it is his turn',
+  async () => {
   const main = MAIN_LINE_ID;
   t.state.lineMessages.append(main, 'user', { role: 'user', content: '帮我加几个信息源', timestamp: 2 },
     { origin: { kind: 'user', userText: '帮我加几个信息源' } });

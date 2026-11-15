@@ -110,7 +110,11 @@ async function start(t: TestContext, script: TextStep[] = ['自然续写']): Pro
   const app = await startTestApp(script, { startTasks: false });
   let vite: ViteDevServer | undefined;
   let browser: LocalBrowser | undefined;
-  t.after(async () => { await browser?.close(); await vite?.close(); await app.close(); });
+  t.after(async () => {
+    await browser?.close();
+    await vite?.close();
+    await app.close();
+  });
   vite = await createServer({ root: fileURLToPath(new URL('..', import.meta.url)), logLevel: 'error',
     cacheDir: join(app.directory, 'vite-cache'),
     server: { hmr: false, host: '127.0.0.1', port: 0, proxy: { '/v2': { target: app.base } } } });

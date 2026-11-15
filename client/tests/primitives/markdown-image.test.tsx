@@ -8,7 +8,8 @@ import type { PlasticineApi } from '../../src/api/client.ts';
 import { Markdown } from '../../src/primitives/message/markdown.tsx';
 import { ImageViewerHost } from '../../src/primitives/image-viewer/index.tsx';
 
-const api = { links: { image: (url: string) => `/v2/image?url=${encodeURIComponent(url)}` } } as unknown as PlasticineApi;
+const api = { links: { image: (url: string) => `/v2/image?url=${encodeURIComponent(url)}` } } as unknown as
+  PlasticineApi;
 
 it('回复里的图直接显示，经服务端转一道；点开看大图，「打开原文」是原图', () => {
   render(<ApiProvider api={api}><Markdown text={'这是走势：\n\n![十月的走势](https://charts.test/oct.png)'} />

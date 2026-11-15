@@ -15,7 +15,9 @@ export class MateActions {
   private readonly directory: MatesStore;
   private readonly running = new Set<string>();
   constructor(api: PlasticineApi, ops: ActionOps, directory: MatesStore) {
-    this.api = api; this.ops = ops; this.directory = directory;
+    this.api = api;
+    this.ops = ops;
+    this.directory = directory;
   }
   create(draft: MateDraft): Promise<Result | null> {
     return this.begin('mates:create', '创建队友', draft.name,

@@ -77,7 +77,10 @@ test('同一群任务只被领取一次，完成后交付在群里，私聊不�
     assert.doesNotMatch(JSON.stringify(h.kernel.read(task.id, 100)), /只在私聊里存放/);
     assert.equal(h.handle.state.lineMessages.after(b.lineId, 0).length, 0);
     assert.equal(h.handle.state.lineMessages.after(c.lineId, 0).length, 0);
-  } finally { gate.resolve('结束'); await h.close(); }
+  } finally {
+    gate.resolve('结束');
+    await h.close();
+  }
 });
 
 test('群任务工具拒绝跨组和封闭来源，模型发布明确保留队友委托来源', async () => {
@@ -155,7 +158,10 @@ test('四张群任务领取后仍只有三个执行席，第四项排队', async
     gate.resolve('完成');
     await h.kernel.settled();
     assert.equal(h.kernel.view(tasks[3]!.id).status, 'idle');
-  } finally { gate.resolve('结束'); await h.close(); }
+  } finally {
+    gate.resolve('结束');
+    await h.close();
+  }
 });
 
 test('队友模型能发布及本人领取群任务，身份取执行线，不能自报别的队友', async () => {

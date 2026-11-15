@@ -13,7 +13,10 @@ function bridge(text = '先沿河走，再进公园。\n回程走另一条路。
       totalChars: text.length, truncated: false })) } };
   return tools;
 }
-afterEach(() => { delete window.plasticineDesktop; vi.restoreAllMocks(); });
+afterEach(() => {
+  delete window.plasticineDesktop;
+  vi.restoreAllMocks();
+});
 async function open() {
   const app = await renderApp();
   act(() => { window.location.hash = webHash(app.state.webTabs.open(URL, '城市散步', 'user')); });

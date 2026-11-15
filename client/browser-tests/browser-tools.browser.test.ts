@@ -34,13 +34,17 @@ test('真实 Chromium：线看图、按观察坐标点击、标签按线固定�
       document.documentElement.dataset.ready='yes';</script></body></html>`);
   });
   t.after(async () => {
-    cloud?.close(); page?.close(); await local?.close();
+    cloud?.close();
+    page?.close();
+    await local?.close();
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   });
   await new Promise<void>((resolve, reject) => {
-    server.once('error', reject); server.listen(0, '127.0.0.1', resolve);
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
   });
-  const address = server.address(); assert.ok(address !== null && typeof address === 'object');
+  const address = server.address();
+  assert.ok(address !== null && typeof address === 'object');
   const url = `http://127.0.0.1:${address.port}/task`;
   local = await launchBrowser();
   const browser = cloud = new CloudBrowser({ transport: new CdpBrowser({ endpoint: local.endpoint }),

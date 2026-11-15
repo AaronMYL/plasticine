@@ -1,11 +1,11 @@
-import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
-import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
-import { libraryBatch } from '../bulk/bulk-api.ts';
 // 资料库首页（#/library；旧地址 #/books/space 同一页）。第 8 批第 6 条（设计稿 Library-Spaces / Phone-Library，11-09）：
 // 空间是整页网页，第一屏是缩略图卡片——「最近」三张（手机上一排横滑），「全部」四列（手机两列）；卡片下面是标题、
 // 「报告 / 来信 · 时间」和 ⋯（改名、删除）。改名在卡片原处改；删除先问，删了进「最近删除」。
 // 手机上没有第二栏，「全部」下面再列「订阅」和「最近删除」，从这里都能走到。
 
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
+import { libraryBatch } from '../bulk/bulk-api.ts';
 import { useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import type { SpaceListItem } from '../../api/shared.ts';

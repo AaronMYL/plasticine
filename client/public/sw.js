@@ -273,7 +273,10 @@ async function directFetch(event) {
       } else if (data.type === 'head') {
         const stream = new ReadableStream({
           start(next) { controller = next; },
-          cancel() { port.postMessage({ type: 'abort' }); port.close(); },
+          cancel() {
+            port.postMessage({ type: 'abort' });
+            port.close();
+          },
         });
         const nullBody = request.method === 'HEAD' || [204, 205, 304].includes(data.status);
         settle(new Response(nullBody ? null : stream, { status: data.status, headers: data.headers }));

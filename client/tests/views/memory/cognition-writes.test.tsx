@@ -1,6 +1,6 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
-import { renderApp, settle } from '../../helpers.tsx';
+import { renderApp } from '../../helpers.tsx';
 
 it.each([
   ['按提议生效', 'adopt', '改后', 'active'],

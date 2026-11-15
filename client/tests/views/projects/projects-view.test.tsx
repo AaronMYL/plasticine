@@ -1,7 +1,7 @@
 // 项目页（用户 2026-11-01 定：项目取代关切）：侧栏是「项目」不是「关切」；列表常驻的排最后、逾期标出来；点进详情能
 // 采纳 Plasticine 提议的健康度；改档案。
 
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { STANDING_PROJECT_IDS } from '../../../src/api/shared.ts';
 import type { FakeApi } from '../../../src/api/fake/index.ts';

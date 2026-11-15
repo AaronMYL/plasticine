@@ -299,7 +299,10 @@ test('按类型关掉的不推（第13批）：等你的事关了卡不推，来
   const kinds: NotifyKinds = { ...NOTIFY_KINDS_DEFAULT, ask: false, letter: false };
   const gated = new PushService({ state: h.state, keys: generateVapidKeys(), subject: 'https://plasticine.test',
     now: h.clock.now, kinds: () => kinds,
-    transport: async (endpoint, request) => { sent.push({ endpoint, request }); return { status }; } });
+    transport: async (endpoint, request) => {
+      sent.push({ endpoint, request });
+      return { status };
+    } });
   h.presenter.setNotifier(gated);
   gated.subscribe(device('手机'), 'https://push.example/kinds', fakeBrowser().keys);
   await gated.notify(raise());

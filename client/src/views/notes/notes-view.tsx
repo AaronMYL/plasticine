@@ -1,10 +1,10 @@
-import { useBulkSelection } from '../bulk/use-bulk-selection.ts';
-import { notesBatch } from '../bulk/bulk-api.ts';
 // 笔记页：电脑上主区只放正文——列表是笔记栏目的第二栏（11-15 界面统一，文件夹从列表顶上的文件夹名点开，
 // notes-column-list.tsx），收起它照旧用标题栏左边那个按钮；手机上一层一层进（文件夹 → 列表 → 正文，带返回）。
 // 电脑上没选的时候默认打开列表第一篇，选择保留在 NotesUi。
 // 「新建」的 request_id 存在 state/note-ops.ts：回执丢了再点（或点「再核实」）用的是同一个，不会建出第二篇。
 
+import { useBulkSelection } from '../bulk/use-bulk-selection.ts';
+import { notesBatch } from '../bulk/bulk-api.ts';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { createRequestId } from '../../api/request-id.ts';
@@ -137,15 +137,19 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
   const [automaticReading, setAutomaticReading] = useState(false);
   const freshLink = useRef(false);
   const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const { notes, error, retry } = useNoteList(query, collection);
   const selection = useBulkSelection({ items: (notes ?? []).map((note) => ({ kind: 'note', id: note.id,
     title: note.title || '未命名' })), run: (input) => notesBatch(api.notes, input),
     empty: (input) => api.notes.emptyTrash(input), onChanged: retry, scope: JSON.stringify([query, collection]) });
   const invalid = invalidNoteId !== undefined;
-  const selectedId = (noteId === 'new' ? null : noteId) ?? (invalid || noteId === 'new' ? null
-    : reading === true && activeNoteId != null ? activeNoteId
-      : reading === false || phone ? null : (notes?.[0]?.id ?? null));
+  // 地址里没带笔记时选哪一条：正在读的那条；没在读、电脑上两栏并排就放第一条，不留一块空白
+  const firstId = reading === false || phone ? null : (notes?.[0]?.id ?? null);
+  const fallbackId = reading === true && activeNoteId != null ? activeNoteId : firstId;
+  const selectedId = (noteId === 'new' ? null : noteId) ?? (invalid || noteId === 'new' ? null : fallbackId);
   const openNote = (id: string): void => {
     navigate({ view: 'notes', noteId: id });
   };
@@ -195,8 +199,14 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
   };
 
   useEffect(() => {
-    if (noteId !== 'new') { freshLink.current = false; return; }
-    if (!freshLink.current) { freshLink.current = true; void create(); }
+    if (noteId !== 'new') {
+      freshLink.current = false;
+      return;
+    }
+    if (!freshLink.current) {
+      freshLink.current = true;
+      void create();
+    }
   }, [noteId]);
 
   // 手机首层（设计稿 Phone-Notes）：文件夹卡 + 最近；点了文件夹才进列表，列表页头有回首层的返回。

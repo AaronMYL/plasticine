@@ -24,7 +24,10 @@ function fake(current: string | null, options: { landedSha?: string; currentSha?
   let installed = false;
   const commands: PublishCommands = {
     sha256: async () => SHA,
-    writeTemp: async (text) => { written.push(text); return '/tmp/latest.json'; },
+    writeTemp: async (text) => {
+      written.push(text);
+      return '/tmp/latest.json';
+    },
     log: (line) => logs.push(line),
     run: async (command, args) => {
       calls.push([command, ...args].join(' '));

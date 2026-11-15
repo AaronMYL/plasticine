@@ -71,7 +71,8 @@ export function argumentProblem(schema: TSchema, issue: ValidationIssue & { keyw
     const prefix = parent === '' ? '' : `/${parent.replaceAll('.', '/')}`;
     const names = (params.requiredProperties as unknown[]).flatMap((key) => {
       if (typeof key !== 'string') { return []; }
-      const field = validationField(schema, { instancePath: issue.instancePath, params: { requiredProperties: [key] } });
+      const field = validationField(schema,
+        { instancePath: issue.instancePath, params: { requiredProperties: [key] } });
       return field.split('.').at(-1) === key ? [`${prefix}/${key}`] : [];
     });
     if (names.length > 0) { return `缺少必填字段 ${names.join('、')}`; }

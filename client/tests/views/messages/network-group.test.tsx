@@ -16,7 +16,8 @@ function xiaolin(fake: FakeApi): void {
   seedNetworkScene({ contacts: fake.control.contacts, network: fake.control.network }, NOW, 'xiaolin');
 }
 
-async function open(hash: string, setup: (fake: FakeApi) => void = alex): Promise<Awaited<ReturnType<typeof renderApp>>> {
+async function open(hash: string, setup: (fake: FakeApi) => void = alex,
+): Promise<Awaited<ReturnType<typeof renderApp>>> {
   const app = await renderApp({ hash, width: 1440, setup });
   await settle();
   return app;

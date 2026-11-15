@@ -108,7 +108,8 @@ describe('动效一套（设计稿 19）', () => {
 describe('第二栏标题行（设计稿 23）', () => {
   it('第二栏标题写栏目名本身（不跟着主线、队友改的名字变）', () => {
     const labels = new Set(Object.values(SECTIONS).map((section) => section.label));
-    const found = lines('.tsx').flatMap(({ where, text }) => [...text.matchAll(/<ColumnHead title=(\{[^}]*\}|"[^"]*")/g)]
+    const found = lines('.tsx').flatMap(({ where,
+      text }) => [...text.matchAll(/<ColumnHead title=(\{[^}]*\}|"[^"]*")/g)]
       .map((match) => match[1]!).filter((title) => !(title.startsWith('"') && labels.has(title.slice(1, -1))))
       .map((title) => `${where} title=${title}`));
     expect(found).toEqual([]);

@@ -37,9 +37,17 @@ export function OutboundSettings(): ReactNode {
     const controller = new AbortController();
     void Promise.all([api.outbound.grants(controller.signal), api.outbound.logs(controller.signal)])
       .then(([nextGrants, nextLogs]) => {
-        if (!controller.signal.aborted) { setGrants(nextGrants); setLogs(nextLogs); setLoaded(true); setError(null); }
+        if (!controller.signal.aborted) {
+          setGrants(nextGrants);
+          setLogs(nextLogs);
+          setLoaded(true);
+          setError(null);
+        }
       }, (cause: unknown) => {
-        if (!controller.signal.aborted) { setError(errorText(cause)); setLoaded(true); }
+        if (!controller.signal.aborted) {
+          setError(errorText(cause));
+          setLoaded(true);
+        }
       });
     return () => controller.abort();
   }, [api, revision]);
@@ -53,11 +61,14 @@ export function OutboundSettings(): ReactNode {
   const write = async (key: string, send: (id: string) => Promise<OutboundGrant>): Promise<void> => {
     if (busy) { return; }
     if (request.current?.key !== key) { request.current = { key, id: createRequestId() }; }
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try {
       const row = await send(request.current.id);
       setGrants((values) => values.map((current) => current.id === row.id ? row : current));
-      setEdit(null); setRevoke(null); request.current = null;
+      setEdit(null);
+      setRevoke(null);
+      request.current = null;
     } catch (cause) {
       setError(errorText(cause));
       if (!isUncertain(cause)) { request.current = null; }
@@ -92,9 +103,15 @@ export function OutboundSettings(): ReactNode {
                   disabled={busy} onChange={(event) => change(row, event.target.checked)} />}
               <RevealMore label={`授权操作：${title}`} actions={row.revokedAt !== null ? [] : [
                 { icon: 'edit', label: '修改授权', disabled: busy || row.legacyScheduleId !== null || ended,
-                  onSelect: () => { setEdit({ row, draft: grantInput(row) }); setRevoke(null); } },
+                  onSelect: () => {
+                    setEdit({ row, draft: grantInput(row) });
+                    setRevoke(null);
+                  } },
                 { icon: 'close', label: '撤销授权', danger: true, disabled: busy,
-                  onSelect: () => { setRevoke(row.id); setEdit(null); } },
+                  onSelect: () => {
+                    setRevoke(row.id);
+                    setEdit(null);
+                  } },
               ]} />
             </div>
             {edit?.row.id !== row.id ? null : <div className="outbound-inline-edit">

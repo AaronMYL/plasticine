@@ -55,9 +55,11 @@ function Actions({ navigate, phone }: { navigate: (route: Route) => void; phone:
     </>;
   }
   return <>
-    <button type="button" className="secondary-button button-small" onClick={() => navigate(skillsRoute({ pane: 'add' }))}>
+    <button type="button" className="secondary-button button-small"
+      onClick={() => navigate(skillsRoute({ pane: 'add' }))}>
       <Icon name="plus" size={14} />添加</button>
-    <button type="button" className="secondary-button button-small" onClick={() => navigate(skillsRoute({ pane: 'new' }))}>
+    <button type="button" className="secondary-button button-small"
+      onClick={() => navigate(skillsRoute({ pane: 'new' }))}>
       <Icon name="edit" size={14} />新建</button>
   </>;
 }
@@ -74,6 +76,8 @@ function List({ data, selected, phone, navigate }: { data: SkillsData; selected:
     return all.filter((skill) => (kind === 'all' || skill.source.kind === kind)
       && (words === '' || `${skill.name} ${skill.title ?? ''} ${skill.description}`.toLowerCase().includes(words)));
   }, [all, kind, query]);
+  const nothing = shown.length === 0
+    ? <p className="block-empty">{all.length === 0 ? '还没有技能' : '没有匹配的技能'}</p> : null;
   return <section className="skills-list" aria-label="技能目录">
     {phone ? <PageHeader title="技能" phoneSearch={false} phoneTools={<>
       <IconButton icon="search" size={20} label="找技能" aria-pressed={searching}
@@ -96,8 +100,7 @@ function List({ data, selected, phone, navigate }: { data: SkillsData; selected:
     </div>}
     {data.error ? <p className="block-empty is-error" role="alert">技能没读出来。{' '}
       <button type="button" className="text-button" onClick={data.reload}>再读一次</button></p>
-      : data.skills === null ? <PageLoading rows={3} dense />
-      : shown.length === 0 ? <p className="block-empty">{all.length === 0 ? '还没有技能' : '没有匹配的技能'}</p> : null}
+      : data.skills === null ? <PageLoading rows={3} dense /> : nothing}
     <ul className="skill-cards">
       {shown.map((skill) => <Row key={skill.name} skill={skill} current={selected === skill.name}
         navigate={navigate} />)}
@@ -134,10 +137,16 @@ export function SkillsPage({ route, phone, navigate, onBack }: SkillsPageProps):
     data.reload();
     toList();
   };
-  const detail = data.skills === null ? (data.error ? <p className="block-empty is-error" role="alert">技能没读出来。</p>
-    : single ? <PageLoading rows={3} dense /> : null)
-    : skill !== null ? <SkillDetail key={skill.name} skill={skill} onRemoved={removed} />
-      : name !== null ? <Missing navigate={navigate} /> : null;
+  /** 右边那一栏：还没读到（出错、在读）、读到了这个技能、地址里的技能不在了。 */
+  const detailOf = (): ReactNode => {
+    if (data.skills === null) {
+      if (data.error) return <p className="block-empty is-error" role="alert">技能没读出来。</p>;
+      return single ? <PageLoading rows={3} dense /> : null;
+    }
+    if (skill !== null) return <SkillDetail key={skill.name} skill={skill} onRemoved={removed} />;
+    return name !== null ? <Missing navigate={navigate} /> : null;
+  };
+  const detail = detailOf();
   const body = (): ReactNode => {
     if (route.skillsPane === 'add') {
       return <SkillsAdd phone={phone} single={single} onBack={toList} onSaved={saved} onChanged={data.reload}

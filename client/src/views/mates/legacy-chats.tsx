@@ -15,14 +15,18 @@ export function LegacyChats({ phone, navigate, onClose }: { phone: boolean; navi
   const api = useApi();
   const live = useLive();
   const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const roster = useStore(live.mates.data);
   const [proposal, setProposal] = useState<LegacyChatProposal | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [merge, setMerge] = useState(false);
   const prepare = async (lineId: string): Promise<void> => {
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try { setProposal(await api.mates.prepareLegacy(lineId)); }
     catch (cause) { setError(errorText(cause)); }
     finally { setBusy(false); }
@@ -34,7 +38,8 @@ export function LegacyChats({ phone, navigate, onClose }: { phone: boolean; navi
       ...(action === 'mate' ? { draft: proposal.draft } : {}) }, proposal.title);
     setBusy(false);
     if (mounted.current && result !== null && 'mate' in result) {
-      onClose(); navigate(result.mate === null ? mainChatRoute() : mateRoute(result.mate.id));
+      onClose();
+      navigate(result.mate === null ? mainChatRoute() : mateRoute(result.mate.id));
     }
   };
   const footer = proposal === null ? undefined : <>
@@ -59,7 +64,8 @@ export function LegacyChats({ phone, navigate, onClose }: { phone: boolean; navi
         onRetry={(key) => {
           void live.mateActions.retry(key).then((result) => {
             if (mounted.current && result !== null && 'mate' in result) {
-              onClose(); navigate(result.mate === null ? mainChatRoute() : mateRoute(result.mate.id));
+              onClose();
+              navigate(result.mate === null ? mainChatRoute() : mateRoute(result.mate.id));
             }
           });
         }} />

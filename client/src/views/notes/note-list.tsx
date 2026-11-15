@@ -1,7 +1,7 @@
-import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
-import type { BulkSelection } from '../bulk/use-bulk-selection.ts';
 // 笔记列表：搜索 + 按「置顶 / 今天 / 昨天 / 前 7 天 / 年月」分组，每条是标题、时间、预览。
 
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import type { BulkSelection } from '../bulk/use-bulk-selection.ts';
 import { AiMark } from '../../shell/glyph.tsx';
 import { isAiNote } from './ai-folder.ts';
 import type { ReactNode } from 'react';

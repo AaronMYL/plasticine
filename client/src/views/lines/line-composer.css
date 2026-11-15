@@ -201,26 +201,69 @@
 
 
 /* 当前页来源在发送前可见，名称和实际范围分开，移除仍保留输入。 */
-.line-page-source { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.line-page-source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
 .line-source-chip {
-  display: flex; align-items: center; gap: var(--space-2); min-width: 0; min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 32px;
     padding: 0 var(--space-1) 0 var(--space-2);
-  border-radius: var(--radius-sm); background: var(--tint2); color: var(--fg2); font-size: var(--text-caption);
+  border-radius: var(--radius-sm);
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: var(--text-caption);
     line-height: var(--text-caption-line);
 }
 .line-source-chip > svg { flex: none; }
 .line-source-kind { flex: none; }
-.line-source-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg); }
-.line-source-scope { margin-left: auto; flex: none; font-size: var(--text-tag); }
-.line-source-chip .icon-button { flex: none; width: 24px; height: 24px; }
-.line-source-error { padding: 0 var(--space-2); color: var(--err); font-size: var(--text-caption);
-  line-height: var(--text-caption-line); }
-.line-source-actions { display: flex; gap: var(--space-4); }
+.line-source-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg);
+}
+.line-source-scope {
+  margin-left: auto;
+  flex: none;
+  font-size: var(--text-tag);
+}
+.line-source-chip .icon-button {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+.line-source-error {
+  padding: 0 var(--space-2);
+  color: var(--err);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+.line-source-actions {
+  display: flex;
+  gap: var(--space-4);
+}
 .line-source-actions .text-button { font-size: var(--text-caption); }
 @media (max-width: 767px) {
-  .line-source-chip { flex-wrap: wrap; padding-right: 0; gap: var(--space-1) var(--space-2); }
+  .line-source-chip {
+    flex-wrap: wrap;
+    padding-right: 0;
+    gap: var(--space-1) var(--space-2);
+  }
   .line-source-chip .line-source-title { flex: 1; }
-  .line-source-chip .icon-button { width: 44px; height: 44px; }
+  .line-source-chip .icon-button {
+    width: 44px;
+    height: 44px;
+  }
   .line-source-actions .text-button { min-height: 44px; }
-  .line-input-tools > .icon-button, .line-stop, .line-send { min-width: 44px; min-height: 44px; }
+  .line-input-tools > .icon-button, .line-stop, .line-send {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

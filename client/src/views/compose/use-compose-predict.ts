@@ -113,8 +113,14 @@ export function useComposePredict({ target, draft, input, change }: ComposePredi
     const onSelect = (): void => {
       if (!caretAtEnd(element, current.current.draft)) away();
     };
-    const start = (): void => { composing.current = true; away(); };
-    const end = (): void => { composing.current = false; again(); };
+    const start = (): void => {
+      composing.current = true;
+      away();
+    };
+    const end = (): void => {
+      composing.current = false;
+      again();
+    };
     element.addEventListener('focus', again);
     element.addEventListener('blur', away);
     element.addEventListener('select', onSelect);

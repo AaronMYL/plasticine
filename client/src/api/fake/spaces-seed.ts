@@ -90,7 +90,8 @@ const ISSUE_ONE: SpaceDoc = {
 };
 
 function review(headline: string, kicker: string, sections: [string, string][]): SpaceDoc {
-  return { kicker, headline, stats: [], sources: [{ label: '主线 · 11月6日', link: { kind: 'message', id: 'line:main:3' } }],
+  return { kicker, headline, stats: [],
+    sources: [{ label: '主线 · 11月6日', link: { kind: 'message', id: 'line:main:3' } }],
     blocks: sections.flatMap(([title, text], index) => [{ type: 'heading' as const, id: `s${index + 1}`, text: title },
       { type: 'text' as const, markdown: text }]) };
 }

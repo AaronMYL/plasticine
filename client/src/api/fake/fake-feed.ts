@@ -1,3 +1,7 @@
+// 假的信息流：条目（新的在前，不感兴趣的默认不在里面）、信息源（关注点、不要的、其他、最近来源）、手动加一条链接、
+// 赞 / 不感兴趣 / 收藏、来源的多少。写操作按 requestId 幂等，带 version 的过时了回 409 和现在那一条；和真服务端
+// （agent/src/app/feed.ts）一样，改来源的多少不推事件，条目变了推 feed.changed。
+
 import {
   COGNITION_PAGE_DEFAULT, FEED_LIST_ORIGINS, FEED_ORIGIN_LABELS, type AddFeedCommentRequest, type AddInterestRequest,
   type AddRedditRequest, type AddSubscriptionRequest, type BlockFeedSiteRequest, type DeleteFeedSourceRequest,
@@ -7,10 +11,6 @@ import {
   type RefreshFeedSourceRequest, type RefreshFeedSourceResponse, type RetryFeedCommentRequest,
   type TranscriberInstallRequest, type TranscriberResponse, type UpdateFeedSourceRequest,
 } from '../shared.ts';
-// 假的信息流：条目（新的在前，不感兴趣的默认不在里面）、信息源（关注点、不要的、其他、最近来源）、手动加一条链接、
-// 赞 / 不感兴趣 / 收藏、来源的多少。写操作按 requestId 幂等，带 version 的过时了回 409 和现在那一条；和真服务端
-// （agent/src/app/feed.ts）一样，改来源的多少不推事件，条目变了推 feed.changed。
-
 import type { FeedApi } from '../client.ts';
 import { compareFeedItems } from '../../../../agent/shared/feed-order.ts';
 import { searchTerms } from '../../../../agent/shared/feed-search.ts';

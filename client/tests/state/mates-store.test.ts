@@ -12,7 +12,8 @@ it('队友资料随line_changed更新，停止后晚到的请求不覆盖已卸�
     role: '核对资料', soul: '', purpose: null });
   const hub = new EventsHub(fake.api.events);
   const store = new MatesStore(fake.api, hub);
-  store.start(); hub.start();
+  store.start();
+  hub.start();
   try {
     await waitFor(() => expect(store.data.get().mates[0]?.name).toBe('资料队友'));
     await fake.api.mates.update(mate.id, { requestId: createRequestId(), version: mate.version, name: '研究队友' });
@@ -24,7 +25,10 @@ it('队友资料随line_changed更新，停止后晚到的请求不覆盖已卸�
     finish({ mates: [], groups: [], legacyChats: [] });
     await pending;
     expect(store.data.get().mates[0]?.name).toBe('研究队友');
-  } finally { store.stop(); hub.stop(); }
+  } finally {
+    store.stop();
+    hub.stop();
+  }
 });
 
 it('群任务列表随事件更新，停启后再读一次并保持真实任务身份', async () => {
@@ -38,7 +42,8 @@ it('群任务列表随事件更新，停启后再读一次并保持真实任务�
   const hub = new EventsHub(fake.api.events);
   const store = new MatesStore(fake.api, hub);
   const list = store.taskList(group.id);
-  store.start(); hub.start();
+  store.start();
+  hub.start();
   try {
     await waitFor(() => expect(list.get().status).toBe('ready'));
     const { line } = await fake.api.mateGroups.createTask(group.id,
@@ -51,5 +56,8 @@ it('群任务列表随事件更新，停启后再读一次并保持真实任务�
     store.start();
     await waitFor(() => expect(read).toHaveBeenCalledWith(group.id));
     expect(list.get().lines.map((item) => item.id)).toEqual([line.id]);
-  } finally { store.stop(); hub.stop(); }
+  } finally {
+    store.stop();
+    hub.stop();
+  }
 });

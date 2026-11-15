@@ -180,7 +180,10 @@ export function createSpaceStore(context: StoreContext) {
       });
     },
     get: (id: string): Space | undefined => isPurged(context, 'spaces', id) ? undefined : spaces.get(id),
-    require: (id: string): Space => { requireUnpurged(context, 'spaces', id); return spaces.require(id); },
+    require: (id: string): Space => {
+      requireUnpurged(context, 'spaces', id);
+      return spaces.require(id);
+    },
     findBySourceUrl(sourceUrl: string, category?: SpaceMetadata['category'], includeDeleted = false):
       Space | undefined {
       return spaces.select((includeDeleted ? '' : 'deleted_at IS NULL AND ') + 'source_url = $url'

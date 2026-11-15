@@ -1,13 +1,16 @@
-// 新内核的线、线里的消息、排队的消息（迁移 0058）。只存取，不做判断：什么时候开一轮、排队怎么发由 lines/ 决定。
+// 线和线里的消息（迁移 0058；排队的消息在 line-queue.ts）。只存取，不做判断：什么时候开一轮由 lines/ 决定。
 // 消息的 seq 在线内从 1 递增，追加和取最大值在同一个事务里，所以同一条线并发写也不会撞号。
 
 import { Value } from 'typebox/value';
-import { LineInputOriginSchema, LineTopicSchema, type LineInputOrigin, type LineKind, type LinePauseReason,
-  type LineStatus, type LineTopic, type QueueStatus } from '../../shared/api/lines.ts';
+import {
+  LineInputOriginSchema, LineTopicSchema, type LineInputOrigin, type LineKind, type LinePauseReason, type LineStatus,
+  type LineTopic,
+} from '../../shared/api/lines.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
 import type { Row } from './db.ts';
 import { StateError } from './errors.ts';
 import { createLineDayStore } from './line-days.ts';
+import { createLineQueueTable } from './line-queue.ts';
 import { MateGroupTaskMetaSchema, type MateGroupTaskMeta } from './mate-group-task-meta.ts';
 import type { StoreContext } from './object-store.ts';
 
@@ -123,18 +126,6 @@ export function lineRef(lineId: string, seq: number): string {
   return `line:${lineId}:${seq}`;
 }
 
-export interface QueuedRow {
-  id: string;
-  lineId: string;
-  text: string;
-  attachments: string[];
-  origin: LineInputOrigin;
-  status: QueueStatus;
-  sentSeq: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface LineListFilter {
   includeArchived?: boolean;
   /** 只要给人看的线：封起来替别人答话的线（sealed_prompt）是内部过程，回答已经在聊天里，不算任务。 */
@@ -222,22 +213,6 @@ function messageOf(row: Row): LineMessageRow {
     message: JSON.parse(text(row, 'message')) as unknown,
     meta: metaOf(row['meta']),
     createdAt: text(row, 'created_at'),
-  };
-}
-
-function queuedOf(row: Row): QueuedRow {
-  const sent = row['sent_seq'];
-  const origin: unknown = typeof row['origin'] === 'string' ? JSON.parse(row['origin']) : null;
-  return {
-    id: text(row, 'id'),
-    lineId: text(row, 'line_id'),
-    text: text(row, 'text'),
-    attachments: JSON.parse(text(row, 'attachments')) as string[],
-    origin: Value.Check(LineInputOriginSchema, origin) ? origin : { kind: 'unknown' },
-    status: text(row, 'status') as QueueStatus,
-    sentSeq: sent === null || sent === undefined ? null : Number(sent),
-    createdAt: text(row, 'created_at'),
-    updatedAt: text(row, 'updated_at'),
   };
 }
 
@@ -476,52 +451,6 @@ function createLineMessageTable(context: StoreContext) {
         : db.get(`SELECT * FROM line_messages WHERE line_id = $lineId AND role = $role
           ORDER BY seq DESC LIMIT 1`, { lineId, role });
       return row === undefined ? undefined : messageOf(row);
-    },
-  };
-}
-
-function createLineQueueTable(context: StoreContext) {
-  const { db } = context;
-  const get = (id: string): QueuedRow | undefined => {
-    const row = db.get('SELECT * FROM line_queue WHERE id = $id', { id });
-    return row === undefined ? undefined : queuedOf(row);
-  };
-  const setStatus = (id: string, status: QueueStatus, sentSeq: number | null): QueuedRow => {
-    db.run('UPDATE line_queue SET status = $status, sent_seq = $sentSeq, updated_at = $at WHERE id = $id',
-      { id, status, sentSeq, at: context.now() });
-    return get(id)!;
-  };
-  return {
-    get,
-    add(lineId: string, text: string, attachments: readonly string[],
-      origin: LineInputOrigin = { kind: 'unknown' }): QueuedRow {
-      const id = `queued-${context.newId()}`;
-      const at = context.now();
-      db.run(`INSERT INTO line_queue (id, line_id, text, attachments, origin, status, created_at, updated_at)
-        VALUES ($id, $lineId, $text, $attachments, $origin, 'queued', $at, $at)`,
-      { id, lineId, text, attachments: JSON.stringify(attachments), origin: JSON.stringify(origin), at });
-      return get(id)!;
-    },
-    /** 还在排的，先来的在前。 */
-    /** 还没发出的（排着的和已插入这一轮的）。 */
-    queued(lineId: string): QueuedRow[] {
-      return db.all(`SELECT * FROM line_queue WHERE line_id = $lineId AND status IN ('queued', 'inserted')
-        ORDER BY created_at, id`, { lineId }).map(queuedOf);
-    },
-    sent(id: string, seq: number): QueuedRow {
-      return setStatus(id, 'sent', seq);
-    },
-    withdraw(id: string): QueuedRow {
-      return setStatus(id, 'withdrawn', null);
-    },
-    /** 立即发送交给了正在跑的这一轮。 */
-    insert(id: string): QueuedRow {
-      return setStatus(id, 'inserted', null);
-    },
-    /** 有排队消息的线（重启后、后台线腾出位置时找下一条）。 */
-    linesWithQueued(): string[] {
-      return db.all(`SELECT line_id, MIN(created_at) AS first FROM line_queue WHERE status IN ('queued', 'inserted')
-        GROUP BY line_id ORDER BY first`).map((row) => text(row, 'line_id'));
     },
   };
 }

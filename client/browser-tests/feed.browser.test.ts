@@ -82,7 +82,10 @@ test('E53–59/70：真实刷新、语义归属、收藏、评论失败接续、
       + '<item><title>工具快捷操作</title><link>https://example.test/a/1</link>'
       + '<pubDate>2026-10-27T07:00:00Z</pubDate></item></channel></rss>');
   } }) });
-  t.after(async () => { finishFetch?.(); await app.close(); });
+  t.after(async () => {
+    finishFetch?.();
+    await app.close();
+  });
   const tools = app.state.feedSources.create({ kind: 'interest', label: '效率工具', level: 'normal' });
   const finance = app.state.feedSources.create({ kind: 'interest', label: '金融' });
   app.state.feedItems.add({ sourceId: tools.id, origin: 'feed', title: '已有条目',
@@ -125,7 +128,8 @@ test('E53–59/70：真实刷新、语义归属、收藏、评论失败接续、
   assert.ok(await page.evaluate(`document.body.textContent.includes('已有条目')`));
   finishFetch?.();
   const run = await refreshed;
-  assert.equal(run.status, 'completed'); assert.equal(run.added, 2);
+  assert.equal(run.status, 'completed');
+  assert.equal(run.added, 2);
   const financial = app.state.feedItems.page({}, {}).find((item) => item.title.includes('金融工具'))!;
   assert.equal(financial.sourceId, finance.id);
   assert.equal(financial.url, 'https://example.test/?p=123');

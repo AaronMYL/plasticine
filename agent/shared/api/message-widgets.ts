@@ -10,7 +10,6 @@
 // 金额用整数分，时间用 ISO 字符串（plasticine-code「数据与状态」）。
 
 import { Type, type Static } from 'typebox';
-import { FOCUS_MINUTES_MAX, FOCUS_MINUTES_MIN } from '../state-life.ts';
 import { IdSchema, IsoTimeSchema } from './common.ts';
 
 /** 一条消息最多带这么多个部件：再多该是一页，不是一条消息。 */

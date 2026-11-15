@@ -68,7 +68,9 @@ export function WorkProcess({ lineId, thread }: { lineId: string; thread: LineTh
     <FoldRow label="查看过程" open={open} onToggle={() => setOpen((value) => !value)} />
     {open ? <div className="work-process-body">
       {thread.hasMore ? <button type="button" className="text-button" disabled={thread.loadingEarlier}
-        onClick={() => void live.lines.loadEarlier(lineId)}><BusyText busy={thread.loadingEarlier}>更早的过程</BusyText></button> : null}
+        onClick={() => void live.lines.loadEarlier(lineId)}>
+        <BusyText busy={thread.loadingEarlier}>更早的过程</BusyText>
+      </button> : null}
       <StepList steps={steps} />
       {thread.messages.filter((message) => message.role === 'user').map((message) =>
         <p className="work-process-input" key={message.seq}>{message.text}</p>)}

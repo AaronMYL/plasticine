@@ -21,8 +21,14 @@ export const xhrUpload: UploadLike = (url, init, progress) => new Promise((resol
     cleanup();
     resolve({ status: request.status, text: async () => request.responseText });
   };
-  request.onerror = () => { cleanup(); reject(new TypeError('上传连接中断')); };
-  request.onabort = () => { cleanup(); reject(signal?.reason ?? new DOMException('已取消上传', 'AbortError')); };
+  request.onerror = () => {
+    cleanup();
+    reject(new TypeError('上传连接中断'));
+  };
+  request.onabort = () => {
+    cleanup();
+    reject(signal?.reason ?? new DOMException('已取消上传', 'AbortError'));
+  };
   if (signal?.aborted) {
     cleanup();
     reject(signal.reason);

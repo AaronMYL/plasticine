@@ -24,7 +24,12 @@
   white-space: nowrap;
 }
 
-.douyin-sync { display: inline-flex; align-items: center; gap: var(--space-2); margin-right: var(--space-1); }
+.douyin-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-right: var(--space-1);
+}
 
 .douyin-filters {
   display: flex;
@@ -46,7 +51,11 @@
   overscroll-behavior: contain;
 }
 
-.douyin-list { margin: 0; padding: 0; list-style: none; }
+.douyin-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
 
 .douyin-row {
   display: flex;
@@ -73,7 +82,11 @@
   accent-color: var(--fg);
 }
 
-.douyin-row-text { min-width: 0; display: flex; flex-direction: column; }
+.douyin-row-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
 
 .douyin-row-title {
   overflow: hidden;
@@ -91,9 +104,16 @@
 }
 
 .douyin-row[data-run='failed'] .douyin-row-meta { color: var(--err); }
-.douyin-row-why { flex: none; color: var(--fg3); }
+.douyin-row-why {
+  flex: none;
+  color: var(--fg3);
+}
 
-.douyin-steps { flex: none; display: inline-flex; gap: var(--space-hair); }
+.douyin-steps {
+  flex: none;
+  display: inline-flex;
+  gap: var(--space-hair);
+}
 
 .douyin-steps i {
   display: block;
@@ -108,8 +128,15 @@
 .douyin-steps[data-run='running'] i:not([data-on]):first-of-type,
 .douyin-steps[data-run='running'] i[data-on] + i:not([data-on]) { background: var(--run); }
 
-.douyin-more { margin-top: var(--space-3); font-size: var(--text-caption); color: var(--fg2); }
-.douyin-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.douyin-more {
+  margin-top: var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--fg2);
+}
+.douyin-mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
 
 .douyin-note {
   margin: var(--space-3) 0 0;
@@ -123,7 +150,11 @@
 .douyin-note.is-error { color: var(--err); }
 
 /* 底部（已选 n 条 · ⓘ · 处理选中的）交给浮层底部那一条（SheetFooter）；手机上三样也排在一行。 */
-.douyin-picked { flex: 1; font-size: var(--text-body); line-height: var(--text-body-line); }
+.douyin-picked {
+  flex: 1;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
 
 .sheet-drawer .sheet-foot > :is(.douyin-picked, .douyin-how) { flex-basis: auto; }
 
@@ -136,11 +167,18 @@
   color: var(--fg2);
 }
 
-.douyin-how .info-tip { width: 24px; height: 24px; color: var(--fg3); }
+.douyin-how .info-tip {
+  width: 24px;
+  height: 24px;
+  color: var(--fg3);
+}
 
 @media (max-width: 767px) {
   .douyin-folder { flex-basis: 120px; }
   .douyin-row-main { padding: var(--space-4) 0; }
-  .douyin-check { width: 20px; height: 20px; }
+  .douyin-check {
+    width: 20px;
+    height: 20px;
+  }
   .douyin-sync-meta { display: none; }
 }

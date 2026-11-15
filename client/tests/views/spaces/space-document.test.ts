@@ -47,7 +47,8 @@ describe('报告', () => {
     const html = '<p class="rp-kick"><b>研究快照 · 第 3 期</b><span>资料截至 10 月 9 日</span></p>'
       + '<header class="rp-hero"><div><h1 class="rp-h1">别追<em>风口</em></h1><p class="rp-deck">导语</p></div>'
       + '<aside class="rp-brief"><p class="lb">核心判断</p><p>一句</p></aside></header>'
-      + '<div class="rp-stats"><div class="rp-stat"><div class="v"><b>$169</b></div><div class="l">中位数</div></div></div>'
+      + '<div class="rp-stats"><div class="rp-stat"><div class="v"><b>$169</b></div>'
+      + '<div class="l">中位数</div></div></div>'
       + ['一', '二', '三'].map((name, index) => `<section class="rp-sec" id="s${index}"><div class="rp-sh">`
         + `<span class="no">0${index + 1} / ${name}</span><h2>${name}</h2></div><p>正文</p></section>`).join('');
     const doc = frameBody(prepareSpace({ html, genre: 'report', title: '研究', dateLabel: '' }).body);

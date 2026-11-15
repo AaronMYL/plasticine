@@ -145,7 +145,10 @@ async function start(): Promise<void> {
     idleSeconds: async () => powerMonitor.getSystemIdleTime(), requestId: () => `desktop-${crypto.randomUUID()}`,
     sleep: (ms, signal) => new Promise((resolve) => {
       const timer = setTimeout(resolve, ms);
-      signal.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
+      signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        resolve();
+      }, { once: true });
     }), now: Date.now, log }, settings.get().devicePaused);
   const feeds = new FeedRunner({ session: web, userAgent: tabAgent, log,
     pageScript: (name) => readPageScript(join(__dirname, 'pages'), name),

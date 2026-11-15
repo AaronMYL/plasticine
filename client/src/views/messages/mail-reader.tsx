@@ -13,7 +13,6 @@ import { useStore } from '../../state/use-store.ts';
 import { LoadNote } from '../../shell/load-note.tsx';
 import { ContactAvatar } from '../contacts/contact-avatar.tsx';
 import { ContactComposer } from '../contacts/contact-composer.tsx';
-import { clockTime, shortDate } from '../contacts/contact-time.ts';
 import { itemTime, joinItems } from '../contacts/contacts-store.ts';
 import { MailReading } from '../contacts/mail-item.tsx';
 import '../contacts/mail.css';

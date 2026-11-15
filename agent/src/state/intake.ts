@@ -2,28 +2,9 @@
 // 去向（只追加）、规则和它的变化、细判记录。只做存取；粗筛和细判的规矩在 intake/。
 
 import {
-  AssessmentInputSchema,
-  AssessmentPatchSchema,
-  AssessmentSchema,
-  IntakeSourceInputSchema,
-  IntakeSourcePatchSchema,
-  IntakeSourceSchema,
-  RuleEventSchema,
-  RuleInputSchema,
-  RulePatchSchema,
-  RuleSchema,
-  TriggerDispositionSchema,
-  TriggerSchema,
-  type Assessment,
-  type AssessmentInput,
-  type IntakeSource,
-  type IntakeSourceKind,
-  type Rule,
-  type RuleEvent,
-  type RuleEventInput,
-  type Trigger,
-  type TriggerDisposition,
-  type TriggerDispositionInput,
+  IntakeSourceInputSchema, IntakeSourcePatchSchema, IntakeSourceSchema, RuleEventSchema, RuleInputSchema,
+  RulePatchSchema, RuleSchema, TriggerDispositionSchema, TriggerSchema, type IntakeSource, type IntakeSourceKind,
+  type Rule, type RuleEvent, type RuleEventInput, type Trigger, type TriggerDisposition, type TriggerDispositionInput,
   type TriggerInput,
 } from '../../shared/state.ts';
 import { appendRows } from './append-rows.ts';
@@ -112,34 +93,6 @@ const RULE_EVENT_COLUMNS: ColumnMap = {
   evidenceIds: 'json',
   reason: 'text',
   at: 'text',
-};
-
-const ASSESSMENT_COLUMNS: ColumnMap = {
-  ...RECORD_META_COLUMNS,
-  threadKey: 'text',
-  triggerIds: 'json',
-  status: 'text',
-  attempts: 'integer',
-  runId: 'text',
-  policyVersion: 'text',
-  outcome: 'text',
-  ruleJudgments: 'json',
-  matterId: 'text',
-  wouldDo: 'text',
-  error: 'text',
-  verdict: 'text',
-  verdictAt: 'text',
-  verdictNote: 'text',
-};
-const ASSESSMENT_SPEC: StoreSpec<typeof AssessmentSchema, typeof AssessmentInputSchema,
-  typeof AssessmentPatchSchema> = {
-  table: 'assessments',
-  schema: AssessmentSchema,
-  input: AssessmentInputSchema,
-  patch: AssessmentPatchSchema,
-  columns: ASSESSMENT_COLUMNS,
-  defaults: { status: 'queued', attempts: 0, runId: null, policyVersion: null, outcome: null, ruleJudgments: [],
-    matterId: null, wouldDo: null, error: null, verdict: null, verdictAt: null, verdictNote: null },
 };
 
 function createSourceStore(context: StoreContext) {
@@ -248,24 +201,6 @@ function createRuleStore(context: StoreContext) {
       });
     },
     events: (ruleId: string): RuleEvent[] => events.select('rule_id = $rule_id', { rule_id: ruleId }, 'at, rowid'),
-  };
-}
-
-function createAssessmentStore(context: StoreContext) {
-  const store = new ObjectStore(context, ASSESSMENT_SPEC);
-  return {
-    create: (input: AssessmentInput): Assessment => store.create(input),
-    get: store.get.bind(store),
-    require: store.require.bind(store),
-    update: store.update.bind(store),
-    /** 这个线索键上还没判完的那一批（同一个键同时最多一个细判，期间到的触发并进下一批）。 */
-    openFor: (threadKey: string): Assessment[] =>
-      store.select("thread_key = $key AND status != 'done'", { key: threadKey }, { limit: 10 }),
-    queued: (limit: number): Assessment[] => store.select("status = 'queued'", {}, { limit }),
-    running: (): Assessment[] => store.select("status = 'running'", {}, { limit: 100 }),
-    forThread: (threadKey: string, limit = 20): Assessment[] =>
-      store.select('thread_key = $key', { key: threadKey }, { limit }, 'created_at DESC, id DESC'),
-    since: (at: string): Assessment[] => store.select('created_at >= $at', { at }, { limit: 500 }),
   };
 }
 

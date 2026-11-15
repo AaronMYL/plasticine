@@ -40,7 +40,10 @@ export function FeedTarget({ id }: { id: string }): ReactNode {
       if (event.type === 'feed.changed' && event.item.id === id) { accept(event.item); }
       if (event.type === 'resync') { void load(); }
     });
-    return () => { controller.abort(); stop(); };
+    return () => {
+      controller.abort();
+      stop();
+    };
   }, [api, live, id, attempt]);
   const shown = cached !== undefined && (item === null || cached.version > item.version) ? cached : item;
   const highlighted = useObjectTarget(`feed-target-${id}`, shown !== null);

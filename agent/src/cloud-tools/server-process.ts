@@ -37,7 +37,10 @@ export function runServerProcess(command: ServerCommandRecord, directory: string
       try { killProcessTree(child.pid); }
       catch (error) { failure ??= error as Error; }
     };
-    const stop = (status: ServerCommandStatus): void => { stopped ??= status; kill(); };
+    const stop = (status: ServerCommandStatus): void => {
+      stopped ??= status;
+      kill();
+    };
     const onAbort = (): void => stop('cancelled');
     const timer = setTimeout(() => stop('timed_out'), command.timeoutMs);
     signal.addEventListener('abort', onAbort, { once: true });
@@ -45,7 +48,10 @@ export function runServerProcess(command: ServerCommandRecord, directory: string
       try {
         if (child.pid !== undefined) { onStart(child.pid); }
         if (signal.aborted) { onAbort(); }
-      } catch (error) { failure = error as Error; kill(); }
+      } catch (error) {
+        failure = error as Error;
+        kill();
+      }
     });
     const capture = (fd: number, chunk: Buffer, stream: 'stdout' | 'stderr'): void => {
       try {
@@ -55,11 +61,17 @@ export function runServerProcess(command: ServerCommandRecord, directory: string
         while (offset < data.length) { offset += writeSync(fd, data, offset); }
         if (stream === 'stdout') { outBytes += data.length; } else { errBytes += data.length; }
         if (data.length < chunk.length) { stop('output_limit'); }
-      } catch (error) { failure = error as Error; kill(); }
+      } catch (error) {
+        failure = error as Error;
+        kill();
+      }
     };
     child.stdout.on('data', (data: Buffer) => capture(stdout, data, 'stdout'));
     child.stderr.on('data', (data: Buffer) => capture(stderr, data, 'stderr'));
-    child.on('error', (error) => { startFailed = true; failure = error; });
+    child.on('error', (error) => {
+      startFailed = true;
+      failure = error;
+    });
     // exit arrives before pipe close; kill inherited children so they cannot keep the pipes or effects alive.
     child.on('exit', kill);
     child.on('close', (exitCode, exitSignal) => {
@@ -67,7 +79,10 @@ export function runServerProcess(command: ServerCommandRecord, directory: string
       signal.removeEventListener('abort', onAbort);
       closeSync(stdout);
       closeSync(stderr);
-      if (failure !== null && !startFailed) { reject(failure); return; }
+      if (failure !== null && !startFailed) {
+        reject(failure);
+        return;
+      }
       resolve({ status: startFailed ? 'start_failed' : stopped ?? 'completed', exitCode, signal: exitSignal,
         stdoutBytes: outBytes, stderrBytes: errBytes, error: failure?.message ?? null });
     });

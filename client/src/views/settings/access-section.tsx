@@ -91,7 +91,10 @@ export function AccessSection(): ReactNode {
     <section className="block access-section" aria-labelledby="settings-access">
       <SectionHead id="settings-access" title="在别的设备上用" />
       <p className="access-warning">登录的人能用这台电脑做事。</p>
-      {error === null ? null : <Failure error={error} onReload={() => { account.reload(); own.reload(); }} />}
+      {error === null ? null : <Failure error={error} onReload={() => {
+        account.reload();
+        own.reload();
+      }} />}
       {account.value === null || own.value === null ? null : <>
         <SettingSelect name="连法" value={current} options={MODES} onChange={setMode} />
         {current === 'net' ? <NetworkWay account={account.value} />

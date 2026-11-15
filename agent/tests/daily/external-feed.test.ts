@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
 import { openTestState } from '../state/helpers.ts';
@@ -156,5 +155,8 @@ test('写入成功但通知失败，刷新回执保留已加条数与具体通�
     assert.equal(run?.added, 1);
     assert.match(run?.error ?? '', /已保存，通知未完成.*事件推送连接已关闭/);
     assert.equal(t.state.feedItems.page({}, {}).length, 1);
-  } finally { await desk.stop(); await t.cleanup(); }
+  } finally {
+    await desk.stop();
+    await t.cleanup();
+  }
 });

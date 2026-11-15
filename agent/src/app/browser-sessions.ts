@@ -15,7 +15,10 @@ export class BrowserSessions {
   readonly #now: () => Date;
   readonly #opened = new Map<string, BrowserSession>();
 
-  constructor(state: StateService, now: () => Date) { this.#state = state; this.#now = now; }
+  constructor(state: StateService, now: () => Date) {
+    this.#state = state;
+    this.#now = now;
+  }
 
   open(node: DeviceNode | null = null): BrowserSession {
     const state = this.#state;

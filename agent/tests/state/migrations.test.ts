@@ -3,7 +3,6 @@ import { afterEach, test } from 'node:test';
 import { MEMORY_DATABASE, openDatabase, type Database } from '../../src/state/db.ts';
 import { StateError } from '../../src/state/errors.ts';
 import { appliedMigrations, migrate, MIGRATIONS, type Migration } from '../../src/state/migrations/index.ts';
-import { RETIRED_TABLES } from '../../src/state/migrations/0062-drop-retired.ts';
 import { openState } from '../../src/state/index.ts';
 import { steppingClock, tempDirectory, throwsState } from './helpers.ts';
 

@@ -12,5 +12,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .line-item.is-focused,
-  .ct-item.is-focused { animation: none; background: var(--tint2); }
+  .ct-item.is-focused {
+    animation: none;
+    background: var(--tint2);
+  }
 }

@@ -7,7 +7,10 @@ import { Mates } from '../../src/mates/service.ts';
 import { call, pair, startTestApp, type TestApp } from './helpers.ts';
 
 let app: TestApp | undefined;
-afterEach(async () => { await app?.close(); app = undefined; });
+afterEach(async () => {
+  await app?.close();
+  app = undefined;
+});
 
 test('群任务接口沿用线 schema，未登录不可读写，发布重放和归档后重试都不重复创建', async () => {
   app = await startTestApp([], { startTasks: false });

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { InboxMessageInput, MoneyEntryInput } from '../../shared/state.ts';
-import { openState } from '../../src/state/index.ts';
-import { device, forged, openTestState, START, steppingClock, throwsState, type TestState } from './helpers.ts';
+import { device, forged, openTestState, START, throwsState, type TestState } from './helpers.ts';
 
 let t: TestState;
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { ReceiptInput } from '../../shared/state.ts';
-import { brainChange, openTestState, throwsState, type TestState } from './helpers.ts';
+import { openTestState, throwsState, type TestState } from './helpers.ts';
 
 let t: TestState;
 

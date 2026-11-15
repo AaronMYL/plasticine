@@ -9,7 +9,10 @@ import { call, json, pair, startTestApp, type ApiReply, type TestApp } from './h
 
 let t: TestApp;
 let cookie: string;
-beforeEach(async () => { t = await startTestApp([('接下来的一句')]); cookie = await pair(t); });
+beforeEach(async () => {
+  t = await startTestApp([('接下来的一句')]);
+  cookie = await pair(t);
+});
 afterEach(async () => { await t.close(); });
 
 function note(markdown = '# 原文\n正文', folder = '笔记') {
@@ -51,7 +54,8 @@ test('图片上传按内容保存，重复请求回放同一链接，10 MB边界
   const response = await call(t, 'GET', String(uploaded['url']), { cookie });
   assert.equal(response.status, 200);
   assert.equal(Buffer.from(response.body as ArrayBuffer).toString(), data.toString());
-  assert.equal(t.state.notes.writeAsset(Buffer.alloc(NOTE_IMAGE_MAX_BYTES, 1), 'image/png').bytes, NOTE_IMAGE_MAX_BYTES);
+  assert.equal(t.state.notes.writeAsset(Buffer.alloc(NOTE_IMAGE_MAX_BYTES, 1), 'image/png').bytes,
+    NOTE_IMAGE_MAX_BYTES);
   assert.throws(() => t.state.notes.writeAsset(Buffer.alloc(NOTE_IMAGE_MAX_BYTES + 1, 1), 'image/png'), /10 MB/);
 });
 

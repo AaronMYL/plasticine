@@ -124,7 +124,8 @@ function paintFakePage(host: FakeHost, frame: WebTabsSync['frame'], page: FakePa
     const lineAt = (line: string): void => {
       if (highlighted) { context.fillStyle = '#f4e8c7';
         context.fillRect(left, top - size, context.measureText(line).width, size * 1.3); }
-      context.fillStyle = color; context.fillText(line, left, top);
+      context.fillStyle = color;
+      context.fillText(line, left, top);
     };
     context.font = `${weight} ${size}px ${font}`;
     context.fillStyle = color;

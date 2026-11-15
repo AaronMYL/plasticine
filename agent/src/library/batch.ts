@@ -43,40 +43,75 @@ function one(services: LibraryServices, item: BatchItem, request: BatchCommand):
     throw new StateError('invalid_input', '请选择移到哪个文件夹。');
   }
   if (item.kind === 'note') {
-    if (action === 'purge') { state.libraryPurge.note(item.id); return; }
+    if (action === 'purge') {
+      state.libraryPurge.note(item.id);
+      return;
+    }
     const note = state.notes.require(item.id);
     switch (action) {
-      case 'move': state.notes.save(note.id, note.version, { folder: destination ?? '' }); break;
-      case 'trash': state.notes.markDeleted(note.id); break;
-      case 'restore': state.notes.restore(note.id); break;
+      case 'move':
+        state.notes.save(note.id, note.version, { folder: destination ?? '' });
+        break;
+      case 'trash':
+        state.notes.markDeleted(note.id);
+        break;
+      case 'restore':
+        state.notes.restore(note.id);
+        break;
     }
     return;
   }
   if (item.kind === 'space') {
-    if (action === 'purge') { state.libraryPurge.space(item.id); return; }
+    if (action === 'purge') {
+      state.libraryPurge.space(item.id);
+      return;
+    }
     const space = state.spaces.require(item.id);
     switch (action) {
-      case 'move': state.spaces.save(space.id, space.version, { folder: destination || null }, 'user'); break;
-      case 'trash': state.spaces.markDeleted(space.id, space.version); break;
-      case 'restore': state.spaces.restore(space.id); break;
+      case 'move':
+        state.spaces.save(space.id, space.version, { folder: destination || null }, 'user');
+        break;
+      case 'trash':
+        state.spaces.markDeleted(space.id, space.version);
+        break;
+      case 'restore':
+        state.spaces.restore(space.id);
+        break;
     }
     return;
   }
   if (item.kind === 'book') {
-    if (action === 'purge') { state.libraryPurge.book(item.id); return; }
+    if (action === 'purge') {
+      state.libraryPurge.book(item.id);
+      return;
+    }
     const book = state.books.require(item.id);
     switch (action) {
-      case 'move': state.books.update(book.id, book.version, { folder: destination || null }); break;
-      case 'trash': state.books.update(book.id, book.version, { deletedAt: new Date().toISOString() }); break;
-      case 'restore': state.books.update(book.id, book.version, { deletedAt: null }); break;
+      case 'move':
+        state.books.update(book.id, book.version, { folder: destination || null });
+        break;
+      case 'trash':
+        state.books.update(book.id, book.version, { deletedAt: new Date().toISOString() });
+        break;
+      case 'restore':
+        state.books.update(book.id, book.version, { deletedAt: null });
+        break;
     }
     return;
   }
   switch (action) {
-    case 'move': workspace.move(item.id, join(destination ?? '', basename(item.id)), basename(item.id)); break;
-    case 'trash': workspace.trash(item.id, basename(item.id)); break;
-    case 'restore': workspace.restore(item.id); break;
-    case 'purge': workspace.purge(item.id); break;
+    case 'move':
+      workspace.move(item.id, join(destination ?? '', basename(item.id)), basename(item.id));
+      break;
+    case 'trash':
+      workspace.trash(item.id, basename(item.id));
+      break;
+    case 'restore':
+      workspace.restore(item.id);
+      break;
+    case 'purge':
+      workspace.purge(item.id);
+      break;
   }
 }
 

@@ -2,7 +2,7 @@
 // 浏览器开一个页面、做动作（假实现里动作算干跑，和开发期真服务端一样）。写操作按 requestId 幂等。
 
 import type { FilesApi, NoteVersionsApi } from '../tool-groups-client.ts';
-import { ApiError, ConflictError } from '../errors.ts';
+import { ApiError } from '../errors.ts';
 import {
   type CreateFolderRequest,
   type FileEntryView,
@@ -138,7 +138,10 @@ export class FakeFiles implements FilesApi {
       const entry = this.confirmed(checkPath(input.from, 'from'), input.confirmName);
       const to = checkPath(input.to, 'to');
       const content = this.contents.get(entry.path);
-      if (content !== undefined) { this.contents.set(to, content); this.contents.delete(entry.path); }
+      if (content !== undefined) {
+        this.contents.set(to, content);
+        this.contents.delete(entry.path);
+      }
       this.entries.delete(entry.path);
       return this.put(to, entry.kind, entry.bytes);
     });

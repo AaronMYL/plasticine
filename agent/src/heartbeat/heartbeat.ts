@@ -363,8 +363,9 @@ export class Heartbeat {
         const row = this.row();
         const slot = this.slot();
         const at = slot.lastRunAt === null ? '' : `${clockOf(new Date(slot.lastRunAt), this.#options.zone())} `;
-        const now = this.#running !== null ? '在看' : slot.lastRunAt === null ? '' : slot.lastOutcome === 'quiet'
-          ? `${at}看过，${slot.lastNote ?? '没事'}` : `${at}${slot.lastNote ?? ''}`;
+        const looked = slot.lastOutcome === 'quiet' ? `${at}看过，${slot.lastNote ?? '没事'}`
+          : `${at}${slot.lastNote ?? ''}`;
+        const now = this.#running !== null ? '在看' : slot.lastRunAt === null ? '' : looked;
         return [{ id: HEARTBEAT_SLOT_ID, name: '心跳', icon: row.icon, hue: row.hue,
           glyph: row.last?.glyph ?? (row.enabled ? 'idle' : 'pause'), now, rowIds: [row.id], lineId: null,
           canStop: row.enabled }];

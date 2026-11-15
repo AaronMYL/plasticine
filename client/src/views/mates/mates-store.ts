@@ -47,7 +47,9 @@ export class MatesStore {
     void this.loader.load();
   }
   stop(): void {
-    this.release?.(); this.release = null; this.loader.stop();
+    this.release?.();
+    this.release = null;
+    this.loader.stop();
     for (const entry of this.tasks.values()) entry.loader.stop();
   }
   reload(): Promise<void> { return this.loader.load(); }

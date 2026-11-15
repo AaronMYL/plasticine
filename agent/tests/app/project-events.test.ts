@@ -6,7 +6,12 @@ import { newRequestId } from './signing.ts';
 let app: TestApp | undefined;
 let stream: SseStream | undefined;
 
-afterEach(async () => { stream?.close(); await app?.close(); stream = undefined; app = undefined; });
+afterEach(async () => {
+  stream?.close();
+  await app?.close();
+  stream = undefined;
+  app = undefined;
+});
 
 test('另一台设备实时收到项目、待办与资料归属变化；移动资料通知两边，重放和拒绝不通知', async () => {
   app = await startTestApp();

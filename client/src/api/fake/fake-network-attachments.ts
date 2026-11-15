@@ -15,7 +15,9 @@ export class FakeNetworkAttachments implements NetworkAttachmentsApi {
   private readonly retryMessage: (thread: string, message: string) => ContactMessageView;
   constructor(session: FakeSession, receipts: FakeReceipts,
     retryMessage: (thread: string, message: string) => ContactMessageView) {
-    this.session = session; this.receipts = receipts; this.retryMessage = retryMessage;
+    this.session = session;
+    this.receipts = receipts;
+    this.retryMessage = retryMessage;
   }
   async upload(input: UploadNetworkAttachment, signal?: AbortSignal, progress?: (fraction: number) => void) {
     this.session.requireUser();
@@ -25,7 +27,8 @@ export class FakeNetworkAttachments implements NetworkAttachmentsApi {
     const row = await this.receipts.run('save', input.requestId, JSON.stringify(input), () => {
       const { requestId, content, ...meta } = input;
       const value: NetworkAttachmentView = { ...meta, id: `media-${requestId}`, status: 'ready', error: null };
-      this.rows.set(value.id, value); this.data.set(value.id, content);
+      this.rows.set(value.id, value);
+      this.data.set(value.id, content);
       return value;
     });
     progress?.(1);
@@ -40,7 +43,9 @@ export class FakeNetworkAttachments implements NetworkAttachmentsApi {
     });
   }
   seed(row: NetworkAttachmentView, content: string, thread: string, message: string): void {
-    this.rows.set(row.id, row); this.data.set(row.id, content); this.links.set(row.id, `${thread}:${message}`);
+    this.rows.set(row.id, row);
+    this.data.set(row.id, content);
+    this.links.set(row.id, `${thread}:${message}`);
   }
   contentUrl(thread: string, message: string, id: string): string {
     const row = this.require(thread, message, id);

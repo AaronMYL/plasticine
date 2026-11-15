@@ -84,7 +84,10 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
   useEffect(() => {
     const locate = (): void => {
       const dom = editorDom(editor);
-      if (dom === null || editor.state.selection.empty) { setBubble(null); return; }
+      if (dom === null || editor.state.selection.empty) {
+        setBubble(null);
+        return;
+      }
       const { from, to } = editor.state.selection;
       const bounds = (dom.closest('.note-pane') ?? dom).getBoundingClientRect();
       const viewport = window.visualViewport;
@@ -104,7 +107,11 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
     };
     const select = (): void => {
       // 有的输入法组字时把正在组的字选中：这不是人选的字，不出选段工具，也不去量位置。
-      if (noteComposing(editor)) { setSelection(null); setBubble(null); return; }
+      if (noteComposing(editor)) {
+        setSelection(null);
+        setBubble(null);
+        return;
+      }
       const { from, to, empty } = editor.state.selection;
       setSelection(!empty && editor.state.doc.textBetween(from, to).trim() !== '' ? { from, to } : null);
       locate();
@@ -136,7 +143,10 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
     setTarget(capture(editor, range));
   };
   const generate = async (action: NoteAssistRequest['action'], draft: DraftTarget, extra = ''): Promise<void> => {
-    if (noModel && !(action === 'custom' && extra.trim() === '')) { setAwaitModel({ action, draft, extra }); return; }
+    if (noModel && !(action === 'custom' && extra.trim() === '')) {
+      setAwaitModel({ action, draft, extra });
+      return;
+    }
     await generateNow(action, draft, extra);
   };
   const generateNow = async (action: NoteAssistRequest['action'], draft: DraftTarget, extra = ''): Promise<void> => {
@@ -170,7 +180,10 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
     } catch (cause) {
       if (!controller.signal.aborted) { setError(errorText(cause)); }
     } finally {
-      if (manual.current === controller) { manual.current = null; setBusy(false); }
+      if (manual.current === controller) {
+        manual.current = null;
+        setBusy(false);
+      }
     }
   };
   const submit = (): void => {
@@ -223,15 +236,25 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
     {target === null ? null : <section className="note-ai-prompt" aria-label="AI 修改要求">
       <div className="note-toolbar"><strong>{target.range === null ? '修改整篇' : '修改选段'}</strong>
         <span className="note-toolbar-gap" />
-        <IconButton icon="close" label="关掉修改要求" onClick={() => { cancel(); setTarget(null); }} />
+        <IconButton icon="close" label="关掉修改要求" onClick={() => {
+          cancel();
+          setTarget(null);
+        }} />
       </div>
       {target.range === null ? null : <blockquote>{target.selected}</blockquote>}
       <textarea ref={prompt} aria-label="修改要求" placeholder="希望怎么改？" value={instruction}
         rows={3} maxLength={4000} disabled={busy} onChange={(event) => setInstruction(event.target.value)}
         onKeyDown={(event) => {
           if (event.nativeEvent.isComposing) { return; }
-          if (event.key === 'Escape') { event.preventDefault(); cancel(); setTarget(null); }
-          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) { event.preventDefault(); submit(); }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            cancel();
+            setTarget(null);
+          }
+          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+            event.preventDefault();
+            submit();
+          }
         }} />
       <div className="note-toolbar"><span className="note-status">⌘ / Ctrl + Enter</span>
         <span className="note-toolbar-gap" />
@@ -242,7 +265,10 @@ export function NoteAi({ editor, noteId, onProposal, pending, onQuote }: {
     {selection === null || bubble === null || target !== null || disabled ? null : createPortal(
       <div ref={tools} className="note-selection-tools" role="toolbar" aria-label="选中文字操作" style={bubble}>
         <IconButton icon="quote" label="引用到对话" onMouseDown={(event) => event.preventDefault()}
-          onClick={() => { onQuote(selection); setSelection(null); }} />
+          onClick={() => {
+            onQuote(selection);
+            setSelection(null);
+          }} />
         <button type="button" className="text-button" disabled={disabled}
           onMouseDown={(event) => event.preventDefault()} onClick={() => quick('polish', selection)}>润色</button>
         <button type="button" className="text-button" disabled={disabled}

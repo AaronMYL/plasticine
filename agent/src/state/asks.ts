@@ -1,14 +1,7 @@
 // 要你定卡（《UI 方案》第 6 节）：一张卡一行，答过、先不、撤回都只改这一行，不删。哪张摊开、怎么排、被答之后做什么
 // 是 attention/ 和 execution/ 的事，这里只存取。同一个动作（action_id）只出一张卡。
 
-import {
-  AskInputSchema,
-  AskPatchSchema,
-  AskSchema,
-  type Ask,
-  type AskInput,
-  type Page,
-} from '../../shared/state.ts';
+import { AskInputSchema, AskPatchSchema, AskSchema, type Ask, type AskInput } from '../../shared/state.ts';
 import { RECORD_META_COLUMNS, type ColumnMap } from './codec.ts';
 import { allPages, ObjectStore, type StoreContext, type StoreSpec } from './object-store.ts';
 

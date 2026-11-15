@@ -159,9 +159,18 @@ function scopedControl(control: LineControl, state: LineAccessState, scope: Line
       return control.list({ ...filter, limit: Number.MAX_SAFE_INTEGER })
         .filter((line) => accessibleLine(state, scope, line.id)).slice(0, filter.limit);
     },
-    read: (id, limit) => { requireAccess(id, 'read'); return control.read(id, limit); },
-    tell: (id, text) => { requireAccess(id, 'control'); return control.tell(id, text); },
-    halt: (id) => { requireAccess(id, 'control'); return control.halt(id); },
+    read: (id, limit) => {
+      requireAccess(id, 'read');
+      return control.read(id, limit);
+    },
+    tell: (id, text) => {
+      requireAccess(id, 'control');
+      return control.tell(id, text);
+    },
+    halt: (id) => {
+      requireAccess(id, 'control');
+      return control.halt(id);
+    },
   };
 }
 

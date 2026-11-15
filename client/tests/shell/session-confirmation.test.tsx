@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { DeviceKeyring } from '../../src/state/device-keyring.ts';
 import { HOME_HEADING, renderApp, seedNote } from '../helpers.tsx';

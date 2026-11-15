@@ -37,7 +37,10 @@ type Props = { phone: boolean; onClose: () => void; navigate: (route: Route) => 
 export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: MateView }): ReactNode {
   const live = useLive();
   const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const state = useClientState();
   const key = mate === undefined ? 'mates:create' : `mates:update:${mate.id}`;
   const op = useOp(key);
@@ -59,7 +62,10 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
     const failed = await soul.save();
     if (!mounted.current) return;
     setProblem(failed);
-    if (failed === null) { onClose(); navigate(mateRoute(result.id)); }
+    if (failed === null) {
+      onClose();
+      navigate(mateRoute(result.id));
+    }
   };
   const submit = async (): Promise<void> => {
     setProblem(null);
@@ -79,7 +85,10 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
       {mate === undefined ? '创建队友' : '保存修改'}</button></>;
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
     title={title} onClose={onClose} className="mate-editor-sheet soul-editor-sheet" footer={footer}>
-    <form id={formId} className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+    <form id={formId} className="mate-form" onSubmit={(event) => {
+      event.preventDefault();
+      void submit();
+    }}>
       <fieldset disabled={locked}>
         {mate !== undefined ? null : (
           <div className="mate-presets" role="group" aria-label="从一个现成的开始">
@@ -103,10 +112,16 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
           <div className="editor-look-side">
             <LookTabs tab={lookTab} onTab={setLookTab} />
             <HueSwatches label="颜色" hues={PROJECT_HUES} names={HUE_NAMES} value={draft.hue}
-              onChange={(hue) => { setPicked(true); patch('hue', hue); }} /></div></div>
+              onChange={(hue) => {
+                setPicked(true);
+                patch('hue', hue);
+              }} /></div></div>
         {lookTab === null ? null : <LookGrid tab={lookTab} look={{ avatar: draft.avatar, hue: draft.hue,
           variant: draft.variant ?? DEFAULT_MATE_VARIANT, face: draft.face ?? DEFAULT_MATE_FACE }}
-          onChange={(change) => { setPicked(true); setDraft((old) => ({ ...old, ...change })); }} />}
+          onChange={(change) => {
+            setPicked(true);
+            setDraft((old) => ({ ...old, ...change }));
+          }} />}
         <label>名字<input required minLength={2} maxLength={40} autoFocus value={draft.name}
           onChange={(event) => patch('name', event.target.value)} /></label>
         <SoulField owner={mate?.id ?? null} doc={soul}
@@ -124,7 +139,10 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
 export function GroupEditor({ group, phone, onClose, navigate }: Props & { group?: MateGroupView }): ReactNode {
   const live = useLive();
   const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const state = useClientState();
   const roster = useStore(live.mates.data);
   const key = group === undefined ? 'mate-groups:create' : `mate-groups:update:${group.id}`;
@@ -138,7 +156,10 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
     const body = { name: draft.name.trim(), mateIds: [...draft.mateIds] };
     const result = group === undefined ? await live.mateActions.createGroup(body)
       : await live.mateActions.updateGroup(group, body);
-    if (mounted.current && result !== null && 'mateIds' in result) { onClose(); navigate(mateGroupRoute(result.id)); }
+    if (mounted.current && result !== null && 'mateIds' in result) {
+      onClose();
+      navigate(mateGroupRoute(result.id));
+    }
   };
   // 挑队友是「一直能勾」的一处（11-15）：底部写已选几位，主按钮在后面。
   const footer = <>
@@ -149,7 +170,10 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
     title={group === undefined ? '创建群组' : '编辑群组'} onClose={onClose} className="mate-editor-sheet"
     footer={footer}>
-    <form id={formId} className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+    <form id={formId} className="mate-form" onSubmit={(event) => {
+      event.preventDefault();
+      void submit();
+    }}>
       <fieldset disabled={locked}><label>群组名字<input required minLength={2} maxLength={60} value={draft.name}
         onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
         <legend className="sr-only">选择队友</legend>
@@ -164,7 +188,8 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
       {op === undefined ? null : <OpLine op={op} onRetry={() => {
         void live.mateActions.retry(key).then((result) => {
           if (mounted.current && result !== null && 'mateIds' in result) {
-            onClose(); navigate(mateGroupRoute(result.id));
+            onClose();
+            navigate(mateGroupRoute(result.id));
           }
         });
       }}

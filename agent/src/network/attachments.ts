@@ -50,7 +50,10 @@ export class NetworkAttachments {
   readonly #nonces = new Map<string, number>();
   readonly #pending = new Map<string, Promise<Buffer>>();
   constructor(state: StateService, now: () => Date, host: (handle: string) => string, fetcher: typeof fetch) {
-    this.#state = state; this.#now = now; this.#host = host; this.#fetch = fetcher;
+    this.#state = state;
+    this.#now = now;
+    this.#host = host;
+    this.#fetch = fetcher;
   }
 
   contextImages(lineId: string): ImageContent[] {

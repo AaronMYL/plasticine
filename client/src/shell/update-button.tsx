@@ -64,7 +64,8 @@ export function UpdateButton(): ReactNode {
     <button type="button" className="rail-item rail-update" data-state={status.state} aria-label={tip}
       data-tip={tip} data-tip-side="right" aria-busy={working || busy ? 'true' : undefined} onClick={press}>
       {ringing ? <Ring fraction={updateFraction(status)}
-        done={status.state === 'ready' || status.state === 'installing'} /> : <Icon name={failed ? 'refresh' : 'download'} size={20} />}
+        done={status.state === 'ready' || status.state === 'installing'} />
+        : <Icon name={failed ? 'refresh' : 'download'} size={20} />}
       {failed ? <span className="rail-dot rail-update-dot" aria-hidden="true" /> : null}
     </button>
   );

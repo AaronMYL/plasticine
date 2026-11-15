@@ -55,7 +55,10 @@ describe('续写和补充都开', () => {
       input.action === 'predict' ? { markdown: '，续写的一句。', label: '续写' }
         : supplements('要不要补一条证据？')));
     toggle('补充建议');
-    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    act(() => {
+      editor.commands.focus('end');
+      editor.commands.insertContent(PARAGRAPH);
+    });
     await waitFor(() => expect(ghost()).not.toBeNull(), { timeout: PREDICT_WAIT_MS });
     expect(interjection()).toBeNull();
     await waitFor(() => expect(interjection()).not.toBeNull(), { timeout: INTERJECT_WAIT_MS });
@@ -74,7 +77,10 @@ describe('续写和补充都开', () => {
     const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', '开头') });
     const editor = await noteEditor();
     vi.spyOn(app.api.notes, 'assist').mockResolvedValue({ markdown: '，续写的一句。', label: '续写' });
-    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    act(() => {
+      editor.commands.focus('end');
+      editor.commands.insertContent(PARAGRAPH);
+    });
     await waitFor(() => expect(ghost()).not.toBeNull(), { timeout: PREDICT_WAIT_MS });
     expect(within(screen.getByRole('group', { name: '笔记 AI' })).getByRole('switch', { name: '续写' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: '收下这句' }));
@@ -93,7 +99,10 @@ describe('续写和补充都开', () => {
       return { markdown: '，续写。', label: '续写' };
     });
     toggle('补充建议');
-    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    act(() => {
+      editor.commands.focus('end');
+      editor.commands.insertContent(PARAGRAPH);
+    });
     await waitFor(() => expect(interjection()).not.toBeNull(), { timeout: INTERJECT_WAIT_MS });
     expect(ghost()).toBeNull();
     await act(async () => slow.resolve());
@@ -103,7 +112,10 @@ describe('续写和补充都开', () => {
     fireEvent.click(screen.getByRole('button', { name: '留下' }));
     expect(editor.getText()).toContain('补一句。');
     expect(editor.getText()).not.toContain('，续写。');
-    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    act(() => {
+      editor.commands.focus('end');
+      editor.commands.insertContent(PARAGRAPH);
+    });
     await waitFor(() => expect(interjection()).not.toBeNull(), { timeout: INTERJECT_WAIT_MS });
     expect(ghost()).not.toBeNull();
     fireEvent.keyDown(editor.view.dom, { key: 'Escape' });
@@ -155,7 +167,10 @@ describe('补充每段只给一次', () => {
     });
     toggle('续写');
     toggle('补充建议');
-    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    act(() => {
+      editor.commands.focus('end');
+      editor.commands.insertContent(PARAGRAPH);
+    });
     await waitFor(() => expect(asked.length).toBe(1), { timeout: INTERJECT_WAIT_MS });
     await settle(50);
     expect(interjection()).toBeNull();
@@ -166,7 +181,10 @@ describe('补充每段只给一次', () => {
     act(() => { editor.commands.insertContent('又想到一点'); });
     await waitFor(() => expect(asked.length).toBe(2), { timeout: INTERJECT_WAIT_MS });
     expect(asked[1]?.endsWith('又想到一点')).toBe(true);
-    act(() => { editor.commands.splitBlock(); editor.commands.insertContent('新的一段从这里开始写起。'); });
+    act(() => {
+      editor.commands.splitBlock();
+      editor.commands.insertContent('新的一段从这里开始写起。');
+    });
     await waitFor(() => expect(interjection()?.textContent).toContain('换了一段'), { timeout: INTERJECT_WAIT_MS });
     fireEvent.click(screen.getByRole('button', { name: '不用' }));
     act(() => { editor.commands.setTextSelection(1); });
@@ -190,7 +208,10 @@ describe('补充每段只给一次', () => {
     });
     toggle('续写');
     toggle('补充建议');
-    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    act(() => {
+      editor.commands.focus('end');
+      editor.commands.insertContent(PARAGRAPH);
+    });
     await waitFor(() => expect(signals.length).toBe(1), { timeout: INTERJECT_WAIT_MS });
     act(() => { editor.commands.setTextSelection(1); });
     expect(signals[0]?.aborted).toBe(true);
@@ -325,7 +346,10 @@ describe('续写的结果报回去', () => {
       return { markdown: '，续写的一句。', label: '续写', loopId: `loop-${seq}` };
     });
     const outcome = vi.spyOn(app.api.notes, 'assistOutcome').mockResolvedValue(undefined);
-    act(() => { editor.commands.focus('end'); editor.commands.insertContent(PARAGRAPH); });
+    act(() => {
+      editor.commands.focus('end');
+      editor.commands.insertContent(PARAGRAPH);
+    });
     await waitFor(() => expect(ghost()).not.toBeNull(), { timeout: PREDICT_WAIT_MS });
     fireEvent.keyDown(editor.view.dom, { key: 'Tab' });
     expect(outcome).toHaveBeenCalledWith('n1', { area: 'note_predict', loopId: 'loop-1', outcome: 'kept' });

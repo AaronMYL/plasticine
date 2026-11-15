@@ -20,7 +20,8 @@ function tweet(options: { id: string; handle: string; name: string; text: string
     <div data-testid="User-Name"><a href="/${options.handle}"><span>${options.name}</span></a>
       <a href="/${options.handle}"><span>@${options.handle}</span></a>${time}</div>
     <div data-testid="tweetText"><span>${options.text}</span></div>${options.more === true
-      ? `<a data-testid="tweet-text-show-more-link" href="/${options.handle}/status/${options.id}">Show more</a>` : ''}${photo}
+      ? `<a data-testid="tweet-text-show-more-link" href="/${options.handle}/status/${options.id}">Show more</a>`
+      : ''}${photo}
   </article>`;
 }
 
@@ -86,7 +87,8 @@ describe('X 时间线注入脚本', () => {
   it('多张图（11-14 图片统一）：按顺序最多四张，同一张不重复，不是 https 的不要；第一张也写在 image', () => {
     const media = (name: string): string => `https://pbs.twimg.com/media/${name}?format=jpg`;
     const doc = page(tweet({ id: '3', handle: 'mayabuilds', name: 'Maya Chen', text: '五张图',
-      photos: [media('a'), 'http://insecure.test/b.jpg', media('c'), media('a'), media('d'), media('e'), media('f')] }));
+      photos: [media('a'), 'http://insecure.test/b.jpg', media('c'), media('a'), media('d'), media('e'),
+        media('f')] }));
     const post = readPost(doc.querySelector('article') as Element, BASE)!;
     expect(post.images?.map((image) => image.url)).toEqual([media('a'), media('c'), media('d'), media('e')]);
     expect(post.image).toBe(media('a'));

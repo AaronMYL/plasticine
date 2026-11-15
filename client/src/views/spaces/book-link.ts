@@ -11,5 +11,8 @@ export function bookSpacePosition(id: string): BookSpacePosition | null {
   const offset = Number(match[3]);
   if (!Number.isSafeInteger(chapter) || !Number.isSafeInteger(offset)) return null;
   try { return { bookId: decodeURIComponent(match[1]!), chapter, offset }; }
-  catch (cause) { if (cause instanceof URIError) return null; throw cause; }
+  catch (cause) {
+    if (cause instanceof URIError) return null;
+    throw cause;
+  }
 }

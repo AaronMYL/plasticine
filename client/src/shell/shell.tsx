@@ -20,13 +20,10 @@ import { useRememberedScroll } from '../state/use-remembered-scroll.ts';
 import { useStore } from '../state/use-store.ts';
 import { webHash } from '../state/web-tabs.ts';
 import { useTelemetry } from '../telemetry.ts';
-import { BackupRestoreCard } from '../views/device/backup-restore-card.tsx';
 import { Palette } from '../views/search/palette.tsx';
 import type { PaletteTarget } from '../views/search/palette-results.ts';
 import { openBookmark } from '../views/bookmarks/bookmark-address.ts';
-import { ToolPanel } from '../views/tools/tool-panel.tsx';
 import { BrowserView } from '../views/tools/browser-view.tsx';
-import { WorkDetail } from '../views/lines/work-detail.tsx';
 import { AmbientLayer } from './ambient/ambient-layer.tsx';
 import { ChatBall, ChatDialog } from './chat-dialog.tsx';
 import { ShellColumn } from './columns/shell-column.tsx';
@@ -37,7 +34,6 @@ import { hostWebTabs, hostWindowChrome } from './host.ts';
 import { IconButton } from './icon-button.tsx';
 import { internalPage } from './internal-page.ts';
 import { PHONE_BELOW, computeLayout } from './layout.ts';
-import { ENTER_KEYFRAMES, MOTION, play } from './motion.ts';
 import { goBack, goForward, pushHash, replaceHash } from './nav-history.ts';
 import { useExternalLinks } from './open-external.ts';
 import { pageIcon } from './page-look.ts';
@@ -56,6 +52,7 @@ import { useSectionMemory } from './section-memory.ts';
 import { TabsContext, type TabActions } from './tabs-context.ts';
 import { usePhoneNavigation } from './use-phone-navigation.ts';
 import { NativeWebTabsContext, useNativeWebTabs } from './use-native-web-tabs.ts';
+import { boundaryKey, linkedWork, PageEnter, PanelBody, shownWebId, type SheetPanel } from './shell-parts.tsx';
 import { useRoute } from './use-route.ts';
 import { useViewportWidth } from './use-viewport-width.ts';
 import { ballWaiting, useWaitingCount } from './waiting.ts';
@@ -80,47 +77,8 @@ import { ContextMenuLayer } from './context-menu.tsx';
 import { useQuoteCommands } from './use-quote-commands.ts';
 import { watchSegmented } from './segmented-slide.ts';
 
-type SheetPanel = Exclude<Panel, { kind: 'settings' } | { kind: 'search' }>;
-
 /** 桌面客户端标题栏的高（有标题栏时才设）：盖住整个窗口的弹框层从它下面开始。 */
 const TITLEBAR_ROOM = '--titlebar-room';
-
-function PanelBody({ panel, navigate }: { panel: SheetPanel; navigate: (route: Route) => void }): ReactNode {
-  switch (panel.kind) {
-    case 'work': return <WorkDetail {...panel} navigate={navigate} />;
-    case 'backup_restore': return <BackupRestoreCard id={panel.id} />;
-    case 'tool':
-      return <ToolPanel name={panel.name} moneyEntry={panel.moneyEntry} recordId={panel.recordId}
-        moneyDate={panel.moneyDate} returnToCalendar={panel.returnToCalendar} />;
-  }
-}
-
-function linkedWork(route: Route): Extract<Panel, { kind: 'work' }> | null {
-  if (route.view !== 'work') return null;
-  if (route.lineId != null) return { kind: 'work', lineId: route.lineId };
-  if (route.taskId != null) return { kind: 'work', taskId: route.taskId };
-  if (route.groupTaskId != null) return { kind: 'work', groupTaskId: route.groupTaskId };
-  return { kind: 'work', lineId: '' };
-}
-
-/** 换页时整页重来；消息里换一个人不算换页（消息列表的位置和筛选留着）。 */
-function boundaryKey(route: Route): string {
-  return route.view === 'messages' ? '#/messages' : routeHash(route);
-}
-
-/** 换页时新页面淡入、从下方 4px 升上来（180ms）。 */
-function PageEnter({ children }: { children: ReactNode }): ReactNode {
-  const element = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    play(element.current, ENTER_KEYFRAMES, MOTION.base);
-  }, []);
-  return <div ref={element} className="page-enter">{children}</div>;
-}
-
-/** 主区开着网页标签时它是哪一个（地址 #/web/<id>）；标签没了是 null。 */
-function shownWebId(route: Route): string | null {
-  return route.view === 'web' ? route.webTabId ?? null : null;
-}
 
 export function Shell(): ReactNode {
   const { route: linked, navigate } = useRoute();
@@ -455,7 +413,10 @@ export function Shell(): ReactNode {
             ref={main.ref}
             className={`shell-main${browserPage ? ' shell-main-browser' : ''}${webTab !== null ? ' shell-main-web'
               : ''}`}
-            onScroll={(event) => { main.onScroll(); phoneNavigation.onScroll(event.currentTarget.scrollTop); }}
+            onScroll={(event) => {
+              main.onScroll();
+              phoneNavigation.onScroll(event.currentTarget.scrollTop);
+            }}
           >
             <MainErrorBoundary key={webTab === null ? boundaryKey(route) : webTab.id} onHome={() => go(HOME)}>
               <PageEnter key={webTab === null ? routeHash(route) : webTab.id}>
@@ -476,7 +437,8 @@ export function Shell(): ReactNode {
               onClick={closePanel} /> : undefined}
           >
             {activePanel === null ? null : <MainErrorBoundary key={panelTitle(activePanel)} onHome={() => {
-              setPanel(null); go(HOME);
+              setPanel(null);
+              go(HOME);
             }}><PanelBody panel={activePanel} navigate={go} /></MainErrorBoundary>}
           </Sheet>
           <ToastHost />

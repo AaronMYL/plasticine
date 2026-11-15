@@ -15,7 +15,7 @@ import { groupSpaces } from '../../views/library/space-categories.ts';
 import { IconButton } from '../icon-button.tsx';
 import { Icon } from '../icons.tsx';
 import type { Route } from '../routes.ts';
-import { ColumnFoot, ColumnHead, ColumnLabel, ColumnLink, ColumnNote } from './column.tsx';
+import { ColumnFoot, ColumnHead, ColumnLabel, ColumnNote } from './column.tsx';
 import { SubscriptionRows, TrashRow } from './library-subscriptions.tsx';
 import { SpaceRows } from './library-space-rows.tsx';
 

@@ -101,7 +101,10 @@ export function NoteActions({ note, beforeChange, changed, extra = [], label = '
       onClick={() => { if (open) { hide(); } else { show(); } }} />
     {anchor === null ? null : <Popover anchor={anchor} role="dialog" align="end" label={label}
       className="note-actions-pop" trigger={button} leaving={leaving}
-      onLeft={() => { setAnchor(null); setLeaving(false); }} onClose={hide}>
+      onLeft={() => {
+        setAnchor(null);
+        setLeaving(false);
+      }} onClose={hide}>
       {extra.map((action) => <button key={action.label} type="button" className="popover-item" onClick={() => {
         hide();
         action.onSelect();

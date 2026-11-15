@@ -28,7 +28,7 @@ function widthOf(data: Buffer): number {
     '-of', 'csv=p=0', file]).toString().trim());
 }
 
-test('有 ffmpeg：转成最宽 1200 的 webp，比原图小', { skip: !hasFfmpeg }, async () => {
+test('有 ffmpeg：转成最宽 1200 的 webp，比原图小', { skip: hasFfmpeg ? false : '这台机器没有装 ffmpeg' }, async () => {
   const original = bigWebp();
   const shrunk = await shrinkIllustration(original, 'image/webp', 'ffmpeg', signal);
   assert.equal(shrunk.mime, 'image/webp');

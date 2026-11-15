@@ -133,7 +133,8 @@ export function AddFriendPage({ phone, onClose, onAdded }: { phone: boolean; onC
         </label>
         <div className="net-actions">{button}</div>
         {op === undefined || op.status === 'running' ? null : (
-          <OpLine op={op} onRetry={(key) => void contactActions.retry(key)} onDismiss={(key) => actionOps.dismiss(key)} />
+          <OpLine op={op} onRetry={(key) => void contactActions.retry(key)}
+            onDismiss={(key) => actionOps.dismiss(key)} />
         )}
         {link === null ? null : (
           <>
@@ -206,7 +207,8 @@ export function NewGroupPage({ phone, onClose, onCreated }: { phone: boolean; on
         </label>
         {phone ? null : <div className="net-actions">{submit}{count}</div>}
         {op === undefined || op.status === 'running' ? null : (
-          <OpLine op={op} onRetry={(key) => void contactActions.retry(key)} onDismiss={(key) => actionOps.dismiss(key)} />
+          <OpLine op={op} onRetry={(key) => void contactActions.retry(key)}
+            onDismiss={(key) => actionOps.dismiss(key)} />
         )}
       </div>
     </NetPane>

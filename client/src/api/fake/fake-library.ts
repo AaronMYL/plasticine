@@ -64,7 +64,10 @@ export function createFakeLibrary(deps: FakeLibraryDeps): LibraryApi {
     (item) => title(item, input.action === 'restore' || input.action === 'purge'), (item) => apply(item, input));
   return {
     trash,
-    batch: async (input) => { deps.session.require(); return receipts.run(input, () => batch(input)); },
+    batch: async (input) => {
+      deps.session.require();
+      return receipts.run(input, () => batch(input));
+    },
     emptyTrash: async (input) => {
       deps.session.require();
       return receipts.run(input, async () => {

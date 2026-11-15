@@ -50,14 +50,39 @@
   padding: 0;
 }
 
-.browser-more { position: relative; flex: none; }
-.browser-actions-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: var(--z-menu);
-  width: min(256px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: var(--space-1);
-  padding: var(--space-3); border-radius: var(--radius); background: var(--bg); box-shadow: var(--lift); }
+.browser-more {
+  position: relative;
+  flex: none;
+}
+.browser-actions-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: var(--z-menu);
+  width: min(256px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: var(--lift);
+  }
 .browser-actions-menu > p { margin-bottom: var(--space-2); }
-.browser-menu-item { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: var(--space-2);
-  border: 0; border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; text-align: left;
-  cursor: pointer; }
+.browser-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
 .browser-menu-item:hover { background: var(--tint); }
 .browser-address {
   flex: 1;
@@ -152,7 +177,10 @@
   }
 }
 @media (max-width: 767px) {
-  .browser-tool > .browser-toolbar { gap: var(--space-1); padding: var(--space-2); }
+  .browser-tool > .browser-toolbar {
+    gap: var(--space-1);
+    padding: var(--space-2);
+  }
   .browser-menu-item { min-height: 44px; }
   /* 手机上保留网页后退，前进收起，给地址栏留宽度。 */
   .browser-toolbar .browser-history[aria-label="前进"] {

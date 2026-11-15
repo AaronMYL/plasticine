@@ -12,7 +12,8 @@ function SourceLink({ source, children }: { source: SpaceSource; children?: Reac
   if (href === null) {
     return <span>{children ?? source.label}</span>;
   }
-  return <a className="space-src" href={href} {...(href.startsWith('#') ? {} : { target: '_blank', rel: 'noreferrer' })}>
+  return <a className="space-src" href={href}
+    {...(href.startsWith('#') ? {} : { target: '_blank', rel: 'noreferrer' })}>
     {children ?? source.label}</a>;
 }
 

@@ -225,7 +225,8 @@ describe('按编号操作', () => {
     document.body.innerHTML = RACE;
     const scrolled = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined);
     const page = await perceive();
-    expect(await run({ op: 'act', version: page.version, act: { op: 'scroll', dy: 600 } })).toMatchObject({ ok: true, op: 'scroll' });
+    expect(await run({ op: 'act', version: page.version, act: { op: 'scroll', dy: 600 } })).toMatchObject({ ok: true,
+      op: 'scroll' });
     expect(scrolled).toHaveBeenCalledWith(0, 600);
     expect(document.querySelector('plasticine-dot')).not.toBeNull();
   });

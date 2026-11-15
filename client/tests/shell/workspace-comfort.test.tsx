@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, expect, it, vi } from 'vitest';
 import { MainErrorBoundary } from '../../src/shell/main-error-boundary.tsx';
 import { AppearanceSection } from '../../src/views/settings/appearance-section.tsx';
-import { renderApp, settle } from '../helpers.tsx';
+import { renderApp } from '../helpers.tsx';
 
 afterEach(() => {
   localStorage.removeItem('plasticine.appearance');
@@ -14,7 +14,10 @@ afterEach(() => {
 it('页面崩溃只显示该区错误，重试可以恢复，外部对话仍可输入', () => {
   const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   let broken = true;
-  function Page() { if (broken) { throw new Error('资料列表无法读取'); } return <p>页面恢复</p>; }
+  function Page() {
+    if (broken) { throw new Error('资料列表无法读取'); }
+    return <p>页面恢复</p>;
+  }
   render(<><input aria-label="仍能对话" /><MainErrorBoundary onHome={() => undefined}><Page /></MainErrorBoundary></>);
   expect(screen.getByText('这一页出错了')).toBeTruthy();
   expect(screen.getByText('资料列表无法读取')).toBeTruthy();

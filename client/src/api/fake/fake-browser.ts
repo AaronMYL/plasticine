@@ -28,7 +28,8 @@ export class FakeBrowser implements BrowserApi {
     signal?.throwIfAborted();
     const blocks = readerBlocks(input.text, input.title).map((block, index) => ({ ...block, index }));
     if (blocks.length === 0) throw new Error('这里读不到网页正文，不能提取或归档。');
-    const url = new URL(input.url); url.hash = '';
+    const url = new URL(input.url);
+    url.hash = '';
     return { title: input.title, totalChars: input.totalChars, truncated: input.truncated,
       url: url.href, blocks, images: input.images ?? [],
       points: blocks.filter((block) => block.kind === 'paragraph').slice(0, 3)

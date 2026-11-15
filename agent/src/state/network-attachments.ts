@@ -122,10 +122,10 @@ export function createNetworkAttachmentStore({ db, now, newId }: StoreContext) {
         { id: messageId }).map((raw) => {
         const row = read(raw);
         const text = typeof raw['text_content'] === 'string' ? raw['text_content'] : null;
-        const detail = text ?? (row.metadata.mimeType.startsWith('image/')
-          ? row.view.status !== 'ready' ? '图片原件尚未取得。'
-            : row.metadata.bytes > 5 * 1024 * 1024 ? '图片大于 5 MB，未提供给模型。' : '图片附件。'
-          : '没有可读取的文本。');
+        const tooLarge = row.metadata.bytes > 5 * 1024 * 1024;
+        const image = row.view.status !== 'ready' ? '图片原件尚未取得。'
+          : tooLarge ? '图片大于 5 MB，未提供给模型。' : '图片附件。';
+        const detail = text ?? (row.metadata.mimeType.startsWith('image/') ? image : '没有可读取的文本。');
         return `附件「${row.metadata.name}」（${row.metadata.mimeType}）：${detail}`;
       }).join('\n').slice(0, 30_000);
     },

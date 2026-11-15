@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { setTimeout as sleep } from 'node:timers/promises';
 import { call, json, pair, startTestApp, uploadAttachment, type TestApp } from './helpers.ts';
 import { textPdf } from '../cloud-tools/pdf-fixture.ts';
 import { zip } from '../cloud-tools/zip-fixture.ts';

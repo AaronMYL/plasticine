@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import { searchTerms } from '../../shared/feed-search.ts';
-import { FEED_SELECTION_LIMIT, type FeedCandidate } from '../../shared/feed-selection.ts';
+import { type FeedCandidate } from '../../shared/feed-selection.ts';
 import type { FeedSource } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { errorCategory, failureText, safeLog } from '../util/index.ts';

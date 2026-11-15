@@ -79,7 +79,10 @@ export function useNoteImages(editor: Editor | null, noteId: string) {
     if (editor === null || dom === null) { return; }
     const paste = (event: ClipboardEvent): void => {
       const files = [...event.clipboardData?.files ?? []].filter((file) => file.type.startsWith('image/'));
-      if (files.length > 0) { event.preventDefault(); void uploadRef.current(files); }
+      if (files.length > 0) {
+        event.preventDefault();
+        void uploadRef.current(files);
+      }
     };
     const drop = (event: DragEvent): void => {
       const files = [...event.dataTransfer?.files ?? []].filter((file) => file.type.startsWith('image/'));

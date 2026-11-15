@@ -1,3 +1,6 @@
+// 真接口：把各资源文件和事件流装成一个 PlasticineApi。fetch 和 EventSource 可以换成假的（测试用），
+// 默认用浏览器自己的；同源请求，会话在 HttpOnly cookie 里，前端不碰。
+
 import { createNetworkAttachmentsHttp } from './network-attachments.ts';
 import { createMatesHttp } from './mates.ts';
 import { createSoulHttp } from './soul.ts';
@@ -7,9 +10,6 @@ import { HttpBackups } from './backups.ts';
 import { HttpSearch } from './search.ts';
 import { HttpSystems } from './systems.ts';
 import { createOutboundHttp } from './outbound.ts';
-// 真接口：把各资源文件和事件流装成一个 PlasticineApi。fetch 和 EventSource 可以换成假的（测试用），
-// 默认用浏览器自己的；同源请求，会话在 HttpOnly cookie 里，前端不碰。
-
 import { HttpLines, HttpModelProviders } from './lines.ts';
 import { HttpTasks } from './tasks.ts';
 import { HttpCompose } from './compose.ts';

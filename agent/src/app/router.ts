@@ -1,3 +1,8 @@
+// The route table (plasticine-code: 路由表一个文件). Every /v2 route, its method, whether it needs a session, and the
+// resource file that handles it. Order matters only where two patterns could match the same path.
+// 2026-11-05 Harness 重做：对话、任务、事、自迭代、启用、度量、遥测、关切、判断 / 预测、采访、≠、专注、提醒 / 日历、成果、
+// 回来汇报和十件事、定时任务、旧的模型连接与模型偏好的接口都删了；对话走 /v2/lines，模型走 /v2/model-providers。
+
 import { composeOutcome, predictCompose } from './compose.ts';
 import { SOUL_ROUTES } from './soul.ts';
 import { SOULS_ROUTES } from './souls.ts';
@@ -6,11 +11,6 @@ import { MEMORY_CONFLICT_ROUTES } from './memory-conflicts.ts';
 import { MEMORY_MANAGE_ROUTES } from './memory-manage.ts';
 import { getLinkPreview } from './link-preview.ts';
 import { getProxiedImage } from './image-proxy.ts';
-// The route table (plasticine-code: 路由表一个文件). Every /v2 route, its method, whether it needs a session, and the
-// resource file that handles it. Order matters only where two patterns could match the same path.
-// 2026-11-05 Harness 重做：对话、任务、事、自迭代、启用、度量、遥测、关切、判断 / 预测、采访、≠、专注、提醒 / 日历、成果、
-// 回来汇报和十件事、定时任务、旧的模型连接与模型偏好的接口都删了；对话走 /v2/lines，模型走 /v2/model-providers。
-
 import {
   OUTBOUND_GRANTS_PATH,
   OUTBOUND_LOG_PATH,

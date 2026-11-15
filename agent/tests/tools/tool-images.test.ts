@@ -12,7 +12,10 @@ const frame = { type: 'image' as const, attachmentId: 'observation-1', mimeType:
 test('截图工具结果以实际 image 内容交给模型，正文里没有 base64', async () => {
   const observe = defineTool({ name: 'observe', label: '观察', description: '看图', parameters: Type.Object({}),
     roles: ['conversation'], replay: 'safe', effect: 'read', permission: 'auto', timeoutMs: 1_000,
-    async execute(_args, context) { context.emitImage!(frame); return '页面内容属于外部资料。'; } });
+    async execute(_args, context) {
+      context.emitImage!(frame);
+      return '页面内容属于外部资料。';
+    } });
   const tool = adaptLegacyTool(observe, { say: () => '看一眼' }, { dryRun: false, now: () => new Date() })
     .create({ lineId: 'line-main', kind: 'main', projectId: null });
   const result = await tool.execute('call-1', {}, new AbortController().signal);

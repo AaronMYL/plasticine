@@ -5,10 +5,9 @@
 
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { FakeApi } from '../../src/api/fake/index.ts';
 import type { PlasticineMacWebTabs, WebPageTool, WebTabsSync } from '../../src/api/shared.ts';
 import { webHash } from '../../src/state/web-tabs.ts';
-import { renderApp, settle, type AppHarness } from '../helpers.tsx';
+import { renderApp, type AppHarness } from '../helpers.tsx';
 
 const ARTICLE = 'https://blog.example.org/local-first-sync';
 const ALL_TOOLS = ['find', 'zoom', 'capture', 'capture_full', 'print', 'circle', 'thumbnail', 'downloads'];

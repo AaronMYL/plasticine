@@ -34,7 +34,10 @@ test('网页提取和归档需登录；归档重复请求不多写一版，同�
 
 test('网页归档经安全图片代理保存原图，之后从本地资产读取', async () => {
   const image = Buffer.from('89504e470d0a1a0a', 'hex');
-  const server = createServer((_req, res) => { res.writeHead(200, { 'content-type': 'image/png' }); res.end(image); });
+  const server = createServer((_req, res) => {
+    res.writeHead(200, { 'content-type': 'image/png' });
+    res.end(image);
+  });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
   assert.ok(address !== null && typeof address !== 'string');
@@ -54,5 +57,9 @@ test('网页归档经安全图片代理保存原图，之后从本地资产读�
     const saved = await call(app, 'GET', source, { cookie });
     assert.equal(saved.status, 200);
     assert.deepEqual(Buffer.from(saved.body as ArrayBuffer), image);
-  } finally { await app.close(); server.closeAllConnections(); server.close(); }
+  } finally {
+    await app.close();
+    server.closeAllConnections();
+    server.close();
+  }
 });

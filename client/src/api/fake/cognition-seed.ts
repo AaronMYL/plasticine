@@ -17,7 +17,6 @@ function daysAgo(now: Date, days: number): string {
 
 const SAID = { id: 'src_said', kind: 'user_said', label: '你在对话里说的', w: 1 } as const;
 const INFERRED = { id: 'src_inferred', kind: 'own_reasoning', label: 'Plasticine 自己推的', w: 0.1 } as const;
-const STATEMENT = { id: 'src_bank', kind: 'verifiable_original', label: '银行流水原文', w: 0.5 } as const;
 
 function seedMemory(fakes: CognitionFakes, now: Date): void {
   const { memory } = fakes;

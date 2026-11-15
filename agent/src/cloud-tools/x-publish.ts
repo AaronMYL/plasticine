@@ -18,10 +18,15 @@ const READY = `new Promise(resolve => { const end = Date.now() + 15000; const ch
 /** 只在已批准原文后调用。用浏览器原会话发出，成功依据为 CreateTweet 回执里的真实帖子 id。 */
 export async function publishXThroughPage(connection: Pick<CdpConnection, 'send' | 'onEvent'>,
   sessionId: string, text: string, signal: AbortSignal): Promise<{ url: string }> {
-  let clicked = false; let requestId: string | null = null;
-  let status = 0; let finish: (result: { url: string }) => void = () => undefined;
+  let clicked = false;
+  let requestId: string | null = null;
+  let status = 0;
+  let finish: (result: { url: string }) => void = () => undefined;
   let fail: (error: unknown) => void = () => undefined;
-  const result = new Promise<{ url: string }>((resolve, reject) => { finish = resolve; fail = reject; });
+  const result = new Promise<{ url: string }>((resolve, reject) => {
+    finish = resolve;
+    fail = reject;
+  });
   // 在准备输入阶段也可能断线；承接拒绝，实际返回时仍抛同一个错误。
   void result.catch(() => undefined);
   const abort = () => fail(new CloudToolError(clicked ? 'unknown' : 'failed',
@@ -32,7 +37,8 @@ export async function publishXThroughPage(connection: Pick<CdpConnection, 'send'
     if (event.method === 'Network.responseReceived') {
       const data = cdpValue(ResponseEvent, event.params);
       if (new URL(data.response.url).pathname.endsWith('/CreateTweet')) {
-        requestId = data.requestId; status = data.response.status;
+        requestId = data.requestId;
+        status = data.response.status;
       }
     } else if (event.method === 'Network.loadingFinished') {
       const eventData = cdpValue(LoadingEvent, event.params);
@@ -68,12 +74,16 @@ export async function publishXThroughPage(connection: Pick<CdpConnection, 'send'
           return !!b && !b.disabled && b.getAttribute('aria-disabled') !== 'true'; })()`, returnByValue: true,
     }, signal, sessionId));
     if (!matched.result.value) throw new CloudToolError('failed', 'X 上的原文或发布按钮状态与授权卡不一致。没有发布。');
-    signal.throwIfAborted(); clicked = true;
+    signal.throwIfAborted();
+    clicked = true;
     await connection.send('Runtime.evaluate', { expression:
       `document.querySelector('[data-testid="tweetButton"]').click()`, returnByValue: true }, signal, sessionId);
     return await result;
   } catch (cause) {
     if (cause instanceof CloudToolError && (cause.code === 'failed' || cause.code === 'unknown')) throw cause;
     throw new CloudToolError(clicked ? 'unknown' : 'failed', cause instanceof Error ? cause.message : String(cause));
-  } finally { stop(); signal.removeEventListener('abort', abort); }
+  } finally {
+    stop();
+    signal.removeEventListener('abort', abort);
+  }
 }

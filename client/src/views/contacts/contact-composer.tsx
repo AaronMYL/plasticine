@@ -138,7 +138,10 @@ export function ContactComposer({ contact, phone, onNewTask, predict: canPredict
   const target = targets[0] ?? null;
   const predict = useComposePredict({ target: canPredict && predictOn && target === null
     && (contact.kind === 'person' || contact.kind === 'group') ? { kind: 'contact', id: contact.id } : null,
-  draft: text, input, change: (value) => { inlineDrafts.set(key, value); requestAnimationFrame(grow); } });
+  draft: text, input, change: (value) => {
+    inlineDrafts.set(key, value);
+    requestAnimationFrame(grow);
+  } });
   const [scrollTop, setScrollTop] = useState(0);
   const all = mentionChoices(contact, useMainName());
   const choices = menu === null ? [] : matchMentions(all, menu.typed, group ? targets : []);
@@ -176,7 +179,9 @@ export function ContactComposer({ contact, phone, onNewTask, predict: canPredict
     const sent = await contactActions.send(contact, kind === null ? 'person' : kind, asked[0] ?? null, attachments.ids,
       reply?.id ?? null, asked.slice(1));
     if (sent) {
-      setTargets([]); attachments.clear(); setContactReply(contact.id, null);
+      setTargets([]);
+      attachments.clear();
+      setContactReply(contact.id, null);
       requestAnimationFrame(grow);
     }
   };
@@ -228,7 +233,8 @@ export function ContactComposer({ contact, phone, onNewTask, predict: canPredict
     <div className="contact-composer" data-phone={phone} data-has-media={attachments.rows.length > 0 || reply !== null}
       onDragOver={(event) => { if (supportsFiles && !locked) event.preventDefault(); }} onDrop={(event) => {
         if (!supportsFiles || locked) return;
-        event.preventDefault(); attachments.add(Array.from(event.dataTransfer.files));
+        event.preventDefault();
+        attachments.add(Array.from(event.dataTransfer.files));
       }}>
       <div className="contact-compose-surface">
       {reply === null ? null : (
@@ -240,7 +246,10 @@ export function ContactComposer({ contact, phone, onNewTask, predict: canPredict
       )}
       <NetworkAttachmentDrafts drafts={attachments} disabled={locked} />
       <input type="file" multiple hidden ref={files} aria-label="选择消息附件" disabled={locked}
-        onChange={(event) => { attachments.add(Array.from(event.target.files ?? [])); event.target.value = ''; }} />
+        onChange={(event) => {
+          attachments.add(Array.from(event.target.files ?? []));
+          event.target.value = '';
+        }} />
       <div className="contact-composer-row">
         {phone && onNewTask !== null ? <IconButton icon="plus" label="发任务" onClick={onNewTask} /> : null}
         <div className="contact-composer-box" data-ai={target !== null}>
@@ -264,7 +273,8 @@ export function ContactComposer({ contact, phone, onNewTask, predict: canPredict
             }}
             onPaste={(event) => {
               if (!supportsFiles || locked || event.clipboardData.files.length === 0) return;
-              event.preventDefault(); attachments.add(Array.from(event.clipboardData.files));
+              event.preventDefault();
+              attachments.add(Array.from(event.clipboardData.files));
             }}
             onBlur={() => setMenu(null)}
             onKeyDown={onKey} />

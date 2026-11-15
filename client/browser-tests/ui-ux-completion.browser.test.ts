@@ -144,7 +144,8 @@ const paletteRow = (title: string): string => `Array.from(document.querySelector
   .find(row => row.querySelector('.palette-title')?.textContent === ${JSON.stringify(title)})`;
 
 async function choose(page: Cdp, title: string): Promise<void> {
-  await until(() => page.evaluate(`(() => { const row = ${paletteRow(title)}; row?.click(); return row !== undefined; })()`),
+  const clickRow = `(() => { const row = ${paletteRow(title)}; row?.click(); return row !== undefined; })()`;
+  await until(() => page.evaluate(clickRow),
     `打开「${title}」`);
 }
 

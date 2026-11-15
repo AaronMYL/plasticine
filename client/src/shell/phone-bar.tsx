@@ -26,7 +26,9 @@ export function phoneFullPage(route: Route): boolean {
   if (route.view === 'plasticine' && (route.plasticineMain === true
     || route.mateId != null
     || route.mateGroupId != null || route.lineId != null || route.messageId != null)) return true;
-  if (route.view === 'projects' || route.view === 'memory' || route.view === 'work' || route.view === 'skills') return true;
+  if (route.view === 'projects' || route.view === 'memory' || route.view === 'work' || route.view === 'skills') {
+    return true;
+  }
   if (route.view === 'books' && (route.bookId != null || route.spaceId != null)) {
     return true;
   }

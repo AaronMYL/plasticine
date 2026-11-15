@@ -1,7 +1,6 @@
 // 约定：生效和撤由用户确认（《从零方案》第 5 节「约定」），所以 state 与 effectiveAt 是用户确认字段，只能经
 // `confirm` 写入。普通写入（脑的提议、前提变了）只能把约定置为待议 under_review，或改提议字段 proposedDiff。
 
-import { Type } from 'typebox';
 import {
   AgreementConfirmedSchema,
   AgreementInputSchema,
@@ -18,7 +17,7 @@ import {
   TermDefinitionSchema,
 } from '../../shared/state.ts';
 import { requireConfirmation } from './confirmed-fields.ts';
-import { StateError, versionConflict } from './errors.ts';
+import { versionConflict } from './errors.ts';
 import { checked, CONFIRMATION_META_COLUMNS, OBJECT_META_COLUMNS, type ColumnMap } from './codec.ts';
 import { ObjectStore, type StoreContext, type StoreSpec } from './object-store.ts';
 

@@ -6,12 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import {
-  ACT_OR_ASK_PROMPT,
-  ACT_OR_ASK_REF,
-  ASK_BASES,
-  ASK_BASIS_LABELS,
-  basisShapeProblem,
-  HARD_LINES,
+  ACT_OR_ASK_PROMPT, ASK_BASES, ASK_BASIS_LABELS, basisShapeProblem, HARD_LINES,
 } from '../../shared/act-or-ask.ts';
 import { ASK_PURPOSE_LINES, ASK_PURPOSES, type AskPurpose } from '../../shared/state.ts';
 import { AttentionError, type RaiseAsk } from '../../src/attention/index.ts';

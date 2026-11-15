@@ -1,13 +1,9 @@
 import assert from 'node:assert/strict';
-import { setTimeout as sleep } from 'node:timers/promises';
 import { afterEach, test } from 'node:test';
-import { REPLAYED_HEADER } from '../../shared/api/index.ts';
 import type { MemoryEntryInput } from '../../shared/state.ts';
-import { Type } from 'typebox';
-import { defineTool } from '../../src/tools/registry.ts';
 import { brainChange } from '../state/helpers.ts';
 import { CREDENTIAL_LINK_TEXT } from '../url-fixtures.ts';
-import { call, json, openEvents, pair, startTestApp, type TestApp } from './helpers.ts';
+import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 import { newRequestId } from './signing.ts';
 
 let t: TestApp | undefined;

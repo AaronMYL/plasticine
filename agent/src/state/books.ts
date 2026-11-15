@@ -127,7 +127,10 @@ function createBookRecords(context: StoreContext) {
   const store = new ObjectStore(context, BOOK_SPEC);
   return {
     get: (id: string): BookRecord | undefined => isPurged(context, 'books', id) ? undefined : store.get(id),
-    require: (id: string): BookRecord => { requireUnpurged(context, 'books', id); return store.require(id); },
+    require: (id: string): BookRecord => {
+      requireUnpurged(context, 'books', id);
+      return store.require(id);
+    },
     update: (id: string, version: number, patch: BookPatch): BookRecord => {
       requireUnpurged(context, 'books', id);
       return store.update(id, version, patch);

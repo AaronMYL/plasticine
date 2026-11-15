@@ -13,7 +13,8 @@ const ROOT = fileURLToPath(new URL('../../../skills-store', import.meta.url));
 
 test('技能商店的清单和每个技能都合规', () => {
   const index: unknown = JSON.parse(readFileSync(join(ROOT, 'index.json'), 'utf8'));
-  assert.ok(Value.Check(SkillStoreIndexSchema, index), JSON.stringify([...Value.Errors(SkillStoreIndexSchema, index)][0]));
+  assert.ok(Value.Check(SkillStoreIndexSchema, index),
+    JSON.stringify([...Value.Errors(SkillStoreIndexSchema, index)][0]));
   const names = index.skills.map((skill) => skill.name);
   assert.equal(new Set(names).size, names.length, '短名不能重复');
   for (const skill of index.skills) {

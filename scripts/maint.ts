@@ -79,6 +79,17 @@ function readPlan(path: string): NonNullable<MaintenanceRequest['plan']> {
 }
 
 /** 命令行参数 → 一条维护命令（或一句只读查询）。 */
+/** 计划文件按命令放进请求里对应的那一栏。 */
+function planField(command: string, plan: NonNullable<MaintenanceRequest['plan']>): Partial<MaintenanceRequest> {
+  if (command === 'memory.move') {
+    return { moves: plan as unknown as NonNullable<MaintenanceRequest['moves']> };
+  }
+  if (command === 'memory.cleanup.add') {
+    return { adds: plan as unknown as NonNullable<MaintenanceRequest['adds']> };
+  }
+  return { plan };
+}
+
 export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv = process.env,
   now: Date = new Date()): ParsedCommand {
   const { values, positionals } = parseArgs({
@@ -126,11 +137,7 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
       .filter((source) => source !== '') as NonNullable<MaintenanceRequest['sources']> }),
     ...(values.ids === undefined ? {}
       : { ids: values.ids.split(',').map((id) => id.trim()).filter((id) => id !== '') }),
-    ...(values.plan === undefined ? {} : command === 'memory.move'
-      ? { moves: readPlan(values.plan) as unknown as NonNullable<MaintenanceRequest['moves']> }
-      : command === 'memory.cleanup.add'
-        ? { adds: readPlan(values.plan) as unknown as NonNullable<MaintenanceRequest['adds']> }
-        : { plan: readPlan(values.plan) }),
+    ...(values.plan === undefined ? {} : planField(command, readPlan(values.plan))),
   };
   return { kind: 'socket', stateDir, request };
 }

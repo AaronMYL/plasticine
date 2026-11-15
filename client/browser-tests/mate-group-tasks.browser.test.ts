@@ -19,7 +19,9 @@ for (const client of ['mac', 'phone'] as const) {
           const second = mates.create({ name: '文字编辑', role: '校对文字', avatar: '编', hue: 'olive',
             soul: '保留原意。', purpose: null });
           const group = mates.createGroup({ name: '阅读小组', mateIds: [first.id, second.id] });
-          groupId = group.id; groupLineId = group.lineId; mateId = first.id;
+          groupId = group.id;
+          groupLineId = group.lineId;
+          mateId = first.id;
         } });
       // 手机上 Plasticine 栏就是主线（11-12），队友和群组在右上角的名单里。
       if (client === 'phone') await click(page, '队友和群组');

@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MAX_FILE_LINES, MAX_LINE_WIDTH, isTestFile, lintSource, visibleWidth } from './lint-rules.ts';
+import {
+  LONG_FILES_ALLOWED, MAX_CSS_LINES, MAX_FILE_LINES, MAX_LINE_WIDTH, isMilestoneName, isTestFile, lintSource,
+  visibleWidth,
+} from './lint-rules.ts';
 
 const rulesOf = (source: string, checkCode = true) => lintSource(source, { checkCode }).map((f) => f.rule);
 
@@ -14,22 +17,100 @@ test('超过 120 字的行报 line-width，正好 120 不报', () => {
   assert.deepEqual(rulesOf('x'.repeat(MAX_LINE_WIDTH + 1)), ['line-width']);
 });
 
-test('格式和类型写法只提醒（第 98 条）：行宽、any 不算错误；吞错误的空 catch 仍是错误', () => {
+test('格式和写法都算错误（11-15 起）：行宽、any、空 catch 违反了 lint 不过', () => {
   const severity = (source: string) => lintSource(source, { checkCode: true }).map((f) => [f.rule, f.severity]);
-  assert.deepEqual(severity('x'.repeat(MAX_LINE_WIDTH + 1)), [['line-width', 'warning']]);
-  assert.deepEqual(severity(`let a: ${'an' + 'y'} = 1;`), [['no-any', 'warning']]);
+  assert.deepEqual(severity('x'.repeat(MAX_LINE_WIDTH + 1)), [['line-width', 'error']]);
+  assert.deepEqual(severity(`let a: ${'an' + 'y'} = 1;`), [['no-any', 'error']]);
   assert.deepEqual(severity('try { run(); } catch {}'), [['empty-catch', 'error']]);
 });
 
-test('源码超过 500 行只是提醒，不算错误；测试文件不限长度', () => {
+test('源码超过 500 行：登记过「只干一件事」的文件只提醒，没登记的算错误；测试文件不限长度', () => {
   assert.equal(MAX_FILE_LINES, 500);
   const long = 'a\n'.repeat(MAX_FILE_LINES + 1);
-  const findings = lintSource(long, { checkCode: false });
-  assert.deepEqual(findings.map((f) => [f.rule, f.severity]), [['file-length', 'warning']]);
+  const listed = Object.keys(LONG_FILES_ALLOWED)[0] ?? '';
+  assert.deepEqual(lintSource(long, { checkCode: false, path: 'agent/src/x/new-file.ts' })
+    .map((f) => [f.rule, f.severity]), [['file-length', 'error']]);
+  assert.deepEqual(lintSource(long, { checkCode: false, path: listed })
+    .map((f) => [f.rule, f.severity]), [['file-length', 'warning']]);
   assert.deepEqual(lintSource(long, { checkCode: false, isTest: true }), []);
+  // CSS 一行一条声明，上限 800
+  const css = (lines: number) => lintSource('a {}\n'.repeat(lines), { checkCode: false, isCss: true, path: 'x.css' });
+  assert.deepEqual(css(MAX_CSS_LINES), []);
+  assert.deepEqual(css(MAX_CSS_LINES + 1).map((f) => f.rule), ['file-length']);
   assert.ok(isTestFile('agent/tests/model/helpers.ts'));
   assert.ok(isTestFile('scripts\\copy\\copy.test.ts'));
   assert.ok(!isTestFile('agent/src/state/object-store.ts'));
+  for (const [path, reason] of Object.entries(LONG_FILES_ALLOWED)) {
+    assert.ok(reason.length >= 6, `${path} 要写清为什么可以超过 500 行`);
+  }
+});
+
+test('一行一个语句：分号后面同一行还有语句就报；只有一个语句的短块、for 头、类型成员不报', () => {
+  assert.deepEqual(rulesOf('if (x) { a(); b(); }'), ['one-statement']);
+  assert.deepEqual(rulesOf('let a = 1; let b = 2;'), ['one-statement']);
+  assert.deepEqual(rulesOf("switch (x) {\n  case 'a': run(); break;\n}"), ['one-statement']);
+  assert.deepEqual(rulesOf('if (x) { return; }'), []);
+  assert.deepEqual(rulesOf('if (x) { a(); } else { b(); }'), []);
+  assert.deepEqual(rulesOf('for (let i = 0; i < n; i += 1) { run(i); }'), []);
+  assert.deepEqual(rulesOf('interface P { a: string; b?: number; readonly c: boolean }'), []);
+  assert.deepEqual(rulesOf('interface W { ack(sequence: number): Promise<void>; close?(): void; end(): void }'), []);
+  assert.deepEqual(rulesOf('const f = (p: { a: string; b: number }): void => { use(p); };'), []);
+  assert.deepEqual(rulesOf('const text = `${a};${b}`; // 模板里的分号不算'), []);
+  assert.deepEqual(rulesOf("const s = 'a; b';"), []);
+});
+
+test('三元最多套两层：第三层报一次；可选链、??、可选参数、条件类型不算', () => {
+  assert.deepEqual(rulesOf('const v = a ? 1 : b ? 2 : 3;'), []);
+  assert.deepEqual(rulesOf('const v = a ? 1 : b ? 2 : c ? 3 : 4;'), ['nested-ternary']);
+  assert.deepEqual(rulesOf('const v = a ? 1 : (b ? 2 : (c ? 3 : d ? 4 : 5));'), ['nested-ternary']);
+  assert.deepEqual(rulesOf('const v = a ? (b ? (c ? 1 : 2) : 3) : 4;'), ['nested-ternary']);
+  assert.deepEqual(rulesOf('const v = a ? f(b ? 1 : 2, c ? 3 : 4) : g(d ? 5 : 6);'), []);
+  assert.deepEqual(rulesOf('const v = [a ? 1 : 2, b ? 1 : 2, c ? 1 : 2];'), []);
+  assert.deepEqual(rulesOf('const v = a?.b ?? c?.[0] ?? d?.(1);'), []);
+  assert.deepEqual(rulesOf('function f(a?: string, b?: number, c?: boolean): void { use(a, b, c); }'), []);
+  const conditionalType = "type T<X> = X extends string ? 'a' : X extends number ? 'b' "
+    + ": X extends boolean ? 'c' : 'd';";
+  assert.deepEqual(rulesOf(conditionalType), []);
+  assert.deepEqual(rulesOf('const v = a ? `${b ? 1 : 2}` : `${c ? 3 : 4}`;'), []);
+  assert.deepEqual(rulesOf("const who = mine ? (ai ? 'my_ai' : 'me') : (ai ? 'their_ai' : 'them');"), []);
+  assert.deepEqual(rulesOf('const v = a ? b ? 1 : 2 : c ? 3 : 4;'), []);
+  assert.deepEqual(rulesOf('const html = `${a ? 1 : 2}${b ? 1 : 2}${c ? 1 : 2}${d ? 1 : 2}`;'), []);
+  assert.deepEqual(rulesOf('const row = [on ? <Row checked={on} /> : null, a ? 1 : null, b ? 2 : null];'), []);
+});
+
+test('测试不许无条件跳过：.skip / .only / .todo 和不带原因的 skip: 报；带条件和原因的不报；源码里不查', () => {
+  const inTest = (source: string) => lintSource(source, { checkCode: true, isTest: true }).map((f) => f.rule);
+  assert.deepEqual(inTest("test.skip('以后再说', () => {});"), ['no-skipped-test']);
+  assert.deepEqual(inTest("describe.only('一组', () => {});"), ['no-skipped-test']);
+  assert.deepEqual(inTest("it.todo('还没写');"), ['no-skipped-test']);
+  assert.deepEqual(inTest("test('名字', { skip: true }, () => {});"), ['no-skipped-test']);
+  assert.deepEqual(inTest("test('名字', { skip: !hasTool }, () => {});"), ['no-skipped-test']);
+  assert.deepEqual(inTest("test('名字', { skip: hasTool ? false : '这台机器没有这个工具' }, () => {});"), []);
+  assert.deepEqual(inTest('assert.deepEqual(counts, { all: 5, todo: 4, done: 1 });'), []);
+  assert.deepEqual(rulesOf("test.skip('源码文件里不查', () => {});"), []);
+  assert.deepEqual(inTest('queue.skip(3);'), []);
+});
+
+test('CSS 一行一条声明：挤了两条、或一行两个花括号块就报；一条声明的短规则、括号里的分号不报', () => {
+  const css = (source: string) => lintSource(source, { checkCode: false, isCss: true }).map((f) => f.rule);
+  assert.deepEqual(css('.a { color: red; margin: 0; }'), ['css-one-declaration']);
+  assert.deepEqual(css('.a {\n  color: red; margin: 0;\n}'), ['css-one-declaration']);
+  assert.deepEqual(css('@media (min-width: 600px) { .a { color: red; } }'), ['css-one-declaration']);
+  assert.deepEqual(css('.a {\n  color: red;\n  margin: 0; }'), ['css-one-declaration']);
+  assert.deepEqual(css('.a { color: red;\n  margin: 0;\n}'), ['css-one-declaration']);
+  assert.deepEqual(css('.a { color: red; }'), []);
+  assert.deepEqual(css('.a { color: red }'), []);
+  assert.deepEqual(css('.a {\n  background: url("data:image/svg+xml;utf8,<svg/>");\n}'), []);
+  assert.deepEqual(css('/* a: b; c: d; */\n.a:hover { color: red; }'), []);
+});
+
+test('文件名不用里程碑、批次：m5b-…、第13批-… 报，普通名字不报', () => {
+  assert.ok(isMilestoneName('agent/src/app/m5b-services.ts'));
+  assert.ok(isMilestoneName('client/src/state/m4-action-requests.ts'));
+  assert.ok(isMilestoneName('scripts/browser/第13批-shots.ts'));
+  assert.ok(!isMilestoneName('agent/src/state/migrations/0052-mail-bodies.ts'));
+  assert.ok(!isMilestoneName('agent/src/books/format/mobi.ts'));
+  assert.ok(!isMilestoneName('client/src/views/models/models-page.tsx'));
 });
 
 test('超过上限的文件报 file-length', () => {
@@ -90,13 +171,13 @@ test('元组里的 any 和只写了注释的空 catch 都会被拦下', () => {
 });
 
 test('变量名叫 any 或除法不会误报', () => {
-  assert.deepEqual(rulesOf(`const ${ANY} = 1; const half = total / 2 / count;`), []);
-  assert.deepEqual(rulesOf(`f(${ANY}); g(a, ${ANY}); const n = ${ANY}; const xs = [${ANY}];`), []);
+  assert.deepEqual(rulesOf(`const ${ANY} = 1;\nconst half = total / 2 / count;`), []);
+  assert.deepEqual(rulesOf(`f(${ANY});\ng(a, ${ANY});\nconst n = ${ANY};\nconst xs = [${ANY}];`), []);
 });
 
 test('对象字面量、比较、位运算里名叫 any 的值不误报；函数类型的返回值照样拦', () => {
-  assert.deepEqual(rulesOf(`const obj = { value: ${ANY} }; const lt = a < ${ANY}; const bits = x | ${ANY};`), []);
-  assert.deepEqual(rulesOf(`const pick = c ? ${ANY} : other; const g = () => ${ANY};`), []);
+  assert.deepEqual(rulesOf(`const obj = { value: ${ANY} };\nconst lt = a < ${ANY};\nconst bits = x | ${ANY};`), []);
+  assert.deepEqual(rulesOf(`const pick = c ? ${ANY} : other;\nconst g = () => ${ANY};`), []);
   assert.deepEqual(rulesOf(`let f: () => ${ANY};`), ['no-any']);
   assert.deepEqual(rulesOf(`function f() { const x: ${ANY} = 1; }`), ['no-any']);
   assert.deepEqual(rulesOf(`if (ok) { let y: ${ANY}; } else { const z = { k: ${ANY} }; }`), ['no-any']);

@@ -54,7 +54,11 @@ export function FeedComments({ item }: { item: FeedItemView }): ReactNode {
     const stop = live.hub.on((event) => {
       if (event.type === 'resync' || (event.type === 'feed.changed' && event.item.id === item.id)) { void load(); }
     });
-    return () => { stop(); clearTimeout(timer); controller.abort(); };
+    return () => {
+      stop();
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [apply, live, item.id, pending]);
   return <section className="feed-comments" aria-label={`「${item.title}」的评论`}>
     {rows === undefined ? <p className="text-meta">正在读评论…</p> : <ul className="feed-comment-list">

@@ -12,7 +12,8 @@ describe('地址和栏目', () => {
   it('主线、旁聊、消息、网页标签来回都对得上', () => {
     const mail = `#/messages/${encodeURIComponent('mail:noreply@aliyun.com')}`;
     for (const hash of ['#/plasticine', '#/plasticine/main', '#/plasticine/mate/m1', '#/plasticine/group/g1',
-      '#/memory/rules', '#/memory/rules/m1', '#/memory/conflicts', '#/plasticine/line%3Al1%3A3', '#/plasticine/side/l2', '#/messages',
+      '#/memory/rules', '#/memory/rules/m1', '#/memory/conflicts', '#/plasticine/line%3Al1%3A3', '#/plasticine/side/l2',
+        '#/messages',
       '#/messages/c_linyi', '#/messages/c_linyi/profile', '#/messages/requests', mail, '#/web', '#/web/t1',
       '#/books/space', '#/books/space/s1']) {
       expect(routeHash(parseHash(hash))).toBe(hash);

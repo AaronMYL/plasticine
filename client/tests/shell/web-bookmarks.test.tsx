@@ -64,7 +64,8 @@ async function start(): Promise<AppHarness> {
 describe('网页栏的「书签」一节', () => {
   it('在搜标签和置顶之间；只列网页书签；点了新开一个标签进「今天」并切过去，书签不变；再点切回那一个', async () => {
     const app = await start();
-    const parts = [...column().querySelectorAll('.web-search, .web-bookmarks, .web-bookmarks-rule, ul[aria-label="今天"]')];
+    const parts = [...column()
+      .querySelectorAll('.web-search, .web-bookmarks, .web-bookmarks-rule, ul[aria-label="今天"]')];
     expect(parts.map((part) => part.className.split(' ')[0])).toEqual(['web-search', 'web-bookmarks',
       'web-bookmarks-rule', 'web-tabs']);
     expect(titles(list())).toEqual(['小红书', 'GitHub']);

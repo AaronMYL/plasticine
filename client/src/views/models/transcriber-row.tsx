@@ -13,18 +13,27 @@ export function TranscriberRow(): ReactNode {
   if (status === null) return null;
   const failed = status.state === 'failed' ? status.error : null;
   const percent = status.totalBytes === 0 ? 0 : Math.floor(status.doneBytes / status.totalBytes * 100);
+  /** 这一行右边：装好了、正在装、这种系统用不了，或者一个安装按钮。 */
+  const tail = (): ReactNode => {
+    if (status.state === 'ready') {
+      return <span className="ai-use-static">{status.source === 'env' ? '服务器上配好的' : '已装好'}</span>;
+    }
+    if (status.state === 'installing') {
+      return <span className="ai-use-static" role="status">正在装 · {percent}%</span>;
+    }
+    if (status.state === 'unsupported') {
+      return <span className="ai-use-static" data-quiet="true">这种系统用不了</span>;
+    }
+    return <button type="button" className="secondary-button button-small"
+      onClick={() => void live.transcriber.install()}>{failed === null ? '安装' : '重试'}</button>;
+  };
   return (
     <div className="ai-use">
       <div className="ai-use-line">
         <span className="ai-use-name">本地转写<span className="ai-use-sub">视频转文字{
           status.state === 'absent' || status.state === 'failed' ? ` · ${aboutSize(status.totalBytes)}` : ''
         }</span></span>
-        {status.state === 'ready'
-          ? <span className="ai-use-static">{status.source === 'env' ? '服务器上配好的' : '已装好'}</span>
-          : status.state === 'installing' ? <span className="ai-use-static" role="status">正在装 · {percent}%</span>
-            : status.state === 'unsupported' ? <span className="ai-use-static" data-quiet="true">这种系统用不了</span>
-              : <button type="button" className="secondary-button button-small"
-                onClick={() => void live.transcriber.install()}>{failed === null ? '安装' : '重试'}</button>}
+        {tail()}
       </div>
       {failed ?? error ? <p className="ai-use-error" role="alert">{failed ?? error}</p> : null}
     </div>

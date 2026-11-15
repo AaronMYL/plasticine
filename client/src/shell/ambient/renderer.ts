@@ -27,8 +27,6 @@ export class AsciiRenderer {
   private palette: AmbientPalette;
   private fontFamily = 'ui-monospace, Menlo, monospace';
   private dpr = 1;
-  private width = 0;
-  private height = 0;
   private cw = 10;
   private ch = 15;
   private cols = 0;
@@ -78,8 +76,6 @@ export class AsciiRenderer {
   }
 
   resize(width: number, height: number, dpr: number): void {
-    this.width = width;
-    this.height = height;
     this.dpr = dpr;
     this.cw = clamp(Math.round(width / 124), 8, 13);
     this.ch = Math.round(this.cw * 1.45);

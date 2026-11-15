@@ -25,7 +25,6 @@ import {
   type TrashListResponse,
   type UploadFileRequest,
 } from '../shared.ts';
-import { conflictWith } from './conflict.ts';
 import type { Transport } from './transport.ts';
 
 // 一个文件 20 MB 的 base64 发出去要比平常久：给上传单独 2 分钟（默认值，接上后按实测再调）。

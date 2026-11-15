@@ -6,23 +6,53 @@
   gap: var(--space-5);
 }
 
-.settings-content { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; }
-.settings-sections { align-self: flex-start; position: sticky; top: 0; z-index: var(--z-raised); }
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+.settings-sections {
+  align-self: flex-start;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-raised);
+}
 /* 定位区块或字段时，给固定分类栏和阅读间隔留空间。 */
 .settings-content > .block,
 .settings .block-title,
 .settings-ai-choice { scroll-margin-top: var(--space-7); }
-.settings-ai-choice:focus { outline: 2px solid var(--line2); outline-offset: 4px; }
-.settings .model-choice { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3); }
-.settings .model-choice label { display: flex; flex-direction: column; gap: var(--space-2);
-  font-size: var(--text-caption); }
-.settings .model-choice .field-input { width: 100%; min-width: 0; }
+.settings-ai-choice:focus {
+  outline: 2px solid var(--line2);
+  outline-offset: 4px;
+}
+.settings .model-choice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.settings .model-choice label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+}
+.settings .model-choice .field-input {
+  width: 100%;
+  min-width: 0;
+}
 .settings .model-choice > .text-meta { grid-column: 1 / -1; }
-.sheet-drawer .settings { flex: 0 0 auto; padding: var(--space-4); }
+.sheet-drawer .settings {
+  flex: 0 0 auto;
+  padding: var(--space-4);
+}
 .settings textarea.field-input { min-height: 96px; }
 
 .settings .block { min-width: 0; }
-.settings .field { width: 100%; max-width: 32em; }
+.settings .field {
+  width: 100%;
+  max-width: 32em;
+}
 .settings .block-head > .icon-button { margin-left: auto; }
 .settings .block-empty { max-width: 44em; }
 
@@ -59,32 +89,77 @@
 }
 
 /* 账户与设备：设备名一行、链接一行、退出一行；确认时两个按钮和那句说明排在一起（和设备页的 device-confirm 一样）。 */
-.settings-device { margin: 0; font-size: var(--text-body); line-height: var(--text-body-line); }
+.settings-device {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
 .settings-device strong { font-weight: 500; }
 .settings-device-link,
 .settings-logout { align-self: flex-start; }
-.settings-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
-.settings-connection-status { display: flex; flex-direction: column; gap: var(--space-1); margin: 0;
+.settings-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+.settings-connection-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
   padding: var(--space-3);
-  border-radius: var(--radius); background: var(--tint); font-size: var(--text-caption);
-    line-height: var(--text-caption-line); }
+  border-radius: var(--radius);
+  background: var(--tint);
+  font-size: var(--text-caption);
+    line-height: var(--text-caption-line);
+}
 .settings-connection-status dt { color: var(--fg2); }
 .settings-connection-status dd { margin: 0; }
 
 /* 时区（time-zone-field.tsx）：「跟随设备」一行，关掉后下面缩进：搜索框、搜到的几条、直接填名称。 */
-.settings-time-zone { display: flex; flex-direction: column; }
-.time-zone-results { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-.time-zone-result { display: flex; flex-direction: column; align-items: flex-start; width: 100%;
+.settings-time-zone {
+  display: flex;
+  flex-direction: column;
+}
+.time-zone-results {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.time-zone-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
   min-height: 48px; /* 例外：和设置页一行一样高 */
-  padding: var(--space-2) 0; border: 0; border-bottom: 1px solid var(--line); background: transparent;
-  color: var(--fg); font: inherit; font-size: var(--text-body); line-height: var(--text-body-line);
-  text-align: left; cursor: pointer; }
+  padding: var(--space-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  text-align: left;
+  cursor: pointer;
+  }
 .time-zone-result:hover { background: var(--tint); }
 .time-zone-result[aria-pressed='true'] { font-weight: 500; }
-.time-zone-result .text-meta { color: var(--fg2); font-size: var(--text-caption);
-  line-height: var(--text-caption-line); }
+.time-zone-result .text-meta {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
 /* 设置里改了要保存的那几处：按钮在这一组的底部靠右。 */
-.set-actions { display: flex; justify-content: flex-end; gap: var(--space-2); padding-top: var(--space-3); }
+.set-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+}
 @media (max-width: 767px) {
   .settings-content > .block,
   .settings .block-title,
@@ -301,4 +376,8 @@
 }
 
 /* 隐私与授权 ·「先问你」（第13批）：硬线只读，一行一个、带锁，和记忆文档里原来的样子一样。 */
-.hard-lines { margin: 0; padding: 0; list-style: none; }
+.hard-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

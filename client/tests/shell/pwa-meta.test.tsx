@@ -1,11 +1,9 @@
 // PWA 细节（用户视角审查 2026-11-01 第 16 条）：index.html 浅 / 深两条 theme-color 和 iOS 状态栏样式；手动选深色时
 // theme-color 跟着 data-theme 走；document.title 按视图写「笔记 · Plasticine」，今日页就叫「Plasticine」。
 
-import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import html from '../../index.html?raw';
 import { applyAppearance, saveAppearance } from '../../src/shell/appearance.ts';
-import { renderApp, settle } from '../helpers.tsx';
 
 function themeColors(): Array<{ media: string | null; content: string | null }> {
   return [...document.querySelectorAll('meta[name="theme-color"]')]

@@ -6,7 +6,6 @@ import { describe, expect, it } from 'vitest';
 import { HOME_HEADING, renderApp, seedNote, settle } from '../helpers.tsx';
 
 /** 自动保存停笔 1.2 秒；等它的上限留足余量。 */
-const SAVE_WAIT_MS = 4000;
 
 async function noteEditor(): Promise<Editor> {
   return waitFor(() => {
@@ -23,12 +22,6 @@ function typeInNote(editor: Editor, text: string): void {
     editor.commands.focus('end');
     editor.commands.insertContent(text);
   });
-}
-
-function askInChat(text: string): void {
-  const input = screen.getByRole('textbox', { name: '问一句' });
-  fireEvent.change(input, { target: { value: text } });
-  fireEvent.keyDown(input, { key: 'Enter' });
 }
 
 describe('M1 退出条件', () => {

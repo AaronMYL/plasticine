@@ -5,7 +5,10 @@ import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 import { newDeviceKey, newRequestId, signedCall } from './signing.ts';
 
 let t: TestApp | undefined;
-afterEach(async () => { await t?.close(); t = undefined; });
+afterEach(async () => {
+  await t?.close();
+  t = undefined;
+});
 
 async function setup() {
   t = await startTestApp([], { dryRun: false });

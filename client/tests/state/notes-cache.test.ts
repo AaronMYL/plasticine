@@ -21,7 +21,10 @@ function api() {
 }
 function hub() {
   let listener: EventListener = () => undefined;
-  return { on(next: EventListener) { listener = next; return () => { listener = () => undefined; }; },
+  return { on(next: EventListener) {
+    listener = next;
+    return () => { listener = () => undefined; };
+  },
     emit: (event: Parameters<EventListener>[0]) => listener(event) };
 }
 afterEach(() => {

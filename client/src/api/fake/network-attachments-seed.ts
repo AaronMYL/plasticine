@@ -3,17 +3,34 @@ import type { FakeContacts } from './fake-contacts.ts';
 import type { FakeNetworkAttachments } from './fake-network-attachments.ts';
 
 function mapImage(): string {
-  const canvas = document.createElement('canvas'); canvas.width = 480; canvas.height = 300;
+  const canvas = document.createElement('canvas');
+  canvas.width = 480;
+  canvas.height = 300;
   const ctx = canvas.getContext('2d');
   if (ctx === null) return '';
-  ctx.fillStyle = '#ecece5'; ctx.fillRect(0, 0, 480, 300);
-  ctx.fillStyle = '#d5ded2'; ctx.fillRect(20, 20, 145, 100); ctx.fillRect(310, 175, 150, 105);
-  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 23;
-  ctx.beginPath(); ctx.moveTo(20, 230); ctx.lineTo(150, 190); ctx.lineTo(250, 95); ctx.lineTo(455, 70); ctx.stroke();
-  ctx.strokeStyle = '#748f9b'; ctx.lineWidth = 6; ctx.stroke();
-  ctx.font = '18px sans-serif'; ctx.fillStyle = '#394b50';
+  ctx.fillStyle = '#ecece5';
+  ctx.fillRect(0, 0, 480, 300);
+  ctx.fillStyle = '#d5ded2';
+  ctx.fillRect(20, 20, 145, 100);
+  ctx.fillRect(310, 175, 150, 105);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 23;
+  ctx.beginPath();
+  ctx.moveTo(20, 230);
+  ctx.lineTo(150, 190);
+  ctx.lineTo(250, 95);
+  ctx.lineTo(455, 70);
+  ctx.stroke();
+  ctx.strokeStyle = '#748f9b';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.font = '18px sans-serif';
+  ctx.fillStyle = '#394b50';
   for (const [label, x, y] of [['A', 60, 218], ['B', 237, 108], ['C', 410, 76]] as const) {
-    ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fill(); ctx.fillText(label, x - 5, y - 20);
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText(label, x - 5, y - 20);
   }
   return canvas.toDataURL('image/png').split(',')[1] ?? '';
 }
@@ -25,9 +42,11 @@ function pdf(): string {
     '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
     `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];
-  let result = '%PDF-1.4\n'; const offsets = [0];
+  let result = '%PDF-1.4\n';
+  const offsets = [0];
   for (const [index, object] of objects.entries()) {
-    offsets.push(result.length); result += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    offsets.push(result.length);
+    result += `${index + 1} 0 obj\n${object}\nendobj\n`;
   }
   const start = result.length;
   result += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;

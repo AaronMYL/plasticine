@@ -27,7 +27,8 @@ export function FileTextEditor({ path, creating = false, onClose }: {
     const controller = new AbortController();
     void api.files.readText(path, controller.signal).then((value) => {
       if (controller.signal.aborted) { return; }
-      setLatest(value); setError(null);
+      setLatest(value);
+      setError(null);
     }, (cause: unknown) => { if (!controller.signal.aborted) { setError(errorText(cause)); } });
     return () => controller.abort();
   }, [api, path, key, creating, attempt, inlineDrafts]);

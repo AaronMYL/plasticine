@@ -123,7 +123,8 @@ const SKIP_SELECTOR = [
   '[role="textbox"]', '[role="combobox"]', '[role="listbox"]',
 ].join(', ');
 // 行内的标签：一个块里只有这些子元素，它就是一个能整段译的段落。
-const INLINE_TAGS = new Set(['A', 'ABBR', 'B', 'BDI', 'BDO', 'BR', 'CITE', 'DATA', 'DEL', 'DFN', 'EM', 'FONT', 'I',
+const INLINE_TAGS = new Set(['A', 'ABBR', 'B', 'BDI', 'BDO', 'BR', 'CITE', 'DATA', 'DEL', 'DFN', 'EM', 'FONT',
+  'I',
   'IMG', 'INS', 'MARK', 'Q', 'RP', 'RT', 'RUBY', 'S', 'SMALL', 'SPAN', 'STRONG', 'SUB', 'SUP', 'TIME', 'U', 'VAR',
   'WBR', 'LABEL', 'CODE', 'KBD', 'SAMP']);
 // 这些块就算只有一个链接也译（博客目录的标题、表格里的链接）；别的块整段都在链接里就是菜单、用户名，不译。
@@ -246,7 +247,8 @@ function wordy(element         , text        )          {
   if (PROSE_TAGS.has(element.tagName)) {
     return true;
   }
-  return /\s/.test(text) || letters(text, /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu) >= 4;
+  return /\s/.test(text) || letters(text,
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu) >= 4;
 }
 
 /** 能整段译的块：只含行内元素、它的父元素不是（取最大的那一块）、不在跳过的区域里、字够多。 */
@@ -319,11 +321,13 @@ alternate}}
 margin-bottom:var(--plasticine-mb)!important}
 [data-plasticine-only]>:not(plasticine-tr){display:none!important}
 [data-plasticine-only]>plasticine-tr{display:inline!important;font-size:var(--plasticine-fs)!important;
-line-height:var(--plasticine-lh)!important;margin:0!important;padding:0!important;border:0!important;opacity:1!important}
+line-height:var(--plasticine-lh)!important;margin:0!important;padding:0!important;border:0!important;
+opacity:1!important}
 [data-plasticine-only]::marker{font-size:var(--plasticine-fs)}
 [data-plasticine-wait]{opacity:.45}
 [data-plasticine-wait]>plasticine-tr{display:none!important}
-@media (prefers-reduced-motion:no-preference){[data-plasticine-only],[data-plasticine-wait]{transition:opacity .2s ease-out}}
+@media (prefers-reduced-motion:no-preference){[data-plasticine-only],[data-plasticine-wait]{
+transition:opacity .2s ease-out}}
 plasticine-tr[data-state="failed"]{display:inline!important;margin:0!important;padding:0!important;
 border:0!important;opacity:1}
 `;
@@ -350,7 +354,8 @@ const ORIGINAL_STYLE = `
 .card{box-sizing:border-box;padding:10px 14px 12px;border-radius:10px;background:#fff;color:#444;
 box-shadow:0 0 0 1px rgba(45,45,43,.1),0 8px 24px rgba(45,45,43,.14);font:15px/24px Georgia,"Times New Roman",serif;
 white-space:pre-wrap;overflow-wrap:anywhere}
-.label{display:block;margin-bottom:4px;color:#777;font:600 11px/16px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+.label{display:block;margin-bottom:4px;color:#777;
+font:600 11px/16px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
 @media (prefers-color-scheme:dark){.card{background:#2d2d2b;color:#deded9;
 box-shadow:0 0 0 1px rgba(249,249,247,.14),0 8px 24px rgba(0,0,0,.4)}.label{color:#a5a59f}}
 `;
@@ -974,7 +979,10 @@ function installPageTranslator(host                )                 {
         mutations = new view.MutationObserver((records) => {
           cancelSettle?.();
           const pending = [...records];
-          cancelSettle = host.schedule(() => { cancelSettle = null; settle(pending); }, MUTATION_SETTLE_MS);
+          cancelSettle = host.schedule(() => {
+            cancelSettle = null;
+            settle(pending);
+          }, MUTATION_SETTLE_MS);
         });
         mutations.observe(body, { childList: true, subtree: true, characterData: true });
       }

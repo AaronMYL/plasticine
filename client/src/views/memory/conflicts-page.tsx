@@ -26,7 +26,9 @@ function Conflict({ conflict, busy, onResolve }: { conflict: ConflictView; busy:
       const winner = line.id === conflict.winnerId;
       return <article key={line.id} className="conflict-side" data-winner={winner}
         aria-label={winner ? `现在以这条为准：${line.text}` : line.text}>
-        <div className="conflict-tags">{winner ? <span className="conflict-win"><span className="dot dot-ok" aria-hidden="true" />现在以这条为准</span> : null}
+        <div className="conflict-tags">{winner
+          ? <span className="conflict-win"><span className="dot dot-ok" aria-hidden="true" />现在以这条为准</span>
+          : null}
           <span className="rule-chip">{line.scope}</span></div>
         <p className="conflict-text">{line.text}</p>
         <p className="rule-meta">{MEMORY_SOURCE_LABELS[line.source]} · {ruleDay(line.at)} · {line.docTitle}</p>

@@ -6,7 +6,10 @@ import { RULES_DOC_ID } from '../../shared/state.ts';
 import { call, pair, startTestApp, type TestApp } from './helpers.ts';
 
 let app: TestApp | undefined;
-afterEach(async () => { await app?.close(); app = undefined; });
+afterEach(async () => {
+  await app?.close();
+  app = undefined;
+});
 
 test('Soul 读取要求登录，用户增改可重放、保留来源、旧版本不覆盖，撤销不物理删除', async () => {
   app = await startTestApp([], { startTasks: false });

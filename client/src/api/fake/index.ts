@@ -286,7 +286,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       html: renderWebArchive(page, [], now()) }, true);
     return { space: await spaces.spaces.get(id) };
   });
-  const moneyDrafts = new FakeMoneyDrafts({ session, bus, receipts, now, attachments, asks, money: toolGroups.control.money });
+  const moneyDrafts = new FakeMoneyDrafts({ session, bus, receipts, now, attachments, asks,
+    money: toolGroups.control.money });
   const signed = new FakeSigned({ session, receipts, agreements, asks, notes, backups, memoryTopics,
     nodes, faults, moneyDrafts });
   signed.setToolGroups(toolGroups.control.toolGroups);

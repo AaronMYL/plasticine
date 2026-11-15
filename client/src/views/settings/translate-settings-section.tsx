@@ -52,7 +52,10 @@ export function TranslateSettingsSection(): ReactNode {
   const current = draft ?? settings;
   // 改回和已保存的一样就不算改动（不让关弹框白问一句）。
   const changed = draft !== null && settings !== null && !same(draft, settings);
-  useSettingsDraft(changed, () => { setDraft(null); setMessage(null); });
+  useSettingsDraft(changed, () => {
+    setDraft(null);
+    setMessage(null);
+  });
   const editSettings = (patch: Partial<TranslateSettingsView>): void => {
     if (current !== null) {
       setDraft({ ...current, ...patch });
@@ -112,7 +115,10 @@ export function TranslateSettingsSection(): ReactNode {
         {changed ? (
           <div className="set-actions">
             <button type="button" className="secondary-button" disabled={busy}
-              onClick={() => { setDraft(null); setMessage(null); }}>取消</button>
+              onClick={() => {
+                setDraft(null);
+                setMessage(null);
+              }}>取消</button>
             <button type="button" className="primary-button" disabled={busy} aria-label="保存网页翻译"
               onClick={() => void save()}>{busy ? '正在保存…' : '保存'}</button>
           </div>

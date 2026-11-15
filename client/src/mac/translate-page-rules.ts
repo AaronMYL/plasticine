@@ -23,7 +23,8 @@ export const SKIP_SELECTOR = [
   '[role="textbox"]', '[role="combobox"]', '[role="listbox"]',
 ].join(', ');
 // 行内的标签：一个块里只有这些子元素，它就是一个能整段译的段落。
-export const INLINE_TAGS = new Set(['A', 'ABBR', 'B', 'BDI', 'BDO', 'BR', 'CITE', 'DATA', 'DEL', 'DFN', 'EM', 'FONT', 'I',
+export const INLINE_TAGS = new Set(['A', 'ABBR', 'B', 'BDI', 'BDO', 'BR', 'CITE', 'DATA', 'DEL', 'DFN', 'EM', 'FONT',
+  'I',
   'IMG', 'INS', 'MARK', 'Q', 'RP', 'RT', 'RUBY', 'S', 'SMALL', 'SPAN', 'STRONG', 'SUB', 'SUP', 'TIME', 'U', 'VAR',
   'WBR', 'LABEL', 'CODE', 'KBD', 'SAMP']);
 // 这些块就算只有一个链接也译（博客目录的标题、表格里的链接）；别的块整段都在链接里就是菜单、用户名，不译。
@@ -146,7 +147,8 @@ function wordy(element: Element, text: string): boolean {
   if (PROSE_TAGS.has(element.tagName)) {
     return true;
   }
-  return /\s/.test(text) || letters(text, /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu) >= 4;
+  return /\s/.test(text) || letters(text,
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu) >= 4;
 }
 
 /** 能整段译的块：只含行内元素、它的父元素不是（取最大的那一块）、不在跳过的区域里、字够多。 */

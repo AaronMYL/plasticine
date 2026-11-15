@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { Editor } from '@tiptap/core';
 import { expect, it, vi } from 'vitest';
 import { renderApp, seedNote } from '../../helpers.tsx';
-import { aiOn, toggleAi } from './ai-switch.ts';
+import { aiOn } from './ai-switch.ts';
 
 async function open() {
   const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1',

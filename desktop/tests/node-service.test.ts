@@ -69,7 +69,10 @@ async function fakeServer(): Promise<FakeServer> {
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const port = (server.address() as AddressInfo).port;
   return Object.assign(state, { url: `http://127.0.0.1:${port}/`,
-    close: () => new Promise<void>((resolve) => { server.closeAllConnections(); server.close(() => resolve()); }) });
+    close: () => new Promise<void>((resolve) => {
+      server.closeAllConnections();
+      server.close(() => resolve());
+    }) });
 }
 
 function service(dir: string, executed: string[],
@@ -93,7 +96,10 @@ function service(dir: string, executed: string[],
     requestId: () => 'request-0001',
     sleep: (ms, signal) => new Promise((resolve) => {
       const timer = setTimeout(resolve, Math.min(ms, 20));
-      signal.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
+      signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        resolve();
+      }, { once: true });
     }),
     now: () => Date.now(),
     log: () => undefined,
@@ -120,7 +126,10 @@ test('没配对时等着；配对后 hello、领动作、做、交回执，同�
   const dir = tempDir(t);
   const executed: string[] = [];
   const node = service(dir, executed);
-  t.after(async () => { node.stop(); await server.close(); });
+  t.after(async () => {
+    node.stop();
+    await server.close();
+  });
   node.useServer(server.url);
   await until(node, (status) => status.state === 'unpaired' && status.capabilities.length > 0);
   const action = { id: 'act-1', kind: 'file_read', params: { path: '~/a' }, deadline: '2026-11-08T10:00:00.000Z' };
@@ -142,7 +151,10 @@ test('本体不认凭证了（401）：停下来显示要重新配对', async (t
   const server = await fakeServer();
   const dir = tempDir(t);
   const node = service(dir, []);
-  t.after(async () => { node.stop(); await server.close(); });
+  t.after(async () => {
+    node.stop();
+    await server.close();
+  });
   node.useServer(server.url);
   await until(node, (status) => status.state === 'unpaired');
   await node.pair('ABCD-1234');
@@ -157,7 +169,10 @@ test('非法动作编号交回 refused，继续接下一步，不执行也不破
   const server = await fakeServer();
   const executed: string[] = [];
   const node = service(tempDir(t), executed);
-  t.after(async () => { node.stop(); await server.close(); });
+  t.after(async () => {
+    node.stop();
+    await server.close();
+  });
   node.useServer(server.url);
   await until(node, (status) => status.state === 'unpaired');
   const invalidIds = ['call_fixture|fc_fixture', 'x'.repeat(201), '../outside'];
@@ -185,7 +200,10 @@ test('回执开始记录失败也交回 refused，不让动作成为无回执的
   }
   const dir = tempDir(t);
   const node = service(dir, executed, (origin, nodeId) => new BrokenJournal(dir, origin, nodeId));
-  t.after(async () => { node.stop(); await server.close(); });
+  t.after(async () => {
+    node.stop();
+    await server.close();
+  });
   node.useServer(server.url);
   await until(node, (status) => status.state === 'unpaired');
   server.queue.push({ id: 'begin-failure', kind: 'file_read', params: { path: '~/a' },
@@ -206,7 +224,10 @@ test('复合与超长编号映射后可保存回执，重启重放也只执行�
   const dir = tempDir(t);
   const executed: string[] = [];
   let node = service(dir, executed);
-  t.after(async () => { node.stop(); await server.close(); });
+  t.after(async () => {
+    node.stop();
+    await server.close();
+  });
   node.useServer(server.url);
   await until(node, (status) => status.state === 'unpaired');
   const actions = ['call_fixture|fc_fixture', `call_${'x'.repeat(250)}`].map((original) => ({

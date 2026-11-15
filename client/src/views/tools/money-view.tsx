@@ -274,7 +274,10 @@ function Stats(): ReactNode {
   const move = (by: number) => {
     const date = new Date(`${anchor}T12:00:00Z`);
     if (range === 'week') { date.setUTCDate(date.getUTCDate() + by * 7); }
-    else if (range === 'month') { date.setUTCDate(1); date.setUTCMonth(date.getUTCMonth() + by); }
+    else if (range === 'month') {
+      date.setUTCDate(1);
+      date.setUTCMonth(date.getUTCMonth() + by);
+    }
     else { date.setUTCFullYear(date.getUTCFullYear() + by); }
     setAnchor(date.toISOString().slice(0, 10));
   };

@@ -1,8 +1,7 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { renderApp, seedNote } from '../../helpers.tsx';
 import { buildNoteQuote } from '../../../src/views/notes/note-quote.ts';
-import { splitQuotes } from '../../../src/api/quote-text.ts';
 
 it('多篇全文合计超过引用上限（12 万字）时保留草稿、说明上限并阻止发送，移除一篇即可继续', async () => {
   const app = await renderApp({ hash: '#/conversation', setup: (fake) => {

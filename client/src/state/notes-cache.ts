@@ -79,7 +79,10 @@ export class NotesCache {
     for (const flight of [...this.reads.values(), ...this.listReads.values()]) { flight.controller.abort(); }
     this.reads.clear();
     this.listReads.clear();
-    if (this.refreshTimer !== null) { clearTimeout(this.refreshTimer); this.refreshTimer = null; }
+    if (this.refreshTimer !== null) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
     this.store.set(new Map());
     this.lists.set(new Map());
     clearStoredNotes(this.storage);
@@ -92,7 +95,10 @@ export class NotesCache {
     void this.loadNote(api, id);
     return () => {
       const count = (this.readers.get(id) ?? 1) - 1;
-      if (count > 0) { this.readers.set(id, count); return; }
+      if (count > 0) {
+        this.readers.set(id, count);
+        return;
+      }
       this.readers.delete(id);
       // 私密正文仍不持久缓存；再次进入从已配对会话直接读取，不增加解锁状态。
       if (this.store.get().get(id)?.note?.private) { this.invalidateNote(id, true); }
@@ -153,7 +159,10 @@ export class NotesCache {
     const stop = hub.on((event) => this.onEvent(api, event));
     return () => {
       stop();
-      if (this.refreshTimer !== null) { clearTimeout(this.refreshTimer); this.refreshTimer = null; }
+      if (this.refreshTimer !== null) {
+        clearTimeout(this.refreshTimer);
+        this.refreshTimer = null;
+      }
     };
   }
 
@@ -167,7 +176,10 @@ export class NotesCache {
       this.setNote(note.id, { ...old, loading: false });
       return;
     }
-    if (note.private && !this.readers.has(note.id)) { this.invalidateNote(note.id, true); return; }
+    if (note.private && !this.readers.has(note.id)) {
+      this.invalidateNote(note.id, true);
+      return;
+    }
     const confirmed = old.note?.version === note.version ? old.note : note;
     const now = this.now();
     this.setNote(note.id, { note: confirmed, checkedAt: now, cachedAt: now, touchedAt: now,
@@ -193,7 +205,10 @@ export class NotesCache {
       this.accept(note);
     } catch (cause) {
       if (flight.controller.signal.aborted || this.reads.get(id) !== flight || this.owner === null) { return; }
-      if (cause instanceof ApiError && cause.kind === 'unauthorized') { this.clear(); return; }
+      if (cause instanceof ApiError && cause.kind === 'unauthorized') {
+        this.clear();
+        return;
+      }
       const old = this.store.get().get(id) ?? EMPTY_NOTE;
       const gone = cause instanceof ApiError && cause.kind === 'not_found';
       const denied = cause instanceof ApiError && cause.status === 403;
@@ -222,7 +237,10 @@ export class NotesCache {
       this.refreshActive(api);
     } catch (cause) {
       if (flight.controller.signal.aborted || this.listReads.get(key) !== flight || this.owner === null) { return; }
-      if (cause instanceof ApiError && cause.kind === 'unauthorized') { this.clear(); return; }
+      if (cause instanceof ApiError && cause.kind === 'unauthorized') {
+        this.clear();
+        return;
+      }
       const old = this.lists.get().get(key) ?? EMPTY_NOTE_LIST;
       this.setList(key, { ...old, loading: false, checkedAt: null, error: errorText(cause) });
     } finally {

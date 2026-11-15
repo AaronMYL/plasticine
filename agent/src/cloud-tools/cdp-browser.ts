@@ -1,5 +1,6 @@
-import { publishXThroughPage } from './x-publish.ts';
 // 唯一的有头浏览器；这里只连用户 systemd 服务的回环 CDP，不负责起进程或碰 profile 文件。
+
+import { publishXThroughPage } from './x-publish.ts';
 import type { BrowserFrame, BrowserTab, BrowserTabAction, BrowserViewport } from '../../shared/api/browser.ts';
 import { browserUrl } from './browser-url.ts';
 import { CdpConnection } from './cdp-connection.ts';
@@ -97,7 +98,10 @@ export class CdpBrowser implements BrowserTransport {
         this.#watching = null;
         watching?.disconnected();
       }).then(async (connection) => {
-        try { await this.#prepareCookies(connection, signal); } catch (error) { connection.close(); throw error; }
+        try { await this.#prepareCookies(connection, signal); } catch (error) {
+          connection.close();
+          throw error;
+        }
         this.#connection = connection;
         connection.onEvent((event) => this.#pageEvent(event));
         return connection;

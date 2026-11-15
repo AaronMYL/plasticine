@@ -27,11 +27,15 @@ export function ContactMessageMedia({ contact, message, text }: {
       `data:${row.thumbnail.mimeType};base64,${row.thumbnail.content.replaceAll('-', '+').replaceAll('_', '/')}` }),
     loadContent: async (signal) => {
       try { return await api.networkAttachments.content(contact.id, message.id, row.id, signal); }
-      catch (cause) { if (!signal.aborted) setError(errorText(cause)); throw cause; }
+      catch (cause) {
+        if (!signal.aborted) setError(errorText(cause));
+        throw cause;
+      }
     },
   })), [api, contact.id, message.id, message.attachments, revision]);
   const retry = async (): Promise<void> => {
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try {
       const next = await api.networkAttachments.retry(contact.id, message.id, requestId.current);
       live.contacts.thread(contact.id).put({ type: 'message', message: next });
@@ -58,7 +62,10 @@ export function ContactMessageMedia({ contact, message, text }: {
           没发出：{message.error ?? '发送未完成'}<button type="button" className="text-button" disabled={busy}
             onClick={() => void retry()}>重试发送</button></div>}
         {error === null ? null : <div className="contact-media-error" role="alert">{error}
-          <button type="button" className="text-button" onClick={() => { setError(null); setRevision(revision + 1); }}>
+          <button type="button" className="text-button" onClick={() => {
+            setError(null);
+            setRevision(revision + 1);
+          }}>
             重试读取</button></div>}
       </div>
       {mine && ai ? <AiMark label="你的 Plasticine" /> : null}

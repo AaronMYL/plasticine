@@ -17,7 +17,10 @@ function builtinSkills(): string {
     + '# 读书笔记\n先摘原文，再写一句自己的话；每章一段，书名放标题，页码写在摘句后面的括号里。\n');
   return root;
 }
-afterEach(async () => { await app?.close(); app = undefined; });
+afterEach(async () => {
+  await app?.close();
+  app = undefined;
+});
 
 test('技能 HTTP 按目录、正文、参考分页读取，用户浏览不改变任务已加载方法', async () => {
   app = await startTestApp([], { builtinSkills: builtinSkills() });

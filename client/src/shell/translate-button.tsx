@@ -222,8 +222,12 @@ function TranslateControl({ translator, tabId, url }: { translator: WebTranslato
   const title = status === 'error' ? `${reason}${RETRY_HINT}` : TITLES[status];
   // 开着时按钮上写进度（11-13 设计稿）：在译 12 / 40 段、译完了、3 段没译成。
   const total = state.done + state.pending + state.failed;
-  const progress = status === 'running' ? (total === 0 ? '在译' : `在译 ${state.done} / ${total} 段`)
-    : status === 'on' ? '译完了' : status === 'error' ? `${Math.max(state.failed, 1)} 段没译成` : null;
+  const progressText: Partial<Record<typeof status, string>> = {
+    running: total === 0 ? '在译' : `在译 ${state.done} / ${total} 段`,
+    on: '译完了',
+    error: `${Math.max(state.failed, 1)} 段没译成`,
+  };
+  const progress = progressText[status] ?? null;
   const cancelPress = (): void => {
     if (press.current !== null) {
       window.clearTimeout(press.current);

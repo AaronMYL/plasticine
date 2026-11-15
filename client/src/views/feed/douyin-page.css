@@ -1,56 +1,194 @@
-.feed.feed-douyin { height: 100%; min-height: 0; padding: 0; gap: 0; max-width: none; overflow: hidden; }
-.dy-page { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(240px, 32%) minmax(0, 1fr); }
-.dy-index { min-width: 0; min-height: 0; display: flex; flex-direction: column; border-right: 1px solid var(--line); }
-.dy-index-head, .dy-detail-head { display: flex; align-items: center; gap: var(--space-2);
+.feed.feed-douyin {
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  gap: 0;
+  max-width: none;
+  overflow: hidden;
+}
+.dy-page {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(240px, 32%) minmax(0, 1fr);
+}
+.dy-index {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+}
+.dy-index-head, .dy-detail-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  min-height: 64px; border-bottom: 1px solid var(--line); }
+  min-height: 64px;
+  border-bottom: 1px solid var(--line);
+  }
 .dy-index-head { flex-wrap: wrap; }
-.dy-index-head .segmented { overflow-x: auto; max-width: 100%; }
-.dy-index-tools { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; }
-.dy-count { color: var(--fg3); font-family: var(--mono); font-size: var(--text-caption); }
-.dy-index-scroll { flex: 1; overflow: auto; min-height: 0; }
-.dy-works { list-style: none; padding: 0; margin: 0; }
-.dy-work { display: flex; width: 100%; align-items: center; gap: var(--space-3); text-align: left;
+.dy-index-head .segmented {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.dy-index-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+.dy-count {
+  color: var(--fg3);
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+}
+.dy-index-scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+.dy-works {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.dy-work {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: left;
   padding: var(--space-4);
-  border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--fg); }
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  }
 .dy-work[aria-current='true'] { background: var(--tint2); }
-.dy-work-text { flex: 1; min-width: 0; }
-.dy-work-thumb { position: relative; flex: none; display: grid; place-items: center; width: 48px; height: 64px;
-  overflow: hidden; border-radius: var(--radius); background: var(--tint2); color: var(--fg2); }
-.dy-work-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.dy-work-thumb img + .dy-work-length { padding: 0 var(--space-1); border-radius: var(--radius-sm);
-  background: var(--bg); color: var(--fg); }
-.dy-work-length { position: absolute; right: 4px; bottom: 3px; font-size: var(--text-tag);
-  line-height: var(--text-tag-line); color: var(--fg2);
-  font-variant-numeric: tabular-nums; }
-.dy-work-phase { display: inline-flex; flex: none; align-items: center; gap: var(--space-1);
-  padding: 0 var(--space-2); border-radius: var(--radius-full);
-  font-size: var(--text-caption); line-height: var(--text-ui-line);
-  color: var(--fg2); box-shadow: inset 0 0 0 1px var(--line2); }
+.dy-work-text {
+  flex: 1;
+  min-width: 0;
+}
+.dy-work-thumb {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--tint2);
+  color: var(--fg2);
+  }
+.dy-work-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dy-work-thumb img + .dy-work-length {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--fg);
+  }
+.dy-work-length {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+  color: var(--fg2);
+  font-variant-numeric: tabular-nums;
+}
+.dy-work-phase {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
+  color: var(--fg2);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  }
 label.dy-work { cursor: pointer; }
 .dy-work[data-picked] { background: var(--tint); }
 /* 多选（11-14 和资料库一套）：顶上一行全选 · 已选 n · 完成，底下浮条。 */
-.dy-bulk-head { margin: 0; padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--line); }
+.dy-bulk-head {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
 .dy-bulk-bar { margin: var(--space-3) auto; }
-.dy-work strong { display: -webkit-box; overflow: hidden; font-size: var(--text-body);
-  line-height: var(--text-body-line); font-weight: 500;
-  -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
-.dy-work-meta { display: block; color: var(--fg2); font-size: var(--text-caption);
-  line-height: var(--text-caption-line); margin-top: var(--space-1); }
-.dy-detail { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-.dy-version { flex: 1; color: var(--fg2); font-size: var(--text-caption); }
+.dy-work strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  font-weight: 500;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+  }
+.dy-work-meta {
+  display: block;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  margin-top: var(--space-1);
+  }
+.dy-detail {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dy-version {
+  flex: 1;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
 .dy-unprocessed { padding: var(--space-6); }
 /* 卡靠左上：电脑上对话框浮在右侧，居中会被它挡住。 */
-.dy-kit { flex: 1; display: flex; align-items: flex-start; padding: var(--space-6); }
+.dy-kit {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  padding: var(--space-6);
+}
 .dy-page[data-phone='true'] .dy-kit { padding: var(--space-4); }
-.dy-unprocessed h2 { margin: 0 0 var(--space-5); font-size: var(--text-number); }
+.dy-unprocessed h2 {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-number);
+}
 .dy-sentinel { height: 1px; }
-.dy-page[data-phone='true'] { display: flex; flex-direction: column; }
-.dy-page[data-phone='true'] .dy-index { flex: 1; border-right: 0; }
+.dy-page[data-phone='true'] {
+  display: flex;
+  flex-direction: column;
+}
+.dy-page[data-phone='true'] .dy-index {
+  flex: 1;
+  border-right: 0;
+}
 .dy-page[data-phone='true'] .dy-detail { display: none; }
 .dy-page[data-phone='true'][data-detail='true'] .dy-index { display: none; }
-.dy-page[data-phone='true'][data-detail='true'] .dy-detail { display: flex; flex: 1; }
-.dy-page[data-phone='true'] .dy-detail-head { gap: var(--space-2); padding: var(--space-2); min-height: 52px; }
+.dy-page[data-phone='true'][data-detail='true'] .dy-detail {
+  display: flex;
+  flex: 1;
+}
+.dy-page[data-phone='true'] .dy-detail-head {
+  gap: var(--space-2);
+  padding: var(--space-2);
+  min-height: 52px;
+}
 
-.feed-douyin > .page-head { padding: var(--space-4); margin: 0; }
+.feed-douyin > .page-head {
+  padding: var(--space-4);
+  margin: 0;
+}
 .feed-douyin > .feed-top { margin: 0; }

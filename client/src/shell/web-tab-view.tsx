@@ -14,7 +14,6 @@ import type { WebTab } from '../state/web-tabs.ts';
 import './web-toolbar.css';
 import { AiMark } from './glyph.tsx';
 import { Icon } from './icons.tsx';
-import { IconButton } from './icon-button.tsx';
 import { HIT_REGION_ATTRIBUTE } from './hit-regions.ts';
 import { anchorOf, type PopoverAnchor } from './popover.tsx';
 import type { NativeWebTabs } from './use-native-web-tabs.ts';
@@ -25,7 +24,7 @@ import { WebHistoryPopover } from './web-history-popover.tsx';
 import { WebMoreMenu } from './web-more-menu.tsx';
 import { hostLogins } from './host.ts';
 import { openLoginImport } from '../views/settings/login-import-request.ts';
-import { useWebPageActions, type WebPageActions } from './web-page-actions.ts';
+import { useWebPageActions } from './web-page-actions.ts';
 import { useWebExtract } from './use-web-extract.ts';
 import { WebExtractPanel } from './web-extract-panel.tsx';
 import './web-extract.css';
@@ -210,7 +209,10 @@ export function WebTabView(props: WebTabViewProps): ReactNode {
         onToggle={popovers.toggle} circling={actions.circling} onCircle={actions.circle}
         onBookmarkError={actions.report} historyInMenu={phone}
         {...(native?.tools.has('extract_marks') !== true || !native.tools.has('extract_images') ? {} : {
-          onExtract: () => { setReading(false); extract.toggle(); }, extracting: extract.open })} />
+          onExtract: () => {
+            setReading(false);
+            extract.toggle();
+          }, extracting: extract.open })} />
       {/* 查找条浮在网页右上角，不把网页往下推（不跳布局）；盖在原生网页上，报成 hitRegions。 */}
       {finding && native !== null ? (
         <div className="web-floats" data-phone={phone} {...{ [HIT_REGION_ATTRIBUTE]: 'web-floats' }}>

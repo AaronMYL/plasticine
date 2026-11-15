@@ -89,7 +89,8 @@ test('已有完整短总述直接复用，服务启动不调用模型；页面�
   const html = t.state.spaces.require(page.id).html!;
   assert.match(html, /<p class="bn-marks">.*高亮 0 处/u);
   assert.equal(html.replace(/<p class="bn-marks">.*?<\/p>/u, '').replace(/^<style>[\s\S]*?<\/style>/u, ''),
-    page.html!.replace(/^<style>[\s\S]*?<\/style>/u, '').replace('<span class="bn-current">', '<span class="bn-current" hidden>'));
+    page.html!.replace(/^<style>[\s\S]*?<\/style>/u, '').replace('<span class="bn-current">',
+      '<span class="bn-current" hidden>'));
 });
 
 for (const summary of ['长'.repeat(70), '协作与判断']) {

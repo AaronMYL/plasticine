@@ -8,8 +8,14 @@ export interface FeedRefreshState { busy: boolean; run: FeedRefresh | null; erro
 
 function wait(signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    const abort = (): void => { clearTimeout(timer); reject(signal.reason); };
-    const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve(); }, REFRESH_POLL_MS);
+    const abort = (): void => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', abort);
+      resolve();
+    }, REFRESH_POLL_MS);
     signal.addEventListener('abort', abort, { once: true });
   });
 }
@@ -21,7 +27,10 @@ export class FeedRefreshTracker {
   private pending: Promise<void> | null = null;
   private controller: AbortController | null = null;
 
-  constructor(api: FeedApi, reload: () => Promise<void>) { this.api = api; this.reload = reload; }
+  constructor(api: FeedApi, reload: () => Promise<void>) {
+    this.api = api;
+    this.reload = reload;
+  }
 
   collect(body: RefreshFeedRequest): Promise<void> {
     if (this.pending !== null) { return this.pending; }

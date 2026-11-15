@@ -1,5 +1,3 @@
-import { compareFeedItems, type FeedComment, type FeedCommentsResponse } from '../../api/shared.ts';
-import { FeedRefreshTracker } from './feed-refresh.ts';
 // 信息流页的数据：条目（按天新的在前、同一天里命中关注点的在前，shared/feed-order.ts；不感兴趣的默认藏起来，可只看
 // 收藏）、往后翻、信息源。第一次打开信息流才拉，之后回来静默再拉一份。事件流来的一条按版本就地换；点了「不感兴趣」的
 // （没开「连不感兴趣的一起看」时）、只看收藏时取消收藏的，从列表里收走，展开状态一起清掉。
@@ -7,6 +5,8 @@ import { FeedRefreshTracker } from './feed-refresh.ts';
 // 也照留，离开这一页、换分段时（settleDismissed）才收走。
 // 拉的期间到的事件，换上快照后按版本再放一遍：旧快照盖不掉新事件。
 
+import { compareFeedItems, type FeedComment, type FeedCommentsResponse } from '../../api/shared.ts';
+import { FeedRefreshTracker } from './feed-refresh.ts';
 import type { PlasticineApi } from '../../api/client.ts';
 import { errorText } from '../../api/errors.ts';
 import type { EventsHub } from '../../state/events-hub.ts';

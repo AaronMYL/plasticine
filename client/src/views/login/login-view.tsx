@@ -99,14 +99,20 @@ export function LoginView({ account, onSignedIn, navigate = (url) => window.loca
               <span className="ob-pre" aria-hidden="true">@</span>
               <input id="login-who" value={who} autoComplete="username" autoCapitalize="none" spellCheck={false}
                 inputMode="email" disabled={busy} autoFocus={account?.handle == null}
-                onChange={(event) => { setWho(event.target.value); setError(null); }} />
+                onChange={(event) => {
+                  setWho(event.target.value);
+                  setError(null);
+                }} />
               {address === null ? null : <span className="ob-suffix login-address">{address}</span>}
             </div>
           </div>
           <PasswordField id="login-password" label="密码" value={password} autoComplete="current-password"
             disabled={busy || target.kind === 'elsewhere'} autoFocus={account?.handle != null}
             invalid={error !== null && target.kind === 'here'}
-            onChange={(value) => { setPassword(value); setError(null); }} />
+            onChange={(value) => {
+              setPassword(value);
+              setError(null);
+            }} />
           {error === null ? null : <p className="ob-error" role="alert">{error}</p>}
           <button type="submit" className="primary-button ob-big" disabled={!ready}>
             {busy ? '正在登录…' : '登录'}

@@ -16,6 +16,7 @@
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": true,
     "skipLibCheck": true
   },
   "include": ["src", "tests", "browser-tests/fixtures", "vite.config.ts"]

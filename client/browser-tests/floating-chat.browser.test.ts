@@ -48,7 +48,10 @@ test('首页、信息流、图书和笔记：对话停靠在右边不盖页面�
   const address = vite.httpServer?.address();
   assert.ok(address !== null && typeof address === 'object');
   const browser = await launchBrowser();
-  t.after(async () => { await browser.close(); await vite.close(); });
+  t.after(async () => {
+    await browser.close();
+    await vite.close();
+  });
   for (const route of ['today', 'feed', 'books', 'notes']) {
     const page = await browser.page(`http://127.0.0.1:${address.port}/#/${route}`, 'mac', { isolated: true });
     // 信息流那一页没有 h1（标题在第二栏里）：等主区里有了内容就行。

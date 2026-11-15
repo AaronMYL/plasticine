@@ -41,7 +41,10 @@ export function splitMessageLinks(text: string): Part[] {
     }
     const link = fence === '' ? linkLine(line.trim()) : null;
     if (link === null) lines.push(line);
-    else { flush(); parts.push(link); }
+    else {
+      flush();
+      parts.push(link);
+    }
   }
   flush();
   return parts;

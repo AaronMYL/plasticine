@@ -33,7 +33,11 @@ export function useBulkSelection({ items, run, empty, onChanged, scope }: BulkOp
     setKeys((current) => [...current].every((key) => present.has(key)) ? current
       : new Set([...current].filter((key) => present.has(key))));
   }, [items]);
-  useEffect(() => { setKeys(new Set()); setActive(false); anchor.current = null; }, [scope]);
+  useEffect(() => {
+    setKeys(new Set());
+    setActive(false);
+    anchor.current = null;
+  }, [scope]);
   /** 跑一次批量：成了返回结果（逐项成没成），没跑或出错是 null（原因在 error 里）。 */
   const execute = async (next: Attempt): Promise<BatchResponse | null> => {
     if (running.current) return null;
@@ -69,7 +73,11 @@ export function useBulkSelection({ items, run, empty, onChanged, scope }: BulkOp
     active, selected, busy, report, error, uncertain, canRetry,
     checked: (item: BatchItem): boolean => keys.has(bulkKey(item)),
     start: (): void => setActive(true),
-    finish: (): void => { if (!running.current) { setActive(false); setKeys(new Set()); anchor.current = null; } },
+    finish: (): void => { if (!running.current) {
+      setActive(false);
+      setKeys(new Set());
+      anchor.current = null;
+    } },
     all: (): void => setKeys(selected.length === items.length ? new Set() : new Set(items.map(bulkKey))),
     toggle: (item: BulkItem, shift = false): void => {
       if (running.current) return;

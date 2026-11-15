@@ -36,9 +36,15 @@ export function AttachmentComposer(): ReactNode {
         }}
       />
       <input ref={photo} type="file" accept="image/*" multiple hidden aria-label="选择照片"
-        onChange={(event) => { add(event.target.files); event.target.value = ''; }} />
+        onChange={(event) => {
+          add(event.target.files);
+          event.target.value = '';
+        }} />
       <input ref={camera} type="file" accept="image/*" capture="environment" hidden aria-label="拍照上传"
-        onChange={(event) => { add(event.target.files); event.target.value = ''; }} />
+        onChange={(event) => {
+          add(event.target.files);
+          event.target.value = '';
+        }} />
       <button
         type="button"
         className="icon-button conv-attach"

@@ -160,7 +160,8 @@ test('设备报时区：记下，定时按它算；设置里选了的以设置�
 test('任务四个动作：暂停的在「进行中」，停止的进「已结束」，删除的进「最近删除」、能恢复', async () => {
   const { t, cookie } = await taskApp([]);
   const kernel = t.app.deps.lines!;
-  const open = (title: string) => kernel.open({ title, goal: title, parentLineId: null, projectId: null }, () => undefined);
+  const open = (title: string) => kernel.open({ title, goal: title, parentLineId: null, projectId: null },
+    () => undefined);
   const paused = open('整理账单');
   const stopped = open('重装环境');
   const deleted = open('翻译博客');
@@ -173,7 +174,8 @@ test('任务四个动作：暂停的在「进行中」，停止的进「已结�
   assert.ok(board.ended.some((line) => line.id === stopped.id && line.outcome === 'stopped'));
   assert.deepEqual(board.deleted.map((line) => line.id), [deleted.id]);
   assert.equal(board.counts.deleted, 1);
-  const restored = await call(t, 'POST', `/v2/lines/${deleted.id}/restore`, { cookie, body: { requestId: requestId() } });
+  const restored = await call(t, 'POST', `/v2/lines/${deleted.id}/restore`,
+    { cookie, body: { requestId: requestId() } });
   assert.equal(restored.status, 200);
   const after = json(await call(t, 'GET', TASKS_BOARD_PATH, { cookie })) as TasksBoardResponse;
   assert.equal(after.deleted.length, 0);

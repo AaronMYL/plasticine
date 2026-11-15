@@ -18,9 +18,15 @@ function LoadedMessageAttachments({ ids }: { ids: readonly string[] }): ReactNod
       const loaded: AttachmentMedia[] = [];
       const failed: string[] = [];
       for (const result of results) {
-        if (result.status === 'rejected') { failed.push(errorText(result.reason)); continue; }
+        if (result.status === 'rejected') {
+          failed.push(errorText(result.reason));
+          continue;
+        }
         const row = result.value;
-        if (row.status !== 'ready') { failed.push(`${row.name}：${row.error ?? '附件原件暂不可用'}`); continue; }
+        if (row.status !== 'ready') {
+          failed.push(`${row.name}：${row.error ?? '附件原件暂不可用'}`);
+          continue;
+        }
         loaded.push({ id: row.id, name: row.name, mimeType: row.mimeType, bytes: row.bytes,
           url: api.attachments.contentUrl(row.id), loadContent: (signal) => api.attachments.content(row.id, signal) });
       }

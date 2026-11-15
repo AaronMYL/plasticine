@@ -1,5 +1,6 @@
 // One AskResolver for the desk that hands each card to whoever raised that kind: the line kernel for its approvals and
-// questions, devices/ for device approvals, network/ for cross-user tasks … A purpose nobody claims goes to the fallback.
+// questions, devices/ for device approvals, network/ for cross-user tasks … A purpose nobody claims goes to the
+// fallback.
 
 import type { Ask, AskPurpose } from '../../shared/state.ts';
 import type { Answerer, AskResolver } from './asks.ts';

@@ -45,8 +45,8 @@ function Person({ mate, lines }: { mate: MateView; lines: LineView[] }): ReactNo
   const work = groupWork(lines);
   const active = [...work.waiting, ...work.doing];
   const running = work.doing.find((line) => line.status === 'running') ?? work.doing[0];
-  const state = mate.disabledAt !== null ? '已停用' : work.waiting.length > 0 ? '等你回答'
-    : running !== undefined ? `在做「${running.title}」` : '空着';
+  const busy = running !== undefined ? `在做「${running.title}」` : '空着';
+  const state = mate.disabledAt !== null ? '已停用' : work.waiting.length > 0 ? '等你回答' : busy;
   return <section className="mate-work-person" aria-label={mate.name}>
     <header><MateAvatar mate={mate} size={28} />
       <div><h4>{mate.name}</h4><p>{state}</p></div></header>

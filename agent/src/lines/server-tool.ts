@@ -39,7 +39,8 @@ function serverAgentTool(parts: ServerToolParts, scope: LineScope, options: Lega
     label: '服务器命令',
     description: 'Runs a script on Plasticine\'s own server as the application account (PowerShell on Windows, '
       + 'bash elsewhere; sudo -n when needed), or, with host, on a host from the SSH allowlist. '
-      + 'Returns status, exit code and the start of stdout / stderr; use server_command_read for the rest. Check exitCode: finishing is not succeeding. Never print secrets.',
+      + 'Returns status, exit code and the start of stdout / stderr; use server_command_read for the rest. '
+      + 'Check exitCode: finishing is not succeeding. Never print secrets.',
     parameters: ServerCommandParameters,
     async execute(toolCallId, raw, signal, onUpdate) {
       const args = checkedArgs(ServerCommandParameters, raw, 'server_command');

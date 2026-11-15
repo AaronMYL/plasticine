@@ -110,7 +110,10 @@ export class PushSwitch {
   async start(): Promise<void> {
     void this.loadKinds();
     const generation = this.next('checking');
-    if (inDesktopApp()) { this.settle(generation, 'native', null); return; }
+    if (inDesktopApp()) {
+      this.settle(generation, 'native', null);
+      return;
+    }
     const reason = this.device.unsupportedReason();
     if (reason !== null) {
       this.settle(generation, 'unsupported', reason);
@@ -149,7 +152,10 @@ export class PushSwitch {
 
   /** 用户点了开关（打开）：这时才申请权限。 */
   async enable(): Promise<void> {
-    if (inDesktopApp()) { this.store.set({ status: 'native', message: null }); return; }
+    if (inDesktopApp()) {
+      this.store.set({ status: 'native', message: null });
+      return;
+    }
     if (isBusy(this.store.get().status)) {
       return;
     }

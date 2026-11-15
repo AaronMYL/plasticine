@@ -31,7 +31,10 @@ export function NoteReview({ proposal, current, onAdopt, onKeep, conflict = fals
     if (composing || canAdopt?.() === false) { return; }
     try {
       onAdopt(applyNoteChanges(proposal.base, current(), changes.filter((_, index) => selected.has(index))));
-    } catch (cause) { setError(errorText(cause)); setTab('changes'); }
+    } catch (cause) {
+      setError(errorText(cause));
+      setTab('changes');
+    }
   };
   const tabs = [['changes', `逐处比较 · ${changes.length}`], ['draft', '编辑修改稿'], ['original', '生成时原文']] as const;
   return <section className="note-review" aria-label="笔记改动对照">

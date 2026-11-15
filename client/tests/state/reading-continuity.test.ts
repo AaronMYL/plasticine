@@ -31,7 +31,8 @@ it('对话框收起与否全局记一份（设计稿 2026-11-03）：在笔记�
   const storage = memoryStorage();
   const prefs = new ShellPrefs(storage);
   expect(computeLayout(1440, prefs.store.get(), 'notes').chat).toBe('dialog');
-  prefs.setChatOpen(false); prefs.setSidebarCollapsed(true);
+  prefs.setChatOpen(false);
+  prefs.setSidebarCollapsed(true);
   prefs.setPhoneChatOpen(true);
   const restored = new ShellPrefs(storage).store.get();
   expect(restored).toMatchObject({ chatOpen: false, sidebarCollapsed: true, phoneChatOpen: false });

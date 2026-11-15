@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { checkLinkData, checkLinkText, cleanSite } from '../../src/daily/index.ts';
-import { ARTICLE_URLS, SAFE_URL, unsafeUrl } from '../url-fixtures.ts';
+import { ARTICLE_URLS, unsafeUrl } from '../url-fixtures.ts';
 
 test('旧来源和站点的协议相对地址也只留主机，普通文章文字参数不变', () => {
   const raw = unsafeUrl().replace('https:', '');

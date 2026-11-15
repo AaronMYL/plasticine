@@ -111,8 +111,8 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
   const roster = useStore(live.mates.data);
   const mate = roster.mates.find((item) => item.lineId === lineId);
   const disabledMate = mate?.disabledAt != null;
-  const purpose = mate !== undefined ? mate.purpose ?? 'main'
-    : thread.line?.mateGroupId != null ? 'main' : side ? 'side' : 'main';
+  const ownPurpose = thread.line?.mateGroupId == null && side ? 'side' : 'main';
+  const purpose = mate !== undefined ? mate.purpose ?? 'main' : ownPurpose;
   const composing = useRef(false);
   // 预测消息（11-13）：设置 · AI 的开关开着、这位队友没停用就猜；发送前浅色字不算草稿。
   const predictOn = useStore(state.shellPrefs.store).composePredict;
@@ -189,7 +189,8 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
         const all = sentQuote === null ? original.quotes : [...original.quotes, sentQuote];
         const limit = quoteLimitMessage(all);
         if (limit !== null) throw new Error(limit);
-        const sentAttachments = [...attachments.takeReady().map((item) => item.id), ...(shot === null ? [] : [shot.id])];
+        const sentAttachments = [...attachments.takeReady().map((item) => item.id),
+          ...(shot === null ? [] : [shot.id])];
         // 先交给线的待发记录，再清空草稿；来源预读失败不会来到这里。
         const delivery = live.lines.send(lineId, original.draft.trim(), sentAttachments, all, original.reply);
         conversationUi.clearComposer();
@@ -229,7 +230,10 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
   };
 
   return (
-    <form className="line-composer" onSubmit={(event) => { event.preventDefault(); send(); }}
+    <form className="line-composer" onSubmit={(event) => {
+      event.preventDefault();
+      send();
+    }}
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes('Files')) event.preventDefault();
       }}
@@ -268,8 +272,11 @@ export function LineComposer({ lineId, askPage, side = false }: LineComposerProp
           aria-activedescendant={mentions.selectedId} disabled={disabledMate}
           placeholder={predict.ghost !== null ? '' : side ? '接着说…' : `回复 ${mainName}`} rows={1} value={draft}
           onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
-          onChange={(event) => { if (askPage) state.dockTargets.protectCurrent();
-            conversationUi.setDraft(event.target.value); mentions.update(event.target.selectionStart); }}
+          onChange={(event) => {
+            if (askPage) state.dockTargets.protectCurrent();
+            conversationUi.setDraft(event.target.value);
+            mentions.update(event.target.selectionStart);
+          }}
           onPaste={(event) => {
             const files = Array.from(event.clipboardData.files);
             if (files.length > 0) {

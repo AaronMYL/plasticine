@@ -109,7 +109,8 @@ export function groupTaskView(state: StateService, task: GroupTask, activity?: T
 
 /** 群里回的那一句：谁说的、开头。 */
 function groupReplyOf(state: StateService, message: GroupMessage): { author: string; text: string } | null {
-  const target = message.replyTo == null ? undefined : state.groupMessages.byMessageId(message.groupId, message.replyTo);
+  const target = message.replyTo == null ? undefined
+    : state.groupMessages.byMessageId(message.groupId, message.replyTo);
   if (target === undefined) return null;
   const me = state.networkIdentity.get()?.accountId;
   return { author: target.authorAccountId === me ? '我' : faceOf(state, target.authorAccountId).name,

@@ -12,7 +12,6 @@ afterEach(async () => {
 });
 
 type Body = Record<string, unknown>;
-const MINUTE = 60_000;
 
 test('记账：没登录 401；记一笔 201、重发同一个 requestId 不记第二笔；账本按月分天；推 money_changed', async () => {
   t = await startTestApp();

@@ -10,7 +10,7 @@ export interface Token {
 }
 
 // After these, a `/` starts a regex literal rather than a division.
-const REGEX_AFTER_PUNCT = new Set(['(', ',', '=', ':', '[', '!', '&', '|', '?', '{', '}', ';', '+', '-', '*', '%', '<',
+const REGEX_AFTER_PUNCT = new Set(['(', ',', '=', ':', '[', '!', '&', '|', '?', '{', '}', ';', '+', '-', '*', '%',
   '>', '~', '^', '=>']);
 const REGEX_AFTER_KEYWORD = new Set(['return', 'typeof', 'case', 'do', 'else', 'in', 'of', 'new', 'delete', 'void',
   'throw', 'yield', 'await']);
@@ -72,6 +72,11 @@ function skipRegex(source: string, start: number): number {
     i += 1;
   }
   return i;
+}
+
+/** JSX 里的斜杠不是正则：`checked={on} />` 的收尾。（`</p>` 的斜杠在 `<` 后面，`<` 本来就不在上面的表里。） */
+function jsxSlash(previous: Token | undefined, next: string | undefined): boolean {
+  return previous?.text === '}' && next === '>';
 }
 
 function startsRegex(previous: Token | undefined): boolean {
@@ -150,7 +155,7 @@ function scanFrom(source: string, start: number, inExpression: boolean): Scanned
       i = template.end;
       inner = template.tokens;
       kind = 'template';
-    } else if (ch === '/' && startsRegex(lastCode)) {
+    } else if (ch === '/' && startsRegex(lastCode) && !jsxSlash(lastCode, next)) {
       i = skipRegex(source, i);
       kind = 'regex';
     } else if (IDENT_START.test(ch)) {

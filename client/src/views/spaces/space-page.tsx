@@ -98,7 +98,10 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
     return <div className="page space-page">
       {error === null && history.error === null ? <PageLoading rows={6} />
         : <p className="block-empty is-error" role="alert">{error ?? history.error}{' '}
-          <button type="button" className="text-button" onClick={() => { reload(); history.reload(); }}>
+          <button type="button" className="text-button" onClick={() => {
+            reload();
+            history.reload();
+          }}>
             再读一次</button></p>}
     </div>;
   }

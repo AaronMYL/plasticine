@@ -387,7 +387,6 @@ export class DeviceActions {
   #finish(row: NodeAction, patch: NodeActionPatch): NodeAction {
     const current = this.#state.nodeActions.get(row.id) ?? row;
     if (current.status !== 'queued' && current.status !== 'sent') { return current; }
-    const at = this.#now().toISOString();
     const updated = this.#state.nodeActions.update(current.id, current.version, patch);
     this.#sink.actionRecorded(updated);
     return updated;

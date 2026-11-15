@@ -7,7 +7,7 @@ import { compareFeedItems } from '../../shared/feed-order.ts';
 import { call, json, openEvents, pair, startTestApp, type TestApp } from './helpers.ts';
 import { newRequestId } from './signing.ts';
 import { assertNoPrivateText, captureLogs, CREDENTIAL_PARAMS, PRIVATE_ERROR_TEXT } from '../safety-helpers.ts';
-import { ARTICLE_URLS, SAFE_URL, unsafeUrl } from '../url-fixtures.ts';
+import { ARTICLE_URLS, unsafeUrl } from '../url-fixtures.ts';
 
 let t: TestApp | undefined;
 

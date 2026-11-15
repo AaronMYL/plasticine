@@ -16,7 +16,10 @@ function listed(index: number, position = index): DouyinListedWork {
     author: '示例作者', kind: 'video', durationSeconds: null, collectedAt: null, publishedAt: null,
     folderIds: [], listPosition: position };
 }
-beforeEach(async () => { t = await openTestState(); kicks = 0; });
+beforeEach(async () => {
+  t = await openTestState();
+  kicks = 0;
+});
 afterEach(async () => { await t.cleanup(); });
 
 test('全量回填跨批次、重启仍保留顺序，已有作品不重复解析、不改阶段', () => {

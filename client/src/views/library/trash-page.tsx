@@ -1,9 +1,9 @@
-import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
-import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
-import { libraryBatch } from '../bulk/bulk-api.ts';
 // 「最近删除」（#/library/trash，2026-11-08 设计稿 Library-Trash）：删掉的空间、图书、文件混在一起，删的时间新的在前。
 // 每行：类型图标 · 名字 · 类型 · 删除时间 · 「还原」。还原后那一行淡出收起，资料库各处跟着重读。支持批量还原和明确确认后的永久删除。
 
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
+import { libraryBatch } from '../bulk/bulk-api.ts';
 import { useRef, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
@@ -105,7 +105,9 @@ export function TrashPage(): ReactNode {
   const items = (trash?.items ?? []).filter((item) => !gone.has(keyOf(item)));
   const selection = useBulkSelection({ items, run: (input) => libraryBatch(api.library, input),
     empty: (input) => api.library.emptyTrash(input), onChanged: () => {
-      libraryChanged(); void toolGroups.files.reset(); void toolGroups.trash.reload();
+      libraryChanged();
+      void toolGroups.files.reset();
+      void toolGroups.trash.reload();
     } });
   return (
     <div className="page lib-page lib-trash">

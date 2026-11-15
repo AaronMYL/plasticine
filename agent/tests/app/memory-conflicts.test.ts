@@ -7,7 +7,10 @@ import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writ
 import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 
 let t: TestApp | undefined;
-afterEach(async () => { await t?.close(); t = undefined; });
+afterEach(async () => {
+  await t?.close();
+  t = undefined;
+});
 
 test('说法冲突：要登录；留下一条时另一条进归档、冲突关掉；定过的再定是冲突', async () => {
   t = await startTestApp();

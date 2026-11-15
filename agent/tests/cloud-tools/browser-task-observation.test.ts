@@ -11,7 +11,11 @@ test('并发任务绑定自己的标签；观察返回真实截图和元素，�
   const dir = await tempDirectory();
   const browser = new CloudBrowser({ transport: new CdpBrowser({ endpoint: fake.endpoint }),
     stateDirectory: dir.directory, now: () => new Date() });
-  t.after(async () => { browser.close(); await fake.close(); await dir.cleanup(); });
+  t.after(async () => {
+    browser.close();
+    await fake.close();
+    await dir.cleanup();
+  });
   const [first, second] = await Promise.all([
     browser.open('https://example.test/one', signal(), 'task-one'),
     browser.open('https://example.test/two', signal(), 'task-two'),
@@ -36,7 +40,11 @@ test('任务恢复沿用原标签，旧画面失效；用户接手后不能继�
   const dir = await tempDirectory();
   let browser = new CloudBrowser({ transport: new CdpBrowser({ endpoint: fake.endpoint }),
     stateDirectory: dir.directory, now: () => new Date() });
-  t.after(async () => { browser.close(); await fake.close(); await dir.cleanup(); });
+  t.after(async () => {
+    browser.close();
+    await fake.close();
+    await dir.cleanup();
+  });
   const initial = await browser.open('https://example.test/work', signal(), 'task-one');
   const old = await browser.observe(signal(), 'task-one');
   browser.close();
@@ -54,7 +62,10 @@ test('任务恢复沿用原标签，旧画面失效；用户接手后不能继�
 test('页面结构变化拒绝旧坐标；没有绑定的任务必须选择实际标签或打开网址', async (t) => {
   const fake = await fakeCdp();
   const browser = new CloudBrowser({ transport: new CdpBrowser({ endpoint: fake.endpoint }), now: () => new Date() });
-  t.after(async () => { browser.close(); await fake.close(); });
+  t.after(async () => {
+    browser.close();
+    await fake.close();
+  });
   await assert.rejects(browser.observe(signal(), 'new-task'), /标签/);
   const initial = await browser.observe(signal(), 'new-task', 'tab-1');
   fake.elementLabel('已变成删除');

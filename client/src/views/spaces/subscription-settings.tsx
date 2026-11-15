@@ -9,7 +9,8 @@ const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 const CLOCKS = Array.from({ length: 24 }, (_unused, hour) => `${String(hour).padStart(2, '0')}:00`);
 
 function Field({ label, children }: { label: string; children: ReactNode }): ReactNode {
-  return <div className="sub-field"><span className="sub-label">{label}</span><div className="sub-value">{children}</div>
+  return <div className="sub-field">
+    <span className="sub-label">{label}</span><div className="sub-value">{children}</div>
   </div>;
 }
 
@@ -26,7 +27,8 @@ function Chips({ values, label, onChange }: { values: readonly string[]; label: 
   return (
     <span className="sub-chips">
       {values.map((value) => <span key={value} className="sub-chip">{value}
-        <button type="button" aria-label={`去掉「${value}」`} onClick={() => onChange(values.filter((item) => item !== value))}>
+        <button type="button" aria-label={`去掉「${value}」`}
+          onClick={() => onChange(values.filter((item) => item !== value))}>
           ×</button></span>)}
       {adding === null ? <IconButton icon="plus" label={`加${label}`} className="sub-chip-add"
         onClick={() => setAdding('')} /> : <input className="sub-chip-input" aria-label={`新的${label}`} autoFocus
@@ -49,10 +51,14 @@ function Choice<T extends string>({ label, options, value, onChange }: { label: 
   );
 }
 
-function ScheduleSelect({ schedule, onChange }: { schedule: SubscriptionSchedule; onChange: (next: SubscriptionSchedule) => void }): ReactNode {
+function ScheduleSelect({ schedule, onChange }: {
+  schedule: SubscriptionSchedule;
+  onChange: (next: SubscriptionSchedule) => void;
+}): ReactNode {
   return (
     <span className="sub-schedule">
-      <select aria-label="哪天" className="sub-select" value={schedule.every === 'day' ? 'day' : String(schedule.weekday ?? 1)}
+      <select aria-label="哪天" className="sub-select"
+        value={schedule.every === 'day' ? 'day' : String(schedule.weekday ?? 1)}
         onChange={(event) => onChange(event.target.value === 'day' ? { every: 'day', time: schedule.time }
           : { every: 'week', weekday: Number(event.target.value), time: schedule.time })}>
         <option value="day">每天</option>

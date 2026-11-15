@@ -62,8 +62,9 @@ export type { NetworkTaskStores } from './network-tasks.ts';
 export type { GroupStores, MemberInput } from './groups.ts';
 export { lineRef, MAIN_LINE_ID, plainText } from './lines.ts';
 export type { DayCompaction, LineDayRow } from './line-days.ts';
-export type { LineListFilter, LineMessageMeta, LineMessageRow, LinePatch, LineRow, LineStores, NewLine, QueuedRow,
+export type { LineListFilter, LineMessageMeta, LineMessageRow, LinePatch, LineRow, LineStores, NewLine,
   SaidLine } from './lines.ts';
+export type { QueuedRow } from './line-queue.ts';
 export { APPROVAL_STATUSES } from './line-approvals.ts';
 export type { ApprovalStatus, LineApproval, LineApprovalStore, NewLineApproval } from './line-approvals.ts';
 export type { KernelSettingsStores, StoredCredential } from './kernel-settings.ts';

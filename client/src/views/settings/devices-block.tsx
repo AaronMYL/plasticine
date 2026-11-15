@@ -83,7 +83,10 @@ export function Devices(): ReactNode {
       {confirm === null ? null : (
         <ConfirmDialog title={confirm.kind === 'logout' ? '退出这台？' : `让「${deviceLabel(confirm.device)}」退出？`}
           body={confirmText(confirm)} confirmLabel="退出" busy={busy} error={error}
-          onCancel={() => { setConfirm(null); setError(null); }} onConfirm={() => perform(confirm)} />
+          onCancel={() => {
+            setConfirm(null);
+            setError(null);
+          }} onConfirm={() => perform(confirm)} />
       )}
       {error === null || confirm !== null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
     </section>

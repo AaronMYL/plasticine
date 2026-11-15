@@ -2,7 +2,6 @@
 // 信息流不感兴趣的默认不在列表里。
 
 import { describe, expect, it } from 'vitest';
-import { ApiError, ConflictError } from '../../src/api/errors.ts';
 import { createFakeApi } from '../../src/api/fake/index.ts';
 import type { LiveEvent } from '../../src/api/types.ts';
 import { NOW } from '../helpers.tsx';

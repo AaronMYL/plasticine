@@ -27,7 +27,10 @@ function worker(reply: (input: FeedTranslationInput) => FeedTranslationReply, se
   const translations = new FeedTranslations({ state: t.state, now: () => NOW,
     isPost: (item) => t.state.feedSources.get(item.sourceId)?.kind === 'x',
     changed: (item) => changed.push(item.id),
-    translate: async (input) => { seen.push(input); return reply(input); } });
+    translate: async (input) => {
+      seen.push(input);
+      return reply(input);
+    } });
   return { translations, changed };
 }
 

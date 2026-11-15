@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, NoteConflictError } from '../../src/api/errors.ts';
+import { NoteConflictError } from '../../src/api/errors.ts';
 import { FAKE_LOCAL_TOKEN } from '../../src/api/fake/fake-account.ts';
 import { createFakeApi } from '../../src/api/fake/index.ts';
 import { noteBytes, notePreview, noteTitle } from '../../src/api/fake/note-text.ts';
@@ -16,19 +16,6 @@ function collect(fake: ReturnType<typeof signedIn>): LiveEvent[] {
   const events: LiveEvent[] = [];
   fake.api.events.subscribe({ onEvent: (event) => events.push(event), onStatus: () => undefined });
   return events;
-}
-
-/** 假实现的流式回复用 0ms 计时器一段段推；等这么多轮足够推完一条。 */
-const MAX_ROUNDS = 50;
-
-async function until(check: () => boolean): Promise<void> {
-  for (let round = 0; round < MAX_ROUNDS && !check(); round += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  }
-}
-
-async function drain(): Promise<void> {
-  await until(() => false);
 }
 
 describe('假接口 · session', () => {

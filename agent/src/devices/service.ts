@@ -163,7 +163,10 @@ export class DeviceService {
   /** Inside an outer transaction (the API answer), the event waits for `after`. */
   revoke(nodeId: string, byDeviceId: string, after: (action: () => void) => void): DeviceNode {
     const node = revokeNode(this.#pairing, nodeId, byDeviceId);
-    after(() => { this.#sink.nodeChanged(nodeId); this.channel.wake(); });
+    after(() => {
+      this.#sink.nodeChanged(nodeId);
+      this.channel.wake();
+    });
     return node;
   }
 

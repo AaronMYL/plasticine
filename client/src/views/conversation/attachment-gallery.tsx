@@ -41,8 +41,14 @@ function Preview({ items, initial, onClose }: { items: readonly AttachmentMedia[
   }, []);
   if (item === undefined) return null;
   return createPortal(<dialog ref={dialog} className="attachment-viewer" aria-label="附件预览" aria-modal="true"
-    onCancel={(event) => { event.preventDefault(); onClose(); }} onKeyDown={(event) => {
-      if (event.key === 'Escape') { event.preventDefault(); onClose(); }
+    onCancel={(event) => {
+      event.preventDefault();
+      onClose();
+    }} onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
       if (event.key === 'ArrowLeft') setIndex((value) => Math.max(0, value - 1));
       if (event.key === 'ArrowRight') setIndex((value) => Math.min(items.length - 1, value + 1));
     }}>

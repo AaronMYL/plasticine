@@ -32,7 +32,10 @@ export function LineEditor({ initial, label, onSave, onCancel }: { initial: stri
     setError(problem);
   };
   return (
-    <form className="line-editor" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+    <form className="line-editor" onSubmit={(event) => {
+      event.preventDefault();
+      void save();
+    }}>
       <textarea className="field-input" aria-label={label} value={text} rows={2} autoFocus maxLength={600}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={(event) => { if (event.key === 'Escape') onCancel(); }} />

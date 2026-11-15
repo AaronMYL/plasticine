@@ -65,7 +65,10 @@ export default function AttachmentPdf({ item, compact = false }: { item: Attachm
     }).catch(() => {
       if (active) setError('这一页暂时无法预览，请下载原件查看。');
     });
-    return () => { active = false; render?.cancel(); };
+    return () => {
+      active = false;
+      render?.cancel();
+    };
   }, [document, page, compact]);
 
   if (error !== null) return compact ? <span className="text-meta">PDF</span> : <p role="alert">{error}</p>;

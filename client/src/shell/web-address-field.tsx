@@ -79,7 +79,8 @@ export function addressSuggestions(typed: string, bookmarks: readonly { title: s
   }
   for (const visit of visits) add('history', visit.title, visit.url);
   const isUrl = typedUrl(text) !== null;
-  return [...found, { kind: 'go', title: isUrl ? `打开 ${text}` : `用${SEARCH_ENGINE_LABELS[readSearchEngine()]}搜「${text}」`,
+  const title = isUrl ? `打开 ${text}` : `用${SEARCH_ENGINE_LABELS[readSearchEngine()]}搜「${text}」`;
+  return [...found, { kind: 'go', title,
     url: direct }];
 }
 

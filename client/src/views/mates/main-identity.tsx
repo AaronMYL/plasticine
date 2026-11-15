@@ -68,7 +68,10 @@ export function MainEditor({ phone, onClose }: { phone: boolean; onClose: () => 
       || soul.error !== null || soul.text.trim().length < 2}>保存修改</button></>;
   return createPortal(<div className="mate-editor-layer"><Sheet open variant={phone ? 'drawer' : 'panel'} modal
     title="编辑主线" onClose={onClose} className="mate-editor-sheet soul-editor-sheet" footer={footer}>
-    <form id={formId} className="mate-form" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+    <form id={formId} className="mate-form" onSubmit={(event) => {
+      event.preventDefault();
+      void submit();
+    }}>
       <fieldset disabled={busy}>
         <div className="editor-look">
           <span className="editor-look-box"><MainAvatar key={draft.variant} variant={draft.variant} size={52}
@@ -82,7 +85,10 @@ export function MainEditor({ phone, onClose }: { phone: boolean; onClose: () => 
         {looking ? (
           <div className="look-grid look-grid-fit">
             <LookChoices kind="variant" look={{ kind: 'main', variant: draft.variant }}
-              onChange={(variant) => { setPicked(true); setDraft({ ...draft, variant }); }} /></div>
+              onChange={(variant) => {
+                setPicked(true);
+                setDraft({ ...draft, variant });
+              }} /></div>
         ) : null}
         <label>名字<input required minLength={2} maxLength={20} autoFocus value={draft.name}
           onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>

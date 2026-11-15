@@ -28,7 +28,8 @@ export function SpaceChartView({ chart }: { chart: SpaceChart }): ReactNode {
   const slot = plotWidth / Math.max(count, 1);
   const xOf = (index: number): number => (chart.kind === 'bar' ? LEFT + slot * (index + 0.5)
     : LEFT + (count === 1 ? plotWidth / 2 : (plotWidth * index) / (count - 1)));
-  const yOf = (value: number): number => TOP + plotHeight - ((value - scale.min) / (scale.max - scale.min)) * plotHeight;
+  const yOf = (value: number): number => TOP + plotHeight
+    - ((value - scale.min) / (scale.max - scale.min)) * plotHeight;
   const unit = chart.unit ?? '';
   const href = sourceHref(chart.source);
   const barWidth = Math.min(28, (slot * 0.7) / chart.series.length);

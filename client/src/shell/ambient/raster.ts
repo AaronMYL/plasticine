@@ -33,7 +33,6 @@ export class CreatureRaster {
   private body: BodyDef | null = null;
   private beat = 0;
   private time = 0;
-  private id = 0;
   private reachScale = [1, 1];
   private hitFlag = 0;
   private hitShade = 0;
@@ -66,7 +65,6 @@ export class CreatureRaster {
     const body = c.body;
     const L = c.length;
     this.body = body;
-    this.id = c.id;
     this.buildSpine(c);
     // 扇翅：鹰追的时候用力扇、巡游时滑翔；蝠鲼一直慢慢扇。
     const effort = clamp((c.speed - c.cruise) / c.cruise + 0.25, 0.2, 1);

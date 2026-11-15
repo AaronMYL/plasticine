@@ -67,7 +67,10 @@ export const REAL_KIT_PORTS: KitPorts = {
     await fetcher.read(url, { accept: '*/*', types: null, maxBytes: 1024 * 1024 * 1024, userAgent: AGENT,
       timeoutMs: KIT_DOWNLOAD_TIMEOUT_MS }, signal, async (chunks) => {
       const counted = async function* (): AsyncGenerator<Buffer> {
-        for await (const chunk of chunks) { bytes(chunk.length); yield chunk; }
+        for await (const chunk of chunks) {
+          bytes(chunk.length);
+          yield chunk;
+        }
       };
       await pipeline(Readable.from(counted()), createWriteStream(file), { signal });
     });

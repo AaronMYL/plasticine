@@ -41,15 +41,30 @@ test('本地假 HTTP：新闻空或失败退网页，语言参数、跳转、超
     const url = new URL(req.url ?? '/', 'http://localhost');
     const term = url.searchParams.get('q');
     if (term === 'timeout') { return; }
-    if (term === 'large') { res.end('x'.repeat(2 * 1024 * 1024 + 1)); return; }
-    if (term === 'private') { res.writeHead(302, { location: 'http://127.0.0.1/private' }).end(); return; }
-    if (term === 'loop') { res.writeHead(302, { location: req.url }).end(); return; }
+    if (term === 'large') {
+      res.end('x'.repeat(2 * 1024 * 1024 + 1));
+      return;
+    }
+    if (term === 'private') {
+      res.writeHead(302, { location: 'http://127.0.0.1/private' }).end();
+      return;
+    }
+    if (term === 'loop') {
+      res.writeHead(302, { location: req.url }).end();
+      return;
+    }
     if (term === 'redirect' && url.pathname === '/news/search') {
       res.writeHead(302, { location: '/final' }).end();
       return;
     }
-    if (term === 'empty' && url.pathname === '/news/search') { res.end(wrap('')); return; }
-    if (term === 'failed' && url.pathname === '/news/search') { res.writeHead(500).end(); return; }
+    if (term === 'empty' && url.pathname === '/news/search') {
+      res.end(wrap(''));
+      return;
+    }
+    if (term === 'failed' && url.pathname === '/news/search') {
+      res.writeHead(500).end();
+      return;
+    }
     const link = `https://www.bing.com/news/apiclick.aspx?url=${encodeURIComponent(ARTICLE)}`;
     res.end(wrap(item(link)));
   });

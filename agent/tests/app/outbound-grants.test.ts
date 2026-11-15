@@ -8,7 +8,10 @@ import { MAIN_LINE_ID } from '../../src/state/index.ts';
 import { call, pair, startTestApp, type TestApp } from './helpers.ts';
 
 let app: TestApp | undefined;
-afterEach(async () => { await app?.close(); app = undefined; });
+afterEach(async () => {
+  await app?.close();
+  app = undefined;
+});
 const grant = { actor: MAIN_LINE_ID, channel: 'fixture.mail', account: 'fixture-account',
   recipientMode: 'list', recipients: ['recipient-fixture'], category: 'reply', fixedTexts: null,
   scope: { kind: 'always' }, expiresAt: null };

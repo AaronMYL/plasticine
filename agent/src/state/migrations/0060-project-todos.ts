@@ -77,7 +77,8 @@ function ensurePersonal(db: MigrationDb, at: string): void {
     return;
   }
   db.run(`INSERT INTO projects (id, created_at, updated_at, version, name, standing, lifecycle, brief, people)
-    VALUES ($id, $at, $at, 1, '个人', 1, 'active', $brief, '[]')`, { id: PERSONAL_PROJECT_ID, at, brief: PERSONAL_BRIEF });
+    VALUES ($id, $at, $at, 1, '个人', 1, 'active', $brief, '[]')`,
+      { id: PERSONAL_PROJECT_ID, at, brief: PERSONAL_BRIEF });
 }
 
 function moveConcerns(db: MigrationDb, filed: ReadonlyMap<string, string>): void {

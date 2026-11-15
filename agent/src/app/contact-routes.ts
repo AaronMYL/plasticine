@@ -1,10 +1,10 @@
-import { NETWORK_ATTACHMENTS_PATH, PEER_ATTACHMENTS_PATH } from '../../shared/network-attachments.ts';
-import { uploadNetworkAttachment, peerAttachment, networkAttachmentContent, retryNetworkMessage }
-  from './network-attachments.ts';
 // 第 113 条的路由条目（router.ts 摊进 ROUTES）：联系人、网络账号、跨用户任务、对外可见。都要设备会话，只有邮件图片代理
 // （/v2/mail-image）不要：显示邮件的沙箱 iframe 带不了 cookie，凭服务端签的短期签名（mail-view.ts）。
 // 中继自己的 /v2/net/* 不在这里：中继是独立的服务（network-relay/main.ts），账号签名，不走会话。
 
+import { NETWORK_ATTACHMENTS_PATH, PEER_ATTACHMENTS_PATH } from '../../shared/network-attachments.ts';
+import { uploadNetworkAttachment, peerAttachment, networkAttachmentContent, retryNetworkMessage }
+  from './network-attachments.ts';
 import {
   CONTACT_LOOKUP_PATH,
   CONTACTS_ADD_PATH,

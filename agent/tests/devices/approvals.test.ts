@@ -33,7 +33,10 @@ beforeEach(() => {
   service.setLimits(nodeId, 0, { ...DEFAULT_DEVICE_LIMITS, roots: ['~/Documents'] },
     { deviceId: issuer, confirmedAt: at }, (action) => action());
 });
-afterEach(() => { service.stop(); h.close(); });
+afterEach(() => {
+  service.stop();
+  h.close();
+});
 
 function request() {
   n += 1;

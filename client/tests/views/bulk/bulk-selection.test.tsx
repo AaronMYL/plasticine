@@ -31,7 +31,10 @@ it('部分成功后只保留失败项，重试只发送失败项并使用新请�
   ] }).mockImplementation(async (input) => success(input));
   const changed = vi.fn();
   const { result } = renderHook(() => useBulkSelection({ items: items.slice(0, 2), run, onChanged: changed }));
-  act(() => { result.current.start(); result.current.all(); });
+  act(() => {
+    result.current.start();
+    result.current.all();
+  });
   await act(async () => result.current.perform('move', '归档'));
   expect(result.current.selected.map((item) => item.id)).toEqual(['1']);
   expect(result.current.report?.results[1]?.error).toBe('目标已有同名笔记');
@@ -49,7 +52,10 @@ it('结果不确定时保留原请求核实，清空遇到数量冲突会刷新�
     status: 409, message: '最近删除的数量变了，请刷新后重新确认。' }));
   const changed = vi.fn();
   const { result } = renderHook(() => useBulkSelection({ items, run, empty, onChanged: changed }));
-  act(() => { result.current.start(); result.current.all(); });
+  act(() => {
+    result.current.start();
+    result.current.all();
+  });
   await act(async () => result.current.perform('trash'));
   expect(result.current.uncertain).toBe(true);
   await act(async () => result.current.retry());

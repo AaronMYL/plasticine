@@ -227,12 +227,18 @@ export class ModelResolver {
       thinking: CHEAP_THINKING };
   }
 
+  /** 这个用途没单独设时跟谁。 */
+  #fallback(fallback: ReturnType<typeof purposeInfo>['fallback']): Resolution {
+    if (fallback === 'main' || fallback === 'note_predict') {
+      return this.resolve(fallback);
+    }
+    return fallback === 'cheap' ? this.cheap() : this.resolve();
+  }
+
   #resolvePurpose(purpose: ModelPurpose): Resolution {
     const override = this.#settings.overrides[purpose] ?? { model: null, thinking: null };
     const { fallback, thinking } = purposeInfo(purpose);
-    const parent = fallback === 'main' ? this.resolve('main')
-      : fallback === 'note_predict' ? this.resolve('note_predict')
-      : fallback === 'cheap' ? this.cheap() : this.resolve();
+    const parent = this.#fallback(fallback);
     const parentRef = parent.effective;
     return this.#settle({ purpose, requested: override.model, candidates: [override.model, parentRef],
       thinking: override.thinking ?? thinking ?? parent.thinking, explicitThinking: override.thinking !== null,

@@ -14,7 +14,9 @@ export class FakeOutbound implements OutboundApi {
   private sequence = 0;
 
   constructor(session: FakeSession, receipts: FakeReceipts, now: () => Date) {
-    this.session = session; this.receipts = receipts; this.now = now;
+    this.session = session;
+    this.receipts = receipts;
+    this.now = now;
   }
   seed(grants: readonly OutboundGrant[], logs: readonly OutboundLog[] = []): void {
     for (const row of grants) { this.rows.set(row.id, structuredClone(row)); }

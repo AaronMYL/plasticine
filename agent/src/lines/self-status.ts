@@ -77,7 +77,8 @@ export function statusSection(state: StatusState, current: LineRow, now: Date): 
     .filter((line) => line.id !== current.id && line.archivedAt === null);
   const by = (status: LineRow['status']): LineRow[] => all.filter((line) => line.status === status);
   const failedSince = now.getTime() - FAILED_WINDOW_MS;
-  const failed = all.filter((line) => (line.status === 'failed' || (line.status === 'idle' && line.unmetReason !== null))
+  const failed = all.filter((line) => (line.status === 'failed'
+    || (line.status === 'idle' && line.unmetReason !== null))
     && Date.parse(line.updatedAt) >= failedSince);
   const parts = [
     ...group('在做', by('running'), (line) => row(line, state.mates)),

@@ -1,3 +1,6 @@
+// /v2/notes 的真实现：服务端全文搜索和分页、读、新建、保存（带 version，409 带当前那一版）、软删与恢复。
+// 写成功后在本机报 note.* 事件；服务端的 note_invalidated 也会通过 SSE 同步到已打开的笔记。
+
 import {
   BatchResponseSchema, NOTE_LIST_MAX, NoteAssistOutcomeViewSchema, NoteAssistStreamEventSchema, noteAssistTimeoutMs,
   NoteAssistViewSchema, NoteConflictSchema, NoteFoldersViewSchema, NoteImageViewSchema, NoteImportViewSchema,
@@ -5,9 +8,6 @@ import {
   type NoteAssistOutcome, type NoteAssistRequest, type NoteAssistView, type NoteFolderCommand, type NoteFoldersView,
   type NoteImageRequest, type NoteImageView, type NoteImportView, type NoteListResponse, type NotesBatchRequest,
 } from '../shared.ts';
-// /v2/notes 的真实现：服务端全文搜索和分页、读、新建、保存（带 version，409 带当前那一版）、软删与恢复。
-// 写成功后在本机报 note.* 事件；服务端的 note_invalidated 也会通过 SSE 同步到已打开的笔记。
-
 import { Value } from 'typebox/value';
 import type { NotesApi } from '../client.ts';
 import { ApiError, badResponseError, NoteConflictError } from '../errors.ts';

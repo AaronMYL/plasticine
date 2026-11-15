@@ -1,8 +1,8 @@
-import { MAIN_SOUL_DEFAULTS } from '../../../shared/soul.ts';
 // 记忆文档的写法（docs/specs/memory-docs.md 第 2 节）：后台整理、file_to_project 的决定、记忆页的用户改动都走这里，
 // 所以三处写出来的行和事件是同一个样子：加一行、改一行（新行替代旧行，旧文字存进「之前」）、退休一行、合并几行、
 // 提一条待确认推断、确认推断成行，每一步在 memory_doc_events 记一笔。每个函数自己一个事务（嵌套时是保存点）。
 
+import { MAIN_SOUL_DEFAULTS } from '../../../shared/soul.ts';
 import {
   MEMORY_DOC_CHAR_LIMIT,
   RULES_DOC_ID,

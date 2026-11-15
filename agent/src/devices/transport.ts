@@ -93,7 +93,10 @@ export class PollingNodeTransport implements NodeTransport {
       };
       const check = (): void => {
         const row = this.#state.nodeActions.byActionId(envelope.actionId);
-        if (row === undefined) { finish(new TransportError('动作没有落盘。', false)); return; }
+        if (row === undefined) {
+          finish(new TransportError('动作没有落盘。', false));
+          return;
+        }
         if (this.#stopped) {
           finish(new TransportError('服务正在停止，未发动作保留到下次启动。', row.status !== 'queued', true));
         } else if (row.status === 'unknown') {
@@ -118,7 +121,10 @@ export class PollingNodeTransport implements NodeTransport {
       this.#reports.add(check);
       signal.addEventListener('abort', abort, { once: true });
       if (signal.aborted) { abort(); }
-      else { check(); this.wake(); }
+      else {
+        check();
+        this.wake();
+      }
     });
   }
 

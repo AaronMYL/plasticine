@@ -73,7 +73,8 @@ export function GrantFields({ value, onChange, choices, disabled = false, lockAc
           value="" disabled={disabled} onChange={(event) => {
             if (event.target.value !== '') {
               const recipients = [...new Set([...value.recipients, event.target.value])];
-              setRecipientDraft(recipients.join('\n')); patch({ recipients });
+              setRecipientDraft(recipients.join('\n'));
+              patch({ recipients });
             }
           }}><option value="">选择联系人</option>{[...choices.people].map(([id, name]) =>
             <option key={id} value={id}>{name}</option>)}</select></label>}
@@ -116,7 +117,10 @@ export function GrantFields({ value, onChange, choices, disabled = false, lockAc
             </option>)}
           </select></label>}
         <button className="text-button text-button-quiet grant-expiry-toggle" type="button" disabled={disabled}
-          onClick={() => { setExpiry(!expiry); if (expiry) patch({ expiresAt: null }); }}>
+          onClick={() => {
+            setExpiry(!expiry);
+            if (expiry) patch({ expiresAt: null });
+          }}>
           {expiry ? '取消到期时间' : '设置到期时间'}</button>
         {expiry ? <label className="grant-binding">到期时间<input className="field-input" type="datetime-local"
           aria-label="到期时间" disabled={disabled}

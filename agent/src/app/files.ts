@@ -108,7 +108,8 @@ export async function trashFile(context: RequestContext): Promise<Reply> {
 /** GET /v2/files/trash */
 export function listTrash(context: RequestContext): Reply {
   requireAuth(context);
-  const body: TrashListResponse = { entries: context.deps.toolGroups.artifacts.workspace.trashed().map(trashEntryView) };
+  const trashed = context.deps.toolGroups.artifacts.workspace.trashed();
+  const body: TrashListResponse = { entries: trashed.map(trashEntryView) };
   return { status: 200, body };
 }
 

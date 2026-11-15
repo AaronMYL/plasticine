@@ -1,7 +1,7 @@
-import type { NetworkAttachmentsApi } from './network-attachments-client.ts';
 // 客户端用到的接口函数签名（前缀 /v2/，《实施方案》第 5 节）。http/ 的真实现和 fake/ 的内存实现都满足它；
 // 组件不直接 fetch，只经 useApi() 拿到这个对象。请求和响应的形状都是 agent/shared/api 里的。
 
+import type { NetworkAttachmentsApi } from './network-attachments-client.ts';
 import type { ContactsClientApi } from './contacts-client.ts';
 import type { ToolGroupApi } from './tool-groups-client.ts';
 import type { ThingsApi } from './things-client.ts';
@@ -46,14 +46,12 @@ export interface AttachmentsApi {
 import type { SignedResult, SignedSend, SignedTarget } from './signed-targets.ts';
 import type {
   AddFeedItemRequest, AgreementDetail, AgreementListQuery, AgreementListResponse, AnswerAskRequest, AnswerAskResponse,
-  AskAboutRequest, AskAboutResponse, AskListResponse, AskView, BriefItemView, CreateNoteRequest, DailySettingsView,
-  DeferAskRequest, DeferAskResponse, DeviceKeyView, DeviceView, EventHandlers, FeedItemView, FeedListQuery,
-  FeedListResponse, FeedSourcesResponse, FeedSourceView, MemoryBoardQuery, MemoryBoardResponse, MemoryColumn,
-  MemoryEntriesQuery, MemoryEntryDetail, MemoryEntryView, NodeActionView, NodeListResponse, NodeView, NoteMetaView,
-  NoteSearch, NoteView, PushKeyResponse, ReactFeedItemRequest, ReadReturnBriefRequest, ReturnBriefView,
-  RevokeNodeRequest, SaveFeedItemRequest, SaveNoteRequest, SeeBriefItemRequest, SessionView, SetSourceLevelRequest,
-  SubscribePushRequest, SubscribePushResponse, UnsubscribePushRequest, UnsubscribePushResponse,
-  UpdateDailySettingsRequest,
+  AskAboutRequest, AskAboutResponse, AskListResponse, AskView, CreateNoteRequest, DailySettingsView, DeferAskRequest,
+  DeferAskResponse, DeviceKeyView, DeviceView, EventHandlers, FeedItemView, FeedListQuery, FeedListResponse,
+  FeedSourcesResponse, FeedSourceView, MemoryEntryDetail, NodeActionView, NodeListResponse, NodeView, NoteMetaView,
+  NoteSearch, NoteView, PushKeyResponse, ReactFeedItemRequest, RevokeNodeRequest, SaveFeedItemRequest, SaveNoteRequest,
+  SessionView, SetSourceLevelRequest, SubscribePushRequest, SubscribePushResponse, UnsubscribePushRequest,
+  UnsubscribePushResponse, UpdateDailySettingsRequest,
 } from './types.ts';
 
 export interface SessionApi {

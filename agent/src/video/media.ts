@@ -47,7 +47,10 @@ export async function downloadTo(url: string, file: string, signal: AbortSignal,
   return mediaFetcher.read(url, specification(url, maxBytes), signal, async (chunks) => {
     let bytes = 0;
     const counted = async function* () {
-      for await (const chunk of chunks) { bytes += chunk.length; yield chunk; }
+      for await (const chunk of chunks) {
+        bytes += chunk.length;
+        yield chunk;
+      }
     };
     await pipeline(Readable.from(counted()), createWriteStream(file), { signal });
     return bytes;

@@ -81,7 +81,10 @@ export function DockTargetSelector(): ReactNode {
   const [menu, setMenu] = useState<PopoverAnchor | null>(null);
   const mate = roster.mates.find((item) => item.lineId === target.lineId);
   const group = roster.groups.find((item) => item.lineId === target.lineId);
-  const select = (lineId: string): void => { state.dockTargets.choose(lineId); setMenu(null); };
+  const select = (lineId: string): void => {
+    state.dockTargets.choose(lineId);
+    setMenu(null);
+  };
   const main = useMainIdentity();
   return <div className="dock-target-head">
     <button type="button" className="dock-target-button" aria-label="切换对话对象" aria-expanded={menu !== null}

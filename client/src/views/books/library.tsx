@@ -1,9 +1,9 @@
-import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
-import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
-import { libraryBatch } from '../bulk/bulk-api.ts';
 // 图书馆：页头「图书馆」（11-08 图书单独一栏后和第二栏第一行同名）+「n 本 · 在读 n · 标注 n」，排序（最近 / 书名 / 作者）和「导入书」；导入中的书一行一个状态；
 // 「在读」两列（封面、章、进度、上次在哪台设备读、接着读）；「全部」封面格子。整页可以把书拖进来。
 
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection.ts';
+import { libraryBatch } from '../bulk/bulk-api.ts';
 import { StatusGlyph } from '../../shell/glyph.tsx';
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
@@ -201,7 +201,10 @@ export function Library({ phone, navigate }: LibraryProps): ReactNode {
   const reading = sorted.filter(isReading);
   const bulkItems = sorted.map((book) => ({ kind: 'book' as const, id: book.id, title: book.title }));
   const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
-    onChanged: () => { reload(); libraryChanged(); } });
+    onChanged: () => {
+      reload();
+      libraryChanged();
+    } });
   const now = new Date();
   const controls = phone ? (
     <IconButton icon="upload" label="导入书" size={20} onClick={() => picker.current?.click()} />

@@ -28,7 +28,10 @@ export class DockTargets {
   }
   enterPage(pageKey: string, pageKind: string, writerLineId: string | null, available: ReadonlySet<string>): void {
     const current = this.store.get();
-    if (pageKey !== current.pageKey) { this.manualPage = null; this.error.set(null); }
+    if (pageKey !== current.pageKey) {
+      this.manualPage = null;
+      this.error.set(null);
+    }
     const manual = this.manualPage === pageKey && available.has(current.lineId);
     const writer = writerLineId !== null && available.has(writerLineId) ? writerLineId : null;
     const remembered = this.choices.get(pageKind);

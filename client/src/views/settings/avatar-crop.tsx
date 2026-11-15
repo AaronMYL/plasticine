@@ -102,7 +102,8 @@ export function AvatarCrop({ file, shape, onCancel, onSave }: AvatarCropProps): 
     onSave(dataUrl);
   };
   const hole = shape === 'circle'
-    ? `M${VIEW / 2 - FRAME / 2},${VIEW / 2} a${FRAME / 2},${FRAME / 2} 0 1,0 ${FRAME},0 a${FRAME / 2},${FRAME / 2} 0 1,0 -${FRAME},0`
+    ? `M${VIEW / 2 - FRAME / 2},${VIEW / 2} a${FRAME / 2},${FRAME / 2} 0 1,0 ${FRAME},0 `
+      + `a${FRAME / 2},${FRAME / 2} 0 1,0 -${FRAME},0`
     : `M${(VIEW - FRAME) / 2},${(VIEW - FRAME) / 2} h${FRAME} v${FRAME} h-${FRAME} z`;
   return (
     <div className="dialog-layer" role="presentation" onKeyDown={(event) => {
