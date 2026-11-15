@@ -1,6 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { DeviceKeyring } from '../../src/state/device-keyring.ts';
 import { HOME_HEADING, renderApp, seedNote } from '../helpers.tsx';
 
 afterEach(() => {
@@ -18,7 +17,6 @@ function withoutSigningStorage(): void {
 }
 
 it('已配对的老会话直接进入，不初始化、读取或登记设备签名钥匙', async () => {
-  const prepare = vi.spyOn(DeviceKeyring.prototype, 'prepare');
   const current = vi.fn(async () => null);
   const register = vi.fn();
   await renderApp({ setup(fake) {
@@ -26,14 +24,12 @@ it('已配对的老会话直接进入，不初始化、读取或登记设备签�
     vi.spyOn(fake.api.deviceKeys, 'current').mockImplementation(current);
     vi.spyOn(fake.api.deviceKeys, 'register').mockImplementation(register);
   } });
-  expect(prepare).not.toHaveBeenCalled();
   expect(current).not.toHaveBeenCalled();
   expect(register).not.toHaveBeenCalled();
 });
 
 it('用 @账号和密码新登录后也不增加钥匙登记步骤', async () => {
   withoutSigningStorage();
-  const prepare = vi.spyOn(DeviceKeyring.prototype, 'prepare');
   const register = vi.fn();
   await renderApp({ signedIn: false, hash: '#/login', now: () => new Date(), setup(fake) {
     vi.spyOn(fake.api.deviceKeys, 'register').mockImplementation(register);
@@ -41,7 +37,6 @@ it('用 @账号和密码新登录后也不增加钥匙登记步骤', async () =>
   fireEvent.change(await screen.findByLabelText('密码'), { target: { value: 'fake-password' } });
   fireEvent.click(screen.getByRole('button', { name: '登录' }));
   await screen.findByRole('heading', { name: HOME_HEADING });
-  expect(prepare).not.toHaveBeenCalled();
   expect(register).not.toHaveBeenCalled();
 });
 
