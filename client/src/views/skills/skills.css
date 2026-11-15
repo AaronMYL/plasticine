@@ -283,7 +283,7 @@
 }
 
 @keyframes skills-in {
-  from { opacity: 0; transform: translateX(8px); }
+  from { opacity: 0; transform: translateY(4px); }
 }
 
 .skill-preview h3 {

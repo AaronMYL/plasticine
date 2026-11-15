@@ -159,7 +159,7 @@
 @keyframes welcome-rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(4px);
   }
 }
 

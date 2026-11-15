@@ -18,7 +18,7 @@
   color: var(--fg); background: var(--tint2); font-size: var(--text-caption); line-height: 1; font-weight: 500; }
 .grant-avatar-small { width: 20px; height: 20px; font-size: var(--text-tag); }
 .grant-field-editor { display: grid; gap: var(--space-3); padding: var(--space-3) 0 var(--space-1);
-  animation: grant-open var(--motion-fast) var(--ease-out); }
+  animation: grant-open var(--motion-base) var(--ease-out); }
 .grant-field-editor label, .grant-binding { display: grid; gap: var(--space-1); min-width: 0;
   font-size: var(--text-caption);
   color: var(--fg2); }
@@ -52,7 +52,7 @@
 .outbound-grant-row[data-ended='true'] .outbound-grant-title { color: var(--fg3); }
 .outbound-ended { white-space: nowrap; }
 .outbound-inline-edit { padding: var(--space-1) 0 var(--space-4) var(--space-4);
-  animation: grant-open var(--motion-fast) var(--ease-out); }
+  animation: grant-open var(--motion-base) var(--ease-out); }
 .outbound-log { border-bottom: 1px solid var(--line); }
 .outbound-log-row { display: flex; align-items: center; gap: var(--space-3); min-height: 44px; }
 .outbound-log-row time { width: 88px; flex: none; color: var(--fg2); font-size: var(--text-caption);
@@ -65,12 +65,12 @@
   color: var(--fg2); font-size: var(--text-caption); line-height: var(--text-caption-line); }
 .outbound-log-status[data-error='true'] { color: var(--err); }
 .outbound-log-body { padding: var(--space-2) 0 var(--space-4);
-  animation: grant-open var(--motion-fast) var(--ease-out); }
+  animation: grant-open var(--motion-base) var(--ease-out); }
 .outbound-log-body p { margin: 0 0 var(--space-2); color: var(--fg2); font-size: var(--text-caption);
   line-height: var(--text-caption-line); }
 .outbound-log-body pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--sans);
   font-size: var(--text-body); line-height: var(--text-body-line); }
-@keyframes grant-open { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes grant-open { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 600px) {
   .grant-field { grid-template-columns: 56px minmax(0, 1fr); gap: var(--space-2); }
   .grant-duration-control { gap: var(--space-1); }

@@ -42,7 +42,7 @@
 .tool-page:has(.bulk-bar) .tool { flex: 1; }
 .tool > .bulk-bar { margin-top: auto; }
 .bulk-bar { animation: bulk-enter var(--motion-base) var(--ease-out); }
-@keyframes bulk-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bulk-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .bulk-bar { animation: none; } }
 .page:has(> .bulk-bar), .tool-page:has(.bulk-bar) { padding-bottom: var(--space-4); }
 .page.bk-phone:has(> .bulk-bar) { padding-bottom: var(--space-4); }

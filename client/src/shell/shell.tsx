@@ -78,6 +78,7 @@ import './frame.css';
 import './client-update.css';
 import { ContextMenuLayer } from './context-menu.tsx';
 import { useQuoteCommands } from './use-quote-commands.ts';
+import { watchSegmented } from './segmented-slide.ts';
 
 type SheetPanel = Exclude<Panel, { kind: 'settings' } | { kind: 'search' }>;
 
@@ -158,6 +159,8 @@ export function Shell(): ReactNode {
   const route = lastPage.current;
   const section = sectionOf(route);
   const memory = useSectionMemory(route, overlaid);
+  // 分段控件换一项时底块滑过去（11-15 动效一套）。
+  useEffect(() => watchSegmented(document.body), []);
   // 旧地址（#/conversation…、#/messages/plasticine…、#/bookmarks）规整成新的，不多一步历史。
   // 按地址栏此刻的样子规整（不按这一轮渲染时的：设置弹框会在同一轮里把地址换成它自己的）。
   useEffect(() => {

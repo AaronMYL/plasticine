@@ -170,7 +170,7 @@ img.rail-avatar {
 @keyframes rail-update-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(4px);
   }
 }
 

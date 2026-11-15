@@ -597,6 +597,8 @@ textarea.field-input {
 }
 
 .segmented-item {
+  position: relative;
+  isolation: isolate;
   height: 28px;
   padding: 0 var(--space-3);
   border: 0;
@@ -606,14 +608,26 @@ textarea.field-input {
   font-size: var(--text-caption);
   white-space: nowrap;
   cursor: pointer;
+  transition: color var(--motion-base) var(--ease-out);
 }
 
+/* 选中的底块画在 ::before 上：换一项时从旧那一项滑过来（shell/segmented-slide.ts，11-15 动效一套）。 */
 .segmented-item[aria-pressed='true'],
 .segmented-item[aria-current='page'] {
-  background: var(--bg);
-  box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--fg);
   font-weight: 500;
+}
+
+.segmented-item[aria-pressed='true']::before,
+.segmented-item[aria-current='page']::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1; /* 例外：底块垫在这一项的字下面 */
+  border-radius: inherit;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  transform-origin: left center;
+  content: '';
 }
 
 .segmented-item:focus-visible {
@@ -672,6 +686,48 @@ textarea.field-input {
     min-height: var(--touch);
   }
 }
+/*
+ * 动效一套（11-15 Aaron 弹框定，设计稿「动效：一套」）：收起 / 展开——<details> 的内容高度 260 ease-out 展开收起
+ * （浏览器支持 ::details-content 时；不支持的照旧直接开合）；设置里开关下面缩进的细项出现时淡入、升 4px。
+ * 减少动态效果时都不动。
+ */
+@supports selector(::details-content) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size var(--motion-slow) var(--ease-out),
+      content-visibility var(--motion-slow) var(--ease-out) allow-discrete;
+  }
+
+  details[open]::details-content {
+    block-size: auto;
+  }
+}
+
+.set-sub {
+  animation: rise-in var(--motion-base) var(--ease-out);
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  details::details-content,
+  .segmented-item {
+    transition: none;
+  }
+
+  .set-sub {
+    animation: none;
+  }
+}
+
 /*
  * 滚动条一种（11-15 Aaron 弹框定，设计稿「滚动条：一种」，参照微信）：平时看不见；鼠标在哪一块上，那一块的细条出来——
  * 4 宽、圆头、字色 30%，移到条上 8 宽、50%；没有底槽，上下各空 8。用浏览器自己的滚动条：它一直占着右边那条 10 宽的

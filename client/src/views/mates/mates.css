@@ -148,9 +148,9 @@
 /* 「角色 · 画风 · 脸型」切换同一块格子（11-13 设计稿）：三样一样高，切过去不跳；换的时候淡入。 */
 .look-picker-tabs { align-self: flex-start; }
 .look-grid { height: 196px; overflow-y: auto; padding: var(--space-2); border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line); animation: look-grid-in var(--motion-fast) var(--ease-out); }
+  box-shadow: inset 0 0 0 1px var(--line); animation: look-grid-in var(--motion-base) var(--ease-out); }
 .look-grid-fit { height: auto; animation: none; }
-@keyframes look-grid-in { from { opacity: 0; transform: translateY(2px); } }
+@keyframes look-grid-in { from { opacity: 0; transform: translateY(4px); } }
 @media (prefers-reduced-motion: reduce) { .look-grid { animation: none; } }
 /* 手机上一排放五个：画风、脸型四排，格子高一点，一屏看全。 */
 @media (max-width: 600px) { .look-grid { height: 240px; } .look-grid-fit { height: auto; } }

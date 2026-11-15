@@ -1,10 +1,10 @@
-// 第二栏（252 宽）：按栏目换内容。换栏目时新内容淡入并从左边 6px 滑进来（11-07：栏目切换时第二栏内容淡入 + 轻微位移），
+// 第二栏（252 宽）：按栏目换内容。换栏目时新内容淡入并从下方 4px 升上来（11-07 定淡入 + 轻微位移，11-15 动效一套统一方向），
 // 减少动态效果时直接换。11-08 能收起（column-toggle.tsx）：网页收成 56 宽的窄栏（web-strip.tsx），别的栏目宽度收到 0、
 // 里面的东西留着（滚动位置不丢）但不可达；宽度有动画（column.css，减少动态效果时直接变）。
 
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { ArchivedTab } from '../../state/web-tabs.ts';
-import { EASE_OUT, MOTION, play } from '../motion.ts';
+import { EASE_OUT, ENTER_KEYFRAMES, MOTION, play } from '../motion.ts';
 import type { Route } from '../routes.ts';
 import { SECTIONS, type SectionId } from '../sections.ts';
 import { LibraryColumn } from './library-column.tsx';
@@ -16,10 +16,8 @@ import { TasksColumn } from './tasks-column.tsx';
 import { WebColumn } from './web-column.tsx';
 import { WebStrip } from './web-strip.tsx';
 
-const SWITCH_KEYFRAMES: Keyframe[] = [
-  { opacity: 0, transform: 'translateX(-6px)' },
-  { opacity: 1, transform: 'translateX(0)' },
-];
+// 11-15 动效一套（设计稿 19「切换」）：换栏目时新内容和别处切换一样淡入、从下方 4px 升上来。
+const SWITCH_KEYFRAMES: Keyframe[] = ENTER_KEYFRAMES;
 
 export interface ShellColumnProps {
   section: SectionId;
