@@ -8,6 +8,8 @@ import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 export const MOTION = { fast: 120, base: 180, slow: 260 } as const;
 export const EASE_OUT = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
 export const EASE_IN_OUT = 'cubic-bezier(0.4, 0, 0.2, 1)';
+/** 和 tokens.css 的 --ease-spring 一致：弹层、弹框出现时那一点弹性（11-14 规则表「今天放开」）。 */
+export const EASE_SPRING = 'cubic-bezier(0.3, 1.3, 0.6, 1)';
 
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {

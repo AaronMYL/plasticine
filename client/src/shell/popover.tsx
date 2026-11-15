@@ -7,7 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefO
 import { createPortal } from 'react-dom';
 import { HIT_REGION_ATTRIBUTE } from './hit-regions.ts';
 import { Icon, type IconName } from './icons.tsx';
-import { MOTION, play, playThen } from './motion.ts';
+import { EASE_SPRING, MOTION, play, playThen } from './motion.ts';
 import { useDismiss, type DismissReason } from './use-dismiss.ts';
 import './popover.css';
 
@@ -72,7 +72,10 @@ export interface PopoverProps {
 
 const FOCUSABLE = 'input, select, textarea, button:not(:disabled), [tabindex]:not([tabindex="-1"])';
 const MENU_ITEMS = '[role^="menuitem"]:not(:disabled):not([aria-disabled="true"])';
-const ENTER: Keyframe[] = [{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'translateY(0)' }];
+/** 出现（11-14 规则表「今天放开」）：从贴着按钮的那个角轻轻放大、带一点弹性；收起照旧只淡出。 */
+function enterFrames(below: boolean): Keyframe[] {
+  return [{ opacity: 0, transform: `translateY(${below ? -4 : 4}px) scale(0.96)` }, { opacity: 1, transform: 'none' }];
+}
 const LEAVE: Keyframe[] = [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-2px)' }];
 
 /** 菜单里的方向键：上下移一项（到头绕回）、Home / End 到首尾。 */
@@ -140,7 +143,9 @@ export function Popover(props: PopoverProps): ReactNode {
     setPlace(next);
     if (!shown.current) {
       shown.current = true;
-      play(element, ENTER, MOTION.fast);
+      const below = next.top >= anchor.bottom;
+      element.style.transformOrigin = `${props.align === 'end' ? 'right' : 'left'} ${below ? 'top' : 'bottom'}`;
+      play(element, enterFrames(below), MOTION.base, EASE_SPRING);
     }
   }, [anchor, props.align]);
   useDismiss({

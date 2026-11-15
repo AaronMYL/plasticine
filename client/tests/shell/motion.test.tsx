@@ -4,7 +4,8 @@
 import { render } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { canAnimate, playThen, useFlipList } from '../../src/shell/motion.ts';
+import { EASE_SPRING, canAnimate, playThen, useFlipList } from '../../src/shell/motion.ts';
+import { Popover } from '../../src/shell/popover.tsx';
 
 function List({ keys }: { keys: string[] }): ReactNode {
   const list = useRef<HTMLUListElement>(null);
@@ -32,6 +33,16 @@ afterEach(() => {
 });
 
 describe('动效', () => {
+  it('弹层出现：从贴着按钮的那个角轻轻放大、带一点弹性（11-14 规则表「今天放开」）', () => {
+    const animate = installMotion(false);
+    render(<Popover anchor={{ left: 20, top: 20, right: 80, bottom: 40 }} align="end" label="菜单" role="menu"
+      onClose={() => undefined}><button type="button">一项</button></Popover>);
+    const [frames, options] = animate.mock.calls[0] as unknown as [Keyframe[], KeyframeAnimationOptions];
+    expect(String(frames[0]?.transform)).toContain('scale(0.96)');
+    expect(options.easing).toBe(EASE_SPRING);
+    expect(document.querySelector<HTMLElement>('[role="menu"]')?.style.transformOrigin).toBe('right top');
+  });
+
   it('重排：挪了位的从旧位置平移过来，新来的淡入；第一次渲染不动', () => {
     const animate = installMotion(false);
     const view = render(<List keys={['a', 'b', 'c']} />);
