@@ -30,7 +30,7 @@ export class ConversationRegistry {
       const raw = storage?.getItem(INDEX);
       const ids: unknown = raw == null ? null : JSON.parse(raw);
       if (Array.isArray(ids)) for (const id of ids) if (typeof id === 'string') this.forLine(id);
-    } catch { console.warn('各条对话的草稿索引未能读取，请检查浏览器存储。'); }
+    } catch { console.warn('各条对话的草稿索引没读到，请检查浏览器存储。'); }
   }
   private watch(lineId: string, entry: LineComposerState): void {
     this.entries.set(lineId, entry);

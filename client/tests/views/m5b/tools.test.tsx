@@ -262,8 +262,8 @@ describe('记账 · 截图每周汇总', () => {
     const purge = vi.spyOn(app.api.moneyDrafts, 'purgeOriginals');
     fireEvent.click(within(week).getByRole('button', { name: '清掉原图' }));
     expect(purge).not.toHaveBeenCalled();
-    expect(within(week).getByText('删掉这 3 张已记账截图的原图？账目不动，原图删了找不回。')).toBeTruthy();
-    fireEvent.click(within(week).getByRole('button', { name: '删掉原图' }));
+    expect(within(week).getByText('删除这 3 张已记账截图的原图？账目不动，原图删了找不回。')).toBeTruthy();
+    fireEvent.click(within(week).getByRole('button', { name: '删除原图' }));
     await waitFor(() => expect(purge).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(week.textContent).not.toContain('原图 3 张'));
     expect(within(week).queryByRole('button', { name: '清掉原图' })).toBeNull();

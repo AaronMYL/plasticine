@@ -68,7 +68,7 @@ function Checklist({ items, save }: { items: HeartbeatItem[]; save: (next: Heart
           <button type="button" className="heartbeat-grip" aria-label={`拖动排序：${item.text}`}
             onKeyDown={keyMove(index)}><Icon name="grip" size={14} /></button>
           <span className="heartbeat-item-text">{item.text}</span>
-          <button type="button" className="icon-button heartbeat-remove" aria-label={`删掉：${item.text}`}
+          <button type="button" className="icon-button heartbeat-remove" aria-label={`删除：${item.text}`}
             onClick={() => save(items.filter((existing) => existing.id !== item.id))}>
             <Icon name="close" size={14} />
           </button>

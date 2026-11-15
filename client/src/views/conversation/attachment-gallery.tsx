@@ -49,7 +49,7 @@ function Preview({ items, initial, onClose }: { items: readonly AttachmentMedia[
     <header className="attachment-viewer-head"><span>{item.name}</span>
       <span className="text-meta">{fileSize(item.bytes)}</span>
       <AttachmentDownload key={item.id} item={item} />
-      <IconButton icon="close" label="关闭预览" onClick={onClose} /></header>
+      <IconButton icon="close" label="关掉预览" onClick={onClose} /></header>
     <div className="attachment-viewer-body" onTouchStart={(event) => {
       const touch = event.touches[0];
       start.current = touch === undefined ? null : { x: touch.clientX, y: touch.clientY };

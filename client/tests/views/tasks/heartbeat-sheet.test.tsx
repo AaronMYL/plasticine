@@ -30,7 +30,7 @@ describe('心跳的弹层', () => {
     const { app, sheet } = await openHeartbeat();
     fireEvent.change(within(sheet).getByRole('combobox', { name: '多久一次' }), { target: { value: '60' } });
     await waitFor(async () => expect((await app.api.tasks.heartbeat()).config.intervalMinutes).toBe(60));
-    fireEvent.click(within(sheet).getByRole('button', { name: '删掉：信息流里命中关注点的' }));
+    fireEvent.click(within(sheet).getByRole('button', { name: '删除：信息流里命中关注点的' }));
     await waitFor(async () => expect((await app.api.tasks.heartbeat()).config.items).toHaveLength(6));
     fireEvent.keyDown(within(sheet).getByRole('button', { name: '拖动排序：今天到期的项目待办' }), { key: 'ArrowUp' });
     await waitFor(async () => expect((await app.api.tasks.heartbeat()).config.items.map((item) => item.id)

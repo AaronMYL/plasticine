@@ -1,5 +1,5 @@
 // 看图（11-14 界面统一，设计稿「图片：显示和打开」）：一格一格的图点开都是同一个看图层；多过四张第四格写「+n」；
-// 左右键翻，Esc 关，关了焦点回到点开它的那一格；读不出来的图写「图片读不出来 · 重试」。
+// 左右键翻，Esc 关，关了焦点回到点开它的那一格；没读到的图写「图片没读到 · 重试」。
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -44,13 +44,13 @@ describe('看图', () => {
     expect(within(viewer).queryByRole('button', { name: '下一张' })).toBeNull();
   });
 
-  it('读不出来的图写一句，点了重试再读一遍', () => {
+  it('没读到的图写一句，点了重试再读一遍', () => {
     render(<Grid images={pictures(2)} />);
     const first = screen.getAllByRole('img')[0]!;
     fireEvent.error(first);
-    const retry = screen.getByRole('button', { name: /图片读不出来/ });
+    const retry = screen.getByRole('button', { name: /图片没读到/ });
     fireEvent.click(retry);
-    expect(screen.queryByRole('button', { name: /图片读不出来/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /图片没读到/ })).toBeNull();
     expect(screen.getAllByRole('button', { name: /^查看图片/ })).toHaveLength(2);
   });
 

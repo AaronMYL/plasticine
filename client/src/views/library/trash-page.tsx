@@ -114,7 +114,7 @@ export function TrashPage(): ReactNode {
       <BulkFeedback selection={selection} />
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {trash === null && error === null ? <PageLoading page /> : null}
-      {trash !== null && items.length === 0 ? <p className="block-empty">没有删掉的东西。</p> : null}
+      {trash !== null && items.length === 0 ? <p className="block-empty">最近没有删除的东西。</p> : null}
       {items.length === 0 ? null : (
         <ul className="lib-trash-rows">
           {items.map((item) => <TrashRow key={keyOf(item)} item={item} now={now} onRestore={restore}

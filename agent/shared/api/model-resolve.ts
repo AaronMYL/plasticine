@@ -175,7 +175,7 @@ export class ModelResolver {
     }
     if (options.explicitThinking && used !== thinking) {
       const name = this.#find(picked)?.model.name ?? picked.model;
-      return { effective, issue: `${name} 不支持「${THINKING_LABELS[thinking]}」思考，用「${THINKING_LABELS[used]}」。`,
+      return { effective, issue: `${name} 的思考档没有「${THINKING_LABELS[thinking]}」，用「${THINKING_LABELS[used]}」。`,
         thinking };
     }
     return { effective, issue: null, thinking };

@@ -108,7 +108,7 @@ export function useWebPageActions(page: WebPage, native: NativeWebTabs | null, w
     setNotice({ kind: 'busy', text: busyText });
     job().then((next) => setNotice(next)).catch((cause: unknown) => {
       console.warn(failure, cause);
-      setNotice({ kind: 'error', text: `${failure}：${errorText(cause)}。再试一次。` });
+      setNotice({ kind: 'error', text: `${failure}：${errorText(cause)}。请重试。` });
     }).finally(() => {
       busy.current = false;
     });

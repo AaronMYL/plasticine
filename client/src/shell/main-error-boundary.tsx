@@ -19,7 +19,7 @@ export class MainErrorBoundary extends Component<Props, State> {
       <h1>这一页出错了</h1><p>{this.state.error.message}</p>
       <div className="ask-options">
         <button type="button" className="chip-button" onClick={this.props.onHome}>回到今日</button>
-        <button type="button" className="text-button" onClick={() => this.setState({ error: null })}>再试一次</button>
+        <button type="button" className="text-button" onClick={() => this.setState({ error: null })}>重试</button>
       </div>
     </section>;
   }

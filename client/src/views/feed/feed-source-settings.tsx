@@ -112,7 +112,7 @@ function SourceForm({ row, onDone }: { row: FeedNavSource; onDone: () => void })
         <span className="feed-add-hint" />
         <button type="button" className="secondary-button" onClick={onDone}>取消</button>
         <button type="submit" form={formId} className="primary-button" disabled={!changed || busy}>
-          {busy ? '正在存…' : '保存'}</button>
+          {busy ? '正在保存…' : '保存'}</button>
       </SheetFooter>
     </form>
   );

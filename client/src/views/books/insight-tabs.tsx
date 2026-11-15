@@ -34,7 +34,7 @@ function InsightContent(props: InsightStateProps & { currentChapter?: number; to
     body = <p className="bk-generating" role="status">Plasticine 正在逐章归纳…</p>;
   } else if (status === 'failed') {
     body = <div className="bk-insight-empty"><p role="alert">{props.insight?.error}</p>
-      <button type="button" className="primary-button" onClick={() => props.onGenerate(true)}>再试一次</button></div>;
+      <button type="button" className="primary-button" onClick={() => props.onGenerate(true)}>重试</button></div>;
   } else if (status === 'none') {
     body = <div className="bk-insight-empty"><button type="button" className="primary-button"
       onClick={() => props.onGenerate(false)}>生成{name}</button></div>;

@@ -36,7 +36,7 @@ export class AttachmentBytes {
       request.onupgradeneeded = () => request.result.createObjectStore('bytes');
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(new Error('附件草稿暂存不可用，请保留页面后重试。'));
-      request.onblocked = () => reject(new Error('附件暂存正在等待其他页面关闭。'));
+      request.onblocked = () => reject(new Error('附件暂存正在等其他页面关掉。'));
     });
     try {
       return await new Promise<unknown>((resolve, reject) => {

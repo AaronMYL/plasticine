@@ -1,6 +1,6 @@
 // 截图记账的每周汇总（《置信度与做事方式改动方案》第二批「记账直接记」，11-04 他定）：识别清楚的截图直接入账、
 // 新商户标「待看」，都不再弹卡，所以账本顶上一行告诉他这周记了几笔、几笔待看。原图先留着（删除是硬线），
-// 这一行里一键清掉已记账的原图：先说清后果（账目不动、原图找不回），点「删掉原图」才删。
+// 这一行里一键清掉已记账的原图：先说清后果（账目不动、原图找不回），点「删除原图」才删。
 // 这周没有截图记账、也没有留着的原图时整行不出。
 
 import { useEffect, useState, type ReactNode } from 'react';
@@ -68,9 +68,9 @@ export function MoneyWeek(): ReactNode {
       </p>
       {!confirming ? null : (
         <div className="tool-confirm">
-          <p className="money-week-warn">删掉这 {summary.originals} 张已记账截图的原图？账目不动，原图删了找不回。</p>
+          <p className="money-week-warn">删除这 {summary.originals} 张已记账截图的原图？账目不动，原图删了找不回。</p>
           <button type="button" className="primary-button" disabled={working} onClick={() => void purge()}>
-            删掉原图
+            删除原图
           </button>
           <button type="button" className="text-button text-button-quiet" disabled={working}
             onClick={() => setConfirming(false)}>

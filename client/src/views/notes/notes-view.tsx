@@ -278,7 +278,7 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
         <div className="notes-detail" hidden={!showNote}>
             {phone || showList ? null : <div className="notes-detail-bar">{controls}</div>}
             {selection.active ? <div className="note-bulk-detail">
-              <h2>选了 {selection.selected.length} 篇笔记</h2><BulkFeedback selection={selection} />
+              <h2>已选 {selection.selected.length} 篇笔记</h2><BulkFeedback selection={selection} />
             </div> : <OpenNotePane noteId={selectedId} onDeleted={() => {
               if (selectedId !== null) afterDeleted(selectedId);
             }} />}

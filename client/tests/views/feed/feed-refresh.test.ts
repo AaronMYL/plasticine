@@ -59,7 +59,7 @@ describe('寻找新内容的接续', () => {
     first.store.stop();
     await pending;
     expect(first.ops.get('feed:refresh')?.status).toBe('uncertain');
-    expect(first.store.refresh.state.get().error).toContain('服务端已接收的刷新仍继续');
+    expect(first.store.refresh.state.get().error).toContain('服务端已收到的刷新照常进行');
     run.complete();
     const next = run.mount();
     await next.actions.retry('feed:refresh');

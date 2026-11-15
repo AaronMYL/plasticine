@@ -150,7 +150,7 @@ describe('笔记页', () => {
     fireEvent.doubleClick(images[1]!);
     const viewer = await screen.findByRole('dialog', { name: '看图' });
     expect(viewer.textContent).toContain('2 / 2');
-    fireEvent.click(within(viewer).getByRole('button', { name: '关闭' }));
+    fireEvent.click(within(viewer).getByRole('button', { name: '关掉' }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '看图' })).toBeNull());
     expect(screen.queryByRole('button', { name: '放大' })).toBeNull();
     let first = -1;

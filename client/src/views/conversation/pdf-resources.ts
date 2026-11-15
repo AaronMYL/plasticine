@@ -16,7 +16,7 @@ export class LocalPdfResources {
       : assets[`../../../../node_modules/pdfjs-dist/${folder}/${filename}`];
     if (source === undefined) throw new Error('PDF 所需资源未随安装包提供。');
     const response = await fetch(source, { credentials: 'same-origin', cache: 'force-cache' });
-    if (!response.ok) throw new Error('PDF 本地资源读取失败，请重新打开文件。');
+    if (!response.ok) throw new Error('PDF 本地资源没读到，请重新打开文件。');
     return new Uint8Array(await response.arrayBuffer());
   }
 }

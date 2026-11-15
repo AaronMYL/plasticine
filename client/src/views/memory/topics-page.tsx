@@ -93,7 +93,7 @@ function UncertainRow({ item }: { item: UncertainItem }): ReactNode {
           <input className="field-input" aria-label="改成一句对的" placeholder="改成一句对的（可不填）" value={text}
             onChange={(event) => setText(event.target.value)} />
           <button type="submit" className="chip-button">记下</button>
-          <button type="button" className="text-button text-button-quiet" onClick={() => setFixing(false)}>算了</button>
+          <button type="button" className="text-button text-button-quiet" onClick={() => setFixing(false)}>取消</button>
         </form>
       ) : null}
       <UncertainOp item={item} />

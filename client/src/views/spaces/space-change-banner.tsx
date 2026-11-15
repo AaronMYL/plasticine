@@ -24,7 +24,7 @@ function shouldShow(space: SpaceView): boolean {
   try {
     return window.localStorage.getItem(seenKey(space)) === null;
   } catch (cause) {
-    console.warn('修改提示的已读记录读不出来，本次仍显示提示', cause);
+    console.warn('修改提示的已读记录没读到，本次仍显示提示', cause);
     return true;
   }
 }

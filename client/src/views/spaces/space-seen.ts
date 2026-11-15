@@ -9,7 +9,7 @@ function read(): string[] {
     const parsed: unknown = raw === null ? [] : JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
   } catch (cause) {
-    console.warn('看过的空间读不出来，当都没看过', cause);
+    console.warn('看过的空间没读到，当都没看过', cause);
     return [];
   }
 }

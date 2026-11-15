@@ -24,7 +24,7 @@ export class DockTargets {
           if (typeof lineId === 'string') this.choices.set(kind, lineId);
         }
       }
-    } catch { console.warn('上次选择的对话对象未能读取，请检查浏览器存储。'); }
+    } catch { console.warn('上次选择的对话对象没读到，请检查浏览器存储。'); }
   }
   enterPage(pageKey: string, pageKind: string, writerLineId: string | null, available: ReadonlySet<string>): void {
     const current = this.store.get();

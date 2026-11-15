@@ -65,7 +65,7 @@ describe('消息附件画廊', () => {
   });
 });
 
-it('缩略图用于聊天网格，原件用于大图；大图读不出来可以重试', () => {
+it('缩略图用于聊天网格，原件用于大图；大图没读到可以重试', () => {
   Gallery({ items: [{ ...images[0]!, thumbnailUrl: 'https://example.test/thumb.png' }] });
   expect(screen.getByRole('img').getAttribute('src')).toBe('https://example.test/thumb.png');
   fireEvent.click(screen.getByRole('button', { name: '查看图片 草图1.png' }));
@@ -73,7 +73,7 @@ it('缩略图用于聊天网格，原件用于大图；大图读不出来可以�
   const original = dialog.getByRole('img', { name: '草图1.png' });
   expect(original.getAttribute('src')).toBe(images[0]!.url);
   fireEvent.error(original);
-  expect(dialog.getByText('图片读不出来')).toBeTruthy();
+  expect(dialog.getByText('图片没读到')).toBeTruthy();
   fireEvent.click(dialog.getByRole('button', { name: '重试' }));
   expect(dialog.getByRole('img', { name: '草图1.png' }).getAttribute('src')).toBe(images[0]!.url);
 });

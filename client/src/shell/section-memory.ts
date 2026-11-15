@@ -14,7 +14,7 @@ function read(): Partial<Record<SectionId, string>> {
     const parsed: unknown = raw === null ? {} : JSON.parse(raw);
     return typeof parsed === 'object' && parsed !== null ? parsed as Partial<Record<SectionId, string>> : {};
   } catch (cause) {
-    console.warn('栏目上次停在哪读不出来，点入口回到栏目开头', cause);
+    console.warn('栏目上次停在哪没读到，点入口回到栏目开头', cause);
     return {};
   }
 }

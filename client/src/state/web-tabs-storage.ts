@@ -87,7 +87,7 @@ function parse(raw: string | null, what: string): unknown {
   try {
     return JSON.parse(raw);
   } catch (cause) {
-    console.warn(`${what}读不出来，当没有`, cause);
+    console.warn(`${what}没读到，当没有`, cause);
     return null;
   }
 }

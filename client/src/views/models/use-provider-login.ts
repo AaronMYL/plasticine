@@ -134,7 +134,7 @@ export function useProviderLogin(provider: ModelProviderView, onDone: () => void
     }
     onCancel();
   };
-  const failed = error ?? login?.error ?? (login?.status === 'failed' ? '登录没成，再试一次。' : null);
+  const failed = error ?? login?.error ?? (login?.status === 'failed' ? '登录没成，请重试。' : null);
   return { login, route, error: failed, busy, complete, cancel,
     reopen: () => { if (login !== null && route !== null) open(login, route); } };
 }

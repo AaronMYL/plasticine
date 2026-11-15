@@ -1,5 +1,5 @@
 // 设置 · 账号 ·「在别的设备上用」（11-12《首次使用解耦》）：常显后果一句；Cyber Hunter 网络给网址、二维码、复制；
-// 没 @账号说一句去起；我自己的网址只收 https，存了以后再进来默认停在这一边，「不用了」清掉；设备列表写怎么连进来的。
+// 没 @账号说一句去起；我自己的网址只收 https，存了以后再进来默认停在这一边，「移除」清掉；设备列表写怎么连进来的。
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -38,7 +38,7 @@ describe('在别的设备上用', () => {
     expect(within(region).queryByRole('img', { name: /二维码/ })).toBeNull();
   });
 
-  it('自己的网址：http 不收；https 存下，再进来默认这一边；「不用了」清掉', async () => {
+  it('自己的网址：http 不收；https 存下，再进来默认这一边；「移除」清掉', async () => {
     const app = await renderApp({ hash: '#/settings/account', setup: joined });
     const region = await section();
     fireEvent.click(await within(region).findByRole('button', { name: '连法' }));
@@ -52,7 +52,7 @@ describe('在别的设备上用', () => {
     await waitFor(() => expect((within(form).getByLabelText('网址') as HTMLInputElement).value)
       .toBe('https://box.example.test'));
     expect((await app.api.account.ownUrl()).ownUrl).toBe('https://box.example.test');
-    fireEvent.click(within(form).getByRole('button', { name: '不用了' }));
+    fireEvent.click(within(form).getByRole('button', { name: '移除' }));
     await waitFor(async () => expect((await app.api.account.ownUrl()).ownUrl).toBeNull());
   });
 

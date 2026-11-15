@@ -78,7 +78,7 @@ export class ContactEdits {
       if (cause instanceof ApiError) {
         return cause.next === undefined ? cause.message : `${cause.message}${cause.next}`;
       }
-      return '没有改成，再试一次。';
+      return '没有改成，请重试。';
     }
   }
 }

@@ -71,7 +71,7 @@ export function LineActions({ docId, line, onEdit }: { docId: string; line: Memo
           ))}
         </Popover>
       )}
-      {deleting ? <ConfirmDialog title="删除这一条？" body="删掉后 Plasticine 不再用它，也不会再想起来。"
+      {deleting ? <ConfirmDialog title="删除这一条？" body="删除后 Plasticine 不再用它，也不会再想起来。"
         confirmLabel="删除" busy={busy} error={error} onCancel={() => setDeleting(false)}
         onConfirm={() => {
           setBusy(true);

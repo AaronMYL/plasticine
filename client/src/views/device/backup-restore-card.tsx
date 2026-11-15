@@ -129,7 +129,7 @@ export function BackupRestoreCard({ id }: { id: string }): ReactNode {
         </button>
       )}
       {row === null ? (
-        <p>正在读取预览…</p>
+        <p>正在读预览…</p>
       ) : (
         <>
           <h3 className="ask-question">
@@ -144,7 +144,7 @@ export function BackupRestoreCard({ id }: { id: string }): ReactNode {
             </p>
           ))}
           {row.status === 'restored' ? <p>这个对象已恢复为新版本。</p> : null}
-          {row.status === 'rejected' ? <p>这次恢复已关闭，需要恢复时请重新预览。</p> : null}
+          {row.status === 'rejected' ? <p>这次恢复已结束，需要恢复时请重新预览。</p> : null}
           {row.status === 'pending' && row.blocked.length === 0 ? (
             <>
               {localDraft ? <p role="alert">这篇笔记还有本地草稿，请先回笔记页保存或处理冲突。</p> : null}

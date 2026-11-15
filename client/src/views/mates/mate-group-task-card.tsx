@@ -66,7 +66,7 @@ export function MateGroupTaskCard({ line }: { line: LineView }): ReactNode {
         <span className="gt-state">{delivered ? '已交付' : workStatusText(line, timeZone)}</span>
       </div>}
     {unclaimed && expanded ? <p className="nt-delivery">{thread.queue[0]?.text
-      ?? thread.error ?? '任务原文正在读取…'}</p> : null}
+      ?? thread.error ?? '任务原文正在读…'}</p> : null}
     {delivered && result ? <div className="nt-delivery"><Markdown text={result} /></div> : null}
     {unclaimed ? <div className="nt-actions"><button type="button" className="chip-button"
       aria-label="选择领取队友" disabled={locked || members.length === 0}

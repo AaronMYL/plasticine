@@ -67,7 +67,7 @@ export async function saveNotesForRefresh(api: PlasticineApi, state: ClientState
       await saver.flush();
       saver.dispose(false);
     } catch {
-      errors.push('有笔记未能读取或保存，请回笔记页核对');
+      errors.push('有笔记没读到或没保存上，请回笔记页核对');
     }
   }
   if (edits !== state.noteDrafts.edits) {

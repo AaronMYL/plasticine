@@ -45,7 +45,7 @@ export function MainEditor({ phone, onClose }: { phone: boolean; onClose: () => 
         await api.mates.updateMain({ requestId: createRequestId(), name, variant: draft.variant });
         await live.mates.reload();
       } catch (cause) {
-        return cause instanceof ApiError ? cause.message : '名字和头像没有改成，再试一次。';
+        return cause instanceof ApiError ? cause.message : '名字和头像没有改成，请重试。';
       }
     }
     const soulProblem = await soul.save();

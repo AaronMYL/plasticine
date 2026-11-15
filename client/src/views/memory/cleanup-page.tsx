@@ -57,7 +57,7 @@ export function CleanupPage({ onBack }: { onBack?: (() => void) | undefined }): 
   return (
     <div className="page memory-cleanup">
       <PageHeader title="整理清单" onBack={onBack} controls={ready ? <>
-        <span className="text-meta">选了 {chosen.length} 条</span>
+        <span className="text-meta">已选 {chosen.length} 条</span>
         <button type="button" className="secondary-button" disabled={busy} onClick={() => void submit([])}>都不要</button>
         <button type="button" className="primary-button" disabled={busy || chosen.length === 0}
           onClick={() => void submit(chosen)}>采用这 {chosen.length} 条</button>

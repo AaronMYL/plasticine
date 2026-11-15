@@ -32,7 +32,7 @@ export class FeedRefreshTracker {
     });
     return this.pending;
   }
-  stop(): void { this.controller?.abort(new Error('页面连接已关闭，服务端已接收的刷新仍继续。')); }
+  stop(): void { this.controller?.abort(new Error('页面连接断了，服务端已收到的刷新照常进行。')); }
 
   private async run(body: RefreshFeedRequest, signal: AbortSignal): Promise<void> {
     this.state.set({ busy: true, run: null, error: null });

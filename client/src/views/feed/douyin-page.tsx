@@ -211,7 +211,7 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
         : <MoreState loading={state.busy === 'more'} end={false} error={null} onRetry={() => void store.more()} />}
       </div>
       {picking ? <footer className="dy-pick-bar">
-        <span>{picked.size === 0 ? '勾选没整理的' : `选了 ${picked.size} 条`}</span>
+        <span>{picked.size === 0 ? '勾选没整理的' : `已选 ${picked.size} 条`}</span>
         {problem === null ? null : <span className="is-error" role="alert">{problem}</span>}
         <button type="button" className="primary-button button-small" disabled={picked.size === 0 || running}
           onClick={() => void processPicked()}>{`整理这 ${picked.size} 条`}</button>

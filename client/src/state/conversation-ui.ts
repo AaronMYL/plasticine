@@ -64,7 +64,7 @@ export class ConversationUi {
         this.saved = JSON.stringify(parsed);
       }
     } catch {
-      console.warn('刷新前的对话草稿未能读取，请检查浏览器存储。');
+      console.warn('刷新前的对话草稿没读到，请检查浏览器存储。');
     }
     this.store.subscribe(() => {
       if (this.saved !== null && this.saved !== this.draftText()) {

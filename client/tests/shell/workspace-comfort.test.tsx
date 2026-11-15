@@ -16,7 +16,7 @@ it('页面崩溃只显示该区错误，重试可以恢复，外部对话仍可�
   fireEvent.change(screen.getByLabelText('仍能对话'), { target: { value: '继续问' } });
   expect(screen.getByLabelText('仍能对话')).toHaveProperty('value', '继续问');
   broken = false;
-  fireEvent.click(screen.getByRole('button', { name: '再试一次' }));
+  fireEvent.click(screen.getByRole('button', { name: '重试' }));
   expect(screen.getByText('页面恢复')).toBeTruthy();
   log.mockRestore();
 });

@@ -240,7 +240,7 @@ export class PushSwitch {
       this.settle(generation, 'off', null);
     } catch (cause) {
       const reason = errorText(cause);
-      const message = `这台设备已经不再接收；服务端那条登记没删掉（${reason}）它下次推送失败时会自己停用。`;
+      const message = `这台设备已经不再接收；服务端那条登记没删除（${reason}）它下次推送失败时会自己停用。`;
       this.settle(generation, 'off', message);
     }
   }

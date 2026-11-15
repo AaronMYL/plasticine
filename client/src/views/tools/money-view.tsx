@@ -189,7 +189,7 @@ function Ledger({ date, entryId, highlighted }: {
               {/* 删除先说后果再删（第 7 批第 12 条：原来点了直接删）。 */}
               {removing !== entry.id ? null : (
                 <div className="tool-confirm" role="group" aria-label="确认删除这笔账">
-                  <span>删掉这笔账？删了就不再算进收支和资产。</span>
+                  <span>删除这笔账？删除后不再算进收支和资产。</span>
                   <button type="button" className="chip-button" onClick={() => {
                     setRemoving(null);
                     void m5bActions.removeMoney(entry);

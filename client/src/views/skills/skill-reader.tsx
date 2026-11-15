@@ -39,7 +39,7 @@ export function SkillReader({ descriptor }: { descriptor: SkillDescriptor }): Re
         {files.map((file) => <option key={file}>{file}</option>)}
       </select>
     </>}
-    {busy ? <p className="block-empty">正在读取方法…</p> : null}
+    {busy ? <p className="block-empty">正在读方法…</p> : null}
     {error ? <p className="block-empty is-error" role="alert">读取技能失败。{' '}
       <button type="button" className="text-button" onClick={() => setRefresh((value) => value + 1)}>再读一次</button>
     </p> : null}

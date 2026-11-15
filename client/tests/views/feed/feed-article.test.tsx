@@ -52,7 +52,7 @@ describe('博客全文', () => {
     fireEvent.click(within(article).getByRole('button', { name: '查看图片 示意图' }));
     const viewer = await screen.findByRole('dialog', { name: '看图' });
     expect(within(viewer).getByRole('img', { name: '示意图' }).getAttribute('src')).toBe('/v2/mail-image?u=x&e=1&s=y');
-    fireEvent.click(within(viewer).getByRole('button', { name: '关闭' }));
+    fireEvent.click(within(viewer).getByRole('button', { name: '关掉' }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '看图' })).toBeNull());
     expect(card(TITLE).textContent).not.toContain('先说结论');
     fireEvent.click(within(card(TITLE)).getByRole('button', { name: '收起' }));

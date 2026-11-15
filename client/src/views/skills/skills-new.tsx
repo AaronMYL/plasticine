@@ -109,7 +109,7 @@ function Form({ draft, written, onChange, onSave, onDrop, busy, error }: { draft
     {dropping ? <ConfirmDialog title="不要这份草稿？" body="草稿没存，丢了找不回来。" confirmLabel="不要了"
       cancelLabel="接着写" onCancel={() => setDropping(false)} onConfirm={onDrop} /> : null}
     <div className="skill-preview-actions">
-      <button type="submit" className="primary-button" disabled={!ready || busy}>{busy ? '正在存…' : '保存'}</button>
+      <button type="submit" className="primary-button" disabled={!ready || busy}>{busy ? '正在保存…' : '保存'}</button>
       <button type="button" className="secondary-button" disabled={!ready || busy} onClick={() => onSave(true)}>
         保存并试一次</button>
       <button type="button" className="text-button text-button-quiet" disabled={busy}

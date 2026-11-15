@@ -1,7 +1,7 @@
 // 看图层（11-14 界面统一，Aaron 弹框选「按这样做」，设计稿「图片：显示和打开」）：哪里的图点开都是这一个——信息流、
 // 对话附件、回复里的图、小部件、网页卡截图、全文、报告、来信、图书、笔记。盖住整个窗口；顶上一条：第几张 / 共几张、
 // 出处、「打开原文」「下载」「关闭」。← → 翻，Esc 关；滚轮或双指放大，放大后拖着看，双击放大 / 还原。
-// 手机：左上角关闭（44），左右滑翻页，往下滑关掉。读不出来写「图片读不出来」和「重试」。
+// 手机：左上角关闭（44），左右滑翻页，往下滑关掉。读不出来写「图片没读到」和「重试」。
 // 壳里挂一个 ImageViewerHost，别处只调 showImages。
 
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode, type WheelEvent } from 'react';
@@ -125,7 +125,7 @@ function Stage({ image, onFlip, onClose }: { image: ViewerImage; onFlip: (step: 
       }}>
       {failed ? (
         <div className="image-viewer-failed" role="alert">
-          <p>图片读不出来</p>
+          <p>图片没读到</p>
           <button type="button" className="secondary-button" onClick={() => {
             setFailed(false);
             setAttempt(attempt + 1);
@@ -162,7 +162,7 @@ function ImageViewer({ shown, onClose }: { shown: Shown; onClose: () => void }):
         if (event.key === 'ArrowRight') { event.preventDefault(); flip(1); }
       }}>
       <header className="image-viewer-bar">
-        {phone ? <IconButton icon="close" label="关闭" size={20} onClick={onClose} /> : null}
+        {phone ? <IconButton icon="close" label="关掉" size={20} onClick={onClose} /> : null}
         {counter}
         {image.caption === undefined || phone ? null : <span className="image-viewer-caption">{image.caption}</span>}
         <span className="image-viewer-gap" />
@@ -174,7 +174,7 @@ function ImageViewer({ shown, onClose }: { shown: Shown; onClose: () => void }):
           <a className="icon-button" href={image.download.url} download={image.download.name} aria-label="下载"
             data-tip="下载"><Icon name="download" /></a>
         )}
-        {phone ? null : <IconButton icon="close" label="关闭" onClick={onClose} />}
+        {phone ? null : <IconButton icon="close" label="关掉" onClick={onClose} />}
       </header>
       <Stage key={index} image={image} onFlip={flip} onClose={onClose} />
       {count < 2 || phone ? null : <>

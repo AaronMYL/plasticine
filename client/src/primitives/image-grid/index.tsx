@@ -35,7 +35,7 @@ function Cell({ image, index, total, more, cover, style, onOpen }: { image: Grid
     return <button type="button" className="image-cell image-cell-failed" style={style} onClick={() => {
       setFailed(false);
       setAttempt(attempt + 1);
-    }}>图片读不出来 · 重试</button>;
+    }}>图片没读到 · 重试</button>;
   }
   return (
     <button type="button" className="image-cell" style={style} aria-label={label} onClick={onOpen}>

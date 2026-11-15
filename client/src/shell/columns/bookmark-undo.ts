@@ -56,9 +56,9 @@ export function useBookmarkUndo(store: BookmarkStore): BookmarkUndo {
     removing.current = pending;
     setGone({ view, index, error: null });
     pending.catch((cause: unknown) => {
-      console.warn('书签没删掉', cause);
+      console.warn('书签没删除', cause);
       if (removing.current === pending) {
-        setGone({ view, index, error: `没删掉：${errorText(cause)}` });
+        setGone({ view, index, error: `没删除：${errorText(cause)}` });
       }
     });
   };

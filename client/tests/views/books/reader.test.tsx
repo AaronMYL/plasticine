@@ -295,7 +295,7 @@ describe('阅读页 · 标注与讨论', () => {
     expect(sent).toContainEqual({ pz: 'space', type: 'book-position', bookId: 'book_fusheng', chapter: 1 });
   });
 
-  it('没有大纲的书：生成 → 「Plasticine 正在逐章归纳…」→ 失败写服务端的原因和「再试一次」', async () => {
+  it('没有大纲的书：生成 → 「Plasticine 正在逐章归纳…」→ 失败写服务端的原因和「重试」', async () => {
     const app = await reader({ hash: '#/books/book_cihua' });
     app.control.books.failNextInsight('模型这会儿连不上');
     fireEvent.click(screen.getByRole('button', { name: /标注与讨论，/ }));
@@ -305,6 +305,6 @@ describe('阅读页 · 标注与讨论', () => {
       fireEvent.click(await within(sheet).findByRole('button', { name: '生成大纲' }));
     });
     await within(sheet).findByText(/模型这会儿连不上/);
-    expect(within(sheet).getByRole('button', { name: '再试一次' })).toBeTruthy();
+    expect(within(sheet).getByRole('button', { name: '重试' })).toBeTruthy();
   });
 });

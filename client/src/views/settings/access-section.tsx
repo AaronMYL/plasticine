@@ -3,7 +3,7 @@
 //   我自己的网址：他用 Tailscale、隧道或反向代理把一个 https 网址转到这台电脑，存在这里（只收 https）。
 // 常显一句后果「登录的人能用这台电脑做事」：连进来的人能替他动这台电脑，这句不收进 ⓘ。
 // 11-14 设置页一种行（Aaron 弹框选）：「连法」一行下拉；网络那边「网址」一行（行尾复制）、「手机扫码」一行「二维码 ›」，
-// 点开在下面出二维码；自己的网址那边框在下、「不用了 · 保存」靠右。
+// 点开在下面出二维码；自己的网址那边框在下、「移除 · 保存」靠右。
 
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
@@ -70,7 +70,7 @@ function OwnWay({ saved, onSaved }: { saved: string | null; onSaved: (view: OwnU
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       <div className="set-actions">
         {saved !== null && !changed ? (
-          <button type="button" className="secondary-button" disabled={busy} onClick={() => save(null)}>不用了</button>
+          <button type="button" className="secondary-button" disabled={busy} onClick={() => save(null)}>移除</button>
         ) : null}
         <button type="submit" className="primary-button" disabled={busy || !changed}>保存</button>
       </div>

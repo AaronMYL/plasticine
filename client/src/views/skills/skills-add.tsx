@@ -63,7 +63,7 @@ function Store({ picked, onPick, turn }: { picked: string | null; onPick: (skill
     && `${skill.title} ${skill.name} ${skill.description}`.toLowerCase().includes(query.trim().toLowerCase()));
   if (error !== null) {
     return <p className="block-empty is-error" role="alert">{error}{' '}
-      <button type="button" className="text-button" onClick={() => setRetry((value) => value + 1)}>再试一次</button></p>;
+      <button type="button" className="text-button" onClick={() => setRetry((value) => value + 1)}>重试</button></p>;
   }
   if (skills === null) { return <PageLoading rows={3} dense />; }
   return <>

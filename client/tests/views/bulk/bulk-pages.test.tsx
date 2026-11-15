@@ -15,7 +15,7 @@ it('笔记多选会替换阅读区，移动后列表与最近删除数量同步'
   } });
   await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: '全选' }));
-  expect(screen.getByRole('heading', { name: '选了 2 篇笔记' })).toBeTruthy();
+  expect(screen.getByRole('heading', { name: '已选 2 篇笔记' })).toBeTruthy();
   expect(document.querySelector('.note-row[aria-current="true"]')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: '移到…' }));
   fireEvent.change(screen.getByLabelText('目标文件夹'), { target: { value: '归档' } });
