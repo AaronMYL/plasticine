@@ -147,7 +147,7 @@ export async function runCleanup(state: CleanupState, models: TextModels, cleanu
  * 没给段时：那边也有这一段就不变，没有就进那边的第一段。Plasticine 试出来的行只能留在做事经验里。
  */
 export function moveLine(state: CleanupState, line: MemoryLine, toDocId: string, writer: Writer,
-  toSection?: MemoryLineSection): MemoryLine {
+  toSection?: MemoryLineSection, eventDetail: Record<string, unknown> = {}): MemoryLine {
   return state.transaction(() => {
     const target = state.memoryDocs.docs.require(toDocId);
     if (line.basis === 'tried' && target.kind !== 'how') {
@@ -163,7 +163,7 @@ export function moveLine(state: CleanupState, line: MemoryLine, toDocId: string,
       writtenBy: writer.actor, writtenRef: writer.ref, ...scopeOf(line) });
     docEvent(state, line.docId, line.id, 'line_retired', writer, { reason: 'moved', movedTo: toDocId });
     docEvent(state, toDocId, written.id, 'line_added', writer, { movedFrom: line.docId, replaced: line.id,
-      fromSection: line.section, section });
+      fromSection: line.section, section, ...eventDetail });
     return written;
   });
 }

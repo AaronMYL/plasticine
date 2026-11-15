@@ -337,6 +337,10 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'memory') {
       seedMemoryScene({ mates, soul, souls }, now());
     }
+    // ?scene=layers：刚搬过一次家（11-15 记忆分层的搬家记录截图用）。
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'layers') {
+      memoryTopics.moveLayers(['周末不排任何工作提醒', '晚上十点以后', '先给结论'], new Date());
+    }
     // ?scene=team：四位队友、一个群组、各种状态的事（11-13 分工面板截图用）。
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'team') {
       void seedTeamScene({ mates, lines }, now());

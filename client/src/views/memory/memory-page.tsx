@@ -18,6 +18,7 @@ import { DreamPage } from './dream-page.tsx';
 import { RulesMovePage } from './rules-move-page.tsx';
 import { ObjectFocus } from './object-focus.tsx';
 import { PendingCognition } from './pending-cognition.tsx';
+import { LayersMovePage } from './layers-move-page.tsx';
 import { TopicDocPage } from './topic-doc.tsx';
 import { TopicsPage } from './topics-page.tsx';
 import './memory.css';
@@ -58,6 +59,7 @@ export function MemoryPage(props: MemoryPageProps): ReactNode {
   }
   if (route.memoryConflicts === true) return <ConflictsPage navigate={navigate} onBack={onBack} />;
   if (route.memoryCleanup === true) return <CleanupPage onBack={onBack} />;
+  if (route.memoryLayers === true) return <LayersMovePage navigate={navigate} onBack={onBack} />;
   // 规则（原 Soul，11-11）：第13批起是规则搬家——#/memory/rules、只对某位队友的规则、规则那份文档、旧的约定和词表
   // 地址都到这里，勾了的搬进各自的 Soul 或「关于你」。
   if (route.memoryRules === true || route.topicId === RULES_DOC_ID || route.termId === null

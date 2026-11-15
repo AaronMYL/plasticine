@@ -9,7 +9,7 @@ import {
 } from '../../shared/api/maintenance.ts';
 import type { RuleMode } from '../../shared/state.ts';
 import { CloudToolError, type RefetchReport } from '../cloud-tools/index.ts';
-import { addClaudeItems, moveLine, rewriteRules } from '../memory/index.ts';
+import { addClaudeItems, applyLayersMove, ensureMemoryDocs, moveLine, rewriteRules } from '../memory/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
 
 export interface MaintenanceDeps {
@@ -104,6 +104,19 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
       throw new MaintenanceFailure('invalid_input', '「memory.move」要给 --plan（挪哪几行）。');
     }
     return moveMemoryLines(deps.state, request.moves, `maintenance:${request.operationId}`);
+  }
+  if (request.op === 'memory.layers') {
+    if (request.moves === undefined && request.agreements === undefined) {
+      throw new MaintenanceFailure('invalid_input', '「memory.layers」要给 --plan（挪哪几行、哪几条旧约定）。');
+    }
+    ensureMemoryDocs(deps.state);
+    try {
+      return applyLayersMove(deps.state, { moves: request.moves ?? [], agreements: request.agreements ?? [] },
+        request.operationId);
+    } catch (error) {
+      if (error instanceof StateError) throw error;
+      throw new MaintenanceFailure('invalid_input', error instanceof Error ? error.message : String(error));
+    }
   }
   if (request.op === 'memory.cleanup.add') {
     if (request.adds === undefined) {
@@ -203,6 +216,7 @@ function record(state: StateService, request: MaintenanceRequest, quote: string,
   const args = { code: request.code ?? null, mode: request.mode ?? null, limit: request.limit ?? null,
     plan: request.plan ?? null, ...(request.moves === undefined ? {} : { moves: request.moves }),
     ...(request.adds === undefined ? {} : { adds: request.adds }),
+    ...(request.agreements === undefined ? {} : { agreements: request.agreements }),
     ...(request.ids === undefined ? {} : { ids: request.ids }),
     ...(request.sources === undefined ? {} : { sources: request.sources }) };
   state.maintenanceOperations.record({ id: request.operationId, op: request.op, args, because: quote, result });

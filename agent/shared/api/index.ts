@@ -30,6 +30,7 @@ export * from './memory.ts';
 export * from './memory-docs.ts';
 export * from './memory-conflicts.ts';
 export * from './memory-grants.ts';
+export * from './memory-layers.ts';
 export * from './memory-manage.ts';
 export * from './notes.ts';
 export * from './books.ts';

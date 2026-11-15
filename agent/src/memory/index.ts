@@ -7,6 +7,8 @@
 // Soul 不在这里（mates/）。只经 state/ 读写库，模型调用经 kernel/ 的 TextModels。
 
 export { addClaudeItems, applyCleanup, moveLine, runCleanup, startCleanup } from './curation/memory-cleanup.ts';
+export { applyLayersMove, layersMoveView, undoLayersMove } from './curation/layers-move.ts';
+export type { LayersMove, LayersMoveItem, LayersPlan } from './curation/layers-move.ts';
 export { looksLikeSecret, sameThing } from './curation/memory-curation-ops.ts';
 export type { CurationSource } from './curation/memory-curation-ops.ts';
 export type { CurationState } from './curation/memory-curation-work.ts';

@@ -212,6 +212,11 @@ function createLineStore(context: StoreContext) {
     /** 一份文档的归档，最近归档的在前。 */
     archived: (docId: string): MemoryLine[] => allPages((page) =>
       store.select(`doc_id = $doc_id AND ${ARCHIVED}`, { doc_id: docId }, page, 'archived_at DESC, id')),
+    /** 接替这一行的那一行（改过、挪过以后的新行）；没有就是 undefined。 */
+    successor(id: string): MemoryLine | undefined {
+      return store.select(`EXISTS (SELECT 1 FROM json_each(memory_doc_lines.supersedes) WHERE value = $id)`, { id },
+        { limit: 1 }, 'created_at DESC, id')[0];
+    },
     /** 所有文档的归档（「以前怎么定的」搜它）。 */
     allArchived: (): MemoryLine[] => allPages((page) =>
       store.select(ARCHIVED, {}, page, 'archived_at DESC, id')),

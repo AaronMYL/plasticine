@@ -4,9 +4,10 @@
 // - 规则搬家的提示条（第13批）：原来的「队友」一节（只对它的规则）去掉，规则还没搬完时在页面最上面提示。
 
 import type { ReactNode } from 'react';
-import { cleanupRoute, soulRoute, type Route } from '../../shell/routes.ts';
+import { cleanupRoute, layersMoveRoute, soulRoute, type Route } from '../../shell/routes.ts';
 import { Icon } from '../../shell/icons.tsx';
 import type { CleanupState } from './use-cleanup.ts';
+import { useLayersMove } from './layers-move-page.tsx';
 import { useRulesMove } from './use-rules-move.ts';
 import './rules-move.css';
 import { timeText } from '../../shell/time-text.ts';
@@ -54,6 +55,25 @@ export function MemoryOverview({ cleanup, navigate, now = new Date(), children }
  * 规则搬家的提示条（第13批设计稿 Memory）：「规则」里还有没搬的才出现，点「去勾」进规则搬家；都搬完了就没有了。
  * 原来这里是「队友」一节（点进去是只对它的规则），队友的规则并进各自的 Soul 以后去掉。
  */
+/**
+ * 记忆分层的搬家提示条（11-15 设计稿）：Claude 把现有记忆按层分好搬过去以后的 7 天里，目录顶上一条——搬了几条、
+ * 「看一下」进搬家记录（每条能搬回去）。没搬过、都搬回去了、过了 7 天（服务端不再给这份记录）就没有了。
+ */
+export function LayersMoveBanner({ navigate }: { navigate: (route: Route) => void }): ReactNode {
+  const { move } = useLayersMove();
+  const count = move?.items.length ?? 0;
+  if (move === null || count === 0) {
+    return null;
+  }
+  return (
+    <div className="banner rules-move-banner" role="region" aria-label="记忆分层">
+      <p className="banner-text rules-move-banner-text"><strong>记忆分好层了：搬了 {count} 条。</strong>
+        原来混在「关于你」和旧约定里的，各回各处。</p>
+      <button type="button" className="text-button" onClick={() => navigate(layersMoveRoute())}>看一下</button>
+    </div>
+  );
+}
+
 export function RulesMoveBanner({ navigate }: { navigate: (route: Route) => void }): ReactNode {
   const count = useRulesMove().data?.items.length ?? 0;
   if (count === 0) return null;

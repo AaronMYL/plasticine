@@ -176,6 +176,8 @@ export interface NewLine {
   migrated?: boolean;
   scopeKind?: MemoryScopeKind;
   scopeRef?: string | null;
+  /** 「加了一行」那条事件里多带的几样（记忆分层搬家：这一行是哪一批、从哪条旧约定来的）。 */
+  eventDetail?: Record<string, unknown>;
 }
 
 /** 一行的适用范围，改写、合并、恢复时照抄（11-11）。 */
@@ -204,7 +206,8 @@ export function addLine(state: DocState, line: NewLine, writer: Writer): MemoryL
       basis: line.basis, anchors: line.anchors, inferenceId: line.inferenceId ?? null, writtenBy: writer.actor,
       writtenRef: writer.ref, scopeKind: line.scopeKind ?? 'all', scopeRef: line.scopeRef ?? null },
     { migratedDefault: line.migrated ?? false });
-    docEvent(state, line.docId, written.id, 'line_added', writer, { section: written.section, basis: written.basis });
+    docEvent(state, line.docId, written.id, 'line_added', writer, { section: written.section, basis: written.basis,
+      ...line.eventDetail });
     return written;
   });
 }

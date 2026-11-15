@@ -8,11 +8,13 @@ import { ApiError } from '../errors.ts';
 import {
   GRANTS_DOC_ID, groupMemoryTopics, hardLines, PROACTIVE_DOC_ID, RULES_DOC_ID, type AddMemoryLineRequest,
   type AnswerUncertainRequest, type ApplyCleanupRequest, type ApplyCleanupResponse, type ChooseDreamChangeRequest,
-  type EditMemoryLineRequest, type LatestCleanupResponse, type LoopGrantView, type MemoryDreamChangeView,
+  type EditMemoryLineRequest, type LatestCleanupResponse, type LayersMoveResponse, type LoopGrantView,
+  type MemoryDreamChangeView,
   type MemoryDreamSummary, type MemoryDreamView, type MemoryGrantsResponse, type MemorySearchResponse,
   type MemoryTopicDoc, type MemoryTopicListResponse, type MemoryTopicView, type MoveMemoryLineRequest,
   type RetireMemoryLineRequest, type RevokeLoopGrantRequest, type RulesOfferItem, type SoulView,
   type StartCleanupRequest, type Tier, type UncertainItem, type UndoDreamChangeRequest,
+  type UndoLayersMoveRequest,
 } from '../shared.ts';
 import type { WithdrawnLine } from '../things-client.ts';
 import type { FakeReceipts } from './receipts.ts';
@@ -38,6 +40,9 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
   private dreamView: MemoryDreamView | null = null;
   /** 点过「以后直接做」的几类（承诺和授权里和他说的排在一起）。 */
   private loop: LoopGrantView[] = [];
+  /** 记忆分层的搬家：搬过去的行和它原来在哪一页；没搬过 movedAt 是 null。 */
+  private moved: { lineId: string; fromDocId: string }[] = [];
+  private movedAt: string | null = null;
   /** 11-11：改、删、加、挪和全量整理。 */
   readonly edits = new FakeMemoryEdits(() => this.topics, () => this.deps.now());
 
@@ -148,6 +153,62 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
   async withdrawn(docId: string): Promise<WithdrawnLine[]> {
     this.deps.session.require();
     return this.edits.withdrawn(docId);
+  }
+
+  /**
+   * 造一次记忆分层的搬家（测试、设计走查用）：「关于你」里含这几段字的行挪到主动告诉你的「别提的」。
+   * 真服务端是 Claude 经维护入口搬的，界面只读记录、搬回去。
+   */
+  moveLayers(texts: readonly string[], at: Date = this.deps.now()): void {
+    const from = this.topics.find((seed) => seed.topic.id === 't_you');
+    if (from === undefined) return;
+    for (const section of from.sections) {
+      for (const line of [...section.lines]) {
+        if (!texts.some((text) => line[0].includes(text))) continue;
+        const moved = this.edits.metaOf(line);
+        if (moved === undefined) continue;
+        const lineId = this.edits.move('t_you', moved.id, moved.version, PROACTIVE_DOC_ID, 'never');
+        this.moved.push({ lineId, fromDocId: 't_you' });
+      }
+    }
+    this.movedAt = at.toISOString();
+  }
+
+  private layersView(): LayersMoveResponse {
+    // 和服务端一样：搬之前的样子留 7 天。
+    if (this.movedAt === null || Date.now() - Date.parse(this.movedAt) > 7 * 86_400_000) {
+      return { move: null };
+    }
+    const items = this.moved.flatMap((row) => {
+      const found = this.edits.find(row.lineId);
+      const section = found?.section.section;
+      return found === undefined || section === undefined ? [] : [{ lineId: row.lineId, text: found.line[0],
+        toDocId: found.seed.topic.id, toTitle: found.seed.topic.title, section,
+        fromTitle: this.titleOf(row.fromDocId) }];
+    });
+    const total = this.topics.reduce((sum, seed) => sum + seed.topic.lineCount, 0);
+    return { move: { at: this.movedAt, items, kept: Math.max(0, total - items.length) } };
+  }
+
+  async layersMove(): Promise<LayersMoveResponse> {
+    this.deps.session.require();
+    return this.layersView();
+  }
+
+  async undoLayersMove(input: UndoLayersMoveRequest): Promise<LayersMoveResponse> {
+    this.deps.session.require();
+    return this.deps.receipts.run('save', input.requestId, 'memory-layers-undo', () => {
+      const chosen = this.moved.filter((row) => input.lineIds === undefined || input.lineIds.includes(row.lineId));
+      for (const row of chosen) {
+        const found = this.edits.find(row.lineId);
+        const meta = found === undefined ? undefined : this.edits.metaOf(found.line);
+        if (found !== undefined && meta !== undefined) {
+          this.edits.move(found.seed.topic.id, row.lineId, meta.version, row.fromDocId);
+        }
+      }
+      this.moved = this.moved.filter((row) => !chosen.includes(row));
+      return this.layersView();
+    });
   }
 
   async grants(): Promise<MemoryGrantsResponse> {

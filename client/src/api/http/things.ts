@@ -4,7 +4,8 @@
 import type { MemoryTopicsApi, ThingsApi } from '../things-client.ts';
 import {
   ApplyCleanupResponseSchema, LatestCleanupResponseSchema, MEMORY_CLEANUPS_PATH, MEMORY_DOCS_PATH, MEMORY_DREAMS_PATH,
-  MEMORY_GRANTS_PATH, MEMORY_LOOP_GRANT_REVOKE_PATH, MEMORY_SEARCH_PATH, MEMORY_TOPICS_PATH, memoryCleanupApplyPath,
+  LayersMoveResponseSchema, MEMORY_GRANTS_PATH, MEMORY_LAYERS_MOVE_PATH, MEMORY_LAYERS_MOVE_UNDO_PATH,
+  MEMORY_LOOP_GRANT_REVOKE_PATH, MEMORY_SEARCH_PATH, MEMORY_TOPICS_PATH, memoryCleanupApplyPath,
   MemoryDocResponseSchema, MemoryDreamChangeViewSchema, MemoryDreamViewSchema, MemoryGrantsResponseSchema,
   memoryLineMovePath, memoryLinesPath, MemorySearchResponseSchema, MemoryTopicDocSchema, MemoryTopicListResponseSchema,
 } from '../shared.ts';
@@ -61,6 +62,10 @@ export function createThingsHttp(transport: Transport): ThingsApi {
       schema: MemoryGrantsResponseSchema, what: '读放过手的几类', lostAs: 'failed', signal }),
     revokeLoopGrant: (input) => transport.request({ method: 'POST', path: MEMORY_LOOP_GRANT_REVOKE_PATH, body: input,
       schema: MemoryGrantsResponseSchema, what: '收回这一类', lostAs: 'uncertain' }),
+    layersMove: (signal) => transport.request({ method: 'GET', path: MEMORY_LAYERS_MOVE_PATH,
+      schema: LayersMoveResponseSchema, what: '读搬家记录', lostAs: 'failed', signal }),
+    undoLayersMove: (input) => transport.request({ method: 'POST', path: MEMORY_LAYERS_MOVE_UNDO_PATH, body: input,
+      schema: LayersMoveResponseSchema, what: '搬回去', lostAs: 'uncertain' }),
     cleanup: (signal) => transport.request({ method: 'GET', path: `${MEMORY_CLEANUPS_PATH}/latest`,
       schema: LatestCleanupResponseSchema, what: '读整理清单', lostAs: 'failed', signal }),
     startCleanup: async (input) => {

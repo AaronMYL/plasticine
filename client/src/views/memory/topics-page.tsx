@@ -25,7 +25,7 @@ import { conflictsRoute, mainLineRoute, type Route } from '../../shell/routes.ts
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
 import { MemorySearch } from './memory-search.tsx';
-import { CleanupButton, MemoryOverview, RulesMoveBanner } from './memory-overview.tsx';
+import { CleanupButton, LayersMoveBanner, MemoryOverview, RulesMoveBanner } from './memory-overview.tsx';
 import { useCleanup } from './use-cleanup.ts';
 import { uncertainKey } from './topics-store.ts';
 import './topics.css';
@@ -207,6 +207,7 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
       {searching ? <MemorySearch.Results query={query} navigate={navigate} /> : list === null
         ? <PageLoading /> : (
           <>
+            <LayersMoveBanner navigate={navigate} />
             <RulesMoveBanner navigate={navigate} />
             <MemoryOverview cleanup={cleanup} navigate={navigate}>
               <ConflictsEntry navigate={navigate} />

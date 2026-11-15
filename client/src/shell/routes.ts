@@ -92,6 +92,8 @@ export interface Route {
   memoryConflicts?: boolean;
   /** 全量整理的清单（#/memory/cleanup，11-11）。 */
   memoryCleanup?: boolean;
+  /** 记忆分层的搬家记录（#/memory/layers，11-15）。 */
+  memoryLayers?: boolean;
   /**
    * 设置弹框开在哪一段（#/settings/<段>，2026-11-05 起设置不占标签：这种地址只用来开弹框，壳认到就开、地址换回当前标签的）。
    * 旧段名（feed、network…）和旧地址 #/device 都映射到新的五段，见 settingsLink。
@@ -303,6 +305,7 @@ export function parseHash(hash: string): Route {
   if (view === 'memory' && id === 'rules') return soulRoute(sub === undefined ? null : decodedOrNull(sub));
   if (view === 'memory' && id === 'conflicts') return conflictsRoute();
   if (view === 'memory' && id === 'cleanup') return cleanupRoute();
+  if (view === 'memory' && id === 'layers') return layersMoveRoute();
   if (view === 'projects') {
     return { view, noteId: null, projectId: id === undefined ? null : decodedOrNull(id) };
   }
@@ -376,6 +379,10 @@ export function soulRoute(mateId: string | null = null): Route {
 
 export function cleanupRoute(): Route {
   return { view: 'memory', noteId: null, memoryCleanup: true };
+}
+
+export function layersMoveRoute(): Route {
+  return { view: 'memory', noteId: null, memoryLayers: true };
 }
 
 export function conflictsRoute(): Route {
@@ -532,6 +539,7 @@ export function routeHash(route: Route): string {
   }
   if (route.view === 'memory' && route.memoryConflicts === true) return '#/memory/conflicts';
   if (route.view === 'memory' && route.memoryCleanup === true) return '#/memory/cleanup';
+  if (route.view === 'memory' && route.memoryLayers === true) return '#/memory/layers';
   if (route.view === 'memory' && route.objectType === 'agreement' && route.objectId == null) {
     return '#/memory/agreements';
   }

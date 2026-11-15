@@ -6,9 +6,10 @@
 
 import type {
   AddMemoryLineRequest, ApplyCleanupRequest, ApplyCleanupResponse, ChooseDreamChangeRequest, EditMemoryLineRequest,
-  LatestCleanupResponse, MemoryDreamChangeView, MemoryDreamView, MemoryGrantsResponse, MemoryLineSection,
+  LatestCleanupResponse, LayersMoveResponse, MemoryDreamChangeView, MemoryDreamView, MemoryGrantsResponse,
+  MemoryLineSection,
   MemorySearchResponse, MemoryTopicDoc, MemoryTopicListResponse, MoveMemoryLineRequest, RetireMemoryLineRequest,
-  RevokeLoopGrantRequest, StartCleanupRequest, UndoDreamChangeRequest,
+  RevokeLoopGrantRequest, StartCleanupRequest, UndoDreamChangeRequest, UndoLayersMoveRequest,
 } from './shared.ts';
 
 /** 收回过的一行（承诺和授权最下面「已收回」）：还看得到，能恢复成新的一行。 */
@@ -48,6 +49,11 @@ export interface MemoryTopicsApi {
   grants(signal?: AbortSignal): Promise<MemoryGrantsResponse>;
   /** POST /v2/memory/grants/loop/revoke：收回一类。 */
   revokeLoopGrant(input: RevokeLoopGrantRequest): Promise<MemoryGrantsResponse>;
+  // ---- 11-15 记忆分层：搬家记录（shared/api/memory-layers.ts） ----
+  /** GET /v2/memory/layers-move：最近一次搬家搬了哪些；没搬过 move 是 null。 */
+  layersMove(signal?: AbortSignal): Promise<LayersMoveResponse>;
+  /** POST /v2/memory/layers-move/undo：搬回去（不给 lineIds 是全部）。 */
+  undoLayersMove(input: UndoLayersMoveRequest): Promise<LayersMoveResponse>;
   /** GET /v2/memory/cleanups/latest */
   cleanup(signal?: AbortSignal): Promise<LatestCleanupResponse>;
   /** POST /v2/memory/cleanups */

@@ -298,3 +298,67 @@
 .memory-proactive > .doc-back {
   margin-bottom: calc(-1 * var(--space-3));
 }
+
+/* ---------- 搬家记录（#/memory/layers） ---------- */
+
+.layers-banner-text {
+  margin: 0;
+}
+
+.layers-moved {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.layers-moved-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--line);
+}
+
+.layers-moved-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.layers-moved-from {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.layers-moved-undo {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* 电脑上「搬回去」鼠标移到那一行才出；触屏常显。 */
+@media (hover: hover) {
+  .layers-moved-undo {
+    opacity: 0;
+  }
+
+  .layers-moved-row:hover .layers-moved-undo,
+  .layers-moved-undo:focus-visible {
+    opacity: 1;
+  }
+}
+
+.layers-kept {
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--fg2);
+}

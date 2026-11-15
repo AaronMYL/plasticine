@@ -3,7 +3,7 @@
 // 记进 maintenance_operations；同一个操作号重放只回原来的结果，不再动一次。
 
 import { Type, type Static } from 'typebox';
-import { RULE_MODES } from '../state.ts';
+import { MEMORY_LINE_SECTIONS, RULE_MODES } from '../state.ts';
 import { SOUL_SECTIONS } from './soul.ts';
 
 /**
@@ -21,6 +21,9 @@ export const MAINTENANCE_OPS = [
   // 等他勾选（memory.cleanup.add）。
   'memory.move',
   'memory.cleanup.add',
+  // 11-15 记忆分层：Aaron 同意线上记忆搬家由 Claude 做——现有的行按层挪到承诺和授权、主动告诉你、做事经验，在用的
+  // 旧约定写成承诺和授权里的行；搬了什么记忆页有一页记录，每条能搬回去。
+  'memory.layers',
   // 11-12 全量优化：Aaron 同意把「建议」里堆着的半句话收起（忽略）；按 id 收，结果里记下收了哪几条、原来什么状态。
   'suggestions.dismiss',
   // 11-12 全量优化：Aaron 同意把消息里「采访、巡查、反馈」这几行旧功能留下的归档（不删，还在收信的「已归档」里）。
@@ -29,15 +32,27 @@ export const MAINTENANCE_OPS = [
 export type MaintenanceOp = (typeof MAINTENANCE_OPS)[number];
 
 export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['rules.mode', 'mail.refetch', 'rules.rewrite',
-  'memory.move', 'memory.cleanup.add', 'suggestions.dismiss', 'inbox.archive'];
+  'memory.move', 'memory.cleanup.add', 'memory.layers', 'suggestions.dismiss', 'inbox.archive'];
 
 /** memory.move 的一项：这一行挪到 toDocId。 */
 export const MemoryMoveItemSchema = Type.Object({
   lineId: Type.String({ minLength: 1, maxLength: 80 }),
   version: Type.Integer({ minimum: 1 }),
   toDocId: Type.String({ minLength: 1, maxLength: 80 }),
+  /** 挪到那一篇的哪一段；不写就是那边也有的同一段，没有就进第一段。toDoc 写 how:<名字> 是做事经验里那一篇（没有就建）。 */
+  section: Type.Optional(Type.Enum(MEMORY_LINE_SECTIONS)),
 }, { additionalProperties: false });
 export type MemoryMoveItem = Static<typeof MemoryMoveItemSchema>;
+
+/** memory.layers 里一条旧约定：写成承诺和授权（或 toDocId 那一篇）里的一行，出处指回那条约定。 */
+export const AgreementMoveItemSchema = Type.Object({
+  agreementId: Type.String({ minLength: 1, maxLength: 80 }),
+  toDocId: Type.Optional(Type.String({ minLength: 1, maxLength: 80 })),
+  section: Type.Enum(MEMORY_LINE_SECTIONS),
+  /** 写成的那一句；不给就用约定的正文。 */
+  text: Type.Optional(Type.String({ minLength: 1, maxLength: 500 })),
+}, { additionalProperties: false });
+export type AgreementMoveItem = Static<typeof AgreementMoveItemSchema>;
 
 /** memory.cleanup.add 的一项：清单里新加一条（不注明来处）。给 person（人名）时加进这个人的那一页，没有就建一页。 */
 export const MemoryCleanupAddSchema = Type.Object({
@@ -73,8 +88,10 @@ export const MaintenanceRequestSchema = Type.Object(
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: MAIL_REFETCH_MAX_LIMIT })),
     /** rules.rewrite 的整理方案。 */
     plan: Type.Optional(Type.Array(RulesRewriteItemSchema, { minItems: 1, maxItems: 100 })),
-    /** memory.move 挪哪几行。 */
+    /** memory.move、memory.layers 挪哪几行。 */
     moves: Type.Optional(Type.Array(MemoryMoveItemSchema, { minItems: 1, maxItems: 200 })),
+    /** memory.layers 把哪几条在用的旧约定写成行。 */
+    agreements: Type.Optional(Type.Array(AgreementMoveItemSchema, { minItems: 1, maxItems: 100 })),
     /** suggestions.dismiss 收起哪几条建议。 */
     ids: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 80 }), { minItems: 1, maxItems: 100 })),
     /** inbox.archive 归档哪几个系统来源的来信（巡查、反馈、采访）。 */

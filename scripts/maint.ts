@@ -14,6 +14,8 @@
 //   rules.rewrite --plan <方案.json> --because "用户原话" [--op-id 号]
 //   memory.move --plan <[{lineId,version,toDocId}]> --because "用户原话"   把几行记忆挪到别的文档
 //   memory.cleanup.add --plan <[{toDocId,text}]> --because "用户原话"     整理清单里新加几条，等用户勾选
+//   memory.layers --plan <{moves:[{lineId,version,toDocId,section?}],agreements:[{agreementId,section,text?}]}>
+//     --because "用户原话"                    记忆分层的搬家：几行挪到新的几层，在用的旧约定写成承诺和授权里的行
 //   suggestions.dismiss --ids <id,id,…> --because "用户原话"            把几条建议收起（标成忽略，不删）
 //   inbox.archive --sources patrol,feedback,interview --because "用户原话"  这几个系统来源的来信归档（不删）
 //                                            整理「规则」：一行换成几行或挪进归档（memory/rules/rules-rewrite.ts）
@@ -66,16 +68,34 @@ function newOperationId(now: Date): string {
   return `maint-${now.toISOString().replace(/[^0-9]/g, '').slice(0, 14)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** --plan：rules.rewrite 的整理方案，一个 JSON 文件（数组）。 */
-function readPlan(path: string): NonNullable<MaintenanceRequest['plan']> {
-  let value: unknown;
+function readJson(path: string): unknown {
   try {
-    value = JSON.parse(readFileSync(path, 'utf8'));
+    return JSON.parse(readFileSync(path, 'utf8'));
   } catch (error) {
     throw new MaintCliError(`--plan 读不成：${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+/** --plan：rules.rewrite 的整理方案，一个 JSON 文件（数组）。 */
+function readPlan(path: string): NonNullable<MaintenanceRequest['plan']> {
+  const value = readJson(path);
   if (!Array.isArray(value)) throw new MaintCliError('--plan 要是一个 JSON 数组。');
   return value as NonNullable<MaintenanceRequest['plan']>;
+}
+
+/** memory.layers 的 --plan 是一个对象：moves（挪哪几行）和 agreements（哪几条旧约定写成行），至少给一样。 */
+function readLayersPlan(path: string): Pick<MaintenanceRequest, 'moves' | 'agreements'> {
+  const value = readJson(path) as { moves?: unknown; agreements?: unknown } | null;
+  const list = (items: unknown): unknown[] | undefined =>
+    (Array.isArray(items) && items.length > 0 ? items : undefined);
+  const moves = list(value?.moves);
+  const agreements = list(value?.agreements);
+  if (moves === undefined && agreements === undefined) {
+    throw new MaintCliError('--plan 要是 {"moves":[…],"agreements":[…]}，至少给一样。');
+  }
+  return { ...(moves === undefined ? {} : { moves: moves as NonNullable<MaintenanceRequest['moves']> }),
+    ...(agreements === undefined ? {}
+      : { agreements: agreements as NonNullable<MaintenanceRequest['agreements']> }) };
 }
 
 /** 命令行参数 → 一条维护命令（或一句只读查询）。 */
@@ -137,7 +157,8 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
       .filter((source) => source !== '') as NonNullable<MaintenanceRequest['sources']> }),
     ...(values.ids === undefined ? {}
       : { ids: values.ids.split(',').map((id) => id.trim()).filter((id) => id !== '') }),
-    ...(values.plan === undefined ? {} : planField(command, readPlan(values.plan))),
+    ...(values.plan === undefined ? {}
+      : command === 'memory.layers' ? readLayersPlan(values.plan) : planField(command, readPlan(values.plan))),
   };
   return { kind: 'socket', stateDir, request };
 }

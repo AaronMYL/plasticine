@@ -1,7 +1,7 @@
 // 第 115 条：维护入口命令行。参数变成一条维护命令；db.read 只读打开库、只收查询；连不上服务时说清是入口没开。
 
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -36,6 +36,24 @@ test('mail.refetch：--limit 是这次补几封（1 到 200 的整数），带�
   assert.throws(() => parseMaintArgs(['mail.refetch', '--limit', '0'], {}, NOW), /--limit/);
   assert.throws(() => parseMaintArgs(['mail.refetch', '--limit', '201'], {}, NOW), /--limit/);
   assert.throws(() => parseMaintArgs(['mail.refetch', '--limit', '五十'], {}, NOW), /--limit/);
+});
+
+test('memory.layers：--plan 是一个对象（挪哪几行、哪几条旧约定写成行），至少给一样', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'maint-layers-'));
+  try {
+    const plan = join(dir, 'plan.json');
+    await writeFile(plan, JSON.stringify({ moves: [{ lineId: 'line-1', version: 1, toDocId: 'memdoc-proactive',
+      section: 'never' }], agreements: [{ agreementId: 'agreement-1', section: 'allow' }] }));
+    const parsed = parseMaintArgs(['memory.layers', '--plan', plan, '--because', '记忆搬家同意你做',
+      '--op-id', 'layers-1'], {}, NOW);
+    assert.deepEqual(parsed.request, { operationId: 'layers-1', op: 'memory.layers', because: '记忆搬家同意你做',
+      moves: [{ lineId: 'line-1', version: 1, toDocId: 'memdoc-proactive', section: 'never' }],
+      agreements: [{ agreementId: 'agreement-1', section: 'allow' }] });
+    await writeFile(plan, JSON.stringify({ moves: [] }));
+    assert.throws(() => parseMaintArgs(['memory.layers', '--plan', plan], {}, NOW), /至少给一样/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 test('db.read：只读打开库查一句；写语句和不是查询的开头都拒绝', async () => {

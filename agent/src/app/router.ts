@@ -9,6 +9,7 @@ import { SOULS_ROUTES } from './souls.ts';
 import { RULES_MOVE_ROUTES } from './rules-move.ts';
 import { MEMORY_CONFLICT_ROUTES } from './memory-conflicts.ts';
 import { MEMORY_GRANTS_ROUTES } from './memory-grants.ts';
+import { MEMORY_LAYERS_ROUTES } from './memory-layers.ts';
 import { MEMORY_MANAGE_ROUTES } from './memory-manage.ts';
 import { getLinkPreview } from './link-preview.ts';
 import { getProxiedImage } from './image-proxy.ts';
@@ -242,6 +243,7 @@ export const ROUTES: readonly Route[] = [
   ...MEMORY_CONFLICT_ROUTES,
   ...MEMORY_MANAGE_ROUTES,
   ...MEMORY_GRANTS_ROUTES,
+  ...MEMORY_LAYERS_ROUTES,
   { method: 'GET', path: OUTBOUND_GRANTS_PATH, auth: true, handler: listOutboundGrants },
   { method: 'POST', path: OUTBOUND_GRANTS_PATH, auth: true, handler: createOutboundGrant },
   { method: 'PUT', path: `${OUTBOUND_GRANTS_PATH}/:id`, auth: true, handler: editOutboundGrant },
