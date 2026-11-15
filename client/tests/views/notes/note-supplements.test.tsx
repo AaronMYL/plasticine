@@ -52,7 +52,7 @@ it('结构建议沿用修改稿对比，采用之前不改正文；工具条两�
   fireEvent.click(await screen.findByRole('button', { name: '加上' }));
   const review = await screen.findByRole('region', { name: '笔记改动对照' });
   expect(editor.getMarkdown()).not.toContain('##');
-  fireEvent.click(within(review).getByRole('button', { name: '采用所选' }));
+  fireEvent.click(within(review).getByRole('button', { name: /^采用这 \d+ 处$/ }));
   expect(editor.getMarkdown()).toContain('## 事情经过');
   expect(editor.getMarkdown()).toContain('最后写下自己的想法。');
 });

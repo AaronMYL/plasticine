@@ -31,21 +31,12 @@
 .move-more:hover { color: var(--fg); }
 .move-more:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; border-radius: var(--radius-sm); }
 .move-done { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); }
-/* 底下一条：跟着页面滚，到底贴住主区下沿。 */
-.move-bar { position: sticky; bottom: 0; z-index: var(--z-raised); display: flex; flex-wrap: wrap; align-items: center;
-  gap: var(--space-2) var(--space-3);
-  margin-inline: calc(-1 * var(--space-6)); padding: var(--space-3) var(--space-6); border-top: 1px solid var(--line);
-    background: var(--layer-float); }
-.move-bar-count { font-size: var(--text-ui); font-weight: 500; color: var(--fg); }
-.move-bar-note { font-size: var(--text-caption); color: var(--fg2); }
-.move-bar-space { flex: 1; }
 @media (max-width: 767px) {
   .move-item { flex-wrap: wrap; row-gap: var(--space-2); }
   .move-item-main { flex-basis: 100%; }
   .move-item-source { margin-left: var(--space-6); }
   .move-dest { margin-left: auto; }
-  .move-bar { margin-inline: calc(-1 * var(--space-4)); padding: var(--space-3) var(--space-4); }
-  .move-bar-note { display: none; }
+  .pick-bar > .text-meta:not(:first-child) { display: none; }
 }
 /* 记忆首页的提示条（设计稿 Memory）：浅陶土底，一句话 + 「去勾」。 */
 /* 「规则搬家」那一条：全站那一种页内横条（11-14 界面统一，不再用强调色淡底）。 */

@@ -93,8 +93,9 @@
   resize: vertical;
 }
 
-.note-review-footer {
-  padding-top: var(--space-1);
+/* 底下的浮条（11-15 一直能勾的几处一个样子）：在对照这一块里贴着下沿。 */
+.note-review > .pick-bar {
+  margin-top: var(--space-2);
 }
 
 @media (max-width: 767px) {

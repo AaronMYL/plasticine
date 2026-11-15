@@ -56,6 +56,9 @@ it('Plasticine 栏标题一直写「Plasticine」，技能和记忆在标题那�
   expect(within(head).getByRole('link', { name: '记忆' }).getAttribute('aria-current')).toBe('page');
   expect(within(head).getByRole('link', { name: '技能' }).getAttribute('aria-current')).toBeNull();
   expect(column.querySelector('.column-foot')).toBeNull();
+  // 左边图标栏的栏目名也一直是 Plasticine（Aaron：线上改了主线名字，标题跟着变了）。
+  expect(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: 'Plasticine' }))
+    .toBeTruthy();
 });
 
 it('手机 Plasticine 根页直接是主线；「队友和群组」打开名单，点队友进它的对话，返回回到主线', async () => {

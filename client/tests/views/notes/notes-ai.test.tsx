@@ -32,7 +32,7 @@ describe('笔记 AI 编辑流程', () => {
     fireEvent.change(draft, { target: { value: '# 标题\n\n自己再调整的新段\n\n结尾' } });
     act(() => editor.commands.insertContentAt(editor.state.doc.content.size, '<p>后来新增</p>'));
     fireEvent.click(within(review).getByRole('tab', { name: /逐处比较/ }));
-    fireEvent.click(within(review).getByRole('button', { name: '采用所选' }));
+    fireEvent.click(within(review).getByRole('button', { name: /^采用这 \d+ 处$/ }));
     expect(editor.getText()).toContain('自己再调整的新段');
     expect(editor.getText()).toContain('后来新增');
     expect(screen.queryByRole('region', { name: '笔记改动对照' })).toBeNull();
@@ -58,7 +58,7 @@ describe('笔记 AI 编辑流程', () => {
     });
     expect(assist.mock.calls[0]?.[1].before).toContain('前文背景');
     expect(assist.mock.calls[0]?.[1].after).toContain('后文结论');
-    fireEvent.click(within(review).getByRole('button', { name: '采用所选' }));
+    fireEvent.click(within(review).getByRole('button', { name: /^采用这 \d+ 处$/ }));
     expect(editor.getMarkdown()).toBe('前文背景。\n\n调整后的句子。\n\n后文结论。');
   });
 
@@ -73,7 +73,7 @@ describe('笔记 AI 编辑流程', () => {
     expect(screen.getByRole('menuitem', { name: '整篇润色' }).hasAttribute('disabled')).toBe(true);
     expect(assist).toHaveBeenCalledTimes(1);
     act(() => editor.commands.setContent('我又改了原文', { contentType: 'markdown' }));
-    fireEvent.click(within(review).getByRole('button', { name: '采用所选' }));
+    fireEvent.click(within(review).getByRole('button', { name: /^采用这 \d+ 处$/ }));
     await within(review).findByRole('alert');
     expect(editor.getText()).toBe('我又改了原文');
   });

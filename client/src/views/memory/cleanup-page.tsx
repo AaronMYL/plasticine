@@ -5,6 +5,8 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import type { CleanupItemView } from '../../api/shared.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { PickAll, PickBar } from '../bulk/pick-controls.tsx';
+import { Icon } from '../../shell/icons.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
 import { useCleanup } from './use-cleanup.ts';
 import './cleanup.css';
@@ -56,12 +58,7 @@ export function CleanupPage({ onBack }: { onBack?: (() => void) | undefined }): 
   const ready = view?.status === 'ready' && pending.length > 0;
   return (
     <div className="page memory-cleanup">
-      <PageHeader title="整理清单" onBack={onBack} controls={ready ? <>
-        <span className="text-meta">已选 {chosen.length} 条</span>
-        <button type="button" className="secondary-button" disabled={busy} onClick={() => void submit([])}>都不要</button>
-        <button type="button" className="primary-button" disabled={busy || chosen.length === 0}
-          onClick={() => void submit(chosen)}>采用这 {chosen.length} 条</button>
-      </> : null} />
+      <PageHeader title="整理清单" onBack={onBack} />
       {cleanup.error === null ? null : <p className="block-empty is-error" role="alert">{cleanup.error}{' '}
         <button type="button" className="text-button" onClick={cleanup.reload}>再读一次</button></p>}
       {note === null ? null : <p className="block-empty" role="status">{note}</p>}
@@ -81,6 +78,8 @@ export function CleanupPage({ onBack }: { onBack?: (() => void) | undefined }): 
                   </button>
                 ))}
               </div>
+              <PickAll total={pending.length} picked={chosen.length} disabled={busy}
+                onAll={(on) => setOff(on ? new Set() : new Set(pending.map((item) => item.id)))} />
               <ul className="cleanup-list">
                 {shown.map((item) => (
                   <li key={item.id}>
@@ -96,6 +95,12 @@ export function CleanupPage({ onBack }: { onBack?: (() => void) | undefined }): 
                   </li>
                 ))}
               </ul>
+              <PickBar picked={chosen.length}>
+                <button type="button" className="text-button" disabled={busy} onClick={() => void submit([])}>
+                  <Icon name="close" size={16} />都不要</button>
+                <button type="button" className="primary-button" disabled={busy || chosen.length === 0}
+                  onClick={() => void submit(chosen)}>采用这 {chosen.length} 条</button>
+              </PickBar>
             </>}
     </div>
   );

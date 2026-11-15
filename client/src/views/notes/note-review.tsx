@@ -1,3 +1,4 @@
+import { PickAll, PickBar } from '../bulk/pick-controls.tsx';
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { errorText } from '../../api/errors.ts';
 import { noteChanges, applyNoteChanges } from './note-diff.ts';
@@ -43,6 +44,8 @@ export function NoteReview({ proposal, current, onAdopt, onKeep, conflict = fals
         className="text-button" onClick={() => setTab(value)}>{label}</button>)}
     </div>
     <div id={`${id}-changes`} role="tabpanel" aria-labelledby={`${id}-changes-tab`} hidden={tab !== 'changes'}>
+      {changes.length === 0 ? null : <PickAll total={changes.length} picked={selected.size}
+        onAll={(on) => setSelected(on ? new Set(changes.map((_, index) => index)) : new Set())} />}
       {changes.length === 0 ? <p className="note-status">两版正文相同。</p> : changes.map((change, index) =>
         <label className="note-change" key={`${change.start}:${change.end}`}>
           <span className="note-change-choice"><input type="checkbox" aria-label={`采用第 ${index + 1} 处修改`}
@@ -66,15 +69,14 @@ export function NoteReview({ proposal, current, onAdopt, onKeep, conflict = fals
       <pre className="note-review-original">{proposal.base}</pre>
     </div>
     {error === null ? null : <p role="alert" className="note-error">{error}</p>}
-    <footer className="note-toolbar note-review-footer">
-      <button type="button" className="primary-button" onClick={adopt}
-        disabled={selected.size === 0 || composing}>采用所选</button>
-      <span className="note-status">{selected.size} / {changes.length}</span>
+    <PickBar picked={selected.size}>
       <button type="button" className="text-button" onClick={onKeep}>
         {conflict ? '保留我的' : '保留当前正文'}
       </button>
       {!conflict || onUseNew === undefined ? null :
         <button type="button" className="text-button" onClick={onUseNew}>用新版本</button>}
-    </footer>
+      <button type="button" className="primary-button" onClick={adopt}
+        disabled={selected.size === 0 || composing}>采用这 {selected.size} 处</button>
+    </PickBar>
   </section>;
 }

@@ -140,7 +140,9 @@ export function GroupEditor({ group, phone, onClose, navigate }: Props & { group
       : await live.mateActions.updateGroup(group, body);
     if (mounted.current && result !== null && 'mateIds' in result) { onClose(); navigate(mateGroupRoute(result.id)); }
   };
+  // 挑队友是「一直能勾」的一处（11-15）：底部写已选几位，主按钮在后面。
   const footer = <>
+    <span className="text-meta mate-picked" role="status">已选 {draft.mateIds.length}</span>
     <button type="button" className="secondary-button" onClick={onClose}>取消</button>
     <button type="submit" form={formId} className="primary-button" disabled={locked || draft.name.trim().length < 2
       || draft.mateIds.length < 2}>{group === undefined ? '创建群组' : '保存修改'}</button></>;

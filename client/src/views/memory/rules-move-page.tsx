@@ -8,6 +8,7 @@ import { SOUL_OWNER_MAIN, type RulesMoveDest, type RulesMoveItem, type RulesMove
 import { useLive } from '../../live.tsx';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import { Icon } from '../../shell/icons.tsx';
+import { PickAll, PickBar } from '../bulk/pick-controls.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
 import type { Route } from '../../shell/routes.ts';
 import { useStore } from '../../state/use-store.ts';
@@ -154,17 +155,14 @@ export function RulesMovePage({ navigate, onBack }: { navigate: (route: Route) =
           <button type="button" className="secondary-button" onClick={back}>回到记忆</button>
         </div>
       ) : <>
+        <PickAll total={data.items.length} picked={chosen.length} disabled={busy} onAll={setAll} />
         {groups.map((group) => <MoveGroup key={group.key} data={data} groupKey={group.key} items={group.items}
           picks={picks} onPick={(id, pick) => setPicks((old) => new Map(old).set(id, pick))} />)}
-        <div className="move-bar" role="region" aria-label="搬过去">
-          <span className="move-bar-count">已勾 {chosen.length} / {data.items.length}</span>
-          <span className="move-bar-note">没勾的留在原处，下次整理再问</span>
-          <span className="move-bar-space" />
-          <button type="button" className="secondary-button" disabled={busy}
-            onClick={() => setAll(chosen.length === 0)}>{chosen.length === 0 ? '全选' : '全不选'}</button>
+        <PickBar picked={chosen.length}>
+          <span className="text-meta">没勾的留在原处，下次整理再问</span>
           <button type="button" className="primary-button" disabled={busy || chosen.length === 0}
             onClick={() => void submit()}>搬过去 {chosen.length} 条</button>
-        </div>
+        </PickBar>
       </>}
     </div>
   );

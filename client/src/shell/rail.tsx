@@ -57,7 +57,8 @@ export function Rail(props: RailProps): ReactNode {
         {RAIL_GROUPS.map((group) => (
           <ul key={group[0]} className="rail-group">
             {group.map((id) => {
-              const item = id === 'plasticine' ? { ...SECTIONS[id], label: mainName } : SECTIONS[id];
+              // 11-15 Aaron：栏目一直叫 Plasticine，不跟着主线改的名字变（主线改名只改主线那一行和对话里的名字）。
+              const item = SECTIONS[id];
               const flagged = id === 'tasks' && props.waiting > 0;
               const label = flagged ? `${item.label} · 有等你的事` : item.label;
               return (

@@ -17,8 +17,11 @@ describe('规则搬家（第13批）和说法冲突（11-11）', () => {
       expect(within(research).getAllByRole('checkbox').every((box) => (box as HTMLInputElement).checked)).toBe(true);
       const product = screen.getByRole('region', { name: '隐私与授权' });
       expect((within(product).getByRole('checkbox') as HTMLInputElement).checked).toBe(false);
-      const bar = screen.getByRole('region', { name: '搬过去' });
-      expect(within(bar).getByText('已勾 9 / 10')).toBeTruthy();
+      // 11-15 一直能勾的那几处一个样子：顶上「全选 · 已选 n」（勾了一部分是一道横），底下浮条「已选 n」加主按钮。
+      const all = screen.getByRole('checkbox', { name: '全选' }) as HTMLInputElement;
+      expect(all.indeterminate).toBe(true);
+      const bar = screen.getByRole('group', { name: '勾了的' });
+      expect(within(bar).getByText('已选 9')).toBeTruthy();
       fireEvent.click(within(research).getByRole('checkbox', { name: '先列结论，再列依据。' }));
       fireEvent.change(within(main).getByRole('combobox', { name: '「周末不发等我决定的卡。」搬到哪里' }),
         { target: { value: 'about_you' } });
@@ -31,8 +34,10 @@ describe('规则搬家（第13批）和说法冲突（11-11）', () => {
       const you = await app.api.memoryTopics.get('t_you');
       expect(you.sections.flatMap((section) => section.lines.map((line) => line.text)))
         .toContain('周末不发等我决定的卡。');
-      await waitFor(() => expect(screen.getAllByRole('checkbox')).toHaveLength(2));
-      expect(within(screen.getByRole('region', { name: '搬过去' })).getByText('已勾 0 / 2')).toBeTruthy();
+      await waitFor(() => expect(screen.getAllByRole('checkbox', { name: /^(?!全选)/ })).toHaveLength(2));
+      expect(within(screen.getByRole('group', { name: '勾了的' })).getByText('已选 0')).toBeTruthy();
+      fireEvent.click(screen.getByRole('checkbox', { name: '全选' }));
+      expect(within(screen.getByRole('group', { name: '勾了的' })).getByText('已选 2')).toBeTruthy();
     });
 
   it('规则搬完了：这一页只剩一句，记忆首页不再有提示条；搬之前首页顶上是「规则搬家：n 条等你勾」', async () => {

@@ -46,3 +46,8 @@
 @media (prefers-reduced-motion: reduce) { .bulk-bar { animation: none; } }
 .page:has(> .bulk-bar), .tool-page:has(.bulk-bar) { padding-bottom: var(--space-4); }
 .page.bk-phone:has(> .bulk-bar) { padding-bottom: var(--space-4); }
+/* 一直能勾的几处（pick-controls.tsx）：顶上一行贴着列表，不往右推；浮条里主按钮用实心小号。 */
+.pick-head { justify-content: flex-start; margin-bottom: var(--space-2); }
+.pick-head .bulk-all { margin-right: 0; }
+.pick-bar { gap: var(--space-4); }
+.pick-bar .primary-button, .pick-bar .secondary-button { height: 32px; }

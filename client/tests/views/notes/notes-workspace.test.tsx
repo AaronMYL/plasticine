@@ -168,11 +168,11 @@ describe('笔记完整工作区', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: '整篇润色' }));
     const review = await screen.findByRole('region', { name: '笔记改动对照' });
     expect(noteEditor.getText()).not.toContain('甲段改');
-    const options = within(review).getAllByRole('checkbox');
+    const options = within(review).getAllByRole('checkbox', { name: /^采用第/ });
     expect(options.length).toBeGreaterThanOrEqual(2);
     fireEvent.click(options[1]!);
     act(() => noteEditor.commands.insertContentAt(noteEditor.state.doc.content.size, '<p>新写的一句</p>'));
-    fireEvent.click(within(review).getByRole('button', { name: '采用所选' }));
+    fireEvent.click(within(review).getByRole('button', { name: /^采用这 \d+ 处$/ }));
     expect(noteEditor.getText()).toContain('甲段改');
     expect(noteEditor.getText()).not.toContain('乙段改');
     expect(noteEditor.getText()).toContain('新写的一句');
