@@ -14,6 +14,7 @@ import { MateEditor, GroupEditor } from './mate-editor.tsx';
 import { useMainIdentity } from './main-identity.tsx';
 import { useLineMenu } from './line-menu.tsx';
 import { LegacyChats } from './legacy-chats.tsx';
+import { WaitMark } from '../../shell/wait-mark.tsx';
 import './mates.css';
 
 export function MatesRoster({ route, navigate, phone = false }: { route: Route;
@@ -65,7 +66,7 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
         lead={<GroupAvatar mates={roster.mates.filter((mate) => group.mateIds.includes(mate.id))} />}
         sub={`${group.mateIds.length} 位队友`}
         trail={groupWaiting(group, lines.lines) === 0 ? undefined
-          : <span className="mate-wait-count">等你 {groupWaiting(group, lines.lines)}</span>}>{group.name}</ColumnLink>
+          : <WaitMark count={groupWaiting(group, lines.lines)} />}>{group.name}</ColumnLink>
         <RevealMore label={`「${group.name}」的更多操作`} actions={menu.actions({ kind: 'group', group })} /></div>)}
       {roster.legacyChats.length === 0 ? null : <div className="mates-legacy">
         <button type="button" className="text-button" onClick={() => setLegacy(true)}>整理原来的对话</button>

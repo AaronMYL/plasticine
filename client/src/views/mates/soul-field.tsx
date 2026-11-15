@@ -1,4 +1,4 @@
-// 编辑弹框里的 Soul（第13批设计稿 Editor）：等宽字的一块，markdown 的「-」「## 」标成强调色（字下面垫一层同样排版的
+// 编辑弹框里的 Soul（第13批设计稿 Editor）：等宽字的一块，markdown 的「-」「## 」记号淡一档（字下面垫一层同样排版的
 // 影子，输入框本身的字是透明的）；下面一行写它自己最近一次改了几处，「看改动」就地展开一行行加的、删的，「撤回」
 // 只在那一次之后没再改过、你也没改着没存时能点。
 
@@ -13,10 +13,9 @@ import { timeText } from '../../shell/time-text.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** 一行里的 markdown 记号：标题整行、列表的「- 」。 */
+/** 一行里的 markdown 记号：标题前的「## 」、列表的「- 」。 */
 function MarkedLine({ line }: { line: string }): ReactNode {
-  if (/^#{1,6}\s/u.test(line)) return <span className="soul-text-mark">{line}</span>;
-  const item = /^(\s*[-*]\s)(.*)$/u.exec(line);
+  const item = /^(#{1,6}\s|\s*[-*]\s)(.*)$/u.exec(line);
   if (item === null) return line;
   return <><span className="soul-text-mark">{item[1]}</span>{item[2]}</>;
 }

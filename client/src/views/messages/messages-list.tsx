@@ -27,6 +27,7 @@ import {
   type MessageFilter,
 } from './message-filter.ts';
 import { timeText } from '../../shell/time-text.ts';
+import { WaitMark } from '../../shell/wait-mark.tsx';
 
 function matches(row: ContactRow, query: string): boolean {
   const needle = query.trim().toLowerCase();
@@ -92,7 +93,7 @@ function Row({ row, current, phone, now, groupStart, onOpen, manage }: { row: Co
               </span>
             )}
             {row.unread > 0 ? <span className="contact-unread mono" aria-hidden="true">{row.unread}</span> : null}
-            {row.waiting ? <span className="contact-wait" aria-hidden="true">等你</span> : null}
+            {row.waiting ? <WaitMark hidden /> : null}
           </span>
         </span>
       </button>

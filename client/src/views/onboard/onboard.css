@@ -131,6 +131,10 @@
 }
 
 .ob-suffix[data-tone='ok'] {
+  color: var(--fg2);
+}
+
+.ob-suffix[data-tone='ok'] > svg {
   color: var(--ok);
 }
 

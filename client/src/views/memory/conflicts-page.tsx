@@ -8,6 +8,9 @@ import { createRequestId } from '../../api/request-id.ts';
 import { MEMORY_SOURCE_LABELS, type ConflictView, type ResolveConflictRequest } from '../../api/shared.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
+import { PHONE_BELOW } from '../../shell/layout.ts';
+import { useInTitlebar } from '../../shell/titlebar.tsx';
+import { useViewportWidth } from '../../shell/use-viewport-width.ts';
 import type { Route } from '../../shell/routes.ts';
 import { invalidateQueries } from '../../state/live-query.ts';
 import { ruleDay } from './rule-parts.tsx';
@@ -23,7 +26,7 @@ function Conflict({ conflict, busy, onResolve }: { conflict: ConflictView; busy:
       const winner = line.id === conflict.winnerId;
       return <article key={line.id} className="conflict-side" data-winner={winner}
         aria-label={winner ? `现在以这条为准：${line.text}` : line.text}>
-        <div className="conflict-tags">{winner ? <span className="conflict-win">现在以这条为准</span> : null}
+        <div className="conflict-tags">{winner ? <span className="conflict-win"><span className="dot dot-ok" aria-hidden="true" />现在以这条为准</span> : null}
           <span className="rule-chip">{line.scope}</span></div>
         <p className="conflict-text">{line.text}</p>
         <p className="rule-meta">{MEMORY_SOURCE_LABELS[line.source]} · {ruleDay(line.at)} · {line.docTitle}</p>
@@ -55,13 +58,16 @@ export function ConflictsPage({ navigate, onBack }: { navigate: (route: Route) =
       .finally(() => setBusy(null));
   };
   const conflicts = query.data?.conflicts ?? null;
+  // 桌面客户端页名和件数在标题栏（11-14 页头名字只写一遍）：「记忆 /」是跟着页名的，一起不画，回去用标题栏的后退。
+  const wide = useViewportWidth() >= PHONE_BELOW;
+  const titled = useInTitlebar() && wide;
   return <div className="page conflicts-page">
-    <nav className="rules-crumb" aria-label="位置"><a href="#/memory" onClick={(event) => {
+    {titled ? null : <nav className="rules-crumb" aria-label="位置"><a href="#/memory" onClick={(event) => {
       event.preventDefault();
       navigate({ view: 'memory', noteId: null });
-    }}>记忆</a><span aria-hidden="true">/</span></nav>
+    }}>记忆</a><span aria-hidden="true">/</span></nav>}
     <PageHeader title="说法冲突" onBack={onBack} phoneSearch={false}
-      meta={conflicts === null || conflicts.length === 0 ? undefined : String(conflicts.length)} />
+      count={conflicts === null || conflicts.length === 0 ? undefined : conflicts.length} />
     {error === null && query.error === null ? null : <p className="rules-error" role="alert">{error ?? query.error}</p>}
     {conflicts === null ? (query.error === null ? <PageLoading /> : null)
       : conflicts.length === 0 ? <p className="tasks-empty">没有要你选的说法冲突。</p>

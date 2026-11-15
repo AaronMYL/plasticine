@@ -12,8 +12,8 @@ import { useViewportWidth } from './use-viewport-width.ts';
 
 export interface PageHeaderProps {
   title: string;
-  /** 标题后面常显的一小句（这一页的状态，比如「项目 · 进行中」）；只放必要的，冗余的数不要传。 */
-  meta?: string | undefined;
+  /** 名字后面最多跟一个数（11-14 页头：名字加最多一个数，不写副标题）；桌面客户端跟名字一起进标题栏。 */
+  count?: number | undefined;
   controls?: ReactNode;
   /** 手机页头右边、查找后面的本页图标（2026-11-05 设计稿 Phone-Notes 的「新建」、Phone-Feed 的「筛选」）。 */
   phoneTools?: ReactNode;
@@ -23,7 +23,7 @@ export interface PageHeaderProps {
   onBack?: (() => void) | undefined;
 }
 
-export function PageHeader({ title, meta, controls, phoneTools, phoneSearch = true, onBack }: PageHeaderProps)
+export function PageHeader({ title, count, controls, phoneTools, phoneSearch = true, onBack }: PageHeaderProps)
   : ReactNode {
   const openPanel = useOpenPanel();
   const { canGoBack, goBack } = useRoute();
@@ -31,12 +31,12 @@ export function PageHeader({ title, meta, controls, phoneTools, phoneSearch = tr
   // 11-14 界面统一（页头：名字只写一遍）：桌面客户端顶上有标题栏，名字写在标题栏里，页里的标题只留给读屏；
   // 什么都不剩时整个页头不画。
   const titled = useInTitlebar() && !phone;
-  if (titled && meta === undefined && controls === undefined) {
-    return <><TitlebarTitle text={title} /><h1 className="sr-only">{title}</h1></>;
+  if (titled && controls === undefined) {
+    return <><TitlebarTitle text={title} count={count} /><h1 className="sr-only">{title}</h1></>;
   }
   return (
     <header className="page-head">
-      {titled ? <TitlebarTitle text={title} /> : null}
+      {titled ? <TitlebarTitle text={title} count={count} /> : null}
       <div className="page-head-title">
         {phone && onBack !== undefined ? <IconButton icon="back" label="回到上一层" className="page-back" onClick={onBack} />
           : canGoBack && phone ? <IconButton icon="back" label="回到上一页" className="page-back" onClick={goBack} />
@@ -44,7 +44,7 @@ export function PageHeader({ title, meta, controls, phoneTools, phoneSearch = tr
         {/* 2026-11-03《全量界面优化》：页头不写副标题，数字进分段控件。11-04 重做悬停：不再藏在标题的悬停里——
             必要的（这一页的状态）常显在标题后面，冗余的（和分段控件重复的数、今天几号）调用方不再传。 */}
         <h1 className={titled ? 'sr-only' : undefined}>{title}</h1>
-        {meta === undefined ? null : <span className="page-head-status">{meta}</span>}
+        {count === undefined || titled ? null : <span className="page-head-status">{count}</span>}
       </div>
       {controls === undefined ? null : <div className="page-head-controls">{controls}</div>}
       {phone && (phoneSearch || phoneTools !== undefined) ? (

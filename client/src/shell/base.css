@@ -273,6 +273,19 @@ textarea.field-input {
   background: var(--run);
 }
 
+/* 「等你」（11-14）：强调色只做前面的点，字是正常字色。 */
+.wait-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--fg);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 /*
  * ---------- 小签：11/16·500，padding 1px 6px，圆角 4，中文不拉字距 ----------
  * 要你授权 / 要你动手 = --accent 描边 --fg 字；要你定 / 要你确认 = --line2 描边 --fg 字；

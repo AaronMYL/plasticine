@@ -15,8 +15,12 @@ import { MateAvatar } from './mate-avatar.tsx';
 import { MateGroupTaskCard } from './mate-group-task-card.tsx';
 import { MateGroupTaskEditor } from './mate-group-task-editor.tsx';
 
+/** 状态色只染名字前面的点，数字是正常字色（11-14 界面统一）。 */
+const STAT_DOTS = { run: 'dot dot-run', wait: 'dot dot-accent', done: 'dot dot-ok' } as const;
+
 function Stat({ value, label, tone }: { value: number; label: string; tone?: 'run' | 'wait' | 'done' }): ReactNode {
-  return <div className="mate-work-stat" data-tone={tone}><dd>{value}</dd><dt>{label}</dt></div>;
+  return <div className="mate-work-stat" data-tone={tone}><dd>{value}</dd>
+    <dt>{tone === undefined ? null : <span className={STAT_DOTS[tone]} aria-hidden="true" />}{label}</dt></div>;
 }
 
 /** 一件事一行：状态符号、标题（点了看这件工作）、下面一行状态和已用时间；行尾可以带一个动作。 */

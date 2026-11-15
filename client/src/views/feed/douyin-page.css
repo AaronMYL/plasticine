@@ -23,11 +23,10 @@
 .dy-work-length { position: absolute; right: 4px; bottom: 3px; font-size: var(--text-tag);
   line-height: var(--text-tag-line); color: var(--fg2);
   font-variant-numeric: tabular-nums; }
-.dy-work-phase { flex: none; padding: 0 var(--space-2); border-radius: var(--radius-full);
+.dy-work-phase { display: inline-flex; flex: none; align-items: center; gap: var(--space-1);
+  padding: 0 var(--space-2); border-radius: var(--radius-full);
   font-size: var(--text-caption); line-height: var(--text-ui-line);
   color: var(--fg2); box-shadow: inset 0 0 0 1px var(--line2); }
-.dy-work-phase[data-phase='done'] { color: var(--ok); }
-.dy-work-phase[data-phase='waiting'] { color: var(--run); }
 label.dy-work { cursor: pointer; }
 .dy-work[data-picked] { background: var(--tint2); }
 .dy-pick-bar { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4);

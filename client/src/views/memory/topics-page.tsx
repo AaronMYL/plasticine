@@ -151,7 +151,7 @@ function ConflictsEntry({ navigate }: { navigate: (route: Route) => void }): Rea
   const count = useConflicts().data?.conflicts.length ?? 0;
   if (count === 0) return null;
   return <button type="button" className="memory-conflicts" onClick={() => navigate(conflictsRoute())}>
-    <Icon name="alert" size={16} /><span className="memory-conflicts-text">{count} 处说法冲突，要你选以哪条为准</span>
+    <span className="dot dot-accent" aria-hidden="true" /><span className="memory-conflicts-text">{count} 处说法冲突，要你选以哪条为准</span>
     <span className="topic-row-chevron" aria-hidden="true"><Icon name="chevron-right" size={14} /></span>
   </button>;
 }

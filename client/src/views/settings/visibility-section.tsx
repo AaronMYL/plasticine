@@ -23,6 +23,7 @@ import { Popover, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 import { usePendingOps } from '../pending/pending-ops.tsx';
 import { LoadNote } from '../m5b/load-note.tsx';
 import { SectionHead } from './section-head.tsx';
+import { WaitMark } from '../../shell/wait-mark.tsx';
 
 const KIND_LABELS: Readonly<Record<MaterialKind, string>> = {
   memory_topic: '记忆',
@@ -215,7 +216,7 @@ export function VisibilitySection(): ReactNode {
         <>
           {value.pending === 0 ? null : (
             <div className="vis-suggest" role="group" aria-label="Plasticine 的建议">
-              <span className="vis-suggest-tag"><Icon name="clock" size={14} />等你</span>
+              <WaitMark />
               <span className="vis-suggest-text">Plasticine 建议再放开 {value.pending} 样（虚线框的）</span>
               <button type="button" className="primary-button button-small"
                 disabled={declining || confirming.some(isOpenOp)} onClick={() => void networkActions.confirmAll()}>

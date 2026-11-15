@@ -28,6 +28,7 @@ import { ActionItems } from '../../shell/reveal-more.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { useMainIdentity } from '../mates/main-identity.tsx';
 import { messageAuthor } from '../lines/line-origin.ts';
+import { WaitMark } from '../../shell/wait-mark.tsx';
 import './plasticine.css';
 
 /** 在已经读到的记录里找（他说的、回答、步骤）：点一条滚到那一句。 */
@@ -118,7 +119,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
       aria-pressed={division} onClick={() => setDivision((value) => !value)}>
       <Icon name="tasks" size={16} />分工
       {groupWaiting(group, lines) === 0 ? null
-        : <span className="mate-wait-count">等你 {groupWaiting(group, lines)}</span>}</button>}
+        : <WaitMark count={groupWaiting(group, lines)} />}</button>}
     {(
       <IconButton icon="more" size={iconSize} label="更多" aria-expanded={menu !== null}
         onClick={(event) => setMenu(anchorOf(event.currentTarget))} />

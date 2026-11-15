@@ -21,6 +21,7 @@ import { clampChatFrame, type ChatFrame } from '../state/shell-prefs.ts';
 import { Conversation } from '../views/conversation/conversation.tsx';
 import { DockTargetSelector, useDockTarget } from '../views/mates/dock-target.tsx';
 import { IconButton } from './icon-button.tsx';
+import { WaitMark } from './wait-mark.tsx';
 import { EASE_OUT, MOTION, canAnimate, play, playThen } from './motion.ts';
 import './chat-dialog.css';
 
@@ -196,7 +197,7 @@ export function ChatBall({ waiting, onExpand }: { waiting: number; onExpand: () 
     <button ref={ball} type="button" className="chat-ball" aria-label={label} title={label} onClick={onExpand}
       data-hit-region="chat-ball">
       {target.avatar(BALL_AVATAR)}
-      {waiting > 0 ? <span className="chat-ball-badge" aria-hidden="true">等你 {waiting}</span> : null}
+      {waiting > 0 ? <span className="chat-ball-badge" aria-hidden="true"><WaitMark count={waiting} /></span> : null}
     </button>
   );
 }

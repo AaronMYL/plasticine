@@ -142,8 +142,8 @@ export function RulesMovePage({ navigate, onBack }: { navigate: (route: Route) =
   const setAll = (on: boolean): void => setPicks((old) => new Map([...old].map(([id, pick]) => [id, { ...pick, on }])));
   return (
     <div className="page memory-rules-move">
-      <PageHeader title="规则搬家" meta={data === null || data.items.length === 0 ? undefined
-        : `${data.items.length} 条 · 勾了的才搬`} onBack={back} />
+      <PageHeader title="规则搬家" count={data === null || data.items.length === 0 ? undefined : data.items.length}
+        onBack={back} />
       {move.error === null ? null : <p className="block-empty is-error" role="alert">{move.error}{' '}
         <button type="button" className="text-button" onClick={move.reload}>再读一次</button></p>}
       {note === null ? null : <p className={`block-empty${note.error ? ' is-error' : ''}`}

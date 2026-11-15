@@ -22,8 +22,8 @@ const EDGE = 12;
 interface TitlebarSlot {
   present: boolean;
   actions: HTMLElement | null;
-  /** 页面接管标题栏里的页名；回的函数交还（只交还自己那一次）。 */
-  claimTitle: (title: string) => () => void;
+  /** 页面接管标题栏里的页名（后面最多跟一个数）；回的函数交还（只交还自己那一次）。 */
+  claimTitle: (title: string, count?: number) => () => void;
 }
 
 const NO_TITLEBAR: TitlebarSlot = { present: false, actions: null, claimTitle: () => () => undefined };
@@ -42,33 +42,41 @@ export function TitlebarActions({ children }: { children: ReactNode }): ReactNod
 }
 
 /** 标题栏里写这一页自己的名字（比如信息流写当前来源），不写壳按地址算的页名。 */
-export function TitlebarTitle({ text }: { text: string }): null {
+export function TitlebarTitle({ text, count }: { text: string; count?: number | undefined }): null {
   const { claimTitle } = useContext(TitlebarContext);
-  useEffect(() => claimTitle(text), [claimTitle, text]);
+  useEffect(() => claimTitle(text, count), [claimTitle, text, count]);
   return null;
+}
+
+/** 页面接管的页名和跟着它的数（11-14 页头：名字加最多一个数）。 */
+export interface TitlebarClaim {
+  title: string;
+  count: number | undefined;
 }
 
 export interface TitlebarState {
   slot: TitlebarSlot;
   /** 页面接管的页名；没有是 null。 */
-  claimed: string | null;
+  claimed: TitlebarClaim | null;
   setActions: (element: HTMLElement | null) => void;
 }
 
 /** 壳持有标题栏的槽：右边那块的元素、页面接管的页名。 */
 export function useTitlebarState(present: boolean): TitlebarState {
   const [actions, setActions] = useState<HTMLElement | null>(null);
-  const [claim, setClaim] = useState<{ token: number; title: string } | null>(null);
+  const [claim, setClaim] = useState<{ token: number; title: string; count: number | undefined } | null>(null);
   const tokens = useRef(0);
-  const claimTitle = useCallback((title: string) => {
+  const claimTitle = useCallback((title: string, count?: number) => {
     tokens.current += 1;
     const token = tokens.current;
-    setClaim({ token, title });
+    setClaim({ token, title, count });
     return () => setClaim((current) => (current?.token === token ? null : current));
   }, []);
   const slot = useMemo<TitlebarSlot>(() => (present ? { present, actions, claimTitle } : NO_TITLEBAR),
     [present, actions, claimTitle]);
-  return { slot, claimed: present ? claim?.title ?? null : null, setActions };
+  const claimed = useMemo<TitlebarClaim | null>(() => (present && claim !== null
+    ? { title: claim.title, count: claim.count } : null), [present, claim]);
+  return { slot, claimed, setActions };
 }
 
 export function TitlebarProvider({ state, children }: { state: TitlebarState; children: ReactNode }): ReactNode {
@@ -86,8 +94,9 @@ export interface TitlebarProps {
 export function Titlebar({ title, chrome, column, state }: TitlebarProps): ReactNode {
   const bar = useRef<HTMLElement>(null);
   const { canBack, canForward } = useNavHistory();
-  const shown = state.claimed ?? title;
-  useTitlebarReport(bar, `${shown}|${column?.collapsed ?? 'none'}`);
+  const shown = state.claimed?.title ?? title;
+  const count = state.claimed?.count;
+  useTitlebarReport(bar, `${shown}|${count ?? ''}|${column?.collapsed ?? 'none'}`);
   const style = {
     '--titlebar-lights': `${Math.max(chrome.trafficLightInset, EDGE)}px`,
     '--titlebar-controls': `${chrome.controlsRight ?? 0}px`,
@@ -101,7 +110,8 @@ export function Titlebar({ title, chrome, column, state }: TitlebarProps): React
         disabled={column === null} aria-expanded={column === null ? undefined : !column.collapsed}
         onClick={column?.toggle} />
       <span className="titlebar-rule" aria-hidden="true" />
-      <span key={shown} className="titlebar-title">{shown}</span>
+      <span key={shown} className="titlebar-title">{shown}
+        {count === undefined ? null : <span className="titlebar-count">{count}</span>}</span>
       <div ref={state.setActions} className="titlebar-actions" />
     </header>
   );

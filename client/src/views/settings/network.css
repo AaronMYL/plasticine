@@ -13,16 +13,6 @@
   background: var(--tint2);
 }
 
-.vis-suggest-tag {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-caption);
-  font-weight: 600;
-  color: var(--accent);
-}
-
 .vis-suggest-text {
   flex: 1;
   min-width: 12em;

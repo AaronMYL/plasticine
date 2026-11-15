@@ -21,19 +21,6 @@
   color: var(--fg2);
 }
 
-.reply-confirm-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0 var(--space-2) 0 var(--space-2);
-  border-radius: var(--radius-lg);
-  background: var(--tint2);
-  color: var(--fg);
-  font-size: var(--text-caption);
-  font-weight: 600;
-  line-height: var(--text-section-line);
-}
-
 .reply-confirm-draft {
   width: 100%;
   resize: vertical;

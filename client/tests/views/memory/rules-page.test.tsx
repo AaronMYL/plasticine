@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { seedMemoryScene } from '../../../src/api/fake/memory-scene-seed.ts';
 import { NOW, renderApp } from '../../helpers.tsx';
 
@@ -63,4 +63,32 @@ describe('规则搬家（第13批）和说法冲突（11-11）', () => {
     expect(await screen.findByText('没有要你选的说法冲突。')).toBeTruthy();
     expect((await app.api.soul.conflicts()).conflicts).toEqual([]);
   });
+
+  it('说法冲突在桌面客户端：页名只在标题栏，页里不留半截「记忆 /」和孤零零的件数', async () => {
+    window.plasticineDesktop = { version: '0.9.0', notify: vi.fn(),
+      windowChrome: { current: () => ({ trafficLightInset: 96, fullScreen: false }) } };
+    const { view: { container } } = await renderApp({ hash: '#/memory/conflicts', setup: ({ control }) => {
+      seedMemoryScene({ mates: control.mates, soul: control.soul }, NOW);
+    } });
+    expect(await screen.findByRole('article', { name: '现在以这条为准：周末照常提醒到期事项。' })).toBeTruthy();
+    const title = container.querySelector<HTMLElement>('.titlebar .titlebar-title')!;
+    expect(title.textContent).toBe('说法冲突1');
+    expect(title.querySelector('.titlebar-count')?.textContent).toBe('1');
+    expect(screen.queryByRole('navigation', { name: '位置' })).toBeNull();
+    expect(container.querySelector('.conflicts-page .page-head')).toBeNull();
+  });
+
+  it('说法冲突在网页版：「记忆 /」、页名和件数照旧在页里', async () => {
+    const { view: { container } } = await renderApp({ hash: '#/memory/conflicts', setup: ({ control }) => {
+      seedMemoryScene({ mates: control.mates, soul: control.soul }, NOW);
+    } });
+    expect(await screen.findByRole('navigation', { name: '位置' })).toBeTruthy();
+    const head = container.querySelector<HTMLElement>('.conflicts-page .page-head')!;
+    expect(within(head).getByRole('heading', { level: 1, name: '说法冲突' })).toBeTruthy();
+    expect(head.querySelector('.page-head-status')?.textContent).toBe('1');
+  });
+});
+
+afterEach(() => {
+  delete window.plasticineDesktop;
 });

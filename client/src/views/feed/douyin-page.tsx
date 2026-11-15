@@ -34,6 +34,9 @@ function meta(work: VideoWorkView, timeZone: string): string {
 export type DouyinPhase = 'todo' | 'running' | 'waiting' | 'done';
 export const PHASE_LABELS: Readonly<Record<DouyinPhase, string>> = { todo: '没整理', running: '在整理',
   waiting: '等转写装好', done: '已整理' };
+/** 状态色只染点（11-14 界面统一）。 */
+const PHASE_DOTS: Readonly<Record<DouyinPhase, string>> = { todo: 'dot', running: 'dot dot-run',
+  waiting: 'dot dot-run', done: 'dot dot-ok' };
 export function phaseOf(work: VideoWorkView): DouyinPhase {
   if (work.stage === 'summarized') return 'done';
   if (work.run === 'waiting_transcriber') return 'waiting';
@@ -125,7 +128,8 @@ function WorkRow({ work, timeZone, current, picking, picked, onOpen, onPick }: {
       {length === '' ? null : <span className="dy-work-length">{length}</span>}</span>
     <span className="dy-work-text"><strong>{work.title}</strong>
       <span className="dy-work-meta">{meta(work, timeZone)}</span></span>
-    {phase === 'todo' ? null : <span className="dy-work-phase" data-phase={phase}>{PHASE_LABELS[phase]}</span>}
+    {phase === 'todo' ? null : <span className="dy-work-phase" data-phase={phase}>
+      <span className={PHASE_DOTS[phase]} aria-hidden="true" />{PHASE_LABELS[phase]}</span>}
   </>;
   if (picking) {
     return <label className="dy-work" data-picked={picked || undefined}>

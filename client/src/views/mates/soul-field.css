@@ -1,4 +1,4 @@
-/* 编辑弹框里的 Soul（第13批设计稿 Editor）：等宽字、记号强调色；影子和输入框排版一模一样，叠在一起。 */
+/* 编辑弹框里的 Soul（第13批设计稿 Editor）：等宽字、记号淡一档（11-14 起强调色不写字）；影子和输入框排版一模一样，叠在一起。 */
 .soul-field { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .soul-field-label { font-size: var(--text-ui); color: var(--fg2); }
 .soul-text { position: relative; height: clamp(200px, calc(100dvh - 620px), 330px); border-radius: var(--radius-lg);
@@ -16,13 +16,13 @@
 .soul-text .soul-text-input { resize: none; background: transparent; color: transparent; caret-color: var(--fg);
   -webkit-text-fill-color: transparent; outline: none; }
 .soul-text .soul-text-input::placeholder { color: var(--fg3); -webkit-text-fill-color: var(--fg3); }
-.soul-text-mark { color: var(--accent); }
+.soul-text-mark { color: var(--fg3); }
 .soul-field-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3);
   font-size: var(--text-caption);
   color: var(--fg2); }
 .soul-field-link { display: inline-flex; align-items: center; gap: var(--space-1); padding: 0; border: 0;
   background: transparent;
-  color: var(--accent); font: inherit; font-size: var(--text-caption); cursor: pointer; }
+  color: var(--fg); font: inherit; font-size: var(--text-caption); cursor: pointer; }
 .soul-field-link:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 3px; }
 .soul-field-link:disabled { color: var(--fg3); cursor: default; }
 .soul-field-link:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; border-radius: var(--radius-sm); }
