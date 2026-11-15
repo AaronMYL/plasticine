@@ -63,8 +63,7 @@ describe('规则搬家（第13批）和说法冲突（11-11）', () => {
       seedMemoryScene({ mates: control.mates, soul: control.soul }, NOW);
     } });
     const winner = await screen.findByRole('article', { name: '现在以这条为准：周末照常提醒到期事项。' });
-    // 这一行的「关于你」要等目录读回来才有：机器忙的时候晚一拍，等它出来。
-    expect(await within(winner).findByText('你说的 · 10-27 · 关于你')).toBeTruthy();
+    expect(within(winner).getByText('你说的 · 10-27 · 关于你')).toBeTruthy();
     fireEvent.click(within(winner).getByRole('button', { name: '以这条为准' }));
     expect(await screen.findByText('没有要你选的说法冲突。')).toBeTruthy();
     expect((await app.api.soul.conflicts()).conflicts).toEqual([]);
