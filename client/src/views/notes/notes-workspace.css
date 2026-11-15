@@ -371,21 +371,80 @@
   margin-bottom: 0;
 }
 
-/* 列表收着（或窄到只放得下正文）时：回列表、新建放在正文上面一小行。 */
-.notes-detail-bar {
-  display: flex;
-  flex: none;
-  align-items: center;
+/* ---------- 11-15 界面统一：电脑上列表就是笔记栏目的第二栏（notes-column-list.tsx） ---------- */
+
+.column .note-list {
+  flex: 1;
+  gap: var(--space-3);
+  padding: 0 var(--space-2) var(--space-6);
+  border-right: 0;
+}
+
+.column .note-list-head {
+  top: 0;
+  gap: var(--space-2);
+  margin-top: 0;
+  padding: 0 0 var(--space-3);
+  border-bottom: 0;
+  background: var(--layer-side);
+}
+
+/* 顶上一行和别的栏目的标题行一样高（56）；文件夹名就是切换，字和别的栏目名对齐。 */
+.column .note-list-heading {
+  min-height: 56px; /* 例外：和第二栏标题行同高 */
+  padding: 0 var(--space-1) 0 0;
+}
+
+.column .note-collection-toggle {
   gap: var(--space-1);
-  min-height: 40px;
-  padding: var(--space-2) 0 0 var(--space-5);
+  height: var(--control);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius);
+  font-size: var(--text-body);
+  font-weight: 600;
+  transition: background-color var(--motion-fast) var(--ease-out);
 }
 
-.notes-detail-bar .notes-back {
-  margin: 0;
-  align-self: center;
+.column .note-collection-toggle:hover,
+.column .note-collection-toggle[aria-expanded='true'] {
+  background: var(--tint2);
 }
 
-.notes-columns[data-layout='single'] .notes-detail-bar {
-  padding-left: 0;
+.column .note-collection-toggle > svg:last-child {
+  transition: transform var(--motion-base) var(--ease-out);
+}
+
+.column .note-collection-toggle[aria-expanded='true'] > svg:last-child {
+  transform: rotate(180deg);
+}
+
+.column .note-group {
+  margin-inline: var(--space-2);
+}
+
+/* 笔记一行的 ⋯（设计稿「笔记一行」）：平时不显示，鼠标移上去在右上角出来，时间不让位；触屏常显。 */
+@media (hover: hover) and (pointer: fine) {
+  .note-list-item > .note-actions {
+    opacity: 0;
+    transition: opacity var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+  }
+
+  .note-list-item:is(:hover, :focus-within) > .note-actions,
+  .note-list-item > .note-actions[data-open='true'] {
+    opacity: 1;
+  }
+}
+
+/* 文件夹列表的弹层（从文件夹名点开）：一行一个文件夹，个数鼠标移上去换成 ⋯；「新建文件夹」只在最下面。 */
+.note-folders-popover {
+  width: 264px; /* 例外：比第二栏略宽，长文件夹名不折 */
+  padding: var(--space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .column .note-collection-toggle,
+  .column .note-collection-toggle > svg:last-child,
+  .note-list-item > .note-actions {
+    transition: none;
+  }
 }

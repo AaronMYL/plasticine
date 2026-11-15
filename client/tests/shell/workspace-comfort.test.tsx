@@ -4,7 +4,12 @@ import { MainErrorBoundary } from '../../src/shell/main-error-boundary.tsx';
 import { AppearanceSection } from '../../src/views/settings/appearance-section.tsx';
 import { renderApp, settle } from '../helpers.tsx';
 
-afterEach(() => { localStorage.removeItem('plasticine.appearance'); delete document.documentElement.dataset.theme; });
+afterEach(() => {
+  localStorage.removeItem('plasticine.appearance');
+  localStorage.removeItem('plasticine.palette');
+  delete document.documentElement.dataset.theme;
+  delete document.documentElement.dataset.palette;
+});
 
 it('页面崩溃只显示该区错误，重试可以恢复，外部对话仍可输入', () => {
   const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -35,6 +40,23 @@ it('外观在本设备记住，跟随系统取消固定主题', () => {
   expect(screen.getByRole('button', { name: '浅色 / 深色' }).textContent).toBe('深色');
   pick('跟随系统');
   expect(document.documentElement.dataset.theme).toBeUndefined();
+});
+
+it('主题是例外：四张小样（左浅右深、中间一点强调色），点一张马上换，选中那张按下、带勾（11-15 Aaron 弹框定）', () => {
+  const view = render(<AppearanceSection />);
+  const themes = screen.getByRole('group', { name: '主题' });
+  const cards = within(themes).getAllByRole('button');
+  expect(cards.map((card) => card.textContent)).toEqual(['暖纸', '石墨', '松林', '午夜']);
+  expect(cards[0]?.getAttribute('aria-pressed')).toBe('true');
+  expect(screen.queryByRole('button', { name: '主题' })).toBeNull();
+  fireEvent.click(within(themes).getByRole('button', { name: '松林' }));
+  expect(document.documentElement.dataset.palette).toBe('pine');
+  expect(within(themes).getByRole('button', { name: '松林' }).getAttribute('aria-pressed')).toBe('true');
+  expect(within(themes).getByRole('button', { name: '暖纸' }).getAttribute('aria-pressed')).toBe('false');
+  view.unmount();
+  render(<AppearanceSection />);
+  expect(within(screen.getByRole('group', { name: '主题' })).getByRole('button', { name: '松林' })
+    .getAttribute('aria-pressed')).toBe('true');
 });
 
 it('页里点链接走一步：⌘[ 后退回到原页和阅读位置', async () => {

@@ -33,8 +33,6 @@
   padding-left: var(--space-2); }
 .note-list-item[data-bulk='true'] .note-row { flex: 1; min-width: 0; }
 .note-list-item[data-selected='true'] { background: var(--tint); border-radius: var(--radius); }
-.note-bulk-detail { padding: var(--space-5); }
-.note-bulk-detail h2 { margin: 0 0 var(--space-5); font-size: var(--text-number); color: var(--fg2); }
 .file-row[data-bulk='true'] .file-row-side .icon-button, .bk-item:has(.bulk-card-check) .bk-item-more { display: none; }
 .lib-trash-row:has(> .bulk-check) { grid-template-columns: 18px 28px minmax(0, 1fr) 56px 96px; }
 @media (max-width: 640px) {

@@ -10,12 +10,20 @@ describe('壳偏好 · 悬浮对话框', () => {
     const storage = memoryStorage();
     const prefs = new ShellPrefs(storage);
     prefs.setChatOpen(false);
-    prefs.setChatFrame({ width: 500, height: 700, right: 300, bottom: 80 });
+    prefs.setChatFrame({ width: 500, height: 700, right: 300, bottom: 80, full: false });
     prefs.setPhoneChatOpen(true);
     const restored = new ShellPrefs(storage).store.get();
-    expect(restored).toMatchObject({ chatOpen: false, chatFrame: { width: 500, height: 700, right: 300, bottom: 80 },
-      phoneChatOpen: false });
+    expect(restored).toMatchObject({ chatOpen: false,
+      chatFrame: { width: 500, height: 700, right: 300, bottom: 80, full: false }, phoneChatOpen: false });
     expect(computeLayout(1440, restored, 'today').chat).toBe('ball');
+  });
+
+  it('11-15 以前存的大小没有「整高」：当作整高，宽度照旧', () => {
+    const storage = memoryStorage();
+    storage.setItem('plasticine:shell-prefs', JSON.stringify({ chatFrame: { width: 480, height: 640, right: 24,
+      bottom: 24 } }));
+    expect(new ShellPrefs(storage).store.get().chatFrame).toEqual({ width: 480, height: 640, right: 24, bottom: 24,
+      full: true });
   });
 
   it('旧版的按视图收起和对话栏宽度当作没选过；坏的位置记录回到默认', () => {

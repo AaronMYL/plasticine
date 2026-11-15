@@ -79,6 +79,45 @@
   outline: none;
 }
 
+/* 上边（11-15 设计稿⑰）：拖了改高度，下边还贴着窗口底；鼠标移上来显出一道短横线；双击回到整高。 */
+.chat-grip-n {
+  top: 0;
+  right: 0;
+  left: 8px;
+  height: 8px;
+  display: grid;
+  place-items: center;
+  cursor: ns-resize;
+}
+
+.chat-grip-n > span {
+  width: 40px;
+  height: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--line2);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.chat-grip-n:hover > span,
+.chat-grip-n:focus-visible > span,
+.chat-dialog[data-dragging='true'] .chat-grip-n > span {
+  opacity: 1;
+}
+
+.chat-grip-n:focus-visible {
+  outline: none;
+}
+
+/* 左上角：宽和高一起改。 */
+.chat-grip-nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
 
 .chat-collapse {
   flex: none;

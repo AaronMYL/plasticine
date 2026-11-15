@@ -1,0 +1,84 @@
+/*
+ * 设置 · 通用 · 外观的例外（11-15 Aaron 弹框定「两处都有小样」）：主题是四张小样一排，手机上两张一排。
+ * 选中的那张描边加粗、名字加重、带勾（不只靠颜色）。
+ */
+.settings-palettes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-2) 0 var(--space-3);
+}
+
+.settings-palette {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+
+.settings-palette:hover {
+  background: var(--tint);
+}
+
+.settings-palette:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.settings-palette[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px var(--fg);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.settings-palette-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  min-height: var(--text-ui-line);
+}
+
+.settings-palette-swatch {
+  position: relative;
+  display: flex;
+  height: 44px; /* 例外：小样的色块高度（设计稿） */
+  overflow: hidden;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.settings-palette-swatch > span {
+  flex: 1;
+}
+
+.settings-palette-swatch > i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px; /* 例外：中间那一点强调色 */
+  height: 12px;
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%);
+}
+
+@media (max-width: 520px) {
+  .settings-palettes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-palette {
+    min-height: var(--touch);
+  }
+}

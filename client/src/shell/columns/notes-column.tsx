@@ -1,28 +1,10 @@
-// 笔记栏目的第二栏（11-06 定）：文件夹，只放他自己写的（「Plasticine 写的」在资料库的空间里）；顶上 + 新建一篇。
-// 选哪个文件夹记在 NotesUi（和主区的列表共用一份），点了主区回到这个文件夹的列表。
+// 笔记栏目的第二栏：11-06 起是文件夹；11-15 界面统一（Aaron 弹框定「两栏合成一栏」）起就是笔记列表，文件夹从列表顶上的
+// 文件夹名点开（views/notes/notes-column-list.tsx）。选哪个文件夹、搜什么记在 NotesUi，和主区的正文共用一份。
 
 import type { ReactNode } from 'react';
-import { useClientState } from '../../state/context.tsx';
-import { useStore } from '../../state/use-store.ts';
-import { NoteFolders } from '../../views/notes/note-folders.tsx';
-import { IconButton } from '../icon-button.tsx';
+import { NotesListColumn } from '../../views/notes/notes-column-list.tsx';
 import type { Route } from '../routes.ts';
-import { ColumnHead } from './column.tsx';
 
-export function NotesColumn({ navigate }: { navigate: (route: Route) => void }): ReactNode {
-  const { notesUi } = useClientState();
-  const ui = useStore(notesUi.store);
-  return (
-    <>
-      <ColumnHead title="笔记">
-        <IconButton icon="plus" label="新建笔记" onClick={() => navigate({ view: 'notes', noteId: 'new' })} />
-      </ColumnHead>
-      <div className="column-scroll">
-        <NoteFolders column value={ui.collection} onChange={(collection) => {
-          notesUi.set({ collection, activeNoteId: null, reading: true });
-          navigate({ view: 'notes', noteId: null });
-        }} />
-      </div>
-    </>
-  );
+export function NotesColumn({ route, navigate }: { route: Route; navigate: (route: Route) => void }): ReactNode {
+  return <NotesListColumn route={route} navigate={navigate} />;
 }

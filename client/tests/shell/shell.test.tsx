@@ -212,7 +212,7 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
     expect(screen.getByRole('button', { name: /^展开对话框/ })).toBeTruthy();
   });
 
-  it('电脑上对话浮在页面右侧（第13批，取代停靠）：不盖住页面布局、不能拖走，只调宽度（方向键、拖左边），记下来',
+  it('电脑上对话浮在页面右侧（第13批，取代停靠）：不盖住页面布局、不能拖走，打开时整高；拖左边、方向键调宽，记下来',
     async () => {
       const app = await renderApp({ width: 1440 });
       expect(chatColumn().getAttribute('data-docked')).toBeNull();
@@ -222,12 +222,40 @@ describe('壳 · 悬浮对话框在所有标签上都在', () => {
       const grip = screen.getByRole('separator', { name: '调整对话框宽度（左右方向键）' });
       fireEvent.keyDown(grip, { key: 'ArrowLeft' });
       fireEvent.keyDown(grip, { key: 'ArrowUp' });
-      expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ width: 436, height: 640 });
+      expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ width: 436, full: true });
       fireEvent.pointerDown(grip, { button: 0, pointerId: 2, clientX: 1004, clientY: 300 });
       fireEvent.pointerMove(grip, { pointerId: 2, clientX: 940, clientY: 300 });
       fireEvent.pointerUp(grip, { pointerId: 2 });
       expect(app.state.shellPrefs.store.get().chatFrame.width).toBe(500);
-      expect(screen.queryByRole('separator', { name: /调整对话框大小/ })).toBeNull();
+    });
+
+  it('对话框上边也能拖（11-15 Aaron「只能拉宽度、无法拉高度」）：变矮时下边还贴着窗口底，记下来；双击上边回到整高',
+    async () => {
+      const app = await renderApp({ width: 1440 });
+      const top = screen.getByRole('separator', { name: '调整对话框高度（上下方向键）' });
+      fireEvent.pointerDown(top, { button: 0, pointerId: 3, clientX: 1200, clientY: 8 });
+      fireEvent.pointerMove(top, { pointerId: 3, clientX: 1200, clientY: 208 });
+      fireEvent.pointerUp(top, { pointerId: 3 });
+      const full = window.innerHeight - 16;
+      expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ height: full - 200, full: false });
+      expect(chatColumn().style.height).toBe(`${full - 200}px`);
+      expect(chatColumn().style.top).toBe('auto');
+      fireEvent.pointerDown(top, { button: 0, pointerId: 4, clientX: 1200, clientY: 300 });
+      fireEvent.pointerMove(top, { pointerId: 4, clientX: 1200, clientY: 900 });
+      fireEvent.pointerUp(top, { pointerId: 4 });
+      expect(app.state.shellPrefs.store.get().chatFrame.height).toBe(420);
+      fireEvent.doubleClick(top);
+      expect(app.state.shellPrefs.store.get().chatFrame.full).toBe(true);
+      expect(chatColumn().style.height).toBe('');
+      fireEvent.keyDown(top, { key: 'ArrowDown' });
+      expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ height: full - 16, full: false });
+      fireEvent.keyDown(top, { key: 'ArrowUp' });
+      expect(app.state.shellPrefs.store.get().chatFrame.full).toBe(true);
+      const corner = screen.getByRole('separator', { name: '调整对话框大小' });
+      fireEvent.pointerDown(corner, { button: 0, pointerId: 5, clientX: 1000, clientY: 8 });
+      fireEvent.pointerMove(corner, { pointerId: 5, clientX: 960, clientY: 108 });
+      fireEvent.pointerUp(corner, { pointerId: 5 });
+      expect(app.state.shellPrefs.store.get().chatFrame).toMatchObject({ width: 460, height: full - 100, full: false });
     });
 
   it('Esc 缩小对话框，焦点回到圆球', async () => {

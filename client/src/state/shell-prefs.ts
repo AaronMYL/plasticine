@@ -13,10 +13,12 @@ export interface ChatFrame {
   right: number;
   /** 离窗口下边多远。 */
   bottom: number;
+  /** 整高（11-15 Aaron「只能拉宽度、无法拉高度」）：true 时上下贴着窗口、不看 height；拖了上边就是 false。 */
+  full: boolean;
 }
 
 /** 对话框默认 420×640，离右、下各 24（方向 I 的间距档）。 */
-export const CHAT_FRAME_DEFAULT: ChatFrame = { width: 420, height: 640, right: 24, bottom: 24 };
+export const CHAT_FRAME_DEFAULT: ChatFrame = { width: 420, height: 640, right: 24, bottom: 24, full: true };
 /** 最小 340×420：放得下一张工具卡和输入框；最大 720 宽，高到窗口上下各留 16。 */
 export const CHAT_MIN_WIDTH = 340;
 export const CHAT_MIN_HEIGHT = 420;
@@ -56,7 +58,7 @@ export function clampChatFrame(frame: ChatFrame, viewport: { width: number; heig
   const height = Math.round(Math.min(maxHeight, Math.max(CHAT_MIN_HEIGHT, frame.height)));
   const right = Math.round(Math.min(Math.max(EDGE, viewport.width - width - EDGE), Math.max(EDGE, frame.right)));
   const bottom = Math.round(Math.min(Math.max(EDGE, viewport.height - height - EDGE), Math.max(EDGE, frame.bottom)));
-  return { width, height, right, bottom };
+  return { width, height, right, bottom, full: frame.full };
 }
 
 function readFrame(saved: unknown): ChatFrame | null {
@@ -68,7 +70,9 @@ function readFrame(saved: unknown): ChatFrame | null {
     return null;
   }
   const [width, height, right, bottom] = values as number[];
-  return { width: width!, height: height!, right: right!, bottom: bottom! };
+  // 11-15 以前存的没有 full：那时对话框都是整高。
+  const full = (saved as Record<string, unknown>)['full'];
+  return { width: width!, height: height!, right: right!, bottom: bottom!, full: typeof full === 'boolean' ? full : true };
 }
 
 export class ShellPrefs {

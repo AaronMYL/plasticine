@@ -8,6 +8,13 @@
   width: 100%;
 }
 
+/* 11-15 界面统一（设计稿「记忆页：底部不压列表，加回页头」）：内容最宽 760，页头和它对齐。 */
+@media (min-width: 768px) {
+  .page.memory-topics:not(.page-fill) {
+    max-width: calc(760px + 64px);
+  }
+}
+
 .memory-doc > :not(.page-head) {
   width: 100%;
   max-width: 760px;
@@ -325,6 +332,16 @@
     width: 100%;
   }
 
+  /* 窄屏：搜索框和「全量整理」同一行，搜索框占剩下的（11-15）。 */
+  .memory-topics .page-head-controls {
+    flex-wrap: nowrap;
+  }
+
+  .memory-topics .page-head-controls > .memory-search {
+    flex: 1;
+    width: auto;
+  }
+
   .doc-line {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
@@ -478,10 +495,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.memory-overview-spacer {
-  flex: 1;
 }
 
 .memory-overview-text {

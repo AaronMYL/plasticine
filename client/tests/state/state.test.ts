@@ -52,12 +52,12 @@ describe('state/', () => {
 
   it('对话框的大小夹在 340×420 到 720 宽之间，整个框留在窗口里', () => {
     const viewport = { width: 1440, height: 900 };
-    expect(clampChatFrame({ width: 100, height: 100, right: 24, bottom: 24 }, viewport))
-      .toEqual({ width: 340, height: 420, right: 24, bottom: 24 });
-    expect(clampChatFrame({ width: 2000, height: 2000, right: -50, bottom: 5000 }, viewport))
-      .toEqual({ width: 720, height: 868, right: 16, bottom: 16 });
-    expect(clampChatFrame({ width: 420.4, height: 640, right: 3000, bottom: 24 }, viewport))
-      .toEqual({ width: 420, height: 640, right: 1004, bottom: 24 });
+    expect(clampChatFrame({ width: 100, height: 100, right: 24, bottom: 24, full: false }, viewport))
+      .toEqual({ width: 340, height: 420, right: 24, bottom: 24, full: false });
+    expect(clampChatFrame({ width: 2000, height: 2000, right: -50, bottom: 5000, full: true }, viewport))
+      .toEqual({ width: 720, height: 868, right: 16, bottom: 16, full: true });
+    expect(clampChatFrame({ width: 420.4, height: 640, right: 3000, bottom: 24, full: false }, viewport))
+      .toEqual({ width: 420, height: 640, right: 1004, bottom: 24, full: false });
   });
 
   it('有没存的笔记草稿或没发的对话草稿时，离开页面前要问', () => {

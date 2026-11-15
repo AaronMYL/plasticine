@@ -48,7 +48,7 @@ function Body(props: ShellColumnProps): ReactNode {
       return <WebColumn currentId={props.webId} onOpen={props.onOpenTab} onClose={props.onCloseTab}
         onReopen={props.onReopen} onNew={() => navigate({ view: 'web', noteId: null, webTabId: null })} />;
     case 'reading': return <ReadingColumn route={route} navigate={navigate} />;
-    case 'notes': return <NotesColumn navigate={navigate} />;
+    case 'notes': return <NotesColumn route={route} navigate={navigate} />;
     case 'library': return <LibraryColumn route={route} navigate={navigate} onAsk={props.onAsk} />;
     case 'now': return null;
   }

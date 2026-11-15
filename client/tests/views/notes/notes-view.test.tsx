@@ -3,6 +3,11 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest';
 import { NOW, renderApp, seedNote, settle } from '../../helpers.tsx';
 
+/** 新建一篇：手机在页头（「新建」）；电脑在笔记栏目第二栏的列表顶上（「新建笔记」，11-15 两栏合成一栏）。 */
+function newNoteButton(): HTMLElement {
+  return screen.getByRole('button', { name: window.innerWidth < 768 ? '新建' : '新建笔记' });
+}
+
 async function noteEditor(): Promise<Editor> {
   return waitFor(() => {
     const element = document.querySelector<HTMLElement & { editor?: Editor }>('.ProseMirror');
@@ -187,7 +192,7 @@ describe('笔记页', () => {
 
   it('新建一篇，打开的就是它，焦点直接落在正文里（审查第 3 条）', async () => {
     const app = await renderApp({ hash: '#/notes' });
-    fireEvent.click(screen.getByRole('button', { name: '新建' }));
+    fireEvent.click(newNoteButton());
     await waitFor(() => expect(window.location.hash).toMatch(/^#\/notes\/note_/));
     const editor = await noteEditor();
     await waitFor(() => expect(document.activeElement).toBe(editor.view.dom));
@@ -197,7 +202,7 @@ describe('笔记页', () => {
 
   it.each([390, 1440])('%s 宽：新建后聚焦只发生一次，再打开同一篇不抢焦点', async (width) => {
     const app = await renderApp({ hash: '#/notes', width });
-    fireEvent.click(screen.getByRole('button', { name: '新建' }));
+    fireEvent.click(newNoteButton());
     await waitFor(() => expect(window.location.hash).toMatch(/^#\/notes\/note_/));
     const editor = await noteEditor();
     const dom = editor.view.dom;
@@ -223,7 +228,7 @@ describe('笔记页', () => {
       setup: (fake) => fake.control.faults.next('create', { kind: 'uncertain', landed: true }),
     });
     const create = vi.spyOn(app.api.notes, 'create');
-    fireEvent.click(screen.getByRole('button', { name: '新建' }));
+    fireEvent.click(newNoteButton());
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('结果待核实'));
     fireEvent.click(screen.getByRole('button', { name: '再核实' }));
     await waitFor(() => expect(window.location.hash).toMatch(/^#\/notes\/note_/));
@@ -239,13 +244,13 @@ describe('笔记页', () => {
       setup: (fake) => fake.control.faults.next('create', { kind: 'uncertain', landed: false }),
     });
     const create = vi.spyOn(app.api.notes, 'create');
-    fireEvent.click(screen.getByRole('button', { name: '新建' }));
+    fireEvent.click(newNoteButton());
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('结果待核实'));
     fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '首页' }));
     await settle();
     fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: '笔记' }));
     await settle();
-    fireEvent.click(screen.getByRole('button', { name: '新建' }));
+    fireEvent.click(newNoteButton());
     await waitFor(() => expect(window.location.hash).toMatch(/^#\/notes\/note_/));
     const ids = create.mock.calls.map(([input]) => input.requestId);
     expect(ids[1]).toBe(ids[0]);

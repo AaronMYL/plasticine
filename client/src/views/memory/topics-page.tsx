@@ -1,4 +1,5 @@
-// 记忆页（第 102 条；《优化清单》第 16、19、10 条 11-06 重做，设计稿 Plasticine-Memory）：页头「记忆」+ 搜索（含归档）；
+// 记忆页（第 102 条；《优化清单》第 16、19、10 条 11-06 重做，设计稿 Plasticine-Memory）：页头「记忆」+ 搜索（含归档）
+// +「全量整理」（11-15 界面统一，内容最宽 760、和页头对齐）；
 // 夜里整理过就有一行「昨晚整理了 n 条」入口（没有整理时整行不出现）；「拿不准的」几条（对 / 不对）；下面是按类型分组的目录：
 // 关于你和做事方式 · 项目 · 人 · 话题 · 技能，每篇一行（名字 + 开头那句简介），档位只在不是私密时标出来。
 
@@ -20,7 +21,8 @@ import { conflictsRoute, mainLineRoute, type Route } from '../../shell/routes.ts
 import { OpLine } from '../../primitives/task-row/op-line.tsx';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
 import { MemorySearch } from './memory-search.tsx';
-import { MemoryOverview, RulesMoveBanner } from './memory-overview.tsx';
+import { CleanupButton, MemoryOverview, RulesMoveBanner } from './memory-overview.tsx';
+import { useCleanup } from './use-cleanup.ts';
 import { uncertainKey } from './topics-store.ts';
 import './topics.css';
 
@@ -160,6 +162,8 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
   const live = useLive();
   const data = useStore(live.memoryTopics.data);
   const [query, setQuery] = useState('');
+  const cleanup = useCleanup();
+  const [cleanupError, setCleanupError] = useState<string | null>(null);
   useEffect(() => {
     void live.memoryTopics.open();
   }, [live.memoryTopics]);
@@ -174,13 +178,17 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
   return (
     <div className="page memory-topics">
       <PageHeader title="记忆" phoneSearch={false} onBack={() => navigate(mainLineRoute())}
-        controls={<MemorySearch.Field value={query} onChange={setQuery} />} />
+        controls={<>
+          <MemorySearch.Field value={query} onChange={setQuery} />
+          <CleanupButton cleanup={cleanup} navigate={navigate} onError={setCleanupError} />
+        </>} />
       {data.error === null ? null : <p className="block-empty is-error" role="alert">{data.error}</p>}
+      {cleanupError === null ? null : <p className="block-empty is-error" role="alert">{cleanupError}</p>}
       {searching ? <MemorySearch.Results query={query} navigate={navigate} /> : list === null
         ? <PageLoading /> : (
           <>
             <RulesMoveBanner navigate={navigate} />
-            <MemoryOverview navigate={navigate}>
+            <MemoryOverview cleanup={cleanup} navigate={navigate}>
               <ConflictsEntry navigate={navigate} />
               {list.dream === null ? null : <DreamEntry dream={list.dream} navigate={navigate} />}
             </MemoryOverview>

@@ -5,6 +5,7 @@ import { uncertainError } from '../../../src/api/errors.ts';
 import { ActionOps } from '../../../src/state/action-ops.ts';
 import { memoryStorage, renderApp, seedNote, settle } from '../../helpers.tsx';
 import { aiOn, toggleAi } from './ai-switch.ts';
+import { openFolders } from './folders.ts';
 
 async function editor(): Promise<Editor> {
   return waitFor(() => {
@@ -21,7 +22,7 @@ describe('笔记完整工作区', () => {
       seedNote(fake, 'n1', '# 出行', { folder: '旧文件夹' });
     } });
     await editor();
-    fireEvent.click(await screen.findByRole('button', { name: '管理文件夹旧文件夹' }));
+    fireEvent.click(await within(await openFolders()).findByRole('button', { name: '管理文件夹旧文件夹' }));
     fireEvent.change(screen.getByLabelText('文件夹名称'), { target: { value: '新文件夹' } });
     const original = app.api.notes.changeFolder.bind(app.api.notes);
     const write = vi.spyOn(app.api.notes, 'changeFolder').mockImplementationOnce(async (input) => {
@@ -45,14 +46,15 @@ describe('笔记完整工作区', () => {
     const current = await app.api.notes.get('n1');
     expect(current.folder).toBe('新文件夹');
     expect(current.version).toBe(2);
-    expect(await screen.findByRole('button', { name: '新文件夹 1' })).toBeTruthy();
+    expect(await within(await openFolders()).findByRole('button', { name: '新文件夹 1' })).toBeTruthy();
   });
 
   it('文件夹计数先读到新事件，迟到的旧列表不能覆盖它', async () => {
     const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => {
       seedNote(fake, 'n1', '# 一', { folder: '工作' });
     } });
-    await screen.findByRole('button', { name: '工作 1' });
+    const folders = await openFolders();
+    await within(folders).findByRole('button', { name: '工作 1' });
     const old = await app.api.notes.folders();
     const gate = Promise.withResolvers<typeof old>();
     vi.spyOn(app.api.notes, 'folders').mockReturnValueOnce(gate.promise);
@@ -61,9 +63,9 @@ describe('笔记完整工作区', () => {
       seedNote(app, 'n2', '# 二', { folder: '工作' });
       app.control.bus.emit({ type: 'note.invalidated', noteId: 'folders' });
     });
-    await screen.findByRole('button', { name: '工作 2' });
+    await within(folders).findByRole('button', { name: '工作 2' });
     await act(async () => gate.resolve(old));
-    expect(screen.getByRole('button', { name: '工作 2' })).toBeTruthy();
+    expect(within(folders).getByRole('button', { name: '工作 2' })).toBeTruthy();
   });
 
   it('文件夹新建、移入、软删后恢复回原文件夹，正文深处能搜索', async () => {
@@ -71,7 +73,8 @@ describe('笔记完整工作区', () => {
       seedNote(fake, 'n1', `# 旅行\n\n${'普通内容'.repeat(60)}\n正文深处的杭州`, { folder: '出行' });
     } });
     await editor();
-    expect(await screen.findByRole('button', { name: '出行 1' })).toBeTruthy();
+    expect(await within(await openFolders()).findByRole('button', { name: '出行 1' })).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.change(screen.getByRole('searchbox', { name: '搜索笔记' }), { target: { value: '杭州' } });
     await settle(300);
     expect(document.querySelectorAll('.note-row')).toHaveLength(1);
@@ -79,7 +82,7 @@ describe('笔记完整工作区', () => {
     fireEvent.click(screen.getByRole('button', { name: '删除笔记' }));
     fireEvent.click(screen.getByRole('button', { name: '移到最近删除' }));
     await waitFor(() => expect(window.location.hash).toBe('#/notes'));
-    fireEvent.click(await screen.findByRole('button', { name: '最近删除 1' }));
+    fireEvent.click(await within(await openFolders()).findByRole('button', { name: '最近删除 1' }));
     await settle(350);
     fireEvent.click(await screen.findByRole('button', { name: /旅行/ }));
     await editor();

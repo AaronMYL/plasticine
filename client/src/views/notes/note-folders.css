@@ -177,11 +177,74 @@
   padding: var(--space-4);
 }
 
-/* 2026-11-04 第 2 批悬停规则：文件夹行尾的 ⋯（管理）常显，不再悬停才出现。 */
+/* 2026-11-04 第 2 批悬停规则：手机文件夹抽屉里行尾的 ⋯（管理）常显。 */
+
+/*
+ * 电脑上从文件夹名点开的弹层（11-15 设计稿「笔记：文件夹和列表合成一栏」）：行矮一点；个数鼠标移上去（键盘聚焦）换成 ⋯，
+ * 「全部」「最近删除」没有 ⋯；触屏 ⋯ 常显、个数往左让。
+ */
+.note-folders[data-menu='true'] .note-folder-group {
+  gap: 0;
+}
+
+.note-folders[data-menu='true'] .note-folder-archive {
+  gap: 0;
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+}
+
+.note-folders[data-menu='true'] .note-folder-button {
+  min-height: var(--control);
+  padding: var(--space-1) var(--space-3);
+}
+
+.note-folders[data-menu='true'] .note-folder-spacer {
+  display: none;
+}
+
+.note-folders[data-menu='true'] .note-folder-manage.icon-button {
+  position: absolute;
+  top: 50%;
+  right: var(--space-1);
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
+.note-folders[data-menu='true'] .note-folder-count {
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.note-folders[data-menu='true'] .note-folder-row:is(:hover, :focus-within) > .note-folder-manage {
+  opacity: 1;
+}
+
+.note-folders[data-menu='true'] .note-folder-row:has(> .note-folder-manage):is(:hover, :focus-within)
+  .note-folder-count {
+  opacity: 0;
+}
+
+.note-folder-new {
+  color: var(--fg2);
+}
+
+@media (pointer: coarse) {
+  .note-folders[data-menu='true'] .note-folder-manage.icon-button {
+    opacity: 1;
+  }
+
+  .note-folders[data-menu='true'] .note-folder-row:has(> .note-folder-manage) .note-folder-count {
+    margin-right: var(--space-6);
+    opacity: 1;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .note-folder-row,
-  .note-folder-manage {
+  .note-folder-manage,
+  .note-folder-count {
     transition: none;
   }
 }

@@ -1,8 +1,8 @@
-import { BulkFeedback } from '../bulk/bulk-controls.tsx';
 import { useBulkSelection } from '../bulk/use-bulk-selection.ts';
 import { notesBatch } from '../bulk/bulk-api.ts';
-// 笔记页：文件夹 | 列表 | 正文；手机上一层一层进（列表 → 正文，带返回）。
-// 电脑上没选的时候默认打开列表第一篇；文件夹/列表可以独立收起，选择保留在 NotesUi。
+// 笔记页：电脑上主区只放正文——列表是笔记栏目的第二栏（11-15 界面统一，文件夹从列表顶上的文件夹名点开，
+// notes-column-list.tsx），收起它照旧用标题栏左边那个按钮；手机上一层一层进（文件夹 → 列表 → 正文，带返回）。
+// 电脑上没选的时候默认打开列表第一篇，选择保留在 NotesUi。
 // 「新建」的 request_id 存在 state/note-ops.ts：回执丢了再点（或点「再核实」）用的是同一个，不会建出第二篇。
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -19,10 +19,10 @@ import { useStore } from '../../state/use-store.ts';
 import { NoteEditor } from './note-editor.tsx';
 import { NoteFolders, type NoteCollection } from './note-folders.tsx';
 import { NoteList } from './note-list.tsx';
+import { collectionLabel as labelOf } from './notes-column-list.tsx';
 import { deleteNote, deleteOpNoteId } from './note-delete.ts';
 import { restoreNote, restoreOpNoteId } from './note-restore.ts';
 import { useNoteList, useOpenNote } from './use-notes.ts';
-import { useNotesLayout } from './use-notes-layout.ts';
 import './notes.css';
 import './notes-workspace.css';
 import { PhoneNotesHome } from './phone-notes-home.tsx';
@@ -130,11 +130,9 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
   const api = useApi();
   const { noteOps, notesUi, notesCache } = useClientState();
   const createOp = useStore(noteOps.store).get(CREATE_NOTE_OP);
-  const { query, collection, listHidden, activeNoteId, reading, phoneList } = useStore(notesUi.store);
+  const { query, collection, activeNoteId, reading, phoneList } = useStore(notesUi.store);
   const setQuery = (query: string): void => notesUi.set({ query });
   const setCollection = (collection: NoteCollection): void => notesUi.set({ collection });
-  const setListHidden = (listHidden: boolean): void => notesUi.set({ listHidden });
-  const { ref: workspace, layout, measured } = useNotesLayout(phone);
   const [foldersOpen, setFoldersOpen] = useState(false);
   const [automaticReading, setAutomaticReading] = useState(false);
   const freshLink = useRef(false);
@@ -161,20 +159,16 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
     notesUi.forgetNote(id);
     if (mounted.current && window.location.hash === renderedLocation && id === selectedId) backToList();
   };
-  const compact = layout === 'single';
-  // 电脑上文件夹在笔记栏目的第二栏（11-07 两层侧栏），主区不再画。
-  const showFolders = false;
-  const showNote = selection.active ? !compact
-    : !compact || noteId !== null || automaticReading || (reading === true && selectedId !== null);
-  const showList = selection.active || (compact ? !showNote : !listHidden);
-  const collectionLabel = collection.kind === 'folder' ? collection.name
-    : collection.kind === 'deleted' ? '最近删除' : '全部';
+  // 电脑上列表在第二栏（11-15），主区一直是正文；手机上列表和正文轮流占满。
+  const showNote = phone ? !selection.active
+    && (noteId !== null || automaticReading || (reading === true && selectedId !== null)) : true;
+  const showList = phone && (selection.active || !showNote);
+  const collectionLabel = labelOf(collection);
 
-  // 默认展开的第一篇已经在阅读时，聊天栏或缩放不能把它突然换成列表。
-  // 首次就处于单栏时仍从列表进入；返回列表会清除此状态。
+  // 电脑上默认展开的第一篇已经在阅读：之后变窄、切到手机宽也不突然换成列表；返回列表会清除此状态。
   useEffect(() => {
-    if (measured && !compact && selectedId !== null) setAutomaticReading(true);
-  }, [measured, compact, selectedId]);
+    if (!phone && selectedId !== null) setAutomaticReading(true);
+  }, [phone, selectedId]);
 
   const create = async (): Promise<void> => {
     const origin = window.location.hash;
@@ -192,6 +186,11 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
       }
     } catch (cause) {
       noteOps.fail(CREATE_NOTE_OP, cause);
+      // 从「新建」的地址来的（电脑上第二栏的 +、图标栏的新建）：没建成就回到笔记页，切走再回来不会自己再发一次；
+      // 要再试点「再核实」或再点新建，用的还是同一个 request_id。
+      if (mounted.current && window.location.hash === origin && origin === '#/notes/new') {
+        navigate({ view: 'notes', noteId: null });
+      }
     }
   };
 
@@ -221,17 +220,12 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
     );
   }
 
+  // 手机页头右边：正文里有回列表；文件夹；新建。
   const controls = (<>
-    {compact && showNote ? <button type="button" className="text-button notes-back"
+    {showNote ? <button type="button" className="text-button notes-back"
       aria-label="返回笔记列表" onClick={backToList}><Icon name="back" />列表</button> : null}
-    {phone ? (
-      <IconButton icon="folder" label="打开文件夹" aria-expanded={foldersOpen}
-        onClick={() => setFoldersOpen(true)} />
-    ) : null}
-    {!compact ? (
-      <IconButton icon="list" label={listHidden ? '展开列表' : '收起列表'} aria-pressed={!listHidden}
-        onClick={() => setListHidden(!listHidden)} />
-    ) : null}
+    <IconButton icon="folder" label="打开文件夹" aria-expanded={foldersOpen}
+      onClick={() => setFoldersOpen(true)} />
     <IconButton icon="plus" label="新建" className="notes-create"
       disabled={createOp?.status === 'running'} onClick={() => void create()} />
   </>);
@@ -249,9 +243,9 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
           地址里的笔记标识「{invalidNoteId}」不完整，打不开。从列表里选一篇。
         </p>
       ) : null}
-      <div className="notes-columns" ref={workspace} data-phone={phone} data-layout={layout}
-        data-folders-visible={showFolders} data-list-visible={showList}>
-        {phone ? <NoteFolders value={collection} inline={showFolders} open={foldersOpen} phone
+      <div className="notes-columns" data-phone={phone} data-layout={phone ? 'single' : 'wide'}
+        data-folders-visible={false} data-list-visible={showList}>
+        {phone ? <NoteFolders value={collection} inline={false} open={foldersOpen} phone
           onClose={() => setFoldersOpen(false)} onChange={(value) => {
             setCollection(value);
             setFoldersOpen(false);
@@ -259,7 +253,7 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
             notesUi.set({ activeNoteId: null, reading: false });
             navigate({ view: 'notes', noteId: null });
           }} /> : null}
-        <NoteList selection={selection} trash={collection.kind === 'deleted'} feedback={compact}
+        {phone ? <NoteList selection={selection} trash={collection.kind === 'deleted'} feedback
           folders={[...new Set((notes ?? []).map((note) => note.folder))]}
           hidden={!showList}
           notes={notes}
@@ -271,17 +265,13 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
           onOpen={openNote}
           showFolder={collection.kind === 'all'}
           collectionLabel={collectionLabel}
-          heading={!phone}
-          tools={phone ? undefined : controls}
-          onFolders={phone ? () => setFoldersOpen(true) : undefined}
-        />
+          heading={false}
+          onFolders={() => setFoldersOpen(true)}
+        /> : null}
         <div className="notes-detail" hidden={!showNote}>
-            {phone || showList ? null : <div className="notes-detail-bar">{controls}</div>}
-            {selection.active ? <div className="note-bulk-detail">
-              <h2>已选 {selection.selected.length} 篇笔记</h2><BulkFeedback selection={selection} />
-            </div> : <OpenNotePane noteId={selectedId} onDeleted={() => {
-              if (selectedId !== null) afterDeleted(selectedId);
-            }} />}
+          <OpenNotePane noteId={selectedId} onDeleted={() => {
+            if (selectedId !== null) afterDeleted(selectedId);
+          }} />
         </div>
       </div>
     </div>

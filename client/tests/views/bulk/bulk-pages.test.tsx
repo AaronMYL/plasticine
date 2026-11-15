@@ -8,14 +8,15 @@ async function startSelecting(): Promise<void> {
   fireEvent.click(await screen.findByRole('menuitem', { name: '选择' }));
 }
 
-it('笔记多选会替换阅读区，移动后列表与最近删除数量同步', async () => {
+// 11-15 两栏合成一栏：电脑上笔记列表在第二栏，多选在那一栏里做完（勾、全选、浮条），正文照旧开着。
+it('笔记多选在第二栏里做完，移动后列表与最近删除数量同步', async () => {
   const app = await renderApp({ hash: '#/notes', setup: (fake) => {
     seedNote(fake, 'a', '# 第一篇', { folder: '笔记' });
     seedNote(fake, 'b', '# 第二篇', { folder: '笔记' });
   } });
   await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: '全选' }));
-  expect(screen.getByRole('heading', { name: '已选 2 篇笔记' })).toBeTruthy();
+  expect(screen.getAllByText('已选 2').length).toBeGreaterThan(0);
   expect(document.querySelector('.note-row[aria-current="true"]')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: '移到…' }));
   fireEvent.change(screen.getByLabelText('目标文件夹'), { target: { value: '归档' } });

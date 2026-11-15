@@ -86,6 +86,26 @@
   scrollbar-width: thin;
 }
 
+/*
+ * 11-15 界面统一（Aaron 框出第二栏底部「技能 / 记忆」压住了群组）：下面还有没滚到的，列表在底部那道细线上方淡出一截，
+ * 不再像被底部那一块压住；滚到底、或者列表本来就短（没有滚动），不淡。跟着滚动走，不是时间动效。
+ */
+@keyframes column-scroll-end {
+  from { mask-size: 100% 100%; }
+  to { mask-size: 100% calc(100% + var(--space-4)); }
+}
+
+@supports (animation-timeline: scroll()) {
+  .column-scroll {
+    mask-image: linear-gradient(to bottom, var(--fg) calc(100% - var(--space-4)), transparent);
+    mask-repeat: no-repeat;
+    mask-size: 100% calc(100% + var(--space-4));
+    animation: column-scroll-end linear both;
+    animation-timeline: scroll(self);
+    animation-range: calc(100% - var(--space-4)) 100%;
+  }
+}
+
 .column-item {
   display: flex;
   flex: none;
@@ -259,22 +279,6 @@
   padding: var(--space-2) var(--space-3);
 }
 
-/* ---------- 笔记：文件夹放进第二栏 ---------- */
-
-.note-folders[data-column='true'] {
-  padding: 0 var(--space-2);
-  border: 0;
-  overflow: visible;
-}
-
-.note-folders[data-column='true'] .note-folder-button {
-  min-height: var(--control);
-  padding: var(--space-1) var(--space-3);
-}
-
-.note-folder-new {
-  color: var(--fg2);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .column,

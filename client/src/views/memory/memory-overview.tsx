@@ -1,42 +1,44 @@
 // 记忆首页的两块（11-11 记忆改版，设计稿「记忆首页」）：
-// - 总览：最近一次全量整理写的一段话，右边「全量整理」；正在整理时按钮换成一句状态；有清单没看就是「整理清单 n 条」入口。
-// 总览里还挂着「说法冲突」「昨晚整理」两个入口，连成一块，不在中间空一截。
+// - 总览：最近一次全量整理写的一段话；有清单没看就是「整理清单 n 条」入口。总览里还挂着「说法冲突」「昨晚整理」两个入口，
+//   连成一块，不在中间空一截。「全量整理」11-15 挪进页头那一行（界面统一，Aaron 弹框定「加回页头」），和搜索框在一起。
 // - 规则搬家的提示条（第13批）：原来的「队友」一节（只对它的规则）去掉，规则还没搬完时在页面最上面提示。
 
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cleanupRoute, soulRoute, type Route } from '../../shell/routes.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { useCleanup } from './use-cleanup.ts';
+import type { CleanupState } from './use-cleanup.ts';
 import { useRulesMove } from './use-rules-move.ts';
 import './rules-move.css';
 import { timeText } from '../../shell/time-text.ts';
 
-export function MemoryOverview({ navigate, now = new Date(), children }:
-  { navigate: (route: Route) => void; now?: Date; children?: ReactNode }): ReactNode {
-  const cleanup = useCleanup();
-  const [error, setError] = useState<string | null>(null);
+/** 页头的「全量整理」：正在整理时换成一句状态；开始不了的原因交给页面写在页头下面。 */
+export function CleanupButton({ cleanup, navigate, onError }: { cleanup: CleanupState;
+  navigate: (route: Route) => void; onError: (problem: string | null) => void }): ReactNode {
+  if (cleanup.data?.cleanup?.status === 'running') {
+    return <span className="text-meta memory-cleanup-status" role="status">正在整理…</span>;
+  }
+  return <button type="button" className="secondary-button" onClick={() => {
+    onError(null);
+    void cleanup.start().then((problem) => {
+      onError(problem);
+      if (problem === null) navigate(cleanupRoute());
+    });
+  }}>全量整理</button>;
+}
+
+export function MemoryOverview({ cleanup, navigate, now = new Date(), children }:
+  { cleanup: CleanupState; navigate: (route: Route) => void; now?: Date; children?: ReactNode }): ReactNode {
   const view = cleanup.data?.cleanup ?? null;
   const pending = view?.status === 'ready' ? view.items.filter((item) => item.applied === null).length : 0;
   const overview = cleanup.data?.overview ?? null;
-  const running = view?.status === 'running';
   return (
     <section className="memory-overview" aria-label="总览">
       <div className="memory-overview-head">
         <h2 className="block-title">总览</h2>
         {overview === null ? null : <span className="text-meta">{timeText(overview.at, now)}整理</span>}
-        <span className="memory-overview-spacer" />
-        {running ? <span className="text-meta" role="status">正在整理…</span>
-          : <button type="button" className="secondary-button button-small" onClick={() => {
-            setError(null);
-            void cleanup.start().then((problem) => {
-              setError(problem);
-              if (problem === null) navigate(cleanupRoute());
-            });
-          }}>全量整理</button>}
       </div>
       {overview === null || overview.text.trim() === '' ? null
         : <p className="memory-overview-text">{overview.text}</p>}
-      {error === null ? null : <p className="text-meta is-error" role="alert">{error}</p>}
       {pending === 0 ? null : (
         <button type="button" className="topic-row memory-overview-list" onClick={() => navigate(cleanupRoute())}>
           <span className="topic-row-text"><span className="topic-row-title">整理清单 {pending} 条，等你勾选</span></span>

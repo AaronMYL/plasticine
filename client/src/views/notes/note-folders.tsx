@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode, type RefObject } from 'react';
 import { Icon, type IconName } from '../../shell/icons.tsx';
 import { isAiFolder } from './ai-folder.ts';
 import { useApi } from '../../api/context.tsx';
@@ -12,6 +12,7 @@ import { isOpenOp } from '../../state/action-ops.ts';
 import { PendingOps, useOp } from '../pending/pending-ops.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
+import { Popover, type PopoverAnchor } from '../../shell/popover.tsx';
 import './note-folders.css';
 
 import type { NoteCollection } from '../../state/notes-ui.ts';
@@ -36,8 +37,11 @@ interface Props {
   value: NoteCollection;
   onChange: (value: NoteCollection) => void;
   inline?: boolean;
-  /** 画在笔记栏目的第二栏里（11-07 两层侧栏）：只放他自己写的，「Plasticine 写的」在资料库的空间里。 */
-  column?: boolean;
+  /**
+   * 电脑上从列表顶上的文件夹名点开的文件夹列表（11-15 两栏合成一栏）：贴着文件夹名出的弹层，只放他自己写的
+   * （「Plasticine 写的」在资料库的空间里）；行尾个数鼠标移上去换成 ⋯，「新建文件夹」只在最下面一处。
+   */
+  menu?: { anchor: PopoverAnchor; trigger: RefObject<HTMLElement | null>; onClose: () => void } | null;
   open?: boolean;
   phone?: boolean;
   onClose?: () => void;
@@ -61,8 +65,9 @@ const OP = 'note-folders:change';
 const FIELDS = ['mode', 'folder', 'name', 'destination'] as const;
 
 export function NoteFolders({
-  value, onChange, inline = true, column = false, open = false, phone = false, onClose,
+  value, onChange, inline = true, menu = null, open = false, phone = false, onClose,
 }: Props): ReactNode {
+  const listed = menu !== null;
   const api = useApi();
   const { actionOps, inlineDrafts, notesUi } = useClientState();
   const { folders, error: loadError, reload } = useNoteFolders();
@@ -83,6 +88,11 @@ export function NoteFolders({
     setManaging(false);
   };
   const edit = (folder: string | null): void => {
+    // 从文件夹列表的弹层里点的：弹层收起，焦点先回文件夹名，管理面板关了也回到那里。
+    if (menu !== null) {
+      menu.trigger.current?.focus();
+      menu.onClose();
+    }
     setManaging(true);
     if (mode === (folder === null ? 'new' : 'existing') && drafts.get(`${OP}:folder`) === (folder ?? '')) return;
     actionOps.dismiss(OP);
@@ -131,17 +141,17 @@ export function NoteFolders({
     </div>
   );
   const navigation = (isInline: boolean): ReactNode => (
-    <aside className="note-folders" aria-label="笔记文件夹" data-inline={isInline} data-column={column}>
-      {isInline && !column ? <div className="note-folders-head">
+    <aside className="note-folders" aria-label="笔记文件夹" data-inline={isInline} data-menu={listed}>
+      {isInline ? <div className="note-folders-head">
         <h2>文件夹</h2>
         <IconButton icon="plus" label="新建文件夹" disabled={locked} onClick={() => edit(null)} />
       </div> : null}
       {row('全部', folders?.allCount ?? 0, { kind: 'all' })}
       <div className="note-folder-group">
-        {arrangeFolders(folders?.folders ?? []).filter((folder) => !column || !isAiFolder(folder.name))
+        {arrangeFolders(folders?.folders ?? []).filter((folder) => !listed || !isAiFolder(folder.name))
           .map((folder) => row(folder.name, folder.count, { kind: 'folder', name: folder.name },
             !folder.fixed && !isAiFolder(folder.name)))}
-        {column ? <button type="button" className="note-folder-button note-folder-new" disabled={locked}
+        {listed ? <button type="button" className="note-folder-button note-folder-new" disabled={locked}
           onClick={() => edit(null)}>
           <span className="note-folder-icon" aria-hidden="true"><Icon name="plus" size={16} /></span>
           <span className="note-folder-name">新建文件夹</span>
@@ -197,6 +207,8 @@ export function NoteFolders({
   return <>
     {operation === undefined || managing ? null : <div className="notes-folder-pending">{pending}</div>}
     {inline ? navigation(true) : null}
+    {menu === null ? null : <Popover anchor={menu.anchor} role="dialog" label="文件夹" trigger={menu.trigger}
+      className="note-folders-popover" onClose={menu.onClose}>{navigation(false)}</Popover>}
     <Sheet open={open || managing} variant={phone ? 'drawer' : 'panel'} onClose={closePanel}
       title={managing ? editing === '' ? '新建文件夹' : '管理文件夹' : '文件夹'}
       actions={managing ? undefined : <IconButton icon="plus" label="新建文件夹" disabled={locked}

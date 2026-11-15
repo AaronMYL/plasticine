@@ -4,6 +4,8 @@
 // 260ms），收起时反过来缩回圆球。
 // 第13批（11-14 Aaron 看过设计稿，取代 11-12 的停靠）：电脑上展开的对话浮在页面右侧——上、下、右各留 8、整高，
 // 细边框加阴影，拖左边调宽（宽度记在本机）；打开、收起都不动页面布局，点页面不收起，Esc 或收起按钮才收。手机全屏。
+// 11-15（Aaron「只能拉宽度、无法拉高度」，设计稿⑰）：上边、左上角也能拖，变矮时下边还贴着窗口底；双击上边回到整高；
+// 宽和高都记在本机。
 // 顶栏切换主线、队友或群组；每条对话保留各自的草稿和附件。「问这一页」仍跟随当前页面。
 // 滚动位置、草稿、引用片在 state/ 里，收起再展开、切标签都不变。
 
@@ -17,7 +19,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react';
-import { clampChatFrame, type ChatFrame } from '../state/shell-prefs.ts';
+import { CHAT_MIN_HEIGHT, clampChatFrame, type ChatFrame } from '../state/shell-prefs.ts';
 import { Conversation } from '../views/conversation/conversation.tsx';
 import { DockTargetSelector, useDockTarget } from '../views/mates/dock-target.tsx';
 import { IconButton } from './icon-button.tsx';
@@ -32,14 +34,36 @@ const BALL_AVATAR = 52;
 /** 键盘调大小、挪位置一步多少：方向 I 的 16px 间距。 */
 const KEY_STEP = 16;
 
+/** 拖哪里：左边改宽、上边改高、左上角两样一起改。 */
+type GripKind = 'w' | 'n' | 'nw';
+
 interface DragState {
   pointerId: number;
+  kind: GripKind;
   x: number;
+  y: number;
   start: ChatFrame;
 }
 
+/** 整高时框的上边离窗口顶多远：桌面客户端标题栏 44 + 8，别处 8（和 chat-dialog.css 一致）。 */
+const FULL_TOP_TITLED = 52;
+const FULL_TOP = 8;
+const FULL_BOTTOM = 8;
+
 function viewport(): { width: number; height: number } {
   return { width: window.innerWidth, height: window.innerHeight };
+}
+
+/** 整高时有多高：拖上边最多拖到这么高，到了就回到整高。 */
+function fullHeight(element: HTMLElement | null): number {
+  const titled = (element?.closest('.shell') ?? document.querySelector('.shell'))?.hasAttribute('data-titled') === true;
+  return window.innerHeight - (titled ? FULL_TOP_TITLED : FULL_TOP) - FULL_BOTTOM;
+}
+
+/** 拖到的高度：不矮于 420，够到整高就记成整高。 */
+function withHeight(frame: ChatFrame, height: number, max: number): ChatFrame {
+  const clamped = Math.round(Math.min(max, Math.max(CHAT_MIN_HEIGHT, height)));
+  return clamped >= max ? { ...frame, full: true } : { ...frame, height: clamped, full: false };
 }
 
 
@@ -116,21 +140,35 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
     playThen(element, [...morphKeyframes(element)].reverse(), MOTION.base, props.onCollapse);
   };
 
-  const begin = (event: PointerEvent<HTMLElement>): void => {
+  // 整高时拖上边：从现在看到的高度开始变矮（jsdom 量不出高度，就当整高）。
+  const shownHeight = (): number => {
+    const max = fullHeight(dialog.current);
+    if (!frame.full) return Math.min(frame.height, max);
+    const measured = dialog.current?.getBoundingClientRect().height ?? 0;
+    return measured > 0 ? measured : max;
+  };
+  const begin = (kind: GripKind) => (event: PointerEvent<HTMLElement>): void => {
     if (fullscreen || event.button !== 0) {
       return;
     }
     event.preventDefault();
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    drag.current = { pointerId: event.pointerId, x: event.clientX, start: frame };
+    drag.current = { pointerId: event.pointerId, kind, x: event.clientX, y: event.clientY,
+      start: { ...frame, height: shownHeight() } };
   };
   const move = (event: PointerEvent<HTMLElement>): void => {
     const current = drag.current;
     if (current === null || current.pointerId !== event.pointerId) {
       return;
     }
-    setDragFrame(clampChatFrame({ ...current.start, width: current.start.width - (event.clientX - current.x) },
-      viewport()));
+    const { start, kind } = current;
+    let next = kind === 'n' ? start : { ...start, width: start.width - (event.clientX - current.x) };
+    if (kind !== 'w') {
+      next = withHeight(next, start.height - (event.clientY - current.y), fullHeight(dialog.current));
+    } else if (start.full) {
+      next = { ...next, full: true };
+    }
+    setDragFrame(clampChatFrame(next, viewport()));
   };
   const end = (): void => {
     if (drag.current === null) {
@@ -152,6 +190,14 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
       props.onFrame(clampChatFrame({ ...frame, ...patch }, viewport()));
     }
   };
+  const keyHeight = (event: KeyboardEvent<HTMLElement>): void => {
+    const step = { ArrowUp: KEY_STEP, ArrowDown: -KEY_STEP }[event.key];
+    if (step !== undefined) {
+      event.preventDefault();
+      props.onFrame(clampChatFrame(withHeight(frame, shownHeight() + step, fullHeight(dialog.current)), viewport()));
+    }
+  };
+  const restoreFull = (): void => props.onFrame({ ...frame, full: true });
   const onKey = (event: KeyboardEvent<HTMLElement>): void => {
     if (event.key === 'Escape' && !event.nativeEvent.isComposing && !event.defaultPrevented) {
       event.preventDefault();
@@ -160,17 +206,25 @@ export function ChatDialog(props: ChatDialogProps): ReactNode {
     }
   };
   const handlers = { onPointerMove: move, onPointerUp: end, onPointerCancel: end, onLostPointerCapture: end };
-  const style: CSSProperties = fullscreen ? {} : { width: frame.width };
+  const shown = fullscreen ? null : frame.full ? null : Math.min(frame.height, fullHeight(dialog.current));
+  const style: CSSProperties = fullscreen ? {} : shown === null ? { width: frame.width }
+    : { width: frame.width, height: shown, top: 'auto' };
 
   return (
     <aside ref={dialog} className="chat-dialog" data-fullscreen={fullscreen} data-dragging={dragFrame !== null}
       data-hit-region="chat-dialog"
       style={style} aria-label="对话框" onKeyDown={onKey}>
-      {fullscreen ? null : (
+      {fullscreen ? null : <>
         <div className="chat-grip chat-grip-w" role="separator" tabIndex={0} aria-orientation="vertical"
           aria-label="调整对话框宽度（左右方向键）" aria-valuetext={`${frame.width}`}
-          onKeyDown={keyResize} onPointerDown={begin} {...handlers}><span aria-hidden="true" /></div>
-      )}
+          onKeyDown={keyResize} onPointerDown={begin('w')} {...handlers}><span aria-hidden="true" /></div>
+        <div className="chat-grip chat-grip-n" role="separator" tabIndex={0} aria-orientation="horizontal"
+          aria-label="调整对话框高度（上下方向键）" aria-valuetext={frame.full ? '整高' : `${frame.height}`}
+          onKeyDown={keyHeight} onDoubleClick={restoreFull} onPointerDown={begin('n')} {...handlers}>
+          <span aria-hidden="true" /></div>
+        <div className="chat-grip chat-grip-nw" role="separator" aria-label="调整对话框大小"
+          onPointerDown={begin('nw')} {...handlers} />
+      </>}
       <header className="chat-head">
         <DockTargetSelector />
         <IconButton icon={fullscreen ? 'close' : 'collapse'} className="chat-collapse"

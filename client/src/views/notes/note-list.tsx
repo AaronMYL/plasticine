@@ -31,12 +31,17 @@ export interface NoteListProps {
   showFolder?: boolean;
   hidden?: boolean;
   collectionLabel?: string;
-  onFolders?: (() => void) | undefined;
+  /** 点文件夹名：手机上开文件夹抽屉，电脑上在它下面出文件夹列表（给按钮自己，好贴着它）。 */
+  onFolders?: ((button: HTMLElement) => void) | undefined;
+  /** 文件夹列表开着（电脑上的弹层）。 */
+  foldersOpen?: boolean;
   onRetry?: () => void;
   /** 手机上文件夹名已经在页头（设计稿 Phone-Notes），列表里不再写一遍。 */
   heading?: boolean;
-  /** 文件夹名这一行右边的按钮（收起列表、新建）；电脑上才有。 */
+  /** 文件夹名这一行右边的按钮（新建）；电脑上才有。 */
   tools?: ReactNode;
+  /** 这一行最右边（收起第二栏，网页版才有）。 */
+  trail?: ReactNode;
 }
 
 export function NoteList(props: NoteListProps): ReactNode {
@@ -61,7 +66,8 @@ export function NoteList(props: NoteListProps): ReactNode {
           <div className="note-list-title">
             {props.onFolders === undefined ? <h2>{props.collectionLabel ?? '全部'}</h2> : (
               <button type="button" className="note-collection-toggle" aria-label="选择文件夹"
-                onClick={props.onFolders}>
+                aria-haspopup="dialog" aria-expanded={props.foldersOpen}
+                onClick={(event) => props.onFolders?.(event.currentTarget)}>
                 <Icon name="folder" />
                 <span>{props.collectionLabel ?? '全部'}</span>
                 <Icon name="chevron-down" size={14} />
@@ -71,7 +77,7 @@ export function NoteList(props: NoteListProps): ReactNode {
               {props.notes.length}
             </span>}
           </div>
-          {merged ? <div className="note-list-tools">{props.tools}{bulk}</div> : null}
+          {merged ? <div className="note-list-tools">{props.tools}{bulk}{props.trail}</div> : null}
         </div>}
         {props.selection?.active ? null : <SearchField className="note-search" label="搜索笔记" placeholder="搜索"
           value={props.query} onChange={props.onQuery} />}

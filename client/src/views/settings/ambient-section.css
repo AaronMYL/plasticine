@@ -1,0 +1,58 @@
+/*
+ * 设置 · 通用 · 动态背景的例外（11-15 Aaron 弹框定「两处都有小样」）：开关下面一条会动的小样，速度和透明度是滑杆，
+ * 右边写现在的值。别的行照设置页的一种行。
+ */
+.ambient-preview {
+  height: 104px; /* 例外：小样一条（设计稿） */
+  margin: var(--space-3) 0 var(--space-1);
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.ambient-preview > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  font-family: var(--mono);
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.ambient-range {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 280px; /* 例外：滑杆加右边的值（设计稿） */
+  max-width: 100%;
+}
+
+.ambient-range > input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--fg);
+  cursor: pointer;
+}
+
+.ambient-range > output {
+  flex: none;
+  min-width: 40px; /* 例外：值那一格按最宽的「100%」留 */
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .ambient-sub .set-row-control:has(.ambient-range) {
+    flex: 1;
+    max-width: none;
+  }
+
+  .ambient-range {
+    width: 100%;
+  }
+}

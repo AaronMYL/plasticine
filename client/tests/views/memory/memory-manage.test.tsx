@@ -58,8 +58,13 @@ describe('一页记忆：改、删、挪、加', () => {
 describe('全量整理', () => {
   it('首页点「全量整理」出清单；默认都勾上，取消一条后采用其余，没勾的不动', async () => {
     const app = await renderApp({ hash: '#/memory', setup: seed });
+    // 11-15 界面统一（Aaron 弹框定「加回页头」）：「全量整理」和搜索框一起在页头那一行，总览里不再有。
     const overview = await within(main()).findByRole('region', { name: '总览' });
-    fireEvent.click(within(overview).getByRole('button', { name: '全量整理' }));
+    expect(within(overview).queryByRole('button', { name: '全量整理' })).toBeNull();
+    const head = main().querySelector<HTMLElement>('.page-head');
+    if (head === null) throw new Error('记忆页没有页头');
+    expect(within(head).getByRole('searchbox', { name: '搜记忆，含归档' })).toBeTruthy();
+    fireEvent.click(within(head).getByRole('button', { name: '全量整理' }));
     await waitFor(() => expect(window.location.hash).toBe('#/memory/cleanup'));
     const items = await within(main()).findAllByRole('checkbox', { name: /^采用：/ });
     expect(items.length).toBe(3);
