@@ -61,19 +61,3 @@ export function shortDate(date: string): string {
   return date.slice(5);
 }
 
-/** 「2 小时前」「3 天前」，再早写月-日。 */
-export function ago(at: string, now: Date): string {
-  const minutes = Math.floor((now.getTime() - Date.parse(at)) / 60_000);
-  if (minutes < 1) {
-    return '刚刚';
-  }
-  if (minutes < 60) {
-    return `${minutes} 分钟前`;
-  }
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours} 小时前`;
-  }
-  const days = Math.floor(hours / 24);
-  return days < 7 ? `${days} 天前` : at.slice(5, 10);
-}

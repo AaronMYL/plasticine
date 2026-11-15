@@ -19,7 +19,6 @@ import { Icon, type IconName } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { EASE_OUT, MOTION, play, playThen } from '../../shell/motion.ts';
 import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
-import { listTime } from '../contacts/contact-time.ts';
 import {
   GROUP_LABELS,
   paletteItems,
@@ -28,6 +27,7 @@ import {
   type PaletteTarget,
 } from './palette-results.ts';
 import './palette.css';
+import { timeText } from '../../shell/time-text.ts';
 
 /** 停打字这么久再查（输入法组合期间不查）。 */
 const SEARCH_DELAY_MS = 150;
@@ -136,7 +136,7 @@ export function Palette({ phone, onClose, onOpen }: PaletteProps): ReactNode {
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), [lines.lines]);
   const now = new Date();
   const items = paletteItems({ query, results, tabs: tabs.tabs, archived: tabs.archived, bookmarks, sides,
-    today: tabs.today, dayText: (iso) => listTime(iso, now, timeZone) });
+    today: tabs.today, dayText: (iso) => timeText(iso, now, timeZone) });
   const current = Math.min(active, Math.max(0, items.length - 1));
   useLayoutEffect(() => {
     play(box.current, phone ? PHONE_ENTER : ENTER, MOTION.base, EASE_OUT);

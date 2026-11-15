@@ -7,10 +7,10 @@ import { useLive } from '../../live.tsx';
 import { StatusGlyph } from '../../shell/glyph.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { useStore } from '../../state/use-store.ts';
 import { unmetReason, unmetText } from '../lines/work-status.tsx';
 import { ReviewRows, useHomeReview } from './home-review.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 export function recentResults(lines: readonly LineView[]): LineView[] {
   return lines.filter((line) => line.kind === 'background' && line.status === 'idle'
@@ -26,7 +26,7 @@ function ResultRow({ line, now, onOpen }: { line: LineView; now: Date; onOpen: (
       {unmet === null ? <StatusGlyph status="done" label="已完成" /> : <StatusGlyph status="err" label="没做成" />}
       <span className="home-result-title">{line.title}
         {unmet === null ? null : <span className="home-result-unmet">{unmetText(unmet)}</span>}</span>
-      <span className="home-result-time">{relativeTime(line.updatedAt, now)}</span>
+      <span className="home-result-time">{timeText(line.updatedAt, now)}</span>
       <Icon name="chevron-right" size={14} />
     </button>
   );

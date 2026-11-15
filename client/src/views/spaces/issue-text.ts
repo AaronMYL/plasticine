@@ -2,12 +2,6 @@
 
 import type { IssueBrief } from '../../api/shared.ts';
 
-export function issueDate(issue: Pick<IssueBrief, 'createdAt'>, timeZone?: string): string {
-  const parts = new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric',
-    ...(timeZone === undefined ? {} : { timeZone }) }).formatToParts(new Date(issue.createdAt));
-  const value = (type: string): string => parts.find((part) => part.type === type)?.value ?? '';
-  return `${value('month')}月${value('day')}日`;
-}
 
 /** 第几期；个人回顾是来信（11-09 起）、旧版式是日报 / 周报。 */
 export function issueLabel(issue: Pick<IssueBrief, 'edition' | 'issueNumber' | 'genre'>): string {

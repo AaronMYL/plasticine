@@ -4,12 +4,12 @@
 // - 规则搬家的提示条（第13批）：原来的「队友」一节（只对它的规则）去掉，规则还没搬完时在页面最上面提示。
 
 import { useState, type ReactNode } from 'react';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { cleanupRoute, soulRoute, type Route } from '../../shell/routes.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { useCleanup } from './use-cleanup.ts';
 import { useRulesMove } from './use-rules-move.ts';
 import './rules-move.css';
+import { timeText } from '../../shell/time-text.ts';
 
 export function MemoryOverview({ navigate, now = new Date(), children }:
   { navigate: (route: Route) => void; now?: Date; children?: ReactNode }): ReactNode {
@@ -23,7 +23,7 @@ export function MemoryOverview({ navigate, now = new Date(), children }:
     <section className="memory-overview" aria-label="总览">
       <div className="memory-overview-head">
         <h2 className="block-title">总览</h2>
-        {overview === null ? null : <span className="text-meta">{relativeTime(overview.at, now)}整理</span>}
+        {overview === null ? null : <span className="text-meta">{timeText(overview.at, now)}整理</span>}
         <span className="memory-overview-spacer" />
         {running ? <span className="text-meta" role="status">正在整理…</span>
           : <button type="button" className="secondary-button button-small" onClick={() => {

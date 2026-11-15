@@ -15,10 +15,11 @@ import { Icon } from '../../shell/icons.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
 import type { Route } from '../../shell/routes.ts';
 import { useStore } from '../../state/use-store.ts';
-import { ago, dueNote, HealthMark, NodeBar, shortDate, shownHealth } from './project-parts.tsx';
+import { dueNote, HealthMark, NodeBar, shortDate, shownHealth } from './project-parts.tsx';
 
 import { useProjectRead } from './use-project-read.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 const FILTERS = [
   { id: 'active', label: '进行' },
@@ -70,7 +71,7 @@ function Row({ row, open }: { row: ProjectRowView; open: (id: string) => void })
           </>
         )}
       </span>
-      <span className="proj-cell proj-updated text-meta">{ago(row.touchedAt, new Date())}</span>
+      <span className="proj-cell proj-updated text-meta">{timeText(row.touchedAt, new Date())}</span>
     </li>
   );
 }

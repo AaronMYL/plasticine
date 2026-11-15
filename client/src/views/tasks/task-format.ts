@@ -45,24 +45,6 @@ export function runningFor(since: string | null, now: number): string | null {
   return minutes < 60 ? `${minutes} 分` : `${Math.floor(minutes / 60)} 小时`;
 }
 
-/** 做完多久以前：「刚才」「12 分钟前」「2 小时前」「昨天」「11/3」。 */
-export function agoText(iso: string, now: Date, timeZone: string): string {
-  const ms = now.getTime() - Date.parse(iso);
-  if (ms < MINUTE_MS) {
-    return '刚才';
-  }
-  if (ms < HOUR_MS) {
-    return `${Math.floor(ms / MINUTE_MS)} 分钟前`;
-  }
-  const at = parts(iso, timeZone);
-  if (at.day === parts(now.toISOString(), timeZone).day) {
-    return `${Math.floor(ms / HOUR_MS)} 小时前`;
-  }
-  if (at.day === parts(new Date(now.getTime() - DAY_MS).toISOString(), timeZone).day) {
-    return '昨天';
-  }
-  return `${at.month}/${at.date}`;
-}
 
 export function timedIcon(icon: TimedRowView['icon']): IconName {
   return icon === 'space' ? 'chart' : icon;

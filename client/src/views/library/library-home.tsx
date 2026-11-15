@@ -25,13 +25,13 @@ import { routeHash, type Route } from '../../shell/routes.ts';
 import { useInTitlebar } from '../../shell/titlebar.tsx';
 import { spaceRoute } from '../spaces/space-links.ts';
 import { SpaceThumb } from '../spaces/space-thumb.tsx';
-import { spaceWhen } from '../spaces/space-time.ts';
 import { groupSpaces, spaceCategoryLabel } from './space-categories.ts';
 import { useSpaceActions, useUndoableDelete } from './library-actions.tsx';
 import { libraryChanged } from './library-signal.ts';
 import './library.css';
 import './library-grid.css';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 /** 「最近」放几张（设计稿：电脑一排三张）。 */
 const RECENT_COUNT = 3;
@@ -55,7 +55,7 @@ interface CardProps {
 function SpaceCard({ space, now, onDelete, selection }: CardProps): ReactNode {
   const actions = useSpaceActions();
   const [renaming, setRenaming] = useState(false);
-  const meta = `${spaceCategoryLabel(space)} · ${spaceWhen(space.updatedAt, now)}`;
+  const meta = `${spaceCategoryLabel(space)} · ${timeText(space.updatedAt, now)}`;
   return (
     <li className="lib-card" data-genre={space.genre ?? 'legacy'}>
       {selection.active ? <span className="bulk-card-check"><BulkCheck selection={selection}

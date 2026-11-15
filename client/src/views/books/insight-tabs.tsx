@@ -3,10 +3,10 @@ import type { BookAnnotationView, BookInsightKind, BookInsightView, BookKeyPoint
   BookTocEntry } from '../../api/shared.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { SpaceFrame } from '../spaces/space-frame.tsx';
-import { letterDate } from '../spaces/space-time.ts';
 import { useLinkedSpace } from '../spaces/use-linked-space.ts';
 import { useSpaceQuote } from '../spaces/space-quote.ts';
 import '../spaces/space-frame.css';
+import { bodyDate } from '../../shell/time-text.ts';
 
 const KIND_NAMES: Readonly<Record<BookInsightKind, string>> = { outline: '大纲', key_points: '重点' };
 
@@ -43,7 +43,7 @@ function InsightContent(props: InsightStateProps & { currentChapter?: number; to
   } else if (space?.html != null) {
     body = <SpaceFrame className="space-frame bk-insight-frame" label={space.title} mode="page" onQuote={quote}
       space={{ html: space.html, title: space.title, genre: space.genre ?? 'report',
-        dateLabel: letterDate(space.createdAt) }}
+        dateLabel: bodyDate(space.createdAt) }}
       {...(props.currentChapter === undefined ? {} : { bookPosition: {
         bookId: props.bookId, chapter: props.currentChapter } })}
       onBookJump={(position) => {

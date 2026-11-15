@@ -19,12 +19,13 @@ import { useUndoableDelete } from '../library/library-actions.tsx';
 import { libraryChanged } from '../library/library-signal.ts';
 import type { Route } from '../../shell/routes.ts';
 import { BookCover } from './book-cover.tsx';
-import { chapterDotted, isReading, percentText, progressLabel, readingTime } from './book-format.ts';
+import { chapterDotted, isReading, percentText, progressLabel } from './book-format.ts';
 import { sizeText, useBookImports, type ImportRow } from './book-import.ts';
 import { onQueuedBookImport } from './import-queue.ts';
 import { SORT_LABELS, sortBooks, type LibrarySort } from './library-sort.ts';
 import { useBooksList } from './use-books-list.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 export interface LibraryProps {
   phone: boolean;
@@ -86,7 +87,7 @@ function ReadingRow({ book, now, onOpen }: { book: BookView; now: Date; onOpen: 
           {progress === null ? null : <>
             <span className="text-mono bk-reading-meta">{percentText(progress.percent)}</span>
             <time className="text-meta bk-reading-meta" dateTime={progress.updatedAt}>
-              {readingTime(progress.updatedAt, now)} · {progress.deviceLabel}</time>
+              {timeText(progress.updatedAt, now)} · {progress.deviceLabel}</time>
           </>}
         </div>
         <div className="bk-reading-foot">

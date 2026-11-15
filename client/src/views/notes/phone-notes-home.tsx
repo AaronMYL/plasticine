@@ -8,9 +8,9 @@ import { AiMark } from '../../shell/glyph.tsx';
 import { Icon, type IconName } from '../../shell/icons.tsx';
 import { isAiFolder, isAiNote } from './ai-folder.ts';
 import { useNoteFolders, type NoteCollection } from './note-folders.tsx';
-import { when } from './note-time.ts';
 import { useNoteList } from './use-notes.ts';
 import './phone-notes.css';
+import { timeText } from '../../shell/time-text.ts';
 
 /** 「最近」列几篇。 */
 const RECENT_ROWS = 5;
@@ -82,7 +82,7 @@ export function PhoneNotesHome({ onCollection, onOpen }: {
                   </span>
                   <span className="phone-recent-line">
                     <time className="phone-recent-time" dateTime={note.updatedAt}>
-                      {when(note.updatedAt, now, timeZone)}
+                      {timeText(note.updatedAt, now, timeZone)}
                     </time>
                     <span className="phone-recent-preview">{note.preview}</span>
                     <span className="phone-recent-folder">{note.folder}</span>

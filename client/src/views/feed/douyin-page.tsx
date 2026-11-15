@@ -13,13 +13,13 @@ import { useStore } from '../../state/use-store.ts';
 import { useMention } from '../conversation/mention-button.tsx';
 import { SpaceFrame } from '../spaces/space-frame.tsx';
 import { spaceRoute } from '../spaces/space-links.ts';
-import { letterDate } from '../spaces/space-time.ts';
 import { useLinkedSpace } from '../spaces/use-linked-space.ts';
 import { useSpaceQuote } from '../spaces/space-quote.ts';
 import { MoreState, useAutoMore } from './feed-pager.tsx';
 import { TranscriberCard } from './transcriber-card.tsx';
 import '../spaces/space-frame.css';
 import './douyin-page.css';
+import { bodyDate } from '../../shell/time-text.ts';
 
 function meta(work: VideoWorkView, timeZone: string): string {
   const date = work.collectedAt === null ? null : `收藏于 ${new Intl.DateTimeFormat('zh-CN',
@@ -95,7 +95,7 @@ function Detail({ work, phone, back }: { work: VideoWorkView; phone: boolean; ba
       <button type="button" className="text-button" onClick={reload}>再读一次</button></p>
       : space?.html != null ? <SpaceFrame className="space-frame" label={space.title} mode="page" onQuote={quote}
         space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
-          dateLabel: letterDate(space.createdAt) }} />
+          dateLabel: bodyDate(space.createdAt) }} />
         : showKit ? <div className="dy-kit"><TranscriberCard status={kit} error={installError}
           onLater={() => { setAsking(false); setLater(true); }}
           onInstall={() => void live.transcriber.install(waiting ? undefined : process)} /></div>

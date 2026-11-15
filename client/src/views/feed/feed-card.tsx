@@ -18,14 +18,13 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { useHeightMorph } from '../../shell/motion.ts';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { usePhone } from '../../shell/use-viewport-width.ts';
 import { useMention } from '../conversation/mention-button.tsx';
-import { when } from '../notes/note-time.ts';
 import { DouyinMark, FeedChartView, FeedText, FeedVideoBody, videoMeta } from './feed-body.tsx';
 import { RedditMark } from './feed-source-list.tsx';
 import { useOps } from '../../state/ops.ts';
 import { FEED_IMAGE_BOX, ImageGrid } from '../../primitives/image-grid/index.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 export interface CardSource {
   name: string;
@@ -183,7 +182,7 @@ function CardBody({ item, lockedReact, lockedSave }: CardBodyProps): ReactNode {
           <span key={place} className="feed-place">{FEED_PLACE_LABELS[place]}</span>
         ))}
         <time className="feed-card-time" dateTime={at}>
-          {phone ? relativeTime(at, new Date()) : when(at, new Date(), timeZone)}
+          {timeText(at, new Date(), timeZone)}
         </time>
         {item.why === '' ? null : (
           <InfoTip className="feed-card-why" label="为什么推给你" text={item.why} />

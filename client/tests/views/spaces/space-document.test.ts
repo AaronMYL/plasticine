@@ -151,13 +151,13 @@ describe('srcdoc', () => {
 });
 
 describe('卡片下面的时间', () => {
-  it('今天写时分、昨天写「昨天」、今年写月日、更早带年份；信纸日期', async () => {
-    const { letterDate, spaceWhen } = await import('../../../src/views/spaces/space-time.ts');
+  it('卡片下面用全站一种写法（11-14）：今天写钟点、昨天写「昨天」、今年写月-日、更早带年份；信纸日期是正文写法', async () => {
+    const { bodyDate, timeText } = await import('../../../src/shell/time-text.ts');
     const now = new Date('2026-11-09T10:00:00+08:00');
-    expect(spaceWhen('2026-11-09T00:30:00Z', now, 'Asia/Shanghai')).toBe('今天 08:30');
-    expect(spaceWhen('2026-11-08T13:07:00Z', now, 'Asia/Shanghai')).toBe('昨天 21:07');
-    expect(spaceWhen('2026-11-01T13:07:00Z', now, 'Asia/Shanghai')).toBe('11月1日');
-    expect(spaceWhen('2025-11-01T13:07:00Z', now, 'Asia/Shanghai')).toBe('2025年11月1日');
-    expect(letterDate('2026-11-09T00:30:00Z', 'Asia/Shanghai')).toBe('2026 年 11 月 9 日');
+    expect(timeText('2026-11-09T00:30:00Z', now, 'Asia/Shanghai')).toBe('08:30');
+    expect(timeText('2026-11-08T13:07:00Z', now, 'Asia/Shanghai')).toBe('昨天');
+    expect(timeText('2026-11-01T13:07:00Z', now, 'Asia/Shanghai')).toBe('11-01');
+    expect(timeText('2025-11-01T13:07:00Z', now, 'Asia/Shanghai')).toBe('2025-11-01');
+    expect(bodyDate('2026-11-09T00:30:00Z', now, 'Asia/Shanghai')).toBe('11 月 9 日');
   });
 });

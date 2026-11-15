@@ -16,11 +16,11 @@ import {
 import type { FeedSourceView } from '../../api/types.ts';
 import { SheetFooter } from '../../primitives/sheet/index.tsx';
 import { useLive, useTimeZone } from '../../live.tsx';
-import { when } from '../notes/note-time.ts';
 import { LoginPanel } from './feed-add.tsx';
 import { feedNavChanged } from './feed-nav-data.ts';
 import { FeedSources } from './feed-sources.tsx';
 import './feed-add.css';
+import { timeText } from '../../shell/time-text.ts';
 
 type Level = Exclude<FeedSourceView['level'], 'off'>;
 const LEVELS: ReadonlyArray<{ level: Level; label: string }> = [
@@ -35,7 +35,7 @@ function Status({ row }: { row: FeedNavSource }): ReactNode {
   return (
     <div className="feed-set-status">
       {row.problem === null ? null : <p className="feed-add-note is-error" role="alert">上次没取到：{row.problem}</p>}
-      {okAt === null ? null : <p className="feed-add-note">上次取到：{when(okAt, new Date(), timeZone)}</p>}
+      {okAt === null ? null : <p className="feed-add-note">上次取到：{timeText(okAt, new Date(), timeZone)}</p>}
     </div>
   );
 }

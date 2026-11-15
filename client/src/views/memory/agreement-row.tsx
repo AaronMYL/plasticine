@@ -14,11 +14,11 @@ import { useClientState } from '../../state/context.tsx';
 import { agreementOpKey } from '../../state/signed-ops.ts';
 import { useStore } from '../../state/use-store.ts';
 import { RevealMore, type RevealAction } from '../../shell/reveal-more.tsx';
-import { when } from '../notes/note-time.ts';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
 import { AGREEMENT_KIND_TEXT, AGREEMENT_STATE_TEXT, AWAITING_TEXT } from './labels.ts';
 import { AgreementHistory } from './agreement-history.tsx';
 import { useMention } from '../conversation/mention-button.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 export function AgreementRow({ agreement }: { agreement: AgreementView }): ReactNode {
   const { agreements, signer } = useLive();
@@ -68,7 +68,7 @@ export function AgreementRow({ agreement }: { agreement: AgreementView }): React
       </div>
       <p className="mem-meta text-meta">
         {agreement.scope}
-        {agreement.effectiveAt === null ? '' : ` · ${when(agreement.effectiveAt, new Date())} 起生效`}
+        {agreement.effectiveAt === null ? '' : ` · ${timeText(agreement.effectiveAt, new Date())} 起生效`}
       </p>
       {agreement.userQuote === null ? null : <q className="mem-quote">{agreement.userQuote}</q>}
       {historyOpen ? <AgreementHistory id={agreement.id} version={agreement.version} /> : null}

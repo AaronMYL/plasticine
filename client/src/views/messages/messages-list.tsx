@@ -16,7 +16,6 @@ import { ColumnCollapseButton } from '../../shell/columns/column-toggle.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { LoadNote } from '../m5b/load-note.tsx';
 import { ContactAvatar } from '../contacts/contact-avatar.tsx';
-import { listTime } from '../contacts/contact-time.ts';
 import { RemoveContactDialog, RenameField } from '../contacts/contact-manage.tsx';
 import { ContactRowMenu, RemovedContacts } from './contact-row-menu.tsx';
 import {
@@ -27,6 +26,7 @@ import {
   startsOtherGroup,
   type MessageFilter,
 } from './message-filter.ts';
+import { timeText } from '../../shell/time-text.ts';
 
 function matches(row: ContactRow, query: string): boolean {
   const needle = query.trim().toLowerCase();
@@ -80,7 +80,7 @@ function Row({ row, current, phone, now, groupStart, onOpen, manage }: { row: Co
           <span className="contact-row-top">
             <span className="contact-row-name">{row.name}</span>
             {row.last === null ? null
-              : <span className="mono contact-row-time">{listTime(row.last.at, now, timeZone)}</span>}
+              : <span className="mono contact-row-time">{timeText(row.last.at, now, timeZone)}</span>}
           </span>
           <span className="contact-row-bottom">
             {row.last === null ? <span className="contact-row-preview" /> : (

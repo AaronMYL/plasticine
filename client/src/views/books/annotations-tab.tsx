@@ -5,8 +5,9 @@
 import { useState, type ReactNode } from 'react';
 import { HIGHLIGHT_COLORS, type BookAnnotationView, type BookTocEntry,
   type HighlightColor } from '../../api/shared.ts';
-import { bookPercent, percentText, readingTime } from './book-format.ts';
+import { bookPercent, percentText } from './book-format.ts';
 import { COLOR_NAMES } from './reader-popovers.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 type Kind = 'all' | 'highlight' | 'note' | 'accepted';
 
@@ -43,7 +44,7 @@ function Row({ annotation, props }: { annotation: BookAnnotationView; props: Ann
         {plasticine ? <span className="tag tag-outline-quiet">Plasticine 标的 · 已收下</span> : null}
         <span>{percentText(bookPercent(props.toc, annotation.chapter, annotation.start))}</span>
         <span>
-          {[readingTime(annotation.createdAt, props.now), annotation.deviceLabel].filter(Boolean).join(' · ')}
+          {[timeText(annotation.createdAt, props.now), annotation.deviceLabel].filter(Boolean).join(' · ')}
         </span>
         {lost ? <span className="is-error">原文里没找到这一段</span> : null}
         <span className="grow" />

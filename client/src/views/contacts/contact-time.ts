@@ -52,20 +52,6 @@ export function clockTime(iso: string, timeZone?: string): string {
   return `${parts.hour}:${parts.minute}`;
 }
 
-export function listTime(iso: string, now: Date, timeZone?: string): string {
-  const at = partsOf(iso, timeZone);
-  const gap = dayGap(at, partsOf(now.toISOString(), timeZone));
-  if (gap <= 0) {
-    return `${at.hour}:${at.minute}`;
-  }
-  if (gap === 1) {
-    return '昨天';
-  }
-  if (gap <= WEEK_DAYS) {
-    return WEEKDAYS[at.weekday] ?? shortDate(iso, timeZone);
-  }
-  return `${pad(at.month)}-${pad(at.day)}`;
-}
 
 export function dayLabel(iso: string, timeZone?: string): string {
   const parts = partsOf(iso, timeZone);

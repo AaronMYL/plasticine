@@ -3,7 +3,8 @@
 
 import { describe, expect, it } from 'vitest';
 import type { ContactMessageView, ContactThreadItem, NetworkTaskView } from '../../../src/api/shared.ts';
-import { deadlineText, listTime } from '../../../src/views/contacts/contact-time.ts';
+import { timeText } from '../../../src/shell/time-text.ts';
+import { deadlineText } from '../../../src/views/contacts/contact-time.ts';
 import { joinItems, upsertItem } from '../../../src/views/contacts/contacts-store.ts';
 import { progressLabel, segments, taskStatusLine } from '../../../src/views/contacts/task-status.ts';
 
@@ -80,11 +81,12 @@ describe('任务卡的进度和一句状态', () => {
 describe('联系人里的时间', () => {
   const now = new Date('2026-11-03T06:30:00.000Z');
 
-  it('今天写钟点、昨天写「昨天」、一周内写星期、再早写月-日', () => {
-    expect(listTime('2026-11-03T06:20:00.000Z', now, TZ)).toBe('14:20');
-    expect(listTime('2026-11-02T06:20:00.000Z', now, TZ)).toBe('昨天');
-    expect(listTime('2026-10-30T06:20:00.000Z', now, TZ)).toBe('周五');
-    expect(listTime('2026-10-20T06:20:00.000Z', now, TZ)).toBe('10-20');
+  it('列表上的时间用全站一种写法（11-14）：今天写钟点、昨天写「昨天」、一周内写星期、再早写月-日', () => {
+    expect(timeText('2026-11-03T06:20:00.000Z', now, TZ)).toBe('10 分钟前');
+    expect(timeText('2026-11-03T04:20:00.000Z', now, TZ)).toBe('12:20');
+    expect(timeText('2026-11-02T06:20:00.000Z', now, TZ)).toBe('昨天');
+    expect(timeText('2026-10-30T06:20:00.000Z', now, TZ)).toBe('周五');
+    expect(timeText('2026-10-20T06:20:00.000Z', now, TZ)).toBe('10-20');
   });
 
   it('期限一周内写星期和钟点，再远写月-日和钟点', () => {

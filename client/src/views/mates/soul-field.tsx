@@ -7,9 +7,9 @@ import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import type { SoulDiffLine, SoulRevision } from '../../api/shared.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { relativeTime } from '../../shell/relative-time.ts';
 import type { SoulDoc } from './use-soul-doc.ts';
 import './soul-field.css';
+import { timeText } from '../../shell/time-text.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -43,7 +43,7 @@ function SoulText({ id, value, onChange, readOnly, placeholder }: { id: string; 
 
 /** 「昨晚」「3 天前」「10-27」：夜里整理的时间。 */
 function whenOf(at: string, now: Date): string {
-  return now.getTime() - new Date(at).getTime() < DAY_MS ? '昨晚' : relativeTime(at, now);
+  return now.getTime() - new Date(at).getTime() < DAY_MS ? '昨晚' : timeText(at, now);
 }
 
 /** 接两段字：挨着数字的地方空一格（「已撤回 3 天前的改动」「10-27 整理时」）。 */

@@ -9,12 +9,12 @@ import { errorText } from '../../api/errors.ts';
 import type { DeviceView } from '../../api/shared.ts';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { SectionHead } from './section-head.tsx';
 import { SettingRow } from './setting-row.tsx';
 import './account-profile.css';
 import { Failure, useRead } from './system-read.tsx';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 type Confirm = { kind: 'logout' } | { kind: 'revoke'; device: DeviceView };
 
@@ -62,7 +62,7 @@ export function Devices(): ReactNode {
       <ul className="account-rows account-devices" aria-label="登录着的设备">
         {rows.map((device) => (
           <SettingRow key={device.id} as="li" name={deviceLabel(device)}
-            sub={`${device.current ? '这台 · ' : ''}${relativeTime(device.lastSeenAt, now)}`}
+            sub={`${device.current ? '这台 · ' : ''}${timeText(device.lastSeenAt, now)}`}
             lead={<Icon name={device.local !== true && PHONE_NAME.test(device.name) ? 'phone' : 'mac'} />}>
             {device.via === undefined ? null : (
               <span className="account-device-via" data-via={device.via}>

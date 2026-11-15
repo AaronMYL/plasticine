@@ -7,11 +7,11 @@ import type { NodeView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { SectionHead } from './section-head.tsx';
 import { SettingRow } from './setting-row.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 /** 这台电脑是什么：Mac 和 Windows 的桌面客户端是同一套，都列在这里。 */
 const PLATFORM_NAMES: Readonly<Partial<Record<NodeView['platform'], string>>> = { macos: 'Mac', windows: 'Windows',
@@ -40,7 +40,7 @@ export function NodeDevices(): ReactNode {
       <ul className="account-rows" aria-label="替你动手的电脑">
         {macs.map((node) => (
           <SettingRow key={node.id} as="li" lead={<Icon name="mac" />}
-            name={`${node.name} · ${PLATFORM_NAMES[node.platform] ?? '电脑'}`} sub={relativeTime(node.lastSeenAt, now)}>
+            name={`${node.name} · ${PLATFORM_NAMES[node.platform] ?? '电脑'}`} sub={timeText(node.lastSeenAt, now)}>
             <RevealMore label={`「${node.name}」的更多操作`} actions={[{ icon: 'close', label: '撤销',
               onSelect: () => setConfirm(node) }]} />
           </SettingRow>

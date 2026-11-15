@@ -12,8 +12,9 @@ import { NoteActions } from './note-actions.tsx';
 import { deleteNote } from './note-delete.ts';
 import { useApi } from '../../api/context.tsx';
 import { useClientState } from '../../state/context.tsx';
-import { groupByDay, when } from './note-time.ts';
+import { groupByDay } from './note-time.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 export interface NoteListProps {
   selection?: BulkSelection;
@@ -114,7 +115,7 @@ export function NoteList(props: NoteListProps): ReactNode {
                   </span>
                   {note.preview === '' ? null : <span className="note-row-preview">{note.preview}</span>}
                   <span className="note-row-meta">
-                    <span className="note-row-time text-meta">{when(note.updatedAt, now)}</span>
+                    <span className="note-row-time text-meta">{timeText(note.updatedAt, now)}</span>
                     {props.showFolder && note.folder !== '笔记' ? (
                       <span className="note-row-folder" title={note.folder}>{note.folder}</span>
                     ) : null}

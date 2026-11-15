@@ -13,10 +13,11 @@ import { useStore } from '../../state/use-store.ts';
 import { LoadNote } from '../m5b/load-note.tsx';
 import { ContactAvatar } from '../contacts/contact-avatar.tsx';
 import { ContactComposer } from '../contacts/contact-composer.tsx';
-import { clockTime, listTime, shortDate } from '../contacts/contact-time.ts';
+import { clockTime, shortDate } from '../contacts/contact-time.ts';
 import { itemTime, joinItems } from '../contacts/contacts-store.ts';
 import { MailReading } from '../contacts/mail-item.tsx';
 import '../contacts/mail.css';
+import { timeText } from '../../shell/time-text.ts';
 
 /**
  * 在 Gmail 里找到这封信：按发件地址和主题搜（服务端没给 Gmail 里那一封的直接地址；in:anywhere 连归档的也找）。
@@ -84,7 +85,7 @@ function Others({ mails, current, now, onPick }: { mails: readonly ContactMessag
         <li key={mail.id}>
           <button type="button" className="mail-reader-other" onClick={() => onPick(mail.id)}>
             <span className="mail-reader-other-subject">{mail.mail?.subject ?? mail.text}</span>
-            <span className="mono mail-reader-other-time">{listTime(mail.at, now, timeZone)}</span>
+            <span className="mono mail-reader-other-time">{timeText(mail.at, now, timeZone)}</span>
           </button>
         </li>
       ))}
@@ -129,7 +130,7 @@ export function MailReader({ contact, phone, now, onBack }: MailReaderProps): Re
               <ContactAvatar row={contact} size={20} />
               <span className="mail-reader-sender">{sender}</span>
               {address === '' || address === sender ? null : <span className="mail-reader-address">{address}</span>}
-              <time className="mono mail-reader-time" dateTime={shown.at}>{listTime(shown.at, now, timeZone)}</time>
+              <time className="mono mail-reader-time" dateTime={shown.at}>{timeText(shown.at, now, timeZone)}</time>
             </p>
           )}
         </div>

@@ -14,9 +14,9 @@ import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { mainLineRoute, type Route } from '../../shell/routes.ts';
 import { SKILL_NAME_PATTERN } from './skill-text.ts';
+import { timeText } from '../../shell/time-text.ts';
 
 export interface SkillsNewProps {
   phone: boolean;
@@ -54,7 +54,7 @@ function Tell({ busy, said, onSaid, onDraft }: { busy: boolean; said: string; on
             onClick={() => setLineId((current) => current === line.id ? null : line.id)}>
             <Icon name="check" size={14} />
             <span className="skills-done-title">{line.title}</span>
-            <span className="skills-done-time">{relativeTime(line.updatedAt, new Date())}</span>
+            <span className="skills-done-time">{timeText(line.updatedAt, new Date())}</span>
           </button>
         </li>)}
       </ul>

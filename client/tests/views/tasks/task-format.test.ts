@@ -1,7 +1,8 @@
 // 任务栏目里的时间写法：下次、在做多久、做完多久以前。
 
 import { describe, expect, it } from 'vitest';
-import { agoText, nextText, runningFor } from '../../../src/views/tasks/task-format.ts';
+import { timeText } from '../../../src/shell/time-text.ts';
+import { nextText, runningFor } from '../../../src/views/tasks/task-format.ts';
 
 const ZONE = 'Asia/Shanghai';
 // 北京时间 2026-11-07（周六）14:00。
@@ -18,7 +19,8 @@ describe('任务栏目的时间', () => {
   it('在做多久按分钟，做完多久以前按钟头和昨天', () => {
     expect(runningFor('2026-11-07T05:48:00Z', NOW.getTime())).toBe('12 分');
     expect(runningFor(null, NOW.getTime())).toBeNull();
-    expect(agoText('2026-11-07T04:00:00Z', NOW, ZONE)).toBe('2 小时前');
-    expect(agoText('2026-11-06T04:00:00Z', NOW, ZONE)).toBe('昨天');
+    // 做完的时间用全站一种写法（11-14）。
+    expect(timeText('2026-11-07T04:00:00Z', NOW, ZONE)).toBe('12:00');
+    expect(timeText('2026-11-06T04:00:00Z', NOW, ZONE)).toBe('昨天');
   });
 });

@@ -7,8 +7,8 @@ import { useApi } from '../../api/context.tsx';
 import type { SpaceView } from '../../api/shared.ts';
 import { legacyPreviewHtml } from './space-document.ts';
 import { SpaceFrame } from './space-frame.tsx';
-import { letterDate } from './space-time.ts';
 import './space-thumb.css';
+import { bodyDate } from '../../shell/time-text.ts';
 
 /** 缩略图里的页面按这么宽排版（设计稿 1200 × 750，再整体缩小）。 */
 export const THUMB_WIDTH = 1200;
@@ -100,7 +100,7 @@ export function SpaceThumb({ spaceId, version, className = '' }: SpaceThumbProps
           transform: `scale(${scale})` }}>
           <SpaceFrame mode="thumb" label={space.title} className="space-thumb-frame" space={{ genre,
             html: space.html ?? legacyPreviewHtml(space.doc, space.title), title: space.title,
-            dateLabel: letterDate(space.createdAt) }} />
+            dateLabel: bodyDate(space.createdAt) }} />
         </div>
       )}
     </div>

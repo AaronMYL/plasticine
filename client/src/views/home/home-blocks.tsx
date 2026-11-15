@@ -8,7 +8,6 @@ import { useTimeZone } from '../../live.tsx';
 import { AiMark, StatusGlyph } from '../../shell/glyph.tsx';
 import { HueTile, hueVar, type HueName } from '../../shell/hue.tsx';
 import { Icon, type IconName } from '../../shell/icons.tsx';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { useTabActions } from '../../shell/tabs-context.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
@@ -18,6 +17,7 @@ import { continueItems, type ContinueItem } from './continue-items.ts';
 import { calendarHue, eventMeta, eventTime, reminderTime, staleNote } from './today-items.ts';
 import { useBooks, useFeedHeadlines, useRecentNotes, useToday } from './use-home-sections.ts';
 import '../feed/feed.css';
+import { timeText } from '../../shell/time-text.ts';
 
 const CONTINUE_LOOK: Readonly<Record<ContinueItem['kind'], { hue: HueName; icon: IconName }>> = {
   note: { hue: 'teal', icon: 'notes' },
@@ -42,7 +42,7 @@ function metaOf(item: ContinueItem, now: Date): string | null {
   if (item.kind === 'web') {
     return hostOf(item.url);
   }
-  return item.at === null ? null : relativeTime(item.at, now);
+  return item.at === null ? null : timeText(item.at, now);
 }
 
 export function ContinueBlock({ now }: { now: Date }): ReactNode {
@@ -170,7 +170,7 @@ export function FeedBlock({ items, now }: { items: readonly FeedItemView[]; now:
               <button type="button" className="home-row-line home-feed-row" onClick={() => openFeedItem(item, tabs)}>
                 <SourceMark source={sourceOf(item)} />
                 <span className="home-feed-title">{title}</span>
-                <span className="home-feed-time">{relativeTime(item.arrivedAt, now)}</span>
+                <span className="home-feed-time">{timeText(item.arrivedAt, now)}</span>
               </button>
             </li>
           );

@@ -16,7 +16,8 @@ import { useLive } from '../../live.tsx';
 import { useNow } from '../lines/line-time.ts';
 import { DeletedTask, TaskMenu, taskPhase } from '../lines/task-menu.tsx';
 import { unmetText, WorkLineAction, WorkStatusGlyph, workStatusText } from '../lines/work-status.tsx';
-import { agoText, runningFor, timedIcon } from './task-format.ts';
+import { runningFor, timedIcon } from './task-format.ts';
+import { timeText } from '../../shell/time-text.ts';
 
 function ProjectDot({ project }: { project: TaskProjectView | undefined }): ReactNode {
   if (project === undefined) {
@@ -48,7 +49,7 @@ function TaskLine({ line, project, now, onDeleted }: { line: LineView; project: 
         <span className="tasks-row-meta" data-error={error !== null || unmet !== null}>{error ?? meta}</span>
       </button>
       <span className="tasks-elapsed">{line.status === 'running' ? runningFor(line.activeSince, now)
-        : phase === 'active' ? null : agoText(line.archivedAt ?? line.updatedAt, new Date(now), timeZone)}</span>
+        : phase === 'active' ? null : timeText(line.archivedAt ?? line.updatedAt, new Date(now), timeZone)}</span>
       <WorkLineAction line={line} onError={setError} />
       <TaskMenu line={line} onError={setError} onDeleted={onDeleted} />
     </li>

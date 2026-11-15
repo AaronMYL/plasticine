@@ -10,8 +10,9 @@ import { HueTile } from '../../shell/hue.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { useRead } from '../memory/use-read.ts';
-import { issueDate, issueLabel, issueStats } from './issue-text.ts';
+import { issueLabel, issueStats } from './issue-text.ts';
 import { SubscriptionFields } from './subscription-settings.tsx';
+import { bodyDate } from '../../shell/time-text.ts';
 
 type Tab = 'latest' | 'issues' | 'settings';
 
@@ -29,7 +30,7 @@ function IssueRow({ issue, onOpen }: { issue: IssueBrief; onOpen: () => void }):
     <li><button type="button" className="sub-issue" onClick={onOpen}>
       <span className="sub-issue-n">{issueLabel(issue)}</span>
       <span className="sub-issue-title">{issue.headline}</span>
-      <span className="text-meta">{issueDate(issue)}</span>
+      <span className="text-meta">{bodyDate(issue.createdAt)}</span>
       <Icon name="chevron-right" size={14} />
     </button></li>
   );
@@ -41,7 +42,7 @@ function Latest({ issue, onOpen }: { issue: IssueBrief | undefined; onOpen: (id:
   }
   return (
     <div className="sub-latest">
-      <p className="text-meta">{issueLabel(issue)} · {issueDate(issue)}</p>
+      <p className="text-meta">{issueLabel(issue)} · {bodyDate(issue.createdAt)}</p>
       <h3>{issue.headline}</h3>
       {issue.stats.length === 0 ? null : <p className="text-meta">{issueStats(issue)}</p>}
       <button type="button" className="secondary-button" onClick={() => onOpen(issue.spaceId)}>打开</button>

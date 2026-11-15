@@ -7,7 +7,7 @@ import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { isOpenOp } from '../../state/action-ops.ts';
 import { useOp } from '../pending/pending-ops.tsx';
-import { when } from '../notes/note-time.ts';
+import { timeText } from '../../shell/time-text.ts';
 
 const COMMENT_POLL_MS = 600;
 
@@ -60,7 +60,7 @@ export function FeedComments({ item }: { item: FeedItemView }): ReactNode {
     {rows === undefined ? <p className="text-meta">正在读评论…</p> : <ul className="feed-comment-list">
       {rows.map((row) => <li key={row.id} className={row.author === 'ai' ? 'feed-comment is-ai' : 'feed-comment'}>
         <p className="text-meta">{row.author === 'ai' ? 'Plasticine' : '你'}
-          {row.migrated ? ' · 迁入评论' : ''} · {when(row.createdAt, new Date(), timeZone)}</p>
+          {row.migrated ? ' · 迁入评论' : ''} · {timeText(row.createdAt, new Date(), timeZone)}</p>
         {row.text === '' ? null : <p className="feed-comment-text">{row.text}</p>}
         {row.status !== 'pending' ? null : <p role="status" className="text-meta">Plasticine 正在回复…</p>}
         {row.error === null ? null : <p role="alert" className="is-error">{row.error}</p>}

@@ -4,7 +4,8 @@
 import type { ReactNode } from 'react';
 import type { BookProgressView } from '../../api/shared.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
-import { chapterShort, percentText, readingTime } from './book-format.ts';
+import { chapterShort, percentText } from './book-format.ts';
+import { timeText } from '../../shell/time-text.ts';
 
 export type ReaderPanel = 'toc' | 'annotations' | 'insights' | 'search' | 'type';
 
@@ -60,7 +61,7 @@ export function OtherDeviceBanner(props: OtherDeviceBannerProps): ReactNode {
       <span className="dot dot-run" aria-hidden="true" />
       <span className="banner-text">
         {`${progress.deviceLabel} 上读到 ${chapterShort(props.chapterTitle)} · ${percentText(progress.percent)}`}
-        {`（${readingTime(progress.updatedAt, props.now)}）`}
+        {`（${timeText(progress.updatedAt, props.now)}）`}
       </span>
       <button type="button" className="text-button" onClick={props.onJump}>跳过去</button>
       <button type="button" className="text-button text-button-quiet" onClick={props.onStay}>留在这里</button>

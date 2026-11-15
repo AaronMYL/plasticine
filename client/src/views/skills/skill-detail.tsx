@@ -7,9 +7,9 @@ import { createRequestId } from '../../api/request-id.ts';
 import type { SkillRow } from '../../api/shared.ts';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { SkillReader } from './skill-reader.tsx';
 import { SOURCE_LABELS, originText, skillLabel } from './skill-text.ts';
+import { timeText } from '../../shell/time-text.ts';
 
 /** 删一个技能：挪出目录留底；正在用它的线照旧用已经加载的那一版。 */
 function ConfirmRemove({ skill, onDone, onCancel }: { skill: SkillRow; onDone: () => void; onCancel: () => void })
@@ -46,7 +46,7 @@ export function SkillDetail({ skill, onRemoved }: { skill: SkillRow; onRemoved: 
     {removing ? <ConfirmRemove skill={skill} onCancel={() => setRemoving(false)} onDone={onRemoved} /> : null}
     <p className="skill-detail-meta">
       <span>{skill.uses === 0 ? '还没用过' : `用过 ${skill.uses} 次`}</span>
-      {skill.lastUsedAt === null ? null : <span>上次 {relativeTime(skill.lastUsedAt, new Date())}</span>}
+      {skill.lastUsedAt === null ? null : <span>上次 {timeText(skill.lastUsedAt, new Date())}</span>}
       <span>{originText(skill.source)}</span>
     </p>
     <SkillReader key={`${skill.name}:${skill.version}`} descriptor={skill} />

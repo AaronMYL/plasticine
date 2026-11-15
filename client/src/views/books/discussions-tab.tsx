@@ -2,7 +2,8 @@
 
 import type { ReactNode } from 'react';
 import type { BookDiscussion, BookTocEntry } from '../../api/shared.ts';
-import { chapterShort, readingTime } from './book-format.ts';
+import { chapterShort } from './book-format.ts';
+import { timeText } from '../../shell/time-text.ts';
 
 export interface DiscussionsTabProps {
   discussions: readonly BookDiscussion[] | null;
@@ -33,7 +34,7 @@ export function DiscussionsTab(props: DiscussionsTabProps): ReactNode {
               <button type="button" className="text-button text-button-quiet" onClick={() => props.onJump(discussion)}>
                 {chapterShort(props.toc[discussion.chapter]?.title ?? discussion.quoteLabel)}
               </button>
-              <span>{readingTime(discussion.at, props.now)}</span>
+              <span>{timeText(discussion.at, props.now)}</span>
               <span className="grow" />
               <button type="button" className="text-button" onClick={() => props.onOpen(discussion)}>回到对话 ›</button>
             </div>

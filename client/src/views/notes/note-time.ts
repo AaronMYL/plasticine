@@ -1,5 +1,4 @@
-// 笔记列表的时间写法和分组（照旧版 notes.ts 的 when() 与 NotesPage 的 groupByDay 重写）。
-// 一律按本机时区：今天写时分，昨天写「昨天」，今年写「月/日」，更早带年份。
+// 笔记列表的分组（照旧版 NotesPage 的 groupByDay 重写）。每一行的时间用全站一种写法（shell/time-text.ts，11-14）。
 
 import type { NoteMetaView } from '../../api/types.ts';
 import { timeInput } from '../../primitives/message/states.ts';
@@ -9,20 +8,6 @@ const DAY_MS = 86_400_000;
 /** 「前 7 天」这一组的范围。 */
 const RECENT_DAYS = 7;
 
-export function when(iso: string, now: Date, timeZone = deviceTimeZone()): string {
-  const local = timeInput(iso, timeZone);
-  const day = local.slice(0, 10);
-  const today = timeInput(now.toISOString(), timeZone).slice(0, 10);
-  if (day === today) {
-    return local.slice(11);
-  }
-  const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - DAY_MS).toISOString().slice(0, 10);
-  if (yesterday === day) {
-    return '昨天';
-  }
-  const [year, month, date] = day.split('-').map(Number);
-  return `${day.slice(0, 4) === today.slice(0, 4) ? '' : `${year}/`}${month}/${date}`;
-}
 
 export interface NoteGroup {
   label: string;

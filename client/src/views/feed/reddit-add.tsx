@@ -16,9 +16,9 @@ import {
 import { SheetFooter } from '../../primitives/sheet/index.tsx';
 import { useLive } from '../../live.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { feedNavChanged } from './feed-nav-data.ts';
 import { RedditMark } from './feed-source-list.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 /** 停手这么久再去预览，不每敲一个字就取一次（Reddit 会限流）。 */
 const PREVIEW_DELAY_MS = 500;
@@ -117,7 +117,7 @@ export function RedditAdd({ onAdded, onCancel }: { onAdded: () => void; onCancel
                 <span className="feed-add-post-text">
                   <span className="feed-add-post-title">{post.title}</span>
                   <span className="feed-add-post-meta">
-                    {[post.author, relativeTime(post.publishedAt, now)].filter((part) => part !== null).join(' · ')}
+                    {[post.author, timeText(post.publishedAt, now)].filter((part) => part !== null).join(' · ')}
                   </span>
                 </span>
               </li>

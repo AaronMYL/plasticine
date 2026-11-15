@@ -16,7 +16,6 @@ import { createRequestId } from '../../api/request-id.ts';
 import type { BackupList, SystemOperations } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { Icon } from '../../shell/icons.tsx';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { useStore } from '../../state/use-store.ts';
 import { fileSize } from '../../primitives/artifact-card/format.ts';
 import { formatClock } from '../../primitives/message/states.ts';
@@ -30,6 +29,7 @@ import { desktopShell, useDesktopState } from './desktop-shell.ts';
 import { SectionHead } from './section-head.tsx';
 import { SettingRow } from './setting-row.tsx';
 import { Failure, useRead } from './system-read.tsx';
+import { timeText } from '../../shell/time-text.ts';
 
 /** 运行概况隔多久再读一次（和原来的系统页一样）。 */
 const OPERATIONS_POLL_MS = 30_000;
@@ -103,7 +103,7 @@ function BackupBlock(): ReactNode {
       </SettingRow>
       <ul className="account-rows" aria-label="最近的备份">
         {rows.map((row) => (
-          <SettingRow key={row.id} as="li" className="system-backup" name={<>{relativeTime(row.createdAt, now)}{' '}
+          <SettingRow key={row.id} as="li" className="system-backup" name={<>{timeText(row.createdAt, now)}{' '}
             <span className="mono">{formatClock(row.createdAt, false, timeZone)}</span></>}
           lead={<span className="system-backup-mark" data-status={row.status}>
             <Icon name={row.status === 'ready' ? 'check' : row.status === 'failed' ? 'alert' : 'clock'} size={16} />

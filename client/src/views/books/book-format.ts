@@ -28,23 +28,6 @@ export function isReading(book: Pick<BookView, 'progress'>): boolean {
   return book.progress !== null && percent > 0 && percent < FINISHED_AT;
 }
 
-/** 今天写「今天 08:12」，昨天「昨天 22:14」，今年「10-31 23:02」（dateOnly 时「10-29」），更早带年份。 */
-export function readingTime(iso: string, now: Date, options: { dateOnly?: boolean } = {},
-  timeZone = deviceTimeZone()): string {
-  const local = timeInput(iso, timeZone);
-  const day = local.slice(0, 10);
-  const clock = local.slice(11, 16);
-  const today = timeInput(now.toISOString(), timeZone).slice(0, 10);
-  const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - DAY_MS).toISOString().slice(0, 10);
-  if (day === today) {
-    return `今天 ${clock}`;
-  }
-  if (day === yesterday) {
-    return `昨天 ${clock}`;
-  }
-  const date = day.slice(0, 4) === today.slice(0, 4) ? day.slice(5) : day;
-  return options.dateOnly === true ? date : `${date} ${clock}`;
-}
 
 /** 章名第一段：「卷一　闺房记乐」→「卷一」；没有空格就是整个章名。 */
 export function chapterShort(title: string): string {

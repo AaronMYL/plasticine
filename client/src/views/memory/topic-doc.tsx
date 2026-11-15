@@ -18,7 +18,6 @@ import { useStore } from '../../state/use-store.ts';
 import { HueTile } from '../../shell/hue.tsx';
 import { PageHeader } from '../../shell/page-header.tsx';
 import { mainLineRoute, messagesRoute, type Route } from '../../shell/routes.ts';
-import { relativeTime } from '../../shell/relative-time.ts';
 import { topicLook } from './topics-page.tsx';
 import { PhoneContent } from '../reading/phone-content.tsx';
 import { memoryTopicQuote } from '../reading/content-quotes.ts';
@@ -26,6 +25,7 @@ import { LineActions, LineEditor } from './line-actions.tsx';
 import { useMemoryEdits } from './use-memory-edits.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import './topics.css';
+import { timeText } from '../../shell/time-text.ts';
 
 const BASIS_TAG: Readonly<Record<MemoryDocLine['basis'], string | null>> = {
   quote: null,
@@ -177,7 +177,7 @@ function Body({ doc, navigate, now, phone = false }: { doc: MemoryTopicDoc; navi
         </span>
       </div>}
       {phone ? null : <p className="doc-meta text-meta">
-        {lines} 行 · Plasticine {relativeTime(doc.composedAt, now)}整理{doc.topic.overLimit ? ' · 超出上限，等夜里整理' : ''}
+        {lines} 行 · Plasticine {timeText(doc.composedAt, now)}整理{doc.topic.overLimit ? ' · 超出上限，等夜里整理' : ''}
       </p>}
       <TierControl topic={doc.topic} />
       {doc.hardLines === undefined ? null : <HardLines lines={doc.hardLines} />}

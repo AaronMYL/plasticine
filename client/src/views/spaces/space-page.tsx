@@ -26,7 +26,6 @@ import { LegacySpace } from './space-legacy.tsx';
 import { spaceRoute } from './space-links.ts';
 import { useSpaceSaver } from './space-saver.ts';
 import { markSpaceSeen } from './space-seen.ts';
-import { letterDate } from './space-time.ts';
 import { ChangeBanner } from './space-change-banner.tsx';
 import { SpaceTools } from './space-tools.tsx';
 import { SubscriptionSheet } from './subscription-sheet.tsx';
@@ -36,6 +35,7 @@ import type { Route } from '../../shell/routes.ts';
 import './spaces.css';
 import './space-frame.css';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
+import { bodyDate } from '../../shell/time-text.ts';
 
 export interface SpacePageProps {
   spaceId: string;
@@ -173,7 +173,7 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
           editing={position === undefined && editing} onQuote={quoteSpace}
           highlightParagraph={position?.paragraph}
           space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
-            dateLabel: letterDate(space.createdAt) }} onEdit={saver.save} onEscape={stopEditing} />
+            dateLabel: bodyDate(space.createdAt) }} onEdit={saver.save} onEscape={stopEditing} />
       )}
       {!versionsOpen || current === null ? null : <SpaceVersions space={current} phone={phone}
         onClose={() => setVersionsOpen(false)} onChanged={changed} onSelect={(version) => {
