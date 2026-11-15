@@ -42,6 +42,8 @@ export interface NoteListProps {
   tools?: ReactNode;
   /** 这一行最右边（收起第二栏，网页版才有）。 */
   trail?: ReactNode;
+  /** 还没有笔记时空状态里的「新建笔记」（11-15 空的一种样子）。 */
+  onCreate?: () => void;
 }
 
 export function NoteList(props: NoteListProps): ReactNode {
@@ -90,9 +92,13 @@ export function NoteList(props: NoteListProps): ReactNode {
         </p>
       )}
       {props.notes === null && props.error === null ? <PageLoading dense /> : null}
-      {props.notes !== null && props.notes.length === 0 ? (
-        <p className="block-empty">{props.query === '' ? '还没有笔记。' : '没有找到。'}</p>
-      ) : null}
+      {props.notes !== null && props.notes.length === 0 ? <div className="note-list-empty">
+        <p className="block-empty">{props.query.trim() !== '' ? `没找到「${props.query.trim()}」。`
+          : props.trash === true ? '最近删除里没有笔记。' : '还没有笔记。'}</p>
+        {props.query.trim() === '' && props.trash !== true && props.onCreate !== undefined
+          ? <button type="button" className="secondary-button" onClick={props.onCreate}>
+            <Icon name="plus" size={14} />新建笔记</button> : null}
+      </div> : null}
       {groupByDay(props.notes ?? [], now).map((group) => (
         <section key={group.label} aria-label={group.label}>
           <h3 className="note-group">{group.label}</h3>

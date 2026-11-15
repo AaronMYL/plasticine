@@ -207,7 +207,8 @@
 .vis-picker-empty {
   margin: 0;
   padding: var(--space-2) var(--space-3);
-  font-size: var(--text-caption);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   color: var(--fg2);
 }
 

@@ -497,21 +497,69 @@ textarea.field-input {
   color: var(--fg2);
 }
 
-.block-empty,
-.gate-note {
+/*
+ * 空（11-15 界面统一，设计稿「多选、加载、空、正在连接」③）：一种样子——13/20、第二档字色、左对齐，放在内容该出现的
+ * 第一行，不上下居中；一句话说现在没有什么，搜不到写「没找到「…」」。各处的 *-empty 也用这一种字。
+ */
+.block-empty {
   margin: 0;
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
   color: var(--fg2);
+  text-align: left;
 }
 
-.block-empty.is-error,
-.gate-note.is-error {
+.block-empty.is-error {
   color: var(--err);
 }
 
-.gate-note {
-  padding: var(--space-5) var(--space-6);
+/* 打开时「正在连接」（connecting-screen.tsx）：窗口正中一个标，下面一行字；连不上时红字加「重试」。 */
+.connecting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 100dvh;
+  padding: var(--space-6);
+  animation: connecting-in var(--motion-slow) var(--ease-out);
+}
+
+.connecting-mark {
+  display: inline-flex;
+}
+
+.connecting-mark[data-waiting='true'] {
+  animation: connecting-breathe 2400ms var(--ease-out) infinite alternate; /* 例外：慢慢呼吸，不是界面动效 */
+}
+
+.connecting-text {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  text-align: center;
+}
+
+.connecting-text.is-error {
+  color: var(--err);
+}
+
+@keyframes connecting-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes connecting-breathe {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0.7; transform: scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connecting,
+  .connecting-mark[data-waiting='true'] {
+    animation: none;
+  }
 }
 
 /* ---------- 警示横幅：--tint2 底、左侧 6px --accent 点、--fg 字、圆角 8，一页最多一条 ---------- */

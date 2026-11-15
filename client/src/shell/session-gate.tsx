@@ -15,6 +15,7 @@ import { suggestedDeviceName } from '../views/onboard/onboard-parts.tsx';
 import { SetupView } from '../views/onboard/setup-view.tsx';
 import { WindowDragStrip } from './window-drag-strip.tsx';
 import { hostLocalGrant } from './host.ts';
+import { ConnectingScreen } from './connecting-screen.tsx';
 
 type Gate =
   | { status: 'checking' }
@@ -109,18 +110,12 @@ export function SessionGate({ children }: { children: ReactNode }): ReactNode {
     setGate({ status: 'signed-in' });
   };
 
-  if (gate.status === 'checking') {
-    return <p className="gate-note">正在连接…</p>;
-  }
-  if (gate.status === 'error') {
-    return (
-      <p className="gate-note is-error" role="alert">
-        {gate.error}
-        <button type="button" className="chip-button" onClick={() => {
-          setGate({ status: 'checking' }); setAttempt((value) => value + 1);
-        }}>重新连接</button>
-      </p>
-    );
+  const retry = (): void => {
+    setGate({ status: 'checking' });
+    setAttempt((value) => value + 1);
+  };
+  if (gate.status === 'checking' || gate.status === 'error') {
+    return <ConnectingScreen key={attempt} error={gate.status === 'error' ? gate.error : null} onRetry={retry} />;
   }
   if (gate.status === 'setup') {
     return <><WindowDragStrip /><SetupView account={gate.account} onSignedIn={onSignedIn} /></>;

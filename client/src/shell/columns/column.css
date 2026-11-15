@@ -229,11 +229,12 @@
   background: var(--fg);
 }
 
+/* 第二栏里的空、出错一句话：和别处的空一样 13/20（11-15）。 */
 .column-note {
   margin: var(--space-1) var(--space-4);
   color: var(--fg2);
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .column-foot {

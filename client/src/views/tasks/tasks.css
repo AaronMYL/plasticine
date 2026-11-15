@@ -324,8 +324,8 @@
   margin: 0;
   padding: var(--space-4) 0;
   color: var(--fg2);
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
 }
 
 .tasks-error {

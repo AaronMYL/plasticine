@@ -5,7 +5,8 @@ import { NOW, renderApp, seedNote, settle } from '../../helpers.tsx';
 
 /** 新建一篇：手机在页头（「新建」）；电脑在笔记栏目第二栏的列表顶上（「新建笔记」，11-15 两栏合成一栏）。 */
 function newNoteButton(): HTMLElement {
-  return screen.getByRole('button', { name: window.innerWidth < 768 ? '新建' : '新建笔记' });
+  // 列表空着时下面还有一个「新建笔记」（空的一种样子）：用顶上那一个。
+  return screen.getAllByRole('button', { name: window.innerWidth < 768 ? '新建' : '新建笔记' })[0]!;
 }
 
 async function noteEditor(): Promise<Editor> {
@@ -133,6 +134,8 @@ describe('笔记页', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/notes'));
     expect(await app.api.notes.list({})).toHaveLength(0);
     await waitFor(() => expect(screen.getByText('还没有笔记。')).toBeTruthy());
+    // 11-15 空的一种样子：能新建的给一个次按钮。
+    expect(screen.getAllByRole('button', { name: '新建笔记' }).length).toBeGreaterThan(1);
   });
 
   it('迁过来的笔记里旧的 /v1 图片地址画成 /v2 的，存回去的 Markdown 一字不改', async () => {
@@ -329,10 +332,10 @@ describe('笔记页', () => {
     expect(screen.getByRole('heading', { level: 1, name: '笔记' })).toBeTruthy();
   });
 
-  it('搜索没有结果时说「没有找到」', async () => {
+  it('搜索没有结果时说「没找到「…」」（11-15 空的一种样子）', async () => {
     await renderApp({ hash: '#/notes', setup: (fake) => seedNote(fake, 'n1', '# 购物') });
     fireEvent.change(screen.getByRole('searchbox', { name: '搜索笔记' }), { target: { value: '时间' } });
-    await waitFor(() => expect(screen.getByText('没有找到。')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('没找到「时间」。')).toBeTruthy());
   });
 
   it('手机上一层一层进：列表 → 正文，带返回', async () => {

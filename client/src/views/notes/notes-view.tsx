@@ -267,6 +267,7 @@ export function NotesView({ noteId, invalidNoteId, phone, navigate }: NotesViewP
           collectionLabel={collectionLabel}
           heading={false}
           onFolders={() => setFoldersOpen(true)}
+          onCreate={() => void create()}
         /> : null}
         <div className="notes-detail" hidden={!showNote}>
           <OpenNotePane noteId={selectedId} onDeleted={() => {

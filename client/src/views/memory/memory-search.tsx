@@ -46,7 +46,7 @@ function Results({ query, navigate }: { query: string; navigate: (route: Route) 
     return <p className="block-empty" role="status">正在搜…</p>;
   }
   if (hits.length === 0) {
-    return <p className="block-empty" role="status">没有找到</p>;
+    return <p className="block-empty" role="status">没找到「{query.trim()}」。</p>;
   }
   return (
     <ul className="topic-list memory-hits" aria-label="搜到的记忆">

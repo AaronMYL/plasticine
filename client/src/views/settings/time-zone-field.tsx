@@ -95,7 +95,7 @@ export function TimeZoneField({ value, disabled, onChange }: {
           <span>{entry.label}</span><span className="text-meta">{entry.id}</span>
         </button></li>)}
       </ul>}
-      {term !== '' && shown.length === 0 ? <p className="block-empty">没有找到</p> : null}
+      {term !== '' && shown.length === 0 ? <p className="block-empty">没找到「{query.trim()}」。</p> : null}
       <SettingField name="时区名称" htmlFor={`${id}-value`}>
         <input id={`${id}-value`} className="field-input field-input-mono" value={value}
           readOnly={disabled} placeholder="Asia/Shanghai" onChange={(event) => onChange(event.target.value)} />

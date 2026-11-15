@@ -420,9 +420,7 @@ textarea.field-input.skills-said { min-height: 120px; }
 }
 
 .skills-new-form > .block-empty {
-  display: grid;
-  place-items: center;
-  height: 100%;
+  padding-top: var(--space-2);
 }
 
 .skills-form {
