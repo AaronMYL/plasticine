@@ -10,7 +10,7 @@ import { createRequestId } from '../../api/request-id.ts';
 import type { DailySettingsView, UpdateDailySettingsRequest } from '../../api/types.ts';
 import { isOpenOp, type ActionOps, type ActionRequest } from '../../state/action-ops.ts';
 import type { InlineDrafts } from '../../state/inline-drafts.ts';
-import { DAILY_SETTINGS_OP_KEY } from '../../state/m4-action-requests.ts';
+import { DAILY_SETTINGS_OP_KEY } from '../../state/daily-action-requests.ts';
 import { Store } from '../../state/store.ts';
 import type { LoadStatus } from '../../state/load.ts';
 import { isTimeZone } from '../../../../agent/shared/time-zone.ts';

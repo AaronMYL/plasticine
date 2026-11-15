@@ -1,8 +1,7 @@
 // 假「昨晚整理了什么」（设计稿 Plasticine-Dream，11-06）：一次夜里的整理——新加 7、替换 3、拿不准 1、走不通的路 1。
 // 内容是示例，不是真数据；出处的字照真服务端的样子（主线 / 「线名」· 几月几日）。
 
-import type { MemoryDreamChangeView, MemoryDreamView, MemoryLineSource } from '../shared.ts';
-import { RULES_DOC_ID } from '../shared.ts';
+import { RULES_DOC_ID, type MemoryDreamChangeView, type MemoryDreamView, type MemoryLineSource } from '../shared.ts';
 import { minutesAgo } from './design-projects.ts';
 
 const HOUR = 60;

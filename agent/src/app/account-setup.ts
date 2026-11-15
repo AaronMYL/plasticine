@@ -7,7 +7,7 @@ import {
   type AccountSetupRequest,
   type AccountSetupResponse,
 } from '../../shared/api/account.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { ApiError } from './api-error.ts';
 import type { AppDeps, Reply, RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';

@@ -1,4 +1,4 @@
-// Tool definitions and tool results (harness design 10-27 §5.2). brain/ registers and dispatches tools; the client
+// Tool definitions and tool results (harness design 10-27 §5.2). tools/ registers tools and lines/ dispatches them; the client
 // and later execution/ read the same shapes from here instead of keeping their own copy.
 
 import { Type, type Static } from 'typebox';

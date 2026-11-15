@@ -17,8 +17,8 @@ import {
   type WebTabsResponse,
 } from '../../shared/api/index.ts';
 import { DailyError } from '../daily/index.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
-import { decodeDataUrl, sniffImage } from '../cloud-tools/favicon-fetch.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
+import { decodeDataUrl, sniffImage } from '../cloud-tools/index.ts';
 import { StateError } from '../state/index.ts';
 import { ApiError } from './api-error.ts';
 import { requireAuth, type AppDeps, type HandlerResult, type Reply, type RequestContext } from './context.ts';
@@ -120,7 +120,7 @@ export async function mergeWebTabs(context: RequestContext): Promise<Reply> {
 export async function getFavicon(context: RequestContext): Promise<HandlerResult> {
   requireAuth(context);
   const query = checkInput(FaviconQuerySchema, queryObject(context.url.searchParams), '网站');
-  const icon = await context.deps.m5b.favicons.icon(query.host);
+  const icon = await context.deps.toolGroups.favicons.icon(query.host);
   if (icon.status === 'none') {
     throw new ApiError(404, 'not_found', '这个网站没有图标。', { next: '界面照旧画首字母。' });
   }
@@ -149,7 +149,7 @@ export async function putFavicon(context: RequestContext): Promise<Reply> {
       next: '只收 http(s) 网页的图片（PNG、ICO、GIF、JPEG、WebP、SVG），64 KB 以内。' });
   }
   return idempotent(context, body.requestId, () => {
-    context.deps.m5b.favicons.remember(host, { mime, data });
+    context.deps.toolGroups.favicons.remember(host, { mime, data });
     const response: PutFaviconResponse = { host };
     return { status: 200, body: response };
   });

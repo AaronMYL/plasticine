@@ -1,7 +1,7 @@
 // 预测闭环的存取（迁移 0135，11-13 Aaron 定）：记预测、记他的反应、按类数三个数、放手和收回、做梦写的说明书。
 // 只存取，不判断；怎么用这些数在 loop/ 里。结果只填一次：同一条重复报（重试、重启后补报）不改第一次的。
 
-import { LOOP_AREAS, normalizeTopic, type LoopArea, type LoopOutcome, type Tally } from '../loop/tally.ts';
+import { LOOP_AREAS, normalizeTopic, type LoopArea, type LoopOutcome, type Tally } from '../loop/index.ts';
 import type { Row } from './db.ts';
 import type { StoreContext } from './object-store.ts';
 import { StateError } from './errors.ts';

@@ -9,8 +9,8 @@ import type { FakeApi } from '../../src/api/fake/index.ts';
 import { NOW, renderApp, settle } from '../helpers.tsx';
 
 function seed(fake: FakeApi): void {
-  const { contacts, m5b, network, visibility } = fake.control;
-  seedContacts({ contacts, inbox: m5b.inbox, network, visibility }, NOW);
+  const { contacts, toolGroups, network, visibility } = fake.control;
+  seedContacts({ contacts, inbox: toolGroups.inbox, network, visibility }, NOW);
 }
 
 function waitingSeed(fake: FakeApi): void {

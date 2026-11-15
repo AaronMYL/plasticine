@@ -10,14 +10,8 @@
 import type { Static, TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import {
-  ApiError,
-  badResponseError,
-  networkError,
-  NOT_RECEIVED_CODE,
-  uncertainError,
-  unauthorizedError,
+  ApiError, badResponseError, networkError, NOT_RECEIVED_CODE, unauthorizedError, uncertainError, type ApiErrorKind,
 } from '../errors.ts';
-import type { ApiErrorKind } from '../errors.ts';
 import { ApiErrorSchema } from '../shared.ts';
 import { readEventStream } from './event-stream.ts';
 import { xhrUpload, type UploadLike } from './xhr-upload.ts';

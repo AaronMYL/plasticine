@@ -5,10 +5,10 @@
 
 import { MailImageQuerySchema, type MailBodyResponse } from '../../shared/api/index.ts';
 import type { InboxMailPart, InboxMessage } from '../../shared/state.ts';
-import { keepImageUrl, sanitizeMailHtml, type MailFiles } from '../cloud-tools/index.ts';
-import { MailImageError, type MailImageFetcher } from '../cloud-tools/mail-image-fetch.ts';
-import type { MailImageSigner } from '../cloud-tools/mail-image-signer.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import {
+  keepImageUrl, MailImageError, sanitizeMailHtml, type MailFiles, type MailImageFetcher, type MailImageSigner,
+} from '../cloud-tools/index.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { parseInboxContact } from './contact-mail.ts';
@@ -97,21 +97,21 @@ export function mailBody(deps: MailViewDeps, message: InboxMessage): MailBodyRes
 /** GET /v2/contacts/:id/mail/:mailId：只认这个邮件联系人自己的信。 */
 export function getContactMail(context: RequestContext): Reply {
   requireAuth(context);
-  const { state, m5b } = context.deps;
+  const { state, toolGroups } = context.deps;
   const contact = parseInboxContact(param(context, 'id'));
   const message = state.inboxMessages.get(param(context, 'mailId'));
   if (contact === null || contact.kind !== 'mail' || message === undefined || message.source !== 'email'
     || message.fromAddress.trim().toLowerCase() !== contact.address) {
     throw notFoundError('这封邮件');
   }
-  const body = mailBody({ state, files: m5b.cloud.mailFiles, images: m5b.mailImages }, message);
+  const body = mailBody({ state, files: toolGroups.cloud.mailFiles, images: toolGroups.mailImages }, message);
   return { status: 200, body };
 }
 
 /** GET /v2/mail-image?u=&e=&s=：签名对、没过期才代取；回的是图片字节，不是 JSON。 */
 export async function getMailImage(context: RequestContext): Promise<HandlerResult> {
   const query = checkInput(MailImageQuerySchema, queryObject(context.url.searchParams), '图片地址');
-  const { signer, fetcher } = context.deps.m5b.mailImages;
+  const { signer, fetcher } = context.deps.toolGroups.mailImages;
   const verdict = signer.check(query.u, query.e, query.s);
   if (verdict !== 'ok') {
     const expired = verdict === 'expired';

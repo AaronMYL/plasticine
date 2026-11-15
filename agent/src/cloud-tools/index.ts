@@ -1,7 +1,6 @@
-// cloud-tools/: 云端执行器（《应用架构方案》第 3 节、structure.md）——云端命令（SSH，名单上的主机）、云端浏览器、邮件
-// （IMAP 只读收信、发信）、附件转文字。M6 浏览器默认连回环 CDP，其余默认仍不连。凭据只按
-// 名字引用（credentials/，0600），不进日志、不进库、不回给客户端。有副作用的动作在调用方走回执（execution/receipts.ts 的
-// 规则：脑的工具经 brain/tools/dispatch.ts，界面上的操作经 app/external-actions.ts）。
+// cloud-tools/：云端执行器——云端命令（SSH，名单上的主机）、云端浏览器、邮件（IMAP 只读收信、发信）、附件转文字、
+// 网页图标。浏览器默认连回环 CDP，其余默认不连。凭据只按名字引用（credentials/，0600），不进日志、不进库、不回给
+// 客户端。有副作用的动作在调用方走回执（system/ 的 receipts 和 external-once）。
 
 import { join } from 'node:path';
 import type { InboxMessage } from '../../shared/state.ts';
@@ -122,3 +121,16 @@ export type { ServerCommandPage, ServerCommandResult } from './server-command.ts
 export { LinkPreviewFetcher, type LinkPreviewFetchOptions } from './link-preview-fetch.ts';
 export { PublicFetchError, PublicFetcher, publicUrl, type PublicResource, type PublicRequest } from './public-fetch.ts';
 export { MailImageError } from './mail-image-fetch.ts';
+export { createCloudBrowserActTool } from './cloud-browser-act.ts';
+export { createCloudBrowserObserveTool } from './cloud-browser-observe.ts';
+export { createCloudBrowserOpenTool } from './cloud-browser-open.ts';
+export { createCloudBrowserReadTool } from './cloud-browser-read.ts';
+export { createCloudSshRunTool } from './cloud-ssh-run.ts';
+export { FaviconFetchError, decodeDataUrl, sniffImage } from './favicon-fetch.ts';
+export { FaviconFetcher } from './favicon-fetch.ts';
+export type { FaviconFetchOptions } from './favicon-fetch.ts';
+export { MailImageFetcher } from './mail-image-fetch.ts';
+export type { MailImageFetchOptions } from './mail-image-fetch.ts';
+export { MailImageSigner } from './mail-image-signer.ts';
+export type { PublicFetchOptions } from './public-fetch.ts';
+export { createServerCommandTools } from './server-command-tool.ts';

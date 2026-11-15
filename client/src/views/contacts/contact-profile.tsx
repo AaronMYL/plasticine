@@ -16,7 +16,7 @@ import { contactOpKey } from '../../state/contacts-action-requests.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { LoadNote } from '../m5b/load-note.tsx';
+import { LoadNote } from '../../shell/load-note.tsx';
 import { useOp } from '../pending/pending-ops.tsx';
 import { ContactAvatar } from './contact-avatar.tsx';
 import { RemoveContactDialog, RenameField } from './contact-manage.tsx';

@@ -2,20 +2,11 @@
 
 import { Type, type Static } from 'typebox';
 import {
-  AGREEMENTS_PATH,
-  NODE_PAIRING_CODES_PATH,
-  NODES_PATH,
-  TOOL_GROUPS_PATH,
-  NOTES_PATH,
-  MONEY_DRAFTS_PATH,
-  MEMORY_UNCERTAIN_PATH,
-  type MoneyDraftView,
+  AGREEMENTS_PATH, MEMORY_UNCERTAIN_PATH, MONEY_DRAFTS_PATH, NODE_PAIRING_CODES_PATH, NODES_PATH, NOTES_PATH,
+  TOOL_GROUPS_PATH, type AnswerAskResponse, type MoneyDraftView, type RestorePreview, type ToolGroupView,
   type UncertainItem,
-  type RestorePreview,
-  type ToolGroupView,
 } from './shared.ts';
 import type { AgreementView, NodePairingCodeResponse, NodeView } from './types.ts';
-import type { AnswerAskResponse } from './shared.ts';
 
 export const SignedTargetSchema = Type.Union([
   Type.Object({ kind: Type.Literal('device_action_answer'), askId: Type.String({ minLength: 1 }) }),

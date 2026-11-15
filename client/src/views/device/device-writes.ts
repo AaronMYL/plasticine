@@ -11,7 +11,7 @@ import type { NodeView } from '../../api/types.ts';
 import type { ActionOps, ActionRequest } from '../../state/action-ops.ts';
 import type { DeviceUi } from '../../state/device-ui.ts';
 import type { InlineDrafts } from '../../state/inline-drafts.ts';
-import { NODE_CODE_KEY, nodeLimitsKey, nodeRevokeKey } from '../../state/m5-action-requests.ts';
+import { NODE_CODE_KEY, nodeLimitsKey, nodeRevokeKey } from '../../state/device-action-requests.ts';
 import type { SignedOps } from '../../state/signed-ops.ts';
 import { Store } from '../../state/store.ts';
 import type { SignedSender } from '../signing/signed-sender.ts';

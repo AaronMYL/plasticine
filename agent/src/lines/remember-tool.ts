@@ -4,8 +4,7 @@
 
 import { Type } from 'typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
-import { RememberParameters, rememberWithSources, type CurationSource, type CurationState }
-  from '../tools/index.ts';
+import { RememberParameters, rememberWithSources, type CurationSource, type CurationState } from '../memory/index.ts';
 import { plainText, type StateService } from '../state/index.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';
@@ -13,12 +12,16 @@ import type { KernelTool, LineScope } from './types.ts';
 // 往回找他说过的话最多看这么多条用户消息：再早的话该在压缩摘要里，记一行用不着翻那么远。
 const RECENT_USER_MESSAGES = 30;
 
-const { messageIds: _messageIds, ...rememberFields } = RememberParameters.properties;
-const RememberLineParameters = Type.Object({
-  ...rememberFields,
-  quote: Type.Optional(Type.String({ minLength: 1, maxLength: 500,
-    description: 'His exact words this line comes from (a phrase from one of his recent messages in this line)' })),
-}, { additionalProperties: false });
+// 参数在函数里拼、不放在文件顶层：memory/ 和 lines/ 互相引用，顶层就读对方的常量会赶上对方还没初始化。
+function lineParameters() {
+  const { messageIds: _messageIds, ...rememberFields } = RememberParameters.properties;
+  return Type.Object({
+    ...rememberFields,
+    quote: Type.Optional(Type.String({ minLength: 1, maxLength: 500,
+      description: 'His exact words this line comes from (a phrase from one of his recent messages in this line)' })),
+  }, { additionalProperties: false });
+}
+type RememberLineParameters = ReturnType<typeof lineParameters>;
 
 export type RememberState = CurationState & Pick<StateService, 'lineMessages'>;
 
@@ -40,7 +43,8 @@ function sourceSeq(state: RememberState, lineId: string, quote: string | undefin
   return null;
 }
 
-function createRemember(state: RememberState, scope: LineScope): AgentTool<typeof RememberLineParameters> {
+function createRemember(state: RememberState, scope: LineScope): AgentTool<RememberLineParameters> {
+  const parameters = lineParameters();
   return {
     name: 'remember',
     label: '记住一句',
@@ -48,9 +52,9 @@ function createRemember(state: RememberState, scope: LineScope): AgentTool<typeo
       + '链回他的原话（quote 写他说的那句里的一段）。docId 照「记忆文档」目录写，不写就进「关于你」；他要你以后怎么'
       + '做事的规矩写进 memdoc-rules；没有合适的人物或话题文档就给 newDoc。同一件事变了用 replacesLineId 改那一行。'
       + '你的推测标 inferred 并写 why，只进「拿不准的」等他确认。查来的资料和你自己的建议不记。',
-    parameters: RememberLineParameters,
+    parameters,
     async execute(toolCallId, raw) {
-      const { quote, ...args } = checkedArgs(RememberLineParameters, raw, 'remember');
+      const { quote, ...args } = checkedArgs(parameters, raw, 'remember');
       const seq = sourceSeq(state, scope.lineId, quote);
       if (seq === null) {
         throw new Error(quote === undefined ? '这条线里还没有他说的话，没有可以链回的原话。'

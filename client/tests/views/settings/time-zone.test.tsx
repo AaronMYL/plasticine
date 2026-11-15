@@ -17,7 +17,7 @@ function Probe() {
   const timeZone = useTimeZone();
   useEffect(() => {
     live.feed.open();
-    live.m5b.money.open();
+    live.toolGroups.money.open();
   }, [live]);
   return <><output aria-label="当前时区">{timeZone}</output><TimeZoneSection /></>;
 }

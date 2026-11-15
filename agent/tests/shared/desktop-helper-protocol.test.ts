@@ -5,8 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { Value } from 'typebox/value';
-import type { DeviceActionParams } from '../../shared/api/index.ts';
-import { DEVICE_RESULT_SCHEMAS } from '../../shared/api/index.ts';
+import { DEVICE_RESULT_SCHEMAS, type DeviceActionParams } from '../../shared/api/index.ts';
 import {
   HELPER_DEVICE_KINDS, HELPER_ERROR_CODES, HELPER_METHOD_NAMES, HELPER_METHODS, HELPER_PERMISSIONS,
   HelperResponseSchema, helperCallFor, helperCapabilities, isHelperMethod,

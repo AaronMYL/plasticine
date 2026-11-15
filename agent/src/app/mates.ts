@@ -3,18 +3,15 @@ import { CreateMateGroupRequestSchema, CreateMateRequestSchema, LegacyChatConver
   LegacyChatPrepareRequestSchema, MateHandoffRequestSchema, UpdateMateGroupRequestSchema,
   UpdateMateRequestSchema, UpdateMainRequestSchema, MAIN_PATH, MATES_PATH, MATE_GROUPS_PATH }
   from '../../shared/api/mates.ts';
-import { setMainIdentity } from '../mates/main-identity.ts';
-import { Mates } from '../mates/service.ts';
-import { param, requireAuth, requireUserAuth, type RequestContext, type Route } from './context.ts';
+import { setMainIdentity } from '../mates/index.ts';
+import { param, requireAuth, requireUserAuth, type Route } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';
 import { lineCall } from './lines.ts';
+import { matesFor } from './mates-for.ts';
 import { checkInput } from './validate.ts';
 import { MATE_GROUP_TASK_ROUTES } from './mate-group-tasks.ts';
 
-export function matesFor(context: RequestContext): Mates {
-  return new Mates(context.deps.state, () => context.deps.lines);
-}
 function digest(value: unknown) {
   return { bodyDigest: createHash('sha256').update(JSON.stringify(value)).digest('hex') };
 }

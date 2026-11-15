@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { TimedRowView } from '../../shared/api/index.ts';
-import { ensureDefaultProjects } from '../../src/tools/index.ts';
+import { ensureDefaultProjects } from '../../src/projects/index.ts';
 import { SuggestionDesk, teammatesFromRows, TimedRegistry, type TimedProvider } from '../../src/tasks/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 

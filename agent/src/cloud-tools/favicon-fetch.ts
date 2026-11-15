@@ -5,8 +5,7 @@
 // 整个过程最多 8 秒。图标的种类按字节认（不信对方的 content-type），只收 PNG / ICO / GIF / JPEG / WebP / SVG。
 
 import { lookup } from 'node:dns/promises';
-import type { IncomingMessage } from 'node:http';
-import { request as httpRequest } from 'node:http';
+import { request as httpRequest, type IncomingMessage } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import type { LookupFunction } from 'node:net';
 import type { ResolvedAddress } from './mail-image-fetch.ts';

@@ -1,11 +1,12 @@
 import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
 import type { MatesApi, MateGroupsApi } from '../mates-client.ts';
-import { autoMateCharacter, DEFAULT_MAIN, DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT, MateDraftSchema,
-  MateGroupDraftSchema, mateSoulOpening, SendLineMessageRequestSchema, UpdateMateRequestSchema } from '../shared.ts';
-import type { MateDraft, MateView, MateGroupView, MateGroupDraft, CreateMateRequest, UpdateMateRequest,
-  MateHandoffRequest, LegacyChatConvertRequest, LegacyChatProposal, MainIdentity, UpdateMainRequest }
-  from '../shared.ts';
+import {
+  autoMateCharacter, DEFAULT_MAIN, DEFAULT_MATE_FACE, DEFAULT_MATE_VARIANT, MateDraftSchema, MateGroupDraftSchema,
+  mateSoulOpening, SendLineMessageRequestSchema, UpdateMateRequestSchema, type CreateMateRequest,
+  type LegacyChatConvertRequest, type LegacyChatProposal, type MainIdentity, type MateDraft, type MateGroupDraft,
+  type MateGroupView, type MateHandoffRequest, type MateView, type UpdateMainRequest, type UpdateMateRequest,
+} from '../shared.ts';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeReceipts } from './receipts.ts';

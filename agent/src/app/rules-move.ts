@@ -2,8 +2,8 @@
 
 import { createHash } from 'node:crypto';
 import { ApplyRulesMoveRequestSchema, RULES_MOVE_PATH } from '../../shared/api/rules-move.ts';
-import { applyRulesMove, rulesMoveView } from '../memory/rules/rules-move.ts';
-import { mainIdentity } from '../mates/main-identity.ts';
+import { applyRulesMove, rulesMoveView } from '../memory/index.ts';
+import { mainIdentity } from '../mates/index.ts';
 import { requireAuth, requireUserAuth, type Route } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';

@@ -3,9 +3,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { setTimeout as pause } from 'node:timers/promises';
-import { CloudBrowser, CdpBrowser } from '../../src/cloud-tools/index.ts';
-import { createCloudBrowserActTool, createCloudBrowserOpenTool, createCloudBrowserReadTool,
-  createCloudBrowserObserveTool, ToolRegistry } from '../../src/tools/index.ts';
+import {
+  CdpBrowser, CloudBrowser, createCloudBrowserActTool, createCloudBrowserObserveTool, createCloudBrowserOpenTool,
+  createCloudBrowserReadTool,
+} from '../../src/cloud-tools/index.ts';
+import { ToolRegistry } from '../../src/tools/index.ts';
 import type { ModelImage } from '../../shared/model.ts';
 import { fakeCdp } from './fake-cdp.ts';
 import { toolContext } from '../tools/helpers.ts';

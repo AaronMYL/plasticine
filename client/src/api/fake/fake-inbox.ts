@@ -1,7 +1,7 @@
 // 假的站内信和工具组：邮件不接受新回复；其他来源只记站内回复，保留历史的核实入口。
 // 工具组的开关经本人会话确认（FakeSigned 调 confirm）。写操作按 requestId 幂等，变了推 inbox.changed / tool_group.changed。
 
-import type { InboxApi, ToolGroupsApi } from '../m5b-client.ts';
+import type { InboxApi, ToolGroupsApi } from '../tool-groups-client.ts';
 import { ApiError, ConflictError } from '../errors.ts';
 import {
   INBOX_BOX_LABELS,

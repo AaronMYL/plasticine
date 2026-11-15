@@ -4,9 +4,10 @@
 import type { PlasticineApi } from '../../api/client.ts';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
-import { providerDisplayName, THINKING_LABELS } from '../../api/shared.ts';
-import type { ListModelProvidersResponse, ModelChoiceView, ModelOverride, ModelProviderView,
-  ModelPurpose, SaveModelConfigRequest } from '../../api/shared.ts';
+import {
+  providerDisplayName, THINKING_LABELS, type ListModelProvidersResponse, type ModelChoiceView, type ModelOverride,
+  type ModelProviderView, type ModelPurpose, type SaveModelConfigRequest,
+} from '../../api/shared.ts';
 import { Store } from '../../state/store.ts';
 
 export interface ModelsData {

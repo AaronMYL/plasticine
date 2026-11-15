@@ -5,13 +5,12 @@
 
 import type { LineInputOrigin, LineView } from '../../shared/api/index.ts';
 import type { Ask, Schedule, ScheduleInput, ScheduleOutcome } from '../../shared/state.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
-import type { StateService } from '../state/index.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
+import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
 import { cadenceLabel, latestDue, nextAfterRun, nextRun, rezonedNext } from './cadence.ts';
 import { scheduleTimeZone } from './time-zone.ts';
 import { outwardBrief } from './schedule-text.ts';
 import { ensureScheduleGrant } from '../outbound/index.ts';
-import { MAIN_LINE_ID } from '../state/index.ts';
 import { scheduleActor, SCHEDULE_OWNER_CONTEXT_KEY } from './schedule-owner.ts';
 
 /** 每分钟看一眼有没有到点的：卡上的钟点精确到分钟。 */

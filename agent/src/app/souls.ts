@@ -3,7 +3,7 @@
 
 import { createHash } from 'node:crypto';
 import { SOULS_PATH, UndoSoulRequestSchema, UpdateSoulRequestSchema } from '../../shared/api/souls.ts';
-import { soulResponse, soulRevisionDiff, undoSoul, updateSoul } from '../mates/souls.ts';
+import { soulResponse, soulRevisionDiff, undoSoul, updateSoul } from '../mates/index.ts';
 import { param, requireAuth, requireUserAuth, type Route } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';

@@ -3,15 +3,9 @@
 
 import { mergeLayouts, normalizeLayout, sameLayout } from '../../../../agent/shared/web-tabs-layout.ts';
 import { ApiError, ConflictError } from '../errors.ts';
-import { faviconHost } from '../shared.ts';
-import type {
-  MergeWebTabsRequest,
-  PutFaviconRequest,
-  PutFaviconResponse,
-  PutWebTabsRequest,
-  PutWebTabsResponse,
-  WebTabsLayout,
-  WebTabsResponse,
+import {
+  faviconHost, type MergeWebTabsRequest, type PutFaviconRequest, type PutFaviconResponse, type PutWebTabsRequest,
+  type PutWebTabsResponse, type WebTabsLayout, type WebTabsResponse,
 } from '../shared.ts';
 import type { WebTabsApi } from '../web-tabs-client.ts';
 import type { FakeEventBus } from './event-bus.ts';

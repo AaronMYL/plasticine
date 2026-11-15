@@ -65,8 +65,8 @@ it('编辑主线：夜里自己改过的能看改动、能撤回；你改着没�
 
 it('对方的 AI 有名字：@ 菜单和聊天里写「林一的 小满」', async () => {
   await renderApp({ hash: '#/messages/c_linyi', width: 1440, setup: (fake) => {
-    const { contacts, m5b, network, visibility } = fake.control;
-    seedContacts({ contacts, inbox: m5b.inbox, network, visibility }, new Date('2026-11-12T08:00:00Z'));
+    const { contacts, toolGroups, network, visibility } = fake.control;
+    seedContacts({ contacts, inbox: toolGroups.inbox, network, visibility }, new Date('2026-11-12T08:00:00Z'));
     const lin = contacts.people.get('c_linyi');
     if (lin !== undefined) lin.aiName = '小满';
   } });

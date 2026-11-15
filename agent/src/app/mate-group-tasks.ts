@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { SendLineMessageRequestSchema } from '../../shared/api/lines.ts';
 import { MATE_GROUPS_PATH } from '../../shared/api/mates.ts';
-import { MateGroupTasks } from '../mates/group-tasks.ts';
+import { MateGroupTasks } from '../mates/index.ts';
 import { ApiError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type Route } from './context.ts';
 import { readJsonBody } from './http.ts';

@@ -1,9 +1,8 @@
 import { Value } from 'typebox/value';
-import { LegacyChatProposalSchema } from '../../src/api/shared.ts';
+import { LegacyChatProposalSchema, type MateDraft } from '../../src/api/shared.ts';
 import { expect, it } from 'vitest';
 import { createFakeApi } from '../../src/api/fake/index.ts';
 import { createRequestId } from '../../src/api/request-id.ts';
-import type { MateDraft } from '../../src/api/shared.ts';
 
 const draft: MateDraft = { name: '资料研究员', avatar: 'cat', hue: 'sky', role: '整理资料与来源', soul: '', purpose: null };
 function setup() {

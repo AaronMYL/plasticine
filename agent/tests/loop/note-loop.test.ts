@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { NoteAssistant } from '../../src/tools/index.ts';
+import { NoteAssistant } from '../../src/notes/index.ts';
 import { MIN_DECIDED } from '../../src/loop/tally.ts';
 import { scriptedText } from '../tools/helpers.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';

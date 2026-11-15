@@ -8,7 +8,7 @@ import { DailyError } from '../daily/index.ts';
 import { DeviceError } from '../devices/index.ts';
 import { StateError } from '../state/index.ts';
 import { SubsError } from '../subs/index.ts';
-import { failureText } from '../util/log.ts';
+import { failureText } from '../util/index.ts';
 import { ArtifactError } from '../artifacts/index.ts';
 import { CloudToolError } from '../cloud-tools/index.ts';
 import { LifeError } from '../life/index.ts';
@@ -171,7 +171,7 @@ function fromDevice(error: DeviceError): ApiError {
 }
 
 /** M5 乙路: life/, artifacts/ and cloud-tools/ refusals, each with its own status. */
-function fromM5b(error: LifeError | ArtifactError | CloudToolError): ApiError {
+function fromToolGroup(error: LifeError | ArtifactError | CloudToolError): ApiError {
   const field = error.field === undefined ? {} : { field: error.field };
   switch (error.code) {
     case 'not_found':
@@ -259,7 +259,7 @@ export function toApiError(error: unknown): { error: ApiError; unexpected: boole
     return { error: fromDevice(error), unexpected: false };
   }
   if (error instanceof LifeError || error instanceof ArtifactError || error instanceof CloudToolError) {
-    return { error: fromM5b(error), unexpected: false };
+    return { error: fromToolGroup(error), unexpected: false };
   }
   if (error instanceof NetworkError) {
     return { error: fromNetwork(error), unexpected: false };

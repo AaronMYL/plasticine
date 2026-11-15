@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fauxAssistantMessage, fauxToolCall, type JsonObject } from '@earendil-works/pi-ai';
 import { Mates } from '../../src/mates/service.ts';
-import { ensureDefaultProjects } from '../../src/tools/index.ts';
+import { ensureDefaultProjects } from '../../src/projects/index.ts';
 import { MAIN_LINE_ID } from '../../src/state/index.ts';
 import { until } from '../lines/helpers.ts';
 import { call, pair, startTestApp, type TestApp } from './helpers.ts';

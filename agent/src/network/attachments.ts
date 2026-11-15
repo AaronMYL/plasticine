@@ -1,5 +1,5 @@
 import type { ImageContent } from '@earendil-works/pi-ai';
-import { IMAGE_MAX_BYTES } from '../lines/images.ts';
+import { IMAGE_MAX_BYTES } from '../lines/index.ts';
 import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import { EnvelopeSchema, NET_HEADERS, NET_HANDLE_PATTERN, NET_NONCE_TTL_MS, NET_TIME_SKEW_MS, type Envelope }

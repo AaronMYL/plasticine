@@ -2,7 +2,7 @@
 // 站外信息流。每个扫描自己幂等；一个出错只记日志、不拦其他的，下一轮再跑。返回 Promise 的扫描还没跑完时，下一轮跳过它
 // （审查 2026-11-01：同一个扫描不并发两份，收信、自迭代接续这类长活不靠自己的锁也不会叠起来）。计时器 unref，停的时候清掉。
 
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 
 // 5 分钟：触发和采访都以「天」「期限」计，5 分钟的误差看不出；更密只会多写库（方案没定，跑出记录后改）。
 export const SCAN_TICK_MS = 5 * 60 * 1000;

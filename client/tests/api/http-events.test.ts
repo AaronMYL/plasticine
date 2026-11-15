@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { EventsHub } from '../../src/api/events-hub.ts';
+import { EventsHub } from '../../src/state/events-hub.ts';
 import { createHttpApi } from '../../src/api/http/index.ts';
 import type { ConnectionStatus, EveryStreamEvent, LiveEvent } from '../../src/api/types.ts';
 import {

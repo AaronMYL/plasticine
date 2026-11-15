@@ -18,19 +18,19 @@ import {
 } from '../../shared/api/index.ts';
 import { ApiError, unauthorized } from './api-error.ts';
 import { SYNC_TIMEOUT_MS } from '../cloud-tools/index.ts';
-import { failureText } from '../util/log.ts';
+import { failureText } from '../util/index.ts';
 import { stillAuthenticated } from './auth.ts';
 import { withCurrent } from './conflict.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody, readJsonBodyWithDigest } from './http.ts';
 import { idempotent } from './idempotency.ts';
-import { inboxMessageView, inboxReplyView, inboxRowView } from './m5b-views.ts';
+import { inboxMessageView, inboxReplyView, inboxRowView } from './tool-group-views.ts';
 import { checkInput, queryObject } from './validate.ts';
 
 export async function syncInbox(context: RequestContext): Promise<Reply> {
   requireAuth(context);
   checkInput(SyncInboxRequestSchema, await readJsonBody(context.req), '现在收信');
-  const sync = context.deps.m5b.cloud.mailSync;
+  const sync = context.deps.toolGroups.cloud.mailSync;
   if (!sync.configured()) { throw new ApiError(409, 'conflict', '邮箱尚未连接，暂时不能收信。'); }
   const controller = new AbortController();
   const abort = (): void => controller.abort();
@@ -54,8 +54,8 @@ export async function addInboxFeedback(context: RequestContext): Promise<Reply> 
     const { message } = context.deps.state.inboxMessages.add({ source: 'feedback', fromAddress: '用户',
       fromName: auth.device.name, title: Array.from(body.text.split('\n')[0] ?? body.text).slice(0, 80).join(''),
       body: body.text, receivedAt: context.deps.now().toISOString(), messageId: `feedback:${body.requestId}` });
-    afterCommit(() => context.deps.m5b.inbox.announce(message));
-    return { status: 201, body: { message: inboxRowView(message), unread: context.deps.m5b.inbox.unread() } };
+    afterCommit(() => context.deps.toolGroups.inbox.announce(message));
+    return { status: 201, body: { message: inboxRowView(message), unread: context.deps.toolGroups.inbox.unread() } };
   }, { bodyDigest: raw.digest });
 }
 
@@ -64,7 +64,7 @@ export function listInbox(context: RequestContext): Reply {
   requireAuth(context);
   const types = { offset: 'integer', limit: 'integer' } as const;
   const query = checkInput(InboxListQuerySchema, queryObject(context.url.searchParams, types), '查询参数');
-  const { inbox, cloud } = context.deps.m5b;
+  const { inbox, cloud } = context.deps.toolGroups;
   const limit = query.limit ?? INBOX_PAGE_DEFAULT_LIMIT;
   const offset = query.offset ?? 0;
   const { messages, total } = inbox.page(query.box ?? 'all', query.q, offset, limit);
@@ -87,7 +87,7 @@ export function listInbox(context: RequestContext): Reply {
 /** GET /v2/inbox/:id */
 export function getInboxMessage(context: RequestContext): Reply {
   requireAuth(context);
-  const { message, replies } = context.deps.m5b.inbox.open(param(context, 'id'));
+  const { message, replies } = context.deps.toolGroups.inbox.open(param(context, 'id'));
   return { status: 200, body: inboxMessageView(message, replies) };
 }
 
@@ -104,11 +104,11 @@ export async function setInboxFlags(context: RequestContext): Promise<Reply> {
   return idempotent(context, requestId, (afterCommit) => {
     const read = () => deps.state.inboxMessages.require(id);
     const message = withCurrent(
-      () => deps.m5b.inbox.setFlags(id, version, flags, afterCommit),
+      () => deps.toolGroups.inbox.setFlags(id, version, flags, afterCommit),
       () => inboxRowView(read()),
       () => read().version,
     );
-    const body: InboxRowResponse = { message: inboxRowView(message), unread: deps.m5b.inbox.unread() };
+    const body: InboxRowResponse = { message: inboxRowView(message), unread: deps.toolGroups.inbox.unread() };
     return { status: 200, body };
   });
 }
@@ -119,8 +119,8 @@ export async function readAllInbox(context: RequestContext): Promise<Reply> {
   const body = checkInput(ReadAllInboxRequestSchema, await readJsonBody(context.req), '全部标已读');
   const { deps } = context;
   return idempotent(context, body.requestId, (afterCommit) => {
-    const changed = deps.m5b.inbox.readAll(body.box, afterCommit);
-    const response: ReadAllInboxResponse = { changed: changed.length, unread: deps.m5b.inbox.unread() };
+    const changed = deps.toolGroups.inbox.readAll(body.box, afterCommit);
+    const response: ReadAllInboxResponse = { changed: changed.length, unread: deps.toolGroups.inbox.unread() };
     return { status: 200, body: response };
   });
 }
@@ -133,7 +133,7 @@ export async function replyInbox(context: RequestContext): Promise<Reply> {
   if (!stillAuthenticated(deps, auth)) {
     throw unauthorized('这台设备的登录在请求途中失效了，这次没有执行。');
   }
-  const reply = await deps.m5b.inbox.reply(param(context, 'id'), body.text, body.requestId, auth.device.id);
+  const reply = await deps.toolGroups.inbox.reply(param(context, 'id'), body.text, body.requestId, auth.device.id);
   const response: InboxReplyResponse = { reply: inboxReplyView(reply) };
   return { status: 201, body: response };
 }
@@ -144,7 +144,7 @@ export async function settleInboxReply(context: RequestContext): Promise<Reply> 
   const body = checkInput(SettleInboxReplyRequestSchema, await readJsonBody(context.req), '核实回复');
   const { deps } = context;
   return idempotent(context, body.requestId, () => {
-    const reply = deps.m5b.inbox.settleReply(param(context, 'id'), body.happened);
+    const reply = deps.toolGroups.inbox.settleReply(param(context, 'id'), body.happened);
     const response: InboxReplyResponse = { reply: inboxReplyView(reply) };
     return { status: 200, body: response };
   });

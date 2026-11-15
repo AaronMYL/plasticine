@@ -3,8 +3,8 @@
 // 主机名先解析、内网不取、只收图片、有大小上限）。回的是图片字节，不是 JSON。
 
 import { ImageProxyQuerySchema } from '../../shared/api/index.ts';
-import { MailImageError } from '../cloud-tools/mail-image-fetch.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { MailImageError } from '../cloud-tools/index.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { ApiError } from './api-error.ts';
 import { requireAuth, type HandlerResult, type RequestContext } from './context.ts';
 import { checkInput, queryObject } from './validate.ts';
@@ -22,7 +22,7 @@ export async function getProxiedImage(context: RequestContext): Promise<HandlerR
   context.res.on('close', () => gone.abort());
   let image;
   try {
-    image = await context.deps.m5b.mailImages.fetcher.get(query.url, gone.signal);
+    image = await context.deps.toolGroups.mailImages.fetcher.get(query.url, gone.signal);
   } catch (error) {
     if (error instanceof MailImageError) {
       safeLog('warn', 'image_proxy_failed', { category: errorCategory(error) });

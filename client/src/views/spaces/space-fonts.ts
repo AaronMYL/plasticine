@@ -25,6 +25,7 @@ let wenkai: Promise<WenkaiSlice[]> | null = null;
 function bytes(url: string): Promise<ArrayBuffer> {
   let found = buffers.get(url);
   if (found === undefined) {
+    // 例外：取的是静态文件，不是本体的接口，不经 api/。
     found = fetch(url).then((response) => {
       if (!response.ok) throw new Error(`字体没读到（${response.status}）：${url}`);
       return response.arrayBuffer();

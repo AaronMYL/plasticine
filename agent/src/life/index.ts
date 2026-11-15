@@ -1,4 +1,4 @@
-// life/：日常事务——记账（账本、分类、账户、统计）和付款截图的记账草案。数据只经 state/ 写，不调模型（截图识别在 brain/）。
+// life/：日常事务——记账（账本、分类、账户、统计）和付款截图的记账草案。数据只经 state/ 写；付款截图的识别（payment-reader.ts）经内核调模型。
 // 2026-11-05 他定：自建的提醒、日历和专注删掉（Apple 日历和提醒以后由 Mac 接），交互遥测随度量一起删。
 
 import type { StateService } from '../state/index.ts';
@@ -28,3 +28,5 @@ export function createLife(options: { state: StateService; now: () => Date }) {
 }
 
 export type Life = ReturnType<typeof createLife>;
+export { PaymentReader } from './payment-reader.ts';
+export { createPaymentTool } from './payment-tool.ts';

@@ -87,8 +87,8 @@ describe('输入建议', () => {
   });
 
   it('消息里和朋友聊：一样给浅色字，点一下采纳', async () => {
-    const seed = ({ control: { contacts, network, visibility, m5b } }: FakeApi): void => {
-      seedContacts({ contacts, inbox: m5b.inbox, network, visibility }, NOW);
+    const seed = ({ control: { contacts, network, visibility, toolGroups } }: FakeApi): void => {
+      seedContacts({ contacts, inbox: toolGroups.inbox, network, visibility }, NOW);
     };
     await renderApp({ hash: '#/messages/c_linyi', width: 1440, setup: seed });
     const box = await screen.findByRole<HTMLTextAreaElement>('textbox', { name: '发给林一' });

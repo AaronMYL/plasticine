@@ -23,8 +23,8 @@ it('笔记批量逐项回执，重复请求不重复处理，永久删除后读�
 });
 it('文件夹回收包含文件数，清空数量变化时不删任何项目，重试只处理剩余项', async () => {
   const { api, control } = setup();
-  control.m5b.files.seed('示例资料', 'directory');
-  control.m5b.files.seed('示例资料/摘要.md');
+  control.toolGroups.files.seed('示例资料', 'directory');
+  control.toolGroups.files.seed('示例资料/摘要.md');
   const result = await api.library.batch({ requestId: createRequestId(), action: 'trash',
     items: [{ kind: 'folder', id: '示例资料' }] });
   expect(result.succeeded).toBe(1);
@@ -36,5 +36,5 @@ it('文件夹回收包含文件数，清空数量变化时不删任何项目，�
   const emptied = await api.library.emptyTrash({ requestId: createRequestId(), expectCount: 1 });
   expect(Value.Check(BatchResponseSchema, emptied)).toBe(true);
   expect((await api.library.trash()).items).toHaveLength(0);
-  expect(control.m5b.files.has('示例资料/摘要.md')).toBe(false);
+  expect(control.toolGroups.files.has('示例资料/摘要.md')).toBe(false);
 });

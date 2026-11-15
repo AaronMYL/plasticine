@@ -3,18 +3,10 @@
 // 和消息原语里你的话下面那一行同一个写法（component-recipes「任务反馈与操作按钮」：未知结果给核实路径）。
 
 import type { ReactNode } from 'react';
+import type { OpStatus, OpView } from '../../state/ops.ts';
 import './op-line.css';
 
-export type OpStatus = 'running' | 'uncertain' | 'unsent' | 'failed';
-
-export interface OpView {
-  key: string;
-  label: string;
-  status: OpStatus;
-  error: string | null;
-  /** 待核实过的不让「不发了」：它可能已经生效。 */
-  unresolved: boolean;
-}
+export type { OpStatus, OpView };
 
 const STATUS_TEXT: Readonly<Record<OpStatus, string>> = {
   running: '发出中',

@@ -3,19 +3,12 @@
 
 import type { MemoryTopicsApi, ThingsApi } from '../things-client.ts';
 import {
-  MEMORY_DREAMS_PATH,
-  MEMORY_SEARCH_PATH,
-  MEMORY_TOPICS_PATH,
-  MemoryDreamChangeViewSchema,
-  MemoryDreamViewSchema,
-  MemorySearchResponseSchema,
-  MemoryTopicDocSchema,
-  MemoryTopicListResponseSchema,
+  ApplyCleanupResponseSchema, LatestCleanupResponseSchema, MEMORY_CLEANUPS_PATH, MEMORY_DOCS_PATH, MEMORY_DREAMS_PATH,
+  MEMORY_SEARCH_PATH, MEMORY_TOPICS_PATH, memoryCleanupApplyPath, MemoryDreamChangeViewSchema, MemoryDreamViewSchema,
+  memoryLineMovePath, memoryLinesPath, MemorySearchResponseSchema, MemoryTopicDocSchema, MemoryTopicListResponseSchema,
 } from '../shared.ts';
 import type { Transport } from './transport.ts';
 import { Type } from 'typebox';
-import { ApplyCleanupResponseSchema, LatestCleanupResponseSchema, MEMORY_CLEANUPS_PATH, MEMORY_DOCS_PATH,
-  memoryCleanupApplyPath, memoryLineMovePath, memoryLinesPath } from '../shared.ts';
 
 const Anything = Type.Unknown();
 const linePath = (docId: string, lineId: string) =>

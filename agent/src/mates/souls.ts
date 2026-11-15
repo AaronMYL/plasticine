@@ -4,8 +4,7 @@
 import { SOUL_OWNER_MAIN, SOUL_REVISIONS_SHOWN, type SoulActor, type SoulResponse, type SoulRevision,
   type SoulRevisionDiffResponse } from '../../shared/api/souls.ts';
 import { diffSoul, MAIN_SOUL_OPENING, mateSoulOpening, soulChangeCount } from '../../shared/soul-text.ts';
-import { StateError, type StateService } from '../state/index.ts';
-import type { SoulRevisionRow, SoulRow } from '../state/souls.ts';
+import { StateError, type SoulRevisionRow, type SoulRow, type StateService } from '../state/index.ts';
 
 export type SoulState = Pick<StateService, 'souls' | 'mates' | 'transaction'>;
 type ReadState = Pick<StateService, 'mates'> & Partial<Pick<StateService, 'souls'>>;

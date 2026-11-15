@@ -8,8 +8,9 @@
 // （web-tabs-sync.ts）把整份送上去，别的设备先改过时在本体那一份上把这几步重做一遍（rebase）。在看哪一个、原生网页开了
 // 哪些只在这台设备上。打开时先画上次的缓存（web-tabs-storage.ts），没有缓存时先画这台设备上还没并上去的旧存档。
 
-import { faviconHost, WEB_TABS_ARCHIVED_MAX, type ProjectHue, type WebTabsLayout } from '../api/shared.ts';
-import { PROJECT_HUES } from '../api/shared.ts';
+import {
+  faviconHost, PROJECT_HUES, WEB_TABS_ARCHIVED_MAX, type ProjectHue, type WebTabsLayout,
+} from '../api/shared.ts';
 import type { KeyValueStorage } from './outbox.ts';
 import { Store } from './store.ts';
 import {

@@ -5,7 +5,7 @@
 
 import type { PlasticineApi } from '../../api/client.ts';
 import { errorText } from '../../api/errors.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 import type {
   AgreementListResponse,
   AgreementView,

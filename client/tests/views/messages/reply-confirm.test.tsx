@@ -10,8 +10,8 @@ import { NOW, renderApp, settle } from '../../helpers.tsx';
 const DRAFT = '能接。稿子发来后，周五前给你 10 条要点。';
 
 function seed(fake: FakeApi, draft: string | null = DRAFT): void {
-  const { contacts, m5b, network, visibility, asks } = fake.control;
-  seedContacts({ contacts, inbox: m5b.inbox, network, visibility }, NOW);
+  const { contacts, toolGroups, network, visibility, asks } = fake.control;
+  seedContacts({ contacts, inbox: toolGroups.inbox, network, visibility }, NOW);
   const option = (id: string, label: string) => ({ id, label, description: null, recommended: id === 'send' });
   asks.raise({ id: 'ask_reply_zhou', kind: 'confirm', question: '周可 @zhouke 问你的 Plasticine：能接吗？',
     options: [...(draft === null ? [] : [option('send', '这样回')]), option('self', '我自己回'), option('none', '不回')],

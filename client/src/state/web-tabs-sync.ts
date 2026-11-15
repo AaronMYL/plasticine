@@ -7,7 +7,7 @@
 // · 送不出去（断网）：连接恢复时再送；期间照样能用，改动先记在这台设备上。
 // · 桌面壳报来的网站图标按网站存进本体（PUT /v2/favicon），别的设备画这个网站时也用它。
 
-import type { EventsHub } from '../api/events-hub.ts';
+import type { EventsHub } from './events-hub.ts';
 import { ConflictError } from '../api/errors.ts';
 import { createRequestId } from '../api/request-id.ts';
 import { faviconHost, type WebTabsResponse } from '../api/shared.ts';

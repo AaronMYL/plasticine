@@ -9,12 +9,12 @@ import type { MoneyStatsResponse } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { isOpenOp } from '../../state/action-ops.ts';
 import { useClientState } from '../../state/context.tsx';
-import { MONEY_ADD_OP_KEY } from '../../state/m5b-action-requests.ts';
+import { MONEY_ADD_OP_KEY } from '../../state/tool-group-action-requests.ts';
 import { useStore } from '../../state/use-store.ts';
 import { useObjectTarget } from '../../state/use-object-target.ts';
 import { PendingOps, useOp } from '../pending/pending-ops.tsx';
-import { centsOf, moneyDraftKey } from '../m5b/m5b-actions.ts';
-import { LoadNote, shortTime, yuan } from '../m5b/load-note.tsx';
+import { centsOf, moneyDraftKey } from './tool-group-actions.ts';
+import { LoadNote, shortTime, yuan } from '../../shell/load-note.tsx';
 import './tools.css';
 import { AddMoneyAccount, MoneyEditor } from './money-editor.tsx';
 import { MoneyWeek } from './money-week.tsx';
@@ -33,10 +33,10 @@ function shiftMonth(month: string, by: number): string {
 }
 
 function AddEntry(): ReactNode {
-  const { m5b, m5bActions } = useLive();
+  const { toolGroups, toolGroupActions } = useLive();
   const { inlineDrafts } = useClientState();
   const drafts = useStore(inlineDrafts.store);
-  const money = useStore(m5b.money.data);
+  const money = useStore(toolGroups.money.data);
   const op = useOp(MONEY_ADD_OP_KEY);
   const locked = op !== undefined && isOpenOp(op);
   const field = (name: Parameters<typeof moneyDraftKey>[0]): string => drafts.get(moneyDraftKey(name)) ?? '';
@@ -108,7 +108,7 @@ function AddEntry(): ReactNode {
           type="button"
           className="primary-button"
           disabled={locked || !amountOk}
-          onClick={() => void m5bActions.recordMoney()}
+          onClick={() => void toolGroupActions.recordMoney()}
         >
           记下
         </button>
@@ -121,9 +121,9 @@ function AddEntry(): ReactNode {
 function Ledger({ date, entryId, highlighted }: {
   date: string | null; entryId: string | undefined; highlighted: boolean;
 }): ReactNode {
-  const { m5b, m5bActions } = useLive();
+  const { toolGroups, toolGroupActions } = useLive();
   const timeZone = useTimeZone();
-  const money = useStore(m5b.money.data);
+  const money = useStore(toolGroups.money.data);
   const value = money.value;
   const [editing, setEditing] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
@@ -192,7 +192,7 @@ function Ledger({ date, entryId, highlighted }: {
                   <span>删除这笔账？删除后不再算进收支和资产。</span>
                   <button type="button" className="chip-button" onClick={() => {
                     setRemoving(null);
-                    void m5bActions.removeMoney(entry);
+                    void toolGroupActions.removeMoney(entry);
                   }}>删除</button>
                   <button type="button" className="text-button text-button-quiet" onClick={() => setRemoving(null)}>
                     先不
@@ -210,8 +210,8 @@ function Ledger({ date, entryId, highlighted }: {
 }
 
 function Assets(): ReactNode {
-  const { m5b } = useLive();
-  const value = useStore(m5b.money.data).value;
+  const { toolGroups } = useLive();
+  const value = useStore(toolGroups.money.data).value;
   if (value === null) {
     return null;
   }
@@ -246,10 +246,10 @@ function Assets(): ReactNode {
 
 function Stats(): ReactNode {
   const api = useApi();
-  const { m5b } = useLive();
-  const money = useStore(m5b.money.data).value;
+  const { toolGroups } = useLive();
+  const money = useStore(toolGroups.money.data).value;
   const [range, setRange] = useState<'week' | 'month' | 'year'>('month');
-  const [anchor, setAnchor] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: m5b.timeZone }));
+  const [anchor, setAnchor] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: toolGroups.timeZone }));
   const [stats, setStats] = useState<{ value: MoneyStatsResponse | null; error: string | null }>({
     value: null,
     error: null,
@@ -258,7 +258,7 @@ function Stats(): ReactNode {
   useEffect(() => {
     const controller = new AbortController();
     api.money
-      .stats({ range, anchor, tz: m5b.timeZone }, controller.signal)
+      .stats({ range, anchor, tz: toolGroups.timeZone }, controller.signal)
       .then((value) => {
         if (!controller.signal.aborted) {
           setStats({ value, error: null });
@@ -270,7 +270,7 @@ function Stats(): ReactNode {
         }
       });
     return () => controller.abort();
-  }, [api, m5b.timeZone, range, attempt, money, anchor]);
+  }, [api, toolGroups.timeZone, range, attempt, money, anchor]);
   const move = (by: number) => {
     const date = new Date(`${anchor}T12:00:00Z`);
     if (range === 'week') { date.setUTCDate(date.getUTCDate() + by * 7); }
@@ -326,10 +326,10 @@ export function MoneyView({ entry, date }: {
   entry?: { id: string; occurredAt: string } | undefined;
   date?: string | undefined;
 }): ReactNode {
-  const { m5b, m5bActions } = useLive();
+  const { toolGroups, toolGroupActions } = useLive();
   const timeZone = useTimeZone();
-  const money = useStore(m5b.money.data);
-  const month = useStore(m5b.moneyMonth);
+  const money = useStore(toolGroups.money.data);
+  const month = useStore(toolGroups.moneyMonth);
   const [tab, setTab] = useState<Tab>('ledger');
   const [selectedDate, setSelectedDate] = useState<string | null>(date ?? null);
   const entryDate = entry === undefined ? undefined
@@ -338,22 +338,22 @@ export function MoneyView({ entry, date }: {
   useEffect(() => {
     setSelectedDate(date ?? null);
     setTab('ledger');
-    if (requestedMonth === undefined || m5b.moneyMonth.get() === requestedMonth) { return; }
-    m5b.moneyMonth.set(requestedMonth);
-    void m5b.money.reset();
-  }, [date, requestedMonth, m5b]);
+    if (requestedMonth === undefined || toolGroups.moneyMonth.get() === requestedMonth) { return; }
+    toolGroups.moneyMonth.set(requestedMonth);
+    void toolGroups.money.reset();
+  }, [date, requestedMonth, toolGroups]);
   const target = entry !== undefined ? `money-entry-${entry.id}`
     : selectedDate === null ? null : `money-day-${selectedDate}`;
   const found = tab === 'ledger' && (money.value?.days.some((day) => entry === undefined
     ? day.date === selectedDate : day.entries.some((item) => item.id === entry.id)) ?? false);
   const highlighted = useObjectTarget(target, found);
   useEffect(() => {
-    m5b.money.open();
-  }, [m5b.money]);
+    toolGroups.money.open();
+  }, [toolGroups.money]);
   const goMonth = (by: number): void => {
     setSelectedDate(null);
-    m5b.moneyMonth.set(shiftMonth(month, by));
-    void m5b.money.reset();
+    toolGroups.moneyMonth.set(shiftMonth(month, by));
+    void toolGroups.money.reset();
   };
   return (
     <div className="tool">
@@ -361,7 +361,7 @@ export function MoneyView({ entry, date }: {
         label="还没了结的记账操作"
         prefixes={['money:']}
         visible={() => false}
-        onRetry={(key) => void m5bActions.retry(key)}
+        onRetry={(key) => void toolGroupActions.retry(key)}
       />
       <AddEntry />
       <div className="tool-bar">
@@ -387,7 +387,7 @@ export function MoneyView({ entry, date }: {
           ))}
         </div>
       </div>
-      <LoadNote resource={money} what="账本" onRetry={() => void m5b.money.reload()} />
+      <LoadNote resource={money} what="账本" onRetry={() => void toolGroups.money.reload()} />
       {tab !== 'ledger' || selectedDate === null ? null : <div className="tool-bar">
         <span className="tool-sub">正在看 {selectedDate} 的账目</span>
         <button type="button" className="text-button" onClick={() => setSelectedDate(null)}>查看整月</button>

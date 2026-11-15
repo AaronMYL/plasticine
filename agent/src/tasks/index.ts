@@ -2,8 +2,7 @@
 // 「定时」列表的登记（订阅、回顾、做梦、心跳登记进来）和队友。线本身归 lines/：定时线就是一条后台线，到点放一条消息进去。
 // 外面只经这里：assemble 装好 Tasks、把工具交给内核、把一轮停下接到 ended；app/ 拿它挂接口。
 
-import type { KernelTool } from '../lines/index.ts';
-import type { AskToolHost } from '../lines/index.ts';
+import type { AskToolHost, KernelTool } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
 import { scheduleProvider } from './schedule-rows.ts';
 import { ScheduleDesk, type ScheduleLines, type ScheduleNotice } from './schedules.ts';
@@ -84,3 +83,5 @@ export class Tasks {
     return [scheduleProposeTool({ state: this.#state, schedules: this.schedules, suggestions: this.suggestions })];
   }
 }
+export { scheduleActor } from './schedule-owner.ts';
+export type { ScheduleOwnerState } from './schedule-owner.ts';

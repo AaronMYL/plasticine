@@ -3,8 +3,7 @@
 
 import { Type } from 'typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
-import { checkedArgs } from '../lines/tool-args.ts';
-import type { KernelTool } from '../lines/types.ts';
+import { checkedArgs, type KernelTool } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
 
 export const TAKE_BACK_TOOL = 'loop_take_back';

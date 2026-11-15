@@ -78,7 +78,7 @@ const GAPS = [
   '0057-ask-basis',
   '0058-lines',
 ];
-const M5B = ['0012-life-inbox-artifacts', '0013-reading-to-manual', ...GAPS];
+const TOOL_GROUP_MIGRATIONS = ['0012-life-inbox-artifacts', '0013-reading-to-manual', ...GAPS];
 
 test('自迭代开关迁移只打开已有 self_code 行，之后用户关闭不会被再次打开', () => {
   const db = openDatabase(MEMORY_DATABASE);
@@ -110,7 +110,7 @@ const ALL_MIGRATIONS = [
   '0008-memory-judgments',
   '0009-concerns-daily',
   '0010-trigger-generations',
-  '0011-devices-self', ...M5B,
+  '0011-devices-self', ...TOOL_GROUP_MIGRATIONS,
 ];
 
 const TABLES_0058 = [
@@ -324,7 +324,7 @@ test('M0 的旧库打开时只补跑之后的迁移，旧数据还在', () => {
     '0008-memory-judgments',
     '0009-concerns-daily',
     '0010-trigger-generations',
-    '0011-devices-self', ...M5B,
+    '0011-devices-self', ...TOOL_GROUP_MIGRATIONS,
   ]);
   assert.equal(db.get('SELECT count(*) AS n FROM legacy_ids')?.['n'], 1);
 });
@@ -342,7 +342,7 @@ test('M1 的库补跑 0006：已有任务拿到 M2 新列的默认值（未看�
     '0008-memory-judgments',
     '0009-concerns-daily',
     '0010-trigger-generations',
-    '0011-devices-self', ...M5B,
+    '0011-devices-self', ...TOOL_GROUP_MIGRATIONS,
   ]);
   const columns = 'seen_at, finished_at, replan_required, original_request, archived_from, rework_count';
   const row = db.get(`SELECT ${columns} FROM tasks WHERE id = $id`, { id: 't1' });
@@ -383,7 +383,7 @@ test('0007 遇到旧格式动作标识的任务回执就整批失败、说清原
         '0008-memory-judgments',
         '0009-concerns-daily',
         '0010-trigger-generations',
-        '0011-devices-self', ...M5B,
+        '0011-devices-self', ...TOOL_GROUP_MIGRATIONS,
       ];
       assert.deepEqual(migrate(db, HISTORY, steppingClock()), upgraded);
       continue;
@@ -407,7 +407,7 @@ test('M2 的库补跑 0008：已有判断不在讨论中，接口回执多出可
     '0008-memory-judgments',
     '0009-concerns-daily',
     '0010-trigger-generations',
-    '0011-devices-self', ...M5B,
+    '0011-devices-self', ...TOOL_GROUP_MIGRATIONS,
   ]);
   assert.equal(db.get('SELECT discussing FROM judgments WHERE id = $id', { id: 'j1' })?.['discussing'], 0);
   const request = db.get('SELECT body_digest FROM api_requests WHERE request_id = $id', { id: 'r1' });
@@ -544,7 +544,7 @@ test('M3 的库补跑 0009：已有关切、卡一条不少，新表都是空的
     activities, wait_conditions, trigger_conditions, channel, agreement_ids)
     VALUES ('c1', 't', 't', 1, '关切', 'goal', '为什么', 'user', 'active', '[]', '[]', '[]', 'next_report', '[]')`);
   assert.deepEqual(migrate(db, HISTORY, steppingClock()), [
-    '0009-concerns-daily', '0010-trigger-generations', '0011-devices-self', ...M5B,
+    '0009-concerns-daily', '0010-trigger-generations', '0011-devices-self', ...TOOL_GROUP_MIGRATIONS,
   ]);
   assert.equal(db.get('SELECT count(*) AS n FROM concerns')?.['n'], 1);
   for (const table of ['registrations', 'feed_items', 'brief_items', 'return_briefs', 'trigger_firings']) {
@@ -559,7 +559,7 @@ test('M4 的库补跑 0010：旧触发的标识和内容保留，补为第一代
     VALUES ('deadline:j1', 'deadline', 'judgment', 'j1', 'silent', 'silent', '2026-10-27T00:00:00.000Z')`);
   const before = db.get('SELECT * FROM trigger_firings');
   assert.deepEqual(migrate(db, HISTORY, steppingClock()), [
-    '0010-trigger-generations', '0011-devices-self', ...M5B,
+    '0010-trigger-generations', '0011-devices-self', ...TOOL_GROUP_MIGRATIONS,
   ]);
   const after = db.get('SELECT * FROM trigger_firings');
   assert.deepEqual({ ...after }, { ...before, trigger_key: 'deadline:j1', generation: 1, invalidated_at: null });
@@ -606,7 +606,7 @@ test('M4 的库补跑 0011：已有任务一条不少，节点、配对码、设
     acceptance, prohibitions, agreement_ids, plan_version, retry_budget, attempts_used, failure_signatures,
     signature_repeats, verifier_policy, results)
     VALUES ('t1', 't', 't', 1, '任务', 'user', 'queued', 1, '[]', '[]', '[]', 0, 3, 0, '[]', 0, 'brain', '[]')`);
-  assert.deepEqual(migrate(db, HISTORY, steppingClock()), ['0011-devices-self', ...M5B]);
+  assert.deepEqual(migrate(db, HISTORY, steppingClock()), ['0011-devices-self', ...TOOL_GROUP_MIGRATIONS]);
   assert.equal(db.get('SELECT count(*) AS n FROM tasks')?.['n'], 1);
   for (const table of ['nodes', 'node_pairing_codes', 'node_actions', 'self_changes']) {
     assert.equal(db.get(`SELECT count(*) AS n FROM ${table}`)?.['n'], 0, table);
@@ -640,7 +640,7 @@ test('M5 甲路升级补后续迁移，已有节点不变，生活、站内信�
     protocol_version, capabilities, credential_hash, pairing_code_id, paired_at, last_seen_at)
     VALUES ('n1', 't', 't', 1, 'Mac', 'macos', '1', 1, '[]', 'h', 'c', 't', 't')`);
   const before = db.get('SELECT * FROM nodes');
-  assert.deepEqual(migrate(db, HISTORY, steppingClock()), M5B);
+  assert.deepEqual(migrate(db, HISTORY, steppingClock()), TOOL_GROUP_MIGRATIONS);
   // 0040 只给节点加两列可空的空闲上报，原有各列不变。
   assert.deepEqual({ ...db.get('SELECT * FROM nodes') }, { ...before, idle_seconds: null, idle_reported_at: null });
   for (const table of ['money_entries', 'focus_sessions', 'inbox_messages', 'artifacts']) {

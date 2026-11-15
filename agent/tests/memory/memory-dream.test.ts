@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { YOU_DOC_ID } from '../../shared/state.ts';
-import { addLine, Dreamer, ensureMemoryDocs, type DreamSkills, type DreamSuggest } from '../../src/tools/index.ts';
+import { addLine, Dreamer, ensureMemoryDocs, type DreamSkills, type DreamSuggest } from '../../src/memory/index.ts';
 import type { TextModels, TextRequest } from '../../src/kernel/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 

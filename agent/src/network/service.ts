@@ -4,14 +4,14 @@
 import { randomUUID } from 'node:crypto';
 import { tunnelHost } from '../../shared/tunnel-wire.ts';
 import { NetworkAttachments } from './attachments.ts';
-import type { NetInvite } from '../../shared/net-wire.ts';
+import type { NET_REACTIONS, NetInvite } from '../../shared/net-wire.ts';
 import type { NetworkTaskExecution } from '../../shared/api/contacts.ts';
 import type { HandleAvailability } from '../../shared/api/account.ts';
 import type { Contact, ContactMessage, Group, GroupMessage, GroupTask, NetworkIdentity,
   NetworkTask } from '../../shared/state.ts';
 import type { AskDesk, AskResolver, Changes } from '../attention/index.ts';
 import type { DriveOutcome } from '../lines/index.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
 import { addContact, confirmSafety, decideRequest, markRead, normalizeHandle, sendMessage, setRelation,
   type AddContactInput,
@@ -34,7 +34,6 @@ import { cancelTask, decideTask, deliverFinishedLocal, deliverTask, networkTaskR
   verdictTask, type OfferInput, type TaskDecision, type TaskVerdict } from './tasks.ts';
 import { groupReplyKey, reactInGroup, reactToContact, removeContact, restoreContact, setAlias }
   from './contact-edits.ts';
-import type { NET_REACTIONS } from '../../shared/net-wire.ts';
 
 /** 测试等线停下时最多绕这么多圈（一轮答完可能又开下一条线）。 */
 const SETTLE_ROUNDS_MAX = 20;

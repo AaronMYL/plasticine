@@ -5,7 +5,7 @@
 import { Type } from 'typebox';
 import type { StateService } from '../../state/index.ts';
 import { findDoc, memoryDocView, searchMemory, SEARCH_DEFAULT_LIMIT } from './memory-docs-context.ts';
-import { defineTool, type Tool } from '../../tools/registry.ts';
+import { defineTool, type Tool } from '../../tools/index.ts';
 
 const READ = { effect: 'read', permission: 'auto', replay: 'safe', parallel: true, timeoutMs: 2000 } as const;
 const ROLES: ('conversation' | 'worker' | 'diagnosis' | 'verifier')[] = ['conversation', 'worker', 'diagnosis',

@@ -7,7 +7,7 @@ import type { StateService } from '../state/index.ts';
 import { NOTE_SUPPLEMENTS_PROMPT, parseNoteSupplements } from './note-supplements.ts';
 import { noteSupplementReferences } from './note-supplement-context.ts';
 import { PredictText } from './note-overlap.ts';
-import { predictHabits, recordPrediction, recordSupplements, supplementHabits } from '../loop/writing.ts';
+import { predictHabits, recordPrediction, recordSupplements, supplementHabits } from '../loop/index.ts';
 
 const LABELS: Record<NoteAssistRequest['action'], string> = {
   predict: '续写', interject: '补充建议', polish: '润色', organize: '整理',

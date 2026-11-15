@@ -6,21 +6,11 @@
 
 import type { AccountApi } from '../account-client.ts';
 import { ApiError } from '../errors.ts';
-import type {
-  AccountPasswordRequest,
-  AccountPasswordResponse,
-  AccountSetupRequest,
-  AccountSetupResponse,
-  AccountState,
-  HandleAvailability,
-  OwnUrlView,
-  WorkLimitSetting,
-  WorkLimitView,
-  PasswordSessionRequest,
-  SessionView,
-  WelcomeStart,
+import {
+  HandleSchema, PASSWORD_MIN_CHARS, type AccountPasswordRequest, type AccountPasswordResponse, type AccountSetupRequest,
+  type AccountSetupResponse, type AccountState, type HandleAvailability, type OwnUrlView, type PasswordSessionRequest,
+  type SessionView, type WelcomeStart, type WorkLimitSetting, type WorkLimitView,
 } from '../shared.ts';
-import { HandleSchema, PASSWORD_MIN_CHARS } from '../shared.ts';
 import { Value } from 'typebox/value';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 import type { FakeNetwork } from './fake-network.ts';

@@ -5,16 +5,11 @@
 // null，界面照网页的做法走。
 
 import { Value } from 'typebox/value';
-import { HostProfileSchema, type HostProfile } from '../api/shared.ts';
-import type {
-  PlasticineDesktopExternal,
-  PlasticineDesktopServer,
-  PlasticineIOSBridge,
-  PlasticineMacLogins,
-  PlasticineMacWebTabs,
-  PlasticineMacWindowChrome,
+import {
+  HostProfileSchema, type HostProfile, type PlasticineDesktopExternal, type PlasticineDesktopServer,
+  type PlasticineIOSBridge, type PlasticineMacLogins, type PlasticineMacTranslate, type PlasticineMacWebTabs,
+  type PlasticineMacWindowChrome,
 } from '../api/shared.ts';
-import type { PlasticineMacTranslate } from '../api/shared.ts';
 import type { HostBridge } from '../mac/bridge.ts';
 import type { DesktopHelperBridge } from '../mac/desktop-helper.ts';
 import '../mac/bridge.ts';

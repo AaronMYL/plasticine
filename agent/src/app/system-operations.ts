@@ -11,8 +11,8 @@ const DISK_LOW_BYTES = 1024 ** 3;
 
 export function getSystemOperations(context: RequestContext): Reply {
   requireAuth(context);
-  const { state, now, clientUpdates, m5b, scans } = context.deps;
-  const disk = statfsSync(m5b.stateDirectory);
+  const { state, now, clientUpdates, toolGroups, scans } = context.deps;
+  const disk = statfsSync(toolGroups.stateDirectory);
   const body: SystemOperations = { ...state.systemOperations.read(),
     version: clientUpdates.view().current?.buildId ?? null,
     uptimeSeconds: Math.max(0, (now().getTime() - Date.parse(context.deps.startedAt)) / 1000),

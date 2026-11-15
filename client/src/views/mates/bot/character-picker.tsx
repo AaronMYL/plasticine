@@ -2,8 +2,7 @@
 // 读屏念角色的中文名，不加悬停提示（角色一看就认得）。
 
 import type { ReactNode } from 'react';
-import type { MateCharacter } from '../../../api/shared.ts';
-import { isMateCharacter } from '../../../api/shared.ts';
+import { isMateCharacter, type MateCharacter } from '../../../api/shared.ts';
 import { useBotEngine } from './bot-engine.ts';
 import { stillSvg, type BotLook } from './bot-render.ts';
 import { CHARACTER_NAMES } from './character-names.ts';

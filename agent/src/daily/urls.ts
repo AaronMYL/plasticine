@@ -4,7 +4,7 @@
 // 不把 URL 解析错误的原文或 cause 带到日志。
 
 import { FEED_URL_MAX_CHARS } from '../../shared/state.ts';
-import { cleanUrlQuery, isCredentialParam } from '../util/link-clean.ts';
+import { cleanUrlQuery, isCredentialParam } from '../util/index.ts';
 import { shownError } from './errors.ts';
 
 export { cleanUrlQuery, isCredentialParam };

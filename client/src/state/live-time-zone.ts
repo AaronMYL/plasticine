@@ -7,7 +7,7 @@ export function startTimeZone(live: Live): () => void {
     const zone = live.dailySettings.data.get().settings?.timeZone ?? deviceTimeZone();
     live.feed.setTimeZone(zone);
     live.feedActions.setTimeZone(zone);
-    live.m5b.setTimeZone(zone);
+    live.toolGroups.setTimeZone(zone);
     live.timeZone.set(zone);
   };
   const stopSettings = live.dailySettings.data.subscribe(apply);

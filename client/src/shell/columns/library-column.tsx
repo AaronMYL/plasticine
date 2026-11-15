@@ -46,8 +46,8 @@ export function LibraryColumn({ route, navigate, onAsk }: { route: Route; naviga
   const data = useLibraryData();
   const spaceId = route.view === 'books' ? route.spaceId ?? null : null;
   const openFolder = (path: string): void => {
-    live.m5b.folder.set(path);
-    void live.m5b.files.reset();
+    live.toolGroups.folder.set(path);
+    void live.toolGroups.files.reset();
     navigate({ view: 'tools', noteId: null, tool: '文件' });
   };
   return (

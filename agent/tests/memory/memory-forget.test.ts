@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, test } from 'node:test';
 import { FORGOTTEN_TEXT, YOU_DOC_ID } from '../../shared/state.ts';
-import { addLine, ensureMemoryDocs, forgetMemory, reviseLine } from '../../src/tools/index.ts';
+import { addLine, ensureMemoryDocs, forgetMemory, reviseLine } from '../../src/memory/index.ts';
 import { openDatabase } from '../../src/state/db.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 import { ftsHits, tablesHolding } from '../state/residue.ts';

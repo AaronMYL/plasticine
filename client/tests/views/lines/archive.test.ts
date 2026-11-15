@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createFakeApi } from '../../../src/api/fake/index.ts';
-import { EventsHub } from '../../../src/api/events-hub.ts';
+import { EventsHub } from '../../../src/state/events-hub.ts';
 import { LinesStore } from '../../../src/views/lines/line-store.ts';
 
 const flush = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));

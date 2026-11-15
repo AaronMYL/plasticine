@@ -1,4 +1,4 @@
-// 分身（别人问我的 Plasticine，第 113 条，规格第 8 节）：network/ 收到 ask_ai 后取材料，交给 brain/ 做一次不带工具、
+// 分身（别人问我的 Plasticine，第 113 条，规格第 8 节）：network/ 收到 ask_ai 后取材料，交给内核做一次不带工具、
 // 不进主会话的模型调用，要回这份 JSON。模型只看到这个联系人能听到的档位里的材料和这段对话最近 20 句。
 
 import { Type, type Static } from 'typebox';

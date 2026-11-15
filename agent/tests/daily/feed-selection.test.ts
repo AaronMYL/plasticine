@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createFeedSelector } from '../../src/tools/index.ts';
+import { createFeedSelector } from '../../src/daily/index.ts';
 import { scriptedText } from '../tools/helpers.ts';
 
 test('信息流选材一次模型调用，带关注点和反应；坏输出不重试', async () => {

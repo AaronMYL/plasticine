@@ -132,7 +132,7 @@ export async function sendContactMessage(context: RequestContext): Promise<Reply
       throw new ApiError(400, 'invalid_request', '邮件回复暂不支持消息附件。');
     }
     return idempotentAsync(context, body.requestId, async () => ({ status: 201, body: {
-      message: await replyToInboxContact(deps.m5b.inbox, deps.state, inbox,
+      message: await replyToInboxContact(deps.toolGroups.inbox, deps.state, inbox,
         { text: body.text, requestId: body.requestId, deviceId: auth.device.id }) } }));
   }
   const network = requireNetwork(deps);
@@ -226,7 +226,7 @@ export async function readContact(context: RequestContext): Promise<Reply> {
   return idempotent(context, body.requestId, (afterCommit) => {
     const marked = isGroupId(id) ? requireNetwork(deps).markGroupRead(requireGroupRow(deps, id).id, body.upTo)
       : inbox === null ? requireNetwork(deps).markRead(requirePerson(deps, id).id, body.upTo)
-        : readInboxContact(deps.m5b.inbox, deps.state, inbox, body.upTo, afterCommit);
+        : readInboxContact(deps.toolGroups.inbox, deps.state, inbox, body.upTo, afterCommit);
     const list = contactList(deps.state);
     const contact = list.contacts.find((row) => row.id === id) ?? null;
     if (contact === null) { throw new ApiError(404, 'not_found', '没有这个联系人。'); }

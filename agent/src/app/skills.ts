@@ -2,11 +2,10 @@
 // 11-13 加「添加」和「新建」：/v2/skill-store 商店清单、/v2/skill-preview 装之前先看、/v2/skill-install 装、
 // /v2/skill-draft 让 Plasticine 写草稿、POST /v2/skills 存自己写的。
 
-import { SkillReadSchema, SkillSearchSchema } from '../../shared/skills.ts';
+import { SkillReadSchema, SkillSearchSchema, type SkillDescriptor } from '../../shared/skills.ts';
 import { CreateSkillRequestSchema, DraftSkillRequestSchema, InstallSkillRequestSchema, RemoveSkillRequestSchema,
   SkillPreviewRequestSchema, type RemoveSkillResponse, type SkillListResponse, type SkillResponse, type SkillRow,
   type SkillSavedResponse, type SkillStoreResponse } from '../../shared/api/index.ts';
-import type { SkillDescriptor } from '../../shared/skills.ts';
 import { TextModelError } from '../kernel/index.ts';
 import { draftSkill, hasScripts, previewOf, skillDocument, SkillInstallError, SkillRemoveError, SkillShopError,
   skillTitle, type DraftMaterial } from '../skills/index.ts';

@@ -1,5 +1,10 @@
-import { BatchResponseSchema, NOTES_BATCH_PATH, NOTES_EMPTY_PATH, type NotesBatchRequest,
-  type EmptyTrashRequest } from '../shared.ts';
+import {
+  BatchResponseSchema, NOTE_LIST_MAX, NoteAssistOutcomeViewSchema, NoteAssistStreamEventSchema, noteAssistTimeoutMs,
+  NoteAssistViewSchema, NoteConflictSchema, NoteFoldersViewSchema, NoteImageViewSchema, NoteImportViewSchema,
+  NoteListResponseSchema, NOTES_BATCH_PATH, NOTES_EMPTY_PATH, NOTES_PATH, NoteViewSchema, type EmptyTrashRequest,
+  type NoteAssistOutcome, type NoteAssistRequest, type NoteAssistView, type NoteFolderCommand, type NoteFoldersView,
+  type NoteImageRequest, type NoteImageView, type NoteImportView, type NoteListResponse, type NotesBatchRequest,
+} from '../shared.ts';
 // /v2/notes 的真实现：服务端全文搜索和分页、读、新建、保存（带 version，409 带当前那一版）、软删与恢复。
 // 写成功后在本机报 note.* 事件；服务端的 note_invalidated 也会通过 SSE 同步到已打开的笔记。
 
@@ -7,12 +12,6 @@ import { Value } from 'typebox/value';
 import type { NotesApi } from '../client.ts';
 import { ApiError, badResponseError, NoteConflictError } from '../errors.ts';
 import { toMeta } from '../note-meta.ts';
-import { NOTE_LIST_MAX, NoteConflictSchema, NoteListResponseSchema, NOTES_PATH, NoteViewSchema } from '../shared.ts';
-import { NoteFoldersViewSchema, NoteImageViewSchema, NoteAssistViewSchema, NoteImportViewSchema } from '../shared.ts';
-import { noteAssistTimeoutMs, NoteAssistOutcomeViewSchema, NoteAssistStreamEventSchema } from '../shared.ts';
-import type { NoteFolderCommand, NoteFoldersView, NoteImageRequest, NoteImageView,
-  NoteAssistOutcome, NoteAssistRequest, NoteAssistView, NoteImportView } from '../shared.ts';
-import type { NoteListResponse } from '../shared.ts';
 import type { CreateNoteRequest, NoteMetaView, NoteSearch, NoteView, SaveNoteRequest } from '../types.ts';
 import type { LocalEvents } from './local-events.ts';
 import type { Transport } from './transport.ts';

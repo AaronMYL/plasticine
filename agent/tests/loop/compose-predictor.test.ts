@@ -2,7 +2,7 @@
 // 他收下过和没要的原样。
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { ComposePredictor, type ComposeContext } from '../../src/tools/index.ts';
+import { ComposePredictor, type ComposeContext } from '../../src/loop/index.ts';
 import { COMPOSE_SYSTEM } from '../../src/loop/compose-predictor.ts';
 import { MIN_DECIDED } from '../../src/loop/tally.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';

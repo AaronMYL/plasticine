@@ -11,8 +11,8 @@ import type { FakeApi } from '../../../src/api/fake/index.ts';
 import { NOW, renderApp, settle } from '../../helpers.tsx';
 
 function seed(fake: FakeApi): void {
-  const { contacts, m5b, network, visibility } = fake.control;
-  seedContacts({ contacts, inbox: m5b.inbox, network, visibility }, NOW);
+  const { contacts, toolGroups, network, visibility } = fake.control;
+  seedContacts({ contacts, inbox: toolGroups.inbox, network, visibility }, NOW);
 }
 
 async function open(hash: string, width = 1440): Promise<Awaited<ReturnType<typeof renderApp>>> {
@@ -235,9 +235,9 @@ describe('消息 · 邮件', () => {
     const input = await within(reader).findByRole('textbox', { name: '发给阿里云' }) as HTMLTextAreaElement;
     expect(input.placeholder).toBe('回 阿里云');
     fireEvent.change(input, { target: { value: '已续费' } });
-    expect(app.control.m5b.inbox.find('inbox_aliyun_expire')?.replies).toHaveLength(0);
+    expect(app.control.toolGroups.inbox.find('inbox_aliyun_expire')?.replies).toHaveLength(0);
     fireEvent.click(within(reader).getByRole('button', { name: '发送' }));
-    await waitFor(() => expect(app.control.m5b.inbox.find('inbox_aliyun_expire')?.replies.at(-1)?.text)
+    await waitFor(() => expect(app.control.toolGroups.inbox.find('inbox_aliyun_expire')?.replies.at(-1)?.text)
       .toBe('已续费'));
   });
 });

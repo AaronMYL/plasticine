@@ -6,33 +6,14 @@ import type { BooksApi } from '../books-client.ts';
 import { ApiError } from '../errors.ts';
 import { splitQuotes } from '../quote-text.ts';
 import {
-  BOOK_FILE_EXTENSIONS,
-  BOOK_SEARCH_MAX_HITS,
-  BOOK_UPLOAD_MAX_BYTES,
-  BOOKS_PATH,
-  type BookAnnotationView,
-  type BookChapterResponse,
-  type BookDiscussion,
-  type BookFormat,
-  type BookInsightKind,
-  type BookInsightView,
-  type BookProgressView,
-  type BookQuoteReference,
-  type BookSearchHit,
-  type BookView,
-  type CreateBookAnnotationRequest,
-  type DismissKeyPointRequest,
-  type ExportBookNotesResponse,
-  type GenerateBookInsightRequest,
-  type RenameBookRequest,
-  type ResolvedConversationQuote,
-  type SaveBookProgressRequest,
-  type UpdateBookAnnotationRequest,
-  type UploadBookRequest,
-  type UploadBookResponse,
+  BOOK_FILE_EXTENSIONS, BOOK_SEARCH_MAX_HITS, BOOK_UPLOAD_MAX_BYTES, BOOKS_PATH, type BookAnnotationView,
+  type BookChapterResponse, type BookDiscussion, type BookFormat, type BookInsightKind, type BookInsightView,
+  type BookProgressView, type BookQuoteReference, type BookSearchHit, type BookView, type CreateBookAnnotationRequest,
+  type DismissKeyPointRequest, type ExportBookNotesResponse, type GenerateBookInsightRequest, type LineMessageView,
+  type RenameBookRequest, type ResolvedConversationQuote, type SaveBookProgressRequest,
+  type UpdateBookAnnotationRequest, type UploadBookRequest, type UploadBookResponse,
 } from '../shared.ts';
 import type { BookChangedPart } from '../types.ts';
-import type { LineMessageView } from '../shared.ts';
 import type { FakeEventBus } from './event-bus.ts';
 import type { FakeNotes } from './fake-notes.ts';
 import type { FakeSession } from './fake-session.ts';
@@ -59,7 +40,7 @@ interface FakeBook {
   deletedAt: string | null;
 }
 
-// 命中处前后各带多少字给界面看（真服务端是 reading/search.ts 的口径，这里取一样的量级）。
+// 命中处前后各带多少字给界面看（真服务端是 books/book-search.ts 的口径，这里取一样的量级）。
 const SEARCH_CONTEXT_CHARS = 24;
 
 function invalid(status: number, code: string, message: string): ApiError {

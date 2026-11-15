@@ -1,8 +1,8 @@
 // cloud_browser_open：在共享浏览器当前标签导航，HTTP/HTTPS 地址经 checkUrl 核对（11-14 起不清洗）。用户随时可以接手。
 
 import { BrowserNavigationSchema } from '../../shared/api/index.ts';
-import type { BrowserView } from './index.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import type { BrowserView } from './browser.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 import { browserResult } from './browser-result.ts';
 
 export interface BrowserOpener {

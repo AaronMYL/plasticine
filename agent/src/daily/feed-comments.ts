@@ -1,7 +1,7 @@
 import type { FeedComment, FeedCommentGenerator } from '../../shared/feed-comments.ts';
 import type { FeedItem } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { failureText, safeLog } from '../util/log.ts';
+import { failureText, safeLog } from '../util/index.ts';
 import { bounded } from './feed-fetch.ts';
 
 const REPLY_TIMEOUT_MS = 90_000;

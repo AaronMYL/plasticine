@@ -3,15 +3,13 @@ import type { NetworkAttachmentsApi } from './network-attachments-client.ts';
 // 组件不直接 fetch，只经 useApi() 拿到这个对象。请求和响应的形状都是 agent/shared/api 里的。
 
 import type { ContactsClientApi } from './contacts-client.ts';
-import type { M5bApi } from './m5b-client.ts';
+import type { ToolGroupApi } from './tool-groups-client.ts';
 import type { ThingsApi } from './things-client.ts';
 import type {
-  Backup,
-  BackupDetail,
-  BackupList,
-  CreateBackupRequest,
-  RestorePreviewRequest,
-  RestorePreview,
+  AttachmentView, Backup, BackupDetail, BackupList, ClientUpdate, ClientUpdateDecision, ClientVersion,
+  CreateBackupRequest, CreateMoneyDraftRequest, EditMoneyDraftRequest, MoneyDraftSummary, MoneyDraftView,
+  PurgeOriginalsRequest, PurgeOriginalsResponse, PushStatus, PushTestResponse, RejectMoneyDraftRequest, RestorePreview,
+  RestorePreviewRequest, UploadAttachmentMeta,
 } from './shared.ts';
 export interface BackupsApi {
   list(signal?: AbortSignal): Promise<BackupList>;
@@ -20,28 +18,10 @@ export interface BackupsApi {
   preview(id: string, input: RestorePreviewRequest): Promise<RestorePreview>;
   getPreview(id: string, signal?: AbortSignal): Promise<RestorePreview>;
 }
-import type {
-  ClientVersion,
-  ClientUpdateDecision,
-  ClientUpdate,
-} from './shared.ts';
 export interface ClientUpdatesApi {
   list(signal?: AbortSignal): Promise<ClientVersion>;
   decide(id: string, input: ClientUpdateDecision): Promise<ClientUpdate>;
 }
-import type {
-  AttachmentView,
-  UploadAttachmentMeta,
-} from './shared.ts';
-import type {
-  MoneyDraftView,
-  CreateMoneyDraftRequest,
-  EditMoneyDraftRequest,
-  RejectMoneyDraftRequest,
-  MoneyDraftSummary,
-  PurgeOriginalsRequest,
-  PurgeOriginalsResponse,
-} from './shared.ts';
 
 export interface MoneyDraftsApi {
   create(input: CreateMoneyDraftRequest): Promise<MoneyDraftView>;
@@ -63,64 +43,17 @@ export interface AttachmentsApi {
   contentUrl(id: string): string;
   content(id: string, signal?: AbortSignal): Promise<Blob>;
 }
-import type {
-  PushStatus,
-  PushTestResponse,
-} from './shared.ts';
 import type { SignedResult, SignedSend, SignedTarget } from './signed-targets.ts';
 import type {
-  AddFeedItemRequest,
-  BriefItemView,
-  DailySettingsView,
-  FeedItemView,
-  FeedListQuery,
-  FeedListResponse,
-  FeedSourceView,
-  FeedSourcesResponse,
-  NodeActionView,
-  NodeListResponse,
-  NodeView,
-  RevokeNodeRequest,
-  ReactFeedItemRequest,
-  ReadReturnBriefRequest,
-  ReturnBriefView,
-  SaveFeedItemRequest,
-  SeeBriefItemRequest,
-  SetSourceLevelRequest,
+  AddFeedItemRequest, AgreementDetail, AgreementListQuery, AgreementListResponse, AnswerAskRequest, AnswerAskResponse,
+  AskAboutRequest, AskAboutResponse, AskListResponse, AskView, BriefItemView, CreateNoteRequest, DailySettingsView,
+  DeferAskRequest, DeferAskResponse, DeviceKeyView, DeviceView, EventHandlers, FeedItemView, FeedListQuery,
+  FeedListResponse, FeedSourcesResponse, FeedSourceView, MemoryBoardQuery, MemoryBoardResponse, MemoryColumn,
+  MemoryEntriesQuery, MemoryEntryDetail, MemoryEntryView, NodeActionView, NodeListResponse, NodeView, NoteMetaView,
+  NoteSearch, NoteView, PushKeyResponse, ReactFeedItemRequest, ReadReturnBriefRequest, ReturnBriefView,
+  RevokeNodeRequest, SaveFeedItemRequest, SaveNoteRequest, SeeBriefItemRequest, SessionView, SetSourceLevelRequest,
+  SubscribePushRequest, SubscribePushResponse, UnsubscribePushRequest, UnsubscribePushResponse,
   UpdateDailySettingsRequest,
-} from './types.ts';
-import type {
-  AgreementDetail,
-  AgreementListQuery,
-  AgreementListResponse,
-  DeviceKeyView,
-  MemoryBoardQuery,
-  MemoryBoardResponse,
-  MemoryColumn,
-  MemoryEntriesQuery,
-  MemoryEntryDetail,
-  MemoryEntryView,
-  AnswerAskRequest,
-  AnswerAskResponse,
-  AskAboutRequest,
-  AskAboutResponse,
-  AskListResponse,
-  AskView,
-  CreateNoteRequest,
-  DeferAskRequest,
-  DeferAskResponse,
-  DeviceView,
-  EventHandlers,
-  NoteMetaView,
-  NoteSearch,
-  NoteView,
-  PushKeyResponse,
-  SaveNoteRequest,
-  SessionView,
-  SubscribePushRequest,
-  SubscribePushResponse,
-  UnsubscribePushRequest,
-  UnsubscribePushResponse,
 } from './types.ts';
 
 export interface SessionApi {
@@ -365,7 +298,7 @@ export interface SearchApi {
   query(input: import('./shared.ts').SearchQuery, signal?: AbortSignal): Promise<import('./shared.ts').SearchResponse>;
 }
 
-export interface PlasticineApi extends M5bApi, ThingsApi, ContactsClientApi {
+export interface PlasticineApi extends ToolGroupApi, ThingsApi, ContactsClientApi {
   networkAttachments: NetworkAttachmentsApi;
   soul: import('./soul-client.ts').SoulApi;
   /** 第13批：主线和每位队友的 Soul、规则搬家。 */

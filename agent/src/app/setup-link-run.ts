@@ -7,7 +7,7 @@
 
 import { NETWORK_HANDLE_PATTERN } from '../../shared/api/network.ts';
 import type { RelayClient } from '../../protocol/relay-client.ts';
-import { registerIdentity } from '../network/register.ts';
+import { registerIdentity } from '../network/index.ts';
 import type { StateService } from '../state/index.ts';
 import { normalizeOwnUrl, OWN_URL_KEY, storedOwnUrl } from './own-url.ts';
 import { configuredPublicUrl, handlePublicUrl } from './public-url.ts';

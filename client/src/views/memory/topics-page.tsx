@@ -7,8 +7,10 @@ import { InfoTip } from '../../shell/info-tip.tsx';
 import { RevealMore } from '../../shell/reveal-more.tsx';
 import { FlipList } from '../../shell/flip-list.tsx';
 import { useEffect, useState, type ReactNode } from 'react';
-import { MEMORY_TOPIC_GROUP_LABELS, TIER_LABELS } from '../../api/shared.ts';
-import type { MemoryDreamSummary, MemoryTopicKind, MemoryTopicView, UncertainItem } from '../../api/shared.ts';
+import {
+  MEMORY_TOPIC_GROUP_LABELS, TIER_LABELS, type MemoryDreamSummary, type MemoryTopicKind, type MemoryTopicView,
+  type UncertainItem,
+} from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
 import type { HueName } from '../../shell/hue.tsx';

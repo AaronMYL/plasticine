@@ -6,7 +6,7 @@
 
 import type { PlasticineApi } from '../../api/client.ts';
 import { errorText } from '../../api/errors.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 import type {
   ContactDetail,
   ContactListResponse,
@@ -17,7 +17,7 @@ import type {
 import type { LiveEvent } from '../../api/types.ts';
 import { Store } from '../../state/store.ts';
 import type { LoadStatus } from '../../state/load.ts';
-import { ResourceStore, type Merge } from '../m5b/resource-store.ts';
+import { ResourceStore, type Merge } from '../../state/resource-store.ts';
 
 export function itemKey(item: ContactThreadItem): string {
   switch (item.type) {

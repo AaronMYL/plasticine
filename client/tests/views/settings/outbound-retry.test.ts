@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { createFakeApi } from '../../../src/api/fake/index.ts';
 import { outboundAsk } from '../../../src/api/fake/outbound-seed.ts';
-import { EventsHub } from '../../../src/api/events-hub.ts';
+import { EventsHub } from '../../../src/state/events-hub.ts';
 import { uncertainError } from '../../../src/api/errors.ts';
 import { AsksStore } from '../../../src/views/asks/asks-store.ts';
 

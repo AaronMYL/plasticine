@@ -2,7 +2,7 @@
 // 只记在这次打开的窗口里。
 
 import { Store } from './store.ts';
-import { DEFAULT_MESSAGE_FILTER, type MessageFilter } from '../views/messages/message-filter.ts';
+import { DEFAULT_MESSAGE_FILTER, type MessageFilter } from './message-filter.ts';
 
 export class MessagesUi {
   readonly filter = new Store<MessageFilter>(DEFAULT_MESSAGE_FILTER);

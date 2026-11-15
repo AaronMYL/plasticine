@@ -3,8 +3,9 @@ import type { NetworkAttachmentsApi } from '../../api/network-attachments-client
 import { Store } from '../../state/store.ts';
 import { useStore } from '../../state/use-store.ts';
 import { useApi } from '../../api/context.tsx';
-import type { NetworkAttachmentView, UploadNetworkAttachment } from '../../api/shared.ts';
-import { NETWORK_ATTACHMENT_MAX_BYTES } from '../../api/shared.ts';
+import {
+  NETWORK_ATTACHMENT_MAX_BYTES, type NetworkAttachmentView, type UploadNetworkAttachment,
+} from '../../api/shared.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import { errorText } from '../../api/errors.ts';
 import { base64Of, readFileBytes } from '../../state/attachment-bytes.ts';

@@ -30,7 +30,7 @@ export const ASK_BASIS_MEANINGS: Readonly<Record<AskBasis, string>> = {
   hard_line: `不管有没有把握都问你：${HARD_LINES.join('、')}`,
 };
 
-/** 整段，放进主会话和任务轮共用的身份提示（brain/identity.ts）。 */
+/** 整段，放进主会话和任务轮共用的身份提示（lines/prompt.ts）。 */
 export const ACT_OR_ASK_PROMPT = [
   '「做还是问」那条线（把握看资料里有没有，不给人或 AI 打分）：',
   '- 用户明说过的：直接做，做完告诉他；',

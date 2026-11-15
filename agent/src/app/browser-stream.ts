@@ -25,7 +25,7 @@ export async function streamBrowser(context: RequestContext): Promise<HandlerRes
     width: Number(context.url.searchParams.get('width')), height: Number(context.url.searchParams.get('height')),
     deviceScaleFactor: Number(context.url.searchParams.get('deviceScaleFactor') ?? 1),
   }, '浏览器画面');
-  const { browser } = deps.m5b.cloud;
+  const { browser } = deps.toolGroups.cloud;
   streams.get(browser)?.end();
   const lifetime = new AbortController();
   let cast: BrowserWatch | undefined;
@@ -115,7 +115,7 @@ export async function streamBrowser(context: RequestContext): Promise<HandlerRes
 export async function ackBrowser(context: RequestContext): Promise<Reply> {
   const auth = requireAuth(context);
   const body = checkInput(BrowserAckSchema, await readJsonBody(context.req), '画面确认');
-  const watching = streams.get(context.deps.m5b.cloud.browser);
+  const watching = streams.get(context.deps.toolGroups.cloud.browser);
   const owns = stillAuthenticated(context.deps, auth) && watching?.sessionId === auth.session.id
     && watching.streamId === body.streamId;
   if (owns) {

@@ -9,7 +9,7 @@ import type { ApplyRulesMoveRequest, ApplyRulesMoveResponse, RulesMoveDest, Rule
 import { SOUL_OWNER_MAIN } from '../../../shared/api/souls.ts';
 import { appendToSection } from '../../../shared/soul-text.ts';
 import { RULES_DOC_ID, YOU_DOC_ID, type MemoryLine } from '../../../shared/state.ts';
-import { soulOf, type SoulState } from '../../mates/souls.ts';
+import { soulOf, type SoulState } from '../../mates/index.ts';
 import { StateError } from '../../state/index.ts';
 import { docEvent, ensureRulesDoc, ensureYouDoc, type DocState, type Writer } from '../docs/memory-doc-writes.ts';
 import { soulSectionOf, soulSource } from './soul.ts';

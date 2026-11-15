@@ -51,7 +51,7 @@ describe('第 92 条 · 中文与数字混排', () => {
   });
 
   it('文件时间和文件夹说明共用混排样式；记账的纯金额仍是等宽字体', async () => {
-    await renderApp({ setup: (fake) => { fake.control.m5b.files.seed('周报.md'); } });
+    await renderApp({ setup: (fake) => { fake.control.toolGroups.files.seed('周报.md'); } });
     const openTool = (name: string): HTMLElement => {
       act(() => { window.location.hash = name === '文件' ? '#/tools/files' : '#/tools/money'; });
       return screen.getByRole('main');

@@ -2,7 +2,7 @@
 // 先问用户。不改已读（那是用户的事）。
 
 import { Type } from 'typebox';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 
 export interface InboxReader {
   read(id: string): unknown;

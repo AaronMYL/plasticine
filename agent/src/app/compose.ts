@@ -4,7 +4,7 @@
 import {
   ComposeOutcomeSchema, ComposePredictRequestSchema, type ComposePredictView, type ComposeTarget,
 } from '../../shared/api/index.ts';
-import { COMPOSE_TURNS, type ComposeContext, type ComposeTurn } from '../loop/compose-predictor.ts';
+import { COMPOSE_TURNS, type ComposeContext, type ComposeTurn } from '../loop/index.ts';
 import { notFoundError } from './api-error.ts';
 import { parseInboxContact } from './contact-mail.ts';
 import { personThread } from './contact-views.ts';

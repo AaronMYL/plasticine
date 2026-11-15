@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
-      include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
+      include: ['tests/**/*.test.{ts,tsx}'],
       setupFiles: ['tests/setup.ts'],
       restoreMocks: true,
       // 字体回归测试读取实际 CSS；只放行显式的 raw 导入，其余样式仍由测试默认处理。

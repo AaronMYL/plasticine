@@ -4,8 +4,8 @@
 //   后台线都不通知（后台线没做成照旧走主线的系统通知）。
 // - 联系人：对方本人发来的文字（一对一、群里）；对方的 AI 代答、任务卡、系统说明、表情都不通知；读过的不通知。
 
-import type { ContactAlert, LineAlert } from '../attention/message-alerts.ts';
-import { mainIdentity } from '../mates/main-identity.ts';
+import type { ContactAlert, LineAlert } from '../attention/index.ts';
+import { mainIdentity } from '../mates/index.ts';
 import type { NetworkChange } from '../network/index.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import { faceOf } from './group-views.ts';

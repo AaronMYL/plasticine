@@ -1,6 +1,6 @@
 import type { NodeAction, Schedule } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { scheduleActor, type ScheduleOwnerState } from '../tasks/schedule-owner.ts';
+import { scheduleActor, type ScheduleOwnerState } from '../tasks/index.ts';
 
 type ScheduleGrantState = Pick<StateService, 'outboundGrants'> & ScheduleOwnerState;
 

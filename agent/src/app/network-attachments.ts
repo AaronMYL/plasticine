@@ -4,7 +4,7 @@ import { chatNames, messageView } from './contact-views.ts';
 import { groupMessageView } from './group-views.ts';
 import { idempotent } from './idempotency.ts';
 import { UploadNetworkAttachmentSchema, NETWORK_ATTACHMENT_MAX_BYTES } from '../../shared/network-attachments.ts';
-import { attachmentText } from '../network/attachments.ts';
+import { attachmentText } from '../network/index.ts';
 import { ApiError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';

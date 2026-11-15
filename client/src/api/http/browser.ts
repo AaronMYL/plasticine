@@ -3,7 +3,7 @@
 
 import { Value } from 'typebox/value';
 import { ApiError } from '../errors.ts';
-import type { BrowserApi, NoteVersionsApi, ToolGroupsApi } from '../m5b-client.ts';
+import type { BrowserApi, NoteVersionsApi, ToolGroupsApi } from '../tool-groups-client.ts';
 import {
   WEB_EXTRACT_PATH, WEB_ARCHIVE_PATH, WebExtractViewSchema, WebArchiveViewSchema,
   type WebExtractInput, type WebExtractView, type WebArchiveRequest, type WebArchiveView,

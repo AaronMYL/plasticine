@@ -2,8 +2,7 @@
 // 读成一段段——段落、小标题、引用、列表项、代码、图，不存 HTML、不执行任何东西。宽松地读：订阅里的 HTML 常常不规整，
 // 认不出的标签只取里面的字。链接只留字；图只要 https 的。
 
-import type { FeedBlock } from '../../shared/state.ts';
-import { FEED_BODY_MAX_BLOCKS } from '../../shared/state.ts';
+import { FEED_BODY_MAX_BLOCKS, type FeedBlock } from '../../shared/state.ts';
 import { tagAttributes, xmlText } from './feed-parse.ts';
 
 /** 全文最多这么多字（一篇很长的文章也够；再长的看原文）。 */

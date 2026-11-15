@@ -14,7 +14,7 @@ import {
   type BookRecord,
 } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { chapterPlainText } from '../reading/index.ts';
+import { chapterPlainText } from './book-plain-text.ts';
 import { digestBook, type BookDigest, type DigestChapter } from './book-digest.ts';
 import { askJson, type BookModel } from './book-model.ts';
 import { backfillBookSpaces, bookSummarySpaceSnapshot, upgradeBookOutlineLayouts, publishBookSpace, publishBookSummary,

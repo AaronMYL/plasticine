@@ -13,7 +13,7 @@ import { notFoundError } from './api-error.ts';
 import { withCurrent } from './conflict.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';
 import { confirmedWrite } from './user-confirmation.ts';
-import { toolGroupView } from './m5b-views.ts';
+import { toolGroupView } from './tool-group-views.ts';
 import { checkInput } from './validate.ts';
 
 function groupId(context: RequestContext): ToolGroupId {

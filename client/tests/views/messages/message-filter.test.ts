@@ -12,7 +12,7 @@ import {
   listedContacts,
   rowsFor,
   showsRequests,
-} from '../../../src/views/messages/message-filter.ts';
+} from '../../../src/state/message-filter.ts';
 
 function row(id: string, kind: ContactRow['kind'], at: string | null, fields: Partial<ContactRow> = {}): ContactRow {
   return { id, kind, name: id, handle: null, address: null, relation: null, state: 'active', unread: 0, waiting: false,

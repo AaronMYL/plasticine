@@ -5,8 +5,7 @@
 import { BLANK_SIDE_TITLE, LINE_TITLE_MAX_CHARS, type ChatsResponse, type LineTopic,
   type LineView } from '../../shared/api/lines.ts';
 import { replyExcerpt, splitReply, type LineReply } from '../../shared/line-reply.ts';
-import type { LineRow, StateService } from '../state/index.ts';
-import { lineRef } from '../state/index.ts';
+import { lineRef, type LineRow, type StateService } from '../state/index.ts';
 import { LineError } from './kernel-types.ts';
 import { clip } from './messages.ts';
 

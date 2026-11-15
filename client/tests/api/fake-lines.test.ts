@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { createFakeApi } from '../../src/api/fake/index.ts';
 import { MAIN_LINE_ID } from '../../src/api/fake/fake-lines.ts';
-import { EventsHub } from '../../src/api/events-hub.ts';
+import { EventsHub } from '../../src/state/events-hub.ts';
 import { LINE_MESSAGE_MAX_CHARS, type SendLineMessageRequest } from '../../src/api/shared.ts';
 import type { LiveEvent, Quote } from '../../src/api/types.ts';
 import { LinesStore } from '../../src/views/lines/line-store.ts';

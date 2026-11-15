@@ -102,7 +102,7 @@ const REPORT: RefetchReport = { tried: 2, found: 1, notFound: 1, errors: 0, rema
 
 test('mail.refetch：要原话；结果记进操作记录，同一个操作号重放不再连 Gmail；没给 --limit 补 30 封', async () => {
   const limits: number[] = [];
-  const refetchDeps = { ...deps(), m5b: { cloud: { mailRefetch: { run: async (limit: number) => {
+  const refetchDeps = { ...deps(), toolGroups: { cloud: { mailRefetch: { run: async (limit: number) => {
     limits.push(limit);
     return REPORT;
   } } } } };
@@ -124,7 +124,7 @@ test('mail.refetch：要原话；结果记进操作记录，同一个操作号�
 });
 
 test('mail.refetch：收信没接上或没装就说不能做（unavailable），不记操作；同步入口不收它', async () => {
-  const refuse = { ...deps(), m5b: { cloud: { mailRefetch: { run: async (): Promise<RefetchReport> => {
+  const refuse = { ...deps(), toolGroups: { cloud: { mailRefetch: { run: async (): Promise<RefetchReport> => {
     throw new CloudToolError('not_configured', '收信还没接上 Gmail，没法从 Gmail 重新抓。');
   } } } } };
   const failure = await failsWith(() => performMaintenance(refuse, { operationId: 'op-mail-3', op: 'mail.refetch',

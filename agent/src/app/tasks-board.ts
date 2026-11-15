@@ -3,10 +3,7 @@
 // 建议 = 摆着的建议卡；项目列在最下面。只列线和定时任务，不列每一次运行（定时线的每一次不进「刚做完」）。
 // 项目页用同一份数据（?projectId=）：没归项目的定时、建议算「个人」。
 
-import {
-  STANDING_PROJECT_IDS,
-  type Ask,
-} from '../../shared/state.ts';
+import { STANDING_PROJECT_IDS, type Ask, type Suggestion } from '../../shared/state.ts';
 import {
   TASKS_DELETED_MAX,
   taskEnded,
@@ -19,7 +16,6 @@ import {
   type TeammateView,
   type TimedRowView,
 } from '../../shared/api/index.ts';
-import type { Suggestion } from '../../shared/state.ts';
 import { askView, lineOf } from './asks.ts';
 import type { AppDeps } from './context.ts';
 import { projectHue } from './project-tag.ts';

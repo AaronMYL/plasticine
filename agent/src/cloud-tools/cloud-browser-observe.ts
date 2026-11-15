@@ -1,7 +1,7 @@
 import { BrowserObserveSchema } from '../../shared/browser-observation.ts';
-import type { BrowserObservation } from './index.ts';
+import type { BrowserObservation } from './browser.ts';
 import { browserResult } from './browser-result.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 
 export interface BrowserObserver {
   observe(signal: AbortSignal, scope?: string, tabId?: string): Promise<BrowserObservation>;

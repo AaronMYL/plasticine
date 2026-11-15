@@ -9,7 +9,7 @@ import type { FeedItemView, FeedSourceView } from '../../api/types.ts';
 import type { ActionOps, ActionRequest } from '../../state/action-ops.ts';
 import type { FeedUi } from '../../state/feed-ui.ts';
 import type { InlineDrafts } from '../../state/inline-drafts.ts';
-import { FEED_ADD_OP_KEY, feedItemOpKey, feedLevelOpKey, feedQueryOpKey } from '../../state/m4-action-requests.ts';
+import { FEED_ADD_OP_KEY, feedItemOpKey, feedLevelOpKey, feedQueryOpKey } from '../../state/daily-action-requests.ts';
 import { deviceTimeZone as localTimeZone } from '../../state/time-zone.ts';
 import type { FeedStore } from './feed-store.ts';
 

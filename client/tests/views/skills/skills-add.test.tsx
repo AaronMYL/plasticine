@@ -48,11 +48,11 @@ describe('技能 · 添加', () => {
 
   it('商店连不上：写原因，能再试', async () => {
     const app = await renderApp({ hash: '#/skills/add', setup: (fake) => {
-      fake.control.m5b.skills.storeDown = '技能商店暂时连不上，稍后再试。';
+      fake.control.toolGroups.skills.storeDown = '技能商店暂时连不上，稍后再试。';
     } });
     const pane = await add();
     expect((await within(pane).findByRole('alert')).textContent).toContain('技能商店暂时连不上');
-    app.control.m5b.skills.storeDown = null;
+    app.control.toolGroups.skills.storeDown = null;
     fireEvent.click(within(pane).getByRole('button', { name: '重试' }));
     expect(await within(pane).findByRole('list', { name: '商店里的技能' })).toBeTruthy();
   });

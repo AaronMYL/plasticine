@@ -19,7 +19,7 @@ import {
 import { hardLines } from '../../shared/rules-doc.ts';
 import { MEMORY_DOC_CHAR_LIMIT, RULES_DOC_ID, type MemoryDoc, type MemoryDocKind, type MemoryInference,
   type MemoryLine } from '../../shared/state.ts';
-import { decideInference, findDoc } from '../tools/index.ts';
+import { decideInference, findDoc } from '../memory/index.ts';
 import { sourcesOf } from './memory-sources.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';

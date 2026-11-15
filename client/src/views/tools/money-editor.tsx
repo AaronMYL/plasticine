@@ -5,8 +5,8 @@ import { fromTimeInput, timeInput } from '../../primitives/message/states.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { isOpenOp } from '../../state/action-ops.ts';
-import { moneyEntryOpKey, MONEY_ACCOUNT_OP_KEY } from '../../state/m5b-action-requests.ts';
-import { centsOf } from '../m5b/m5b-actions.ts';
+import { moneyEntryOpKey, MONEY_ACCOUNT_OP_KEY } from '../../state/tool-group-action-requests.ts';
+import { centsOf } from './tool-group-actions.ts';
 import { useOp } from '../pending/pending-ops.tsx';
 
 export function MoneyEditor({ entry, ledger, onClose }: {
@@ -36,7 +36,7 @@ export function MoneyEditor({ entry, ledger, onClose }: {
   const at = fromTimeInput(fields.at, timeZone);
   const save = async () => {
     if (amount === null || at === null) { return; }
-    if (await live.m5bActions.editMoney(entry.id, { version: draft?.baseVersion ?? entry.version,
+    if (await live.toolGroupActions.editMoney(entry.id, { version: draft?.baseVersion ?? entry.version,
       amountCents: amount, kind: fields.kind as MoneyEntryView['kind'], categoryId: fields.category || null,
       accountId: fields.account || null, toAccountId: fields.kind === 'transfer' ? fields.toAccount || null : null,
       merchant: fields.merchant || null, note: fields.note || null, occurredAt: at, review: false })) {
@@ -75,7 +75,7 @@ export function MoneyEditor({ entry, ledger, onClose }: {
 }
 
 export function AddMoneyAccount(): ReactNode {
-  const { m5bActions } = useLive();
+  const { toolGroupActions } = useLive();
   const { inlineDrafts } = useClientState();
   const drafts = useStore(inlineDrafts.store);
   const op = useOp(MONEY_ACCOUNT_OP_KEY);
@@ -98,7 +98,7 @@ export function AddMoneyAccount(): ReactNode {
       disabled={locked} onChange={(event) => set('opening', event.target.value)} /></label>
     <button type="button" className="primary-button" disabled={locked || !valid || field('name').trim() === ''}
       onClick={() => void (async () => {
-        const saved = await m5bActions.addMoneyAccount({ name: field('name').trim(),
+        const saved = await toolGroupActions.addMoneyAccount({ name: field('name').trim(),
           type: (field('type') || 'debit') as AddMoneyAccountRequest['type'],
           openingCents: Math.round(Number(opening) * 100) });
         if (saved) { for (const name of ['name', 'type', 'opening']) { inlineDrafts.clear(`money:account:${name}`); }

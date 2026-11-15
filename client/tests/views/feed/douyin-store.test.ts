@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createFakeApi } from '../../../src/api/fake/index.ts';
-import { EventsHub } from '../../../src/api/events-hub.ts';
+import { EventsHub } from '../../../src/state/events-hub.ts';
 import { DouyinStore } from '../../../src/views/feed/douyin-store.ts';
 
 describe('收藏清单刷新', () => {

@@ -5,7 +5,7 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { TLSSocket } from 'node:tls';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { createAcmeIssuer, LETS_ENCRYPT_DIRECTORY } from '../../protocol/acme.ts';
 import { CertificateKeeper, ChallengeResponses, type CertificateIssuer } from '../../protocol/certificates.ts';
 import type { Signer } from '../../protocol/relay-client.ts';

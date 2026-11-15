@@ -1,6 +1,6 @@
 import { Type } from 'typebox';
-import type { DeviceService } from './index.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import type { DeviceService } from './service.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 
 export function createDeviceNodesTool(devices: Pick<DeviceService, 'listNodes'>): Tool {
   return defineTool({ name: 'device_nodes', label: '设备节点',

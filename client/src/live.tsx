@@ -8,7 +8,7 @@ import { Value } from 'typebox/value';
 import type { PlasticineApi } from './api/client.ts';
 import { useApi } from './api/context.tsx';
 import { DIRECT_OPEN_EVENT } from './api/direct/direct-channel.ts';
-import { EventsHub } from './api/events-hub.ts';
+import { EventsHub } from './state/events-hub.ts';
 import { usePushDevice } from './api/push-device.ts';
 import { AgreementViewSchema, MAIN_LINE_ALIAS } from './api/shared.ts';
 import { useClientState } from './state/context.tsx';
@@ -37,12 +37,12 @@ import { SignedSender } from './views/signing/signed-sender.ts';
 import { MemoryTopicsStore } from './views/memory/topics-store.ts';
 import { BookmarkStore } from './views/bookmarks/bookmark-store.ts';
 import { ChapterCache } from './views/books/chapter-cache.ts';
-import { M5bActions } from './views/m5b/m5b-actions.ts';
+import { ToolGroupActions } from './views/tools/tool-group-actions.ts';
 import { ContactActions } from './views/contacts/contact-actions.ts';
 import { ContactEdits } from './views/contacts/contact-edits.ts';
 import { ContactsStore } from './views/contacts/contacts-store.ts';
 import { NetworkActions, NetworkStore } from './views/settings/network-store.ts';
-import { createM5bStores, startM5bStores, type M5bStores } from './views/m5b/m5b-stores.ts';
+import { createToolGroupStores, startToolGroupStores, type ToolGroupStores } from './views/tools/tool-group-stores.ts';
 
 export interface Live {
   timeZone: Store<string>;
@@ -69,8 +69,8 @@ export interface Live {
   devices: DeviceStore;
   deviceWrites: DeviceWrites;
   /** M5 乙路：记账、收件箱、工具组、文件、浏览器的数据和写操作。 */
-  m5b: M5bStores;
-  m5bActions: M5bActions;
+  toolGroups: ToolGroupStores;
+  toolGroupActions: ToolGroupActions;
   memoryTopics: MemoryTopicsStore;
   /** 第 111 条：书签和项目名单（名字、颜色）。 */
   bookmarks: BookmarkStore;
@@ -99,8 +99,8 @@ function createLive(api: PlasticineApi, parts: ClientParts, push: PushSwitch): L
   const signer = new SignedSender({ api: api.signed, ops: signedOps });
   const agreements = new AgreementStore(api, hub, signer);
   const cognitionActions = new CognitionActions({ agreements });
-  const m5b = createM5bStores(api, hub, () => new Date(), timeZone.get());
-  const m5bActions = new M5bActions({ api, stores: m5b, ops: actionOps, drafts: inlineDrafts });
+  const toolGroups = createToolGroupStores(api, hub, () => new Date(), timeZone.get());
+  const toolGroupActions = new ToolGroupActions({ api, stores: toolGroups, ops: actionOps, drafts: inlineDrafts });
   const memoryTopics = new MemoryTopicsStore(api, signer);
   const asks = new AsksStore(api, hub);
   signer.onResult((result, op) => {
@@ -113,7 +113,7 @@ function createLive(api: PlasticineApi, parts: ClientParts, push: PushSwitch): L
         settleCognitionDraft(editDrafts, op.key, body, result.agreement.version);
       }
     } else if (result.kind === 'tool_group') {
-      m5b.toolGroups.apply({ type: 'tool_group.changed', group: result.group });
+      toolGroups.toolGroups.apply({ type: 'tool_group.changed', group: result.group });
     } else if (result.kind === 'memory_uncertain') {
       memoryTopics.applyAnswered(result.item);
     }
@@ -153,8 +153,8 @@ function createLive(api: PlasticineApi, parts: ClientParts, push: PushSwitch): L
     transcriber: new TranscriberStore(api, hub),
     devices,
     deviceWrites,
-    m5b,
-    m5bActions,
+    toolGroups,
+    toolGroupActions,
     memoryTopics,
     bookmarks: new BookmarkStore(api, hub),
     chapters: new ChapterCache(api.books),
@@ -184,7 +184,7 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
     live.devices.start();
     live.contacts.start();
     live.network.start();
-    const stopM5b = startM5bStores(live.m5b);
+    const stopToolGroup = startToolGroupStores(live.toolGroups);
     const stopTimeZone = startTimeZone(live);
     // 定时按这台设备现在的时区算：打开时报一次，切回来变了再报。
     const stopZoneReport = startTimeZoneReport(api.tasks);
@@ -206,7 +206,7 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
       live.contacts.stop();
       stopTimeZone();
       stopZoneReport();
-      stopM5b();
+      stopToolGroup();
       // 进行中的通知开关操作作废：重新配对后旧实例的请求回来，不再替这台设备订阅、登记（review-followups 912f540）。
       live.push.dispose();
       stopNativePush();

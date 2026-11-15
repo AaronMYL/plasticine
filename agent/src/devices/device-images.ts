@@ -5,7 +5,7 @@
 import type { DeviceActionKind } from '../../shared/state.ts';
 import type { ModelImage } from '../../shared/model.ts';
 
-// ModelImage 一张图的上限（brain/tools/dispatch.ts 的 emitImage 同一个数）。
+// ModelImage 一张图的上限（tools/registry.ts 的 emitImage 同一个数）。
 export const DEVICE_IMAGE_MAX_CHARS = 8_000_000;
 const SHOWN_AS_IMAGE = '[图片已经作为图像交给模型，这里不重复]';
 

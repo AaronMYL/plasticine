@@ -21,7 +21,7 @@ import {
   type MemoryLineView,
 } from '../../shared/api/index.ts';
 import type { MemoryAnchor, MemoryDoc, MemoryDocKind, MemoryInference, MemoryLine } from '../../shared/state.ts';
-import { decideInference, docFullness, retireLine, reviseLine } from '../tools/index.ts';
+import { decideInference, docFullness, retireLine, reviseLine } from '../memory/index.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';

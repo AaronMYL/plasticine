@@ -4,16 +4,20 @@
 // close the connections. Closing the library is the caller's last step.
 
 import { createServer, type Server } from 'node:http';
-import { adoptMateSouls, BookInsightService, ComposePredictor, ensureDefaultProjects, ensureMemoryDocs, NoteAssistant,
-  PageTranslator,
-  type GlossaryTerm, type MemoryCurator, type PaymentReader } from '../tools/index.ts';
+import { adoptMateSouls } from '../mates/index.ts';
+import { BookInsightService } from '../books/index.ts';
+import { ComposePredictor } from '../loop/index.ts';
+import { ensureDefaultProjects } from '../projects/index.ts';
+import { ensureMemoryDocs, type MemoryCurator } from '../memory/index.ts';
+import { NoteAssistant } from '../notes/index.ts';
+import { PageTranslator, type GlossaryTerm } from '../web/index.ts';
+import type { MoneyDraftDesk, PaymentReader } from '../life/index.ts';
 import { Presence, type AskDesk, type Presenter, type PushService, type ScanScheduler } from '../attention/index.ts';
 import type { Daily } from '../daily/index.ts';
 import type { DeviceService } from '../devices/index.ts';
 import type { IntakeDesk } from '../intake/index.ts';
 import type { Video } from '../video/index.ts';
 import type { TextModels } from '../kernel/index.ts';
-import type { MoneyDraftDesk } from '../life/index.ts';
 import type { LineKernel } from '../lines/index.ts';
 import type { Tasks } from '../tasks/index.ts';
 import type { CalendarSync } from '../calendar/index.ts';
@@ -37,8 +41,8 @@ import type { AppDeps } from './context.ts';
 import { attachDeviceStreams } from './device-streams.ts';
 import { EventHub } from './event-hub.ts';
 import { attachFeedStreams } from './feed.ts';
-import type { M5bServices } from './m5b-services.ts';
-import { attachM5bStreams } from './m5b-streams.ts';
+import type { ToolGroupServices } from './tool-group-services.ts';
+import { attachToolGroupStreams } from './tool-group-streams.ts';
 import { withClientFiles } from './static-client.ts';
 import type { MacDownloads } from './mac-updates.ts';
 import type { KernelModelParts } from './model-providers.ts';
@@ -47,7 +51,7 @@ import { SourceLimiter } from './source-limiter.ts';
 import { askView } from './asks.ts';
 import { BrowserSessions } from './browser-sessions.ts';
 import { DevicePaths } from './device-paths.ts';
-import { DirectHub } from '../direct/hub.ts';
+import { DirectHub } from '../direct/index.ts';
 
 export interface AppOptions {
   state: StateService;
@@ -66,7 +70,7 @@ export interface AppOptions {
   devices: DeviceService;
   /** Development dry run of external effects (decisions 8 and 68). */
   dryRun: boolean;
-  m5b: M5bServices;
+  toolGroups: ToolGroupServices;
   moneyDrafts: MoneyDraftDesk;
   paymentReader: PaymentReader;
   clientUpdates: ClientReleases;
@@ -202,7 +206,7 @@ export function createApp(options: AppOptions): App {
     devices: options.devices,
     startedAt: now().toISOString(),
     dryRun: options.dryRun,
-    m5b: options.m5b,
+    toolGroups: options.toolGroups,
     skills: options.skills,
     skillShop: options.skillShop,
     intake: options.intake,
@@ -220,7 +224,7 @@ export function createApp(options: AppOptions): App {
   attachAskStreams(deps, options.presenter);
   attachFeedStreams(deps);
   attachDeviceStreams(deps);
-  attachM5bStreams(deps);
+  attachToolGroupStreams(deps);
   const api = createRequestHandler(deps);
   const server = createServer(options.clientDirectory === undefined ? api
     : withClientFiles(options.clientDirectory, api));
@@ -299,9 +303,9 @@ export function createApp(options: AppOptions): App {
         options.paymentReader.stop();
         options.backups.stop();
         hub.closeAll();
-        options.m5b.cloud.browser.close();
+        options.toolGroups.cloud.browser.close();
         options.kernelModels?.logins.stop();
-        await Promise.all([options.lines.stop(), options.m5b.cloud.mailSync.stop(),
+        await Promise.all([options.lines.stop(), options.toolGroups.cloud.mailSync.stop(),
           options.daily.externalFeed?.stop(), options.daily.subscriptions.stop(), options.daily.comments?.stop(),
           options.daily.translations?.stop(), options.video.stop()]);
         await networkStopped;

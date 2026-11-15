@@ -8,10 +8,10 @@ import { Type } from 'typebox';
 import type { MemoryCleanup, MemoryCleanupItem, MemoryDoc, MemoryLine } from '../../../shared/state.ts';
 import type { TextModels } from '../../kernel/index.ts';
 import type { StateService } from '../../state/index.ts';
-import { askJson } from '../../books/book-model.ts';
+import { askJson } from '../../books/index.ts';
 import { addLine, docEvent, mergeLines, retireLine, reviseLine, scopeOf, type Writer } from '../docs/memory-doc-writes.ts';
 import { findContradictions } from './memory-contradictions.ts';
-import { errorCategory, safeLog } from '../../util/log.ts';
+import { errorCategory, safeLog } from '../../util/index.ts';
 
 export type CleanupState = Pick<StateService, 'memoryDocs' | 'memoryCuration' | 'projects' | 'transaction'
   | 'memoryCleanups' | 'memoryConflicts'>;

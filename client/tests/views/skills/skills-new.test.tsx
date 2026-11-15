@@ -41,7 +41,7 @@ describe('技能 · 新建', () => {
   it('草稿没写成：写原因，原来说的那句还在', async () => {
     const app = await renderApp({ hash: '#/skills/new' });
     const ask = await pane();
-    app.control.m5b.skills.draft = () => Promise.reject(new ApiError({ kind: 'failed', code: 'upstream_failed',
+    app.control.toolGroups.skills.draft = () => Promise.reject(new ApiError({ kind: 'failed', code: 'upstream_failed',
       status: 502, message: '还没有连接模型，连上以后再让 Plasticine 写；也可以选「自己写」。' }));
     const said = within(ask).getByRole('textbox', { name: '想让 Plasticine 学会什么？' }) as HTMLTextAreaElement;
     fireEvent.change(said, { target: { value: '整理周报' } });
@@ -52,7 +52,7 @@ describe('技能 · 新建', () => {
   });
 
   it('自己写：空白表单，填全了才能保存；重名说清楚', async () => {
-    await renderApp({ hash: '#/skills/new', setup: (fake) => { fake.control.m5b.skills.seedPage(); } });
+    await renderApp({ hash: '#/skills/new', setup: (fake) => { fake.control.toolGroups.skills.seedPage(); } });
     const ask = await pane();
     fireEvent.click(within(ask).getByRole('button', { name: '自己写' }));
     const form = await screen.findByRole('form', { name: '技能草稿' });

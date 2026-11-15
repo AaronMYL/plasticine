@@ -13,7 +13,7 @@ import {
   type MacLatestResponse,
   type MacReleaseFile,
 } from '../../shared/api/index.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { ApiError } from './api-error.ts';
 import { param, type Reply, type RequestContext } from './context.ts';
 import { requireNode } from './node-protocol.ts';

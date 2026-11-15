@@ -117,10 +117,9 @@ import {
 import { createOutboundGrant, editOutboundGrant, getOutboundLog, listOutboundGrants, listOutboundLog,
   revokeOutboundGrant } from './outbound-grants.ts';
 import { REVIEW_PATH, SPACES_PATH, SUBSCRIPTIONS_PATH } from '../../shared/api/spaces.ts';
-import { deleteSpace, getSpace, listSpaces, restoreSpace, saveSpace, undoSpace } from './spaces.ts';
+import { deleteSpace, getSpace, getSpaceVersions, listSpaces, restoreSpace, saveSpace, undoSpace } from './spaces.ts';
 import { LIBRARY_TRASH_PATH } from '../../shared/api/library.ts';
 import { listLibraryTrash } from './library-trash.ts';
-import { getSpaceVersions } from './spaces.ts';
 import { LIBRARY_BATCH_PATH, LIBRARY_EMPTY_PATH, NOTES_BATCH_PATH, NOTES_EMPTY_PATH }
   from '../../shared/api/library-batch.ts';
 import { batchLibrary, batchNotes, emptyLibrary, emptyNotes } from './library-batch.ts';

@@ -9,8 +9,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
   type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { WindowChrome } from '../api/shared.ts';
-import type { ColumnToggle } from './columns/column-toggle.tsx';
-import { toggleShortcut } from './columns/column-toggle.tsx';
+import { toggleShortcut, type ColumnToggle } from './columns/column-toggle.tsx';
 import { IconButton } from './icon-button.tsx';
 import { goBack, goForward, useNavHistory } from './nav-history.ts';
 import { useTitlebarReport } from './window-chrome.ts';

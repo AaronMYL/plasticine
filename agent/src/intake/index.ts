@@ -10,3 +10,5 @@ export type { RuleCode } from './seed.ts';
 export { threadKeys } from './thread-keys.ts';
 export { bookmarkTrigger, contactTrigger, deviceTrigger, feedTrigger, mailTrigger, ruleGoal } from './triggers.ts';
 export type { MailFacts } from './triggers.ts';
+export { createListInboxTool } from './list-inbox-tool.ts';
+export { createReadInboxTool } from './read-inbox-tool.ts';

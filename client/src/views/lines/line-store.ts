@@ -4,7 +4,7 @@
 
 import type { PlasticineApi } from '../../api/client.ts';
 import { errorText } from '../../api/errors.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import { lineMessageText, lineQuoteInputs } from '../../api/quote-text.ts';
 import { LINE_PAGE_DEFAULT, MAIN_LINE_ALIAS, type LineReply, type LineStreamEvent, type LineView, type OpenSideRequest,

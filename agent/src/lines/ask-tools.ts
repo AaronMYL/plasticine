@@ -10,7 +10,7 @@ import type { LineInputOrigin } from '../../shared/api/lines.ts';
 import type { Ask } from '../../shared/state.ts';
 import type { AskDesk, AskResolver } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
-import { autoChoice, raiseOffer, recordAsk, settleAsk } from '../loop/autonomy.ts';
+import { autoChoice, raiseOffer, recordAsk, settleAsk } from '../loop/index.ts';
 import { withdrawAsk } from './hard-line.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';

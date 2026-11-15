@@ -30,3 +30,5 @@ export type { ApprovedResult } from './approvals.ts';
 export type { DeviceServiceOptions } from './service.ts';
 export { PollingNodeTransport, TransportError, UNCONNECTED_TRANSPORT } from './transport.ts';
 export type { NodeTransport } from './transport.ts';
+export { createDeviceActionGate, createDeviceActionTool } from './device-action.ts';
+export { createDeviceNodesTool } from './device-nodes.ts';

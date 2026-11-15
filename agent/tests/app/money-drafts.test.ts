@@ -52,7 +52,7 @@ test('识别清楚、商户以前归过类：直接入账不出卡，按你上�
     occurredAt: '2026-10-28T07:00:00.000Z', categoryId: 'shop' })]);
   try {
     const cookie = await pair(app);
-    app.app.deps.m5b.life.money.categories();
+    app.app.deps.toolGroups.life.money.categories();
     app.state.moneyEntries.create({ kind: 'expense', amountCents: 5000, currency: 'CNY', cnyCents: 5000,
       categoryId: 'study', accountId: null, toAccountId: null, merchant: '书店', note: null,
       occurredAt: '2026-10-20T07:00:00.000Z', discountCents: null, feeCents: null, confidence: null, review: false,

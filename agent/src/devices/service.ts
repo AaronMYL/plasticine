@@ -1,9 +1,8 @@
 // devices/ put together: the pairing and limits of nodes (pairing.ts) and their actions (actions.ts), over one state
 // service, one transport and one clock. app/ attaches a sink so each change reaches the open streams after it commits.
 
-import { NODE_ONLINE_MS } from '../../shared/api/index.ts';
-import type {
-  NodeActionResultRequest, NodeHelloRequest, NodePairRequest, NodeWireAction,
+import {
+  NODE_ONLINE_MS, type NodeActionResultRequest, type NodeHelloRequest, type NodePairRequest, type NodeWireAction,
 } from '../../shared/api/index.ts';
 import type { DeviceConfirmation, DeviceLimits, DeviceNode, NodePairingCode } from '../../shared/state.ts';
 import { MAX_PAGE_SIZE, type StateService } from '../state/index.ts';

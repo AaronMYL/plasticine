@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import {
   attachmentText,
@@ -14,7 +14,6 @@ import {
   type OutgoingMail,
 } from '../../src/cloud-tools/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
-import { dirname } from 'node:path';
 import { assertNoPrivateText, captureLogs, PRIVATE_ERROR_TEXT } from '../safety-helpers.ts';
 
 let t: TestState;

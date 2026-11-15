@@ -2,16 +2,9 @@
 
 import type { PushApi } from '../client.ts';
 import {
-  NOTIFY_KINDS_PATH,
-  NotifyKindsSchema,
-  PRESENCE_PATH,
-  PUSH_KEY_PATH,
-  PUSH_SUBSCRIPTIONS_PATH,
-  PUSH_TEST_PATH,
-  PushTestResponseSchema,
-  PushKeyResponseSchema,
-  SubscribePushResponseSchema,
-  UnsubscribePushResponseSchema,
+  NOTIFY_KINDS_PATH, NotifyKindsSchema, PRESENCE_PATH, PUSH_KEY_PATH, PUSH_SUBSCRIPTIONS_PATH, PUSH_TEST_PATH,
+  PushKeyResponseSchema, PushStatusSchema, PushTestResponseSchema, SubscribePushResponseSchema,
+  UnsubscribePushResponseSchema, type NotifyKinds, type PushStatus, type PushTestResponse,
 } from '../shared.ts';
 import type {
   PushKeyResponse,
@@ -21,7 +14,6 @@ import type {
   UnsubscribePushResponse,
 } from '../types.ts';
 import type { Transport } from './transport.ts';
-import { PushStatusSchema, type NotifyKinds, type PushStatus, type PushTestResponse } from '../shared.ts';
 import { Type } from 'typebox';
 
 const PresenceAckSchema = Type.Object({ ok: Type.Boolean() });

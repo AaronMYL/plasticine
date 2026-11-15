@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { LifeError, MoneyDesk } from '../../src/life/index.ts';
+import { LifeError, MoneyDesk, type EntryDraft } from '../../src/life/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
-import type { EntryDraft } from '../../src/life/index.ts';
 
 let t: TestState;
 let desk: MoneyDesk;

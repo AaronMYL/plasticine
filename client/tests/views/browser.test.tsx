@@ -132,7 +132,7 @@ it('收到乱序帧时旧序号不进入解码；手动中文输入不进入浏�
     CanvasRenderingContext2D);
   const storage = memoryStorage();
   const app = await renderApp({ storage, setup(fake) {
-    fake.control.m5b.browser.seed({ open: true, activeTabId: 'tab-1', url: 'https://example.com/',
+    fake.control.toolGroups.browser.seed({ open: true, activeTabId: 'tab-1', url: 'https://example.com/',
       tabs: [{ id: 'tab-1', title: '示例', url: 'https://example.com/' }] });
   } });
   act(() => {
@@ -141,14 +141,14 @@ it('收到乱序帧时旧序号不进入解码；手动中文输入不进入浏�
   });
   fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: /^浏览器/ }));
   await screen.findByRole('textbox', { name: '地址栏' });
-  act(() => app.control.m5b.browser.emitFrame(frame(3)));
-  act(() => app.control.m5b.browser.emitFrame(frame(2)));
+  act(() => app.control.toolGroups.browser.emitFrame(frame(3)));
+  act(() => app.control.toolGroups.browser.emitFrame(frame(2)));
   expect(images.length).toBe(1);
   act(() => images[0]?.onload?.());
-  await waitFor(() => expect(app.control.m5b.browser.acknowledgements).toEqual([3]));
+  await waitFor(() => expect(app.control.toolGroups.browser.acknowledgements).toEqual([3]));
   const keyboard = screen.getByRole('textbox', { name: '浏览器键盘输入' });
   fireEvent.input(keyboard, { target: { value: '只在当前浏览器中输入' } });
-  await waitFor(() => expect(app.control.m5b.browser.actions).toContainEqual({
+  await waitFor(() => expect(app.control.toolGroups.browser.actions).toContainEqual({
     kind: 'type', text: '只在当前浏览器中输入',
   }));
   expect(JSON.stringify([...storage.data.values()])).not.toContain('只在当前浏览器中输入');
@@ -156,7 +156,7 @@ it('收到乱序帧时旧序号不进入解码；手动中文输入不进入浏�
 });
 
 it('浏览器没起来显示重试，恢复后可以继续新开标签页；脑占用提示随状态变化', async () => {
-  const app = await renderApp({ setup(fake) { fake.control.m5b.browser.seed({ available: false }); } });
+  const app = await renderApp({ setup(fake) { fake.control.toolGroups.browser.seed({ available: false }); } });
   act(() => {
     window.location.hash = '#/web';
     window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -164,7 +164,7 @@ it('浏览器没起来显示重试，恢复后可以继续新开标签页；脑�
   fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: /^浏览器/ }));
   expect(await screen.findByText('浏览器还没起来')).toBeTruthy();
   expect((screen.getByRole('button', { name: '新开标签页' }) as HTMLButtonElement).disabled).toBe(true);
-  act(() => app.control.m5b.browser.seed({ available: true, controller: 'brain' }));
+  act(() => app.control.toolGroups.browser.seed({ available: true, controller: 'brain' }));
   fireEvent.click(screen.getByRole('button', { name: '新开标签页' }));
   await screen.findByRole('tab', { name: '新标签页' });
   expect(screen.queryByText('浏览器还没起来')).toBeNull();
@@ -292,8 +292,8 @@ const twoTabs = {
 };
 
 it('切页前等旧标签的按键释放回执，暂停中的松键和失焦不重复发送', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const original = app.api.browser.act.bind(app.api.browser);
   const order: string[] = [];
   let release: (() => void) | undefined;
@@ -324,7 +324,7 @@ it('切页前等旧标签的按键释放回执，暂停中的松键和失焦不�
     await act(async () => release?.());
   }
   await waitFor(() => expect(order).toEqual(['tab-1:down', 'tab-1:up', 'switch']));
-  act(() => app.control.m5b.browser.emitFrame({ ...frame(2), tabId: 'tab-2' }));
+  act(() => app.control.toolGroups.browser.emitFrame({ ...frame(2), tabId: 'tab-2' }));
   fireEvent.keyUp(surface, { key: 'Control', code: 'ControlLeft' });
   expect(send.mock.calls.map(([input]) => input.tabId)).toEqual(['tab-1', 'tab-1']);
 });
@@ -337,12 +337,12 @@ it('画面流重建期间释放旧按键，尚无新画面时继续拒绝新输�
     observe(target: Element) { element = target; }
     disconnect() { /* 假观察器没有外部资源。 */ }
   });
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
   const notify = (width: number): void => {
     resize?.([{ target: element, contentRect: { width, height: 700 } } as ResizeObserverEntry], {} as ResizeObserver);
   };
   act(() => notify(600));
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const keyboard = screen.getByRole('textbox', { name: '浏览器键盘输入' });
   const send = vi.spyOn(app.api.browser, 'act');
   await act(async () => { fireEvent.keyDown(keyboard, { key: 'Control', code: 'ControlLeft', ctrlKey: true }); });
@@ -370,8 +370,8 @@ it('画面流重建期间释放旧按键，尚无新画面时继续拒绝新输�
 });
 
 it('按下回执未返回就离开浏览器，仍按顺序释放原标签的键', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const original = app.api.browser.act.bind(app.api.browser);
   let release: (() => void) | undefined;
   const send = vi.spyOn(app.api.browser, 'act').mockImplementationOnce(async (input) => {
@@ -394,8 +394,8 @@ it('按下回执未返回就离开浏览器，仍按顺序释放原标签的键'
 });
 
 it('输入队列已满仍保留松键清理，不留下远端按住的修饰键', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const original = app.api.browser.act.bind(app.api.browser);
   let release: (() => void) | undefined;
   vi.spyOn(app.api.browser, 'act').mockImplementationOnce(async (input) => {
@@ -415,13 +415,13 @@ it('输入队列已满仍保留松键清理，不留下远端按住的修饰键'
   } finally {
     await act(async () => release?.());
   }
-  expect(app.control.m5b.browser.actions.at(-1)).toMatchObject({ key: 'Control', event: 'up', modifiers: 0 });
-  expect(app.control.m5b.browser.actions.filter((input) => input.kind === 'key')).toHaveLength(2);
+  expect(app.control.toolGroups.browser.actions.at(-1)).toMatchObject({ key: 'Control', event: 'up', modifiers: 0 });
+  expect(app.control.toolGroups.browser.actions.filter((input) => input.kind === 'key')).toHaveLength(2);
 });
 
 it('释放失败时保留待清理键并报告错误，重试释放成功前不切页', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const original = app.api.browser.act.bind(app.api.browser);
   let failed = false;
   const send = vi.spyOn(app.api.browser, 'act').mockImplementation(async (input) => {
@@ -450,8 +450,8 @@ it('释放失败时保留待清理键并报告错误，重试释放成功前不�
 });
 
 it('已按下键在后续输入出错时仍释放，被取消且尚未发送的按下不补松键', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const keyboard = screen.getByRole('textbox', { name: '浏览器键盘输入' });
   await act(async () => { fireEvent.keyDown(keyboard, { key: 'Control', code: 'ControlLeft', ctrlKey: true }); });
   let release: (() => void) | undefined;
@@ -472,8 +472,8 @@ it('已按下键在后续输入出错时仍释放，被取消且尚未发送的�
 });
 
 it('同一键再次按下不会覆盖前一次失败的释放记录，重试仍能清理', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const original = app.api.browser.act.bind(app.api.browser);
   let release: (() => void) | undefined;
   let failed = false;
@@ -499,17 +499,17 @@ it('同一键再次按下不会覆盖前一次失败的释放记录，重试仍�
     expect.objectContaining({ key: 'Control', event: 'up' }),
     expect.objectContaining({ key: 'Control', event: 'up' }),
   ]);
-  expect(app.control.m5b.browser.actions.at(-1)).toMatchObject({ key: 'Control', event: 'up' });
+  expect(app.control.toolGroups.browser.actions.at(-1)).toMatchObject({ key: 'Control', event: 'up' });
 });
 
 it('远端自行切页后仍向原标签松键，随后可以正常切回旧页', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const send = vi.spyOn(app.api.browser, 'act');
   const keyboard = screen.getByRole('textbox', { name: '浏览器键盘输入' });
   await act(async () => { fireEvent.keyDown(keyboard, { key: 'Control', code: 'ControlLeft', ctrlKey: true }); });
-  await act(async () => app.control.m5b.browser.seed({ activeTabId: 'tab-2' }));
-  expect(app.control.m5b.browser.actions.at(-1)).toMatchObject({ key: 'Control', event: 'up' });
+  await act(async () => app.control.toolGroups.browser.seed({ activeTabId: 'tab-2' }));
+  expect(app.control.toolGroups.browser.actions.at(-1)).toMatchObject({ key: 'Control', event: 'up' });
   expect(send.mock.calls.map(([input]) => input.tabId)).toEqual(['tab-1', 'tab-1']);
   expect(screen.getByRole('tab', { name: '第二页' }).getAttribute('aria-selected')).toBe('true');
   await act(async () => { fireEvent.click(screen.getByRole('tab', { name: '第一页' })); });
@@ -517,8 +517,8 @@ it('远端自行切页后仍向原标签松键，随后可以正常切回旧页'
 });
 
 it('切换标签开始即暂停旧画面输入，直到切换完成且新页画面到达', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const original = app.api.browser.tab.bind(app.api.browser);
   let release: (() => void) | undefined;
   vi.spyOn(app.api.browser, 'tab').mockImplementation(async (input) => {
@@ -543,14 +543,14 @@ it('切换标签开始即暂停旧画面输入，直到切换完成且新页画�
   expect(send).not.toHaveBeenCalled();
   tap();
   expect(send).not.toHaveBeenCalled();
-  act(() => app.control.m5b.browser.emitFrame({ ...frame(2), tabId: 'tab-2' }));
+  act(() => app.control.toolGroups.browser.emitFrame({ ...frame(2), tabId: 'tab-2' }));
   await act(async () => tap());
   expect(send).toHaveBeenCalledWith(expect.objectContaining({ tabId: 'tab-2' }));
 });
 
 it('排队中的操作保留产生时标签，状态切页不把旧点击改投新页', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   let release: (() => void) | undefined;
   const send = vi.spyOn(app.api.browser, 'act').mockImplementationOnce(async () => {
     await new Promise<void>((resolve) => { release = resolve; });
@@ -559,7 +559,7 @@ it('排队中的操作保留产生时标签，状态切页不把旧点击改投�
   const keyboard = screen.getByRole('textbox', { name: '浏览器键盘输入' });
   await act(async () => { fireEvent.input(keyboard, { target: { value: '第一段' } }); });
   fireEvent.input(keyboard, { target: { value: '第二段' } });
-  act(() => app.control.m5b.browser.seed({ activeTabId: 'tab-2' }));
+  act(() => app.control.toolGroups.browser.seed({ activeTabId: 'tab-2' }));
   await act(async () => release?.());
   expect(send.mock.calls.map(([input]) => input.tabId)).toEqual(['tab-1', 'tab-1']);
 });
@@ -576,16 +576,16 @@ it('请求缓存换代不取消在途解码，不重置同一画面流的序号'
   const draw = vi.fn();
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ drawImage: draw } as unknown as
     CanvasRenderingContext2D);
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(3)));
-  act(() => app.control.m5b.browser.seed({ instanceId: 'next-request-cache' }));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(3)));
+  act(() => app.control.toolGroups.browser.seed({ instanceId: 'next-request-cache' }));
   act(() => images[0]?.onload?.());
-  await waitFor(() => expect(app.control.m5b.browser.acknowledgements).toEqual([3]));
-  act(() => app.control.m5b.browser.emitFrame(frame(2)));
+  await waitFor(() => expect(app.control.toolGroups.browser.acknowledgements).toEqual([3]));
+  act(() => app.control.toolGroups.browser.emitFrame(frame(2)));
   expect(images.length).toBe(1);
-  act(() => app.control.m5b.browser.emitFrame(frame(4)));
+  act(() => app.control.toolGroups.browser.emitFrame(frame(4)));
   act(() => images[1]?.onload?.());
-  await waitFor(() => expect(app.control.m5b.browser.acknowledgements).toEqual([3, 4]));
+  await waitFor(() => expect(app.control.toolGroups.browser.acknowledgements).toEqual([3, 4]));
 });
 
 it('新标签帧到达但尚未绘制时继续暂停输入，绘制确认后才接受点按', async () => {
@@ -597,11 +597,11 @@ it('新标签帧到达但尚未绘制时继续暂停输入，绘制确认后才�
     src = '';
     constructor() { images.push(this); }
   });
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   act(() => images[0]?.onload?.());
   await act(async () => { fireEvent.click(screen.getByRole('tab', { name: '第二页' })); });
-  act(() => app.control.m5b.browser.emitFrame({ ...frame(2), tabId: 'tab-2' }));
+  act(() => app.control.toolGroups.browser.emitFrame({ ...frame(2), tabId: 'tab-2' }));
   const surface = screen.getByRole('group', { name: '浏览器画面' });
   const send = vi.spyOn(app.api.browser, 'act');
   const tap = (): void => {
@@ -616,8 +616,8 @@ it('新标签帧到达但尚未绘制时继续暂停输入，绘制确认后才�
 });
 
 it('点击回执确认远端编辑焦点后才启用软键盘，工具条按钮可手动唤起', async () => {
-  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.m5b.browser.seed(twoTabs); } });
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   let release: (() => void) | undefined;
   vi.spyOn(app.api.browser, 'act').mockImplementation(async () => {
     await new Promise<void>((resolve) => { release = resolve; });
@@ -640,21 +640,21 @@ it('点击回执确认远端编辑焦点后才启用软键盘，工具条按钮�
 
 it('导航后地址栏更新，输入中的草稿保留到失焦；加载时刷新换成停止', async () => {
   const app = await renderApp({ hash: '#/browser', setup(fake) {
-    fake.control.m5b.browser.seed({ open: true, url: 'https://example.com/', activeTabId: 'tab-1' });
+    fake.control.toolGroups.browser.seed({ open: true, url: 'https://example.com/', activeTabId: 'tab-1' });
   } });
   const address = await screen.findByRole('textbox', { name: '地址栏' });
-  act(() => app.control.m5b.browser.seed({ url: 'https://example.com/redirect', loading: true }));
+  act(() => app.control.toolGroups.browser.seed({ url: 'https://example.com/redirect', loading: true }));
   expect((address as HTMLInputElement).value).toBe('https://example.com/redirect');
   fireEvent.click(screen.getByRole('button', { name: '停止加载' }));
-  await waitFor(() => expect(app.control.m5b.browser.actions).toContainEqual({ kind: 'stop' }));
-  act(() => app.control.m5b.browser.emitFrame(frame(1)));
+  await waitFor(() => expect(app.control.toolGroups.browser.actions).toContainEqual({ kind: 'stop' }));
+  act(() => app.control.toolGroups.browser.emitFrame(frame(1)));
   const surface = screen.getByRole('group', { name: '浏览器画面' });
   touch(surface, 'pointerdown', 50, 50);
   touch(surface, 'pointerup', 50, 50);
   act(() => address.focus());
   expect(document.activeElement).toBe(address);
   fireEvent.change(address, { target: { value: 'https://draft.example/' } });
-  act(() => app.control.m5b.browser.seed({ url: 'https://example.com/last', loading: false }));
+  act(() => app.control.toolGroups.browser.seed({ url: 'https://example.com/last', loading: false }));
   expect((address as HTMLInputElement).value).toBe('https://draft.example/');
   fireEvent.blur(address);
   expect((address as HTMLInputElement).value).toBe('https://example.com/last');
@@ -698,7 +698,7 @@ it('初始画面尺寸和 DPR 传到流，窗口变化防抖 300ms 后才替换�
 
 it('导航还没返回时停止按钮立即发送，不排在导航后面', async () => {
   const app = await renderApp({ hash: '#/browser', setup(fake) {
-    fake.control.m5b.browser.seed({ open: true, activeTabId: 'tab-1', url: 'https://example.com/' });
+    fake.control.toolGroups.browser.seed({ open: true, activeTabId: 'tab-1', url: 'https://example.com/' });
   } });
   let release: (() => void) | undefined;
   vi.spyOn(app.api.browser, 'open').mockImplementation(async () => {
@@ -708,10 +708,10 @@ it('导航还没返回时停止按钮立即发送，不排在导航后面', asyn
   const address = screen.getByRole('textbox', { name: '地址栏' });
   fireEvent.change(address, { target: { value: 'https://example.com/slow' } });
   await act(async () => { fireEvent.keyDown(address, { key: 'Enter' }); });
-  act(() => app.control.m5b.browser.seed({ loading: true }));
+  act(() => app.control.toolGroups.browser.seed({ loading: true }));
   try {
     fireEvent.click(screen.getByRole('button', { name: '停止加载' }));
-    await waitFor(() => expect(app.control.m5b.browser.actions).toContainEqual({ kind: 'stop' }));
+    await waitFor(() => expect(app.control.toolGroups.browser.actions).toContainEqual({ kind: 'stop' }));
   } finally {
     await act(async () => release?.());
   }

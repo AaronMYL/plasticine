@@ -5,7 +5,7 @@
 import { Type, type Static } from 'typebox';
 import type { ContactMessage, MemoryJob, MemoryJobResult } from '../../../shared/state.ts';
 import type { StateService } from '../../state/index.ts';
-import { askJson, type BookModel } from '../../books/book-model.ts';
+import { askJson, type BookModel } from '../../books/index.ts';
 import { addLine } from './memory-doc-writes.ts';
 
 /** 往回看多久进来的话。 */

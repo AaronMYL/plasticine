@@ -17,6 +17,7 @@ function useRead<T>(url: string, parse: (text: string, url: string) => T): [Load
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), READ_TIMEOUT_MS);
     setState({ kind: 'loading' });
+    // 例外：取的是静态文件，不是本体的接口，不经 api/。
     fetch(url, { cache: 'no-store', signal: controller.signal }).then(async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       setState({ kind: 'ready', value: parse(await response.text(), url) });

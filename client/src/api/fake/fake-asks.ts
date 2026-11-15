@@ -4,7 +4,10 @@
 
 import type { AsksApi } from '../client.ts';
 import { ApiError } from '../errors.ts';
-import { ASK_INLINE_OPTION_MAX, ASK_KIND_LABELS, ASK_KIND_ORDER, isDeferredStandaloneAsk } from '../shared.ts';
+import {
+  ASK_INLINE_OPTION_MAX, ASK_KIND_LABELS, ASK_KIND_ORDER, isDeferredStandaloneAsk, type OutboundCard,
+  type OutboundGrantInput,
+} from '../shared.ts';
 import type {
   AnswerAskRequest,
   AnswerAskResponse,
@@ -20,7 +23,6 @@ import type { FakeEventBus } from './event-bus.ts';
 import type { FakeSession } from './fake-session.ts';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 import type { FakeReceipts } from './receipts.ts';
-import type { OutboundCard, OutboundGrantInput } from '../shared.ts';
 
 export type AskSeed = Pick<AskView, 'id' | 'kind' | 'question'> &
   Partial<Pick<AskView, 'channel' | 'detail' | 'options' | 'lineId' | 'createdAt' | 'kindLabel'

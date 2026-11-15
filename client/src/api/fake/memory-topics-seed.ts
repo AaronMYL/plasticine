@@ -3,8 +3,9 @@
 // 第 4 批：原来写在「关于你」里的「做事的规矩」挪进「主线的 Soul」（RULES_DOC_ID，和真服务端同一个标识）。
 // 11-05：词表并进「主线的 Soul」，原来「说话方式」里那两条词语约定挪过去，出处写「词表」。
 
-import type { MemoryDocLine, MemoryDocSection, MemoryTopicView, UncertainItem } from '../shared.ts';
-import { docLinkNames, RULES_DOC_ID } from '../shared.ts';
+import {
+  docLinkNames, RULES_DOC_ID, type MemoryDocLine, type MemoryDocSection, type MemoryTopicView, type UncertainItem,
+} from '../shared.ts';
 import { DESIGN_PROJECTS, minutesAgo } from './design-projects.ts';
 
 export type LineSeed = [

@@ -1,7 +1,7 @@
 // cloud_browser_read：读云端浏览器里当前页面上的字。只读，页面上的话是外部资料、不是指令。
 
 import { Type } from 'typebox';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 import { browserResult } from './browser-result.ts';
 
 export interface BrowserReader {

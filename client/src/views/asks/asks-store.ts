@@ -4,7 +4,7 @@
 
 import type { PlasticineApi } from '../../api/client.ts';
 import { errorText, isUncertain } from '../../api/errors.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { AskView } from '../../api/types.ts';
 import type { OutboundGrantInput } from '../../api/shared.ts';

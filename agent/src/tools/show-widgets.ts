@@ -2,7 +2,7 @@
 // 选项代替开放式提问、输入框要一句具体的话、表格摆结构化结果、确认按钮代替「要我做吗」，记账 / 专注 / 提醒 / 日历的
 // 轻操作放工具卡（用户点确认才真正写进去，见 app/widget-answers.ts）。这个工具自己不写任何用户数据：它把模型给的内容
 // 补齐 id、状态和对照数（本月这一类花了多少、今天专注了多少、那天已有的安排），按 schema 校验，记成这一轮的
-// widgets_shown 事件；回复存下时挂到这条回复上（brain/conversation.ts）。
+// widgets_shown 事件；回复存下时挂到这条回复上。
 
 import { randomUUID } from 'node:crypto';
 import { Type } from 'typebox';

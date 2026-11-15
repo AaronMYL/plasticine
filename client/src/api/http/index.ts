@@ -31,7 +31,7 @@ import { HttpDevices } from './devices.ts';
 import { HttpEvents, type CreateEventSource } from './events.ts';
 import { HttpFeed } from './feed.ts';
 import { LocalEvents } from './local-events.ts';
-import { createM5bHttp } from './m5b.ts';
+import { createToolGroupHttp } from './tool-groups.ts';
 import { HttpMemory } from './memory.ts';
 import { HttpNotes } from './notes.ts';
 import { HttpPush } from './push.ts';
@@ -110,7 +110,7 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     today: new HttpToday(transport),
     feed: new HttpFeed(transport),
     nodes: new HttpNodes(transport),
-    ...createM5bHttp(transport),
+    ...createToolGroupHttp(transport),
     ...createThingsHttp(transport),
     ...createSpacesHttp(transport),
     contacts: new HttpContacts(transport),

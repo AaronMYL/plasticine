@@ -45,7 +45,7 @@ import { FakeMemoryTopics } from './fake-memory-topics.ts';
 import { FakeSpaces } from './fake-spaces.ts';
 import { createFakeLibrary } from './fake-library.ts';
 import { FaultPlan } from './faults.ts';
-import { createFakeM5b, seedM5b, type FakeM5bControl } from './fake-m5b.ts';
+import { createFakeToolGroup, seedToolGroup, type FakeToolGroupControl } from './fake-tool-groups.ts';
 import { FakeReceipts } from './receipts.ts';
 import { seedNotes } from './seed.ts';
 import { FakeBookmarks } from './fake-bookmarks.ts';
@@ -123,7 +123,7 @@ export interface FakeControl {
   bus: FakeEventBus;
   faults: FaultPlan;
   /** M5 乙路：记账、站内信、工具组、文件、浏览器、技能。 */
-  m5b: FakeM5bControl;
+  toolGroups: FakeToolGroupControl;
   /** 付款截图记账草案（第二批：每周汇总的种子）。 */
   moneyDrafts: FakeMoneyDrafts;
   /** 第 113 条：联系人、跨用户任务、网络账号、对外可见。 */
@@ -277,8 +277,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   addMateSoul = (mateId, text) => souls.ensure(mateId, text);
   const spaces = new FakeSpaces({ session, receipts, now, bus, dream: () => memoryTopics.currentDream() });
   const nodes = new FakeNodes({ session, bus, receipts, faults, now });
-  const m5b = createFakeM5b({ session, bus, receipts, notes, now });
-  m5b.control.browser.setArchive(async (page) => {
+  const toolGroups = createFakeToolGroup({ session, bus, receipts, notes, now });
+  toolGroups.control.browser.setArchive(async (page) => {
     const existing = spaces.findBySourceUrl(page.url, 'webarchive');
     if (existing?.deletedAt != null) throw new Error('这个网址的归档已删除，请先恢复。');
     const id = spaces.ensureGenerated({ id: existing?.id ?? `web-${encodeURIComponent(page.url)}`,
@@ -286,14 +286,14 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       html: renderWebArchive(page, [], now()) }, true);
     return { space: await spaces.spaces.get(id) };
   });
-  const moneyDrafts = new FakeMoneyDrafts({ session, bus, receipts, now, attachments, asks, money: m5b.control.money });
+  const moneyDrafts = new FakeMoneyDrafts({ session, bus, receipts, now, attachments, asks, money: toolGroups.control.money });
   const signed = new FakeSigned({ session, receipts, agreements, asks, notes, backups, memoryTopics,
     nodes, faults, moneyDrafts });
-  signed.setToolGroups(m5b.control.toolGroups);
+  signed.setToolGroups(toolGroups.control.toolGroups);
   const systems = new FakeSystems(session);
   const networkAttachments = new FakeNetworkAttachments(session, receipts,
     (thread, message) => contacts.retryMessage(thread, message));
-  const contacts = new FakeContacts({ session, bus, receipts, inbox: m5b.control.inbox, now,
+  const contacts = new FakeContacts({ session, bus, receipts, inbox: toolGroups.control.inbox, now,
     replyMs: options.streamStepMs > 0 ? CONTACT_REPLY_MS : 0,
     attachments: (ids, thread, message) => networkAttachments.bind(ids, thread, message) });
   const networkTasks = new FakeNetworkTasks({ session, receipts, contacts, lines, now });
@@ -311,16 +311,16 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'calendar-mac') {
       nodes.addNode('家里的 Mac', ['file_list', 'file_read', 'calendar_list', 'calendar_create']);
     }
-    seedM5b(m5b.control, now());
+    seedToolGroup(toolGroups.control, now());
     // 第二批「记账直接记」：这周四张付款截图直接入账，新商户那笔标「待你看一眼」。
     const hours = (count: number) => new Date(now().getTime() - count * 3_600_000).toISOString();
-    m5b.control.money.seed({ id: 'pay_demo_1', amountCents: 2800, merchant: '楼下面馆', categoryId: 'food',
+    toolGroups.control.money.seed({ id: 'pay_demo_1', amountCents: 2800, merchant: '楼下面馆', categoryId: 'food',
       occurredAt: hours(5), origin: 'ai' });
-    m5b.control.money.seed({ id: 'pay_demo_2', amountCents: 4590, merchant: '盒马', categoryId: 'daily',
+    toolGroups.control.money.seed({ id: 'pay_demo_2', amountCents: 4590, merchant: '盒马', categoryId: 'daily',
       occurredAt: hours(30), origin: 'ai' });
-    m5b.control.money.seed({ id: 'pay_demo_3', amountCents: 1600, merchant: '滴滴出行', categoryId: 'traffic',
+    toolGroups.control.money.seed({ id: 'pay_demo_3', amountCents: 1600, merchant: '滴滴出行', categoryId: 'traffic',
       occurredAt: hours(52), origin: 'ai' });
-    m5b.control.money.seed({ id: 'pay_demo_4', amountCents: 12800, merchant: '一间新开的书店', categoryId: 'study',
+    toolGroups.control.money.seed({ id: 'pay_demo_4', amountCents: 12800, merchant: '一间新开的书店', categoryId: 'study',
       occurredAt: hours(76), origin: 'ai', review: true });
     moneyDrafts.seedWeek(4, 1);
     session.signInForDevelopment('本地开发');
@@ -345,10 +345,10 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     }
     spaces.seed();
     // 技能页（11-13）：随应用的两个，加一个 Plasticine 整理的。
-    m5b.control.skills.seedPage();
+    toolGroups.control.skills.seedPage();
     const netScene = netSceneOf(typeof window === 'undefined' ? '' : window.location.search);
     if (netScene === null) {
-      seedContacts({ contacts, inbox: m5b.control.inbox, network, visibility }, now());
+      seedContacts({ contacts, inbox: toolGroups.control.inbox, network, visibility }, now());
     } else {
       seedNetworkScene({ contacts, network }, now(), netScene);
     }
@@ -395,10 +395,10 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     memoryTopics,
     spaces: spaces.spaces,
     subscriptions: spaces.subscriptions,
-    library: createFakeLibrary({ session, spaces, books, files: m5b.control.files }),
+    library: createFakeLibrary({ session, spaces, books, files: toolGroups.control.files }),
     feed,
     nodes,
-    ...m5b.api,
+    ...toolGroups.api,
     contacts,
     networkTasks,
     groupTasks: contacts.groupChats,
@@ -438,7 +438,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       nodes,
       bus,
       faults,
-      m5b: m5b.control,
+      toolGroups: toolGroups.control,
       contacts,
       network,
       visibility,

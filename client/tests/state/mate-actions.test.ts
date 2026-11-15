@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { ApiError } from '../../src/api/errors.ts';
 import { createFakeApi } from '../../src/api/fake/index.ts';
-import { EventsHub } from '../../src/api/events-hub.ts';
+import { EventsHub } from '../../src/state/events-hub.ts';
 import { ActionOps } from '../../src/state/action-ops.ts';
 import { MatesStore } from '../../src/views/mates/mates-store.ts';
 import { MateActions } from '../../src/views/mates/mate-actions.ts';

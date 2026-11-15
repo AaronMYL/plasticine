@@ -28,13 +28,13 @@ import {
 } from '../api/shared.ts';
 import { MATES_ACTION_REQUEST_SCHEMAS } from './mates-action-requests.ts';
 import { CONTACTS_ACTION_REQUEST_SCHEMAS } from './contacts-action-requests.ts';
-import { M4_ACTION_REQUEST_SCHEMAS } from './m4-action-requests.ts';
-import { M5_ACTION_REQUEST_SCHEMAS } from './m5-action-requests.ts';
-import { M5B_ACTION_REQUEST_SCHEMAS } from './m5b-action-requests.ts';
+import { M4_ACTION_REQUEST_SCHEMAS } from './daily-action-requests.ts';
+import { M5_ACTION_REQUEST_SCHEMAS } from './device-action-requests.ts';
+import { TOOL_GROUP_ACTION_REQUEST_SCHEMAS } from './tool-group-action-requests.ts';
 import type { KeyValueStorage } from './outbox.ts';
 import { Store } from './store.ts';
 
-/** 一个写操作要发的东西：发往哪（任务 / 卡 / …）和请求体（里面带着标识）。M4、M5 的几种在 m4- / m5-action-requests.ts。 */
+/** 一个写操作要发的东西：发往哪（任务 / 卡 / …）和请求体（里面带着标识）。每日和设备的几种在 daily- / device-action-requests.ts。 */
 export const ActionRequestSchema = Type.Union([
   Type.Object({ kind: Type.Literal('soul_change'), body: ChangeSoulRequestSchema }),
   Type.Object({ kind: Type.Literal('backup_create'), body: CreateBackupRequestSchema }),
@@ -60,7 +60,7 @@ export const ActionRequestSchema = Type.Union([
   Type.Object({ kind: Type.Literal('ask_about'), askId: Type.String(), body: AskAboutRequestSchema }),
   ...M4_ACTION_REQUEST_SCHEMAS,
   ...M5_ACTION_REQUEST_SCHEMAS,
-  ...M5B_ACTION_REQUEST_SCHEMAS,
+  ...TOOL_GROUP_ACTION_REQUEST_SCHEMAS,
   ...CONTACTS_ACTION_REQUEST_SCHEMAS,
   ...MATES_ACTION_REQUEST_SCHEMAS,
 ]);

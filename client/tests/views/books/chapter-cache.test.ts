@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { EventListener } from '../../../src/api/events-hub.ts';
+import type { EventListener } from '../../../src/state/events-hub.ts';
 import type { BookChapterResponse } from '../../../src/api/shared.ts';
 import { ChapterCache } from '../../../src/views/books/chapter-cache.ts';
 

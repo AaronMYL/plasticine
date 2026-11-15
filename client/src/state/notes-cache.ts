@@ -1,6 +1,6 @@
 // 正文与列表的共享读缓存：快照立即可读，过期或收到事件才后台核实；草稿仍由 NoteDrafts 管。
 import type { NotesApi } from '../api/client.ts';
-import type { EventsHub } from '../api/events-hub.ts';
+import type { EventsHub } from './events-hub.ts';
 import { ApiError, errorText } from '../api/errors.ts';
 import type { LiveEvent, NoteMetaView, NoteSearch, NoteView } from '../api/types.ts';
 import { clearStoredNotes, persistNotes, restoreNotes } from './note-cache-storage.ts';

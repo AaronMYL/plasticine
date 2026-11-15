@@ -2,8 +2,7 @@
 // 浏览器导出的书签 HTML（Netscape 格式，Chrome 和 Safari 都是它）怎么读、原来的文件夹对到哪个项目。
 // 都是纯函数：服务端和假接口用同一份，推法和读法不会两边各一套。
 
-import type { BookmarkKind } from './state-bookmarks.ts';
-import { BOOKMARK_TITLE_MAX } from './state-bookmarks.ts';
+import { BOOKMARK_TITLE_MAX, type BookmarkKind } from './state-bookmarks.ts';
 
 /** 同一个东西的键：网页按规整过的网址（主机名小写、去掉末尾的 #），页面按 #/… 地址原样。 */
 export function bookmarkKey(kind: BookmarkKind, target: string | null): string | null {

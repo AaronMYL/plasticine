@@ -1,6 +1,6 @@
 // 往外送的 JSON 整份清洗链接（规则在 util/link-clean.ts）：复制 JSON，不回写库、回执缓存。11-14 起只用在往外送的地方
 // （推送、发给联系人和群组的信、不是他自己设备的请求），回给他自己设备的不清洗。
-import { cleanOutboundText } from '../util/link-clean.ts';
+import { cleanOutboundText } from '../util/index.ts';
 
 export { cleanOutboundText };
 

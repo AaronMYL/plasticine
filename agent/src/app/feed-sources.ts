@@ -15,7 +15,7 @@ import {
 import { redditFeedOf, redditFeedUrl, redditLabel, subredditOf } from '../../shared/reddit.ts';
 import type { FeedSource, FeedSourcePatch } from '../../shared/state.ts';
 import { DailyError } from '../daily/index.ts';
-import { failureText } from '../util/log.ts';
+import { failureText } from '../util/index.ts';
 import { StateError } from '../state/index.ts';
 import { ApiError } from './api-error.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';

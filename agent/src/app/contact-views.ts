@@ -15,8 +15,9 @@ import {
 } from '../../shared/api/index.ts';
 import { TIERS, type Tier } from '../../shared/api/visibility.ts';
 import type { Contact, ContactMessage, NetworkTask, SaidLog } from '../../shared/state.ts';
-import { safetyCode, taskStage, taskWaiting } from '../network/index.ts';
-import { contactMessageKey, foldReactions, type ReactionView } from '../network/contact-edits.ts';
+import {
+  contactMessageKey, foldReactions, safetyCode, taskStage, taskWaiting, type ReactionView,
+} from '../network/index.ts';
 import { contactMemory } from './contact-memory-view.ts';
 import type { StateService } from '../state/index.ts';
 

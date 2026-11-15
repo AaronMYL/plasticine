@@ -1,4 +1,8 @@
-import type { NetworkAttachmentView } from '../shared.ts';
+import type {
+  ContactDetail, ContactListResponse, ContactLookupResponse, ContactMemory, ContactMessagesResponse, ContactMessageView,
+  ContactRelation, ContactRow, ContactThreadItem, GroupTaskView, MailBodyResponse, MemberFace, NetworkAttachmentView,
+  NetworkTaskView,
+} from '../shared.ts';
 // 假联系人（第 113 条）：网络上的人在这里存着（聊天、任务卡、代你说过、安全码），邮件和系统来源从假站内信归并出来。
 // 写操作按 requestId 幂等（FakeReceipts），变了推 contact.item（那一项的新样子）和 contacts.changed（等你数、未读数），
 // 和真服务端的两种 SSE 一样。本地开发时对方的 Plasticine 会过一会儿回一句、接下发出去的任务（replyMs > 0）；测试里
@@ -23,21 +27,6 @@ import type {
 } from '../contacts-client.ts';
 import { fakeMemory, messageIn, replyLine, withReaction } from './fake-contact-edits.ts';
 import { ApiError, ConflictError } from '../errors.ts';
-import {
-  type ContactDetail,
-  type ContactListResponse,
-  type ContactMemory,
-  type ContactLookupResponse,
-  type GroupTaskView,
-  type MemberFace,
-  type ContactMessagesResponse,
-  type ContactMessageView,
-  type ContactRelation,
-  type ContactRow,
-  type ContactThreadItem,
-  type MailBodyResponse,
-  type NetworkTaskView,
-} from '../shared.ts';
 import {
   page,
   personDetail,

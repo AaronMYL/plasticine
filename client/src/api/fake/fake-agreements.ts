@@ -3,9 +3,9 @@
 
 import type { AgreementsApi } from '../client.ts';
 import { ApiError, ConflictError } from '../errors.ts';
-import { COGNITION_PAGE_DEFAULT } from '../shared.ts';
-import type { CreateTermRequest, ProposeTermRequest, TermDecodingList } from '../shared.ts';
-import { proposedAgreementText } from '../shared.ts';
+import {
+  COGNITION_PAGE_DEFAULT, proposedAgreementText, type CreateTermRequest, type ProposeTermRequest, type TermDecodingList,
+} from '../shared.ts';
 import type {
   AgreementDetail,
   AgreementListQuery,

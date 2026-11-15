@@ -1,7 +1,7 @@
 import { waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { networkError } from '../../../src/api/errors.ts';
-import { EventsHub } from '../../../src/api/events-hub.ts';
+import { EventsHub } from '../../../src/state/events-hub.ts';
 import { createFakeApi } from '../../../src/api/fake/index.ts';
 import { ActionOps } from '../../../src/state/action-ops.ts';
 import { FeedUi } from '../../../src/state/feed-ui.ts';

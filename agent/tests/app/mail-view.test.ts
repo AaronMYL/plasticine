@@ -102,7 +102,7 @@ test('图片代理：不要会话、凭签名；签名不对或过期 403，指�
 
     const tampered = proxied.replace(/u=[^&]+/, `u=${encodeURIComponent('http://meta.test/latest/')}`);
     assert.equal((await call(t, 'GET', tampered)).status, 403);
-    const signer = t.app.deps.m5b.mailImages.signer;
+    const signer = t.app.deps.toolGroups.mailImages.signer;
     const inside = await call(t, 'GET', signer.url('http://meta.test/latest/meta-data/'));
     assert.equal(inside.status, 502);
     assert.equal(json(inside)['code'], 'upstream_failed');

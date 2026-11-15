@@ -8,8 +8,9 @@ import { useMateMentions } from '../mates/mate-mentions.tsx';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
-import { CONVERSATION_ATTACHMENT_MAX_COUNT, LINE_MESSAGE_MAX_CHARS, quoteLimitMessage, type QueuedMessageView }
-  from '../../api/shared.ts';
+import {
+  CONVERSATION_ATTACHMENT_MAX_COUNT, LINE_MESSAGE_MAX_CHARS, quoteLimitMessage, splitReply, type QueuedMessageView,
+} from '../../api/shared.ts';
 import { useClientState } from '../../state/context.tsx';
 import { useLive } from '../../live.tsx';
 import { QuotePreview } from '../../primitives/message/quote-preview.tsx';
@@ -22,7 +23,6 @@ import { useCurrentTab } from '../../shell/current-tab-context.ts';
 import { routeHash } from '../../shell/routes.ts';
 import { currentPageReference } from '../conversation/current-page-reference.ts';
 import { capturePageSnapshot, withSnapshot } from '../conversation/page-snapshot.ts';
-import { splitReply } from '../../api/shared.ts';
 import { useComposerAttachments, useConversationUi } from './conversation-ui-context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { AttachmentChips, AttachmentComposer, AttachmentError } from '../conversation/attachment-composer.tsx';

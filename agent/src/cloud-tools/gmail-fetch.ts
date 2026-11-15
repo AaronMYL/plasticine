@@ -3,7 +3,7 @@
 // multipart/related 再解析（附件不下载，没有原信）。
 
 import { randomUUID } from 'node:crypto';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { mailParts, type MailPartPlan } from './mail-bodystructure.ts';
 import { parseMail, type ParsedMail } from './mail-parse.ts';
 import type { ImapResponse } from './mail-protocol.ts';

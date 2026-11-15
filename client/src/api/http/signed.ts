@@ -18,8 +18,7 @@ import {
 } from '../shared.ts';
 import { SIGNED_METHOD, signedPath, type SignedResult, type SignedSend, type SignedTarget } from '../signed-targets.ts';
 import { conflictWith } from './conflict.ts';
-import type { Transport } from './transport.ts';
-import type { RequestSpec } from './transport.ts';
+import type { RequestSpec, Transport } from './transport.ts';
 import type { TSchema } from 'typebox';
 
 const WHAT: Readonly<Record<SignedSend['target']['kind'], string>> = {

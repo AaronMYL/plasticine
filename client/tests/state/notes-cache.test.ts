@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { EventListener } from '../../src/api/events-hub.ts';
+import type { EventListener } from '../../src/state/events-hub.ts';
 import { ApiError, unauthorizedError } from '../../src/api/errors.ts';
 import { toMeta } from '../../src/api/note-meta.ts';
 import { NotesCache, NOTE_CACHE_FRESH_MS, noteListKey } from '../../src/state/notes-cache.ts';

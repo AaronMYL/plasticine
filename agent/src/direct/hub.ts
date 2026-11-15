@@ -5,7 +5,7 @@
 import { createRequire } from 'node:module';
 import { randomBytes } from 'node:crypto';
 import { DIRECT_CHANNEL_LABEL, DIRECT_STUN_URLS } from '../../shared/api/direct.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { DirectChannelServer, type DirectPipe, type DirectTarget } from './channel.ts';
 
 /** werift 里用到的那几样（测试里换成假的也行）。 */

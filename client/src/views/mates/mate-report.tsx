@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import type { LineMessageView } from '../../api/shared.ts';
-import { MAIN_LINE_ALIAS } from '../../api/shared.ts';
+import { MAIN_LINE_ALIAS, type LineMessageView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { QuoteSelection } from '../../primitives/message/quote-selection.tsx';

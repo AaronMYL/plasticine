@@ -7,9 +7,10 @@ import {
   BookReadParameters,
   BookSearchParameters,
 } from '../../shared/book-tools.ts';
-import { chapterPlainText, searchBook } from '../reading/index.ts';
+import { chapterPlainText } from './book-plain-text.ts';
+import { searchBook } from './book-search.ts';
 import type { StateService } from '../state/index.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 
 // 一次最多读回 2.4 万字：够一章的大部分，再长就分段读（from）。
 const READ_CHARS = 24_000;

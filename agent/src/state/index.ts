@@ -70,3 +70,4 @@ export type { KernelSettingsStores, StoredCredential } from './kernel-settings.t
 export { prepareOfflineRestore } from './backup-recovery.ts';
 export type { CachedFavicon, FaviconStore } from './favicons.ts';
 export type { WebTabsSnapshot, WebTabsStateStore } from './web-tabs.ts';
+export type { SoulRevisionRow, SoulRow } from './souls.ts';

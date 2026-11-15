@@ -7,7 +7,7 @@ import { MEMORY_CONFLICTS_PATH, ResolveConflictRequestSchema,
   type ConflictLineView, type ConflictListResponse, type ConflictView } from '../../shared/api/memory-conflicts.ts';
 import { comparePriority, memorySource, priorityReason } from '../../shared/memory-priority.ts';
 import type { MemoryConflict, MemoryDoc, MemoryLine } from '../../shared/state.ts';
-import { retireLine } from '../memory/docs/memory-doc-writes.ts';
+import { retireLine } from '../memory/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
 import { param, requireAuth, requireUserAuth, type RequestContext, type Route } from './context.ts';
 import { readJsonBody } from './http.ts';

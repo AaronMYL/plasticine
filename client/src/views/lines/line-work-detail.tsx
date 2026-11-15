@@ -2,12 +2,11 @@
 
 import { useState, type ReactNode } from 'react';
 import type { NetworkTaskView } from '../../api/shared.ts';
-import { useTimeZone } from '../../live.tsx';
+import { useLive, useTimeZone } from '../../live.tsx';
 import { Markdown } from '../../primitives/message/markdown.tsx';
 import { AiMark, StatusGlyph } from '../../shell/glyph.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import type { Route } from '../../shell/routes.ts';
-import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { lineElapsed, useNow } from './line-time.ts';

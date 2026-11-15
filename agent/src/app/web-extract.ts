@@ -1,6 +1,7 @@
 import { WebArchiveRequestSchema, WebExtractInputSchema } from '../../shared/api/web-extract.ts';
-import { extractWebPage, prepareWebArchive, publishWebArchive, assertWebArchiveDestination, WebExtractError }
-  from '../tools/index.ts';
+import {
+  extractWebPage, prepareWebArchive, publishWebArchive, assertWebArchiveDestination, WebExtractError,
+} from '../web/index.ts';
 import { MailImageError } from '../cloud-tools/index.ts';
 import { ApiError } from './api-error.ts';
 import { requireAuth, type Reply, type RequestContext } from './context.ts';
@@ -39,7 +40,7 @@ export async function archiveBrowserPage(context: RequestContext): Promise<Reply
   return cancelOnClose(context, async (signal) => {
     assertWebArchiveDestination(context.deps.state, input.url);
     const prepared = await prepareWebArchive(input,
-      (url, active) => context.deps.m5b.mailImages.fetcher.get(url, active), signal);
+      (url, active) => context.deps.toolGroups.mailImages.fetcher.get(url, active), signal);
     return idempotent(context, input.requestId, () => ({ status: 200,
       body: { space: spaceView(context.deps.state,
         publishWebArchive(context.deps.state, prepared, context.deps.now())) },

@@ -4,13 +4,12 @@
 
 import type { AskDesk } from '../attention/index.ts';
 import type { PermissionGate, Tool, ToolRegistry } from '../tools/index.ts';
-import { adaptLegacyTool, attachmentReadTool, conversationSearchTool, forgetTool, LineKernel, legacySayings,
-  rememberTool,
-  serverCommandTool, type Compactor, type KernelTool, type Later, type ModelSource, type SubmitHoldPort }
-  from '../lines/index.ts';
+import {
+  adaptLegacyTool, attachmentReadTool, conversationSearchTool, effectiveLimit, forgetTool, legacySayings, LineKernel,
+  machineLoad, readWorkLimit, rememberTool, serverCommandTool, type Compactor, type DriveOutcome, type KernelOptions,
+  type KernelTool, type Later, type MachineLoad, type ModelSource, type SubmitHoldPort,
+} from '../lines/index.ts';
 import type { MessageWidget } from '../../shared/api/message-widgets.ts';
-import type { DriveOutcome, KernelOptions } from '../lines/index.ts';
-import { effectiveLimit, machineLoad, readWorkLimit, type MachineLoad } from '../lines/capacity.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import type { EventHub } from './event-hub.ts';
 

@@ -7,7 +7,7 @@ import { COMPOSE_PREDICT_TIMEOUT_MS, type ComposePredictView } from '../../share
 import type { TextDeltas, TextModels } from '../kernel/index.ts';
 import { predictHabits, recordPrediction } from './writing.ts';
 import type { StateService } from '../state/index.ts';
-import { PredictText } from '../notes/note-overlap.ts';
+import { PredictText } from '../notes/index.ts';
 
 /** 带最近这么多句；每句最多这么长。 */
 export const COMPOSE_TURNS = 16;

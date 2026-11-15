@@ -6,8 +6,7 @@ import type { ContactListResponse, ContactRow } from '../../shared/api/index.ts'
 import type { InboxMessage } from '../../shared/state.ts';
 import type { NetworkChange } from '../network/index.ts';
 import type { StateService } from '../state/index.ts';
-import { inboxContactId, inboxMessageItem } from './contact-mail.ts';
-import { inboxRows } from './contact-mail.ts';
+import { inboxContactId, inboxMessageItem, inboxRows } from './contact-mail.ts';
 import { listed, networkTaskView, personRow, threadItemFor, type TaskActivity, type TaskExecution }
   from './contact-views.ts';
 import type { EventHub } from './event-hub.ts';

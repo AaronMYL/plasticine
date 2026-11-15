@@ -15,7 +15,8 @@ import {
   type UploadBookResponse,
 } from '../../shared/api/index.ts';
 import { BookParseError } from '../books/index.ts';
-import { importBook, searchBook } from '../reading/index.ts';
+import { importBook } from '../books/index.ts';
+import { searchBook } from '../books/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
 import type { BookRecord } from '../../shared/state.ts';
 import { ApiError, notFoundError } from './api-error.ts';

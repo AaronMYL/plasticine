@@ -1,8 +1,7 @@
 // 把 books-seed.ts 的示例装进假图书馆：书、进度、标注、Plasticine 的大纲和重点，再在主线里放两轮
 // 引用过《浮生六记》的讨论（「讨论」tab 和对话栏里的书引用片都从这里来）。
 
-import { withResolvedQuotes, type LineMessageView } from '../shared.ts';
-import type { BookAnnotationView, BookProgressView } from '../shared.ts';
+import { withResolvedQuotes, type BookAnnotationView, type BookProgressView, type LineMessageView } from '../shared.ts';
 import { FUSHENG_ID, SEED_ANNOTATIONS, SEED_BOOKS, SEED_KEY_POINTS, SEED_OUTLINE } from './books-seed.ts';
 import type { FakeBooks } from './fake-books.ts';
 import { anchorIn, chapterOf, type FakeChapter } from './fake-book-text.ts';

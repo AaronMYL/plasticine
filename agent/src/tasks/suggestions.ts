@@ -6,7 +6,7 @@ import type { LineInputOrigin } from '../../shared/api/index.ts';
 import { STANDING_PROJECT_IDS, type Suggestion, type SuggestionInput } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { ScheduleError } from './schedules.ts';
-import { heldBack, recordSuggestion, settleSuggestion, suggestionTopic } from '../loop/suggestions.ts';
+import { heldBack, recordSuggestion, settleSuggestion, suggestionTopic } from '../loop/index.ts';
 
 export type SuggestionState = Pick<StateService, 'suggestions' | 'projects' | 'transaction'>
   & Partial<Pick<StateService, 'loop'>>;

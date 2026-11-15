@@ -6,7 +6,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { TextModels } from '../kernel/index.ts';
 import type { StateService, VideoWorkRow } from '../state/index.ts';
-import { safeLog } from '../util/log.ts';
+import { safeLog } from '../util/index.ts';
 import { createVideoDigester } from './digest.ts';
 import { DouyinFavorites } from './douyin.ts';
 import type { TranscriberStatus } from '../../shared/api/video.ts';

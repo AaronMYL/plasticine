@@ -1,24 +1,14 @@
-import { BatchResponseSchema, LIBRARY_BATCH_PATH, LIBRARY_EMPTY_PATH } from '../shared.ts';
+import {
+  BatchResponseSchema, LIBRARY_BATCH_PATH, LIBRARY_EMPTY_PATH, LIBRARY_TRASH_PATH, LibraryTrashResponseSchema,
+  REVIEW_PATH, ReviewSummarySchema, RunSubscriptionResponseSchema, SPACE_LIST_STANDALONE_PARAM, SpaceListResponseSchema,
+  SPACES_PATH, SpaceVersionsResponseSchema, SpaceViewSchema, SubscriptionListResponseSchema, SUBSCRIPTIONS_PATH,
+  SubscriptionViewSchema,
+} from '../shared.ts';
 // 空间与订阅的真实现（第 6、7 条）：按 shared/api/spaces.ts 的路径发请求、按同一份 schema 校验回答。
 
 import type { LibraryApi, SpacesApi, SubscriptionsApi } from '../spaces-client.ts';
 import { Type } from 'typebox';
 import { ApiError } from '../errors.ts';
-import {
-  LIBRARY_TRASH_PATH,
-  LibraryTrashResponseSchema,
-  REVIEW_PATH,
-  ReviewSummarySchema,
-  RunSubscriptionResponseSchema,
-  SPACE_LIST_STANDALONE_PARAM,
-  SPACES_PATH,
-  SpaceListResponseSchema,
-  SpaceViewSchema,
-  SpaceVersionsResponseSchema,
-  SUBSCRIPTIONS_PATH,
-  SubscriptionListResponseSchema,
-  SubscriptionViewSchema,
-} from '../shared.ts';
 import type { Transport } from './transport.ts';
 
 const spacePath = (id: string): string => `${SPACES_PATH}/${encodeURIComponent(id)}`;

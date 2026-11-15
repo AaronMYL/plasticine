@@ -13,7 +13,7 @@ import {
 import type { Group, GroupMessage, GroupTask } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { networkTaskView, type TaskActivity, type TaskExecution } from './contact-views.ts';
-import { foldReactions, type ReactionView } from '../network/contact-edits.ts';
+import { foldReactions, type ReactionView } from '../network/index.ts';
 
 /** 群头像拼前 9 个人（1 个 → 一张，2–4 → 2×2，5–9 → 3×3，界面画）。 */
 const FACES_SHOWN = 9;

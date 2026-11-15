@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { createBookTools } from '../../src/tools/index.ts';
-import { anchorQuote } from '../../src/tools/index.ts';
+import { anchorQuote, createBookTools } from '../../src/books/index.ts';
 import type { Tool } from '../../src/tools/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 

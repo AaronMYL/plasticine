@@ -2,8 +2,9 @@
 // 你点了批准也执行不了。
 import { BrowserActionInputSchema } from '../../shared/api/index.ts';
 import { BrowserToolActionSchema } from '../../shared/browser-observation.ts';
-import type { BrowserAction, BrowserView } from './index.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import type { BrowserAction } from './transports.ts';
+import type { BrowserView } from './browser.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 import { browserResult } from './browser-result.ts';
 
 export interface BrowserActor {

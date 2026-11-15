@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { PageTranslator, type GlossaryTerm } from '../../src/tools/index.ts';
+import { PageTranslator, type GlossaryTerm } from '../../src/web/index.ts';
 import { TextModelError, type TextRequest } from '../../src/kernel/index.ts';
 import { hangUntilAborted, memoryState, scriptedText, type TextStep } from '../tools/helpers.ts';
 

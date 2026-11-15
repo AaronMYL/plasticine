@@ -13,13 +13,13 @@ import {
   DeviceActionParamsSchema, PageSubmitHoldSchema, REFUSAL_LAYER_LABELS, SUBMIT_KIND_LABELS, type DeviceActionParams,
 } from '../../shared/api/index.ts';
 import { NODE_ACTION_PURPOSE_MAX_CHARS } from '../../shared/state.ts';
-import {
-  ACTION_TTL_MS, BROWSE_KINDS, proveDeviceAction, splitDeviceImage,
-  type ActionOutcome, type ActionRequest, type DeviceHold, type PlaceChoice, type Refusal,
-} from './index.ts';
-import type { PermissionGate } from '../tools/permission.ts';
-import { ToolFailure, ToolUncertain } from '../tools/failure.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { ACTION_TTL_MS, type ActionOutcome, type ActionRequest } from './actions.ts';
+import { BROWSE_KINDS, type PlaceChoice } from './route.ts';
+import { proveDeviceAction } from './proof.ts';
+import { splitDeviceImage } from './device-images.ts';
+import type { DeviceHold } from './holds.ts';
+import type { Refusal } from './limits.ts';
+import { defineTool, ToolFailure, ToolUncertain, type PermissionGate, type Tool } from '../tools/index.ts';
 
 export const DEVICE_ACTION_TOOL = 'device_action';
 // The tool must wait through the node deadline so the channel can distinguish unsent from uncertain actions.

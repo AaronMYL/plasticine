@@ -9,7 +9,7 @@ import { idempotent } from './idempotency.ts';
 import { checkInput } from './validate.ts';
 
 function services(context: RequestContext): LibraryServices {
-  return { state: context.deps.state, workspace: context.deps.m5b.artifacts.workspace };
+  return { state: context.deps.state, workspace: context.deps.toolGroups.artifacts.workspace };
 }
 
 function changed(context: RequestContext, notes: boolean): void {

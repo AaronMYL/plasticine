@@ -5,7 +5,7 @@
 // 网页推送（iPhone 主屏幕网页、浏览器）走 PushService；桌面客户端收不到网页推送，发一个 notify 事件让界面自己弹。
 
 import type { NotifyEvent, NotifyKind, PushPayload } from '../../shared/api/push.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import type { Presence } from './presence.ts';
 
 /** 同一个群连着来的，间隔在这之内就合成一条。 */

@@ -12,9 +12,9 @@ export async function getLinkPreview(context: RequestContext): Promise<Reply> {
   const close = (): void => gone.abort();
   context.res.once('close', close);
   try {
-    const preview = await context.deps.m5b.linkPreviews.get(query.url, gone.signal);
+    const preview = await context.deps.toolGroups.linkPreviews.get(query.url, gone.signal);
     return { status: 200, body: { ...preview, image: preview.image === null ? null
-      : context.deps.m5b.mailImages.signer.url(preview.image) } };
+      : context.deps.toolGroups.mailImages.signer.url(preview.image) } };
   } catch (cause) {
     if (cause instanceof PublicFetchError) {
       const status = cause.code === 'refused' ? 400 : cause.code === 'timeout' ? 504 : 502;

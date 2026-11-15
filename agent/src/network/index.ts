@@ -38,3 +38,7 @@ export { terminate } from '../../protocol/tunnel-terminator.ts';
 export type { TerminatorOptions } from '../../protocol/tunnel-terminator.ts';
 export { TUNNEL_DIRECTORY, TunnelService } from './tunnel.ts';
 export type { TunnelServiceOptions } from './tunnel.ts';
+export { attachmentText } from './attachments.ts';
+export { contactMessageKey, foldReactions } from './contact-edits.ts';
+export type { ReactionView } from './contact-edits.ts';
+export { registerIdentity } from './register.ts';

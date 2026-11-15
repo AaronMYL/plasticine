@@ -6,7 +6,7 @@ import { OpLines } from '../../primitives/task-row/op-line.tsx';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
-import { LoadNote } from '../m5b/load-note.tsx';
+import { LoadNote } from '../../shell/load-note.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import './tools.css';
@@ -56,15 +56,15 @@ function GroupRow({ group }: { group: ToolGroupView }): ReactNode {
 export const TOOL_GROUPS_NOTE = '关掉的那组，Plasticine 在对话和任务里都用不了。';
 
 export function ToolGroupsView({ note = true }: { note?: boolean }): ReactNode {
-  const { m5b } = useLive();
-  const groups = useStore(m5b.toolGroups.data);
+  const { toolGroups } = useLive();
+  const groups = useStore(toolGroups.toolGroups.data);
   useEffect(() => {
-    m5b.toolGroups.open();
-  }, [m5b.toolGroups]);
+    toolGroups.toolGroups.open();
+  }, [toolGroups.toolGroups]);
   return (
     <div className="tool">
       {note ? <p className="tool-sub">{TOOL_GROUPS_NOTE}</p> : null}
-      <LoadNote resource={groups} what="工具组" onRetry={() => void m5b.toolGroups.reload()} />
+      <LoadNote resource={groups} what="工具组" onRetry={() => void toolGroups.toolGroups.reload()} />
       <ul className="tool-list tool-groups" aria-label="工具组">
         {(groups.value?.groups ?? []).map((group) => (
           <GroupRow key={group.id} group={group} />

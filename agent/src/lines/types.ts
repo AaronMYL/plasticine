@@ -1,12 +1,11 @@
 // 新内核里几处共用的形状：工具怎么声明自己（大白话、硬线）、模型从哪来、定时怎么排。
 
-import type { AgentTool, StreamFn, ThinkingLevel } from '@earendil-works/pi-agent-core';
+import type { AgentTool, AgentToolResult, StreamFn, ThinkingLevel } from '@earendil-works/pi-agent-core';
 import type { Api, AssistantMessage, Context, Model } from '@earendil-works/pi-ai';
 import { HARD_LINES } from '../../shared/act-or-ask.ts';
 import type { LineKind } from '../../shared/api/lines.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
 import type { OutboundResult, OutboundSpec } from '../../shared/outbound.ts';
-import type { AgentToolResult } from '@earendil-works/pi-agent-core';
 
 /** 硬线的五类，和 shared/act-or-ask.ts 的 HARD_LINES 一一对上（顺序相同）。 */
 export const HARD_LINE_KINDS = ['spend', 'outward', 'irreversible', 'permission', 'in_person'] as const;

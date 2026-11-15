@@ -9,10 +9,8 @@ import { DateOnlySchema, MEMORY_LINE_MAX_CHARS, PROJECT_HEALTHS, PROJECT_TODO_TI
   type Project } from '../../shared/state.ts';
 import { PROJECT_HEALTH_LABELS } from '../../shared/api/projects.ts';
 import type { StateService } from '../state/index.ts';
-import { sameThing } from '../memory/curation/memory-curation-ops.ts';
-import { memoryDocView } from '../memory/docs/memory-docs-context.ts';
-import { addLine, ensureProjectDoc, reviseLine } from '../memory/docs/memory-doc-writes.ts';
-import { defineTool, type Tool, type ToolContext } from '../tools/registry.ts';
+import { addLine, ensureProjectDoc, memoryDocView, reviseLine, sameThing } from '../memory/index.ts';
+import { defineTool, type Tool, type ToolContext } from '../tools/index.ts';
 
 const Id = Type.String({ minLength: 1 });
 const Reason = Type.String({ minLength: 1, maxLength: 300 });

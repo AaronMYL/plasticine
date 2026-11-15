@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { rowsFor } from '../../views/messages/message-filter.ts';
+import { rowsFor } from '../../state/message-filter.ts';
 import { focusMemory } from '../../views/contacts/contact-profile-memory.tsx';
 import { MessagesList } from '../../views/messages/messages-list.tsx';
 import { messagesRoute, type Route } from '../routes.ts';

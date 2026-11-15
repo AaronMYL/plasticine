@@ -1,4 +1,7 @@
-import type { NetworkAttachmentView } from '../shared.ts';
+import {
+  GROUP_ID_PREFIX, type ContactDetail, type ContactMessageView, type ContactRow, type ContactThreadItem,
+  type GroupTaskView, type MemberFace, type NetworkAttachmentView, type NetworkTaskView,
+} from '../shared.ts';
 // 假的群聊（2026-11-05 群聊）：群和一对一走同一套联系人接口（id 以 grp- 开头），由假联系人转到这里。群里一句话带说话
 // 的人；@ 某人的 Plasticine 过一会儿由它回一句（本地开发）；群任务卡指给某人或全群谁先接谁做，「我来接」「让 Plasticine
 // 接」立刻接到（假的没有别人抢）。变了推 contact.item 和 contacts.changed，和真服务端一样。
@@ -6,16 +9,6 @@ import type { NetworkAttachmentView } from '../shared.ts';
 import type { ClaimGroupTaskRequest, CreateGroupRequest, CreateNetworkTaskRequest, GroupRequest, GroupTasksApi,
   SendContactMessageRequest, UpdateGroupRequest } from '../contacts-client.ts';
 import { ApiError } from '../errors.ts';
-import {
-  GROUP_ID_PREFIX,
-  type ContactDetail,
-  type ContactMessageView,
-  type ContactRow,
-  type ContactThreadItem,
-  type GroupTaskView,
-  type MemberFace,
-  type NetworkTaskView,
-} from '../shared.ts';
 import { messageIn, replyLine } from './fake-contact-edits.ts';
 import type { FakeEventBus } from './event-bus.ts';
 import type { FakeSession } from './fake-session.ts';

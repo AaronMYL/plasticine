@@ -11,8 +11,7 @@ import {
   type SpaceGenre,
 } from '../../shared/state.ts';
 import { findAll, hasAttribute, hasClass, parseHtml, textOf, type HtmlElement } from '../../shared/space-html.ts';
-import { cleanOutboundText } from '../util/link-clean.ts';
-import { EXTERNAL_LINK } from '../util/link-text.ts';
+import { cleanOutboundText, EXTERNAL_LINK } from '../util/index.ts';
 import { SubsError } from './errors.ts';
 import { sanitizeSpaceHtml, type SanitizedHtml } from './space-sanitize.ts';
 

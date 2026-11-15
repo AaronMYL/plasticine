@@ -3,7 +3,7 @@
 
 import type { BooksApi } from '../../api/books-client.ts';
 import type { BookChapterResponse } from '../../api/shared.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 
 // 保留前后翻阅的章节；同时限制 HTML 字符总量，防止少数超长章节撑大缓存。
 const MAX_CHAPTERS = 12;

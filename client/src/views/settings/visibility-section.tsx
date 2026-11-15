@@ -21,7 +21,7 @@ import { OpLines } from '../../primitives/task-row/op-line.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { Popover, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 import { usePendingOps } from '../pending/pending-ops.tsx';
-import { LoadNote } from '../m5b/load-note.tsx';
+import { LoadNote } from '../../shell/load-note.tsx';
 import { SectionHead } from './section-head.tsx';
 import { WaitMark } from '../../shell/wait-mark.tsx';
 import { SearchField } from '../../primitives/search-field/index.tsx';

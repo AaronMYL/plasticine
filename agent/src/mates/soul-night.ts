@@ -9,10 +9,10 @@ import { SOUL_OWNER_MAIN } from '../../shared/api/souls.ts';
 import { SOUL_TEXT_MAX_CHARS, soulChangeCount, soulKeptShare } from '../../shared/soul-text.ts';
 import type { TextModels } from '../kernel/index.ts';
 import { soulOf, type SoulState } from './souls.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import type { StateService } from '../state/index.ts';
-import { askJson } from '../books/book-model.ts';
-import { transcripts } from '../memory/dream/dream-material.ts';
+import { askJson } from '../books/index.ts';
+import { transcripts } from '../memory/index.ts';
 
 export type SoulNightState = SoulState & Pick<StateService, 'lineMessages' | 'lines'>;
 

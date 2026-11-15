@@ -7,8 +7,8 @@
 import type { AssistantMessage } from '@earendil-works/pi-ai';
 import { YOU_DOC_ID, type MemoryEntry, type MemoryJob, type MemoryJobResult } from '../../../shared/state.ts';
 import { lineRef, type StateService } from '../../state/index.ts';
-import { errorCategory, safeLog } from '../../util/log.ts';
-import { askJson, type BookModel } from '../../books/book-model.ts';
+import { errorCategory, safeLog } from '../../util/index.ts';
+import { askJson, type BookModel } from '../../books/index.ts';
 import { contactJobKey, contactMemorySources, runContactJob } from '../docs/contact-memory.ts';
 import { CurationOutputSchema, planCuration, type CurationOutput, type CurationPlan } from './memory-curation-ops.ts';
 import {

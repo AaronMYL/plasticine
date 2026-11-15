@@ -5,8 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { PROJECT_HUES } from '../../api/shared.ts';
 import { HueSwatches } from '../../primitives/hue-swatches/index.tsx';
 import { HUE_NAMES } from '../hue.tsx';
-import type { WebTabsStore } from '../../state/web-tabs.ts';
-import { placeOf } from '../../state/web-tabs.ts';
+import { placeOf, type WebTabsStore } from '../../state/web-tabs.ts';
 import { MenuItem, MenuSeparator, Popover, type PopoverAnchor } from '../popover.tsx';
 
 

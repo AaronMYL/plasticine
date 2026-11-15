@@ -5,7 +5,7 @@ import { LibraryBatchParameters, LibraryListParameters, LibraryObjectParameters,
 import { DEFAULT_NOTE_FOLDER } from '../../shared/state.ts';
 import { checkedArgs, type KernelTool, type ToolArgs } from '../lines/index.ts';
 import { allPages } from '../state/index.ts';
-import { runLibraryBatch, trashItems, type LibraryServices } from './index.ts';
+import { runLibraryBatch, trashItems, type LibraryServices } from './batch.ts';
 
 function json(value: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(value) }], details: {} };

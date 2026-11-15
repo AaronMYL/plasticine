@@ -4,7 +4,7 @@
 import { inferSoulSection, ruleTexts } from '../../shared/soul.ts';
 import { RULES_DOC_ID } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { docEvent, ensureRulesDoc, type DocState } from '../memory/docs/memory-doc-writes.ts';
+import { docEvent, ensureRulesDoc, type DocState } from '../memory/index.ts';
 
 type MateRuleState = DocState & Pick<StateService, 'mates'>;
 const MARK = 'mateSoul';

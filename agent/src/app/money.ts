@@ -20,7 +20,7 @@ import { withCurrent } from './conflict.ts';
 import { param, requireAuth, type AppDeps, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';
-import { moneyAccountView, moneyEntryView } from './m5b-views.ts';
+import { moneyAccountView, moneyEntryView } from './tool-group-views.ts';
 import { checkInput, queryObject } from './validate.ts';
 
 function entryWrite<T>(deps: AppDeps, id: string, write: () => T): T {
@@ -29,7 +29,7 @@ function entryWrite<T>(deps: AppDeps, id: string, write: () => T): T {
 }
 
 function accountView(deps: AppDeps, id: string) {
-  const row = deps.m5b.life.money.assets().accounts.find((candidate) => candidate.account.id === id);
+  const row = deps.toolGroups.life.money.assets().accounts.find((candidate) => candidate.account.id === id);
   const account = deps.state.moneyAccounts.require(id);
   return moneyAccountView(row ?? { account, balanceCents: account.openingCents });
 }
@@ -38,8 +38,8 @@ function accountView(deps: AppDeps, id: string) {
 export function getMoney(context: RequestContext): Reply {
   requireAuth(context);
   const query = checkInput(MoneyQuerySchema, queryObject(context.url.searchParams), '查询参数');
-  const { state, m5b } = context.deps;
-  const { money } = m5b.life;
+  const { state, toolGroups } = context.deps;
+  const { money } = toolGroups.life;
   const summary = money.month(query.month, query.tz ?? DEFAULT_TIME_ZONE);
   const assets = money.assets();
   const body: MoneyResponse = {
@@ -67,7 +67,7 @@ export function getMoney(context: RequestContext): Reply {
 export function getMoneyStats(context: RequestContext): Reply {
   requireAuth(context);
   const query = checkInput(MoneyStatsQuerySchema, queryObject(context.url.searchParams), '查询参数');
-  const stats = context.deps.m5b.life.money.stats(query.range, query.anchor, query.tz ?? DEFAULT_TIME_ZONE);
+  const stats = context.deps.toolGroups.life.money.stats(query.range, query.anchor, query.tz ?? DEFAULT_TIME_ZONE);
   const body: MoneyStatsResponse = stats;
   return { status: 200, body };
 }
@@ -78,7 +78,7 @@ export async function recordMoney(context: RequestContext): Promise<Reply> {
   const { requestId, ...draft } = checkInput(RecordMoneyRequestSchema, await readJsonBody(context.req), '记一笔');
   const { deps } = context;
   return idempotent(context, requestId, (afterCommit) => {
-    const entry = deps.m5b.life.money.record(
+    const entry = deps.toolGroups.life.money.record(
       { ...draft, origin: auth.actor === 'system' ? 'brain' : 'manual' }, afterCommit);
     const body: MoneyEntryResponse = { entry: moneyEntryView(deps.state, entry) };
     return { status: 201, body };
@@ -94,7 +94,7 @@ export async function editMoney(context: RequestContext): Promise<Reply> {
   return idempotent(context, requestId, (afterCommit) => {
     // Not saying review means you looked at it (1ca0391 money.ts update).
     const patch = { ...draft, review: draft.review ?? false };
-    const entry = entryWrite(deps, id, () => deps.m5b.life.money.edit(id, version, patch, afterCommit));
+    const entry = entryWrite(deps, id, () => deps.toolGroups.life.money.edit(id, version, patch, afterCommit));
     const body: MoneyEntryResponse = { entry: moneyEntryView(deps.state, entry) };
     return { status: 200, body };
   });
@@ -107,7 +107,7 @@ export async function removeMoney(context: RequestContext): Promise<Reply> {
   const id = param(context, 'id');
   const { deps } = context;
   return idempotent(context, body.requestId, (afterCommit) => {
-    const entry = entryWrite(deps, id, () => deps.m5b.life.money.remove(id, body.version, afterCommit));
+    const entry = entryWrite(deps, id, () => deps.toolGroups.life.money.remove(id, body.version, afterCommit));
     const response: MoneyEntryResponse = { entry: moneyEntryView(deps.state, entry) };
     return { status: 200, body: response };
   });
@@ -119,7 +119,7 @@ export async function addMoneyAccount(context: RequestContext): Promise<Reply> {
   const { requestId, ...input } = checkInput(AddMoneyAccountRequestSchema, await readJsonBody(context.req), '加账户');
   const { deps } = context;
   return idempotent(context, requestId, () => {
-    const account = deps.m5b.life.money.addAccount(input);
+    const account = deps.toolGroups.life.money.addAccount(input);
     const body: MoneyAccountResponse = { account: accountView(deps, account.id) };
     return { status: 201, body };
   });

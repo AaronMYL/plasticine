@@ -7,8 +7,8 @@ import { libraryChanged } from '../../../src/views/library/library-signal.ts';
 
 it('文件回收清空只删除确认时文件清单，保留隐藏空间、书和确认后新到的文件', async () => {
   const app = await renderApp({ hash: '#/tools/files', setup: ({ control }) => {
-    control.m5b.files.seed('归档', 'directory'); control.m5b.files.seed('归档/记录.txt');
-    control.m5b.files.seed('稍后.txt'); control.spaces.seed(); seedBooks(control.books, control.lines, NOW);
+    control.toolGroups.files.seed('归档', 'directory'); control.toolGroups.files.seed('归档/记录.txt');
+    control.toolGroups.files.seed('稍后.txt'); control.spaces.seed(); seedBooks(control.books, control.lines, NOW);
   } });
   const space = (await app.api.spaces.list()).spaces[0]!;
   const book = (await app.api.books.list()).books[0]!;

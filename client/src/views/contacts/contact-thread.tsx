@@ -12,7 +12,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { messagesRoute, type Route } from '../../shell/routes.ts';
 import { useFocusMessage } from '../../shell/use-focus-message.ts';
 import { useViewing } from '../../state/viewing.ts';
-import { LoadNote } from '../m5b/load-note.tsx';
+import { LoadNote } from '../../shell/load-note.tsx';
 import { ContactAvatar } from './contact-avatar.tsx';
 import { ContactComposer } from './contact-composer.tsx';
 import { ContactRequests } from './contact-requests.tsx';

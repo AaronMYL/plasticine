@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { NoteAssistant } from '../../src/tools/index.ts';
+import { NoteAssistant } from '../../src/notes/index.ts';
 import { NOTE_ASSIST_CONTEXT_CHARS } from '../../shared/api/notes-workspace.ts';
 import { TextModelError } from '../../src/kernel/index.ts';
 import { hangUntilAborted, scriptedText } from '../tools/helpers.ts';

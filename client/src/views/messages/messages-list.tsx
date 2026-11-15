@@ -14,7 +14,7 @@ import { AiMark } from '../../shell/glyph.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { ColumnCollapseButton } from '../../shell/columns/column-toggle.tsx';
 import { Icon } from '../../shell/icons.tsx';
-import { LoadNote } from '../m5b/load-note.tsx';
+import { LoadNote } from '../../shell/load-note.tsx';
 import { ContactAvatar } from '../contacts/contact-avatar.tsx';
 import { RemoveContactDialog, RenameField } from '../contacts/contact-manage.tsx';
 import { ContactRowMenu, RemovedContacts } from './contact-row-menu.tsx';
@@ -25,7 +25,7 @@ import {
   showsRequests,
   startsOtherGroup,
   type MessageFilter,
-} from './message-filter.ts';
+} from '../../state/message-filter.ts';
 import { timeText } from '../../shell/time-text.ts';
 import { WaitMark } from '../../shell/wait-mark.tsx';
 import { SearchField } from '../../primitives/search-field/index.tsx';

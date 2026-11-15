@@ -4,7 +4,7 @@
 import type { Backup, BackupObjectKind, RestoreBackupRequest, RestorePreview } from '../../shared/api/index.ts';
 import type { DeviceConfirmation } from '../../shared/state.ts';
 import type { AfterCommit, AskDesk, AskResolver } from '../attention/index.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
 
 // 每小时看一次今天的备份有没有：重启、睡眠错过了也只晚一小时。

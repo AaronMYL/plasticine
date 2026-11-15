@@ -1,7 +1,7 @@
 import { waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { createFakeApi } from '../../src/api/fake/index.ts';
-import { EventsHub } from '../../src/api/events-hub.ts';
+import { EventsHub } from '../../src/state/events-hub.ts';
 import { createRequestId } from '../../src/api/request-id.ts';
 import { MatesStore } from '../../src/views/mates/mates-store.ts';
 

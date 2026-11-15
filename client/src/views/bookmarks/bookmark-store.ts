@@ -4,7 +4,7 @@
 // （按 position 排）；失败交给调用的地方说一句。
 
 import type { PlasticineApi } from '../../api/client.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import {
   bookmarkKey,

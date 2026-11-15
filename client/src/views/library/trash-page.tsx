@@ -84,7 +84,7 @@ function TrashRow({ item, now, onRestore, onGone, selection }: { item: LibraryTr
 
 export function TrashPage(): ReactNode {
   const api = useApi();
-  const { m5b } = useLive();
+  const { toolGroups } = useLive();
   const { trash, error } = useLibraryTrash();
   // 还原了、收起动画也播完的：先从这一页拿掉，再让资料库各处重读（重读回来它本来也不在了）。
   const [gone, setGone] = useState<ReadonlySet<string>>(new Set());
@@ -98,14 +98,14 @@ export function TrashPage(): ReactNode {
     } else {
       await api.files.restore({ requestId, id: item.id });
       // 文件页和它的回收各有一份缓存：还原了一起重读。
-      void m5b.files.reset();
-      void m5b.trash.reload();
+      void toolGroups.files.reset();
+      void toolGroups.trash.reload();
     }
   };
   const items = (trash?.items ?? []).filter((item) => !gone.has(keyOf(item)));
   const selection = useBulkSelection({ items, run: (input) => libraryBatch(api.library, input),
     empty: (input) => api.library.emptyTrash(input), onChanged: () => {
-      libraryChanged(); void m5b.files.reset(); void m5b.trash.reload();
+      libraryChanged(); void toolGroups.files.reset(); void toolGroups.trash.reload();
     } });
   return (
     <div className="page lib-page lib-trash">

@@ -5,8 +5,10 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
-import { PROJECT_LIFECYCLE_LABELS, PROJECT_LIFECYCLES } from '../../api/shared.ts';
-import type { EditProjectRequest, ProjectBrief, ProjectPerson, ProjectRowView } from '../../api/shared.ts';
+import {
+  PROJECT_LIFECYCLE_LABELS, PROJECT_LIFECYCLES, type EditProjectRequest, type ProjectBrief, type ProjectPerson,
+  type ProjectRowView,
+} from '../../api/shared.ts';
 
 type Patch = Omit<EditProjectRequest, 'requestId' | 'version'>;
 

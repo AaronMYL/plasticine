@@ -13,7 +13,7 @@ import type { FeedItemView } from '../../api/types.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { OpLines } from '../../primitives/task-row/op-line.tsx';
 import { isOpenOp } from '../../state/action-ops.ts';
-import { feedItemOpKey } from '../../state/m4-action-requests.ts';
+import { feedItemOpKey } from '../../state/daily-action-requests.ts';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';

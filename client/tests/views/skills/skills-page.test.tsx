@@ -6,7 +6,7 @@ import type { FakeApi } from '../../../src/api/fake/index.ts';
 import { renderApp } from '../../helpers.tsx';
 
 function seed(fake: FakeApi): void {
-  fake.control.m5b.skills.seedPage();
+  fake.control.toolGroups.skills.seedPage();
 }
 
 async function catalog(): Promise<HTMLElement> {

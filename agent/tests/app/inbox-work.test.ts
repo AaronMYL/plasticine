@@ -32,7 +32,7 @@ test('现在收信只报告本次真实结果；未配置、具体失败和成�
     const cookie = await pair(app);
     const body = { requestId: 'inbox-sync-isolated' };
     assert.equal((await call(app, 'POST', '/v2/inbox/sync', { cookie, body })).status, 409);
-    const sync = app.app.deps.m5b.cloud.mailSync;
+    const sync = app.app.deps.toolGroups.cloud.mailSync;
     sync.configured = () => true;
     // HTTP behavior is isolated from the real account; MailSync's IMAP handling has its own transport tests.
     sync.sync = async () => { throw new Error('隔离 IMAP：服务器断开连接'); };

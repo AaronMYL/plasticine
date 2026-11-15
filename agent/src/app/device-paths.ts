@@ -7,7 +7,7 @@
 
 import type { IncomingMessage } from 'node:http';
 import type { DeviceVia } from '../../shared/api/devices.ts';
-import { DIRECT_MARKER_HEADER } from '../direct/channel.ts';
+import { DIRECT_MARKER_HEADER } from '../direct/index.ts';
 import { fromLoopback } from './local-access.ts';
 
 const LOCAL_HOSTS: ReadonlySet<string> = new Set(['127.0.0.1', 'localhost', '[::1]']);

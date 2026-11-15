@@ -89,3 +89,6 @@ export function createDaily(options: DailyOptions) {
 }
 
 export type Daily = ReturnType<typeof createDaily>;
+export { createFeedCommentGenerator } from './feed-comment-generator.ts';
+export { createFeedSelector } from './feed-selection.ts';
+export { createFeedTranslator } from './feed-translator.ts';

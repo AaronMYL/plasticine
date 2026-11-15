@@ -1,7 +1,7 @@
 // 假的记账：分类（旧版默认那一套）、账户、一笔一笔，按用户时区分天汇总，和真服务端（agent/src/life/money.ts）同一套算法：
 // 人民币原样、外币按汇率折、删只打时间；写操作按 requestId 幂等，带 version 的过时了回 409 和现在那一条，变了推 money.changed。
 
-import type { MoneyApi } from '../m5b-client.ts';
+import type { MoneyApi } from '../tool-groups-client.ts';
 import { ApiError, ConflictError } from '../errors.ts';
 import {
   MONEY_DEFAULT_CATEGORIES,

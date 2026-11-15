@@ -3,7 +3,7 @@
 
 import type { PlasticineApi } from '../../api/client.ts';
 import type { NetworkInviteResponse } from '../../api/contacts-client.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { MaterialRow, NetworkInvite, NetworkStatus, Tier, VisibilityResponse } from '../../api/shared.ts';
 import type { ActionOps, ActionRequest } from '../../state/action-ops.ts';
@@ -15,7 +15,7 @@ import {
 } from '../../state/contacts-action-requests.ts';
 import type { InlineDrafts } from '../../state/inline-drafts.ts';
 import { Store } from '../../state/store.ts';
-import { ResourceStore } from '../m5b/resource-store.ts';
+import { ResourceStore } from '../../state/resource-store.ts';
 
 export type JoinField = 'handle' | 'displayName' | 'inviteCode';
 

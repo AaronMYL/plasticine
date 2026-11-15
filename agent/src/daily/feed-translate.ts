@@ -3,11 +3,10 @@
 // 11-07 走查：线上英文帖都没翻——当时代码里根本没有抓取时翻译这一步（维护入口也没有 feed.translate），这里补上。
 // 每次扫描先把最近几天还没排上的旧条目补排，所以升级后最近的英文帖也会翻；更早的不翻（不看就不花这份钱）。
 
-import type { FeedTranslator } from '../../shared/feed-translation.ts';
-import { FEED_LONG_TEXT_CHARS } from '../../shared/feed-translation.ts';
+import { FEED_LONG_TEXT_CHARS, type FeedTranslator } from '../../shared/feed-translation.ts';
 import type { FeedItem } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { failureText, safeLog } from '../util/log.ts';
+import { failureText, safeLog } from '../util/index.ts';
 import { checkedChart } from './feed-chart-check.ts';
 import { bounded } from './feed-fetch.ts';
 

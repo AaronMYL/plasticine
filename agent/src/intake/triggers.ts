@@ -3,9 +3,11 @@
 // 2026-11-05 Harness 重做：从 matters/ 挪过来；对话、iPhone 分享和位置、自迭代教训、项目逾期的触发随功能删掉。
 // 命中规则时开的那条后台线要做什么，也在这里写（ruleGoal）。
 
-import type { Bookmark, Contact, ContactMessage, FeedItem, InboxMessage, Rule, Trigger } from '../../shared/state.ts';
-import { TRIGGER_SUMMARY_MAX_CHARS } from '../../shared/state.ts';
-import { clip } from '../util/text.ts';
+import {
+  TRIGGER_SUMMARY_MAX_CHARS, type Bookmark, type Contact, type ContactMessage, type FeedItem, type InboxMessage,
+  type Rule, type Trigger,
+} from '../../shared/state.ts';
+import { clip } from '../util/index.ts';
 import type { RecordInput } from './desk.ts';
 import { threadKeys } from './thread-keys.ts';
 

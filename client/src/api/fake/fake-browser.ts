@@ -1,6 +1,6 @@
 // 与真实接口同形状的浏览器假实现；测试和截图可注入帧，不启动或连接浏览器。
 import { readerBlocks } from '../../../../agent/shared/web-reader.ts';
-import type { BrowserApi } from '../m5b-client.ts';
+import type { BrowserApi } from '../tool-groups-client.ts';
 import type {
   WebExtractInput, WebExtractView, WebArchiveRequest, WebArchiveView,
   BrowserAck, BrowserActionRequest, BrowserActionResponse, BrowserFrame, BrowserStreamEvent, BrowserStreamQuery,

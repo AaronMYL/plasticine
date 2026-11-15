@@ -50,9 +50,9 @@ it('资料库选择空间删除后刷新列表和最近删除，批量还原后�
 
 it('文件页多选发送文件与文件夹身份，删除后刷新到最近删除', async () => {
   const app = await renderApp({ hash: '#/tools/files', setup: (fake) => {
-    fake.control.m5b.files.seed('报告', 'directory');
-    fake.control.m5b.files.seed('报告/摘要.md');
-    fake.control.m5b.files.seed('说明.txt');
+    fake.control.toolGroups.files.seed('报告', 'directory');
+    fake.control.toolGroups.files.seed('报告/摘要.md');
+    fake.control.toolGroups.files.seed('说明.txt');
   } });
   await startSelecting();
   fireEvent.click(screen.getByRole('checkbox', { name: '全选' }));
@@ -77,7 +77,7 @@ it('图书馆批量删除与数量同步，选择时只保留一份书目', asyn
 
 it('手机仅放行文件工具，能进行批量选择，其他工具保持原入口限制', async () => {
   await renderApp({ width: 390, hash: '#/tools/files', setup: (fake) => {
-    fake.control.m5b.files.seed('示例.txt');
+    fake.control.toolGroups.files.seed('示例.txt');
   } });
   await startSelecting();
   expect(screen.getByRole('checkbox', { name: '选择示例.txt' })).toBeTruthy();

@@ -6,7 +6,7 @@ import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import { TRANSLATE_TARGET_PROMPT, type TranslateItem, type TranslateTarget } from '../../shared/api/translate.ts';
 import { TextModelError } from '../kernel/index.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 
 /** 记忆里的一个词（在用的词表约定）：词（可写几种叫法，用 / 、，或括号分开）、释义、适用范围。 */
 export interface GlossaryTerm {

@@ -1,13 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  createCloudBrowserActTool,
-  createCloudSshRunTool,
-  createListInboxTool,
-  getTimeTool,
-  ToolRegistry,
-  type ToolContext,
-} from '../../src/tools/index.ts';
+import { createCloudBrowserActTool, createCloudSshRunTool } from '../../src/cloud-tools/index.ts';
+import { createListInboxTool } from '../../src/intake/index.ts';
+import { getTimeTool, ToolRegistry, type ToolContext } from '../../src/tools/index.ts';
 
 function context(): ToolContext {
   const signal = new AbortController().signal;

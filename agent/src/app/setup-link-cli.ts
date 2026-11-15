@@ -6,7 +6,7 @@
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { DEFAULT_RELAY_URL, RelayClient } from '../../protocol/relay-client.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { openState } from '../state/index.ts';
 import { DATABASE_FILE, DEFAULT_PORT } from './config.ts';
 import { setupLink } from './setup-link-run.ts';

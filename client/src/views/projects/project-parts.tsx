@@ -2,8 +2,7 @@
 
 import { AiMark } from '../../shell/glyph.tsx';
 import type { ReactNode } from 'react';
-import { PROJECT_HEALTH_LABELS } from '../../api/shared.ts';
-import type { ProjectRowView } from '../../api/shared.ts';
+import { PROJECT_HEALTH_LABELS, type ProjectRowView } from '../../api/shared.ts';
 
 type Health = NonNullable<ProjectRowView['health']>;
 

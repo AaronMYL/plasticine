@@ -5,8 +5,7 @@ import type { LineInputOrigin, LineMessageView, LineStreamEvent, LineView, Queue
   from '../../shared/api/lines.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
 import type { AskDesk } from '../attention/index.ts';
-import type { StateService } from '../state/index.ts';
-import type { LineRow } from '../state/index.ts';
+import type { LineRow, StateService } from '../state/index.ts';
 import type { LineReportMessage } from './messages.ts';
 import type { DriveOutcome, RunnerHost } from './runner.ts';
 import type { AskToolHost } from './ask-tools.ts';

@@ -6,7 +6,7 @@ import type { NetworkIdentity } from '../../shared/state.ts';
 import { changeOf, requireIdentity, type NetworkContext } from './context.ts';
 import { NetworkError } from './errors.ts';
 import { enqueue } from './outbox.ts';
-import { aiNameOf } from '../mates/main-identity.ts';
+import { aiNameOf } from '../mates/index.ts';
 
 const AVATAR_PATTERN = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
 

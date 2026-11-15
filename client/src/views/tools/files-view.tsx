@@ -14,8 +14,8 @@ import { useLive } from '../../live.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { PendingOps } from '../pending/pending-ops.tsx';
-import { FOLDER_DRAFT } from '../m5b/m5b-actions.ts';
-import { LoadNote, shortTime } from '../m5b/load-note.tsx';
+import { FOLDER_DRAFT } from './tool-group-actions.ts';
+import { LoadNote, shortTime } from '../../shell/load-note.tsx';
 import './tools.css';
 import { FileTextEditor } from './file-text-editor.tsx';
 import { Icon } from '../../shell/icons.tsx';
@@ -36,15 +36,15 @@ function draftKey(entry: FileEntryView, what: 'to' | 'confirm'): string {
 }
 
 function EntryActions({ entry, mode, onDone }: { entry: FileEntryView; mode: 'move' | 'trash'; onDone: () => void }) {
-  const { m5bActions } = useLive();
+  const { toolGroupActions } = useLive();
   const { inlineDrafts } = useClientState();
   const drafts = useStore(inlineDrafts.store);
   const to = drafts.get(draftKey(entry, 'to')) ?? entry.path;
   const confirm = drafts.get(draftKey(entry, 'confirm')) ?? '';
   const submit = async (): Promise<void> => {
     const done = mode === 'move'
-      ? await m5bActions.move(entry, to.trim(), confirm)
-      : await m5bActions.trash(entry, confirm);
+      ? await toolGroupActions.move(entry, to.trim(), confirm)
+      : await toolGroupActions.trash(entry, confirm);
     if (!done) {
       return;
     }
@@ -89,10 +89,10 @@ function EntryActions({ entry, mode, onDone }: { entry: FileEntryView; mode: 'mo
 
 function Trash(): ReactNode {
   const api = useApi();
-  const { m5b } = useLive();
+  const { toolGroups } = useLive();
   const { trash, error } = useLibraryTrash();
   const entries = (trash?.items ?? []).filter((item) => item.kind === 'file' || item.kind === 'folder');
-  const changed = (): void => { libraryChanged(); void m5b.files.reset(); void m5b.trash.reload(); };
+  const changed = (): void => { libraryChanged(); void toolGroups.files.reset(); void toolGroups.trash.reload(); };
   const selection = useBulkSelection({ items: entries, run: (input) => libraryBatch(api.library, input),
     onChanged: changed });
   return <section className="block" aria-label="回收">
@@ -116,10 +116,10 @@ function Trash(): ReactNode {
 
 export function FilesView(): ReactNode {
   const api = useApi();
-  const { m5b, m5bActions } = useLive();
+  const { toolGroups, toolGroupActions } = useLive();
   const { inlineDrafts } = useClientState();
-  const files = useStore(m5b.files.data);
-  const folder = useStore(m5b.folder);
+  const files = useStore(toolGroups.files.data);
+  const folder = useStore(toolGroups.folder);
   const newFolder = useStore(inlineDrafts.store).get(FOLDER_DRAFT) ?? '';
   const [editing, setEditing] = useState<{ path: string; mode: 'move' | 'trash' } | null>(null);
   const [tooBig, setTooBig] = useState<string | null>(null);
@@ -128,26 +128,26 @@ export function FilesView(): ReactNode {
   const [newText, setNewText] = useState('');
   const upload = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    m5b.files.open();
-  }, [m5b.files]);
+    toolGroups.files.open();
+  }, [toolGroups.files]);
   const go = (path: string): void => {
-    m5b.folder.set(path);
+    toolGroups.folder.set(path);
     setPathDraft(path);
     setEditing(null);
-    void m5b.files.reset();
+    void toolGroups.files.reset();
   };
   const listing = files.value;
   const bulkItems = (listing?.entries ?? []).map((entry) => ({
     kind: entry.kind === 'directory' ? 'folder' as const : 'file' as const, id: entry.path, title: entry.name }));
   const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
-    scope: folder, onChanged: () => { void m5b.files.reset(); void m5b.trash.reload(); libraryChanged(); } });
+    scope: folder, onChanged: () => { void toolGroups.files.reset(); void toolGroups.trash.reload(); libraryChanged(); } });
   return (
     <div className="tool">
       <PendingOps
         label="还没了结的文件操作"
         prefixes={['files:']}
         visible={() => false}
-        onRetry={(key) => void m5bActions.retry(key)}
+        onRetry={(key) => void toolGroupActions.retry(key)}
       />
       <div className="tool-bar">
         <form className="file-path-form" onSubmit={(event) => { event.preventDefault(); go(pathDraft.trim()); }}>
@@ -172,7 +172,7 @@ export function FilesView(): ReactNode {
             setTooBig(null);
             void (async () => { for (const file of selected) {
               if (file.size > UPLOAD_MAX_BYTES) { setTooBig(`「${file.name}」超过 20 MB，没有传。`); continue; }
-              await m5bActions.upload(folder, file);
+              await toolGroupActions.upload(folder, file);
             } })();
           }}
         />
@@ -210,7 +210,7 @@ export function FilesView(): ReactNode {
             type="button"
             className="chip-button"
             disabled={newFolder.trim() === ''}
-            onClick={() => void m5bActions.createFolder(folder)}
+            onClick={() => void toolGroupActions.createFolder(folder)}
           >
             新建
           </button>
@@ -219,7 +219,7 @@ export function FilesView(): ReactNode {
       {textFile === null ? null :
         <FileTextEditor key={textFile.path} {...textFile} onClose={() => setTextFile(null)} />}
       {tooBig === null ? null : <p className="tool-sub tool-error" role="alert">{tooBig}</p>}
-      <LoadNote resource={files} what="文件夹" onRetry={() => void m5b.files.reload()} />
+      <LoadNote resource={files} what="文件夹" onRetry={() => void toolGroups.files.reload()} />
       {files.status === 'ready' && listing?.entries.length === 0 ? <p className="block-empty">这个文件夹是空的。</p> : null}
       <ul className="tool-list" aria-label="文件">
         {(listing?.entries ?? []).map((entry) => (

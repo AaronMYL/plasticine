@@ -6,9 +6,8 @@ import type { Ask, AskPurpose } from '../../shared/state.ts';
 import { MAIN_LINE_ALIAS, type ChatsResponse, type LineMessageView, type LineStatus, type LineTopic, type LineView,
   type QueuedMessageView } from '../../shared/api/lines.ts';
 import type { AskResolver } from '../attention/index.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
-import type { LinePatch, LineRow, QueuedRow } from '../state/index.ts';
-import { lineRef } from '../state/index.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
+import { lineRef, type LinePatch, type LineRow, type QueuedRow } from '../state/index.ts';
 import { answerSentence, askUserTool, questionResolver } from './ask-tools.ts';
 import { HardLineGate } from './hard-line.ts';
 import { imagesOf } from './images.ts';
@@ -16,7 +15,7 @@ import { DEFAULT_TIME_ZONE, LineError, MAX_BACKGROUND_LINES, NOW, type After, ty
   type OpenLine, type SendInput, type SendResult } from './kernel-types.ts';
 import { lineTools, type LineControl } from './line-tools.ts';
 import { outcomeTool } from './outcome-tool.ts';
-import { loopTools } from '../loop/tools.ts';
+import { loopTools } from '../loop/index.ts';
 import { isAssistant, messageView, userMessage, type AttachmentNote, type LineNoticeMessage,
   type LineLetterMessage, type LineWelcomeMessage, type PostedMessage,
   type ReportOutcome } from './messages.ts';

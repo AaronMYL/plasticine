@@ -10,7 +10,7 @@ import { RULES_DOC_ID, YOU_DOC_ID, type MemoryDoc, type MemoryDocKind, type Memo
   type MemoryLine } from '../../../shared/state.ts';
 import type { StateService } from '../../state/index.ts';
 import { similarity } from '../curation/memory-curation-ops.ts';
-import { estimateTokens } from '../../tools/tokens.ts';
+import { estimateTokens } from '../../tools/index.ts';
 
 type DocsState = Pick<StateService, 'memoryDocs' | 'projects'>;
 type TodayState = Pick<StateService, 'memoryJournal'>;

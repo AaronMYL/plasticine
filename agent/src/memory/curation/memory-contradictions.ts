@@ -6,7 +6,7 @@ import { Type } from 'typebox';
 import type { MemoryLine } from '../../../shared/state.ts';
 import type { TextModels } from '../../kernel/index.ts';
 import type { StateService } from '../../state/index.ts';
-import { askJson } from '../../books/book-model.ts';
+import { askJson } from '../../books/index.ts';
 
 type ConflictState = Pick<StateService, 'memoryDocs' | 'memoryConflicts' | 'transaction'>;
 

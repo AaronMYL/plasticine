@@ -8,8 +8,10 @@
 
 import { currentComposer } from '../conversation/current-composer.ts';
 import { useEffect, useState, type ReactNode } from 'react';
-import { HARD_LINES_HEADING, HARD_LINES_NOTE, RULES_DOC_ID, TIER_LABELS, TIERS } from '../../api/shared.ts';
-import type { MemoryDocLine, MemoryLineSource, MemoryTopicDoc, MemoryTopicView } from '../../api/shared.ts';
+import {
+  HARD_LINES_HEADING, HARD_LINES_NOTE, RULES_DOC_ID, TIER_LABELS, TIERS, type MemoryDocLine, type MemoryLineSource,
+  type MemoryTopicDoc, type MemoryTopicView,
+} from '../../api/shared.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
 import { useLive } from '../../live.tsx';

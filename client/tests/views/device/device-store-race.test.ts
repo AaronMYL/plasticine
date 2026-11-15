@@ -3,7 +3,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { waitFor } from '@testing-library/react';
-import { EventsHub } from '../../../src/api/events-hub.ts';
+import { EventsHub } from '../../../src/state/events-hub.ts';
 import { createFakeApi } from '../../../src/api/fake/index.ts';
 import type { NodeListResponse } from '../../../src/api/types.ts';
 import { DeviceStore } from '../../../src/views/device/device-store.ts';

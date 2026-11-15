@@ -1,7 +1,7 @@
 // 同时做几件事（设置 · AI，11-12 全量优化第 2 条）：读、改后台线的并发上限。算法在 lines/capacity.ts。
 
 import { WorkLimitRequestSchema, type WorkLimitView } from '../../shared/api/account.ts';
-import { BACKGROUND_LIMIT_KEY, readWorkLimit } from '../lines/capacity.ts';
+import { BACKGROUND_LIMIT_KEY, readWorkLimit } from '../lines/index.ts';
 import { requireUserAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { checkInput } from './validate.ts';

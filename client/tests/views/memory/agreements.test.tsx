@@ -5,9 +5,8 @@
 
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { EventsHub } from '../../../src/api/events-hub.ts';
-import type { FakeApi } from '../../../src/api/fake/index.ts';
-import { createFakeApi } from '../../../src/api/fake/index.ts';
+import { EventsHub } from '../../../src/state/events-hub.ts';
+import { createFakeApi, type FakeApi } from '../../../src/api/fake/index.ts';
 import { SignedSender } from '../../../src/views/signing/signed-sender.ts';
 import { AgreementStore } from '../../../src/views/memory/agreement-store.ts';
 import { NOW, renderApp, settle } from '../../helpers.tsx';

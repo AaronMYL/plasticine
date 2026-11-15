@@ -1,5 +1,5 @@
 // /v2/memory/search 与 /v2/memory/dreams（shared/api/memory-library.ts，《优化清单》第 10、16 条，11-06 定）：
-// 记忆页页头的搜索（带归档），和「昨晚整理了什么」——读最近一次整理、撤销一条、拿不准的挑一个。写都经 brain/ 的函数，
+// 记忆页页头的搜索（带归档），和「昨晚整理了什么」——读最近一次整理、撤销一条、拿不准的挑一个。写都经 memory/ 的函数，
 // 按 requestId 幂等、带 version。
 
 import {
@@ -12,8 +12,9 @@ import {
   type MemorySearchResponse,
 } from '../../shared/api/index.ts';
 import type { MemoryDreamChange } from '../../shared/state.ts';
-import { canUndoChange, chooseDreamCandidate, DreamActionError, searchMemory, undoDreamChange,
-  type Writer } from '../tools/index.ts';
+import {
+  canUndoChange, chooseDreamCandidate, DreamActionError, searchMemory, undoDreamChange, type Writer,
+} from '../memory/index.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';

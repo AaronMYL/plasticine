@@ -3,23 +3,8 @@
 // 视图订阅的实时事件（由服务端的 SSE 事件映射而来，见 http/event-mapper.ts）和连接状态。
 
 import type {
-  BrowserViewDto,
-  InboxRowView,
-  InboxUnread,
-  MoneyEntryView,
-  ToolGroupView,
-} from './shared.ts';
-import type {
-  AgreementView,
-  AskView,
-  NodeActionView,
-  NodeView,
-  FeedItemView,
-  MemoryEntryView,
-  NoteMetaView,
-  BookQuoteReference,
-  NoteQuoteReference,
-  SpaceQuoteReference,
+  AgreementView, AskView, BookQuoteReference, BrowserViewDto, FeedItemView, InboxRowView, InboxUnread, MemoryEntryView,
+  MoneyEntryView, NodeActionView, NodeView, NoteMetaView, NoteQuoteReference, SpaceQuoteReference, ToolGroupView,
 } from './shared.ts';
 
 // M5 甲路：执行节点、设备动作。
@@ -173,7 +158,7 @@ export type LiveEvent =
   | { type: 'feed.changed'; item: FeedItemView }
   | { type: 'node.changed'; node: NodeView }
   | { type: 'node_action.recorded'; action: NodeActionView }
-  | M5bLiveEvent
+  | ToolGroupLiveEvent
   | ContactsLiveEvent
   /** 新内核的线（2026-11-05）：服务端 line_* 事件原样带过来。 */
   | { type: 'line'; event: import('./shared.ts').LineStreamEvent }
@@ -192,7 +177,7 @@ export type ContactsLiveEvent =
   | { type: 'contact.item'; contactId: string; item: import('./shared.ts').ContactThreadItem };
 
 /** M5 乙路：服务端的 money_changed 等原样带过来（整行，按 id / version 换）。 */
-export type M5bLiveEvent =
+export type ToolGroupLiveEvent =
   | { type: 'money.changed'; entry: MoneyEntryView }
   | { type: 'inbox.changed'; message: InboxRowView; unread: InboxUnread }
   | { type: 'tool_group.changed'; group: ToolGroupView }

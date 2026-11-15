@@ -3,11 +3,12 @@
 
 import { ApiError } from '../errors.ts';
 import type { SoulsApi } from '../souls-client.ts';
-import { appendToSection, diffSoul, MAIN_SOUL_OPENING, mateSoulOpening, SOUL_OWNER_MAIN, soulChangeCount }
-  from '../shared.ts';
-import type { ApplyRulesMoveRequest, ApplyRulesMoveResponse, MateView, RulesMoveItem, RulesMoveResponse,
-  SoulActor, SoulLine, SoulResponse, SoulRevision, SoulRevisionDiffResponse, UndoSoulRequest, UpdateSoulRequest }
-  from '../shared.ts';
+import {
+  appendToSection, diffSoul, MAIN_SOUL_OPENING, mateSoulOpening, SOUL_OWNER_MAIN, soulChangeCount,
+  type ApplyRulesMoveRequest, type ApplyRulesMoveResponse, type MateView, type RulesMoveItem, type RulesMoveResponse,
+  type SoulActor, type SoulLine, type SoulResponse, type SoulRevision, type SoulRevisionDiffResponse,
+  type UndoSoulRequest, type UpdateSoulRequest,
+} from '../shared.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeSoul } from './fake-soul.ts';
 import type { FakeReceipts } from './receipts.ts';

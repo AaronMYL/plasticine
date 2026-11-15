@@ -7,7 +7,7 @@ import { AskStreamEventSchema } from './ask-events.ts';
 import { DeviceStreamEventSchema } from './device-events.ts';
 import { ServerEventSchema } from './events.ts';
 import { FeedItemViewSchema } from './feed.ts';
-import { M5bStreamEventSchema } from './m5b-events.ts';
+import { ToolGroupStreamEventSchema } from './tool-group-events.ts';
 import { MemoryStreamEventSchema } from './memory-events.ts';
 
 /** 信息流里一条到了、点了赞或不感兴趣、收藏了：带整条。 */
@@ -22,7 +22,7 @@ export const EveryStreamEventSchema = Type.Union([
   MemoryStreamEventSchema,
   FeedItemChangedEventSchema,
   DeviceStreamEventSchema,
-  M5bStreamEventSchema,
+  ToolGroupStreamEventSchema,
 ]);
 export type EveryStreamEvent = Static<typeof EveryStreamEventSchema>;
 export type EveryStreamEventType = EveryStreamEvent['type'];

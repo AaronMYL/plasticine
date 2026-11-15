@@ -6,7 +6,7 @@ import type { Tier } from '../../shared/api/visibility.ts';
 import type { Contact, ContactMessage, NetworkIdentity } from '../../shared/state.ts';
 import { changeOf, requireContact, requireIdentity, signerOf, type NetworkContext } from './context.ts';
 import { NetworkError } from './errors.ts';
-import { aiNameOf } from '../mates/main-identity.ts';
+import { aiNameOf } from '../mates/index.ts';
 import { enqueue } from './outbox.ts';
 import { RelayCallError } from '../../protocol/relay-client.ts';
 import { contactMessageKey } from './contact-edits.ts';

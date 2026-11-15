@@ -61,7 +61,7 @@ describe('假联系人 · 列表与聊天', () => {
     const { api, control } = seeded();
     const sent = await api.contacts.send('mail:noreply@aliyun.com', { requestId: 'req_mail_000001', text: '收到' });
     expect(sent.author).toBe('me');
-    expect(control.m5b.inbox.find('inbox_aliyun_expire')?.replies.at(-1)).toMatchObject({ text: '收到',
+    expect(control.toolGroups.inbox.find('inbox_aliyun_expire')?.replies.at(-1)).toMatchObject({ text: '收到',
       status: 'dry_run' });
     const refused = await api.contacts.send('system:patrol', { requestId: 'req_mail_000002', text: '好' })
       .catch((cause: unknown) => cause);

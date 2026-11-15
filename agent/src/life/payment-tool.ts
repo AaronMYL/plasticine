@@ -1,7 +1,7 @@
 import { Type } from 'typebox';
-import type { MoneyDraftDesk } from './index.ts';
+import type { MoneyDraftDesk } from './money-drafts.ts';
 import type { PaymentReader } from './payment-reader.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 
 export function createPaymentTool(drafts: MoneyDraftDesk, reader: PaymentReader): Tool {
   return defineTool({

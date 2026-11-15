@@ -19,7 +19,7 @@
 
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { loadOrCreateVapidKeys } from '../attention/index.ts';
 import { NOTES_DIRECTORY, openState } from '../state/index.ts';
 import { assembleApp } from './assemble.ts';

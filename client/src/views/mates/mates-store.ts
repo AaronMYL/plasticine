@@ -1,5 +1,5 @@
 import type { PlasticineApi } from '../../api/client.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 import type { MateListResponse, ListLinesResponse } from '../../api/shared.ts';
 import type { LoadStatus } from '../../state/load.ts';
 import { SnapshotLoader } from '../../state/snapshot-loader.ts';

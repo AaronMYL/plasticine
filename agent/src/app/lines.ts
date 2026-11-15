@@ -9,9 +9,8 @@ import {
   SendLineMessageRequestSchema,
   LINE_PAGE_DEFAULT,
 } from '../../shared/api/index.ts';
-import { LineError, type LineKernel } from '../lines/index.ts';
-import { lineDetails } from '../lines/details.ts';
-import { matesFor } from './mates.ts';
+import { lineDetails, LineError, type LineKernel } from '../lines/index.ts';
+import { matesFor } from './mates-for.ts';
 import { ApiError } from './api-error.ts';
 import { resolveConversationQuotes } from './conversation-quotes.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';

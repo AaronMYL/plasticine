@@ -10,9 +10,8 @@ import type {
   ClientUpdateDecision,
   ClientUpdate,
 } from '../../shared/api/index.ts';
-import type { StateService } from '../state/index.ts';
-import { StateError } from '../state/index.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { StateError, type StateService } from '../state/index.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { manifestDigest, readClientManifest, readClientPublication } from './client-manifest.ts';
 export interface ClientReleaseOptions {
   state: StateService;

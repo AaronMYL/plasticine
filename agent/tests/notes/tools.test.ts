@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createNoteTools, type Tool } from '../../src/tools/index.ts';
+import { createNoteTools } from '../../src/notes/index.ts';
+import { type Tool } from '../../src/tools/index.ts';
 import { openTestState } from '../state/helpers.ts';
 import { toolContext } from '../tools/helpers.ts';
 

@@ -7,7 +7,7 @@
 // turn, pushing events) is handed to `afterCommit` (review-followups e4cef52). Before the work runs, the session is
 // checked again: the body may have taken a while, and a device revoked meanwhile must not write (908a81e).
 
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { IDEMPOTENCY_WINDOW_MS, REPLAYED_HEADER } from '../../shared/api/index.ts';
 import { ApiError, toApiError, unauthorized } from './api-error.ts';
 import { stillAuthenticated } from './auth.ts';

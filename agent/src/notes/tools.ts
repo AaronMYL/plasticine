@@ -1,7 +1,7 @@
 import { NOTE_MAX_CHARS, DEFAULT_NOTE_FOLDER } from '../../shared/state.ts';
 import { NoteSearchParameters, NoteReadParameters, NoteWriteParameters } from '../../shared/note-tools.ts';
 import type { StateService } from '../state/index.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 
 /** 写入走工具回执的 once 语义；同一 actionId 回放不会再次追加。 */
 export function createNoteTools(state: StateService, changed: (id: string) => void): Tool[] {

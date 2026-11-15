@@ -2,15 +2,15 @@
 // 「问这一页」，带上的引用片不是一句地址，而是这一页上看得见的东西——这人是谁、什么关系，等你的和在做的任务（要做到什么、
 // 验收看到什么、期限），最近几句。不点就不带。
 
-import type { ContactMessageView, ContactRow, ContactThreadItem } from '../../api/shared.ts';
-import { CONTACT_RELATION_LABELS } from '../../api/shared.ts';
+import {
+  CONTACT_RELATION_LABELS, type ContactMessagesResponse, type ContactMessageView, type ContactRow,
+  type ContactThreadItem,
+} from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { Store } from '../../state/store.ts';
 import { useStore } from '../../state/use-store.ts';
-import type { Route } from '../../shell/routes.ts';
-import { routeHash } from '../../shell/routes.ts';
-import type { Resource } from '../m5b/resource-store.ts';
-import type { ContactMessagesResponse } from '../../api/shared.ts';
+import { routeHash, type Route } from '../../shell/routes.ts';
+import type { Resource } from '../../state/resource-store.ts';
 import { deadlineText } from './contact-time.ts';
 
 /** 引用片里带最近几句。 */

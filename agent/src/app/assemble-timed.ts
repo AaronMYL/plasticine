@@ -1,14 +1,12 @@
 // 登记进「任务 · 定时」的那几样（第 6 批二段 night 线）：订阅（研究周报、个人回顾的日报 / 周报）、心跳、做梦。
 // 都用 tasks 的计时器（每分钟看一眼）；各自到点做什么在 subs/、heartbeat/、dream/。线、通知后面才装好，这里按需取。
 
-import { loopReadings } from '../loop/readings.ts';
-import { writeSelfNotes } from '../loop/self-notes.ts';
-import { soulNight } from '../mates/soul-night.ts';
-import { mainIdentity } from '../mates/main-identity.ts';
+import { loopReadings, writeSelfNotes } from '../loop/index.ts';
+import { mainIdentity, soulNight } from '../mates/index.ts';
 import { randomUUID } from 'node:crypto';
 import type { NoticeInput } from '../attention/index.ts';
-import { Dreamer, type DreamSkills } from '../tools/index.ts';
-import { DreamNight } from '../dream/index.ts';
+import { Dreamer, type DreamSkills } from '../memory/index.ts';
+import { DreamNight } from '../memory/index.ts';
 import { FOLLOW_UP_PREFIX, Heartbeat, type CalendarPort } from '../heartbeat/index.ts';
 import type { TextModels } from '../kernel/index.ts';
 import type { LineKernel } from '../lines/index.ts';

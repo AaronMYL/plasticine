@@ -2,7 +2,7 @@
 // 加补播缓冲，打字时一秒好几段的增量会挤掉别的事件，也会推到别的设备上）。头等第一段字到了再发：那之前失败（没连
 // 模型、额度用完）照旧回普通的错误回答。页面断开（打字作废、换段）就叫停模型。
 
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { toApiError } from './api-error.ts';
 import type { HandlerResult, RequestContext } from './context.ts';
 

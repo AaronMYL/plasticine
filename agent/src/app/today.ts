@@ -20,7 +20,7 @@ export function todayNumbers(deps: AppDeps, day: string, timeZone: string): Toda
     concernsActive: 0,
     concernsPendingClose: 0,
     projectsActive: state.projects.all().filter((project) => project.lifecycle === 'active').length,
-    moneyThisMonth: deps.m5b.life.money.month(day.slice(0, 7), timeZone).expenseCents,
+    moneyThisMonth: deps.toolGroups.life.money.month(day.slice(0, 7), timeZone).expenseCents,
     calendarToday: null,
     focusMinutesToday: null,
   };

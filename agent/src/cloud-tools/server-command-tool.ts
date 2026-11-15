@@ -1,8 +1,7 @@
 import { ServerCommandReadSchema, ServerCommandRequestSchema, SERVER_COMMAND_MAX_MS,
   type ServerCommandRecord } from '../../shared/server-command.ts';
-import type { ServerCommands } from './index.ts';
-import { ToolUncertain } from '../tools/failure.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import type { ServerCommands } from './server-command.ts';
+import { defineTool, ToolUncertain, type Tool } from '../tools/index.ts';
 
 function summary(row: ServerCommandRecord) {
   const { script, error, ...record } = row;

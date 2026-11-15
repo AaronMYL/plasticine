@@ -3,7 +3,7 @@
 
 import { Type } from 'typebox';
 import { INBOX_SOURCES } from '../../shared/state.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 
 export interface InboxLister {
   list(box: (typeof INBOX_TOOL_BOXES)[number], query: string | undefined): Record<string, unknown>;

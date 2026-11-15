@@ -4,23 +4,18 @@
 // 2026-11-05 Harness 重做：任务的暂停 / 取消 / 归档、判断分流、「怎么替你做事」的一次性迁移删掉；status 改数线。
 
 import {
-  MAIL_REFETCH_DEFAULT_LIMIT,
-  MAINTENANCE_WRITE_OPS,
-  type MaintenanceOp,
-  type MaintenanceRequest,
-  type MaintenanceResponse,
+  MAIL_REFETCH_DEFAULT_LIMIT, MAINTENANCE_WRITE_OPS, type MaintenanceOp, type MaintenanceRequest,
+  type MaintenanceResponse, type MemoryMoveItem,
 } from '../../shared/api/maintenance.ts';
 import type { RuleMode } from '../../shared/state.ts';
 import { CloudToolError, type RefetchReport } from '../cloud-tools/index.ts';
-import { rewriteRules } from '../memory/rules/rules-rewrite.ts';
-import { addClaudeItems, moveLine } from '../memory/curation/memory-cleanup.ts';
-import type { MemoryMoveItem } from '../../shared/api/maintenance.ts';
+import { addClaudeItems, moveLine, rewriteRules } from '../memory/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
 
 export interface MaintenanceDeps {
   state: StateService;
-  /** 收信那一侧（mail.refetch 用）；AppDeps 里就是 m5b。 */
-  m5b?: { cloud: { mailRefetch: { run(limit: number, signal: AbortSignal): Promise<RefetchReport> } } };
+  /** 收信那一侧（mail.refetch 用）；AppDeps 里就是 toolGroups。 */
+  toolGroups?: { cloud: { mailRefetch: { run(limit: number, signal: AbortSignal): Promise<RefetchReport> } } };
 }
 
 // 一次 mail.refetch 最多跑这么久：每块（十封）自己有 3 分钟的时限，200 封二十块，正常几分钟；超过就停，补过的已经存下。
@@ -214,7 +209,7 @@ function record(state: StateService, request: MaintenanceRequest, quote: string,
 }
 
 async function refetchMail(deps: MaintenanceDeps, request: MaintenanceRequest): Promise<RefetchReport> {
-  const refetch = deps.m5b?.cloud.mailRefetch;
+  const refetch = deps.toolGroups?.cloud.mailRefetch;
   if (refetch === undefined) {
     throw new MaintenanceFailure('unavailable', '这台服务没装收信，没法从 Gmail 重新抓。');
   }

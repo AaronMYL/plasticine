@@ -32,3 +32,7 @@ export { COMPACTION_KEEP_RECENT_TOKENS, COMPACTION_RESERVE_TOKENS, contextTokens
 export { MAX_DAY_COMPACTIONS, contextWindow, localDay, rollDay, segmented } from './day-context.ts';
 export { LARGE_RESULT_CHARS, READ_RESULT_TOOL } from './large-results.ts';
 export { OPEN_SIDE_TOOL, titleFromText } from './side-chats.ts';
+export { BACKGROUND_LIMIT_KEY, effectiveLimit, machineLoad, readWorkLimit } from './capacity.ts';
+export type { MachineLoad } from './capacity.ts';
+export { lineDetails } from './details.ts';
+export { IMAGE_MAX_BYTES } from './images.ts';

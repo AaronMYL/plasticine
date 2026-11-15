@@ -1,6 +1,6 @@
 // 保留固定的接手提示；CDP 的原始异常和页面输入都不会进入工具日志或失败正文。
-import { CloudToolError } from './index.ts';
-import { ToolFailure, ToolUncertain } from '../tools/failure.ts';
+import { CloudToolError } from './errors.ts';
+import { ToolFailure, ToolUncertain } from '../tools/index.ts';
 
 export async function browserResult<T>(work: () => Promise<T>, sideEffect = false): Promise<T> {
   try {

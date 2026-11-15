@@ -2,7 +2,7 @@
 // 就地换，拉的期间到的事件换上快照后再放一遍——旧快照盖不掉新事件。被拒的动作（超上限、受保护路径）就是在这里看到原因的。
 
 import type { PlasticineApi } from '../../api/client.ts';
-import type { EventsHub } from '../../api/events-hub.ts';
+import type { EventsHub } from '../../state/events-hub.ts';
 import type { LiveEvent, NodeActionView, NodeListResponse, NodeView } from '../../api/types.ts';
 import { Store } from '../../state/store.ts';
 import { SnapshotLoader } from '../../state/snapshot-loader.ts';

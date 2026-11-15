@@ -3,27 +3,12 @@
 
 import type { ProjectsApi } from '../client.ts';
 import { ApiError, ConflictError } from '../errors.ts';
-import { PROJECT_HEALTH_LABELS } from '../shared.ts';
-import type {
-  ProjectDecisionView,
-  AddProjectTodoRequest,
-  CreateProjectRequest,
-  EditProjectRequest,
-  FileProjectItemRequest,
-  ProjectActivityView,
-  ProjectBrief,
-  ProjectDetail,
-  ProjectListResponse,
-  ProjectMaterialView,
-  ProjectPerson,
-  ProjectQuery,
-  ProjectRowView,
-  ProjectTodoResponse,
-  ProjectTodoView,
-  SetProjectHealthRequest,
-  EditProjectTodoRequest,
-  UnfileProjectItemRequest,
-  LineView,
+import {
+  PROJECT_HEALTH_LABELS, type AddProjectTodoRequest, type CreateProjectRequest, type EditProjectRequest,
+  type EditProjectTodoRequest, type FileProjectItemRequest, type LineView, type ProjectActivityView, type ProjectBrief,
+  type ProjectDecisionView, type ProjectDetail, type ProjectListResponse, type ProjectMaterialView, type ProjectPerson,
+  type ProjectQuery, type ProjectRowView, type ProjectTodoResponse, type ProjectTodoView, type SetProjectHealthRequest,
+  type UnfileProjectItemRequest,
 } from '../shared.ts';
 import { designHue } from './design-projects.ts';
 import type { FakeEventBus } from './event-bus.ts';

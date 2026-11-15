@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { rulesDocSection } from '../tools/index.ts';
+import { rulesDocSection } from '../memory/index.ts';
 import type { TextModels } from '../kernel/index.ts';
 import type { StateService } from '../state/index.ts';
 

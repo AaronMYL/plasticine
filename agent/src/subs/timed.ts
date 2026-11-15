@@ -8,9 +8,10 @@ import type { LineView, TeammateView, TimedRowView } from '../../shared/api/inde
 import { STANDING_PROJECT_IDS, type ScheduleCadence, type SpaceEdition, type Subscription, type TimedSlot }
   from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { cadenceLabel, coveredBy, latestDue, lineOutcome, missedDue, nextAfterRun, nextRun, rezonedNext, slotLast,
-  teammatesFromRows, type TimedProvider } from '../tasks/index.ts';
-import type { SuggestionInputDraft } from '../tasks/index.ts';
+import {
+  cadenceLabel, coveredBy, latestDue, lineOutcome, missedDue, nextAfterRun, nextRun, rezonedNext, slotLast,
+  teammatesFromRows, type SuggestionInputDraft, type TimedProvider,
+} from '../tasks/index.ts';
 import { followUps } from './follow-ups.ts';
 import { runSubscription, type RunPort, type RunState } from './run.ts';
 import { schedulesOf } from './schedule.ts';

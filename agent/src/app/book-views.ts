@@ -6,15 +6,10 @@ import {
   type BookInsightView,
   type BookView,
 } from '../../shared/api/index.ts';
-import type {
-  BookAnnotation,
-  BookInsight,
-  BookInsightKind,
-  BookKeyPoints,
-  BookOutline,
-  BookRecord,
+import {
+  BookKeyPointsSchema, BookOutlineSchema, type BookAnnotation, type BookInsight, type BookInsightKind,
+  type BookKeyPoints, type BookOutline, type BookRecord,
 } from '../../shared/state.ts';
-import { BookKeyPointsSchema, BookOutlineSchema } from '../../shared/state.ts';
 import { Value } from 'typebox/value';
 import type { StateService } from '../state/index.ts';
 

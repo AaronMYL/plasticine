@@ -1,14 +1,10 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { NodeActionEnvelope } from '../../shared/api/index.ts';
+import { autoOnlyPermissionGate, type PermissionGate } from '../../src/tools/index.ts';
 import {
-  autoOnlyPermissionGate,
-  createDeviceActionGate,
-  createDeviceActionTool,
-  createDeviceNodesTool,
-  type PermissionGate,
-} from '../../src/tools/index.ts';
-import { DEFAULT_DEVICE_LIMITS, DeviceService } from '../../src/devices/index.ts';
+  createDeviceActionGate, createDeviceActionTool, createDeviceNodesTool, DEFAULT_DEVICE_LIMITS, DeviceService,
+} from '../../src/devices/index.ts';
 import { adaptLegacyTool } from '../../src/lines/index.ts';
 import type { StateService } from '../../src/state/index.ts';
 import { FIXED_NOW, memoryState, toolContext } from '../tools/helpers.ts';

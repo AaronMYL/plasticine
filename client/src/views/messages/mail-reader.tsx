@@ -10,7 +10,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { openExternal } from '../../shell/open-external.ts';
 import { MenuItem, Popover, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { LoadNote } from '../m5b/load-note.tsx';
+import { LoadNote } from '../../shell/load-note.tsx';
 import { ContactAvatar } from '../contacts/contact-avatar.tsx';
 import { ContactComposer } from '../contacts/contact-composer.tsx';
 import { clockTime, shortDate } from '../contacts/contact-time.ts';

@@ -4,16 +4,10 @@
 // 第 10、16 条（11-06）：搜记忆（带归档）和「昨晚整理了什么」（服务端 agent/src/app/memory-library.ts）。
 // 请求和回答的形状都是 agent/shared/api/ 里的，这里不另写一份。
 
-import type { AddMemoryLineRequest, ApplyCleanupRequest, ApplyCleanupResponse, EditMemoryLineRequest,
-  LatestCleanupResponse, MoveMemoryLineRequest, RetireMemoryLineRequest, StartCleanupRequest } from './shared.ts';
 import type {
-  ChooseDreamChangeRequest,
-  MemoryDreamChangeView,
-  MemoryDreamView,
-  MemorySearchResponse,
-  MemoryTopicDoc,
-  MemoryTopicListResponse,
-  UndoDreamChangeRequest,
+  AddMemoryLineRequest, ApplyCleanupRequest, ApplyCleanupResponse, ChooseDreamChangeRequest, EditMemoryLineRequest,
+  LatestCleanupResponse, MemoryDreamChangeView, MemoryDreamView, MemorySearchResponse, MemoryTopicDoc,
+  MemoryTopicListResponse, MoveMemoryLineRequest, RetireMemoryLineRequest, StartCleanupRequest, UndoDreamChangeRequest,
 } from './shared.ts';
 
 export interface MemoryTopicsApi {

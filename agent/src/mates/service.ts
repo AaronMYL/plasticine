@@ -3,7 +3,7 @@ import { LegacyChatProposalSchema, type LegacyChatConvertRequest, type LegacyCha
   type LegacyChatProposal, type MateDraft, type MateGroupDraft, type MateGroupView,
   type MateHandoffRequest, type MateListResponse, type MateView, type UpdateMateRequest }
   from '../../shared/api/mates.ts';
-import type { TextModels } from '../kernel/text.ts';
+import type { TextModels } from '../kernel/index.ts';
 import { LineError, type After, type LineKernel, type SendInput, type SendResult } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
 import { mateSoulOpening } from '../../shared/soul-text.ts';

@@ -1,34 +1,28 @@
-import { offerResolver } from '../loop/autonomy.ts';
+import { offerResolver } from '../loop/index.ts';
 import { withMainSoul } from './soul-text.ts';
-import type { LinkPreviewFetchOptions } from '../cloud-tools/index.ts';
+import {
+  createServerCommandTools, ServerCommands, type CloudTransports, type FaviconFetchOptions,
+  type LinkPreviewFetchOptions, type MailImageFetchOptions,
+} from '../cloud-tools/index.ts';
 // The wiring of the whole service in one place, used by main.ts and by the tests alike. 2026-11-05 Harness 重做：对话就是
 // 新内核的主线（lines/），要花时间的事开后台线；旧的对话轮、任务、事、自迭代、验收和它们的扫描都删了。这里装：卡桌和
 // 它的推送、设备服务、云端工具与站内信、记账、信息流、图书、记忆整理、联系人与网络、进门的规则（命中开后台线）、
 // 本机备份，以及新内核本身和它带的业务工具。
 
+import { autoOnlyPermissionGate, createShowWidgetsTool, getTimeTool, ToolRegistry, type Tool } from '../tools/index.ts';
+import { ensureRulesDoc, createMemoryDocTools, MemoryCurator } from '../memory/index.ts';
+import { createBookTools } from '../books/index.ts';
 import {
-  autoOnlyPermissionGate,
-  ensureRulesDoc,
-  createBookTools,
-  createDeviceActionGate,
-  createDeviceActionTool,
-  createDeviceNodesTool,
-  createFeedCommentGenerator,
-  createFeedTranslator,
-  createFeedSelector,
-  createMemoryDocTools,
-  createNoteTools,
-  createPaymentTool,
-  createServerCommandTools,
-  createShowWidgetsTool,
-  createSkillTools,
-  getTimeTool,
-  MemoryCurator,
-  PaymentReader,
-  projectTools,
-  ToolRegistry,
-  type Tool,
-} from '../tools/index.ts';
+  createDeviceActionGate, createDeviceActionTool, createDeviceNodesTool, DeviceService, type NodeTransport,
+} from '../devices/index.ts';
+import {
+  BACKGROUND_TIME_ZONE, createDaily, createFeedCommentGenerator, createFeedSelector, createFeedTranslator,
+  type FeedFetcher,
+} from '../daily/index.ts';
+import { createNoteTools } from '../notes/index.ts';
+import { createPaymentTool, MoneyDraftDesk, PaymentReader } from '../life/index.ts';
+import { createSkillTools, SkillShop, SkillStore, type SkillShopOptions } from '../skills/index.ts';
+import { projectTools } from '../projects/index.ts';
 import {
   AskDesk,
   Notices,
@@ -45,27 +39,17 @@ import {
   type PushTransport,
   type VapidKeys,
 } from '../attention/index.ts';
-import { BACKGROUND_TIME_ZONE, createDaily, type FeedFetcher } from '../daily/index.ts';
-import { DeviceService, type NodeTransport } from '../devices/index.ts';
 import { bookmarkTrigger, contactTrigger, deviceTrigger, ensureIntake, feedTrigger, IntakeDesk, mailTrigger, ruleGoal,
   type RecordInput } from '../intake/index.ts';
 import { kernelText, type Illustrator, type TextModels } from '../kernel/index.ts';
 import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
-import { MoneyDraftDesk } from '../life/index.ts';
-import { Mates } from '../mates/service.ts';
-import { mateTools } from '../mates/tools.ts';
-import { MateGroupTasks } from '../mates/group-tasks.ts';
-import { mateGroupTaskTools } from '../mates/group-task-tools.ts';
+import { MateGroupTasks, mateGroupTaskTools, Mates, mateTools } from '../mates/index.ts';
 import type { LineKernel } from '../lines/index.ts';
 import { DEFAULT_RELAY_URL, NetworkService, TunnelService, type TunnelServiceOptions } from '../network/index.ts';
-import { ServerCommands, type CloudTransports } from '../cloud-tools/index.ts';
-import type { MailImageFetchOptions } from '../cloud-tools/mail-image-fetch.ts';
-import type { FaviconFetchOptions } from '../cloud-tools/favicon-fetch.ts';
-import { SkillShop, SkillStore, type SkillShopOptions } from '../skills/index.ts';
 import { Tasks } from '../tasks/index.ts';
 import { BackupService, ClientReleases } from '../system/index.ts';
 import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { join } from 'node:path';
 import { LETTER_BRIEF, MAIN_THREAD_PATH, type BackupObjectKind } from '../../shared/api/index.ts';
 import { createApp, type App } from './app.ts';
@@ -83,7 +67,7 @@ import { scanDiskNotice } from './disk-notice.ts';
 import { reportAnnouncement } from './report-announcement.ts';
 import { EventHub } from './event-hub.ts';
 import { MAC_DOWNLOADS_DIR, MacDownloads } from './mac-updates.ts';
-import { createM5bServices, m5bScans, m5bTools, toolEnabled } from './m5b-services.ts';
+import { createToolGroupServices, toolGroupScans, toolGroupTools, toolEnabled } from './tool-group-services.ts';
 import { BrowserSessions } from './browser-sessions.ts';
 import type { KernelModelParts } from './model-providers.ts';
 import { createWidgetFacts } from './widget-facts.ts';
@@ -241,7 +225,7 @@ export function assembleApp(options: AssembleOptions): App {
     receiptPath: join(options.stateDirectory, 'client-release.json'),
     changed: () => hub.publish({ type: 'client_version_changed' }) });
   const browserSessions = new BrowserSessions(state, now);
-  const m5b = createM5bServices({
+  const toolGroups = createToolGroupServices({
     state,
     stateDirectory: options.stateDirectory,
     dryRun: options.dryRun,
@@ -256,7 +240,7 @@ export function assembleApp(options: AssembleOptions): App {
     ...(options.favicons === undefined ? {} : { favicons: options.favicons }),
     onMail: (message) => record(mailTrigger(message, { knownSender: state.inboxReplies.sentTo(message.fromAddress) })),
   });
-  const moneyDrafts = new MoneyDraftDesk({ state, desk, money: m5b.life.money, now,
+  const moneyDrafts = new MoneyDraftDesk({ state, desk, money: toolGroups.life.money, now,
     changed: (id) => hub.publish({ type: 'money_draft_changed', draft: moneyDrafts.view(id) }),
     attachmentChanged: (id) => hub.publish({ type: 'attachment_changed',
       attachment: state.attachments.require(id) }) });
@@ -294,7 +278,7 @@ export function assembleApp(options: AssembleOptions): App {
   const noteTools = createNoteTools(state, (noteId) => hub.publish({ type: 'note_invalidated', noteId }));
   const tools = [...noteTools, ...createBookTools(state), getTimeTool,
     createPaymentTool(moneyDrafts, paymentReader), createDeviceNodesTool(devices),
-    createDeviceActionTool(devices.actions), ...m5bTools(m5b),
+    createDeviceActionTool(devices.actions), ...toolGroupTools(toolGroups),
     ...projectTools({ state, changed: (projectId) => hub.publish({ type: 'project_invalidated', projectId }) }),
     ...createMemoryDocTools(state),
     ...createServerCommandTools(server), ...createSkillTools(skills),
@@ -304,7 +288,7 @@ export function assembleApp(options: AssembleOptions): App {
   }
   // 工具组：关掉的组，线上看不到它的工具（开关是用户确认字段，tool_groups）。
   registry.setGate((name) => toolEnabled(state, name)
-    && (name !== 'cloud_ssh_run' || m5b.cloud.transportAvailable.ssh));
+    && (name !== 'cloud_ssh_run' || toolGroups.cloud.transportAvailable.ssh));
   // 任务栏目（《优化清单》第 3、4、5 条）：定时线就是一条后台线（不贴回哪条线，结果按卡上写的告诉他）；建议开始做的
   // 线做完贴回主线。线和通知后面才装好，这里按需取。
   const tasks = new Tasks({ state, now,
@@ -345,7 +329,7 @@ export function assembleApp(options: AssembleOptions): App {
     tools: [...mateTools(new Mates(state, () => late.get())),
       ...mateGroupTaskTools(new MateGroupTasks(state, () => late.get())), taskCardTool(state, network),
       ...messageTools(state, network), ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
-      ...libraryTools({ state, workspace: m5b.artifacts.workspace },
+      ...libraryTools({ state, workspace: toolGroups.artifacts.workspace },
         (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。
       ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId), {
@@ -357,9 +341,9 @@ export function assembleApp(options: AssembleOptions): App {
         } }),
       ...calendarTools({ state, devices: devices.actions, sync: calendar, now, zone: calendarZone })],
     askTools: tasks.askTools(),
-    legacy: { registry, permission, dryRun: options.dryRun, sshAvailable: m5b.cloud.transportAvailable.ssh,
+    legacy: { registry, permission, dryRun: options.dryRun, sshAvailable: toolGroups.cloud.transportAvailable.ssh,
       submits: devices.actions,
-      widgets: (recorder) => createShowWidgetsTool(createWidgetFacts(state, m5b.life), recorder) },
+      widgets: (recorder) => createShowWidgetsTool(createWidgetFacts(state, toolGroups.life), recorder) },
     turnEnded: (line, outcome) => {
       // 第13批：他自己发起的那一轮回完了（主线、队友、群组、旁聊）：通知「谁 + 回复开头」。
       const alert = outcome === 'done' ? lineReplyAlert(state, line) : null;
@@ -442,12 +426,12 @@ export function assembleApp(options: AssembleOptions): App {
   scans.add({ name: '已记账原图清理', run: () => moneyDrafts.purge() });
   scans.add({ name: '客户端发布记录', run: () => clientUpdates.scan() });
   scans.add({ name: '日历同步', run: () => calendar.scan() });
-  for (const scan of [...daily.scans, ...video.scans, ...m5bScans(m5b)]) {
+  for (const scan of [...daily.scans, ...video.scans, ...toolGroupScans(toolGroups)]) {
     scans.add(scan);
   }
   return createApp({
     browserSessions,
-    m5b,
+    toolGroups,
     memoryCurator,
     skills,
     skillShop: new SkillShop(options.skillShop ?? {}),

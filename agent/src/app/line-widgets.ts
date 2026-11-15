@@ -148,7 +148,7 @@ export async function answerLineWidget(context: RequestContext): Promise<Reply> 
   requireUserAuth(context);
   const lines = kernel(context);
   const body = checkInput(AnswerLineWidgetRequestSchema, await readJsonBody(context.req), '部件作答');
-  const { state, m5b } = context.deps;
+  const { state, toolGroups } = context.deps;
   return idempotent(context, body.requestId, (afterCommit) => lineCall(() => {
     const line = lines.line(param(context, 'id'));
     const row = state.lineMessages.withWidget(line.id, body.widgetId);
@@ -157,7 +157,7 @@ export async function answerLineWidget(context: RequestContext): Promise<Reply> 
     if (row === undefined || widget === undefined) {
       throw notFoundError('这个部件');
     }
-    const answered = applyWidgetAnswer(widget, body.answer, { money: m5b.life.money, state }, afterCommit);
+    const answered = applyWidgetAnswer(widget, body.answer, { money: toolGroups.life.money, state }, afterCommit);
     const details = Reflect.get(message as object, 'details') as Record<string, unknown>;
     const widgets = widgetsIn(message).map((item) => (item.id === widget.id ? answered.widget : item));
     state.lineMessages.replace(line.id, row.seq, { ...(message as object), details: { ...details, widgets } });

@@ -1,6 +1,6 @@
 // /v2/inbox 的真实现：列表（十个分类）、打开一封、已读 / 收藏 / 归档、全部标已读、回复、核实一条回复发没发出去。
 
-import type { InboxApi } from '../m5b-client.ts';
+import type { InboxApi } from '../tool-groups-client.ts';
 import {
   INBOX_PATH,
   INBOX_READ_ALL_PATH,

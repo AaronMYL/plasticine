@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { safeLog } from '../util/log.ts';
+import { safeLog } from '../util/index.ts';
 import type { Illustration, IllustrationMime, Illustrator } from './images.ts';
 
 /** 来信信纸外扩到 720 宽，两倍屏也够清楚。 */

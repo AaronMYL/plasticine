@@ -78,8 +78,8 @@ export function attachFeedStreams(deps: AppDeps): void {
   });
 }
 
-export function itemView(deps: Pick<AppDeps, 'state' | 'm5b'>, item: FeedItem, full = false): FeedItemView {
-  return feedItemView(deps.state, item, deps.m5b.mailImages.signer, full);
+export function itemView(deps: Pick<AppDeps, 'state' | 'toolGroups'>, item: FeedItem, full = false): FeedItemView {
+  return feedItemView(deps.state, item, deps.toolGroups.mailImages.signer, full);
 }
 
 function itemWrite<T>(deps: AppDeps, id: string, write: () => T): T {

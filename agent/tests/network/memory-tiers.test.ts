@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { addLine, ensureMemoryDocs } from '../../src/tools/index.ts';
+import { addLine, ensureMemoryDocs } from '../../src/memory/index.ts';
 import { gatherMaterials, suggestTier } from '../../src/network/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 

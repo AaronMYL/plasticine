@@ -1,6 +1,6 @@
 import { waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { EventsHub } from '../../../src/api/events-hub.ts';
+import { EventsHub } from '../../../src/state/events-hub.ts';
 import { createFakeApi } from '../../../src/api/fake/index.ts';
 import { COGNITION_PAGE_DEFAULT } from '../../../src/api/shared.ts';
 import { FeedUi } from '../../../src/state/feed-ui.ts';

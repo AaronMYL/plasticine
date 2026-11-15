@@ -1,6 +1,6 @@
 import { SkillReadSchema, SkillSearchSchema, SkillWriteSchema } from '../../shared/skills.ts';
-import type { SkillStore } from './index.ts';
-import { defineTool, type Tool, type ToolContext } from '../tools/registry.ts';
+import type { SkillStore } from './store.ts';
+import { defineTool, type Tool, type ToolContext } from '../tools/index.ts';
 
 /** 一条线读过的技能版本固定在这条线上（线的 run id 是 line:<线>），重启、压缩后照旧。 */
 export function skillScope(scope: Pick<ToolContext, 'runId'>): string {

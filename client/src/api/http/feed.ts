@@ -1,56 +1,21 @@
-import { FEED_REFRESH_PATH, FeedRefreshSchema, FeedCommentsResponseSchema, InterestResponseSchema,
-  type RefreshFeedRequest, type FeedRefresh, type FeedCommentsResponse, type AddFeedCommentRequest,
-  type RetryFeedCommentRequest, type AddInterestRequest, type InterestResponse,
-  type BlockFeedSiteRequest } from '../shared.ts';
+import {
+  DOUYIN_PATH, DOUYIN_PROCESS_PATH, DOUYIN_SYNC_PATH, DouyinListResponseSchema, DouyinProcessResponseSchema,
+  DouyinSyncResponseSchema, FEED_ITEMS_PATH, FEED_NAV_PATH, FEED_PATH, FEED_REDDIT_PATH, FEED_REDDIT_PREVIEW_PATH,
+  FEED_REFRESH_PATH, FEED_SOURCES_PATH, FEED_SUBSCRIPTIONS_PATH, FeedCommentsResponseSchema, FeedItemResponseSchema,
+  FeedItemViewSchema, FeedListResponseSchema, FeedNavResponseSchema, FeedRefreshSchema, FeedSourceResponseSchema,
+  FeedSourcesResponseSchema, FeedSourceViewSchema, InterestResponseSchema, RedditPreviewResponseSchema,
+  RefreshFeedSourceResponseSchema, TRANSCRIBER_INSTALL_PATH, TRANSCRIBER_PATH, TranscriberResponseSchema,
+  type AddFeedCommentRequest, type AddInterestRequest, type AddRedditRequest, type AddSubscriptionRequest,
+  type BlockFeedSiteRequest, type DeleteFeedSourceRequest, type DouyinListQuery, type DouyinListResponse,
+  type DouyinProcessRequest, type DouyinProcessResponse, type DouyinSyncRequest, type DouyinSyncResponse,
+  type FeedCommentsResponse, type FeedNavResponse, type FeedRefresh, type InterestResponse, type RedditPreviewQuery,
+  type RedditPreviewResponse, type RefreshFeedRequest, type RefreshFeedSourceRequest, type RefreshFeedSourceResponse,
+  type RetryFeedCommentRequest, type TranscriberInstallRequest, type TranscriberResponse, type UpdateFeedSourceRequest,
+} from '../shared.ts';
 // /v2/feed 的真实现：条目（新的在前，不感兴趣的默认不在里面）、信息源、手动加一条链接、赞 / 不感兴趣 / 收藏、来源的
 // 多少。带 version 的写操作过时了服务端回 409 和现在那一条，换成 ConflictError。
 
 import type { FeedApi } from '../client.ts';
-import { FEED_SUBSCRIPTIONS_PATH, type AddSubscriptionRequest } from '../shared.ts';
-import {
-  DOUYIN_PATH,
-  DOUYIN_PROCESS_PATH,
-  DOUYIN_SYNC_PATH,
-  DouyinListResponseSchema,
-  DouyinProcessResponseSchema,
-  DouyinSyncResponseSchema,
-  FEED_NAV_PATH,
-  FEED_REDDIT_PATH,
-  FEED_REDDIT_PREVIEW_PATH,
-  FeedNavResponseSchema,
-  RedditPreviewResponseSchema,
-  RefreshFeedSourceResponseSchema,
-  type AddRedditRequest,
-  type DeleteFeedSourceRequest,
-  type RedditPreviewQuery,
-  type RedditPreviewResponse,
-  type RefreshFeedSourceRequest,
-  type RefreshFeedSourceResponse,
-  type UpdateFeedSourceRequest,
-  type DouyinListQuery,
-  type DouyinListResponse,
-  type DouyinProcessRequest,
-  type DouyinProcessResponse,
-  type DouyinSyncRequest,
-  type DouyinSyncResponse,
-  type FeedNavResponse,
-  TRANSCRIBER_INSTALL_PATH,
-  TRANSCRIBER_PATH,
-  TranscriberResponseSchema,
-  type TranscriberInstallRequest,
-  type TranscriberResponse,
-} from '../shared.ts';
-import {
-  FEED_ITEMS_PATH,
-  FEED_PATH,
-  FEED_SOURCES_PATH,
-  FeedItemResponseSchema,
-  FeedItemViewSchema,
-  FeedListResponseSchema,
-  FeedSourceResponseSchema,
-  FeedSourcesResponseSchema,
-  FeedSourceViewSchema,
-} from '../shared.ts';
 import type {
   AddFeedItemRequest,
   FeedItemView,

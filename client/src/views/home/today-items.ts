@@ -2,8 +2,7 @@
 // 右边「还有多久」、缓存旧了才出现的同步时间。日历颜色是他 Apple 日历里的颜色，就近落到 --hue-* 的一种，
 // 深浅色都跟着令牌走（界面不现写色值）。
 
-import type { TodayEvent } from '../../api/shared.ts';
-import { CALENDAR_STALE_MS } from '../../api/shared.ts';
+import { CALENDAR_STALE_MS, type TodayEvent } from '../../api/shared.ts';
 import type { HueName } from '../../shell/hue.tsx';
 
 const MINUTE_MS = 60_000;

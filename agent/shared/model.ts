@@ -1,5 +1,5 @@
 // Unified model-layer formats: messages, tool definitions, stream events and requests.
-// Decisions 10-26 第 20 条: every provider speaks this one format, so brain/ never sees provider wire shapes.
+// Decisions 10-26 第 20 条: every provider speaks this one format, so business code never sees provider wire shapes.
 // Defined with typebox so the client and other modules import the same types instead of hand-writing them.
 
 import { Type, type Static } from 'typebox';

@@ -5,30 +5,13 @@
 
 import type { MemoryTopicsApi } from '../things-client.ts';
 import { ApiError } from '../errors.ts';
-import { groupMemoryTopics, hardLines, RULES_DOC_ID } from '../shared.ts';
-import type {
-  AddMemoryLineRequest,
-  ApplyCleanupRequest,
-  ApplyCleanupResponse,
-  EditMemoryLineRequest,
-  LatestCleanupResponse,
-  MoveMemoryLineRequest,
-  RetireMemoryLineRequest,
-  StartCleanupRequest,
-  AnswerUncertainRequest,
-  ChooseDreamChangeRequest,
-  MemoryDreamChangeView,
-  MemoryDreamSummary,
-  MemoryDreamView,
-  MemorySearchResponse,
-  MemoryTopicDoc,
-  MemoryTopicListResponse,
-  MemoryTopicView,
-  RulesOfferItem,
-  SoulView,
-  Tier,
-  UncertainItem,
-  UndoDreamChangeRequest,
+import {
+  groupMemoryTopics, hardLines, RULES_DOC_ID, type AddMemoryLineRequest, type AnswerUncertainRequest,
+  type ApplyCleanupRequest, type ApplyCleanupResponse, type ChooseDreamChangeRequest, type EditMemoryLineRequest,
+  type LatestCleanupResponse, type MemoryDreamChangeView, type MemoryDreamSummary, type MemoryDreamView,
+  type MemorySearchResponse, type MemoryTopicDoc, type MemoryTopicListResponse, type MemoryTopicView,
+  type MoveMemoryLineRequest, type RetireMemoryLineRequest, type RulesOfferItem, type SoulView,
+  type StartCleanupRequest, type Tier, type UncertainItem, type UndoDreamChangeRequest,
 } from '../shared.ts';
 import type { FakeReceipts } from './receipts.ts';
 import type { FakeSession } from './fake-session.ts';

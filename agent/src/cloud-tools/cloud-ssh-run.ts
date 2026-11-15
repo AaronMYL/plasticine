@@ -4,8 +4,9 @@
 // 工具组「云端命令」默认开启；用户已明确关闭的存量设置仍生效。
 
 import { Type } from 'typebox';
-import { COMMAND_MAX_CHARS, type SshResult } from './index.ts';
-import { defineTool, type Tool } from '../tools/registry.ts';
+import { COMMAND_MAX_CHARS } from './ssh.ts';
+import type { SshResult } from './transports.ts';
+import { defineTool, type Tool } from '../tools/index.ts';
 
 export interface SshRunner {
   run(host: string, command: string, signal: AbortSignal): Promise<SshResult>;

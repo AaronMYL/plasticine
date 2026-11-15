@@ -1,7 +1,7 @@
 // 假的文件页、云端浏览器、笔记版本：文件页是一棵内存里的树（路径不许出根、改名和删除要打名字、删除进回收能还原）；
 // 浏览器开一个页面、做动作（假实现里动作算干跑，和开发期真服务端一样）。写操作按 requestId 幂等。
 
-import type { FilesApi, NoteVersionsApi } from '../m5b-client.ts';
+import type { FilesApi, NoteVersionsApi } from '../tool-groups-client.ts';
 import { ApiError, ConflictError } from '../errors.ts';
 import {
   type CreateFolderRequest,

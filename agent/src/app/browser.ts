@@ -18,7 +18,7 @@ export function browserActionId(requestId: string): string { return `browser:${r
 
 export async function getBrowser(context: RequestContext): Promise<Reply> {
   requireAuth(context);
-  const { browser } = context.deps.m5b.cloud;
+  const { browser } = context.deps.toolGroups.cloud;
   try {
     await browser.refresh(AbortSignal.timeout(OPERATION_MS));
   } catch (error) {
@@ -33,7 +33,7 @@ export async function getBrowser(context: RequestContext): Promise<Reply> {
 
 export async function getBrowserFrame(context: RequestContext): Promise<Reply> {
   requireAuth(context);
-  const data = await context.deps.m5b.cloud.browser.frame(AbortSignal.timeout(OPERATION_MS));
+  const data = await context.deps.toolGroups.cloud.browser.frame(AbortSignal.timeout(OPERATION_MS));
   return { status: 200, bytes: { data, type: 'image/png', noStore: true } };
 }
 
@@ -49,7 +49,7 @@ export async function openBrowser(context: RequestContext): Promise<Reply> {
   requireAuth(context);
   const body = checkInput(OpenBrowserRequestSchema, await readJsonBody(context.req), '打开网址');
   const owner = authenticated(context);
-  const { browser } = context.deps.m5b.cloud;
+  const { browser } = context.deps.toolGroups.cloud;
   const view = await browser.requests.run(owner, body.requestId, body.instanceId, body,
     () => browser.userOpen(body.url, AbortSignal.timeout(OPERATION_MS)));
   return { status: 200, body: { browser: view } satisfies BrowserResponse };
@@ -59,7 +59,7 @@ export async function actBrowser(context: RequestContext): Promise<Reply> {
   requireAuth(context);
   const body = checkInput(BrowserActionRequestSchema, await readJsonBody(context.req), '浏览器操作');
   const owner = authenticated(context);
-  const { browser } = context.deps.m5b.cloud;
+  const { browser } = context.deps.toolGroups.cloud;
   const view = await browser.requests.run(owner, body.requestId, body.instanceId, body,
     () => browser.userAct(body.action, AbortSignal.timeout(OPERATION_MS), body.tabId));
   return { status: 200, body: { browser: view, outcome: 'done' } satisfies BrowserActionResponse };
@@ -69,7 +69,7 @@ export async function tabBrowser(context: RequestContext): Promise<Reply> {
   requireAuth(context);
   const body = checkInput(BrowserTabRequestSchema, await readJsonBody(context.req), '浏览器标签页');
   const owner = authenticated(context);
-  const { browser } = context.deps.m5b.cloud;
+  const { browser } = context.deps.toolGroups.cloud;
   const view = await browser.requests.run(owner, body.requestId, body.instanceId, body,
     () => browser.tab(body.action, AbortSignal.timeout(OPERATION_MS)));
   return { status: 200, body: { browser: view } satisfies BrowserResponse };

@@ -10,7 +10,7 @@ import { Value } from 'typebox/value';
 import { SkillStoreIndexSchema, SKILL_UPLOAD_MAX_CHARS, SKILL_UPLOAD_MAX_FILES, type SkillOrigin, type SkillPreview,
   type StoreSkill } from '../../shared/api/skills.ts';
 import { SKILL_NAME_PATTERN } from '../../shared/skills.ts';
-import { PublicFetcher, PublicFetchError, type PublicFetchOptions } from '../cloud-tools/public-fetch.ts';
+import { PublicFetcher, PublicFetchError, type PublicFetchOptions } from '../cloud-tools/index.ts';
 import type { SkillFiles } from './files.ts';
 import { hasScripts, skillMetadata, skillPath, skillTitle } from './format.ts';
 

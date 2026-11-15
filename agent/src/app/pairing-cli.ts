@@ -4,8 +4,7 @@
 // service may be running: the library is shared through WAL and a short write lock.
 
 import { join } from 'node:path';
-import { errorCategory, safeLog } from '../util/log.ts';
-import { requireInteractiveTerminal, showAuthorization } from '../util/terminal.ts';
+import { errorCategory, requireInteractiveTerminal, safeLog, showAuthorization } from '../util/index.ts';
 import { openState } from '../state/index.ts';
 import { DATABASE_FILE } from './config.ts';
 import { issuePairingCode } from './pairing-code.ts';

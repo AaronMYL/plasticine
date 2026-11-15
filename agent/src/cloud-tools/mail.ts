@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import type { InboxMessage } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { errorCategory, failureText, safeLog } from '../util/log.ts';
+import { errorCategory, failureText, safeLog } from '../util/index.ts';
 import type { CredentialFiles } from './credentials.ts';
 import { GMAIL_CREDENTIAL } from './gmail.ts';
 import { CloudToolError } from './errors.ts';

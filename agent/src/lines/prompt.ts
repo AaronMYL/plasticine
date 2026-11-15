@@ -6,16 +6,15 @@
 // 的活交给子代理（后台线）；对话里怎么说话写在 talk-style.ts。
 
 import { ACT_OR_ASK_PROMPT } from '../../shared/act-or-ask.ts';
-import { memoryDocsSection, rulesDocSection, todaySection } from '../tools/index.ts';
+import { memoryDocsSection, rulesDocSection, todaySection } from '../memory/index.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import { DEFAULT_MAIN_NAME } from '../../shared/api/mates.ts';
 import { SOUL_OWNER_MAIN } from '../../shared/api/souls.ts';
 import { MAIN_SOUL_OPENING, soulFirstParagraph } from '../../shared/soul-text.ts';
-import { soulText } from '../mates/souls.ts';
-import { mainIdentity } from '../mates/main-identity.ts';
+import { mainIdentity, soulText } from '../mates/index.ts';
 import { daySection } from './day-context.ts';
 import { statusSection, type StatusState } from './self-status.ts';
-import { loopSection } from '../loop/prompt.ts';
+import { loopSection } from '../loop/index.ts';
 import { BACKGROUND_HANDOFF, SIDE_TOPIC_HINT, TALK_STYLE } from './talk-style.ts';
 
 export type PromptState = Pick<StateService, 'memoryDocs' | 'projects' | 'memoryJournal' | 'lineDays'>

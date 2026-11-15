@@ -1,9 +1,9 @@
 // 只看指定图片，不运行工具，不持久化模型的 OCR 原文；断电留下的尝试不自动再次计费。
 import { Value } from 'typebox/value';
-import { errorCategory, safeLog } from '../util/log.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
 import { EMPTY_PAYMENT_CANDIDATE, PaymentCandidateSchema } from '../../shared/money-drafts.ts';
 import type { TextModels } from '../kernel/index.ts';
-import type { MoneyDraftDesk } from './index.ts';
+import type { MoneyDraftDesk } from './money-drafts.ts';
 import type { StateService } from '../state/index.ts';
 
 interface Options {

@@ -4,13 +4,16 @@ import type { Video } from '../video/index.ts';
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http';
 import type { Device, Session } from '../../shared/state.ts';
 import type { AskDesk, Presence, PushService, ScanScheduler } from '../attention/index.ts';
-import type { BookInsightService, ComposePredictor, MemoryCurator, NoteAssistant, PageTranslator, PaymentReader }
-  from '../tools/index.ts';
+import type { BookInsightService } from '../books/index.ts';
+import type { ComposePredictor } from '../loop/index.ts';
+import type { MemoryCurator } from '../memory/index.ts';
+import type { NoteAssistant } from '../notes/index.ts';
+import type { PageTranslator } from '../web/index.ts';
+import type { MoneyDraftDesk, PaymentReader } from '../life/index.ts';
 import type { Daily } from '../daily/index.ts';
 import type { DeviceService } from '../devices/index.ts';
 import type { IntakeDesk } from '../intake/index.ts';
 import type { TextModels } from '../kernel/index.ts';
-import type { MoneyDraftDesk } from '../life/index.ts';
 import type { LineKernel } from '../lines/index.ts';
 import type { NetworkService, TunnelService } from '../network/index.ts';
 import type { SkillShop, SkillStore } from '../skills/index.ts';
@@ -20,7 +23,7 @@ import type { AttemptLimiter } from './attempt-limiter.ts';
 import type { SourceLimiter } from './source-limiter.ts';
 import { ApiError, unauthorized } from './api-error.ts';
 import type { EventHub } from './event-hub.ts';
-import type { M5bServices } from './m5b-services.ts';
+import type { ToolGroupServices } from './tool-group-services.ts';
 import type { MacDownloads } from './mac-updates.ts';
 import type { KernelModelParts } from './model-providers.ts';
 import type { BrowserSessions } from './browser-sessions.ts';
@@ -28,7 +31,7 @@ import type { Tasks } from '../tasks/index.ts';
 import type { CalendarSync } from '../calendar/index.ts';
 import type { Heartbeat } from '../heartbeat/index.ts';
 import type { DevicePaths } from './device-paths.ts';
-import type { DirectHub } from '../direct/hub.ts';
+import type { DirectHub } from '../direct/index.ts';
 
 export interface AppDeps {
   state: StateService;
@@ -75,7 +78,7 @@ export interface AppDeps {
   /** Development dry run of external effects (decisions 8 and 68). */
   dryRun: boolean;
   /** M5 乙路: 记账、云端工具、文件页、站内信. */
-  m5b: M5bServices;
+  toolGroups: ToolGroupServices;
   skills: SkillStore;
   /** 技能页的「添加」：商店清单、从网址、从文件（11-13）。 */
   skillShop: SkillShop;

@@ -2,7 +2,7 @@
 // 隔一周放一条出去试试；常要的、常忽略的写进提示。
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { ensureDefaultProjects } from '../../src/tools/index.ts';
+import { ensureDefaultProjects } from '../../src/projects/index.ts';
 import { linePrompt } from '../../src/lines/prompt.ts';
 import { COLD_RETRY_MS, MIN_DECIDED } from '../../src/loop/tally.ts';
 import { MAIN_LINE_ID } from '../../src/state/index.ts';

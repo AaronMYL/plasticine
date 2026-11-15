@@ -1,6 +1,6 @@
 // /v2/money 的真实现：账本、统计、记一笔、改一笔、删一笔、加账户、改账户。带 version 的过时了换成带 current 的 ConflictError。
 
-import type { MoneyApi } from '../m5b-client.ts';
+import type { MoneyApi } from '../tool-groups-client.ts';
 import {
   MONEY_ACCOUNTS_PATH,
   MONEY_ENTRIES_PATH,

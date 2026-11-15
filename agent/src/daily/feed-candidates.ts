@@ -7,7 +7,7 @@ import { searchTerms } from '../../shared/feed-search.ts';
 import { FEED_SELECTION_LIMIT, type FeedCandidate } from '../../shared/feed-selection.ts';
 import type { FeedSource } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { errorCategory, failureText, safeLog } from '../util/log.ts';
+import { errorCategory, failureText, safeLog } from '../util/index.ts';
 import type { FeedFetcher } from './feed-fetch.ts';
 import { BUILT_IN_SOURCES } from './feed.ts';
 import { cleanSite } from './link-data.ts';

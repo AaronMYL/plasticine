@@ -23,7 +23,7 @@ export * from './files.ts';
 export * from './inbox.ts';
 export * from './mail.ts';
 export * from './lineage.ts';
-export * from './m5b-events.ts';
+export * from './tool-group-events.ts';
 export * from './money.ts';
 export * from './memory-events.ts';
 export * from './memory.ts';

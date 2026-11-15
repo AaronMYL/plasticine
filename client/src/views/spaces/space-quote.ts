@@ -1,6 +1,5 @@
 import { currentComposer } from '../conversation/current-composer.ts';
-import type { SpaceQuoteReference, SpaceView } from '../../api/shared.ts';
-import { quoteLimitMessage } from '../../api/shared.ts';
+import { quoteLimitMessage, type SpaceQuoteReference, type SpaceView } from '../../api/shared.ts';
 import { useClientState } from '../../state/context.tsx';
 import { PHONE_BELOW } from '../../shell/layout.ts';
 import { useViewportWidth } from '../../shell/use-viewport-width.ts';

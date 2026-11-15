@@ -1,7 +1,7 @@
 // 文件页（/v2/files）的真实现：围着状态目录里的工作目录。下载走同源链接（cookie 会话），浏览器自己下载，不经 fetch、
 // 不进 JSON。
 
-import type { FilesApi } from '../m5b-client.ts';
+import type { FilesApi } from '../tool-groups-client.ts';
 import {
   FILES_CONTENT_PATH,
   FILES_FOLDERS_PATH,

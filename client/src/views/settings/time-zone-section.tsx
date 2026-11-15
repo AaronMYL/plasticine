@@ -6,7 +6,7 @@ import { useLive } from '../../live.tsx';
 import { OpLines } from '../../primitives/task-row/op-line.tsx';
 import { isOpenOp } from '../../state/action-ops.ts';
 import { useClientState } from '../../state/context.tsx';
-import { DAILY_SETTINGS_OP_KEY } from '../../state/m4-action-requests.ts';
+import { DAILY_SETTINGS_OP_KEY } from '../../state/daily-action-requests.ts';
 import { useStore } from '../../state/use-store.ts';
 import { useOp } from '../pending/pending-ops.tsx';
 import { TimeZoneField } from './time-zone-field.tsx';

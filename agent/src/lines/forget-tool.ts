@@ -4,7 +4,7 @@
 
 import { Type } from 'typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
-import { forgetMemory } from '../tools/index.ts';
+import { forgetMemory } from '../memory/index.ts';
 import type { StateService } from '../state/index.ts';
 import { clip } from './messages.ts';
 import { checkedArgs } from './tool-args.ts';
