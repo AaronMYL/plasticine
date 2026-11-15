@@ -11,7 +11,9 @@ Agent、界面、桌面客户端都在这里改、测、打包、发版。Cyber 
    - 先写测试再实现；schema 两端共享；不吞错误。
    - 审查时用它的 `references/review-checklist.md`。
 2. `agent/skills/plasticine-visual/SKILL.md`：界面规矩，只在改界面时读。
-   - 页面模板、页头、间距、组件、加载、动效、文案的统一规范在它的 `references/page-spec.md`，每次改界面都照它做。
+   - 页面模板、页头、内容宽度、组件、加载、空、动效、文案的统一规范在它的 `references/page-spec.md`，每次改界面都照它做；
+     它是界面规矩的正本（设计稿画布、聊天只是过程）。定下新规矩：当场写进 `page-spec.md`，能自动检查的同时在
+     `client/tests/` 或 `scripts/token-check/` 加一条检查进 `npm run check`（已有的检查列在 `page-spec.md` 末尾）。
 3. [docs/dev-workflow.md](docs/dev-workflow.md)：怎么装、怎么测、怎么截图、怎么发版。
 4. [CONTRIBUTING.md](CONTRIBUTING.md)：外部贡献的流程。
 

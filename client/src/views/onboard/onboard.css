@@ -254,7 +254,7 @@
 @keyframes ob-pop-in {
   from {
     opacity: 0;
-    transform: translateY(-3px);
+    transform: translateY(4px);
   }
 }
 

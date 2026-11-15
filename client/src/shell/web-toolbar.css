@@ -72,7 +72,7 @@
 }
 
 .web-note {
-  max-width: 680px;
+  max-width: 680px; /* 例外：网页地址框最宽，不是页面内容 */
   margin: 0 auto var(--space-5);
 }
 
@@ -485,7 +485,7 @@ button.web-address-host:focus-visible {
 
 .web-reader {
   box-sizing: border-box;
-  max-width: 680px;
+  max-width: 680px; /* 例外：网页地址框最宽，不是页面内容 */
   margin: 0 auto;
   padding: var(--space-4) 0 var(--space-7);
   color: var(--fg);

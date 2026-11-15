@@ -18,7 +18,7 @@
   z-index: var(--z-window);
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr);
-  width: min(880px, calc(100vw - 48px));
+  width: min(880px, calc(100vw - 48px)); /* 例外：设置弹框的宽，不是页面内容 */
   height: min(640px, calc(100vh - 48px));
   border-radius: var(--radius-lg);
   background: var(--layer-float);

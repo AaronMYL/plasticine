@@ -212,7 +212,7 @@
 
 @keyframes sheet-up {
   from {
-    transform: translateY(24px);
+    transform: translateY(24px); /* 例外：手机底部抽屉整块升上来 */
     opacity: 0;
   }
 }
