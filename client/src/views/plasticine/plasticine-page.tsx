@@ -30,6 +30,7 @@ import { useMainIdentity } from '../mates/main-identity.tsx';
 import { messageAuthor } from '../lines/line-origin.ts';
 import { WaitMark } from '../../shell/wait-mark.tsx';
 import './plasticine.css';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 /** 在已经读到的记录里找（他说的、回答、步骤）：点一条滚到那一句。 */
 function LineSearch({ lineId }: { lineId: string }): ReactNode {
@@ -126,7 +127,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
     )}
   </>;
   if ((route.mateId != null && mate === undefined) || (route.mateGroupId != null && group === undefined)) {
-    return <p className="block-empty">{roster.status === 'ready' ? '这位队友或群组暂时找不到。' : '正在读…'}</p>;
+    return roster.status === 'ready' ? <p className="block-empty">这位队友或群组暂时找不到。</p> : <PageLoading page />;
   }
   return (
     <div className="messages-plasticine" data-phone={phone} data-side={sideId === null ? undefined : 'true'}>

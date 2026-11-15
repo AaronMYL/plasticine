@@ -10,6 +10,7 @@ import { PlasticineMark } from '../../shell/plasticine-mark.tsx';
 import { loginTarget } from '../onboard/handle.ts';
 import { parseDesktopCatalog, parseLinuxCommand, shortVersion, type DesktopCatalog } from './release-catalog.ts';
 import './download-page.css';
+import { BusyText } from '../../primitives/busy/index.tsx';
 
 export type DownloadPlatform = 'mac' | 'windows' | 'linux' | 'phone';
 /** 读清单是小请求；超时就当没读到，给重试。 */
@@ -115,7 +116,7 @@ function DesktopButton({ platform, desktop, onRetry }: { platform: 'mac' | 'wind
   return (
     <>
       {asset === null ? <button type="button" className="primary-button download-main" disabled>
-        <Icon name="download" size={16} />{desktop.kind === 'loading' ? '正在读…' : `${name} 版还没有`}</button> : (
+        <BusyText busy={desktop.kind === 'loading'}><Icon name="download" size={16} />{`${name} 版还没有`}</BusyText></button> : (
         <a className="primary-button download-main" href={asset.url}><Icon name="download" size={16} />下载 {name} 版</a>
       )}
       {desktop.kind === 'ready' && asset !== null

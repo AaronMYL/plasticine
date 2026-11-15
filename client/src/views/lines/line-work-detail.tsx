@@ -42,8 +42,9 @@ export function LineWorkDetail({ lineId, navigate, task, before, actions, hideCo
   const [actionError, setActionError] = useState<string | null>(null);
   const manual = task?.direction === 'in' && task.doer === 'person';
   const now = useNow(!manual && line?.status === 'running');
-  if (line === null) return <div className="work-placeholder" role={detail.error === null ? 'status' : 'alert'}>
-    <p>{detail.error ?? '正在读工作…'}</p>
+  if (line === null && detail.error === null) return <div className="work-placeholder"><PageLoading rows={6} /></div>;
+  if (line === null) return <div className="work-placeholder" role="alert">
+    <p>{detail.error}</p>
     {detail.error === null ? null : <button type="button" className="secondary-button"
       onClick={() => void detail.refresh()}>再读一次</button>}
   </div>;

@@ -7,6 +7,7 @@ import { useLinkedSpace } from '../spaces/use-linked-space.ts';
 import { useSpaceQuote } from '../spaces/space-quote.ts';
 import '../spaces/space-frame.css';
 import { bodyDate } from '../../shell/time-text.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const KIND_NAMES: Readonly<Record<BookInsightKind, string>> = { outline: '大纲', key_points: '重点' };
 
@@ -50,7 +51,7 @@ function InsightContent(props: InsightStateProps & { currentChapter?: number; to
         if (position.bookId === props.bookId) props.onPosition(position.chapter, position.offset);
       }} />;
   } else {
-    body = <p className="block-empty" role="status">正在读…</p>;
+    body = <PageLoading rows={3} dense />;
   }
   return <div className="bk-insight-content">
     {status === 'ready' ? <div className="bk-insight-tools">{props.tools}<span className="grow" />

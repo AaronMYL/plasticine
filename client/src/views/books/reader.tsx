@@ -40,6 +40,7 @@ import { TypographyMenu } from './typography-menu.tsx';
 import { useAnnotations, useBook, useInsight } from './use-book-data.ts';
 import { usePaged } from './use-paged.ts';
 import { useSelectionPopover, useSelectionQuote } from './use-selection-popover.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const HEADING_FIRST = /^<h[234]>/;
 
@@ -98,7 +99,7 @@ export function Reader(props: ReaderProps): ReactNode {
     );
   }
   if (book.value === null) {
-    return <p className="block-empty page-loading">正在读…</p>;
+    return <PageLoading page rows={8} />;
   }
   return <LoadedReader {...props} book={book.value} />;
 }
@@ -461,7 +462,7 @@ function LoadedReader({ book, position, phone, navigate }: ReaderProps & { book:
             本章约 {minutesToRead(book.toc[chapterIndex]?.chars ?? 0)} 分钟 · 全书 {percentText(percent)}
           </p>
           {chapterError === null ? null : <p className="block-empty is-error" role="alert">{chapterError}</p>}
-          {chapter === null ? (chapterError === null ? <p className="block-empty">正在读这一章…</p> : null) : (
+          {chapter === null ? (chapterError === null ? <PageLoading rows={10} /> : null) : (
             <ChapterView html={chapter.html} assetUrl={(key) => api.books.assetUrl(chapter, key)}
               highlights={decorations.highlights} keyPoints={pointMarks} noteMarkers={!showMargins} flash={flash}
               onRendered={onRendered}

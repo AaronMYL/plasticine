@@ -7,6 +7,7 @@ import { useRead } from './use-read.ts';
 import { AgreementRow } from './agreement-row.tsx';
 import { ChangeLog } from './change-log.tsx';
 import { SourceContextView } from './source-context.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export function ObjectFocus({ id, type, readOnly = false, onQuote }: { id: string; type: Route['objectType'];
   readOnly?: boolean; onQuote?: ((quote: Quote | null) => void) | undefined;
@@ -36,7 +37,7 @@ export function ObjectFocus({ id, type, readOnly = false, onQuote }: { id: strin
   if (error !== null) {
     return <p role="alert">{error} <button type="button" className="text-button" onClick={reload}>重读这条</button></p>;
   }
-  if (value === null) { return <p className="block-empty">正在读引用的这一条…</p>; }
+  if (value === null) { return <PageLoading rows={3} />; }
   return <section className="block" aria-label="引用的条目">
     <h2 className="block-title">引用的条目</h2>
     {value.kind === 'memory' ? <>

@@ -10,6 +10,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { FoldRow, StepList } from './line-parts.tsx';
 import type { LineThreadData } from './line-thread-data.ts';
 import { buildTimeline } from './timeline.ts';
+import { BusyText } from '../../primitives/busy/index.tsx';
 
 export function WorkRequest({ request }: { request: LineDetailsResponse['request'] }): ReactNode {
   const [showSource, setShowSource] = useState(false);
@@ -52,7 +53,7 @@ export function WorkResults({ results, current, hasMore, loading, onEarlier }:
         <Markdown text={result.text} />
       </details>)}
       {hasMore ? <button type="button" className="text-button" disabled={loading} onClick={onEarlier}>
-        {loading ? '正在读…' : '更早的版本'}</button> : null}
+        <BusyText busy={loading}>更早的版本</BusyText></button> : null}
     </div> : null}
   </section>;
 }
@@ -67,7 +68,7 @@ export function WorkProcess({ lineId, thread }: { lineId: string; thread: LineTh
     <FoldRow label="查看过程" open={open} onToggle={() => setOpen((value) => !value)} />
     {open ? <div className="work-process-body">
       {thread.hasMore ? <button type="button" className="text-button" disabled={thread.loadingEarlier}
-        onClick={() => void live.lines.loadEarlier(lineId)}>{thread.loadingEarlier ? '正在读…' : '更早的过程'}</button> : null}
+        onClick={() => void live.lines.loadEarlier(lineId)}><BusyText busy={thread.loadingEarlier}>更早的过程</BusyText></button> : null}
       <StepList steps={steps} />
       {thread.messages.filter((message) => message.role === 'user').map((message) =>
         <p className="work-process-input" key={message.seq}>{message.text}</p>)}

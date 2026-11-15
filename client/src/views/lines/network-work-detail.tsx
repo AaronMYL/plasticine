@@ -13,6 +13,7 @@ import { TaskDetailActions } from '../contacts/task-card.tsx';
 import { LineWorkDetail } from './line-work-detail.tsx';
 import { WorkRequest } from './work-content.tsx';
 import { WorkRevision } from './work-revision.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 export interface NetworkWorkDetailProps {
   taskId?: string;
@@ -77,8 +78,10 @@ export function NetworkWorkDetail({ taskId, groupTaskId, navigate }: NetworkWork
   if (task?.localTaskId != null && task.direction === 'in') return <LineWorkDetail lineId={task.localTaskId}
     navigate={navigate} task={task} before={before} actions={actions}
     hideComposer={revision || task.doer !== 'ai' || !['accepted', 'in_progress'].includes(task.state)} />;
+  if ((!loaded || task === null && group === null) && error === null) return <div className="work-placeholder">
+    <PageLoading rows={6} /></div>;
   if (!loaded || task === null && group === null) return <div className="work-placeholder"
-    role={error === null ? 'status' : 'alert'}><p>{error ?? '正在读工作…'}</p>
+    role="alert"><p>{error}</p>
     {error === null ? null : <button type="button" className="secondary-button" onClick={() => void reload()}>
       重试</button>}</div>;
   return <div className="work-detail"><div className="work-scroll">

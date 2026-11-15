@@ -14,6 +14,8 @@ import { usePhone } from '../../shell/use-viewport-width.ts';
 import { useStore } from '../../state/use-store.ts';
 import './douyin-sheet.css';
 import { SearchField } from '../../primitives/search-field/index.tsx';
+import { BusyText } from '../../primitives/busy/index.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const RUN_TEXT: Readonly<Record<VideoWorkView['run'], string | null>> = {
   idle: null,
@@ -123,7 +125,7 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
         ) : null}
         {state.error === null ? null : <p className="douyin-note is-error" role="alert">{state.error}</p>}
         <div className="douyin-scroll">
-          {state.status === 'loading' ? <p className="douyin-note">正在读收藏…</p> : null}
+          {state.status === 'loading' ? <PageLoading rows={6} dense /> : null}
           {state.status === 'ready' && works.length === 0 && state.error === null ? (
             <p className="douyin-note">
               {state.query === '' && state.folder === null ? '还没同步过收藏。点「同步」从电脑上取标题。' : '没有对得上的收藏。'}
@@ -137,7 +139,7 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
           {left > 0 ? (
             <button type="button" className="text-button douyin-more" disabled={busy === 'more'}
               onClick={() => void store.more()}>
-              {busy === 'more' ? '正在读…' : <>还有 <Count n={left} /> 条</>}
+              <BusyText busy={busy === 'more'}>还有 <Count n={left} /> 条</BusyText>
             </button>
           ) : null}
         </div>

@@ -12,6 +12,7 @@ import { PageHeader } from '../../shell/page-header.tsx';
 import type { Route } from '../../shell/routes.ts';
 import { DreamSouls } from './dream-souls.tsx';
 import './dream.css';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 // 每组先摆几条（设计稿）。
 const SHOWN = 3;
@@ -113,7 +114,7 @@ export function DreamPage({ navigate, onBack }: { navigate: (route: Route) => vo
     return (
       <div className="page memory-dream">
         <PageHeader title="昨晚整理了什么" onBack={back} />
-        {dreamError === null ? <p className="block-empty" role="status">正在读…</p>
+        {dreamError === null ? <PageLoading rows={6} dense />
           : <p className="block-empty" role="alert">{dreamError}</p>}
       </div>
     );

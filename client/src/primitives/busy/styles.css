@@ -1,0 +1,40 @@
+/* 小圈（primitives/busy）：14 的细环，跟着字色；减少动态效果时不转，只淡一点。 */
+.spinner {
+  display: inline-block;
+  flex: none;
+  width: 14px; /* 例外：小圈的大小 */
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--radius-full);
+  animation: busy-spin 720ms linear infinite; /* 例外：转一圈的时长，不是界面动效 */
+}
+
+.busy-text {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+}
+
+.busy-text[data-busy='true'] > .busy-text-label {
+  visibility: hidden;
+}
+
+.busy-text > .spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+@keyframes busy-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    opacity: 0.6;
+  }
+}

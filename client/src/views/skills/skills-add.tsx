@@ -10,6 +10,7 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import { SkillPreviewPane } from './skill-preview.tsx';
 import { SearchField } from '../../primitives/search-field/index.tsx';
+import { BusyText } from '../../primitives/busy/index.tsx';
 
 export interface SkillsAddProps {
   phone: boolean;
@@ -94,7 +95,7 @@ function FromUrl({ busy, onLook }: { busy: boolean; onLook: (url: string) => voi
       placeholder="https://github.com/…/tree/main/…" value={url} onChange={(event) => setUrl(event.target.value)} />
     <p className="field-hint">GitHub 上的一个技能目录，或者直接指到一份 SKILL.md</p>
     <button type="submit" className="primary-button" disabled={busy || url.trim() === ''}>
-      {busy ? '正在读…' : '先看看'}</button>
+      <BusyText busy={busy}>先看看</BusyText></button>
   </form>;
 }
 
@@ -117,7 +118,7 @@ function FromFiles({ busy, onLook, onError }: { busy: boolean;
     <p className="skills-from-lead">挑一个技能文件夹（里面有 SKILL.md）</p>
     <div className="skill-preview-actions">
       <button type="button" className="primary-button" disabled={busy} onClick={() => folder.current?.click()}>
-        {busy ? '正在读…' : '选文件夹'}</button>
+        <BusyText busy={busy}>选文件夹</BusyText></button>
       <button type="button" className="secondary-button" disabled={busy} onClick={() => loose.current?.click()}>
         选文件</button>
     </div>

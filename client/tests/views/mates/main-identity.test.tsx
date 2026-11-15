@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 import { seedContacts } from '../../../src/api/fake/contacts-seed.ts';
 import { renderApp, settle } from '../../helpers.tsx';
 
-it('编辑主线（第13批设计稿）：头像、名字、Soul、模型；画风点「换画风」才出；改的一起存，栏目和输入框提示跟着变', async () => {
+it('编辑主线（第13批设计稿）：头像、名字、Soul、模型；画风点「换画风」才出；改的一起存，主线那一行和输入框提示跟着变（栏目名照旧 Plasticine，11-15）', async () => {
   const app = await renderApp({ hash: '#/plasticine' });
   fireEvent.click(await screen.findByRole('button', { name: /主线的更多操作$/ }));
   fireEvent.click(screen.getByRole('menuitem', { name: '编辑主线' }));
@@ -31,7 +31,8 @@ it('编辑主线（第13批设计稿）：头像、名字、Soul、模型；画�
   await waitFor(() => expect(app.control.souls.textOf('main')).toContain('## 说话\n- 先说结论。'));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: '编辑主线' })).toBeNull());
   expect(await screen.findByRole('link', { name: '阿泥 主线' })).toBeTruthy();
-  expect(screen.getByRole('navigation', { name: '栏目' }).querySelector('[aria-label="阿泥"]')).not.toBeNull();
+  expect(screen.getByRole('navigation', { name: '栏目' }).querySelector('[aria-label="阿泥"]')).toBeNull();
+  expect(screen.getByRole('navigation', { name: '栏目' }).querySelector('[aria-label="Plasticine"]')).not.toBeNull();
   const input = await screen.findByRole('textbox', { name: '问一句' }) as HTMLTextAreaElement;
   expect(input.placeholder).toBe('回复 阿泥');
 });

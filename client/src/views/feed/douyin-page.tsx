@@ -21,6 +21,7 @@ import '../spaces/space-frame.css';
 import '../bulk/bulk.css';
 import './douyin-page.css';
 import { bodyDate } from '../../shell/time-text.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 function meta(work: VideoWorkView, timeZone: string): string {
   const date = work.collectedAt === null ? null : `收藏于 ${new Intl.DateTimeFormat('zh-CN',
@@ -226,8 +227,8 @@ export function DouyinPage({ phone, onSelect }: { phone: boolean; onSelect: () =
           })} /></li>)}
       </ul>
       <div ref={sentinel} className="dy-sentinel" aria-hidden="true" />
-      {state.works.length === 0 ? <p className="block-empty">{state.status === 'loading' ? '正在读收藏…'
-        : filter === 'all' ? '还没有同步收藏' : `没有${FILTER_LABELS[filter]}的收藏`}</p>
+      {state.works.length === 0 ? state.status === 'loading' ? <PageLoading rows={6} dense />
+        : <p className="block-empty">{filter === 'all' ? '还没有同步收藏' : `没有${FILTER_LABELS[filter]}的收藏`}</p>
         : <MoreState loading={state.busy === 'more'} end={false} error={null} onRetry={() => void store.more()} />}
       </div>
       {picking ? <div className="bulk-bar dy-bulk-bar" role="group" aria-label="批量操作">

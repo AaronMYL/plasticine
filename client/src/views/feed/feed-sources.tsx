@@ -12,6 +12,7 @@ import { useStore } from '../../state/use-store.ts';
 import { useOp } from '../pending/pending-ops.tsx';
 import { FeedQuery } from './feed-query.tsx';
 import { FeedInterest, FeedSite } from './feed-interest.tsx';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 const LEVELS: ReadonlyArray<{ level: FeedSourceView['level']; label: string }> = [
   { level: 'more', label: '偏多' },
@@ -88,7 +89,7 @@ export function FeedSources(): ReactNode {
   const data = useStore(live.feed.sources);
   return (
     <section className="block feed-sources" aria-label="信息源">
-      {data.status === 'loading' || data.status === 'idle' ? <p className="block-empty">正在读信息源…</p> : null}
+      {data.status === 'loading' || data.status === 'idle' ? <PageLoading rows={4} dense /> : null}
       {data.error === null ? null : (
         <p className="block-empty is-error" role="alert">
           {data.error}{' '}
