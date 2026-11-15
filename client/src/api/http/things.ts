@@ -4,7 +4,8 @@
 import type { MemoryTopicsApi, ThingsApi } from '../things-client.ts';
 import {
   ApplyCleanupResponseSchema, LatestCleanupResponseSchema, MEMORY_CLEANUPS_PATH, MEMORY_DOCS_PATH, MEMORY_DREAMS_PATH,
-  MEMORY_SEARCH_PATH, MEMORY_TOPICS_PATH, memoryCleanupApplyPath, MemoryDreamChangeViewSchema, MemoryDreamViewSchema,
+  MEMORY_GRANTS_PATH, MEMORY_LOOP_GRANT_REVOKE_PATH, MEMORY_SEARCH_PATH, MEMORY_TOPICS_PATH, memoryCleanupApplyPath,
+  MemoryDocResponseSchema, MemoryDreamChangeViewSchema, MemoryDreamViewSchema, MemoryGrantsResponseSchema,
   memoryLineMovePath, memoryLinesPath, MemorySearchResponseSchema, MemoryTopicDocSchema, MemoryTopicListResponseSchema,
 } from '../shared.ts';
 import type { Transport } from './transport.ts';
@@ -48,6 +49,18 @@ export function createThingsHttp(transport: Transport): ThingsApi {
       await transport.request({ method: 'POST', path: memoryLineMovePath(docId, lineId), body: input,
         schema: Anything, what: '挪这一条记忆', lostAs: 'uncertain' });
     },
+    withdrawn: async (docId, signal) => {
+      const doc = await transport.request({ method: 'GET', path: `${MEMORY_DOCS_PATH}/${encodeURIComponent(docId)}`,
+        query: { includeRetired: true }, schema: MemoryDocResponseSchema, what: '读收回过的几条', lostAs: 'failed',
+        signal });
+      // 收回的是「不再成立」那一种；被改掉、挪走的旧行不算。
+      return (doc.retired ?? []).filter((line) => line.retiredReason === 'no_longer_true' && line.retiredAt !== null)
+        .map((line) => ({ id: line.id, text: line.text, section: line.section, retiredAt: line.retiredAt ?? '' }));
+    },
+    grants: (signal) => transport.request({ method: 'GET', path: MEMORY_GRANTS_PATH,
+      schema: MemoryGrantsResponseSchema, what: '读放过手的几类', lostAs: 'failed', signal }),
+    revokeLoopGrant: (input) => transport.request({ method: 'POST', path: MEMORY_LOOP_GRANT_REVOKE_PATH, body: input,
+      schema: MemoryGrantsResponseSchema, what: '收回这一类', lostAs: 'uncertain' }),
     cleanup: (signal) => transport.request({ method: 'GET', path: `${MEMORY_CLEANUPS_PATH}/latest`,
       schema: LatestCleanupResponseSchema, what: '读整理清单', lostAs: 'failed', signal }),
     startCleanup: async (input) => {

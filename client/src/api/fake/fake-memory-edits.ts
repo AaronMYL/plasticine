@@ -2,7 +2,9 @@
 // 挪过去接在目标页最后一节。全量整理在假实现里马上出一份示例清单（合并、挪位置、归档各一条），勾了才改。
 
 import { ApiError } from '../errors.ts';
-import type { ApplyCleanupResponse, CleanupItemView, CleanupView, LatestCleanupResponse } from '../shared.ts';
+import { MEMORY_SECTION_LABELS, type ApplyCleanupResponse, type CleanupItemView, type CleanupView,
+  type LatestCleanupResponse, type MemoryLineSection } from '../shared.ts';
+import type { WithdrawnLine } from '../things-client.ts';
 import type { LineSeed, TopicSeed } from './memory-topics-seed.ts';
 
 export interface LineRef {
@@ -19,6 +21,7 @@ export class FakeMemoryEdits {
   private readonly meta = new WeakMap<LineSeed, { id: string; version: number }>();
   private counter = 0;
   private cleanup: CleanupView | null = null;
+  private readonly gone: { docId: string; line: WithdrawnLine }[] = [];
   private overview: LatestCleanupResponse['overview'] = null;
 
   private readonly topics: () => TopicSeed[];
@@ -72,12 +75,19 @@ export class FakeMemoryEdits {
       lineCount: seed.sections.reduce((sum, section) => sum + section.lines.length, 0) };
   }
 
-  private append(seed: TopicSeed, line: LineSeed, version = 1): string {
-    let section = seed.sections[seed.sections.length - 1];
-    if (section === undefined) {
-      section = { heading: '补充', lines: [] };
-      seed.sections.push(section);
-    }
+  /** 加到哪一节：给了段就找那一段（没有就按段名新起一节），没给就接在最后一节。 */
+  private sectionFor(seed: TopicSeed, key: MemoryLineSection | undefined): TopicSeed['sections'][number] {
+    const found = key === undefined ? seed.sections[seed.sections.length - 1]
+      : seed.sections.find((candidate) => candidate.section === key);
+    if (found !== undefined) return found;
+    const section = key === undefined ? { heading: '补充', lines: [] }
+      : { heading: MEMORY_SECTION_LABELS[key], section: key, lines: [] };
+    seed.sections.push(section);
+    return section;
+  }
+
+  private append(seed: TopicSeed, line: LineSeed, version = 1, key?: MemoryLineSection): string {
+    const section = this.sectionFor(seed, key);
     section.lines.push(line);
     const id = `line_new_${(this.counter += 1)}`;
     this.meta.set(line, { id, version });
@@ -85,8 +95,8 @@ export class FakeMemoryEdits {
     return id;
   }
 
-  add(docId: string, text: string): string {
-    return this.append(this.doc(docId), [text.trim(), 'quote', '你加的', 0]);
+  add(docId: string, text: string, section?: MemoryLineSection): string {
+    return this.append(this.doc(docId), [text.trim(), 'quote', '你加的', 0], 1, section);
   }
 
   edit(docId: string, lineId: string, version: number, text: string): void {
@@ -99,18 +109,30 @@ export class FakeMemoryEdits {
     this.touch(found.seed);
   }
 
-  retire(docId: string, lineId: string, version: number): void {
+  /** withdraw：收回（进「已收回」，还看得到）；不然就是忘掉。 */
+  retire(docId: string, lineId: string, version: number, withdraw = false): void {
     const found = this.require(docId, lineId, version);
     found.section.lines.splice(found.section.lines.indexOf(found.line), 1);
+    if (withdraw && found.section.section !== undefined) {
+      this.gone.unshift({ docId, line: { id: lineId, text: found.line[0], section: found.section.section,
+        retiredAt: this.now().toISOString() } });
+    }
     this.touch(found.seed);
   }
 
-  move(docId: string, lineId: string, version: number, toDocId: string): string {
+  withdrawn(docId: string): WithdrawnLine[] {
+    return this.gone.filter((row) => row.docId === docId).map((row) => ({ ...row.line }));
+  }
+
+  move(docId: string, lineId: string, version: number, toDocId: string, section?: MemoryLineSection): string {
     const target = this.doc(toDocId);
     const found = this.require(docId, lineId, version);
     found.section.lines.splice(found.section.lines.indexOf(found.line), 1);
     this.touch(found.seed);
-    return this.append(target, [...found.line] as LineSeed);
+    // 没给段：那边也有这一段就不变，没有就接在那边最后一节（同真服务端的落法）。
+    const key = section ?? (target.sections.some((candidate) => candidate.section === found.section.section)
+      ? found.section.section : undefined);
+    return this.append(target, [...found.line] as LineSeed, 1, key);
   }
 
   // ---- 全量整理 ----

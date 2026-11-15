@@ -1,0 +1,300 @@
+/* 记忆分层（11-15 设计稿）：承诺和授权、主动告诉你、做事经验三页多出来的样子。 */
+
+/* ---------- 目录：说好的两页、做事经验的条数 ---------- */
+
+.topic-row-lead {
+  display: grid;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  color: var(--fg2);
+}
+
+.topic-row-count {
+  flex: none;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.uncertain-to {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  white-space: nowrap;
+  vertical-align: 1px;
+}
+
+/* ---------- 一行的另外两种摆法：做事经验（出处在下面）、一行一条（承诺和授权、主动告诉你） ---------- */
+
+.doc-line.doc-line-stacked {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.doc-line-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.doc-line-text .ai-mark {
+  margin-right: var(--space-2);
+}
+
+.doc-line-under {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--fg2);
+}
+
+.doc-line-was {
+  margin-top: var(--space-1);
+  padding-left: var(--space-3);
+  box-shadow: inset 1px 0 0 var(--line2);
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.doc-line[data-look='row'] {
+  align-items: center;
+  min-height: 48px;
+}
+
+.doc-line[data-look='row'] .doc-line-text {
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.doc-line-lead {
+  display: grid;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  color: var(--fg2);
+}
+
+.doc-line-at {
+  flex: none;
+  color: var(--fg2);
+  white-space: nowrap;
+}
+
+.doc-section-count {
+  margin-left: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  font-weight: 400;
+}
+
+.doc-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.doc-add-form > .segmented {
+  align-self: flex-start;
+}
+
+/* ---------- 承诺和授权 ---------- */
+
+.memory-grants .outbound-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.grants-gone-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.grants-gone-count {
+  flex: 1;
+  font-size: var(--text-caption);
+}
+
+.grants-gone-text {
+  color: var(--fg2);
+}
+
+/* ---------- 主动告诉你：电脑上左右两栏，窄了接成一列 ---------- */
+
+.memory-proactive {
+  container-type: inline-size;
+}
+
+.proactive-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--space-7);
+}
+
+.proactive-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+@container (max-width: 640px) {
+  .proactive-cols {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-5);
+  }
+}
+
+.proactive-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.proactive-quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+}
+
+/* ---------- 心跳的清单、一句话改、最近（从任务 · 定时的弹层搬来） ---------- */
+
+.heartbeat-model .line-model {
+  justify-content: space-between;
+  width: 220px;
+  height: 34px;
+  padding: 0 var(--space-3);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font-size: var(--text-body);
+}
+
+.heartbeat-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.heartbeat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  border-radius: var(--radius);
+  transition: background var(--motion-fast) var(--ease-out);
+}
+
+.heartbeat-item[data-over] {
+  background: var(--tint);
+}
+
+.heartbeat-grip {
+  display: grid;
+  width: 20px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg3);
+  cursor: grab;
+}
+
+.heartbeat-grip:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.heartbeat-item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.heartbeat-remove {
+  opacity: 0.55;
+}
+
+.heartbeat-item:hover .heartbeat-remove,
+.heartbeat-remove:focus-visible {
+  opacity: 1;
+}
+
+.heartbeat-say {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  margin-top: var(--space-2);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.heartbeat-say:focus-within {
+  box-shadow: inset 0 0 0 1px var(--fg2);
+}
+
+.heartbeat-say-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: var(--text-body);
+}
+
+.heartbeat-say-input::placeholder {
+  color: var(--fg3);
+}
+
+.heartbeat-recent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  list-style: none;
+}
+
+.heartbeat-recent li[data-failed] {
+  color: var(--err);
+}
+
+.heartbeat-recent-at {
+  margin-right: var(--space-3);
+  font-family: var(--mono);
+}
+
+/* 两页固定的没有一句话说明那一行：返回和第一节之间不往上收那么多。 */
+.memory-grants > .doc-back,
+.memory-proactive > .doc-back {
+  margin-bottom: calc(-1 * var(--space-3));
+}

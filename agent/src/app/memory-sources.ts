@@ -51,6 +51,13 @@ export function sourceOf(state: SourceState, anchor: MemoryAnchor): MemoryLineSo
     return { kind: 'agreement', id: anchor.ref, label: anchor.kind === 'term' ? '词表' : '约定',
       at: agreement?.createdAt ?? EPOCH };
   }
+  if (anchor.kind === 'work') {
+    // 记忆分层：Plasticine 做事时试出来的，出处是那条线（哪件事）；点过去是那条线。
+    const id = anchor.ref.replace(/^line:/u, '');
+    const line = state.lines.get(id);
+    const label = line === undefined ? '做事的时候' : line.kind === 'main' ? '主线' : clip(line.title, LABEL_CHARS);
+    return { kind: 'work', id, label, at: line?.updatedAt ?? EPOCH };
+  }
   if (anchor.kind === 'contact_message') {
     // 第 12 批：联系人在聊天里说的那一句：点过去是和他的聊天。
     const message = state.contactMessages.get(anchor.ref);

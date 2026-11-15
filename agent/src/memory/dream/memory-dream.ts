@@ -9,7 +9,8 @@
 import { Type, type Static } from 'typebox';
 import { Value } from 'typebox/value';
 import { SkillNameSchema } from '../../../shared/skills.ts';
-import type { MemoryAnchor, MemoryDream, MemoryDoc, MemoryJournalEntry } from '../../../shared/state.ts';
+import { PROACTIVE_DOC_ID, type MemoryAnchor, type MemoryDream, type MemoryDoc,
+  type MemoryJournalEntry } from '../../../shared/state.ts';
 import type { TextModels } from '../../kernel/index.ts';
 import type { StateService } from '../../state/index.ts';
 import { askJson } from '../../books/index.ts';
@@ -19,6 +20,8 @@ import { applyPlan, directory, relatedLines, snapshot, touchedDocs,
   type WrittenOp } from '../curation/memory-curation-work.ts';
 import { errorCategory, safeLog } from '../../util/index.ts';
 import { findContradictions } from '../curation/memory-contradictions.ts';
+import { LAYER_RULES } from '../curation/layer-rules.ts';
+import { noteExperience } from '../docs/experience.ts';
 import { ensureMemoryDocs, type Writer } from '../docs/memory-doc-writes.ts';
 
 /** 一晚最多读这么多条消息（一天再忙也到不了；到了就是在刷，宁可留到下一晚）。 */
@@ -33,6 +36,9 @@ export type DreamState = Pick<StateService, 'memoryDocs' | 'memoryCuration' | 'm
 /** 没了结的事提成建议（tasks 的 suggestions.suggest，assemble 接上）；同一个 key 不重复提。 */
 export type DreamSuggest = (input: { title: string; why: string; goal: string; key: string; sourceRef: string | null })
   => void;
+
+/** 一晚最多记这么多条做事经验：多出来的多半是在凑数。 */
+const LESSONS_MAX = 10;
 
 /** 一晚最多提这么多件没了结的事。 */
 const OPEN_LOOPS_MAX = 3;
@@ -51,6 +57,9 @@ export const DreamOutputSchema = Type.Object({
   deadEnds: Type.Optional(Type.Array(Type.Object({ doc: Type.Optional(Type.String()), text: Type.String(),
     sources: Sources }))),
   digests: Type.Optional(Type.Array(Type.Object({ line: Type.String(), day: Type.String(), text: Type.String() }))),
+  /** 做事经验（记忆分层，11-15）：Plasticine 这段时间做事时试出来的做法和坑，直接记进做事经验，能撤。 */
+  lessons: Type.Optional(Type.Array(Type.Object({ topic: Type.String(), kind: Type.String(), text: Type.String(),
+    sources: Sources }))),
   skills: Type.Optional(Type.Array(Type.Object({ name: Type.String(), description: Type.String(),
     body: Type.String() }))),
   /** 没了结的事（11-12 主动性一批）：他说过要做、让 Plasticine 做但没做完、聊到一半停下的。进「任务 · 建议」。 */
@@ -71,13 +80,18 @@ const SYSTEM = [
   'basis=system 的条目是产品默认，不是用户原话或确认推断；和用户来源分开，不合并。',
   '某一次会话里随口一句推翻不了已定的决定（决定段、「规则」里的规矩）：只有他明确改口才改。',
   '「你可能喜欢 X」这类从行为里推出来的，只能 infer 并写清 why，他确认才算。',
-  '操作写进 ops：{"op":"add","doc":文档标识,"section":"note","text":一行,"sources":[出处]}；',
+  LAYER_RULES,
+  '操作写进 ops：{"op":"add","doc":文档标识,"section":段（可省，不写就是那篇的第一段）,"text":一行,"sources":[出处]}；',
   '{"op":"revise","line":行标识,"text":新的一行,"sources":[…]}；{"op":"retire","line":行标识,"sources":[…]}；',
   '{"op":"infer","doc":文档标识,"text":推断,"why":依据,"sources":[…]}；{"op":"new_doc","ref":短名,',
-  '"kind":"person"/"topic"/"skill","title":名字,"summary":一句话}；{"op":"summary","doc":文档标识,"summary":新说明}。',
+  '"kind":"person"/"topic"/"skill"/"how","title":名字,"summary":一句话}；{"op":"summary","doc":文档标识,"summary":新说明}。',
   '每篇的说明是一句话，写成「讲什么；什么时候该读」（比如「定下的方向、决定和进展；聊到「X」时读」）；',
   'docs 里 oldSummary 为 true 的那几篇，这次顺手用 summary 改成这个格式。',
   'deadEnds：这段时间试过、走不通的路（{"text":一句,"sources":[…]}），写清为什么走不通。',
+  'lessons：Plasticine 这段时间做事时自己试出来、下次还用得上的经验（某个网站要先做什么、哪条路走不通、某个工具怎么用），',
+  '写成 {"topic":哪个工具、网站或流程（做事经验里那一篇的名字，没有就起个新的）,"kind":"do"（走得通的做法）或"avoid"',
+  '（要避开的坑）,"text":一句能照着做的话,"sources":[出在哪条线上的出处标识]}。只写对话里看得出亲手试过、确实如此的；',
+  '已经在 lines 里的不重复写；关于他这个人的事不写在这里。它们直接生效，他在记忆页看得到、能撤。',
   'conflicts：[{"doc":文档标识,"candidates":[{"text":说法一,"sources":[…]},{"text":说法二,"sources":[…]}]}]。',
   'digests：days 里每一天每条线写一段要点（{"line":线标识,"day":日子,"text":几句话}），第二天从它起步。',
   'skills：这段时间做成、以后还会用的新做法，写成技能（{"name":英文小写短横线名,"description":什么时候用,',
@@ -86,8 +100,8 @@ const SYSTEM = [
   '让 Plasticine 做了但没做完或没做成的，聊到一半停下、差一步就有结果的。每件写 {"title":一句能单独看懂的话（不超过',
   '30 字，说清做什么，不要「继续上次的事」这种），"why":为什么现在值得做（带上是哪天、因为什么停下的），"goal":点了开始',
   '以后交给后台任务的完整说明（要做到什么程度、已有的进展和材料在哪），"sources":[出处]}。已经做完的、他明确说不要了的、',
-  '只是随口一提的不算。它们只是建议，他点了才做。',
-  '只输出 JSON：{"ops":[…],"conflicts":[…],"deadEnds":[…],"digests":[…],"skills":[…],"openLoops":[…]}。',
+  '只是随口一提的不算。它们只是建议，他点了才做。材料里的 never 是他说过别主动提的事：沾到这些的不要提。',
+  '只输出 JSON：{"ops":[…],"conflicts":[…],"deadEnds":[…],"lessons":[…],"digests":[…],"skills":[…],"openLoops":[…]}。',
 ].join('\n');
 
 export interface DreamInput {
@@ -219,6 +233,9 @@ export class Dreamer {
       journal: journal.map((entry) => ({ id: journalRef(entry), day: entry.day, kind: entry.kind, text: entry.text })),
       transcripts: talk,
       days,
+      // 他说过别主动提的事（记忆分层）：提建议之前对一遍。
+      never: state.memoryDocs.lines.live(PROACTIVE_DOC_ID).filter((line) => line.section === 'never')
+        .map((line) => line.text),
     });
   }
 
@@ -253,6 +270,23 @@ export class Dreamer {
         changes += 1;
       }
     }
+    const lessonDocs: string[] = [];
+    for (const lesson of (output.lessons ?? []).slice(0, LESSONS_MAX)) {
+      // 出处里第一条能对上线的（line:<线>:<序号>）就是这条经验出在哪件事上；对不上的不记（没有出处的经验不留）。
+      const lineId = (lesson.sources ?? []).filter((ref) => sources.has(ref))
+        .map((ref) => /^line:(.+):\d+$/u.exec(ref)?.[1]).find((id) => id !== undefined);
+      if (lineId === undefined || (lesson.kind !== 'do' && lesson.kind !== 'avoid')) {
+        continue;
+      }
+      const result = noteExperience(state, { topic: lesson.topic, section: lesson.kind, text: lesson.text, lineId },
+        writer);
+      if (result.saved) {
+        state.memoryDreams.addChange({ dreamId: dream.id, kind: 'add', docId: result.doc.id, lineId: result.line.id,
+          text: result.line.text, anchors: result.line.anchors });
+        lessonDocs.push(result.doc.id);
+        changes += 1;
+      }
+    }
     const open = new Set(state.lineDays.undigested(today).map((day) => `${day.lineId}|${day.day}`));
     for (const digest of output.digests ?? []) {
       const text = clip(digest.text, DIGEST_MAX_CHARS);
@@ -260,7 +294,7 @@ export class Dreamer {
         state.lineDays.setDigest(digest.line, digest.day, text);
       }
     }
-    return { changes, rejected: plan.rejected.length, docIds: touchedDocs(written) };
+    return { changes, rejected: plan.rejected.length, docIds: [...new Set([...touchedDocs(written), ...lessonDocs])] };
   }
 
   /** 新加 → add；改一行 → replace（旧行进了归档，记旧说法）。推断进「拿不准的」，不在这一页。 */

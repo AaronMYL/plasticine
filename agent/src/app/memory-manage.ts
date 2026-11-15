@@ -6,7 +6,7 @@ import {
   StartCleanupRequestSchema, type ApplyCleanupResponse, type CleanupItemView, type CleanupView,
   type LatestCleanupResponse,
 } from '../../shared/api/memory-manage.ts';
-import type { MemoryCleanup, MemoryCleanupItem } from '../../shared/state.ts';
+import { memorySectionIn, memorySectionsOf, type MemoryCleanup, type MemoryCleanupItem } from '../../shared/state.ts';
 import { addLine, applyCleanup, moveLine, runCleanup, startCleanup } from '../memory/index.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
@@ -57,7 +57,12 @@ export const MEMORY_MANAGE_ROUTES: readonly Route[] = [
     const docId = param(context, 'docId');
     requireDoc(state, docId);
     return idempotent(context, body.requestId, () => {
+      const kind = state.memoryDocs.docs.require(docId).kind;
+      if (body.section !== undefined && !memorySectionsOf(kind).includes(body.section)) {
+        throw new ApiError(400, 'invalid_request', '这份记忆里没有这一段。');
+      }
       const line = addLine(state, { docId, text: body.text.trim(), basis: 'stated',
+        ...(body.section === undefined ? {} : { section: body.section }),
         anchors: [{ kind: 'user_edit', ref: body.requestId }] }, { actor: 'user', ref: auth.device.id });
       return { status: 201, body: { line: memoryLineView(state, line) } };
     });
@@ -70,8 +75,19 @@ export const MEMORY_MANAGE_ROUTES: readonly Route[] = [
       requireDoc(state, body.toDocId);
       return idempotent(context, body.requestId, () => {
         const line = requireLiveLine(state, param(context, 'docId'), param(context, 'lineId'), body.version);
-        if (line.docId === body.toDocId) throw new ApiError(400, 'invalid_request', '已经在这份记忆里了。');
-        const moved = moveLine(state, line, body.toDocId, { actor: 'user', ref: auth.device.id });
+        const target = state.memoryDocs.docs.require(body.toDocId);
+        const section = body.section ?? memorySectionIn(target.kind, line.section);
+        // 同一份里只能换段（承诺和授权里「先停着」和恢复）；换去的段得是这种文档有的。
+        if (line.docId === body.toDocId && section === line.section) {
+          throw new ApiError(400, 'invalid_request', '已经在这份记忆的这一段里了。');
+        }
+        if (!memorySectionsOf(target.kind).includes(section)) {
+          throw new ApiError(400, 'invalid_request', '这份记忆里没有这一段。');
+        }
+        if (line.basis === 'tried' && target.kind !== 'how') {
+          throw new ApiError(400, 'invalid_request', 'Plasticine 自己试出来的只能留在做事经验里。');
+        }
+        const moved = moveLine(state, line, body.toDocId, { actor: 'user', ref: auth.device.id }, section);
         return { status: 200, body: { line: memoryLineView(state, moved) } };
       });
     } },

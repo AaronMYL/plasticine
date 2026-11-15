@@ -3,20 +3,16 @@
 // 电脑上先只画主区；手机照稿子在标题下放分段控件。等你就是那几张要你定卡本身，在这里就地答。
 
 import { useState, type ReactNode } from 'react';
-import type { TasksBoardResponse, TimedRowView } from '../../api/shared.ts';
+import { PROACTIVE_DOC_ID, type TasksBoardResponse, type TimedRowView } from '../../api/shared.ts';
 import { PageHeader } from '../../shell/page-header.tsx';
 import { routeHash, TASKS_SECTIONS, type Route, type TasksSection } from '../../shell/routes.ts';
 import { LineAskCard } from '../asks/line-ask-card.tsx';
-import { registerHeartbeatSheet } from './heartbeat-sheet.tsx';
 import { TasksIdeas } from './tasks-ideas.tsx';
 import { TaskLines, TasksRun } from './tasks-run.tsx';
 import { TasksTimed } from './tasks-timed.tsx';
 import { TimedSheet, type OpenSheet } from './timed-sheet.tsx';
 import { useTaskActions, useTasksBoard } from './use-tasks-board.ts';
 import './tasks.css';
-
-// 「定时」里点开心跳那一行：心跳自己的弹层（第 11 条）。
-registerHeartbeatSheet();
 
 export const SECTION_TITLES: Readonly<Record<TasksSection, string>> = {
   run: '在做',
@@ -75,7 +71,9 @@ export function TasksPage({ section, phone, navigate }: TasksPageProps): ReactNo
   const actions = useTaskActions(reload);
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
   const current = currentSheet(sheet, board);
-  const openRow = (row: TimedRowView): void => setSheet({ kind: 'row', row });
+  // 心跳那一行点开直接到记忆 · 主动告诉你（记忆分层 11-15：清单、不打扰的时段都搬到那一页，不再弹浮层）。
+  const openRow = (row: TimedRowView): void => (row.source === 'heartbeat'
+    ? navigate({ view: 'memory', noteId: null, topicId: PROACTIVE_DOC_ID }) : setSheet({ kind: 'row', row }));
   return (
     <div className="page tasks-main" data-section={section}>
       {phone ? (

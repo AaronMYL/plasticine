@@ -17,7 +17,8 @@ import { PageLoading } from '../../primitives/page-loading/index.tsx';
 
 interface Edit { row: OutboundGrant; draft: OutboundGrantInput }
 
-export function OutboundSettings(): ReactNode {
+/** embedded：放在记忆 · 承诺和授权里（11-15 授权清单挪过去）——一条授权、一条记录都没有时整块不出现。 */
+export function OutboundSettings({ embedded = false }: { embedded?: boolean } = {}): ReactNode {
   const api = useApi();
   const live = useLive();
   const choices = useOutboundChoices();
@@ -78,6 +79,9 @@ export function OutboundSettings(): ReactNode {
     void write(`toggle:${row.id}:${row.version}:${enabled}`, (requestId) =>
       api.outbound.edit(row.id, { requestId, version: row.version, patch: { enabled } }));
   };
+  if (embedded && (!loaded || (grants.length === 0 && logs.length === 0 && error === null))) {
+    return null;
+  }
   return <div className="outbound-settings">
     <section className="block" aria-label="对外授权">
       <SectionHead title="对外授权"><IconButton icon="refresh" label="再读一次授权" disabled={busy}

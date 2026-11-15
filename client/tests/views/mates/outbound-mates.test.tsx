@@ -5,7 +5,9 @@ import { NOW, renderApp } from '../../helpers.tsx';
 import { createRequestId } from '../../../src/api/request-id.ts';
 
 it('授权发送者列出真实在用队友名字，停用后不再提供新授权选择', async () => {
-  const app = await renderApp({ hash: '#/settings/grants', setup: ({ control }) => {
+  // 记忆分层（11-15）：对外授权的清单在记忆 · 承诺和授权里。
+  const app = await renderApp({ hash: '#/memory/topics/memdoc-grants', setup: ({ control }) => {
+    control.memoryTopics.seed();
     control.outbound.seed([outboundGrant(NOW)]);
   } });
   const mate = await act(() => app.api.mates.create({ requestId: createRequestId(), name: '项目队友', avatar: 'bear',

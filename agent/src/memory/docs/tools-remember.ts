@@ -11,6 +11,7 @@ import {
   MEMORY_DOC_SUMMARY_MAX_CHARS,
   MEMORY_DOC_TITLE_MAX_CHARS,
   MEMORY_LINE_MAX_CHARS,
+  MEMORY_LINE_SECTIONS,
   MEMORY_NEW_DOC_KINDS,
   YOU_DOC_ID,
 } from '../../../shared/state.ts';
@@ -34,7 +35,7 @@ const Parameters = Type.Object({
     title: Type.String({ minLength: 1, maxLength: MEMORY_DOC_TITLE_MAX_CHARS }),
     summary: Type.String({ minLength: 1, maxLength: MEMORY_DOC_SUMMARY_MAX_CHARS }),
   }, { additionalProperties: false })),
-  section: Type.Optional(Type.Enum(['note', 'decision'])),
+  section: Type.Optional(Type.Enum(MEMORY_LINE_SECTIONS)),
   replacesLineId: Type.Optional(Id),
   inferred: Type.Optional(Type.Boolean()),
   why: Type.Optional(Type.String({ maxLength: 1_000 })),
@@ -54,13 +55,14 @@ export function rememberOps(args: Args): CurationOp[] {
   }
   const doc = args.newDoc !== undefined ? NEW_DOC_REF : args.docId ?? YOU_DOC_ID;
   const sources = [...new Set(args.messageIds)];
-  const section = args.section ?? 'note';
+  // 没写段：交给校验按这种文档的第一段放（关于你是 note，承诺和授权是 allow……）。
+  const section = args.section === undefined ? {} : { section: args.section };
   if (args.replacesLineId !== undefined) {
     ops.push({ op: 'revise', line: args.replacesLineId, text: args.text, sources });
   } else if (args.inferred === true) {
-    ops.push({ op: 'infer', doc, section, text: args.text, why: args.why ?? '', sources });
+    ops.push({ op: 'infer', doc, ...section, text: args.text, why: args.why ?? '', sources });
   } else {
-    ops.push({ op: 'add', doc, section, text: args.text, sources });
+    ops.push({ op: 'add', doc, ...section, text: args.text, sources });
   }
   return ops;
 }

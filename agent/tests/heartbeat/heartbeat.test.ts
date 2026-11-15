@@ -23,7 +23,7 @@ interface World {
 }
 
 function world(answers: string[], options: { noModel?: boolean; caught?: string[];
-  stuck?: { lineId: string; title: string; reason: string }[] } = {}): World {
+  stuck?: { lineId: string; title: string; reason: string }[]; preferences?: string } = {}): World {
   const asked: TextRequest[] = [];
   const notices: NoticeInput[] = [];
   const opened: { title: string; goal: string }[] = [];
@@ -53,6 +53,7 @@ function world(answers: string[], options: { noModel?: boolean; caught?: string[
     newId: () => `item-${(id += 1)}`,
     ...(options.caught === undefined ? {} : { catchUp: () => options.caught?.splice(0) ?? [] }),
     ...(options.stuck === undefined ? {} : { stuck: () => options.stuck ?? [] }),
+    ...(options.preferences === undefined ? {} : { preferences: () => options.preferences ?? '' }),
   });
   return { heartbeat, asked, notices, opened, suggested, clock };
 }
@@ -103,6 +104,15 @@ test('有新邮件邀请：叫 heartbeat 模型，发一条消息、开一条线
   w.clock.at = new Date('2026-11-07T15:00:00+08:00');
   await w.heartbeat.beat(w.clock.at);
   assert.equal(w.asked.length, 1, '同一封邀请不再叫模型');
+});
+
+test('判断之前带着他说过的「主动告诉他」的偏好：别提的、什么时候、怎么通知（记忆分层）', async () => {
+  inviteMail('评审会');
+  const w = world([JSON.stringify({ note: '没事' })], { preferences: '### 别提的\n- 周末不提工作上的事' });
+  await w.heartbeat.beat(w.clock.at);
+  const material = JSON.parse(w.asked[0]?.messages[0]?.content ?? '{}') as { preferences: string };
+  assert.equal(material.preferences, '### 别提的\n- 周末不提工作上的事');
+  assert.match(w.asked[0]?.system ?? '', /「别提的」里的事不写进 tell、suggest/);
 });
 
 test('模型没判断成：记一句原因，这几件下一跳还会再看', async () => {

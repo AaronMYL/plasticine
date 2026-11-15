@@ -5,6 +5,7 @@
 // 设计稿阶段：只有假接口实现；真接口下一批接。
 
 import { Type, type Static } from 'typebox';
+import { MEMORY_LINE_SECTIONS } from '../state.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { OrNull } from './lineage.ts';
 import { ProjectTagSchema } from './project-tag.ts';
@@ -15,7 +16,10 @@ export const MEMORY_UNCERTAIN_PATH = `${API_PREFIX}/memory/uncertain`;
 
 // rules：「怎么替你做事」（第 4 批），和「关于你」排在最前面一组。第 16 条（11-06）：类型是 关于你、怎么替你做事、项目、人、
 // 话题、技能；目录按这个次序分组（设计稿 Plasticine-Memory：关于你和做事方式 → 项目 → 人）。
-export const MEMORY_TOPIC_KINDS = ['about_you', 'rules', 'project', 'person', 'topic', 'skill'] as const;
+// 记忆分层（11-15 Aaron 看过设计稿）：目录按七层排——说好的（承诺和授权、主动告诉你两页固定的）→ 你 → 人物 → 项目 →
+// 话题 → 做事经验（how，一类新文档）。
+export const MEMORY_TOPIC_KINDS = ['grants', 'proactive', 'about_you', 'rules', 'person', 'project', 'topic', 'skill',
+  'how'] as const;
 export type MemoryTopicKind = (typeof MEMORY_TOPIC_KINDS)[number];
 
 export const MEMORY_TOPIC_KIND_LABELS: Readonly<Record<MemoryTopicKind, string>> = {
@@ -25,17 +29,22 @@ export const MEMORY_TOPIC_KIND_LABELS: Readonly<Record<MemoryTopicKind, string>>
   project: '项目',
   topic: '话题',
   skill: '技能',
+  how: '做事经验',
+  grants: '承诺和授权',
+  proactive: '主动告诉你',
 };
 
 /** 目录里每种文档排进哪一组：「怎么替你做事」和「关于你」同一组。 */
 export const MEMORY_TOPIC_GROUP_OF: Readonly<Record<MemoryTopicKind, MemoryTopicKind>> = {
-  about_you: 'about_you', rules: 'about_you', person: 'person', project: 'project', topic: 'topic', skill: 'topic' };
+  about_you: 'about_you', rules: 'about_you', person: 'person', project: 'project', topic: 'topic', skill: 'topic',
+  how: 'how', grants: 'grants', proactive: 'grants' };
 
 /** 组名（11-11 记忆改版）：关于你和规则一组叫「你」；话题和技能并成「其他」。 */
 export const MEMORY_TOPIC_GROUP_LABELS: Readonly<Record<MemoryTopicKind, string>> = {
   ...MEMORY_TOPIC_KIND_LABELS,
   about_you: '你',
   topic: '其他',
+  grants: '说好的',
 };
 
 /** 双链（第 16 条）：一篇提到另一篇时写 [[名字]]。按出现的先后，同名只算一次。 */
@@ -84,11 +93,14 @@ export type MemoryTopicView = Static<typeof MemoryTopicViewSchema>;
 
 /** 一行从哪来：原话（对话里的一条消息、笔记的一段）、约定，或者 Plasticine 推断。 */
 // contact（第 12 批）：绑了人物页的联系人亲口说的，界面写「<人物页名字>说的」（by）。
-export const MEMORY_TOPIC_LINE_BASES = ['quote', 'agreement', 'inferred', 'system', 'contact'] as const;
+// tried（记忆分层）：Plasticine 自己做事时试出来的，只在做事经验里；界面用 ✦ 标出来，下面一行写出处。
+export const MEMORY_TOPIC_LINE_BASES = ['quote', 'agreement', 'inferred', 'system', 'contact', 'tried'] as const;
 
 export const MemoryLineSourceSchema = Type.Object({
   kind: Type.Union([Type.Literal('message'), Type.Literal('note'), Type.Literal('book'),
-    Type.Literal('agreement'), Type.Literal('system'), Type.Literal('contact')]),
+    Type.Literal('agreement'), Type.Literal('system'), Type.Literal('contact'),
+    // 做事时试出来的：id 是那条线，label 是那件事的名字。
+    Type.Literal('work')]),
   id: IdSchema,
   /** 链上写的字，例如「10-26 对话」。 */
   label: Type.String({ minLength: 1 }),
@@ -110,11 +122,19 @@ export const MemoryDocLineSchema = Type.Object({
   uncertainId: OrNull(IdSchema),
   /** 行里的 [[名字]] 指向哪一篇；对不上的为 null（照原样显示，不能点）。 */
   links: Type.Optional(Type.Array(Type.Object({ name: Type.String({ minLength: 1 }), topicId: OrNull(IdSchema) }))),
+  /** 这一行哪天写下的（改过的是改的那天）。 */
+  at: Type.Optional(IsoTimeSchema),
+  /** 改过的行：改之前那句（界面写「之前：…」）。 */
+  previous: Type.Optional(Type.String()),
+  /** 只限某个项目、某个人时的一句（「只限 Plasticine 项目」）；全部适用的不带。 */
+  scope: Type.Optional(Type.String()),
 });
 export type MemoryDocLine = Static<typeof MemoryDocLineSchema>;
 
 export const MemoryDocSectionSchema = Type.Object({
   id: IdSchema,
+  /** 哪一段（往这一段加一条、挪到这一段时带上）。 */
+  section: Type.Optional(Type.Enum(MEMORY_LINE_SECTIONS)),
   heading: Type.String({ minLength: 1 }),
   lines: Type.Array(MemoryDocLineSchema),
 });

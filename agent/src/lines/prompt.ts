@@ -6,7 +6,8 @@
 // 的活交给子代理（后台线）；对话里怎么说话写在 talk-style.ts。
 
 import { ACT_OR_ASK_PROMPT } from '../../shared/act-or-ask.ts';
-import { memoryDocsSection, rulesDocSection, todaySection } from '../memory/index.ts';
+import { grantsDocSection, memoryDocsSection, proactiveDocSection, rulesDocSection,
+  todaySection } from '../memory/index.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import { DEFAULT_MAIN_NAME } from '../../shared/api/mates.ts';
 import { SOUL_OWNER_MAIN } from '../../shared/api/souls.ts';
@@ -119,6 +120,8 @@ export function linePrompt(state: PromptState, line: LineRow, publicUrl?: string
     soulSection(state, line),
     ACT_OR_ASK_PROMPT,
     rulesDocSection(state, line.mateId ?? null),
+    grantsDocSection(state),
+    proactiveDocSection(state),
     mateSection(state, line),
     memoryDocsSection(state),
     todaySection(state),

@@ -144,3 +144,39 @@ test('没了结的事进建议（11-12）：一晚最多三件，缺标题、理
   assert.equal(suggested[0]?.sourceRef, said);
   assert.match(suggested[0]?.goal ?? '', /整理成 10 条要点/);
 });
+
+test('做梦把试出来的做事经验直接记进做事经验：带出处那条线，进「昨晚整理」能撤；没出处的、乱写段的不记（记忆分层）', async () => {
+  const main = t.state.lines.main();
+  ensureMemoryDocs(t.state);
+  say(main.id, '帮我把小红书那篇笔记存下来');
+  const tried = reply(main.id, '第一次打不开，带上 xsec_token 以后打开了，已经存进资料库。');
+  const { dreamer: d } = dreamer(() => ({ lessons: [
+    { topic: '小红书', kind: 'do', text: '链接要带着 xsec_token 才打得开', sources: [tried] },
+    { topic: '小红书', kind: 'avoid', text: '没有出处的不记', sources: ['line:nowhere:9'] },
+    { topic: '小红书', kind: 'maybe', text: '段不对的不记', sources: [tried] },
+  ] }));
+  const report = await d.dream(input);
+  const doc = t.state.memoryDocs.docs.live().find((item) => item.kind === 'how');
+  assert.equal(doc?.title, '小红书');
+  const lines = t.state.memoryDocs.lines.live(doc!.id);
+  assert.deepEqual(lines.map((line) => [line.section, line.basis, line.text]),
+    [['do', 'tried', '链接要带着 xsec_token 才打得开']]);
+  assert.deepEqual(lines[0]!.anchors, [{ kind: 'work', ref: `line:${main.id}` }]);
+  assert.equal(report.changes, 1);
+  assert.deepEqual(report.docIds, [doc!.id]);
+  const change = t.state.memoryDreams.changes(report.dream!.id)[0]!;
+  assert.deepEqual([change.kind, change.lineId, change.text], ['add', lines[0]!.id, '链接要带着 xsec_token 才打得开']);
+});
+
+test('做梦提建议之前带着他说过别提的事（记忆分层）', async () => {
+  const main = t.state.lines.main();
+  ensureMemoryDocs(t.state);
+  addLine(t.state, { docId: 'memdoc-proactive', section: 'never', text: '股票涨跌不用说', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'line:line-main:0' }] }, { actor: 'user', ref: 'device-1' });
+  say(main.id, '今天没什么事');
+  const { asked, dreamer: d } = dreamer(() => ({}));
+  await d.dream(input);
+  const material = JSON.parse(String(asked[0]!.messages[0]!.content)) as { never: string[] };
+  assert.deepEqual(material.never, ['股票涨跌不用说']);
+  assert.match(asked[0]!.system ?? '', /先分层再写/);
+});

@@ -47,6 +47,12 @@ export class FakeHeartbeat {
     if (body.intervalMinutes !== undefined) {
       config.intervalMinutes = body.intervalMinutes;
     }
+    if (body.quietFrom !== undefined) {
+      config.quietFrom = body.quietFrom;
+    }
+    if (body.quietTo !== undefined) {
+      config.quietTo = body.quietTo;
+    }
     if (body.items !== undefined) {
       config.items = body.items.map((item) => {
         const kept = item.id === undefined ? undefined : config.items.find((existing) => existing.id === item.id);

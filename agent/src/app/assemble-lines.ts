@@ -5,9 +5,10 @@
 import type { AskDesk } from '../attention/index.ts';
 import type { PermissionGate, Tool, ToolRegistry } from '../tools/index.ts';
 import {
-  adaptLegacyTool, attachmentReadTool, conversationSearchTool, effectiveLimit, forgetTool, legacySayings, LineKernel,
-  machineLoad, readWorkLimit, rememberTool, serverCommandTool, type Compactor, type DriveOutcome, type KernelOptions,
-  type KernelTool, type Later, type MachineLoad, type ModelSource, type SubmitHoldPort,
+  adaptLegacyTool, attachmentReadTool, conversationSearchTool, effectiveLimit, experienceTool, forgetTool,
+  legacySayings, LineKernel, machineLoad, readWorkLimit, rememberTool, serverCommandTool, type Compactor,
+  type DriveOutcome, type KernelOptions, type KernelTool, type Later, type MachineLoad, type ModelSource,
+  type SubmitHoldPort,
 } from '../lines/index.ts';
 import type { MessageWidget } from '../../shared/api/message-widgets.ts';
 import type { LineRow, StateService } from '../state/index.ts';
@@ -95,7 +96,7 @@ function legacyTools(parts: LineParts, legacy: LegacyParts): KernelTool[] {
     const remote = legacy.sshAvailable === false ? undefined : registry.get('cloud_ssh_run');
     tools.push(serverCommandTool({ local, remote }, options));
   }
-  tools.push(rememberTool(parts.state), forgetTool(parts.state));
+  tools.push(rememberTool(parts.state), experienceTool(parts.state), forgetTool(parts.state));
   // 翻对话（第 17、20 条）：只读，查统一全文索引里所有线上的原话。
   tools.push(conversationSearchTool(parts.state));
   // 读他发的附件（第13批）：按附件说明里的 id 读上传时读好的正文。

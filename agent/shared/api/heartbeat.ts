@@ -61,6 +61,9 @@ export type HeartbeatView = Static<typeof HeartbeatViewSchema>;
 export const UpdateHeartbeatRequestSchema = Type.Object({
   requestId: RequestIdSchema,
   intervalMinutes: Type.Optional(HeartbeatConfigSchema.properties.intervalMinutes),
+  /** 不打扰的时段（记忆 ·「主动告诉你」里改，11-15）：两头一起给。 */
+  quietFrom: Type.Optional(Clock),
+  quietTo: Type.Optional(Clock),
   items: Type.Optional(Type.Array(Type.Object({
     id: Type.Optional(Type.String({ minLength: 1, maxLength: 40 })),
     text: Type.String({ minLength: 1, maxLength: HEARTBEAT_ITEM_MAX_CHARS }),

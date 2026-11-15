@@ -1,4 +1,5 @@
-// 通知按类型开关（第13批，11-14 Aaron 定）：设置 · 通用 · 通知下面七类各一个开关，所有设备一起；关掉的那一类桌面客户端
+// 通知按类型开关（第13批，11-14 Aaron 定；记忆分层 11-15 从设置 · 通用搬到记忆 · 主动告诉你的「怎么通知」）：
+// 七类各一个开关，所有设备一起；关掉的那一类桌面客户端
 // 也不自己弹（卡、来信、主线的提醒）；「等你的事」关着时写一句后果；存不上退回原样。
 
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -21,7 +22,7 @@ function mainMessage(seq: number, fields: Partial<LineMessageView>): LineMessage
     attachments: [], widgets: [], createdAt: '2026-11-14T10:00:00.000Z', ...fields };
 }
 
-/** 11-14 设置页一种行：七类收在「通知哪些事」那一行的「7 类 ›」里，点开才出。 */
+/** 七类收在「通知哪些事」那一行的「7 类 ›」里，点开才出。 */
 async function openKinds(): Promise<HTMLElement> {
   const value = await screen.findByRole('button', { name: '通知哪些事' });
   expect(value.textContent).toContain('7 类');
@@ -30,8 +31,9 @@ async function openKinds(): Promise<HTMLElement> {
 }
 
 describe('通知按类型开关', () => {
-  it('设置里七类各一个开关，默认开着；关掉一类存到服务器上，「等你的事」关着时写后果', async () => {
-    const app = await renderApp({ hash: '#/settings/general' });
+  it('主动告诉你里七类各一个开关，默认开着；关掉一类存到服务器上，「等你的事」关着时写后果', async () => {
+    const app = await renderApp({ hash: '#/memory/topics/memdoc-proactive',
+      setup: ({ control }) => control.memoryTopics.seed() });
     const list = await openKinds();
     const switches = within(list).getAllByRole('switch');
     expect(switches.map((item) => item.getAttribute('aria-label'))).toEqual(['等你的事', '联系人消息', '群组消息',
@@ -46,7 +48,8 @@ describe('通知按类型开关', () => {
   });
 
   it('存不上：开关退回原样，写原因', async () => {
-    const app = await renderApp({ hash: '#/settings/general' });
+    const app = await renderApp({ hash: '#/memory/topics/memdoc-proactive',
+      setup: ({ control }) => control.memoryTopics.seed() });
     vi.spyOn(app.api.push, 'saveKinds').mockRejectedValueOnce(new Error('连接中断'));
     const list = await openKinds();
     fireEvent.click(within(list).getByRole('switch', { name: '来信' }));

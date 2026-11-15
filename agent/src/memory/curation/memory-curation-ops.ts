@@ -7,8 +7,8 @@ import {
   MEMORY_DOC_SUMMARY_MAX_CHARS,
   MEMORY_DOC_TITLE_MAX_CHARS,
   MEMORY_LINE_MAX_CHARS,
-  MEMORY_LINE_SECTIONS,
   MEMORY_NEW_DOC_KINDS,
+  memorySectionsOf,
   type MemoryAnchor,
   type MemoryDoc,
   type MemoryDocKind,
@@ -250,12 +250,11 @@ class Planner {
   }
 
   #section(raw: string | undefined, kind: MemoryDocKind): MemoryLineSection | { error: string } {
-    const section = MEMORY_LINE_SECTIONS.find((known) => known === (raw ?? 'note'));
+    // 每种文档有自己的几段（项目有决定段，承诺和授权、主动告诉你、做事经验各有几段）；没写就进第一段。
+    const allowed = memorySectionsOf(kind);
+    const section = raw === undefined || raw === '' ? allowed[0] : allowed.find((known) => known === raw);
     if (section === undefined) {
-      return { error: `没有段 ${raw ?? ''}` };
-    }
-    if (section === 'decision' && kind !== 'project') {
-      return { error: '决定段只在项目文档里' };
+      return { error: raw === 'decision' ? '决定段只在项目文档里' : `这种文档里没有段 ${raw ?? ''}` };
     }
     return section;
   }
@@ -266,7 +265,7 @@ class Planner {
     }
     const kind = MEMORY_NEW_DOC_KINDS.find((candidate) => candidate === op.kind);
     if (kind === undefined) {
-      return '只能新建人物、话题或技能文档（关于你只有一份，项目文档由项目生成）';
+      return '只能新建人物、话题、技能或做事经验文档（关于你、承诺和授权、主动告诉你各只有一份，项目文档由项目生成）';
     }
     const title = this.#text(op.title, MEMORY_DOC_TITLE_MAX_CHARS);
     const summary = this.#text(op.summary, MEMORY_DOC_SUMMARY_MAX_CHARS);

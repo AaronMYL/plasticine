@@ -25,7 +25,9 @@ import { SystemSection } from './system-section.tsx';
 import { TimeZoneSection } from './time-zone-section.tsx';
 import { TranslateSettingsSection } from './translate-settings-section.tsx';
 import { VisibilitySection } from './visibility-section.tsx';
-import { OutboundSettings } from './outbound-settings.tsx';
+import { GRANTS_DOC_ID } from '../../api/shared.ts';
+import { MemoryLinkRow } from './memory-link.tsx';
+import { SectionHead } from './section-head.tsx';
 import './settings.css';
 import './network.css';
 
@@ -78,7 +80,11 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
       return <>
         <HardLinesSection />
         <Spot name="visibility"><VisibilitySection /></Spot>
-        <OutboundSettings />
+        {/* 记忆分层（11-15）：授权清单挪到记忆 · 承诺和授权，这里只留一行指过去。 */}
+        <section className="block" aria-label="已经授权的">
+          <SectionHead title="已经授权的" />
+          <MemoryLinkRow name="对外发送、以后直接做的" topicId={GRANTS_DOC_ID} page="承诺和授权" />
+        </section>
       </>;
   }
 }

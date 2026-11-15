@@ -6,8 +6,8 @@
 import { SOUL_SECTIONS, SOUL_SECTION_LABELS } from '../../../shared/api/soul.ts';
 import { soulSectionOf } from '../rules/soul.ts';
 import { hardLinesForModel } from '../../../shared/rules-doc.ts';
-import { RULES_DOC_ID, YOU_DOC_ID, type MemoryDoc, type MemoryDocKind, type MemoryJournalKind,
-  type MemoryLine } from '../../../shared/state.ts';
+import { GRANTS_DOC_ID, MEMORY_SECTION_LABELS, PROACTIVE_DOC_ID, RULES_DOC_ID, YOU_DOC_ID, memorySectionsOf,
+  type MemoryDoc, type MemoryDocKind, type MemoryJournalKind, type MemoryLine } from '../../../shared/state.ts';
 import type { StateService } from '../../state/index.ts';
 import { similarity } from '../curation/memory-curation-ops.ts';
 import { estimateTokens } from '../../tools/index.ts';
@@ -24,9 +24,19 @@ export const SEARCH_DEFAULT_LIMIT = 20;
 // 「今天的记录」最多装这么多（约一页）；更早的写明还有几条，夜里会整理进主题文档。
 export const TODAY_BUDGET_TOKENS = 2_000;
 
+// 记忆分层（11-15）：承诺和授权、主动告诉你整份进上下文（下面两段），目录里不再列；做事经验按篇列在目录最后。
 const GROUP_LABELS: Readonly<Record<MemoryDocKind, string>> = { you: '关于你和做事方式', rules: '关于你和做事方式',
-  project: '项目', person: '人', topic: '话题', skill: '技能' };
-const KIND_ORDER: readonly MemoryDocKind[] = ['you', 'rules', 'project', 'person', 'topic', 'skill'];
+  project: '项目', person: '人', topic: '话题', skill: '技能', how: '做事经验（开工前先读相关的那一篇）',
+  grants: '说好的', proactive: '说好的' };
+const KIND_ORDER: readonly MemoryDocKind[] = ['you', 'rules', 'project', 'person', 'topic', 'skill', 'how', 'grants',
+  'proactive'];
+const WHOLE_IN_CONTEXT: readonly string[] = [GRANTS_DOC_ID, PROACTIVE_DOC_ID];
+
+const BASIS_NOTES: Readonly<Partial<Record<MemoryLine['basis'], string>>> = {
+  confirmed_inference: '（你推断、用户确认过）',
+  contact_stated: '（对方在聊天里自己说的）',
+  tried: '（你自己试出来的）',
+};
 
 const HEADER = '## 记忆（按主题整理；用户原话、已确认推断与系统默认分别保留来源）';
 const HINT = '目录里每篇一行：名字和「这篇讲什么、什么时候该读」。要用到某篇时用 read_memory_doc 按名字读整篇，'
@@ -37,8 +47,7 @@ const HINT = '目录里每篇一行：名字和「这篇讲什么、什么时候
 export function lineText(line: MemoryLine): string {
   const decision = line.section === 'decision' ? '［决定］' : '';
   const origin = line.anchors.every((anchor) => anchor.kind === 'system') ? '（系统默认）' : '';
-  const inferred = line.basis === 'confirmed_inference' ? '（你推断、用户确认过）'
-    : line.basis === 'contact_stated' ? '（对方在聊天里自己说的）' : '';
+  const inferred = BASIS_NOTES[line.basis] ?? '';
   const before = line.previous === null ? '' : `（之前：${line.previous}）`;
   return `- [行:${line.id}] ${decision}${line.text}${origin}${inferred}${before}`;
 }
@@ -51,6 +60,7 @@ function liveProjectIds(state: DocsState): Set<string> {
 export function directoryDocs(state: DocsState): MemoryDoc[] {
   const projects = liveProjectIds(state);
   return state.memoryDocs.docs.live()
+    .filter((doc) => !WHOLE_IN_CONTEXT.includes(doc.id))
     .filter((doc) => doc.kind !== 'project' || (doc.projectId !== null && projects.has(doc.projectId)))
     .sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind)
       || b.updatedAt.localeCompare(a.updatedAt));
@@ -102,6 +112,41 @@ export function memoryDocsSection(state: DocsState): string {
   const you = youBody(state);
   return [HEADER, HINT, '### 目录', ...directoryLines(docs.slice(0, DIRECTORY_MAX_DOCS)), ...more,
     ...(you.length === 0 ? [] : ['### 关于你', ...you])].join('\n');
+}
+
+/** 一份分了段的文档整份排出来：每段一个小标题，下面是在用的行；一行都没有就是空的。 */
+function wholeDoc(state: Pick<StateService, 'memoryDocs'>, docId: string): string[] {
+  const doc = state.memoryDocs.docs.get(docId);
+  if (doc === undefined) {
+    return [];
+  }
+  const lines = state.memoryDocs.lines.live(docId);
+  return memorySectionsOf(doc.kind).flatMap((section) => {
+    const group = lines.filter((line) => line.section === section);
+    return group.length === 0 ? [] : [`### ${MEMORY_SECTION_LABELS[section]}`,
+      ...group.map((line) => lineText({ ...line, previous: null }))];
+  });
+}
+
+const GRANTS_HEADER = '## 承诺和授权（他说过的允许、先问、先停着，和你答应过他的事；每轮都带着）';
+const GRANTS_HINT = '做事前、出确认卡前先对一遍：「可以直接做」里有的不用再问；「先问你」里有的先问；「先停着」里的不做，'
+  + '等他开口；「答应你的」是你答应过他的，到点要做，做不了就告诉他。和他这次说的冲突时以最新的为准。'
+  + '花钱、对外答应或发出、删除和撤不回的、权限变化、必须他本人做的这几条硬线不受这里影响，照旧先问。';
+
+/** 承诺和授权整份（记忆分层，11-15）：它短，而且做事前必须知道。一行都还没有时是空的。 */
+export function grantsDocSection(state: Pick<StateService, 'memoryDocs'>): string {
+  const body = wholeDoc(state, GRANTS_DOC_ID);
+  return body.length === 0 ? '' : [GRANTS_HEADER, GRANTS_HINT, ...body].join('\n');
+}
+
+const PROACTIVE_HEADER = '## 主动告诉他（他说过别主动提什么、什么时候别打扰、通知写成什么样）';
+const PROACTIVE_HINT = '只管你主动找他的时候（心跳、建议、主动发的消息、来信）：发之前对一遍，「别提的」不发，'
+  + '「什么时候」说的时段不发或只发要紧的，写法照「怎么通知」。他问到你的事照常回答，不受这里限制。';
+
+/** 主动告诉他整份：主动发消息之前必读。一行都还没有时是空的。 */
+export function proactiveDocSection(state: Pick<StateService, 'memoryDocs'>): string {
+  const body = wholeDoc(state, PROACTIVE_DOC_ID);
+  return body.length === 0 ? '' : [PROACTIVE_HEADER, PROACTIVE_HINT, ...body].join('\n');
 }
 
 const JOURNAL_LABELS: Readonly<Record<MemoryJournalKind, string>> = { fact: '事实', decision: '决定',

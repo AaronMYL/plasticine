@@ -1,4 +1,5 @@
-// 设置 · 通用 · 通知 ·「通知哪些事」（第13批，11-14 Aaron：「通知消息可以按类型在设置中开关」，看过设计稿弹框都选推荐）：
+// 记忆 · 主动告诉你 ·「通知哪些事」（记忆分层 11-15 从设置 · 通用搬来，Aaron 选「都搬到这一页」）。
+// 第13批，11-14 Aaron：「通知消息可以按类型在设置中开关」，看过设计稿弹框都选推荐：
 // 七类各一个开关，所有设备一起生效（存在服务器上）；关掉的那一类只是不弹系统通知，对话和消息里照常有、红点照常亮。
 // 「等你的事」关着时开关下面写一句后果。设计稿 NotifyTypes / NotifyTypesPhone；11-14 设置页一种行：收进「n 类 ›」。
 
@@ -6,7 +7,7 @@ import { useState, type ReactNode } from 'react';
 import type { NotifyKind } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { SettingRow, ValueButton } from './setting-row.tsx';
+import { SettingRow, ValueButton } from '../settings/setting-row.tsx';
 
 const TIP = '所有设备一起生效。关掉的那一类只是不弹系统通知，对话和消息里照常有，红点照常亮。';
 

@@ -4,12 +4,21 @@ import { outboundAsk, outboundGrant, outboundLog } from '../../../src/api/fake/o
 import { NOW, renderApp } from '../../helpers.tsx';
 
 describe('设置 · 隐私与授权', () => {
-  it('对外授权在「隐私与授权」里，空列表说明没有授权', async () => {
+  it('授权清单挪到了记忆 · 承诺和授权：设置里只留一行指过去，点了到那一页、设置收起（记忆分层 11-15）', async () => {
     await renderApp({ hash: '#/settings/grants' });
     const dialog = await screen.findByRole('dialog', { name: '设置' });
     fireEvent.click(within(dialog).getByRole('button', { name: '隐私与授权' }));
-    const section = await within(dialog).findByRole('region', { name: '对外授权' });
-    expect(await within(section).findByText('还没有对外授权')).toBeTruthy();
+    const section = await within(dialog).findByRole('region', { name: '已经授权的' });
+    expect(within(dialog).queryByRole('region', { name: '对外授权' })).toBeNull();
+    const link = within(section).getByRole('link', { name: '对外发送、以后直接做的：在记忆 · 承诺和授权' });
+    expect(link.getAttribute('href')).toBe('#/memory/topics/memdoc-grants');
+    expect(within(dialog).getByRole('region', { name: '先问你' })).toBeTruthy();
+  });
+
+  it('承诺和授权里一条对外授权都没有时，这一块不出现', async () => {
+    await renderApp({ hash: '#/memory/topics/memdoc-grants', setup: ({ control }) => control.memoryTopics.seed() });
+    await screen.findByRole('region', { name: /^可以直接做/ });
+    expect(screen.queryByRole('region', { name: '对外授权' })).toBeNull();
   });
 });
 
@@ -73,7 +82,9 @@ describe('授权范围交互', () => {
   });
 
   it('编辑名单支持换行；可暂停和撤销，记录原文及未知结果可查看', async () => {
-    const app = await renderApp({ hash: '#/settings/grants', setup: ({ control }) => {
+    // 记忆分层（11-15）：对外授权的清单在记忆 · 承诺和授权里。
+    const app = await renderApp({ hash: '#/memory/topics/memdoc-grants', setup: ({ control }) => {
+      control.memoryTopics.seed();
       control.outbound.seed([outboundGrant(NOW, { channel: 'douyin.dm' })],
         [outboundLog(NOW, { status: 'unknown' })]);
     } });

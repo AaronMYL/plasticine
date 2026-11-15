@@ -56,7 +56,7 @@ agent/
 
 | 模块 | 管什么 |
 |---|---|
-| `memory/` | 记忆。`docs/` 现行文档和「记住一句」，`journal/` 今天的记录和忘掉，`curation/` 后台整理，`dream/` 每晚做梦和它的定时，`rules/` 旧规则文档 |
+| `memory/` | 记忆，按七层分（11-15）：关于你、人物、项目、话题之外，做事经验（`how`，只有它允许 Plasticine 自己写，依据 `tried`）、承诺和授权（`memdoc-grants`）、主动告诉你（`memdoc-proactive`）各有固定位置。`docs/` 现行文档、「记住一句」和记做事经验，`journal/` 今天的记录和忘掉，`curation/` 后台整理（一句话进哪一层在 `layer-rules.ts`），`dream/` 每晚做梦和它的定时，`rules/` 旧规则文档 |
 | `mates/` | 队友、群组、主线的身份；每位的 Soul |
 | `attention/` | 注意力与渠道：触发扫描、四档渠道、要你定的卡、推送 |
 | `tasks/` | 任务：定时线、照卡发送、建议 |

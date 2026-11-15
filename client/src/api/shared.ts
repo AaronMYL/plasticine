@@ -27,6 +27,14 @@ export {
 export {
   RULES_DOC_ID,
 } from '../../../agent/shared/state.ts';
+// 记忆分层（11-15）：两页固定的记忆文档的标识、每种文档有哪几段、段名。
+export {
+  GRANTS_DOC_ID,
+  MEMORY_SECTION_LABELS,
+  PROACTIVE_DOC_ID,
+  memorySectionsOf,
+} from '../../../agent/shared/state.ts';
+export type { MemoryDocKind, MemoryLineSection } from '../../../agent/shared/state.ts';
 export type { ProjectBrief, ProjectPerson } from '../../../agent/shared/state.ts';
 // 第13批：Soul 的文字小工具（第一段、逐行比对、改了几处、往一节里加一条）。
 export {

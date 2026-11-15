@@ -60,7 +60,7 @@ export function RulesMoveBanner({ navigate }: { navigate: (route: Route) => void
   return (
     <div className="banner rules-move-banner" role="region" aria-label="规则搬家">
       <p className="banner-text rules-move-banner-text"><strong>规则搬家：{count} 条等你勾。</strong>
-        说话方式进各自的 Soul，你说过的偏好进「关于你」，硬线和授权留在设置里。</p>
+        说话方式进各自的 Soul，你说过的偏好进「关于你」，硬线留在设置里。</p>
       <button type="button" className="text-button" onClick={() => navigate(soulRoute())}>去勾</button>
     </div>
   );

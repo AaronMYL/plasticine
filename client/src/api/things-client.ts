@@ -6,9 +6,18 @@
 
 import type {
   AddMemoryLineRequest, ApplyCleanupRequest, ApplyCleanupResponse, ChooseDreamChangeRequest, EditMemoryLineRequest,
-  LatestCleanupResponse, MemoryDreamChangeView, MemoryDreamView, MemorySearchResponse, MemoryTopicDoc,
-  MemoryTopicListResponse, MoveMemoryLineRequest, RetireMemoryLineRequest, StartCleanupRequest, UndoDreamChangeRequest,
+  LatestCleanupResponse, MemoryDreamChangeView, MemoryDreamView, MemoryGrantsResponse, MemoryLineSection,
+  MemorySearchResponse, MemoryTopicDoc, MemoryTopicListResponse, MoveMemoryLineRequest, RetireMemoryLineRequest,
+  RevokeLoopGrantRequest, StartCleanupRequest, UndoDreamChangeRequest,
 } from './shared.ts';
+
+/** 收回过的一行（承诺和授权最下面「已收回」）：还看得到，能恢复成新的一行。 */
+export interface WithdrawnLine {
+  id: string;
+  text: string;
+  section: MemoryLineSection;
+  retiredAt: string;
+}
 
 export interface MemoryTopicsApi {
   /** GET /v2/memory/topics：主题目录（按 关于你和做事方式 · 项目 · 人 · 话题 · 技能 分组）+ 拿不准的 + 昨晚整理的摘要。 */
@@ -32,6 +41,13 @@ export interface MemoryTopicsApi {
   retireLine(docId: string, lineId: string, input: RetireMemoryLineRequest): Promise<void>;
   /** POST /v2/memory/docs/:docId/lines/:lineId/move */
   moveLine(docId: string, lineId: string, input: MoveMemoryLineRequest): Promise<void>;
+  // ---- 11-15 记忆分层：承诺和授权一页（shared/api/memory-grants.ts） ----
+  /** GET /v2/memory/docs/:id?includeRetired=true 里收回过的那几行（新的在前）。 */
+  withdrawn(docId: string, signal?: AbortSignal): Promise<WithdrawnLine[]>;
+  /** GET /v2/memory/grants：点过「以后直接做」的几类。 */
+  grants(signal?: AbortSignal): Promise<MemoryGrantsResponse>;
+  /** POST /v2/memory/grants/loop/revoke：收回一类。 */
+  revokeLoopGrant(input: RevokeLoopGrantRequest): Promise<MemoryGrantsResponse>;
   /** GET /v2/memory/cleanups/latest */
   cleanup(signal?: AbortSignal): Promise<LatestCleanupResponse>;
   /** POST /v2/memory/cleanups */

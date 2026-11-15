@@ -4,11 +4,16 @@
 
 import { MAIN_SOUL_DEFAULTS } from '../../../shared/soul.ts';
 import {
+  GRANTS_DOC_ID,
+  GRANTS_DOC_TITLE,
   MEMORY_DOC_CHAR_LIMIT,
+  PROACTIVE_DOC_ID,
+  PROACTIVE_DOC_TITLE,
   RULES_DOC_ID,
   RULES_DOC_TITLE,
   YOU_DOC_ID,
   YOU_DOC_TITLE,
+  memorySectionsOf,
   projectDocId,
   type Actor,
   type DeviceConfirmation,
@@ -90,6 +95,33 @@ export function ensureRulesDoc(state: DocState): MemoryDoc {
   });
 }
 
+// 记忆分层（11-15）：两份固定的页，和「关于你」一样一直在。说明写给模型看：这篇讲什么、什么时候该读。
+const GRANTS_SUMMARY = '允许直接做的、要先问的、先停着的事，和 Plasticine 答应过的事；做事前、出确认卡前先看';
+const PROACTIVE_SUMMARY = '别主动提的事、什么时候别打扰、通知写成什么样；主动发消息、心跳、建议、来信之前先看';
+
+function ensureFixedDoc(state: DocState, id: string, kind: 'grants' | 'proactive', title: string,
+  summary: string): MemoryDoc {
+  const existing = state.memoryDocs.docs.get(id);
+  if (existing !== undefined) {
+    return existing;
+  }
+  return state.transaction(() => {
+    const doc = state.memoryDocs.docs.create({ kind, title, summary, createdBy: 'system' }, { id });
+    docEvent(state, doc.id, null, 'doc_created', { actor: 'system', ref: null }, { title: doc.title });
+    return doc;
+  });
+}
+
+/** 「承诺和授权」一直在；没有就建（稳定标识，重复调用不重复建）。 */
+export function ensureGrantsDoc(state: DocState): MemoryDoc {
+  return ensureFixedDoc(state, GRANTS_DOC_ID, 'grants', GRANTS_DOC_TITLE, GRANTS_SUMMARY);
+}
+
+/** 「主动告诉你」一直在；没有就建。 */
+export function ensureProactiveDoc(state: DocState): MemoryDoc {
+  return ensureFixedDoc(state, PROACTIVE_DOC_ID, 'proactive', PROACTIVE_DOC_TITLE, PROACTIVE_SUMMARY);
+}
+
 function clipSummary(text: string): string {
   return Array.from(text).slice(0, 150).join('');
 }
@@ -117,10 +149,12 @@ export function ensureProjectDoc(state: DocState, project: Project): MemoryDoc {
   });
 }
 
-/** 「关于你」「怎么替你做事」和每个项目的文档。服务启动和每次整理前调一次。 */
+/** 「关于你」「怎么替你做事」「承诺和授权」「主动告诉你」和每个项目的文档。服务启动和每次整理前调一次。 */
 export function ensureMemoryDocs(state: DocState): void {
   ensureYouDoc(state);
   ensureRulesDoc(state);
+  ensureGrantsDoc(state);
+  ensureProactiveDoc(state);
   for (const project of state.projects.all()) {
     ensureProjectDoc(state, project);
   }
@@ -150,9 +184,23 @@ export function scopeOf(line: Pick<MemoryLine, 'scopeKind' | 'scopeRef'>):
   return { scopeKind: line.scopeKind, scopeRef: line.scopeRef };
 }
 
+/** 没写段就进这种文档的第一段；写了这种文档里没有的段不收。 */
+function sectionFor(state: DocState, docId: string, section: MemoryLineSection | undefined): MemoryLineSection {
+  const allowed = memorySectionsOf(state.memoryDocs.docs.require(docId).kind);
+  const chosen = section ?? allowed[0] ?? 'note';
+  if (!allowed.includes(chosen)) {
+    throw new Error(`这份记忆里没有「${chosen}」这一段`);
+  }
+  return chosen;
+}
+
 export function addLine(state: DocState, line: NewLine, writer: Writer): MemoryLine {
   return state.transaction(() => {
-    const written = state.memoryDocs.lines.add({ docId: line.docId, section: line.section ?? 'note', text: line.text,
+    if (line.basis === 'tried' && state.memoryDocs.docs.require(line.docId).kind !== 'how') {
+      throw new Error('Plasticine 自己试出来的只能记在做事经验里');
+    }
+    const section = sectionFor(state, line.docId, line.section);
+    const written = state.memoryDocs.lines.add({ docId: line.docId, section, text: line.text,
       basis: line.basis, anchors: line.anchors, inferenceId: line.inferenceId ?? null, writtenBy: writer.actor,
       writtenRef: writer.ref, scopeKind: line.scopeKind ?? 'all', scopeRef: line.scopeRef ?? null },
     { migratedDefault: line.migrated ?? false });

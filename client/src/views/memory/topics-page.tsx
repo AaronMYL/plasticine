@@ -1,3 +1,5 @@
+// 记忆分层（11-15 Aaron 看过设计稿）：目录按七层排——总览 → 拿不准的（每条后面写打算放哪一篇）→ 说好的（承诺和授权、
+// 主动告诉你两页固定的，一直在，下面一行写现在的数）→ 你 → 人物 → 项目 → 话题 → 做事经验（行尾是条数）。
 // 记忆页（第 102 条；《优化清单》第 16、19、10 条 11-06 重做，设计稿 Plasticine-Memory）：页头「记忆」+ 搜索（含归档）
 // +「全量整理」（11-15 界面统一）；
 // 夜里整理过就有一行「昨晚整理了 n 条」入口（没有整理时整行不出现）；「拿不准的」几条（对 / 不对）；下面是按类型分组的目录：
@@ -27,6 +29,7 @@ import { CleanupButton, MemoryOverview, RulesMoveBanner } from './memory-overvie
 import { useCleanup } from './use-cleanup.ts';
 import { uncertainKey } from './topics-store.ts';
 import './topics.css';
+import './layers.css';
 
 /** 拿不准的在页面上最多摆几条：用户不会细看记忆（第 102 条）。 */
 export const UNCERTAIN_SHOWN_MAX = 3;
@@ -38,7 +41,13 @@ const KIND_LOOK: Readonly<Record<MemoryTopicKind, { hue: HueName; icon: IconName
   project: { hue: 'slate', icon: 'folder' },
   topic: { hue: 'sky', icon: 'hash' },
   skill: { hue: 'ochre', icon: 'tools' },
+  how: { hue: 'teal', icon: 'tools' },
+  grants: { hue: 'ink', icon: 'shield' },
+  proactive: { hue: 'ink', icon: 'bell' },
 };
+
+/** 说好的两页：不是一堆文档里的两篇，一直在目录里（没有行也在）。 */
+const FIXED_KINDS: readonly MemoryTopicKind[] = ['grants', 'proactive'];
 
 export function topicLook(topic: MemoryTopicView): { hue: HueName; icon: IconName } {
   const look = KIND_LOOK[topic.kind];
@@ -76,7 +85,9 @@ function UncertainRow({ item }: { item: UncertainItem }): ReactNode {
   return (
     <li className="uncertain">
       <div className="uncertain-main">
-        <p className="uncertain-text"><span>{item.text}<InfoTip label="依据" text={basis} /></span></p>
+        <p className="uncertain-text"><span>{item.text}<InfoTip label="依据" text={basis} />
+          <span className="uncertain-to" aria-label={`打算放进《${item.topicTitle}》`}>
+            <Icon name="chevron-right" size={12} />{item.topicTitle}</span></span></p>
         {fixing ? null : (
           <div className="uncertain-answers">
             <button type="button" className="chip-button"
@@ -115,15 +126,20 @@ export function TierTag({ topic }: { topic: MemoryTopicView }): ReactNode {
 }
 
 function TopicRow({ topic, navigate }: { topic: MemoryTopicView; navigate: (route: Route) => void }): ReactNode {
+  const fixed = FIXED_KINDS.includes(topic.kind);
   return (
     <li>
       <button type="button" className="topic-row"
         onClick={() => navigate({ view: 'memory', noteId: null, topicId: topic.id })}>
+        {fixed ? <span className="topic-row-lead" aria-hidden="true">
+          <Icon name={KIND_LOOK[topic.kind].icon} size={16} /></span> : null}
         <span className="topic-row-text">
           <span className="topic-row-title">{topic.title}</span>
           {topic.summary === topic.title ? null : <span className="topic-row-summary">{topic.summary}</span>}
         </span>
         {topic.overLimit ? <span className="topic-row-full text-meta">超出上限</span> : null}
+        {topic.kind === 'how' ? <span className="topic-row-count text-mono"
+          aria-label={`${topic.lineCount} 条`}>{topic.lineCount}</span> : null}
         <TierTag topic={topic} />
         <span className="topic-row-chevron" aria-hidden="true"><Icon name="chevron-right" size={14} /></span>
       </button>
@@ -174,7 +190,8 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
   // 空的一页不在目录里出现（11-11：「个人」项目的记忆并进了关于你，人物页等勾了才有内容）；关于你总在。
   // 第13批：「规则」那一份不在目录里了——还没搬的在顶上的规则搬家提示条里。
   const groups = (list?.groups ?? []).map((group) => ({ ...group, topics: group.topics.filter((topic) =>
-    topic.kind !== 'rules' && (topic.lineCount > 0 || topic.kind === 'about_you')) }))
+    topic.kind !== 'rules'
+      && (topic.lineCount > 0 || topic.kind === 'about_you' || FIXED_KINDS.includes(topic.kind))) }))
     .filter((group) => group.topics.length > 0);
   const uncertain = list?.uncertain.slice(0, UNCERTAIN_SHOWN_MAX) ?? [];
   const searching = query.trim() !== '';
@@ -211,7 +228,8 @@ export function TopicsPage({ navigate }: { navigate: (route: Route) => void; now
                 aria-labelledby={`topics-${group.kind}`}>
                 <div className="memory-block-head">
                   <h2 id={`topics-${group.kind}`} className="block-title">{MEMORY_TOPIC_GROUP_LABELS[group.kind]}</h2>
-                  <span className="block-meta text-mono">{group.topics.length}</span>
+                  {group.kind === 'grants' ? null
+                    : <span className="block-meta text-mono">{group.topics.length}</span>}
                 </div>
                 <FlipList className="topic-list" keys={group.topics.map((topic) => topic.id)}>
                   {group.topics.map((topic) => <TopicRow key={topic.id} topic={topic} navigate={navigate} />)}

@@ -171,7 +171,9 @@ export type EditMemoryLineRequest = Static<typeof EditMemoryLineRequestSchema>;
 
 /** POST /v2/memory/docs/:docId/lines/:lineId/retire —— 用户要忘掉这一行：整行退休（软删，行还在）。 */
 export const RetireMemoryLineRequestSchema = Type.Object(
-  { requestId: RequestIdSchema, version: Type.Integer({ minimum: 1 }) },
+  { requestId: RequestIdSchema, version: Type.Integer({ minimum: 1 }),
+    /** 默认 forget（忘掉，真的删）；withdraw 是收回（进归档，还看得到、能恢复），承诺和授权里用。 */
+    mode: Type.Optional(Type.Enum(['forget', 'withdraw'])) },
   { additionalProperties: false },
 );
 export type RetireMemoryLineRequest = Static<typeof RetireMemoryLineRequestSchema>;

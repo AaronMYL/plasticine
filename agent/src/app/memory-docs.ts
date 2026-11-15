@@ -33,7 +33,8 @@ import { checkInput, queryObject } from './validate.ts';
 // 锚点摘录：够认出是哪句话，全文在原消息里。
 const EXCERPT_CHARS = 120;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const KIND_ORDER: readonly MemoryDocKind[] = ['you', 'rules', 'project', 'person', 'topic'];
+const KIND_ORDER: readonly MemoryDocKind[] = ['you', 'rules', 'project', 'person', 'topic', 'skill', 'how', 'grants',
+  'proactive'];
 
 type ViewState = Pick<StateService, 'memoryDocs' | 'memoryCuration' | 'lineMessages' | 'memory' | 'projects'
   | 'transaction'>;
@@ -245,7 +246,10 @@ export async function editMemoryLine(context: RequestContext): Promise<Reply> {
   });
 }
 
-/** POST /v2/memory/docs/:docId/lines/:lineId/retire —— 用户要忘掉：整行退休，行还在。 */
+/**
+ * POST /v2/memory/docs/:docId/lines/:lineId/retire —— 默认是用户要忘掉（真的删）；mode = withdraw 是收回
+ * （不再成立，进归档，还看得到、能恢复），承诺和授权里用。
+ */
 export async function retireMemoryLine(context: RequestContext): Promise<Reply> {
   const auth = requireUserAuth(context);
   const body = checkInput(RetireMemoryLineRequestSchema, await readJsonBody(context.req), '忘掉一行记忆');
@@ -254,7 +258,8 @@ export async function retireMemoryLine(context: RequestContext): Promise<Reply> 
   const lineId = param(context, 'lineId');
   return idempotent(context, body.requestId, () => {
     const line = requireLiveLine(state, docId, lineId, body.version);
-    const retired = retireLine(state, line, 'forgotten', { actor: 'user', ref: auth.device.id },
+    const reason = body.mode === 'withdraw' ? 'no_longer_true' : 'forgotten';
+    const retired = retireLine(state, line, reason, { actor: 'user', ref: auth.device.id },
       { requestId: body.requestId });
     const response: MemoryLineResponse = { line: memoryLineView(state, retired) };
     return { status: 200, body: response };

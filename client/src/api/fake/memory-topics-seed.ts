@@ -4,17 +4,26 @@
 // 11-05：词表并进「主线的 Soul」，原来「说话方式」里那两条词语约定挪过去，出处写「词表」。
 
 import {
-  docLinkNames, RULES_DOC_ID, type MemoryDocLine, type MemoryDocSection, type MemoryTopicView, type UncertainItem,
+  docLinkNames, GRANTS_DOC_ID, PROACTIVE_DOC_ID, RULES_DOC_ID, type MemoryDocLine, type MemoryDocSection,
+  type MemoryLineSection, type MemoryTopicView, type UncertainItem,
 } from '../shared.ts';
 import { DESIGN_PROJECTS, minutesAgo } from './design-projects.ts';
 
+/** 一行多出来的几样（记忆分层）：改之前那句、只限哪里。 */
+export interface LineExtra {
+  previous?: string;
+  scope?: string;
+}
+
 export type LineSeed = [
-  text: string, basis: MemoryDocLine['basis'], source: string, minutesBefore: number, uncertain?: string,
+  text: string, basis: MemoryDocLine['basis'], source: string, minutesBefore: number, uncertain?: string | null,
+  extra?: LineExtra,
 ];
 
 export interface TopicSeed {
   topic: MemoryTopicView;
-  sections: Array<{ heading: string; lines: LineSeed[] }>;
+  /** section：分了段的几篇（承诺和授权、主动告诉你、做事经验）是哪一段。 */
+  sections: Array<{ heading: string; section?: MemoryLineSection; lines: LineSeed[] }>;
 }
 
 const DAY = 24 * 60;
@@ -27,8 +36,69 @@ function topic(fields: Pick<MemoryTopicView, 'id' | 'kind' | 'title' | 'summary'
     material, overLimit: false, ...fields };
 }
 
+/** 记忆分层（11-15 设计稿）：说好的两页（承诺和授权、主动告诉你）和几篇做事经验。 */
+function layerSeeds(now: Date): TopicSeed[] {
+  return [
+    { topic: topic({ id: GRANTS_DOC_ID, kind: 'grants', title: '承诺和授权', summary: '承诺和授权' }, now, 30),
+      sections: [
+        { heading: '可以直接做', section: 'allow', lines: [
+          ['给周屿发消息不用先问', 'quote', '主线 · 11月12日', 3 * DAY, null, { scope: '只限 Plasticine 项目' }],
+          ['定时任务可以自己加，加完告诉你', 'quote', '主线 · 11月9日', 6 * DAY],
+        ] },
+        { heading: '先问你', section: 'ask', lines: [
+          ['改线上数据之前先问', 'quote', '主线 · 11月13日', 2 * DAY],
+          ['发到群组里的话先给你看', 'quote', '主线 · 11月11日', 4 * DAY],
+          ['订阅新的信息源之前先问', 'quote', '主线 · 11月7日', 8 * DAY],
+        ] },
+        { heading: '先停着', section: 'hold', lines: [
+          ['每周回顾先停，等你开口', 'quote', '主线 · 11月14日', DAY],
+        ] },
+        { heading: '答应你的', section: 'promise', lines: [
+          ['抖音收藏有新的就整理，周日汇总一次', 'quote', '主线 · 11月9日', 6 * DAY],
+          ['读完一本书给你一页笔记', 'quote', '主线 · 11月5日', 10 * DAY],
+        ] },
+      ] },
+    { topic: topic({ id: PROACTIVE_DOC_ID, kind: 'proactive', title: '主动告诉你', summary: '主动告诉你' }, now, 40),
+      sections: [
+        { heading: '别提的', section: 'never', lines: [
+          ['周末不提工作上的事', 'quote', '主线 · 11月12日', 3 * DAY],
+          ['回过「知道了」的事不再提第二次', 'quote', '主线 · 11月10日', 5 * DAY],
+          ['股票涨跌不用说', 'quote', '主线 · 11月8日', 7 * DAY],
+        ] },
+        { heading: '什么时候', section: 'when', lines: [
+          ['开会的时候不打扰', 'quote', '主线 · 11月13日', 2 * DAY],
+          ['通勤那段只发要紧的', 'quote', '主线 · 11月11日', 4 * DAY],
+        ] },
+        { heading: '怎么通知', section: 'style', lines: [
+          ['一句话说完，细节放链接里', 'quote', '主线 · 11月12日', 3 * DAY],
+        ] },
+      ] },
+    { topic: topic({ id: 't_how_xhs', kind: 'how', title: '小红书', summary: '打开链接、读正文、存进资料库' }, now, 10 * 60),
+      sections: [
+        { heading: '做法', section: 'do', lines: [
+          ['链接要带着 xsec_token 才打得开；从分享文案里取整条链接，不自己拼。', 'tried', '存小红书笔记', 2 * DAY],
+          ['存进资料库时把封面图一起存，不然列表里只有标题。', 'quote', '主线 · 11月12日', 3 * DAY],
+          ['图文笔记的正文在第一屏，评论要往下滚两屏才出来。', 'tried', '存小红书笔记', 2 * DAY],
+        ] },
+        { heading: '要避开的', section: 'avoid', lines: [
+          ['没登录时搜索页只给 20 条，不能当成全部结果。', 'tried', '找露营装备的测评', 4 * DAY],
+          ['连着打开超过 30 篇会弹验证，隔几分钟再继续。', 'tried', '整理收藏夹', DAY, null,
+            { previous: '连着打开超过 50 篇会弹验证。' }],
+        ] },
+      ] },
+    { topic: topic({ id: 't_how_mail', kind: 'how', title: '发邮件', summary: '草稿、附件、发之前给你看' }, now, 2 * DAY),
+      sections: [
+        { heading: '做法', section: 'do', lines: [
+          ['发之前先把草稿给你看。', 'quote', '主线 · 11月10日', 5 * DAY],
+          ['附件超过 20M 先传网盘，正文里放链接。', 'tried', '给周屿发采访素材', 3 * DAY],
+        ] },
+      ] },
+  ];
+}
+
 export function topicSeeds(now: Date): TopicSeed[] {
   return [
+    ...layerSeeds(now),
     { topic: topic({ id: 't_you', kind: 'about_you', title: '关于你', summary: '身份、住处、作息和长期偏好',
       uncertainCount: 2 }, now, 50), sections: [
       { heading: '作息', lines: [
@@ -108,27 +178,33 @@ export function uncertainSeeds(now: Date): UncertainItem[] {
     status: 'open', correction: null });
   return [
     item('u_weekend', '周末连「等你定」的卡也不想看到，不只是工作提醒。',
-      '10-26 原话「周末不要给我排任何工作提醒」；两个周末都没点开卡。', 't_you', '关于你', 50),
+      '10-26 原话「周末不要给我排任何工作提醒」；两个周末都没点开卡。', PROACTIVE_DOC_ID, '主动告诉你', 50),
     item('u_commute', '早上 8:30–9:10 是通勤，那段时间首页多给你读的。',
       '近两周这段时间多半在 iPhone 上打开图书。', 't_you', '关于你', 2 * DAY),
     item('u_zhouyu', '周屿更愿意用语音过稿，不想看长文。', '三次采访稿他都回了语音。', 't_zhouyu', '周屿', 3 * DAY),
   ];
 }
 
+const SOURCE_KINDS: Readonly<Partial<Record<MemoryDocLine['basis'], MemoryDocLine['sources'][number]['kind']>>> = {
+  system: 'system', agreement: 'agreement', tried: 'work' };
+
 export function sectionsOf(seed: TopicSeed, now: Date, idOf: (name: string) => string | null = () => null,
   meta: (line: LineSeed) => { id: string; version: number } | undefined = () => undefined): MemoryDocSection[] {
   return seed.sections.map((section, sectionIndex) => ({
     id: `${seed.topic.id}_s${sectionIndex}`,
     heading: section.heading,
+    ...(section.section === undefined ? {} : { section: section.section }),
     lines: section.lines.map((line, lineIndex) => {
-      const [text, basis, label, minutes, uncertain] = line;
+      const [text, basis, label, minutes, uncertain, extra] = line;
       return {
-      id: meta(line)?.id ?? `${seed.topic.id}_s${sectionIndex}_l${lineIndex}`, version: meta(line)?.version ?? 1, text,
-      basis,
-      sources: [{ kind: basis === 'system' ? 'system' : basis === 'agreement' ? 'agreement' : 'message',
-        id: `src_${seed.topic.id}_${sectionIndex}_${lineIndex}`, label, at: minutesAgo(now, minutes) }],
-      uncertainId: uncertain ?? null,
-      links: docLinkNames(text).map((name) => ({ name, topicId: idOf(name) })),
+        id: meta(line)?.id ?? `${seed.topic.id}_s${sectionIndex}_l${lineIndex}`, version: meta(line)?.version ?? 1,
+        text, basis,
+        sources: [{ kind: SOURCE_KINDS[basis] ?? 'message',
+          id: `src_${seed.topic.id}_${sectionIndex}_${lineIndex}`, label, at: minutesAgo(now, minutes) }],
+        uncertainId: uncertain ?? null,
+        links: docLinkNames(text).map((name) => ({ name, topicId: idOf(name) })),
+        at: minutesAgo(now, minutes),
+        ...extra,
       };
     }),
   }));

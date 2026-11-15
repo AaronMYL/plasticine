@@ -6,7 +6,7 @@
 // - POST /v2/memory/cleanups/:id/apply          采用勾选的几条，其余不动
 
 import { Type, type Static } from 'typebox';
-import { MEMORY_CLEANUP_ITEM_KINDS, MEMORY_CLEANUP_STATUSES } from '../state.ts';
+import { MEMORY_CLEANUP_ITEM_KINDS, MEMORY_CLEANUP_STATUSES, MEMORY_LINE_SECTIONS } from '../state.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 
 const STRICT = { additionalProperties: false };
@@ -16,6 +16,8 @@ export const MEMORY_LINE_TEXT_MAX = 600;
 export const AddMemoryLineRequestSchema = Type.Object({
   requestId: RequestIdSchema,
   text: Type.String({ minLength: 1, maxLength: MEMORY_LINE_TEXT_MAX }),
+  /** 加到哪一段（承诺和授权、主动告诉你、做事经验各有几段）；不写就是这种文档的第一段。 */
+  section: Type.Optional(Type.Enum(MEMORY_LINE_SECTIONS)),
 }, STRICT);
 export type AddMemoryLineRequest = Static<typeof AddMemoryLineRequestSchema>;
 
@@ -23,6 +25,8 @@ export const MoveMemoryLineRequestSchema = Type.Object({
   requestId: RequestIdSchema,
   version: Type.Integer({ minimum: 1 }),
   toDocId: IdSchema,
+  /** 挪到哪一段；toDocId 就是原来那份时必须带（同一份里换段：先停着、恢复）。 */
+  section: Type.Optional(Type.Enum(MEMORY_LINE_SECTIONS)),
 }, STRICT);
 export type MoveMemoryLineRequest = Static<typeof MoveMemoryLineRequestSchema>;
 

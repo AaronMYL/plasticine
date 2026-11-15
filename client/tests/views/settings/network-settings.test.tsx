@@ -30,7 +30,10 @@ describe('设置 · 分段', () => {
     expect(within(pane()).getByRole('button', { name: '换头像' })).toBeTruthy();
     fireEvent.click(within(nav).getByRole('button', { name: '隐私与授权' }));
     expect(await within(pane()).findByRole('heading', { level: 3, name: '对外可见' })).toBeTruthy();
-    expect(within(pane()).getByRole('region', { name: '对外授权' })).toBeTruthy();
+    // 记忆分层（11-15）：授权清单挪到记忆 · 承诺和授权，设置里只留一行指过去。
+    const granted = within(pane()).getByRole('region', { name: '已经授权的' });
+    expect(within(granted).getByRole('link', { name: '对外发送、以后直接做的：在记忆 · 承诺和授权' })
+      .getAttribute('href')).toBe('#/memory/topics/memdoc-grants');
     fireEvent.click(within(nav).getByRole('button', { name: '通用' }));
     expect(await within(pane()).findByRole('heading', { level: 3, name: '通知' })).toBeTruthy();
     expect(within(pane()).queryByRole('heading', { level: 3, name: '通知记录' })).toBeNull();

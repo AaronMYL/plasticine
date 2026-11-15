@@ -5,7 +5,8 @@
 
 import { randomUUID } from 'node:crypto';
 import { Type } from 'typebox';
-import type { MemoryCleanup, MemoryCleanupItem, MemoryDoc, MemoryLine } from '../../../shared/state.ts';
+import { memorySectionIn, memorySectionsOf, type MemoryCleanup, type MemoryCleanupItem, type MemoryDoc,
+  type MemoryLine, type MemoryLineSection } from '../../../shared/state.ts';
 import type { TextModels } from '../../kernel/index.ts';
 import type { StateService } from '../../state/index.ts';
 import { askJson } from '../../books/index.ts';
@@ -141,15 +142,28 @@ export async function runCleanup(state: CleanupState, models: TextModels, cleanu
 }
 
 /** 一行挪到别的文档：新文档里接一行（文字、来源、范围照抄），旧行退休进归档。 */
-export function moveLine(state: CleanupState, line: MemoryLine, toDocId: string, writer: Writer): MemoryLine {
+/**
+ * 把一行挪到别的文档，或同一份文档里的另一段（承诺和授权里「先停着」和恢复）：原来那行进归档，新行链着它。
+ * 没给段时：那边也有这一段就不变，没有就进那边的第一段。Plasticine 试出来的行只能留在做事经验里。
+ */
+export function moveLine(state: CleanupState, line: MemoryLine, toDocId: string, writer: Writer,
+  toSection?: MemoryLineSection): MemoryLine {
   return state.transaction(() => {
-    state.memoryDocs.docs.require(toDocId);
+    const target = state.memoryDocs.docs.require(toDocId);
+    if (line.basis === 'tried' && target.kind !== 'how') {
+      throw new Error('Plasticine 自己试出来的只能留在做事经验里');
+    }
+    const section = toSection ?? memorySectionIn(target.kind, line.section);
+    if (!memorySectionsOf(target.kind).includes(section)) {
+      throw new Error(`这份记忆里没有「${section}」这一段`);
+    }
     state.memoryDocs.lines.retire(line.id, line.version, 'edited');
-    const written = state.memoryDocs.lines.add({ docId: toDocId, section: line.section, text: line.text,
+    const written = state.memoryDocs.lines.add({ docId: toDocId, section, text: line.text,
       basis: line.basis, anchors: line.anchors, previous: null, supersedes: [line.id], inferenceId: line.inferenceId,
       writtenBy: writer.actor, writtenRef: writer.ref, ...scopeOf(line) });
     docEvent(state, line.docId, line.id, 'line_retired', writer, { reason: 'moved', movedTo: toDocId });
-    docEvent(state, toDocId, written.id, 'line_added', writer, { movedFrom: line.docId, replaced: line.id });
+    docEvent(state, toDocId, written.id, 'line_added', writer, { movedFrom: line.docId, replaced: line.id,
+      fromSection: line.section, section });
     return written;
   });
 }

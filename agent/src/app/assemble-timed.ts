@@ -5,8 +5,7 @@ import { loopReadings, writeSelfNotes } from '../loop/index.ts';
 import { mainIdentity, soulNight } from '../mates/index.ts';
 import { randomUUID } from 'node:crypto';
 import type { NoticeInput } from '../attention/index.ts';
-import { Dreamer, type DreamSkills } from '../memory/index.ts';
-import { DreamNight } from '../memory/index.ts';
+import { Dreamer, DreamNight, proactiveDocSection, type DreamSkills } from '../memory/index.ts';
 import { FOLLOW_UP_PREFIX, Heartbeat, type CalendarPort } from '../heartbeat/index.ts';
 import type { TextModels } from '../kernel/index.ts';
 import type { LineKernel } from '../lines/index.ts';
@@ -70,6 +69,7 @@ export function assembleTimed(parts: TimedParts): TimedAssembly {
     open: (input) => parts.lines().open({ ...input, projectId: null, parentLineId: MAIN_LINE_ID,
       origin: { kind: 'trigger', ref: 'heartbeat' } }).id,
     suggest: (input) => tasks.suggestions.suggest(input),
+    preferences: () => proactiveDocSection(state),
     stalled: parts.stalled,
     // 没做成的后台任务：出错停下的，和做完了但自己说没做成的；心跳开的跟进线自己再失败不再跟（免得一直转）。
     stuck: (since) => state.lines.list({ kind: 'background', visibleOnly: true, limit: 200 })

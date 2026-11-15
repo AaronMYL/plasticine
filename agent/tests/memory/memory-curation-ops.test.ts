@@ -105,7 +105,7 @@ test('改那一行：新文字、引用来源；同一行一次只能改或退�
     ['这一行这次已经改过或退休过', '没有在用的行 l-gone']);
 });
 
-test('新建文档：只能建人物、话题或技能；同名的并到已有那份；之后的加行用 ref 指向它', () => {
+test('新建文档：只能建人物、话题、技能或做事经验；同名的并到已有那份；之后的加行用 ref 指向它', () => {
   const result = plan([
     { op: 'new_doc', ref: 'xc', kind: 'person', title: '赵一舟', summary: '用户的朋友' },
     { op: 'add', doc: 'xc', text: '赵一舟可能一起做阳台花园', sources: ['msg-1'] },
@@ -117,7 +117,7 @@ test('新建文档：只能建人物、话题或技能；同名的并到已有�
   const [, toNew, toExisting] = result.ops;
   assert.deepEqual(toNew?.kind === 'add' ? toNew.doc : null, { ref: 'xc' });
   assert.deepEqual(toExisting?.kind === 'add' ? toExisting.doc : null, { id: 'tt' });
-  assert.match(result.rejected[0]?.reason ?? '', /只能新建人物、话题或技能/);
+  assert.match(result.rejected[0]?.reason ?? '', /只能新建人物、话题、技能或做事经验/);
 });
 
 test('决定段只在项目文档；超长、空、像密钥的文字和超长说明拒绝', () => {

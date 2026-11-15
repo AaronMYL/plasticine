@@ -49,9 +49,13 @@ function createRemember(state: RememberState, scope: LineScope): AgentTool<Remem
     name: 'remember',
     label: '记住一句',
     description: '把他在这条线里明确说过、以后还用得上的事（偏好、决定、纠正、人物、长期项目）当场记成主题文档里的一行，'
-      + '链回他的原话（quote 写他说的那句里的一段）。docId 照「记忆文档」目录写，不写就进「关于你」；他要你以后怎么'
-      + '做事的规矩写进 memdoc-rules；没有合适的人物或话题文档就给 newDoc。同一件事变了用 replacesLineId 改那一行。'
-      + '你的推测标 inferred 并写 why，只进「拿不准的」等他确认。查来的资料和你自己的建议不记。',
+      + '链回他的原话（quote 写他说的那句里的一段）。先分层：关于他这个人的进「关于你」（docId 不写）或人物、项目、话题'
+      + '文档（docId 照「记忆文档」目录写）；他允许、禁止、暂停你做某类事，或你答应他以后要做的事，进 memdoc-grants，'
+      + 'section 写 allow（可以直接做）、ask（先问他）、hold（先停着）、promise（你答应的）；他说别主动提什么、什么时候'
+      + '别打扰、通知写成什么样，进 memdoc-proactive，section 写 never、when、style；他说的具体做事方法进做事经验里'
+      + '那个工具、网站或流程的一篇（没有就 newDoc，kind 写 how），section 写 do 或 avoid。没有合适的人物或话题文档就给'
+      + ' newDoc。同一件事变了用 replacesLineId 改那一行。你的推测、分不清放哪层的标 inferred 并写 why，只进'
+      + '「拿不准的」等他确认。查来的资料和你自己的建议不记；你自己试出来的做法用 note_experience。',
     parameters,
     async execute(toolCallId, raw) {
       const { quote, ...args } = checkedArgs(parameters, raw, 'remember');

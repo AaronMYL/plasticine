@@ -32,7 +32,8 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   { section: 'account', title: '在别的设备上用', words: '手机 网址 二维码 域名 远程 访问' },
   { section: 'account', title: '登录着的设备', words: '设备 退出 登出 直连 中继' },
   { section: 'grants', title: '对外可见', words: '隐私 朋友 合作 公开 私密 档位 放开 谁能问到' },
-  { section: 'grants', title: '对外授权', words: '授权 自动发出 发邮件 发消息 许可' },
+  // 记忆分层（11-15）：授权清单挪到记忆 · 承诺和授权，这里是一行指过去。
+  { section: 'grants', title: '已经授权的', words: '授权 自动发出 发邮件 发消息 许可 对外授权 承诺 直接做' },
   { section: 'system', title: '运行情况', words: '版本 磁盘 运行 状态 邮件' },
   { section: 'system', title: '日历和提醒事项', words: '日历 提醒 Apple Mac' },
   { section: 'system', title: '备份', words: '恢复 还原 备份 导出' },

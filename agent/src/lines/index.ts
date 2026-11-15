@@ -22,6 +22,7 @@ export type { NodeLabel } from './catalog.ts';
 export { serverCommandTool } from './server-tool.ts';
 export { answerSentence, awaitAnswer, QUESTION_PURPOSE } from './ask-tools.ts';
 export type { AskToolHost } from './ask-tools.ts';
+export { experienceTool } from './experience-tool.ts';
 export { rememberTool } from './remember-tool.ts';
 export { conversationSearchTool } from './search-tool.ts';
 export { forgetTool } from './forget-tool.ts';

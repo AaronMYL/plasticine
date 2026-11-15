@@ -12,13 +12,16 @@ export type { CurationSource } from './curation/memory-curation-ops.ts';
 export type { CurationState } from './curation/memory-curation-work.ts';
 export { MemoryCurator } from './curation/memory-curator.ts';
 export {
-  addLine, decideInference, docEvent, docFullness, ensureMemoryDocs, ensureProjectDoc, ensureRulesDoc, retireLine,
-  reviseLine,
+  addLine, decideInference, docEvent, docFullness, ensureGrantsDoc, ensureMemoryDocs, ensureProactiveDoc,
+  ensureProjectDoc, ensureRulesDoc, retireLine, reviseLine,
 } from './docs/memory-doc-writes.ts';
 export type { DocState, Writer } from './docs/memory-doc-writes.ts';
 export {
-  findDoc, memoryDocView, memoryDocsSection, rulesDocSection, searchMemory, todaySection,
+  findDoc, grantsDocSection, memoryDocView, memoryDocsSection, proactiveDocSection, rulesDocSection, searchMemory,
+  todaySection,
 } from './docs/memory-docs-context.ts';
+export { noteExperience } from './docs/experience.ts';
+export type { ExperienceInput, ExperienceResult } from './docs/experience.ts';
 export { createMemoryDocTools } from './docs/tools-docs.ts';
 export { RememberParameters, rememberWithSources } from './docs/tools-remember.ts';
 export { transcripts } from './dream/dream-material.ts';

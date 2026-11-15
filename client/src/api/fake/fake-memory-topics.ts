@@ -6,13 +6,15 @@
 import type { MemoryTopicsApi } from '../things-client.ts';
 import { ApiError } from '../errors.ts';
 import {
-  groupMemoryTopics, hardLines, RULES_DOC_ID, type AddMemoryLineRequest, type AnswerUncertainRequest,
-  type ApplyCleanupRequest, type ApplyCleanupResponse, type ChooseDreamChangeRequest, type EditMemoryLineRequest,
-  type LatestCleanupResponse, type MemoryDreamChangeView, type MemoryDreamSummary, type MemoryDreamView,
-  type MemorySearchResponse, type MemoryTopicDoc, type MemoryTopicListResponse, type MemoryTopicView,
-  type MoveMemoryLineRequest, type RetireMemoryLineRequest, type RulesOfferItem, type SoulView,
+  GRANTS_DOC_ID, groupMemoryTopics, hardLines, PROACTIVE_DOC_ID, RULES_DOC_ID, type AddMemoryLineRequest,
+  type AnswerUncertainRequest, type ApplyCleanupRequest, type ApplyCleanupResponse, type ChooseDreamChangeRequest,
+  type EditMemoryLineRequest, type LatestCleanupResponse, type LoopGrantView, type MemoryDreamChangeView,
+  type MemoryDreamSummary, type MemoryDreamView, type MemoryGrantsResponse, type MemorySearchResponse,
+  type MemoryTopicDoc, type MemoryTopicListResponse, type MemoryTopicView, type MoveMemoryLineRequest,
+  type RetireMemoryLineRequest, type RevokeLoopGrantRequest, type RulesOfferItem, type SoulView,
   type StartCleanupRequest, type Tier, type UncertainItem, type UndoDreamChangeRequest,
 } from '../shared.ts';
+import type { WithdrawnLine } from '../things-client.ts';
 import type { FakeReceipts } from './receipts.ts';
 import type { FakeSession } from './fake-session.ts';
 import { dreamSeed } from './memory-dream-seed.ts';
@@ -34,6 +36,8 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
   private topics: TopicSeed[] = [];
   private uncertain: UncertainItem[] = [];
   private dreamView: MemoryDreamView | null = null;
+  /** 点过「以后直接做」的几类（承诺和授权里和他说的排在一起）。 */
+  private loop: LoopGrantView[] = [];
   /** 11-11：改、删、加、挪和全量整理。 */
   readonly edits = new FakeMemoryEdits(() => this.topics, () => this.deps.now());
 
@@ -47,6 +51,8 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
       lineCount: seed.sections.reduce((sum, section) => sum + section.lines.length, 0) } }));
     this.uncertain = uncertainSeeds(now);
     this.dreamView = dreamSeed(now);
+    this.loop = [{ id: 'loop_feed_save', topic: '把信息流里的文章存进资料库',
+      grantedAt: new Date(now.getTime() - 5 * 24 * 3_600_000).toISOString() }];
     this.edits.label();
   }
 
@@ -92,7 +98,7 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
   async list(): Promise<MemoryTopicListResponse> {
     this.deps.session.require();
     const open = this.uncertain.filter((item) => item.status === 'open');
-    const topics = this.topics.map((seed) => ({ ...seed.topic,
+    const topics = this.topics.map((seed) => ({ ...seed.topic, summary: this.summaryOf(seed),
       uncertainCount: open.filter((item) => item.topicId === seed.topic.id).length }));
     return {
       groups: groupMemoryTopics(topics),
@@ -118,10 +124,43 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
     ...(id === RULES_DOC_ID ? { hardLines: [...hardLines()] } : {}) };
   }
 
+  /** 目录里那两页固定的，下面一行写现在的数（同真服务端）；别的照旧是那句说明。 */
+  private summaryOf(seed: TopicSeed): string {
+    if (seed.topic.id === PROACTIVE_DOC_ID) {
+      return '每 30 分钟看 7 件事 · 23:00–08:00 不打扰';
+    }
+    if (seed.topic.id !== GRANTS_DOC_ID) {
+      return seed.topic.summary;
+    }
+    const counts = seed.sections.flatMap((section) => {
+      const count = section.lines.length + (section.section === 'allow' ? this.loop.length : 0);
+      return count === 0 ? [] : [`${section.heading} ${count}`];
+    });
+    return counts.length === 0 ? '还没有说好的事' : counts.join(' · ');
+  }
+
   async addLine(docId: string, input: AddMemoryLineRequest): Promise<void> {
     this.deps.session.require();
     await this.deps.receipts.run('save', input.requestId, `memory-add:${docId}`,
-      () => this.edits.add(docId, input.text));
+      () => this.edits.add(docId, input.text, input.section));
+  }
+
+  async withdrawn(docId: string): Promise<WithdrawnLine[]> {
+    this.deps.session.require();
+    return this.edits.withdrawn(docId);
+  }
+
+  async grants(): Promise<MemoryGrantsResponse> {
+    this.deps.session.require();
+    return { loop: structuredClone(this.loop) };
+  }
+
+  async revokeLoopGrant(input: RevokeLoopGrantRequest): Promise<MemoryGrantsResponse> {
+    this.deps.session.require();
+    return this.deps.receipts.run('save', input.requestId, `memory-loop-revoke:${input.topic}`, () => {
+      this.loop = this.loop.filter((grant) => grant.topic !== input.topic);
+      return { loop: structuredClone(this.loop) };
+    });
   }
 
   async editLine(docId: string, lineId: string, input: EditMemoryLineRequest): Promise<void> {
@@ -133,13 +172,13 @@ export class FakeMemoryTopics implements MemoryTopicsApi {
   async retireLine(docId: string, lineId: string, input: RetireMemoryLineRequest): Promise<void> {
     this.deps.session.require();
     await this.deps.receipts.run('save', input.requestId, `memory-retire:${lineId}`,
-      () => this.edits.retire(docId, lineId, input.version));
+      () => this.edits.retire(docId, lineId, input.version, input.mode === 'withdraw'));
   }
 
   async moveLine(docId: string, lineId: string, input: MoveMemoryLineRequest): Promise<void> {
     this.deps.session.require();
     await this.deps.receipts.run('save', input.requestId, `memory-move:${lineId}`,
-      () => this.edits.move(docId, lineId, input.version, input.toDocId));
+      () => this.edits.move(docId, lineId, input.version, input.toDocId, input.section));
   }
 
   async cleanup(): Promise<LatestCleanupResponse> {

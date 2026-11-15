@@ -40,6 +40,7 @@ function tagOf(basis: MemoryLineBasis, title: string): string {
     case 'stated': return '你说的';
     case 'confirmed_inference': return '推断';
     case 'system': return '系统默认';
+    case 'tried': return 'Plasticine 试出来的';
   }
 }
 

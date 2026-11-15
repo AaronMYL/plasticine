@@ -1,12 +1,16 @@
 // 一条记忆的改、删、挪（11-11 记忆改版，设计稿「一页记忆」）：行尾 ⋯ 里是「改」「挪到…」「删除」；改是就地换成输入框，
 // 挪到…是第二层菜单列出别的几页，删除先问一句。规则页（RULES_DOC_ID）自己有一套，不走这里。
+// 记忆分层（11-15 设计稿）：承诺和授权的行是另一份菜单（GrantLineActions）——看出处、修改、先停着（停着的是
+// 「改成可以直接做」「改成先问你」）、收回；收回的进「已收回」，不删。
 
 import { useEffect, useState, type ReactNode } from 'react';
-import type { MemoryDocLine, MemoryTopicView } from '../../api/shared.ts';
+import { MEMORY_SECTION_LABELS, type MemoryDocLine, type MemoryLineSection, type MemoryLineSource,
+  type MemoryTopicView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
+import { Icon } from '../../shell/icons.tsx';
 import { MenuItem, Popover, type PopoverAnchor } from '../../shell/popover.tsx';
-import { RevealMore } from '../../shell/reveal-more.tsx';
+import { RevealMore, type RevealAction } from '../../shell/reveal-more.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { useMemoryEdits } from './use-memory-edits.ts';
 
@@ -85,6 +89,62 @@ export function LineActions({ docId, line, onEdit }: { docId: string; line: Memo
           });
         }} /> : null}
       {error === null || deleting ? null : <span className="text-meta is-error" role="alert">{error}</span>}
+    </>
+  );
+}
+
+/**
+ * 「加一条」：点开是输入框，存了接在最后一节。分了段的几篇（做事经验、承诺和授权）先选加到哪一段（sections）；
+ * 只有一段时不用选（主动告诉你每段下面各一个）。
+ */
+export function AddLine({ docId, sections, label = '加一条' }: { docId: string;
+  sections?: readonly MemoryLineSection[]; label?: string }): ReactNode {
+  const edits = useMemoryEdits();
+  const [open, setOpen] = useState(false);
+  const [section, setSection] = useState<MemoryLineSection | undefined>(sections?.[0]);
+  if (!open) {
+    return <button type="button" className="secondary-button button-small doc-add" onClick={() => setOpen(true)}>
+      <Icon name="plus" size={14} />{label}</button>;
+  }
+  return <div className="doc-add-form">
+    {sections === undefined || sections.length < 2 ? null : (
+      <span className="segmented" role="group" aria-label="加到哪一段">
+        {sections.map((item) => (
+          <button key={item} type="button" className="segmented-item" aria-pressed={section === item}
+            onClick={() => setSection(item)}>{MEMORY_SECTION_LABELS[item]}</button>
+        ))}
+      </span>
+    )}
+    <LineEditor initial="" label="加一条记忆" onCancel={() => setOpen(false)}
+      onSave={async (text) => {
+        const problem = await edits.add(docId, text, section);
+        if (problem === null) setOpen(false);
+        return problem;
+      }} />
+  </div>;
+}
+
+/** 承诺和授权里一行的菜单：看出处、修改、先停着或恢复、收回（收回的还在「已收回」里，不删）。 */
+export function GrantLineActions({ docId, line, section, onEdit, onSource }: { docId: string; line: MemoryDocLine;
+  section: MemoryLineSection; onEdit: () => void; onSource: ((source: MemoryLineSource) => void) | null }): ReactNode {
+  const edits = useMemoryEdits();
+  const [error, setError] = useState<string | null>(null);
+  const short = Array.from(line.text).slice(0, 12).join('');
+  const source = line.sources[0];
+  const to = (target: MemoryLineSection): RevealAction => ({ icon: target === 'hold' ? 'pause' : 'undo',
+    label: target === 'hold' ? '先停着' : `改成${MEMORY_SECTION_LABELS[target]}`,
+    onSelect: () => void edits.moveSection(docId, line, target).then(setError) });
+  const moves = section === 'hold' ? [to('allow'), to('ask')] : section === 'promise' ? [] : [to('hold')];
+  return (
+    <>
+      <RevealMore label={`「${short}」的更多操作`} actions={[
+        ...(onSource === null || source === undefined || source.kind === 'system' ? []
+          : [{ icon: 'search' as const, label: '看出处', onSelect: () => onSource(source) }]),
+        { icon: 'edit', label: '修改', onSelect: onEdit },
+        ...moves,
+        { icon: 'undo', label: '收回', danger: true, onSelect: () => void edits.withdraw(docId, line).then(setError) },
+      ]} />
+      {error === null ? null : <span className="text-meta is-error" role="alert">{error}</span>}
     </>
   );
 }

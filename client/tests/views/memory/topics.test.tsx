@@ -18,7 +18,7 @@ function main(): HTMLElement {
 }
 
 describe('记忆 · 主题目录', () => {
-  it('默认是主题目录（设计稿 11-06）：昨晚整理的入口、拿不准的（最多 3 条），再按 你 · 项目 · 人物 · 其他 分组，总览在最前',
+  it('默认是主题目录：昨晚整理的入口、拿不准的（最多 3 条），再按 说好的 · 你 · 人物 · 项目 · 其他 · 做事经验 分组，总览在最前',
     async () => {
       await renderApp({ hash: '#/memory', setup: seed });
       expect(within(main()).getByRole('heading', { level: 1, name: '记忆' })).toBeTruthy();
@@ -31,8 +31,9 @@ describe('记忆 · 主题目录', () => {
       expect(within(main()).getByRole('region', { name: '总览' })).toBeTruthy();
       const regions = within(main()).getAllByRole('region').map((region) => region.getAttribute('aria-labelledby'))
         .filter((id) => id !== null);
-      expect(regions).toEqual(['memory-uncertain', 'topics-about_you', 'topics-project', 'topics-person',
-        'topics-topic']);
+      // 记忆分层（11-15）：说好的排在拿不准的后面，人物挪到你后面，做事经验是新的一组、排最后。
+      expect(regions).toEqual(['memory-uncertain', 'topics-grants', 'topics-about_you', 'topics-person',
+        'topics-project', 'topics-topic', 'topics-how']);
       const pinned = within(main()).getByRole('region', { name: '你' });
       // 第13批：「规则」那一份不在目录里，还没搬的在顶上的规则搬家提示条里。
       expect(within(pinned).getAllByRole('button').map((button) => button.textContent?.split(/身份|你明说/)[0]))
@@ -72,12 +73,12 @@ describe('记忆 · 主题目录', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/memory/topics/t_you'));
   });
 
-  it('拿不准的点「对」按本人会话确认：发出后，收成一行「已记进《关于你》」，服务端记下', async () => {
+  it('拿不准的点「对」按本人会话确认：发出后，收成一行「已记进」那一篇，服务端记下', async () => {
     const app = await renderApp({ hash: '#/memory', setup: seed });
     const send = vi.spyOn(app.api.signed, 'send');
     const uncertain = await within(main()).findByRole('region', { name: '拿不准的' });
     fireEvent.click(within(uncertain).getAllByRole('button', { name: '没错' })[0]!);
-    expect(await within(uncertain).findByText('已记进《关于你》', {}, { timeout: 3000 })).toBeTruthy();
+    expect(await within(uncertain).findByText('已记进《主动告诉你》', {}, { timeout: 3000 })).toBeTruthy();
     await waitFor(async () => expect((await app.api.memoryTopics.list()).uncertain).toHaveLength(2));
     expect(send.mock.calls[0]?.[0]).toMatchObject({ target: { kind: 'memory_uncertain' } });
     expect(send.mock.calls[0]?.[0]).not.toHaveProperty('signature');
@@ -95,7 +96,7 @@ describe('记忆 · 主题目录', () => {
     expect(await within(uncertain).findByText(/没有送到/)).toBeTruthy();
     expect(within(uncertain).getAllByRole('button', { name: '没错' })).toHaveLength(3);
     fireEvent.click(within(uncertain).getByRole('button', { name: '重发' }));
-    expect(await within(uncertain).findByText('已记进《关于你》', {}, { timeout: 3000 })).toBeTruthy();
+    expect(await within(uncertain).findByText('已记进《主动告诉你》', {}, { timeout: 3000 })).toBeTruthy();
     await waitFor(async () => expect((await app.api.memoryTopics.list()).uncertain).toHaveLength(2));
   });
 

@@ -5,6 +5,8 @@ import { Type, type Static } from 'typebox';
 import {
   MEMORY_DOC_COMPACT_RATIO,
   MEMORY_LINE_MAX_CHARS,
+  GRANTS_DOC_ID,
+  PROACTIVE_DOC_ID,
   RULES_DOC_ID,
   YOU_DOC_ID,
   type MemoryAnchor,
@@ -71,7 +73,8 @@ export function directory(state: CurationState, docs: readonly MemoryDoc[]) {
 }
 
 // 「关于你」「怎么替你做事」两份总在材料里（第 4 批：规矩要能对上已有的那一行，改它而不是另加）。
-const ALWAYS_SHOWN: readonly string[] = [YOU_DOC_ID, RULES_DOC_ID];
+// 记忆分层（11-15）：承诺和授权、主动告诉你也总在（它们短，而且新说法要能改到已有的那一行）。
+const ALWAYS_SHOWN: readonly string[] = [YOU_DOC_ID, RULES_DOC_ID, GRANTS_DOC_ID, PROACTIVE_DOC_ID];
 
 /** 「关于你」「怎么替你做事」总在；其余按和这次文字的两字重合挑几份最相关的，行的总字数有上限。 */
 export function relatedLines(state: CurationState, docs: readonly MemoryDoc[], text: string) {

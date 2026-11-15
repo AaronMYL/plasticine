@@ -1,5 +1,5 @@
 // 设置 · 通用 · 通知（11-14 设置页一种行，设计稿「设置页的布局」）：「这台设备接收系统通知」一行开关、「发一条测试通知」
-// 一行按钮、「通知哪些事」一行「n 类 ›」，点开在下面缩进七类开关（notify-kinds-section.tsx）。
+// 一行按钮（每台设备自己的，留在设置）；「通知哪些事」七类开关 11-15 搬到记忆 · 主动告诉你，这里一行指过去。
 // 用户视角审查 2026-11-01 第 15 条：/v2/push/subscriptions 只回这台设备订没订（PushStatusSchema），没有列所有订阅的
 // 接口，所以只写这台的状态，不编台数。通知用来做什么、别的设备去哪看是补充，进 ⓘ。
 // 《优化清单》第 12 条（11-06）：通知都是主线上的一条消息，开着的设备再弹一条系统通知；不再发邮件。
@@ -7,7 +7,8 @@
 import type { ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { NotifyKindsRows } from './notify-kinds-section.tsx';
+import { PROACTIVE_DOC_ID } from '../../api/shared.ts';
+import { MemoryLinkRow } from './memory-link.tsx';
 import { NotifyTest } from './notify-test.tsx';
 import type { PushSwitchStatus } from './push-switch.ts';
 import { SectionHead } from './section-head.tsx';
@@ -55,7 +56,8 @@ export function NotificationSection(): ReactNode {
         </div>
       ) : null}
       {checked ? <NotifyTest /> : null}
-      <NotifyKindsRows />
+      {/* 记忆分层（11-15）：七类开关搬到记忆 · 主动告诉你，这里只留一行指过去。 */}
+      <MemoryLinkRow name="通知哪些事" topicId={PROACTIVE_DOC_ID} page="主动告诉你" />
     </section>
   );
 }

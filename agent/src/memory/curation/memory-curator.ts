@@ -10,6 +10,7 @@ import { lineRef, type StateService } from '../../state/index.ts';
 import { errorCategory, safeLog } from '../../util/index.ts';
 import { askJson, type BookModel } from '../../books/index.ts';
 import { contactJobKey, contactMemorySources, runContactJob } from '../docs/contact-memory.ts';
+import { LAYER_RULES } from './layer-rules.ts';
 import { CurationOutputSchema, planCuration, type CurationOutput, type CurationPlan } from './memory-curation-ops.ts';
 import {
   applyCompaction,
@@ -47,19 +48,18 @@ const RULES = [
   '记过的不重复记：用户把已记住的事又说了一遍，用 restated 标那一行。',
   '同一件事有变化（用户纠正、情况变了）用 revise 改那一行，不另加一行；用户要忘掉就 retire 并写 "forget":true；',
   '用户说某件事不再成立就 retire。你自己推出来的（用户没有直接说的）只能用 infer 提出来并写清 why，用户确认后才算。',
-  '项目里定下的事写进那个项目文档的 decision 段（"section":"decision"），其余都是 note。',
-  // 第13批三层（11-14 Aaron 选「按三层分」）：他说过的偏好是记忆，进「关于你」；说话方式和相处的判断在各自的 Soul
-  // （夜里自己改）；硬线和授权在产品里。「规则」只剩还没搬走的旧条目，不再往里写。
-  `用户要 Plasticine 怎么做事的偏好写进 ${YOU_DOC_ID}（「关于你」）：用户明说的`,
-  '（“以后都……”“别再……”“每次……”“不要……”）直接 add，写成一句他的偏好（主语省掉）；',
-  '从用户的纠正里推出来、他没明说以后都这样的，只能 infer；同一条偏好说法变了 revise 那一行，新旧冲突按最新的。',
-  '花钱、对外答应或发出、删除和撤不回的、权限变化、必须用户本人做的，这几条硬线产品里已经有，不用写。',
+  '项目里定下的事写进那个项目文档的 decision 段（"section":"decision"）；分了段的几篇按上面写的段，其余都是 note。',
+  // 第13批三层（11-14）：说话方式和相处的判断在各自的 Soul（夜里自己改）；「规则」只剩还没搬走的旧条目，不再往里写。
+  // 记忆分层（11-15）：他对 Plasticine 的要求按性质分到承诺和授权、主动告诉你、做事经验，其余偏好进「关于你」。
+  LAYER_RULES,
+  '用户明说的（“以后都……”“别再……”“每次……”“不要……”“可以直接……”）直接 add，写成一句话（主语省掉）；',
+  '从用户的纠正里推出来、他没明说以后都这样的，只能 infer；同一条说法变了 revise 那一行，新旧冲突按最新的。',
   `用户自己的说法和专有名词（他说的某个词是什么意思、某个名字指谁或指什么）也写进 ${YOU_DOC_ID}，`,
   '一个词一行，写成「X」指的是 …：用户明说的直接 add；从用法里猜出来的只能 infer；意思变了 revise 那一行。',
   '操作：{"op":"add","doc":文档标识,"section":"note","text":一行,"sources":[来源标识]}；',
   '{"op":"revise","line":行标识,"text":新的一行,"sources":[…]}；{"op":"retire","line":行标识,"forget":false,"sources":[…]}；',
   '{"op":"restated","line":行标识,"sources":[…]}；{"op":"infer","doc":文档标识,"text":推断,"why":依据,"sources":[…]}；',
-  '{"op":"new_doc","ref":自起的短名,"kind":"person"或"topic","title":标题,"summary":一句话说明，150 字以内，写清讲谁、',
+  '{"op":"new_doc","ref":自起的短名,"kind":"person"、"topic"或"how","title":标题,"summary":一句话说明，150 字以内，写清讲谁、',
   '哪些项目 / 地点 / 事}；{"op":"summary","doc":文档标识,"summary":新说明}。new_doc 之后 add / infer 的 doc 可以写那个 ref。',
   '一行讲一件事，不超过 500 字，中文事实句（主语「用户」可省）。行标识、文档标识、来源标识照材料原样写。',
 ].join('\n');
@@ -76,10 +76,12 @@ const TURN_SYSTEM = [
   '出处只能是 turn.user 里的消息标识；done 也可以写 turn.replyId。只记他说过的、以后用得上的；查来的资料、',
   'Plasticine 自己的建议不记（他采纳了就记成决定）；today 里已经有的同一件事不再记；密码、密钥、令牌不记。',
   'remember：只在他明说要记住（「记住……」「以后都……」「别再……」「每次……」）时，当场写进主题文档：',
-  `{"op":"add","doc":文档标识,"text":一行,"sources":[…]}；同一件事他改口用 {"op":"revise","line":行标识,"text":…,"sources":[…]}；`,
-  '没有合适的文档用 {"op":"new_doc","ref":短名,"kind":"person"/"topic"/"skill","title":名字,"summary":一句话：',
+  '{"op":"add","doc":文档标识,"section":段（可省）,"text":一行,"sources":[…]}；同一件事他改口用',
+  '{"op":"revise","line":行标识,"text":…,"sources":[…]}；',
+  '没有合适的文档用 {"op":"new_doc","ref":短名,"kind":"person"/"topic"/"skill"/"how","title":名字,"summary":一句话：',
   '这篇讲什么、什么时候该读}；他把已经记住的又说了一遍用 {"op":"restated","line":行标识,"sources":[…]}。',
-  `他要 Plasticine 怎么做事的偏好写进 ${YOU_DOC_ID}；他的说法和专有名词也写进 ${YOU_DOC_ID}，写成「X」指的是 …。`,
+  LAYER_RULES,
+  `他的说法和专有名词写进 ${YOU_DOC_ID}，写成「X」指的是 …。`,
   '一行提到另一篇文档时写 [[那篇的名字]]。推断、合并、退休都不要做。',
   'used：Plasticine 这次的回复实际用到了材料里哪几行（只列确实用上的行标识）。',
   '只输出 JSON：{"notes":[…],"remember":[…],"used":[…]}；没有值得记的就 {"notes":[],"remember":[],"used":[…]}。',

@@ -17,9 +17,10 @@ import {
   type UncertainItem,
 } from '../../shared/api/index.ts';
 import { hardLines } from '../../shared/rules-doc.ts';
-import { MEMORY_DOC_CHAR_LIMIT, RULES_DOC_ID, type MemoryDoc, type MemoryDocKind, type MemoryInference,
+import { GRANTS_DOC_ID, MEMORY_DOC_CHAR_LIMIT, MEMORY_SECTION_LABELS, PROACTIVE_DOC_ID, RULES_DOC_ID,
+  memorySectionsOf, type MemoryDoc, type MemoryDocKind, type MemoryInference,
   type MemoryLine } from '../../shared/state.ts';
-import { decideInference, findDoc } from '../memory/index.ts';
+import { decideInference, ensureMemoryDocs, findDoc } from '../memory/index.ts';
 import { sourcesOf } from './memory-sources.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
@@ -35,8 +36,10 @@ const KIND: Readonly<Record<MemoryDocKind, MemoryTopicKind>> = {
   project: 'project',
   topic: 'topic',
   skill: 'skill',
+  how: 'how',
+  grants: 'grants',
+  proactive: 'proactive',
 };
-const SECTION_HEADINGS: Readonly<Record<string, string>> = { note: '记下的', decision: '决定' };
 // 「怎么替你做事」那一段叫「规矩」，前面是硬线（第 4 批）。
 const RULES_HEADING = '规矩';
 
@@ -58,13 +61,51 @@ function tierOf(state: StateService, doc: MemoryDoc): Pick<MemoryTopicView, 'tie
     material: { ...material, version: mark?.version ?? 0 } };
 }
 
-function topicView(state: StateService, doc: MemoryDoc): MemoryTopicView {
+/** 各段现在几条：「可以直接做 4 · 先问你 3」；一条都没有就是空的。 */
+function sectionCounts(state: StateService, doc: MemoryDoc, extra: Readonly<Record<string, number>> = {}): string {
+  const lines = state.memoryDocs.lines.live(doc.id);
+  return memorySectionsOf(doc.kind).flatMap((section) => {
+    const count = lines.filter((line) => line.section === section).length + (extra[section] ?? 0);
+    return count === 0 ? [] : [`${MEMORY_SECTION_LABELS[section]} ${count}`];
+  }).join(' · ');
+}
+
+const EVERY: Readonly<Record<number, string>> = { 15: '每 15 分钟', 30: '每 30 分钟', 60: '每小时', 120: '每 2 小时' };
+
+/**
+ * 目录里那两页固定的，下面一行写现在的数（设计稿：不用点进去）：承诺和授权是各段几条（对外授权、放过手的算进
+ * 「可以直接做」）；主动告诉你是心跳多久看几件事、哪段时间不打扰。别的文档照旧是那句说明。
+ */
+function summaryOf(deps: TopicDeps, doc: MemoryDoc): string {
+  const { state } = deps;
+  if (doc.id === GRANTS_DOC_ID) {
+    const now = deps.now().getTime();
+    const structured = state.loop.grants.list().length + state.outboundGrants.list().filter((grant) =>
+      grant.enabled && grant.revokedAt === null && (grant.expiresAt === null || Date.parse(grant.expiresAt) > now)
+      && !(grant.scope.kind === 'once' && grant.usedCount > 0)).length;
+    const counts = sectionCounts(state, doc, { allow: structured });
+    return counts === '' ? '还没有说好的事' : counts;
+  }
+  if (doc.id === PROACTIVE_DOC_ID) {
+    const beat = deps.heartbeat.view();
+    const quiet = `${beat.config.quietFrom}–${beat.config.quietTo} 不打扰`;
+    return beat.enabled
+      ? `${EVERY[beat.config.intervalMinutes] ?? '定时'}看 ${beat.config.items.length} 件事 · ${quiet}`
+      : `心跳关着 · ${quiet}`;
+  }
+  return doc.summary.trim() === '' ? doc.title : doc.summary;
+}
+
+type TopicDeps = Pick<RequestContext['deps'], 'state' | 'now' | 'heartbeat'>;
+
+function topicView(deps: TopicDeps, doc: MemoryDoc): MemoryTopicView {
+  const { state } = deps;
   const size = state.memoryDocs.lines.size(doc.id);
   return {
     id: doc.id,
     kind: KIND[doc.kind],
     title: doc.title,
-    summary: doc.summary.trim() === '' ? doc.title : doc.summary,
+    summary: summaryOf(deps, doc),
     lineCount: size.lines,
     updatedAt: doc.updatedAt,
     project: projectTag(state, doc.projectId),
@@ -96,6 +137,9 @@ function basisOf(line: MemoryLine): MemoryDocLine['basis'] {
   if (line.anchors.every((anchor) => anchor.kind === 'system')) {
     return 'system';
   }
+  if (line.basis === 'tried') {
+    return 'tried';
+  }
   if (line.basis === 'contact_stated') {
     return 'contact';
   }
@@ -103,6 +147,21 @@ function basisOf(line: MemoryLine): MemoryDocLine['basis'] {
     return 'inferred';
   }
   return line.anchors.some((anchor) => anchor.kind === 'agreement' || anchor.kind === 'term') ? 'agreement' : 'quote';
+}
+
+/** 只限某个项目、某个人、某位队友时写一句；全部适用的不写。 */
+function scopeOf(state: StateService, line: MemoryLine): { scope?: string } {
+  const ref = line.scopeRef ?? '';
+  switch (line.scopeKind) {
+    case 'all':
+      return {};
+    case 'project':
+      return { scope: `只限${state.projects.get(ref)?.name ?? '一个项目'}项目` };
+    case 'mate':
+      return { scope: `只对${state.mates.get(ref)?.name ?? '一位队友'}` };
+    case 'contact':
+      return { scope: `只限${state.contacts.get(ref)?.displayName ?? '一位联系人'}` };
+  }
 }
 
 function lineView(state: StateService, line: MemoryLine, pending: ReadonlySet<string>): MemoryDocLine {
@@ -114,6 +173,9 @@ function lineView(state: StateService, line: MemoryLine, pending: ReadonlySet<st
     sources: sourcesOf(state, line.anchors) as [MemoryLineSource, ...MemoryLineSource[]],
     uncertainId: line.inferenceId !== null && pending.has(line.inferenceId) ? line.inferenceId : null,
     links: linksOf(state, line.text),
+    at: line.createdAt,
+    ...(line.previous === null ? {} : { previous: line.previous }),
+    ...scopeOf(state, line),
     ...(line.basis === 'contact_stated' ? { by: state.memoryDocs.docs.get(line.docId)?.title ?? '对方' } : {}),
   };
 }
@@ -149,9 +211,11 @@ function uncertainView(state: StateService, inference: MemoryInference): Uncerta
 export function listMemoryTopics(context: RequestContext): Reply {
   requireAuth(context);
   const { state, now } = context.deps;
+  // 两页固定的（承诺和授权、主动告诉你）一直在目录里，没建过就先建。
+  ensureMemoryDocs(state);
   const docs = state.memoryDocs.docs.live();
-  // 第 4 批：「怎么替你做事」和「关于你」同一组排最前（两份并列）。
-  const groups = groupMemoryTopics(docs.map((doc) => topicView(state, doc)));
+  // 第 4 批：「怎么替你做事」和「关于你」同一组排最前（两份并列）。记忆分层：说好的两页排在它们前面。
+  const groups = groupMemoryTopics(docs.map((doc) => topicView(context.deps, doc)));
   const uncertain = state.memoryCuration.inferences.list('pending', { limit: UNCERTAIN_SHOWN })
     .map((inference) => uncertainView(state, inference));
   const composedAt = docs.map((doc) => doc.updatedAt).sort().at(-1) ?? now().toISOString();
@@ -170,12 +234,16 @@ export function getMemoryTopic(context: RequestContext): Reply {
   const pending = new Set(uncertainOf(state, doc.id).map((inference) => inference.id));
   const lines = state.memoryDocs.lines.live(doc.id);
   const rules = doc.id === RULES_DOC_ID;
-  const sections = [...new Set(lines.map((line) => line.section))].map((section) => ({
+  // 段按这种文档定好的次序排（承诺和授权四段、主动告诉你三段、做事经验两段）；没有行的段不出现。
+  const known = memorySectionsOf(doc.kind);
+  const order = [...known, ...new Set(lines.map((line) => line.section).filter((section) => !known.includes(section)))];
+  const sections = order.filter((section) => lines.some((line) => line.section === section)).map((section) => ({
     id: `${doc.id}:${section}`,
-    heading: rules ? RULES_HEADING : SECTION_HEADINGS[section] ?? section,
+    section,
+    heading: rules ? RULES_HEADING : MEMORY_SECTION_LABELS[section],
     lines: lines.filter((line) => line.section === section).map((line) => lineView(state, line, pending)),
   }));
-  const body: MemoryTopicDoc = { topic: topicView(state, doc), sections, composedAt: doc.updatedAt,
+  const body: MemoryTopicDoc = { topic: topicView(context.deps, doc), sections, composedAt: doc.updatedAt,
     version: doc.version, ...(rules ? { hardLines: [...hardLines()] } : {}) };
   return { status: 200, body };
 }

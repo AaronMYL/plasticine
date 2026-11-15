@@ -50,6 +50,8 @@ export interface HeartbeatOptions {
   readings?: (now: Date) => HeartbeatFact[];
   /** 定时的订阅和回顾里，本该出、过了一小时还没出的补一期；回补了哪几个（11-12：日报漏发心跳没发现）。 */
   catchUp?: (now: Date) => string[];
+  /** 他说过的「主动告诉他」的偏好（记忆分层，11-15）：每次判断前现读，交给模型发之前对一遍。 */
+  preferences?: () => string;
   changed?: () => void;
   newId: () => string;
 }
@@ -164,7 +166,8 @@ export class Heartbeat {
     let output: JudgeOutput;
     try {
       output = await askJson({ models }, JudgeOutputSchema, JUDGE_SYSTEM,
-        judgeMaterial(fresh, config.items, now.toISOString(), zone), AbortSignal.timeout(3 * MINUTE_MS), 'heartbeat');
+        judgeMaterial(fresh, config.items, now.toISOString(), zone, this.#options.preferences?.() ?? ''),
+        AbortSignal.timeout(3 * MINUTE_MS), 'heartbeat');
     } catch (error) {
       safeLog('warn', 'heartbeat_judge_failed', { category: errorCategory(error) });
       this.#fail(now, fresh, `这次没判断成：${error instanceof Error ? error.message : String(error)}`);
@@ -290,6 +293,8 @@ export class Heartbeat {
     const next: HeartbeatConfig = {
       ...config,
       ...(request.intervalMinutes === undefined ? {} : { intervalMinutes: request.intervalMinutes }),
+      ...(request.quietFrom === undefined ? {} : { quietFrom: request.quietFrom }),
+      ...(request.quietTo === undefined ? {} : { quietTo: request.quietTo }),
       ...(request.items === undefined ? {} : { items: replaceItems(config.items, request.items,
         this.#options.newId) }),
     };

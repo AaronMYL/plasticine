@@ -20,9 +20,14 @@ const Text = Type.String({ minLength: 1 });
 // rules：「怎么替你做事」（《置信度与做事方式改动方案》第 4 批，11-04 用户定）——和「关于你」并列，只有一份：
 // 「关于你」记用户是谁，这份记用户要 Plasticine 怎么做事。两份每次都整份进上下文。
 // skill：技能（《优化清单》第 16 条，11-06 定）——做成过一次的做法，一个技能一篇。
-export const MEMORY_DOC_KINDS = ['you', 'rules', 'person', 'project', 'topic', 'skill'] as const;
-/** 模型能新建的种类：关于你、怎么替你做事各只有一份，项目文档只由项目生成。 */
-export const MEMORY_NEW_DOC_KINDS = ['person', 'topic', 'skill'] as const;
+// 记忆分层（11-15 Aaron 定，参考 Muse）：每层回答一个问题，三样新的各有固定位置——
+// how：做事经验（怎么把事做成：工具和网站的坑、跑通过的做法、别再犯的错），按工具、网站、流程分篇；
+// grants：承诺和授权（答应过什么：允许、先问、先停着、Plasticine 答应的），只有一份；
+// proactive：主动告诉你（什么时候找你：别提什么、什么时候、怎么通知），只有一份。
+export const MEMORY_DOC_KINDS = ['you', 'rules', 'person', 'project', 'topic', 'skill', 'how', 'grants',
+  'proactive'] as const;
+/** 模型能新建的种类：关于你、承诺和授权、主动告诉你各只有一份，项目文档只由项目生成。 */
+export const MEMORY_NEW_DOC_KINDS = ['person', 'topic', 'skill', 'how'] as const;
 export type MemoryNewDocKind = (typeof MEMORY_NEW_DOC_KINDS)[number];
 export type MemoryDocKind = (typeof MEMORY_DOC_KINDS)[number];
 /** 「关于你」只有一份，标识固定。 */
@@ -31,6 +36,12 @@ export const YOU_DOC_TITLE = '关于你';
 /** 「怎么替你做事」只有一份，标识固定。 */
 export const RULES_DOC_ID = 'memdoc-rules';
 export const RULES_DOC_TITLE = '规则';
+/** 「承诺和授权」只有一份，标识固定。 */
+export const GRANTS_DOC_ID = 'memdoc-grants';
+export const GRANTS_DOC_TITLE = '承诺和授权';
+/** 「主动告诉你」只有一份，标识固定。 */
+export const PROACTIVE_DOC_ID = 'memdoc-proactive';
+export const PROACTIVE_DOC_TITLE = '主动告诉你';
 /** 项目文档和项目一一对应，标识由项目标识推出。 */
 export function projectDocId(projectId: string): string {
   return `memdoc-project-${projectId}`;
@@ -45,12 +56,39 @@ export const MEMORY_LINE_MAX_CHARS = 500;
 export const MEMORY_DOC_CHAR_LIMIT = 4_000;
 export const MEMORY_DOC_COMPACT_RATIO = 0.85;
 
-/** 决定段只在项目文档里（项目档案的「决定」）；其余都是 note。 */
-export const MEMORY_LINE_SECTIONS = ['note', 'decision'] as const;
+/**
+ * 段。决定段只在项目文档里（项目档案的「决定」）；承诺和授权四段：allow 可以直接做、ask 先问你、hold 先停着、
+ * promise 答应你的；主动告诉你三段：never 别提的、when 什么时候、style 怎么通知；做事经验两段：do 做法、avoid 要避开的；
+ * 其余都是 note。
+ */
+export const MEMORY_LINE_SECTIONS = ['note', 'decision', 'allow', 'ask', 'hold', 'promise', 'never', 'when', 'style',
+  'do', 'avoid'] as const;
 export type MemoryLineSection = (typeof MEMORY_LINE_SECTIONS)[number];
+const NOTE_ONLY: readonly MemoryLineSection[] = ['note'];
+const KIND_SECTIONS: Readonly<Partial<Record<MemoryDocKind, readonly MemoryLineSection[]>>> = {
+  project: ['note', 'decision'],
+  grants: ['allow', 'ask', 'hold', 'promise'],
+  proactive: ['never', 'when', 'style'],
+  how: ['do', 'avoid'],
+};
+/** 这种文档里有哪几段，按页面上的次序；第一段是没写段时的默认。 */
+export function memorySectionsOf(kind: MemoryDocKind): readonly MemoryLineSection[] {
+  return KIND_SECTIONS[kind] ?? NOTE_ONLY;
+}
+/** 一行挪到另一种文档时落在哪一段：那边也有这一段就不变，没有就进那边的第一段。 */
+export function memorySectionIn(kind: MemoryDocKind, section: MemoryLineSection): MemoryLineSection {
+  const allowed = memorySectionsOf(kind);
+  return allowed.includes(section) ? section : allowed[0] ?? 'note';
+}
+export const MEMORY_SECTION_LABELS: Readonly<Record<MemoryLineSection, string>> = {
+  note: '记下的', decision: '决定', allow: '可以直接做', ask: '先问你', hold: '先停着', promise: '答应你的',
+  never: '别提的', when: '什么时候', style: '怎么通知', do: '做法', avoid: '要避开的',
+};
 /** stated = 用户说的；confirmed_inference = 用户确认过的推断；system = 产品默认规则。 */
 // contact_stated（第 12 批）：绑了人物页的联系人在聊天里亲口说的（界面写「<人物页名字>说的」）。
-export const MEMORY_LINE_BASES = ['stated', 'confirmed_inference', 'system', 'contact_stated'] as const;
+// tried（记忆分层，11-15 Aaron 选「直接记，能看能撤」）：Plasticine 自己做事时试出来的，只能写在做事经验里，
+// 锚点是那次做事（work）；别的层照旧只记用户说过的。
+export const MEMORY_LINE_BASES = ['stated', 'confirmed_inference', 'system', 'contact_stated', 'tried'] as const;
 export type MemoryLineBasis = (typeof MEMORY_LINE_BASES)[number];
 /** 行退休的原因：被新行替代、合并压缩、用户要忘掉、用户改写、用户说不再成立。 */
 export const MEMORY_LINE_RETIRE_REASONS = ['revised', 'merged', 'forgotten', 'edited', 'no_longer_true'] as const;
@@ -67,6 +105,8 @@ export const MEMORY_ANCHOR_KINDS = [
   'mate',
   // 第 12 批：联系人说的那一句（ref 是 contact_messages 的 id）。
   'contact_message',
+  // 记忆分层：Plasticine 做事时试出来的经验，ref 是那条线（line:<线>）。
+  'work',
 ] as const;
 
 /**
