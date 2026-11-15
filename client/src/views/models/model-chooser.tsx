@@ -11,6 +11,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { Popover, type PopoverAnchor } from '../../shell/popover.tsx';
 import { providerName } from './model-store.ts';
 import './model-chooser.css';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 /** 选了什么：purpose 为 null 时是全局默认（模型和思考都得有）。 */
 export interface ChooserChange {
@@ -108,11 +109,7 @@ export function ModelChooserPanel({ value, purpose, onChoose, footer }: ChooserP
   };
   return (
     <div className="model-chooser" ref={root} onKeyDown={(event) => moveFocus(root.current, event)}>
-      <label className="model-search">
-        <Icon name="search" size={14} />
-        <input type="search" className="search-input" aria-label="搜模型" placeholder="搜模型" value={query}
-          aria-controls={listId} onChange={(event) => setQuery(event.target.value)} />
-      </label>
+      <SearchField label="搜模型" value={query} aria-controls={listId} onChange={setQuery} />
       <div className="model-chooser-list" role="listbox" id={listId} aria-label="模型">
         {purpose === null || needle !== '' ? null : (
           <button type="button" role="option" aria-selected={current.model === null}

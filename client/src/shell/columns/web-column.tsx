@@ -25,6 +25,7 @@ import { BookmarkButton, useOpenBookmark, WebBookmarks } from './web-bookmarks.t
 import { useTabDrag } from './web-tab-drag.ts';
 import './web-column.css';
 import { GroupMenu, TabMenu } from './web-tab-menu.tsx';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 function hostOf(url: string): string {
   try {
@@ -134,14 +135,8 @@ export function WebColumn(props: WebColumnProps): ReactNode {
   return (
     <div ref={root} className="web-column" data-dragging={drag.dragging !== null}>
       <div className="web-search">
-        <label className="web-search-field">
-          <Icon name="search" size={14} />
-          <input type="search" placeholder="搜标签、书签、历史" aria-label="搜标签" value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') setQuery('');
-            }} />
-        </label>
+        <SearchField className="web-search-field" label="搜标签" placeholder="搜标签、书签、历史" value={query}
+          onChange={setQuery} />
         <ColumnCollapseButton />
       </div>
       {needle !== '' ? (
@@ -178,7 +173,7 @@ export function WebColumn(props: WebColumnProps): ReactNode {
             <ul className="web-tabs" aria-label="历史">
               {visited.map((visit) => (
                 <li key={visit.url} className="web-tab-item">
-                  <button type="button" className="web-tab-row" title={visit.url}
+                  <button type="button" className="web-tab-row"
                     onClick={() => tabActions.openWeb(visit.url, visit.title)}>
                     <SiteIcon url={visit.url} title={visit.title} />
                     <span className="web-tab-title">{tabTitle(visit)}</span>

@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { deviceTimeZone } from '../../state/time-zone.ts';
 import { isTimeZone } from '../../../../agent/shared/time-zone.ts';
 import { SettingField, SettingSwitch } from './setting-row.tsx';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 const KNOWN_ZONES: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'Asia/Shanghai', label: '北京时间 · 北京 / 上海 / 广州' },
@@ -82,8 +83,8 @@ export function TimeZoneField({ value, disabled, onChange }: {
       onChange={(on) => onChange(on ? '' : device)} />
     {following ? null : <div className="set-sub">
       <SettingField name="搜索城市或时区" htmlFor={`${id}-search`}>
-        <input id={`${id}-search`} type="search" className="search-input" value={query}
-          disabled={disabled} placeholder="北京、新加坡、London" onChange={(event) => setQuery(event.target.value)} />
+        <SearchField id={`${id}-search`} label="搜索城市或时区" value={query} disabled={disabled}
+          placeholder="北京、新加坡、London" onChange={setQuery} />
       </SettingField>
       {shown.length === 0 ? null : <ul className="time-zone-results" aria-label="可选时区">
         {shown.map((entry) => <li key={entry.id}><button type="button" className="time-zone-result"

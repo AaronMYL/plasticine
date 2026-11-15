@@ -6,6 +6,7 @@ import { errorText } from '../../api/errors.ts';
 import type { BookSearchHit } from '../../api/shared.ts';
 import { Sheet } from '../../primitives/sheet/index.tsx';
 import { chapterShort } from './book-format.ts';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 /** 停下多久才查：300 毫秒（任务书）。 */
 export const SEARCH_DEBOUNCE_MS = 300;
@@ -87,8 +88,7 @@ export function SearchSheet(props: SearchSheetProps): ReactNode {
     <Sheet open={props.open} variant={props.phone ? 'drawer' : 'panel'} title={`在《${props.title}》里找`}
       onClose={props.onClose}>
       <div className="bk-search">
-        <input className="field-input" type="search" aria-label="要找的字" placeholder="要找的字" value={query}
-          autoFocus onChange={(event) => setQuery(event.target.value)} />
+        <SearchField label="要找的字" value={query} autoFocus onChange={setQuery} />
         <Results state={state} onPick={props.onPick} />
       </div>
     </Sheet>

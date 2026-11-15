@@ -9,6 +9,7 @@ import { SKILL_UPLOAD_MAX_FILES, type SkillOrigin, type SkillPreview, type Skill
 import { IconButton } from '../../shell/icon-button.tsx';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import { SkillPreviewPane } from './skill-preview.tsx';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 export interface SkillsAddProps {
   phone: boolean;
@@ -67,8 +68,7 @@ function Store({ picked, onPick, turn }: { picked: string | null; onPick: (skill
   }
   if (skills === null) { return <PageLoading rows={3} dense />; }
   return <>
-    <input className="field-input" type="search" aria-label="找技能" placeholder="找技能" value={query}
-      onChange={(event) => setQuery(event.target.value)} />
+    <SearchField label="找技能" value={query} onChange={setQuery} />
     {categories.length < 2 ? null : <div className="store-cats" role="group" aria-label="分类">
       <button type="button" className="chip-button" aria-pressed={category === null}
         onClick={() => setCategory(null)}>全部</button>

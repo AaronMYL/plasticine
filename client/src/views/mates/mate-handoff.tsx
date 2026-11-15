@@ -44,7 +44,7 @@ export function MateHandoff({ line }: { line: LineView }): ReactNode {
     author = from?.name ?? (source.line?.kind === 'main' || source.line?.mateGroupId != null
       ? 'Plasticine' : '来源未记录');
   }
-  return <p className="mate-handoff"><span title={remote?.ref === ref ? remote?.error ?? undefined : undefined}>
+  return <p className="mate-handoff"><span data-tip={remote?.ref === ref ? remote?.error ?? undefined : undefined}>
     {author}</span><span aria-hidden="true">→</span><span>{to.name}</span>
     <span className="mate-handoff-goal">{instruction?.text ?? line.title}</span></p>;
 }

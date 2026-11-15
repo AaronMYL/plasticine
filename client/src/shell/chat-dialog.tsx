@@ -194,7 +194,7 @@ export function ChatBall({ waiting, onExpand }: { waiting: number; onExpand: () 
       MOTION.base);
   }, []);
   return (
-    <button ref={ball} type="button" className="chat-ball" aria-label={label} title={label} onClick={onExpand}
+    <button ref={ball} type="button" className="chat-ball" aria-label={label} onClick={onExpand}
       data-hit-region="chat-ball">
       {target.avatar(BALL_AVATAR)}
       {waiting > 0 ? <span className="chat-ball-badge" aria-hidden="true"><WaitMark count={waiting} /></span> : null}

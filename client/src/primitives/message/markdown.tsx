@@ -30,8 +30,7 @@ function references(text: string): ReactNode {
     if (path === undefined) { continue; }
     result.push(text.slice(cursor, match.index));
     result.push(<a key={match.index} className="object-reference"
-      href={`#/${path}/${encodeURIComponent(match[2]!)}`}
-      title={match[0]}>
+      href={`#/${path}/${encodeURIComponent(match[2]!)}`} data-tip={match[0]}>
       {OBJECT_LABELS[path]}{match[3] === undefined ? '' : ` · 第${match[3]}版`}
     </a>);
     cursor = match.index + match[0].length;
@@ -78,7 +77,7 @@ function renderToken(token: Token): ReactNode {
       // 指向本实例或旧 IP 的 #/ 地址：换成站内地址，站内打开（第 7 批第 14 条）。
       const href = inAppHash(String(token.href)) ?? String(token.href);
       return /^(https?:|mailto:|#\/|\/)/i.test(href)
-        ? <a href={href} title={token.title ?? undefined} target={href.startsWith('http') ? '_blank' : undefined}
+        ? <a href={href} data-tip={token.title ?? undefined} target={href.startsWith('http') ? '_blank' : undefined}
           rel="noreferrer">{children()}</a> : children();
     }
     case 'image': return /^https?:\/\//i.test(String(token.href))

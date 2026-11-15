@@ -23,6 +23,7 @@ import { TaskCompose } from './task-compose.tsx';
 import { ThreadItems } from './thread-items.tsx';
 import './contact-thread.css';
 import './network.css';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 /** 离底部这么近（px）就算停在底部，新来的跟到底。 */
 const FOLLOW_SLACK = 48;
@@ -72,7 +73,7 @@ function DesktopHead(props: ContactThreadProps & { finding: boolean; onFind: () 
   return (
     <header className="ct-head">
       <div className="ct-head-who">
-        {avatar ? <ContactAvatar row={contact} size={24} /> : null}
+        {avatar ? <ContactAvatar row={contact} size={28} /> : null}
         <h2 className="ct-name">{contact.name}</h2>
         {contact.kind === 'group' ? <span className="ct-count">{contact.memberCount}</span> : null}
       </div>
@@ -187,10 +188,9 @@ export function ContactThread(props: ContactThreadProps): ReactNode {
         : <DesktopHead {...withCompose} composing={composing} finding={query !== null}
           onFind={() => setQuery((value) => (value === null ? '' : null))} />}
       {query === null ? null : (
-        <input className="field-input ct-find" type="search" aria-label="在这段聊天里找" value={query} autoFocus
-          onChange={(event) => setQuery(event.target.value)}
+        <SearchField className="ct-find" label="在这段聊天里找" value={query} autoFocus onChange={setQuery}
           onKeyDown={(event) => {
-            if (event.key === 'Escape') {
+            if (event.key === 'Escape' && query === '') {
               setQuery(null);
             }
           }} />

@@ -33,7 +33,7 @@ function Who({ task }: { task: GroupTaskView }): ReactNode {
   if (task.assignee !== null) {
     return (
       <div className="gt-who">
-        <FaceAvatar name={task.assignee.name} avatar={task.assignee.avatar} size={18} />
+        <FaceAvatar name={task.assignee.name} avatar={task.assignee.avatar} size={20} />
         <span>指给{task.assignee.self ? '你' : task.assignee.name}</span>
       </div>
     );
@@ -106,7 +106,7 @@ export function GroupTaskCard({ task, now, navigate, detail = false }: { task: G
           aria-label={`查看工作：${task.title}`} onClick={() => open({ kind: 'work', groupTaskId: task.id })}>
           {task.title}</button>}</h3>
         {task.deadline === null ? null
-          : <span className="nt-deadline" title="期限">{deadlineText(task.deadline, now, timeZone)}</span>}
+          : <span className="nt-deadline" data-tip="期限">{deadlineText(task.deadline, now, timeZone)}</span>}
       </div>
       <Who task={task} />
       <Claimed task={task} />

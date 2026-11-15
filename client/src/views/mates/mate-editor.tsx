@@ -90,7 +90,7 @@ export function MateEditor({ mate, phone, onClose, navigate }: Props & { mate?: 
                   setDraft((old) => ({ ...old, ...preset }));
                   soul.setText(mateSoulOpening(preset.name, preset.role));
                 }}>
-                <MateAvatar mate={preset} size={24} still />{preset.name}
+                <MateAvatar mate={preset} size={20} still />{preset.name}
               </button>
             ))}
           </div>

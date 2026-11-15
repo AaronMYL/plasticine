@@ -107,40 +107,9 @@
   color: var(--fg2);
 }
 
-.note-search {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  min-height: 36px;
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--line2);
-  border-radius: var(--radius);
-  color: var(--fg2);
-}
-
-.note-search .search-input {
-  min-width: 0;
-  width: 100%;
-  min-height: 24px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  appearance: none;
-  font-size: var(--text-body);
-}
-
-.note-search:focus-within,
 .note-collection-toggle:focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: 2px;
-}
-
-.note-search .search-input:focus {
-  outline: none;
 }
 
 .note-list-item {
@@ -332,12 +301,6 @@
 .note-prose th > p,
 .note-prose td > p {
   margin: 0;
-}
-
-@media (max-width: 767px) {
-  .note-search .search-input {
-    font-size: var(--text-long);
-  }
 }
 
 /* 2026-11-04 第 2 批悬停规则：笔记行尾的 ⋯ 常显，不再悬停才出现。 */

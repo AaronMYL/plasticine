@@ -94,7 +94,7 @@ export function TasksRun({ running, projects }: TasksRunProps): ReactNode {
       {roster.mates.length === 0 ? null : <section className="tasks-section" aria-label="队友">
         <h2 className="tasks-section-title">队友</h2><ul className="tasks-mates">{roster.mates.map((mate) => (
           <li key={mate.id}><a className="tasks-mate" href={routeHash(mateRoute(mate.id))}>
-            <MateAvatar mate={mate} size={32} /><span className="tasks-mate-text">
+            <MateAvatar mate={mate} size={28} /><span className="tasks-mate-text">
               <span className="tasks-mate-name">{mate.name}</span><span className="tasks-row-meta">
                 {mate.disabledAt === null ? mate.role : '已停用'}</span></span></a></li>
         ))}</ul></section>}

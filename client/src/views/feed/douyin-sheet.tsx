@@ -13,6 +13,7 @@ import { InfoTip } from '../../shell/info-tip.tsx';
 import { usePhone } from '../../shell/use-viewport-width.ts';
 import { useStore } from '../../state/use-store.ts';
 import './douyin-sheet.css';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 const RUN_TEXT: Readonly<Record<VideoWorkView['run'], string | null>> = {
   idle: null,
@@ -113,11 +114,8 @@ export function DouyinSheet({ open, onClose }: { open: boolean; onClose: () => v
             <option value="">全部收藏夹</option>
             {folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
           </select>
-          <label className="douyin-search">
-            <Icon name="search" size={14} />
-            <input type="search" className="douyin-search-input" placeholder="搜标题、作者" aria-label="搜标题、作者"
-              value={state.query} onChange={(event) => store.setQuery(event.target.value)} />
-          </label>
+          <SearchField className="douyin-search" label="搜标题、作者" value={state.query}
+            onChange={(value) => store.setQuery(value)} />
         </div>
         {waitingMac ? <p className="douyin-note" role="status">电脑不在线：上线后自动去取。</p> : null}
         {sync?.state === 'failed' && sync.error !== null ? (

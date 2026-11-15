@@ -228,7 +228,6 @@ export interface MenuItemProps {
   /** 有下一级（项目页 ›）。 */
   more?: boolean;
   disabled?: boolean | undefined;
-  title?: string | undefined;
   /** 行尾的快捷键（⌘F），等宽字；不给（手机）就不写。 */
   shortcut?: string | undefined;
   /** 开关项（阅读模式）：开着时行尾一个勾。 */
@@ -244,7 +243,6 @@ export function MenuItem(props: MenuItemProps): ReactNode {
   return (
     <button type="button" role={props.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
       className={props.danger === true ? 'popover-item is-danger' : 'popover-item'} disabled={props.disabled}
-      title={props.title}
       aria-checked={props.checked} aria-disabled={unavailable ? true : undefined}
       aria-description={props.unavailable}
       onClick={unavailable ? undefined : props.onSelect}>

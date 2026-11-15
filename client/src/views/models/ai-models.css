@@ -120,15 +120,6 @@
   font-weight: 600;
 }
 
-.ai-use-search {
-  width: 150px;
-}
-
-.ai-use-search > .search-input {
-  height: 28px;
-  font-size: var(--text-ui);
-}
-
 /* ---------- 左：每家一行 ---------- */
 
 .ai-provider-list {

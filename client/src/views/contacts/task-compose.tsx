@@ -31,7 +31,7 @@ function Recipient({ contact, assignee, onAssignee }: { contact: ContactRow; ass
   if (contact.kind !== 'group') {
     return (
       <div className="task-compose-to">
-        <FaceAvatar name={contact.name} avatar={contact.avatar} size={22} />
+        <FaceAvatar name={contact.name} avatar={contact.avatar} size={20} />
         <span>{contact.name}</span>
       </div>
     );

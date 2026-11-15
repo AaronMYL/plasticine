@@ -57,6 +57,10 @@ function typingInside(refs: readonly RefObject<Element | null>[]): boolean {
     && (active.matches('input, textarea, select') || active.isContentEditable);
 }
 
+function clearsFirst(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement && target.type === 'search' && target.value !== '';
+}
+
 export function useDismiss(options: DismissOptions): void {
   const latest = useRef(options);
   latest.current = options;
@@ -75,7 +79,8 @@ export function useDismiss(options: DismissOptions): void {
       }
     };
     const key = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape' && !event.isComposing) {
+      // 搜索框里有字：这一下 Esc 归它清空（search-field），空了再按才关浮层（11-14 搜索框一种）。
+      if (event.key === 'Escape' && !event.isComposing && !clearsFirst(event.target)) {
         event.stopPropagation();
         dismiss('escape');
       }

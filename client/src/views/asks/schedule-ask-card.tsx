@@ -37,7 +37,7 @@ export function ScheduleAskCard({ ask, card }: { ask: AskView; card: ScheduleCar
           <Row label="对谁">
             <span className="schedule-people">
               {card.who.map((name) => <span key={name} className="schedule-person">
-                <FaceAvatar name={name} avatar={null} size={22} />{name}</span>)}
+                <FaceAvatar name={name} avatar={null} size={20} />{name}</span>)}
             </span>
           </Row>
         )}

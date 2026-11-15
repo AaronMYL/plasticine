@@ -51,7 +51,7 @@ function SoulRow({ row, finishedAt, onChange }: { row: Row; finishedAt: string;
   return (
     <li className="dream-row" data-undone={revision.undoneAt !== null}>
       <span className="dream-soul-avatar" aria-hidden="true">
-        {row.mate === null ? <MainAvatar size={18} still /> : <MateAvatar mate={row.mate} size={18} still />}
+        {row.mate === null ? <MainAvatar size={20} still /> : <MateAvatar mate={row.mate} size={20} still />}
       </span>
       <span className="dream-row-text">
         <span className="dream-row-main">{soulOf(row.name)} · 改了 {revision.changes} 处</span>

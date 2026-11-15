@@ -74,7 +74,7 @@ export function BrowserView({ onBack }: { onBack(): void }): ReactNode {
         <div className="browser-tabs" role="tablist" aria-label="浏览器标签页">
           {(view?.tabs ?? []).map((tab) => <div className="browser-tab" key={tab.id}>
             <button type="button" role="tab" aria-selected={view?.activeTabId === tab.id}
-              className="browser-tab-title" title={tab.title || tab.url}
+              className="browser-tab-title" data-tip={tab.title || tab.url}
               onClick={() => session.tab({ kind: 'switch', tabId: tab.id })}>
               {tab.title || '新标签页'}
             </button>

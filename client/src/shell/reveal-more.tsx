@@ -16,7 +16,6 @@ export interface RevealAction {
   /** anchor 是 ⋯ 的位置：要接着出下一层弹层（比如「移到」）时贴着它出。 */
   onSelect: (anchor: PopoverAnchor) => void;
   disabled?: boolean | undefined;
-  title?: string | undefined;
   /** 删除：上面一道分隔线，字用 --err（设计稿 Library-Menu）。 */
   danger?: boolean | undefined;
 }
@@ -76,7 +75,7 @@ export function ActionItems({ actions, anchor, onClose }: { actions: readonly Re
     <Fragment key={action.label}>
       {action.danger === true && index > 0 ? <MenuSeparator /> : null}
       <MenuItem icon={action.icon} label={action.label} disabled={action.disabled === true}
-        danger={action.danger} {...(action.title === undefined ? {} : { title: action.title })}
+        danger={action.danger}
         onSelect={() => {
           onClose();
           action.onSelect(anchor);

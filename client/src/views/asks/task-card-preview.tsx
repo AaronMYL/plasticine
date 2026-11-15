@@ -15,8 +15,8 @@ export function TaskCardPreview({ card }: { card: Card }): ReactNode {
   return (
     <div className="line-ask-task">
       <div className="line-ask-task-head">
-        {card.to.group ? <GroupAvatar members={[]} avatar={card.to.avatar} size={22} />
-          : <FaceAvatar name={card.to.name} avatar={card.to.avatar} size={22} />}
+        {card.to.group ? <GroupAvatar members={[]} avatar={card.to.avatar} size={20} />
+          : <FaceAvatar name={card.to.name} avatar={card.to.avatar} size={20} />}
         <span className="line-ask-task-to">{card.to.name}{card.to.group
           ? ` · ${card.assignee === null ? '谁先接谁做' : `指给${card.assignee}`}` : ''}</span>
         {deadline === null ? null : <span className="line-ask-task-due">期限 {deadline}</span>}

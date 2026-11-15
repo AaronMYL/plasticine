@@ -259,8 +259,9 @@ describe('⋯ 菜单里的工具', () => {
     fireEvent.keyDown(window, { key: 'y', code: 'KeyY', metaKey: true });
     const popover = screen.getByRole('dialog', { name: '历史记录' });
     const today = within(popover).getByRole('region', { name: '今天' });
-    expect(within(today).getAllByRole('button').map((row) => row.getAttribute('title')))
-      .toEqual(['https://b.example.com/x', 'https://a.example.com/']);
+    // 同名的页靠名字下面一行的站点分开，不靠悬停看地址（11-14 不用系统提示）。
+    expect(within(today).getAllByRole('button').map((row) => row.querySelector('.web-pop-host')?.textContent))
+      .toEqual(['b.example.com', 'a.example.com']);
     fireEvent.click(within(today).getAllByRole('button')[1]!);
     expect(bridge.navigate).toHaveBeenCalledWith(id, 'https://a.example.com/');
   });
@@ -277,8 +278,8 @@ describe('⋯ 菜单里的工具', () => {
     const search = screen.getByRole('searchbox', { name: '搜标签' });
     fireEvent.change(search, { target: { value: 'example' } });
     const history = await screen.findByRole('list', { name: '历史' });
-    expect(within(history).getAllByRole('button').map((row) => row.getAttribute('title')))
-      .toEqual(['https://notes.example.com/sync-design']);
+    expect(within(history).getAllByRole('button').map((row) => row.querySelector('.web-tab-title')?.textContent))
+      .toEqual(['页']);
   });
 });
 

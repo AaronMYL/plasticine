@@ -5,7 +5,9 @@ import { useState, type ReactNode } from 'react';
 import type { WebHistory, WebVisit } from '../state/tabs-history.ts';
 import { useStore } from '../state/use-store.ts';
 import { SiteIcon } from './site-icon.tsx';
+import { hostOf } from './web-address-field.tsx';
 import { Popover, type PopoverAnchor } from './popover.tsx';
+import { SearchField } from '../primitives/search-field/index.tsx';
 
 /** 弹层里最多列这么多条：再早的用上面的输入框找。 */
 const HISTORY_SHOWN = 60;
@@ -52,8 +54,7 @@ export function WebHistoryPopover(props: WebHistoryPopoverProps): ReactNode {
   return (
     <Popover anchor={props.anchor} role="dialog" align="end" label="历史记录" className="web-pop web-history"
       onClose={props.onClose}>
-      <input className="popover-field web-pop-search" type="search" aria-label="找历史记录" placeholder="找历史记录"
-        value={query} onChange={(event) => setQuery(event.target.value)} />
+      <SearchField className="web-pop-search" label="找历史记录" value={query} onChange={setQuery} />
       <div className="web-pop-scroll">
         {days.map((day) => (
           <section key={day.label} aria-label={day.label}>
@@ -61,12 +62,15 @@ export function WebHistoryPopover(props: WebHistoryPopoverProps): ReactNode {
             <ul className="web-pop-list">
               {day.visits.map((visit) => (
                 <li key={`${visit.url}|${visit.at}`}>
-                  <button type="button" className="web-pop-row" title={visit.url} onClick={() => {
+                  <button type="button" className="web-pop-row" onClick={() => {
                     props.onClose();
                     props.onOpen(visit);
                   }}>
                     <SiteIcon url={visit.url} title={visit.title} />
-                    <span className="web-pop-title">{visit.title === '' ? visit.url : visit.title}</span>
+                    <span className="web-pop-text">
+                      <span className="web-pop-title">{visit.title === '' ? visit.url : visit.title}</span>
+                      {visit.title === '' ? null : <span className="web-pop-host">{hostOf(visit.url) || visit.url}</span>}
+                    </span>
                     <time className="web-pop-meta" dateTime={visit.at}>{clock(new Date(visit.at))}</time>
                   </button>
                 </li>

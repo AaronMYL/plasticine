@@ -96,7 +96,8 @@ describe('笔记阅读布局', () => {
     await editor();
     const column = screen.getByRole('complementary', { name: '笔记' });
     const target = await within(column).findByRole('button', { name: `${name} 1` });
-    expect(target.getAttribute('title')).toBe(name);
+    expect(target.querySelector('.note-folder-name')?.textContent).toBe(name);
+    expect(target.hasAttribute('title')).toBe(false);
     fireEvent.click(target);
     await waitFor(() => expect(window.location.hash).toBe('#/notes'));
     expect(target.getAttribute('aria-current')).toBe('true');

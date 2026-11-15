@@ -289,7 +289,7 @@ export function TaskCard({ task, name, now, groupTaskId, detail = false }: TaskC
           aria-label={`查看工作：${task.title}`} onClick={() => open(groupTaskId === undefined
             ? { kind: 'work', taskId: task.id } : { kind: 'work', groupTaskId })}>{task.title}</button>}</h3>
         {task.deadline === null ? null
-          : <span className="nt-deadline" title="期限">{deadlineText(task.deadline, now, timeZone)}</span>}
+          : <span className="nt-deadline" data-tip="期限">{deadlineText(task.deadline, now, timeZone)}</span>}
       </div>
       {incoming && task.state === 'offered' ? null : <Bars task={task} />}
       {incoming ? <InBody task={task} name={name} /> : <OutBody task={task} name={name} />}

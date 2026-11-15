@@ -24,6 +24,7 @@ import { usePendingOps } from '../pending/pending-ops.tsx';
 import { LoadNote } from '../m5b/load-note.tsx';
 import { SectionHead } from './section-head.tsx';
 import { WaitMark } from '../../shell/wait-mark.tsx';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 const KIND_LABELS: Readonly<Record<MaterialKind, string>> = {
   memory_topic: '记忆',
@@ -94,7 +95,7 @@ function Chip({ row, tier, pending }: { row: MaterialRow; tier: SharedTier; pend
   return (
     <li className="vis-chip" data-pending={pending ? 'true' : undefined}>
       <span className="vis-chip-kind">{KIND_LABELS[row.kind]}</span>
-      <span className="vis-chip-title" title={title}>{title}</span>
+      <span className="vis-chip-title" data-tip={title}>{title}</span>
       {pending ? (
         <button type="button" className="vis-chip-action" disabled={busy}
           aria-label={`同意把「${title}」放到${TIER_LABELS[tier]}`} onClick={() => void networkActions.mark(row, tier)}>
@@ -130,11 +131,7 @@ function AddButton({ rows, tier }: { rows: readonly MaterialRow[]; tier: SharedT
       {anchor === null ? null : (
         <Popover anchor={anchor} label={`放到${TIER_LABELS[tier]}`} role="dialog" trigger={button} className="vis-picker"
           onClose={close}>
-          <label className="vis-picker-search">
-            <Icon name="search" size={14} />
-            <input type="search" className="search-input" aria-label="找记忆、项目、笔记、空间"
-              placeholder="找记忆、项目、笔记、空间" value={query} onChange={(event) => setQuery(event.target.value)} />
-          </label>
+          <SearchField label="找记忆、项目、笔记、空间" value={query} onChange={setQuery} />
           {found.length === 0 ? <p className="vis-picker-empty">{query.trim() === '' ? '没有还能放开的了' : '没有找到'}</p>
             : (
               <ul className="vis-picker-list" aria-label="能放开的">

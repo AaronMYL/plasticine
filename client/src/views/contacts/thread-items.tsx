@@ -127,7 +127,7 @@ function GroupThem({ message }: { message: ContactMessageView }): ReactNode {
     <div className="cm-group-line">
       <span className="cm-sender">{sender.name}</span>
       <div className="cm-line" data-side="them">
-        <FaceAvatar name={sender.name} avatar={sender.avatar} size={24} />
+        <FaceAvatar name={sender.name} avatar={sender.avatar} size={28} />
         <div className="cm-bubble"><Text message={message} /></div>
       </div>
     </div>
@@ -153,7 +153,7 @@ export function ThreadMessage({ message, contact }: { message: ContactMessageVie
     case 'them':
       return (
         <div className="cm-line" data-side="them">
-          <ContactAvatar row={contact} size={24} />
+          <ContactAvatar row={contact} size={28} />
           <div className="cm-bubble"><Text message={message} /></div>
         </div>
       );
@@ -223,7 +223,7 @@ function Item({ item, contact, now, navigate, openMail }: { item: ContactThreadI
         <div className="cm-group-line">
           {mine ? null : <span className="cm-sender">{item.task.owner.name}</span>}
           <div className="cm-line cm-task-line" data-side={mine ? 'me' : 'them'}>
-            {mine ? null : <FaceAvatar name={item.task.owner.name} avatar={item.task.owner.avatar} size={24} />}
+            {mine ? null : <FaceAvatar name={item.task.owner.name} avatar={item.task.owner.avatar} size={28} />}
             <GroupTaskCard task={item.task} now={now} navigate={navigate} />
           </div>
         </div>

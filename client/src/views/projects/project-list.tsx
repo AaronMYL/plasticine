@@ -45,20 +45,20 @@ function Row({ row, open }: { row: ProjectRowView; open: (id: string) => void })
         <span className="proj-row-title">
           <span className="proj-name">{row.name}</span>
           <HealthMark health={health} proposed={proposed} />
-          {row.standing ? <span className="proj-standing" role="img" aria-label="常驻" title="常驻">
+          {row.standing ? <span className="proj-standing" role="img" aria-label="常驻" data-tip="常驻">
             <Icon name="pin" size={12} /></span> : null}
         </span>
         {/* 第 109 条：没有现状就不写「还没有现状」。 */}
         {row.status === null ? null : <span className="proj-status">{row.status.text}</span>}
-        {row.next === null ? null : <span className="proj-next text-meta" title="下一步">
+        {row.next === null ? null : <span className="proj-next text-meta">
           <Icon name="forward" size={12} /> {row.next}</span>}
       </button>
       <span className="proj-cell proj-cell-nodes"><NodeBar done={row.todosDone} total={row.todosTotal} /></span>
       <span className="proj-cell proj-cell-tasks text-meta">
-        {row.running === 0 ? null : <span className="proj-wait" title={`在做 ${row.running}`}>
+        {row.running === 0 ? null : <span className="proj-wait" data-tip={`在做 ${row.running}`}>
           <StatusGlyph status="run" /><span className="text-mono proj-num">{row.running}</span></span>}
         {row.waitingOnYou > 0 ? (
-          <span className="proj-wait" title={`等你 ${row.waitingOnYou}`}>
+          <span className="proj-wait" data-tip={`等你 ${row.waitingOnYou}`}>
             <StatusGlyph status="wait" /><span className="text-mono proj-num">{row.waitingOnYou}</span>
           </span>
         ) : null}

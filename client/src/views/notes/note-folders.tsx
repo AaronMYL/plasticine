@@ -116,7 +116,7 @@ export function NoteFolders({
   const folderButton = (label: string, count: number, target: NoteCollection): ReactNode => {
     const active = target.kind === value.kind && (target.kind !== 'folder'
       || value.kind === 'folder' && target.name === value.name);
-    return <button type="button" className="note-folder-button" aria-label={`${label} ${count}`} title={label}
+    return <button type="button" className="note-folder-button" aria-label={`${label} ${count}`}
       aria-current={active ? 'true' : undefined} data-ai={target.kind === 'folder' && isAiFolder(target.name)}
       onClick={() => onChange(target)}>
       <span className="note-folder-icon" aria-hidden="true"><Icon name={folderIcon(target)} size={16} /></span>
@@ -164,7 +164,7 @@ export function NoteFolders({
         : { action: 'rename', name: editing, next: name.trim(), requestId });
     }}>
       {pending}
-      <label>文件夹名称<input className="search-input" value={name} maxLength={100} disabled={locked}
+      <label>文件夹名称<input className="field-input" value={name} maxLength={100} disabled={locked}
         onChange={(event) => inlineDrafts.set(`${OP}:name`, event.target.value)} /></label>
       {editing === '' ? null : <>
         <div className="note-folder-position"><span>位置</span>

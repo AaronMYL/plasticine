@@ -15,32 +15,6 @@
   min-width: 0;
 }
 
-.model-search {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.model-search > svg {
-  position: absolute;
-  left: 10px;
-  color: var(--fg2);
-  pointer-events: none;
-}
-
-.model-search > .search-input {
-  width: 100%;
-  height: 32px;
-  padding-left: var(--space-6);
-  font-size: var(--text-ui);
-}
-
-/* 打开弹层时焦点就在搜索框：只把描边加深，不出粗框。 */
-.model-search > .search-input:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 1px var(--fg2);
-}
-
 .model-chooser-list {
   display: flex;
   flex-direction: column;

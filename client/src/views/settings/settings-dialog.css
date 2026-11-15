@@ -319,34 +319,7 @@
 
 /* 查找（11-12）：左栏顶上一个小框；有字时下面换成对得上的块，没字时还是六段。手机上左栏是一排标签，查找框占一整行。 */
 .settings-search {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 32px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius);
   background: var(--bg);
-  box-shadow: inset 0 0 0 1px var(--line2);
-  color: var(--fg2);
-}
-
-.settings-search:focus-within {
-  box-shadow: inset 0 0 0 1.5px var(--fg);
-}
-
-.settings-search > input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--fg);
-  font: inherit;
-  font-size: var(--text-ui);
-}
-
-.settings-search > input::-webkit-search-cancel-button {
-  appearance: none;
 }
 
 .settings-search-item > span:first-of-type {
@@ -391,11 +364,6 @@
 
 .settings-dialog[data-phone='true'] .settings-search {
   margin: 0 var(--space-4) var(--space-1);
-  font-size: var(--text-long);
-}
-
-.settings-dialog[data-phone='true'] .settings-search > input {
-  font-size: var(--text-long);
 }
 
 .settings-dialog[data-phone='true'] .settings-search-results {

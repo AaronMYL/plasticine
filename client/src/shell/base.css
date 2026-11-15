@@ -165,8 +165,7 @@ h3 {
 .chip-button:focus-visible,
 .text-button:focus-visible,
 .icon-button:focus-visible,
-.field-input:focus-visible,
-.search-input:focus-visible {
+.field-input:focus-visible {
   outline: 2px solid var(--fg);
   outline-offset: 2px;
 }
@@ -201,8 +200,7 @@ h3 {
   white-space: pre-line;
 }
 
-.field-input,
-.search-input {
+.field-input {
   height: 36px;
   padding: 0 var(--space-3);
   border: 0;
@@ -225,8 +223,7 @@ h3 {
   font-variant-numeric: tabular-nums;
 }
 
-.field-input::placeholder,
-.search-input::placeholder {
+.field-input::placeholder {
   color: var(--fg2);
 }
 
@@ -614,8 +611,7 @@ textarea.field-input {
     max-width: 100%;
   }
 
-  .field-input,
-  .search-input {
+  .field-input {
     font-size: var(--text-long);
     min-height: var(--touch);
   }

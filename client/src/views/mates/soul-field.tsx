@@ -147,7 +147,7 @@ export function SoulField({ owner, doc, now = new Date(), placeholder }: { owner
           )}
           {self === undefined || !undoable ? null : (
             <button type="button" className="soul-field-link" disabled={busy || doc.dirty}
-              title={doc.dirty ? '先保存或改回你刚改的，再撤回' : undefined} onClick={() => void undo(self)}>
+              data-tip={doc.dirty ? '先保存或改回你刚改的，再撤回' : undefined} onClick={() => void undo(self)}>
               <Icon name="undo" size={12} />撤回
             </button>
           )}

@@ -230,12 +230,26 @@ button.web-address-host:focus-visible {
   outline: none;
 }
 
-.web-pop-title {
+.web-pop-text {
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-width: 0;
+  padding: var(--space-1) 0;
+}
+
+.web-pop-title,
+.web-pop-host {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 同名的页（都叫「GitHub」）分得开：名字下面一行站点，不靠悬停看地址（11-14 不用系统提示）。 */
+.web-pop-host {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
 }
 
 .web-pop-meta {

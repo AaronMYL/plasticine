@@ -13,6 +13,7 @@ import { useStore } from '../../state/use-store.ts';
 import { providerName } from './model-store.ts';
 import { Connected, KeyForm, LoginFlow } from './provider-connect.tsx';
 import { ProviderList, providerMoreActions, type ProviderAction } from './provider-list.tsx';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 type Step = { kind: 'login' | 'key' | 'done' | 'logout'; provider: ModelProviderView } | null;
 
@@ -52,11 +53,7 @@ function EnabledModels({ provider }: { provider: ModelProviderView }): ReactNode
   return (
     <div className="ai-provider-models">
       {provider.models.length < FILTER_FROM ? null : (
-        <label className="model-search">
-          <Icon name="search" size={14} />
-          <input type="search" className="search-input" aria-label={`筛选 ${name} 的模型`} placeholder="筛选"
-            value={filter} onChange={(event) => setFilter(event.target.value)} />
-        </label>
+        <SearchField label={`筛选 ${name} 的模型`} placeholder="筛选" value={filter} onChange={setFilter} />
       )}
       <ul className="ai-provider-grid" aria-label={`${name} 启用的模型`}>
         {shown.map((model) => (

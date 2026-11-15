@@ -23,10 +23,10 @@ it('英文对象引用显示中文名称与版本，完整标识留在提示中�
   render(<Markdown text={`参考 ${reference} 和 [note:笔记一]。`} />);
   const judgment = screen.getByRole('link', { name: '判断 · 第1版' });
   expect(judgment.getAttribute('href')).toBe(`#/memory/judgments/${id}`);
-  expect(judgment.getAttribute('title')).toBe(reference);
+  expect(judgment.getAttribute('data-tip')).toBe(reference);
   const note = screen.getByRole('link', { name: '笔记' });
   expect(note.getAttribute('href')).toBe(`#/notes/${encodeURIComponent('笔记一')}`);
-  expect(note.getAttribute('title')).toBe('[note:笔记一]');
+  expect(note.getAttribute('data-tip')).toBe('[note:笔记一]');
 });
 
 it('代码里的对象文本保持代码，流式未闭合标记保留原文', () => {

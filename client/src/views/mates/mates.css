@@ -4,7 +4,7 @@
   padding: var(--space-5) var(--space-3) var(--space-1); }
 .mates-section-head h3 { margin: 0; font-size: var(--text-caption); font-weight: 500; color: var(--fg2); }
 .mate-avatar-stack { display: inline-flex; align-items: center; padding-right: var(--space-hair); }
-.mate-avatar-stack .bot-avatar + .bot-avatar { margin-left: calc(-1 * var(--space-3)); }
+.mate-avatar-stack .bot-avatar + .bot-avatar { margin-left: calc(-1 * var(--space-2)); }
 .mate-state { font-size: var(--text-tag); color: var(--fg3); }
 .mates-legacy { padding-top: var(--space-5); }
 .mates-legacy > .text-button { margin-left: var(--space-3); }

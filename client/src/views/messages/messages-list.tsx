@@ -28,6 +28,7 @@ import {
 } from './message-filter.ts';
 import { timeText } from '../../shell/time-text.ts';
 import { WaitMark } from '../../shell/wait-mark.tsx';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 function matches(row: ContactRow, query: string): boolean {
   const needle = query.trim().toLowerCase();
@@ -209,10 +210,10 @@ export function MessagesList(props: MessagesListProps): ReactNode {
       </div>
       <FilterControl filter={props.filter} onFilter={props.onFilter} />
       {query === null ? null : (
-        <input className="field-input contact-list-search" type="search" aria-label="查找" value={query}
-          autoFocus placeholder="名字、@handle、地址" onChange={(event) => setQuery(event.target.value)}
+        <SearchField className="contact-list-search" label="查找" value={query} autoFocus
+          placeholder="名字、@handle、地址" onChange={setQuery}
           onKeyDown={(event) => {
-            if (event.key === 'Escape') {
+            if (event.key === 'Escape' && query === '') {
               setQuery(null);
             }
           }} />

@@ -137,7 +137,7 @@ function PlasticineChatPage({ route, phone, navigate }: PlasticinePageProps): Re
           <div className="mate-conversation-name">
             {mate !== undefined ? <MateAvatar mate={mate} /> : group !== undefined
               ? <GroupAvatar mates={roster.mates.filter((item) => group.mateIds.includes(item.id))} />
-              : <MainAvatar size={24} />}
+              : <MainAvatar />}
             <div><h2>{title}</h2>{group === undefined ? null : <p>你和 {group.mateIds.length} 位队友</p>}</div>
           </div>
           <span className="messages-thread-spacer" />

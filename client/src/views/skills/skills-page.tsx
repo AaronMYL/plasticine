@@ -16,6 +16,7 @@ import { SkillsNew } from './skills-new.tsx';
 import { useNarrow } from './use-narrow.ts';
 import { useSkills, type SkillsData } from './use-skills.ts';
 import './skills.css';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 export interface SkillsPageProps {
   route: Route;
@@ -84,8 +85,8 @@ function List({ data, selected, phone, navigate }: { data: SkillsData; selected:
         onClick={() => setSearching((value) => !value)} />
       <Actions navigate={navigate} phone={false} />
     </header>}
-    {searching ? <input className="field-input skills-search" type="search" aria-label="找技能" placeholder="找技能"
-      autoFocus value={query} onChange={(event) => setQuery(event.target.value)} /> : null}
+    {searching ? <SearchField className="skills-search" label="找技能" autoFocus value={query} onChange={setQuery} />
+      : null}
     {present.length < 2 ? null : <div className="segmented skills-kinds" role="group" aria-label="来源">
       <button type="button" className="segmented-item" aria-pressed={kind === 'all'} onClick={() => setKind('all')}>
         全部 {all.length}</button>

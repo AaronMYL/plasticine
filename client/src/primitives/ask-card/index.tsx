@@ -45,7 +45,7 @@ const ASK_ICON: Readonly<Record<AskView['kind'], IconName>> = {
 
 export function AskTag({ ask }: { ask: Pick<AskView, 'kind' | 'kindLabel'> }): ReactNode {
   const urgent = ask.kind === 'act' || ask.kind === 'approve';
-  return <span className="ask-glyph" data-urgent={urgent} role="img" aria-label={ask.kindLabel} title={ask.kindLabel}>
+  return <span className="ask-glyph" data-urgent={urgent} role="img" aria-label={ask.kindLabel} data-tip={ask.kindLabel}>
     <Icon name={ASK_ICON[ask.kind]} size={14} />
   </span>;
 }
@@ -118,7 +118,6 @@ function Options(props: AskCardProps & { blocked: boolean }): ReactNode {
           onClick={() => props.onOption(option.id,
               ask.collision === true && option.id === 'date' ? props.drafts.answer : undefined)}
           aria-label={option.recommended ? `${option.label}（推荐）` : undefined}
-          title={option.recommended ? '推荐' : undefined}
         >
           {option.label}
         </button>

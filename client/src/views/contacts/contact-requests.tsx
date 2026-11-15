@@ -39,7 +39,7 @@ function RequestCard({ row, onAccepted }: { row: ContactRow; onAccepted: (id: st
   return (
     <li className="net-request" aria-label={row.name}>
       <div className="net-request-who">
-        <ContactAvatar row={row} size={44} />
+        <ContactAvatar row={row} size={40} />
         <span className="net-person-name">{row.name}
           {row.handle === null ? null : <small>@{row.handle}</small>}</span>
         {row.last === null ? null : <span className="mono nt-deadline">{clockTime(row.last.at, timeZone)}</span>}

@@ -16,6 +16,7 @@ import { useDialogFocus } from './settings-dialog-focus.ts';
 import { searchSettings } from './settings-index.ts';
 import '../../shell/dialog.css';
 import './settings-dialog.css';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 /** 查找跳到的那一块闪多久。 */
 const FOUND_FLASH_MS = 1_600;
@@ -209,11 +210,7 @@ export function SettingsDialog({ request, leave, phone, onPlace, onClosed }: Set
           aria-labelledby={titleId} tabIndex={-1}>
           <nav className="settings-dialog-nav" aria-label="设置分类" inert={leaving !== null}>
             <h2 id={titleId} className="settings-dialog-title">设置</h2>
-            <label className="settings-search">
-              <Icon name="search" size={14} />
-              <input type="search" aria-label="搜设置" placeholder="搜设置" value={query}
-                onChange={(event) => setQuery(event.target.value)} />
-            </label>
+            <SearchField className="settings-search" label="搜设置" value={query} onChange={setQuery} />
             {query.trim() === '' ? null : (
               <ul className="settings-dialog-sections settings-search-results" aria-label="找到的设置">
                 {found.length === 0 ? <li className="settings-search-empty">没有对得上的设置</li> : null}

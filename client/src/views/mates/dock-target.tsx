@@ -86,19 +86,19 @@ export function DockTargetSelector(): ReactNode {
   return <div className="dock-target-head">
     <button type="button" className="dock-target-button" aria-label="切换对话对象" aria-expanded={menu !== null}
       onClick={(event) => setMenu(anchorOf(event.currentTarget))}>
-      {mate !== undefined ? <MateAvatar mate={mate} size={24} /> : group !== undefined
+      {mate !== undefined ? <MateAvatar mate={mate} size={20} /> : group !== undefined
         ? <GroupAvatar mates={roster.mates.filter((item) => group.mateIds.includes(item.id))} />
-        : <MainAvatar size={24} />}
+        : <MainAvatar size={20} />}
       <span>{mate?.name ?? group?.name ?? main.name}</span><Icon name="chevron-down" size={12} />
     </button>
     {target.fromWriter ? <span className="dock-writer">写过这一页</span> : null}
     {menu === null ? null : <Popover anchor={menu} role="menu" label="对话对象" align="start"
       onClose={() => setMenu(null)}>
       <TargetItem label={`${main.name} 主线`} selected={target.lineId === MAIN_LINE_ALIAS}
-        lead={<MainAvatar size={24} />} onSelect={() => select(MAIN_LINE_ALIAS)} />
+        lead={<MainAvatar size={20} />} onSelect={() => select(MAIN_LINE_ALIAS)} />
       <p className="dock-target-section">队友</p>
       {roster.mates.filter((item) => item.disabledAt === null).map((item) => <TargetItem key={item.id}
-        label={item.name} selected={target.lineId === item.lineId} lead={<MateAvatar mate={item} size={24} />}
+        label={item.name} selected={target.lineId === item.lineId} lead={<MateAvatar mate={item} size={20} />}
         onSelect={() => select(item.lineId)} />)}
       {roster.groups.length === 0 ? null : <p className="dock-target-section">群组</p>}
       {roster.groups.map((item) => <TargetItem key={item.id} label={item.name} selected={target.lineId === item.lineId}

@@ -7,17 +7,14 @@ import type { MemorySearchHit } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import type { Route } from '../../shell/routes.ts';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 // 停手这么久再搜：一个字一个字打时不连发请求。
 const SEARCH_DELAY_MS = 200;
 
 function Field({ value, onChange }: { value: string; onChange: (value: string) => void }): ReactNode {
   return (
-    <label className="memory-search">
-      <Icon name="search" size={14} />
-      <input type="search" aria-label="搜记忆，含归档" placeholder="搜记忆，含归档" value={value}
-        onChange={(event) => onChange(event.target.value)} />
-    </label>
+    <SearchField className="memory-search" label="搜记忆，含归档" value={value} onChange={onChange} />
   );
 }
 

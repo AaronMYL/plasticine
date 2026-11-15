@@ -61,7 +61,7 @@ export function GroupMenu({ tabs, groupId, anchor, onClose }: { tabs: WebTabsSto
           onChange={(hue) => tabs.recolorGroup(groupId, hue)} />
       </div>
       <MenuSeparator />
-      <MenuItem icon="close" label="解散分组" title="组里的标签回到「今天」" onSelect={() => {
+      <MenuItem icon="close" label="解散分组" onSelect={() => {
         tabs.ungroup(groupId);
         onClose();
       }} />

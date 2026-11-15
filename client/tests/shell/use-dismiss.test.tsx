@@ -22,6 +22,7 @@ function Harness({ onDismiss, withAnchor = false }: {
     <button ref={trigger} type="button" onClick={() => setOpen((value) => !value)}>打开</button>
     {open ? <div ref={panel} role="menu" aria-label="浮层">
       <input aria-label="浮层里的输入框" />
+      <input type="search" aria-label="浮层里的搜索框" />
       <div data-testid="浮层里的滚动">里面</div>
     </div> : null}
   </div>;
@@ -68,6 +69,17 @@ describe('浮层的关闭逻辑', () => {
     // 组字时那一下照常传到外面；关浮层的那一下没传出去。
     expect(outer).toHaveBeenCalledTimes(1);
     document.removeEventListener('keydown', outer);
+  });
+
+  it('浮层里的搜索框有字时 Esc 先交给它清空，不关；空了再按才关（11-14 搜索框一种）', () => {
+    const onDismiss = setup();
+    const search = screen.getByRole('searchbox', { name: '浮层里的搜索框' });
+    fireEvent.change(search, { target: { value: '配色' } });
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(onDismiss).not.toHaveBeenCalled();
+    fireEvent.change(search, { target: { value: '' } });
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(onDismiss).toHaveBeenCalledWith('escape');
   });
 
   it('窗口失焦就关：Mac App 里点到垫在下面的原生网页时，主网页只收得到失焦', () => {

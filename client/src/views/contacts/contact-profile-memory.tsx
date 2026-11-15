@@ -11,6 +11,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { Popover, anchorOf, type PopoverAnchor } from '../../shell/popover.tsx';
 import { routeHash } from '../../shell/routes.ts';
 import type { PersonChoice } from './contact-edits.ts';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 /** 资料栏里这一节的 id（列表「关联人物…」打开资料后落到这里）。 */
 export function memorySectionId(contactId: string): string {
@@ -40,8 +41,7 @@ function Picker({ contact, memory, anchor, onPick, onClose }: { contact: Contact
   return (
     <Popover anchor={anchor} role="dialog" align="start" label="选一页人物" onClose={onClose}>
       <div className="contact-person-picker">
-        <input className="field-input" type="search" value={query} autoFocus placeholder="找人物页"
-          aria-label="找人物页" onChange={(event) => setQuery(event.target.value)} />
+        <SearchField label="找人物页" value={query} autoFocus onChange={setQuery} />
         <ul className="contact-person-options" role="listbox" aria-label="人物页">
           {shown.map((person) => (
             <li key={person.id}>
@@ -103,7 +103,7 @@ export function ContactMemorySection({ contact, memory }: { contact: ContactRow;
             <ul className="profile-list contact-memory-lines">
               {memory.lines.map((line) => (
                 <li key={`${line.at}-${line.text}`}>
-                  <span className="profile-item-text" title={line.text}>{line.text}</span>
+                  <span className="profile-item-text">{line.text}</span>
                   <span className="profile-meta">{line.by}</span>
                 </li>
               ))}

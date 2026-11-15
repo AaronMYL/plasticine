@@ -53,7 +53,7 @@ export function MainAvatar({ size = 28, still = false, variant, picked = false }
     still={still} />;
 }
 
-export function GroupAvatar({ mates, size = 24 }: { mates: readonly MateView[]; size?: number }): ReactNode {
+export function GroupAvatar({ mates, size = 20 }: { mates: readonly MateView[]; size?: number }): ReactNode {
   return <span className="mate-avatar-stack" aria-hidden="true">
     {mates.slice(0, 3).map((mate) => <MateAvatar key={mate.id} mate={mate} size={size} still />)}
   </span>;

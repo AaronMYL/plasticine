@@ -40,8 +40,8 @@ export function ContactMessageMedia({ contact, message, text }: {
     finally { setBusy(false); }
   };
   const avatar = contact.kind === 'group' && message.sender != null
-    ? <FaceAvatar name={message.sender.name} avatar={message.sender.avatar} size={24} />
-    : <ContactAvatar row={contact} size={24} />;
+    ? <FaceAvatar name={message.sender.name} avatar={message.sender.avatar} size={28} />
+    : <ContactAvatar row={contact} size={28} />;
   const gallery = <AttachmentGallery key={revision} items={items} />;
   return <div className="cm-media-message" data-side={mine ? 'me' : 'them'}>
     {mine || contact.kind !== 'group' || message.sender == null ? null :

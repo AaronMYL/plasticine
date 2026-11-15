@@ -16,7 +16,7 @@ export function HealthMark({ health, proposed = false }: { health: Health | null
   const label = `${PROJECT_HEALTH_LABELS[health]}${proposed ? '（Plasticine 提议）' : ''}`;
   return (
     <span className={`proj-health proj-health-${health}`} data-proposed={proposed ? 'true' : undefined}
-      title={label} aria-label={label}>
+      data-tip={label} aria-label={label}>
       <span className={dot} aria-hidden="true" />
       {health === 'ok' ? null : PROJECT_HEALTH_LABELS[health]}
       {proposed ? <AiMark label="Plasticine 提议" /> : null}

@@ -63,7 +63,7 @@ function Deliveries({ detail }: { detail: ContactDetail }): ReactNode {
           const word = deliveryWord(entry.state);
           return (
             <li key={entry.taskId}>
-              <span className="profile-item" title={entry.title}>
+              <span className="profile-item">
                 <span className={`dot profile-dot-${dot}`} role="img" aria-label={DOT_LABELS[dot]} />
                 <span className="profile-item-text">{entry.title}</span>
               </span>
@@ -88,7 +88,7 @@ function Said({ detail }: { detail: ContactDetail }): ReactNode {
       <ul className="profile-list">
         {detail.said.map((entry) => (
           <li key={entry.id}>
-            <span className="profile-item-text" title={entry.text}>{entry.text}</span>
+            <span className="profile-item-text">{entry.text}</span>
             <span className="mono profile-meta">{shortDate(entry.at, timeZone)}</span>
           </li>
         ))}

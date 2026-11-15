@@ -193,7 +193,7 @@ export function NewGroupPage({ phone, onClose, onCreated }: { phone: boolean; on
               <input type="checkbox" checked={picked.includes(row.id)} disabled={locked}
                 onChange={(event) => setPicked(event.target.checked ? [...picked, row.id]
                   : picked.filter((id) => id !== row.id))} />
-              <FaceAvatar name={row.name} avatar={row.avatar} size={32} />
+              <FaceAvatar name={row.name} avatar={row.avatar} size={28} />
               <span className="net-person-name">{row.name}<small>@{row.handle}</small></span>
             </label>
           ))}

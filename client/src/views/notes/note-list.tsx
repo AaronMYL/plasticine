@@ -15,6 +15,7 @@ import { useClientState } from '../../state/context.tsx';
 import { groupByDay } from './note-time.ts';
 import { PageLoading } from '../../primitives/page-loading/index.tsx';
 import { timeText } from '../../shell/time-text.ts';
+import { SearchField } from '../../primitives/search-field/index.tsx';
 
 export interface NoteListProps {
   selection?: BulkSelection;
@@ -58,9 +59,9 @@ export function NoteList(props: NoteListProps): ReactNode {
         {merged && props.selection?.active ? bulk : null}
         {props.heading === false || props.selection?.active ? null : <div className="note-list-heading">
           <div className="note-list-title">
-            {props.onFolders === undefined ? <h2 title={props.collectionLabel}>{props.collectionLabel ?? '全部'}</h2> : (
+            {props.onFolders === undefined ? <h2>{props.collectionLabel ?? '全部'}</h2> : (
               <button type="button" className="note-collection-toggle" aria-label="选择文件夹"
-                title={props.collectionLabel} onClick={props.onFolders}>
+                onClick={props.onFolders}>
                 <Icon name="folder" />
                 <span>{props.collectionLabel ?? '全部'}</span>
                 <Icon name="chevron-down" size={14} />
@@ -72,11 +73,8 @@ export function NoteList(props: NoteListProps): ReactNode {
           </div>
           {merged ? <div className="note-list-tools">{props.tools}{bulk}</div> : null}
         </div>}
-        {props.selection?.active ? null : <div className="note-search">
-          <Icon name="search" size={16} />
-          <input className="search-input" type="search" aria-label="搜索笔记" placeholder="搜索"
-            value={props.query} onChange={(event) => props.onQuery(event.target.value)} />
-        </div>}
+        {props.selection?.active ? null : <SearchField className="note-search" label="搜索笔记" placeholder="搜索"
+          value={props.query} onChange={props.onQuery} />}
       </div>
       {props.error === null ? null : (
         <p className="block-empty is-error" role="alert">
@@ -101,7 +99,6 @@ export function NoteList(props: NoteListProps): ReactNode {
                 <button
                   type="button"
                   className="note-row"
-                  title={note.title === '' ? '未命名' : note.title}
                   aria-current={!props.selection?.active && note.id === props.selectedId ? 'true' : undefined}
                   onClick={(event) => props.selection?.active
                     ? props.selection.toggle({ kind: 'note', id: note.id, title: note.title || '未命名' }, event.shiftKey)
@@ -117,7 +114,7 @@ export function NoteList(props: NoteListProps): ReactNode {
                   <span className="note-row-meta">
                     <span className="note-row-time text-meta">{timeText(note.updatedAt, now)}</span>
                     {props.showFolder && note.folder !== '笔记' ? (
-                      <span className="note-row-folder" title={note.folder}>{note.folder}</span>
+                      <span className="note-row-folder">{note.folder}</span>
                     ) : null}
                     {(note.mergedCount ?? 0) > 0 ? <span>合并 {note.mergedCount}</span> : null}
                   </span>
