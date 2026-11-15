@@ -44,7 +44,8 @@ describe('订阅设置', () => {
   it('第 7 批：订阅设置浮层从资料库的订阅页打开，改了「保存」能存', async () => {
     const app = await renderApp({ hash: '#/library/sub/sub_research', setup: (fake) => fake.control.spaces.seed() });
     await screen.findByRole('heading', { name: '认知与神经科学研究周报' });
-    fireEvent.click(screen.getByRole('button', { name: '订阅设置' }));
+    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: '「认知与神经科学研究周报」的更多操作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '订阅设置' }));
     const sheet = await screen.findByRole('dialog', { name: '认知与神经科学研究周报' });
     fireEvent.click(within(sheet).getByRole('button', { name: '临床应用' }));
     await act(async () => fireEvent.click(within(sheet).getByRole('button', { name: '保存' })));

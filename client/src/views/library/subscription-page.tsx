@@ -14,13 +14,12 @@ import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { LIBRARY_HOME } from '../../shell/library-routes.ts';
 import { RevealMore } from '../../shell/reveal-more.tsx';
-import { TitlebarTitle } from '../../shell/titlebar.tsx';
+import { TitlebarActions, TitlebarTitle, useInTitlebar } from '../../shell/titlebar.tsx';
 import { useRoute } from '../../shell/use-route.ts';
 import type { Route } from '../../shell/routes.ts';
 import { useRead } from '../memory/use-read.ts';
 import { issueLabel } from '../spaces/issue-text.ts';
 import { spaceRoute } from '../spaces/space-links.ts';
-import { SubscriptionSheet } from '../spaces/subscription-sheet.tsx';
 import { useSubscriptionMenu } from './subscription-menu.tsx';
 import { libraryChanged, useLibraryRevision } from './library-signal.ts';
 import { issueRange, subscriptionLine } from './subscription-text.ts';
@@ -62,7 +61,6 @@ export function SubscriptionPage({ subscriptionId, phone, navigate }: Subscripti
     // revision 变了（资料库里改了名、删了一期）就重读：多依赖一个计数是故意的。
     [api, subscriptionId, revision]);
   const { value, error, reload } = useRead(read);
-  const [sheet, setSheet] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ text: string; failed: boolean } | null>(null);
   const menu = useSubscriptionMenu(phone, navigate, reload);
@@ -94,23 +92,27 @@ export function SubscriptionPage({ subscriptionId, phone, navigate }: Subscripti
     ? <button type="button" className="primary-button" disabled={busy} onClick={runNow}>现在出一期</button>
     : <button type="button" className="primary-button" disabled={busy} onClick={() => setStatus('active')}>
       开启定时</button>;
+  // 11-14 页头统一（设计稿「一份菜单，四个入口」）：右边一个主操作加 ⋯（订阅设置在 ⋯ 里）；桌面客户端的名字和这两样
+  // 都在标题栏里，页里只留图标和一句状态，名字不写第二遍。
+  const titled = useInTitlebar() && !phone;
+  const actions = <>
+    {phone ? null : primary}
+    <RevealMore label={`「${view.title}」的更多操作`} actions={more} />
+  </>;
   return (
     <div className="page lib-page lib-sub" data-phone={phone}>
       {/* 桌面客户端的标题栏写订阅名（不写壳按地址算的「资料库」）；网页版、手机没有标题栏，这行什么也不画。 */}
       <TitlebarTitle text={view.title} />
+      {titled ? <TitlebarActions>{actions}</TitlebarActions> : null}
       <header className="lib-sub-head">
         {phone ? <IconButton icon="back" label="回到上一页" className="page-back"
           onClick={() => (canGoBack ? goBack() : navigate(LIBRARY_HOME))} /> : null}
         <HueTile hue={look.hue} icon={look.icon} size={36} />
         <div className="lib-sub-title">
-          <h1>{view.title}</h1>
+          <h1 className={titled ? 'sr-only' : undefined}>{view.title}</h1>
           <p className="text-meta">{subscriptionLine(view)}</p>
         </div>
-        <div className="lib-sub-actions">
-          {phone ? null : primary}
-          <IconButton icon="sliders" label="订阅设置" aria-haspopup="dialog" onClick={() => setSheet(true)} />
-          <RevealMore label={`「${view.title}」的更多操作`} actions={more} />
-        </div>
+        {titled ? null : <div className="lib-sub-actions">{actions}</div>}
         {menu.dialogs}
       </header>
       {phone && primary !== null ? <div className="lib-sub-primary">{primary}</div> : null}
@@ -122,14 +124,6 @@ export function SubscriptionPage({ subscriptionId, phone, navigate }: Subscripti
             timeZone={timeZone} onOpen={() => navigate(spaceRoute(issue.spaceId))} />)}
         </ul>
       )}
-      <SubscriptionSheet open={sheet} subscriptionId={view.id} phone={phone} onClose={() => {
-        setSheet(false);
-        reload();
-        libraryChanged();
-      }} onOpenIssue={(id) => {
-        setSheet(false);
-        navigate(spaceRoute(id));
-      }} />
     </div>
   );
 }

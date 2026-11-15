@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react';
 import { IconButton } from './icon-button.tsx';
 import { useOpenPanel } from './panel.ts';
+import { TitlebarTitle, useInTitlebar } from './titlebar.tsx';
 import { useRoute } from './use-route.ts';
 import { PHONE_BELOW } from './layout.ts';
 import { useViewportWidth } from './use-viewport-width.ts';
@@ -27,15 +28,22 @@ export function PageHeader({ title, meta, controls, phoneTools, phoneSearch = tr
   const openPanel = useOpenPanel();
   const { canGoBack, goBack } = useRoute();
   const phone = useViewportWidth() < PHONE_BELOW;
+  // 11-14 界面统一（页头：名字只写一遍）：桌面客户端顶上有标题栏，名字写在标题栏里，页里的标题只留给读屏；
+  // 什么都不剩时整个页头不画。
+  const titled = useInTitlebar() && !phone;
+  if (titled && meta === undefined && controls === undefined) {
+    return <><TitlebarTitle text={title} /><h1 className="sr-only">{title}</h1></>;
+  }
   return (
     <header className="page-head">
+      {titled ? <TitlebarTitle text={title} /> : null}
       <div className="page-head-title">
         {phone && onBack !== undefined ? <IconButton icon="back" label="回到上一层" className="page-back" onClick={onBack} />
           : canGoBack && phone ? <IconButton icon="back" label="回到上一页" className="page-back" onClick={goBack} />
             : null}
         {/* 2026-11-03《全量界面优化》：页头不写副标题，数字进分段控件。11-04 重做悬停：不再藏在标题的悬停里——
             必要的（这一页的状态）常显在标题后面，冗余的（和分段控件重复的数、今天几号）调用方不再传。 */}
-        <h1>{title}</h1>
+        <h1 className={titled ? 'sr-only' : undefined}>{title}</h1>
         {meta === undefined ? null : <span className="page-head-status">{meta}</span>}
       </div>
       {controls === undefined ? null : <div className="page-head-controls">{controls}</div>}

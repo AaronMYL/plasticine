@@ -149,7 +149,10 @@ describe('订阅页', () => {
     await screen.findByText('每周一 09:00 · 已暂停');
     await act(async () => fireEvent.click(screen.getByRole('button', { name: '开启定时' })));
     await screen.findByText('每周一 09:00 · 已开启');
-    fireEvent.click(screen.getByRole('button', { name: '订阅设置' }));
+    // 11-14 页头统一：订阅设置在 ⋯ 里，页头右边只有主操作和 ⋯。
+    expect(within(screen.getByRole('main')).queryByRole('button', { name: '订阅设置' })).toBeNull();
+    fireEvent.click(within(screen.getByRole('main')).getByRole('button', { name: '「认知与神经科学研究周报」的更多操作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '订阅设置' }));
     expect(await screen.findByRole('dialog', { name: '认知与神经科学研究周报' })).toBeTruthy();
   });
 
