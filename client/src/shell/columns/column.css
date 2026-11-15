@@ -83,7 +83,6 @@
   padding-bottom: var(--space-3);
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
 }
 
 /*

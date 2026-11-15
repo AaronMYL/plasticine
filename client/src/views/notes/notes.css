@@ -22,7 +22,6 @@
   overflow-y: auto;
   padding: var(--space-4) var(--space-4) var(--space-6);
   border-right: 1px solid var(--line);
-  scrollbar-width: thin;
   overscroll-behavior: contain;
 }
 
@@ -135,7 +134,6 @@
   scroll-padding-top: var(--space-2);
   /* 上内边距 24：固定的工具栏（sticky 按内边距以内算）用 top: -24px 贴到滚动区的最上沿（note-ai.css）。 */
   padding: var(--space-5) var(--page-gutter) var(--space-7);
-  scrollbar-width: thin;
   overscroll-behavior: contain;
 }
 

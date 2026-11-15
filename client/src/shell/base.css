@@ -624,6 +624,73 @@ textarea.field-input {
     min-height: var(--touch);
   }
 }
+/*
+ * 滚动条一种（11-15 Aaron 弹框定，设计稿「滚动条：一种」，参照微信）：平时看不见；鼠标在哪一块上，那一块的细条出来——
+ * 4 宽、圆头、字色 30%，移到条上 8 宽、50%；没有底槽，上下各空 8。用浏览器自己的滚动条：它一直占着右边那条 10 宽的
+ * 窄边，条出来、收起都不动排版；常滚的几块（主区、第二栏、笔记、对话）还用 scrollbar-gutter 把窄边一直留着，内容多到要滚
+ * 时也不挤一下。横着滑的（分段、标签条）照旧不显示（各自 scrollbar-width: none）。触屏用系统的。
+ */
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 10px; /* 例外：滚动条那一条窄边 */
+    height: 10px;
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: var(--space-2);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent; /* 例外：细条两边透明，露出来 4 宽 */
+    border-radius: var(--radius-full);
+    background-clip: padding-box;
+    background-color: transparent;
+  }
+
+  :hover::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--fg) 30%, transparent);
+  }
+
+  /* Chromium 只在这一块自己的样式变了时才重画滚动条：鼠标移进、移出时改一个看不见的属性（没有分栏线），细条才跟着出来、收起。 */
+  :hover {
+    column-rule-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb:hover,
+  ::-webkit-scrollbar-thumb:active {
+    border-width: 1px;
+    background-color: color-mix(in srgb, var(--fg) 50%, transparent);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  .shell-main,
+  .column-scroll,
+  .note-list,
+  .note-pane,
+  .line-scroll {
+    scrollbar-gutter: stable;
+  }
+}
+
+/* 不认 ::-webkit-scrollbar 的浏览器（Firefox）：细的，平时透明，鼠标在这一块上才有颜色。 */
+@supports not selector(::-webkit-scrollbar) {
+  @media (hover: hover) and (pointer: fine) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+    }
+
+    *:hover {
+      scrollbar-color: color-mix(in srgb, var(--fg) 30%, transparent) transparent;
+    }
+  }
+}
+
 .mono {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
