@@ -44,6 +44,20 @@ it('电脑侧栏创建队友、创建两人群组，并进入各自的对话', a
   expect(window.location.hash).toMatch(/^#\/plasticine\/group\//);
 });
 
+it('Plasticine 栏标题一直写「Plasticine」，技能和记忆在标题那一行右边（11-15 Aaron 弹框定，设计稿 23）', async () => {
+  await renderApp({ hash: '#/plasticine', setup: (fake) => { fake.control.mates.main = { ...fake.control.mates.main, name: '卷毛' }; } });
+  const column = await screen.findByRole('complementary', { name: 'Plasticine' });
+  const head = column.querySelector<HTMLElement>('.column-head');
+  if (head === null) throw new Error('没有标题行');
+  expect(within(head).getByRole('heading', { level: 2 }).textContent).toBe('Plasticine');
+  expect(await within(column).findByRole('link', { name: '卷毛 主线' })).toBeTruthy();
+  fireEvent.click(within(head).getByRole('link', { name: '记忆' }));
+  await waitFor(() => expect(window.location.hash).toBe('#/memory'));
+  expect(within(head).getByRole('link', { name: '记忆' }).getAttribute('aria-current')).toBe('page');
+  expect(within(head).getByRole('link', { name: '技能' }).getAttribute('aria-current')).toBeNull();
+  expect(column.querySelector('.column-foot')).toBeNull();
+});
+
 it('手机 Plasticine 根页直接是主线；「队友和群组」打开名单，点队友进它的对话，返回回到主线', async () => {
   await renderApp({ width: 390, hash: '#/plasticine' });
   expect(await screen.findByRole('textbox', { name: '问一句' })).toBeTruthy();

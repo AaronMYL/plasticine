@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { useLive } from '../../live.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
-import { Icon } from '../../shell/icons.tsx';
+import { Icon, type IconName } from '../../shell/icons.tsx';
 import { RevealMore } from '../../shell/reveal-more.tsx';
-import { ColumnFoot, ColumnHead, ColumnLink, ColumnNote } from '../../shell/columns/column.tsx';
-import { mainChatRoute, mateGroupRoute, mateRoute, sideRoute, skillsRoute, type Route } from '../../shell/routes.ts';
+import { ColumnHead, ColumnLink, ColumnNote } from '../../shell/columns/column.tsx';
+import { mainChatRoute, mateGroupRoute, mateRoute, routeHash, sideRoute, skillsRoute, type Route }
+  from '../../shell/routes.ts';
 import { useStore } from '../../state/use-store.ts';
 import { PendingOps } from '../pending/pending-ops.tsx';
 import { MATE_OP_PREFIXES } from './mate-actions.ts';
@@ -17,6 +18,17 @@ import { LegacyChats } from './legacy-chats.tsx';
 import { WaitMark } from '../../shell/wait-mark.tsx';
 import './mates.css';
 
+/** 标题那一行右边的「技能」「记忆」：在哪一页那一个按下去（底色加深、字加重），不只靠颜色。 */
+function HeadLink({ route, current, navigate, icon, children }: { route: Route; current: boolean;
+  navigate: (route: Route) => void; icon: IconName; children: string }): ReactNode {
+  return <a href={routeHash(route)} className="mates-head-link" aria-current={current ? 'page' : undefined}
+    onClick={(event) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+      event.preventDefault();
+      navigate(route);
+    }}><Icon name={icon} size={14} />{children}</a>;
+}
+
 export function MatesRoster({ route, navigate, phone = false }: { route: Route;
   navigate: (route: Route) => void; phone?: boolean }): ReactNode {
   const live = useLive();
@@ -28,8 +40,15 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
   const [legacy, setLegacy] = useState(false);
   const root = route.view === 'plasticine' && route.mateId == null && route.mateGroupId == null
     && route.lineId == null;
+  const entries = <span className="mates-head-links">
+    <HeadLink route={skillsRoute()} current={route.view === 'skills'} navigate={navigate} icon="sparkle">技能</HeadLink>
+    <HeadLink route={{ view: 'memory', noteId: null }} current={route.view === 'memory'} navigate={navigate}
+      icon="memory">记忆</HeadLink>
+  </span>;
   return <div className={`mates-roster${phone ? ' mates-roster-phone' : ''}`}>
-    {phone ? <header className="mates-phone-head"><h1>{main.name}</h1></header> : <ColumnHead title={main.name} />}
+    {/* 11-15 Aaron 弹框定（设计稿 23）：标题一直写 Plasticine，不跟着主线改的名字；技能、记忆在标题那一行右边。 */}
+    {phone ? <header className="mates-phone-head"><h1>Plasticine</h1>{entries}</header>
+      : <ColumnHead title="Plasticine">{entries}</ColumnHead>}
     <div className="column-scroll">
       <div className="column-row">
         <ColumnLink route={mainChatRoute()} current={root} navigate={navigate} label={`${main.name} 主线`}
@@ -75,12 +94,6 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
           {chat.title}</ColumnLink>)}
       </div>}
     </div>
-    <ColumnFoot>
-      <ColumnLink route={skillsRoute()} current={route.view === 'skills'} navigate={navigate}
-        lead={<Icon name="sparkle" size={20} />}>技能</ColumnLink>
-      <ColumnLink route={{ view: 'memory', noteId: null }} current={route.view === 'memory'}
-        navigate={navigate} lead={<Icon name="memory" size={20} />}>记忆</ColumnLink>
-    </ColumnFoot>
     {editor === 'mate' ? <MateEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}
     {menu.dialogs}
     {editor === 'group' ? <GroupEditor phone={phone} navigate={navigate} onClose={() => setEditor(null)} /> : null}

@@ -11,14 +11,29 @@
 /* 手机上名单在抽屉里，底栏盖着抽屉最下面一截：留出底栏的高度，「技能」「记忆」和最后一行不被压住。 */
 .mates-roster-phone { background: var(--bg);
   padding: 0 var(--space-4) calc(64px + env(safe-area-inset-bottom)); /* 例外：手机底下给圆球留地方 */ }
-.mates-phone-head { padding: var(--space-5) var(--space-2) var(--space-4); }
+.mates-phone-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-5) var(--space-2) var(--space-4); }
 .mates-phone-head h1 { margin: 0; font-size: var(--text-title); font-weight: 600; }
+/* 标题那一行右边的「技能」「记忆」（11-15 Aaron 弹框定，设计稿 23）：两个小按钮并排，在哪一页那一个按下去。 */
+.mates-head-links { display: inline-flex; align-items: center; gap: var(--space-1); }
+.mates-head-link { display: inline-flex; align-items: center; gap: var(--space-1); height: 28px;
+  padding: 0 var(--space-2); border-radius: var(--radius); box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg); font-size: var(--text-ui); line-height: var(--text-ui-line); text-decoration: none;
+  white-space: nowrap; transition: background-color var(--motion-fast) var(--ease-out); }
+.mates-head-link > svg { flex: none; color: var(--fg2); }
+.mates-head-link:hover { background: var(--tint); }
+.mates-head-link[aria-current='page'] { background: var(--tint2); box-shadow: none; font-weight: 600; }
+.mates-head-link[aria-current='page'] > svg { color: var(--fg); }
+.mates-head-link:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.mates-phone-head .mates-head-link { height: var(--touch); padding: 0 var(--space-3); }
+/* 网页版标题行右边还有收起按钮：两个按钮只写字，不挤到「Plasticine」。 */
+.column-head:has(.column-collapse) .mates-head-link > svg { display: none; }
+.column-head:has(.column-collapse) .mates-head-links { margin-left: var(--space-2); }
+@media (prefers-reduced-motion: reduce) { .mates-head-link { transition: none; } }
 .mates-roster-phone .column-item { min-height: 64px; gap: var(--space-3); border-bottom: 1px solid var(--line); }
 .mates-roster-phone .column-item[aria-current='page'] { background: transparent; }
 .mates-roster-phone .column-item-text { font-size: var(--text-section); }
 .mates-roster-phone .column-item-sub { padding-top: var(--space-1); font-size: var(--text-caption); }
-.mates-roster-phone .column-foot { display: flex; border-top: 0; padding: var(--space-4) 0; }
-.mates-roster-phone .column-foot .column-item { flex: 1; justify-content: center; border-bottom: 0; }
 /* 编辑队友、群组、主线（11-14 统一）：和别的浮层一样停在主区右侧、560 宽，「取消 · 保存」在浮层底部；盖住整个窗口
    （标题栏除外），点遮罩、Esc、× 都关。 */
 .mate-editor-layer { position: fixed; inset: var(--titlebar-room, 0px) 0 0; z-index: var(--z-modal); }
