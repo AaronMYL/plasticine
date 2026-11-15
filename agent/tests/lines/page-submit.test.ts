@@ -6,7 +6,7 @@ import { afterEach, test } from 'node:test';
 import { fauxAssistantMessage, fauxToolCall, type TranscriptContext } from '@earendil-works/pi-ai';
 import type { NodeActionEnvelope, NodeActionReport } from '../../shared/api/index.ts';
 import type { DeviceActionKind } from '../../shared/state.ts';
-import { autoOnlyPermissionGate, createDeviceActionGate, createDeviceActionTool } from '../../src/brain/index.ts';
+import { autoOnlyPermissionGate, createDeviceActionGate, createDeviceActionTool } from '../../src/tools/index.ts';
 import { DeviceService, submitRefusal, type NodeTransport } from '../../src/devices/index.ts';
 import { adaptLegacyTool, legacySayings } from '../../src/lines/index.ts';
 import { startKernel, until, type Harness } from './helpers.ts';

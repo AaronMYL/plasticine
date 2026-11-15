@@ -2,7 +2,7 @@
 // 要登录；通道绑在这次登录会话上（转请求时带这次的会话 cookie）。只从对外网址来的页面才有意义，本机打开的不握手。
 
 import { DirectOfferRequestSchema, type DirectOfferResponse } from '../../shared/api/direct.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { ApiError } from './api-error.ts';
 import { SESSION_COOKIE } from './config.ts';
 import { requireUserAuth, type Reply, type RequestContext } from './context.ts';

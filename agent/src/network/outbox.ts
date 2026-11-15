@@ -6,12 +6,12 @@
 import type { Envelope, EnvelopeKind, NetTaskStatus, Plaintext } from '../../shared/net-wire.ts';
 import type { MessageAuthor } from '../../shared/api/contacts.ts';
 import type { Contact, ContactMessage } from '../../shared/state.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { changeOf, groupChange, requireIdentity, signerOf, touchContact, type NetworkContext } from './context.ts';
 import { sealEnvelope } from '../../protocol/crypto.ts';
 import { RelayCallError } from '../../protocol/relay-client.ts';
 import { settleNetworkOutbound, settleMessageOutbound } from '../outbound/index.ts';
-import { cleanOutboundJson } from '../outbound.ts';
+import { cleanOutboundJson } from '../outbound/clean-json.ts';
 
 /** 5 秒起、每次翻倍、最长 10 分钟，8 次（合起来二十来分钟）：对方中继重启、网络抖一下都等得过去。 */
 export const OUTBOX_MAX_ATTEMPTS = 8;

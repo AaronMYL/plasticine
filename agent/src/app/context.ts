@@ -5,7 +5,7 @@ import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:
 import type { Device, Session } from '../../shared/state.ts';
 import type { AskDesk, Presence, PushService, ScanScheduler } from '../attention/index.ts';
 import type { BookInsightService, ComposePredictor, MemoryCurator, NoteAssistant, PageTranslator, PaymentReader }
-  from '../brain/index.ts';
+  from '../tools/index.ts';
 import type { Daily } from '../daily/index.ts';
 import type { DeviceService } from '../devices/index.ts';
 import type { IntakeDesk } from '../intake/index.ts';

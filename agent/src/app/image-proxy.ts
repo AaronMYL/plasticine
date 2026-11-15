@@ -4,7 +4,7 @@
 
 import { ImageProxyQuerySchema } from '../../shared/api/index.ts';
 import { MailImageError } from '../cloud-tools/mail-image-fetch.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { ApiError } from './api-error.ts';
 import { requireAuth, type HandlerResult, type RequestContext } from './context.ts';
 import { checkInput, queryObject } from './validate.ts';

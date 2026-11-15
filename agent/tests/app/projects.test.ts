@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { STANDING_PROJECT_IDS } from '../../shared/state.ts';
-import { addLine, ensureProjectDoc } from '../../src/brain/memory-doc-writes.ts';
+import { addLine, ensureProjectDoc } from '../../src/memory/docs/memory-doc-writes.ts';
 import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 import { newRequestId } from './signing.ts';
 

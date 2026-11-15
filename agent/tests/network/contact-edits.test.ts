@@ -141,7 +141,7 @@ test('绑了联系人的人物页不管标成哪一档都不拿去对外答', as
 
 test('联系人说的关于自己的事：绑了人物页才排整理，写成那一页的一行（依据 contact_stated，链回那一句）', async () => {
   const { t, contactId, incomingId } = await joined();
-  const { contactMemorySources, runContactJob } = await import('../../src/brain/contact-memory.ts');
+  const { contactMemorySources, runContactJob } = await import('../../src/memory/docs/contact-memory.ts');
   assert.deepEqual(contactMemorySources(t.state, t.clock.now()), []);
   const doc = t.state.memoryDocs.docs.create({ kind: 'person', title: '山姆', summary: '朋友', createdBy: 'user' });
   t.state.contacts.update(contactId, t.state.contacts.require(contactId).version, { personDocId: doc.id });

@@ -7,8 +7,8 @@ import { Value } from 'typebox/value';
 import { LatestCleanupResponseSchema, MEMORY_CLEANUPS_PATH, memoryCleanupApplyPath, memoryLineMovePath,
   memoryLinesPath } from '../../shared/api/index.ts';
 import { YOU_DOC_ID } from '../../shared/state.ts';
-import { addClaudeItems } from '../../src/brain/memory-cleanup.ts';
-import { addLine, ensureMemoryDocs } from '../../src/brain/memory-doc-writes.ts';
+import { addClaudeItems } from '../../src/memory/curation/memory-cleanup.ts';
+import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writes.ts';
 import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 
 let t: TestApp | undefined;

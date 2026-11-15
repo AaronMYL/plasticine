@@ -14,7 +14,7 @@ import {
   createListInboxTool,
   createReadInboxTool,
   type Tool,
-} from '../brain/index.ts';
+} from '../tools/index.ts';
 import { createArtifacts, type Artifacts } from '../artifacts/index.ts';
 import type { Scan } from '../attention/index.ts';
 import { attachmentText, createCloudTools, type CloudTools, type CloudTransports } from '../cloud-tools/index.ts';

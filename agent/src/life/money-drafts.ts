@@ -267,4 +267,4 @@ export class MoneyDraftDesk {
     }
   }
 }
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';

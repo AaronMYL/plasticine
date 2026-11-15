@@ -1,7 +1,7 @@
-// show_widgets 补对照数要读的东西（brain/tools/show-widgets.ts 的 WidgetFacts），用 life/ 和 state/ 实现；只读。
+// show_widgets 补对照数要读的东西（tools/show-widgets.ts 的 WidgetFacts），用 life/ 和 state/ 实现；只读。
 // 时区按用户在设置里定的（没定是 Asia/Shanghai），和记账页算「本月」用同一个。
 
-import type { WidgetFacts } from '../brain/index.ts';
+import type { WidgetFacts } from '../tools/index.ts';
 import { dayOf, type Life } from '../life/index.ts';
 import type { StateService } from '../state/index.ts';
 

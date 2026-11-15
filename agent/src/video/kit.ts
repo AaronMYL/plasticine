@@ -13,7 +13,7 @@ import { pipeline } from 'node:stream/promises';
 import { createGunzip } from 'node:zlib';
 import type { TranscriberStatus } from '../../shared/api/video.ts';
 import { PublicFetcher, PublicFetchError } from '../cloud-tools/index.ts';
-import { safeLog } from '../shared-log.ts';
+import { safeLog } from '../util/log.ts';
 import { KIT_VERSION, kitBytes, type KitFile, type KitPlan } from './kit-files.ts';
 import { silentWav } from './wav.ts';
 import { SherpaTranscriber } from './sherpa.ts';

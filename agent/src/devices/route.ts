@@ -1,6 +1,6 @@
 // 任务要用浏览器、Mac 没开时在哪做（2026-11-04 第 3 批，他的原话）：「不用登录的网页云端先做；登录不上的等 Mac；
 // iPhone 在线且 iPhone 能做的，也可以在 iPhone 上做」。这里把这句话写成代码，设备动作的门槛在节点离线时照它分路
-// （brain/tools/device-action.ts）：
+// （devices/device-action.ts）：
 // 1. Mac 在线、会这一步 → Mac（他的登录在 Mac 上 Plasticine 的浏览器里）。
 // 2. iPhone 在线、报了这项能力 → iPhone。
 // 3. 只是看网页（开、换地址、读、感知）、不用他的登录 → 云端浏览器先做。

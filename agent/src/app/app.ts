@@ -6,7 +6,7 @@
 import { createServer, type Server } from 'node:http';
 import { adoptMateSouls, BookInsightService, ComposePredictor, ensureDefaultProjects, ensureMemoryDocs, NoteAssistant,
   PageTranslator,
-  type GlossaryTerm, type MemoryCurator, type PaymentReader } from '../brain/index.ts';
+  type GlossaryTerm, type MemoryCurator, type PaymentReader } from '../tools/index.ts';
 import { Presence, type AskDesk, type Presenter, type PushService, type ScanScheduler } from '../attention/index.ts';
 import type { Daily } from '../daily/index.ts';
 import type { DeviceService } from '../devices/index.ts';

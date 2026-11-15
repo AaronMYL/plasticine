@@ -1,6 +1,6 @@
 // /v2/memory/docs 与 /v2/memory/inferences（docs/specs/memory-docs.md 第 7 节）：记忆文档的目录、一份文档、拿不准的列表、
 // 确认 / 否掉一条推断（本人会话确认，同约定确认）、用户改一行和退休一行。写操作按 requestId 幂等、核对 version，
-// 过时就 409 带现在的样子；行和推断怎么写由 brain/ 的写法决定，这里只校验请求、组装视图。
+// 过时就 409 带现在的样子；行和推断怎么写由 memory/ 的写法决定，这里只校验请求、组装视图。
 
 import {
   DecideMemoryInferenceRequestSchema,
@@ -21,7 +21,7 @@ import {
   type MemoryLineView,
 } from '../../shared/api/index.ts';
 import type { MemoryAnchor, MemoryDoc, MemoryDocKind, MemoryInference, MemoryLine } from '../../shared/state.ts';
-import { decideInference, docFullness, retireLine, reviseLine } from '../brain/index.ts';
+import { decideInference, docFullness, retireLine, reviseLine } from '../tools/index.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';

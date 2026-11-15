@@ -1,7 +1,7 @@
 // One request: match the route → who is asking → 401 without a session → the resource's handler → JSON (or
 // bytes, or the stream the handler wrote). Every failure leaves here in the API's error format.
 
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { ApiError, toApiError, unauthorized } from './api-error.ts';
 import { authenticate } from './auth.ts';

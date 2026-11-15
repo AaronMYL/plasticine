@@ -10,7 +10,7 @@ import type { DeviceActionParams } from '../../shared/api/index.ts';
 import type { DeviceNode } from '../../shared/state.ts';
 import { nodeOnline, type ActionOutcome, type ActionRequest } from '../devices/index.ts';
 import { dayRange, localDay } from '../daily/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { MAX_PAGE_SIZE, type StateService } from '../state/index.ts';
 
 /** 每隔多久拉一次（11-06 定：比如每 10 分钟）。扫描 5 分钟一跳，留一分钟余量免得隔一跳才拉。 */

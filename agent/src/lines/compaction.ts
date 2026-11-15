@@ -5,8 +5,8 @@
 
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import type { Message } from '@earendil-works/pi-ai';
-import { estimateTokens as textTokens } from '../brain/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { estimateTokens as textTokens } from '../tools/index.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import { contextWindow, MAX_DAY_COMPACTIONS, saveCompaction } from './day-context.ts';
 import { answerText, contentText, convertToLlm, isAssistant } from './messages.ts';

@@ -8,7 +8,7 @@ import type { InboxMailPart, InboxMessage } from '../../shared/state.ts';
 import { keepImageUrl, sanitizeMailHtml, type MailFiles } from '../cloud-tools/index.ts';
 import { MailImageError, type MailImageFetcher } from '../cloud-tools/mail-image-fetch.ts';
 import type { MailImageSigner } from '../cloud-tools/mail-image-signer.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { parseInboxContact } from './contact-mail.ts';

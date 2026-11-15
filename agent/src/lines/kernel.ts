@@ -6,7 +6,7 @@ import type { Ask, AskPurpose } from '../../shared/state.ts';
 import { MAIN_LINE_ALIAS, type ChatsResponse, type LineMessageView, type LineStatus, type LineTopic, type LineView,
   type QueuedMessageView } from '../../shared/api/lines.ts';
 import type { AskResolver } from '../attention/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { LinePatch, LineRow, QueuedRow } from '../state/index.ts';
 import { lineRef } from '../state/index.ts';
 import { answerSentence, askUserTool, questionResolver } from './ask-tools.ts';

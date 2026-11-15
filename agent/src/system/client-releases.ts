@@ -12,7 +12,7 @@ import type {
 } from '../../shared/api/index.ts';
 import type { StateService } from '../state/index.ts';
 import { StateError } from '../state/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { manifestDigest, readClientManifest, readClientPublication } from './client-manifest.ts';
 export interface ClientReleaseOptions {
   state: StateService;

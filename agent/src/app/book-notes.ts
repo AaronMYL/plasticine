@@ -15,7 +15,7 @@ import { BOOK_INSIGHT_KINDS, DEFAULT_NOTE_FOLDER, type BookInsightKind } from '.
 import { bookDiscussions, bookNotesMarkdown } from '../reading/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { liveBook } from './books.ts';
-import { publishBookSpace, refreshBookOutlineMarks } from '../brain/index.ts';
+import { publishBookSpace, refreshBookOutlineMarks } from '../tools/index.ts';
 import { annotationView, insightView } from './book-views.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';
 import { readJsonBody } from './http.ts';

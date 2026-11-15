@@ -18,7 +18,7 @@ import {
 } from '../../shared/api/index.ts';
 import { ApiError, unauthorized } from './api-error.ts';
 import { SYNC_TIMEOUT_MS } from '../cloud-tools/index.ts';
-import { failureText } from '../shared-log.ts';
+import { failureText } from '../util/log.ts';
 import { stillAuthenticated } from './auth.ts';
 import { withCurrent } from './conflict.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';

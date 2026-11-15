@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { responseTextPolicy } from '../../src/app/outbound-policy.ts';
-import { cleanOutboundJson } from '../../src/outbound.ts';
-import { memoryState } from '../brain/helpers.ts';
+import { cleanOutboundJson } from '../../src/outbound/clean-json.ts';
+import { memoryState } from '../tools/helpers.ts';
 import { CLEAN_LINK_TEXT, CREDENTIAL_LINK_TEXT } from '../url-fixtures.ts';
 
 test('工具结果即使带用户角色和笔记字段也照常清洗，不从字段名自行推断豁免', () => {

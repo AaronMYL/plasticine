@@ -1,6 +1,6 @@
 // /v2/memory/topics 与 /v2/memory/uncertain（shared/api/memory-topics.ts，第 102 条）：记忆文档（memory-docs）上面的
 // 一层轻读法——主题目录（每个主题一句话说明）、一份文档按段列行（每行链回原话）、「拿不准的」几条。
-// 拿不准的对 / 不对是用户确认字段，和 /v2/memory/inferences 同一条路：由本人会话确认，经 brain/ 的 decideInference 写。
+// 拿不准的对 / 不对是用户确认字段，和 /v2/memory/inferences 同一条路：由本人会话确认，经 memory/ 的 decideInference 写。
 // 第 16、19 条（11-06）：目录带档位（只在不是私密时标出来）、超上限标记、最近一次夜里整理的摘要；行里的 [[名字]] 可点。
 
 import {
@@ -19,7 +19,7 @@ import {
 import { hardLines } from '../../shared/rules-doc.ts';
 import { MEMORY_DOC_CHAR_LIMIT, RULES_DOC_ID, type MemoryDoc, type MemoryDocKind, type MemoryInference,
   type MemoryLine } from '../../shared/state.ts';
-import { decideInference, findDoc } from '../brain/index.ts';
+import { decideInference, findDoc } from '../tools/index.ts';
 import { sourcesOf } from './memory-sources.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';

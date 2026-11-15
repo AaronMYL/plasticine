@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Mates } from '../../src/mates/service.ts';
 import { linePrompt } from '../../src/lines/prompt.ts';
-import { changeSoul, soulView } from '../../src/brain/soul.ts';
-import { ensureRulesDoc } from '../../src/brain/memory-doc-writes.ts';
-import { adoptMateSouls } from '../../src/brain/mate-rules.ts';
+import { changeSoul, soulView } from '../../src/memory/rules/soul.ts';
+import { ensureRulesDoc } from '../../src/memory/docs/memory-doc-writes.ts';
+import { adoptMateSouls } from '../../src/mates/mate-rules.ts';
 import { startKernel } from './helpers.ts';
 
 test('每位读自己的 Soul（第13批）：建队友时写的那段就是它的 Soul，别的队友看不到；主线读主线那份；改了下一次就生效', async () => {

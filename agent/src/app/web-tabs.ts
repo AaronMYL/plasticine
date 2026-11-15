@@ -17,7 +17,7 @@ import {
   type WebTabsResponse,
 } from '../../shared/api/index.ts';
 import { DailyError } from '../daily/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { decodeDataUrl, sniffImage } from '../cloud-tools/favicon-fetch.ts';
 import { StateError } from '../state/index.ts';
 import { ApiError } from './api-error.ts';

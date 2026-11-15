@@ -6,8 +6,8 @@
 import { randomUUID } from 'node:crypto';
 import type { AuthEvent, AuthPrompt } from '@earendil-works/pi-ai';
 import type { ProviderLoginView } from '../../shared/api/model-providers.ts';
-import { looksLikeSecret } from '../brain/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { looksLikeSecret } from '../tools/index.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { KernelModelError, type KernelModels } from './models.ts';
 
 // 一次登录最多等这么久（他去浏览器里点授权）；过了就取消，回调端口放开。

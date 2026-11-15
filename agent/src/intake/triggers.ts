@@ -5,7 +5,7 @@
 
 import type { Bookmark, Contact, ContactMessage, FeedItem, InboxMessage, Rule, Trigger } from '../../shared/state.ts';
 import { TRIGGER_SUMMARY_MAX_CHARS } from '../../shared/state.ts';
-import { clip } from '../shared-text.ts';
+import { clip } from '../util/text.ts';
 import type { RecordInput } from './desk.ts';
 import { threadKeys } from './thread-keys.ts';
 

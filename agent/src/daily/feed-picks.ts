@@ -4,7 +4,7 @@ import { FeedSelectionSchema, type FeedSelection, type FeedSelectionInput,
 import { bounded } from './feed-fetch.ts';
 import { checkLinkData } from './link-data.ts';
 import { DailyError } from './errors.ts';
-import { failureText } from '../shared-log.ts';
+import { failureText } from '../util/log.ts';
 
 const SELECT_TIMEOUT_MS = 90_000;
 type Picked = FeedSelection['items'][number];

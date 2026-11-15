@@ -5,7 +5,7 @@
 import type { SQLInputValue } from 'node:sqlite';
 import type { Static, TSchema } from 'typebox';
 import { Value } from 'typebox/value';
-import { validationField } from '../shared-validation.ts';
+import { validationField } from '../util/validation.ts';
 import type { Params, Row } from './db.ts';
 import { StateError, type StateErrorCode } from './errors.ts';
 

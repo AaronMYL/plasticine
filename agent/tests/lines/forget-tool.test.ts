@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai';
 import { YOU_DOC_ID } from '../../shared/state.ts';
-import { addLine, ensureMemoryDocs } from '../../src/brain/index.ts';
+import { addLine, ensureMemoryDocs } from '../../src/tools/index.ts';
 import { forgetTool } from '../../src/lines/index.ts';
 import { openTestState } from '../state/helpers.ts';
 import { startKernel, until, type Harness } from './helpers.ts';

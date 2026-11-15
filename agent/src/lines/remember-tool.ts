@@ -5,7 +5,7 @@
 import { Type } from 'typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { RememberParameters, rememberWithSources, type CurationSource, type CurationState }
-  from '../brain/index.ts';
+  from '../tools/index.ts';
 import { plainText, type StateService } from '../state/index.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';

@@ -3,7 +3,7 @@
 // 业务工具（第三级）从旧注册表里按名字取已经装好的那件，包成新内核的工具：执行逻辑不重写，工具组开关照旧生效。
 
 import type { AskDesk } from '../attention/index.ts';
-import type { PermissionGate, Tool, ToolRegistry } from '../brain/index.ts';
+import type { PermissionGate, Tool, ToolRegistry } from '../tools/index.ts';
 import { adaptLegacyTool, attachmentReadTool, conversationSearchTool, forgetTool, LineKernel, legacySayings,
   rememberTool,
   serverCommandTool, type Compactor, type KernelTool, type Later, type ModelSource, type SubmitHoldPort }

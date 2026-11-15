@@ -1,6 +1,6 @@
 import { WebArchiveRequestSchema, WebExtractInputSchema } from '../../shared/api/web-extract.ts';
 import { extractWebPage, prepareWebArchive, publishWebArchive, assertWebArchiveDestination, WebExtractError }
-  from '../brain/index.ts';
+  from '../tools/index.ts';
 import { MailImageError } from '../cloud-tools/index.ts';
 import { ApiError } from './api-error.ts';
 import { requireAuth, type Reply, type RequestContext } from './context.ts';

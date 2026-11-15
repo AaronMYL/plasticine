@@ -16,7 +16,7 @@
 //   memory.cleanup.add --plan <[{toDocId,text}]> --because "用户原话"     整理清单里新加几条，等用户勾选
 //   suggestions.dismiss --ids <id,id,…> --because "用户原话"            把几条建议收起（标成忽略，不删）
 //   inbox.archive --sources patrol,feedback,interview --because "用户原话"  这几个系统来源的来信归档（不删）
-//                                            整理「规则」：一行换成几行或挪进归档（brain/rules-rewrite.ts）
+//                                            整理「规则」：一行换成几行或挪进归档（memory/rules/rules-rewrite.ts）
 //   db.read "SELECT …"                       只读打开数据库查一句（不经服务，库以只读方式打开）
 //
 // 2026-11-05 Harness 重做：任务没了，tasks.* 删掉；judgments.*、rulesdoc.* 的一次性迁移早已做完，一起删了。

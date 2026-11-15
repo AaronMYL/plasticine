@@ -6,7 +6,7 @@
 // 的活交给子代理（后台线）；对话里怎么说话写在 talk-style.ts。
 
 import { ACT_OR_ASK_PROMPT } from '../../shared/act-or-ask.ts';
-import { memoryDocsSection, rulesDocSection, todaySection } from '../brain/index.ts';
+import { memoryDocsSection, rulesDocSection, todaySection } from '../tools/index.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 import { DEFAULT_MAIN_NAME } from '../../shared/api/mates.ts';
 import { SOUL_OWNER_MAIN } from '../../shared/api/souls.ts';

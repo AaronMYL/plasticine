@@ -2,7 +2,7 @@
 // a card on the 立刻打断 channel also goes out as a Web Push. Called only after the transaction has committed; a stream
 // or push that fails is logged and does not undo what is already stored.
 
-import { errorCategory, safeLog, type LogEvent } from '../shared-log.ts';
+import { errorCategory, safeLog, type LogEvent } from '../util/log.ts';
 import type { Ask } from '../../shared/state.ts';
 import { isDeferredStandaloneAsk } from '../../shared/api/asks.ts';
 import type { StateService } from '../state/index.ts';

@@ -15,7 +15,7 @@ import { fauxAssistantMessage, fauxText, fauxToolCall } from '@earendil-works/pi
 import { launchBrowser, type Cdp, type LocalBrowser } from '../../scripts/browser/cdp.ts';
 import type { ClientName } from '../../scripts/browser/client-profile.ts';
 import { pair, startTestApp, type TestApp, type TestAppOptions } from '../../agent/tests/app/helpers.ts';
-import type { TextStep } from '../../agent/tests/brain/helpers.ts';
+import type { TextStep } from '../../agent/tests/tools/helpers.ts';
 import { fakeProviders, type FakeProviders } from '../../agent/tests/kernel/helpers.ts';
 import { KernelModels, ProviderLogins } from '../../agent/src/kernel/index.ts';
 import { checkedArgs, type KernelTool, type ModelSource } from '../../agent/src/lines/index.ts';

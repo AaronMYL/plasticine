@@ -3,7 +3,7 @@
 
 import type { MemoryLineSource } from '../../shared/api/index.ts';
 import type { MemoryAnchor } from '../../shared/state.ts';
-import { clip } from '../shared-text.ts';
+import { clip } from '../util/text.ts';
 import type { StateService } from '../state/index.ts';
 
 export type SourceState = Pick<StateService, 'lineMessages' | 'lines' | 'notes' | 'agreements' | 'memory'

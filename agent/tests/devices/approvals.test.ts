@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, test } from 'node:test';
 import { DEFAULT_DEVICE_LIMITS, DeviceService, ACTION_TTL_MS, type ApprovedResult }
   from '../../src/devices/index.ts';
-import { autoOnlyPermissionGate, createDeviceActionGate, createDeviceActionTool } from '../../src/brain/index.ts';
+import { autoOnlyPermissionGate, createDeviceActionGate, createDeviceActionTool } from '../../src/tools/index.ts';
 import { harness, type Harness } from '../attention/desk-harness.ts';
 
 let h: Harness;

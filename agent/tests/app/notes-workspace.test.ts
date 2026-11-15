@@ -4,7 +4,7 @@ import { Value } from 'typebox/value';
 import { NOTE_IMAGE_MAX_BYTES, NoteAssistStreamEventSchema, type NoteAssistStreamEvent }
   from '../../shared/api/index.ts';
 import { TextModelError } from '../../src/kernel/index.ts';
-import type { TextStep } from '../brain/helpers.ts';
+import type { TextStep } from '../tools/helpers.ts';
 import { call, json, pair, startTestApp, type ApiReply, type TestApp } from './helpers.ts';
 
 let t: TestApp;

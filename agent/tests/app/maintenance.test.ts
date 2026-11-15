@@ -8,7 +8,7 @@ import { CloudToolError, type RefetchReport } from '../../src/cloud-tools/index.
 import { ensureIntake } from '../../src/intake/index.ts';
 import { openState, type StateService } from '../../src/state/index.ts';
 import { RULES_DOC_ID, YOU_DOC_ID } from '../../shared/state.ts';
-import { addLine, ensureMemoryDocs } from '../../src/brain/memory-doc-writes.ts';
+import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writes.ts';
 
 let h: { state: StateService };
 

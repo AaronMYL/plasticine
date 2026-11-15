@@ -2,7 +2,7 @@
 // 取到了留 14 天；网站没有图标或取不到，记一笔「没有」留 1 天再试；原来有、这次没取到的，旧图标照用、1 天后再试。
 
 import { FaviconFetchError, type FaviconFetcher } from '../cloud-tools/favicon-fetch.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { CachedFavicon, FaviconStore } from '../state/index.ts';
 
 /** 取到的图标留 14 天：网站换图标不常见，两周内换了也只是晚几天看到。 */

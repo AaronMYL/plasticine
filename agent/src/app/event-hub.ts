@@ -2,7 +2,7 @@
 // Event ids are `<epoch>-<n>`: the epoch changes with every process start, so an id from before a restart is
 // recognised and answered with `resync` instead of a silently incomplete replay.
 
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { randomUUID } from 'node:crypto';
 import type { HubStreamEvent } from '../../shared/api/index.ts';
 import { EVENT_BUFFER_SIZE } from './config.ts';

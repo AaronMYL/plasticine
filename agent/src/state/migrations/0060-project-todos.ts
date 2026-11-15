@@ -71,7 +71,7 @@ function dueOf(row: Row): string | null {
   return times.length === 0 ? null : DAY_FORMAT.format(new Date(Math.min(...times)));
 }
 
-/** 「个人」项目：旧库启动过就有；万一没有（从没启动过的库），照 brain/default-projects.ts 建一个。 */
+/** 「个人」项目：旧库启动过就有；万一没有（从没启动过的库），照 projects/default-projects.ts 建一个。 */
 function ensurePersonal(db: MigrationDb, at: string): void {
   if (db.all('SELECT id FROM projects WHERE id = $id', { id: PERSONAL_PROJECT_ID }).length > 0) {
     return;

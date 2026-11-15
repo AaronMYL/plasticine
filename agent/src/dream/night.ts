@@ -1,14 +1,14 @@
 // 「做梦」定时（《优化清单》第 10 条夜里那一半，11-06 定；第13批加上各自看一遍 Soul）：每晚凌晨 1 点（他所在地的时区）
 // 整理一次记忆，列在「任务 ·
 // 定时」，花名册里也有它；只能关，不能删。当天没有新对话就跳过；某晚失败了，下一晚从上次整理到的地方接着读，把那段补上。
-// 和后台线共用并发上限 3：后台线满着就等十分钟再看。整理本身在 brain/ 的 Dreamer（用途 dream 的便宜模型）。
+// 和后台线共用并发上限 3：后台线满着就等十分钟再看。整理本身在 memory/ 的 Dreamer（用途 dream 的便宜模型）。
 
 import type { TeammateView, TimedRowView } from '../../shared/api/index.ts';
 import { STANDING_PROJECT_IDS, type ScheduleCadence, type TimedSlot } from '../../shared/state.ts';
-import type { Dreamer } from '../brain/index.ts';
+import type { Dreamer } from '../tools/index.ts';
 import { localDay } from '../daily/index.ts';
 import { MAX_BACKGROUND_LINES } from '../lines/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { StateService } from '../state/index.ts';
 import { nextRun, rezonedNext, slotLast, type TimedProvider } from '../tasks/index.ts';
 
@@ -38,7 +38,7 @@ export interface DreamNightOptions {
    */
   selfNotes?: (now: Date, signal: AbortSignal) => Promise<boolean>;
   /**
-   * 第13批：整理完记忆，主线和每位队友各看一遍自己的 Soul，按这一天的相处小改（brain/soul-night.ts）。回改了几份；
+   * 第13批：整理完记忆，主线和每位队友各看一遍自己的 Soul，按这一天的相处小改（mates/soul-night.ts）。回改了几份；
    * 失败只记日志，不算这一晚没整理成。
    */
   souls?: (from: Date, to: Date, signal: AbortSignal) => Promise<number>;

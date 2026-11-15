@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { withMainSoul } from '../../src/app/soul-text.ts';
-import { changeSoul, soulView } from '../../src/brain/soul.ts';
-import { ensureRulesDoc } from '../../src/brain/memory-doc-writes.ts';
-import { memoryState, scriptedText } from '../brain/helpers.ts';
+import { changeSoul, soulView } from '../../src/memory/rules/soul.ts';
+import { ensureRulesDoc } from '../../src/memory/docs/memory-doc-writes.ts';
+import { memoryState, scriptedText } from '../tools/helpers.ts';
 
 test('旁路模型每次请求重读主线 Soul，专用输出格式保留；封闭网络答复不接入私人规则', async () => {
   const state = memoryState();

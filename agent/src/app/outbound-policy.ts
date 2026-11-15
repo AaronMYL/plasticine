@@ -1,7 +1,7 @@
 // 用户自己的可编辑原文只回给已认证的本人，不能在出口改写，否则编辑器读回再保存会损坏数据。
 // 豁免绑定具体路由的字段，不因任意对象带有 content、markdown 或 role 就放行。
 // 11-14 起回给他自己设备的（会话、节点）整个不清洗（server.ts），这里只在清洗时用上；事件流只给他自己的设备，也不清洗。
-import type { PreserveOutboundField } from '../outbound.ts';
+import type { PreserveOutboundField } from '../outbound/clean-json.ts';
 import type { StateService } from '../state/index.ts';
 
 type JsonObject = Record<string, unknown>;

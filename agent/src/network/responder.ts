@@ -20,8 +20,8 @@ import { ASK_DETAIL_MAX_CHARS, ASK_QUESTION_MAX_CHARS, SaidMaterialSchema, type 
   type ContactMessage, type Group, type GroupMessage, type NetResponse, type ResponseMaterial,
   type SaidMaterial } from '../../shared/state.ts';
 import type { AskResolver, Changes } from '../attention/index.ts';
-import { clip } from '../shared-text.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { clip } from '../util/text.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { changeOf, requireIdentity, type NetworkContext } from './context.ts';
 import { groupReach, postGroupMessage } from './groups.ts';
 import { enqueue } from './outbox.ts';

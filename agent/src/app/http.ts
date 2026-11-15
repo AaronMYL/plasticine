@@ -2,7 +2,7 @@
 
 import { createHash } from 'node:crypto';
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http';
-import { cleanOutboundJson, type PreserveOutboundField } from '../outbound.ts';
+import { cleanOutboundJson, type PreserveOutboundField } from '../outbound/clean-json.ts';
 import { ApiError } from './api-error.ts';
 import { compressText, type Encoding } from './compression.ts';
 import { MAX_BODY_BYTES } from './config.ts';

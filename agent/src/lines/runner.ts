@@ -9,7 +9,7 @@ import { Agent, runToolCall, type AgentMessage, type AgentTool, type AgentToolCa
 import type { AssistantMessage, UserMessage } from '@earendil-works/pi-ai';
 import type { LineStatus, LineStreamEvent } from '../../shared/api/lines.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { LineMessageMeta, LinePatch, LineRow, QueuedRow, StateService } from '../state/index.ts';
 import { questionAnswerOrigin } from './ask-tools.ts';
 import { classifyFailure, exhaustedText, RETRY_DELAYS_MS, retryingText, type FailureVerdict } from './failure.ts';

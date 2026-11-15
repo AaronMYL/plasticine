@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { NoteAssistant } from '../../src/brain/index.ts';
+import { NoteAssistant } from '../../src/tools/index.ts';
 import { MIN_DECIDED } from '../../src/loop/tally.ts';
-import { scriptedText } from '../brain/helpers.ts';
+import { scriptedText } from '../tools/helpers.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 
 let current: TestState | undefined;

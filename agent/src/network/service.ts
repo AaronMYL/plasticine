@@ -11,7 +11,7 @@ import type { Contact, ContactMessage, Group, GroupMessage, GroupTask, NetworkId
   NetworkTask } from '../../shared/state.ts';
 import type { AskDesk, AskResolver, Changes } from '../attention/index.ts';
 import type { DriveOutcome } from '../lines/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { StateError, type StateService } from '../state/index.ts';
 import { addContact, confirmSafety, decideRequest, markRead, normalizeHandle, sendMessage, setRelation,
   type AddContactInput,

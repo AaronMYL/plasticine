@@ -2,7 +2,7 @@ import { basename, join } from 'node:path';
 import type { BatchItem, BatchRequest, BatchResponse } from '../../shared/api/library-batch.ts';
 import { ArtifactError, type Workspace } from '../artifacts/index.ts';
 import { allPages, StateError, type StateService } from '../state/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 export { libraryTools } from './tools.ts';
 
 export interface LibraryServices { state: StateService; workspace: Workspace }

@@ -7,7 +7,7 @@ import type { FeedTranslator } from '../../shared/feed-translation.ts';
 import { FEED_LONG_TEXT_CHARS } from '../../shared/feed-translation.ts';
 import type { FeedItem } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { failureText, safeLog } from '../shared-log.ts';
+import { failureText, safeLog } from '../util/log.ts';
 import { checkedChart } from './feed-chart-check.ts';
 import { bounded } from './feed-fetch.ts';
 

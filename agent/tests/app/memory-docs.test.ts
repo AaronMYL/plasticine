@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import { afterEach, test } from 'node:test';
 import { YOU_DOC_ID, type MemoryInference, type MemoryLine } from '../../shared/state.ts';
-import { addLine, proposeInference } from '../../src/brain/memory-doc-writes.ts';
+import { addLine, proposeInference } from '../../src/memory/docs/memory-doc-writes.ts';
 import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 import { newDeviceKey, newRequestId, signedCall, type TestDeviceKey } from './signing.ts';
 

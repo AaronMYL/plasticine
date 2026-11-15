@@ -8,7 +8,7 @@ import {
   ContactRemoveRequestSchema,
 } from '../../shared/api/index.ts';
 import type { Contact } from '../../shared/state.ts';
-import { docEvent } from '../brain/memory-doc-writes.ts';
+import { docEvent } from '../memory/docs/memory-doc-writes.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { withCurrent } from './conflict.ts';
 import { requireNetwork } from './contacts.ts';

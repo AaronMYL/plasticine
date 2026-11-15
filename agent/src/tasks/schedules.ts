@@ -5,7 +5,7 @@
 
 import type { LineInputOrigin, LineView } from '../../shared/api/index.ts';
 import type { Ask, Schedule, ScheduleInput, ScheduleOutcome } from '../../shared/state.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { StateService } from '../state/index.ts';
 import { cadenceLabel, latestDue, nextAfterRun, nextRun, rezonedNext } from './cadence.ts';
 import { scheduleTimeZone } from './time-zone.ts';

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { ChangeSoulRequestSchema, SOUL_PATH, type SoulView } from '../../shared/api/soul.ts';
-import { changeSoul, ensureRulesDoc, soulView } from '../brain/index.ts';
+import { changeSoul, ensureRulesDoc, soulView } from '../tools/index.ts';
 import { requireAuth, requireUserAuth, type RequestContext, type Route } from './context.ts';
 import { readJsonBody } from './http.ts';
 import { idempotent } from './idempotency.ts';

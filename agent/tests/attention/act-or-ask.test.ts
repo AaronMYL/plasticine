@@ -48,7 +48,7 @@ test('那条线只写一处：五条做法 + 五条硬线，线的系统提示�
 });
 
 test('各处说到「该不该问」时都引用那条线，不再各写一套「拿不准就问」', () => {
-  const files = ['brain/tools/projects.ts', 'lines/prompt.ts'];
+  const files = ['projects/tools.ts', 'lines/prompt.ts'];
   const src = join(import.meta.dirname, '../../src');
   for (const file of files) {
     const text = readFileSync(join(src, file), 'utf8');

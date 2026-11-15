@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { TextModelError, type TextRequest } from '../../src/kernel/index.ts';
-import { type TextStep } from '../brain/helpers.ts';
+import { type TextStep } from '../tools/helpers.ts';
 import { call, json, pair, startTestApp } from './helpers.ts';
 
 const SETTINGS = '/v2/translate/settings';

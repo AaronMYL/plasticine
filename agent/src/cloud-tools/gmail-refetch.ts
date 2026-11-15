@@ -2,7 +2,7 @@
 // （带 \All 标记的那个文件夹，名字随 Gmail 界面语言变），先按 Message-ID 找；旧版迁来的信 Message-ID 是旧格式，按发件人、
 // 前后一天、再比对标题和时间找。找到的用 gmail-fetch.ts 整封抓回。不改已读、不动任何信。
 
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { decodeHeaderWords } from './mail-words.ts';
 import { fetchMessage, messageSizes, type ImapCommand } from './gmail-fetch.ts';
 import { imapDate, imapQuote } from './mail-protocol.ts';

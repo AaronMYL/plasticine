@@ -1,5 +1,5 @@
 // 进门的存取（docs/specs/things-and-sources.md 第 7 节）：来源实例、触发（只追加，同一来源同一外部标识只记一次）、
-// 去向（只追加）、规则和它的变化、细判记录。只做存取；粗筛和细判的规矩在 intake/ 和 brain/。
+// 去向（只追加）、规则和它的变化、细判记录。只做存取；粗筛和细判的规矩在 intake/。
 
 import {
   AssessmentInputSchema,

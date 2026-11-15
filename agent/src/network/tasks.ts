@@ -7,7 +7,7 @@ import type { Plaintext } from '../../shared/net-wire.ts';
 import { ASK_DETAIL_MAX_CHARS, ASK_QUESTION_MAX_CHARS, type Ask, type Contact,
   type NetworkTask } from '../../shared/state.ts';
 import { AttentionError, type AskResolver, type Changes, type RaiseAsk } from '../attention/index.ts';
-import { clip } from '../shared-text.ts';
+import { clip } from '../util/text.ts';
 import { changeOf, groupChange, requireContact, type NetworkContext } from './context.ts';
 import { NetworkError } from './errors.ts';
 import { syncGroupTask } from './group-tasks.ts';

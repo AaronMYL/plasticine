@@ -3,11 +3,11 @@
 
 import { loopReadings } from '../loop/readings.ts';
 import { writeSelfNotes } from '../loop/self-notes.ts';
-import { soulNight } from '../brain/soul-night.ts';
+import { soulNight } from '../mates/soul-night.ts';
 import { mainIdentity } from '../mates/main-identity.ts';
 import { randomUUID } from 'node:crypto';
 import type { NoticeInput } from '../attention/index.ts';
-import { Dreamer, type DreamSkills } from '../brain/index.ts';
+import { Dreamer, type DreamSkills } from '../tools/index.ts';
 import { DreamNight } from '../dream/index.ts';
 import { FOLLOW_UP_PREFIX, Heartbeat, type CalendarPort } from '../heartbeat/index.ts';
 import type { TextModels } from '../kernel/index.ts';

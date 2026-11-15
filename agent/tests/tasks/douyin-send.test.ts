@@ -8,7 +8,7 @@ import { fauxAssistantMessage, fauxToolCall, type TranscriptContext } from '@ear
 import { MAIN_LINE_ALIAS, type NodeActionEnvelope, type NodeActionReport } from '../../shared/api/index.ts';
 import type { DeviceActionKind } from '../../shared/state.ts';
 import { autoOnlyPermissionGate, createDeviceActionGate, createDeviceActionTool, ensureDefaultProjects }
-  from '../../src/brain/index.ts';
+  from '../../src/tools/index.ts';
 import { DeviceService, submitRefusal, type NodeTransport } from '../../src/devices/index.ts';
 import { adaptLegacyTool, legacySayings } from '../../src/lines/index.ts';
 import { MAIN_LINE_ID } from '../../src/state/index.ts';

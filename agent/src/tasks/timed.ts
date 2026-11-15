@@ -4,7 +4,7 @@
 // 登记接口是 TimedProvider：给出自己的行和队友，管自己的开关、删除、叫停；这里只汇总、按 id 派回去。
 
 import type { TeammateView, TimedRowView, TimedSource } from '../../shared/api/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { ScheduleError } from './schedules.ts';
 
 export interface TimedProvider {

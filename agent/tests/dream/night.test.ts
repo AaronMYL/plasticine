@@ -2,7 +2,7 @@
 // 后台线满着（并发上限 3）就等一会儿；只能关不能删。
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import type { Dreamer, DreamInput, DreamReport } from '../../src/brain/index.ts';
+import type { Dreamer, DreamInput, DreamReport } from '../../src/tools/index.ts';
 import { DreamNight } from '../../src/dream/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 

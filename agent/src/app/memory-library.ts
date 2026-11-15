@@ -13,7 +13,7 @@ import {
 } from '../../shared/api/index.ts';
 import type { MemoryDreamChange } from '../../shared/state.ts';
 import { canUndoChange, chooseDreamCandidate, DreamActionError, searchMemory, undoDreamChange,
-  type Writer } from '../brain/index.ts';
+  type Writer } from '../tools/index.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type Reply, type RequestContext } from './context.ts';

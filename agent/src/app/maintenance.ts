@@ -12,8 +12,8 @@ import {
 } from '../../shared/api/maintenance.ts';
 import type { RuleMode } from '../../shared/state.ts';
 import { CloudToolError, type RefetchReport } from '../cloud-tools/index.ts';
-import { rewriteRules } from '../brain/rules-rewrite.ts';
-import { addClaudeItems, moveLine } from '../brain/memory-cleanup.ts';
+import { rewriteRules } from '../memory/rules/rules-rewrite.ts';
+import { addClaudeItems, moveLine } from '../memory/curation/memory-cleanup.ts';
 import type { MemoryMoveItem } from '../../shared/api/maintenance.ts';
 import { StateError, type StateService } from '../state/index.ts';
 

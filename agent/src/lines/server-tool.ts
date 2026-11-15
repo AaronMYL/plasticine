@@ -6,7 +6,7 @@
 import { Type } from 'typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { SERVER_COMMAND_MAX_MS } from '../../shared/server-command.ts';
-import type { Tool } from '../brain/index.ts';
+import type { Tool } from '../tools/index.ts';
 import { adaptLegacyTool, type LegacyOptions } from './legacy.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';

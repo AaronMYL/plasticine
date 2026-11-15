@@ -1,5 +1,5 @@
 // 记忆整理的存取（docs/specs/memory-docs.md）：拿不准的推断（status / decidedAt 只经设备确认写入）、
-// 后台整理的作业队列、一次性迁移的进度和每条旧条目的去向。只做存取；整理的规矩在 brain/。
+// 后台整理的作业队列、一次性迁移的进度和每条旧条目的去向。只做存取；整理的规矩在 memory/。
 
 import {
   FORGOTTEN_TEXT,

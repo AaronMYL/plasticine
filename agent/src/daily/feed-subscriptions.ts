@@ -8,7 +8,7 @@ import type { XTimelineDue, XTimelineReport } from '../../shared/api/feed-x.ts';
 import type { XhsDue, XhsReport } from '../../shared/api/feed-xhs.ts';
 import type { FeedItem, FeedItemInput, FeedSource } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
-import { errorCategory, failureText, safeLog } from '../shared-log.ts';
+import { errorCategory, failureText, safeLog } from '../util/log.ts';
 import { BACKGROUND_TIME_ZONE, localDay } from './days.ts';
 import { BUILT_IN_SOURCES } from './feed.ts';
 import { computerFailureText, handOffText, type ComputerFetches } from './computer-fetch.ts';

@@ -9,7 +9,7 @@ import {
   MaintenanceRequestSchema,
   type MaintenanceError,
 } from '../../shared/api/maintenance.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { ApiError } from './api-error.ts';
 import { readJsonBody, sendJson } from './http.ts';
 import { MaintenanceFailure, performMaintenance, type MaintenanceDeps } from './maintenance.ts';

@@ -6,8 +6,8 @@
 import type { AgentTool, AgentToolResult } from '@earendil-works/pi-agent-core';
 import type { ImageContent, TextContent } from '@earendil-works/pi-ai';
 import type { ModelImage } from '../../shared/model.ts';
-import { ToolFailure, type PermissionGate, type Tool, type ToolContext } from '../brain/index.ts';
-import { failureText } from '../shared-log.ts';
+import { ToolFailure, type PermissionGate, type Tool, type ToolContext } from '../tools/index.ts';
+import { failureText } from '../util/log.ts';
 import type { HardLineKind, KernelTool, LineScope, ToolArgs } from './types.ts';
 
 /** 每件留下来的旧工具在新内核里怎么说自己（大白话）、属不属于硬线。 */

@@ -4,7 +4,7 @@ import { afterEach, test } from 'node:test';
 import { linePrompt } from '../../src/lines/prompt.ts';
 import { CORRECTIONS_HIGH, loopReadings } from '../../src/loop/readings.ts';
 import { selfNotesMaterial, writeSelfNotes } from '../../src/loop/self-notes.ts';
-import { scriptedText } from '../brain/helpers.ts';
+import { scriptedText } from '../tools/helpers.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 
 let current: TestState | undefined;

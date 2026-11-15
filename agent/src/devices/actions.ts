@@ -15,7 +15,7 @@ import type {
   NodeRefusalLayer,
 } from '../../shared/state.ts';
 import { argsDigest } from '../system/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { MAX_PAGE_SIZE, type StateService } from '../state/index.ts';
 import { DeviceError } from './errors.ts';
 import { checkAction, factsOf, type Refusal } from './limits.ts';

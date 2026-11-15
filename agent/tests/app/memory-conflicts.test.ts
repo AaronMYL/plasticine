@@ -3,7 +3,7 @@ import { afterEach, test } from 'node:test';
 import { Value } from 'typebox/value';
 import { ConflictListResponseSchema, MEMORY_CONFLICTS_PATH, memoryConflictPath } from '../../shared/api/index.ts';
 import { RULES_DOC_ID, YOU_DOC_ID } from '../../shared/state.ts';
-import { addLine, ensureMemoryDocs } from '../../src/brain/memory-doc-writes.ts';
+import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writes.ts';
 import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 
 let t: TestApp | undefined;

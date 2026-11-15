@@ -9,7 +9,7 @@
 import type { Space, SpaceDoc, SpaceGenre } from '../../shared/state.ts';
 import type { Illustrator, IllustrationMime, TextModels } from '../kernel/index.ts';
 import type { StateService } from '../state/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { illustrate } from './illustrate.ts';
 import { LETTER_GUIDE, REPORT_GUIDE, SPACE_RULES } from './space-guide.ts';
 import { writeSpace } from './writes.ts';

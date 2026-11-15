@@ -13,7 +13,7 @@ import {
   encodeChunk,
   type DirectFrame,
 } from '../../shared/api/direct.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 
 /** 通道的抽象（werift 的数据通道、测试里的假通道都满足）。 */
 export interface DirectPipe {

@@ -9,7 +9,7 @@ import { PLAINTEXT_SCHEMAS, type AnyPlaintext, type Envelope, type EnvelopeKind,
 import type { MessageAuthor } from '../../shared/api/contacts.ts';
 import type { Contact, ContactMessage, NetworkIdentity } from '../../shared/state.ts';
 import type { Changes } from '../attention/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { changeOf, groupChange, signerOf, type NetworkChange, type NetworkContext } from './context.ts';
 import { openEnvelope } from '../../protocol/crypto.ts';
 import { receiveClaim, receiveGroupTask } from './group-tasks.ts';

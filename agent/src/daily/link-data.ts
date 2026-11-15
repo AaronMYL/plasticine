@@ -1,7 +1,7 @@
 // 链接校验在 urls.ts；这里把它用到 M4 的文字、站点字段与旧 JSON 存档：链接只核对、不清洗（11-14 起自己用不清洗，
 // 清洗只在往外送的地方，见 ../link-clean.ts），站点字段只留主机名。
-import { errorCategory, safeLog } from '../shared-log.ts';
-import { EXTERNAL_LINK, splitLink } from '../link-text.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
+import { EXTERNAL_LINK, splitLink } from '../util/link-text.ts';
 import { DailyError } from './errors.ts';
 import { checkUrl, siteOf } from './urls.ts';
 

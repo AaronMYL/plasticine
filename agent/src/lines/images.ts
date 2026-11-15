@@ -4,7 +4,7 @@
 
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import type { ImageContent, Model, Api, UserMessage } from '@earendil-works/pi-ai';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { StateService } from '../state/index.ts';
 import { attachmentIds } from './messages.ts';
 

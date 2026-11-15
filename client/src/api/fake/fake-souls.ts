@@ -1,4 +1,4 @@
-// 假的 Soul 和规则搬家（第13批，和服务端 agent/src/mates/souls.ts、brain/rules-move.ts 同一套规矩）：主线和每位队友
+// 假的 Soul 和规则搬家（第13批，和服务端 agent/src/mates/souls.ts、memory/rules/rules-move.ts 同一套规矩）：主线和每位队友
 // 各一份，改一次记一条（谁改的、改了几处），撤回只撤之后没再改过的那一次；规则搬家按同样的建议分、勾了才搬。
 
 import { ApiError } from '../errors.ts';

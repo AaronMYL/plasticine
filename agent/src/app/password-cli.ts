@@ -5,7 +5,7 @@
 
 import { join } from 'node:path';
 import { PASSWORD_MAX_CHARS, PASSWORD_MIN_CHARS } from '../../shared/api/account.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { openState } from '../state/index.ts';
 import { DATABASE_FILE } from './config.ts';
 import { hashPassword } from './password-hash.ts';

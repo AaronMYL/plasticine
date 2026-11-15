@@ -8,7 +8,7 @@ import { DailyError } from '../daily/index.ts';
 import { DeviceError } from '../devices/index.ts';
 import { StateError } from '../state/index.ts';
 import { SubsError } from '../subs/index.ts';
-import { failureText } from '../shared-log.ts';
+import { failureText } from '../util/log.ts';
 import { ArtifactError } from '../artifacts/index.ts';
 import { CloudToolError } from '../cloud-tools/index.ts';
 import { LifeError } from '../life/index.ts';

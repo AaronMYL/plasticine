@@ -14,7 +14,7 @@ import {
   type PushTransport,
   type VapidKeys,
 } from '../../src/attention/index.ts';
-import type { Tool } from '../../src/brain/tools/registry.ts';
+import type { Tool } from '../../src/tools/registry.ts';
 import type { NodeTransport } from '../../src/devices/index.ts';
 import type { App } from '../../src/app/app.ts';
 import { assembleApp, type AssembleOptions } from '../../src/app/assemble.ts';
@@ -27,7 +27,7 @@ import { hashPassword } from '../../src/app/password-hash.ts';
 import { TextModelError, type TextAnswer } from '../../src/kernel/index.ts';
 import type { ModelSource } from '../../src/lines/index.ts';
 import { openState, type StateService } from '../../src/state/index.ts';
-import { scriptedText, type TextStep } from '../brain/helpers.ts';
+import { scriptedText, type TextStep } from '../tools/helpers.ts';
 
 export const START_MS = Date.parse('2026-10-27T08:00:00.000Z');
 

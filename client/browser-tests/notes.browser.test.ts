@@ -7,7 +7,7 @@ import { setTimeout as pause } from 'node:timers/promises';
 import { createServer, type ViteDevServer } from 'vite';
 import { launchBrowser, type Cdp, type LocalBrowser } from '../../scripts/browser/cdp.ts';
 import { pair, startTestApp, type TestApp } from '../../agent/tests/app/helpers.ts';
-import type { TextStep } from '../../agent/tests/brain/helpers.ts';
+import type { TextStep } from '../../agent/tests/tools/helpers.ts';
 import { reloadPage } from './reload.ts';
 
 const EDITOR = `document.querySelector('.note-body .ProseMirror').editor`;

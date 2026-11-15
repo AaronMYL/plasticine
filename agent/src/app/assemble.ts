@@ -28,7 +28,7 @@ import {
   projectTools,
   ToolRegistry,
   type Tool,
-} from '../brain/index.ts';
+} from '../tools/index.ts';
 import {
   AskDesk,
   Notices,
@@ -65,7 +65,7 @@ import { SkillShop, SkillStore, type SkillShopOptions } from '../skills/index.ts
 import { Tasks } from '../tasks/index.ts';
 import { BackupService, ClientReleases } from '../system/index.ts';
 import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { join } from 'node:path';
 import { LETTER_BRIEF, MAIN_THREAD_PATH, type BackupObjectKind } from '../../shared/api/index.ts';
 import { createApp, type App } from './app.ts';

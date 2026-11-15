@@ -6,7 +6,7 @@
 import { DouyinResolvedSchema, type DouyinResolved } from '../../shared/api/video.ts';
 import { Value } from 'typebox/value';
 import type { StateService, VideoWorkRow } from '../state/index.ts';
-import { failureText, safeLog } from '../shared-log.ts';
+import { failureText, safeLog } from '../util/log.ts';
 import { advanceWork, type PipelinePorts } from './pipeline.ts';
 
 /** 视频自己最多同时走几条（再受 slots 限制）。 */

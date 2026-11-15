@@ -12,9 +12,9 @@ import {
 } from '../../shared/api/index.ts';
 import { STANDING_PROJECT_IDS, type HeartbeatAct, type HeartbeatFact, type TimedSlot } from '../../shared/state.ts';
 import type { NoticeInput } from '../attention/index.ts';
-import { askJson } from '../brain/index.ts';
+import { askJson } from '../tools/index.ts';
 import type { TextModels } from '../kernel/index.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { StateService } from '../state/index.ts';
 import { slotLast, zonedClock, type SuggestionInputDraft, type TimedProvider } from '../tasks/index.ts';
 import { localDay } from '../daily/index.ts';

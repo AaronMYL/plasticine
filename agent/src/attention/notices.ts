@@ -7,7 +7,7 @@
 // 时回执跟着回滚，下次扫描再发；推送失败只记日志，主线上那条照样在。
 
 import { NOTICE_TITLE, type NotifyKind, type PushPayload } from '../../shared/api/push.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import type { StateService } from '../state/index.ts';
 
 const NOTICE_TOOL = 'main_notice';

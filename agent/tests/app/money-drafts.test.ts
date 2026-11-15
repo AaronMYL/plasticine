@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { type TextStep } from '../brain/helpers.ts';
+import { type TextStep } from '../tools/helpers.ts';
 import { call, json, pair, startTestApp, uploadAttachment, type TestApp } from './helpers.ts';
 
 // 《置信度与做事方式改动方案》第二批「记账直接记」：

@@ -3,7 +3,7 @@
 // 关着自动同步（测试）时两条循环都不起，由调用方 syncOnce / flush。
 
 import type { NetworkIdentity } from '../../shared/state.ts';
-import { errorCategory, safeLog } from '../shared-log.ts';
+import { errorCategory, safeLog } from '../util/log.ts';
 import { requireIdentity, signerOf, type NetworkContext } from './context.ts';
 import type { Inbound } from './inbound.ts';
 import type { Outbox } from './outbox.ts';

@@ -7,8 +7,8 @@ import {
   type LatestCleanupResponse,
 } from '../../shared/api/memory-manage.ts';
 import type { MemoryCleanup, MemoryCleanupItem } from '../../shared/state.ts';
-import { applyCleanup, moveLine, runCleanup, startCleanup } from '../brain/memory-cleanup.ts';
-import { addLine } from '../brain/memory-doc-writes.ts';
+import { applyCleanup, moveLine, runCleanup, startCleanup } from '../memory/curation/memory-cleanup.ts';
+import { addLine } from '../memory/docs/memory-doc-writes.ts';
 import type { StateService } from '../state/index.ts';
 import { ApiError, notFoundError } from './api-error.ts';
 import { param, requireAuth, requireUserAuth, type RequestContext, type Route } from './context.ts';
