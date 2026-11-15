@@ -25,7 +25,7 @@
 
 | 什么 | 命令 |
 |---|---|
-| 类型 + lint | `npm run -s typecheck && npm run -s lint`（只看 error，行宽是提醒） |
+| 类型 + lint | `npm run -s typecheck && npm run -s lint`（格式也算 error；登记过的超长文件只提醒） |
 | 界面全量 | `cd client && TZ=Asia/Shanghai npx vitest run` |
 | 服务端全量 | `TZ=Asia/Shanghai node --test --test-concurrency=6 "agent/tests/**/*.test.ts" "scripts/**/*.test.ts"`（约 8 分钟） |
 | 桌面客户端 | `cd desktop && npm test` |

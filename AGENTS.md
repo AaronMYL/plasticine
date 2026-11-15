@@ -6,10 +6,13 @@ Agent、界面、桌面客户端都在这里改、测、打包、发版。Cyber 
 
 ## 必读
 
-1. `agent/skills/plasticine-code/SKILL.md`：代码规矩。
-   - 行宽 ≤ 120；一文件一职责，源码 500 行软上限，测试不限。
-   - 先写测试再实现；schema 两端共享；不吞错误。
-   - 审查时用它的 `references/review-checklist.md`。
+1. `agent/skills/plasticine-code/SKILL.md`：代码规矩的正本（不管哪个 Agent 来写都照它做）。
+   - 「改什么去哪」看它的 `references/structure.md`：先分外部技术（`state/`、`app/` 等）和内部业务（一个业务一个包），
+     模块之间只经 `index.ts` 往来。
+   - 行宽 ≤ 120、一行一个语句、三元最多两层、不吞错误、没用到的导入删掉；一文件一职责（源码 500 行、CSS 800 行）。
+     违反了 `npm run check` 不过。
+   - 先写测试再实现，测试按行为放；schema 两端共享。审查时用它的 `references/review-checklist.md`。
+   - 定下新规矩：当场写进 SKILL.md，能自动检查的同时加一条检查进 `npm run check`（已有的检查列在 SKILL.md 末尾）。
 2. `agent/skills/plasticine-visual/SKILL.md`：界面规矩，只在改界面时读。
    - 页面模板、页头、内容宽度、组件、加载、空、动效、文案的统一规范在它的 `references/page-spec.md`，每次改界面都照它做；
      它是界面规矩的正本（设计稿画布、聊天只是过程）。定下新规矩：当场写进 `page-spec.md`，能自动检查的同时在
