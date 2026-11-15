@@ -1,6 +1,5 @@
 // 本人确认依赖真实配对会话，不再依赖浏览器签名；请求标识、原请求体和版本检查继续生效。
 import { describe, expect, it } from 'vitest';
-import { generateDeviceKeyPair, publicJwkOf } from '../../src/api/device-signature.ts';
 import { createFakeApi } from '../../src/api/fake/index.ts';
 import type { SignedSend, SignedTarget } from '../../src/api/signed-targets.ts';
 import { NOW } from '../helpers.tsx';
@@ -21,7 +20,6 @@ describe('假实现 · 本人会话确认', () => {
     {}, { signedAt: '', signature: '' }, { signedAt: '2020-01-01T00:00:00.000Z', signature: 'bad' },
   ])('没有钥匙的老会话可确认，旧签名字段不再制造门槛：%j', async (legacy) => {
     const fake = setup();
-    expect(await fake.api.deviceKeys.current()).toBeNull();
     const request = { target: TARGET, bodyText: BODY, ...legacy };
     const first = await fake.api.signed.send(request);
     const again = await fake.api.signed.send(request);
@@ -64,11 +62,4 @@ describe('假实现 · 本人会话确认', () => {
       .rejects.toMatchObject({ code: 'unauthorized', status: 401 });
     expect(fake.control.agreements.find('agr_1')?.text).toBe('原文');
   });
-});
-
-it('保留旧钥匙登记接口的兼容行为，不会自动扩展其登记时间窗口', async () => {
-  const fake = setup();
-  const publicKey = await publicJwkOf((await generateDeviceKeyPair()).publicKey);
-  const body = JSON.stringify({ requestId: 'req_register1', publicKey });
-  await expect(fake.api.deviceKeys.register(body)).rejects.toMatchObject({ code: 'device_key_too_late', status: 403 });
 });

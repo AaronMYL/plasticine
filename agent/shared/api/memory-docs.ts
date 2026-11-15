@@ -14,7 +14,7 @@ import {
   MEMORY_LINE_SECTIONS,
   ACTORS,
 } from '../state.ts';
-import { ApiErrorSchema, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
+import { IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { NextOffsetSchema, OrNull, PageLimitSchema, ReasonTextSchema } from './lineage.ts';
 import { MEMORY_PATH } from './memory.ts';
 
@@ -120,7 +120,6 @@ export const MemoryDocQuerySchema = Type.Object(
   { includeRetired: Type.Optional(Type.Boolean()) },
   { additionalProperties: false },
 );
-export type MemoryDocQuery = Static<typeof MemoryDocQuerySchema>;
 export const MemoryDocResponseSchema = Type.Object({
   doc: MemoryDocRowViewSchema,
   lines: Type.Array(MemoryLineViewSchema),
@@ -138,7 +137,6 @@ export const MemoryInferenceQuerySchema = Type.Object(
   },
   { additionalProperties: false },
 );
-export type MemoryInferenceQuery = Static<typeof MemoryInferenceQuerySchema>;
 export const MemoryInferenceListResponseSchema = Type.Object({
   inferences: Type.Array(MemoryInferenceViewSchema),
   nextOffset: NextOffsetSchema,
@@ -153,7 +151,6 @@ export const DecideMemoryInferenceRequestSchema = Type.Object(
   { requestId: RequestIdSchema, version: Type.Integer({ minimum: 1 }), reason: Type.Optional(ReasonTextSchema) },
   { additionalProperties: false },
 );
-export type DecideMemoryInferenceRequest = Static<typeof DecideMemoryInferenceRequestSchema>;
 export const MemoryInferenceResponseSchema = Type.Object({
   inference: MemoryInferenceViewSchema,
   /** 确认时写成的那一行；否掉时为 null。 */
@@ -182,9 +179,3 @@ export type RetireMemoryLineRequest = Static<typeof RetireMemoryLineRequestSchem
 export const MemoryLineResponseSchema = Type.Object({ line: MemoryLineViewSchema });
 export type MemoryLineResponse = Static<typeof MemoryLineResponseSchema>;
 
-/** 409：这一行或这条推断在别处改过 / 已经退休或定过；`current` 是现在的样子。 */
-export const MemoryLineConflictSchema = Type.Object({ ...ApiErrorSchema.properties, current: MemoryLineViewSchema });
-export type MemoryLineConflict = Static<typeof MemoryLineConflictSchema>;
-export const MemoryInferenceConflictSchema = Type.Object({ ...ApiErrorSchema.properties,
-  current: MemoryInferenceViewSchema });
-export type MemoryInferenceConflict = Static<typeof MemoryInferenceConflictSchema>;

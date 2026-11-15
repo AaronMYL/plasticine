@@ -157,7 +157,6 @@ export const ChromeMessageSchema = Type.Object({
   type: Type.Literal('titlebar'),
   layout: TitlebarLayoutSchema,
 }, STRICT);
-export type ChromeMessage = Static<typeof ChromeMessageSchema>;
 
 export interface PlasticineMacWindowChrome {
   /** 回的是未校验的数据，网页侧按 WindowChromeSchema 校验后再用。 */

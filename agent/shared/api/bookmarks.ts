@@ -64,7 +64,6 @@ export const BookmarkSnapshotSchema = Type.Object(
   },
   STRICT,
 );
-export type BookmarkSnapshot = Static<typeof BookmarkSnapshotSchema>;
 
 /**
  * POST /v2/bookmarks → 201 { bookmark }。网页和页面要 target，保存的分组要 tabs。同一个网址 / 地址已经有书签时回

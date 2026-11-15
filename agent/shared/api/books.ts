@@ -148,7 +148,6 @@ export const UpdateBookAnnotationRequestSchema = Type.Object(
 export type UpdateBookAnnotationRequest = Static<typeof UpdateBookAnnotationRequestSchema>;
 
 export const DeleteBookRequestSchema = Type.Object({ requestId: RequestIdSchema }, { additionalProperties: false });
-export type DeleteBookRequest = Static<typeof DeleteBookRequestSchema>;
 
 /** PATCH /v2/books/:id：改书名（资料库「最近删除」那一批，11-08）。 */
 export const RenameBookRequestSchema = Type.Object({
@@ -160,7 +159,6 @@ export type RenameBookRequest = Static<typeof RenameBookRequestSchema>;
 
 /** POST /v2/books/:id/restore：从「最近删除」还原，标注跟着回来。 */
 export const RestoreBookRequestSchema = Type.Object({ requestId: RequestIdSchema }, { additionalProperties: false });
-export type RestoreBookRequest = Static<typeof RestoreBookRequestSchema>;
 
 export const BookInsightViewSchema = Type.Object({
   spaceId: Type.Optional(Type.Union([IdSchema, Type.Null()])),

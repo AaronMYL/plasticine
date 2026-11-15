@@ -31,14 +31,3 @@ export interface ProxyLine {
   text: string;
 }
 
-export interface ProxyQuestion {
-  askerName: string;
-  askerIsAi: boolean;
-  question: string;
-  materials: ProxyMaterial[];
-  conversation: ProxyLine[];
-}
-
-export interface ProxyAnswerer {
-  answer(question: ProxyQuestion, signal: AbortSignal): Promise<ProxyAnswer>;
-}

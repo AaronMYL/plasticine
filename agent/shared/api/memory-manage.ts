@@ -29,7 +29,6 @@ export type MoveMemoryLineRequest = Static<typeof MoveMemoryLineRequestSchema>;
 export const CleanupLineViewSchema = Type.Object({
   id: IdSchema, text: Type.String(), docId: IdSchema, docTitle: Type.String(),
 }, STRICT);
-export type CleanupLineView = Static<typeof CleanupLineViewSchema>;
 
 export const CleanupItemViewSchema = Type.Object({
   id: Type.String(),

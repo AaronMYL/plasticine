@@ -36,13 +36,11 @@ export const ProjectStatusSchema = Type.Object(
   { text: Text, by: Type.Enum(['user', 'brain']), at: IsoTimeSchema },
   STRICT,
 );
-export type ProjectStatus = Static<typeof ProjectStatusSchema>;
 
 export const ProposedHealthSchema = Type.Object(
   { value: Type.Enum(PROJECT_HEALTHS), reason: Text, at: IsoTimeSchema },
   STRICT,
 );
-export type ProposedHealth = Static<typeof ProposedHealthSchema>;
 
 export const ProjectInputSchema = Type.Object(
   {

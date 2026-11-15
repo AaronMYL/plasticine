@@ -24,10 +24,6 @@ export function visiblePoints(insight: BookInsightView | null): BookKeyPoint[] {
   return insight.keyPoints.points.filter((point) => !insight.dismissedPointIds.includes(point.id));
 }
 
-export function pointAccepted(point: BookKeyPoint, annotations: readonly BookAnnotationView[]): boolean {
-  return point.anchors.some((anchor) => isAccepted(annotations, anchor.chapter, anchor.quote));
-}
-
 /** 这一章里还要画虚线的几处：重新对上原文，对不上的不画。 */
 export function pendingInChapter(insight: BookInsightView | null, annotations: readonly BookAnnotationView[],
   chapter: number, chapterText: string): PendingKeyPoint[] {

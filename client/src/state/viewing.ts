@@ -24,11 +24,6 @@ export function useViewing(conversation: string | null): void {
   }, [conversation]);
 }
 
-/** 现在开着的那段（页面不在前台时也照实给，调用方自己看 document）。 */
-export function viewingNow(): string | null {
-  return current.get();
-}
-
 /** 他眼下正看着这段：页面在前台、窗口有焦点、开着的就是它。 */
 export function lookingAt(conversation: string): boolean {
   return document.visibilityState === 'visible' && document.hasFocus() && current.get() === conversation;

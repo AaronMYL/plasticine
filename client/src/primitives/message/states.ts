@@ -3,25 +3,6 @@
 /** 你的话：已存下 / 发送中 / 结果待核实 / 核实过没送到 / 明确失败。用户消息不折叠。 */
 export type UserState = 'sent' | 'sending' | 'uncertain' | 'unsent' | 'failed';
 
-const SECOND_MS = 1000;
-const MINUTE_MS = 60 * SECOND_MS;
-const HOUR_MS = 60 * MINUTE_MS;
-
-/** 「Plasticine 做了什么 · n 个动作 · 时长」里的时长。 */
-export function formatDuration(ms: number): string {
-  if (ms < SECOND_MS) {
-    return '不到 1 秒';
-  }
-  if (ms < MINUTE_MS) {
-    return `${Math.round(ms / SECOND_MS)} 秒`;
-  }
-  if (ms < HOUR_MS) {
-    return `${Math.round(ms / MINUTE_MS)} 分钟`;
-  }
-  const hours = Math.floor(ms / HOUR_MS);
-  const minutes = Math.round((ms % HOUR_MS) / MINUTE_MS);
-  return minutes === 0 ? `${hours} 小时` : `${hours} 小时 ${minutes} 分`;
-}
 
 /** 消息头上的时间：按本机时区显示时分。 */
 export function formatClock(iso: string, withDate = false, timeZone?: string): string {

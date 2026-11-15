@@ -66,7 +66,6 @@ export const BookmarkPatchSchema = Type.Partial(
   }),
   STRICT,
 );
-export type BookmarkPatch = Static<typeof BookmarkPatchSchema>;
 
 export const BookmarkSchema = Type.Object({ ...RECORD_META, ...Type.Required(BookmarkInputSchema).properties });
 export type Bookmark = Static<typeof BookmarkSchema>;

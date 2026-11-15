@@ -8,9 +8,6 @@ import { createRequestId } from '../../api/request-id.ts';
 import { showResultToast, showToast } from '../../primitives/toast/index.tsx';
 import { libraryChanged } from './library-signal.ts';
 
-/** 删除前那一行后果（他定的原话）。 */
-export const DELETE_CONSEQUENCE = '会移到「最近删除」，在那里可以还原。';
-
 export interface SpaceActions {
   rename: (id: string, title: string) => Promise<void>;
   remove: (id: string) => Promise<void>;

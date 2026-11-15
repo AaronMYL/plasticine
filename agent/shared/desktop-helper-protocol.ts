@@ -19,14 +19,11 @@ import type { DeviceActionKind } from './state.ts';
 
 const STRICT = { additionalProperties: false };
 
-/** 改了已有方法的参数或回执形状才加一（Swift 那边是 HelperProtocol.version）。 */
-export const HELPER_PROTOCOL_VERSION = 1;
 export const HELPER_ID_MAX_CHARS = 200;
 export const HELPER_TYPE_MAX_CHARS = 4_000;
 export const HELPER_SCROLL_MAX_LINES = 200;
 export const HELPER_COMMAND_SECONDS_MAX = 600;
 export const HELPER_COMMAND_OUTPUT_MAX_BYTES = 100 * 1024;
-export const HELPER_CALENDAR_WINDOW_MAX_DAYS = 92;
 
 export const HELPER_ERROR_CODES = [
   'invalid_request', 'unknown_method', 'invalid_params', 'refused', 'failed', 'cancelled', 'permission_denied',

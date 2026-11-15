@@ -101,7 +101,6 @@ export const MemoryDocPatchSchema = Type.Partial(
   }),
   STRICT,
 );
-export type MemoryDocPatch = Static<typeof MemoryDocPatchSchema>;
 export const MemoryDocSchema = Type.Object({ ...OBJECT_META, ...Type.Required(MemoryDocInputSchema).properties });
 export type MemoryDoc = Static<typeof MemoryDocSchema>;
 
@@ -141,7 +140,6 @@ export const MemoryLinePatchSchema = Type.Partial(Type.Object({
   archivedAt: IsoTimeSchema,
   deletedAt: IsoTimeSchema,
 }), STRICT);
-export type MemoryLinePatch = Static<typeof MemoryLinePatchSchema>;
 export const MemoryLineSchema = Type.Object({
   ...OBJECT_META,
   ...Type.Required(MemoryLineInputSchema).properties,
@@ -280,7 +278,6 @@ export const MemoryJobPatchSchema = Type.Partial(
   }),
   STRICT,
 );
-export type MemoryJobPatch = Static<typeof MemoryJobPatchSchema>;
 export const MemoryJobSchema = Type.Object({
   ...RECORD_META,
   ...Type.Required(MemoryJobInputSchema).properties,
@@ -313,13 +310,11 @@ export type MemoryEntryMigration = Static<typeof MemoryEntryMigrationSchema>;
 export const MEMORY_CONFLICT_STATUSES = ['open', 'resolved'] as const;
 /** kept：留下其中一条（其余退休）；both：都留（通常接着改范围）；neither：都不要了。 */
 export const MEMORY_CONFLICT_RESOLUTIONS = ['kept', 'both', 'neither'] as const;
-export type MemoryConflictResolution = (typeof MEMORY_CONFLICT_RESOLUTIONS)[number];
 export const MemoryConflictInputSchema = Type.Object({
   title: Type.String({ minLength: 1, maxLength: 60 }),
   lineIds: Type.Array(IdSchema, { minItems: 2, maxItems: 4, uniqueItems: true }),
   foundBy: Type.Optional(Nullable(Type.String())),
 }, STRICT);
-export type MemoryConflictInput = Static<typeof MemoryConflictInputSchema>;
 export const MemoryConflictSchema = Type.Object({
   id: IdSchema,
   version: Type.Integer({ minimum: 1 }),
@@ -340,7 +335,6 @@ export const MemoryConflictPatchSchema = Type.Partial(Type.Object({
   keptLineIds: Type.Array(IdSchema),
   resolvedAt: Nullable(IsoTimeSchema),
 }), STRICT);
-export type MemoryConflictPatch = Static<typeof MemoryConflictPatchSchema>;
 
 /**
  * 全量整理（11-11 Aaron：记忆页加「全量整理」，先出改动清单、勾选后才改）：一次整理一行。items 是清单：
@@ -350,7 +344,6 @@ export type MemoryConflictPatch = Static<typeof MemoryConflictPatchSchema>;
  */
 export const MEMORY_CLEANUP_STATUSES = ['running', 'ready', 'failed', 'done'] as const;
 export const MEMORY_CLEANUP_ITEM_KINDS = ['merge', 'move', 'archive', 'rewrite', 'add'] as const;
-export type MemoryCleanupItemKind = (typeof MEMORY_CLEANUP_ITEM_KINDS)[number];
 export const MemoryCleanupItemSchema = Type.Object({
   id: Type.String({ minLength: 1, maxLength: 40 }),
   kind: Type.Enum(MEMORY_CLEANUP_ITEM_KINDS),
@@ -381,4 +374,3 @@ export const MemoryCleanupPatchSchema = Type.Partial(Type.Object({
   items: Type.Array(MemoryCleanupItemSchema, { maxItems: 400 }),
   finishedAt: Nullable(IsoTimeSchema),
 }), STRICT);
-export type MemoryCleanupPatch = Static<typeof MemoryCleanupPatchSchema>;

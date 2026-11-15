@@ -51,7 +51,6 @@ export interface GroupMember {
 // ---------- 群里的一句 ----------
 
 export const GROUP_MESSAGE_KINDS = ['text', 'ask_ai', 'ai_text', 'task', 'system'] as const;
-export type GroupMessageKind = (typeof GROUP_MESSAGE_KINDS)[number];
 
 export const GroupMessageInputSchema = Type.Object({
   groupId: IdSchema,

@@ -112,7 +112,6 @@ export type Contact = Static<typeof ContactSchema>;
 export const CONTACT_MESSAGE_KINDS = ['hello', 'text', 'ai_text', 'ask_ai', 'task_offer', 'task_reply',
   'task_delivery', 'task_verdict', 'read', 'system', 'profile', 'group_update', 'group_message', 'group_task',
   'task_claim', 'task_cancel', 'reaction'] as const;
-export type ContactMessageKind = (typeof CONTACT_MESSAGE_KINDS)[number];
 
 export const ContactMessageInputSchema = Type.Object({
   contactId: IdSchema,

@@ -42,9 +42,7 @@ export type VideoRun = (typeof VIDEO_RUNS)[number];
  * 见 video/douyin.ts 的 videoWorkView。没装转写时视频不下载，装好自动接着走。
  */
 export const VIDEO_VIEW_RUNS = [...VIDEO_RUNS, 'waiting_transcriber'] as const;
-export type VideoViewRun = (typeof VIDEO_VIEW_RUNS)[number];
 export const VIDEO_KINDS = ['video', 'images'] as const;
-export const TRANSCRIPT_SOURCES = ['caption', 'subtitle', 'local', 'images'] as const;
 
 /** 一次最多交多少条（Mac 翻收藏一页 10–20 条，攒几页交一次）。 */
 export const DOUYIN_WORKS_PER_REPORT_MAX = 200;
@@ -325,4 +323,3 @@ export const VideoParseArgsSchema = Type.Object({
   url: Type.String({ minLength: 8, maxLength: 4_000, description: '视频或图文作品的链接（http/https）' }),
   wait: Type.Optional(Type.Boolean({ description: '等它做完再回（后台线里用；默认 true）' })),
 }, { additionalProperties: false });
-export type VideoParseArgs = Static<typeof VideoParseArgsSchema>;

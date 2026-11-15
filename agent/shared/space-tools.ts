@@ -1,7 +1,7 @@
 // 给模型的空间和订阅工具的参数（《优化清单》第 6、7 条；第 8 批第 6 条起空间是整页网页）：写 / 改 / 读 / 列空间，
 // 建订阅草案、改订阅、现在出一期。
 
-import { Type, type Static } from 'typebox';
+import { Type } from 'typebox';
 import {
   ResearchSettingsSchema,
   SubscriptionScheduleSchema,
@@ -37,7 +37,6 @@ export const SpaceWriteParameters = Type.Object({
   rule: Type.Optional(Type.String({ minLength: 1, maxLength: 200,
     description: 'If the change could apply to every future issue, that rule in one phrase (he decides)' })),
 }, STRICT);
-export type SpaceWriteArgs = Static<typeof SpaceWriteParameters>;
 
 export const SpaceEditParameters = Type.Object({
   id: Type.String({ minLength: 1 }),
@@ -51,7 +50,6 @@ export const SpaceEditParameters = Type.Object({
   rule: Type.Optional(Type.String({ minLength: 1, maxLength: 200,
     description: 'If the change could apply to every future issue, that rule in one phrase (he decides)' })),
 }, STRICT);
-export type SpaceEditArgs = Static<typeof SpaceEditParameters>;
 
 export const SpaceReadParameters = Type.Object({ id: Type.String({ minLength: 1 }) }, STRICT);
 export const SpaceListParameters = Type.Object({}, STRICT);
@@ -69,7 +67,6 @@ export const SubscriptionDraftParameters = Type.Object({
   sections: Type.Optional(research.sections),
   output: Type.Optional(research.output),
 }, STRICT);
-export type SubscriptionDraftArgs = Static<typeof SubscriptionDraftParameters>;
 
 export const SubscriptionUpdateParameters = Type.Object({
   id: Type.String({ minLength: 1 }),
@@ -84,10 +81,8 @@ export const SubscriptionUpdateParameters = Type.Object({
   status: Type.Optional(Type.Enum(['active', 'paused'], {
     description: 'active only after he has seen a sample issue and said to start; paused when he asks' })),
 }, STRICT);
-export type SubscriptionUpdateArgs = Static<typeof SubscriptionUpdateParameters>;
 
 export const SubscriptionRunParameters = Type.Object({
   id: Type.String({ minLength: 1 }),
   edition: Type.Optional(Type.Enum(SPACE_EDITIONS, { description: 'Personal review only' })),
 }, STRICT);
-export type SubscriptionRunArgs = Static<typeof SubscriptionRunParameters>;

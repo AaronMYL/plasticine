@@ -26,7 +26,6 @@ export type SpaceAuthor = (typeof SPACE_AUTHORS)[number];
 
 /** 一条结论能点回去的地方：原对话（line:<线>:<seq>）、线、项目、记忆文档、笔记、别的空间、信息流条目。 */
 export const SPACE_LINK_KINDS = ['message', 'line', 'project', 'memory_doc', 'note', 'space', 'feed_item'] as const;
-export type SpaceLinkKind = (typeof SPACE_LINK_KINDS)[number];
 export const SpaceLinkSchema = Type.Object({ kind: Type.Enum(SPACE_LINK_KINDS), id: IdSchema }, STRICT);
 export type SpaceLink = Static<typeof SpaceLinkSchema>;
 
@@ -178,10 +177,8 @@ export type SpaceRevision = Static<typeof SpaceRevisionSchema>;
 // ---------- 订阅 ----------
 
 export const SUBSCRIPTION_KINDS = ['research', 'review'] as const;
-export type SubscriptionKind = (typeof SUBSCRIPTION_KINDS)[number];
 /** draft 草案（还没出过）；sample 出过样刊、还没开定时；active 按时出；paused 暂停。 */
 export const SUBSCRIPTION_STATUSES = ['draft', 'sample', 'active', 'paused'] as const;
-export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 const Clock = Type.String({ pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' });
 /** 0 = 星期日（和 Date.getDay 一样）。 */
@@ -233,7 +230,6 @@ export const ReviewExcludeSchema = Type.Object({
   id: IdSchema,
   label: Type.String({ minLength: 1, maxLength: 120 }),
 }, STRICT);
-export type ReviewExclude = Static<typeof ReviewExcludeSchema>;
 
 export const ReviewSettingsSchema = Type.Object({
   kind: Type.Literal('review'),

@@ -37,10 +37,6 @@ export function setupTokenOf(hash: string = window.location.hash): string | null
   return token === null || token.trim() === '' ? null : token.trim();
 }
 
-export function isSetupHash(hash: string = window.location.hash): boolean {
-  return hash === SETUP_PREFIX || hash.startsWith(`${SETUP_PREFIX}?`) || hash.startsWith(`${SETUP_PREFIX}/`);
-}
-
 /** 装的时候已经起好的 @账号：锁着，只显示。 */
 function LockedHandle({ handle }: { handle: string }): ReactNode {
   return (

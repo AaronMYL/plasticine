@@ -45,7 +45,6 @@ export const MemoryCleanupAddSchema = Type.Object({
   person: Type.Optional(Type.String({ minLength: 1, maxLength: 40 })),
   text: Type.String({ minLength: 1, maxLength: 600 }),
 }, { additionalProperties: false });
-export type MemoryCleanupAdd = Static<typeof MemoryCleanupAddSchema>;
 
 /** rules.rewrite 的一项：这一行换成 into 里的几行（空 = 不再成立，挪进归档）。 */
 export const RulesRewriteItemSchema = Type.Object({

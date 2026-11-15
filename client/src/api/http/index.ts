@@ -26,7 +26,6 @@ import { HttpAsks } from './asks.ts';
 import { HttpContacts, HttpGroupTasks, HttpNetworkTasks } from './contacts.ts';
 import { HttpNetwork, HttpVisibility } from './network.ts';
 import { HttpProjects } from './projects.ts';
-import { HttpDeviceKeys } from './device-keys.ts';
 import { HttpDevices } from './devices.ts';
 import { HttpEvents, type CreateEventSource } from './events.ts';
 import { HttpFeed } from './feed.ts';
@@ -104,7 +103,6 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     push: new HttpPush(transport),
     memory: new HttpMemory(transport),
     agreements: new HttpAgreements(transport),
-    deviceKeys: new HttpDeviceKeys(transport),
     signed: new HttpSigned(transport),
     projects: new HttpProjects(transport),
     today: new HttpToday(transport),

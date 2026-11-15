@@ -269,4 +269,3 @@ export function createSearchStore(context: StoreContext, index: SearchIndex) {
   };
 }
 
-export type SearchStore = ReturnType<typeof createSearchStore>;

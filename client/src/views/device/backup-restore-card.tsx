@@ -6,20 +6,11 @@ import type { RestorePreview } from '../../api/shared.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
-import { useOpenPanel } from '../../shell/panel.ts';
 import { operationErrorText } from '../../primitives/task-row/op-line.tsx';
 import { BACKUP_KIND } from './backup-labels.ts';
 import { BackupComparison } from './backup-comparison.tsx';
 import { formatDay } from '../../primitives/message/states.ts';
 import './backups.css';
-export function BackupRestoreEntry({ id }: { id: string }): ReactNode {
-  const open = useOpenPanel();
-  return (
-    <button className="text-button" type="button" onClick={() => open({ kind: 'backup_restore', id })}>
-      查看恢复预览与回执
-    </button>
-  );
-}
 export function BackupRestoreCard({ id }: { id: string }): ReactNode {
   const api = useApi();
   const live = useLive();

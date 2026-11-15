@@ -33,6 +33,4 @@ export const CalendarRemindersSnapshotSchema = Type.Object({
 }, STRICT);
 export type CalendarRemindersSnapshot = Static<typeof CalendarRemindersSnapshotSchema>;
 
-export type CalendarSnapshot = CalendarEventsSnapshot | CalendarRemindersSnapshot;
-
 export type { CalendarEvent, ReminderItem } from './api/device-ios.ts';

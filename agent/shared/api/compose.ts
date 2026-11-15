@@ -28,7 +28,6 @@ export const ComposePredictRequestSchema = Type.Object({
   /** 光标前的字（光标不在末尾时界面不来问）。空的就是要一整句。 */
   draft: Type.String({ maxLength: COMPOSE_DRAFT_MAX }),
 }, { additionalProperties: false });
-export type ComposePredictRequest = Static<typeof ComposePredictRequestSchema>;
 
 export const ComposePredictViewSchema = Type.Object({
   /** 要接在草稿后面的字；空串 = 这次不给（没轮到他说、猜不出来）。 */

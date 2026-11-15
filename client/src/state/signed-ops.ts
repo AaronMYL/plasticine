@@ -11,12 +11,6 @@ import { SignedTargetSchema, type SignedTarget } from '../api/signed-targets.ts'
 import type { KeyValueStorage } from './outbox.ts';
 import { Store } from './store.ts';
 
-/**
- * running 在路上 · uncertain 回执不确定（保留原标识查询回执）· unsent 确定没执行（会话失效、
- * 服务正在重启或旧接口明确拒绝），可以用同一标识重发 · failed 服务端明确拒了，下次点换新标识。
- */
-export type SignedOpStatus = 'running' | 'uncertain' | 'unsent' | 'failed';
-
 const SignedOpSchema = Type.Object({
   key: Type.String({ minLength: 1 }),
   /** 状态那一行写的：「把 p 改成 0.40」「确认这条约定」。 */
@@ -47,10 +41,6 @@ export const SIGNED_OPS_STORAGE_KEY = 'plasticine.signed-ops';
 
 const RELOADED_WHILE_RUNNING = '页面重新载入时这个操作还在路上，尚未取得服务回执。结果待核实，点「再核实」。';
 const SIGNED_OUT = '会话失效，这次没有执行。重新配对后点「重发」，用的还是同一个标识和同样的内容。';
-
-export function judgmentOpKey(judgmentId: string, action: 'p' | 'outcome'): string {
-  return `judgment:${judgmentId}:${action}`;
-}
 
 export function agreementOpKey(agreementId: string): string {
   return `agreement:${agreementId}:confirm`;

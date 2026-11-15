@@ -14,10 +14,6 @@ function read(): string[] {
   }
 }
 
-export function seenSpace(id: string): boolean {
-  return read().includes(id);
-}
-
 export function markSpaceSeen(id: string): void {
   const list = read();
   if (list.includes(id)) {

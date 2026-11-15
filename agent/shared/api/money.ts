@@ -60,7 +60,6 @@ export const MoneyCategoryViewSchema = Type.Object({
   name: Type.String(),
   kind: Type.Enum(MONEY_CATEGORY_KINDS),
 });
-export type MoneyCategoryView = Static<typeof MoneyCategoryViewSchema>;
 
 export const MoneyAccountViewSchema = Type.Object({
   id: IdSchema,
@@ -80,7 +79,6 @@ export const MoneyDayViewSchema = Type.Object({
   incomeCents: Type.Integer(),
   entries: Type.Array(MoneyEntryViewSchema),
 });
-export type MoneyDayView = Static<typeof MoneyDayViewSchema>;
 
 /** GET /v2/money?month=YYYY-MM&tz= — 账本（这个月按天）、分类、账户和资产。 */
 export const MoneyQuerySchema = Type.Object({ month: MonthSchema, tz: Type.Optional(TimeZoneSchema) }, STRICT);

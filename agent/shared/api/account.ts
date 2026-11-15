@@ -103,7 +103,6 @@ export type PasswordSessionRequest = Static<typeof PasswordSessionRequestSchema>
 /** POST /v2/session/local（不用登录，要本机令牌请求头、只认 127.0.0.1）：壳替本机界面登录（回 SessionView）。 */
 export const LocalSessionRequestSchema = Type.Object({ deviceName: DeviceNameSchema },
   { additionalProperties: false });
-export type LocalSessionRequest = Static<typeof LocalSessionRequestSchema>;
 
 /**
  * PUT /v2/account/password（要登录）：改密码 / 第一次设密码。current：已经设过密码时要填旧密码；
@@ -122,7 +121,6 @@ export type AccountPasswordResponse = Static<typeof AccountPasswordResponseSchem
 /** PATCH /v2/account（要登录）：改名字。 */
 export const AccountPatchRequestSchema = Type.Object({ displayName: DisplayNameSchema },
   { additionalProperties: false });
-export type AccountPatchRequest = Static<typeof AccountPatchRequestSchema>;
 
 /**
  * 「在别的设备上用」的自己的网址（11-12《首次使用解耦》）：只收 https、不带路径以外的东西；null = 没设。
@@ -134,7 +132,6 @@ export const OwnUrlViewSchema = Type.Object({
 }, { additionalProperties: false });
 export type OwnUrlView = Static<typeof OwnUrlViewSchema>;
 export const OwnUrlRequestSchema = OwnUrlViewSchema;
-export type OwnUrlRequest = OwnUrlView;
 
 /** 欢迎消息下面的「开始」（schema 在 shared/welcome-start.ts：线的视图也要用，放在不引别的文件的那一份里）。 */
 export { WelcomeStartSchema, type WelcomeStart } from '../welcome-start.ts';
@@ -154,4 +151,3 @@ export const WorkLimitViewSchema = Type.Object({
 }, { additionalProperties: false });
 export type WorkLimitView = Static<typeof WorkLimitViewSchema>;
 export const WorkLimitRequestSchema = Type.Object({ setting: WorkLimitSettingSchema }, { additionalProperties: false });
-export type WorkLimitRequest = Static<typeof WorkLimitRequestSchema>;

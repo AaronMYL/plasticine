@@ -395,6 +395,5 @@ export type NodeActionView = Static<typeof NodeActionViewSchema>;
 /** GET /v2/nodes/actions?nodeId= — newest first, 50. */
 export const NODE_ACTIONS_PATH = `${NODES_PATH}/actions`;
 export const NodeActionListQuerySchema = Type.Object({ nodeId: Type.Optional(IdSchema) }, STRICT);
-export type NodeActionListQuery = Static<typeof NodeActionListQuerySchema>;
 export const NodeActionListResponseSchema = Type.Object({ actions: Type.Array(NodeActionViewSchema) });
 export type NodeActionListResponse = Static<typeof NodeActionListResponseSchema>;

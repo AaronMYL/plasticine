@@ -226,28 +226,6 @@ export function proposeInference(state: DocState, input: { docId: string; sectio
   });
 }
 
-/** 系统撤回一条还没定的推断（重复、错了、被新的一条替代；第 99 条④），缘由记进事件。不是用户否掉。 */
-export function withdrawInference(state: DocState, inference: MemoryInference, why: string,
-  writer: Writer): MemoryInference {
-  return state.transaction(() => {
-    const withdrawn = state.memoryCuration.inferences.withdraw(inference.id, inference.version);
-    docEvent(state, inference.docId, null, 'inference_withdrawn', writer, { inferenceId: inference.id, why });
-    return withdrawn;
-  });
-}
-
-/** 把还没定的推断挪到更贴切的文档（比如从「关于你」挪到「阅读兴趣」），两份文档的事件里各记一笔。 */
-export function moveInference(state: DocState, inference: MemoryInference, docId: string, why: string,
-  writer: Writer): MemoryInference {
-  return state.transaction(() => {
-    const moved = state.memoryCuration.inferences.move(inference.id, inference.version, docId);
-    const detail = { inferenceId: inference.id, from: inference.docId, to: docId, why };
-    docEvent(state, inference.docId, null, 'inference_moved', writer, detail);
-    docEvent(state, docId, null, 'inference_moved', writer, detail);
-    return moved;
-  });
-}
-
 /**
  * 用户在设备上确认一条推断：先写确认（用户确认字段），再写成文档里的一行（锚点 = 推断的来源），最后把行记回推断。
  * 否掉只写确认，不成行。

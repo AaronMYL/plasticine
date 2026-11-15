@@ -50,4 +50,3 @@ export const ServerEventSchema = Type.Union([
   ReadyEventSchema,
 ]);
 export type ServerEvent = Static<typeof ServerEventSchema>;
-export type ServerEventType = ServerEvent['type'];

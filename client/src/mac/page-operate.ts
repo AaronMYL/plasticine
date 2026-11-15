@@ -18,10 +18,6 @@
 // ios/Core/Sources/PlasticineCore/page-operate-script.swift 原样带一份；测试核对三份一样，并在 jsdom 里跑它。
 // 字符串里不用反引号和 ${。
 
-/** 大纲最多带这么多字：和设备动作 tab_read 一段正文同档（node-channel.ts 的 TAB_READ_TEXT_CHARS）。 */
-export const OPERATE_OUTLINE_MAX_CHARS = 12_000;
-/** 一次最多编这么多个元素：再多的页面先翻页或圈一块。 */
-export const OPERATE_ELEMENTS_MAX = 200;
 /** 页面上的光点：方向 I 的 --run（浅色 #5a6b85）；网页标签里读不到 Plasticine 的令牌，写死同一个值（测试核对）。 */
 export const OPERATE_DOT_COLOR = '#5A6B85';
 

@@ -182,4 +182,3 @@ export function createLoopStore(context: StoreContext) {
   };
 }
 
-export type LoopStore = ReturnType<typeof createLoopStore>;

@@ -31,7 +31,6 @@ import { FakeBooks } from './fake-books.ts';
 import { seedBooks } from './seed-books.ts';
 import { FakeAsks } from './fake-asks.ts';
 import { FakeProjects } from './fake-projects.ts';
-import { FakeDeviceKeys } from './fake-device-keys.ts';
 import { FakeFeed } from './fake-feed.ts';
 import { FakeMemory } from './fake-memory.ts';
 import { FakeNodes } from './fake-nodes.ts';
@@ -107,7 +106,6 @@ export interface FakeControl {
   push: FakePush;
   memory: FakeMemory;
   agreements: FakeAgreements;
-  deviceKeys: FakeDeviceKeys;
   projects: FakeProjects;
   /** 第 110 条：书签（2026-11-04 起和信息流收藏分开）。 */
   bookmarks: FakeBookmarks;
@@ -257,7 +255,6 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const push = new FakePush({ session, receipts, now });
   const agreements = new FakeAgreements({ session, bus, now });
   const memory = new FakeMemory({ session, bus, receipts, agreements, now });
-  const deviceKeys = new FakeDeviceKeys({ session, faults, now });
   const projects = new FakeProjects({ session, bus, receipts, lines: () => lines.all(), now });
   const feed = new FakeFeed({ session, bus, receipts, now, installStepMs: options.streamStepMs > 0 ? 900 : 0,
     publishWork: (work) => spaces.ensureGenerated({ id: `space-${work.id}`, title: work.title,
@@ -387,7 +384,6 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     clientUpdates,
     backups,
     agreements,
-    deviceKeys,
     signed,
     projects,
     bookmarks,
@@ -427,7 +423,6 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       push,
       memory,
       agreements,
-      deviceKeys,
       projects,
       bookmarks,
       webTabs,

@@ -3,13 +3,11 @@
 // 决定。Import from shared/state.ts.
 
 import { Type, type Static } from 'typebox';
-import { IdSchema, IsoTimeSchema, Nullable, OBJECT_META, RECORD_META } from './state-common.ts';
-import { CHANNELS, DisagreementSchema } from './state-objects.ts';
+import { IdSchema, IsoTimeSchema, Nullable, OBJECT_META } from './state-common.ts';
 import { PreferredTimeZoneSchema } from './time-zone.ts';
 import { FeedBannedTermsSchema } from './feed-search.ts';
 
 const STRICT = { additionalProperties: false };
-const Text = Type.String({ minLength: 1 });
 
 /** A local calendar day, `YYYY-MM-DD` (the 今日 of the user's time zone). */
 export const DaySchema = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$' });
@@ -17,26 +15,6 @@ export const DaySchema = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$' });
 // 登记（《UI 方案》第 7 节：登记 n/10 是一条可完成目标，完成标准「10 个陌生人登记」）。一次登记一行；「删除请求」也是
 // 一行（withdrawal），所以旧版「登记数 − 删除请求数」的算法原样保留，谁也不改谁。
 export const REGISTRATION_KINDS = ['signup', 'withdrawal'] as const;
-export const RegistrationInputSchema = Type.Object(
-  {
-    concernId: IdSchema,
-    criterionId: IdSchema,
-    kind: Type.Enum(REGISTRATION_KINDS),
-    label: Type.String({ minLength: 1, maxLength: 200 }),
-    occurredAt: IsoTimeSchema,
-    // Where it came from (an old inbox message id, an API request): the same source is counted once.
-    sourceRef: Type.Optional(Nullable(Type.String({ minLength: 1, maxLength: 300 }))),
-    note: Type.Optional(Nullable(Type.String({ maxLength: 2_000 }))),
-  },
-  STRICT,
-);
-export type RegistrationInput = Static<typeof RegistrationInputSchema>;
-export const RegistrationPatchSchema = Type.Partial(
-  Type.Object({ note: Nullable(Type.String({ maxLength: 2_000 })) }),
-  STRICT,
-);
-export const RegistrationSchema = Type.Object({ ...OBJECT_META, ...Type.Required(RegistrationInputSchema).properties });
-export type Registration = Static<typeof RegistrationSchema>;
 
 // 信息流的来源（《UI 方案》第 9 节「Sources：关注点、不要的、最近来源」）。interest = 关注点，每个挂一条探索方向关切；
 // internal = 站内（手动添加、「按关注点搜新闻」这个总开关；任务、关切两个站内来源 2026-11-04 起停收）；
@@ -191,175 +169,12 @@ export type FeedItem = Static<typeof FeedItemSchema>;
 // 1ca0391 daily.ts：待决 > 目标变化 > 值得一提 > 信息对齐。
 export const BRIEF_CATEGORIES = ['decision', 'goal_change', 'noteworthy', 'alignment'] as const;
 export const BRIEF_REF_TYPES = ['ask', 'task', 'concern', 'judgment', 'agreement', 'registration'] as const;
-export const BriefItemInputSchema = Type.Object(
-  {
-    day: DaySchema,
-    dedupeKey: Type.String({ minLength: 1, maxLength: 300 }),
-    category: Type.Enum(BRIEF_CATEGORIES),
-    // The w of who caused the change (第 62 条), shown as a number only; never used to rank or filter (第 19 条).
-    weight: Type.Union([Type.Literal(1), Type.Literal(0.5), Type.Literal(0.1)]),
-    title: Type.String({ minLength: 1, maxLength: 300 }),
-    body: Type.String({ maxLength: 2_000 }),
-    sourceLabel: Type.String({ maxLength: 100 }),
-    refType: Type.Enum(BRIEF_REF_TYPES),
-    refId: IdSchema,
-    diffPending: Type.Optional(Type.Boolean()),
-  },
-  STRICT,
-);
-export type BriefItemInput = Static<typeof BriefItemInputSchema>;
-export const BriefDisagreementSchema = Type.Object({ ...DisagreementSchema.properties,
-  markedVersion: Type.Integer({ minimum: 1 }), status: Type.Enum(['open', 'resolved']),
-  proposedChange: Nullable(Type.String()) });
-export const BriefItemPatchSchema = Type.Partial(
-  Type.Object({ seenAt: Nullable(IsoTimeSchema), diffPending: Type.Boolean(),
-    disagreement: Nullable(BriefDisagreementSchema) }),
-  STRICT,
-);
-export const BriefItemSchema = Type.Object({
-  ...OBJECT_META,
-  ...Type.Required(BriefItemInputSchema).properties,
-  seenAt: Nullable(IsoTimeSchema),
-  disagreement: Nullable(BriefDisagreementSchema),
-});
-export type BriefItem = Static<typeof BriefItemSchema>;
-
-// 采访（《UI 方案》第 6 节：走要你定卡，档位「下次汇报」，不弹）。一题一行：待问 → 出了卡 → 答了（或旧版跳过的）。
-export const INTERVIEW_STATUSES = ['pending', 'asked', 'answered', 'skipped'] as const;
-// The card's sentence is the question itself (shared/state-attention.ts ASK_QUESTION_MAX_CHARS).
-export const INTERVIEW_QUESTION_MAX_CHARS = 120;
-export const InterviewDraftSchema = Type.Object({ id: IdSchema, language: Type.Enum(['zh', 'en']),
-  text: Type.String({ minLength: 1, maxLength: 2000 }), createdAt: IsoTimeSchema }, STRICT);
-export type InterviewDraft = Static<typeof InterviewDraftSchema>;
-export const InterviewInputSchema = Type.Object(
-  {
-    question: Type.String({ minLength: 1, maxLength: INTERVIEW_QUESTION_MAX_CHARS }),
-    questionEn: Type.Optional(Nullable(Type.String({ maxLength: 1_000 }))),
-    variable: Type.Optional(Nullable(Type.String({ maxLength: 200 }))),
-    dueAt: IsoTimeSchema,
-    status: Type.Optional(Type.Enum(INTERVIEW_STATUSES)),
-    answer: Type.Optional(Nullable(Type.String({ maxLength: 40_000 }))),
-    answeredAt: Type.Optional(Nullable(IsoTimeSchema)),
-    drafts: Type.Optional(Type.Array(InterviewDraftSchema)),
-    postedAt: Type.Optional(Nullable(IsoTimeSchema)),
-    likesForecastId: Type.Optional(Nullable(IdSchema)),
-    draftError: Type.Optional(Nullable(Type.String())),
-  },
-  STRICT,
-);
-export type InterviewInput = Static<typeof InterviewInputSchema>;
-export const InterviewPatchSchema = Type.Partial(
-  Type.Object({
-    status: Type.Enum(INTERVIEW_STATUSES),
-    askId: Nullable(IdSchema),
-    askedAt: Nullable(IsoTimeSchema),
-    answer: Nullable(Type.String({ maxLength: 40_000 })),
-    answeredAt: Nullable(IsoTimeSchema),
-    answeredByDeviceId: Nullable(IdSchema),
-    drafts: Type.Array(InterviewDraftSchema),
-    postedAt: Nullable(IsoTimeSchema),
-    likesForecastId: Nullable(IdSchema),
-    draftError: Nullable(Type.String()),
-  }),
-  STRICT,
-);
-export type InterviewPatch = Static<typeof InterviewPatchSchema>;
-export const InterviewSchema = Type.Object({
-  ...OBJECT_META,
-  ...Type.Required(InterviewInputSchema).properties,
-  askId: Nullable(IdSchema),
-  askedAt: Nullable(IsoTimeSchema),
-  answeredByDeviceId: Nullable(IdSchema),
-});
-export type Interview = Static<typeof InterviewSchema>;
 
 // 回来四句话（《从零方案》第 5 节、《UI 方案》第 4 节）：哪些问题没新证据保留了（→ 关切）· 哪个判断因为什么变了（→ 判断）·
 // 约定的工作推到哪里（→ 任务）· 有没有新联系（→ 它带回的条目）。
 export const RETURN_SENTENCE_KEYS = ['kept', 'changed', 'progressed', 'connections'] as const;
 export const RETURN_TARGET_VIEWS = ['concerns', 'judgments', 'tasks', 'feed'] as const;
-export const RETURN_SENTENCE_MAX_CHARS = 120;
-export const ReturnSentenceSchema = Type.Object(
-  {
-    key: Type.Enum(RETURN_SENTENCE_KEYS),
-    text: Type.String({ minLength: 1, maxLength: RETURN_SENTENCE_MAX_CHARS }),
-    // ID 来自当前真实记录；按正文提及顺序，第一个是主要去向。没有相关记录时才留空。
-    target: Type.Object({ view: Type.Enum(RETURN_TARGET_VIEWS), ids: Type.Array(IdSchema) }, STRICT),
-    // 2026-11-03 第 109 条：这一句是「这段时间没有…」的空话，界面不摆（零、空、默认值不显示）。旧记录没有这一项。
-    quiet: Type.Optional(Type.Boolean()),
-  },
-  STRICT,
-);
-export type ReturnSentence = Static<typeof ReturnSentenceSchema>;
 export const RETURN_BRIEF_STATUSES = ['composing', 'ready'] as const;
-export const ReturnBriefInputSchema = Type.Object(
-  {
-    awaySince: IsoTimeSchema,
-    returnedAt: IsoTimeSchema,
-    awayMs: Type.Integer({ minimum: 0 }),
-    status: Type.Enum(RETURN_BRIEF_STATUSES),
-    composedBy: Nullable(Type.Enum(['brain', 'data'])),
-    // Always the four sentences built from the data; the brain's wording replaces them once it is ready.
-    sentences: Type.Array(ReturnSentenceSchema, { minItems: 4, maxItems: 4 }),
-    asksConnected: Type.Boolean(),
-  },
-  STRICT,
-);
-export type ReturnBriefInput = Static<typeof ReturnBriefInputSchema>;
-export const ReturnBriefPatchSchema = Type.Partial(
-  Type.Object({
-    status: Type.Enum(RETURN_BRIEF_STATUSES),
-    composedBy: Nullable(Type.Enum(['brain', 'data'])),
-    sentences: Type.Array(ReturnSentenceSchema, { minItems: 4, maxItems: 4 }),
-    readAt: Nullable(IsoTimeSchema),
-    connected: Nullable(Type.Boolean()),
-    readByDeviceId: Nullable(IdSchema),
-  }),
-  STRICT,
-);
-export type ReturnBriefPatch = Static<typeof ReturnBriefPatchSchema>;
-export const ReturnBriefSchema = Type.Object({
-  ...RECORD_META,
-  ...ReturnBriefInputSchema.properties,
-  readAt: Nullable(IsoTimeSchema),
-  connected: Nullable(Type.Boolean()),
-  readByDeviceId: Nullable(IdSchema),
-});
-export type ReturnBrief = Static<typeof ReturnBriefSchema>;
-
-// 触发记录：同一代次只记一次；条件失效保留历史，下次满足使用新代次，重扫、重启不会重复出卡。
-export const TRIGGER_KINDS = ['deadline', 'criterion_met'] as const;
-export const TRIGGER_OUTCOMES = ['card', 'silent'] as const;
-export const TriggerFiringSchema = Type.Object(
-  {
-    key: Type.String({ minLength: 1, maxLength: 300 }),
-    triggerKey: Type.String({ minLength: 1, maxLength: 300 }),
-    generation: Type.Integer({ minimum: 1 }),
-    invalidatedAt: Nullable(IsoTimeSchema),
-    kind: Type.Enum(TRIGGER_KINDS),
-    concernId: Nullable(IdSchema),
-    refType: Text,
-    refId: IdSchema,
-    channel: Type.Enum(CHANNELS),
-    askId: Nullable(IdSchema),
-    outcome: Type.Enum(TRIGGER_OUTCOMES),
-    firedAt: IsoTimeSchema,
-  },
-  STRICT,
-);
-export type TriggerFiring = Static<typeof TriggerFiringSchema>;
-
-export const ConcernTriggerContextSchema = Type.Union([Type.Object({
-  triggerKey: Type.String({ minLength: 1 }),
-  triggerKind: Type.Literal('deadline'),
-  concernId: Nullable(IdSchema),
-  refId: IdSchema,
-}), Type.Object({
-  triggerKey: Type.String({ minLength: 1 }),
-  triggerKind: Type.Literal('criterion_met'),
-  concernId: IdSchema,
-  refId: IdSchema,
-})]);
-export type ConcernTriggerContext = Static<typeof ConcernTriggerContextSchema>;
 
 /** The last time the user did something in the app (any device). */
 export const PresenceSchema = Type.Object(

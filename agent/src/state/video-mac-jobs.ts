@@ -124,4 +124,3 @@ export function createMacJobStore(context: StoreContext) {
   };
 }
 
-export type MacJobStore = ReturnType<typeof createMacJobStore>;

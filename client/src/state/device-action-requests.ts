@@ -19,5 +19,3 @@ export function nodeLimitsKey(nodeId: string): string {
 
 export const NODE_CODE_KEY = 'node:new:code';
 
-/** 设备与度量这一页管的操作 key 前缀。 */
-export const DEVICE_OP_PREFIXES: readonly string[] = ['node:', 'self:'];

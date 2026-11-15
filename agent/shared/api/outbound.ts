@@ -20,5 +20,3 @@ export const OutboundGrantResponseSchema = Type.Object({ grant: OutboundGrantSch
 export const OutboundGrantListResponseSchema = Type.Object({ grants: Type.Array(OutboundGrantSchema) });
 export const OutboundLogListResponseSchema = Type.Object({ entries: Type.Array(OutboundLogSchema) });
 export const OutboundLogResponseSchema = Type.Object({ entry: OutboundLogSchema });
-export type OutboundGrantListResponse = Static<typeof OutboundGrantListResponseSchema>;
-export type OutboundLogListResponse = Static<typeof OutboundLogListResponseSchema>;

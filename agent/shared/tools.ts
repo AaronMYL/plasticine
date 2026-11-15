@@ -55,7 +55,6 @@ export type ToolDescriptor = Static<typeof ToolDescriptorSchema>;
  */
 export const TOOL_OUTCOMES = ['ok', 'error', 'needs_permission', 'unknown', 'dry_run', 'queued'] as const;
 export const ToolOutcomeSchema = Type.Enum(TOOL_OUTCOMES);
-export type ToolOutcome = Static<typeof ToolOutcomeSchema>;
 
 export const TOOL_ERROR_CODES = [
   'unknown_tool',
@@ -68,7 +67,6 @@ export const TOOL_ERROR_CODES = [
   'action_conflict',
 ] as const;
 export const ToolErrorCodeSchema = Type.Enum(TOOL_ERROR_CODES);
-export type ToolErrorCode = Static<typeof ToolErrorCodeSchema>;
 
 /** One call's result, in the call's original position; `content` is exactly what the model is shown. */
 export const ToolResultSchema = Type.Object(

@@ -51,7 +51,6 @@ export const PageElementSchema = Type.Object({
   /** 点它（或在它里面回车）算提交：提交前问他。 */
   submit: Type.Optional(SubmitKindSchema),
 }, STRICT);
-export type PageElement = Static<typeof PageElementSchema>;
 
 // Mac 框架读取最多登记60个文档；兼容0.7.5已持久化的局部子框架计数回执。
 const PAGE_FRAME_COUNT_MAX = 60;
@@ -105,7 +104,6 @@ export const PageActResultSchema = Type.Object({
   submitted: Type.Union([SubmitKindSchema, Type.Null()]),
   page: PagePerceptionSchema,
 }, STRICT);
-export type PageActResult = Static<typeof PageActResultSchema>;
 
 /** 没放行的提交：设备没点，回执的 result 里带这个（errorCode 是 submit_needs_you）。 */
 export const PageSubmitHoldSchema = Type.Object({

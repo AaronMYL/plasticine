@@ -72,11 +72,3 @@ export function inSpan(day: string, span: DaySpan): boolean {
   return day >= span.from && day < span.to;
 }
 
-/** Every day of the span in order. */
-export function daysOf(span: DaySpan): string[] {
-  const days: string[] = [];
-  for (let at = utcDate(span.from).getTime(); isoDay(new Date(at)) < span.to; at += DAY_MS) {
-    days.push(isoDay(new Date(at)));
-  }
-  return days;
-}

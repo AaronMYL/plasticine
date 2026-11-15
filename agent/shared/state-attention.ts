@@ -73,7 +73,6 @@ export type Channel = Static<typeof ChannelSchema>;
 /** 「先不」不是状态：卡仍是 open，只是收回清单（deferredAt 有值）。 */
 export const ASK_STATUSES = ['open', 'answered', 'withdrawn'] as const;
 export const AskStatusSchema = Type.Enum(ASK_STATUSES);
-export type AskStatus = Static<typeof AskStatusSchema>;
 
 // The card's one sentence is ≤ 40 characters in the UI (《UI 方案》第 6 节); cards the system writes itself quote a
 // task title, so the store allows more and the request_input tool keeps the model to 40.
@@ -140,7 +139,6 @@ export const AskPatchSchema = Type.Partial(
   }),
   STRICT,
 );
-export type AskPatch = Static<typeof AskPatchSchema>;
 
 export const AskSchema = Type.Object({
   ...RECORD_META,
@@ -164,7 +162,6 @@ export const PushKeysSchema = Type.Object(
   },
   STRICT,
 );
-export type PushKeys = Static<typeof PushKeysSchema>;
 
 // Push services hand out https URLs of a few hundred characters; 2 048 leaves room and keeps the index small.
 export const PUSH_ENDPOINT_MAX_CHARS = 2_048;
@@ -201,9 +198,3 @@ export type PushSubscription =Static<typeof PushSubscriptionSchema>;
 
 // ---------- 邮件兜底的开关（用户 2026-11-01 定：只给「订阅需要重新登录」「任务连续失败」两类卡加邮件） ----------
 
-/** 一行；没有行时算开着（默认开，用户可关）。发不发、发什么由 attention/mail-fallback.ts 决定，这里只存开关。 */
-export const MailFallbackSettingsSchema = Type.Object({
-  ...RECORD_META,
-  enabled: Type.Boolean(),
-});
-export type MailFallbackSettings = Static<typeof MailFallbackSettingsSchema>;

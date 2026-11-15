@@ -95,4 +95,3 @@ export function createLineDayStore(context: StoreContext) {
   };
 }
 
-export type LineDayStore = ReturnType<typeof createLineDayStore>;

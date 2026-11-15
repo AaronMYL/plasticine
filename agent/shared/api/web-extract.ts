@@ -19,7 +19,6 @@ export type WebExtractInput = Static<typeof WebExtractInputSchema>;
 export const WebExtractPointSchema = Type.Object({ text: Type.String({ minLength: 1, maxLength: 240 }),
   block: Type.Integer({ minimum: 0 }), quote: Type.String({ minLength: 1, maxLength: 1000 }) }, Strict);
 export const WebExtractPointsSchema = Type.Array(WebExtractPointSchema, { maxItems: WEB_EXTRACT_POINTS_MAX });
-export type WebExtractPoint = Static<typeof WebExtractPointSchema>;
 export const WebExtractViewSchema = Type.Object({ url: Url, title: Type.String({ maxLength: 1000 }),
   totalChars: Type.Integer({ minimum: 0 }), truncated: Type.Boolean(),
   blocks: Type.Array(Type.Object({ index: Type.Integer({ minimum: 0 }), kind: Type.Enum(['paragraph', 'heading']),

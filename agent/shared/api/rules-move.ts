@@ -12,7 +12,6 @@ import { SoulOwnerSchema } from './souls.ts';
 export const RULES_MOVE_PATH = `${API_PREFIX}/memory/rules-move`;
 /** about_you：进「关于你」；soul：进主线或某位队友的 Soul；product：产品里本来就有，拿掉。 */
 export const RULES_MOVE_DEST_KINDS = ['about_you', 'soul', 'product'] as const;
-export type RulesMoveDestKind = (typeof RULES_MOVE_DEST_KINDS)[number];
 export const RULES_MOVE_MAX = 200;
 
 export const RulesMoveDestSchema = Type.Object({

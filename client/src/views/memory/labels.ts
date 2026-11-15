@@ -1,6 +1,6 @@
 // 记忆页、判断页共用的中文写法：谁改的、为什么改、来源和它的 w（w 只说来源，等宽数字，不用颜色，第 19 条）。
 
-import type { AgreementView, ChangeRecordView, MemoryEntryView } from '../../api/types.ts';
+import type { AgreementView, ChangeRecordView } from '../../api/types.ts';
 
 export const ACTOR_TEXT: Readonly<Record<ChangeRecordView['actor'], string>> = {
   user: '你',
@@ -16,11 +16,6 @@ export const REASON_KIND_TEXT: Readonly<Record<NonNullable<ChangeRecordView['rea
   premise_clarified: '前提澄清',
   context_changed: '情境变化',
   user_correction: '用户纠正',
-};
-
-export const BASIS_TEXT: Readonly<Record<MemoryEntryView['basis'], string>> = {
-  self_reported: '自述',
-  inferred: '推断',
 };
 
 export const AGREEMENT_KIND_TEXT: Readonly<Record<AgreementView['kind'], string>> = {

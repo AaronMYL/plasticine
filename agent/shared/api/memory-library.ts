@@ -17,7 +17,6 @@ export const MemorySearchQuerySchema = Type.Object(
   { q: Type.String({ minLength: 1, maxLength: 200 }), archive: Type.Optional(Type.Boolean()) },
   { additionalProperties: false },
 );
-export type MemorySearchQuery = Static<typeof MemorySearchQuerySchema>;
 
 export const MemorySearchHitSchema = Type.Object({
   topicId: IdSchema,

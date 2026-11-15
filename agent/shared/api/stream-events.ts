@@ -25,4 +25,3 @@ export const EveryStreamEventSchema = Type.Union([
   ToolGroupStreamEventSchema,
 ]);
 export type EveryStreamEvent = Static<typeof EveryStreamEventSchema>;
-export type EveryStreamEventType = EveryStreamEvent['type'];

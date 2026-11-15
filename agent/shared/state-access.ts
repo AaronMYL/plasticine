@@ -30,7 +30,6 @@ export const DevicePatchSchema = Type.Partial(
   Type.Object({ lastSeenAt: IsoTimeSchema, revokedAt: Nullable(IsoTimeSchema) }),
   STRICT,
 );
-export type DevicePatch = Static<typeof DevicePatchSchema>;
 export const DeviceSchema = Type.Object({
   ...RECORD_META,
   ...DeviceInputSchema.properties,
@@ -60,7 +59,6 @@ export const SessionPatchSchema = Type.Partial(
   Type.Object({ lastSeenAt: IsoTimeSchema, revokedAt: Nullable(IsoTimeSchema) }),
   STRICT,
 );
-export type SessionPatch = Static<typeof SessionPatchSchema>;
 export const SessionSchema = Type.Object({
   ...RECORD_META,
   ...SessionInputSchema.properties,
@@ -107,7 +105,6 @@ export const DeviceKeyInputSchema = Type.Object(
 );
 export type DeviceKeyInput = Static<typeof DeviceKeyInputSchema>;
 export const DeviceKeyPatchSchema = Type.Object({ revokedAt: IsoTimeSchema }, STRICT);
-export type DeviceKeyPatch = Static<typeof DeviceKeyPatchSchema>;
 export const DeviceKeySchema = Type.Object({
   ...RECORD_META,
   ...DeviceKeyInputSchema.properties,

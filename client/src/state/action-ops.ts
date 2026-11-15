@@ -66,12 +66,6 @@ export const ActionRequestSchema = Type.Union([
 ]);
 export type ActionRequest = Static<typeof ActionRequestSchema>;
 
-/**
- * running 请求在路上 · uncertain 回执不确定（结果待核实，用同一标识再发一次就是核实）· unsent 确定没送到
- * （会话失效、服务正在重启），可以用同一标识重发 · failed 服务端明确拒了（文案是服务端那句），下次点换新标识。
- */
-export type ActionStatus = 'running' | 'uncertain' | 'unsent' | 'failed';
-
 const ActionOpSchema = Type.Object({
   key: Type.String({ minLength: 1 }),
   /** 按钮上的字（「暂停」「作答」），状态那一行用。 */

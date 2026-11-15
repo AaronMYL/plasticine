@@ -24,7 +24,6 @@ export const DIRECT_CHANNEL_LABEL = 'plasticine';
 export const DirectOfferRequestSchema = Type.Object({
   sdp: Type.String({ minLength: 1, maxLength: DIRECT_SDP_MAX_CHARS }),
 }, { additionalProperties: false });
-export type DirectOfferRequest = Static<typeof DirectOfferRequestSchema>;
 
 export const DirectOfferResponseSchema = Type.Object({
   sdp: Type.String({ minLength: 1, maxLength: DIRECT_SDP_MAX_CHARS }),
@@ -82,9 +81,6 @@ export const DirectControlFrameSchema = Type.Object({
 
 export const DirectFrameSchema = Type.Union([DirectRequestFrameSchema, DirectResponseFrameSchema,
   DirectControlFrameSchema]);
-export type DirectRequestFrame = Static<typeof DirectRequestFrameSchema>;
-export type DirectResponseFrame = Static<typeof DirectResponseFrameSchema>;
-export type DirectControlFrame = Static<typeof DirectControlFrameSchema>;
 export type DirectFrame = Static<typeof DirectFrameSchema>;
 
 /** 二进制帧：前 4 字节是请求号（大端），后面是这一块正文。 */

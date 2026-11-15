@@ -34,15 +34,6 @@ type Level = FeedSourceView['level'];
 
 const REACTION_LABELS: Readonly<Record<Reaction, string>> = { like: '点赞', dislike: '不感兴趣' };
 
-/** 链接只收 http(s) 开头的完整网址（服务端同样拒别的）；空着就是不带链接。 */
-export function linkProblem(url: string): string | null {
-  const trimmed = url.trim();
-  if (trimmed === '') {
-    return null;
-  }
-  return /^https?:\/\/\S+$/i.test(trimmed) ? null : '链接要是 http:// 或 https:// 开头的完整网址。';
-}
-
 function isItem(value: unknown, id: string): value is FeedItemView {
   return typeof value === 'object' && value !== null && 'id' in value && value.id === id && 'arrivedAt' in value;
 }

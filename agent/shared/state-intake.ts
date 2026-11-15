@@ -31,7 +31,6 @@ export const IntakeSourceInputSchema = Type.Object(
   },
   STRICT,
 );
-export type IntakeSourceInput = Static<typeof IntakeSourceInputSchema>;
 export const IntakeSourcePatchSchema = Type.Partial(
   Type.Object({
     enabled: Type.Boolean(),
@@ -41,7 +40,6 @@ export const IntakeSourcePatchSchema = Type.Partial(
   }),
   STRICT,
 );
-export type IntakeSourcePatch = Static<typeof IntakeSourcePatchSchema>;
 export const IntakeSourceSchema = Type.Object({ ...RECORD_META, ...Type.Required(IntakeSourceInputSchema).properties });
 export type IntakeSource = Static<typeof IntakeSourceSchema>;
 
@@ -102,7 +100,6 @@ export const DISPOSITION_KINDS = [
   /** 收尾门补了一次提示还漏：记「留在主会话 · 未派」，计入度量。 */
   'unrouted',
 ] as const;
-export type DispositionKind = (typeof DISPOSITION_KINDS)[number];
 export const DISPOSITION_ACTORS = ['code', 'plasticine', 'user'] as const;
 
 export const TriggerDispositionInputSchema = Type.Object(
@@ -157,7 +154,6 @@ export const RulePatchSchema = Type.Partial(
   Type.Object({ name: Text, text: Text, mode: Type.Enum(RULE_MODES), ruleVersion: Type.Integer({ minimum: 1 }) }),
   STRICT,
 );
-export type RulePatch = Static<typeof RulePatchSchema>;
 export const RuleSchema = Type.Object({ ...RECORD_META, ...Type.Required(RuleInputSchema).properties });
 export type Rule = Static<typeof RuleSchema>;
 
@@ -182,52 +178,3 @@ export type RuleEvent = Static<typeof RuleEventSchema>;
 
 // ---------- 细判记录 ----------
 
-export const ASSESSMENT_OUTCOMES = ['accept', 'ignore', 'unavailable', 'would_accept'] as const;
-export type AssessmentOutcome = (typeof ASSESSMENT_OUTCOMES)[number];
-export const ASSESSMENT_STATUSES = ['queued', 'running', 'done'] as const;
-
-export const RuleJudgmentSchema = Type.Object(
-  { ruleId: IdSchema, ruleVersion: Type.Integer({ minimum: 1 }), hit: Type.Boolean(), reason: Type.String() },
-  STRICT,
-);
-export type RuleJudgment = Static<typeof RuleJudgmentSchema>;
-
-export const AssessmentInputSchema = Type.Object(
-  {
-    threadKey: ThreadKeySchema,
-    triggerIds: Type.Array(IdSchema, { minItems: 1 }),
-    status: Type.Optional(Type.Enum(ASSESSMENT_STATUSES)),
-    attempts: Type.Optional(Type.Integer({ minimum: 0 })),
-    runId: Type.Optional(Nullable(IdSchema)),
-    policyVersion: Type.Optional(Nullable(Type.String())),
-    outcome: Type.Optional(Nullable(Type.Enum(ASSESSMENT_OUTCOMES))),
-    ruleJudgments: Type.Optional(Type.Array(RuleJudgmentSchema)),
-    matterId: Type.Optional(Nullable(IdSchema)),
-    wouldDo: Type.Optional(Nullable(Type.String())),
-    error: Type.Optional(Nullable(Type.String())),
-  },
-  STRICT,
-);
-export type AssessmentInput = Static<typeof AssessmentInputSchema>;
-export const AssessmentPatchSchema = Type.Partial(Type.Object({
-  status: Type.Enum(ASSESSMENT_STATUSES),
-  attempts: Type.Integer({ minimum: 0 }),
-  triggerIds: Type.Array(IdSchema, { minItems: 1 }),
-  runId: Nullable(IdSchema),
-  policyVersion: Nullable(Type.String()),
-  outcome: Nullable(Type.Enum(ASSESSMENT_OUTCOMES)),
-  ruleJudgments: Type.Array(RuleJudgmentSchema),
-  matterId: Nullable(IdSchema),
-  wouldDo: Nullable(Type.String()),
-  error: Nullable(Type.String()),
-}), STRICT);
-export type AssessmentPatch = Static<typeof AssessmentPatchSchema>;
-export const AssessmentSchema = Type.Object({
-  ...RECORD_META,
-  ...Type.Required(AssessmentInputSchema).properties,
-  /** 用户确认字段（观察模式的对 / 不对）；用户 11-02 改定不走观察模式，这三列只留着，代码不写。 */
-  verdict: Nullable(Type.Union([Type.Literal('right'), Type.Literal('wrong')])),
-  verdictAt: Nullable(IsoTimeSchema),
-  verdictNote: Nullable(Type.String()),
-});
-export type Assessment = Static<typeof AssessmentSchema>;

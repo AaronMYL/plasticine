@@ -2,14 +2,8 @@
 // 这个项目下的线，资料是笔记和链接，动态是项目自己的事。关切、任务、节点 2026-11-05 删掉，那几个字段给空数组。
 
 import {
-  PROJECT_HEALTH_LABELS,
-  type ProjectActivityView,
-  type ProjectDecisionView,
-  type ProjectDetail,
-  type ProjectLineView,
-  type ProjectMaterialView,
-  type ProjectRowView,
-  type ProjectTodoView,
+  type ProjectActivityView, type ProjectDecisionView, type ProjectDetail, type ProjectLineView,
+  type ProjectMaterialView, type ProjectRowView, type ProjectTodoView,
 } from '../../shared/api/index.ts';
 import type { LineStatus } from '../../shared/api/lines.ts';
 import type { Actor, Ask, Project, ProjectItem } from '../../shared/state.ts';
@@ -182,6 +176,3 @@ export function projectDetailView(state: ProjectViewState, project: Project, con
   };
 }
 
-export function healthText(value: Project['health']): string {
-  return value === null ? '未定' : PROJECT_HEALTH_LABELS[value];
-}

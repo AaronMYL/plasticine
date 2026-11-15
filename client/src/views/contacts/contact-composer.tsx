@@ -77,11 +77,6 @@ function placeholderOf(contact: ContactRow): string {
   return contact.kind === 'mail' ? `回 ${contact.name}` : `发给${gap}${contact.name}`;
 }
 
-/** 光标前面刚打了一个「@」（行首或空白后面）。 */
-export function startsMention(text: string, caret: number): boolean {
-  return mentionQuery(text, caret) === '';
-}
-
 /** 光标正在一个「@…」里（@ 在行首或空白后面，到光标之间没有空白）：返回 @ 后面已经打的字；不在就是 null。 */
 export function mentionQuery(text: string, caret: number): string | null {
   const at = text.lastIndexOf('@', caret - 1);

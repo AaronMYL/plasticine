@@ -21,7 +21,6 @@ export const BackstageQuerySchema = Type.Object(
   { tz: Type.Optional(TimeZoneSchema) },
   { additionalProperties: false },
 );
-export type BackstageQuery = Static<typeof BackstageQuerySchema>;
 
 /** 服务端自己按钟点跑的几样（app/system-schedules.ts）。 */
 export const SYSTEM_SCHEDULE_IDS = ['backup', 'feed'] as const;
@@ -73,7 +72,6 @@ export const SetBackstageRuleRequestSchema = Type.Object(
   { requestId: RequestIdSchema, version: Type.Integer({ minimum: 1 }), on: Type.Boolean() },
   { additionalProperties: false },
 );
-export type SetBackstageRuleRequest = Static<typeof SetBackstageRuleRequestSchema>;
 
 export const SetBackstageRuleResponseSchema = Type.Object({ rule: BackstageRuleSchema });
 export type SetBackstageRuleResponse = Static<typeof SetBackstageRuleResponseSchema>;

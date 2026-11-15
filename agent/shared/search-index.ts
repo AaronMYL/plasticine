@@ -32,4 +32,3 @@ export const ConversationSearchParameters = Type.Object({
     { description: 'Only this kind of line: main (the main conversation), side, background (work lines)' })),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: CONVERSATION_SEARCH_LIMIT_MAX })),
 }, { additionalProperties: false });
-export type ConversationSearchArgs = Static<typeof ConversationSearchParameters>;

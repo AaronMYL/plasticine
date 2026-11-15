@@ -7,13 +7,6 @@ import { Store } from './store.ts';
 export const DEVICE_TABS = ['devices', 'metrics', 'system', 'activation'] as const;
 export type DeviceTab = (typeof DEVICE_TABS)[number];
 
-export const DEVICE_TAB_LABELS: Readonly<Record<DeviceTab, string>> = {
-  devices: '设备',
-  metrics: '度量',
-  system: '运行与更新',
-  activation: '启用',
-};
-
 export interface DeviceUiState {
   tab: DeviceTab;
   editing: ReadonlySet<string>;

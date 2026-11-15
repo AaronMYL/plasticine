@@ -1,6 +1,5 @@
 // 脑与用户共用操作 schema；对外动作按工具回执干跑。第 97 条（10-29）起不再逐次批准：原来的批准入口从没接上，
 // 你点了批准也执行不了。
-import { BrowserActionInputSchema } from '../../shared/api/index.ts';
 import { BrowserToolActionSchema } from '../../shared/browser-observation.ts';
 import type { BrowserAction } from './transports.ts';
 import type { BrowserView } from './browser.ts';
@@ -11,7 +10,6 @@ export interface BrowserActor {
   act(action: BrowserAction, signal: AbortSignal, scope?: string, observationId?: string): Promise<BrowserView>;
 }
 const ACT_TIMEOUT_MS = 20_000;
-export const BrowserActionSchema = BrowserActionInputSchema;
 
 export function createCloudBrowserActTool(browser: BrowserActor): Tool {
   return defineTool({

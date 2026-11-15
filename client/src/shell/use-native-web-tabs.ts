@@ -6,7 +6,7 @@
 // 2026-11-04 第 2 批「浏览器」：原生报来会做的网页工具（web-page-tools.ts：查找、缩放、截图、打印、圈一块、缩略图、
 // 下载），菜单只显示报了的；缩放按网站记住（换到记过的网站就照那一档缩放），每载完一页记一条历史记录，都在网页侧记。
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Value } from 'typebox/value';
 import {
   WEB_PAGE_TOOLS,
@@ -27,7 +27,6 @@ import { collectHitRegions, useHitRegions } from './hit-regions.ts';
 import { internalPage } from './internal-page.ts';
 import { parseHash, type Route } from './routes.ts';
 import { searchUrl } from './search-engine.ts';
-
 
 export interface WebTabNav {
   url: string;
@@ -74,10 +73,6 @@ function localStorageOrNull(): KeyValueStorage | null {
 }
 
 export const NativeWebTabsContext = createContext<NativeWebTabs | null>(null);
-
-export function useNativeWebTabsContext(): NativeWebTabs | null {
-  return useContext(NativeWebTabsContext);
-}
 
 function sameFrame(a: WebTabFrame | null, b: WebTabFrame | null): boolean {
   return a === b || (a !== null && b !== null && a.x === b.x && a.y === b.y && a.width === b.width

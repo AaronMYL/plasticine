@@ -32,12 +32,6 @@ export const PROJECT_LIFECYCLE_LABELS: Readonly<Record<(typeof PROJECT_LIFECYCLE
 
 /** 动态和现状的来源：你说的 / Plasticine 写的 / 现实结果 / 系统（迁移、建项目）。 */
 export const PROJECT_SOURCES = ['user', 'plasticine', 'reality', 'system'] as const;
-export const PROJECT_SOURCE_LABELS: Readonly<Record<(typeof PROJECT_SOURCES)[number], string>> = {
-  user: '你说的',
-  plasticine: 'Plasticine 写的',
-  reality: '实际结果',
-  system: '系统',
-};
 
 /** GET /v2/projects?tz=&includeDone= 与 GET /v2/projects/:id?tz= */
 export const ProjectQuerySchema = Type.Object(

@@ -408,4 +408,3 @@ export type VideoWorkStore = ReturnType<typeof createVideoWorkStore>;
 export function waitingTranscriber(work: Pick<VideoWorkRow, 'want' | 'run' | 'stage'>): boolean {
   return work.want === 'full' && work.run === 'idle' && (work.stage === 'synced' || work.stage === 'previewed');
 }
-export type VideoFolderStore = ReturnType<typeof createVideoFolderStore>;

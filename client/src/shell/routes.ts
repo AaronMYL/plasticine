@@ -149,12 +149,6 @@ export interface BookRoutePosition {
   offset: number;
 }
 
-export interface NavItem {
-  id: ViewId;
-  label: string;
-  icon: IconName;
-}
-
 /**
  * 设置弹框的六段（11-13 Aaron 看过设计稿定的重排）：通用（外观、时区、通知和通知记录）· 账号（名字、头像、@账号、密码、设备）·
  * AI（模型、同时做几件事、工具开关）· 隐私与授权（对外可见、对外授权；段名还叫 grants，旧地址照样进得来）· 浏览器 · 系统。

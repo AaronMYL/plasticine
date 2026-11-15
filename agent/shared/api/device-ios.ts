@@ -4,24 +4,10 @@
 // 参数 schema 在这里，devices.ts 并进 DeviceActionParamsSchema；结果 schema 并进 node-channel.ts 的 DEVICE_RESULT_SCHEMAS。
 
 import { Type, type Static } from 'typebox';
-import type { DeviceActionKind } from '../state.ts';
 import { IsoTimeSchema } from './common.ts';
 import { OrNull } from './lineage.ts';
 
 const STRICT = { additionalProperties: false };
-
-/** The kinds only the iPhone node reports (it also reports file_list / file_read / file_write). */
-export const IOS_ACTION_KINDS = [
-  'calendar_list',
-  'calendar_create',
-  'reminder_list',
-  'reminder_create',
-  'reminder_complete',
-  'photo_list',
-  'photo_read',
-  'shortcut_run',
-  'location_current',
-] as const satisfies readonly DeviceActionKind[];
 
 // 日历、提醒的标题和备注：系统日历显示一行标题，备注给够一段话。
 export const IOS_TITLE_MAX_CHARS = 200;
@@ -63,7 +49,6 @@ const HexColor = Type.String({ pattern: '^#[0-9A-Fa-f]{6}$' });
 /** 一个日历或提醒事项列表。 */
 export const CalendarInfoSchema = Type.Object({ id: Type.String(), title: Type.String(), color: HexColor,
   source: Type.String(), writable: Type.Boolean() }, STRICT);
-export type CalendarInfo = Static<typeof CalendarInfoSchema>;
 /** 一个日程（重复日程的每一次共用 id，用 id + start 区分）。withOthers：有别人参加，改它要先问他。 */
 export const CalendarEventSchema = Type.Object({ id: Type.String(), title: Type.String(),
   start: IsoTimeSchema, end: IsoTimeSchema, allDay: Type.Boolean(), location: OrNull(Type.String()),

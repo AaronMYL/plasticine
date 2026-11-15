@@ -12,7 +12,6 @@ export const TIMED_SLOT_SOURCES = ['subscription', 'review', 'heartbeat', 'dream
 export type TimedSlotSource = (typeof TIMED_SLOT_SOURCES)[number];
 /** 上次：做成；没做成（线自己说的）；出错；叫停；看过没事（心跳）；跳过（没有新对话、上一次还没做完）。 */
 export const TIMED_SLOT_OUTCOMES = ['done', 'unmet', 'failed', 'stopped', 'quiet', 'skipped'] as const;
-export type TimedSlotOutcome = (typeof TIMED_SLOT_OUTCOMES)[number];
 
 const Json = Type.Record(Type.String(), Type.Unknown());
 
@@ -21,7 +20,6 @@ export const TimedSlotInputSchema = Type.Object({
   /** 各来源自己的设置（心跳：多久一次、安静时段、清单；做梦：几点）。由那个模块自己校验。 */
   config: Type.Optional(Json),
 }, STRICT);
-export type TimedSlotInput = Static<typeof TimedSlotInputSchema>;
 
 export const TimedSlotPatchSchema = Type.Partial(Type.Object({
   nextAt: Nullable(IsoTimeSchema),
@@ -62,7 +60,6 @@ export const HeartbeatFactSchema = Type.Object({
 export type HeartbeatFact = Static<typeof HeartbeatFactSchema>;
 
 export const HEARTBEAT_ACTS = ['notify', 'start', 'suggest'] as const;
-export type HeartbeatActKind = (typeof HEARTBEAT_ACTS)[number];
 export const HeartbeatActSchema = Type.Object({
   kind: Type.Enum(HEARTBEAT_ACTS),
   text: Type.String({ maxLength: 300 }),

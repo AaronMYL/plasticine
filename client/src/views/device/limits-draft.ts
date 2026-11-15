@@ -10,13 +10,7 @@ import {
   DEVICE_PER_HOUR_MAX,
   DeviceLimitsSchema,
 } from '../../api/shared.ts';
-import type { DeviceClassMode, DeviceLimits } from '../../api/types.ts';
-
-export const MODE_LABELS: Readonly<Record<DeviceClassMode, string>> = {
-  allow: '允许',
-  confirm_each: '逐次确认',
-  deny: '不许',
-};
+import type { DeviceLimits } from '../../api/types.ts';
 
 const ClassDraftSchema = Type.Object({ mode: Type.Enum(DEVICE_CLASS_MODES), perHour: Type.String() });
 

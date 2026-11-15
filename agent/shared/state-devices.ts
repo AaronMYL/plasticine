@@ -70,7 +70,6 @@ export const DeviceClassLimitSchema = Type.Object(
   { mode: DeviceClassModeSchema, perHour: Type.Integer({ minimum: 0, maximum: DEVICE_PER_HOUR_MAX }) },
   STRICT,
 );
-export type DeviceClassLimit = Static<typeof DeviceClassLimitSchema>;
 
 /**
  * 设备侧上限（第 8 节第 2 层）：目录范围（roots，读写删和命令的工作目录都只在这些目录里）、可调用的应用、浏览器站点（逐站
@@ -102,7 +101,6 @@ export type DeviceLimits = Static<typeof DeviceLimitsSchema>;
 
 export const NODE_PLATFORMS = ['macos', 'ios', 'windows', 'linux', 'browser'] as const;
 export const NodePlatformSchema = Type.Enum(NODE_PLATFORMS);
-export type NodePlatform = Static<typeof NodePlatformSchema>;
 
 export const NODE_NAME_MAX_CHARS = 60;
 export const NodeNameSchema = Type.String({ minLength: 1, maxLength: NODE_NAME_MAX_CHARS });
@@ -173,7 +171,6 @@ export const NodePairingCodePatchSchema = Type.Partial(
   Type.Object({ usedAt: IsoTimeSchema, nodeId: IdSchema, voidedAt: IsoTimeSchema }),
   STRICT,
 );
-export type NodePairingCodePatch = Static<typeof NodePairingCodePatchSchema>;
 export const NodePairingCodeSchema = Type.Object({
   ...RECORD_META,
   ...NodePairingCodeInputSchema.properties,

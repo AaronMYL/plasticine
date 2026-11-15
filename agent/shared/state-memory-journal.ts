@@ -50,7 +50,6 @@ export type MemoryJournalEntry = Static<typeof MemoryJournalEntrySchema>;
 
 /** 一次整理里的一条变更：新加；替换（旧 → 新，带出处）；拿不准（两个候选，等他挑）；走不通的路。 */
 export const MEMORY_DREAM_CHANGE_KINDS = ['add', 'replace', 'unsure', 'dead_end'] as const;
-export type MemoryDreamChangeKind = (typeof MEMORY_DREAM_CHANGE_KINDS)[number];
 
 export const MemoryDreamCandidateSchema = Type.Object(
   {
@@ -59,7 +58,6 @@ export const MemoryDreamCandidateSchema = Type.Object(
   },
   STRICT,
 );
-export type MemoryDreamCandidate = Static<typeof MemoryDreamCandidateSchema>;
 
 export const MemoryDreamInputSchema = Type.Object(
   {

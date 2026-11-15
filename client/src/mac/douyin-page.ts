@@ -35,8 +35,6 @@ const COMMON_PARAMS: Readonly<Record<string, string>> = {
   version_name: '17.4.0', cookie_enabled: 'true', platform: 'PC', downlink: '10',
 };
 
-export type DouyinPageState = 'signed_out' | 'ready';
-
 type Json = Record<string, unknown>;
 
 function object(value: unknown): Json {

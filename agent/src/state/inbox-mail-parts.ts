@@ -39,4 +39,3 @@ export function createInboxMailParts(context: StoreContext) {
   };
 }
 
-export type InboxMailParts = ReturnType<typeof createInboxMailParts>;

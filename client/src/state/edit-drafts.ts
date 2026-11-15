@@ -18,14 +18,6 @@ const StoredDraftsSchema = Type.Object({ version: Type.Literal(1), drafts: Type.
 
 export const EDIT_DRAFTS_STORAGE_KEY = 'plasticine.edit-drafts';
 
-export function memoryDraftKey(entryId: string): string {
-  return `memory:${entryId}`;
-}
-
-export function judgmentDraftKey(judgmentId: string, form: 'p' | 'outcome'): string {
-  return `judgment:${judgmentId}:${form}`;
-}
-
 function readStored(storage: KeyValueStorage | null): Map<string, EditDraft> {
   const drafts = new Map<string, EditDraft>();
   if (storage === null) {

@@ -2,7 +2,7 @@
 // 改了已读收藏归档（带铃上的未读数），工具组开关变了，云端浏览器的页面变了。每条带整行的视图，客户端按 id 换
 // （有 version 的按 version）。2026-11-05 专注、自建提醒、成果删了，它们的事件一起删。
 
-import { Type, type Static } from 'typebox';
+import { Type } from 'typebox';
 import { BrowserViewSchema } from './browser.ts';
 import { InboxRowViewSchema, InboxUnreadSchema } from './inbox.ts';
 import { MoneyEntryViewSchema } from './money.ts';
@@ -35,4 +35,3 @@ export const ToolGroupStreamEventSchema = Type.Union([
   ToolGroupChangedEventSchema,
   BrowserChangedEventSchema,
 ]);
-export type ToolGroupStreamEvent = Static<typeof ToolGroupStreamEventSchema>;

@@ -24,10 +24,6 @@ export function useAccountFace(): AccountFace {
   return { name: name === '' ? DEFAULT_ACCOUNT_NAME : name, avatar: status?.account?.avatar ?? null };
 }
 
-export function useAccountName(): string {
-  return useAccountFace().name;
-}
-
 /** 头像里的那个字：名字的第一个字（英文大写）。 */
 export function accountInitial(name: string): string {
   const first = Array.from(name.trim())[0] ?? Array.from(DEFAULT_ACCOUNT_NAME)[0]!;

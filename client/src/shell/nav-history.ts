@@ -81,7 +81,3 @@ export function useNavHistory(): { canBack: boolean; canForward: boolean } {
   return { canBack: value[0] === '1', canForward: value[1] === '1' };
 }
 
-/** 测试用：回到刚打开的样子。 */
-export function resetNavHistory(): void {
-  furthest = 0;
-}

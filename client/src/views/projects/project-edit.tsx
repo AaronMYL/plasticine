@@ -6,8 +6,7 @@ import { useApi } from '../../api/context.tsx';
 import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import {
-  PROJECT_LIFECYCLE_LABELS, PROJECT_LIFECYCLES, type EditProjectRequest, type ProjectBrief, type ProjectPerson,
-  type ProjectRowView,
+  PROJECT_LIFECYCLE_LABELS, PROJECT_LIFECYCLES, type EditProjectRequest, type ProjectBrief, type ProjectRowView,
 } from '../../api/shared.ts';
 
 type Patch = Omit<EditProjectRequest, 'requestId' | 'version'>;
@@ -89,7 +88,6 @@ export const BRIEF_FIELDS: readonly { key: keyof ProjectBrief; label: string }[]
   { key: 'terms', label: '术语' },
 ];
 
-
 export function BriefForm({ row, brief, onDone, onCancel }: {
   row: ProjectRowView; brief: ProjectBrief; onDone: () => void; onCancel: () => void;
 }): ReactNode {
@@ -112,32 +110,3 @@ export function BriefForm({ row, brief, onDone, onCancel }: {
   );
 }
 
-export function PeopleForm({ row, people, onDone, onCancel }: {
-  row: ProjectRowView; people: readonly ProjectPerson[]; onDone: () => void; onCancel: () => void;
-}): ReactNode {
-  const [draft, setDraft] = useState<ProjectPerson[]>([...people, { who: '', does: '' }]);
-  const { save, error, busy } = useSave(row, onDone);
-  const change = (index: number, patch: Partial<ProjectPerson>): void => {
-    setDraft(draft.map((person, at) => (at === index ? { ...person, ...patch } : person)));
-  };
-  const submit = (event: FormEvent): void => {
-    event.preventDefault();
-    save({ people: draft.filter((person) => person.who.trim() !== '').map((person) => ({
-      who: person.who.trim(), does: person.does.trim() })) });
-  };
-  return (
-    <form className="proj-edit" onSubmit={submit} aria-label="编辑分工">
-      {draft.map((person, index) => (
-        <div key={index} className="proj-person-fields">
-          <input className="field-input" aria-label="负责人" placeholder="负责人" value={person.who}
-            onChange={(event) => change(index, { who: event.target.value })} />
-          <input className="field-input" aria-label="负责什么" placeholder="负责什么" value={person.does}
-            onChange={(event) => change(index, { does: event.target.value })} />
-        </div>
-      ))}
-      <button type="button" className="text-button text-button-quiet"
-        onClick={() => setDraft([...draft, { who: '', does: '' }])}>再加一行</button>
-      <Foot busy={busy} error={error} onCancel={onCancel} />
-    </form>
-  );
-}

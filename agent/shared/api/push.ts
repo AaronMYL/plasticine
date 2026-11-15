@@ -50,7 +50,6 @@ export const PushSubscriptionViewSchema = Type.Object({
   createdAt: IsoTimeSchema,
   lastSentAt: Nullable(IsoTimeSchema),
 });
-export type PushSubscriptionView = Static<typeof PushSubscriptionViewSchema>;
 
 export const SubscribePushResponseSchema = Type.Object({ subscription: PushSubscriptionViewSchema });
 export type SubscribePushResponse = Static<typeof SubscribePushResponseSchema>;
@@ -100,7 +99,6 @@ export type NotifyEvent = Static<typeof NotifyEventSchema>;
 export const PRESENCE_PATH = `${API_PREFIX}/presence`;
 export const PresenceRequestSchema = Type.Object({ conversation: Nullable(ConversationKeySchema) },
   { additionalProperties: false });
-export type PresenceRequest = Static<typeof PresenceRequestSchema>;
 
 /** POST /v2/push/test：给这台设备发一条测试通知；回这台设备的订阅最近一次的结果（失败写原因）。 */
 export const PUSH_TEST_PATH = `${PUSH_PATH}/test`;

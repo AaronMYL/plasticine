@@ -32,9 +32,6 @@ const TODAY: readonly [string, string][] = [
   ['https://blog.example.com/vertical-tabs', 'Arc 的竖排标签是怎么来的'],
 ];
 
-/** 演示里一开始在看的那一页（今天的第一页）。 */
-export const DEMO_CURRENT_TAB = 'demo-today-0';
-
 export function demoWebTabsLayout(now: Date): WebTabsLayout {
   const at = now.toISOString();
   const tabs: WebTab[] = [];

@@ -72,7 +72,6 @@ export type ScheduleOutward = Static<typeof ScheduleOutwardSchema>;
 
 /** 结果放哪：每次都贴回主线；只在没做成时告诉他。 */
 export const SCHEDULE_REPORTS = ['always', 'failures'] as const;
-export type ScheduleReport = (typeof SCHEDULE_REPORTS)[number];
 
 /**
  * draft 起草了、等他确认；active 在跑；paused 他（或他让 Plasticine）停了；declined 他没确认；replaced 改过，换成了新的
@@ -170,7 +169,6 @@ export const SUGGESTION_ICONS = ['file', 'space', 'mail', 'books', 'clock', 'spa
 export type SuggestionIcon = (typeof SUGGESTION_ICONS)[number];
 /** open 摆着；started 他点了开始做；todo 他加成了待办；dismissed 他忽略了。 */
 export const SUGGESTION_STATUSES = ['open', 'started', 'todo', 'dismissed'] as const;
-export type SuggestionStatus = (typeof SUGGESTION_STATUSES)[number];
 
 export const SuggestionInputSchema = Type.Object({
   title: Type.String({ minLength: 1, maxLength: SUGGESTION_TITLE_MAX_CHARS }),

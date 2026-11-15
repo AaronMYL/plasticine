@@ -139,4 +139,3 @@ export function createSoulStore(context: StoreContext) {
   };
 }
 
-export type SoulStore = ReturnType<typeof createSoulStore>;

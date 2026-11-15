@@ -1,7 +1,7 @@
 // 要你定的卡在 /v2/events 上的三种事件（原来和任务的事件放在 task-events.ts，2026-11-05 任务删了，卡留着）：
 // 新出一张、在哪台设备上答了、放回去（先不）或撤回。都带整张卡和「等你」的条数。
 
-import { Type, type Static } from 'typebox';
+import { Type } from 'typebox';
 import { AskViewSchema } from './asks.ts';
 
 const BOARD_STATE = {
@@ -32,4 +32,3 @@ export const AskUpdatedEventSchema = Type.Object({
 });
 
 export const AskStreamEventSchema = Type.Union([AskCreatedEventSchema, AskAnsweredEventSchema, AskUpdatedEventSchema]);
-export type AskStreamEvent = Static<typeof AskStreamEventSchema>;

@@ -18,9 +18,6 @@ import {
 export const MEMORY_PATH = `${API_PREFIX}/memory`;
 export const MEMORY_ENTRIES_PATH = `${MEMORY_PATH}/entries`;
 
-// Long enough for a paragraph of the user's own words; the notes are where longer text lives.
-export const MEMORY_TEXT_MAX_CHARS = 4_000;
-
 export const MemoryEntryViewSchema = Type.Object({
   id: IdSchema,
   kind: Type.Enum(MEMORY_KINDS),

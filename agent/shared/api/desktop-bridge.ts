@@ -186,13 +186,6 @@ export interface PlasticineDesktopDevice {
   openPermission(permission: DesktopPermission): void;
 }
 
-/** 窗口外观在 Windows 上多报一项：右上角窗口按钮让出来的宽度（和 shell 线给 WindowChromeSchema 加的同名字段对齐）。 */
-export interface DesktopWindowChrome {
-  trafficLightInset: number;
-  fullScreen: boolean;
-  controlsRight?: number;
-}
-
 /**
  * 界面直接调系统助手（machelper 线的 client/src/mac/desktop-helper.ts 按这个取）：方法和参数照
  * agent/shared/desktop-helper-protocol.ts 的 HELPER_METHODS，壳只放行那里的方法（cancel 除外），参数先过 schema。

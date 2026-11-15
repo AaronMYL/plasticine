@@ -90,14 +90,6 @@ describe('真接口 · 本人确认请求', () => {
     expect(await http.signed.send({ ...send, target })).toEqual({ kind: 'agreement', agreement });
     expect(calls[0]?.url).toBe('/v2/agreements/a1/confirm');
   });
-
-  it('登记设备钥匙：原样的请求体，回答里的钥匙交出去', async () => {
-    const key = { id: 'k1', deviceId: 'dev_1', thumbprint: 'ab', createdAt: '2026-10-27T02:00:00.000Z' };
-    const { http, calls } = api(json(201, { key }));
-    const body = '{"requestId":"req_abcdefgh","publicKey":{"kty":"EC"}}';
-    expect(await http.deviceKeys.register(body)).toEqual(key);
-    expect(calls[0]).toMatchObject({ method: 'POST', url: '/v2/device-keys', bodyText: body });
-  });
 });
 
 describe('真事件流 · M3 的事件', () => {

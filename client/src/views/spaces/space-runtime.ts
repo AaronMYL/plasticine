@@ -11,38 +11,12 @@
 
 export type SpaceFrameMode = 'page' | 'thumb';
 
-/** iframe 发给外面的话。 */
-export type SpaceFrameOut =
-  | { pz: 'space'; type: 'ready'; wenkai: string; assets: string[] }
-  | { pz: 'space'; type: 'open'; url: string; title: string }
-  | { pz: 'space'; type: 'navigate'; hash: string }
-  | { pz: 'space'; type: 'link'; kind: string; id: string }
-  | { pz: 'space'; type: 'edited'; index: number; html: string }
-  | { pz: 'space'; type: 'escape' }
-  | { pz: 'space'; type: 'selection'; text: string; sectionId: string | null; paragraph: number;
-      left: number; top: number; bottom: number }
-  | { pz: 'space'; type: 'key'; key: string; meta: boolean; ctrl: boolean; shift: boolean; alt: boolean }
-  /** 点了一张图（11-14 图片统一：点开看大图）：这一页里能看的图（插图写 asset，data: 图写 data），从第 index 张开始。 */
-  | { pz: 'space'; type: 'image'; images: { asset: string; data: string; alt: string }[]; index: number };
-
 export interface SpaceFontFace {
   family: string;
   data: ArrayBuffer;
   weight: string;
   unicodeRange?: string;
 }
-
-/** 外面发给 iframe 的话。 */
-export type SpaceFrameIn =
-  | { pz: 'space'; type: 'fonts'; faces: SpaceFontFace[] }
-  | { pz: 'space'; type: 'asset'; src: string; data: ArrayBuffer; mime: string }
-  | { pz: 'space'; type: 'theme'; vars: Record<string, string>; dark: boolean }
-  | { pz: 'space'; type: 'edit'; on: boolean }
-  | { pz: 'space'; type: 'clear-selection' }
-  | { pz: 'space'; type: 'highlight'; paragraph: number }
-  | { pz: 'space'; type: 'book-position'; bookId: string; chapter: number }
-  /** 外面挂上监听晚了（页面先载完了）：再说一遍「准备好了」。 */
-  | { pz: 'space'; type: 'hello' };
 
 export function spaceRuntime(mode: SpaceFrameMode): void {
   const SAVE_AFTER_MS = 800;

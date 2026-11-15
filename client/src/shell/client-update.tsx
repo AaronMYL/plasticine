@@ -12,7 +12,6 @@ declare const __PLASTICINE_BUILD_ID__: string;
 declare const __PLASTICINE_BUILT_AT__: string;
 export const CLIENT_BUILD_ID =
   typeof __PLASTICINE_BUILD_ID__ === 'string' ? __PLASTICINE_BUILD_ID__ : 'development';
-export const CLIENT_BUILT_AT = typeof __PLASTICINE_BUILT_AT__ === 'string' ? __PLASTICINE_BUILT_AT__ : null;
 export function useClientUpdates() {
   const api = useApi();
   const live = useLive();

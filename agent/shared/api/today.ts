@@ -6,31 +6,14 @@ import { Type, type Static } from 'typebox';
 import { FeedBannedTermsSchema } from '../feed-search.ts';
 import { PreferredTimeZoneSchema } from '../time-zone.ts';
 import {
-  BRIEF_CATEGORIES,
-  BRIEF_LIMIT_MAX,
-  BRIEF_REF_TYPES,
-  RETURN_BRIEF_STATUSES,
-  RETURN_SENTENCE_KEYS,
-  RETURN_TARGET_VIEWS,
-  RETURN_THRESHOLD_HOURS_MAX,
-  INTERVIEW_PER_DAY_MAX,
-  type ReturnSentence,
+  BRIEF_CATEGORIES, BRIEF_LIMIT_MAX, BRIEF_REF_TYPES, RETURN_BRIEF_STATUSES, RETURN_SENTENCE_KEYS, RETURN_TARGET_VIEWS,
+  RETURN_THRESHOLD_HOURS_MAX, INTERVIEW_PER_DAY_MAX,
 } from '../state.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { OrNull } from './lineage.ts';
 
 export const TODAY_PATH = `${API_PREFIX}/today`;
-export const RETURN_BRIEFS_PATH = `${TODAY_PATH}/return-briefs`;
-export const BRIEF_ITEMS_PATH = `${TODAY_PATH}/brief-items`;
 export const TODAY_SETTINGS_PATH = `${TODAY_PATH}/settings`;
-
-/** 四句的左侧小标签（views.md）：保留 · 变化 · 推进 · 新联系。 */
-export const RETURN_SENTENCE_LABELS: Readonly<Record<ReturnSentence['key'], string>> = {
-  kept: '保留',
-  changed: '变化',
-  progressed: '推进',
-  connections: '新联系',
-};
 
 export const ReturnSentenceViewSchema = Type.Object({
   key: Type.Enum(RETURN_SENTENCE_KEYS),
@@ -82,19 +65,6 @@ export const BriefItemViewSchema = Type.Object({
 });
 export type BriefItemView = Static<typeof BriefItemViewSchema>;
 
-export const BriefItemEvidenceSchema = Type.Object({
-  body: Type.String(), sourceLabel: Type.String(), sourceRef: Type.String(),
-  contentAt: Type.Enum(['change', 'current']),
-  version: Type.Union([Type.Integer({ minimum: 1 }), Type.Null()]),
-  disagreementId: OrNull(IdSchema),
-  changes: Type.Array(Type.Object({ actor: Type.String(), reason: Type.String(), at: IsoTimeSchema })),
-  evidence: Type.Array(Type.Object({ id: IdSchema, content: Type.String(), identity: Type.String(),
-    sourceLabel: Type.String(), sourceRef: OrNull(Type.String()), scope: Type.String() })),
-  registration: OrNull(Type.Object({ concernId: IdSchema, kind: Type.Enum(['signup', 'withdrawal']),
-    signups: Type.Integer(), withdrawals: Type.Integer(), count: Type.Integer(), at: IsoTimeSchema })),
-});
-export type BriefItemEvidence = Static<typeof BriefItemEvidenceSchema>;
-
 /** 今天的数. null = not available yet (记账、日程、专注 come with M5). */
 export const TodayNumbersSchema = Type.Object({
   feedNew: Type.Integer({ minimum: 0 }),
@@ -118,14 +88,10 @@ export const ReadReturnBriefRequestSchema = Type.Object(
   { additionalProperties: false },
 );
 export type ReadReturnBriefRequest = Static<typeof ReadReturnBriefRequestSchema>;
-export const ReturnBriefResponseSchema = Type.Object({ brief: ReturnBriefViewSchema });
-export type ReturnBriefResponse = Static<typeof ReturnBriefResponseSchema>;
 
 /** POST /v2/today/brief-items/:id/seen → 200 { item }: 看过（计数）。 */
 export const SeeBriefItemRequestSchema = Type.Object({ requestId: RequestIdSchema }, { additionalProperties: false });
 export type SeeBriefItemRequest = Static<typeof SeeBriefItemRequestSchema>;
-export const BriefItemResponseSchema = Type.Object({ item: BriefItemViewSchema });
-export type BriefItemResponse = Static<typeof BriefItemResponseSchema>;
 
 export const DailySettingsViewSchema = Type.Object({
   feedBannedTerms: FeedBannedTermsSchema,

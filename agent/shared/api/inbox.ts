@@ -59,7 +59,6 @@ export const InboxSyncViewSchema = Type.Object({
   lastCount: OrNull(Type.Integer({ minimum: 0 })),
   lastError: OrNull(Type.String()),
 });
-export type InboxSyncView = Static<typeof InboxSyncViewSchema>;
 
 export const SyncInboxRequestSchema = Type.Object({ requestId: RequestIdSchema }, { additionalProperties: false });
 export type SyncInboxRequest = Static<typeof SyncInboxRequestSchema>;

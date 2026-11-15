@@ -47,11 +47,11 @@ import type { SignedResult, SignedSend, SignedTarget } from './signed-targets.ts
 import type {
   AddFeedItemRequest, AgreementDetail, AgreementListQuery, AgreementListResponse, AnswerAskRequest, AnswerAskResponse,
   AskAboutRequest, AskAboutResponse, AskListResponse, AskView, CreateNoteRequest, DailySettingsView, DeferAskRequest,
-  DeferAskResponse, DeviceKeyView, DeviceView, EventHandlers, FeedItemView, FeedListQuery, FeedListResponse,
-  FeedSourcesResponse, FeedSourceView, MemoryEntryDetail, NodeActionView, NodeListResponse, NodeView, NoteMetaView,
-  NoteSearch, NoteView, PushKeyResponse, ReactFeedItemRequest, RevokeNodeRequest, SaveFeedItemRequest, SaveNoteRequest,
-  SessionView, SetSourceLevelRequest, SubscribePushRequest, SubscribePushResponse, UnsubscribePushRequest,
-  UnsubscribePushResponse, UpdateDailySettingsRequest,
+  DeferAskResponse, DeviceView, EventHandlers, FeedItemView, FeedListQuery, FeedListResponse, FeedSourcesResponse,
+  FeedSourceView, MemoryEntryDetail, NodeActionView, NodeListResponse, NodeView, NoteMetaView, NoteSearch, NoteView,
+  PushKeyResponse, ReactFeedItemRequest, RevokeNodeRequest, SaveFeedItemRequest, SaveNoteRequest, SessionView,
+  SetSourceLevelRequest, SubscribePushRequest, SubscribePushResponse, UnsubscribePushRequest, UnsubscribePushResponse,
+  UpdateDailySettingsRequest,
 } from './types.ts';
 
 export interface SessionApi {
@@ -145,16 +145,6 @@ export interface AgreementsApi {
   list(query: AgreementListQuery, signal?: AbortSignal): Promise<AgreementListResponse>;
   /** GET /v2/agreements/:id */
   get(id: string, signal?: AbortSignal): Promise<AgreementDetail>;
-}
-
-export interface DeviceKeysApi {
-  /** GET /v2/device-keys：这台设备登记过的签名公钥，没有是 null。 */
-  current(signal?: AbortSignal): Promise<DeviceKeyView | null>;
-  /**
-   * POST /v2/device-keys：bodyText 是原样的请求体（requestId + 公钥 JWK）。服务端按请求体摘要去重，回执丢了重发
-   * 要一字不差。配对超过 10 分钟是 403 device_key_too_late，已有另一把是 409 device_key_exists。
-   */
-  register(bodyText: string): Promise<DeviceKeyView>;
 }
 
 export interface SignedApi {
@@ -341,7 +331,6 @@ export interface PlasticineApi extends ToolGroupApi, ThingsApi, ContactsClientAp
   push: PushApi;
   memory: MemoryApi;
   agreements: AgreementsApi;
-  deviceKeys: DeviceKeysApi;
   signed: SignedApi;
   projects: ProjectsApi;
   today: TodayApi;

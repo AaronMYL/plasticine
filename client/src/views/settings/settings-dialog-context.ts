@@ -64,6 +64,3 @@ export type GoToSettings = (section: SettingsSection, focus?: SettingsFocus) => 
 
 export const SettingsGoContext = createContext<GoToSettings | null>(null);
 
-export function useGoToSettings(): GoToSettings | null {
-  return useContext(SettingsGoContext);
-}

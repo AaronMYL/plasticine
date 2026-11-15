@@ -54,14 +54,12 @@ export const FeedAuthorViewSchema = Type.Object({
   handle: OrNull(Type.String()),
   avatar: OrNull(Type.String()),
 });
-export type FeedAuthorView = Static<typeof FeedAuthorViewSchema>;
 
 /** 配图：src 是服务端代理地址（外部图片不直连，对方看不到他的 IP）；ratio = 高 / 宽，知道就先占好位置。 */
 export const FeedImageViewSchema = Type.Object({
   src: Type.String(),
   ratio: OrNull(Type.Number()),
 });
-export type FeedImageView = Static<typeof FeedImageViewSchema>;
 
 export const FeedVideoViewSchema = Type.Object({
   kind: OrNull(Type.Enum(['video', 'images'])),
@@ -157,7 +155,6 @@ export const FeedSourceStatusViewSchema = Type.Object({
   okAt: OrNull(IsoTimeSchema),
   error: OrNull(Type.String()),
 });
-export type FeedSourceStatusView = Static<typeof FeedSourceStatusViewSchema>;
 
 export const FeedSourceViewSchema = Type.Object({
   id: IdSchema,
@@ -280,7 +277,6 @@ export const FEED_BUILT_IN_NAV_KINDS: readonly FeedNavKind[] = ['news', 'x', 'xh
 export const FeedNavQuerySchema = Type.Object({
   tz: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
 }, { additionalProperties: false });
-export type FeedNavQuery = Static<typeof FeedNavQuerySchema>;
 export const FeedNavSourceSchema = Type.Object({
   kind: Type.Enum(FEED_NAV_KINDS),
   /** 名字：内置的用固定名字，订阅用他起的（或订阅源自己的），Reddit 是 r/版块。 */
@@ -323,7 +319,6 @@ export const RedditPreviewPostSchema = Type.Object({
   author: OrNull(Type.String()),
   publishedAt: IsoTimeSchema,
 });
-export type RedditPreviewPost = Static<typeof RedditPreviewPostSchema>;
 export const RedditPreviewResponseSchema = Type.Object({
   /** 认出来的版块名（他填的网址、r/ 前缀都去掉了）；认不出是 null。 */
   subreddit: OrNull(Type.String()),

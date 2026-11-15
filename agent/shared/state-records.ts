@@ -2,7 +2,7 @@
 // Import from shared/state.ts.
 
 import { Type, type Static } from 'typebox';
-import { IdSchema, IsoTimeSchema, MIGRATION_META, Nullable, OBJECT_META } from './state-common.ts';
+import { IdSchema, IsoTimeSchema, Nullable, OBJECT_META } from './state-common.ts';
 import { DisagreementSchema } from './state-objects.ts';
 import { MESSAGE_WIDGETS_MAX, MessageAnswerToSchema, MessageWidgetSchema } from './api/message-widgets.ts';
 
@@ -59,20 +59,7 @@ export const MessageInputSchema = Type.Object(
   },
   STRICT,
 );
-export type MessageInput = Static<typeof MessageInputSchema>;
-export const MessagePatchSchema = Type.Partial(
-  Type.Object({
-    replyLayers: Nullable(ReplyLayersSchema),
-    disagreement: Nullable(MessageDisagreementSchema),
-    active: Type.Boolean(),
-    runId: Nullable(IdSchema),
-    widgets: Type.Array(MessageWidgetSchema, { maxItems: MESSAGE_WIDGETS_MAX }),
-  }),
-  STRICT,
-);
-export type MessagePatch = Static<typeof MessagePatchSchema>;
 export const MessageSchema = Type.Object({ ...OBJECT_META, ...Type.Required(MessageInputSchema).properties });
-export type StoredMessage = Static<typeof MessageSchema>;
 
 export const RUN_KINDS = ['conversation', 'task'] as const;
 export const RUN_OUTCOMES = ['running', 'completed', 'failed', 'interrupted', 'yielded'] as const;
@@ -90,40 +77,8 @@ export const RunInputSchema = Type.Object(
   },
   STRICT,
 );
-export type RunInput = Static<typeof RunInputSchema>;
-export const RunPatchSchema = Type.Partial(
-  Type.Object(Type.Pick(RunInputSchema, ['model', 'outcome', 'endedAt', 'summary']).properties),
-  STRICT,
-);
-export type RunPatch = Static<typeof RunPatchSchema>;
 export const RunSchema = Type.Object({ ...OBJECT_META, ...Type.Required(RunInputSchema).properties });
 export type Run = Static<typeof RunSchema>;
-
-/** Append-only, numbered per run from 1. `kind` is free text checked here, not in SQL, so new kinds need no rebuild. */
-export const RunEventInputSchema = Type.Object({ runId: IdSchema, kind: Text, payload: Payload }, STRICT);
-export type RunEventInput = Static<typeof RunEventInputSchema>;
-export const RunEventSchema = Type.Object({
-  id: IdSchema,
-  ...RunEventInputSchema.properties,
-  seq: Type.Integer({ minimum: 1 }),
-  createdAt: IsoTimeSchema,
-  ...MIGRATION_META,
-});
-export type RunEvent = Static<typeof RunEventSchema>;
-
-// 10-26 第 63 条：遥测并进新库。
-export const TelemetryInputSchema = Type.Object(
-  { name: Text, occurredAt: IsoTimeSchema, payload: Payload, deviceId: Type.Optional(Nullable(IdSchema)) },
-  STRICT,
-);
-export type TelemetryInput = Static<typeof TelemetryInputSchema>;
-export const TelemetryEventSchema = Type.Object({
-  id: IdSchema,
-  ...Type.Required(TelemetryInputSchema).properties,
-  createdAt: IsoTimeSchema,
-  ...MIGRATION_META,
-});
-export type TelemetryEvent = Static<typeof TelemetryEventSchema>;
 
 /** One old row → one new row. The key (库, 表, 旧 id) is unique, which is what makes a re-run import idempotent. */
 export const LegacyIdSchema = Type.Object(

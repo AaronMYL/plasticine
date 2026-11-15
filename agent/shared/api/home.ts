@@ -11,14 +11,12 @@
 // /v2/home/observations/:id 回 404，字段留着只为不改旧 schema。
 
 import { Type, type Static } from 'typebox';
-import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema, TimeZoneSchema } from './common.ts';
+import { API_PREFIX, IdSchema, IsoTimeSchema, TimeZoneSchema } from './common.ts';
 import { OrNull } from './lineage.ts';
 import { ProjectTagSchema } from './project-tag.ts';
 import { BriefItemViewSchema, ReturnBriefViewSchema, TodayNumbersSchema } from './today.ts';
 
 export const HOME_PATH = `${API_PREFIX}/home`;
-export const HOME_FEEDBACK_PATH = `${HOME_PATH}/feedback`;
-export const HOME_OBSERVATIONS_PATH = `${HOME_PATH}/observations`;
 
 /**
  * 候选卡从哪里来。前三种只进钉住层；observe = 观察模式（Plasticine 本来会做的几件事，看一眼对不对），
@@ -43,9 +41,6 @@ export const HOME_CARD_KINDS = [
   'change',
 ] as const;
 export type HomeCardKind = (typeof HOME_CARD_KINDS)[number];
-
-/** 钉住层只收这三种（第 102 条）。 */
-export const HOME_PINNED_KINDS: readonly HomeCardKind[] = ['decide', 'reauth', 'task_failing'];
 
 export const HOME_LAYERS = ['pinned', 'now', 'rest'] as const;
 export const HOME_DEVICES = ['desktop', 'phone'] as const;
@@ -77,7 +72,6 @@ export const HomeTargetSchema = Type.Object({
   /** 对象 id；tool 是工具名，web 是网址，settings 是设置的小节名。 */
   ref: Type.String({ minLength: 1 }),
 });
-export type HomeTarget = Static<typeof HomeTargetSchema>;
 
 /** 四个分量各在 0–1；total 是服务端合起来的分，界面只用来排序和在「为什么在这」里显示，不当可信度。 */
 export const HomeScoreSchema = Type.Object({
@@ -87,7 +81,6 @@ export const HomeScoreSchema = Type.Object({
   reaction: Type.Number({ minimum: 0, maximum: 1 }),
   total: Type.Number({ minimum: 0 }),
 });
-export type HomeScore = Static<typeof HomeScoreSchema>;
 
 /** 观察模式里的一条：Plasticine 本来会做的事，只记下、没真做。 */
 export const HomeObservationSchema = Type.Object({
@@ -96,7 +89,6 @@ export const HomeObservationSchema = Type.Object({
   at: IsoTimeSchema,
   verdict: OrNull(Type.Union([Type.Literal('right'), Type.Literal('wrong')])),
 });
-export type HomeObservation = Static<typeof HomeObservationSchema>;
 
 export const HomeCardSchema = Type.Object({
   id: IdSchema,
@@ -131,7 +123,6 @@ export const HomeQuerySchema = Type.Object(
   { tz: Type.Optional(TimeZoneSchema), device: Type.Optional(Type.Enum(HOME_DEVICES)) },
   { additionalProperties: false },
 );
-export type HomeQuery = Static<typeof HomeQuerySchema>;
 
 export const HomeResponseSchema = Type.Object({
   date: Type.String(),
@@ -157,27 +148,3 @@ export const HomeResponseSchema = Type.Object({
 });
 export type HomeResponse = Static<typeof HomeResponseSchema>;
 
-/** POST /v2/home/feedback：「少给我看这类」或撤销。 */
-export const HomeFeedbackRequestSchema = Type.Object(
-  {
-    requestId: RequestIdSchema,
-    cardId: IdSchema,
-    kind: Type.Enum(HOME_CARD_KINDS),
-    action: Type.Union([Type.Literal('less'), Type.Literal('undo_less')]),
-  },
-  { additionalProperties: false },
-);
-export type HomeFeedbackRequest = Static<typeof HomeFeedbackRequestSchema>;
-
-export const HomeFeedbackResponseSchema = Type.Object({
-  kind: Type.Enum(HOME_CARD_KINDS),
-  times: Type.Integer({ minimum: 0 }),
-});
-export type HomeFeedbackResponse = Static<typeof HomeFeedbackResponseSchema>;
-
-/** POST /v2/home/observations/:id：观察模式里一条「对 / 不对」。说对的次数够了，这一类放开成自动。 */
-export const JudgeObservationRequestSchema = Type.Object(
-  { requestId: RequestIdSchema, verdict: Type.Union([Type.Literal('right'), Type.Literal('wrong')]) },
-  { additionalProperties: false },
-);
-export type JudgeObservationRequest = Static<typeof JudgeObservationRequestSchema>;

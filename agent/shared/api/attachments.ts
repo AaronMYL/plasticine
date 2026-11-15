@@ -33,8 +33,6 @@ export const AttachmentUploadSchema = Type.Object({
   attachment: AttachmentViewSchema,
   received: Type.Integer({ minimum: 0, maximum: CONVERSATION_ATTACHMENT_MAX_BYTES }),
 }, { additionalProperties: false });
-export type AttachmentUpload = Static<typeof AttachmentUploadSchema>;
 export const AttachmentChunkResultSchema = Type.Object({
   received: Type.Integer({ minimum: 0, maximum: CONVERSATION_ATTACHMENT_MAX_BYTES }),
 }, { additionalProperties: false });
-export type AttachmentChunkResult = Static<typeof AttachmentChunkResultSchema>;

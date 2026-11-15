@@ -1,6 +1,5 @@
 // Mac 节点的 HTTPS 长轮询协议。内部 NodeActionEnvelope 不作为线上响应，字段按 Mac 协议固定。
 import { Type, type Static } from 'typebox';
-import { Value } from 'typebox/value';
 import { DeviceActionKindSchema, type DeviceActionKind } from '../state-devices.ts';
 import { IdSchema, IsoTimeSchema } from './common.ts';
 import { IOS_RESULT_SCHEMAS } from './device-ios.ts';
@@ -58,24 +57,16 @@ export const DeviceAfterShotSchema = Type.Object({ sha256: Version, width: Type.
 const InputResult = Type.Object({ afterShot: Type.Optional(DeviceAfterShotSchema),
   changed: Type.Optional(Type.Boolean()) }, STRICT);
 
-// 网页标签动作的回执上限（第 102 条第 3 批）。tab_read 一次最多 12 000 字正文（设备动作工具结果上限 48 000 字，
-// 留出链接和表单字段的位置）；链接、字段只在第一段带，各自截短到够认出来。
-export const TAB_READ_TEXT_CHARS = 12_000;
 export const TAB_READ_LINKS_MAX = 40;
 export const TAB_READ_FIELDS_MAX = 30;
-export const TAB_LINK_TEXT_CHARS = 80;
-export const TAB_LINK_HREF_CHARS = 300;
-export const TAB_FIELD_VALUE_CHARS = 200;
 const Text = Type.String();
 const TabIdText = Type.String({ minLength: 1 });
 export const WebTabSummarySchema = Type.Object({ tabId: TabIdText, url: Text, title: Text, active: Type.Boolean(),
   loading: Type.Boolean() }, STRICT);
-export type WebTabSummary = Static<typeof WebTabSummarySchema>;
 /** 一个表单字段：密码框的值从不回传（value 是 null），只说它是密码框。 */
 export const WebTabFieldSchema = Type.Object({ selector: Text, tag: Text, type: Text, name: Text, label: Text,
   value: Type.Union([Text, Type.Null()]), checked: Type.Union([Type.Boolean(), Type.Null()]),
   disabled: Type.Boolean() }, STRICT);
-export type WebTabField = Static<typeof WebTabFieldSchema>;
 /** 点击前后读回的页面状态：digest 是地址、标题、正文和被点元素状态合起来的 SHA-256（设备算）。 */
 export const WebTabDomStateSchema = Type.Object({ url: Text, title: Text, digest: Version }, STRICT);
 const TabPage = { tabId: TabIdText, url: Text, title: Text, loaded: Type.Boolean() };
@@ -124,19 +115,3 @@ export const DEVICE_RESULT_SCHEMAS = {
 export const DeviceProofSchema = Type.Object({ proven: Type.Boolean(), rule: Type.String(),
   detail: Type.String() }, STRICT);
 export type DeviceProof = Static<typeof DeviceProofSchema>;
-const DeviceToolResultSchema = Type.Object({ kind: DeviceActionKindSchema, proof: DeviceProofSchema });
-/** The proof inside a stored device_action tool result, or null when there is none (an older record). */
-export function deviceProofIn(content: string): { kind: DeviceActionKind; proof: DeviceProof } | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(content);
-  } catch (error) {
-    if (error instanceof SyntaxError) { return null; }
-    throw error;
-  }
-  return Value.Check(DeviceToolResultSchema, value) ? { kind: value.kind, proof: value.proof } : null;
-}
-/** Kinds whose receipt alone does not prove the effect: without a passing proof they count as unverified. */
-export const PROOF_REQUIRED_KINDS: readonly DeviceActionKind[] = ['file_write', 'input_click', 'input_type',
-  'tab_open', 'tab_navigate', 'tab_click', 'tab_fill', 'tab_act',
-  'calendar_create', 'reminder_create', 'reminder_complete', 'shortcut_run'];

@@ -16,7 +16,7 @@ import type { Scan } from '../attention/index.ts';
 import { InboxDesk, INBOX_PAGE_DEFAULT, previewOf } from '../daily/index.ts';
 import { createLife, type Life } from '../life/index.ts';
 import type { StateService } from '../state/index.ts';
-import { TOOL_GROUPS, groupOfTool } from '../../shared/api/index.ts';
+import { groupOfTool } from '../../shared/api/index.ts';
 import { FaviconCache } from './favicon-cache.ts';
 import type { MailImages } from './mail-view.ts';
 
@@ -140,7 +140,3 @@ export function toolGroupScans(services: ToolGroupServices): Scan[] {
   return [...services.cloud.scans];
 }
 
-/** Every group with its switch as it is now (for GET /v2/tool-groups). */
-export function toolGroupStates(state: StateService) {
-  return TOOL_GROUPS.map((group) => ({ definition: group, row: state.toolGroups.get(group.id) }));
-}

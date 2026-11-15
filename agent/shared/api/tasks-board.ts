@@ -47,7 +47,6 @@ export const TIMED_SOURCES = ['schedule', 'subscription', 'review', 'dream', 'he
 export type TimedSource = (typeof TIMED_SOURCES)[number];
 /** 行首图标块。 */
 export const TIMED_ICONS = ['clock', 'play', 'pulse', 'moon', 'sparkle', 'space', 'file', 'mail'] as const;
-export type TimedIcon = (typeof TIMED_ICONS)[number];
 /** 状态符（shell/glyph.tsx）：在做 / 等你 / 做完 / 暂停 / 出错 / 没开始。 */
 export const TASK_GLYPHS = ['run', 'wait', 'done', 'pause', 'err', 'idle'] as const;
 export type TaskGlyph = (typeof TASK_GLYPHS)[number];

@@ -79,16 +79,6 @@ export const BookRecordSchema = Type.Object({
 });
 export type BookRecord = Static<typeof BookRecordSchema>;
 
-/** 书里的一个位置：第几章（从 0 起），章内第几个字（UTF-16 下标，和浏览器 textContent 一致）。 */
-export const BookPositionSchema = Type.Object(
-  {
-    chapter: Type.Integer({ minimum: 0 }),
-    offset: Type.Integer({ minimum: 0 }),
-  },
-  STRICT,
-);
-export type BookPosition = Static<typeof BookPositionSchema>;
-
 export const BookProgressInputSchema = Type.Object(
   {
     bookId: IdSchema,
@@ -139,7 +129,6 @@ export const BookAnnotationPatchSchema = Type.Partial(
   }),
   STRICT,
 );
-export type BookAnnotationPatch = Static<typeof BookAnnotationPatchSchema>;
 export const BookAnnotationSchema = Type.Object({
   ...OBJECT_META,
   ...BookAnnotationInputSchema.properties,
@@ -227,7 +216,6 @@ export const BookInsightPatchSchema = Type.Partial(
   }),
   STRICT,
 );
-export type BookInsightPatch = Static<typeof BookInsightPatchSchema>;
 export const BookInsightSchema = Type.Object({
   ...OBJECT_META,
   ...BookInsightInputSchema.properties,

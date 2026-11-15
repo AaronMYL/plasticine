@@ -33,7 +33,6 @@ export type SkillResponse = Static<typeof SkillResponseSchema>;
 
 /** DELETE /v2/skills/:name：删一个装上的技能（挪到 .removed 留底）；内置的 409。 */
 export const RemoveSkillRequestSchema = Type.Object({ requestId: RequestIdSchema }, { additionalProperties: false });
-export type RemoveSkillRequest = Static<typeof RemoveSkillRequestSchema>;
 export const RemoveSkillResponseSchema = Type.Object({ name: Type.String() });
 export type RemoveSkillResponse = Static<typeof RemoveSkillResponseSchema>;
 
@@ -68,7 +67,6 @@ export const SkillStoreIndexSchema = Type.Object({
   version: Type.Literal(1),
   skills: Type.Array(StoreSkillSchema, { maxItems: 500 }),
 }, { additionalProperties: false });
-export type SkillStoreIndex = Static<typeof SkillStoreIndexSchema>;
 
 export const StoreSkillViewSchema = Type.Object({
   ...StoreSkillSchema.properties,

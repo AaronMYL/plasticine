@@ -93,11 +93,6 @@ export function isSignatureRefusal(cause: unknown): boolean {
   return cause instanceof ApiError && SIGNATURE_REFUSAL_CODES.includes(cause.code);
 }
 
-/** 这台设备签不了名（没有钥匙、钥匙没登记上）：客户端自己判出来的，请求没有发出去。 */
-export function noSigningKeyError(message: string, next: string): ApiError {
-  return new ApiError({ kind: 'invalid', code: 'device_key_missing', message, next });
-}
-
 /** 请求发出去了但没拿到回答：可能已经生效，也可能没有。默认原因是连接中断，超时另写。 */
 export function uncertainError(what: string, reason = '连接中断'): ApiError {
   return new ApiError({

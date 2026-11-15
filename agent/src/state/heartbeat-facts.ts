@@ -132,4 +132,3 @@ export function createHeartbeatFacts(context: StoreContext) {
   };
 }
 
-export type HeartbeatFacts = ReturnType<typeof createHeartbeatFacts>;

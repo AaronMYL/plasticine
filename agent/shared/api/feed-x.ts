@@ -31,7 +31,6 @@ export const XImageSchema = Type.Object({
   /** 高 / 宽；量不到就是 null。 */
   ratio: OrNull(RatioSchema),
 }, { additionalProperties: false });
-export type XImage = Static<typeof XImageSchema>;
 
 export const XPostSchema = Type.Object({
   /** 帖子的数字标识（链接里 /status/ 后面那一段）。 */

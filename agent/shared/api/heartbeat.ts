@@ -21,7 +21,6 @@ export const HEARTBEAT_ITEMS_MAX = 12;
 export const HEARTBEAT_ITEM_MAX_CHARS = 60;
 /** 多久一次能选的几档；默认 30 分钟（参考 OpenClaw 的 Heartbeat）。 */
 export const HEARTBEAT_INTERVALS = [15, 30, 60, 120] as const;
-export const HEARTBEAT_RECENT = 5;
 
 const Clock = Type.String({ pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' });
 
@@ -47,7 +46,6 @@ export const HeartbeatBeatViewSchema = Type.Object({
   note: Type.String(),
   failed: Type.Boolean(),
 }, STRICT);
-export type HeartbeatBeatView = Static<typeof HeartbeatBeatViewSchema>;
 
 /** GET /v2/heartbeat */
 export const HeartbeatViewSchema = Type.Object({

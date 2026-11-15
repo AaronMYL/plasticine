@@ -2,7 +2,7 @@
 // 记成那一页里的一行，依据是 contact_stated（界面写「<人物页名字>说的」，不用他 / 她），锚点链回那一句。
 // 只看最近两天进来的话（刚绑上不翻旧账）；每一句一份整理（key = contact:<消息 id>，排过的不再排）。
 
-import { Type, type Static } from 'typebox';
+import { Type } from 'typebox';
 import type { ContactMessage, MemoryJob, MemoryJobResult } from '../../../shared/state.ts';
 import type { StateService } from '../../state/index.ts';
 import { askJson, type BookModel } from '../../books/index.ts';
@@ -16,7 +16,6 @@ const LINES_MAX = 3;
 export const ContactFactsSchema = Type.Object({
   lines: Type.Array(Type.String({ minLength: 1, maxLength: 200 }), { maxItems: LINES_MAX }),
 });
-export type ContactFacts = Static<typeof ContactFactsSchema>;
 
 const SYSTEM = [
   '你在帮用户整理记忆里的一页人物。下面是这位联系人在聊天里亲口说的一句话，和这页人物已经记着的几行。',

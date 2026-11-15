@@ -11,7 +11,6 @@ import { StatusGlyph } from '../../shell/glyph.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { openExternal } from '../../shell/open-external.ts';
-import { SiteIcon } from '../../shell/site-icon.tsx';
 import type { FeedSegment } from '../../state/feed-ui.ts';
 import { KIND_HUES, kindGroups, kindOfSegment, type KindGroup } from './feed-kinds.ts';
 import { isLoginKind, LOGIN_SITES, useSiteLogins, type LoginKind } from './feed-nav-data.ts';
@@ -23,17 +22,6 @@ import './feed-sources.css';
 /** Reddit 的圆标（橙底白字 r），卡片头、加来源对话框共用。 */
 export function RedditMark({ size = 16 }: { size?: 16 | 20 | 28 }): ReactNode {
   return <span className="reddit-mark" data-size={size} aria-hidden="true">r</span>;
-}
-
-/** 一个来源前面的图标（设置弹层、加来源里用）：Reddit 圆标、博客的网站图标，别的是这一种的色点。 */
-export function sourceLead(row: FeedNavSource): ReactNode {
-  if (row.kind === 'reddit') {
-    return <RedditMark />;
-  }
-  if (row.kind === 'rss') {
-    return <SiteIcon url={row.source.query ?? ''} title={row.label} />;
-  }
-  return <KindDot kind={row.kind} />;
 }
 
 export function KindDot({ kind }: { kind: FeedNavSource['kind'] }): ReactNode {

@@ -44,7 +44,6 @@ type Args = Static<typeof Parameters>;
 
 /** 新内核的「记住一句」（lines/remember-tool.ts）用同一份参数，来源换成线里他说的话。 */
 export const RememberParameters = Parameters;
-export type RememberArgs = Args;
 
 /** 工具参数 → 和后台整理同样形状的操作。 */
 export function rememberOps(args: Args): CurationOp[] {

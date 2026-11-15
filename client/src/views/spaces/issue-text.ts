@@ -2,7 +2,6 @@
 
 import type { IssueBrief } from '../../api/shared.ts';
 
-
 /** 第几期；个人回顾是来信（11-09 起）、旧版式是日报 / 周报。 */
 export function issueLabel(issue: Pick<IssueBrief, 'edition' | 'issueNumber' | 'genre'>): string {
   if (issue.genre === 'letter') return '来信';
@@ -15,9 +14,4 @@ export function issueStats(issue: Pick<IssueBrief, 'stats'>): string {
   return issue.stats.map((stat) => `${stat.value} ${stat.label}`).join(' · ');
 }
 
-// 三天内出的算「新」（设计稿 Feed：研究周报 · 第 2 期 · 新）。
-const FRESH_MS = 3 * 24 * 60 * 60 * 1000;
 
-export function isFresh(issue: Pick<IssueBrief, 'createdAt'>, now: Date): boolean {
-  return now.getTime() - Date.parse(issue.createdAt) <= FRESH_MS;
-}

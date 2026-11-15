@@ -5,15 +5,9 @@
 
 import { useLive } from '../live.tsx';
 import { useStore } from '../state/use-store.ts';
-import type { ViewId } from './routes.ts';
 
 export function useWaitingCount(): number {
   return useStore(useLive().asks.store).open.length;
-}
-
-/** 入口右侧有没有等你的点：只有「首页」，而且你现在不在首页（当前标签不是首页的入口标签）。 */
-export function entryFlagged(view: ViewId, counts: { waiting: number; currentEntry: ViewId | null }): boolean {
-  return view === 'today' && counts.waiting > 0 && counts.currentEntry !== 'today';
 }
 
 /** 圆球角标上的数：在首页上不写（首页「等你」小节标题已经写了 n）。 */

@@ -14,7 +14,6 @@ export const FAVICON_HOST_PATTERN = '^(?![\\d.]+$)(?=.{1,253}$)(?!-)[a-z0-9-]{1,
 export const FaviconQuerySchema = Type.Object({
   host: Type.String({ pattern: FAVICON_HOST_PATTERN }),
 }, { additionalProperties: false });
-export type FaviconQuery = Static<typeof FaviconQuerySchema>;
 
 /** 网址 → 取图标用的域名（去掉 www.）；不是 http(s) 的网址、IP 地址是 null。 */
 export function faviconHost(url: string): string | null {

@@ -81,4 +81,3 @@ export function createTimedSlotStore(context: StoreContext) {
   };
 }
 
-export type TimedSlotStore = ReturnType<typeof createTimedSlotStore>;

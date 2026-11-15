@@ -130,7 +130,6 @@ export const TranslateFailureSchema = Type.Object({
   retryable: Type.Boolean(),
   ids: Type.Array(SegmentIdSchema),
 }, STRICT);
-export type TranslateFailure = Static<typeof TranslateFailureSchema>;
 
 export const TranslateResponseSchema = Type.Object({
   /** 实际译的模型（缓存也按它分）。 */

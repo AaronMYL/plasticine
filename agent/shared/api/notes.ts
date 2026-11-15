@@ -96,7 +96,6 @@ export const DeleteNoteRequestSchema = Type.Object(
   { requestId: RequestIdSchema },
   { additionalProperties: false },
 );
-export type DeleteNoteRequest = Static<typeof DeleteNoteRequestSchema>;
 
 /**
  * GET /v2/notes/:id/versions — saved versions, newest first (M5: every save keeps its own body file). Notes saved

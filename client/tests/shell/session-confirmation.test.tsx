@@ -16,28 +16,12 @@ function withoutSigningStorage(): void {
   vi.stubGlobal('indexedDB', undefined);
 }
 
-it('已配对的老会话直接进入，不初始化、读取或登记设备签名钥匙', async () => {
-  const current = vi.fn(async () => null);
-  const register = vi.fn();
-  await renderApp({ setup(fake) {
-    fake.control.session.backdate(11 * 60 * 1000);
-    vi.spyOn(fake.api.deviceKeys, 'current').mockImplementation(current);
-    vi.spyOn(fake.api.deviceKeys, 'register').mockImplementation(register);
-  } });
-  expect(current).not.toHaveBeenCalled();
-  expect(register).not.toHaveBeenCalled();
-});
-
-it('用 @账号和密码新登录后也不增加钥匙登记步骤', async () => {
+it('没有 WebCrypto 和 IndexedDB 的浏览器用 @账号和密码也能登录进首页', async () => {
   withoutSigningStorage();
-  const register = vi.fn();
-  await renderApp({ signedIn: false, hash: '#/login', now: () => new Date(), setup(fake) {
-    vi.spyOn(fake.api.deviceKeys, 'register').mockImplementation(register);
-  } });
+  await renderApp({ signedIn: false, hash: '#/login', now: () => new Date() });
   fireEvent.change(await screen.findByLabelText('密码'), { target: { value: 'fake-password' } });
   fireEvent.click(screen.getByRole('button', { name: '登录' }));
   await screen.findByRole('heading', { name: HOME_HEADING });
-  expect(register).not.toHaveBeenCalled();
 });
 
 it('没有 WebCrypto 和 IndexedDB 的已配对老会话直接读取私密笔记，没有解锁步骤', async () => {
