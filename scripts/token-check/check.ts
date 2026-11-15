@@ -1,16 +1,6 @@
-// 令牌检查器：扫一份 diff 里新增的界面行（client/ 下的 .css 和 .tsx），令牌表外的颜色、阴影、字号就不过；碰 tokens.css
-// 就是改令牌的值，在别处定义新的 --变量 就是新令牌。原来在 agent/src/self/（自迭代的检查），2026-11-05 自迭代删掉后
-// 挪到这里，由 check.test.ts 拿整份现有界面跑一遍（界面不许写死颜色）。
-// 规则照 plasticine-visual / references/visual-foundation.md 的方向 I 令牌表（2026-10-27 定），这里只认表里写着的值：
-// - 颜色只用 var(--令牌)，不现写 #hex、rgb()、hsl() 和颜色名（transparent、currentColor、inherit 这类不是颜色值，可以）；
-// - 阴影只有 none、var(--lift)，以及描边环 inset 0 0 0 1px var(--令牌)（描边环不算阴影）；
-// - 字号只用字阶：24 · 22 · 16 · 15 · 14 · 13（按钮）· 12 · 11，单位 px，或者 inherit。
-// 第 102 条（2026-11-02）视觉放开：去掉单一强调色与颜色数量的限制，保留对比度、深浅色、字号与间距基础档。所以
-// 类别 / 项目色（tokens.css 的 --hue-*）和按它就地设的 --card-hue、--tile-hue 能用，color-mix 只要掺的都是令牌就行；
-// 细线和色条（inset、不模糊、≤ 3px，颜色是令牌或 currentColor）不算阴影。现写色值、浮起的影子、字阶外的字号照旧不过。
-// 11-14 界面统一（Aaron 弹框定「都做成令牌，加自动检查」）：圆角、间距、字号、行高、叠放层级、动效时长和缓动在样式里
-// 只用令牌（var(--radius…)、var(--space-…)、var(--text-…)、var(--z-…)、var(--motion-…)、var(--ease-…)）；写死数字的不过。
-// 真有例外（给圆球和底栏留的地方这类整块的尺寸），在那一行写一句「例外：原因」的注释。
+// 令牌检查器（只有这一份）：扫一份 diff 里新增的界面行（client/ 下的 .css 和 .tsx），令牌表外的颜色、阴影、字号、
+// 圆角、间距就不过；碰 tokens.css 就是改令牌的值，在别处定义新的 --变量 就是新令牌。check.test.ts 拿整份现有界面
+// 当新增跑一遍（界面不许写死颜色和数值）。
 
 import type { DiffFile } from './diff.ts';
 
@@ -72,6 +62,8 @@ export const DESIGN_TOKENS: readonly string[] = [
   'hue-sage',
   'hue-err',
   'hue-ink',
+  'hue-plum',
+  'hue-indigo',
   'hue-wash',
   // 设计稿 2026-11-03：区域分层（侧栏 · 标签栏 · 页面 · 悬浮对话框）、连接状态灯三色、动效时长与缓动。
   'layer-side',

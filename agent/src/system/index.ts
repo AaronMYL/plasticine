@@ -10,7 +10,3 @@ export type { ReplayDecision, ReplayInput } from './receipts.ts';
 export { ClientReleases } from './client-releases.ts';
 export type { ClientReleaseOptions } from './client-releases.ts';
 export { manifestDigest, readClientManifest, readClientPublication, recordClientRelease } from './client-manifest.ts';
-export { parseDiff } from './diff.ts';
-export type { DiffFile, DiffLine } from './diff.ts';
-export { checkTokens, DESIGN_TOKENS } from './token-check.ts';
-export type { TokenViolation } from './token-check.ts';

@@ -36,7 +36,7 @@
 
 - 测试统一带 `TZ=Asia/Shanghai`。
 - 环境里开着代理（`NODE_USE_ENV_PROXY=1`）时，连本机的测试单独设 `NODE_USE_ENV_PROXY=0`。
-- 界面里不许写死颜色：真要新颜色，在 `client/src/tokens.css` 加令牌，同时登记进 `agent/src/system/token-check.ts` 的令牌表，
+- 界面里不许写死颜色：真要新颜色，在 `client/src/tokens.css` 加令牌，同时登记进 `scripts/token-check/check.ts` 的令牌表，
   再写进 `agent/skills/plasticine-visual/references/visual-foundation.md`。
 
 ## 四、截图（装成客户端）
