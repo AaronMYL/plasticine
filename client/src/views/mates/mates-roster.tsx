@@ -18,15 +18,18 @@ import { LegacyChats } from './legacy-chats.tsx';
 import { WaitMark } from '../../shell/wait-mark.tsx';
 import './mates.css';
 
-/** 标题那一行右边的「技能」「记忆」：在哪一页那一个按下去（底色加深、字加重），不只靠颜色。 */
-function HeadLink({ route, current, navigate, icon, children }: { route: Route; current: boolean;
-  navigate: (route: Route) => void; icon: IconName; children: string }): ReactNode {
-  return <a href={routeHash(route)} className="mates-head-link" aria-current={current ? 'page' : undefined}
-    onClick={(event) => {
+/**
+ * 标题那一行右边的「技能」「记忆」（11-15 Aaron：「去掉文字，只留图标，像其他页面的第二栏一样」）：和别的栏目标题行的图标按钮
+ * 一个样子，名字在悬停提示和读屏里；在哪一页那一个按下去（--tint2 底、图标用字色）。
+ */
+function HeadLink({ route, current, navigate, icon, label }: { route: Route; current: boolean;
+  navigate: (route: Route) => void; icon: IconName; label: string }): ReactNode {
+  return <a href={routeHash(route)} className="icon-button mates-head-link" aria-label={label} data-tip={label}
+    aria-current={current ? 'page' : undefined} onClick={(event) => {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
       event.preventDefault();
       navigate(route);
-    }}><Icon name={icon} size={14} />{children}</a>;
+    }}><Icon name={icon} size={16} /></a>;
 }
 
 export function MatesRoster({ route, navigate, phone = false }: { route: Route;
@@ -41,9 +44,9 @@ export function MatesRoster({ route, navigate, phone = false }: { route: Route;
   const root = route.view === 'plasticine' && route.mateId == null && route.mateGroupId == null
     && route.lineId == null;
   const entries = <span className="mates-head-links">
-    <HeadLink route={skillsRoute()} current={route.view === 'skills'} navigate={navigate} icon="sparkle">技能</HeadLink>
+    <HeadLink route={skillsRoute()} current={route.view === 'skills'} navigate={navigate} icon="sparkle" label="技能" />
     <HeadLink route={{ view: 'memory', noteId: null }} current={route.view === 'memory'} navigate={navigate}
-      icon="memory">记忆</HeadLink>
+      icon="memory" label="记忆" />
   </span>;
   return <div className={`mates-roster${phone ? ' mates-roster-phone' : ''}`}>
     {/* 11-15 Aaron 弹框定（设计稿 23）：标题一直写 Plasticine，不跟着主线改的名字；技能、记忆在标题那一行右边。 */}
