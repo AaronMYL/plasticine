@@ -12,6 +12,7 @@ const SHOWN_AS_IMAGE = '[图片已经作为图像交给模型，这里不重复]
 const IMAGE_FIELDS: Partial<Readonly<Record<DeviceActionKind, { field: string; mimeType: ModelImage['mimeType'] }>>> = {
   screen_capture: { field: 'png', mimeType: 'image/png' },
   photo_read: { field: 'jpeg', mimeType: 'image/jpeg' },
+  tab_shot: { field: 'jpeg', mimeType: 'image/jpeg' },
 };
 
 export interface SplitImage {

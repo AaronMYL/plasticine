@@ -23,6 +23,7 @@ import { pageSubmitAskTool } from './page-submit-tool.ts';
 import { linePrompt } from './prompt.ts';
 import { productMap } from './product-map.ts';
 import { lineReport, pauseNotice } from './reports.ts';
+import { backwards, handoffMessage, relayOf } from './relay.ts';
 import { lineResult } from './results.ts';
 import { LineRunner, type DriveMode, type DriveOutcome, type RunnerHost, type Toolset } from './runner.ts';
 import { realLater, type KernelTool, type Later, type LineScope } from './types.ts';
@@ -501,10 +502,19 @@ export class LineKernel implements LineControl, SideControl {
       return this.#state.lines.update(created.id, { status: 'queued' });
     });
     after(() => {
+      this.#relayHandoff(line, input.goal);
       this.#publishLine(line.id);
       this.#schedule();
     });
     return this.view(line.id);
+  }
+
+  /** 交给队友的话在队友自己的对话里也贴一份（11-16）。 */
+  #relayHandoff(line: LineRow, text: string): void {
+    const target = relayOf(this.#state, line);
+    if (target !== null) {
+      this.#post(target.mateLineId, handoffMessage(line, target, text, this.#now()));
+    }
   }
 
   /**
@@ -558,6 +568,7 @@ export class LineKernel implements LineControl, SideControl {
 
   tell(lineId: string, text: string): { line: LineView; outcome: 'steered' | 'started' | 'queued' } {
     const line = this.#unarchived(lineId);
+    this.#relayHandoff(line, text);
     const runner = this.#runners.get(line.id);
     if (runner?.busy() === true) {
       const item = this.#state.lineQueue.add(line.id, text, [], { kind: 'delegation' });
@@ -854,7 +865,12 @@ export class LineKernel implements LineControl, SideControl {
     if (parent === undefined) {
       return;
     }
-    const report = lineReport(this.#state, line, outcome, this.#now(), notice);
+    const target = relayOf(this.#state, line);
+    const plain = lineReport(this.#state, line, outcome, this.#now(), notice);
+    const report = target === null ? plain : { ...plain, relay: backwards(target.relay) };
+    if (target !== null) {
+      this.#post(target.mateLineId, { ...report, own: true });
+    }
     try {
       this.#options.reported?.(report, parent);
     } catch (error) {

@@ -27,6 +27,8 @@ const PAY_PATH = /\/(?:checkout|pay|payment|payments|cashier|buy|purchase|order\
 const CARD_FIELD = new RegExp('\\bcc-(?:number|csc|exp|exp-month|exp-year|name|type)\\b|card[-_]?(?:number|no)|'
   + '\\bcvv\\b|\\bcvc\\b|卡号|安全码|有效期', 'i');
 const SEARCH_NAMES = /^(?:q|query|wd|kw|keyword|keywords|search|s|word)$/i;
+// 没写成按钮、靠 cursor:pointer 能点的一行（会话列表、卡片）：字多的是一整行内容，不按字判提交。
+const ROW_NAME_MAX = 12;
 const ROLE_NAMES = { link: '链接', button: '按钮', textbox: '输入框', checkbox: '勾选框', radio: '单选', combobox: '下拉框',
   switch: '开关', tab: '标签', menuitem: '菜单项', option: '选项' };
 
@@ -206,6 +208,9 @@ const submitKind = (el) => {
   if (navigatingLink(el)) {
     return paymentUrl(el.getAttribute('href')) ? 'pay' : null;
   }
+  if (!el.matches(INTERACTIVE) && Array.from(nameOf(el)).length > ROW_NAME_MAX) {
+    return null;
+  }
   const role = roleOf(el);
   if (role === 'textbox' || role === 'checkbox' || role === 'radio' || role === 'combobox' || role === 'option') {
     return null;
@@ -307,12 +312,36 @@ const hash = (text) => {
   return value.toString(16);
 };
 
+// 页面上靠 cursor:pointer 能点、却没写成链接按钮的那一块（会话列表一行、卡片）：取最外层的那一个；整屏大的不算。
+const pointerRoot = (el) => {
+  if (el.matches(INTERACTIVE) || el === doc.body || el === doc.documentElement) {
+    return false;
+  }
+  if (getComputedStyle(el).cursor !== 'pointer') {
+    return false;
+  }
+  const parent = el.parentElement;
+  if (parent && getComputedStyle(parent).cursor === 'pointer') {
+    return false;
+  }
+  return el.getBoundingClientRect().height <= window.innerHeight * 0.6;
+};
+
+const candidates = (layout) => {
+  const interactive = Array.from(doc.querySelectorAll(INTERACTIVE));
+  if (!layout || !doc.body) {
+    return interactive;
+  }
+  const known = new Set(interactive);
+  return Array.from(doc.body.querySelectorAll('*')).filter((el) => known.has(el) || pointerRoot(el));
+};
+
 const perceive = () => {
   const layout = hasLayout();
   const elements = [];
   const items = [];
   const numbered = new Map();
-  for (const el of doc.querySelectorAll(INTERACTIVE)) {
+  for (const el of candidates(layout)) {
     if (elements.length >= MAX_ELEMENTS) {
       break;
     }
@@ -602,6 +631,19 @@ if (request.op === 'read') {
 }
 if (request.op === 'perceive') {
   return JSON.stringify(perceive());
+}
+if (request.op === 'at') {
+  // 按位置点之前认一下点到的是什么（11-16 tab_point）：往上找到能点的那一层，按同一套规矩判是不是提交。
+  const x = Number(request.x);
+  const y = Number(request.y);
+  let el = typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(x, y) : null;
+  while (el && el !== doc.body && !el.matches(INTERACTIVE) && !(hasLayout() && pointerRoot(el))) {
+    el = el.parentElement;
+  }
+  if (!el || el === doc.body) {
+    return JSON.stringify({ found: false });
+  }
+  return JSON.stringify({ found: true, role: roleOf(el), name: nameOf(el), submit: submitKind(el) || null });
 }
 if (request.op === 'act') {
   return JSON.stringify(act(request));

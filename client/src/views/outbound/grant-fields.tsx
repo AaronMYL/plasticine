@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import type { OutboundGrantInput } from '../../api/shared.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { InfoTip } from '../../shell/info-tip.tsx';
-import { actorLabel, bindingKey, categoryLabel, channelLabel, MAIN_ACTOR, recipientLabel, SCOPE_LABELS }
+import { accountLabel, actorLabel, bindingKey, categoryLabel, MAIN_ACTOR, recipientLabel, SCOPE_LABELS }
   from './outbound-format.ts';
 import type { OutboundChoices } from './use-outbound-choices.ts';
 import './outbound.css';
@@ -49,7 +49,7 @@ export function GrantFields({ value, onChange, choices, disabled = false, lockAc
         {actors.filter((actor) => !actor.disabled || actor.id === value.actor).map((actor) =>
           <option key={actor.id} value={actor.id} disabled={actor.disabled}>{actor.label}</option>)}
       </select></label>)}
-    {row('account', '平台账号', `${channelLabel(value.channel)} · ${value.account}`,
+    {row('account', '平台账号', accountLabel(value.channel, value.account),
       <><label>渠道<input className="field-input" aria-label="渠道" value={value.channel} disabled={disabled}
         onChange={(event) => patch({ channel: event.target.value })} /></label>
         <label>账号<input className="field-input" aria-label="账号" value={value.account} disabled={disabled}

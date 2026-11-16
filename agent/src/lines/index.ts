@@ -6,7 +6,7 @@ export { LineKernel } from './kernel.ts';
 export { LineError, MAX_BACKGROUND_LINES } from './kernel-types.ts';
 export type { After, Compactor, KernelOptions, KernelState, LineErrorCode, OpenLine, SendInput, SendResult }
   from './kernel-types.ts';
-export { HARD_LINE_KINDS, HARD_LINE_LABELS, realLater } from './types.ts';
+export { HARD_LINE_KINDS, HARD_LINE_LABELS, realLater, sleepFor } from './types.ts';
 export type { CompleteOptions, HardLineKind, KernelTool, Later, LineScope, ModelChoice, ModelSource, ToolArgs }
   from './types.ts';
 export { DEFAULT_PAUSE_MS, RETRY_DELAYS_MS, classifyFailure, resetTime } from './failure.ts';

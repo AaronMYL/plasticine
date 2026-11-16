@@ -12,6 +12,7 @@ import { migration as feedMoreImages } from './0140-feed-more-images.ts';
 import { migration as dropAgreements } from './0141-drop-agreements.ts';
 import { migration as dropAgreementHistory } from './0142-drop-agreement-history.ts';
 import { migration as dropRetiredHistory } from './0143-drop-retired-history.ts';
+import { migration as mateRelays } from './0144-mate-relays.ts';
 import { migration as lineArchive } from './0066-line-archive.ts';
 import { migration as searchIndex } from './0067-search-index.ts';
 import { migration as memoryLayers } from './0070-memory-layers.ts';
@@ -234,6 +235,7 @@ export const MIGRATIONS: readonly Migration[] = [
   dropAgreements,
   dropAgreementHistory,
   dropRetiredHistory,
+  mateRelays,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

@@ -16,8 +16,9 @@ export function mateTools(mates: Mates): KernelTool[] {
         async execute() { return result(mates.list()); } }) },
     { name: 'mate_handoff', say: () => '交给队友', hardLine: () => null,
       create: (scope) => ({ name: 'mate_handoff', label: '交给队友', parameters: Handoff,
-        description: '把完整目标交给指定队友。队友独立执行，答案以该队友身份回到当前对话或群组。'
-          + '群组里只能交给本组成员。包括要点、上下文、交付要求；等待结果时可继续交流。',
+        description: '把完整目标交给指定队友。队友独立执行；你交代的话和它交回的结论都贴在那位队友自己的对话里，'
+          + '用户在你这里看不到原文：结论回到你这里后，用你自己的话整理好再告诉用户，别原样复述。群组里只能交给本组成员，'
+          + '来回都在群组对话里。包括要点、上下文、交付要求；等待结果时可继续交流。',
         async execute(_id, raw) {
           const input = checkedArgs(Handoff, raw, 'mate_handoff');
           return result({ line: mates.handoff({ ...input, sourceLineId: scope.lineId }, undefined, [],

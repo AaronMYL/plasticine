@@ -7,6 +7,7 @@ import { MessageAttachments } from '../conversation/message-attachments.tsx';
 import { MessageContent } from '../conversation/message-content.tsx';
 import { MessageRow } from '../lines/thread-actions.tsx';
 import { MateAvatar } from './mate-avatar.tsx';
+import { Speaker } from './speaker.tsx';
 
 export function MateReport({ message, onQuote }: { message: LineMessageView;
   onQuote: (seq: number, text: string, author: string) => void }): ReactNode {
@@ -15,9 +16,12 @@ export function MateReport({ message, onQuote }: { message: LineMessageView;
   const child = useStore(live.lines.thread(message.childLineId ?? MAIN_LINE_ALIAS)).line;
   const mate = roster.mates.find((candidate) => candidate.id === child?.mateId);
   const author = mate?.name ?? (child?.mateId != null ? '队友' : child === null ? '工作回复' : 'Plasticine');
+  // 交回的结论（11-16）写「队友 → 交代它的那一方」；别的照旧只写队友。
+  const head = message.relay !== undefined ? <Speaker speaker={message.relay.from} to={message.relay.to} />
+    : mate === undefined ? null : <div className="mate-report-author"><MateAvatar mate={mate} size={20} still />
+      <span>{mate.name}</span></div>;
   return <MessageRow seq={message.seq} author={author} text={message.text}>
-    {mate === undefined ? null : <div className="mate-report-author"><MateAvatar mate={mate} size={20} still />
-      <span>{mate.name}</span></div>}
+    {head}
     <div className="line-answer" data-message-seq={message.seq}>
       <QuoteSelection onQuote={(text) => onQuote(message.seq, text, author)}>
         <MessageContent text={message.text} />

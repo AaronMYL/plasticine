@@ -4,6 +4,7 @@ import { FakeSouls } from './fake-souls.ts';
 import { seedMemoryScene } from './memory-scene-seed.ts';
 import { seedOfferScene } from './offer-seed.ts';
 import { seedTeamScene } from './team-scene-seed.ts';
+import { seedRelayScene } from './relay-scene-seed.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
 import { renderVideoPage } from '../../../../agent/shared/video-space-page.ts';
@@ -341,6 +342,10 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     // ?scene=team：四位队友、一个群组、各种状态的事（11-13 分工面板截图用）。
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'team') {
       void seedTeamScene({ mates, lines }, now());
+    }
+    // ?scene=relay：主线交给队友的一来一回在队友对话里（11-16 截图用）。
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'relay') {
+      void seedRelayScene({ mates, lines }, now());
     }
     spaces.seed();
     // 技能页（11-13）：随应用的两个，加一个 Plasticine 整理的。

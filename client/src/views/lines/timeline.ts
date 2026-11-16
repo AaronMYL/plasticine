@@ -56,6 +56,8 @@ export type TimelineItem =
   | { kind: 'input'; key: string; message: LineMessageView }
   | Turn
   | { kind: 'report'; key: string; message: LineMessageView; line: LineView | null }
+  /** 交给这位队友的话（11-16）：谁 → 谁、交代的原话，下面是那件事的卡片（line 是做这件事的后台线）。 */
+  | { kind: 'handoff'; key: string; message: LineMessageView; line: LineView | null }
   | { kind: 'child'; key: string; line: LineView }
   /** 系统发在主线上的通知（《优化清单》第 12 条）：来源是系统，不是他说的、也不是 Plasticine 的回答。 */
   | { kind: 'notice'; key: string; message: LineMessageView }
@@ -134,9 +136,19 @@ function childAnchor(line: LineView, messages: readonly LineMessageView[]): numb
   return messages.findLast((message) => message.createdAt < line.createdAt)?.seq ?? 0;
 }
 
+/**
+ * 交给队友的事不在发起的这条线上画（11-16 用户定：交接留在队友的对话里，发起者整理后自己回）：服务端标了 handedOff
+ * 的子线（模型交给另一位队友、不在群组里），它的卡片和交回的结论都不画。用户自己 @ 的、群组里的照旧画。
+ */
+function handedAway(current: LineView | undefined, child: LineView | undefined): boolean {
+  return current !== undefined && child?.handedOff === true && child.parentLineId === current.id;
+}
+
 function childrenByAnchor(input: TimelineInput): Map<number, LineView[]> {
   const anchors = new Map<number, LineView[]>();
-  const children = input.lineId === null ? [] : input.lines.filter((line) => line.parentLineId === input.lineId)
+  const current = input.lines.find((line) => line.id === input.lineId);
+  const children = input.lineId === null ? [] : input.lines.filter((line) => line.parentLineId === input.lineId
+    && !handedAway(current, line))
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
   for (const line of children) {
     const anchor = childAnchor(line, input.messages);
@@ -163,6 +175,7 @@ export function blankNotice(text: string | null): boolean {
 export function buildTimeline(input: TimelineInput): TimelineItem[] {
   const items: TimelineItem[] = [];
   const byId = new Map(input.lines.map((line) => [line.id, line]));
+  const current = input.lineId === null ? undefined : byId.get(input.lineId);
   const children = childrenByAnchor(input);
   const steps = new Map<string, TurnStep>();
   let turn: Turn | null = null;
@@ -191,9 +204,17 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
       turn = null;
       items.push({ kind: 'letter', key: `m-${message.seq}`, message });
     } else if (message.role === 'lineReport') {
+      const line = message.childLineId === null ? null : byId.get(message.childLineId) ?? null;
+      const relayed = message.relay?.from.kind === 'mate' && current !== undefined && current.mateGroupId == null
+        && current.mateId !== message.relay.from.id;
+      if (!handedAway(current, line ?? undefined) && !relayed) {
+        turn = null;
+        items.push({ kind: 'report', key: `m-${message.seq}`, message, line });
+      }
+    } else if (message.role === 'handoff') {
       turn = null;
       const line = message.childLineId === null ? null : byId.get(message.childLineId) ?? null;
-      items.push({ kind: 'report', key: `m-${message.seq}`, message, line });
+      items.push({ kind: 'handoff', key: `m-${message.seq}`, message, line });
     } else if (message.role === 'assistant' || (message.role === 'toolResult'
       && (message.widgets.length > 0 || (message.ok && spaceToolResult(message.tool, message.text) !== null)))) {
       if (turn === null) {
@@ -238,7 +259,7 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
 /** 这一项占了哪几条消息（在记录里找时按它滚过去）；子线卡片不占。 */
 export function seqRange(item: TimelineItem): [number, number] | null {
   if (item.kind === 'turn') return [item.firstSeq, item.lastSeq];
-  if (item.kind === 'user' || item.kind === 'input' || item.kind === 'report') {
+  if (item.kind === 'user' || item.kind === 'input' || item.kind === 'report' || item.kind === 'handoff') {
     return [item.message.seq, item.message.seq];
   }
   return null;

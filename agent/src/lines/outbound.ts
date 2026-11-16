@@ -10,6 +10,9 @@ import type { GateState } from './hard-line.ts';
 import type { KernelTool, LineScope } from './types.ts';
 import { clip, resultSummary } from './messages.ts';
 
+/** 网页发送的渠道前缀（devices/page-send.ts 的 webChannel）。 */
+const WEB_CHANNEL_PREFIX = 'web:';
+
 export class OutboundGate {
   readonly authorizer: OutboundAuthorizer;
   readonly #state: GateState;
@@ -23,12 +26,19 @@ export class OutboundGate {
       scheduleId: this.#state.schedules.byLine(scope.lineId)?.id ?? null };
   }
 
+  /**
+   * 卡上默认的授权范围（11-16 用户定：开头一张卡确认一次）：在后台做的一件事里，默认放行这件事期间；网页发送默认这个网站上
+   * 所有对象、同样的原文（海投一类），消息默认这几位、内容不限。主线上随口发的一条默认只这一次。他在卡上能改。
+   */
   card(scope: LineScope, spec: OutboundSpec): OutboundCard {
     const who = this.context(scope);
     const related = this.authorizer.related(who, spec);
+    const task = scope.lineId !== MAIN_LINE_ID;
+    const web = spec.channel.startsWith(WEB_CHANNEL_PREFIX);
     const grant: OutboundGrantInput = { actor: who.actorId, channel: spec.channel, account: spec.account,
-      recipientMode: 'list', recipients: [...spec.recipients], category: spec.category, fixedTexts: [spec.content],
-      scope: { kind: 'once' }, expiresAt: null };
+      recipientMode: web && task ? 'all' : 'list', recipients: web && task ? [] : [...spec.recipients],
+      category: spec.category, fixedTexts: task && !web ? null : [spec.content],
+      scope: task ? { kind: 'task', binding: { kind: 'line', id: scope.lineId } } : { kind: 'once' }, expiresAt: null };
     if (related !== undefined) {
       grant.recipientMode = related.recipientMode;
       grant.recipients = [...new Set([...related.recipients, ...spec.recipients])];

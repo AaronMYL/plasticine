@@ -10,7 +10,8 @@ import { WEB_PAGE_TEXT_MAX_CHARS } from '../../../agent/shared/api/mac-bridge.ts
 import { browserHost } from '../../../client/src/mac/translate-page-host.ts';
 import { installPageTranslator, type PageTranslator } from '../../../client/src/mac/translate-page.ts';
 import { TAB_CHANNELS } from '../app/channels.ts';
-import { clickMarked, fillMarked, locate, markedCenter, pageState, readPage, visibleText } from './tab-dom.ts';
+import { clickMarked, fillMarked, focusedFacts, locate, markedCenter, pageState, readPage, viewportSize, visibleText }
+  from './tab-dom.ts';
 
 interface Call {
   id: string;
@@ -51,6 +52,10 @@ async function run(call: Call): Promise<unknown> {
       return markedCenter(document, String(args.nonce));
     case 'fill':
       return fillMarked(document, String(args.nonce), String(args.value ?? ''));
+    case 'viewport':
+      return viewportSize(window);
+    case 'focused':
+      return focusedFacts(document);
     case 'operate':
       return JSON.parse(await pageOperate(args.request)) as unknown;
     case 'circle': {

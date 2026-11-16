@@ -43,6 +43,8 @@ export function legacySayings(nodeLabel: NodeLabel): Readonly<Record<string, Leg
     file_to_project: { say: (args) => withSubject('归到项目', text(args, 'title')) },
     device_nodes: { say: () => '看有哪些设备' },
     device_action: { say: (args) => `在 ${nodeLabel(text(args, 'nodeId'))} 上${text(args, 'purpose') || '做一步'}` },
+    page_send: { say: (args) => `在 ${text(args, 'site')} 上发给${text(args, 'to') || '对方'}`,
+      consequence: () => '会以你的名义发出，对方会收到，撤不回。' },
     cloud_browser_open: { say: (args) => withSubject('在云端浏览器打开', host(text(args, 'url'))) },
     cloud_browser_read: { say: () => '在云端浏览器读网页' },
     cloud_browser_observe: { say: () => '在云端浏览器看画面' },

@@ -383,6 +383,14 @@
   color: var(--fg2);
   font-size: var(--text-caption);
 }
+.speaker-one {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.speaker-arrow {
+  color: var(--fg3);
+}
 .mate-mention-menu {
   position: absolute;
   bottom: calc(100% - 8px);

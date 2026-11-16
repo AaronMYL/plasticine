@@ -114,6 +114,7 @@ export function proveDeviceAction(action: DeviceActionParams, result: unknown): 
     case 'tab_navigate':
       return provePage(result);
     case 'tab_click':
+    case 'tab_point':
       return proveTabClick(result);
     case 'tab_fill':
       return proveTabFill(result);

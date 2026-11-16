@@ -13,7 +13,8 @@ import { autoOnlyPermissionGate, createShowWidgetsTool, getTimeTool, ToolRegistr
 import { ensureRulesDoc, createMemoryDocTools, MemoryCurator } from '../memory/index.ts';
 import { createBookTools } from '../books/index.ts';
 import {
-  createDeviceActionGate, createDeviceActionTool, createDeviceNodesTool, DeviceService, type NodeTransport,
+  createDeviceActionGate, createDeviceActionTool, createDeviceNodesTool, createPageSendTool, DeviceService,
+  type NodeTransport,
 } from '../devices/index.ts';
 import {
   BACKGROUND_TIME_ZONE, createDaily, createFeedCommentGenerator, createFeedSelector, createFeedTranslator,
@@ -42,8 +43,9 @@ import { bookmarkTrigger, deviceTrigger, ensureIntake, feedTrigger, IntakeDesk, 
   type RecordInput } from '../intake/index.ts';
 import { kernelText, type Illustrator, type TextModels } from '../kernel/index.ts';
 import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
-import { MateGroupTasks, mateGroupTaskTools, Mates, mateTools } from '../mates/index.ts';
-import type { LineKernel } from '../lines/index.ts';
+import { mainIdentity, MateGroupTasks, mateGroupTaskTools, Mates, mateTools } from '../mates/index.ts';
+import { realLater, sleepFor, type LineKernel } from '../lines/index.ts';
+import { idleWait } from './idle-wait.ts';
 import { TunnelService, type TunnelServiceOptions } from '../network/index.ts';
 import { Tasks } from '../tasks/index.ts';
 import { BackupService, ClientReleases } from '../system/index.ts';
@@ -277,7 +279,7 @@ export function assembleApp(options: AssembleOptions): App {
   const noteTools = createNoteTools(state, (noteId) => hub.publish({ type: 'note_invalidated', noteId }));
   const tools = [...noteTools, ...createBookTools(state), getTimeTool,
     createPaymentTool(moneyDrafts, paymentReader), createDeviceNodesTool(devices),
-    createDeviceActionTool(devices.actions), ...toolGroupTools(toolGroups),
+    createDeviceActionTool(devices.actions), createPageSendTool(state, devices.actions), ...toolGroupTools(toolGroups),
     ...projectTools({ state, changed: (projectId) => hub.publish({ type: 'project_invalidated', projectId }) }),
     ...createMemoryDocTools(state),
     ...createServerCommandTools(server), ...createSkillTools(skills),
@@ -320,7 +322,10 @@ export function assembleApp(options: AssembleOptions): App {
     text: options.memoryCuration === false ? null : text,
     notify: (input) => notices.post(input),
     stalled: (at) => projectWatch.stalled(at) });
-  const permission = createDeviceActionGate(devices.actions, autoOnlyPermissionGate, devices.approvals);
+  const permission = createDeviceActionGate(devices.actions, autoOnlyPermissionGate, devices.approvals,
+    idleWait({ state, now, sleep: (ms, signal) => sleepFor(realLater, ms, signal), whoOf: (mateId) =>
+      (mateId === null ? mainIdentity(state).name : state.mates.get(mateId)?.name ?? '队友'),
+    post: (input) => notices.post(input) }));
   const lines = assembleLines(options.lines, { state, desk, hub, now, publicUrl,
     skillsContext: (lineId) => skills.context(`line:${lineId}`),
     lineChanged: (lineId) => network.lineChanged(lineId),

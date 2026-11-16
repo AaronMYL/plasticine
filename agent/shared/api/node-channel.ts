@@ -105,6 +105,14 @@ export const DEVICE_RESULT_SCHEMAS = {
   tab_fill: Type.Object({ tabId: TabIdText, selector: Text, tag: Text, type: Text, matches: Type.Boolean() }, STRICT),
   tab_perceive: Type.Object({ tabId: TabIdText, ...PagePerceptionSchema.properties }, STRICT),
   tab_act: PageActResultSchema,
+  /** jpeg 是 base64；width / height 是视口的 CSS 像素（tab_point 的坐标照它）。 */
+  tab_shot: Type.Object({ tabId: TabIdText, url: Text, jpeg: Type.String(), width: Type.Integer({ minimum: 1 }),
+    height: Type.Integer({ minimum: 1 }) }, STRICT),
+  /** target 是点到的那个元素（标签名和字）；changed：点之后页面变了。 */
+  tab_point: Type.Object({ tabId: TabIdText, target: Type.Object({ tag: Text, text: Text }, STRICT),
+    before: WebTabDomStateSchema, after: WebTabDomStateSchema, changed: Type.Boolean() }, STRICT),
+  /** matches：打完读回焦点里的字包含要打的。 */
+  tab_type: Type.Object({ tabId: TabIdText, tag: Text, matches: Type.Boolean() }, STRICT),
   ...IOS_RESULT_SCHEMAS,
 } satisfies Record<DeviceActionKind, object>;
 

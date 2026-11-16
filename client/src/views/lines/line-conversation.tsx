@@ -9,7 +9,7 @@
 import { useMainName } from '../mates/main-identity.tsx';
 import { MateLineCard } from '../mates/mate-line-card.tsx';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { LineView } from '../../api/shared.ts';
+import type { LineMessageView, LineSpeaker, LineView } from '../../api/shared.ts';
 import type { AskView } from '../../api/types.ts';
 import { splitQuotes } from '../../api/quote-text.ts';
 import { PageCard } from '../conversation/page-card.tsx';
@@ -17,7 +17,10 @@ import { parsePageQuote } from '../conversation/page-snapshot.ts';
 import { useLive, useTimeZone } from '../../live.tsx';
 import { UserMessage } from '../../primitives/message/index.tsx';
 import { Markdown } from '../../primitives/message/markdown.tsx';
+import { QuoteSelection } from '../../primitives/message/quote-selection.tsx';
 import { MateReport } from '../mates/mate-report.tsx';
+import { Speaker, useSpeakerName } from '../mates/speaker.tsx';
+import { LineCard } from './line-card.tsx';
 import { parseLineRef, sideRoute } from '../../shell/routes.ts';
 import { lineItemForSeq, useFocusMessage } from '../../shell/use-focus-message.ts';
 import { useViewing } from '../../state/viewing.ts';
@@ -50,7 +53,7 @@ const STICK_PX = 48;
 
 function itemTime(item: TimelineItem): string | null {
   if (item.kind === 'user' || item.kind === 'input' || item.kind === 'report' || item.kind === 'notice'
-    || item.kind === 'welcome' || item.kind === 'letter') {
+    || item.kind === 'welcome' || item.kind === 'letter' || item.kind === 'handoff') {
     return item.message.createdAt;
   }
   if (item.kind === 'child') return item.line.createdAt;
@@ -95,14 +98,37 @@ function Tail({ data, asks }: { data: LineThreadData; asks: readonly AskView[] }
 
 type QuoteMessage = (seq: number, text: string, author: string) => void;
 
-function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: string; item: TimelineItem;
-  running: boolean; onQuote: QuoteMessage;
+/** 这条线上的回答是谁说的：队友自己的对话和它的后台活是队友，别的是主线。 */
+function speakerOf(line: LineView | null): LineSpeaker {
+  return line?.mateId == null ? { kind: 'main' } : { kind: 'mate', id: line.mateId };
+}
+
+/** 交给这位队友的话（11-16）：谁 → 谁、原话，下面是那件事的卡片（状态、停止）。 */
+function HandoffItem({ message, line, onQuote }: { message: LineMessageView; line: LineView | null;
+  onQuote: QuoteMessage }): ReactNode {
+  const from = message.relay?.from ?? { kind: 'main' as const };
+  const author = useSpeakerName(from);
+  return <MessageRow seq={message.seq} author={author} text={message.text}>
+    <Speaker speaker={from} to={message.relay?.to} />
+    <div className="line-answer line-handoff" data-message-seq={message.seq}>
+      <QuoteSelection onQuote={(text) => onQuote(message.seq, text, author)}>
+        <MessageContent text={message.text} />
+      </QuoteSelection>
+    </div>
+    {line === null ? null : <LineCard line={line} stopped={line.outcome === 'stopped'} />}
+  </MessageRow>;
+}
+
+function Item({ lineId, line, item, running, settled, streaming, onQuote }: { lineId: string;
+  line: LineView | null; item: TimelineItem; running: boolean; onQuote: QuoteMessage;
   /**
    * 最后一项、线空闲：停在半路的一轮按「停下了」画。不是最后一项的不算：后面跟着他的话时分不清是叫停后又说的，
    * 还是「立即发送」插进来的（那一轮没停）。
    */
   settled: boolean; streaming: string }): ReactNode {
   const mainName = useMainName();
+  const speaker = speakerOf(line);
+  const speakerName = useSpeakerName(speaker);
   switch (item.kind) {
     case 'user': {
       const { quotes, text } = splitQuotes(item.message.text, `line-${item.message.seq}`);
@@ -128,9 +154,12 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
         onQuote={(text) => onQuote(item.message.seq, text, messageAuthor(item.message))} />;
     case 'turn':
       return <TurnView lineId={lineId} turn={item} running={running} cutOff={settled && item.endedOnTool} quiet
-        streaming={running ? streaming : ''} onQuote={(seq, text) => onQuote(seq, text, mainName)} />;
+        speaker={speaker} author={speakerName} streaming={running ? streaming : ''}
+        onQuote={(seq, text) => onQuote(seq, text, speakerName)} />;
     case 'report':
       return <MateReport message={item.message} onQuote={onQuote} />;
+    case 'handoff':
+      return <HandoffItem message={item.message} line={item.line} onQuote={onQuote} />;
     case 'side':
       return <SideLink lineId={item.lineId} title={item.title} />;
     case 'child':
@@ -139,6 +168,7 @@ function Item({ lineId, item, running, settled, streaming, onQuote }: { lineId: 
       return <WelcomeMessage lineId={lineId} message={item.message} />;
     case 'letter':
       return <MessageRow seq={item.message.seq} author={mainName} text={item.message.text}>
+        <Speaker speaker={{ kind: 'main' }} />
         <div className="line-answer" data-message-seq={item.message.seq}>
           <Markdown text={item.message.text} />
           {item.message.letter === undefined ? null : <LetterCard letter={item.message.letter} />}
@@ -307,7 +337,7 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
               <div key={item.key} className="line-item" data-kind={item.kind} data-seq-from={range?.[0]}
                 data-seq-to={range?.[1]}>
                 {label === null ? null : <div className="line-day">{label}</div>}
-                <Item lineId={line?.id ?? lineId} item={item} running={current} streaming={streaming}
+                <Item lineId={line?.id ?? lineId} line={line} item={item} running={current} streaming={streaming}
                   settled={item === items.at(-1) && line?.status === 'idle'} onQuote={quote} />
               </div>
             );

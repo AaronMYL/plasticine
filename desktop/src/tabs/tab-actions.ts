@@ -3,14 +3,17 @@
 // 算点到（DOM 点不动、页面只认可信点击的，再用调试协议点一次）；填完读回值，matches 为真才算填对。判道两次：先按参数
 // （device-guard），找到元素后再按它的真实 DOM（页面地址、表单地址、按钮上的字、autocomplete、密码框）判一次。他正
 // 看着这个标签（窗口在前、它在中间、30 秒内动过键鼠）时点、填、操作都不做，回 user_present，本体等他停下来。
+// 11-16：DOM 认不出的（会话列表一行这类）也在标签里后台做——tab_shot 截这个标签的画面（标签藏着也截，不切前台），
+// tab_point 按画面上的位置发可信点击，tab_type 往焦点里打字；都不动他的真鼠标和窗口。按位置点到的像提交就不点。
 
 import { createHash, randomUUID } from 'node:crypto';
 import { Value } from 'typebox/value';
+import { nativeImage } from 'electron';
 import type { DeviceActionParams, PageOperateEvent } from '../../../agent/shared/api/index.ts';
 import { PagePerceptionSchema } from '../../../agent/shared/api/page-operate.ts';
 import { classifyLane, isPaymentPage } from '../../../agent/shared/device-lanes.ts';
 import { DeviceRefused, TabActionError, type TabActionPort } from '../node/action-runner.ts';
-import { trustedClick } from './cdp.ts';
+import { trustedClick, trustedInsert, withDebugger } from './cdp.ts';
 import type { Located, TargetFacts } from './tab-dom.ts';
 import type { Tab, TabViews } from './tab-views.ts';
 
@@ -19,6 +22,10 @@ const PRESENT_MS = 30_000;
 /** 点之后等页面动一下再读回；还在载入就等载入完，最多 10 秒（和 Mac 壳一样）。 */
 const SETTLE_MS = 600;
 const LOAD_WAIT_MS = 10_000;
+/** tab_shot 的 JPEG 质量：看得清字、几百 KB。 */
+const SHOT_QUALITY = 80;
+/** 打完字读回时核对开头这么多字（读回最多 8000 字，长文只比开头）。 */
+const MATCH_PREFIX = 200;
 
 export interface TabActionDeps {
   tabs: TabViews;
@@ -91,6 +98,12 @@ export class TabActions implements TabActionPort {
         return { tabId: action.tabId, ...await this.perceive(action.tabId) };
       case 'tab_act':
         return this.act(action);
+      case 'tab_shot':
+        return this.shot(action.tabId);
+      case 'tab_point':
+        return this.point(action.tabId, action.x, action.y);
+      case 'tab_type':
+        return this.type(action.tabId, action.text);
       default:
         throw new TabActionError(null, '这一步不是网页标签的事。');
     }
@@ -214,6 +227,64 @@ export class TabActions implements TabActionPort {
       throw new TabActionError(null, '页面结构没读出来，请重试。');
     }
     return page;
+  }
+
+  /** 截这个标签的画面，缩到视口的 CSS 像素（tab_point 的坐标照它）；标签藏着也截，不让它露出来。 */
+  private async shot(tabId: string): Promise<Record<string, unknown>> {
+    const tab = this.tab(tabId);
+    const size = await this.call(tabId, 'viewport', {});
+    const width = Number(size.width);
+    const height = Number(size.height);
+    let image = await tab.view.webContents.capturePage(undefined, { stayHidden: true });
+    if (image.isEmpty()) {
+      const data = await withDebugger(tab.view.webContents, async (send) =>
+        (await send('Page.captureScreenshot', { format: 'png', fromSurface: true }) as { data: string }).data);
+      image = nativeImage.createFromBuffer(Buffer.from(data, 'base64'));
+    }
+    if (image.isEmpty()) {
+      throw new TabActionError(null, '这个标签现在截不到画面（可能还没载入完），过一会儿再试。');
+    }
+    const jpeg = image.resize({ width, height }).toJPEG(SHOT_QUALITY).toString('base64');
+    return { tabId, url: tab.view.webContents.getURL(), jpeg, width, height };
+  }
+
+  /** 按画面上的位置点一下：先认点到的是什么，像提交的不点；点用调试协议发可信点击，不动真鼠标。 */
+  private async point(tabId: string, x: number, y: number): Promise<Record<string, unknown>> {
+    const tab = this.tab(tabId);
+    this.present(tab);
+    const target = await this.call(tabId, 'operate', { request: { op: 'at', x, y } });
+    if (target.found !== true) {
+      throw new TabActionError(null, '这个位置上没有能点的东西：先 tab_shot 再看一眼。');
+    }
+    if (typeof target.submit === 'string') {
+      throw new DeviceRefused(`点到的是「${String(target.name)}」，像提交，按位置点不放行：先 tab_perceive 找到它的`
+        + '编号，用 tab_act 点（发出去走 page_send）。');
+    }
+    const nonce = randomUUID();
+    const before = digest(await this.call(tabId, 'state', { nonce, cleanup: false }));
+    await trustedClick(tab.view.webContents, x, y);
+    const after = await this.settled(tab, nonce);
+    return { tabId, target: { tag: String(target.role), text: String(target.name) }, before, after,
+      changed: after.digest !== before.digest || after.url !== before.url };
+  }
+
+  /** 往焦点里打字（输入法那条路，React 这类页面也认）；密码框、卡号框不打；不按回车。 */
+  private async type(tabId: string, text: string): Promise<Record<string, unknown>> {
+    const tab = this.tab(tabId);
+    this.present(tab);
+    const focused = await this.call(tabId, 'focused', {});
+    if (focused.editable !== true) {
+      throw new TabActionError(null, '现在没有能打字的焦点：先用 tab_point 点一下输入框。');
+    }
+    if (focused.password === true) {
+      throw new DeviceRefused(FILL_ERRORS.password ?? '密码框不由 Plasticine 填。');
+    }
+    if (focused.card === true) {
+      throw new DeviceRefused(FILL_ERRORS.card ?? '银行卡号这类不由 Plasticine 填。');
+    }
+    await trustedInsert(tab.view.webContents, text);
+    const after = await this.call(tabId, 'focused', {});
+    return { tabId, tag: String(after.tag), matches: String(after.text).includes(text.slice(0, MATCH_PREFIX)) };
   }
 
   private async act(action: Extract<DeviceActionParams, { kind: 'tab_act' }>): Promise<Record<string, unknown>> {

@@ -148,6 +148,12 @@ function paymentLane(action: DeviceActionParams, purpose: string): LaneDecision 
       if (hasCardNumber(action.value)) { return deny('要填的像银行卡号'); }
       if (CARD_FIELD.test(action.selector)) { return deny('要填的是银行卡号、安全码或有效期'); }
       return saysPayment ? deny('用途是付款、下单或转账') : null;
+    case 'tab_type':
+      if (hasCardNumber(action.text)) { return deny('要打的像银行卡号'); }
+      return saysPayment ? deny('用途是付款、下单或转账') : null;
+    case 'tab_point':
+      // 11-16：按位置点在设备上先认出点到的元素，像付款、发出去、删除、改设置的一律不点（tab-actions.ts）。
+      return saysPayment ? deny('用途是付款、下单或转账') : null;
     case 'tab_act':
       // 第 3 批（他定）：问这一页里付款、发帖、删除、改设置先问他，不关死——注入脚本按真实元素判出提交就不点，
       // 放行只凭他在要你定卡上选了提交（page-submits.ts）。卡号由他自己填，像卡号的字照旧关死。

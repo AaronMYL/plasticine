@@ -1,6 +1,8 @@
 // Plasticine 的一轮：正文和过程按出现顺序画，过程从开始就有自己的位置，结束只更新内容。正文可选文引用。
 
 import { useMainName } from '../mates/main-identity.tsx';
+import { Speaker } from '../mates/speaker.tsx';
+import type { LineSpeaker } from '../../api/shared.ts';
 import { useId, useState, type ReactNode } from 'react';
 import { Markdown } from '../../primitives/message/markdown.tsx';
 import { QuoteSelection } from '../../primitives/message/quote-selection.tsx';
@@ -55,15 +57,18 @@ export interface TurnViewProps {
    * 干活时的一行实时状态在下面，子代理的步骤在它的卡片里。
    */
   quiet?: boolean;
+  /** 这一轮是谁说的（11-16：每条回答旁写头像和名字）；不给就不画。author 是引用时的署名。 */
+  speaker?: LineSpeaker | undefined;
+  author?: string | undefined;
 }
 
-function Part({ part, lineId, running, onQuote, onRetry }: Pick<TurnViewProps, 'lineId' | 'onQuote' | 'onRetry'>
-  & { part: TurnPart; running: boolean }): ReactNode {
+function Part({ part, lineId, running, onQuote, onRetry, author }: Pick<TurnViewProps, 'lineId' | 'onQuote'
+  | 'onRetry' | 'author'> & { part: TurnPart; running: boolean }): ReactNode {
   const mainName = useMainName();
   switch (part.kind) {
     case 'space': return <SpaceRevisionCard result={part.result} />;
     case 'answer':
-      return <MessageRow seq={part.seq} author={mainName} text={part.text}>
+      return <MessageRow seq={part.seq} author={author ?? mainName} text={part.text}>
         <div className="line-answer" data-message-seq={part.seq}>
           <QuoteSelection onQuote={onQuote === undefined ? undefined : (text) => onQuote(part.seq, text)}>
             <MessageContent text={part.text} />
@@ -84,15 +89,17 @@ function Part({ part, lineId, running, onQuote, onRetry }: Pick<TurnViewProps, '
 }
 
 export function TurnView({ lineId, turn, running = false, cutOff = false, streaming = '', onRetry,
-  onQuote, quiet = false }: TurnViewProps): ReactNode {
+  onQuote, quiet = false, speaker, author }: TurnViewProps): ReactNode {
   const parts = quiet ? turn.parts.filter((part) => part.kind !== 'thinking' && part.kind !== 'steps') : turn.parts;
   if (parts.length === 0 && streaming === '' && !(cutOff && !turn.stopped)) {
     return null;
   }
   return (
     <div className="line-turn">
+      {speaker !== undefined && (streaming !== '' || parts.some((part) => part.kind === 'answer'))
+        ? <Speaker speaker={speaker} /> : null}
       {parts.map((part) => <Part key={`${part.seq}-${part.kind}`} part={part} lineId={lineId}
-        running={running} onQuote={onQuote} onRetry={onRetry} />)}
+        running={running} onQuote={onQuote} onRetry={onRetry} author={author} />)}
       {streaming === '' ? null : <div className="line-answer"><Markdown text={streaming} /></div>}
       {!turn.stopped && cutOff && turn.error === null ? <StateRow kind="stopped" text="停下了" /> : null}
     </div>

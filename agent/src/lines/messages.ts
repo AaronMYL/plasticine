@@ -5,7 +5,7 @@ import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import type { AssistantMessage, ImageContent, Message, TextContent, ToolResultMessage, UserMessage }
   from '@earendil-works/pi-ai';
 import { Value } from 'typebox/value';
-import type { LineMessageView } from '../../shared/api/lines.ts';
+import type { LineMessageView, LineRelay } from '../../shared/api/lines.ts';
 import type { WelcomeStart } from '../../shared/welcome-start.ts';
 import { splitReply } from '../../shared/line-reply.ts';
 import { MessageWidgetSchema, type MessageWidget } from '../../shared/api/message-widgets.ts';
@@ -27,6 +27,23 @@ export interface LineReportMessage {
   timestamp: number;
   /** 跑完了但线自己说没做成（line_outcome）：一句原因。旧记录没有这一项，照旧按做完。 */
   unmet?: string;
+  /** 队友交回的（11-16）：谁交回给谁。交给发起者的那一份界面上不画，发起者整理后自己回他。 */
+  relay?: LineRelay;
+  /** 贴在队友自己对话里的那一份（给他看、也让队友记得自己交回了什么）。 */
+  own?: boolean;
+}
+
+/**
+ * 交给队友的话（11-16 用户定：交接留在队友的对话里）：主线或别的队友交给这位队友一件事、或给它在做的事插一句，
+ * 贴进这位队友自己的对话（不开一轮，事在后台线 lineId 里做）。
+ */
+export interface LineHandoffMessage {
+  role: 'handoff';
+  lineId: string;
+  title: string;
+  text: string;
+  relay: LineRelay;
+  timestamp: number;
 }
 
 /**
@@ -67,7 +84,8 @@ export interface LineLetterMessage {
 }
 
 /** 贴到一条线上、不开一轮的消息：后台线的结果、系统通知、欢迎、来信。 */
-export type PostedMessage = LineReportMessage | LineNoticeMessage | LineWelcomeMessage | LineLetterMessage;
+export type PostedMessage = LineReportMessage | LineNoticeMessage | LineWelcomeMessage | LineLetterMessage
+  | LineHandoffMessage;
 
 /** 压缩摘要：不存进消息表（存在线的 summary 上），装上下文时放在最前面。 */
 export interface LineSummaryMessage {
@@ -83,6 +101,7 @@ declare module '@earendil-works/pi-agent-core' {
     notice: LineNoticeMessage;
     welcome: LineWelcomeMessage;
     letter: LineLetterMessage;
+    handoff: LineHandoffMessage;
   }
 }
 
@@ -145,8 +164,20 @@ const REPORT_HEADS: Readonly<Record<ReportOutcome, string>> = {
 export function reportText(message: LineReportMessage): string {
   const ended = message.unmet === undefined ? REPORT_HEADS[message.outcome]
     : `跑完了但事没做成（${message.unmet}），下面是它交回的结论`;
+  if (message.own === true) {
+    return `［你在后台线「${message.title}」（${message.lineId}）里做的事${ended}，已经交回给交代你的那一方；`
+      + `这不是用户说的］\n${message.text}`;
+  }
   const head = `后台线「${message.title}」（${message.lineId}）${ended}`;
-  return `［${head}；这不是用户说的］\n${message.text}`;
+  const relay = message.relay === undefined ? ''
+    : '；这是队友交回给你的，用户在你这里看不到原文，用你自己的话整理好再告诉他，别原样复述';
+  return `［${head}${relay}；这不是用户说的］\n${message.text}`;
+}
+
+export function handoffText(message: LineHandoffMessage): string {
+  const from = message.relay.from.kind === 'main' ? '主线' : '一位队友';
+  return `［${from}交给你的话（事在后台线「${message.title}」（${message.lineId}）里做，过程在那条线里）；`
+    + `这不是用户说的］\n${message.text}`;
 }
 
 export function noticeText(message: LineNoticeMessage): string {
@@ -183,6 +214,9 @@ export function convertToLlm(messages: AgentMessage[]): Message[] {
     }
     if (message.role === 'letter') {
       return [{ role: 'user', content: letterText(message), timestamp: message.timestamp }];
+    }
+    if (message.role === 'handoff') {
+      return [{ role: 'user', content: handoffText(message), timestamp: message.timestamp }];
     }
     return [message];
   });
@@ -284,7 +318,11 @@ export function messageView(row: LineMessageRow, sayOf: SayOf, callArgs?: (toolC
   if (message.role === 'lineReport') {
     const unmet = message.unmet !== undefined;
     return view({ role: 'lineReport', text: message.text, ok: message.outcome === 'done' && !unmet,
-      stopReason: unmet ? 'unmet' : message.outcome, childLineId: message.lineId });
+      stopReason: unmet ? 'unmet' : message.outcome, childLineId: message.lineId,
+      ...(message.relay === undefined ? {} : { relay: message.relay }) });
+  }
+  if (message.role === 'handoff') {
+    return view({ role: 'handoff', text: message.text, childLineId: message.lineId, relay: message.relay });
   }
   if (message.role === 'lineSummary') {
     return view({ role: 'lineSummary', text: message.summary });

@@ -108,6 +108,9 @@ export const DEVICE_KIND_LABELS: Readonly<Record<DeviceActionKind, string>> = {
   tab_fill: '在网页标签里填',
   tab_perceive: '看整页',
   tab_act: '在网页上操作',
+  tab_shot: '截网页标签',
+  tab_point: '在网页标签里按位置点',
+  tab_type: '在网页标签里打字',
   ...IOS_KIND_LABELS,
 };
 
@@ -145,6 +148,9 @@ export const DEVICE_KIND_CLASSES: Readonly<Record<DeviceActionKind, DeviceAction
   tab_fill: 'input',
   tab_perceive: 'browser',
   tab_act: 'input',
+  tab_shot: 'browser',
+  tab_point: 'input',
+  tab_type: 'input',
   ...IOS_KIND_CLASSES,
 };
 
@@ -236,6 +242,14 @@ export const DeviceActionParamsSchema = Type.Union([
     },
     STRICT,
   ),
+  /** 截这个网页标签的画面（标签在后台也能截，不切前台）。回执是 JPEG 和视口的 CSS 像素尺寸。 */
+  Type.Object({ kind: Type.Literal('tab_shot'), tabId: WebTabIdSchema }, STRICT),
+  /** 按 tab_shot 画面上的位置点一下（视口 CSS 像素）：在标签里发可信点击，不动真鼠标；像提交的不点。 */
+  Type.Object({ kind: Type.Literal('tab_point'), tabId: WebTabIdSchema, x: Type.Integer({ minimum: 0 }),
+    y: Type.Integer({ minimum: 0 }) }, STRICT),
+  /** 往这个标签当前的焦点里打字（输入法那条路）；不按回车，发出去照旧点发送。密码框、卡号不打。 */
+  Type.Object({ kind: Type.Literal('tab_type'), tabId: WebTabIdSchema,
+    text: Type.String({ minLength: 1, maxLength: TAB_FILL_MAX_CHARS }) }, STRICT),
   ...IOS_ACTION_PARAM_SCHEMAS,
 ]);
 export type DeviceActionParams = Static<typeof DeviceActionParamsSchema>;

@@ -52,7 +52,7 @@ export interface ActionRunnerDeps {
 }
 
 const TAB_KINDS = new Set<DeviceActionKind>(['tab_list', 'tab_read', 'tab_open', 'tab_navigate', 'tab_click',
-  'tab_fill', 'tab_perceive', 'tab_act']);
+  'tab_fill', 'tab_perceive', 'tab_act', 'tab_shot', 'tab_point', 'tab_type']);
 
 function refused(error: string): NodeActionResultRequest {
   return { status: 'refused', refusalLayer: 'device', error };

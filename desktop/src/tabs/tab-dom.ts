@@ -13,6 +13,8 @@ const CLICKABLE = 'a, button, input[type=button], input[type=submit], input[type
   + 'summary, label, [role=button], [role=link], [role=menuitem], [role=tab], [role=option], [onclick]';
 const EDITABLE = 'input, textarea, select, [contenteditable="true"], [contenteditable=""]';
 const CHECKED_WORDS = /^(true|on|1|yes|是|勾选|选中)$/i;
+/** 打字后读回焦点里的字最多这么长（核对包含要打的字）。 */
+const TYPED_TEXT_CHARS = 8_000;
 
 export function clip(value: unknown, max: number): string {
   const chars = Array.from(String(value ?? ''));
@@ -297,4 +299,28 @@ export function markedCenter(doc: Document, nonce: string): { x: number; y: numb
     return null;
   }
   return { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) };
+}
+
+/** 视口的 CSS 像素尺寸：tab_shot 的图缩到这个大小，tab_point 的坐标照它（11-16）。 */
+export function viewportSize(view: { innerWidth: number; innerHeight: number }): { width: number; height: number } {
+  return { width: Math.max(1, Math.round(view.innerWidth)), height: Math.max(1, Math.round(view.innerHeight)) };
+}
+
+/** 当前焦点是什么（tab_type 打字前后看一眼）：密码框、卡号框不打；text 是框里现在的字（密码框不回传）。 */
+export function focusedFacts(doc: Document): { tag: string; editable: boolean; password: boolean; card: boolean;
+  text: string } {
+  const element = doc.activeElement as (HTMLElement & { value?: unknown }) | null;
+  if (element === null || element === doc.body) {
+    return { tag: '', editable: false, password: false, card: false, text: '' };
+  }
+  const tag = element.tagName.toLowerCase();
+  const type = (element.getAttribute('type') ?? '').toLowerCase();
+  const password = type === 'password';
+  const hint = [element.getAttribute('autocomplete'), element.getAttribute('name'), element.id].filter(Boolean)
+    .join(' ');
+  const card = /\bcc-(?:number|csc|exp)|card[-_]?(?:number|no)|\bcvv\b|\bcvc\b|卡号|安全码/i.test(hint);
+  const editable = element.isContentEditable || tag === 'textarea' || tag === 'input' && !['checkbox', 'radio',
+    'button', 'submit', 'reset', 'image', 'file', 'hidden'].includes(type);
+  const value = typeof element.value === 'string' ? element.value : element.innerText;
+  return { tag, editable, password, card, text: password ? '' : clip(value ?? '', TYPED_TEXT_CHARS) };
 }

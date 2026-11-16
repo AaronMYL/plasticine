@@ -86,6 +86,8 @@ export const LineViewSchema = Type.Object({
   parentLineId: Nullable(IdSchema),
   /** 发起它的父线消息；旧记录没有可靠关联时是 null。用于让任务卡留在发起的位置。 */
   parentMessageSeq: Nullable(Type.Integer({ minimum: 1 })),
+  /** 交给队友的事（11-16）：来回都贴在那位队友的对话里，发起的线上不画它的卡片和交回的结论。 */
+  handedOff: Type.Optional(Type.Boolean()),
   projectId: Nullable(IdSchema),
   title: Type.String(),
   status: LineStatusSchema,
@@ -133,7 +135,21 @@ export type LineStepView = Static<typeof LineStepViewSchema>;
  * letter：来信（第 8 批第 6 条）：个人回顾写成来信后 Plasticine 在主线说的一句，下面带来信卡（letter）。
  */
 export const LINE_MESSAGE_ROLES = ['user', 'assistant', 'toolResult', 'lineReport', 'lineSummary', 'notice',
-  'welcome', 'letter'] as const;
+  'welcome', 'letter', 'handoff'] as const;
+
+/** 谁说的（11-16）：主线，或某位队友。 */
+export const LineSpeakerSchema = Type.Union([
+  Type.Object({ kind: Type.Literal('main') }, STRICT),
+  Type.Object({ kind: Type.Literal('mate'), id: IdSchema }, STRICT),
+]);
+export type LineSpeaker = Static<typeof LineSpeakerSchema>;
+
+/**
+ * 主线（或队友）和队友之间的一来一回（11-16 用户定：交接留在队友的对话里）：handoff 是交过去的话，lineReport 是交回的
+ * 结论；界面写成「from → to」，两边都带头像和名字。
+ */
+export const LineRelaySchema = Type.Object({ from: LineSpeakerSchema, to: LineSpeakerSchema }, STRICT);
+export type LineRelay = Static<typeof LineRelaySchema>;
 export const LineMessageRoleSchema = Type.Enum(LINE_MESSAGE_ROLES);
 
 export const LineMessageViewSchema = Type.Object({
@@ -178,6 +194,8 @@ export const LineMessageViewSchema = Type.Object({
   starts: Type.Optional(Type.Array(WelcomeStartSchema)),
   /** letter 那一条下面的来信卡：点了打开那封信。别的角色没有这一项；旧客户端缓存里也没有。 */
   letter: Type.Optional(Type.Object({ spaceId: IdSchema, title: Type.String() }, STRICT)),
+  /** handoff 和交接回来的 lineReport：谁交给谁（11-16）。别的没有这一项。 */
+  relay: Type.Optional(LineRelaySchema),
   createdAt: IsoTimeSchema,
 }, STRICT);
 export type LineMessageView = Static<typeof LineMessageViewSchema>;

@@ -84,6 +84,13 @@ export function factsOf(action: DeviceActionParams): ActionFacts {
       return { actionClass, target: `标签 ${action.tabId} 填「${clipped(action.selector, 80)}」` };
     case 'tab_perceive':
       return { actionClass, target: `标签 ${action.tabId}` };
+    case 'tab_shot':
+      return { actionClass, target: `标签 ${action.tabId}` };
+    case 'tab_point':
+      return { actionClass, target: `标签 ${action.tabId} 点 (${action.x}, ${action.y})` };
+    case 'tab_type':
+      // 只记打在哪个标签，不记打的字。
+      return { actionClass, target: `标签 ${action.tabId} 打字` };
     case 'tab_act':
       // 记这一步的那一句和编号，不记要填的字（同 tab_fill）。
       return { actionClass, target: `标签 ${action.tabId} ${clipped(action.step, 40)}`

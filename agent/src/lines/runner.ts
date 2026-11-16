@@ -507,7 +507,7 @@ export class LineRunner {
       return saved;
     });
     if (message.role === 'lineReport' || message.role === 'notice' || message.role === 'welcome'
-      || message.role === 'letter') {
+      || message.role === 'letter' || message.role === 'handoff') {
       this.#steeredReports.delete(message);
     }
     if (queueId !== undefined) {

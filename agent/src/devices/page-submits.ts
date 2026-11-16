@@ -14,6 +14,7 @@ import {
   type DeviceActionParams,
   type SubmitKind,
 } from '../../shared/api/index.ts';
+import type { OutboundLog } from '../../shared/outbound.ts';
 import type { NodeAction, ScheduleSend } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import type { Refusal } from './limits.ts';
@@ -48,7 +49,9 @@ export interface SubmitHold {
   actionId: string;
 }
 
-type SubmitState = Pick<StateService, 'asks' | 'nodeActions' | 'schedules' | 'scheduleSends' | 'outboundGrants'>;
+type SubmitState = Pick<StateService, 'asks' | 'nodeActions' | 'schedules' | 'scheduleSends' | 'outboundGrants'
+  | 'outboundLog'>;
+type ActionsState = Pick<StateService, 'nodeActions'>;
 type TabAct = Extract<DeviceActionParams, { kind: 'tab_act' }>;
 
 function tabActOf(row: NodeAction): TabAct | null {
@@ -69,7 +72,7 @@ function heldBySubmit(row: NodeAction): boolean {
 }
 
 /** 新内核：这条线（run_id = line:<线>）在这个标签上最近一次被拦下的提交；没有是 null。 */
-export function submitHoldForRun(state: SubmitState, runId: string, nodeId: string, tabId: string)
+export function submitHoldForRun(state: ActionsState, runId: string, nodeId: string, tabId: string)
   : SubmitHold | null {
   return latestHold(state.nodeActions.forRunNode(runId, nodeId), tabId);
 }
@@ -92,6 +95,17 @@ function latestHold(actions: NodeAction[], tabId: string): SubmitHold | null {
 export interface TabTrace {
   url: string | null;
   filled: string | null;
+}
+
+/** tab_type 打进去的字（11-16：按位置点开输入框再打字也算填进去的原文）。 */
+function typedOf(row: NodeAction): string | null {
+  const envelope = row.envelope;
+  const action: unknown = typeof envelope === 'object' && envelope !== null ? Reflect.get(envelope, 'action') : null;
+  if (typeof action !== 'object' || action === null || Reflect.get(action, 'kind') !== 'tab_type') {
+    return null;
+  }
+  const text: unknown = Reflect.get(action, 'text');
+  return typeof text === 'string' ? text : null;
 }
 
 function tabIdOf(row: NodeAction): string | null {
@@ -119,7 +133,7 @@ function urlOf(result: unknown): string | null {
   return typeof url === 'string' && url !== '' ? url : null;
 }
 
-export function tabTrace(state: SubmitState, runId: string, nodeId: string, tabId: string): TabTrace {
+export function tabTrace(state: ActionsState, runId: string, nodeId: string, tabId: string): TabTrace {
   let url: string | null = null;
   let filled: string | null = null;
   for (const row of state.nodeActions.forRunNode(runId, nodeId)) {
@@ -130,6 +144,10 @@ export function tabTrace(state: SubmitState, runId: string, nodeId: string, tabI
     const action = tabActOf(row);
     if (action !== null && action.act.op === 'fill') {
       filled = action.act.value;
+    }
+    const typed = typedOf(row);
+    if (typed !== null) {
+      filled = typed;
     }
   }
   return { url, filled };
@@ -163,6 +181,10 @@ export function submitRefusal(state: SubmitState, request: { nodeId: string; run
   const permit = state.asks.get(action.submitAsk) === undefined ? state.scheduleSends.get(action.submitAsk) : undefined;
   if (permit !== undefined) {
     return permitRefusal(state, request, action, permit);
+  }
+  const sent = state.asks.get(action.submitAsk) === undefined ? state.outboundLog.get(action.submitAsk) : undefined;
+  if (sent !== undefined) {
+    return sendRefusal(state, request, action, sent);
   }
   const ask = state.asks.get(action.submitAsk);
   const context: unknown = ask?.context?.[PAGE_SUBMIT_CONTEXT_KEY];
@@ -221,6 +243,39 @@ function permitRefusal(state: SubmitState, request: { nodeId: string; runId?: st
   }
   if (alreadyUsed(state, { runId, nodeId: request.nodeId }, permit.id)) {
     return refuse('这个照卡放行已经用过一次；下一位要再照卡放行一次。');
+  }
+  return null;
+}
+
+/** 网页发送走承诺和授权（11-16）：放行凭据是 page_send 这次调用的发送记录。 */
+const PAGE_SEND = 'page_send';
+const SENDABLE: readonly string[] = ['publish', 'submit'];
+
+/**
+ * 核对 page_send 的放行：记录是这条线这次 page_send 的、还在等结果；拦下的就是这个标签这一版页面的这一下，种类是
+ * 发出去或表单提交（付款、删除、改设置不认）；一条记录只放一次。
+ */
+function sendRefusal(state: SubmitState, request: { nodeId: string; runId?: string | null }, action: TabAct,
+  log: OutboundLog): Refusal | null {
+  if (action.act.op !== 'click' && action.act.op !== 'enter') {
+    return refuse('发送放行只用在点发送或回车。');
+  }
+  const runId = request.runId?.startsWith(LINE_RUN_PREFIX) === true ? request.runId : null;
+  if (runId === null || runId !== `${LINE_RUN_PREFIX}${log.lineId}` || log.toolName !== PAGE_SEND) {
+    return refuse('这个发送放行不是这条线的。');
+  }
+  if (log.status !== 'pending') {
+    return refuse('这次发送已经有结果了，不再放第二次。');
+  }
+  const hold = submitHoldForRun(state, runId, request.nodeId, action.tabId);
+  if (hold === null || hold.version !== action.version || hold.n !== action.act.n || hold.op !== action.act.op) {
+    return refuse('放行的是另一个标签、另一版页面或另一个元素：页面变了就重新感知、重新点发送。');
+  }
+  if (!SENDABLE.includes(hold.kind)) {
+    return refuse('拦下的是付款、删除或改设置，不能按发送放行。');
+  }
+  if (alreadyUsed(state, { runId, nodeId: request.nodeId }, log.id)) {
+    return refuse('这次发送已经放行过一次。');
   }
   return null;
 }

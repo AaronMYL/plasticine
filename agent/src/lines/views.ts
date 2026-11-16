@@ -1,5 +1,6 @@
 // 线、排队消息给客户端看的样子（shared/api/lines.ts）。实时状态那一行只在内存里（跑着的那一轮知道自己在干什么）。
 
+import { relayOf } from './relay.ts';
 import type { LineMessageView, LineOutcome, LineView, QueuedMessageView } from '../../shared/api/lines.ts';
 import type { LineMessageRow, LineRow, QueuedRow, StateService } from '../state/index.ts';
 import { clip, isAssistant, messageView, type SayOf } from './messages.ts';
@@ -21,7 +22,7 @@ export function queuedView(row: QueuedRow): QueuedMessageView {
     origin: row.origin, createdAt: row.createdAt };
 }
 
-export type ViewState = Pick<StateService, 'lineQueue' | 'lineMessages'>;
+export type ViewState = Pick<StateService, 'lineQueue' | 'lineMessages' | 'lines' | 'mates'>;
 
 function outcome(state: ViewState, line: LineRow, queued: number): LineOutcome | null {
   if (line.status === 'failed') {
@@ -70,6 +71,7 @@ export function lineView(state: ViewState, line: LineRow, activity: Activity): L
     kind: line.kind,
     parentLineId: line.parentLineId,
     parentMessageSeq: parentMessageSeq(state, line),
+    handedOff: relayOf(state, line) !== null,
     projectId: line.projectId,
     title: line.title,
     status: line.status,

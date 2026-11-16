@@ -12,7 +12,14 @@ const CHANNELS: Record<string, string> = {
 };
 const CATEGORIES: Record<string, string> = { task_card: '任务卡', message: '消息', reply: '回复', emoji: '表情', fixed: '固定文案' };
 
-export function channelLabel(value: string): string { return CHANNELS[value] ?? value; }
+/** 网页发送（11-16）：渠道写成 web:<网站>，显示「网页 · 网站」；账号就是登录着的那个网站，不另写。 */
+const WEB_PREFIX = 'web:';
+export function channelLabel(value: string): string {
+  return value.startsWith(WEB_PREFIX) ? `网页 · ${value.slice(WEB_PREFIX.length)}` : CHANNELS[value] ?? value;
+}
+export function accountLabel(channel: string, account: string): string {
+  return account === channel ? channelLabel(channel) : `${channelLabel(channel)} · ${account}`;
+}
 export function categoryLabel(value: string): string { return CATEGORIES[value] ?? value; }
 export function actorLabel(id: string, actors: readonly ActorChoice[] = []): string {
   return actors.find((actor) => actor.id === id)?.label ?? (id === MAIN_ACTOR ? 'Plasticine（主线）' : '当前队友');

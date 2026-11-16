@@ -61,6 +61,9 @@ function createPageSubmitAsk(host: AskToolHost, devices: SubmitHoldPort, scope: 
       if (hold === null) {
         throw new Error('这条线在这个标签上还没有被设备拦下的提交：先用 tab_act 点那个提交，设备拦下来后再问。');
       }
+      if (hold.kind === 'publish' || hold.kind === 'submit') {
+        throw new Error('拦下的是发出去或表单提交：用 page_send 按承诺和授权发，不用一条一问。');
+      }
       if (hold.version !== args.version) {
         throw new Error(`最近被拦下的那一下在页面版本 ${hold.version} 上，不是 ${args.version}：照那一下问，或重新点一次。`);
       }

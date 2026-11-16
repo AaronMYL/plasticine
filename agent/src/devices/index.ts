@@ -11,11 +11,13 @@ export { proveDeviceAction } from './proof.ts';
 export { PAGE_SUBMIT_CONTEXT_KEY, PageSubmitContextSchema, submitHoldForRun, submitRefusal, tabTrace }
   from './page-submits.ts';
 export type { PageSubmitContext, SubmitHold, TabTrace } from './page-submits.ts';
+export { createPageSendTool, PAGE_SEND_KINDS, PAGE_SEND_TOOL, webChannel } from './page-send.ts';
 export { BROWSE_KINDS, choosePlace, DEVICE_PLACES, PLACE_REASONS } from './route.ts';
 export type { DevicePlace, PlaceChoice } from './route.ts';
 export { DEVICE_IMAGE_MAX_CHARS, splitDeviceImage } from './device-images.ts';
 export type { SplitImage } from './device-images.ts';
 export type { ActionOutcome, ActionRequest, DeviceSink } from './actions.ts';
+export type { IdleWait } from './device-action.ts';
 export { NODE_CODE_TTL_MS } from './credentials.ts';
 export { DEFAULT_DEVICE_LIMITS, PROTECTED_DEVICE_PATHS } from './defaults.ts';
 export { DEVICE_ERROR_CODES, DeviceError } from './errors.ts';
