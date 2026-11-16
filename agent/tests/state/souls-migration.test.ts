@@ -18,7 +18,7 @@ test('0139：主线一份起步的 Soul，每位队友一份「你是我的…�
       VALUES ('mate_job', $at, $at, 1, '求职顾问', 'cat', 'teal', '简历、投递和面试准备。', '', NULL, 'line_job')`,
     { at });
     assert.deepEqual(migrate(db, MIGRATIONS, () => at), ['0139-souls', '0140-feed-more-images',
-      '0141-drop-agreements']);
+      '0141-drop-agreements', '0142-drop-agreement-history']);
     const souls = db.all('SELECT owner, text, version FROM souls ORDER BY owner').map((row) => ({ ...row }));
     assert.deepEqual(souls, [{ owner: 'main', text: MAIN_SOUL_OPENING, version: 1 },
       { owner: 'mate_job', text: '你是我的求职顾问：简历、投递和面试准备。', version: 1 }]);

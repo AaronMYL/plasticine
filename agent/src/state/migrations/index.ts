@@ -10,6 +10,7 @@ import { migration as feedPlacesBody } from './0138-feed-places-body.ts';
 import { migration as souls } from './0139-souls.ts';
 import { migration as feedMoreImages } from './0140-feed-more-images.ts';
 import { migration as dropAgreements } from './0141-drop-agreements.ts';
+import { migration as dropAgreementHistory } from './0142-drop-agreement-history.ts';
 import { migration as lineArchive } from './0066-line-archive.ts';
 import { migration as searchIndex } from './0067-search-index.ts';
 import { migration as memoryLayers } from './0070-memory-layers.ts';
@@ -230,6 +231,7 @@ export const MIGRATIONS: readonly Migration[] = [
   souls,
   feedMoreImages,
   dropAgreements,
+  dropAgreementHistory,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

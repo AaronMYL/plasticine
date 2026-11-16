@@ -49,7 +49,7 @@ test('迁移自己声明会变的表（0141 的旧约定、设备钥匙、查找
   db.close();
   const report = await rehearseMigrations(source, join(directory, 'copy'));
   assert.equal(report.passed, true);
-  assert.deepEqual(report.applied, ['0141-drop-agreements']);
+  assert.deepEqual(report.applied, ['0141-drop-agreements', '0142-drop-agreement-history']);
   assert.deepEqual(report.rowChanges, []);
   assert.deepEqual(report.declaredChanges.find((row) => row.table === 'device_keys'),
     { table: 'device_keys', before: 1, after: null });
