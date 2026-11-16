@@ -7,9 +7,11 @@ import { useClientState } from '../../state/context.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { useSignedOps } from '../signing/use-signed-ops.ts';
 import { useOps } from '../../state/ops.ts';
+import { useAnswerAsk } from '../asks/ask-context.tsx';
 
 export function DeviceActionCard({ ask }: { ask: AskView }): ReactNode {
   const live = useLive();
+  const answerAsk = useAnswerAsk();
   const { inlineDrafts, signedOps, actionOps } = useClientState();
   const drafts = useStore(inlineDrafts.store);
   const key = `device-action:${ask.id}`;
@@ -22,14 +24,14 @@ export function DeviceActionCard({ ask }: { ask: AskView }): ReactNode {
     onDraft={(slot, text) => inlineDrafts.set(slot === 'answer' ? answerKey : askKey, text)}
     onOption={(optionId) => {
       if (ask.requiresSignature && optionId !== 'adopt') {
-        void live.asks.answer(ask, { optionId });
+        void answerAsk(ask, { optionId });
         return;
       }
       void live.signer.send(key, ask.requiresSignature ? '确认这项选择' : '逐次授权设备动作', ask.question,
         { kind: 'device_action_answer', askId: ask.id }, (requestId) => ({ requestId, optionId }));
     }}
-    onText={(text) => void live.asks.answer(ask, { text })}
-    onDefer={() => void live.asks.defer(ask)} onAskAbout={(text) => void live.asks.answer(ask, { text })}
+    onText={(text) => void answerAsk(ask, { text })}
+    onDefer={() => void live.asks.defer(ask)} onAskAbout={(text) => void answerAsk(ask, { text })}
     onRetry={(opKey) => { if (opKey === key) { void live.signer.retry(key); } }}
     onDismiss={(opKey) => { if (opKey === key) { signedOps.dismiss(key); } else { actionOps.dismiss(opKey); } }} />;
 }

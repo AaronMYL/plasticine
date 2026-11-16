@@ -232,3 +232,38 @@ test('拿不准时先回的那一句写的是账号上的名字，不写「主�
   assert.equal(holdingLine('Fern'), '我问一下 Fern。');
   assert.equal(holdingLine('  '), '我先问一下，再回你。');
 });
+
+test('卡在哪答的记在答案上（对话、等你、聊天）；答过的卡留在列表的 recent 里，对话里能收成一行', async () => {
+  t = await startTestApp([], { startTasks: false });
+  const cookie = await pair(t);
+  raise(t);
+  const open = Value.Parse(AskListResponseSchema, (await call(t, 'GET', '/v2/asks', { cookie })).body);
+  const card = open.current!;
+  assert.deepEqual(open.recent, []);
+  const answered = await call(t, 'POST', `/v2/asks/${card.id}/answer`, { cookie, body: {
+    requestId: 'place-answer-0001', optionId: 'team', place: { kind: 'line', lineId: 'line-mate-1' } } });
+  assert.equal(answered.status, 200);
+  const after = Value.Parse(AskListResponseSchema, (await call(t, 'GET', '/v2/asks', { cookie })).body);
+  assert.equal(after.current, null);
+  assert.equal(after.recent?.length, 1);
+  const done = after.recent![0]!;
+  assert.equal(done.id, card.id);
+  assert.equal(done.status, 'answered');
+  assert.deepEqual(done.answer?.place, { kind: 'line', lineId: 'line-mate-1' });
+  assert.equal(done.lineId, 'line-main');
+  const bad = await call(t, 'POST', `/v2/asks/${card.id}/answer`, { cookie, body: {
+    requestId: 'place-answer-0002', optionId: 'team', place: { kind: 'somewhere' } } });
+  assert.equal(bad.status, 400);
+});
+
+test('答过的卡只留最近三天的', async () => {
+  t = await startTestApp([], { startTasks: false });
+  const cookie = await pair(t);
+  raise(t);
+  const card = Value.Parse(AskListResponseSchema, (await call(t, 'GET', '/v2/asks', { cookie })).body).current!;
+  await call(t, 'POST', `/v2/asks/${card.id}/answer`, { cookie, body: {
+    requestId: 'place-answer-0003', optionId: 'team', place: { kind: 'wait' } } });
+  t.clock.advance(4 * 24 * 60 * 60 * 1000);
+  const later = Value.Parse(AskListResponseSchema, (await call(t, 'GET', '/v2/asks', { cookie })).body);
+  assert.deepEqual(later.recent, []);
+});

@@ -4,8 +4,8 @@
 // 由新内核自己把答案交回那条线。
 
 import { isDeferredStandaloneAsk } from '../../shared/api/asks.ts';
-import { ASK_PURPOSE_LINES, type Ask, type AskAnswer, type AskBasis, type AskInput, type AskKind, type AskOption,
-  type AskPurpose, type DeviceConfirmation } from '../../shared/state.ts';
+import { ASK_PURPOSE_LINES, type Ask, type AskAnswer, type AskAnswerPlace, type AskBasis, type AskInput, type AskKind,
+  type AskOption, type AskPurpose, type DeviceConfirmation } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import { Changes } from './changes.ts';
 import { channelForAsk, type AskChannel } from './channels.ts';
@@ -55,6 +55,8 @@ export interface AnswerInput {
   askId: string;
   optionId?: string;
   text?: string;
+  /** 在哪答的：出它的对话、上级对话、「等你」、聊天；记在答案上，各处收成一行时写出来。 */
+  place?: AskAnswerPlace;
   answerer: Answerer;
 }
 
@@ -97,7 +99,12 @@ function basisOf(input: RaiseAsk): AskBasis {
   return input.basis ?? basis;
 }
 
-function answerOf(ask: Ask, optionId: string | undefined, text: string | undefined): AskAnswer {
+function answerOf(ask: Ask, input: AnswerInput): AskAnswer {
+  const placed = input.place === undefined ? {} : { place: input.place };
+  return { ...chosen(ask, input.optionId, input.text), ...placed };
+}
+
+function chosen(ask: Ask, optionId: string | undefined, text: string | undefined): AskAnswer {
   if (ask.options.length === 0) {
     if (text === undefined || text.trim() === '') {
       throw new AttentionError('invalid_answer', '这张卡要写一句话回答。', 'text');
@@ -187,7 +194,7 @@ export class AskDesk {
     if (invalid !== undefined) {
       throw invalid;
     }
-    const answer = answerOf(ask, input.optionId, input.text);
+    const answer = answerOf(ask, input);
     const answered = this.#state.asks.update(ask.id, ask.version, {
       status: 'answered',
       answer,

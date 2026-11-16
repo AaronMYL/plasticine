@@ -6,6 +6,8 @@ import { useState, type ReactNode } from 'react';
 import { PROACTIVE_DOC_ID, type TasksBoardResponse, type TimedRowView } from '../../api/shared.ts';
 import { PageHeader } from '../../shell/page-header.tsx';
 import { routeHash, TASKS_SECTIONS, type Route, type TasksSection } from '../../shell/routes.ts';
+import { AskPlaceProvider } from '../asks/ask-context.tsx';
+import { useAskOrigin } from '../asks/ask-labels.ts';
 import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { TasksIdeas } from './tasks-ideas.tsx';
 import { TaskLines, TasksRun } from './tasks-run.tsx';
@@ -66,9 +68,13 @@ function currentSheet(sheet: OpenSheet | null, board: TasksBoardResponse | null)
   return { kind: 'mate', mate, rows: board.timed.filter((row) => mate.rowIds.includes(row.id)) };
 }
 
+/** 在「等你」里答的（11-16 卡片回到对话里：答案上记着，对话里那张卡收成一行时写出来）。 */
+const WAIT_PLACE = { kind: 'wait' } as const;
+
 export function TasksPage({ section, phone, navigate }: TasksPageProps): ReactNode {
   const { board, error, reload } = useTasksBoard(null);
   const actions = useTaskActions(reload);
+  const origin = useAskOrigin();
   const [sheet, setSheet] = useState<OpenSheet | null>(null);
   const current = currentSheet(sheet, board);
   // 心跳那一行点开直接到记忆 · 主动告诉你（记忆分层 11-15：清单、不打扰的时段都搬到那一页，不再弹浮层）。
@@ -90,7 +96,9 @@ export function TasksPage({ section, phone, navigate }: TasksPageProps): ReactNo
           {section === 'deleted' ? (board.deleted.length === 0 ? <p className="tasks-empty">最近没有删除的事。</p>
             : <TaskLines lines={board.deleted} projects={board.projects} label="最近删除" now={Date.now()} />) : null}
           {section === 'wait' ? (board.waiting.length === 0 ? <p className="tasks-empty">没有等你的事。</p> : (
-            <div className="tasks-waiting">{board.waiting.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}</div>
+            <AskPlaceProvider place={WAIT_PLACE} source={origin}>
+              <div className="tasks-waiting">{board.waiting.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}</div>
+            </AskPlaceProvider>
           )) : null}
           {section === 'timed' ? <TasksTimed rows={board.timed} actions={actions} phone={phone} open={openRow}
             navigate={navigate} /> : null}

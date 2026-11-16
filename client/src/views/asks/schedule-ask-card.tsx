@@ -12,6 +12,7 @@ import { Icon } from '../../shell/icons.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { FaceAvatar } from '../contacts/contact-avatar.tsx';
 import type { AskWork } from './asks-store.ts';
+import { AskSource, useAnswerAsk } from './ask-context.tsx';
 import './schedule-ask-card.css';
 
 function Row({ label, children }: { label: string; children: ReactNode }): ReactNode {
@@ -20,6 +21,7 @@ function Row({ label, children }: { label: string; children: ReactNode }): React
 
 export function ScheduleAskCard({ ask, card }: { ask: AskView; card: ScheduleCardPreview }): ReactNode {
   const live = useLive();
+  const answerAsk = useAnswerAsk();
   const work: AskWork | undefined = useStore(live.asks.store).work.get(ask.id);
   const busy = work?.busy === true || ask.status !== 'open';
   const head = `${card.when} · ${card.title}`;
@@ -32,6 +34,7 @@ export function ScheduleAskCard({ ask, card }: { ask: AskView; card: ScheduleCar
           <Icon name={card.outward ? 'lock' : 'check'} size={12} />{ask.kindLabel}
         </span>
       </header>
+      <AskSource ask={ask} />
       <div className="schedule-body">
         {card.who === null ? null : (
           <Row label="对谁">
@@ -56,7 +59,7 @@ export function ScheduleAskCard({ ask, card }: { ask: AskView; card: ScheduleCar
           <button key={option.id} type="button" disabled={busy}
             className={option === ask.options[0] ? 'primary-button' : 'secondary-button'}
             aria-label={option.recommended ? `${option.label}（推荐）` : undefined}
-            onClick={() => void live.asks.answer(ask, { optionId: option.id })}>{option.label}</button>
+            onClick={() => void answerAsk(ask, { optionId: option.id })}>{option.label}</button>
         )) : <span className="schedule-answered">{ask.answer?.label ?? '已答'}</span>}
       </footer>
       {work?.error == null ? null : <p className="line-ask-error" role="alert">{work.error}</p>}

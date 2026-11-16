@@ -1,6 +1,7 @@
 // 和 Plasticine 的对话（2026-11-05 Harness 重做，消息里的 Plasticine 和右下的对话框共用这一份）：读主对话那条线。
 // 你的话是气泡；Plasticine 的一轮是普通文字，上面「想了 n 秒 ›」「做了 n 步 ›」；干活时最下面只有一行实时状态；
-// 后台线是对话里的一张卡；等你定的卡在等你的那一轮下面摊开；额度暂停、连不上模型各一行。输入框在最下面。
+// 后台线是对话里的一张卡；等你定的卡按出卡时间插在出它的那一步后面（交给队友的、后台来的也在，11-16），输入框上方
+// 钉一行「等你 n」；额度暂停、连不上模型各一行。输入框在最下面。
 // 内容不满一屏时贴着底部；在底部时新内容来了跟着往下，往上翻着看的时候不打扰。
 // 《优化清单》第 17 条（11-07 设计稿 Plasticine-Main / Side）：主线和旁聊共用这一份；对话里只有说给人听的话（不画
 // 想了 / 做了几步，子代理的步骤在它的卡里）；消息之间按时间分隔；悬停一条出表情、回复、更多；往上翻着时来了新消息出
@@ -31,7 +32,11 @@ import { useConversationUi } from './conversation-ui-context.tsx';
 import { SideTopic } from './side-topic.tsx';
 import { MessageRow, ThreadActionsProvider, type ThreadActions } from './thread-actions.tsx';
 import { timeBreaks } from './time-breaks.ts';
-import { LineAskCard } from '../asks/line-ask-card.tsx';
+import { AskPlaceProvider } from '../asks/ask-context.tsx';
+import { useLineLabel } from '../asks/ask-labels.ts';
+import { ConversationAsk } from '../asks/conversation-ask.tsx';
+import { asksForConversation, waitingIn } from '../asks/conversation-asks.ts';
+import { locateAsk, WaitingPin } from '../asks/waiting-pin.tsx';
 import { FOCUS_COMPOSER_EVENT, LineComposer } from './line-composer.tsx';
 import { LineInputRecord } from './line-input-record.tsx';
 import { messageAuthor } from './line-origin.ts';
@@ -57,17 +62,13 @@ function itemTime(item: TimelineItem): string | null {
     return item.message.createdAt;
   }
   if (item.kind === 'child') return item.line.createdAt;
+  if (item.kind === 'ask') return item.placed.ask.createdAt;
   if (item.kind === 'side') return item.message.createdAt;
   // 一轮跟着它前面那条走，不单独标时间。
   return null;
 }
 
-/** 在等你定的这一轮下面摊开的卡：卡上写着是哪条线（lineId）；这一轮开始以前出的不算（早先没答的在首页「等你」里）。 */
-function waitingAsks(open: readonly AskView[], lineId: string, since: string | null): AskView[] {
-  return open.filter((ask) => ask.lineId === lineId && (since === null || ask.createdAt >= since));
-}
-
-function Tail({ data, asks }: { data: LineThreadData; asks: readonly AskView[] }): ReactNode {
+function Tail({ data }: { data: LineThreadData }): ReactNode {
   const timeZone = useTimeZone();
   const [error, setError] = useState<string | null>(null);
   const line = data.line;
@@ -86,7 +87,8 @@ function Tail({ data, asks }: { data: LineThreadData; asks: readonly AskView[] }
       return <LiveRow text={text} elapsed={lineElapsed(line, now)} />;
     }
     case 'waiting':
-      return <>{asks.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}</>;
+      // 卡已经插在对话里出它的那一步后面，输入框上方也钉着；这里不再画一遍。
+      return null;
     case 'paused':
       return <StateRow kind="pause" text={pausedText(line, timeZone)} action={action} />;
     case 'failed':
@@ -174,6 +176,8 @@ function Item({ lineId, line, item, running, settled, streaming, onQuote }: { li
           {item.message.letter === undefined ? null : <LetterCard letter={item.message.letter} />}
         </div>
       </MessageRow>;
+    case 'ask':
+      return <ConversationAsk placed={item.placed} />;
     case 'notice':
       return <p className="line-notice" role="note" aria-label="系统通知" data-message-seq={item.message.seq}>
         <Icon name="bell" size={14} />
@@ -233,15 +237,24 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
   const atBottom = useRef(conversationUi.store.get().scroll.atBottom);
   const restored = useRef(false);
   const line = data.line;
+  const placed = useMemo(() => asksForConversation(line, list.lines, [...asks.open, ...asks.deferred, ...asks.recent]),
+    [line, list.lines, asks.open, asks.deferred, asks.recent]);
+  // 答过的卡只放进已经读出来的那一段里：更早的等往上翻、读出那一段再出现，不挤在最上面。
+  const shown = useMemo(() => {
+    const first = data.hasMore ? data.messages[0]?.createdAt ?? null : null;
+    return placed.filter((item) => item.ask.status === 'open' || first === null || item.ask.createdAt >= first);
+  }, [placed, data.hasMore, data.messages]);
   const items = useMemo(() => buildTimeline({ lineId: line?.id ?? null, messages: data.messages, lines: list.lines,
-    summaries: data.summaries }), [line?.id, data.messages, list.lines, data.summaries]);
+    summaries: data.summaries, asks: shown }), [line?.id, data.messages, list.lines, data.summaries, shown]);
+  const lineLabel = useLineLabel();
+  const askSource = (ask: AskView): string | null => {
+    const from = placed.find((item) => item.ask.id === ask.id)?.from ?? null;
+    if (from === null) return null;
+    // 在这位队友自己的对话里，只写是哪件事。
+    return from.mateId != null && from.mateId === line?.mateId ? from.title : lineLabel(from);
+  };
   const running = line?.status === 'running';
   const tail = lastTurn(items);
-  const lastUser = [...items].reverse().find((item) => item.kind === 'user');
-  const since = lastUser?.kind === 'user' ? lastUser.message.createdAt : null;
-  const waiting = line?.status === 'waiting' ? waitingAsks(asks.open, line.id, since) : [];
-  // 样刊附的「开启定时」卡不挂在哪条线上（第 7 批第 14 条）：开着就摊在主线最下面，答了就收起。
-  const sampleCards = line?.kind === 'main' ? asks.open.filter((ask) => ask.subscriptionCard !== undefined) : [];
   const streaming = data.live?.text ?? '';
   const quote: QuoteMessage = (seq, text, author) => {
     const sourceId = `line:${line?.id ?? lineId}:${seq}`;
@@ -287,6 +300,17 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
       element.scrollTop = element.scrollHeight;
     }
   });
+  // 附件、发来的文件、图是后读出来的，读出来对话变高：停在底部的照样贴着底部（不然最后那张图、那个文件被输入框挡住）。
+  useEffect(() => {
+    const element = scroller.current;
+    const column = element?.firstElementChild;
+    if (element == null || column == null || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => {
+      if (atBottom.current) element.scrollTop = element.scrollHeight;
+    });
+    observer.observe(column);
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     if (data.hasMore && scroller.current !== null && scroller.current.scrollTop === 0) {
       void live.lines.loadEarlier(lineId);
@@ -308,6 +332,7 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
   });
   return (
     <ThreadActionsProvider value={actions}>
+    <AskPlaceProvider place={{ kind: 'line', lineId: line?.id ?? lineId }} source={askSource}>
     <section className="line-conv" aria-label="对话" data-kind={line?.kind}>
       <div ref={scroller} className="line-scroll" role="log" aria-label="对话记录" data-welcome-only={welcomeOnly}
         onScroll={(event) => {
@@ -356,18 +381,19 @@ export function LineConversation({ lineId, askPage }: LineConversationProps): Re
                 if (text !== null) conversationUi.restoreToComposer(text, []);
               }} />
           ))}
-          {sampleCards.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}
-          <Tail data={data} asks={waiting} />
+          <Tail data={data} />
         </div>
       </div>
       <div className="line-composer-dock">
         <NewMessages count={unread} onJump={jump} />
         <div className="line-column">
+          <WaitingPin asks={waitingIn(placed)} onLocate={(askId) => locateAsk(scroller.current, askId)} />
           {data.line?.archivedAt == null ? <LineComposer lineId={lineId} askPage={askPage}
             side={line?.kind === 'side'} /> : null}
         </div>
       </div>
     </section>
+    </AskPlaceProvider>
     </ThreadActionsProvider>
   );
 }

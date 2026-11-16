@@ -332,9 +332,15 @@ it('切页前等旧标签的按键释放回执，暂停中的松键和失焦不�
 it('画面流重建期间释放旧按键，尚无新画面时继续拒绝新输入', async () => {
   let resize: ResizeObserverCallback | undefined;
   let element: Element | undefined;
+  // 只接浏览器画面那一个（旁边的对话也观察自己的高度，贴着底部用）。
   vi.stubGlobal('ResizeObserver', class {
-    constructor(callback: ResizeObserverCallback) { resize = callback; }
-    observe(target: Element) { element = target; }
+    private readonly callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) { this.callback = callback; }
+    observe(target: Element) {
+      if (target.closest('.line-scroll') !== null) return;
+      resize = this.callback;
+      element = target;
+    }
     disconnect() { /* 假观察器没有外部资源。 */ }
   });
   const app = await renderApp({ hash: '#/browser', setup(fake) { fake.control.toolGroups.browser.seed(twoTabs); } });
@@ -665,9 +671,15 @@ it('初始画面尺寸和 DPR 传到流，窗口变化防抖 300ms 后才替换�
   let resize: ResizeObserverCallback | undefined;
   let element: Element | undefined;
   const disconnect = vi.fn();
+  // 只接浏览器画面那一个（旁边的对话也观察自己的高度，贴着底部用）。
   vi.stubGlobal('ResizeObserver', class {
-    constructor(callback: ResizeObserverCallback) { resize = callback; }
-    observe(target: Element) { element = target; }
+    private readonly callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) { this.callback = callback; }
+    observe(target: Element) {
+      if (target.closest('.line-scroll') !== null) return;
+      resize = this.callback;
+      element = target;
+    }
     disconnect = disconnect;
   });
   vi.stubGlobal('devicePixelRatio', 3);

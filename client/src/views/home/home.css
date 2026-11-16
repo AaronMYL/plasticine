@@ -192,8 +192,23 @@
   border-radius: var(--radius);
 }
 
-.home-wait-title {
+.home-wait-text {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.home-wait-from {
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-wait-title {
   min-width: 0;
   overflow: hidden;
   font-size: var(--text-body);

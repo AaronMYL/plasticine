@@ -56,6 +56,9 @@ export function createAskStore(context: StoreContext) {
     open: (): Ask[] => allPages((page) => store.list({ status: 'open' }, page)),
     between: (from: string, to: string): Ask[] => allPages((page) => store.select(
       'created_at >= $from AND created_at < $to', { from, to }, page)),
+    /** 出卡时间在 since 之后、已经答过或撤回的卡，新的在前（对话里收成一行用）。 */
+    closedSince: (since: string, limit: number): Ask[] => store.select(
+      "status != 'open' AND created_at >= $since", { since }, { limit }, 'created_at DESC, id DESC'),
   };
 }
 

@@ -449,7 +449,3 @@
   margin-top: 0;
 }
 
-/* 等你定的线：要你定卡就地展开在任务卡里（11-11）。 */
-.line-card-ask {
-  margin-top: var(--space-3);
-}

@@ -8,7 +8,6 @@ import { useLive, useTimeZone } from '../../live.tsx';
 import { useOpenPanel } from '../../shell/panel.ts';
 import { useStore } from '../../state/use-store.ts';
 import { Icon } from '../../shell/icons.tsx';
-import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { StepList } from './line-parts.tsx';
 import { DeletedTask, TaskMenu } from './task-menu.tsx';
 import { unmetReason, unmetText, WorkLineAction, WorkStatusGlyph, workStatusText } from './work-status.tsx';
@@ -56,9 +55,6 @@ export function LineCard({ line, result, stopped = false }: { line: LineView; re
   const unmet = unmetReason(line);
   const second = stopped ? '停下了' : done ? null : workStatusText(line, timeZone);
   const [deleted, setDeleted] = useState(false);
-  // 等你定的线：那张要你定卡就地画在卡里，在对话里也能直接答（11-11 Aaron：只能去任务「等你」里处理）。
-  const asks = useStore(useLive().asks.store);
-  const ask = line.status === 'waiting' ? asks.open.find((item) => item.lineId === line.id) ?? null : null;
   if (line.archivedAt != null) {
     return deleted ? <DeletedTask line={line} onUndone={() => setDeleted(false)} /> : null;
   }
@@ -76,9 +72,8 @@ export function LineCard({ line, result, stopped = false }: { line: LineView; re
         </div>
         {unmet === null || stopped ? null
           : <p className="line-card-status" data-status="unmet">{unmetText(unmet)}</p>}
-        {second === null || ask !== null ? null
-          : <p className="line-card-status" data-status={line.status}>{second}</p>}
-        {ask === null ? null : <div className="line-card-ask"><LineAskCard ask={ask} /></div>}
+        {/* 等你定的卡不画在这张卡里：按出卡时间插在对话里出它的那一步后面（11-16 卡片回到对话里）。 */}
+        {second === null ? null : <p className="line-card-status" data-status={line.status}>{second}</p>}
         {done && !folded ? <DoneList lineId={line.id} listId={listId} /> : null}
         {error === null ? null : <p className="line-card-note is-error" role="alert">{error}</p>}
       </article>

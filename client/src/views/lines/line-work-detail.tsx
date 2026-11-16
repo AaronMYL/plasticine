@@ -8,6 +8,7 @@ import { AiMark, StatusGlyph } from '../../shell/glyph.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import type { Route } from '../../shell/routes.ts';
 import { useStore } from '../../state/use-store.ts';
+import { AskPlaceProvider } from '../asks/ask-context.tsx';
 import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { lineElapsed, useNow } from './line-time.ts';
 import { WorkProcess, WorkRequest, WorkResults } from './work-content.tsx';
@@ -88,7 +89,9 @@ export function LineWorkDetail({ lineId, navigate, task, before, actions, hideCo
       </div>}
       {detail.loading && detail.data === null ? <PageLoading rows={4} /> : null}
       <WorkRequest request={request} />
-      {manual ? null : asks.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}
+      {manual ? null : <AskPlaceProvider place={{ kind: 'line', lineId: line.id }}>
+        {asks.map((ask) => <LineAskCard key={ask.id} ask={ask} />)}
+      </AskPlaceProvider>}
       {!manual && line.status === 'running' && detail.thread.live?.text ? <section className="work-section">
         <h3><AiMark />正在写</h3><Markdown text={detail.thread.live.text} />
       </section> : null}

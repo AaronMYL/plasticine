@@ -50,7 +50,9 @@ describe('授权范围交互', () => {
       control.lines.change('line-main', { status: 'waiting', activeSince: NOW.toISOString() });
       control.asks.raise({ ...outboundAsk(), lineId: 'line-proof' });
     } });
-    const card = await screen.findByRole('region', { name: /对外授权/ });
+    // 同一张卡在工作详情和主线对话里各画一份（11-16 卡片回到对话里），在哪答都一样。
+    const [card] = await screen.findAllByRole('region', { name: /对外授权/ });
+    if (card === undefined) throw new Error('没画出对外授权卡');
     await waitFor(() => expect(within(card).getByRole('button', { name: '这件事期间' }).hasAttribute('disabled'))
       .toBe(false));
     fireEvent.click(within(card).getByRole('button', { name: '这件事期间' }));

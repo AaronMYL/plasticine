@@ -9,6 +9,7 @@ import {
   AskAboutRequestSchema,
   AskFeedbackRequestSchema,
   DeferAskRequestSchema,
+  RECENT_ASK_DAYS,
   ScheduleCardPreviewSchema,
   SubscriptionCardPreviewSchema,
   TaskCardPreviewSchema,
@@ -33,6 +34,9 @@ import { idempotent } from './idempotency.ts';
 import { checkInput } from './validate.ts';
 
 const LINE_RUN_PREFIX = 'line:';
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** 答过的卡最多带这么多张：三天里定过的事一般远少于此，够对话里每处收成一行。 */
+const RECENT_ASK_LIMIT = 100;
 
 function contextText(ask: Ask, key: string): string | null {
   const value = ask.context?.[key];
@@ -128,10 +132,12 @@ export function listAsks(context: RequestContext): Reply {
   requireAuth(context);
   const { state, desk } = context.deps;
   const board = desk.board();
+  const since = new Date(context.deps.now().getTime() - RECENT_ASK_DAYS * DAY_MS).toISOString();
   const body: AskListResponse = {
     current: board.current === null ? null : askView(state, board.current),
     queue: board.queue.map((ask) => askView(state, ask)),
     deferred: board.deferred.map((ask) => askView(state, ask)),
+    recent: state.asks.closedSince(since, RECENT_ASK_LIMIT).map((ask) => askView(state, ask)),
   };
   return { status: 200, body };
 }
@@ -179,6 +185,7 @@ export async function answerAsk(context: RequestContext): Promise<Reply> {
       answerer: { deviceId: auth.device.id, ...(confirmation === undefined ? {} : { confirmation }) },
       ...(body.optionId === undefined ? {} : { optionId: body.optionId }),
       ...(body.text === undefined ? {} : { text: body.text }),
+      ...(body.place === undefined ? {} : { place: body.place }),
     };
     const attempt = desk.tryAnswer(input, afterCommit);
     if ('error' in attempt) {

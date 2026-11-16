@@ -92,12 +92,24 @@ export const AskOptionSchema = Type.Object(
 );
 export type AskOption = Static<typeof AskOptionSchema>;
 
+/**
+ * 在哪答的（11-16 卡片回到对话里）：一张卡在出它的对话、交办它的上级对话、「等你」、和朋友的聊天里都能答，
+ * 答了各处收成一行，写在哪定的。
+ */
+export const AskAnswerPlaceSchema = Type.Union([
+  Type.Object({ kind: Type.Literal('line'), lineId: IdSchema }, STRICT),
+  Type.Object({ kind: Type.Literal('wait') }, STRICT),
+  Type.Object({ kind: Type.Literal('chat'), contactId: Nullable(IdSchema), groupId: Nullable(IdSchema) }, STRICT),
+]);
+export type AskAnswerPlace = Static<typeof AskAnswerPlaceSchema>;
+
 /** What the user chose: an option, free text, or both (text only when the card has no options). */
 export const AskAnswerSchema = Type.Object(
   {
     optionId: Nullable(AskOptionIdSchema),
     label: Type.String(),
     text: Nullable(Type.String()),
+    place: Type.Optional(AskAnswerPlaceSchema),
   },
   STRICT,
 );

@@ -3,6 +3,7 @@
 // 另一台设备答的（answerElsewhere）走同一条路，只是不经这边的接口，这边靠事件收起。
 
 import type { AsksApi } from '../client.ts';
+import type { AskAnswerPlace } from '../shared.ts';
 import { ApiError } from '../errors.ts';
 import {
   ASK_INLINE_OPTION_MAX, ASK_KIND_LABELS, ASK_KIND_ORDER, isDeferredStandaloneAsk, type OutboundCard,
@@ -119,7 +120,7 @@ export class FakeAsks implements AsksApi {
       if (ask.outbound !== undefined && input.optionId !== undefined) {
         this.deps.authorize?.(ask.outbound, input.outboundGrant ?? ask.outbound.grant, input.optionId);
       }
-      return this.answerNow(id, input.optionId, input.text);
+      return this.answerNow(id, input.optionId, input.text, input.place);
     });
   }
 
@@ -173,8 +174,8 @@ export class FakeAsks implements AsksApi {
   }
 
   /** 另一台设备答了这张卡：这边的接口没经手，只收得到事件。 */
-  answerElsewhere(id: string, optionId?: string, text?: string): AskView {
-    return this.answerNow(id, optionId, text).ask;
+  answerElsewhere(id: string, optionId?: string, text?: string, place?: AskAnswerPlace): AskView {
+    return this.answerNow(id, optionId, text, place).ask;
   }
 
   answerSigned(id: string, input: AnswerAskRequest): AnswerAskResponse {
@@ -211,7 +212,9 @@ export class FakeAsks implements AsksApi {
     const active = open.filter((ask) => !isDeferredStandaloneAsk(ask));
     const current = active.filter(spread).sort(byUrgency)[0] ?? null;
     const queue = active.filter((ask) => ask.id !== current?.id).sort(byWaiting);
-    return { current, queue, deferred };
+    const recent = [...this.asks.values()].filter((ask) => ask.status !== 'open')
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return { current, queue, deferred, recent };
   }
 
   private eventState() {
@@ -234,7 +237,8 @@ export class FakeAsks implements AsksApi {
     return stored;
   }
 
-  private answerNow(id: string, optionId: string | undefined, text: string | undefined): AnswerAskResponse {
+  private answerNow(id: string, optionId: string | undefined, text: string | undefined,
+    place?: AskAnswerPlace): AnswerAskResponse {
     const ask = this.require(id);
     if (ask.status !== 'open') {
       throw closedError();
@@ -250,7 +254,7 @@ export class FakeAsks implements AsksApi {
     const answered = this.put({
       ...ask,
       status: 'answered',
-      answer: { optionId: option?.id ?? null, label, text: text ?? null },
+      answer: { optionId: option?.id ?? null, label, text: text ?? null, ...(place === undefined ? {} : { place }) },
       answeredAt: this.deps.now().toISOString(),
     });
     this.outcomes.get(id)?.(optionId, text);

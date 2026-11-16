@@ -1,0 +1,118 @@
+/*
+ * 对话里的卡（11-16 卡片回到对话里）：开着的照内容卡画；答过的收成一行（勾 · 问的什么 · 答了什么、几点、在哪定的）；
+ * 输入框上方钉一行「等你 n」，点开在原地往上展开。
+ */
+
+.ask-done {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 560px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.ask-done > svg {
+  flex: none;
+}
+
+.ask-done[data-status='answered'] > svg {
+  color: var(--ok);
+}
+
+.ask-done-question {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ask-done-meta {
+  flex: none;
+}
+
+.wait-pin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.wait-pin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-ui);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+
+.wait-pin-row:hover {
+  background: var(--tint2);
+}
+
+.wait-pin-row > svg {
+  color: var(--fg2);
+}
+
+/* 展开的那一块盖在对话上面：和页面同底，不透出后面的字。 */
+.wait-pin-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 50vh;
+  padding: var(--space-3);
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  animation: wait-pin-in var(--motion-base) var(--ease-out);
+}
+
+.wait-pin-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  max-width: 560px;
+}
+
+.wait-pin-item > .content-card {
+  align-self: stretch;
+}
+
+@keyframes wait-pin-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (max-width: 767px) {
+  .wait-pin-row {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wait-pin-list {
+    animation: none;
+  }
+}

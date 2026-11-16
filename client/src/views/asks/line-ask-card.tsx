@@ -15,6 +15,7 @@ import { SubscriptionAskCard } from './subscription-ask-card.tsx';
 import { TaskCardPreview } from './task-card-preview.tsx';
 import { OutboundAskCard } from './outbound-ask-card.tsx';
 import type { AskWork } from './asks-store.ts';
+import { AskSource, useAnswerAsk } from './ask-context.tsx';
 import './line-ask-card.css';
 
 const ARGS_MARK = '」的参数：';
@@ -118,12 +119,13 @@ export function LineAskCard({ ask, thread }: { ask: AskView; thread?: string | n
 
 function PlainAskCard({ ask, thread }: { ask: AskView; thread: string | null }): ReactNode {
   const live = useLive();
+  const answerAsk = useAnswerAsk();
   const work: AskWork | undefined = useStore(live.asks.store).work.get(ask.id);
   const busy = work?.busy === true;
   const detail = readDetail(ask);
   const deny = ask.options.find((option) => DENY_IDS.has(option.id));
   const choices = ask.options.filter((option) => option !== deny);
-  const answer = (optionId: string): void => void live.asks.answer(ask, { optionId });
+  const answer = (optionId: string): void => void answerAsk(ask, { optionId });
   // Plasticine 起草的任务卡（2026-11-05 设计稿 Task-Draft）：以你的名义发出去，卡上画成任务卡的样子。
   const card = ask.taskCard;
   const label = card === undefined ? thread : `以你的名义发给${card.to.name}`;
@@ -134,11 +136,11 @@ function PlainAskCard({ ask, thread }: { ask: AskView; thread: string | null }):
         <AskTag ask={ask} />
         <h3 className="content-card-title">{question}</h3>
       </header>
-      {label === null || label === undefined ? null : <p className="line-ask-thread">{label}</p>}
+      {label === null || label === undefined ? <AskSource ask={ask} /> : <p className="line-ask-thread">{label}</p>}
       {card === undefined ? null : <TaskCardPreview card={card} />}
       {detail.args === null || card !== undefined ? null : <Preview args={detail.args} />}
       {detail.rest === null ? null : <p className="line-ask-detail">{detail.rest}</p>}
-      {choices.length === 0 ? <WriteAnswer busy={busy} onSend={(text) => void live.asks.answer(ask, { text })} />
+      {choices.length === 0 ? <WriteAnswer busy={busy} onSend={(text) => void answerAsk(ask, { text })} />
         : null}
       {/* 11-14 内容卡：后果一句在左，按钮靠右，主按钮在最右（和弹框一样）。 */}
       <div className="content-card-actions">

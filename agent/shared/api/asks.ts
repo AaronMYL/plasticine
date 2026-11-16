@@ -9,6 +9,7 @@ import { RulesOfferItemSchema } from './rules-doc.ts';
 import {
   ASK_KINDS,
   ASK_STATUSES,
+  AskAnswerPlaceSchema,
   AskAnswerSchema,
   AskOptionSchema,
   CHANNELS,
@@ -128,11 +129,15 @@ export const AskListResponseSchema = Type.Object({
   queue: Type.Array(AskViewSchema),
   /** 旧服务端未分区时可缺省；新服务端始终返回这个分区。 */
   deferred: Type.Optional(Type.Array(AskViewSchema)),
+  /** 最近答过、撤回的卡（RECENT_ASK_DAYS 天内，新的在前）：对话里在原处收成一行。 */
+  recent: Type.Optional(Type.Array(AskViewSchema)),
 });
 export type AskListResponse = Static<typeof AskListResponseSchema>;
 
 // The same bound as a typed answer on a task row.
 export const ASK_TEXT_MAX_CHARS = 2_000;
+/** 答过的卡在对话里收成一行留几天：够回头看这几天定过什么，再往前的看任务和记忆。 */
+export const RECENT_ASK_DAYS = 3;
 
 /**
  * POST /v2/asks/:id/answer. A card with options needs `optionId` (`text` may add a sentence); a card without
@@ -144,6 +149,7 @@ export const AnswerAskRequestSchema = Type.Object(
     outboundGrant: Type.Optional(OutboundGrantInputSchema),
     optionId: Type.Optional(Type.String({ minLength: 1, maxLength: 32 })),
     text: Type.Optional(Type.String({ minLength: 1, maxLength: ASK_TEXT_MAX_CHARS })),
+    place: Type.Optional(AskAnswerPlaceSchema),
   },
   { additionalProperties: false },
 );

@@ -123,7 +123,7 @@ describe('和 Plasticine 的对话', () => {
     await waitFor(async () => expect((await app.api.asks.get('ask-hard')).status).toBe('answered'));
   });
 
-  it('后台任务等你定：要你定卡就地画在对话里的任务卡里，能直接答（11-11）', async () => {
+  it('后台任务等你定：卡插在对话里（标题下写是哪件事），输入框上方钉「等你 1」；在这里答了记在哪定的、收成一行', async () => {
     const app = await openThread(({ control }) => {
       control.lines.put(control.lines.blank('clean', 'background', '修复删除记忆后名称残留',
         { parentLineId: MAIN_LINE_ID, status: 'waiting' }));
@@ -132,9 +132,18 @@ describe('和 Plasticine 的对话', () => {
           { id: 'deny', label: '暂不清除', recommended: false, description: null }] });
     });
     const task = await screen.findByRole('article', { name: '线：修复删除记忆后名称残留' });
-    const card = await within(task).findByRole('region', { name: /要把两份空记忆的名称也清掉吗/ });
-    fireEvent.click(within(card).getByRole('button', { name: '彻底清掉（推荐）' }));
+    expect(within(task).queryByRole('region', { name: /要把两份空记忆的名称也清掉吗/ })).toBeNull();
+    const cards = await conv().findAllByRole('region', { name: /要把两份空记忆的名称也清掉吗/ });
+    expect(cards).toHaveLength(1);
+    expect(within(cards[0]!).getByText('修复删除记忆后名称残留')).toBeTruthy();
+    const pin = conv().getByRole('button', { name: /等你 1/ });
+    fireEvent.click(pin);
+    const pinned = await conv().findByRole('region', { name: '这段对话里等你的事' });
+    fireEvent.click(within(pinned).getByRole('button', { name: '彻底清掉（推荐）' }));
     await waitFor(async () => expect((await app.api.asks.get('ask-clean')).status).toBe('answered'));
+    expect((await app.api.asks.get('ask-clean')).answer?.place).toEqual({ kind: 'line', lineId: MAIN_LINE_ID });
+    await waitFor(() => expect(conv().queryByRole('button', { name: /等你 1/ })).toBeNull());
+    expect(await conv().findByText(/选了「彻底清掉」/)).toBeTruthy();
   });
 
   it('笔记引用连版本写进消息：读回来是引用片、写明第几版；引用合计超过上限先说，不发', async () => {

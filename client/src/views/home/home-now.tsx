@@ -19,7 +19,12 @@ import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { ConnectSheet, useNoModel } from '../models/connect-sheet.tsx';
 import { lineElapsed, useNow } from '../lines/line-time.ts';
 import { WorkLineAction, WorkStatusGlyph, workStatusText } from '../lines/work-status.tsx';
+import { AskPlaceProvider } from '../asks/ask-context.tsx';
+import { useAskOrigin } from '../asks/ask-labels.ts';
 import './home.css';
+
+/** 在「等你」里答的。 */
+const WAIT_PLACE = { kind: 'wait' } as const;
 
 function WaitRow({ ask, phone }: { ask: AskView; phone: boolean }): ReactNode {
   const live = useLive();
@@ -30,11 +35,16 @@ function WaitRow({ ask, phone }: { ask: AskView; phone: boolean }): ReactNode {
       ? { kind: 'work' as const, lineId: ask.lineId } : null;
   // 要确认怎么回别人的卡出在那段聊天里：这里只带过去，不再就地展开一张一样的卡。
   const chat = ask.networkReply === undefined ? null : ask.networkReply.groupId ?? ask.networkReply.contactId;
+  // 卡是哪条线问的（11-16 卡片回到对话里：同一张卡在那段对话里也有，答了两边一起变）。
+  const origin = useAskOrigin()(ask);
   return (
     <li className="home-wait">
       <div className="home-row-line home-wait-row">
         <AskTag ask={ask} />
-        <span className="home-wait-title">{ask.question}</span>
+        <span className="home-wait-text">
+          <span className="home-wait-title">{ask.question}</span>
+          {origin === null ? null : <span className="home-wait-from">{origin}</span>}
+        </span>
         {chat !== null ? <a className="primary-button button-small" href={routeHash(messagesRoute(chat))}>去回</a>
           : <button type="button" className={`${open ? 'secondary-button' : 'primary-button'} button-small`}
           aria-expanded={work === null ? open : undefined}
@@ -42,7 +52,9 @@ function WaitRow({ ask, phone }: { ask: AskView; phone: boolean }): ReactNode {
         <RevealMore label={`「${ask.question}」的更多操作`}
           actions={[{ icon: 'clock', label: '先不', onSelect: () => void live.asks.defer(ask) }]} />
       </div>
-      {open ? <div className="home-wait-card" data-phone={phone}><LineAskCard ask={ask} /></div> : null}
+      {open ? <div className="home-wait-card" data-phone={phone}>
+        <AskPlaceProvider place={WAIT_PLACE}><LineAskCard ask={ask} /></AskPlaceProvider>
+      </div> : null}
     </li>
   );
 }

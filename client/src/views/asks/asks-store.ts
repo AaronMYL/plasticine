@@ -7,7 +7,7 @@ import { errorText, isUncertain } from '../../api/errors.ts';
 import type { EventsHub } from '../../state/events-hub.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { AskView } from '../../api/types.ts';
-import type { OutboundGrantInput } from '../../api/shared.ts';
+import type { AskAnswerPlace, OutboundGrantInput } from '../../api/shared.ts';
 import { Store } from '../../state/store.ts';
 
 export interface AskWork {
@@ -24,22 +24,28 @@ export interface AsksData {
   /** 开着的卡（服务端排好的顺序：摊开的在前）。 */
   open: AskView[];
   deferred: AskView[];
+  /** 最近答过、撤回的卡（新的在前）：对话里在原处收成一行。 */
+  recent: AskView[];
   work: ReadonlyMap<string, AskWork>;
 }
 
-export const EMPTY_ASKS: AsksData = { loaded: false, error: null, open: [], deferred: [], work: new Map() };
+export const EMPTY_ASKS: AsksData = { loaded: false, error: null, open: [], deferred: [], recent: [],
+  work: new Map() };
 
 export interface AnswerInput {
   outboundGrant?: OutboundGrantInput;
   optionId?: string;
   text?: string;
+  /** 在哪答的（对话、等你、聊天），由卡所在的地方给（ask-context.tsx）。 */
+  place?: AskAnswerPlace;
 }
 
 function place(data: AsksData, ask: AskView): AsksData {
   const open = data.open.filter((item) => item.id !== ask.id);
   const deferred = data.deferred.filter((item) => item.id !== ask.id);
+  const recent = data.recent.filter((item) => item.id !== ask.id);
   if (ask.status !== 'open') {
-    return { ...data, open, deferred };
+    return { ...data, open, deferred, recent: [ask, ...recent] };
   }
   if (ask.deferredAt !== null) {
     return { ...data, open, deferred: [...deferred, ask] };
@@ -95,7 +101,8 @@ export class AsksStore {
     try {
       const list = await this.api.asks.list();
       const open = [list.current, ...list.queue].filter((ask): ask is AskView => ask !== null);
-      this.store.set((data) => ({ ...data, loaded: true, error: null, open, deferred: list.deferred ?? [] }));
+      this.store.set((data) => ({ ...data, loaded: true, error: null, open, deferred: list.deferred ?? [],
+        recent: list.recent ?? [] }));
     } catch (cause) {
       this.store.set((data) => ({ ...data, loaded: true, error: errorText(cause) }));
     }

@@ -2,6 +2,7 @@
 // 子线卡用稳定的 child id 和发起消息定位；回报是后来的一条正文，更新卡的状态而不搬走或重建那张卡。
 
 import type { LineMessageView, LineView } from '../../api/shared.ts';
+import type { PlacedAsk } from '../asks/conversation-asks.ts';
 import { spaceToolResult, type SpaceToolResult } from '../../../../agent/shared/space-result.ts';
 
 /** 开后台线这一步由线卡片表示，不再在步骤里列一行。 */
@@ -66,7 +67,9 @@ export type TimelineItem =
   /** 来信（第 8 批第 6 条，设计稿 Chat-Letter）：Plasticine 的一句话，下面一张来信卡。 */
   | { kind: 'letter'; key: string; message: LineMessageView }
   /** Plasticine 把话题挪到了一条旁聊（open_side_chat，第 17 条）：一行入口，点了过去。 */
-  | { kind: 'side'; key: string; lineId: string; title: string; message: LineMessageView };
+  | { kind: 'side'; key: string; lineId: string; title: string; message: LineMessageView }
+  /** 要你定的卡（11-16 卡片回到对话里）：按出卡时间插在出它的那一步后面；答过的在原处收成一行。 */
+  | { kind: 'ask'; key: string; placed: PlacedAsk };
 
 /** 开旁聊的那一步（服务端 lines/side-chats.ts 的 OPEN_SIDE_TOOL）。 */
 const SIDE_TOOL = 'open_side_chat';
@@ -164,6 +167,8 @@ export interface TimelineInput {
   messages: readonly LineMessageView[];
   lines: readonly LineView[];
   summaries: ReadonlyMap<string, string>;
+  /** 这段对话里的卡（conversation-asks.ts 挑好、按出卡时间排好）。 */
+  asks?: readonly PlacedAsk[];
 }
 
 /** 没内容的提醒：空白或字面上的 "null"。 */
@@ -186,8 +191,19 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
       items.push({ kind: 'child', key: `child-${line.id}`, line });
     }
   };
+  const asks = [...(input.asks ?? [])];
+  /** 把出卡时间早于 until 的卡插进来（until 为 null 时插完）：卡后面另起一轮，卡不被后来的话挤走。 */
+  const appendAsks = (until: string | null): void => {
+    while (asks[0] !== undefined && (until === null || asks[0].ask.createdAt < until)) {
+      const placed = asks[0];
+      asks.shift();
+      turn = null;
+      items.push({ kind: 'ask', key: `ask-${placed.ask.id}`, placed });
+    }
+  };
   appendChildren(0);
   for (const message of input.messages) {
+    appendAsks(message.createdAt);
     if (message.role === 'user') {
       turn = null;
       items.push({ kind: message.origin?.kind === 'user' ? 'user' : 'input', key: `m-${message.seq}`, message });
@@ -253,6 +269,7 @@ export function buildTimeline(input: TimelineInput): TimelineItem[] {
     lastAt = message.createdAt;
     appendChildren(message.seq);
   }
+  appendAsks(null);
   return items;
 }
 

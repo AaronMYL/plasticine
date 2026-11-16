@@ -9,6 +9,7 @@ import type { AskView, ContactRow } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { useStore } from '../../state/use-store.ts';
 import { WaitMark } from '../../shell/wait-mark.tsx';
+import { AskPlaceProvider, useAnswerAsk } from '../asks/ask-context.tsx';
 import './reply-confirm.css';
 
 /** 这段聊天里还开着的确认卡。 */
@@ -20,16 +21,17 @@ export function replyAsksOf(open: readonly AskView[], contact: Pick<ContactRow, 
 function ReplyConfirmCard({ ask, name, group, onSelf }: { ask: AskView; name: string; group: boolean;
   onSelf: () => void }): ReactNode {
   const live = useLive();
+  const answerAsk = useAnswerAsk();
   const work = useStore(live.asks.store).work.get(ask.id);
   const draft = ask.networkReply?.draft ?? null;
   const [text, setText] = useState(draft ?? '');
   const busy = work?.busy === true;
   const send = (): void => {
     const edited = text.trim();
-    void live.asks.answer(ask, { optionId: 'send', ...(edited !== '' && edited !== draft ? { text: edited } : {}) });
+    void answerAsk(ask, { optionId: 'send', ...(edited !== '' && edited !== draft ? { text: edited } : {}) });
   };
   const self = (): void => {
-    void live.asks.answer(ask, { optionId: 'self' });
+    void answerAsk(ask, { optionId: 'self' });
     onSelf();
   };
   if (ask.networkReply?.self === true) {
@@ -45,7 +47,7 @@ function ReplyConfirmCard({ ask, name, group, onSelf }: { ask: AskView; name: st
           <button type="button" className="primary-button" disabled={busy || text.trim() === ''}
             onClick={send}>这样发</button>
           <button type="button" className="secondary-button" disabled={busy}
-            onClick={() => void live.asks.answer(ask, { optionId: 'none' })}>不发</button>
+            onClick={() => void answerAsk(ask, { optionId: 'none' })}>不发</button>
         </div>
         {work?.error == null ? null : <p className="block-empty is-error" role="alert">{work.error}</p>}
       </section>
@@ -70,7 +72,7 @@ function ReplyConfirmCard({ ask, name, group, onSelf }: { ask: AskView; name: st
         <button type="button" className={draft === null ? 'primary-button' : 'secondary-button'} disabled={busy}
           onClick={self}>我自己回</button>
         <button type="button" className="secondary-button" disabled={busy}
-          onClick={() => void live.asks.answer(ask, { optionId: 'none' })}>不回</button>
+          onClick={() => void answerAsk(ask, { optionId: 'none' })}>不回</button>
       </div>
       {work?.error == null ? null : <p className="block-empty is-error" role="alert">{work.error}</p>}
     </section>
@@ -80,6 +82,11 @@ function ReplyConfirmCard({ ask, name, group, onSelf }: { ask: AskView; name: st
 export function ReplyConfirms({ contact, onSelf }: { contact: ContactRow; onSelf: () => void }): ReactNode {
   const live = useLive();
   const asks = replyAsksOf(useStore(live.asks.store).open, contact);
-  return asks.map((ask) => <ReplyConfirmCard key={ask.id} ask={ask} name={contact.name}
-    group={contact.kind === 'group'} onSelf={onSelf} />);
+  // 在这段聊天里答的：答案上记这段聊天（11-16 卡片回到对话里）。
+  const place = contact.kind === 'group' ? { kind: 'chat' as const, contactId: null, groupId: contact.id }
+    : { kind: 'chat' as const, contactId: contact.id, groupId: null };
+  return <AskPlaceProvider place={place}>
+    {asks.map((ask) => <ReplyConfirmCard key={ask.id} ask={ask} name={contact.name}
+      group={contact.kind === 'group'} onSelf={onSelf} />)}
+  </AskPlaceProvider>;
 }

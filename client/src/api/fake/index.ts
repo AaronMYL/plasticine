@@ -4,6 +4,7 @@ import { FakeSouls } from './fake-souls.ts';
 import { seedMemoryScene } from './memory-scene-seed.ts';
 import { seedOfferScene } from './offer-seed.ts';
 import { seedTeamScene } from './team-scene-seed.ts';
+import { seedAsksScene } from './asks-scene-seed.ts';
 import { seedRelayScene } from './relay-scene-seed.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
@@ -162,6 +163,10 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   }
   if (scene === 'tasks') {
     seedTasksLines(lines, now, deps.projectId);
+    return;
+  }
+  // ?scene=asks：主线只放这一场的话（asks-scene-seed.ts），不混进别的样子。
+  if (scene === 'asks') {
     return;
   }
   if (scene === 'schedule') {
@@ -342,6 +347,10 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     // ?scene=team：四位队友、一个群组、各种状态的事（11-13 分工面板截图用）。
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'team') {
       void seedTeamScene({ mates, lines }, now());
+    }
+    // ?scene=asks：卡回到对话里（11-16 截图用）。
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'asks') {
+      void seedAsksScene({ mates, lines, asks }, now());
     }
     // ?scene=relay：主线交给队友的一来一回在队友对话里（11-16 截图用）。
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scene') === 'relay') {

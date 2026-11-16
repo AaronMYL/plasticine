@@ -98,6 +98,7 @@ export {
   MessageDisagreementSchema,
   PushEndpointSchema,
   PushKeysSchema,
+  type AskAnswerPlace,
   type AskKind,
   type AskOption,
   type DeviceActionClass,
