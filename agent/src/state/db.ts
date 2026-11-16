@@ -34,6 +34,8 @@ export class Database {
 
   exec(sql: string): void {
     this.#db.exec(sql);
+    // exec 跑的多是改表结构的语句：缓存着的「SELECT *」还按旧的列取，清掉让它们重新准备。
+    this.#statements.clear();
   }
 
   run(sql: string, params: Params = {}): number {
