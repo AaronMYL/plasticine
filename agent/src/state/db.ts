@@ -84,10 +84,34 @@ export class Database {
     const before = this.#db.prepare('PRAGMA secure_delete').get()?.['secure_delete'];
     this.#db.exec('PRAGMA secure_delete = ON');
     try {
-      return this.transaction(work);
+      return this.transaction(() => {
+        const result = work();
+        this.#scrubFreePages();
+        return result;
+      });
     } finally {
       this.#db.exec(`PRAGMA secure_delete = ${before === 1 ? 'ON' : 'OFF'}`);
     }
+  }
+
+  /**
+   * 空闲页也清零（11-15 发现）：secure_delete 只管这次事务里删掉的内容；库里已经空着的页可能留着以前写过的字节——
+   * 平时的删除不清零，被回滚的保存点写过的空闲页也不清——要忘的那句话可能就在里面。做法：建一张临时表，用全零的
+   * 大字段把空闲页全占上，再把表删掉（secure_delete 开着，删的时候再清一遍）。空闲页通常只有几十页，很快。
+   */
+  #scrubFreePages(): void {
+    const count = (): number => Number(this.#db.prepare('PRAGMA freelist_count').get()?.['freelist_count'] ?? 0);
+    if (count() === 0) {
+      return;
+    }
+    const pageSize = Number(this.#db.prepare('PRAGMA page_size').get()?.['page_size'] ?? 4096);
+    // 一页溢出页装 pageSize - 4 个字节；留一点给表自己的那一页，免得多占出新页。
+    this.#db.exec('CREATE TABLE erase_scrub (filler BLOB)');
+    const fill = this.#db.prepare('INSERT INTO erase_scrub (filler) VALUES (zeroblob($bytes))');
+    for (let free = count(), rounds = 0; free > 0 && rounds < 10_000; free = count(), rounds += 1) {
+      fill.run({ bytes: Math.min(Math.max(1, free - 1), 2048) * (pageSize - 4) - 64 });
+    }
+    this.#db.exec('DROP TABLE erase_scrub');
   }
 
   close(): void {

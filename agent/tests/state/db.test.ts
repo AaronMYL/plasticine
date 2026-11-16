@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { BUSY_TIMEOUT_MS, MEMORY_DATABASE, openDatabase, type Database } from '../../src/state/db.ts';
@@ -123,4 +124,31 @@ test('异步事务回调在执行前拒绝，await 前后都不会写库', async
   await Promise.resolve();
   assert.equal(entered, false);
   assert.equal(db.get('SELECT count(*) AS n FROM t')?.['n'], 0);
+});
+
+test('抹掉（erasing）：这次删的内容清零，库里早就空着的页里留的旧字节也清零；别的内容照旧在', () => {
+  const path = join(directory, 'plasticine.sqlite');
+  const db = open(path);
+  db.exec('CREATE TABLE notes_kept (body TEXT)');
+  db.run('INSERT INTO notes_kept VALUES ($body)', { body: '住在杭州' });
+  // 平时的删表不清零：这几页进了空闲页，里面还是原来的字。
+  db.exec('CREATE TABLE old_stuff (body TEXT)');
+  for (let n = 0; n < 40; n += 1) {
+    db.run('INSERT INTO old_stuff VALUES ($body)', { body: `小周的猫叫年糕 ${'。'.repeat(400)}${n}` });
+  }
+  db.exec('DROP TABLE old_stuff');
+  db.exec('CREATE TABLE to_forget (body TEXT)');
+  db.run('INSERT INTO to_forget VALUES ($body)', { body: '常去的咖啡店是 Seesaw' });
+  assert.ok(Number(db.get('PRAGMA freelist_count')?.['freelist_count']) > 0);
+  db.erasing(() => db.run('DELETE FROM to_forget'));
+  assert.deepEqual(db.all("SELECT name FROM sqlite_schema WHERE name = 'erase_scrub'"), []);
+  assert.equal(db.get('SELECT body FROM notes_kept')?.['body'], '住在杭州');
+  assert.equal(db.get('PRAGMA integrity_check')?.['integrity_check'], 'ok');
+  opened.splice(opened.indexOf(db), 1);
+  db.close();
+  const file = readFileSync(path);
+  for (const needle of ['小周的猫', 'Seesaw']) {
+    assert.equal(file.includes(Buffer.from(needle, 'utf8')), false, `库文件里还有「${needle}」`);
+  }
+  assert.equal(file.includes(Buffer.from('住在杭州', 'utf8')), true);
 });
