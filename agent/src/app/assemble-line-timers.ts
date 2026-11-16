@@ -1,5 +1,5 @@
 // 回来看、盯着（timers/）在这里接上：叫醒线走线的 send（系统发起的一句）；盯网页用公网读取（不经模型、不花搜索额度），
-// 盯 Mac 上的标签走设备动作 tab_read（同一套上限和记录）。
+// 盯 Mac 上的标签走设备动作 tab_read、盯 Mac 上的文件夹走 file_list（同一套上限和记录）。
 
 import { htmlToText, PublicFetcher } from '../cloud-tools/index.ts';
 import type { DeviceActions } from '../devices/index.ts';
@@ -35,6 +35,24 @@ async function readTab(devices: Pick<DeviceActions, 'perform'>, watch: LineWatch
   return text;
 }
 
+/** 文件夹这一次的样子：一行一个文件（名字、大小、改动时间），按名字排；多了、少了、改了就和上次不一样。 */
+async function readFolder(devices: Pick<DeviceActions, 'perform'>, watch: LineWatch, signal: AbortSignal)
+  : Promise<string> {
+  if (watch.folder === null) {
+    throw new Error('这一处不是文件夹。');
+  }
+  const outcome = await devices.perform({ actionId: `watch:${watch.id}:${watch.checks + 1}`,
+    nodeId: watch.folder.nodeId, action: { kind: 'file_list', path: watch.folder.path }, origin: 'brain',
+    taskId: null, runId: `line:${watch.lineId}`, purpose: `盯着变化：${watch.title}`, signal });
+  const entries: unknown = outcome.status === 'executed' && typeof outcome.result === 'object'
+    && outcome.result !== null ? Reflect.get(outcome.result, 'entries') : undefined;
+  if (!Array.isArray(entries)) {
+    throw new Error(outcome.reason ?? '这次没读到那个文件夹（Mac 不在线或文件夹不在授权里）。');
+  }
+  return entries.map((entry: { name?: unknown; size?: unknown; modifiedAt?: unknown }) =>
+    `${String(entry.name)} · ${String(entry.size)} 字节 · ${String(entry.modifiedAt)}`).sort().join('\n');
+}
+
 export function assembleLineTimers(parts: { state: StateService; now: () => Date; hub: EventHub;
   lines: () => Pick<LineKernel, 'send'>; devices: Pick<DeviceActions, 'perform'>; fetcher?: PublicFetcher })
   : LineTimers {
@@ -43,7 +61,9 @@ export function assembleLineTimers(parts: { state: StateService; now: () => Date
     wake: (lineId, text, ref) => {
       parts.lines().send(lineId, { text, origin: { kind: 'trigger', ref } });
     },
-    read: (watch, signal) => (watch.url === null ? readTab(parts.devices, watch, signal)
-      : readPage(fetcher, watch.url, signal)),
+    read: (watch, signal) => {
+      if (watch.folder !== null) return readFolder(parts.devices, watch, signal);
+      return watch.url === null ? readTab(parts.devices, watch, signal) : readPage(fetcher, watch.url, signal);
+    },
     changed: () => parts.hub.publish({ type: 'tasks_changed' }) });
 }

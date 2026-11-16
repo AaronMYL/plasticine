@@ -34,6 +34,9 @@ import { createLegacyIdMap } from './legacy-ids.ts';
 import { createLegacyRowStore } from './legacy-rows.ts';
 import { createLineApprovalStore } from './line-approvals.ts';
 import { createLineStores } from './lines.ts';
+import { createLinePlanStore } from './line-plans.ts';
+import { createPushStore } from './pushes.ts';
+import { createConnectionStore } from './connections.ts';
 import { createMaintenanceOperationStore } from './maintenance-operations.ts';
 import { createMemoryCurationStores } from './memory-curation.ts';
 import { createMemoryDocStores } from './memory-docs.ts';
@@ -181,6 +184,9 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     toolGroups: createToolGroupStore(context),
     // 11-16：线到点自己回来看、盯着变化（迁移 0145）。
     lineTimers: createLineTimerStores(context),
+    linePlans: createLinePlanStore(context),
+    pushes: createPushStore(context),
+    connections: createConnectionStore(context),
     // 通知信的开关（用户 2026-11-01 定的「邮件兜底」，现在管项目逾期 / 停滞提醒信）。
     // 沉浸式翻译（2026-11-03 第 2 批）：设置一行和译文缓存。
     translateSettings: createTranslateSettingsStore(context),

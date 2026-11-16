@@ -16,9 +16,9 @@ import type { KernelTool, Later, ModelSource } from './types.ts';
 export const MAX_BACKGROUND_LINES = 3;
 export const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
 
-export type KernelState = Pick<StateService, 'lines' | 'lineMessages' | 'lineDays' | 'lineQueue' | 'lineApprovals'
-  | 'mates' | 'mateGroups' | 'outboundGrants' | 'outboundLog' | 'schedules' | 'contactMessages' | 'groupMessages'
-  | 'asks' | 'transaction' | 'memoryDocs' | 'memoryJournal' | 'projects' | 'attachments'>
+export type KernelState = Pick<StateService, 'lines' | 'linePlans' | 'lineMessages' | 'lineDays' | 'lineQueue'
+  | 'lineApprovals' | 'mates' | 'mateGroups' | 'outboundGrants' | 'outboundLog' | 'schedules' | 'contactMessages'
+  | 'groupMessages' | 'asks' | 'transaction' | 'memoryDocs' | 'memoryJournal' | 'projects' | 'attachments'>
   & Partial<Pick<StateService, 'loop'>>;
 
 export type Compactor = NonNullable<RunnerHost['compact']>;

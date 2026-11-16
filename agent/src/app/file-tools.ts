@@ -4,7 +4,7 @@
 
 import { fileTools, mediaTools, officeTools, sandboxTool, type Workspace } from '../artifacts/index.ts';
 import { attachmentText, type AttachmentTransport, convertMedia, editImage, officeText, printPdf, PublicFetchError,
-  PublicFetcher, type Sandbox, xlsxSheets } from '../cloud-tools/index.ts';
+  PublicFetcher, Sandbox, xlsxSheets } from '../cloud-tools/index.ts';
 import type { Illustrator } from '../kernel/index.ts';
 import type { KernelTool } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
@@ -36,33 +36,38 @@ export interface FileToolOutside {
   /** 读 PDF 的字（云端的附件转换）。 */
   attachments: AttachmentTransport;
   illustrator: Illustrator | null;
-  /** 要跑的 ffmpeg（装了本地转写用组件里的）。 */
-  ffmpeg: () => string;
-  transcribe(input: { data: Buffer; extension: string }, signal: AbortSignal):
-    Promise<{ text: string; seconds: number | null; engine: string }>;
+  /** ffmpeg（装了本地转写用组件里的）和本地转写。 */
+  video: {
+    ffmpeg(): string;
+    transcribeFile(input: { data: Buffer; extension: string }, signal: AbortSignal):
+      Promise<{ text: string; seconds: number | null; engine: string }>;
+  };
+  /** 沙盒的临时工作目录放在哪下面。 */
+  sandboxRoot: string;
   /** 测试换成假的：不起浏览器。 */
-  printPdf?: (html: string, signal: AbortSignal) => Promise<Buffer>;
-  sandbox: Sandbox;
+  printPdf?: ((html: string, signal: AbortSignal) => Promise<Buffer>) | undefined;
   now: () => Date;
 }
 
 function outsideTools(workspace: Workspace, outside: FileToolOutside): KernelTool[] {
+  const ffmpeg = (): string => outside.video.ffmpeg();
+  const sandbox = new Sandbox({ root: outside.sandboxRoot });
   const media = (input: { data: Buffer; extension: string }, output: string, signal: AbortSignal, quality?: number) =>
-    convertMedia(outside.ffmpeg(), input, output, signal, quality);
+    convertMedia(ffmpeg(), input, output, signal, quality);
   return [
     ...officeTools({ workspace, printPdf: outside.printPdf ?? ((html, signal) => printPdf(html, signal)), officeText,
       xlsxSheets, convertMedia: media,
       pdfText: async (name, data, signal) =>
         (await attachmentText(outside.attachments, { name, data }, signal)).text }),
     ...mediaTools({ workspace,
-      editImage: (inputs, ops, output, signal, options) => editImage(outside.ffmpeg(), inputs, ops, output, signal,
+      editImage: (inputs, ops, output, signal, options) => editImage(ffmpeg(), inputs, ops, output, signal,
         options),
       draw: async (prompt, signal) => (outside.illustrator === null
         ? { error: '这台 Plasticine 没有能出图的模型（设置 · AI 里接一个 OpenAI 的账号）。' }
         : outside.illustrator.draw(prompt, signal)),
-      transcribe: (input, signal) => outside.transcribe(input, signal) }),
-    sandboxTool({ workspace, available: () => outside.sandbox.available(), now: outside.now,
-      run: (request, signal) => outside.sandbox.run(request, signal) }),
+      transcribe: (input, signal) => outside.video.transcribeFile(input, signal) }),
+    sandboxTool({ workspace, available: () => sandbox.available(), now: outside.now,
+      run: (request, signal) => sandbox.run(request, signal) }),
   ];
 }
 

@@ -84,6 +84,8 @@ export * from './lines.ts';
 export * from './schedule-card.ts';
 export * from './tasks-board.ts';
 export * from './timers.ts';
+export * from './pushes.ts';
+export * from './connections.ts';
 export * from './heartbeat.ts';
 export * from './line-details.ts';
 export * from './hub-events.ts';

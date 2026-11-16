@@ -1,11 +1,13 @@
 // 新内核的路由条目（router.ts 摊进 ROUTES）：线（shared/api/lines.ts）和模型连接（shared/api/model-providers.ts）。
 // 都要设备会话。旧路由一条不动。
 
-import { CHATS_PATH, CUSTOM_PROVIDERS_PATH, LINES_PATH, MODEL_CONFIG_PATH, MODEL_CONNECTION_TEST_PATH,
+import { CHATS_PATH, CONNECTIONS_PATH, CUSTOM_PROVIDERS_PATH, LINES_PATH, MODEL_CONFIG_PATH, MODEL_CONNECTION_TEST_PATH,
   MODEL_DEFAULT_PATH, MODEL_IMAGE_PATH, MODEL_PROVIDERS_PATH, SIDE_PATH, WEB_SEARCH_PATH, WEB_SEARCH_TEST_PATH }
   from '../../shared/api/index.ts';
 import { removeCustom, saveCustom, testCustomConnection } from './custom-providers.ts';
 import { getWebSearch, saveWebSearch, testWebSearch } from './web-search-settings.ts';
+import { createConnection, deleteConnection, listConnections, testConnection, updateConnection }
+  from './connections.ts';
 import { MATE_ROUTES } from './mates.ts';
 import type { Route } from './context.ts';
 import { listChats, openSideChat, reactLineMessage } from './side-chats.ts';
@@ -56,4 +58,9 @@ export const LINE_ROUTES: readonly Route[] = [
   { method: 'GET', path: WEB_SEARCH_PATH, auth: true, handler: getWebSearch },
   { method: 'PUT', path: WEB_SEARCH_PATH, auth: true, handler: saveWebSearch },
   { method: 'POST', path: WEB_SEARCH_TEST_PATH, auth: true, handler: testWebSearch },
+  { method: 'GET', path: CONNECTIONS_PATH, auth: true, handler: listConnections },
+  { method: 'POST', path: CONNECTIONS_PATH, auth: true, handler: createConnection },
+  { method: 'POST', path: `${CONNECTIONS_PATH}/:id`, auth: true, handler: updateConnection },
+  { method: 'POST', path: `${CONNECTIONS_PATH}/:id/test`, auth: true, handler: testConnection },
+  { method: 'POST', path: `${CONNECTIONS_PATH}/:id/delete`, auth: true, handler: deleteConnection },
 ];

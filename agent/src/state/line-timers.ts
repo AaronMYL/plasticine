@@ -22,6 +22,8 @@ export interface LineWatch {
   url: string | null;
   /** 看 Mac 上这个网页标签（要他登录的页面）。 */
   tab: { nodeId: string; tabId: string } | null;
+  /** 看 Mac 上授权文件夹里的这个文件夹（迁移 0146）：多了、少了、改了文件就叫。 */
+  folder: { nodeId: string; path: string } | null;
   /** 等这段字出现；没有就是页面有变化就叫。 */
   lookFor: string | null;
   everyMinutes: number;
@@ -55,8 +57,10 @@ function wakeOf(row: Row): LineWake {
 function watchOf(row: Row): LineWatch {
   const nodeId = maybe(row, 'node_id');
   const tabId = maybe(row, 'tab_id');
+  const folder = maybe(row, 'folder');
   return { id: text(row, 'id'), lineId: text(row, 'line_id'), title: text(row, 'title'), url: maybe(row, 'url'),
-    tab: nodeId === null || tabId === null ? null : { nodeId, tabId }, lookFor: maybe(row, 'look_for'),
+    tab: nodeId === null || tabId === null ? null : { nodeId, tabId },
+    folder: nodeId === null || folder === null ? null : { nodeId, path: folder }, lookFor: maybe(row, 'look_for'),
     everyMinutes: Number(row['every_minutes']), untilAt: text(row, 'until_at'), nextAt: text(row, 'next_at'),
     status: text(row, 'status') as LineWatch['status'], checks: Number(row['checks']),
     changes: Number(row['changes']), lastText: maybe(row, 'last_text'), lastCheckedAt: maybe(row, 'last_checked_at'),
@@ -69,6 +73,7 @@ export interface WatchInput {
   title: string;
   url: string | null;
   tab: { nodeId: string; tabId: string } | null;
+  folder?: { nodeId: string; path: string } | null;
   lookFor: string | null;
   everyMinutes: number;
   untilAt: string;
@@ -135,10 +140,12 @@ export function createLineTimerStores(context: StoreContext) {
         }
         const id = `watch_${context.newId()}`;
         const now = context.now();
-        db.run(`INSERT INTO line_watches (id, line_id, call_key, title, url, node_id, tab_id, look_for, every_minutes,
-          until_at, next_at, status, created_at) VALUES ($id, $line, $key, $title, $url, $node, $tab, $look,
+        db.run(`INSERT INTO line_watches (id, line_id, call_key, title, url, node_id, tab_id, folder, look_for,
+          every_minutes, until_at, next_at, status, created_at) VALUES ($id, $line, $key, $title, $url, $node, $tab,
+          $folder, $look,
           $every, $until, $now, 'on', $now)`, { id, line: input.lineId, key: input.callKey, title: input.title,
-          url: input.url, node: input.tab?.nodeId ?? null, tab: input.tab?.tabId ?? null, look: input.lookFor,
+          url: input.url, node: input.tab?.nodeId ?? input.folder?.nodeId ?? null, tab: input.tab?.tabId ?? null,
+          folder: input.folder?.path ?? null, look: input.lookFor,
           every: input.everyMinutes, until: input.untilAt, now });
         return watch(id) as LineWatch;
       },

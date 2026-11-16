@@ -22,7 +22,7 @@ export function queuedView(row: QueuedRow): QueuedMessageView {
     origin: row.origin, createdAt: row.createdAt };
 }
 
-export type ViewState = Pick<StateService, 'lineQueue' | 'lineMessages' | 'lines' | 'mates'>;
+export type ViewState = Pick<StateService, 'lineQueue' | 'lineMessages' | 'lines' | 'mates' | 'linePlans'>;
 
 function outcome(state: ViewState, line: LineRow, queued: number): LineOutcome | null {
   if (line.status === 'failed') {
@@ -86,6 +86,7 @@ export function lineView(state: ViewState, line: LineRow, activity: Activity): L
     lastAnswer: lastAnswer(state, line.id),
     unmet: ended === 'done' ? unmetReason(state, line) : null,
     topic: line.topic,
+    plan: state.linePlans.get(line.id),
     createdAt: line.createdAt,
     updatedAt: line.updatedAt,
   };

@@ -78,6 +78,15 @@ export const LineTopicSchema = Type.Object({
 export type LineTopic = Static<typeof LineTopicSchema>;
 export const SIDE_TOPIC_EXCERPT_MAX_CHARS = 4_000;
 
+/** 线自己列的步骤（line_plan，11-16）：做一步勾一步；running 是正在做的那一步。 */
+export const LINE_PLAN_STEPS_MAX = 30;
+export const LINE_PLAN_STEP_MAX_CHARS = 80;
+export const LinePlanStepSchema = Type.Object({
+  text: Type.String({ minLength: 1, maxLength: LINE_PLAN_STEP_MAX_CHARS }),
+  status: Type.Enum(['todo', 'running', 'done', 'skipped']),
+}, STRICT);
+export type LinePlanStep = Static<typeof LinePlanStepSchema>;
+
 export const LineViewSchema = Type.Object({
   mateId: Type.Optional(Nullable(IdSchema)),
   mateGroupId: Type.Optional(Nullable(IdSchema)),
@@ -115,6 +124,8 @@ export const LineViewSchema = Type.Object({
   unmet: Type.Optional(Nullable(Type.String())),
   /** 旁聊围绕的那一条；别的线是 null。旧客户端缓存里没有这一项。 */
   topic: Type.Optional(Nullable(LineTopicSchema)),
+  /** 线自己列的步骤清单（line_plan）；没列过是 null。 */
+  plan: Type.Optional(Nullable(Type.Array(LinePlanStepSchema, { maxItems: LINE_PLAN_STEPS_MAX }))),
   createdAt: IsoTimeSchema,
   updatedAt: IsoTimeSchema,
 }, STRICT);

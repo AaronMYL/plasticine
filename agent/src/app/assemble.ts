@@ -6,7 +6,7 @@
 import { offerResolver } from '../loop/index.ts';
 import { withMainSoul } from './soul-text.ts';
 import {
-  createServerCommandTools, Sandbox, ServerCommands, type CloudTransports, type FaviconFetchOptions,
+  createServerCommandTools, ServerCommands, type CloudTransports, type FaviconFetchOptions,
   type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
 import { autoOnlyPermissionGate, createShowWidgetsTool, getTimeTool, ToolRegistry, type Tool } from '../tools/index.ts';
@@ -55,6 +55,7 @@ import { linePort } from './subscriptions.ts';
 import { ensureReviewSubscription, SampleCards, subsTools } from '../subs/index.ts';
 import { libraryTools } from '../library/index.ts';
 import { assembleFileTools, deviceFileOf } from './file-tools.ts';
+import { pushTool } from './push-tool.ts';
 import { deviceFileTools } from './device-file-tools.ts';
 import { assembleLineTimers } from './assemble-line-timers.ts';
 import { scanDiskNotice } from './disk-notice.ts';
@@ -345,10 +346,9 @@ export function assembleApp(options: AssembleOptions): App {
       ...libraryTools({ state, workspace: toolGroups.artifacts.workspace },
         (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
       ...assembleFileTools(state, toolGroups.artifacts.workspace, { attachments: toolGroups.cloud.attachments,
-        illustrator, ffmpeg: () => video.ffmpeg(), transcribe: (input, signal) => video.transcribeFile(input, signal),
-        sandbox: new Sandbox({ root: join(options.stateDirectory, 'sandbox') }), now,
-        ...(options.printPdf === undefined ? {} : { printPdf: options.printPdf }) }),
-      ...lineTimers.tools(),
+        illustrator, video, sandboxRoot: join(options.stateDirectory, 'sandbox'), now, printPdf: options.printPdf }),
+      pushTool({ state, announce: (input) => notices.announce(input),
+        changed: () => hub.publish({ type: 'pushes_changed' }) }), ...lineTimers.tools(),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。
       ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId), {
         illustrator,

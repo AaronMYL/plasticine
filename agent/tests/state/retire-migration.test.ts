@@ -126,7 +126,7 @@ test('0059–0062：旧对话进主线、关切成待办、产出成笔记，退
         '0135-prediction-loop', '0136-mate-looks', '0137-loop-message-predict', '0138-feed-places-body',
         '0139-souls', '0140-feed-more-images', '0141-drop-agreements',
         '0142-drop-agreement-history', '0143-drop-retired-history', '0144-mate-relays',
-      '0145-wakes-watches']);
+      '0145-wakes-watches', '0146-plans-pushes-connections']);
       const said = [1, 2, 3].map((seq) => state.lineMessages.said(`line:line-main:${seq}`));
       assert.deepEqual(said.map((line) => [line?.role, line?.text]), [
         ['user', '帮我看看这周的安排［附件：「周报.pdf」；id：att-1；正文用 attachment_text 读］'],

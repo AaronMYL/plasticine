@@ -2,7 +2,7 @@
 // credentials/<名字>，权限 0600；代码只按名字引用。这里只看文件在不在、权限对不对（不读内容）；内容只有传输层在要用的那
 // 一刻读，读出来的字节不进日志、不进库、不回给客户端。M5 一个凭据都不需要。
 
-import { readFileSync, statSync } from 'node:fs';
+import { chmodSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { CloudToolError } from './errors.ts';
 
@@ -62,5 +62,17 @@ export class CredentialFiles {
       throw new CloudToolError('credential_unsafe', `凭据「${name}」别的用户也能读，没有用它。${next}`, 'credential');
     }
     return readFileSync(this.#path(name));
+  }
+
+  /** 设置里填的令牌（11-16 通用连接）：只有服务进程能读（0600）；null 是删掉。不回显、不进日志。 */
+  write(name: string, data: string | null): void {
+    const path = this.#path(name);
+    if (data === null) {
+      rmSync(path, { force: true });
+      return;
+    }
+    mkdirSync(this.#directory, { recursive: true, mode: 0o700 });
+    writeFileSync(path, data, { mode: PRIVATE_MODE });
+    chmodSync(path, PRIVATE_MODE);
   }
 }

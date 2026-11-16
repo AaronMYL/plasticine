@@ -5,8 +5,8 @@
 import {
   attachmentText, createCloudBrowserActTool, createCloudBrowserObserveTool, createCloudBrowserOpenTool,
   createCloudBrowserReadTool, createCloudBrowserTabsTools, createCloudSshRunTool, createCloudTools,
-  createMailSendTool, createWebSearchTools, FaviconFetcher, LinkPreviewFetcher, WebSearch,
-  MailImageFetcher, MailImageSigner, type CloudTools, type CloudTransports, type FaviconFetchOptions,
+  Connections, createConnectionTools, createMailSendTool, createWebSearchTools, FaviconFetcher, LinkPreviewFetcher,
+  WebSearch, MailImageFetcher, MailImageSigner, type CloudTools, type CloudTransports, type FaviconFetchOptions,
   type InternalBrowserCookie, type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
 import type { InboxMessage } from '../../shared/state.ts';
@@ -33,6 +33,8 @@ export interface ToolGroupServices {
   favicons: FaviconCache;
   /** 网络搜索和抓正文（11-16，Tavily）：密钥在设置里填。 */
   webSearch: WebSearch;
+  /** 通用连接（11-16）：设置里连的服务（MCP），令牌在凭据目录。 */
+  connections: Connections;
   dryRun: boolean;
   stateDirectory: string;
 }
@@ -55,6 +57,8 @@ export interface ToolGroupOptions {
   internalUrl?: string;
   /** 网络搜索怎么连外网（测试换成假的）。 */
   webFetch?: typeof fetch;
+  /** 通用连接怎么连外网（测试换成假的，允许连本机的假服务）。 */
+  connectionFetch?: { fetch: typeof fetch; allowLocal: boolean };
 }
 
 /** Whether a tool is switched on: tools in no group always are; a group without a row is on its default. */
@@ -97,6 +101,9 @@ export function createToolGroupServices(options: ToolGroupOptions): ToolGroupSer
     linkPreviews: new LinkPreviewFetcher(options.linkPreviews),
     favicons: new FaviconCache({ store: state.favicons, fetcher: new FaviconFetcher(options.favicons ?? {}), now }),
     webSearch: new WebSearch({ settings: state.kernelSettings, fetch: options.webFetch ?? globalThis.fetch, now }),
+    connections: new Connections({ state, credentials: cloud.credentials,
+      ...(options.connectionFetch === undefined ? {} : { fetch: options.connectionFetch.fetch,
+        allowLocal: options.connectionFetch.allowLocal }) }),
     dryRun,
     stateDirectory,
   };
@@ -123,6 +130,7 @@ export function toolGroupTools(services: ToolGroupServices): Tool[] {
     createCloudBrowserActTool(cloud.browser),
     ...createCloudBrowserTabsTools(cloud.browser),
     ...createWebSearchTools(services.webSearch),
+    ...createConnectionTools(services.connections),
     createMailSendTool({ sender: cloud.mail, readFile: (path) => {
       const { data, entry } = artifacts.workspace.read(path);
       return { name: entry.name, type: (entry.type ?? 'application/octet-stream').split(';')[0] ?? '', data };

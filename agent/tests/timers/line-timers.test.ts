@@ -110,3 +110,14 @@ test('比对用的字和新出现的行', () => {
   assert.equal(watchText('  a   b \n\n c '), 'a b\nc');
   assert.equal(addedLines('a\nb', 'a\nc\nb'), 'c');
 });
+
+test('盯 Mac 上的文件夹（11-16）：nodeId + folder 记下来，读的时候带着；三样给多了、nodeId 落了都不收', async () => {
+  await run('watch_start', { title: '下载完了没有', nodeId: 'mac-1', folder: '~/Downloads' }, 'f1');
+  pages.push('a.zip · 10 字节 · 2026-11-16T08:00:00.000Z');
+  await timers.tick();
+  assert.deepEqual(reads[0]?.folder, { nodeId: 'mac-1', path: '~/Downloads' });
+  assert.equal(reads[0]?.tab, null);
+  await assert.rejects(run('watch_start', { title: '两样', url: 'https://example.com', nodeId: 'mac-1',
+    folder: '~/Downloads' }, 'f2'), /给一样/);
+  await assert.rejects(run('watch_start', { title: '缺设备', folder: '~/Downloads' }, 'f3'), /给一样/);
+});

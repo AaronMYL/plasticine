@@ -72,6 +72,8 @@ const WatchParameters = Type.Object({
     description: '不用登录的网页' })),
   nodeId: Type.Optional(Type.String({ minLength: 1, description: '要他登录的页面：Mac 的 nodeId' })),
   tabId: Type.Optional(Type.String({ minLength: 1, maxLength: 100, description: '和 nodeId 一起：Mac 上那个标签' })),
+  folder: Type.Optional(Type.String({ minLength: 1, maxLength: 1_000,
+    description: '和 nodeId 一起：Mac 上授权文件夹里的一个文件夹（如 ~/Downloads），多了、少了、改了文件就叫' })),
   lookFor: Type.Optional(Type.String({ minLength: 1, maxLength: 100,
     description: '等这段字出现就叫（如「已发货」）；不给就是页面有变化就叫' })),
   everyMinutes: Type.Optional(Type.Integer({ minimum: WATCH_MIN_MINUTES, maximum: 24 * 60 })),
@@ -266,16 +268,19 @@ export class LineTimers {
       create: (scope: LineScope) => ({
         name: 'watch_start', label: '盯着变化',
         description: '隔一段时间看一处，变了（或出现了 lookFor 那段字）就叫醒这条线：招聘回复、价格、发货、公告、审核。'
-          + '不用登录的网页给 url；要他登录的（招聘网站的消息页）给 Mac 的 nodeId 和那个标签的 tabId。默认 30 分钟看一次、'
+          + '不用登录的网页给 url；要他登录的（招聘网站的消息页）给 Mac 的 nodeId 和那个标签的 tabId；Mac 上的文件夹'
+          + '（下载完了没有、有没有新文件）给 nodeId 和 folder。默认 30 分钟看一次、'
           + `盯 24 小时，最密 ${WATCH_MIN_MINUTES} 分钟。不用问他；他在「在做」里看得到、能关。不用了用 watch_stop。`,
         parameters: WatchParameters,
         execute: async (callId: string, input: unknown) => {
           const args = checkedArgs(WatchParameters, input, 'watch_start');
           const tab = args.nodeId !== undefined && args.tabId !== undefined ? { nodeId: args.nodeId, tabId: args.tabId }
             : null;
-          const halfTab = (args.nodeId === undefined) !== (args.tabId === undefined);
-          if ((args.url === undefined) === (tab === null) || halfTab) {
-            throw new Error('url 和 nodeId + tabId 给一样。');
+          const folder = args.nodeId !== undefined && args.folder !== undefined
+            ? { nodeId: args.nodeId, path: args.folder } : null;
+          const given = [args.url, args.tabId, args.folder].filter((value) => value !== undefined).length;
+          if (given !== 1 || (args.nodeId === undefined) !== (args.url !== undefined)) {
+            throw new Error('url、nodeId + tabId、nodeId + folder 三样给一样。');
           }
           const { watches } = this.#deps.state.lineTimers;
           const callKey = `${scope.lineId}:${callId}`;
@@ -284,6 +289,7 @@ export class LineTimers {
           }
           const hours = args.hours ?? WATCH_DEFAULT_HOURS;
           const watch = watches.add({ lineId: scope.lineId, callKey, title: args.title, url: args.url ?? null, tab,
+            folder,
             lookFor: args.lookFor ?? null, everyMinutes: args.everyMinutes ?? WATCH_DEFAULT_MINUTES,
             untilAt: new Date(this.#deps.now().getTime() + hours * 60 * MINUTE_MS).toISOString() });
           this.#deps.changed();

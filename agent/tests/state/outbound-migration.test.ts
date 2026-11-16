@@ -38,7 +38,7 @@ test('旧确认只迁成原定时任务专用授权，历史放行保留待核�
         '0136-mate-looks', '0137-loop-message-predict', '0138-feed-places-body', '0139-souls',
         '0140-feed-more-images', '0141-drop-agreements',
         '0142-drop-agreement-history', '0143-drop-retired-history', '0144-mate-relays',
-      '0145-wakes-watches']);
+      '0145-wakes-watches', '0146-plans-pushes-connections']);
     const { outboundGrants, outboundLog } = createOutboundStores(context);
     const grant = outboundGrants.bySchedule(draft.id)!;
     assert.deepEqual(grant.scope, { kind: 'task', binding: { kind: 'schedule', id: draft.id } });

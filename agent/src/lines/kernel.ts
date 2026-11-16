@@ -24,6 +24,7 @@ import { linePrompt } from './prompt.ts';
 import { productMap } from './product-map.ts';
 import { lineReport, pauseNotice } from './reports.ts';
 import { askerOf, backwards, handoffMessage, relayOf } from './relay.ts';
+import { planTool } from './plan-tool.ts';
 import { lineResult } from './results.ts';
 import { LineRunner, type DriveMode, type DriveOutcome, type RunnerHost, type Toolset } from './runner.ts';
 import { realLater, type KernelTool, type Later, type LineScope } from './types.ts';
@@ -73,7 +74,7 @@ export class LineKernel implements LineControl, SideControl {
     const asking = (options.askTools ?? []).map((make) => make(askHost));
     this.#tools = [askUserTool(askHost), ...lineTools(this, this.#state),
       outcomeTool(this.#state), readResultTool(this.#state), ...loopTools(this.#state),
-      ...submits, ...asking, ...(options.tools ?? [])];
+      planTool(this.#state, (lineId) => this.#publishLine(lineId)), ...submits, ...asking, ...(options.tools ?? [])];
     this.#host = this.#runnerHost();
   }
 

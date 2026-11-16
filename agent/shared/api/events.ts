@@ -28,6 +28,10 @@ export const ServerEventSchema = Type.Union([
   Type.Object({ type: Type.Literal('backups_changed') }),
   // 任务栏目（《优化清单》第 3、4 条）：定时、建议变了，第二栏和主区重读。
   Type.Object({ type: Type.Literal('tasks_changed') }),
+  // 11-16 推到手机的记录：推了一条或撤回了一条；界面重读「最近」，撤回的那条系统通知收掉。
+  Type.Object({ type: Type.Literal('pushes_changed') }),
+  // 11-16 通用连接：设置里连的服务变了（加、改、测、删）。
+  Type.Object({ type: Type.Literal('connections_changed') }),
   // 第 15 条：Apple 日历和提醒事项的缓存刚从 Mac 同步过（或同步结果变了）：首页「今天」重读。
   Type.Object({ type: Type.Literal('calendar_changed') }),
   // 第 9 条：抖音收藏 / 视频解析有一条变了（同步到了、走了一步）：界面重读那一页。
