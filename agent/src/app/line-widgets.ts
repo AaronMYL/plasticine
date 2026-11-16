@@ -92,8 +92,9 @@ export function applyWidgetAnswer(widget: MessageWidget, answer: MessageWidgetAn
   afterCommit: AfterCommit): Answered {
   switch (widget.kind) {
     case 'image':
+    case 'file':
     case 'table':
-      throw new ApiError(400, 'invalid_request', '图片和表格不用作答。', { field: 'widgetId' });
+      throw new ApiError(400, 'invalid_request', '图片、文件和表格不用作答。', { field: 'widgetId' });
     case 'choice': {
       if (answer.kind !== 'choice') {
         throw wrongKind();

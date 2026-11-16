@@ -41,6 +41,8 @@ export function factsOf(action: DeviceActionParams): ActionFacts {
     case 'file_read':
     case 'file_write':
     case 'file_delete':
+    case 'file_fetch':
+    case 'file_put':
       return { actionClass, target: action.path };
     case 'run_command':
       return {
@@ -95,10 +97,22 @@ export function factsOf(action: DeviceActionParams): ActionFacts {
     case 'tab_type':
       // 只记打在哪个标签，不记打的字。
       return { actionClass, target: `标签 ${action.tabId} 打字` };
+    case 'tab_key':
+      return { actionClass, target: `标签 ${action.tabId} 按 ${action.key}` };
+    case 'tab_scroll':
+      return { actionClass, target: `标签 ${action.tabId} 在 (${action.x}, ${action.y}) 滚 ${action.dy}` };
+    case 'tab_paste':
+      // 只记粘在哪个标签，不记粘的字。
+      return { actionClass, target: `标签 ${action.tabId} 粘贴` };
+    case 'tab_show':
+      return { actionClass, target: `标签 ${action.tabId}` };
+    case 'tab_upload':
+      return { actionClass, target: `标签 ${action.tabId} 上传「${clipped(action.files.map((file) => file.name)
+        .join('、'), 80)}」（#${action.n}）` };
     case 'tab_act':
       // 记这一步的那一句和编号，不记要填的字（同 tab_fill）。
       return { actionClass, target: `标签 ${action.tabId} ${clipped(action.step, 40)}`
-        + (action.act.op === 'scroll' ? '' : `（#${action.act.n}）`) };
+        + (action.act.n === undefined ? '' : `（#${action.act.n}）`) };
   }
 }
 
@@ -117,6 +131,8 @@ function pathsOf(action: DeviceActionParams): string[] {
     case 'file_read':
     case 'file_write':
     case 'file_delete':
+    case 'file_fetch':
+    case 'file_put':
       return [action.path];
     case 'run_command':
       return [action.cwd, ...pathsInCommand(action.command)];
@@ -162,6 +178,8 @@ function scopeRefusal(action: DeviceActionParams, limits: DeviceLimits): Refusal
     case 'file_read':
     case 'file_write':
     case 'file_delete':
+    case 'file_fetch':
+    case 'file_put':
     case 'run_command': {
       const path = normalizeDevicePath(action.kind === 'run_command' ? action.cwd : action.path);
       if (path.ok && limits.roots.length > 0 && !withinRoots(path.path, limits.roots)) {

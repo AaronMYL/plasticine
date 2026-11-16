@@ -8,7 +8,7 @@ import {
   adaptLegacyTool, attachmentReadTool, conversationSearchTool, effectiveLimit, experienceTool, forgetTool,
   legacySayings, LineKernel, machineLoad, readWorkLimit, rememberTool, serverCommandTool, type Compactor,
   type DriveOutcome, type KernelOptions, type KernelTool, type Later, type MachineLoad, type ModelSource,
-  type SubmitHoldPort,
+  type SubmitHoldPort, tabHandoffTool, type AskToolHost,
 } from '../lines/index.ts';
 import type { MessageWidget } from '../../shared/api/message-widgets.ts';
 import type { LineRow, StateService } from '../state/index.ts';
@@ -37,6 +37,8 @@ export interface LegacyParts {
   submits: SubmitHoldPort;
   /** 卡片小部件：新内核要一件记到这次调用结果里的（旧的那件记进 run_events，线上没有 run）。 */
   widgets: (recorder: { shown(runId: string, callId: string, widgets: MessageWidget[]): void }) => Tool;
+  /** 包在设备动作外面的工具（往网页上传、文件在设备和服务器之间搬）：同一道权限门。 */
+  deviceTools?: (deviceAction: KernelTool) => KernelTool[];
 }
 
 export interface LineParts {
@@ -105,6 +107,13 @@ function legacyTools(parts: LineParts, legacy: LegacyParts): KernelTool[] {
 }
 
 export function assembleLines(assembly: LineAssembly, parts: LineParts): LineKernel {
+  const legacy = parts.legacy === undefined ? [] : legacyTools(parts, parts.legacy);
+  const deviceAction = legacy.find((tool) => tool.name === 'device_action');
+  const wrapped = deviceAction === undefined ? [] : parts.legacy?.deviceTools?.(deviceAction) ?? [];
+  // 请他接手一步：先把标签切到他眼前（设备动作），再出卡等他。
+  const handoff = deviceAction === undefined ? []
+    : [(host: AskToolHost): KernelTool => tabHandoffTool(host, deviceAction)];
+  const askTools = [...parts.askTools ?? [], ...handoff];
   return new LineKernel({
     state: parts.state,
     desk: parts.desk,
@@ -115,8 +124,7 @@ export function assembleLines(assembly: LineAssembly, parts: LineParts): LineKer
         parts.lineChanged?.(event.line.id);
       }
     },
-    tools: [...(parts.legacy === undefined ? [] : legacyTools(parts, parts.legacy)), ...parts.tools ?? [],
-      ...assembly.tools?.(parts) ?? []],
+    tools: [...legacy, ...wrapped, ...parts.tools ?? [], ...assembly.tools?.(parts) ?? []],
     now: parts.now,
     // 主线和旁聊按他设置里的时区分天（第 17 条）；没设按北京时间。
     zone: () => parts.state.dailySettings.read().settings.timeZone ?? DEFAULT_ZONE,
@@ -130,6 +138,6 @@ export function assembleLines(assembly: LineAssembly, parts: LineParts): LineKer
     ...(parts.reported === undefined ? {} : { reported: parts.reported }),
     ...(parts.skillsContext === undefined ? {} : { skillsContext: parts.skillsContext }),
     ...(parts.contextImages === undefined ? {} : { contextImages: parts.contextImages }),
-    ...(parts.askTools === undefined ? {} : { askTools: parts.askTools }),
+    ...(askTools.length === 0 ? {} : { askTools }),
   });
 }

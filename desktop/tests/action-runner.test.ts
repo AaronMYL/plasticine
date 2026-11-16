@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import type { NodeWireAction } from '../../agent/shared/api/index.ts';
@@ -59,6 +59,32 @@ test('读文件：UTF-8 原样、版本是字节摘要；授权目录外拒', as
   const outside = await run.execute(wire('file_read', { path: '/etc/hostname' }), LIMITS);
   assert.equal(outside.status, 'refused');
   assert.equal(outside.refusalLayer, 'device');
+});
+
+test('文件在设备和服务器之间搬：拿整份 base64、放下一份；已有的要 overwrite，旧的先进废纸篓；授权目录外拒', async (t) => {
+  const { run, dir } = runner(t);
+  const picture = Buffer.from('89504e470d0a1a0a', 'hex');
+  writeFileSync(join(dir, '图.png'), picture);
+  const fetched = await run.execute(wire('file_fetch', { path: join(dir, '图.png') }), LIMITS);
+  assert.equal(fetched.status, 'executed');
+  assert.equal(fetched.result?.base64, picture.toString('base64'));
+  assert.equal(fetched.result?.name, '图.png');
+  const put = await run.execute(wire('file_put', { path: join(dir, '表.csv'), base64: Buffer.from('a,b\n')
+    .toString('base64'), overwrite: false }), LIMITS);
+  assert.equal(put.status, 'executed');
+  assert.equal(readFileSync(join(dir, '表.csv'), 'utf8'), 'a,b\n');
+  const again = await run.execute(wire('file_put', { path: join(dir, '表.csv'), base64: Buffer.from('c\n')
+    .toString('base64'), overwrite: false }), LIMITS);
+  assert.equal(again.status, 'failed');
+  assert.match(String(again.error), /overwrite/);
+  const replaced = await run.execute(wire('file_put', { path: join(dir, '表.csv'), base64: Buffer.from('c\n')
+    .toString('base64'), overwrite: true }), LIMITS);
+  assert.equal(replaced.status, 'executed');
+  assert.equal(readFileSync(join(dir, '表.csv'), 'utf8'), 'c\n');
+  const outside = await run.execute(wire('file_fetch', { path: '/etc/hostname' }), LIMITS);
+  assert.equal(outside.status, 'refused');
+  const kinds = await run.capabilities();
+  assert.ok(kinds.includes('file_fetch') && kinds.includes('file_put') && kinds.includes('tab_upload'));
 });
 
 test('删除每次问；他点不做就拒、文件还在，点做才挪走', async (t) => {

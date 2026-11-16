@@ -62,7 +62,9 @@ test('模型拿到的工具：留下来的都在（服务器命令合成一件�
   for (const name of ['ask_user', 'start_line', 'list_lines', 'read_line', 'tell_line', 'line_pause', 'remember',
     'forget', 'schedule_propose', 'schedule_list', 'schedule_change', 'suggest',
     'server_command', 'note_append', 'read_project', 'device_action', 'cloud_browser_open', 'list_inbox', 'book_read',
-    'propose_payment', 'attachment_text', 'show_widgets', 'skill_read', 'get_time']) {
+    'propose_payment', 'attachment_text', 'show_widgets', 'skill_read', 'get_time', 'web_search', 'web_fetch',
+    'file_save', 'reply_files', 'tab_upload', 'device_file_get', 'device_file_put', 'tab_handoff',
+    'line_wake_later', 'watch_start', 'watch_stop']) {
     assert.ok(seen.includes(name), `有 ${name}`);
   }
   for (const name of ['create_task', 'delegate_task', 'dispatch', 'plan_task', 'list_tasks', 'control_task',

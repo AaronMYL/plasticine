@@ -71,7 +71,8 @@ export interface ActionRunnerDeps {
 }
 
 const TAB_KINDS = new Set<DeviceActionKind>(['tab_list', 'tab_read', 'tab_open', 'tab_navigate', 'tab_click',
-  'tab_fill', 'tab_perceive', 'tab_act', 'tab_shot', 'tab_point', 'tab_type', 'tab_close', 'tab_wait']);
+  'tab_fill', 'tab_perceive', 'tab_act', 'tab_shot', 'tab_point', 'tab_type', 'tab_close', 'tab_wait', 'tab_key',
+  'tab_scroll', 'tab_paste', 'tab_show', 'tab_upload']);
 
 function refused(error: string): NodeActionResultRequest {
   return { status: 'refused', refusalLayer: 'device', error };
@@ -95,7 +96,7 @@ export class DeviceActionRunner implements ActionRunner {
     const fromHelper = await this.deps.helper.capabilities();
     const kinds: DeviceActionKind[] = ['browser_open', 'browser_read', 'app_open', ...fromHelper];
     if (fromHelper.includes('file_list')) {
-      kinds.push('file_delete');
+      kinds.push('file_delete', 'file_fetch', 'file_put');
     }
     if (this.deps.tabs.available()) {
       kinds.push(...TAB_KINDS);

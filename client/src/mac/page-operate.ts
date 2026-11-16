@@ -8,7 +8,8 @@
 //                       自己一动，编号就全作废，发送永远点不上）。最近几版的编号都留着，按当时那一版找节点；
 //                       节点没了、藏了、名字变了，或换了页，就是 stale，要重新感知。
 //   { op: 'act', version, act, allowSubmit }  按编号做一下：click 点、fill 填、select 选、enter 在框里回车、
-//                       scroll 翻页。做之前把页面上的蓝灰光点（--run）移到那个元素上。
+//                       scroll 翻页（带编号就在那个编号所在的那一块里面滚）。做之前把蓝灰光点（--run）移到那个元素上。
+//   { op: 'mark', version, n, nonce }  上传前给这个编号（或它管着的文件框）打记号（11-16 tab_upload）。
 // 硬线在这里拦（不靠提示词）：这一下是「提交」（付款、发帖 / 发消息、删除、改设置、一般的表单提交）而 allowSubmit
 // 不是 true，就不做，回 { ok: false, error: 'submit', submit: { kind, label } }。allowSubmit 只有云端核对过他在
 // 要你定卡上选了「提交」才给（agent/src/devices/page-submits.ts）。密码框不填（error 'password'），像银行卡号的
@@ -57,7 +58,7 @@ const SEARCH_NAMES = /^(?:q|query|wd|kw|keyword|keywords|search|s|word)$/i;
 // 没写成按钮、靠 cursor:pointer 能点的一行（会话列表、卡片）：字多的是一整行内容，不按字判提交。
 const ROW_NAME_MAX = 12;
 const ROLE_NAMES = { link: '链接', button: '按钮', textbox: '输入框', checkbox: '勾选框', radio: '单选', combobox: '下拉框',
-  switch: '开关', tab: '标签', menuitem: '菜单项', option: '选项' };
+  switch: '开关', tab: '标签', menuitem: '菜单项', option: '选项', file: '上传框（用 tab_upload）' };
 
 const clip = (text, max) => {
   const flat = String(text || '').replace(/\s+/g, ' ').trim();
@@ -134,6 +135,9 @@ const roleOf = (el) => {
     }
     if (['submit', 'button', 'reset', 'image'].includes(type)) {
       return 'button';
+    }
+    if (type === 'file') {
+      return 'file';
     }
     return 'textbox';
   }
@@ -354,8 +358,13 @@ const pointerRoot = (el) => {
   return el.getBoundingClientRect().height <= window.innerHeight * 0.6;
 };
 
+// 管着一个藏起来的文件框的 label（「上传简历」）也编号：上传要点的是它（11-16 tab_upload）。
+const uploadLabel = (el, layout) => el.tagName === 'LABEL' && el.control
+  && String(el.control.type).toLowerCase() === 'file' && !visible(el.control, layout);
+
 const candidates = (layout) => {
-  const interactive = Array.from(doc.querySelectorAll(INTERACTIVE));
+  const interactive = Array.from(doc.querySelectorAll(INTERACTIVE + ', label'))
+    .filter((el) => el.tagName !== 'LABEL' || uploadLabel(el, layout));
   if (!layout || !doc.body) {
     return interactive;
   }
@@ -602,6 +611,42 @@ const pressEnter = (el) => {
   el.dispatchEvent(new KeyboardEvent('keyup', options));
 };
 
+const scrollArea = (el) => {
+  for (let node = el; node && node !== doc.documentElement; node = node.parentElement) {
+    const style = getComputedStyle(node);
+    if (/(auto|scroll|overlay)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) {
+      return node;
+    }
+  }
+  return null;
+};
+
+/**
+ * 上传前认一下这个编号（11-16 tab_upload）：是文件框就给它打记号，原生层按记号把文件放进去；是「上传」按钮，找它
+ * 管着的文件框（label 的 control、里面的文件框），找不到就回它的中心，原生层可信点击后接住弹出的「选择文件」。
+ */
+const markForUpload = (request) => {
+  const numbering = store.numberings.find((item) => item.version === request.version);
+  if (!numbering || numbering.url !== location.href) {
+    return { found: false, error: 'stale' };
+  }
+  const el = numbering.elements[Number(request.n) - 1];
+  if (!el || !el.isConnected) {
+    return { found: false, error: 'stale' };
+  }
+  const isFile = (node) => node && node.tagName === 'INPUT' && String(node.type).toLowerCase() === 'file';
+  const input = isFile(el) ? el : isFile(el.control) ? el.control
+    : el.querySelector ? el.querySelector('input[type=file]') : null;
+  const target = input || el;
+  target.setAttribute('data-plasticine-upload', String(request.nonce));
+  pointAt(el);
+  const rect = el.getBoundingClientRect();
+  const center = rect.width > 0 && rect.height > 0
+    ? { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) } : null;
+  return { found: true, file: Boolean(input), multiple: Boolean(input && input.multiple),
+    accept: input ? String(input.accept || '') : '', role: roleOf(el), name: nameOf(el), center };
+};
+
 const act = (request) => {
   const step = request.act || {};
   // 按脑手里那一版的编号找节点：那一版还留着、地址没换。
@@ -609,7 +654,7 @@ const act = (request) => {
   if (!numbering || numbering.url !== location.href) {
     return { ok: false, error: 'stale' };
   }
-  if (step.op === 'scroll') {
+  if (step.op === 'scroll' && step.n === undefined) {
     const dy = Number(step.dy) || 0;
     window.scrollBy(0, dy);
     const mark = dot();
@@ -618,6 +663,21 @@ const act = (request) => {
     return { ok: true, op: 'scroll' };
   }
   const el = numbering.elements[Number(step.n) - 1];
+  if (step.op === 'scroll') {
+    // 在某一块里面滚（会话列表、弹窗里的长列表）：从这个编号往外找第一层能滚的。
+    if (!el || !el.isConnected) {
+      return { ok: false, error: 'stale' };
+    }
+    const area = scrollArea(el);
+    if (!area) {
+      return { ok: false, error: 'unscrollable' };
+    }
+    const from = area.scrollTop;
+    area.scrollTop = from + (Number(step.dy) || 0);
+    pointAt(el);
+    return { ok: true, op: 'scroll', target: { n: Number(step.n), role: roleOf(el), name: nameOf(el) },
+      matches: area.scrollTop !== from };
+  }
   if (!el || !el.isConnected || hiddenByStyle(el)) {
     return { ok: false, error: 'stale' };
   }
@@ -695,5 +755,8 @@ if (request.op === 'at') {
 }
 if (request.op === 'act') {
   return JSON.stringify(act(request));
+}
+if (request.op === 'mark') {
+  return JSON.stringify(markForUpload(request));
 }
 return JSON.stringify({ ok: false, error: 'op' });`;

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { DeviceActionParams } from '../../shared/api/index.ts';
+import { Value } from 'typebox/value';
+import { DeviceActionParamsSchema, type DeviceActionParams } from '../../shared/api/index.ts';
 import { classifyLane } from '../../src/devices/index.ts';
 
 function lane(action: DeviceActionParams, purpose = '日常操作'): string {
@@ -79,4 +80,20 @@ test('问这一页操作整页（第 3 批）：提交不在这里关死而是�
   assert.equal(lane(act('138 0000 2046'), '填报名表'), 'allow');
   assert.equal(lane(act('4111 1111 1111 1111'), '填报名表'), 'deny');
   assert.equal(lane({ kind: 'tab_perceive', tabId: 't1' }, '看看付款页'), 'allow');
+});
+
+test('11-16 新动作：证件、银行卡照片上传先问；粘贴像卡号的关死；回车不在能按的键里', () => {
+  const file = (name: string) => ({ name, mimeType: 'image/png', base64: 'iVBORw0K' });
+  assert.equal(lane({ kind: 'tab_upload', tabId: 't', version: 'v', n: 1, files: [file('身份证正面.png')] }), 'confirm');
+  assert.equal(lane({ kind: 'tab_upload', tabId: 't', version: 'v', n: 1, files: [file('passport.png')] }), 'confirm');
+  assert.equal(lane({ kind: 'tab_upload', tabId: 't', version: 'v', n: 1, files: [file('文章配图.png')] }), 'allow');
+  assert.equal(lane({ kind: 'tab_paste', tabId: 't', text: '卡号 4111 1111 1111 1111', html: null }), 'deny');
+  assert.equal(lane({ kind: 'tab_paste', tabId: 't', text: '正文第一段', html: '<p>正文第一段</p>' }), 'allow');
+  assert.equal(lane({ kind: 'file_fetch', path: '~/.ssh/id_ed25519' }), 'confirm');
+  for (const key of ['Escape', 'Shift+Tab', 'Meta+A', 'ArrowDown', 'Space']) {
+    assert.ok(Value.Check(DeviceActionParamsSchema, { kind: 'tab_key', tabId: 't', key }), key);
+  }
+  for (const key of ['Enter', 'Meta+Enter', 'F5', 'a+b']) {
+    assert.ok(!Value.Check(DeviceActionParamsSchema, { kind: 'tab_key', tabId: 't', key }), key);
+  }
 });

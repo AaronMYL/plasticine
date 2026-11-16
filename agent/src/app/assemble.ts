@@ -24,21 +24,8 @@ import { createNoteTools } from '../notes/index.ts';
 import { createPaymentTool, MoneyDraftDesk, PaymentReader } from '../life/index.ts';
 import { createSkillTools, SkillShop, SkillStore, type SkillShopOptions } from '../skills/index.ts';
 import { projectTools } from '../projects/index.ts';
-import {
-  AskDesk,
-  Notices,
-  Presenter,
-  MessageAlerts,
-  Presence,
-  ProjectWatch,
-  PushService,
-  readNotifyKinds,
-  routeAsks,
-  ScanScheduler,
-  type AskResolver,
-  type PushTransport,
-  type VapidKeys,
-} from '../attention/index.ts';
+import { AskDesk, Notices, Presenter, MessageAlerts, Presence, ProjectWatch, PushService, readNotifyKinds, routeAsks,
+  ScanScheduler, type AskResolver, type PushTransport, type VapidKeys } from '../attention/index.ts';
 import { bookmarkTrigger, deviceTrigger, ensureIntake, feedTrigger, IntakeDesk, mailTrigger, ruleGoal,
   type RecordInput } from '../intake/index.ts';
 import { kernelText, type Illustrator, type TextModels } from '../kernel/index.ts';
@@ -67,6 +54,9 @@ import { messageTools } from './message-tools.ts';
 import { linePort } from './subscriptions.ts';
 import { ensureReviewSubscription, SampleCards, subsTools } from '../subs/index.ts';
 import { libraryTools } from '../library/index.ts';
+import { assembleFileTools, deviceFileOf } from './file-tools.ts';
+import { deviceFileTools } from './device-file-tools.ts';
+import { assembleLineTimers } from './assemble-line-timers.ts';
 import { scanDiskNotice } from './disk-notice.ts';
 import { reportAnnouncement } from './report-announcement.ts';
 import { createNetwork } from './assemble-network.ts';
@@ -341,6 +331,7 @@ export function assembleApp(options: AssembleOptions): App {
     idleWait({ state, now, sleep: (ms, signal) => sleepFor(realLater, ms, signal), whoOf: (mateId) =>
       (mateId === null ? mainIdentity(state).name : state.mates.get(mateId)?.name ?? '队友'),
     post: (input) => notices.post(input) }), devices.waits);
+  const lineTimers = assembleLineTimers({ state, now, hub, lines: () => late.get(), devices: devices.actions });
   const lines = assembleLines(options.lines, { state, desk, hub, now, publicUrl,
     skillsContext: (lineId) => skills.context(`line:${lineId}`),
     lineChanged: (lineId) => network.lineChanged(lineId),
@@ -351,6 +342,7 @@ export function assembleApp(options: AssembleOptions): App {
       heartbeatChecklistTool(() => timed.heartbeat),
       ...libraryTools({ state, workspace: toolGroups.artifacts.workspace },
         (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
+      ...assembleFileTools(state, toolGroups.artifacts.workspace), ...lineTimers.tools(),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。
       ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId), {
         illustrator,
@@ -363,7 +355,9 @@ export function assembleApp(options: AssembleOptions): App {
     askTools: tasks.askTools(),
     legacy: { registry, permission, dryRun: options.dryRun, sshAvailable: toolGroups.cloud.transportAvailable.ssh,
       submits: devices.actions,
-      widgets: (recorder) => createShowWidgetsTool(createWidgetFacts(state, toolGroups.life), recorder) },
+      widgets: (recorder) => createShowWidgetsTool(createWidgetFacts(state, toolGroups.life), recorder),
+      deviceTools: (deviceAction) => deviceFileTools(deviceAction, toolGroups.artifacts.workspace,
+        (actionId) => deviceFileOf(state, actionId)) },
     turnEnded: (line, outcome) => {
       // 第13批：他自己发起的那一轮回完了（主线、队友、群组、旁聊）：通知「谁 + 回复开头」。
       const alert = outcome === 'done' ? lineReplyAlert(state, line) : null;
@@ -479,6 +473,7 @@ export function assembleApp(options: AssembleOptions): App {
     network,
     lines,
     tasks,
+    lineTimers,
     video,
     heartbeat: timed.heartbeat,
     calendar,

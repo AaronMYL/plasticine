@@ -26,6 +26,17 @@ describe('任务栏目', () => {
     await waitFor(() => expect(screen.queryByText('同步抖音收藏')).toBeNull());
   });
 
+  it('进行中下面列出回来看和盯着：没看成的写原因；关掉就没了', async () => {
+    const app = await renderApp({ hash: '#/tasks', setup: ({ control }) => seedTasks(control.tasks, NOW) });
+    const list = await screen.findByRole('region', { name: '回来看和盯着' });
+    expect(within(list).getByText('看示例科技的 HR 回了没')).toBeTruthy();
+    expect(within(list).getByText('上次没看成：这次没读到那个标签（Mac 不在线或标签关了）。')).toBeTruthy();
+    const row = within(list).getByText('示例大学官网的招生公告').closest('li') as HTMLElement;
+    fireEvent.click(within(row).getByRole('button', { name: '关掉' }));
+    await waitFor(() => expect(screen.queryByText('示例大学官网的招生公告')).toBeNull());
+    expect((await app.api.tasks.board({})).timers?.map((timer) => timer.id)).toEqual(['wake-hr', 'watch-reply']);
+  });
+
   it('定时：点开一行出右侧弹层，写做什么、下次、上次', async () => {
     await renderApp({ hash: '#/tasks/timed', setup: ({ control }) => seedTasks(control.tasks, NOW) });
     // 心跳有自己的弹层（heartbeat-sheet.test.tsx）；没登记弹层的（做梦）用默认的。

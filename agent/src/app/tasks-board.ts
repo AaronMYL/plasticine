@@ -103,5 +103,8 @@ export function tasksBoard(deps: AppDeps, projectId: string | null): TasksBoardR
     ideas: parts.ideas.map(suggestionView),
     teammates: parts.teammates,
     projects,
+    // 回来看、盯着按线算项目：项目页只给这个项目的线上的。
+    timers: (deps.lineTimers?.views() ?? []).filter((timer) => projectId === null
+      || deps.state.lines.get(timer.lineId)?.projectId === projectId),
   };
 }

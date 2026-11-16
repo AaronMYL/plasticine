@@ -1,4 +1,5 @@
 // artifacts/: 文件页的工作目录（状态目录里的 files/）。文件只在 files/ 和 files-trash/ 里动，路径不出状态目录。
+// 11-16 加 file_save / reply_files：Plasticine 存文件进文件页、把文件页里的文件发给他。
 // 2026-11-05 他定：成果页删掉，成果迁进笔记里「Plasticine 写的」文件夹（迁移 0059）；成果的登记、版本、核实一起删了。
 
 import { Workspace } from './workspace.ts';
@@ -6,6 +7,8 @@ import { Workspace } from './workspace.ts';
 export { ARTIFACT_ERROR_CODES, ArtifactError } from './errors.ts';
 export type { ArtifactErrorCode } from './errors.ts';
 export { checkUpload, contentTypeOf, FILE_TYPES, INLINE_TYPES } from './file-types.ts';
+export { fileTools, REPLY_FILES_MAX, saveFile } from './file-tools.ts';
+export type { Downloaded, FileToolParts } from './file-tools.ts';
 export {
   checkName,
   DOWNLOAD_MAX_BYTES,

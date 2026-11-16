@@ -1,8 +1,8 @@
 // 本地开发和截图的任务栏目（设计稿 Tasks-Run、Tasks-Timed、Tasks-Ideas、Plasticine-Schedule）：定时七行、队友五位、
 // 建议四张；?scene=tasks 换上稿子里的在做三条和刚做完两条；?scene=schedule 是主线里那张抖音续火花的定时卡。
 
-import { STANDING_PROJECT_IDS, type LineView, type SuggestionView, type TeammateView, type TimedRowView }
-  from '../shared.ts';
+import { STANDING_PROJECT_IDS, type LineView, type SuggestionView, type TeammateView, type TimedRowView,
+  type TimerView } from '../shared.ts';
 import type { AskSeed } from './fake-asks.ts';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 import type { FakeTasks } from './fake-tasks.ts';
@@ -86,8 +86,22 @@ export function ideasSeed(now: Date): SuggestionView[] {
   ];
 }
 
+/** 回来看和盯着（11-16）：一条约好回来看的、两处盯着的（一处上次没看成）。 */
+export function timersSeed(now: Date): TimerView[] {
+  const later = (minutes: number): string => new Date(now.getTime() + minutes * 60_000).toISOString();
+  return [
+    { id: 'watch-notice', kind: 'watch', lineId: 'line-weekly', lineTitle: '研究周报 · 第 3 期',
+      title: '示例大学官网的招生公告', nextAt: later(12), checks: 6, lastError: null },
+    { id: 'wake-hr', kind: 'wake', lineId: 'line-rules', lineTitle: '海投打招呼 3 份', title: '看示例科技的 HR 回了没',
+      nextAt: later(25), checks: 0, lastError: null },
+    { id: 'watch-reply', kind: 'watch', lineId: 'line-rules', lineTitle: '海投打招呼 3 份',
+      title: '招聘网站消息页有没有新回复', nextAt: later(40), checks: 3,
+      lastError: '这次没读到那个标签（Mac 不在线或标签关了）。' },
+  ];
+}
+
 export function seedTasks(tasks: FakeTasks, now: Date): void {
-  tasks.seed({ timed: timedSeed(now), teammates: teammatesSeed(), ideas: ideasSeed(now) });
+  tasks.seed({ timed: timedSeed(now), teammates: teammatesSeed(), ideas: ideasSeed(now), timers: timersSeed(now) });
   tasks.heartbeats.seed(now);
 }
 

@@ -21,6 +21,7 @@ import { Devices } from './devices-block.tsx';
 import { InstallSection } from './install-section.tsx';
 import { ModelsSection } from '../models/models-section.tsx';
 import { SearchEngineSection } from './search-engine-section.tsx';
+import { WebSearchSection } from './web-search-section.tsx';
 import { SystemSection } from './system-section.tsx';
 import { TimeZoneSection } from './time-zone-section.tsx';
 import { TranslateSettingsSection } from './translate-settings-section.tsx';
@@ -61,7 +62,10 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
         <InstallSection />
       </>;
     case 'ai':
-      return <ModelsSection />;
+      return <>
+        <ModelsSection />
+        <Spot name="web-search"><WebSearchSection /></Spot>
+      </>;
     case 'browser':
       return <>
         <SearchEngineSection />

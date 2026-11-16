@@ -10,8 +10,8 @@ import { WEB_PAGE_TEXT_MAX_CHARS } from '../../../agent/shared/api/mac-bridge.ts
 import { browserHost } from '../../../client/src/mac/translate-page-host.ts';
 import { installPageTranslator, type PageTranslator } from '../../../client/src/mac/translate-page.ts';
 import { TAB_CHANNELS } from '../app/channels.ts';
-import { clickMarked, fillMarked, focusedFacts, hasText, locate, markedCenter, pageState, readPage, viewportSize,
-  visibleText } from './tab-dom.ts';
+import { clickMarked, fillMarked, focusedFacts, focusIsButton, hasText, locate, markedCenter, pageState, pasteInto,
+  readPage, scrollPosition, viewportSize, visibleText } from './tab-dom.ts';
 
 interface Call {
   id: string;
@@ -58,6 +58,12 @@ async function run(call: Call): Promise<unknown> {
       return focusedFacts(document);
     case 'contains':
       return hasText(document, String(args.text ?? ''));
+    case 'scrolled':
+      return scrollPosition(document, Number(args.x ?? 0), Number(args.y ?? 0));
+    case 'focus-button':
+      return focusIsButton(document);
+    case 'paste':
+      return pasteInto(document, String(args.text ?? ''), typeof args.html === 'string' ? args.html : null);
     case 'operate':
       return JSON.parse(await pageOperate(args.request)) as unknown;
     case 'circle': {

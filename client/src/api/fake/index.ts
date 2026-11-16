@@ -5,6 +5,8 @@ import { seedMemoryScene } from './memory-scene-seed.ts';
 import { seedOfferScene } from './offer-seed.ts';
 import { seedTeamScene } from './team-scene-seed.ts';
 import { seedAsksScene } from './asks-scene-seed.ts';
+import { seedFilesScene } from './files-scene-seed.ts';
+import { FakeWebSearch } from './fake-web-search.ts';
 import { seedRelayScene } from './relay-scene-seed.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
@@ -167,6 +169,11 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   }
   // ?scene=asks：主线只放这一场的话（asks-scene-seed.ts），不混进别的样子。
   if (scene === 'asks') {
+    return;
+  }
+  // ?scene=files：回答下面挂着发给他的表和截图（files-scene-seed.ts）。
+  if (scene === 'files') {
+    seedFilesScene(lines, deps.attachments, now);
     return;
   }
   if (scene === 'schedule') {
@@ -377,6 +384,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     lines,
     tasks,
     modelProviders,
+    webSearch: new FakeWebSearch(session, now),
     search: new FakeSearch({ session, notes, lines, memoryTopics, feed, bookmarks, now, spaces, books }),
     systems,
     translate: new FakeTranslate(session, modelProviders),

@@ -56,6 +56,21 @@ describe('新对话的来源和选文引用', () => {
       & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('发来的文件（reply_files）和他发的附件一样画：表格一行，点开能预览', async () => {
+    await renderApp({ hash: '#/messages/plasticine', setup({ control }) {
+      const csv = Buffer.from('公司,状态\n示例科技,已读\n').toString('base64');
+      control.attachments.seedImage('att-sent-csv', '投递记录.csv', 'text/csv', csv);
+      control.lines.record(MAIN_LINE_ID, { ...message('assistant', '表在这里。'), stopReason: 'toolUse',
+        steps: [{ toolCallId: 'files', tool: 'reply_files', say: '发给你 1 个文件' }] });
+      control.lines.record(MAIN_LINE_ID, { ...message('toolResult', '已发'), toolCallId: 'files',
+        tool: 'reply_files', ok: true, widgets: [{ kind: 'file', id: 'w-csv', attachmentId: 'att-sent-csv',
+          name: '投递记录.csv', mimeType: 'text/csv', bytes: 24, path: '求职/投递记录.csv' }] });
+      control.lines.record(MAIN_LINE_ID, message('assistant', ''));
+    } });
+    const row = await screen.findByRole('button', { name: '预览文件 投递记录.csv' });
+    expect(screen.getByText('表在这里。').compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('委派为折叠记录，只有本人使用气泡；搜索署名一致', async () => {
     await open();
     expect((await screen.findByText('愿意长期读书。')).closest('.msg-user')).not.toBeNull();

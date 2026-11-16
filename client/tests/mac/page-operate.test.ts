@@ -271,6 +271,45 @@ describe('按编号操作', () => {
   });
 });
 
+describe('区域里滚和上传前打记号（11-16）', () => {
+  it('带编号的 scroll 在那个编号所在的那一块里面滚，不滚整页', async () => {
+    document.body.innerHTML = '<div id="list" style="overflow-y: auto"><a href="/c/1">示例会话甲</a>'
+      + '<a href="/c/2">示例会话乙</a></div>';
+    const list = document.getElementById('list')!;
+    let top = 0;
+    Object.defineProperty(list, 'scrollHeight', { value: 900 });
+    Object.defineProperty(list, 'clientHeight', { value: 300 });
+    Object.defineProperty(list, 'scrollTop', { get: () => top, set: (value: number) => { top = value; } });
+    const { version, n } = await numberOf('示例会话甲');
+    const done = await run({ op: 'act', version, act: { op: 'scroll', n, dy: 400 } });
+    expect(done).toMatchObject({ ok: true, op: 'scroll', matches: true, target: { n, name: '示例会话甲' } });
+    expect(top).toBe(400);
+    const flat = await run({ op: 'act', version, act: { op: 'scroll', n, dy: 0 } });
+    expect(flat).toMatchObject({ ok: true, matches: false });
+  });
+
+  it('没有能滚的一块说清楚', async () => {
+    document.body.innerHTML = '<a href="/a">示例链接</a>';
+    const { version, n } = await numberOf('示例链接');
+    expect(await run({ op: 'act', version, act: { op: 'scroll', n, dy: 300 } }))
+      .toMatchObject({ ok: false, error: 'unscrollable' });
+  });
+
+  it('mark：「上传」按钮找到它管着的文件框打记号；不是文件框的按钮记它自己', async () => {
+    document.body.innerHTML = '<label>上传简历<input type="file" accept=".pdf" style="display:none"></label>'
+      + '<button type="button">选择图片</button>';
+    const label = await numberOf('上传简历');
+    const marked = await run({ op: 'mark', version: label.version, n: label.n, nonce: 'nonce-1' });
+    expect(marked).toMatchObject({ found: true, file: true, accept: '.pdf', multiple: false });
+    expect(document.querySelector('input[type=file]')?.getAttribute('data-plasticine-upload')).toBe('nonce-1');
+    const button = await numberOf('选择图片');
+    expect(await run({ op: 'mark', version: button.version, n: button.n, nonce: 'nonce-2' }))
+      .toMatchObject({ found: true, file: false });
+    expect(document.querySelector('button')?.getAttribute('data-plasticine-upload')).toBe('nonce-2');
+    expect(await run({ op: 'mark', version: 'old', n: 1, nonce: 'x' })).toMatchObject({ found: false, error: 'stale' });
+  });
+});
+
 describe('Mac 带的和这里一样', () => {
   it('Mac 的 Swift 原样带着这一段（iOS 工程 2026-11-05 删了）', () => {
     for (const path of ['../../../mac/Sources/Plasticine/page-operate-script.swift']) {

@@ -34,6 +34,8 @@ export interface TaskActions {
   setEnabled(rowId: string, on: boolean): Promise<void>;
   remove(rowId: string): Promise<void>;
   stopTeammate(teammateId: string): Promise<void>;
+  /** 关掉一条「回来看」或「盯着」。 */
+  stopTimer(id: string): Promise<void>;
   suggestion(id: string, action: SuggestionAction): Promise<string | null>;
 }
 
@@ -66,6 +68,9 @@ export function useTaskActions(reload: () => void): TaskActions {
     },
     async stopTeammate(teammateId) {
       await run(teammateId, () => api.tasks.stopTeammate({ requestId: createRequestId(), teammateId }));
+    },
+    async stopTimer(id) {
+      await run(id, () => api.tasks.stopTimer({ requestId: createRequestId(), id }));
     },
     async suggestion(id, action) {
       const result = await run(id, () => api.tasks.suggestion(id, action, { requestId: createRequestId() }));

@@ -46,6 +46,7 @@ import { createMoneyStores } from './money.ts';
 import { createGroupStores } from './groups.ts';
 import { createNetworkTaskStores } from './network-tasks.ts';
 import { createNetworkStores } from './network.ts';
+import { createLineTimerStores } from './line-timers.ts';
 import { createNodeActionStore } from './node-actions.ts';
 import { createNodePairingCodeStore } from './node-pairing-codes.ts';
 import { createNodeStore } from './nodes.ts';
@@ -178,6 +179,8 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     ...createMoneyStores(context),
     ...createInboxStores(context),
     toolGroups: createToolGroupStore(context),
+    // 11-16：线到点自己回来看、盯着变化（迁移 0145）。
+    lineTimers: createLineTimerStores(context),
     // 通知信的开关（用户 2026-11-01 定的「邮件兜底」，现在管项目逾期 / 停滞提醒信）。
     // 沉浸式翻译（2026-11-03 第 2 批）：设置一行和译文缓存。
     translateSettings: createTranslateSettingsStore(context),

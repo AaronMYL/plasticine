@@ -42,6 +42,15 @@ export const DEVICE_ACTION_KINDS = [
   // 11-16：关掉 Plasticine 自己开的标签；等页面上某段字出现或消失（代替一遍遍读）。
   'tab_close',
   'tab_wait',
+  // 11-16 能力总表：按键和组合键、按画面位置滚、带格式粘贴、把标签提到前面让他接手一步、往上传框放文件；
+  // 文件在设备和服务器之间搬（设备上的一份拿到服务器、服务器的一份放到设备上）。
+  'tab_key',
+  'tab_scroll',
+  'tab_paste',
+  'tab_show',
+  'tab_upload',
+  'file_fetch',
+  'file_put',
   // 第 102 条第 4 批：iPhone 的手（日历与提醒事项、相册、快捷指令、位置；文件沿用上面的 file_* 三种）。
   'calendar_list',
   'calendar_create',

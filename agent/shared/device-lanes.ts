@@ -43,6 +43,8 @@ const PAYMENT_TARGET = new RegExp('checkout|place[-_\\s]?order|submit[-_\\s]?ord
 const CARD_FIELD = new RegExp('\\bcc-(?:number|csc|exp|exp-month|exp-year|name|type)\\b|card[-_]?(?:number|no)|'
   + '\\bcvv\\b|\\bcvc\\b|卡号|安全码|有效期', 'i');
 // 密码框：type=password，或 name / id 里写着密码。
+/** 像证件、银行卡照片的文件名（上传前问他）。 */
+const ID_PHOTO = /身份证|护照|驾驶证|驾照|银行卡|社保卡|户口|id[-_ ]?card|passport|driver'?s?[-_ ]?licen[cs]e|bank[-_ ]?card/i;
 const PASSWORD_FIELD = /type\s*=\s*["']?password|passw(?:or)?d|\bpwd\b|passcode|密码|口令/i;
 // 13–19 位卡号（允许空格、连字符分组），再过 Luhn 校验。
 const CARD_NUMBER = /(?:\d[ -]?){13,19}/g;
@@ -154,6 +156,9 @@ function paymentLane(action: DeviceActionParams, purpose: string): LaneDecision 
     case 'tab_point':
       // 11-16：按位置点在设备上先认出点到的元素，像付款、发出去、删除、改设置的一律不点（tab-actions.ts）。
       return saysPayment ? deny('用途是付款、下单或转账') : null;
+    case 'tab_paste':
+      if (hasCardNumber(action.text)) { return deny('要粘的像银行卡号'); }
+      return saysPayment ? deny('用途是付款、下单或转账') : null;
     case 'tab_act':
       // 第 3 批（他定）：问这一页里付款、发帖、删除、改设置先问他，不关死——注入脚本按真实元素判出提交就不点，
       // 放行只凭他在要你定卡上选了提交（page-submits.ts）。卡号由他自己填，像卡号的字照旧关死。
@@ -177,7 +182,12 @@ function secretLane(action: DeviceActionParams, purpose: string): LaneDecision |
     case 'file_read':
     case 'file_write':
     case 'file_delete':
+    case 'file_fetch':
+    case 'file_put':
       return SECRET_PATHS.some((pattern) => pattern.test(action.path)) ? confirm('碰到钥匙串、密码或密钥文件') : null;
+    case 'tab_upload':
+      // 能力总表：身份证、银行卡这类照片先问他（看文件名认）。
+      return action.files.some((file) => ID_PHOTO.test(file.name)) ? confirm('要上传的像证件或银行卡的照片') : null;
     case 'run_command':
       if (PRIVILEGED_COMMANDS.some((pattern) => pattern.test(action.command))) {
         return confirm('命令会读密码或改系统设置');

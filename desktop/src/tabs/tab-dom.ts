@@ -315,7 +315,8 @@ export function hasText(doc: Document, text: string): { found: boolean } {
 export function focusedFacts(doc: Document): { tag: string; editable: boolean; password: boolean; card: boolean;
   text: string } {
   const element = doc.activeElement as (HTMLElement & { value?: unknown }) | null;
-  if (element === null || element === doc.body) {
+  // 编辑器整个 body 可编辑（iframe 里的正文区）时 body 就是焦点。
+  if (element === null || element === doc.body && !element.isContentEditable) {
     return { tag: '', editable: false, password: false, card: false, text: '' };
   }
   const tag = element.tagName.toLowerCase();
@@ -328,4 +329,85 @@ export function focusedFacts(doc: Document): { tag: string; editable: boolean; p
     'button', 'submit', 'reset', 'image', 'file', 'hidden'].includes(type);
   const value = typeof element.value === 'string' ? element.value : element.innerText;
   return { tag, editable, password, card, text: password ? '' : clip(value ?? '', TYPED_TEXT_CHARS) };
+}
+
+/** 读回粘贴结果时比开头这么多字（排版会把空白换掉，只比去掉空白后的开头）。 */
+const PASTE_MATCH_CHARS = 40;
+
+/** 焦点所在的那一层文档：编辑器常在同源的 iframe 里（公众号的正文编辑区），跟着焦点往里走。 */
+function focusedDocument(doc: Document): Document {
+  let current = doc;
+  for (;;) {
+    const active = current.activeElement;
+    if (!(active instanceof HTMLIFrameElement)) {
+      return current;
+    }
+    let inner: Document | null = null;
+    try {
+      inner = active.contentDocument;
+    } catch (error) {
+      // 跨站的 iframe 读不了，焦点就算在外层。
+      if (!(error instanceof DOMException)) throw error;
+    }
+    if (inner === null) {
+      return current;
+    }
+    current = inner;
+  }
+}
+
+function squash(text: string): string {
+  return text.replace(/\s+/g, '');
+}
+
+/**
+ * 往焦点里粘贴（11-16 tab_paste）：发一次带着 HTML 和纯文字的 paste 事件，编辑器自己接住就照它的排版来（handled）；
+ * 没人接住，可编辑区插 HTML、输入框插纯文字。不碰系统剪贴板。密码框、卡号框不粘。
+ */
+export function pasteInto(doc: Document, text: string, html: string | null): { tag: string; editable: boolean;
+  password: boolean; card: boolean; handled: boolean; matches: boolean } {
+  const inner = focusedDocument(doc);
+  const facts = focusedFacts(inner);
+  const element = inner.activeElement as (HTMLElement & { value?: unknown }) | null;
+  if (!facts.editable || facts.password || facts.card || element === null) {
+    return { tag: facts.tag, editable: facts.editable, password: facts.password, card: facts.card, handled: false,
+      matches: false };
+  }
+  const data = new DataTransfer();
+  data.setData('text/plain', text);
+  if (html !== null) data.setData('text/html', html);
+  const event = new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true });
+  const handled = !element.dispatchEvent(event);
+  if (!handled) {
+    if (element.isContentEditable) {
+      inner.execCommand(html === null ? 'insertText' : 'insertHTML', false, html ?? text);
+    } else if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+      element.setRangeText(text, element.selectionStart ?? element.value.length,
+        element.selectionEnd ?? element.value.length, 'end');
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+  const after = focusedFacts(focusedDocument(doc));
+  return { tag: facts.tag, editable: true, password: false, card: false, handled,
+    matches: squash(after.text).includes(squash(text).slice(0, PASTE_MATCH_CHARS)) };
+}
+
+/** 这个位置上能滚的各层现在滚到哪（加起来，外加整页）：tab_scroll 前后比一下，看滚没滚动。 */
+export function scrollPosition(doc: Document, x: number, y: number): { position: number } {
+  let total = doc.defaultView?.scrollY ?? 0;
+  for (let node = doc.elementFromPoint(x, y); node !== null; node = node.parentElement) {
+    total += node.scrollTop;
+  }
+  return { position: total };
+}
+
+/** 焦点是不是按钮、链接这类（空格会点它）。 */
+export function focusIsButton(doc: Document): { button: boolean } {
+  const element = focusedDocument(doc).activeElement;
+  if (element === null) {
+    return { button: false };
+  }
+  const type = (element.getAttribute('type') ?? '').toLowerCase();
+  return { button: element.tagName === 'BUTTON' || element.tagName === 'A' || element.getAttribute('role') === 'button'
+    || element.tagName === 'INPUT' && ['submit', 'button', 'image', 'reset'].includes(type) };
 }

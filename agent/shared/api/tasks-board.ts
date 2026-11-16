@@ -9,6 +9,7 @@ import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema, TimeZoneSchema } 
 import { OrNull } from './lineage.ts';
 import { LineViewSchema, type LineView } from './lines.ts';
 import { PROJECT_HUES } from './project-tag.ts';
+import { TimerViewSchema } from './timers.ts';
 
 const STRICT = { additionalProperties: false };
 
@@ -149,6 +150,8 @@ export const TasksBoardResponseSchema = Type.Object({
   teammates: Type.Array(TeammateViewSchema),
   /** 项目（列在最下面），各带自己那部分的个数。 */
   projects: Type.Array(TaskProjectViewSchema),
+  /** 11-16：还在等的「回来看」和还开着的「盯着」（在做里列出，能关）。 */
+  timers: Type.Optional(Type.Array(TimerViewSchema)),
 }, STRICT);
 export type TasksBoardResponse = Static<typeof TasksBoardResponseSchema>;
 

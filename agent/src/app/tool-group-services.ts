@@ -4,8 +4,8 @@
 
 import {
   attachmentText, createCloudBrowserActTool, createCloudBrowserObserveTool, createCloudBrowserOpenTool,
-  createCloudBrowserReadTool, createCloudBrowserTabsTools, createCloudSshRunTool, createCloudTools, FaviconFetcher,
-  LinkPreviewFetcher,
+  createCloudBrowserReadTool, createCloudBrowserTabsTools, createCloudSshRunTool, createCloudTools,
+  createWebSearchTools, FaviconFetcher, LinkPreviewFetcher, WebSearch,
   MailImageFetcher, MailImageSigner, type CloudTools, type CloudTransports, type FaviconFetchOptions,
   type InternalBrowserCookie, type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
@@ -31,6 +31,8 @@ export interface ToolGroupServices {
   linkPreviews: LinkPreviewFetcher;
   /** 网站图标（11-08）：本体代取、存进库里。 */
   favicons: FaviconCache;
+  /** 网络搜索和抓正文（11-16，Tavily）：密钥在设置里填。 */
+  webSearch: WebSearch;
   dryRun: boolean;
   stateDirectory: string;
 }
@@ -51,6 +53,8 @@ export interface ToolGroupOptions {
   favicons?: FaviconFetchOptions;
   internalCookies?: () => InternalBrowserCookie[];
   internalUrl?: string;
+  /** 网络搜索怎么连外网（测试换成假的）。 */
+  webFetch?: typeof fetch;
 }
 
 /** Whether a tool is switched on: tools in no group always are; a group without a row is on its default. */
@@ -92,6 +96,7 @@ export function createToolGroupServices(options: ToolGroupOptions): ToolGroupSer
       fetcher: new MailImageFetcher(options.mailImages ?? {}) },
     linkPreviews: new LinkPreviewFetcher(options.linkPreviews),
     favicons: new FaviconCache({ store: state.favicons, fetcher: new FaviconFetcher(options.favicons ?? {}), now }),
+    webSearch: new WebSearch({ settings: state.kernelSettings, fetch: options.webFetch ?? globalThis.fetch, now }),
     dryRun,
     stateDirectory,
   };
@@ -117,6 +122,7 @@ export function toolGroupTools(services: ToolGroupServices): Tool[] {
     createCloudBrowserObserveTool(cloud.browser),
     createCloudBrowserActTool(cloud.browser),
     ...createCloudBrowserTabsTools(cloud.browser),
+    ...createWebSearchTools(services.webSearch),
     createAttachmentTextTool({
       read: (path, signal) => {
         const { data, entry } = artifacts.workspace.read(path);

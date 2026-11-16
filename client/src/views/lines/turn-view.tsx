@@ -79,7 +79,12 @@ function Part({ part, lineId, running, onQuote, onRetry, author }: Pick<TurnView
     case 'thinking': return <Thinking part={part} />;
     case 'steps': return <Steps steps={part.steps} running={running} />;
     case 'widgets':
-      return <MessageWidgets lineId={lineId} messageId={`line:${part.seq}`} widgets={part.widgets} />;
+      // 发来的文件（reply_files）是对话附件：和他发的附件同一套画法，图成格、别的一行一个。
+      return <>
+        <MessageAttachments ids={part.widgets.flatMap((widget) => (widget.kind === 'file' ? [widget.attachmentId]
+          : []))} />
+        <MessageWidgets lineId={lineId} messageId={`line:${part.seq}`} widgets={part.widgets} />
+      </>;
     case 'error':
       return <StateRow kind="err" text={part.text} action={onRetry === undefined ? undefined : (
         <button type="button" className="text-button line-retry" onClick={onRetry}>重试</button>

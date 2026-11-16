@@ -102,6 +102,8 @@ export const WebTabEventSchema = Type.Union([
     activate: Type.Boolean(),
   }, STRICT),
   Type.Object({ type: Type.Literal('closed'), tabId: TabId }, STRICT),
+  /** 11-16 tab_show：Plasticine 要他接手一步（登录、扫码、验证码），把这个标签切到眼前。 */
+  Type.Object({ type: Type.Literal('show'), tabId: TabId }, STRICT),
   WebTabIconEventSchema,
   Type.Object({ type: Type.Literal('internal'), hash: Type.String({ pattern: '^#/' }) }, STRICT),
   PageOperateEventSchema,

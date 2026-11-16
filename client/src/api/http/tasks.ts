@@ -15,7 +15,9 @@ import {
   TEAMMATE_STOP_PATH,
   TIMED_ENABLE_PATH,
   TIMED_REMOVE_PATH,
+  TIMER_STOP_PATH,
   TasksBoardResponseSchema,
+  TimerStopResponseSchema,
   TeammateResponseSchema,
   TimedRowResponseSchema,
   type DeviceTimeZoneRequest,
@@ -25,6 +27,7 @@ import {
   type TeammateStopRequest,
   type TimedEnableRequest,
   type TimedRemoveRequest,
+  type TimerStopRequest,
 } from '../shared.ts';
 import type { Transport } from './transport.ts';
 
@@ -53,6 +56,11 @@ export class HttpTasks implements TasksApi {
   stopTeammate(body: TeammateStopRequest) {
     return this.transport.request({ method: 'POST', path: TEAMMATE_STOP_PATH, body, schema: TeammateResponseSchema,
       what: '叫停', lostAs: 'uncertain' });
+  }
+
+  stopTimer(body: TimerStopRequest) {
+    return this.transport.request({ method: 'POST', path: TIMER_STOP_PATH, body, schema: TimerStopResponseSchema,
+      what: '关掉', lostAs: 'uncertain' });
   }
 
   suggestion(id: string, action: SuggestionAction, body: SuggestionActionRequest) {

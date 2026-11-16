@@ -36,6 +36,22 @@ export const ImageWidgetSchema = Type.Object({
   caption: Type.Optional(Text(200)),
 }, STRICT);
 
+/**
+ * 发给他的文件（11-16 能力总表「给他发一个文件」，reply_files 工具放）：发出时把文件页里那一份存成一个对话附件，
+ * 之后文件页里改了、删了，这里还是发出时那份。图（PNG、JPEG、WebP）排成图，别的是一行文件，点了预览或下载。
+ */
+export const FileWidgetSchema = Type.Object({
+  kind: Type.Literal('file'),
+  id: IdSchema,
+  attachmentId: IdSchema,
+  name: Text(200),
+  /** 对话附件的类型（形状同 shared/attachments.ts 的 AttachmentMimeSchema；这份是 Apache-2.0，不引它）。 */
+  mimeType: Type.String({ minLength: 3, maxLength: 160 }),
+  bytes: Type.Integer({ minimum: 1 }),
+  /** 从文件页哪里发的（只是说明，不用它读）。 */
+  path: Type.Optional(Text(1_000)),
+}, STRICT);
+
 export const ChoiceWidgetSchema = Type.Object({
   kind: Type.Literal('choice'),
   id: IdSchema,
@@ -154,6 +170,7 @@ export const ToolCardSchema = Type.Union([MoneyCardSchema, FocusCardSchema, Remi
 
 export const MessageWidgetSchema = Type.Union([
   ImageWidgetSchema,
+  FileWidgetSchema,
   ChoiceWidgetSchema,
   InputWidgetSchema,
   TableWidgetSchema,
@@ -162,6 +179,7 @@ export const MessageWidgetSchema = Type.Union([
 ]);
 
 export type ImageWidget = Static<typeof ImageWidgetSchema>;
+export type FileWidget = Static<typeof FileWidgetSchema>;
 export type ChoiceWidget = Static<typeof ChoiceWidgetSchema>;
 export type InputWidget = Static<typeof InputWidgetSchema>;
 export type TableWidget = Static<typeof TableWidgetSchema>;

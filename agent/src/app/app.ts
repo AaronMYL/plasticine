@@ -54,6 +54,7 @@ import { askView } from './asks.ts';
 import { BrowserSessions } from './browser-sessions.ts';
 import { DevicePaths } from './device-paths.ts';
 import { DirectHub } from '../direct/index.ts';
+import type { LineTimers } from '../timers/index.ts';
 
 export interface AppOptions {
   state: StateService;
@@ -96,6 +97,8 @@ export interface AppOptions {
   kernelModels?: KernelModelParts;
   /** 任务栏目：定时线、照卡发送、建议。 */
   tasks: Tasks;
+  /** 11-16：线的「回来看」和「盯着」（timers/）。 */
+  lineTimers?: LineTimers;
   /** 心跳（《优化清单》第 11 条）：「定时」里点开心跳那一行的弹层。 */
   heartbeat: Heartbeat;
   /** 第 15 条：Apple 日历和提醒事项的缓存同步。 */
@@ -228,6 +231,7 @@ export function createApp(options: AppOptions): App {
     kernelModels: options.kernelModels ?? null,
     browserSessions: options.browserSessions ?? new BrowserSessions(options.state, now),
     tasks: options.tasks,
+    lineTimers: options.lineTimers ?? null,
     video: options.video,
     heartbeat: options.heartbeat,
     calendar: options.calendar,
@@ -276,6 +280,7 @@ export function createApp(options: AppOptions): App {
       options.lines.start();
       // 定时线：先按现在的时区排好下一次（错过的补最近一次），再每分钟看一眼。
       options.tasks.start();
+      options.lineTimers?.start();
       options.video.start();
       // 本机备份：自己的定时器，每小时看一眼今天的那份做了没有。
       options.backups.start();
@@ -305,6 +310,7 @@ export function createApp(options: AppOptions): App {
         stopSpaceEvents();
         options.scans.stop();
         options.tasks.stop();
+        options.lineTimers?.stop();
         options.devices.stop();
         options.diagnostics.stop();
         bookInsights.stop();

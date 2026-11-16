@@ -25,6 +25,8 @@ import {
   type TimedEnableRequest,
   type TimedRemoveRequest,
   type TimedRowView,
+  type TimerStopRequest,
+  type TimerView,
 } from '../shared.ts';
 import type { AskView } from '../types.ts';
 import { designHue } from './design-projects.ts';
@@ -59,6 +61,8 @@ export class FakeTasks implements TasksApi {
   private timed: TimedRowView[] = [];
   private mates: TeammateView[] = [];
   private ideas: SuggestionView[] = [];
+  /** 11-16：回来看、盯着（场景种子放几条）。 */
+  private timers: TimerView[] = [];
   /** 每台设备最近报的时区。 */
   timeZone: string | null = null;
   /** 心跳的弹层（第 11 条）。 */
@@ -68,10 +72,12 @@ export class FakeTasks implements TasksApi {
     this.deps = deps;
   }
 
-  seed(data: { timed: TimedRowView[]; teammates: TeammateView[]; ideas: SuggestionView[] }): void {
+  seed(data: { timed: TimedRowView[]; teammates: TeammateView[]; ideas: SuggestionView[];
+    timers?: TimerView[] }): void {
     this.timed = structuredClone(data.timed);
     this.mates = structuredClone(data.teammates);
     this.ideas = structuredClone(data.ideas);
+    this.timers = structuredClone(data.timers ?? []);
   }
 
   async board(query: TasksBoardQuery): Promise<TasksBoardResponse> {
@@ -94,6 +100,19 @@ export class FakeTasks implements TasksApi {
       teammates: parts.teammates,
       projects: this.deps.projects().map((project) => ({ id: project.id, name: project.name,
         hue: designHue(project.id), counts: counts(this.forProject(all, project.id)) })),
+      timers: projectId === null ? this.timers : [],
+    });
+  }
+
+  async stopTimer(body: TimerStopRequest) {
+    this.deps.session.require();
+    return this.deps.receipts.run('command', body.requestId, 'POST /v2/timers/stop', () => {
+      if (!this.timers.some((timer) => timer.id === body.id)) {
+        throw notFound('「回来看」或「盯着」');
+      }
+      this.timers = this.timers.filter((timer) => timer.id !== body.id);
+      this.changed();
+      return { timers: structuredClone(this.timers) };
     });
   }
 

@@ -82,7 +82,8 @@ export const PageActSchema = Type.Union([
   Type.Object({ op: Type.Literal('select'), n: ElementNumber,
     value: Type.String({ minLength: 1, maxLength: 200 }) }, STRICT),
   Type.Object({ op: Type.Literal('enter'), n: ElementNumber }, STRICT),
-  Type.Object({ op: Type.Literal('scroll'),
+  /** 不带 n 翻整页；带 n 在这个编号所在的那一块里面滚（会话列表、弹窗里的长列表）。 */
+  Type.Object({ op: Type.Literal('scroll'), n: Type.Optional(ElementNumber),
     dy: Type.Integer({ minimum: -PAGE_SCROLL_MAX, maximum: PAGE_SCROLL_MAX }) }, STRICT),
 ]);
 export type PageAct = Static<typeof PageActSchema>;

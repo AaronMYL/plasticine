@@ -24,6 +24,13 @@ const LIMITS_MS: Partial<Record<DeviceActionKind, number>> = {
   tab_read: 60 * SECOND,
   tab_open: 60 * SECOND,
   tab_navigate: 60 * SECOND,
+  tab_key: 30 * SECOND,
+  tab_scroll: 30 * SECOND,
+  tab_paste: 30 * SECOND,
+  tab_show: 15 * SECOND,
+  tab_upload: 90 * SECOND,
+  file_fetch: 120 * SECOND,
+  file_put: 120 * SECOND,
   screen_capture: 30 * SECOND,
   input_click: 45 * SECOND,
   input_type: 45 * SECOND,
@@ -43,7 +50,7 @@ const LIMITS_MS: Partial<Record<DeviceActionKind, number>> = {
 
 /** 只读、做两遍也没有副作用的：卡住了可以直接再做。 */
 const RETRYABLE: ReadonlySet<DeviceActionKind> = new Set<DeviceActionKind>(['tab_list', 'tab_shot', 'tab_wait',
-  'tab_close', 'tab_perceive',
+  'tab_close', 'tab_perceive', 'tab_show', 'tab_scroll', 'file_fetch',
   'tab_read', 'screen_capture', 'file_list', 'file_read', 'browser_read', 'calendar_list', 'reminder_list',
   'photo_list', 'photo_read', 'location_current']);
 

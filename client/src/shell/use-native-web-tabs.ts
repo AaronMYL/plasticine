@@ -200,6 +200,9 @@ export function useNativeWebTabs(input: NativeWebTabsInput): NativeWebTabs | nul
           if (wasShown) showTab(next);
           return;
         }
+        case 'show':
+          if (tabs.tab(event.tabId) !== null) showTab(event.tabId);
+          return;
         case 'icon':
           tabs.setIcon(event.tabId, event.icon, event.pageUrl);
           return;

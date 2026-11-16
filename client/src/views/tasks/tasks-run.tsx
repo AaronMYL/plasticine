@@ -83,11 +83,16 @@ export function TaskLines({ lines, projects, label, now }: { lines: LineView[]; 
 export interface TasksRunProps {
   running: LineView[];
   projects: TaskProjectView[];
+  /** 下面还有「回来看和盯着」：没有在做的线也不写「没有进行中的事」。 */
+  hasTimers?: boolean;
 }
 
-export function TasksRun({ running, projects }: TasksRunProps): ReactNode {
+export function TasksRun({ running, projects, hasTimers = false }: TasksRunProps): ReactNode {
   const now = useNow(running.length > 0);
   const roster = useStore(useLive().mates.data);
+  if (running.length === 0 && roster.mates.length === 0 && hasTimers) {
+    return null;
+  }
   if (running.length === 0 && roster.mates.length === 0) {
     return <p className="tasks-empty">没有在做的事。</p>;
   }

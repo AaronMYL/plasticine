@@ -128,7 +128,12 @@ async function start(): Promise<void> {
   const tabTranslate = translate;
   const tabActions = new TabActions({ tabs, windowFocused: () => main.window.isFocused() && main.window.isVisible(),
     confirm: (message) => confirmBox(main, message),
-    operate: (event) => events.send('__plasticineWebTabEvent', event) });
+    operate: (event) => events.send('__plasticineWebTabEvent', event),
+    show: (tabId) => {
+      main.window.show();
+      main.window.focus();
+      events.send('__plasticineWebTabEvent', { type: 'show', tabId });
+    }, platform });
   const credentials = new CredentialStore(paths.credentials, platform === 'darwin' ? paths.legacyCredentials : null, {
     available: () => safeStorage.isEncryptionAvailable(),
     encrypt: (text) => safeStorage.encryptString(text),

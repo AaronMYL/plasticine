@@ -5,6 +5,8 @@
 // 看着这个标签（窗口在前、它在中间、30 秒内动过键鼠）时点、填、操作都不做，回 user_present，本体等他停下来。
 // 11-16：DOM 认不出的（会话列表一行这类）也在标签里后台做——tab_shot 截这个标签的画面（标签藏着也截，不切前台），
 // tab_point 按画面上的位置发可信点击，tab_type 往焦点里打字；都不动他的真鼠标和窗口。按位置点到的像提交就不点。
+// 11-16 能力总表：tab_key 按键（回车不按、碰剪贴板的不按）、tab_scroll 按位置滚、tab_paste 带格式粘贴（不碰系统
+// 剪贴板）、tab_show 把标签切到他眼前（他接手一步）、tab_upload 往上传框放文件（接管「选择文件」，不弹给他）。
 
 import { createHash, randomUUID } from 'node:crypto';
 import { Value } from 'typebox/value';
@@ -13,7 +15,9 @@ import type { DeviceActionParams, PageOperateEvent } from '../../../agent/shared
 import { PagePerceptionSchema } from '../../../agent/shared/api/page-operate.ts';
 import { classifyLane, isPaymentPage } from '../../../agent/shared/device-lanes.ts';
 import { DeviceRefused, TabActionError, type StepReporter, type TabActionPort } from '../node/action-runner.ts';
-import { trustedClick, trustedInsert } from './cdp.ts';
+import { type KeyStroke, trustedClick, trustedInsert, trustedKey, trustedWheel } from './cdp.ts';
+import { KeyRefused, keyStroke } from './key-spec.ts';
+import { placeFiles } from './tab-upload.ts';
 import type { Located, TargetFacts } from './tab-dom.ts';
 import type { Tab, TabViews } from './tab-views.ts';
 
@@ -28,6 +32,7 @@ const SHOT_QUALITY = 80;
 /** 打完字读回时核对开头这么多字（读回最多 8000 字，长文只比开头）。 */
 const MATCH_PREFIX = 200;
 
+
 export interface TabActionDeps {
   tabs: TabViews;
   /** 主窗口在前台、看得见。 */
@@ -35,6 +40,9 @@ export interface TabActionDeps {
   confirm(message: string): Promise<boolean>;
   /** 对话框里列出 Plasticine 在这一页做的一步。 */
   operate(event: PageOperateEvent): void;
+  /** 把这个标签切到他眼前（窗口提到前面）。 */
+  show(tabId: string): void;
+  platform: NodeJS.Platform;
 }
 
 const FILL_ERRORS: Readonly<Record<string, string>> = {
@@ -44,6 +52,7 @@ const FILL_ERRORS: Readonly<Record<string, string>> = {
   unfillable: '这个元素不是输入框或下拉框，填不进去。',
   password: '密码框不由 Plasticine 填：请你自己填。',
   card: '银行卡号、安全码这类不由 Plasticine 填。',
+  unscrollable: '这个编号所在的地方没有能滚的一块：换列表里的一个编号，或者 tab_shot 看一眼再用 tab_scroll 按位置滚。',
 };
 
 /** 截一次画面最多等这么久；Electron 的截图在画面出不来时可能一直不返回。 */
@@ -133,6 +142,17 @@ export class TabActions implements TabActionPort {
         return { tabId: action.tabId };
       case 'tab_wait':
         return this.wait(action.tabId, action.text, action.gone === true, action.timeoutSeconds * 1000, step);
+      case 'tab_key':
+        return this.key(action.tabId, action.key);
+      case 'tab_scroll':
+        return this.scroll(action.tabId, action.x, action.y, action.dy);
+      case 'tab_paste':
+        return this.paste(action.tabId, action.text, action.html);
+      case 'tab_show':
+        this.deps.show(this.tab(action.tabId).id);
+        return { tabId: action.tabId };
+      case 'tab_upload':
+        return this.upload(action, step);
       default:
         throw new TabActionError(null, '这一步不是网页标签的事。');
     }
@@ -352,6 +372,75 @@ export class TabActions implements TabActionPort {
     await trustedInsert(tab.view.webContents, text);
     const after = await this.call(tabId, 'focused', {});
     return { tabId, tag: String(after.tag), matches: String(after.text).includes(text.slice(0, MATCH_PREFIX)) };
+  }
+
+  /** 按一个键或组合键：回车不在能按的里面（schema 拦）；碰剪贴板的不按；焦点在按钮上不按空格（等于点它）。 */
+  private async key(tabId: string, key: string): Promise<Record<string, unknown>> {
+    const tab = this.tab(tabId);
+    this.present(tab);
+    let stroke: KeyStroke;
+    try {
+      stroke = keyStroke(key, this.deps.platform);
+    } catch (error) {
+      if (error instanceof KeyRefused) throw new DeviceRefused(error.message);
+      throw error;
+    }
+    if (stroke.code === 'Space' && (await this.call(tabId, 'focus-button', {})).button === true) {
+      throw new DeviceRefused('焦点在按钮上，按空格等于点它：用 tab_act 按编号点（提交前问他）。');
+    }
+    const nonce = randomUUID();
+    const before = digest(await this.call(tabId, 'state', { nonce, cleanup: false }));
+    await trustedKey(tab.view.webContents, stroke);
+    const after = await this.settled(tab, nonce);
+    return { tabId, key, before, after, changed: after.digest !== before.digest || after.url !== before.url };
+  }
+
+  /** 在画面这个位置滚（可信滚轮）：滚的是指着的那一块（会话列表、弹窗里的长列表）。 */
+  private async scroll(tabId: string, x: number, y: number, dy: number): Promise<Record<string, unknown>> {
+    const tab = this.tab(tabId);
+    this.present(tab);
+    const before = Number((await this.call(tabId, 'scrolled', { x, y })).position);
+    await trustedWheel(tab.view.webContents, x, y, dy);
+    await sleep(SETTLE_MS);
+    const after = Number((await this.call(tabId, 'scrolled', { x, y })).position);
+    return { tabId, moved: after !== before };
+  }
+
+  /** 往焦点里粘贴：编辑器自己接住照它的排版；不碰系统剪贴板。密码框、卡号框不粘。 */
+  private async paste(tabId: string, text: string, html: string | null): Promise<Record<string, unknown>> {
+    const tab = this.tab(tabId);
+    this.present(tab);
+    const done = await this.call(tabId, 'paste', { text, html });
+    if (done.password === true) {
+      throw new DeviceRefused(FILL_ERRORS.password ?? '密码框不由 Plasticine 填。');
+    }
+    if (done.card === true) {
+      throw new DeviceRefused(FILL_ERRORS.card ?? '银行卡号这类不由 Plasticine 填。');
+    }
+    if (done.editable !== true) {
+      throw new TabActionError(null, '现在没有能粘贴的焦点：先用 tab_act 或 tab_point 点一下编辑区。');
+    }
+    await sleep(FILL_SETTLE_MS);
+    return { tabId, tag: String(done.tag), handled: done.handled === true, matches: done.matches === true };
+  }
+
+  /** 往编号 n 的上传框放文件（tab-upload.ts）：先认出这个编号是文件框还是「上传」按钮。 */
+  private async upload(action: Extract<DeviceActionParams, { kind: 'tab_upload' }>, step: StepReporter)
+    : Promise<Record<string, unknown>> {
+    const tab = this.tab(action.tabId);
+    this.present(tab);
+    const nonce = randomUUID();
+    const mark = await this.call(tab.id, 'operate', { request: { op: 'mark', version: action.version, n: action.n,
+      nonce } });
+    if (mark.found !== true) {
+      throw new TabActionError('page_stale', '页面变了，编号过期了，先重新感知。');
+    }
+    if (mark.file === true && mark.multiple !== true && action.files.length > 1) {
+      throw new TabActionError(null, '这个上传框一次只收一个文件：分几次传。');
+    }
+    const via = await placeFiles(tab.view.webContents, mark, nonce, action.files, step);
+    await sleep(SETTLE_MS);
+    return { tabId: tab.id, files: action.files.map((file) => file.name), via };
   }
 
   private async act(action: Extract<DeviceActionParams, { kind: 'tab_act' }>): Promise<Record<string, unknown>> {

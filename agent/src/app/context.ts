@@ -33,6 +33,7 @@ import type { CalendarSync } from '../calendar/index.ts';
 import type { Heartbeat } from '../heartbeat/index.ts';
 import type { DevicePaths } from './device-paths.ts';
 import type { DirectHub } from '../direct/index.ts';
+import type { LineTimers } from '../timers/index.ts';
 
 export interface AppDeps {
   state: StateService;
@@ -100,6 +101,8 @@ export interface AppDeps {
   browserSessions: BrowserSessions;
   /** 任务栏目（《优化清单》第 3、4、5 条）：定时线、照卡发送、建议、定时登记和队友。 */
   tasks: Tasks;
+  /** 11-16：线的「回来看」和「盯着」；测试里装出来的应用可能没有。 */
+  lineTimers: LineTimers | null;
   /** 第 6 批第 9 条：视频解析与抖音收藏。 */
   video: Video;
   /** 心跳（《优化清单》第 11 条）。 */

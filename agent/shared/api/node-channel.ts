@@ -128,6 +128,20 @@ export const DEVICE_RESULT_SCHEMAS = {
   tab_wait: Type.Object({ tabId: TabIdText, met: Type.Boolean(), waitedMs: Type.Integer({ minimum: 0 }) }, STRICT),
   /** matches：打完读回焦点里的字包含要打的。 */
   tab_type: Type.Object({ tabId: TabIdText, tag: Text, matches: Type.Boolean() }, STRICT),
+  /** changed：按完页面变了（弹窗关了、焦点挪了也算）。 */
+  tab_key: Type.Object({ tabId: TabIdText, key: Text, before: WebTabDomStateSchema, after: WebTabDomStateSchema,
+    changed: Type.Boolean() }, STRICT),
+  /** moved：那一块真的滚动了（到底了就是 false）。 */
+  tab_scroll: Type.Object({ tabId: TabIdText, moved: Type.Boolean() }, STRICT),
+  /** handled：编辑器自己接住了粘贴（排版照它的来）；matches：读回焦点里的字包含粘的开头。 */
+  tab_paste: Type.Object({ tabId: TabIdText, tag: Text, handled: Type.Boolean(), matches: Type.Boolean() }, STRICT),
+  tab_show: Type.Object({ tabId: TabIdText }, STRICT),
+  /** files：上传框读回的文件名；via：直接放进文件框（input）还是接住了「选择文件」（chooser）。 */
+  tab_upload: Type.Object({ tabId: TabIdText, files: Type.Array(Text), via: Type.Union([Type.Literal('input'),
+    Type.Literal('chooser')]) }, STRICT),
+  file_fetch: Type.Object({ path: Text, name: Text, bytes: Type.Integer({ minimum: 0 }), base64: Type.String() },
+    STRICT),
+  file_put: Type.Object({ path: Text, bytes: Type.Integer({ minimum: 0 }) }, STRICT),
   ...IOS_RESULT_SCHEMAS,
 } satisfies Record<DeviceActionKind, object>;
 

@@ -458,3 +458,8 @@
 .sheet-drawer.tasks-sheet .sheet-body {
   padding: var(--space-1) var(--space-4) var(--space-5);
 }
+
+/* 回来看和盯着（11-16）：上次没看成的那一行第二行红字。 */
+.tasks-timer-row .tasks-row-meta[data-error='true'] {
+  color: var(--err);
+}

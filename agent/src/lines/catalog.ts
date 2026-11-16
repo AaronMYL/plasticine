@@ -63,6 +63,8 @@ export function legacySayings(nodeLabel: NodeLabel): Readonly<Record<string, Leg
     book_annotations: { say: () => '看读书标注' },
     propose_payment: { say: () => '从截图里认一笔账' },
     attachment_text: { say: (args) => withSubject('读附件', text(args, 'path')) },
+    web_search: { say: (args) => withSubject('搜网页', text(args, 'query')) },
+    web_fetch: { say: (args) => withSubject('读网页', host(text(args, 'url'))) },
     show_widgets: { say: () => '在回复里放卡片' },
     skills_search: { say: (args) => withSubject('查技能目录', text(args, 'query')) },
     skill_read: { say: (args) => withSubject('读技能', text(args, 'name')) },

@@ -71,3 +71,4 @@ export { prepareOfflineRestore } from './backup-recovery.ts';
 export type { CachedFavicon, FaviconStore } from './favicons.ts';
 export type { WebTabsSnapshot, WebTabsStateStore } from './web-tabs.ts';
 export type { SoulRevisionRow, SoulRow } from './souls.ts';
+export type { LineWake, LineWatch, WatchCheck, WatchInput } from './line-timers.ts';

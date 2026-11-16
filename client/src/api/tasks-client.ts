@@ -17,6 +17,8 @@ import type {
   TimedEnableRequest,
   TimedRemoveRequest,
   TimedRowResponse,
+  TimerStopRequest,
+  TimerStopResponse,
 } from './shared.ts';
 
 export interface TasksApi {
@@ -28,6 +30,8 @@ export interface TasksApi {
   removeTimed(body: TimedRemoveRequest): Promise<TimedRowResponse>;
   /** POST /v2/tasks/teammates/stop */
   stopTeammate(body: TeammateStopRequest): Promise<TeammateResponse>;
+  /** POST /v2/timers/stop：关掉一条「回来看」或「盯着」（11-16）。 */
+  stopTimer(body: TimerStopRequest): Promise<TimerStopResponse>;
   /** POST /v2/tasks/suggestions/:id/(start|todo|dismiss) */
   suggestion(id: string, action: SuggestionAction, body: SuggestionActionRequest): Promise<SuggestionActionResponse>;
   /** POST /v2/tasks/time-zone */

@@ -1,8 +1,9 @@
 // 任务栏目的路由条目（router.ts 摊进 ROUTES）：shared/api/tasks-board.ts。都要本人会话。
 
 import { DEVICE_TIME_ZONE_PATH, SUGGESTIONS_PATH, TASKS_BOARD_PATH, TEAMMATE_STOP_PATH, TIMED_ENABLE_PATH,
-  TIMED_REMOVE_PATH } from '../../shared/api/index.ts';
+  TIMED_REMOVE_PATH, TIMER_STOP_PATH } from '../../shared/api/index.ts';
 import type { Route } from './context.ts';
+import { stopTimer } from './timers.ts';
 import { dismissSuggestion, enableTimed, readTasksBoard, removeTimed, reportTimeZone, startSuggestion, stopTeammate,
   todoSuggestion } from './tasks.ts';
 
@@ -15,4 +16,5 @@ export const TASK_ROUTES: readonly Route[] = [
   { method: 'POST', path: `${SUGGESTIONS_PATH}/:id/todo`, auth: true, handler: todoSuggestion },
   { method: 'POST', path: `${SUGGESTIONS_PATH}/:id/dismiss`, auth: true, handler: dismissSuggestion },
   { method: 'POST', path: DEVICE_TIME_ZONE_PATH, auth: true, handler: reportTimeZone },
+  { method: 'POST', path: TIMER_STOP_PATH, auth: true, handler: stopTimer },
 ];

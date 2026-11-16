@@ -32,6 +32,8 @@ import {
   type NodeRefusalLayer,
 } from '../state.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
+import { DevicePathSchema, HAND_ACTION_PARAM_SCHEMAS, HAND_KIND_CLASSES, HAND_KIND_LABELS,
+  WebTabIdSchema } from './device-hands.ts';
 import { IOS_ACTION_PARAM_SCHEMAS, IOS_KIND_CLASSES, IOS_KIND_LABELS } from './device-ios.ts';
 import { OrNull } from './lineage.ts';
 import { PAGE_STEP_MAX_CHARS, PageActSchema } from './page-operate.ts';
@@ -116,6 +118,7 @@ export const DEVICE_KIND_LABELS: Readonly<Record<DeviceActionKind, string>> = {
   tab_wait: '等网页标签',
   tab_point: '在网页标签里按位置点',
   tab_type: '在网页标签里打字',
+  ...HAND_KIND_LABELS,
   ...IOS_KIND_LABELS,
 };
 
@@ -158,18 +161,17 @@ export const DEVICE_KIND_CLASSES: Readonly<Record<DeviceActionKind, DeviceAction
   tab_wait: 'browser',
   tab_point: 'input',
   tab_type: 'input',
+  ...HAND_KIND_CLASSES,
   ...IOS_KIND_CLASSES,
 };
 
 const STRICT = { additionalProperties: false };
-// A path on the device: absolute or under ~ (设备不补判断：相对路径不收).
-export const DevicePathSchema = Type.String({ minLength: 1, maxLength: 1_000 });
+export { DEVICE_FILE_MAX_BYTES, DevicePathSchema, TAB_KEY_PATTERN, TAB_PASTE_MAX_CHARS, TAB_UPLOAD_FILES_MAX,
+  WebTabIdSchema } from './device-hands.ts';
 // The old notebook limit for one note (400 000 characters): a write back carries at most one document.
 export const DEVICE_WRITE_MAX_CHARS = 400_000;
 export const DEVICE_COMMAND_MAX_CHARS = 4_000;
 const UrlSchema = Type.String({ pattern: '^https?://', maxLength: 2_048 });
-// 网页标签的标识由 Mac 给（tab_list / tab_open 的回执里有），网页界面里开的标签也是同一个标识。
-export const WebTabIdSchema = Type.String({ minLength: 1, maxLength: 100 });
 // CSS 选择器或按钮上的字：给人读的长度就够了。
 export const TAB_SELECTOR_MAX_CHARS = 500;
 export const TAB_CLICK_TEXT_MAX_CHARS = 200;
@@ -263,6 +265,7 @@ export const DeviceActionParamsSchema = Type.Union([
   Type.Object({ kind: Type.Literal('tab_wait'), tabId: WebTabIdSchema,
     text: Type.String({ minLength: 1, maxLength: 200 }), gone: Type.Optional(Type.Boolean()),
     timeoutSeconds: Type.Integer({ minimum: 1, maximum: TAB_WAIT_MAX_SECONDS }) }, STRICT),
+  ...HAND_ACTION_PARAM_SCHEMAS,
   ...IOS_ACTION_PARAM_SCHEMAS,
 ]);
 export type DeviceActionParams = Static<typeof DeviceActionParamsSchema>;

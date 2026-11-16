@@ -12,6 +12,7 @@ import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { TasksIdeas } from './tasks-ideas.tsx';
 import { TaskLines, TasksRun } from './tasks-run.tsx';
 import { TasksTimed } from './tasks-timed.tsx';
+import { TasksTimers } from './tasks-timers.tsx';
 import { TimedSheet, type OpenSheet } from './timed-sheet.tsx';
 import { useTaskActions, useTasksBoard } from './use-tasks-board.ts';
 import './tasks.css';
@@ -90,7 +91,11 @@ export function TasksPage({ section, phone, navigate }: TasksPageProps): ReactNo
         <button type="button" className="text-button" onClick={reload}>再读一次</button></p>}
       {board === null ? null : (
         <div className="tasks-body">
-          {section === 'run' ? <TasksRun running={board.running} projects={board.projects} /> : null}
+          {section === 'run' ? <>
+            <TasksRun running={board.running} projects={board.projects} hasTimers={(board.timers ?? []).length > 0} />
+            <TasksTimers timers={board.timers ?? []} now={Date.now()} busy={actions.busy} failed={actions.failed}
+              onStop={(id) => void actions.stopTimer(id)} />
+          </> : null}
           {section === 'ended' ? (board.ended.length === 0 ? <p className="tasks-empty">还没有结束的事。</p>
             : <TaskLines lines={board.ended} projects={board.projects} label="已结束" now={Date.now()} />) : null}
           {section === 'deleted' ? (board.deleted.length === 0 ? <p className="tasks-empty">最近没有删除的事。</p>

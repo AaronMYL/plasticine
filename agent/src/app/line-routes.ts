@@ -2,8 +2,10 @@
 // 都要设备会话。旧路由一条不动。
 
 import { CHATS_PATH, CUSTOM_PROVIDERS_PATH, LINES_PATH, MODEL_CONFIG_PATH, MODEL_CONNECTION_TEST_PATH,
-  MODEL_DEFAULT_PATH, MODEL_IMAGE_PATH, MODEL_PROVIDERS_PATH, SIDE_PATH } from '../../shared/api/index.ts';
+  MODEL_DEFAULT_PATH, MODEL_IMAGE_PATH, MODEL_PROVIDERS_PATH, SIDE_PATH, WEB_SEARCH_PATH, WEB_SEARCH_TEST_PATH }
+  from '../../shared/api/index.ts';
 import { removeCustom, saveCustom, testCustomConnection } from './custom-providers.ts';
+import { getWebSearch, saveWebSearch, testWebSearch } from './web-search-settings.ts';
 import { MATE_ROUTES } from './mates.ts';
 import type { Route } from './context.ts';
 import { listChats, openSideChat, reactLineMessage } from './side-chats.ts';
@@ -50,4 +52,8 @@ export const LINE_ROUTES: readonly Route[] = [
   { method: 'POST', path: `${PROVIDER}/logout`, auth: true, handler: logoutProvider },
   { method: 'POST', path: MODEL_DEFAULT_PATH, auth: true, handler: setDefaultModel },
   { method: 'POST', path: MODEL_CONFIG_PATH, auth: true, handler: saveModelConfig },
+  // 网络搜索的密钥（11-16 能力总表）。
+  { method: 'GET', path: WEB_SEARCH_PATH, auth: true, handler: getWebSearch },
+  { method: 'PUT', path: WEB_SEARCH_PATH, auth: true, handler: saveWebSearch },
+  { method: 'POST', path: WEB_SEARCH_TEST_PATH, auth: true, handler: testWebSearch },
 ];
