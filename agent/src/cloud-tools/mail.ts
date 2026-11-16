@@ -11,7 +11,7 @@ import { GMAIL_CREDENTIAL } from './gmail.ts';
 import { CloudToolError } from './errors.ts';
 import type { MailFiles } from './mail-files.ts';
 import { clip, mailInput, storeMailFiles } from './mail-input.ts';
-import type { FetchedMail, ImapTransport, MailTransport } from './transports.ts';
+import type { FetchedMail, ImapTransport, MailTransport, OutgoingMail } from './transports.ts';
 export { SELF_MAIL_ADDRESS } from './transports.ts';
 
 export const IMAP_CREDENTIAL = GMAIL_CREDENTIAL;
@@ -142,12 +142,7 @@ export class MailSync {
   }
 }
 
-export interface MailToSend {
-  to: string;
-  subject: string;
-  text: string;
-  inReplyTo: string | null;
-}
+export type MailToSend = OutgoingMail;
 
 export interface MailSender {
   configured(): boolean;
@@ -159,8 +154,10 @@ export function createMailSender(transport: MailTransport, credentials: Credenti
   return {
     configured: () => credentials.status(SMTP_CREDENTIAL) === 'ready',
     async send(input, signal) {
-      if (!EMAIL_PATTERN.test(input.to)) {
-        throw new CloudToolError('invalid_input', '收件地址不是有效的邮箱，没有发。', 'to');
+      const everyone = [input.to, ...(input.moreTo ?? []), ...(input.cc ?? []), ...(input.bcc ?? [])];
+      const bad = everyone.find((address) => !EMAIL_PATTERN.test(address));
+      if (bad !== undefined) {
+        throw new CloudToolError('invalid_input', `「${bad}」不是有效的邮箱，没有发。`, 'to');
       }
       if (/[\r\n]/.test(input.subject) || /[\r\n]/.test(input.inReplyTo ?? '')) {
         throw new CloudToolError('invalid_input', '邮件标题里不能有换行，没有发。', 'subject');

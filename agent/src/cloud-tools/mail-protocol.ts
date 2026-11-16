@@ -1,4 +1,5 @@
 // 纯协议解析：样本可离线回放，错误不包含服务器原文。邮件本身的 MIME 解析在 mail-parse.ts（postal-mime）。
+import { createHash } from 'node:crypto';
 import { MailWire, mailProtocolError } from './mail-wire.ts';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -68,16 +69,57 @@ export async function readSmtp(wire: MailWire, allowed: readonly number[]): Prom
   }
 }
 
-export function smtpData(address: string, subject: string, text: string, inReplyTo: string | null,
-  to: string = address): string {
-  if (/[\r\n\0]/.test(subject) || /[\r\n\0]/.test(inReplyTo ?? '') || /[\r\n\0<>]/.test(to)) {
+export interface SmtpAttachment {
+  name: string;
+  type: string;
+  data: Buffer;
+}
+
+export interface SmtpMessage {
+  from: string;
+  to: readonly string[];
+  cc: readonly string[];
+  subject: string;
+  text: string;
+  inReplyTo: string | null;
+  attachments: readonly SmtpAttachment[];
+}
+
+/** 头里的非 ASCII 字用 RFC 2047 的 B 编码。 */
+function encodedWord(text: string): string {
+  return /^[\x20-\x7e]*$/.test(text) ? text : `=?UTF-8?B?${Buffer.from(text).toString('base64')}?=`;
+}
+
+function base64Lines(data: Buffer): string {
+  return data.toString('base64').replace(/.{1,76}/g, '$&\r\n').trimEnd();
+}
+
+/** 整封信（DATA 段）：收件人、抄送进头（密送只进 RCPT，不进头）；有附件就是 multipart/mixed，附件按 base64。 */
+export function smtpMessage(mail: SmtpMessage): string {
+  const addresses = [mail.from, ...mail.to, ...mail.cc];
+  if (/[\r\n\0]/.test(mail.subject) || /[\r\n\0]/.test(mail.inReplyTo ?? '')
+    || addresses.some((address) => /[\r\n\0<>,]/.test(address))
+    || mail.attachments.some((file) => /[\r\n\0"]/.test(file.name) || !/^[\w.+-]+\/[\w.+-]+$/.test(file.type))) {
     throw mailProtocolError();
   }
-  // 头用 RFC 2047，正文 UTF-8；每行开头的点加倍，正文永远不能提前结束 DATA。
-  const parts = [
-    `From: <${address}>`, `To: <${to}>`, `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
-    'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: 8bit',
-    ...(inReplyTo === null ? [] : [`In-Reply-To: ${inReplyTo}`]), '', text,
-  ];
-  return parts.join('\r\n').replace(/\r?\n/g, '\r\n').replace(/^\./gm, '..') + '\r\n.\r\n';
+  const head = [`From: <${mail.from}>`, `To: ${mail.to.map((address) => `<${address}>`).join(', ')}`,
+    ...(mail.cc.length === 0 ? [] : [`Cc: ${mail.cc.map((address) => `<${address}>`).join(', ')}`]),
+    `Subject: =?UTF-8?B?${Buffer.from(mail.subject).toString('base64')}?=`, 'MIME-Version: 1.0',
+    ...(mail.inReplyTo === null ? [] : [`In-Reply-To: ${mail.inReplyTo}`])];
+  const textPart = ['Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: 8bit', '', mail.text];
+  let body: string[];
+  if (mail.attachments.length === 0) {
+    body = textPart;
+  } else {
+    const boundary = `plasticine-${createHash('sha256').update(mail.subject).update(mail.text).digest('hex')
+      .slice(0, 24)}`;
+    body = [`Content-Type: multipart/mixed; boundary="${boundary}"`, '', `--${boundary}`, ...textPart,
+      ...mail.attachments.flatMap((file) => [`--${boundary}`,
+        `Content-Type: ${file.type}; name="${encodedWord(file.name)}"`, 'Content-Transfer-Encoding: base64',
+        `Content-Disposition: attachment; filename="${encodedWord(file.name)}"`, '', base64Lines(file.data)]),
+      `--${boundary}--`];
+  }
+  // 正文 UTF-8；每行开头的点加倍，正文永远不能提前结束 DATA。
+  return [...head, ...body].join('\r\n').replace(/\r?\n/g, '\r\n').replace(/^\./gm, '..') + '\r\n.\r\n';
 }
+

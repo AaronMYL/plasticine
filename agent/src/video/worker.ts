@@ -56,6 +56,7 @@ export class VideoWorker {
   readonly #controller = new AbortController();
   readonly #running = new Map<string, Promise<void>>();
   readonly #waiters = new Map<string, Waiter[]>();
+  readonly #transcribeLock = limiter(TRANSCRIBE_AT_ONCE);
 
   constructor(options: VideoWorkerOptions) {
     this.#state = options.state;
@@ -65,11 +66,16 @@ export class VideoWorker {
     this.#ports = {
       ...options.ports,
       works: options.state.videoWorks,
-      transcribeLock: limiter(TRANSCRIBE_AT_ONCE),
+      transcribeLock: this.#transcribeLock,
       askMac: (work) => {
         options.state.videoMacJobs.queue('resolve', work.workId);
       },
     };
+  }
+
+  /** 转一个文件（audio_transcribe）和视频解析共用一把锁：小机器上转写一次只跑一条。 */
+  whileTranscribing<T>(work: () => Promise<T>): Promise<T> {
+    return this.#transcribeLock(work);
   }
 
   get running(): number {

@@ -30,6 +30,10 @@ export const CdpLayoutSchema = Type.Object({ cssVisualViewport: Type.Object({
 export const CdpHistorySchema = Type.Object({ currentIndex: Type.Integer(),
   entries: Type.Array(Type.Object({ id: Type.Integer() })) });
 export const CdpDataSchema = Type.Object({ data: Type.String() });
+export const CdpBrowserContextSchema = Type.Object({ browserContextId: Type.String() });
+export const CdpStreamSchema = Type.Object({ stream: Type.String() });
+export const CdpReadSchema = Type.Object({ data: Type.String(), base64Encoded: Type.Optional(Type.Boolean()),
+  eof: Type.Boolean() });
 export const CdpTextSchema = Type.Object({ result: Type.Object({ value: Type.String() }) });
 export const CdpBooleanSchema = Type.Object({ result: Type.Object({ value: Type.Boolean() }) });
 export const CdpFrameSchema = Type.Object({

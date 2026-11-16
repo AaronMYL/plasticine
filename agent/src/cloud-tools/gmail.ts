@@ -6,7 +6,7 @@ import type { CredentialFiles } from './credentials.ts';
 import { CloudToolError } from './errors.ts';
 import { fetchMessage, FULL_FETCH_MAX_BYTES, messageSizes, type ImapCommand } from './gmail-fetch.ts';
 import { refetchMessages } from './gmail-refetch.ts';
-import { imapDate, imapQuote, readImap, readSmtp, smtpData, SmtpRejection } from './mail-protocol.ts';
+import { imapDate, imapQuote, readImap, readSmtp, smtpMessage, SmtpRejection } from './mail-protocol.ts';
 import { connectMailTls, MailWire, mailProtocolError, type MailConnect } from './mail-wire.ts';
 import { SELF_MAIL_ADDRESS, type CloudTransports } from './transports.ts';
 
@@ -136,7 +136,10 @@ export function createGmailTransports(options: GmailOptions): Pick<CloudTranspor
         const credential = readCredential(options.credentials);
         // 寄给自己的通知换成凭据里的地址；站内信回复（第 113 条，用户点了发送）寄回原发件人。
         const recipient = input.to === SELF_MAIL_ADDRESS ? credential.address : input.to;
-        const data = smtpData(credential.address, input.subject, input.text, input.inReplyTo, recipient);
+        const to = [recipient, ...(input.moreTo ?? [])];
+        const cc = input.cc ?? [];
+        const data = smtpMessage({ from: credential.address, to, cc, subject: input.subject, text: input.text,
+          inReplyTo: input.inReplyTo, attachments: input.attachments ?? [] });
         let wire: MailWire | undefined;
         let startedData = false;
         let accepted = false;
@@ -155,7 +158,9 @@ export function createGmailTransports(options: GmailOptions): Pick<CloudTranspor
             auth.fill(0);
           }
           await command(`MAIL FROM:<${credential.address}>`, [250]);
-          await command(`RCPT TO:<${recipient}>`, [250, 251]);
+          for (const address of [...to, ...cc, ...(input.bcc ?? [])]) {
+            await command(`RCPT TO:<${address}>`, [250, 251]);
+          }
           await command('DATA', [354]);
           startedData = true;
           wire.write(data);

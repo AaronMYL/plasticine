@@ -16,6 +16,7 @@ export const FILE_TYPES: Readonly<Record<string, FileType>> = {
   txt: { type: 'text/plain; charset=utf-8', text: true },
   md: { type: 'text/markdown; charset=utf-8', text: true },
   csv: { type: 'text/csv; charset=utf-8', text: true },
+  tsv: { type: 'text/tab-separated-values; charset=utf-8', text: true },
   json: { type: 'application/json', text: true },
   log: { type: 'text/plain; charset=utf-8', text: true },
   yaml: { type: 'text/yaml; charset=utf-8', text: true },
@@ -30,6 +31,12 @@ export const FILE_TYPES: Readonly<Record<string, FileType>> = {
   xlsx: { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', magic: ZIP },
   pptx: { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', magic: ZIP },
   zip: { type: 'application/zip', magic: ZIP },
+  // 11-16 加音视频（下载下来的、转格式出来的、拿去转写的）：只当文件存和下载，开头的字节各家写法不一，不核。
+  mp3: { type: 'audio/mpeg' },
+  m4a: { type: 'audio/mp4' },
+  wav: { type: 'audio/wav', magic: [0x52, 0x49, 0x46, 0x46] },
+  mp4: { type: 'video/mp4' },
+  mov: { type: 'video/quicktime' },
 };
 
 /** Pictures the file page and artifact cards may show inline; everything else downloads as an attachment. */

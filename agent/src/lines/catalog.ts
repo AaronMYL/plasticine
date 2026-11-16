@@ -64,6 +64,8 @@ export function legacySayings(nodeLabel: NodeLabel): Readonly<Record<string, Leg
     propose_payment: { say: () => '从截图里认一笔账' },
     attachment_text: { say: (args) => withSubject('读附件', text(args, 'path')) },
     web_search: { say: (args) => withSubject('搜网页', text(args, 'query')) },
+    mail_send: { say: (args) => withSubject('发邮件', text(args, 'subject')),
+      consequence: () => '会用你的邮箱发出，对方会收到，撤不回。' },
     web_fetch: { say: (args) => withSubject('读网页', host(text(args, 'url'))) },
     show_widgets: { say: () => '在回复里放卡片' },
     skills_search: { say: (args) => withSubject('查技能目录', text(args, 'query')) },

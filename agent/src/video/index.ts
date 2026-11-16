@@ -18,6 +18,7 @@ import { seedVideoSkill, skillPrompt } from './skill.ts';
 import { videoParseTool } from './tool.ts';
 import type { Transcriber } from './transcriber.ts';
 import { VideoWorker } from './worker.ts';
+import { transcribeFile } from './file-transcribe.ts';
 import { backfillVideoSpaces, publishVideoSpace } from './space-report.ts';
 
 export { DOUYIN_ERROR_TEXT, DouyinFavorites, MAC_JOB_STALE_MS, videoWorkView, workUrl } from './douyin.ts';
@@ -38,6 +39,8 @@ export { parseSubtitle, transcriptText } from './subtitles.ts';
 export { CommandTranscriber, resultOf, transcriberFromEnv, TRANSCRIBE_ENGINES } from './transcriber.ts';
 export type { Transcriber, TranscribeResult } from './transcriber.ts';
 export { resultText, videoParseTool } from './tool.ts';
+export { NO_TRANSCRIBER, transcribeFile } from './file-transcribe.ts';
+export type { FileTranscript } from './file-transcribe.ts';
 export { limiter, TRANSCRIBE_AT_ONCE, VIDEO_RUNS_MAX, VideoWorker } from './worker.ts';
 
 /** 真的下载、抽音频、截图；ffmpeg 是要跑的那一份（装好的组件里的，没有就用系统里的）。 */
@@ -114,6 +117,11 @@ export function createVideo(options: VideoOptions) {
     douyin,
     kit,
     tool: videoParseTool(options.state, worker),
+    /** 转文件页里的一个音频或视频（audio_transcribe 用）。 */
+    transcribeFile: (input: { data: Buffer; extension: string }, signal: AbortSignal) => transcribeFile({
+      transcriber: () => kit.transcriber(), ffmpeg: () => kit.ffmpeg(),
+      whileTranscribing: (work) => worker.whileTranscribing(work), tempRoot }, input, signal),
+    ffmpeg: () => kit.ffmpeg(),
     start: () => {
       backfill();
       worker.start();

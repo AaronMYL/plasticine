@@ -32,6 +32,7 @@ export async function fakeCdp() {
   let scrollY = 0;
   let editable = false;
   let elementLabel = '编辑';
+  let reads = 0;
   const server = createServer((_req, res) => {
     res.setHeader('content-type', 'application/json');
     res.end(JSON.stringify({ webSocketDebuggerUrl: `ws://127.0.0.1:${port}/devtools/browser/fake` }));
@@ -90,6 +91,18 @@ export async function fakeCdp() {
     }
     if (method === 'Page.captureScreenshot') {
       return { data: Buffer.from('png').toString('base64') };
+    }
+    // 打印成 PDF（pdf-print.ts）：分两段按流读回。
+    if (method === 'Target.createBrowserContext') {
+      return { browserContextId: 'context-1' };
+    }
+    if (method === 'Page.printToPDF') {
+      return { data: '', stream: 'stream-1' };
+    }
+    if (method === 'IO.read') {
+      reads += 1;
+      return { base64Encoded: true, data: Buffer.from(reads === 1 ? '%PDF-1.4 ' : '假的').toString('base64'),
+        eof: reads > 1 };
     }
     return {};
   }

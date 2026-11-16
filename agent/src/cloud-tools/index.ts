@@ -58,6 +58,12 @@ export type {
   SshTransport,
 } from './transports.ts';
 export { checkPublicHttpsUrl, displayUrl, isPrivateHost } from './urls.ts';
+export { officeText, xlsxSheets } from './office-text.ts';
+export type { OfficeKind, SheetRows } from './office-text.ts';
+export { printPdf, PRINT_HTML_MAX_CHARS } from './pdf-print.ts';
+export { AUDIO_FORMATS, convertMedia, editImage, IMAGE_FORMATS, IMAGE_SIDE_MAX, JOIN_SIZE_DEFAULT, VIDEO_FORMATS }
+  from './media-convert.ts';
+export type { EditOptions, ImageOp, MediaInput } from './media-convert.ts';
 
 export interface CloudToolsOptions {
   state: StateService;
@@ -139,6 +145,9 @@ export { createCloudBrowserOpenTool } from './cloud-browser-open.ts';
 export { createCloudBrowserTabsTools } from './cloud-browser-tabs.ts';
 export { WebSearch, WebSearchError, type WebSearchDeps } from './web-search.ts';
 export { createWebSearchTools } from './web-search-tools.ts';
+export { createMailSendTool, MAIL_ATTACHMENTS_MAX_BYTES, MAIL_CHANNEL } from './mail-send-tool.ts';
+export { Sandbox, SANDBOX_OUTPUTS_MAX, SANDBOX_TIMEOUT_MAX_S } from './sandbox.ts';
+export type { LaunchResult, SandboxRequest, SandboxResult } from './sandbox.ts';
 export { RendererWatchdog, SPIN_SHARE, SPIN_WINDOW_MS, WATCH_EVERY_MS } from './renderer-watchdog.ts';
 export { createCloudBrowserReadTool } from './cloud-browser-read.ts';
 export { createCloudSshRunTool } from './cloud-ssh-run.ts';

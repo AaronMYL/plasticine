@@ -16,6 +16,8 @@ export const OFFICE_TYPES: Readonly<Record<string, OfficeKind>> = {
 const ENTRY_MAX_BYTES = 32 * 1024 * 1024;
 /** 最多读这么多张表、这么多页。 */
 const PARTS_MAX = 200;
+/** 一行最多读这么多列（Excel 最多 16384 列；位置写得离谱的格子放到最后一列，不铺几万个空格子）。 */
+const COLUMNS_MAX = 16_384;
 
 interface ZipEntry {
   method: number;
@@ -98,7 +100,38 @@ function docxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
     .filter((line) => line.trim() !== '').join('\n');
 }
 
-function xlsxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
+export interface SheetRows {
+  name: string;
+  /** 一行一个数组，按格子的位置（A、B、C…）放，中间空的格子是空字符串。 */
+  rows: string[][];
+}
+
+/** 一个格子的列号（A1 → 0、AB3 → 27）；没写位置的是 null。 */
+function columnOf(attrs: string): number | null {
+  const ref = /\br="([A-Z]+)\d+"/.exec(attrs)?.[1];
+  if (ref === undefined) return null;
+  return [...ref].reduce((sum, char) => sum * 26 + char.charCodeAt(0) - 64, 0) - 1;
+}
+
+function sheetRows(xml: string, shared: readonly string[]): string[][] {
+  return [...xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)].map((row) => {
+    const cells: string[] = [];
+    for (const cell of (row[1] ?? '').matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+      const attrs = cell[1] ?? '';
+      const inner = cell[2] ?? '';
+      let value = textsOf(inner, 'v');
+      if (/\bt="s"/.test(attrs)) value = shared[Number(value)] ?? '';
+      else if (/\bt="inlineStr"/.test(attrs)) value = textsOf(inner, 't');
+      const column = Math.min(columnOf(attrs) ?? cells.length, COLUMNS_MAX);
+      while (cells.length < column) cells.push('');
+      cells[column] = value;
+    }
+    while (cells.length > 0 && cells.at(-1) === '') cells.pop();
+    return cells;
+  });
+}
+
+function xlsxSheetsOf(data: Buffer, entries: Map<string, ZipEntry>): SheetRows[] | null {
   const sharedEntry = entries.get('xl/sharedStrings.xml');
   const sharedXml = sharedEntry === undefined ? '' : entryText(data, sharedEntry) ?? '';
   const shared = [...sharedXml.matchAll(/<si>([\s\S]*?)<\/si>/g)].map((match) => textsOf(match[1] ?? '', 't'));
@@ -110,16 +143,15 @@ function xlsxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
   return sheets.map((name, index) => {
     const entry = entries.get(name);
     const xml = entry === undefined ? '' : entryText(data, entry) ?? '';
-    const rows = [...xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)].map((row) =>
-      [...(row[1] ?? '').matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)].map((cell) => {
-        const attrs = cell[1] ?? '';
-        const inner = cell[2] ?? '';
-        if (/\bt="s"/.test(attrs)) return shared[Number(textsOf(inner, 'v'))] ?? '';
-        if (/\bt="inlineStr"/.test(attrs)) return textsOf(inner, 't');
-        return textsOf(inner, 'v');
-      }).join('\t').replace(/\t+$/, '')).filter((line) => line !== '');
-    return [`## ${names[index] ?? `表 ${index + 1}`}`, ...rows].join('\n');
-  }).join('\n\n');
+    return { name: names[index] ?? `表 ${index + 1}`, rows: sheetRows(xml, shared) };
+  });
+}
+
+function xlsxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
+  const sheets = xlsxSheetsOf(data, entries);
+  if (sheets === null) return null;
+  return sheets.map((sheet) => [`## ${sheet.name}`, ...sheet.rows.map((cells) => cells.join('\t'))
+    .filter((line) => line !== '')].join('\n')).join('\n\n');
 }
 
 function pptxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
@@ -134,10 +166,20 @@ function pptxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
   }).join('\n\n');
 }
 
+function zipEntries(data: Buffer): Map<string, ZipEntry> | null {
+  if (data.length < 22 || data.readUInt32LE(0) !== 0x04034b50) return null;
+  return centralDirectory(data);
+}
+
+/** .xlsx 的每张表按行、按格子位置读出来（转 CSV 用）；读不了是 null。 */
+export function xlsxSheets(data: Buffer): SheetRows[] | null {
+  const entries = zipEntries(data);
+  return entries === null ? null : xlsxSheetsOf(data, entries);
+}
+
 /** 读成文字；读不了是 null（不是 zip、缺了要的文件、加密）。 */
 export function officeText(kind: OfficeKind, data: Buffer): string | null {
-  if (data.length < 22 || data.readUInt32LE(0) !== 0x04034b50) return null;
-  const entries = centralDirectory(data);
+  const entries = zipEntries(data);
   if (entries === null) return null;
   if (kind === 'docx') return docxText(data, entries);
   if (kind === 'xlsx') return xlsxText(data, entries);

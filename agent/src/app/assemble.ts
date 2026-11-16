@@ -6,7 +6,7 @@
 import { offerResolver } from '../loop/index.ts';
 import { withMainSoul } from './soul-text.ts';
 import {
-  createServerCommandTools, ServerCommands, type CloudTransports, type FaviconFetchOptions,
+  createServerCommandTools, Sandbox, ServerCommands, type CloudTransports, type FaviconFetchOptions,
   type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
 import { autoOnlyPermissionGate, createShowWidgetsTool, getTimeTool, ToolRegistry, type Tool } from '../tools/index.ts';
@@ -129,6 +129,8 @@ export interface AssembleOptions {
   kernelModels?: KernelModelParts;
   /** 来信的插图（第 8 批第 6 条）：测试给假的；不给就用连着的 OpenAI（kernel/images.ts），没连模型就是 null。 */
   illustrator?: Illustrator | null;
+  /** 生成 PDF 用的打印（11-16）：测试给假的，不起浏览器；不给就借云端共享浏览器打印。 */
+  printPdf?: (html: string, signal: AbortSignal) => Promise<Buffer>;
   /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；不给或 null = 不认本机令牌。 */
   localToken?: string | null;
 }
@@ -342,7 +344,11 @@ export function assembleApp(options: AssembleOptions): App {
       heartbeatChecklistTool(() => timed.heartbeat),
       ...libraryTools({ state, workspace: toolGroups.artifacts.workspace },
         (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
-      ...assembleFileTools(state, toolGroups.artifacts.workspace), ...lineTimers.tools(),
+      ...assembleFileTools(state, toolGroups.artifacts.workspace, { attachments: toolGroups.cloud.attachments,
+        illustrator, ffmpeg: () => video.ffmpeg(), transcribe: (input, signal) => video.transcribeFile(input, signal),
+        sandbox: new Sandbox({ root: join(options.stateDirectory, 'sandbox') }), now,
+        ...(options.printPdf === undefined ? {} : { printPdf: options.printPdf }) }),
+      ...lineTimers.tools(),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。
       ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId), {
         illustrator,

@@ -2,6 +2,7 @@
 // 接上」）。先看类型和大小：只收认得的几种，超过上限的不读；文字里的 NUL 当作不是文字。
 
 import { CloudToolError } from './errors.ts';
+import { officeText } from './office-text.ts';
 import type { AttachmentTransport } from './transports.ts';
 
 // 一个附件最多 10 MB（够一份长 PDF；旧版的附件 408 个里最大的是截图）。
@@ -18,6 +19,11 @@ export const TEXT_TYPES: Readonly<Record<string, string>> = {
 export const CONVERTED_TYPES: Readonly<Record<string, string>> = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+};
+// 11-16：Excel、PowerPoint 在这里自己读（office-text.ts），不经传输；和聊天附件读法一样。
+const OFFICE_READ: Readonly<Record<string, { kind: 'xlsx' | 'pptx'; type: string }>> = {
+  xlsx: { kind: 'xlsx', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  pptx: { kind: 'pptx', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' },
 };
 // %PDF- and the ZIP header a .docx starts with.
 const MAGIC: Readonly<Record<string, readonly number[]>> = { pdf: [0x25, 0x50, 0x44, 0x46, 0x2d], docx: [0x50, 0x4b] };
@@ -55,6 +61,14 @@ export async function attachmentText(
       throw new CloudToolError('invalid_input', '这个文件看起来不是文字（里面有 NUL）。', 'file');
     }
     return { ...clip(text), type: textType };
+  }
+  const office = OFFICE_READ[extension];
+  if (office !== undefined) {
+    const text = officeText(office.kind, file.data);
+    if (text === null) {
+      throw new CloudToolError('invalid_input', `这份 .${extension} 读不出来（不是正常的文件，或者加了密）。`, 'file');
+    }
+    return { ...clip(text), type: office.type };
   }
   const convertedType = CONVERTED_TYPES[extension];
   const magic = MAGIC[extension];

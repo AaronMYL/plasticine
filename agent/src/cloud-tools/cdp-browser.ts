@@ -3,7 +3,8 @@
 import { publishXThroughPage } from './x-publish.ts';
 import type { BrowserFrame, BrowserTab, BrowserTabAction, BrowserViewport } from '../../shared/api/browser.ts';
 import { browserUrl } from './browser-url.ts';
-import { CdpConnection } from './cdp-connection.ts';
+import { CDP_ENDPOINT, CdpConnection } from './cdp-connection.ts';
+import { PRINT_PAGE_URL } from './pdf-print.ts';
 import { dispatchInput } from './cdp-input.ts';
 import {
   cdpValue, CdpDataSchema, CdpSessionSchema, CdpTargetSchema, CdpTargetsSchema, CdpTextSchema, CdpBooleanSchema,
@@ -17,7 +18,6 @@ import type { BrowserAction, BrowserPage, BrowserProcess, BrowserSnapshot, Brows
 import type { BrowserInspection } from '../../shared/browser-observation.ts';
 import { CdpInspectionSchema, OBSERVE_PAGE } from './cdp-observation.ts';
 
-const CDP_ENDPOINT = 'http://127.0.0.1:9333';
 const RELEASE_TIMEOUT_MS = 5_000;
 // 只返回能否编辑，不读取字段值；按钮、选择器和只读字段不会唤起手机文字键盘。
 const EDITABLE_FOCUS = `(() => {
@@ -139,7 +139,8 @@ export class CdpBrowser implements BrowserTransport {
     if (revision !== this.#targetRevision) {
       return this.snapshot(signal);
     }
-    const tabs = result.targetInfos.filter((target) => target.type === 'page')
+    const tabs = result.targetInfos
+      .filter((target) => target.type === 'page' && !target.url.startsWith(PRINT_PAGE_URL))
       .map((target) => ({ id: target.targetId, url: target.url, title: target.title }));
     const previous = this.#active;
     if (!tabs.some((tab) => tab.id === this.#active) && this.#active !== (tabs[0]?.id ?? null)) {

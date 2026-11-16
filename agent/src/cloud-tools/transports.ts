@@ -128,6 +128,11 @@ export interface OutgoingMail {
   subject: string;
   text: string;
   inReplyTo: string | null;
+  /** 11-16 mail_send：再加的收件人、抄送、密送（密送只投递，不写进信头）。 */
+  moreTo?: readonly string[];
+  cc?: readonly string[];
+  bcc?: readonly string[];
+  attachments?: readonly { name: string; type: string; data: Buffer }[];
 }
 
 export interface MailTransport {

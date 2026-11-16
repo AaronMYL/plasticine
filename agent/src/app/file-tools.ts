@@ -1,7 +1,11 @@
-// 存文件、发文件这两件工具（artifacts/file-tools.ts）在这里接上对话附件的归属和公网下载。
+// 文件页的工具在这里接上外面的东西：存文件、发文件（artifacts/file-tools.ts）接对话附件的归属和公网下载；
+// 生成、转格式（office-tools.ts）接云端浏览器打印 PDF、读 Office 和 PDF 的字、ffmpeg；出图、改图、转写
+// （media-tools.ts）接出图的模型、ffmpeg、本地转写。
 
-import { fileTools, type Workspace } from '../artifacts/index.ts';
-import { PublicFetchError, PublicFetcher } from '../cloud-tools/index.ts';
+import { fileTools, mediaTools, officeTools, sandboxTool, type Workspace } from '../artifacts/index.ts';
+import { attachmentText, type AttachmentTransport, convertMedia, editImage, officeText, printPdf, PublicFetchError,
+  PublicFetcher, type Sandbox, xlsxSheets } from '../cloud-tools/index.ts';
+import type { Illustrator } from '../kernel/index.ts';
 import type { KernelTool } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
 import { ATTACHMENT_OWNER } from './attachments.ts';
@@ -28,9 +32,43 @@ export function deviceFileOf(state: StateService, actionId: string): Buffer {
   return Buffer.from(data, 'base64');
 }
 
-export function assembleFileTools(state: StateService, workspace: Workspace,
+export interface FileToolOutside {
+  /** 读 PDF 的字（云端的附件转换）。 */
+  attachments: AttachmentTransport;
+  illustrator: Illustrator | null;
+  /** 要跑的 ffmpeg（装了本地转写用组件里的）。 */
+  ffmpeg: () => string;
+  transcribe(input: { data: Buffer; extension: string }, signal: AbortSignal):
+    Promise<{ text: string; seconds: number | null; engine: string }>;
+  /** 测试换成假的：不起浏览器。 */
+  printPdf?: (html: string, signal: AbortSignal) => Promise<Buffer>;
+  sandbox: Sandbox;
+  now: () => Date;
+}
+
+function outsideTools(workspace: Workspace, outside: FileToolOutside): KernelTool[] {
+  const media = (input: { data: Buffer; extension: string }, output: string, signal: AbortSignal, quality?: number) =>
+    convertMedia(outside.ffmpeg(), input, output, signal, quality);
+  return [
+    ...officeTools({ workspace, printPdf: outside.printPdf ?? ((html, signal) => printPdf(html, signal)), officeText,
+      xlsxSheets, convertMedia: media,
+      pdfText: async (name, data, signal) =>
+        (await attachmentText(outside.attachments, { name, data }, signal)).text }),
+    ...mediaTools({ workspace,
+      editImage: (inputs, ops, output, signal, options) => editImage(outside.ffmpeg(), inputs, ops, output, signal,
+        options),
+      draw: async (prompt, signal) => (outside.illustrator === null
+        ? { error: '这台 Plasticine 没有能出图的模型（设置 · AI 里接一个 OpenAI 的账号）。' }
+        : outside.illustrator.draw(prompt, signal)),
+      transcribe: (input, signal) => outside.transcribe(input, signal) }),
+    sandboxTool({ workspace, available: () => outside.sandbox.available(), now: outside.now,
+      run: (request, signal) => outside.sandbox.run(request, signal) }),
+  ];
+}
+
+export function assembleFileTools(state: StateService, workspace: Workspace, outside: FileToolOutside,
   fetcher: PublicFetcher = new PublicFetcher()): KernelTool[] {
-  return fileTools({ workspace, state, attachmentOwner: ATTACHMENT_OWNER,
+  return [...outsideTools(workspace, outside), ...fileTools({ workspace, state, attachmentOwner: ATTACHMENT_OWNER,
     deviceFile: (actionId) => deviceFileOf(state, actionId),
     async download(url, maxBytes, signal) {
       try {
@@ -41,5 +79,5 @@ export function assembleFileTools(state: StateService, workspace: Workspace,
         if (cause instanceof PublicFetchError) throw new Error(`没下下来：${cause.message}`, { cause });
         throw cause;
       }
-    } });
+    } })];
 }

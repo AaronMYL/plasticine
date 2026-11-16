@@ -5,7 +5,7 @@
 import {
   attachmentText, createCloudBrowserActTool, createCloudBrowserObserveTool, createCloudBrowserOpenTool,
   createCloudBrowserReadTool, createCloudBrowserTabsTools, createCloudSshRunTool, createCloudTools,
-  createWebSearchTools, FaviconFetcher, LinkPreviewFetcher, WebSearch,
+  createMailSendTool, createWebSearchTools, FaviconFetcher, LinkPreviewFetcher, WebSearch,
   MailImageFetcher, MailImageSigner, type CloudTools, type CloudTransports, type FaviconFetchOptions,
   type InternalBrowserCookie, type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
@@ -123,6 +123,10 @@ export function toolGroupTools(services: ToolGroupServices): Tool[] {
     createCloudBrowserActTool(cloud.browser),
     ...createCloudBrowserTabsTools(cloud.browser),
     ...createWebSearchTools(services.webSearch),
+    createMailSendTool({ sender: cloud.mail, readFile: (path) => {
+      const { data, entry } = artifacts.workspace.read(path);
+      return { name: entry.name, type: (entry.type ?? 'application/octet-stream').split(';')[0] ?? '', data };
+    } }),
     createAttachmentTextTool({
       read: (path, signal) => {
         const { data, entry } = artifacts.workspace.read(path);

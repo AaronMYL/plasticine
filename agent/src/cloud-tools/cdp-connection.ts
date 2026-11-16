@@ -5,6 +5,8 @@ import { cdpValue, CdpEnvelopeSchema, CdpVersionSchema, type CdpEvent } from './
 const COMMAND_TIMEOUT_MS = 10_000;
 const MAX_MESSAGE_CHARS = 4_500_000;
 export const BROWSER_UNAVAILABLE = '浏览器还没起来，请重试。';
+/** 云端共享浏览器的调试口（deploy/plasticine-browser.service 只开在回环上）。 */
+export const CDP_ENDPOINT = 'http://127.0.0.1:9333';
 
 interface Pending {
   resolve(value: unknown): void;
