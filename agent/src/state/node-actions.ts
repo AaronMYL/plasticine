@@ -89,8 +89,9 @@ export function createNodeActionStore(context: StoreContext) {
     },
     /** 新内核：一条线（run_id = line:<线>）在一台设备上的动作，旧的在前（问这一页的提交按线核对）。 */
     forRunNode(runId: string, nodeId: string): NodeAction[] {
+      // 最近的 MAX_PAGE_SIZE 条，按时间正序（同一毫秒按写入先后）：做了很久的线也要看得到最新那次被拦下的提交。
       return store.select('run_id = $run_id AND node_id = $node_id', { run_id: runId, node_id: nodeId },
-        { limit: MAX_PAGE_SIZE }, 'requested_at ASC, id ASC');
+        { limit: MAX_PAGE_SIZE }, 'requested_at DESC, rowid DESC').reverse();
     },
     /** The newest action of these kinds on the node since `since` (截图 / 点击 / 输入的租约). */
     latestOfKinds(nodeId: string, kinds: readonly string[], since: string): NodeAction | undefined {

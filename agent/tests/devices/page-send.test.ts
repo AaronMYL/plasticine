@@ -140,3 +140,23 @@ test('付款这一类不走 page_send', async () => {
   const results = h.handle.state.lineMessages.after(line.id, 0).filter((row) => row.role === 'toolResult');
   assert.match(JSON.stringify(results.at(-1)?.message), /付款、删除或改设置/);
 });
+
+test('拦下发送以后线又在这个标签上填过（哪怕是同一段话）：不放行，要重新点发送', async () => {
+  const { h, nodeId, sent } = await rig();
+  const line = h.kernel.open({ title: '海投打招呼', goal: '给成都岗位打招呼', parentLineId: MAIN_LINE_ID,
+    projectId: null });
+  const [fill, click, send] = steps(nodeId, 't', GREETING);
+  // 设备上的编号不再绑整页（11-16）：拦下以后脑自己动过这个标签（比如点进另一位的会话再填同一段），旧的拦下不作数。
+  const refill = fauxAssistantMessage([fauxToolCall('device_action', { nodeId, purpose: '再填一次',
+    action: { kind: 'tab_act', tabId: 'tab-chat', version: 'v1', act: { op: 'fill', n: 5, value: GREETING },
+      step: '再填一次', submitAsk: null } }, { id: 't-r' })], { stopReason: 'toolUse' });
+  h.respond([fill!, click!, refill, send!, fauxAssistantMessage('没发')]);
+  await until(() => h.handle.state.asks.open().length === 1 || h.kernel.view(line.id).status === 'idle', '停下');
+  for (const ask of h.handle.state.asks.open()) {
+    h.desk.answer({ askId: ask.id, optionId: 'allow', answerer: { deviceId: 'device-mac' } });
+  }
+  await until(() => h.kernel.view(line.id).status === 'idle', '这一轮结束');
+  assert.equal(clicked(sent), 0);
+  const results = h.handle.state.lineMessages.after(line.id, 0).filter((row) => row.role === 'toolResult');
+  assert.match(JSON.stringify(results.at(-1)?.message), /又点过、填过或换过页/);
+});

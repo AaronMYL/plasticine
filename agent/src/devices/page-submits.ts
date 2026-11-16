@@ -91,6 +91,20 @@ function latestHold(actions: NodeAction[], tabId: string): SubmitHold | null {
   return null;
 }
 
+/** 会改动网页标签的动作：拦下提交以后这个标签上又做过其中一种，那次拦下就不再作数。 */
+const TAB_CHANGES: readonly string[] = ['tab_act', 'tab_click', 'tab_fill', 'tab_point', 'tab_type', 'tab_navigate'];
+
+/**
+ * 被拦下的那次提交之后，这条线在这个标签上又点过、填过、打过字或换过页（11-16：设备上的编号不再绑整页 HTML，
+ * 页面自己变不作废；脑自己动过这个标签，就得重新点一次发送、重新拦下再放行）。
+ */
+export function changedSinceHold(state: ActionsState, runId: string, nodeId: string, hold: SubmitHold): boolean {
+  const rows = state.nodeActions.forRunNode(runId, nodeId);
+  const at = rows.findIndex((row) => row.actionId === hold.actionId);
+  return rows.slice(at + 1).some((row) => tabIdOf(row) === hold.tabId && TAB_CHANGES.includes(row.kind)
+    && row.status !== 'refused');
+}
+
 /** 这条线在这个标签上最近看到的页面地址、最近一次填进去的字（照卡发送核网站和内容用，tasks/send-permit.ts）。 */
 export interface TabTrace {
   url: string | null;
@@ -153,6 +167,14 @@ export function tabTrace(state: ActionsState, runId: string, nodeId: string, tab
   return { url, filled };
 }
 
+const TOUCHED = '拦下发送以后这个标签上又点过、填过或换过页：重新感知，再点一次发送，拦下后再放行。';
+
+/** 这条线在这个标签上最近一次被拦下的提交之后又动过这个标签。 */
+function touched(state: ActionsState, runId: string, nodeId: string, tabId: string): boolean {
+  const hold = submitHoldForRun(state, runId, nodeId, tabId);
+  return hold !== null && changedSinceHold(state, runId, nodeId, hold);
+}
+
 function refuse(reason: string): Refusal {
   return { layer: 'confirm', reason: `${reason}这一步没有发出。` };
 }
@@ -212,6 +234,9 @@ export function submitRefusal(state: SubmitState, request: { nodeId: string; run
   if (alreadyUsed(state, { runId, nodeId: request.nodeId }, ask.id)) {
     return refuse('这张卡已经放行过一次提交（一张卡只放一次）；要再提交得再问他。');
   }
+  if (touched(state, runId, request.nodeId, action.tabId)) {
+    return refuse(TOUCHED);
+  }
   return null;
 }
 
@@ -243,6 +268,9 @@ function permitRefusal(state: SubmitState, request: { nodeId: string; runId?: st
   }
   if (alreadyUsed(state, { runId, nodeId: request.nodeId }, permit.id)) {
     return refuse('这个照卡放行已经用过一次；下一位要再照卡放行一次。');
+  }
+  if (touched(state, runId, request.nodeId, action.tabId)) {
+    return refuse(TOUCHED);
   }
   return null;
 }
@@ -276,6 +304,9 @@ function sendRefusal(state: SubmitState, request: { nodeId: string; runId?: stri
   }
   if (alreadyUsed(state, { runId, nodeId: request.nodeId }, log.id)) {
     return refuse('这次发送已经放行过一次。');
+  }
+  if (changedSinceHold(state, runId, request.nodeId, hold)) {
+    return refuse(TOUCHED);
   }
   return null;
 }

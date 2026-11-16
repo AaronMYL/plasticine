@@ -7,8 +7,11 @@ const MAX_VALUE = 200;
 const DOT = '#5A6B85';
 const DOT_IDLE_MS = 8000;
 const doc = document;
-const store = window.__plasticineOperate
-  || (window.__plasticineOperate = { version: '', url: '', digest: '', elements: [] });
+const KEEP_NUMBERINGS = 12;
+const store = window.__plasticineOperate || (window.__plasticineOperate = {});
+if (!Array.isArray(store.numberings)) {
+  store.numberings = [];
+}
 
 const WORDS = {
   pay: /付款|支付|结账|结算|下单|购买|买单|订购|充值|转账|汇款|打款|\bpay\b|pay now|checkout|check out|\bbuy\b|purchase|place order|order now/i,
@@ -336,6 +339,20 @@ const candidates = (layout) => {
   return Array.from(doc.body.querySelectorAll('*')).filter((el) => known.has(el) || pointerRoot(el));
 };
 
+// 页面上填的值和表单发往哪里：输入框、勾选、下拉、可编辑区的全文，表单的 action / method / target 和按钮的 formaction。
+// 提交前和那一版比，变了就不提交（审批绑的就是这些，不是整页 HTML）。
+const fieldsOf = () => {
+  const values = Array.from(doc.querySelectorAll('input, textarea, select')).map((el) =>
+    [el.value, el.checked, el.selectedIndex]);
+  const editors = Array.from(doc.querySelectorAll('[contenteditable]'))
+    .filter((el) => (el.getAttribute('contenteditable') || '').toLowerCase() !== 'false')
+    .map((el) => el.textContent);
+  const forms = Array.from(doc.querySelectorAll('form')).map((form) =>
+    [form.getAttribute('action'), form.getAttribute('method'), form.getAttribute('target')]);
+  const overrides = Array.from(doc.querySelectorAll('[formaction]')).map((el) => el.getAttribute('formaction'));
+  return JSON.stringify([values, editors, forms, overrides]);
+};
+
 const perceive = () => {
   const layout = hasLayout();
   const elements = [];
@@ -430,24 +447,24 @@ const perceive = () => {
   const textChars = (doc.body ? doc.body.textContent : '').replace(/\s+/g, '').length;
   const pictures = doc.querySelectorAll('img, canvas, video, svg').length;
   const digest = hash(outline);
-  // 审批绑定完整本地状态，不只绑定被截断的大纲。完整值只在隔离脚本世界比较，不回传。
-  const copy = doc.documentElement.cloneNode(true);
-  copy.querySelectorAll('plasticine-dot, plasticine-circle').forEach((node) => node.remove());
-  const values = Array.from(doc.querySelectorAll('input, textarea, select')).map((el) =>
-    [el.value, el.checked, el.selectedIndex]);
-  const signature = JSON.stringify([copy.outerHTML, values]);
-  // 页面没变（地址和大纲一样、元素还是那几个）就沿用上一次的编号版本：「问这一页」每发一句都感知一次，没变的页面
-  // 不让脑手里的编号作废。
-  const same = store.signature === signature && store.digest === digest && store.url === location.href
-    && store.elements.length === elements.length && store.elements.every((el, index) => el === elements[index]);
+  // 编号版本：地址、编了号的那几个节点（同一个节点、同一个角色和名字）、页面上填的值都没变，就沿用上一版。
+  // 填的值、表单发往哪里的完整内容只在隔离脚本世界比较，不回传。
+  const names = items.map((item) => item.role + '\u0001' + item.name);
+  const fields = fieldsOf();
+  const last = store.numberings[store.numberings.length - 1];
+  const same = !!last && last.url === location.href && last.fields === fields
+    && last.elements.length === elements.length
+    && last.elements.every((el, index) => el === elements[index] && last.names[index] === names[index]);
+  let current = last;
   if (!same) {
-    store.version = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    current = { version: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), url: location.href,
+      elements, names, fields };
+    store.numberings.push(current);
+    if (store.numberings.length > KEEP_NUMBERINGS) {
+      store.numberings.shift();
+    }
   }
-  store.signature = signature;
-  store.url = location.href;
-  store.digest = digest;
-  store.elements = elements;
-  return { version: store.version, url: location.href, title: doc.title, outline, totalChars: total,
+  return { version: current.version, url: location.href, title: doc.title, outline, totalChars: total,
     frameCount: doc.querySelectorAll('iframe, frame').length,
     truncated: total > size, elements: items, imageHeavy: textChars < 200 && pictures > 0, digest };
 };
@@ -563,9 +580,9 @@ const pressEnter = (el) => {
 
 const act = (request) => {
   const step = request.act || {};
-  // 重新读取后才比较版本；输入值、目的地或节点身份变了，旧审批绝不能继续用。
-  perceive();
-  if (request.version !== store.version || store.url !== location.href) {
+  // 按脑手里那一版的编号找节点：那一版还留着、地址没换。
+  const numbering = store.numberings.find((item) => item.version === request.version);
+  if (!numbering || numbering.url !== location.href) {
     return { ok: false, error: 'stale' };
   }
   if (step.op === 'scroll') {
@@ -576,16 +593,23 @@ const act = (request) => {
     mark.style.top = Math.round(dy > 0 ? window.innerHeight - 24 : 24) + 'px';
     return { ok: true, op: 'scroll' };
   }
-  if (request.version !== store.version || store.url !== location.href) {
-    return { ok: false, error: 'stale' };
-  }
-  const el = store.elements[Number(step.n) - 1];
-  if (!el || !el.isConnected) {
+  const el = numbering.elements[Number(step.n) - 1];
+  if (!el || !el.isConnected || hiddenByStyle(el)) {
     return { ok: false, error: 'stale' };
   }
   const target = { n: Number(step.n), role: roleOf(el), name: nameOf(el) };
+  const seen = numbering.names[Number(step.n) - 1];
+  // 还是那一个节点，而且还是那个角色、那个名字（列表复用节点换了内容就不认）；填和选会改可编辑框的名字，只核角色。
+  const editing = step.op === 'fill' || step.op === 'select';
+  if (editing ? seen.split('\u0001')[0] !== target.role : seen !== target.role + '\u0001' + target.name) {
+    return { ok: false, error: 'stale' };
+  }
   if (step.op === 'click' || step.op === 'enter') {
     const kind = step.op === 'enter' ? enterKind(el) : submitKind(el);
+    // 提交（拦下和放行都一样）：页面上填的值、表单发往哪里得和脑看到的那一版一样，变了旧审批绝不能继续用。
+    if (kind && fieldsOf() !== numbering.fields) {
+      return { ok: false, error: 'stale' };
+    }
     if (kind && request.allowSubmit !== true) {
       return { ok: false, error: 'submit', target, submit: { kind, label: target.name } };
     }

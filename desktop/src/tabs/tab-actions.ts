@@ -21,6 +21,7 @@ import type { Tab, TabViews } from './tab-views.ts';
 const PRESENT_MS = 30_000;
 /** 点之后等页面动一下再读回；还在载入就等载入完，最多 10 秒（和 Mac 壳一样）。 */
 const SETTLE_MS = 600;
+const FILL_SETTLE_MS = 400;
 const LOAD_WAIT_MS = 10_000;
 /** tab_shot 的 JPEG 质量：看得清字、几百 KB。 */
 const SHOT_QUALITY = 80;
@@ -381,6 +382,9 @@ export class TabActions implements TabActionPort {
     if (action.act.op === 'click' || action.act.op === 'enter') {
       await sleep(SETTLE_MS);
       await this.waitLoad(tab);
+    } else if (action.act.op === 'fill' || action.act.op === 'select') {
+      // 填完网页常会再改一次自己（发送按钮变可用、草稿出现）：等它改完再读回，回给脑的那一版编号才是稳的。
+      await sleep(FILL_SETTLE_MS);
     }
     const after = await this.perceive(tab.id);
     report('done', action.step);

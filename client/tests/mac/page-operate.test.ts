@@ -208,16 +208,55 @@ describe('按编号操作', () => {
     expect((await perceive()).version).not.toBe(first.version);
   });
 
-  it('编号过期（页面变过、元素没了）就不做，要重新感知', async () => {
+  it('页面上别处的字变了编号照样能用；元素没了、名字变了、换了页就过期', async () => {
     document.body.innerHTML = RACE;
     const old = await numberOf('下一步');
     document.querySelector('h1')!.textContent = '确认报名信息';
     await perceive();
     expect(await run({ op: 'act', version: old.version, act: { op: 'click', n: old.n } }))
+      .toMatchObject({ ok: true, target: { name: '下一步' } });
+    const renamed = await numberOf('下一步');
+    document.getElementById('next')!.textContent = '删除报名';
+    expect(await run({ op: 'act', version: renamed.version, act: { op: 'click', n: renamed.n } }))
       .toMatchObject({ ok: false, error: 'stale' });
-    const fresh = await numberOf('下一步');
+    const fresh = await numberOf('删除报名');
     document.getElementById('next')!.remove();
     expect(await run({ op: 'act', version: fresh.version, act: { op: 'click', n: fresh.n } }))
+      .toMatchObject({ ok: false, error: 'stale' });
+  });
+
+  it('聊天页：填完以后页面自己又改了一次（草稿、按钮样式、新消息），用填完回的那一版照样能点发送', async () => {
+    document.body.innerHTML = `<ul id="list"><li><a href="#a">龚女士</a></li></ul><p id="time">23:31</p>
+      <textarea aria-label="消息"></textarea><button class="btn-send disabled">发送</button>`;
+    const box = await numberOf('消息');
+    const filled = await run({ op: 'act', version: box.version, act: { op: 'fill', n: box.n, value: '您好，我是牟元礼' } });
+    expect(filled).toMatchObject({ ok: true, matches: true });
+    const page = await perceive();
+    expect(page.version).not.toBe(box.version);
+    // 页面自己改：发送按钮去掉 disabled 样式、会话列表加一条草稿、时间跳了一分钟、多了一个新链接。
+    document.querySelector('button')!.className = 'btn-send';
+    document.getElementById('time')!.textContent = '23:32';
+    document.getElementById('list')!.insertAdjacentHTML('afterbegin', '<li><a href="#b">[草稿] 您好</a></li>');
+    await perceive();
+    const send = page.elements.find((item) => item.name === '发送')!;
+    const held = await run({ op: 'act', version: page.version, act: { op: 'click', n: send.n }, allowSubmit: false });
+    expect(held).toMatchObject({ ok: false, error: 'submit', submit: { kind: 'publish', label: '发送' } });
+    const clicked = vi.fn();
+    document.querySelector('button')!.addEventListener('click', clicked);
+    expect(await run({ op: 'act', version: page.version, act: { op: 'click', n: send.n }, allowSubmit: true }))
+      .toMatchObject({ ok: true, submitted: 'publish' });
+    vi.runOnlyPendingTimers();
+    expect(clicked).toHaveBeenCalledTimes(1);
+  });
+
+  it('提交前输入框里的字被改了：拦下和放行都按过期处理，不发', async () => {
+    document.body.innerHTML = '<div role="textbox" contenteditable="true" aria-label="消息">原文</div><button>发送</button>';
+    const page = await perceive();
+    const send = page.elements.find((item) => item.name === '发送')!;
+    document.querySelector('[contenteditable]')!.textContent = '别的话';
+    expect(await run({ op: 'act', version: page.version, act: { op: 'click', n: send.n }, allowSubmit: false }))
+      .toMatchObject({ ok: false, error: 'stale' });
+    expect(await run({ op: 'act', version: page.version, act: { op: 'click', n: send.n }, allowSubmit: true }))
       .toMatchObject({ ok: false, error: 'stale' });
   });
 
