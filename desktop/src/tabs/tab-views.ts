@@ -10,7 +10,7 @@ import { WebContentsView, shell, type BaseWindow, type Session, type WebContents
 import type { WebTabEvent, WebTabFrame, WebTabsSync } from '../../../agent/shared/api/mac-bridge.ts';
 import { TAB_CHANNELS } from '../app/channels.ts';
 import { dispatchMouse, type ForwardedMouse } from './tab-input.ts';
-import { restackIndex, tabLayer, viewBounds, type TabLayer } from './tab-layering.ts';
+import { hiddenBounds, restackIndex, tabLayer, viewBounds, type TabLayer } from './tab-layering.ts';
 import { TabPopups } from './tab-popups.ts';
 import { TabStage } from './tab-stage.ts';
 import { reportedUrl } from './tab-url.ts';
@@ -262,6 +262,8 @@ export class TabViews {
     const view = new WebContentsView({ webPreferences: { session: this.deps.session, preload: this.deps.preload,
       contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false } });
     view.setVisible(false);
+    // 后台开的标签不露出来也要有大小：不然页面按 0 宽排版、截图是空的。
+    view.setBounds(hiddenBounds(this.frameValue));
     view.webContents.setUserAgent(this.deps.userAgent);
     const tab: Tab = { id: tabId, view, openedBy, lastInputAt: 0, requestedUrl: isWeb(url) ? url : '' };
     this.tabs.set(tabId, tab);
@@ -298,6 +300,14 @@ export class TabViews {
     const shown = active !== null && frame !== null && frame.width > 0 && frame.height > 0 ? active : null;
     if (shown !== null && frame !== null) {
       shown.view.setBounds(viewBounds(frame));
+    }
+    // 藏着的标签跟着浏览区一起改大小，后台截图、排版和他切过来看到的一样。
+    const hidden = hiddenBounds(frame);
+    for (const tab of this.tabs.values()) {
+      const now = tab.view.getBounds();
+      if (tab !== shown && (now.width !== hidden.width || now.height !== hidden.height)) {
+        tab.view.setBounds(hidden);
+      }
     }
     this.stage.update(shown?.id ?? null, this.layerValue);
   }

@@ -133,3 +133,12 @@ test('设备工具失败保留实际异常和原因，便于那条线定位后�
   assert.match(result.content, /节点动作执行失败/);
   assert.match(result.content, /目标文件 Documents\/a.md 不存在/);
 });
+
+test('模型不能直接用 tab_show 把窗口切到前面（11-16 线上抢屏幕）：只有 tab_handoff 发的那一次能发', async () => {
+  const tool = createDeviceActionTool(devices.actions);
+  const params = { nodeId, purpose: '看不到图片入口，切到前面看看', action: { kind: 'tab_show', tabId: 't-1' } };
+  await assert.rejects(tool.execute(params as never, toolContext('call-show')),
+    (error: Error & { content?: string }) => /抢他的屏幕/.test(error.content ?? ''));
+  assert.equal(sent.length, 0);
+  assert.equal(state.nodeActions.recent(nodeId).length, 0);
+});

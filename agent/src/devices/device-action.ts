@@ -229,6 +229,14 @@ async function recapture(call: Call): Promise<never> {
   throw new ToolFailure(`截图过期，这一步没有发出：${done}。先看新截图重新定位，再发点击或输入。`);
 }
 
+/**
+ * tab_show 会把 Plasticine 窗口切到前面、抢他的屏幕（11-16 线上：公众号主编后台截图失败后两次直接调它）：只给
+ * tab_handoff 用——那里同时出「这一步要你来」卡。tab_handoff 发的那一次调用 id 带这个后缀，模型自己的调用 id 不会带。
+ */
+export const HANDOFF_SHOW_CALL_SUFFIX = ':handoff-show';
+const SHOW_REFUSED = 'tab_show 会把窗口切到他眼前、抢他的屏幕，不能直接用。只有要他本人做的一步（登录、扫码、验证码）'
+  + '用 tab_handoff；后台截图或上传没成功，先看回执里的原因再试（tab_perceive、过一会儿再 tab_shot），不要切前台。';
+
 export function createDeviceActionTool(devices: DeviceActionPort, waits?: WaitPort): Tool {
   return defineTool({
     name: DEVICE_ACTION_TOOL,
@@ -240,7 +248,8 @@ export function createDeviceActionTool(devices: DeviceActionPort, waits?: WaitPo
       + 'tab_click 按 CSS 选择器或看得到的字点（只能对上一个）；tab_fill 按选择器填；tab_wait 等一段字出现或消失（代替一遍遍读）；tab_close 关 Plasticine 自己开的、'
       + '用完的标签。tab_key 按一个键或组合键（Escape 关弹窗、方向键在下拉里移动、Meta+A 全选；回车不按、复制粘贴不按）；tab_scroll 在画面某个位置滚（会话列表、弹窗里的长列表）；'
       + 'tab_paste 往焦点里粘贴（给 html 就带格式，公众号这类编辑器认排版；不碰他的剪贴板）。上传文件用 tab_upload，要他本人登录、扫码、输验证码用 tab_handoff，'
-      + '文件在设备和文件页之间搬用 device_file_get / device_file_put（这几件不用 tab_upload、tab_show、file_fetch、file_put 这几种动作）。'
+      + '文件在设备和文件页之间搬用 device_file_get / device_file_put（这几件不用 tab_upload、file_fetch、file_put 这几种动作；'
+      + 'tab_show 不能直接用，它会抢他的屏幕）。'
       + '操作他问的那一页（问这一页）：先 tab_perceive 拿带编号的结构，再用 tab_act 按编号做（点、填、选、回车、翻页；'
       + 'scroll 带 n 就在那个编号所在的那一块里滚），带上它回的 version 和一句他看得懂的中文步骤；读、点、'
       + '翻页、填直接做，提交（付款、发帖或发送、删除、改设置、表单提交）会回 submit_needs_you：发送、发帖、表单提交用 page_send（按他的授权，一件事最多一张卡），付款、删除、改设置用'
@@ -256,6 +265,9 @@ export function createDeviceActionTool(devices: DeviceActionPort, waits?: WaitPo
     maxResultChars: DEVICE_ACTION_RESULT_CHARS,
     parameters: DeviceActionParameters,
     async execute(args, context) {
+      if (args.action.kind === 'tab_show' && !context.callId.endsWith(HANDOFF_SHOW_CALL_SUFFIX)) {
+        throw new ToolFailure(SHOW_REFUSED);
+      }
       const request: ActionRequest = {
         actionId: context.actionId ?? `${context.runId}:${context.callId}`,
         nodeId: args.nodeId,

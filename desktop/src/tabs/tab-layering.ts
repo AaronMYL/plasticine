@@ -63,3 +63,17 @@ export function viewBounds(frame: WebTabFrame): { x: number; y: number; width: n
   return { x, y, width: Math.max(0, Math.round(frame.x + frame.width) - x),
     height: Math.max(0, Math.round(frame.y + frame.height) - y) };
 }
+
+/** 界面还没给过位置时后台标签的大小：常见笔记本屏幕上浏览区的样子。 */
+export const HIDDEN_TAB_SIZE = { width: 1280, height: 800 } as const;
+
+/**
+ * 藏着的标签也要有大小（11-16 线上：后台新开的标签宽高是 0，tab_shot 截出空图，页面也按 0 宽排版，Plasticine 只好
+ * 把标签切到前面来看）：有界面给的位置就和在前的标签一样大，没有就用 HIDDEN_TAB_SIZE。
+ */
+export function hiddenBounds(frame: WebTabFrame | null): { x: number; y: number; width: number; height: number } {
+  if (frame !== null && frame.width > 0 && frame.height > 0) {
+    return viewBounds(frame);
+  }
+  return { x: 0, y: 0, ...HIDDEN_TAB_SIZE };
+}

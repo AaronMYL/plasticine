@@ -37,5 +37,5 @@ export type { ApprovedResult } from './approvals.ts';
 export type { DeviceServiceOptions } from './service.ts';
 export { PollingNodeTransport, TransportError, UNCONNECTED_TRANSPORT } from './transport.ts';
 export type { NodeTransport } from './transport.ts';
-export { createDeviceActionGate, createDeviceActionTool } from './device-action.ts';
+export { createDeviceActionGate, createDeviceActionTool, HANDOFF_SHOW_CALL_SUFFIX } from './device-action.ts';
 export { createDeviceCancelTool, createDeviceLogsTool, createDeviceNodesTool } from './device-diagnose-tools.ts';

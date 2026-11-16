@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { forwardsToTab, restackIndex, tabLayer, viewBounds, type TabLayer } from '../src/tabs/tab-layering.ts';
+import { forwardsToTab, HIDDEN_TAB_SIZE, hiddenBounds, restackIndex, tabLayer, viewBounds, type TabLayer }
+  from '../src/tabs/tab-layering.ts';
 
 const FRAME = { x: 324, y: 56, width: 1116, height: 844 };
 
@@ -62,4 +63,10 @@ test('叠在上面和垫到下面来回换：每次都落在对的那一层，�
 test('还没加进窗口的视图：要在下面就插在界面前面，要在上面就放到最后', () => {
   assert.deepEqual(relayout(['ui'], 'below'), ['tab', 'ui']);
   assert.deepEqual(relayout(['ui'], 'above'), ['ui', 'tab']);
+});
+
+test('藏着的标签也有大小：有浏览区的位置就一样大，没有用默认大小（后台截图不再是空图）', () => {
+  assert.deepEqual(hiddenBounds(FRAME), viewBounds(FRAME));
+  assert.deepEqual(hiddenBounds(null), { x: 0, y: 0, ...HIDDEN_TAB_SIZE });
+  assert.deepEqual(hiddenBounds({ x: 0, y: 0, width: 0, height: 0 }), { x: 0, y: 0, ...HIDDEN_TAB_SIZE });
 });

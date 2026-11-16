@@ -4,6 +4,7 @@
 
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { Type } from 'typebox';
+import { HANDOFF_SHOW_CALL_SUFFIX } from '../devices/index.ts';
 import { awaitAnswer, answerSentence, QUESTION_PURPOSE, type AskToolHost } from './ask-tools.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';
@@ -33,7 +34,7 @@ function createHandoff(host: AskToolHost, deviceAction: KernelTool, scope: LineS
       const actionId = `line-ask:${scope.lineId}:${toolCallId}`;
       let ask = host.state.asks.byActionId(actionId);
       if (ask === undefined) {
-        await deviceAction.create(scope).execute(`${toolCallId}:show`, { nodeId: params.nodeId,
+        await deviceAction.create(scope).execute(`${toolCallId}${HANDOFF_SHOW_CALL_SUFFIX}`, { nodeId: params.nodeId,
           purpose: `请他接手：${params.what}`, action: { kind: 'tab_show', tabId: params.tabId } }, signal);
         ask = host.desk.commit((changes) => host.desk.raise(changes, {
           kind: 'act',
