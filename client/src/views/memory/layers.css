@@ -293,6 +293,54 @@
   font-family: var(--mono);
 }
 
+/* 推到手机的记录（11-16）：一行一条，左铃铛、右 ⋯；撤回的划掉、字变淡。 */
+.push-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.push-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.push-row > svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.push-row-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.push-row-title {
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  overflow-wrap: anywhere;
+}
+
+.push-row-sub {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.push-row[data-withdrawn] .push-row-title {
+  color: var(--fg2);
+  text-decoration: line-through;
+  text-decoration-color: var(--line2);
+}
+
 /* 两页固定的没有一句话说明那一行：返回和第一节之间不往上收那么多。 */
 .memory-grants > .doc-back,
 .memory-proactive > .doc-back {

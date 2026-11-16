@@ -10,8 +10,10 @@ import type { FileWidget, ImageWidget, MessageWidget, MessageWidgetAnswer } from
 import { useClientState } from '../../../state/context.tsx';
 import { useStore } from '../../../state/use-store.ts';
 import { widgetKey } from '../../../state/widget-answers.ts';
-import { ImageGallery, TableWidgetView } from './basic-widgets.tsx';
+import { ImageGallery } from './basic-widgets.tsx';
+import { ChartWidgetView } from './chart-widget.tsx';
 import { ChoiceWidgetView, ConfirmWidgetView, InputWidgetView, type AnswerProps } from './form-widgets.tsx';
+import { TableWidgetView } from './table-widget.tsx';
 import { ToolCardView } from './tool-cards.tsx';
 import './widgets.css';
 
@@ -24,6 +26,7 @@ function One({ widget, answer }: { widget: Drawn; answer: AnswerProps }): ReactN
     case 'input': return <InputWidgetView widget={widget} {...answer} />;
     case 'confirm': return <ConfirmWidgetView widget={widget} {...answer} />;
     case 'table': return <TableWidgetView widget={widget} />;
+    case 'chart': return <ChartWidgetView widget={widget} />;
     case 'tool': return <ToolCardView card={widget} {...answer} />;
   }
 }

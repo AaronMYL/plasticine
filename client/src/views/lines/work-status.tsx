@@ -7,9 +7,10 @@ import { StatusGlyph } from '../../shell/glyph.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { Spinner } from './line-parts.tsx';
 import { activityText, pausedText } from './line-time.ts';
+import { planText } from './plan-text.ts';
 
 export type WorkExecution = Pick<LineView, 'status' | 'pauseReason' | 'outcome' | 'pausedUntil' | 'failure'>
-  & Partial<Pick<LineView, 'activity' | 'queued' | 'archivedAt' | 'unmet'>>;
+  & Partial<Pick<LineView, 'activity' | 'queued' | 'archivedAt' | 'unmet' | 'plan'>>;
 
 /** 跑完了但线自己说没做成（line_outcome）：一句原因；做成了、还没跑完、旧记录都是 null。 */
 export function unmetReason(line: WorkExecution): string | null {
@@ -24,7 +25,8 @@ export function workStatusText(line: WorkExecution, timeZone?: string): string {
   if (line.archivedAt != null) return '已删除';
   switch (line.status) {
     case 'queued': return '排队中';
-    case 'running': return activityText({ activity: line.activity ?? null });
+    // 列了步骤清单的写「第 3 步，共 5 步：……」（11-16），没有的照旧写正在做的那一步。
+    case 'running': return planText(line.plan) ?? activityText({ activity: line.activity ?? null });
     case 'waiting': return '等你决定';
     case 'paused': return pausedText(line, timeZone);
     case 'failed': return line.failure ?? '这次没有完成';

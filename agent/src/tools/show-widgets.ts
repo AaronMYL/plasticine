@@ -57,7 +57,12 @@ export function buildWidget(draft: WidgetDraft, facts: WidgetFacts, now: Date): 
         submitLabel: draft.submitLabel ?? '好', multiline: draft.multiline ?? false, answer: null };
     case 'table':
       return { kind: 'table', id, columns: draft.columns, rows: draft.rows,
-        ...(draft.caption === undefined ? {} : { caption: draft.caption }) };
+        ...(draft.caption === undefined ? {} : { caption: draft.caption }),
+        ...(draft.total === true ? { total: true } : {}) };
+    case 'chart':
+      return { kind: 'chart', id, type: draft.type, series: draft.series,
+        ...(draft.title === undefined ? {} : { title: draft.title }),
+        ...(draft.unit === undefined ? {} : { unit: draft.unit }) };
     case 'confirm':
       return { kind: 'confirm', id, text: draft.text, confirmLabel: draft.confirmLabel ?? '好',
         cancelLabel: draft.cancelLabel ?? '先不', state: 'open' };
@@ -78,7 +83,7 @@ export function buildWidget(draft: WidgetDraft, facts: WidgetFacts, now: Date): 
 }
 
 const KIND_TEXT: Record<WidgetDraft['kind'], string> = {
-  image: '图片', choice: '选项', input: '输入框', table: '表格', confirm: '确认按钮',
+  image: '图片', choice: '选项', input: '输入框', table: '表格', chart: '图表', confirm: '确认按钮',
   money: '记账卡',
 };
 
@@ -86,7 +91,8 @@ export function createShowWidgetsTool(facts: WidgetFacts, recorder: WidgetRecord
   return defineTool({
     name: 'show_widgets',
     label: '在回复里放部件',
-    description: '在这条回答下面放能点的小部件（显示在对话里，点一下就答）：choice 代替开放式提问，input 要一个具体答案，table 放结构化结果，confirm 代替问「要不要我……？」，'
+    description: '在这条回答下面放能点的小部件（显示在对话里，点一下就答）：choice 代替开放式提问，input 要一个具体答案，table 放结构化结果（数字列 align end，要合计就 total），'
+      + 'chart 画数字的走势或对比（bar 比大小、line 看走势、scatter 看两样的关系），confirm 代替问「要不要我……？」，'
       + '记账卡放一笔要记的付款。卡片只是草稿：他点了确认才写进去。回答会作为一条消息回到这条线。',
     replay: 'safe',
     effect: 'internal',

@@ -64,6 +64,7 @@ import {
   FILES_MOVE_PATH,
   FILES_PATH,
   FILES_RESTORE_PATH,
+  FILES_TABLE_PATH,
   FILES_TRASH_PATH,
   FILES_UPLOAD_PATH,
   HOME_PATH,
@@ -190,6 +191,7 @@ import {
   uploadFile,
   writeTextFile,
 } from './files.ts';
+import { exportTable } from './table-export.ts';
 import { health } from './health.ts';
 import { getHome } from './home.ts';
 import { addInboxFeedback, getInboxMessage, listInbox, readAllInbox, replyInbox, setInboxFlags, settleInboxReply,
@@ -530,6 +532,7 @@ export const ROUTES: readonly Route[] = [
   { method: 'GET', path: FILES_TRASH_PATH, auth: true, handler: listTrash },
   { method: 'POST', path: FILES_TRASH_PATH, auth: true, handler: trashFile },
   { method: 'POST', path: FILES_RESTORE_PATH, auth: true, handler: restoreFile },
+  { method: 'POST', path: FILES_TABLE_PATH, auth: true, handler: exportTable },
   { method: 'GET', path: BROWSER_STREAM_PATH, auth: true, handler: streamBrowser },
   { method: 'POST', path: BROWSER_ACK_PATH, auth: true, handler: ackBrowser },
   { method: 'POST', path: BROWSER_TABS_PATH, auth: true, handler: tabBrowser },

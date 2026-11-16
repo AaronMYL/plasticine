@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react';
 import type { SpaceChart } from '../../api/shared.ts';
 import { InfoTip } from '../../shell/info-tip.tsx';
-import { chartScale } from './chart-scale.ts';
+import { chartScale } from '../../primitives/chart/chart-scale.ts';
 import { sourceHref } from './space-links.ts';
 
 const WIDTH = 560;

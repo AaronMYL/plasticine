@@ -287,6 +287,9 @@ export interface PlasticineApi extends ToolGroupApi, ThingsApi, ContactsClientAp
   modelProviders: import('./lines-client.ts').ModelProvidersApi;
   /** 11-16：网络搜索的密钥（Tavily）。 */
   webSearch: import('./web-search-client.ts').WebSearchApi;
+  /** 11-16：设置 · AI · 连接（MCP）和推到手机的记录。 */
+  connections: import('./connections-client.ts').ConnectionsApi;
+  pushes: import('./connections-client.ts').PushesApi;
   /** 任务栏目（《优化清单》第 3、4、5 条）。 */
   tasks: import('./tasks-client.ts').TasksApi;
   search: SearchApi;

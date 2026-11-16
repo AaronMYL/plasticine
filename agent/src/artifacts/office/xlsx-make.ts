@@ -24,7 +24,7 @@ function columnName(index: number): string {
   return name;
 }
 
-function cellXml(value: Cell, ref: string, bold: boolean): string {
+function cellXml(value: Cell, ref: string, bold: boolean, formulas: boolean): string {
   const style = bold ? ' s="1"' : '';
   if (value === null || value === '') {
     return '';
@@ -35,7 +35,7 @@ function cellXml(value: Cell, ref: string, bold: boolean): string {
   if (typeof value === 'boolean') {
     return `<c r="${ref}" t="b"${style}><v>${value ? 1 : 0}</v></c>`;
   }
-  if (value.startsWith('=') && value.length > 1) {
+  if (formulas && value.startsWith('=') && value.length > 1) {
     return `<c r="${ref}"${style}><f>${xmlEscape(value.slice(1))}</f></c>`;
   }
   return `<c r="${ref}" t="inlineStr"${style}><is><t xml:space="preserve">${xmlEscape(value)}</t></is></c>`;
@@ -59,7 +59,7 @@ function textWidth(value: Cell): number {
   return Array.from(String(value ?? '')).reduce((sum, char) => sum + ((char.codePointAt(0) ?? 0) > 255 ? 2 : 1), 0);
 }
 
-function sheetXml(sheet: SheetInput): string {
+function sheetXml(sheet: SheetInput, formulas: boolean): string {
   const widths = new Map<number, number>();
   for (const row of sheet.rows) {
     row.forEach((value, column) => {
@@ -70,7 +70,8 @@ function sheetXml(sheet: SheetInput): string {
   const cols = [...widths].sort((a, b) => a[0] - b[0])
     .map(([column, width]) => `<col min="${column + 1}" max="${column + 1}" width="${width}" customWidth="1"/>`);
   const rows = sheet.rows.map((row, r) =>
-    `<row r="${r + 1}">${row.map((value, c) => cellXml(value, `${columnName(c)}${r + 1}`, r === 0)).join('')}</row>`);
+    `<row r="${r + 1}">${row.map((value, c) => cellXml(value, `${columnName(c)}${r + 1}`, r === 0, formulas))
+      .join('')}</row>`);
   const pane = '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>';
   return `${XML_HEAD}<worksheet xmlns="${SHEET_NS}"><sheetViews><sheetView workbookViewId="0">`
     + `${sheet.rows.length > 1 ? pane : ''}</sheetView></sheetViews>`
@@ -87,8 +88,8 @@ const STYLES = `${XML_HEAD}<styleSheet xmlns="${SHEET_NS}">`
   + '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>'
   + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
 
-/** 几张表 → .xlsx。至少一张表（空表也行）。 */
-export function makeXlsx(input: readonly SheetInput[]): Buffer {
+/** 几张表 → .xlsx。至少一张表（空表也行）。formulas 为 false 时「=」开头的也按文字存（对话里的表格导出用）。 */
+export function makeXlsx(input: readonly SheetInput[], formulas = true): Buffer {
   const sheets = input.length === 0 ? [{ name: '表1', rows: [] }] : input;
   const names = sheetNames(sheets);
   const workbook = `${XML_HEAD}<workbook xmlns="${SHEET_NS}" `
@@ -109,6 +110,6 @@ export function makeXlsx(input: readonly SheetInput[]): Buffer {
     { name: 'xl/workbook.xml', data: workbook },
     { name: 'xl/_rels/workbook.xml.rels', data: relsXml(rels) },
     { name: 'xl/styles.xml', data: STYLES },
-    ...sheets.map((sheet, index) => ({ name: `xl/worksheets/sheet${index + 1}.xml`, data: sheetXml(sheet) })),
+    ...sheets.map((sheet, index) => ({ name: `xl/worksheets/sheet${index + 1}.xml`, data: sheetXml(sheet, formulas) })),
   ]);
 }

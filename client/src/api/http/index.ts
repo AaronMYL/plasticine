@@ -1,6 +1,7 @@
 // 真接口：把各资源文件和事件流装成一个 PlasticineApi。fetch 和 EventSource 可以换成假的（测试用），
 // 默认用浏览器自己的；同源请求，会话在 HttpOnly cookie 里，前端不碰。
 
+import { HttpConnections, HttpPushes } from './connections.ts';
 import { HttpWebSearch } from './web-search.ts';
 import { createNetworkAttachmentsHttp } from './network-attachments.ts';
 import { createMatesHttp } from './mates.ts';
@@ -85,6 +86,8 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     tasks: new HttpTasks(transport),
     modelProviders: new HttpModelProviders(transport),
     webSearch: new HttpWebSearch(transport),
+    connections: new HttpConnections(transport),
+    pushes: new HttpPushes(transport),
     search: new HttpSearch(transport),
     systems: new HttpSystems(transport),
     translate: new HttpTranslate(transport),

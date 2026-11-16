@@ -5,6 +5,7 @@ import type { FilesApi, NoteVersionsApi } from '../tool-groups-client.ts';
 import { ApiError } from '../errors.ts';
 import {
   type CreateFolderRequest,
+  type ExportTableRequest,
   type FileEntryView,
   type FileListResponse,
   type MoveFileRequest,
@@ -122,6 +123,25 @@ export class FakeFiles implements FilesApi {
       const bytes = Uint8Array.from(atob(input.contentBase64), (char) => char.charCodeAt(0));
       this.contents.set(path, { text: new TextDecoder().decode(bytes), version: `file-${++this.sequence}` });
       return this.put(path, 'file', bytes.length);
+    });
+  }
+
+  async exportTable(input: ExportTableRequest): Promise<FileEntryView> {
+    this.deps.session.require();
+    return this.deps.receipts.run('files', input.requestId, 'POST /v2/files/table', () => {
+      if (this.entries.get('表格')?.kind !== 'directory') {
+        this.put('表格', 'directory', 0);
+      }
+      const base = `表格/${input.title} ${this.deps.now().toISOString().slice(0, 10)}`;
+      const taken = (path: string): boolean => this.entries.has(path);
+      let path = `${base}.xlsx`;
+      for (let index = 2; taken(path); index += 1) {
+        path = `${base} (${index}).xlsx`;
+      }
+      const csv = [input.header, ...input.rows, ...(input.total === undefined ? [] : [input.total])]
+        .map((row) => row.join(',')).join('\n');
+      this.contents.set(path, { text: csv, version: `file-${++this.sequence}` });
+      return this.put(path, 'file', new TextEncoder().encode(csv).byteLength);
     });
   }
 

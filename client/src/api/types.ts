@@ -130,6 +130,10 @@ export type LiveEvent =
   | { type: 'backups.changed' }
   /** 任务栏目（定时、建议）变了：第二栏和主区重读。 */
   | { type: 'tasks.changed' }
+  /** 推到手机的记录变了（新推了一条、撤回了一条）。 */
+  | { type: 'pushes.changed' }
+  /** 设置 · AI · 连接变了。 */
+  | { type: 'connections.changed' }
   /** 第 15 条：日历和提醒的缓存刚从 Mac 同步过，首页「今天」重读。 */
   | { type: 'calendar.changed' }
   /** 第 9 条：抖音收藏 / 视频解析有一条变了，勾选清单重读。 */

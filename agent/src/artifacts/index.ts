@@ -11,6 +11,7 @@ export { checkUpload, contentTypeOf, FILE_TYPES, INLINE_TYPES } from './file-typ
 export { fileTools, REPLY_FILES_MAX, saveFile } from './file-tools.ts';
 export type { Downloaded, FileToolParts } from './file-tools.ts';
 export { officeTools } from './office-tools.ts';
+export { makeXlsx } from './office/xlsx-make.ts';
 export type { OfficeToolParts } from './office-tools.ts';
 export { ImageOpSchema, mediaTools, pathForMime } from './media-tools.ts';
 export { sandboxTool } from './sandbox-tool.ts';

@@ -6,7 +6,9 @@ import { seedOfferScene } from './offer-seed.ts';
 import { seedTeamScene } from './team-scene-seed.ts';
 import { seedAsksScene } from './asks-scene-seed.ts';
 import { seedFilesScene } from './files-scene-seed.ts';
+import { seedPlansScene } from './plans-scene-seed.ts';
 import { FakeWebSearch } from './fake-web-search.ts';
+import { FakeConnections, FakePushes } from './fake-connections.ts';
 import { seedRelayScene } from './relay-scene-seed.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
@@ -120,6 +122,9 @@ export interface FakeControl {
   spaces: FakeSpaces;
   feed: FakeFeed;
   nodes: FakeNodes;
+  /** 11-16：设置 · AI · 连接、推到手机的记录。 */
+  connections: FakeConnections;
+  pushes: FakePushes;
   bus: FakeEventBus;
   faults: FaultPlan;
   /** M5 乙路：记账、站内信、工具组、文件、浏览器、技能。 */
@@ -139,8 +144,8 @@ export interface FakeApi {
 
 /** 本地开发的线和模型连接：场景看地址里的 ?scene=（lines-seed.ts）；硬线卡答了，主对话接着跑。 */
 function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProviders; asks: FakeAsks;
-  contacts: FakeContacts; outbound: FakeOutbound; attachments: FakeAttachments;
-  projectId: string | null }, now: Date): void {
+  contacts: FakeContacts; outbound: FakeOutbound; attachments: FakeAttachments; connections: FakeConnections;
+  pushes: FakePushes; projectId: string | null }, now: Date): void {
   const { lines, modelProviders, asks } = deps;
   const search = typeof window === 'undefined' ? '' : window.location.search;
   // ?net=connect：新装、一家模型都没连（第一次打开的第一步）。
@@ -174,6 +179,11 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   // ?scene=files：回答下面挂着发给他的表和截图（files-scene-seed.ts）。
   if (scene === 'files') {
     seedFilesScene(lines, deps.attachments, now);
+    return;
+  }
+  // ?scene=plans：图表、能算的表、步骤清单、连接、推送记录（plans-scene-seed.ts）。
+  if (scene === 'plans') {
+    seedPlansScene(lines, deps.connections, deps.pushes, now);
     return;
   }
   if (scene === 'schedule') {
@@ -244,6 +254,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const outbound = new FakeOutbound(session, receipts, now);
   const attachments = new FakeAttachments(session, now);
   const notes = new FakeNotes({ session, bus, faults, now });
+  const connections = new FakeConnections(session, bus, now);
+  const pushes = new FakePushes(session, bus, now);
   const lines = new FakeLines({ session, bus, receipts, now, stepMs: options.streamStepMs,
     note: (noteId) => notes.peek(noteId), feedItem: (id) => feed.find(id) });
   // 第13批：建队友时那段文字就是它的 Soul（假 Soul 接上），不再拆成规则。
@@ -373,7 +385,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       seedNetworkScene({ contacts, network }, now(), netScene);
     }
     const cyberHunter = projects.names().find((item) => item.name === 'Cyber Hunter')?.id ?? null;
-    seedNewKernel({ lines, modelProviders, asks, contacts, outbound, attachments, projectId: cyberHunter }, now());
+    seedNewKernel({ lines, modelProviders, asks, contacts, outbound, attachments, connections, pushes,
+      projectId: cyberHunter }, now());
     if (typeof window !== 'undefined'
       && new URLSearchParams(window.location.search).get('scene') === 'network-attachments') {
       seedNetworkAttachmentScene(contacts, networkAttachments, now());
@@ -385,6 +398,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     tasks,
     modelProviders,
     webSearch: new FakeWebSearch(session, now),
+    connections,
+    pushes,
     search: new FakeSearch({ session, notes, lines, memoryTopics, feed, bookmarks, now, spaces, books }),
     systems,
     translate: new FakeTranslate(session, modelProviders),
@@ -453,6 +468,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       spaces,
       feed,
       nodes,
+      connections,
+      pushes,
       bus,
       faults,
       toolGroups: toolGroups.control,

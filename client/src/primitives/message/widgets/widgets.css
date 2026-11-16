@@ -143,7 +143,27 @@
   color: var(--fg2);
 }
 
-/* ---------- 表格 ---------- */
+/* ---------- 表格（11-16：排序、合计、下载；放不下横向滚，第一列钉住） ---------- */
+
+.widget-table,
+.widget-chart {
+  max-width: 640px;
+}
+
+.widget-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 24px;
+}
+
+.widget-table-download {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+}
 
 .widget-table-scroll {
   overflow-x: auto;
@@ -170,19 +190,134 @@
   border-bottom: 1px solid var(--line2);
 }
 
+.widget-table-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.widget-table th[data-on] {
+  color: var(--fg);
+}
+
 .widget-table td {
   padding: var(--space-1) var(--space-2) var(--space-1) 0;
   border-bottom: 1px solid var(--line);
   vertical-align: top;
 }
 
+
 .widget-table tr:last-child td {
   border-bottom: 0;
+}
+
+.widget-table .widget-table-total td {
+  font-weight: 600;
+  border-top: 1px solid var(--line2);
 }
 
 .widget-table [data-align='end'] {
   text-align: right;
   padding-right: 0;
+}
+
+.widget-table td[data-align='end'] {
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+}
+
+/* 手机上表格放不下横向滚：第一列钉住（底色和页面一样）。 */
+@media (max-width: 767px) {
+  .widget-table th:first-child,
+  .widget-table td:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--bg);
+  }
+}
+
+/* ---------- 图表 ---------- */
+
+.widget-chart-unit {
+  font-weight: 400;
+  color: var(--fg2);
+}
+
+.widget-chart-plot {
+  position: relative;
+}
+
+.widget-chart-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.widget-chart-grid {
+  stroke: var(--line);
+}
+
+.widget-chart-cross {
+  stroke: var(--line2);
+}
+
+.widget-chart-tick {
+  fill: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-tag);
+}
+
+.widget-chart-latest {
+  fill: var(--fg);
+  font-family: var(--mono);
+  font-size: var(--text-tag);
+  font-weight: 600;
+}
+
+.widget-chart-point {
+  fill: var(--bg);
+}
+
+.widget-chart-tip {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.widget-chart-tip-x {
+  color: var(--fg2);
+}
+
+.widget-chart-tip-y {
+  font-family: var(--mono);
+}
+
+.widget-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.widget-chart-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--space-1);
+  border-radius: 2px;
 }
 
 /* ---------- 工具卡 ---------- */

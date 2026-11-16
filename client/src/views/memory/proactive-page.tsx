@@ -15,6 +15,7 @@ import { DocLine } from './doc-line.tsx';
 import { AddLine, LineActions } from './line-actions.tsx';
 import { NotifyKindsRows } from './notify-kinds.tsx';
 import { RecentBeats, useHeartbeat, WantList, WhenRows } from './proactive-heartbeat.tsx';
+import { RecentPushes, usePushes } from './proactive-pushes.tsx';
 import './topics.css';
 import './layers.css';
 
@@ -58,6 +59,8 @@ function Said({ lines, section, navigate, now }: { lines: readonly MemoryDocLine
 function Body({ doc, navigate, now }: { doc: MemoryTopicDoc; navigate: (route: Route) => void; now: Date }):
   ReactNode {
   const heartbeat = useHeartbeat();
+  const { pushes, error: pushesError } = usePushes();
+  const beats = heartbeat.view?.recent.length ?? 0;
   const linesOf = (section: MemoryLineSection): MemoryDocLine[] =>
     doc.sections.find((item) => item.section === section)?.lines ?? [];
   const said = (section: MemoryLineSection): ReactNode =>
@@ -82,8 +85,12 @@ function Body({ doc, navigate, now }: { doc: MemoryTopicDoc; navigate: (route: R
           <div className="proactive-rows"><NotifyKindsRows /></div>
           {said('style')}
         </Block>
-        {heartbeat.view === null || heartbeat.view.recent.length === 0 ? null : (
-          <Block section="recent" title="最近"><RecentBeats heartbeat={heartbeat} /></Block>
+        {beats === 0 && (pushes ?? []).length === 0 && pushesError === null ? null : (
+          <Block section="recent" title="最近">
+            <RecentPushes pushes={pushes ?? []} now={now} navigate={navigate} />
+            {pushesError === null ? null : <p className="text-meta is-error" role="alert">没读到推送记录：{pushesError}</p>}
+            <RecentBeats heartbeat={heartbeat} />
+          </Block>
         )}
       </div>
     </div>

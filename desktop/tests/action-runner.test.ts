@@ -38,8 +38,8 @@ function runner(t: { after(fn: () => void): void },
     }, open: async (target) => {
       opened.push(target);
     } };
-  const run = new DeviceActionRunner({ helper, tabs, guard: new DeviceGuard(), paths: realPathSystem('linux', dir), desk,
-    localRoots: () => [dir], confirm: async (message) => {
+  const run = new DeviceActionRunner({ helper, tabs, guard: new DeviceGuard(), paths: realPathSystem('linux', dir),
+    desk, localRoots: () => [dir], confirm: async (message) => {
       asked.push(message);
       return options.confirm ?? false;
     },

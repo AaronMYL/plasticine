@@ -8,6 +8,7 @@ import {
   FILES_MOVE_PATH,
   FILES_PATH,
   FILES_RESTORE_PATH,
+  FILES_TABLE_PATH,
   FILES_TRASH_PATH,
   FILES_UPLOAD_PATH,
   FileEntryResponseSchema,
@@ -16,6 +17,7 @@ import {
   TrashFileResponseSchema,
   TrashListResponseSchema,
   type CreateFolderRequest,
+  type ExportTableRequest,
   type FileEntryView,
   type FileListResponse,
   type MoveFileRequest,
@@ -100,6 +102,10 @@ export class HttpFiles implements FilesApi {
 
   restore(input: RestoreFileRequest): Promise<FileEntryView> {
     return this.entry(FILES_RESTORE_PATH, input, '还原');
+  }
+
+  exportTable(input: ExportTableRequest): Promise<FileEntryView> {
+    return this.entry(FILES_TABLE_PATH, input, '下载表格');
   }
 
   private async entry(path: string, body: unknown, what: string, timeoutMs?: number): Promise<FileEntryView> {

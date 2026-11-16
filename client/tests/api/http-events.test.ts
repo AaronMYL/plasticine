@@ -57,7 +57,7 @@ describe('真事件流 · 连接', () => {
     expect(source.types).toEqual(
       [
         'ready', 'attachment_changed', 'money_draft_changed', 'client_version_changed', 'backups_changed',
-          'tasks_changed',
+          'tasks_changed', 'pushes_changed', 'connections_changed',
         'note_invalidated', 'project_invalidated', 'book_changed', 'ask_created', 'ask_answered', 'ask_updated',
         'memory_entry_changed', 'calendar_changed',
         'feed_item_changed', 'node_changed', 'node_action_recorded', 'money_changed',

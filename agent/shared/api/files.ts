@@ -14,6 +14,10 @@ export const FILES_FOLDERS_PATH = `${FILES_PATH}/folders`;
 export const FILES_MOVE_PATH = `${FILES_PATH}/move`;
 export const FILES_TRASH_PATH = `${FILES_PATH}/trash`;
 export const FILES_RESTORE_PATH = `${FILES_PATH}/restore`;
+/** POST：对话里的表格存成 .xlsx 放进文件页「表格」文件夹（11-16），回 201 { entry }，再按文件下载。 */
+export const FILES_TABLE_PATH = `${FILES_PATH}/table`;
+export const TABLE_EXPORT_ROWS_MAX = 200;
+export const TABLE_EXPORT_COLUMNS_MAX = 20;
 /** 1ca0391 files.ts：上传最多 20 MB。 */
 export const FILE_UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
 // base64 把 3 个字节写成 4 个字，再留一点给其余的字段。
@@ -72,6 +76,21 @@ export const MoveFileRequestSchema = Type.Object(
   { additionalProperties: false },
 );
 export type MoveFileRequest = Static<typeof MoveFileRequestSchema>;
+
+const TableRow = Type.Array(Type.String({ maxLength: 2000 }), { maxItems: TABLE_EXPORT_COLUMNS_MAX });
+
+/** POST /v2/files/table → 201 { entry }：表头、按屏上的顺序排好的行、合计行（有就给）。 */
+export const ExportTableRequestSchema = Type.Object(
+  {
+    requestId: RequestIdSchema,
+    title: Type.String({ minLength: 1, maxLength: 80 }),
+    header: Type.Array(Type.String({ maxLength: 200 }), { minItems: 1, maxItems: TABLE_EXPORT_COLUMNS_MAX }),
+    rows: Type.Array(TableRow, { maxItems: TABLE_EXPORT_ROWS_MAX }),
+    total: Type.Optional(TableRow),
+  },
+  { additionalProperties: false },
+);
+export type ExportTableRequest = Static<typeof ExportTableRequestSchema>;
 
 export const FileEntryResponseSchema = Type.Object({ entry: FileEntryViewSchema });
 export type FileEntryResponse = Static<typeof FileEntryResponseSchema>;

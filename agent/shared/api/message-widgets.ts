@@ -87,7 +87,30 @@ export const TableWidgetSchema = Type.Object({
     align: Type.Optional(Type.Union([Type.Literal('start'), Type.Literal('end')])),
   }, STRICT), { minItems: 1, maxItems: WIDGET_TABLE_COLUMNS_MAX }),
   rows: Type.Array(Type.Record(Type.String(), Text(200)), { maxItems: WIDGET_TABLE_ROWS_MAX }),
+  /** 最后加一行「合计」：靠右对齐（align end）的数字列各自相加（11-16）。 */
+  total: Type.Optional(Type.Boolean()),
 }, STRICT);
+
+/** 表格格子里的数：去掉千分位逗号和打头的货币符号；百分数、带别的字的不算（不参与合计、导出时按文字存）。 */
+export function tableNumber(text: string): number | null {
+  const clean = text.trim().replace(/^[¥￥$]\s*/, '').replaceAll(',', '');
+  return /^-?(\d+(\.\d+)?|\.\d+)$/.test(clean) ? Number(clean) : null;
+}
+
+/** 图表（11-16 能力总表「图表」）：折线、柱状、散点三种；一张最多几组、每组最多几个点。 */
+export const WIDGET_CHART_SERIES_MAX = 6;
+export const WIDGET_CHART_POINTS_MAX = 60;
+const ChartPoint = Type.Object({ x: Type.Union([Text(40), Type.Number()]), y: Type.Number() }, STRICT);
+const ChartBody = {
+  title: Type.Optional(Text(80)),
+  type: Type.Union([Type.Literal('bar'), Type.Literal('line'), Type.Literal('scatter')]),
+  /** y 的单位（「份」「元」），写在标题旁边。 */
+  unit: Type.Optional(Text(12)),
+  series: Type.Array(Type.Object({ name: Text(20), points: Type.Array(ChartPoint, { minItems: 1,
+    maxItems: WIDGET_CHART_POINTS_MAX }) }, STRICT), { minItems: 1, maxItems: WIDGET_CHART_SERIES_MAX }),
+};
+
+export const ChartWidgetSchema = Type.Object({ kind: Type.Literal('chart'), id: IdSchema, ...ChartBody }, STRICT);
 
 export const CONFIRM_STATES = ['open', 'confirmed', 'cancelled'] as const;
 
@@ -174,6 +197,7 @@ export const MessageWidgetSchema = Type.Union([
   ChoiceWidgetSchema,
   InputWidgetSchema,
   TableWidgetSchema,
+  ChartWidgetSchema,
   ConfirmWidgetSchema,
   ToolCardSchema,
 ]);
@@ -183,6 +207,7 @@ export type FileWidget = Static<typeof FileWidgetSchema>;
 export type ChoiceWidget = Static<typeof ChoiceWidgetSchema>;
 export type InputWidget = Static<typeof InputWidgetSchema>;
 export type TableWidget = Static<typeof TableWidgetSchema>;
+export type ChartWidget = Static<typeof ChartWidgetSchema>;
 export type ConfirmWidget = Static<typeof ConfirmWidgetSchema>;
 export type MoneyCard = Static<typeof MoneyCardSchema>;
 export type FocusCard = Static<typeof FocusCardSchema>;
@@ -227,7 +252,9 @@ export const WidgetDraftSchema = Type.Union([
     columns: Type.Array(Type.Object({ key: Type.String({ minLength: 1, maxLength: 40 }), label: Text(20),
       align: Type.Optional(Type.Union([Type.Literal('start'), Type.Literal('end')])) }, STRICT),
     { minItems: 1, maxItems: WIDGET_TABLE_COLUMNS_MAX }),
-    rows: Type.Array(Type.Record(Type.String(), Text(200)), { maxItems: WIDGET_TABLE_ROWS_MAX }) }, STRICT),
+    rows: Type.Array(Type.Record(Type.String(), Text(200)), { maxItems: WIDGET_TABLE_ROWS_MAX }),
+    total: Type.Optional(Type.Boolean()) }, STRICT),
+  Type.Object({ kind: Type.Literal('chart'), ...ChartBody }, STRICT),
   Type.Object({ kind: Type.Literal('confirm'), text: Text(200), confirmLabel: Type.Optional(Text(12)),
     cancelLabel: Type.Optional(Text(12)) }, STRICT),
   Type.Object({ kind: Type.Literal('money'), amountCents: Type.Integer({ minimum: 1 }),

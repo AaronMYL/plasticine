@@ -25,6 +25,8 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
     words: '笔记 续写 补充建议 翻译 信息流 图书 网页提取 视频解析 本地转写 语音转文字 出图 配图' },
   { section: 'ai', title: '记忆和记账', words: '记忆整理 合并压缩 付款截图 记账' },
   { section: 'ai', title: '工具和技能', words: '工具 权限 关掉 命令 skill 技能 做法' },
+  { section: 'ai', title: '网络搜索', words: 'Tavily 搜索 密钥 网页正文' },
+  { section: 'ai', title: '连接', words: 'MCP Notion GitHub 飞书 连接地址 令牌 外部工具 服务' },
   { section: 'browser', title: '搜索引擎', words: '必应 谷歌 百度 DuckDuckGo 搜索 地址栏' },
   { section: 'browser', title: '登录着的网站', words: '登录 cookie 网站 退出 账号', desktopOnly: true },
   { section: 'browser', title: '导入', words: 'Chrome Safari 搬 登录 导入', desktopOnly: true },

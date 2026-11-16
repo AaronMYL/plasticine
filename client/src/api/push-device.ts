@@ -25,6 +25,8 @@ export interface PushDevice {
   current(): Promise<DeviceSubscription | null>;
   /** 注册 service worker 并用服务端的公钥订阅。 */
   subscribe(publicKey: string): Promise<DeviceSubscription>;
+  /** 收掉这台设备上还挂着的、tag 是这几个的系统通知（撤回的推送，11-16）。 */
+  close?(tags: readonly string[]): Promise<void>;
 }
 
 /** service worker 的地址：在 client/public/ 下，构建后在站点根上，管整个站点。 */
@@ -123,6 +125,13 @@ export function createBrowserPushDevice(): PushDevice {
         applicationServerKey: base64UrlToBytes(publicKey),
       });
       return toDeviceSubscription(subscription);
+    },
+    async close(tags: readonly string[]) {
+      const existing = await navigator.serviceWorker.getRegistration(SERVICE_WORKER_URL);
+      if (existing === undefined) return;
+      for (const tag of tags) {
+        for (const shown of await existing.getNotifications({ tag })) shown.close();
+      }
     },
   };
 }

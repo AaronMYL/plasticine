@@ -77,6 +77,84 @@
   min-width: 0;
 }
 
+/* 步骤清单（11-16）：标题和「3 / 5」、4px 进度条（进行中的蓝）、一步一行 32px，做完的字变淡。 */
+.work-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.work-plan-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.work-plan-head h3 {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  font-weight: 600;
+}
+
+.work-plan-count {
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+}
+
+.work-plan-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--tint2);
+  overflow: hidden;
+}
+
+.work-plan-bar i {
+  display: block;
+  height: 100%;
+  background: var(--run);
+  transition: width var(--motion-base) var(--ease-out);
+}
+
+.work-plan-steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.work-plan-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.work-plan-step > .glyph {
+  flex: none;
+  margin: 0 3px;
+}
+
+.work-plan-step[data-status='done'],
+.work-plan-step[data-status='skipped'] {
+  color: var(--fg2);
+}
+
+.work-plan-step[data-status='skipped'] > span {
+  text-decoration: line-through;
+  text-decoration-color: var(--line2);
+}
+
+.work-plan-step .text-button {
+  color: var(--fg2);
+}
+
 .work-section h3,
 .work-revision h3 {
   display: flex;

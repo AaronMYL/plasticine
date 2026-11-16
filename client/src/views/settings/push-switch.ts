@@ -17,7 +17,7 @@ import { createRequestId } from '../../api/request-id.ts';
 import { Store } from '../../state/store.ts';
 import { hostNotify, inDesktopApp } from '../../shell/host.ts';
 import { isDeferredStandaloneAsk, LETTER_BRIEF, MAIN_THREAD_PATH, NOTICE_TITLE, NOTIFY_KINDS_DEFAULT, PUSH_BODY,
-  reportBrief, type LineMessageView, type NotifyKind, type NotifyKinds } from '../../api/shared.ts';
+  pushTag, reportBrief, type LineMessageView, type NotifyKind, type NotifyKinds } from '../../api/shared.ts';
 import type { LiveEvent } from '../../api/types.ts';
 import { lookingAt } from '../../state/viewing.ts';
 
@@ -109,6 +109,7 @@ export class PushSwitch {
   /** 看这台设备现在开没开；开着就把订阅再交一次（登录换过会话也接得上）。不弹权限框。 */
   async start(): Promise<void> {
     void this.loadKinds();
+    void this.closeWithdrawn();
     const generation = this.next('checking');
     if (inDesktopApp()) {
       this.settle(generation, 'native', null);
@@ -273,6 +274,10 @@ export class PushSwitch {
       this.kinds.set(event.kinds);
       return;
     }
+    if (event.type === 'pushes.changed') {
+      void this.closeWithdrawn();
+      return;
+    }
     if (!inDesktopApp() || event.type !== 'ask.created' || !this.kinds.get().ask || event.ask.channel !== 'interrupt'
       || event.ask.status !== 'open' || isDeferredStandaloneAsk(event.ask)
       || this.notified.has(event.ask.id)) { return; }
@@ -308,6 +313,17 @@ export class PushSwitch {
    * 第13批的新消息（联系人、群组、主线和队友的回复）：服务端说该通知了，桌面客户端自己弹；他正在窗口里看着这段就
    * 不弹。点开去那一句（url 是 /#/…）。
    */
+  /** 撤回了的推送：这台设备上那条系统通知还挂着就收掉（网页推送；读不到记录就算了，下次打开再收）。 */
+  private async closeWithdrawn(): Promise<void> {
+    if (inDesktopApp() || this.device.close === undefined || this.device.unsupportedReason() !== null) return;
+    try {
+      const withdrawn = (await this.api.pushes.list()).filter((push) => push.withdrawnAt !== null);
+      if (withdrawn.length > 0) await this.device.close(withdrawn.map((push) => pushTag(push.id)));
+    } catch (cause) {
+      console.warn('撤回的推送这次没收掉，下次打开再收', cause);
+    }
+  }
+
   private onNotify(event: Extract<LiveEvent, { type: 'notify' }>): void {
     const key = `${event.tag}|${event.url}`;
     if (!inDesktopApp() || this.notified.has(key) || lookingAt(event.conversation)) {

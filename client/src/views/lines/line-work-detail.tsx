@@ -12,6 +12,7 @@ import { AskPlaceProvider } from '../asks/ask-context.tsx';
 import { LineAskCard } from '../asks/line-ask-card.tsx';
 import { lineElapsed, useNow } from './line-time.ts';
 import { WorkProcess, WorkRequest, WorkResults } from './work-content.tsx';
+import { WorkPlan } from './work-plan.tsx';
 import { WorkLineAction, WorkStatusGlyph, workStatusText } from './work-status.tsx';
 import { WorkSupplement } from './work-supplement.tsx';
 import { useWorkDetails } from './use-work-details.ts';
@@ -81,6 +82,7 @@ export function LineWorkDetail({ lineId, navigate, task, before, actions, hideCo
       {!manual && line.pauseReason === 'output_limit' ? <p className="work-state-note">
         本次输出还没写完，已有内容已保留</p> : null}
       {actionError === null ? null : <p className="work-error" role="alert">{actionError}</p>}
+      {manual ? null : <WorkPlan plan={line.plan} />}
       {before}
       {manual ? actions : null}
       {detail.error === null ? null : <div className="work-error" role="alert">

@@ -27,6 +27,10 @@ export class ServerEventMapper {
         return [{ type: 'backups.changed' }];
       case 'tasks_changed':
         return [{ type: 'tasks.changed' }];
+      case 'pushes_changed':
+        return [{ type: 'pushes.changed' }];
+      case 'connections_changed':
+        return [{ type: 'connections.changed' }];
       case 'calendar_changed':
         return [{ type: 'calendar.changed' }];
       case 'space_changed':

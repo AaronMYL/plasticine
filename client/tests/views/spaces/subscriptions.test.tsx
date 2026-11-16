@@ -3,7 +3,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { parseHash, routeHash } from '../../../src/shell/routes.ts';
-import { chartScale } from '../../../src/views/spaces/chart-scale.ts';
+import { chartScale } from '../../../src/primitives/chart/chart-scale.ts';
 import { renderApp } from '../../helpers.tsx';
 
 describe('信息流顶部的订阅', () => {

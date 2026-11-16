@@ -90,6 +90,8 @@ export interface FilesApi {
   trash(input: TrashFileRequest): Promise<TrashEntryView>;
   trashed(signal?: AbortSignal): Promise<TrashListResponse>;
   restore(input: RestoreFileRequest): Promise<FileEntryView>;
+  /** 对话里的表格存成 .xlsx 放进「表格」文件夹（POST /v2/files/table），之后按 downloadUrl 下载。 */
+  exportTable(input: import('./shared.ts').ExportTableRequest): Promise<FileEntryView>;
 }
 
 export interface BrowserApi {

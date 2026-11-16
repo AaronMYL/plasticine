@@ -146,7 +146,7 @@ export class FakeNodes implements NodesApi {
       kind: action.kind,
       kindLabel: action.kind,
       actionClass: 'read',
-      target: 'path' in action ? action.path : action.kind,
+      target: 'path' in action && typeof action.path === 'string' ? action.path : action.kind,
       status: refusal === null ? 'executed' : 'refused',
       refusalLayer: refusal === null ? null : (refusal.layer as NodeActionView['refusalLayer']),
       reason: refusal?.reason ?? null,

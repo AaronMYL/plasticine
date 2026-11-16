@@ -1,0 +1,112 @@
+/* 设置 · AI · 连接（11-16 设计稿）：一行是设置页那一种行，名字那块能点开工具清单；工具一行 40 高，往里缩 32。 */
+
+.conn-add {
+  margin-left: auto;
+}
+
+.conn-list,
+.conn-tools {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conn-row {
+  gap: var(--space-3);
+}
+
+.conn-row > svg {
+  flex: none;
+  color: var(--fg2);
+}
+
+.conn-row-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.conn-row-main:disabled {
+  cursor: default;
+}
+
+.conn-row-main .set-row-sub[data-error] {
+  color: var(--err);
+}
+
+.conn-tool {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  padding-left: var(--space-6);
+  border-bottom: 1px solid var(--line);
+}
+
+.conn-tool-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+}
+
+.conn-dialog {
+  width: min(480px, 100%);
+  gap: var(--space-4);
+}
+
+.conn-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.conn-label {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.conn-dialog-actions {
+  flex-wrap: wrap;
+}
+
+.conn-dialog-gap {
+  flex: 1;
+}
+
+.conn-test {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--err);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.conn-test[data-ok='true'] {
+  color: var(--ok);
+}
+
+@media (max-width: 767px) {
+  .conn-dialog-gap {
+    display: none;
+  }
+
+  .conn-test {
+    order: -1;
+    flex-basis: 100%;
+  }
+}
