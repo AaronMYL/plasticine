@@ -43,6 +43,8 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
+      // 测试统一用上海时区（项目规矩）：写在这里，不靠跑的人记得在命令前带 TZ。
+      env: { TZ: 'Asia/Shanghai' },
       include: ['tests/**/*.test.{ts,tsx}'],
       setupFiles: ['tests/setup.ts'],
       restoreMocks: true,

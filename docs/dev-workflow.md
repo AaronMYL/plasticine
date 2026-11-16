@@ -34,7 +34,8 @@
 | 技能同步 | 技能正本在 `agent/skills/`，改完跑 `npm run skills:sync` |
 | 角色引擎（队友头像） | 打包好的在 `client/src/vendor/plasticine-bot/`；引擎更新时在它的检出里构建，再 `node scripts/vendor-plasticine-bot.ts <检出目录>` |
 
-- 测试统一带 `TZ=Asia/Shanghai`。
+- 测试统一用上海时区。`npm test`、`npm run check` 和 `client/` 里的 vitest 自己设（`scripts/test-env.ts`、`client/vite.config.ts`），
+  不用在命令前写；只有像上表那样直接跑 `node --test` 时要自己带 `TZ=Asia/Shanghai`。
 - 环境里开着代理（`NODE_USE_ENV_PROXY=1`）时，连本机的测试单独设 `NODE_USE_ENV_PROXY=0`。
 - 界面里不许写死颜色：真要新颜色，在 `client/src/tokens.css` 加令牌，同时登记进 `scripts/token-check/check.ts` 的令牌表，
   再写进 `agent/skills/plasticine-visual/references/visual-foundation.md`。

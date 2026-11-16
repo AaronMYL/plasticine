@@ -13,7 +13,7 @@
   "scripts": {
     "lint": "node scripts/lint.ts && node scripts/generate-sw-payload.ts --check && node --disable-warning=ExperimentalWarning scripts/generate-translate-script.ts --check",
     "typecheck": "tsc -p tsconfig.json && tsc -p client/tsconfig.json",
-    "test": "node --test --test-concurrency=2 --test-reporter=spec \"scripts/**/*.test.ts\" \"agent/tests/**/*.test.ts\" \"desktop/tests/**/*.test.ts\" && npm test -w client",
+    "test": "node --import ./scripts/test-env.ts --test --test-concurrency=2 --test-reporter=spec \"scripts/**/*.test.ts\" \"agent/tests/**/*.test.ts\" \"desktop/tests/**/*.test.ts\" && npm test -w client",
     "check": "npm run lint && npm run typecheck && npm test",
     "skills:sync": "node scripts/sync-skills.ts"
   },
