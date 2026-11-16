@@ -31,7 +31,7 @@ function localTime(now: Date, timezone: string): string {
 export const getTimeTool = defineTool({
   name: 'get_time',
   label: '查时间',
-  description: 'Returns the current time in the given IANA time zone. Call it instead of guessing the time.',
+  description: '回给定 IANA 时区的现在时间。要知道几点就调它，别猜。',
   replay: 'safe',
   effect: 'read',
   parallel: true,

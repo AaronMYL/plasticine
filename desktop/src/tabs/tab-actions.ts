@@ -47,6 +47,8 @@ const FILL_ERRORS: Readonly<Record<string, string>> = {
 
 /** 截一次画面最多等这么久；Electron 的截图在画面出不来时可能一直不返回。 */
 const CAPTURE_MS = 8_000;
+/** tab_wait 隔多久看一次。 */
+const WAIT_POLL_MS = 500;
 /** 垫到最底层显示出来以后等一帧画好。 */
 const BOTTOM_SETTLE_MS = 200;
 
@@ -123,6 +125,13 @@ export class TabActions implements TabActionPort {
         return this.point(action.tabId, action.x, action.y);
       case 'tab_type':
         return this.type(action.tabId, action.text);
+      case 'tab_close':
+        if (!this.deps.tabs.closeOwn(this.tab(action.tabId).id)) {
+          throw new DeviceRefused('这个标签是他自己开的，Plasticine 不关。');
+        }
+        return { tabId: action.tabId };
+      case 'tab_wait':
+        return this.wait(action.tabId, action.text, action.gone === true, action.timeoutSeconds * 1000, step);
       default:
         throw new TabActionError(null, '这一步不是网页标签的事。');
     }
@@ -286,6 +295,22 @@ export class TabActions implements TabActionPort {
       if (this.viewing() !== tab.id) {
         tab.view.setVisible(false);
       }
+    }
+  }
+
+  /** 等一段字在页面上出现（或消失）：每半秒看一次，最多等 timeoutMs；回执说等到没有。 */
+  private async wait(tabId: string, text: string, gone: boolean, timeoutMs: number, step: StepReporter)
+    : Promise<Record<string, unknown>> {
+    step(gone ? `等「${text.slice(0, 20)}」消失` : `等「${text.slice(0, 20)}」出现`);
+    const started = Date.now();
+    for (;;) {
+      const facts = await this.call(tabId, 'contains', { text });
+      const met = facts.found === !gone;
+      const waitedMs = Date.now() - started;
+      if (met || waitedMs >= timeoutMs) {
+        return { tabId, met, waitedMs };
+      }
+      await sleep(WAIT_POLL_MS);
     }
   }
 

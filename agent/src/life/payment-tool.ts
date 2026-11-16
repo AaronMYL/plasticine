@@ -12,13 +12,8 @@ export function createPaymentTool(drafts: MoneyDraftDesk, reader: PaymentReader)
     permission: 'auto',
     roles: ['conversation'],
     timeoutMs: 2000,
-    description:
-      'Call only after visually identifying a supplied image as a payment screenshot. ' +
-      'Respect user refusals such as “这张图不要记账”; mentioning bookkeeping is not a request. ' +
-      'Do not call for tutorials, ordinary photos or text attachments. The system reads it in the background: ' +
-      'a clearly readable payment is recorded directly (a new merchant is marked for a later look), and only an ' +
-      'unreadable amount or an already recorded payment raises a card. Use attachmentId from the supplied ' +
-      'external material.',
+    description: '只有先看图认出给的图是付款截图才调。尊重他的拒绝，比如「这张图不要记账」；提到记账不等于要记。教程、普通照片、文字附件不调。系统在后台读：看得清的付款直接记下（新商家标出来以后再看），'
+      + '只有金额读不清或已经记过的才出卡。attachmentId 用给的外部资料里的。',
     parameters: Type.Object({ attachmentId: Type.String({ minLength: 1 }), isPaymentScreenshot: Type.Literal(true) },
       { additionalProperties: false }),
     async execute(args, context) {

@@ -4,7 +4,8 @@
 
 import {
   attachmentText, createCloudBrowserActTool, createCloudBrowserObserveTool, createCloudBrowserOpenTool,
-  createCloudBrowserReadTool, createCloudSshRunTool, createCloudTools, FaviconFetcher, LinkPreviewFetcher,
+  createCloudBrowserReadTool, createCloudBrowserTabsTools, createCloudSshRunTool, createCloudTools, FaviconFetcher,
+  LinkPreviewFetcher,
   MailImageFetcher, MailImageSigner, type CloudTools, type CloudTransports, type FaviconFetchOptions,
   type InternalBrowserCookie, type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
@@ -78,6 +79,10 @@ export function createToolGroupServices(options: ToolGroupOptions): ToolGroupSer
     },
   });
   inbox = new InboxDesk({ state, mail: cloud.mail, dryRun, now });
+  // 11-16：空转的云端浏览器网页自动结束（开发干跑时不看）。
+  if (!dryRun) {
+    cloud.watchdog.start();
+  }
   return {
     life: createLife({ state, now }),
     cloud,
@@ -111,6 +116,7 @@ export function toolGroupTools(services: ToolGroupServices): Tool[] {
     createCloudBrowserReadTool(cloud.browser),
     createCloudBrowserObserveTool(cloud.browser),
     createCloudBrowserActTool(cloud.browser),
+    ...createCloudBrowserTabsTools(cloud.browser),
     createAttachmentTextTool({
       read: (path, signal) => {
         const { data, entry } = artifacts.workspace.read(path);

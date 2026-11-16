@@ -79,6 +79,9 @@ export const NODE_PROTOCOL_VERSION = 1;
 /** The node's credential goes in `authorization: Bearer …`, never in a URL or a body. */
 export const NODE_CREDENTIAL_SCHEME = 'Bearer';
 
+/** tab_wait 最多等这么久（设备上这一步的时限比它多一点）。 */
+export const TAB_WAIT_MAX_SECONDS = 30;
+
 export const DEVICE_CLASS_LABELS: Readonly<Record<DeviceActionClass, string>> = {
   read: '读取',
   write: '写入',
@@ -109,6 +112,8 @@ export const DEVICE_KIND_LABELS: Readonly<Record<DeviceActionKind, string>> = {
   tab_perceive: '看整页',
   tab_act: '在网页上操作',
   tab_shot: '截网页标签',
+  tab_close: '关网页标签',
+  tab_wait: '等网页标签',
   tab_point: '在网页标签里按位置点',
   tab_type: '在网页标签里打字',
   ...IOS_KIND_LABELS,
@@ -149,6 +154,8 @@ export const DEVICE_KIND_CLASSES: Readonly<Record<DeviceActionKind, DeviceAction
   tab_perceive: 'browser',
   tab_act: 'input',
   tab_shot: 'browser',
+  tab_close: 'browser',
+  tab_wait: 'browser',
   tab_point: 'input',
   tab_type: 'input',
   ...IOS_KIND_CLASSES,
@@ -250,6 +257,12 @@ export const DeviceActionParamsSchema = Type.Union([
   /** 往这个标签当前的焦点里打字（输入法那条路）；不按回车，发出去照旧点发送。密码框、卡号不打。 */
   Type.Object({ kind: Type.Literal('tab_type'), tabId: WebTabIdSchema,
     text: Type.String({ minLength: 1, maxLength: TAB_FILL_MAX_CHARS }) }, STRICT),
+  /** 关掉一个网页标签：只关 Plasticine 自己开的（他开的标签不关）。 */
+  Type.Object({ kind: Type.Literal('tab_close'), tabId: WebTabIdSchema }, STRICT),
+  /** 等这段字在页面上出现（gone: true 等它消失），最多 timeoutSeconds 秒；回执说等到没有、等了多久。 */
+  Type.Object({ kind: Type.Literal('tab_wait'), tabId: WebTabIdSchema,
+    text: Type.String({ minLength: 1, maxLength: 200 }), gone: Type.Optional(Type.Boolean()),
+    timeoutSeconds: Type.Integer({ minimum: 1, maximum: TAB_WAIT_MAX_SECONDS }) }, STRICT),
   ...IOS_ACTION_PARAM_SCHEMAS,
 ]);
 export type DeviceActionParams = Static<typeof DeviceActionParamsSchema>;

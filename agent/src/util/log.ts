@@ -77,6 +77,8 @@ const EVENTS = {
   sql_slow: '一次数据库查询慢（超过 200 毫秒）',
   event_loop_lag: '这一分钟里服务被同步工作占住过（事件循环延迟高）',
   device_resume_failed: '设备回来了，但没能告诉等它的任务接着做',
+  cloud_renderer_stopped: '云端浏览器里一个网页空转超过 30 分钟（平均占一核八成以上），结束了它的进程',
+  cloud_watchdog_failed: '这一次没看成云端浏览器的进程，下一次再看',
   library_batch_item_failed: '批量处理中的一项没有完成，结果保留供重试',
   error_response_failed: '错误响应未发出，连接已断开',
   memory_curation_failed: '记忆整理这一次没做成，原因已记在整理作业里，稍后重试',

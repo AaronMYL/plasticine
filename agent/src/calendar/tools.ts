@@ -175,20 +175,16 @@ export function calendarTools(parts: CalendarToolParts): KernelTool[] {
     kernel('calendar_read', () => '看他的日程和提醒', (scope) => ({
       name: 'calendar_read',
       label: '查日程',
-      description: 'Reads his Apple Calendar events between from and to (ISO, at most 31 days) and his '
-        + 'unfinished Reminders due before to (or with no date), from his Mac (iCloud, same data as his iPhone). '
-        + 'When the Mac is offline it returns the last synced copy and says when it was synced; say so when you '
-        + 'answer. Reminder ids are what reminder_complete takes.',
+      description: '从他的 Mac（iCloud，和 iPhone 同一份）读 from 到 to（ISO，最多 31 天）之间的 Apple 日历事件，和 to 之前到期（或没有日期）的没完成的提醒事项。'
+        + 'Mac 离线时回上次同步的那份并说是什么时候同步的；回答时要说出来。提醒事项的 id 给 reminder_complete 用。',
       parameters: CalendarReadParameters,
       execute: (toolCallId, raw, signal) => tools.read(scope, toolCallId, raw, signal),
     })),
     kernel('calendar_create', (args) => `建日程：${text(args, 'title')}`, (scope) => ({
       name: 'calendar_create',
       label: '建日程',
-      description: 'Adds one event to his Apple Calendar on his Mac (shows up on his iPhone). Give start and end '
-        + 'with his time zone offset; allDay events start at local midnight. Doing it for him is fine, no need '
-        + 'to ask; when the Mac is offline it is queued until the Mac is back (24 h) and has not happened yet: '
-        + 'tell him that.',
+      description: '在他 Mac 上的 Apple 日历加一个事件（iPhone 上也会有）。开始和结束带上他的时区偏移；全天事件从当地零点开始。替他加就行，不用问；Mac 离线时会排到 Mac 回来（24'
+        + ' 小时内），还没加上：要告诉他。',
       parameters: CalendarCreateParameters,
       async execute(toolCallId, raw, signal) {
         const args = checkedArgs(CalendarCreateParameters, raw, 'calendar_create');
@@ -200,9 +196,8 @@ export function calendarTools(parts: CalendarToolParts): KernelTool[] {
     kernel('reminder_create', (args) => `建提醒：${text(args, 'title')}`, (scope) => ({
       name: 'reminder_create',
       label: '建提醒',
-      description: 'Adds one reminder to his Apple Reminders on his Mac. With a due time it alarms on his iPhone '
-        + 'and Mac at that time; a date-only due is local midnight of that day. When the Mac is offline it is '
-        + 'queued until the Mac is back (24 h): tell him it has not happened yet.',
+      description: '在他 Mac 上的 Apple 提醒事项加一条。有到期时间的到点在 iPhone 和 Mac 上响；只写日期的是那天当地零点。Mac 离线时会排到 Mac 回来（24 小时内）：'
+        + '告诉他还没加上。',
       parameters: ReminderCreateParameters,
       async execute(toolCallId, raw, signal) {
         const args = checkedArgs(ReminderCreateParameters, raw, 'reminder_create');
@@ -213,7 +208,7 @@ export function calendarTools(parts: CalendarToolParts): KernelTool[] {
     kernel('reminder_complete', () => '把一条提醒标成完成', (scope) => ({
       name: 'reminder_complete',
       label: '完成提醒',
-      description: 'Marks one of his reminders done (the id from calendar_read). Only when he said it is done.',
+      description: '把他的一条提醒事项标成完成（id 来自 calendar_read）。只在他说做完了时用。',
       parameters: ReminderCompleteParameters,
       async execute(toolCallId, raw, signal) {
         const args = checkedArgs(ReminderCompleteParameters, raw, 'reminder_complete');

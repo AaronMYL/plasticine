@@ -37,9 +37,8 @@ export function createServerCommandTools(commands: ServerCommands): Tool[] {
         outputReader: 'server_command_read' });
     },
   }), defineTool({ name: 'server_command_read', label: '服务器命令 · 核实与读输出',
-    description: 'Reads durable execution metadata and complete paged stdout/stderr/script for server_exec. '
-      + 'Without commandId, lists recent commands. Offsets count Unicode characters. '
-      + 'An unknown action must be checked against its output and actual effects; do not rerun it merely to find out.',
+    description: '读 server_command 跑过的命令：执行记录和分页的完整 stdout / stderr / 脚本。不给 commandId 就列最近的命令。offset 按 Unicode'
+      + ' 字符数。结果不明的命令要对着输出和实际效果核实，别为了弄清楚而重跑。',
     parameters: ServerCommandReadSchema, replay: 'safe', effect: 'read', permission: 'auto', parallel: true,
     roles: ['conversation', 'worker', 'verifier', 'diagnosis'], timeoutMs: 5_000, maxResultChars: 12_000,
     async execute(args) {

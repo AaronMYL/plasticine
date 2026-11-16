@@ -7,13 +7,13 @@ const MODULES = [
   ['图书：原书、标注和阅读进度', ['book_']],
   ['任务和定时：后台工作、周期任务', ['start_line', 'tell_line', 'list_lines', 'read_line', 'line_', 'schedule_',
     'task_']],
-  ['消息：联系人、群组、对方的 Plasticine', ['message_', 'send_task_card', 'list_inbox', 'read_inbox']],
+  ['消息：联系人、群组、对方的 Plasticine', ['message_', 'contact_', 'send_task_card', 'list_inbox', 'read_inbox']],
   ['网页：Plasticine 内置标签页', ['tab_', 'cloud_browser_']],
   ['设备：Mac、Windows 和服务器', ['device_', 'server_']],
   ['记忆：共用的记忆文档', ['remember', 'forget', 'read_memory_doc', 'search_memory', 'conversation_search']],
   ['Soul：主线的做事方式和队友自己的职责', ['soul_']],
   ['队友：长期成员、群组和交接', ['mate_']],
-  ['授权：对外发出前核对账号、收件人、内容和有效范围', ['outbound_']],
+  ['授权：对外发出前核对账号、收件人、内容和有效范围', ['outbound_', 'grant_']],
 ] as const;
 
 /** 每次请求从实际可用工具生成；关闭工具组后提示里也不再声称能用。 */

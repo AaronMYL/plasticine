@@ -13,6 +13,8 @@ const COMMAND_DEFAULT_MS = 300 * SECOND;
 const LIMITS_MS: Partial<Record<DeviceActionKind, number>> = {
   tab_list: 15 * SECOND,
   tab_shot: 25 * SECOND,
+  tab_close: 15 * SECOND,
+  tab_wait: 45 * SECOND,
   tab_point: 30 * SECOND,
   tab_type: 30 * SECOND,
   tab_click: 30 * SECOND,
@@ -40,7 +42,8 @@ const LIMITS_MS: Partial<Record<DeviceActionKind, number>> = {
 };
 
 /** 只读、做两遍也没有副作用的：卡住了可以直接再做。 */
-const RETRYABLE: ReadonlySet<DeviceActionKind> = new Set<DeviceActionKind>(['tab_list', 'tab_shot', 'tab_perceive',
+const RETRYABLE: ReadonlySet<DeviceActionKind> = new Set<DeviceActionKind>(['tab_list', 'tab_shot', 'tab_wait',
+  'tab_close', 'tab_perceive',
   'tab_read', 'screen_capture', 'file_list', 'file_read', 'browser_read', 'calendar_list', 'reminder_list',
   'photo_list', 'photo_read', 'location_current']);
 

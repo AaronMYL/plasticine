@@ -119,7 +119,7 @@ test('服务器命令的说明写明 Windows 上是 PowerShell、别处是 bash�
     return fauxAssistantMessage('看到了。');
   }]);
   await send(t, cookie, '看看服务器命令');
-  assert.match(description, /PowerShell on Windows, bash elsewhere/);
+  assert.match(description, /Windows 上是 PowerShell，别的是 bash/);
   assert.doesNotMatch(description, /Runs a bash script/);
   assert.match(scriptHint, /PowerShell on Windows, bash elsewhere/);
 });

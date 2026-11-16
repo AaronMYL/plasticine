@@ -51,6 +51,8 @@ export function legacySayings(nodeLabel: NodeLabel): Readonly<Record<string, Leg
     cloud_browser_read: { say: () => '在云端浏览器读网页' },
     cloud_browser_observe: { say: () => '在云端浏览器看画面' },
     cloud_browser_act: { say: () => '在云端浏览器操作网页' },
+    cloud_browser_tabs: { say: () => '看云端浏览器开着哪些标签' },
+    cloud_browser_close: { say: () => '关一个云端浏览器标签' },
     server_command_read: { say: () => '看命令的输出' },
     server_health: { say: () => '给服务做个体检' },
     list_inbox: { say: (args) => withSubject('看收件箱', text(args, 'query')) },

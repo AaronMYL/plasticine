@@ -185,6 +185,17 @@ export class TabViews {
     });
   }
 
+  /** Plasticine 关掉自己开的标签（tab_close）：告诉界面关了；他开的不关，回 false。 */
+  closeOwn(tabId: string): boolean {
+    const tab = this.tabs.get(tabId);
+    if (tab === undefined || tab.openedBy !== 'plasticine') {
+      return false;
+    }
+    this.close(tabId);
+    this.deps.emit({ type: 'closed', tabId });
+    return true;
+  }
+
   /** 把一个没在显示的标签垫到最底层（截后台标签的画面时用：短暂显示也在界面和正在看的标签后面）。 */
   toBottom(tabId: string): void {
     const tab = this.tabs.get(tabId);

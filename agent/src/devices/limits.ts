@@ -85,7 +85,11 @@ export function factsOf(action: DeviceActionParams): ActionFacts {
     case 'tab_perceive':
       return { actionClass, target: `标签 ${action.tabId}` };
     case 'tab_shot':
+    case 'tab_close':
       return { actionClass, target: `标签 ${action.tabId}` };
+    case 'tab_wait':
+      return { actionClass, target: `标签 ${action.tabId} 等「${clipped(action.text, 40)}」${action.gone === true
+        ? '消失' : '出现'}` };
     case 'tab_point':
       return { actionClass, target: `标签 ${action.tabId} 点 (${action.x}, ${action.y})` };
     case 'tab_type':

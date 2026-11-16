@@ -37,10 +37,9 @@ function serverAgentTool(parts: ServerToolParts, scope: LineScope, options: Lega
   return {
     name: 'server_command',
     label: '服务器命令',
-    description: 'Runs a script on Plasticine\'s own server as the application account (PowerShell on Windows, '
-      + 'bash elsewhere; sudo -n when needed), or, with host, on a host from the SSH allowlist. '
-      + 'Returns status, exit code and the start of stdout / stderr; use server_command_read for the rest. '
-      + 'Check exitCode: finishing is not succeeding. Never print secrets.',
+    description: '在 Plasticine 自己的服务器上以应用账号跑一段脚本（Windows 上是 PowerShell，别的是 bash；要时用 sudo -n），或者写 host 在 SSH'
+      + ' 名单里的那台主机上跑。回状态、退出码和 stdout / stderr 的开头；其余用 server_command_read 读。看 exitCode：跑完不等于成功。不要打印密钥。查服务卡没卡、哪条请求慢、'
+      + '哪句查询慢，先用 server_health。',
     parameters: ServerCommandParameters,
     async execute(toolCallId, raw, signal, onUpdate) {
       const args = checkedArgs(ServerCommandParameters, raw, 'server_command');

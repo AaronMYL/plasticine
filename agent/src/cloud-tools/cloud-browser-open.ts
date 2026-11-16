@@ -18,9 +18,8 @@ export function createCloudBrowserOpenTool(browser: BrowserOpener): Tool {
   return defineTool({
     name: 'cloud_browser_open',
     label: '云端浏览器 · 打开',
-    description:
-      'Opens an http or https address in the server browser, binding a separate tab to the task. '
-      + 'The user sees it and can take over. Use cloud_browser_observe to inspect the actual page before acting.',
+    description: '在服务器上的浏览器里打开一个 http 或 https 网址，给这件事单独绑一个标签。他看得到、也能接手。动手前先用 cloud_browser_observe 看真实页面；用完的标签用'
+      + ' cloud_browser_close 关掉。',
     replay: 'safe',
     effect: 'read',
     permission: 'auto',

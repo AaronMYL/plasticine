@@ -45,10 +45,8 @@ function createPageSubmitAsk(host: AskToolHost, devices: SubmitHoldPort, scope: 
   return {
     name: 'page_submit_ask',
     label: '提交前问你',
-    description: 'After device_action tab_act came back with submit_needs_you (the device did not click a pay / post / '
-      + 'delete / settings / form submit), asks him on a card whether to submit and waits for his choice. The card '
-      + 'states what submitting does from the device receipt. Only if he picks the submit option, repeat the same '
-      + 'tab_act with submitAsk set to the card id in the result.',
+    description: 'device_action 的 tab_act 回了 submit_needs_you（设备没点付款、删除、改设置这类提交）以后用：出一张卡问他要不要提交，等他选。'
+      + '卡上照设备回执写清提交会怎样。只有他选了提交，才把结果里的卡片 id 作为 submitAsk，原样再做一次那个 tab_act。',
     parameters: PageSubmitAskParameters,
     replay: 'safe',
     async execute(toolCallId, raw, signal) {

@@ -63,12 +63,9 @@ export function createPageSendTool(state: SendState, devices: PageSendPort): Too
   return defineTool({
     name: PAGE_SEND_TOOL,
     label: '网页里发出',
-    description: 'Sends what you prepared on a web page in his name (send, post, reply, form submit) after '
-      + 'device_action tab_act came back submit_needs_you for it. Give the page host, who receives it and the exact '
-      + 'text. It goes out at once when his promises and grants (承诺和授权) already cover it; otherwise he gets one '
-      + 'card that grants the whole job (this site, this text, while this task runs), and later sends in that scope '
-      + 'do not ask again. Never use it for paying, deleting or changing settings: those still go through '
-      + 'page_submit_ask every time.',
+    description: '在网页上以他的名义发出准备好的东西（发送、发帖、回复、表单提交），用在 device_action 的 tab_act 为它回了 submit_needs_you 以后。写清网站、发给谁、'
+      + '原文。他的承诺和授权（可以先 grant_list 看）已经覆盖就直接发；没覆盖他会收到一张卡，授权这一整件事（这个网站、这段原文、这件事做着的时候），之后在范围里再发不再问。付款、删除、改设置不能用它：'
+      + '那些每次照旧走 page_submit_ask。',
     replay: 'once',
     effect: 'external',
     permission: 'agreement',

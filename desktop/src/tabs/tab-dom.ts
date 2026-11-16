@@ -306,6 +306,11 @@ export function viewportSize(view: { innerWidth: number; innerHeight: number }):
   return { width: Math.max(1, Math.round(view.innerWidth)), height: Math.max(1, Math.round(view.innerHeight)) };
 }
 
+/** 页面上看得到的字里有没有这一段（tab_wait 用）。 */
+export function hasText(doc: Document, text: string): { found: boolean } {
+  return { found: (doc.body?.innerText ?? '').includes(text) };
+}
+
 /** 当前焦点是什么（tab_type 打字前后看一眼）：密码框、卡号框不打；text 是框里现在的字（密码框不回传）。 */
 export function focusedFacts(doc: Document): { tag: string; editable: boolean; password: boolean; card: boolean;
   text: string } {

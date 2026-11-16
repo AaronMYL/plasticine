@@ -2,6 +2,8 @@
 // 网页图标。浏览器默认连回环 CDP，其余默认不连。凭据只按名字引用（credentials/，0600），不进日志、不进库、不回给
 // 客户端。有副作用的动作在调用方走回执（system/ 的 receipts 和 external-once）。
 
+import { errorCategory, safeLog } from '../util/index.ts';
+import { RendererWatchdog } from './renderer-watchdog.ts';
 import { join } from 'node:path';
 import type { InboxMessage } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
@@ -88,6 +90,15 @@ export function createCloudTools(options: CloudToolsOptions) {
   const browser = new CloudBrowser({ transport: transports.browser, now: options.now,
     stateDirectory: options.stateDirectory,
     ...(options.internalUrl === undefined ? {} : { internalUrl: options.internalUrl }) });
+  // 11-16：云端浏览器里空转超过 30 分钟的网页进程自动结束（renderer-watchdog.ts）。
+  const browserTransport = transports.browser;
+  const watchdog = new RendererWatchdog({
+    processes: (signal) => browserTransport.processes?.(signal) ?? Promise.resolve(null),
+    kill: (pid) => process.kill(pid, 'SIGTERM'),
+    now: () => options.now().getTime(),
+    stopped: () => safeLog('warn', 'cloud_renderer_stopped'),
+    failed: (error) => safeLog('warn', 'cloud_watchdog_failed', { category: errorCategory(error) }),
+  });
   const mailFiles = new MailFiles(options.stateDirectory);
   const mailSync = new MailSync({
     state: options.state,
@@ -103,6 +114,7 @@ export function createCloudTools(options: CloudToolsOptions) {
   return {
     ssh,
     browser,
+    watchdog,
     mailSync,
     mailRefetch,
     mailFiles,
@@ -124,6 +136,8 @@ export { MailImageError } from './mail-image-fetch.ts';
 export { createCloudBrowserActTool } from './cloud-browser-act.ts';
 export { createCloudBrowserObserveTool } from './cloud-browser-observe.ts';
 export { createCloudBrowserOpenTool } from './cloud-browser-open.ts';
+export { createCloudBrowserTabsTools } from './cloud-browser-tabs.ts';
+export { RendererWatchdog, SPIN_SHARE, SPIN_WINDOW_MS, WATCH_EVERY_MS } from './renderer-watchdog.ts';
 export { createCloudBrowserReadTool } from './cloud-browser-read.ts';
 export { createCloudSshRunTool } from './cloud-ssh-run.ts';
 export { FaviconFetchError, decodeDataUrl, sniffImage } from './favicon-fetch.ts';

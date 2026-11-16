@@ -12,7 +12,8 @@ import {
 import { screencast } from './cdp-screencast.ts';
 import { restoreDesktop } from './cdp-viewport.ts';
 import { CloudToolError } from './errors.ts';
-import type { BrowserAction, BrowserPage, BrowserSnapshot, BrowserTransport, BrowserWatch } from './transports.ts';
+import type { BrowserAction, BrowserPage, BrowserProcess, BrowserSnapshot, BrowserTransport, BrowserWatch }
+  from './transports.ts';
 import type { BrowserInspection } from '../../shared/browser-observation.ts';
 import { CdpInspectionSchema, OBSERVE_PAGE } from './cdp-observation.ts';
 
@@ -114,6 +115,21 @@ export class CdpBrowser implements BrowserTransport {
     if (cookies.length === 0) return;
     // 每次受控操作恢复本站系统身份，防止导入登录或网页改写后留下用户 Cookie。外站和 profile 原样保留。
     await connection.send('Storage.setCookies', { cookies }, signal);
+  }
+
+  /**
+   * 浏览器各个进程（11-16 renderer-watchdog.ts 用）：类型、进程号、累计 CPU 秒数。只在已经连着时查，不为这个去连浏览器；
+   * 没连着回 null。
+   */
+  async processes(signal: AbortSignal): Promise<BrowserProcess[] | null> {
+    const connection = this.#connection;
+    if (connection === null) {
+      return null;
+    }
+    const result = await connection.send('SystemInfo.getProcessInfo', {}, signal) as { processInfo?: unknown };
+    const list = Array.isArray(result.processInfo) ? result.processInfo as Record<string, unknown>[] : [];
+    return list.flatMap((item) => (typeof item['id'] === 'number' && typeof item['cpuTime'] === 'number'
+      ? [{ pid: item['id'], type: String(item['type'] ?? ''), cpuSeconds: item['cpuTime'] }] : []));
   }
 
   async snapshot(signal: AbortSignal): Promise<BrowserSnapshot> {

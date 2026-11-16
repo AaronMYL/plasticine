@@ -123,6 +123,9 @@ export const DEVICE_RESULT_SCHEMAS = {
   /** target 是点到的那个元素（标签名和字）；changed：点之后页面变了。 */
   tab_point: Type.Object({ tabId: TabIdText, target: Type.Object({ tag: Text, text: Text }, STRICT),
     before: WebTabDomStateSchema, after: WebTabDomStateSchema, changed: Type.Boolean() }, STRICT),
+  tab_close: Type.Object({ tabId: TabIdText }, STRICT),
+  /** met：等到了（出现或消失）；waitedMs：等了多久。 */
+  tab_wait: Type.Object({ tabId: TabIdText, met: Type.Boolean(), waitedMs: Type.Integer({ minimum: 0 }) }, STRICT),
   /** matches：打完读回焦点里的字包含要打的。 */
   tab_type: Type.Object({ tabId: TabIdText, tag: Text, matches: Type.Boolean() }, STRICT),
   ...IOS_RESULT_SCHEMAS,

@@ -52,10 +52,8 @@ function createConversationSearch(state: ConversationSearchState, scope: LineSco
   return {
     name: TOOL_NAME,
     label: '翻对话',
-    description: 'Finds exact earlier words in conversations you can access, by keyword and '
-      + 'optionally by day range (YYYY-MM-DD, his time zone) and line kind. Returns each hit\'s ref '
-      + '(line:<line>:<seq>), time, line, and a short stretch of the original text around the hit, best match '
-      + 'first. Use it when you need what was actually said rather than a summary. Tool results are not included.',
+    description: '在你能看的对话里按关键词找以前的原话，可以加日期范围（YYYY-MM-DD，他的时区）和线的种类。每条命中回 ref（line:<线>:<序号>）、时间、哪条线和命中前后一小段原文，'
+      + '最相关的在前。要的是他实际说了什么、不是摘要时用它。不含工具结果。',
     parameters: ConversationSearchParameters,
     async execute(_toolCallId, raw) {
       const args = checkedArgs(ConversationSearchParameters, raw, TOOL_NAME);

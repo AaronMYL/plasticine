@@ -46,6 +46,7 @@ import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
 import { mainIdentity, MateGroupTasks, mateGroupTaskTools, Mates, mateTools } from '../mates/index.ts';
 import { realLater, sleepFor, type LineKernel } from '../lines/index.ts';
 import { resumeAfterDevice } from './device-resume.ts';
+import { networkReadTools } from './network-read-tools.ts';
 import { Diagnostics } from './diagnostics.ts';
 import { createServerHealthTool } from './server-health-tool.ts';
 import { idleWait } from './idle-wait.ts';
@@ -346,7 +347,8 @@ export function assembleApp(options: AssembleOptions): App {
     contextImages: (lineId) => network.attachments.contextImages(lineId),
     tools: [...mateTools(new Mates(state, () => late.get())),
       ...mateGroupTaskTools(new MateGroupTasks(state, () => late.get())), taskCardTool(state, network),
-      ...messageTools(state, network), ...tasks.tools(), video.tool, heartbeatChecklistTool(() => timed.heartbeat),
+      ...messageTools(state, network), ...networkReadTools(state), ...tasks.tools(), video.tool,
+      heartbeatChecklistTool(() => timed.heartbeat),
       ...libraryTools({ state, workspace: toolGroups.artifacts.workspace },
         (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
       // 第 6、7 条：空间与订阅。订阅出一期要往后台线里放消息，线是下面这一行装出来的，所以晚取。

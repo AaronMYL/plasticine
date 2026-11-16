@@ -30,7 +30,8 @@ export const TOOL_GROUPS: readonly ToolGroupDefinition[] = [
     id: 'cloud_browser',
     label: '云端浏览器',
     description: '在云端打开、读取和操作网页，沿用你已确认的全面授权。',
-    tools: ['cloud_browser_open', 'cloud_browser_read', 'cloud_browser_observe', 'cloud_browser_act'],
+    tools: ['cloud_browser_open', 'cloud_browser_read', 'cloud_browser_observe', 'cloud_browser_act',
+      'cloud_browser_tabs', 'cloud_browser_close'],
     defaultEnabled: true,
   },
   {

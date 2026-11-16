@@ -43,7 +43,15 @@ export type BrowserAction = BrowserActionInput;
 export interface BrowserSnapshot { tabs: BrowserTab[]; activeTabId: string | null; loading?: boolean }
 export interface BrowserWatch { ack(sequence: number): Promise<void>; close(targetGone?: boolean): Promise<void> }
 
+/** 浏览器的一个进程：renderer 是网页，cpuSeconds 是到现在一共用了多少秒 CPU。 */
+export interface BrowserProcess {
+  pid: number;
+  type: string;
+  cpuSeconds: number;
+}
+
 export interface BrowserTransport {
+  processes?(signal: AbortSignal): Promise<BrowserProcess[] | null>;
   publishX?(text: string, signal: AbortSignal): Promise<{ url: string }>;
   open(url: string, signal: AbortSignal): Promise<BrowserPage>;
   act(sessionId: string, action: BrowserAction, signal: AbortSignal): Promise<BrowserPage>;

@@ -86,11 +86,8 @@ export function createShowWidgetsTool(facts: WidgetFacts, recorder: WidgetRecord
   return defineTool({
     name: 'show_widgets',
     label: '在回复里放部件',
-    description:
-      'Puts interactive pieces under this reply (shown in the chat, answered with one tap): choice instead of an '
-      + 'open question, input for one specific answer, table for structured results, confirm instead of asking '
-      + '"shall I?", and the money tool card for a payment to record. Tool cards only draft: nothing is written '
-      + 'until the user taps confirm. Answers come back as a message in this line.',
+    description: '在这条回答下面放能点的小部件（显示在对话里，点一下就答）：choice 代替开放式提问，input 要一个具体答案，table 放结构化结果，confirm 代替问「要不要我……？」，'
+      + '记账卡放一笔要记的付款。卡片只是草稿：他点了确认才写进去。回答会作为一条消息回到这条线。',
     replay: 'safe',
     effect: 'internal',
     permission: 'auto',

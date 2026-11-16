@@ -39,6 +39,9 @@ export const DEVICE_ACTION_KINDS = [
   'tab_shot',
   'tab_point',
   'tab_type',
+  // 11-16：关掉 Plasticine 自己开的标签；等页面上某段字出现或消失（代替一遍遍读）。
+  'tab_close',
+  'tab_wait',
   // 第 102 条第 4 批：iPhone 的手（日历与提醒事项、相册、快捷指令、位置；文件沿用上面的 file_* 三种）。
   'calendar_list',
   'calendar_create',
