@@ -4,7 +4,8 @@
 // - 删除：卸掉这家、清掉 key，选了它的默认模型和各用途回到「跟默认走」。
 
 import { randomUUID } from 'node:crypto';
-import { CUSTOM_PROVIDER_PREFIX, type SaveCustomProviderRequest } from '../../shared/api/custom-providers.ts';
+import { CUSTOM_PROVIDER_PREFIX, type CustomModel, type SaveCustomProviderRequest }
+  from '../../shared/api/custom-providers.ts';
 import type { StateService } from '../state/index.ts';
 import { readCustomProviders, writeCustomProviders, type CustomProviderConfig } from './custom-providers.ts';
 import { KernelModelError, type KernelModels } from './models.ts';
@@ -27,8 +28,15 @@ function checkedUrl(raw: string): string {
   return trimmed;
 }
 
-function cleanModels(models: readonly string[]): string[] {
-  const cleaned = [...new Set(models.map((model) => model.trim()).filter((model) => model !== ''))];
+/** 模型名去空格、去空、同名只留第一个（连同它标的几样）。 */
+function cleanModels(models: readonly CustomModel[]): CustomModel[] {
+  const seen = new Set<string>();
+  const cleaned = models.flatMap((model) => {
+    const id = model.id.trim();
+    if (id === '' || seen.has(id)) return [];
+    seen.add(id);
+    return [{ ...model, id }];
+  });
   if (cleaned.length === 0) throw new KernelModelError('invalid', '至少填一个模型名。');
   return cleaned;
 }
@@ -56,8 +64,9 @@ export async function saveCustomProvider(kernel: KernelModels, state: SettingsSt
     : configs.map((item) => (item.id === config.id ? config : item)));
   kernel.register(config);
   const wasEnabled = kernel.enabled()[config.id] ?? [];
-  const added = config.models.filter((model) => !(before?.models ?? []).includes(model));
-  const enabled = config.models.filter((model) => wasEnabled.includes(model) || added.includes(model));
+  const oldIds = (before?.models ?? []).map((model) => model.id);
+  const enabled = config.models.map((model) => model.id)
+    .filter((id) => wasEnabled.includes(id) || !oldIds.includes(id));
   kernel.configure({ version: kernel.settings().version, purposes: [],
     enabled: [{ provider: config.id, models: enabled }] });
   return config.id;

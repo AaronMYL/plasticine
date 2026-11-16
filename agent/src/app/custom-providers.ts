@@ -46,8 +46,9 @@ export async function testCustomConnection(context: RequestContext): Promise<Rep
   const close = (): void => gone.abort();
   context.res.once('close', close);
   try {
+    const models = input.models?.map((model) => ({ ...model, id: model.id.trim() }));
     const result = await testConnection({ protocol: input.protocol, baseUrl: input.baseUrl, apiKey: apiKey.trim(),
-      ...(input.model === undefined ? {} : { model: input.model.trim() }) }, kernel.connectionTest, gone.signal);
+      ...(models === undefined ? {} : { models }) }, kernel.connectionTest, gone.signal);
     return { status: 200, body: result };
   } finally {
     context.res.removeListener('close', close);

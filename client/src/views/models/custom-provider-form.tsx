@@ -1,17 +1,18 @@
 // 自定义提供商（11-16 Aaron，设计稿弹框定「按这个做」）：名称、接口协议、Base URL、API Key、模型（一个个加，或从接口
-// 读出来挑）；底部「测试连接」和「保存」。测试用表单里还没保存的配置，结果每一步一行：成了打勾，没成写原因和服务端原话。
+// 读出来挑；每个模型标能不能思考、能不能看图、上下文多长）；底部「测试连接」和「保存」。测试用表单里还没保存的配置，
+// 每个模型都试一句，结果每一步一行：成了打勾，没成写原因和服务端原话。
 // 设置 · AI 里就地展开（新建从「添加提供商」最后一行进，改从那一家行尾 ⋯ 进）。
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
-  CUSTOM_PROTOCOL_LABELS, CUSTOM_PROTOCOLS, type CustomProtocol, type ModelProviderView,
-  type TestModelConnectionResponse,
+  CUSTOM_PROTOCOL_LABELS, CUSTOM_PROTOCOLS, MAX_TESTED_MODELS, type CustomModel, type CustomProtocol,
+  type ModelProviderView, type TestModelConnectionResponse,
 } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { BusyText } from '../../primitives/busy/index.tsx';
 import { IconButton } from '../../shell/icon-button.tsx';
 import { ConnectionResult } from './connection-result.tsx';
-import { ModelChips } from './model-chips.tsx';
+import { ModelRows } from './model-rows.tsx';
 import './custom-provider.css';
 
 export interface CustomProviderFormProps {
@@ -34,8 +35,9 @@ export function CustomProviderForm({ provider, autoTest = false, onDone, onCance
   const [protocol, setProtocol] = useState<CustomProtocol>(provider?.custom?.protocol ?? 'openai-completions');
   const [baseUrl, setBaseUrl] = useState(provider?.custom?.baseUrl ?? '');
   const [apiKey, setApiKey] = useState('');
-  const [models, setModels] = useState<string[]>(provider?.models.map((model) => model.id) ?? []);
-  const [listed, setListed] = useState<string[] | null>(null);
+  const [models, setModels] = useState<CustomModel[]>(provider?.models.map((model) => ({ id: model.id,
+    reasoning: model.reasoning, images: model.input.includes('image'), contextWindow: model.contextWindow })) ?? []);
+  const [listed, setListed] = useState<TestModelConnectionResponse['models']>(null);
   const [result, setResult] = useState<TestModelConnectionResponse | string | null>(null);
   const [testing, setTesting] = useState<'test' | 'list' | null>(null);
   const [saving, setSaving] = useState(false);
@@ -59,10 +61,9 @@ export function CustomProviderForm({ provider, autoTest = false, onDone, onCance
   const test = (mode: 'test' | 'list'): void => {
     setTesting(mode);
     setResult(null);
-    const model = mode === 'test' ? models[0] : undefined;
     void live.models.testConnection({ providerId: provider?.id ?? null, protocol, baseUrl: baseUrl.trim(),
       ...(apiKey.trim() === '' && provider !== null ? {} : { apiKey: apiKey.trim() }),
-      ...(model === undefined ? {} : { model }) }).then((outcome) => {
+      ...(mode === 'test' ? { models: models.slice(0, MAX_TESTED_MODELS) } : {}) }).then((outcome) => {
       setTesting(null);
       setResult(outcome);
       if (typeof outcome !== 'string' && outcome.models !== null) setListed(outcome.models);
@@ -117,7 +118,7 @@ export function CustomProviderForm({ provider, autoTest = false, onDone, onCance
         <input className="field-input field-input-mono" type="password" autoComplete="off" value={apiKey}
           placeholder={keyHint} onChange={(event) => edited(setApiKey)(event.target.value)} />
       </label>
-      <ModelChips models={models} listed={listed} listing={testing === 'list'} canList={canReach && testing === null}
+      <ModelRows models={models} listed={listed} listing={testing === 'list'} canList={canReach && testing === null}
         onChange={(next) => {
           setModels(next);
           setResult(null);

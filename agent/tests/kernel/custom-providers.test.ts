@@ -20,8 +20,12 @@ async function setup() {
   return { kernel, state: handle.state };
 }
 
+function entry(id: string, extra: Partial<{ reasoning: boolean; images: boolean; contextWindow: number }> = {}) {
+  return { id, reasoning: false, images: true, contextWindow: 128_000, ...extra };
+}
+
 const MONK = { id: null, name: 'Monk', protocol: 'openai-completions' as const, baseUrl: `${FAKE_BASE}/`,
-  apiKey: FAKE_KEY, models: ['monk', 'monk-fast', ' monk ', ''] };
+  apiKey: FAKE_KEY, models: [entry('monk'), entry('monk-fast'), entry(' monk ', { reasoning: true }), entry(' ')] };
 
 test('保存：排在内置的后面，带地址和协议，不回显 key；填的模型都启用；成了默认可用的模型', async () => {
   const { kernel, state } = await setup();
@@ -57,13 +61,13 @@ test('改：key 不给就沿用；新加的模型启用，关掉的保持关，�
   const id = await saveCustomProvider(kernel, state, MONK);
   kernel.configure({ version: kernel.settings().version, purposes: [], enabled: [{ provider: id, models: ['monk'] }] });
   await saveCustomProvider(kernel, state, { id, name: 'Monk 2', protocol: 'openai-completions', baseUrl: FAKE_BASE,
-    models: ['monk', 'monk-fast', 'monk-opus'] });
+    models: [entry('monk'), entry('monk-fast'), entry('monk-opus')] });
   const monk = kernel.providers().find((item) => item.id === id);
   assert.equal(monk?.name, 'Monk 2');
   assert.deepEqual(monk?.enabled, ['monk', 'monk-opus']);
   assert.equal(await storedCustomKey(kernel, id), FAKE_KEY);
   await saveCustomProvider(kernel, state, { id, name: 'Monk 2', protocol: 'openai-completions', baseUrl: FAKE_BASE,
-    apiKey: 'sk-another-fake-key-000', models: ['monk-opus'] });
+    apiKey: 'sk-another-fake-key-000', models: [entry('monk-opus')] });
   assert.equal(await storedCustomKey(kernel, id), 'sk-another-fake-key-000');
   assert.deepEqual(kernel.providers().find((item) => item.id === id)?.models.map((model) => model.id),
     ['monk-opus']);
@@ -79,7 +83,7 @@ test('不填 key 也能存（本机的模型服务），算已连接', async () 
 test('地址不对、没有模型、改不存在的那家：都回清楚的错', async () => {
   const { kernel, state } = await setup();
   await assert.rejects(saveCustomProvider(kernel, state, { ...MONK, baseUrl: 'https://' }), /不是一个网址/);
-  await assert.rejects(saveCustomProvider(kernel, state, { ...MONK, models: [' '] }), /至少填一个模型名/);
+  await assert.rejects(saveCustomProvider(kernel, state, { ...MONK, models: [entry(' ')] }), /至少填一个模型名/);
   await assert.rejects(saveCustomProvider(kernel, state, { ...MONK, id: 'custom-nope' }), /没有这家/);
   await assert.rejects(removeCustomProvider(kernel, state, 'custom-nope'), /没有这家/);
 });
@@ -106,4 +110,33 @@ test('重启服务后还在：新装的 KernelModels 从库里读回来', async 
   const again = new KernelModels({ state, providers: fakeProviders().providers });
   assert.equal(again.providers().find((item) => item.id === id)?.name, 'Monk');
   assert.ok(again.models.getModel(id, 'monk') !== undefined);
+});
+
+test('每个模型自己的几样：能思考的给 不思考 / 较低 / 中等 / 较高，不能看图的只收文字，上下文照填的', async () => {
+  const { kernel, state } = await setup();
+  const id = await saveCustomProvider(kernel, state, { ...MONK, models: [entry('monk-opus',
+    { reasoning: true, contextWindow: 200_000 }), entry('monk-fast', { images: false, contextWindow: 32_000 })] });
+  const models = kernel.providers().find((item) => item.id === id)?.models;
+  assert.deepEqual(models?.map((model) => [model.id, model.reasoning, model.thinkingLevels, model.input,
+    model.contextWindow]), [
+    ['monk-opus', true, ['off', 'low', 'medium', 'high'], ['text', 'image'], 200_000],
+    ['monk-fast', false, ['off'], ['text'], 32_000],
+  ]);
+  assert.equal(kernel.models.getModel(id, 'monk-fast')?.maxTokens, 16_000, '上下文短的一次最多写一半');
+  const server = fakeCompatibleServer({ models: ['monk-opus'] });
+  const opus = kernel.models.getModel(id, 'monk-opus');
+  assert.ok(opus !== undefined);
+  await kernel.models.completeSimple(opus, { messages: [{ role: 'user', content: 'hi', timestamp: 1 }] },
+    { fetch: server.fetch, reasoning: 'high' });
+  assert.equal((server.seen[0]?.body as Record<string, unknown>)['reasoning_effort'], 'high');
+});
+
+test('第一版只存了模型名的：装 KernelModels 时整理成现在的样子写回去', async () => {
+  const { state } = await setup();
+  state.kernelSettings.set('custom_providers', [{ id: 'custom-old00001', name: 'Old', protocol: 'openai-completions',
+    baseUrl: FAKE_BASE, models: ['monk', 'monk-fast'] }]);
+  const kernel = new KernelModels({ state, providers: fakeProviders().providers });
+  assert.deepEqual(state.kernelSettings.get('custom_providers'), [{ id: 'custom-old00001', name: 'Old',
+    protocol: 'openai-completions', baseUrl: FAKE_BASE, models: [entry('monk'), entry('monk-fast')] }]);
+  assert.ok(kernel.models.getModel('custom-old00001', 'monk') !== undefined);
 });

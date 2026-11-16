@@ -20,7 +20,8 @@ import { MODEL_PURPOSES, requiresImages, type ModelPurpose } from '../../shared/
 import type { CompleteOptions, ModelChoice, ModelSource } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
 import { SqliteCredentialStore } from './credentials.ts';
-import { customProvider, readCustomProviders, type CustomProviderConfig } from './custom-providers.ts';
+import { customProvider, readCustomProviders, upgradeCustomProviders, type CustomProviderConfig }
+  from './custom-providers.ts';
 
 export type KernelModelState = Pick<StateService, 'kernelCredentials' | 'kernelSettings'>;
 
@@ -117,6 +118,7 @@ export class KernelModels implements ModelSource {
       this.models.setProvider(provider);
     }
     this.#builtin = providers.map((provider) => provider.id);
+    upgradeCustomProviders(this.#state);
     for (const config of this.customConfigs()) {
       this.models.setProvider(customProvider(config));
     }

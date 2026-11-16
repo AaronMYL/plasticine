@@ -190,8 +190,15 @@ export class FakeModelProviders implements ModelProvidersApi {
     if (body.id !== null && before === undefined) this.require(body.id);
     this.serial += 1;
     const id = before?.id ?? `custom-${String(this.serial).padStart(4, '0')}`;
-    const models = [...new Set(body.models.map((item) => item.trim()).filter((item) => item !== ''))]
-      .map((item) => model(item, item, 0, false));
+    const seen = new Set<string>();
+    const models = body.models.flatMap((item): FakeModel[] => {
+      const id = item.id.trim();
+      if (id === '' || seen.has(id)) return [];
+      seen.add(id);
+      return [{ id, name: id, contextWindow: item.contextWindow, reasoning: item.reasoning,
+        thinkingLevels: item.reasoning ? ['off', 'low', 'medium', 'high'] : ['off'],
+        input: item.images ? ['text', 'image'] : ['text'], price: 0 }];
+    });
     const saved: FakeProvider = { ...provider(id, body.name.trim(), null, models), methods: [], connected: 'api_key',
       custom: { baseUrl: body.baseUrl.replace(/\/+$/, ''), protocol: body.protocol } };
     const index = this.customs.findIndex((item) => item.id === id);

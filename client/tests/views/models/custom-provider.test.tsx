@@ -38,7 +38,8 @@ describe('自定义提供商', () => {
     expect(within(form).getByRole('button', { name: '移除 chat-fast' })).toBeTruthy();
     fireEvent.click(within(form).getByRole('button', { name: '测试连接' }));
     const result = await within(form).findByRole('status', { name: '连接正常' });
-    expect(within(result).getByText('chat-large 回复了')).toBeTruthy();
+    expect(within(result).getByText('chat-large 回复了（带图）')).toBeTruthy();
+    expect(within(result).getByText('chat-fast 回复了（带图）')).toBeTruthy();
     fireEvent.click(save);
     const connected = await screen.findByRole('list', { name: '连着的提供商' });
     const row = await within(connected).findByRole('listitem', { name: 'My Gateway' });
@@ -65,6 +66,32 @@ describe('自定义提供商', () => {
     fireEvent.click(within(listed).getByRole('button', { name: '全部添加' }));
     expect(within(form).getByRole('button', { name: '移除 chat-mini' })).toBeTruthy();
     expect(within(form).getByText('都加上了')).toBeTruthy();
+    expect((within(form).getByLabelText('chat-coder 上下文') as HTMLSelectElement).value).toBe('256000');
+    expect((within(form).getByLabelText('chat-mini 上下文') as HTMLSelectElement).value).toBe('128000');
+  });
+
+  it('每个模型标能思考、能看图、上下文；测试按标的试，不认的那一样说清；保存后思考档能选', async () => {
+    const { app, form } = await openForm();
+    fill(form, { name: 'Flags', url: 'https://llm.example.com/v1', key: 'sk-test-only-0006',
+      models: ['chat-large', 'chat-mini'] });
+    fireEvent.click(within(form).getByRole('button', { name: 'chat-large 能思考' }));
+    fireEvent.click(within(form).getByRole('button', { name: 'chat-mini 能思考' }));
+    fireEvent.click(within(form).getByRole('button', { name: 'chat-mini 能看图' }));
+    expect(within(form).getByRole('button', { name: 'chat-mini 能看图' }).getAttribute('aria-pressed')).toBe('false');
+    fireEvent.change(within(form).getByLabelText('chat-large 上下文'), { target: { value: '200000' } });
+    fireEvent.click(within(form).getByRole('button', { name: '测试连接' }));
+    const result = await within(form).findByRole('status', { name: '连接有问题' });
+    expect(within(result).getByText('chat-large 回复了（带图 · 较低思考）')).toBeTruthy();
+    expect(within(result).getByText('chat-mini 能回复，但不认思考参数，取消「能思考」')).toBeTruthy();
+    fireEvent.click(within(form).getByRole('button', { name: 'chat-mini 能思考' }));
+    fireEvent.click(within(form).getByRole('button', { name: '保存' }));
+    const connected = await screen.findByRole('list', { name: '连着的提供商' });
+    await within(connected).findByRole('listitem', { name: 'Flags' });
+    const saved = (await app.api.modelProviders.list()).providers.find((item) => item.name === 'Flags');
+    expect(saved?.models.map((model) => [model.id, model.thinkingLevels, model.input, model.contextWindow])).toEqual([
+      ['chat-large', ['off', 'low', 'medium', 'high'], ['text', 'image'], 200_000],
+      ['chat-mini', ['off'], ['text'], 128_000],
+    ]);
   });
 
   it('模型名不对：测试连接说「模型名不对」', async () => {

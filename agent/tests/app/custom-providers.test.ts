@@ -35,8 +35,9 @@ function custom(body: unknown): ModelProviderView | undefined {
   return providers.find((item) => item.custom !== null);
 }
 
+const entry = (id: string) => ({ id, reasoning: false, images: true, contextWindow: 128_000 });
 const SAVE = { id: null, name: 'Monk', protocol: 'openai-completions', baseUrl: FAKE_BASE, apiKey: FAKE_KEY,
-  models: ['monk', 'monk-fast', 'monk-coding', 'monk-free', 'monk-opus'] };
+  models: ['monk', 'monk-fast', 'monk-coding', 'monk-free', 'monk-opus'].map(entry) };
 
 test('保存、列出（不回显 key）、删除；没登录 401', async () => {
   const { t, cookie } = await customApp();
@@ -58,7 +59,8 @@ test('保存、列出（不回显 key）、删除；没登录 401', async () => 
 
 test('表单不对回 400：协议不认识、地址不是 http(s)、模型空着', async () => {
   const { t, cookie } = await customApp();
-  for (const wrong of [{ protocol: 'grpc' }, { baseUrl: 'ftp://example.com' }, { models: [] }]) {
+  for (const wrong of [{ protocol: 'grpc' }, { baseUrl: 'ftp://example.com' }, { models: [] }, { models: ['monk'] },
+    { models: [{ ...entry('monk'), contextWindow: 10 }] }]) {
     const reply = await call(t, 'POST', CUSTOM_PROVIDERS_PATH, { cookie,
       body: { requestId: requestId(), ...SAVE, ...wrong } });
     assert.equal(reply.status, 400, JSON.stringify(wrong));
@@ -68,14 +70,15 @@ test('表单不对回 400：协议不认识、地址不是 http(s)、模型空�
 test('测试连接：用表单里的 key；已存的那家不给 key 就用存着的', async () => {
   const { t, cookie, server } = await customApp();
   const fresh = json(await call(t, 'POST', MODEL_CONNECTION_TEST_PATH, { cookie, body: { requestId: requestId(),
-    providerId: null, protocol: 'openai-completions', baseUrl: FAKE_BASE, apiKey: FAKE_KEY, model: 'monk-opus' } }));
+    providerId: null, protocol: 'openai-completions', baseUrl: FAKE_BASE, apiKey: FAKE_KEY,
+    models: [entry('monk-opus')] } }));
   assert.equal(fresh['ok'], true);
   assert.equal((fresh['models'] as string[]).length, 5);
   const saved = await call(t, 'POST', CUSTOM_PROVIDERS_PATH, { cookie, body: { requestId: requestId(), ...SAVE } });
   const id = custom(saved.body)?.id ?? null;
   server.seen.splice(0);
   const reused = json(await call(t, 'POST', MODEL_CONNECTION_TEST_PATH, { cookie, body: { requestId: requestId(),
-    providerId: id, protocol: 'openai-completions', baseUrl: FAKE_BASE, model: 'monk' } }));
+    providerId: id, protocol: 'openai-completions', baseUrl: FAKE_BASE, models: [entry('monk')] } }));
   assert.equal(reused['ok'], true);
   assert.equal(server.seen[0]?.headers['authorization'], `Bearer ${FAKE_KEY}`);
   assert.equal(JSON.stringify(reused).includes(FAKE_KEY), false);
@@ -84,7 +87,8 @@ test('测试连接：用表单里的 key；已存的那家不给 key 就用存�
 test('测试连接失败：每一步的结论和服务端原话都回来', async () => {
   const { t, cookie } = await customApp();
   const result = json(await call(t, 'POST', MODEL_CONNECTION_TEST_PATH, { cookie, body: { requestId: requestId(),
-    providerId: null, protocol: 'openai-completions', baseUrl: FAKE_BASE, apiKey: FAKE_KEY, model: 'monk-x' } }));
+    providerId: null, protocol: 'openai-completions', baseUrl: FAKE_BASE, apiKey: FAKE_KEY,
+    models: [{ ...entry('monk-x'), images: false }] } }));
   assert.equal(result['ok'], false);
   const steps = result['steps'] as { summary: string; detail: string | null }[];
   assert.equal(steps[1]?.summary, '模型名不对：接口说没有「monk-x」（404）');

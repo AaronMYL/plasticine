@@ -30,7 +30,7 @@ export function ConnectionResult({ result }: { result: TestModelConnectionRespon
   }
   return (
     <ul className="connection-result" role="status" aria-label={result.ok ? '连接正常' : '连接有问题'}>
-      {result.steps.map((step) => <StepLine key={step.step} step={step} />)}
+      {result.steps.map((step) => <StepLine key={`${step.step}-${step.model ?? ''}`} step={step} />)}
     </ul>
   );
 }

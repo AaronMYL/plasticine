@@ -18,6 +18,15 @@ export interface FakeServerOptions {
   /** 连接层直接失败（模拟 DNS、拒绝连接）。 */
   fail?: NodeJS.ErrnoException;
   reply?: string;
+  /** 不认 reasoning_effort、不收图片：带了就回 400。 */
+  rejectReasoning?: boolean;
+  rejectImages?: boolean;
+  /** 列表里给的上下文长度（context_length）。 */
+  contexts?: Record<string, number>;
+}
+
+function hasImage(body: unknown): boolean {
+  return JSON.stringify(body).includes('"image_url"');
 }
 
 function headersOf(init: RequestInit | undefined): Record<string, string> {
@@ -40,8 +49,8 @@ export function fakeCompatibleServer(options: FakeServerOptions = {}) {
   const fetcher: typeof fetch = async (input, init) => {
     const url = input instanceof Request ? input.url : String(input);
     const raw = init?.body;
-    seen.push({ url, method: init?.method ?? 'GET', headers: headersOf(init),
-      body: typeof raw === 'string' ? JSON.parse(raw) as unknown : null });
+    const sent: unknown = typeof raw === 'string' ? JSON.parse(raw) as unknown : null;
+    seen.push({ url, method: init?.method ?? 'GET', headers: headersOf(init), body: sent });
     if (options.fail !== undefined) {
       throw new TypeError('fetch failed', { cause: options.fail });
     }
@@ -53,10 +62,19 @@ export function fakeCompatibleServer(options: FakeServerOptions = {}) {
         ? 'text/html' : 'application/json' } });
     }
     if (path.endsWith('/models')) {
-      return Response.json({ object: 'list', data: models.map((id) => ({ id, object: 'model' })) });
+      return Response.json({ object: 'list', data: models.map((id) => ({ id, object: 'model',
+        ...(options.contexts?.[id] === undefined ? {} : { context_length: options.contexts[id] }) })) });
     }
     if (path.endsWith('/chat/completions')) {
-      const model = String((seen.at(-1)?.body as { model?: unknown } | null)?.model ?? '');
+      const body = sent as { model?: unknown; reasoning_effort?: unknown } | null;
+      const model = String(body?.model ?? '');
+      if (options.rejectReasoning === true && body?.reasoning_effort !== undefined) {
+        return Response.json({ error: { message: 'Unrecognized request argument supplied: reasoning_effort' } },
+          { status: 400 });
+      }
+      if (options.rejectImages === true && hasImage(body)) {
+        return Response.json({ error: { message: 'This model does not support image input' } }, { status: 400 });
+      }
       if (!models.includes(model)) {
         return Response.json({ error: { message: `The model \`${model}\` does not exist`, type: 'invalid_request' } },
           { status: 404 });
