@@ -3,8 +3,7 @@ import { afterEach, test } from 'node:test';
 import type { MemoryEntryInput } from '../../shared/state.ts';
 import { brainChange } from '../state/helpers.ts';
 import { CREDENTIAL_LINK_TEXT } from '../url-fixtures.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newRequestId } from './signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
 
 let t: TestApp | undefined;
 
@@ -42,17 +41,16 @@ test('记忆接口回给他自己的设备都是原样（11-14 起自己用不�
   assert.equal((detail['entry'] as Record<string, unknown>)['applicability'], CREDENTIAL_LINK_TEXT);
 });
 
-test('记忆三栏一次拿到：原话、解释、约定各自第一页', async () => {
+test('旧记忆两栏一次拿到：原话、解释各自第一页', async () => {
   const { t: app, cookie } = await start();
   const quote = entry(app, { text: '「用文字链接」', kind: 'quote', basis: 'self_reported' });
   const reading = entry(app);
-  const agreement = app.state.agreements.create({ kind: 'collaboration', text: '先给结论', scope: '对话' }, brainChange());
   const board = json(await call(app, 'GET', '/v2/memory', { cookie }));
   const ids = (column: string, key: string): unknown[] =>
     ((board[column] as Record<string, unknown>)[key] as Record<string, unknown>[]).map((item) => item['id']);
   assert.deepEqual(ids('quotes', 'entries'), [quote.id]);
   assert.deepEqual(ids('interpretations', 'entries'), [reading.id]);
-  assert.deepEqual(ids('agreements', 'agreements'), [agreement.id]);
+  assert.equal('agreements' in board, false);
 });
 
 test('旧记忆条目只读（2026-11-03）：改、归档的接口没有了，读要登录', async () => {

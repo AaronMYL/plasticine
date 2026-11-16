@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { REPLAYED_HEADER } from '../../shared/api/index.ts';
-import { call, json, openEvents, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newRequestId } from './signing.ts';
+import { call, json, openEvents, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
 
 let t: TestApp | undefined;
 

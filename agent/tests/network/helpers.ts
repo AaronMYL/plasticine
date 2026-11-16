@@ -2,8 +2,7 @@
 // 开源版不带中继（docs/open-source-exclusions.md），要连中继的端到端测试不在这里。
 
 import assert from 'node:assert/strict';
-import { call, json, type TestApp } from '../app/helpers.ts';
-import { newRequestId } from '../app/signing.ts';
+import { call, json, type TestApp, newRequestId } from '../app/helpers.ts';
 
 export type Body = Record<string, unknown>;
 

@@ -6,7 +6,7 @@ import { SearchKindSchema, SearchQuerySchema, SearchTypeSchema,
   type SearchKind, type SearchQuery, type SearchResponse, type SearchResult, type SearchType } from './api/search.ts';
 
 export const SEARCH_CATEGORY: Record<SearchKind, SearchType> = {
-  note: 'notes', message: 'conversation', memory_doc: 'memory', agreement: 'memory', term: 'memory',
+  note: 'notes', message: 'conversation', memory_doc: 'memory',
   feed_item: 'feed', bookmark: 'bookmarks', space: 'spaces', book: 'books',
 };
 

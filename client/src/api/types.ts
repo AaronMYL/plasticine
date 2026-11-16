@@ -3,7 +3,7 @@
 // 视图订阅的实时事件（由服务端的 SSE 事件映射而来，见 http/event-mapper.ts）和连接状态。
 
 import type {
-  AgreementView, AskView, BookQuoteReference, BrowserViewDto, FeedItemView, InboxRowView, InboxUnread, MemoryEntryView,
+  AskView, BookQuoteReference, BrowserViewDto, FeedItemView, InboxRowView, InboxUnread, MemoryEntryView,
   MoneyEntryView, NodeActionView, NodeView, NoteMetaView, NoteQuoteReference, SpaceQuoteReference, ToolGroupView,
 } from './shared.ts';
 
@@ -48,20 +48,13 @@ export type {
 
 // M3：记忆、约定、设备钥匙。
 export type {
-  AgreementDetail,
-  AgreementListQuery,
-  AgreementListResponse,
-  AgreementView,
   ChangeRecordView,
-  ConfirmAgreementRequest,
-  DeviceKeyView,
   MemoryBoardQuery,
   MemoryBoardResponse,
   MemoryColumn,
   MemoryEntriesQuery,
   MemoryEntryDetail,
   MemoryEntryView,
-  PublicKeyJwk,
   SourceView,
 } from './shared.ts';
 
@@ -122,7 +115,7 @@ export type NoteSearch = Omit<import('./shared.ts').NoteListQuery, 'limit' | 'of
 
 /**
  * 视图订阅的实时事件（由服务端的 SSE 事件映射而来）。ask.* 是要你定的卡（服务端 ask_created / ask_answered /
- * ask_updated 原样带过来）；memory / agreement 整行带过来，按 version 换；note.updated / note.deleted 是本机写笔记后
+ * ask_updated 原样带过来）；memory 整行带过来，按 version 换；note.updated / note.deleted 是本机写笔记后
  * 自己发的；project.invalidated 是项目写入提交后的跨设备失效；line 是新内核的线事件；
  * resync 表示事件流补不上了（服务端回 ready{resync:true}，或收到认不出的事件），
  * 各视图要重新拉一遍。2026-11-05 旧对话、任务、关切、十件事、判断、≠、自迭代、事、专注、提醒、成果的事件删了。
@@ -154,7 +147,6 @@ export type LiveEvent =
   | ({ type: 'ask.answered'; ask: AskView } & BoardEventState)
   | ({ type: 'ask.updated'; ask: AskView } & BoardEventState)
   | { type: 'memory.changed'; entry: MemoryEntryView }
-  | { type: 'agreement.changed'; agreement: AgreementView }
   | { type: 'feed.changed'; item: FeedItemView }
   | { type: 'node.changed'; node: NodeView }
   | { type: 'node_action.recorded'; action: NodeActionView }

@@ -28,17 +28,11 @@ const COLUMNS: ColumnMap = {
 
 const DEFAULTS = { stale: false, related: [] };
 
-// A quote is a record. It becomes pending only through an actual current question, never by lacking an agreement.
+// A quote is a record. It becomes pending only through an actual current question about it.
 const UNSETTLED = `kind = 'quote' AND deleted_at IS NULL AND EXISTS (
   SELECT 1 FROM asks q WHERE q.status = 'open' AND q.deferred_at IS NULL AND q.purpose = 'cognition' AND (
-    (json_extract(q.context, '$.memoryEntryId') = memory_entries.id
-      AND json_extract(q.context, '$.version') = memory_entries.version)
-    OR EXISTS (SELECT 1 FROM agreements a WHERE a.id = json_extract(q.context, '$.agreementId')
-      AND a.version = json_extract(q.context, '$.version') AND a.state != 'revoked'
-      AND (a.user_quote = memory_entries.text OR EXISTS (
-        SELECT 1 FROM json_each(memory_entries.related) r
-        WHERE json_extract(r.value, '$.type') = 'agreement' AND json_extract(r.value, '$.id') = a.id
-      )))
+    json_extract(q.context, '$.memoryEntryId') = memory_entries.id
+      AND json_extract(q.context, '$.version') = memory_entries.version
   )
 )`;
 

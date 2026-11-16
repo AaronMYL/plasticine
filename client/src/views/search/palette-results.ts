@@ -23,7 +23,7 @@ export const GROUP_MAX = 4;
 
 // 索引里的书签行另外对着这台设备上的书签列（bookmarkItems），这里不按通用的路由列。
 const KIND_GROUP: Readonly<Record<SearchKind, PaletteGroup | null>> = {
-  space: 'space', note: 'note', message: 'message', memory_doc: 'memory', agreement: 'memory', term: 'memory',
+  space: 'space', note: 'note', message: 'message', memory_doc: 'memory',
   feed_item: 'feed', book: 'book', bookmark: null,
 };
 
@@ -60,9 +60,7 @@ export function searchRoute(result: Pick<SearchResult, 'kind' | 'id' | 'lineKind
     case 'message': return messageRoute(result);
     case 'feed_item': return { view: 'feed', noteId: null, feedItemId: id };
     case 'bookmark': return { view: 'web', noteId: null, webTabId: null };
-    case 'term': return { view: 'memory', noteId: null, termId: id };
     case 'memory_doc': return { view: 'memory', noteId: null, topicId: id };
-    case 'agreement': return { view: 'memory', noteId: null, objectType: 'agreement', objectId: id };
     case 'space': return { view: 'books', noteId: null, bookId: null, spaceId: id };
     case 'book': return { view: 'books', noteId: null, bookId: id };
   }

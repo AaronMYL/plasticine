@@ -4,8 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { CdpBrowser, CloudToolError, type BrowserAction, type BrowserTransport } from '../../src/cloud-tools/index.ts';
 import type { BrowserViewDto } from '../../shared/api/browser.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newRequestId } from './signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
 import { fakeCdp } from '../cloud-tools/fake-cdp.ts';
 
 let t: TestApp | undefined;

@@ -3,10 +3,9 @@ import { IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 const STRICT = { additionalProperties: false };
 const NullableId = Type.Union([IdSchema, Type.Null()]);
 const Digest = Type.String({ pattern: '^[a-f0-9]{64}$' });
-// 2026-11-05：来源、关切、判断、证据、任务的表删掉了，能按对象恢复的只剩这三种。
+// 2026-11-05：来源、关切、判断、证据、任务的表删掉了；11-15 旧约定的表也删了，能按对象恢复的只剩这两种。
 export const BackupObjectKindSchema = Type.Enum([
   'note',
-  'agreement',
   'memory_entry',
 ]);
 export type BackupObjectKind = Static<typeof BackupObjectKindSchema>;

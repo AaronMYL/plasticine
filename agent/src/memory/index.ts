@@ -8,7 +8,7 @@
 
 export { addClaudeItems, applyCleanup, moveLine, runCleanup, startCleanup } from './curation/memory-cleanup.ts';
 export { applyLayersMove, layersMoveView, undoLayersMove } from './curation/layers-move.ts';
-export type { LayersMove, LayersMoveItem, LayersPlan } from './curation/layers-move.ts';
+export type { LayersMove, LayersMoveItem } from './curation/layers-move.ts';
 export { looksLikeSecret, sameThing } from './curation/memory-curation-ops.ts';
 export type { CurationSource } from './curation/memory-curation-ops.ts';
 export type { CurationState } from './curation/memory-curation-work.ts';

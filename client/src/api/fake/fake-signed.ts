@@ -6,8 +6,6 @@ import { Value } from 'typebox/value';
 import type { SignedApi } from '../client.ts';
 import { ApiError } from '../errors.ts';
 import {
-  ConfirmAgreementRequestSchema,
-  EditAgreementRequestSchema,
   AnswerAskRequestSchema,
   IssueNodePairingCodeRequestSchema,
   SetNodeLimitsRequestSchema,
@@ -19,7 +17,6 @@ import {
 } from '../shared.ts';
 import type { FakeToolGroups } from './fake-inbox.ts';
 import { signedPath, type SignedResult, type SignedSend, type SignedTarget } from '../signed-targets.ts';
-import type { FakeAgreements } from './fake-agreements.ts';
 import type { FakeNodes } from './fake-nodes.ts';
 import type { FakeSession } from './fake-session.ts';
 import type { FakeNotes } from './fake-notes.ts';
@@ -34,7 +31,6 @@ export interface FakeSignedDeps {
   asks?: FakeAsks;
   session: FakeSession;
   receipts: FakeReceipts;
-  agreements: FakeAgreements;
   /** M5: set once the device fake exists (fake/index.ts). */
   nodes?: FakeNodes;
   faults?: FaultPlan;
@@ -106,22 +102,6 @@ export class FakeSigned implements SignedApi {
         const notes = this.deps.notes ?? missing('笔记');
         notes.unlock(target.noteId);
         return { kind: 'note_unlocked' };
-      }
-      case 'agreement_edit': {
-        if (!Value.Check(EditAgreementRequestSchema, body)) {
-          throw invalid('改约定');
-        }
-        return receipts.run<SignedResult>('signed', body.requestId, scope, () => ({ kind: 'agreement',
-          agreement: this.deps.agreements.edit(target.agreementId, body.version, body.text, body.scope) }));
-      }
-      case 'agreement_confirm': {
-        if (!Value.Check(ConfirmAgreementRequestSchema, body)) {
-          throw invalid('确认约定');
-        }
-        return receipts.run<SignedResult>('signed', body.requestId, scope, () => ({
-          kind: 'agreement',
-          agreement: this.deps.agreements.confirm(target.agreementId, body),
-        }));
       }
       case 'node_pairing_code': {
         if (!Value.Check(IssueNodePairingCodeRequestSchema, body)) {

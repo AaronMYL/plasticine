@@ -49,7 +49,6 @@ const STREAM_EVENT_TYPES: Readonly<Record<EveryStreamEvent['type'], true>> = {
   ask_answered: true,
   ask_updated: true,
   memory_entry_changed: true,
-  agreement_changed: true,
   feed_item_changed: true,
   node_changed: true,
   node_action_recorded: true,

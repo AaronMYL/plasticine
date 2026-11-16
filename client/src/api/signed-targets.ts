@@ -2,19 +2,17 @@
 
 import { Type, type Static } from 'typebox';
 import {
-  AGREEMENTS_PATH, MEMORY_UNCERTAIN_PATH, MONEY_DRAFTS_PATH, NODE_PAIRING_CODES_PATH, NODES_PATH, NOTES_PATH,
+  MEMORY_UNCERTAIN_PATH, MONEY_DRAFTS_PATH, NODE_PAIRING_CODES_PATH, NODES_PATH, NOTES_PATH,
   TOOL_GROUPS_PATH, type AnswerAskResponse, type MoneyDraftView, type RestorePreview, type ToolGroupView,
   type UncertainItem,
 } from './shared.ts';
-import type { AgreementView, NodePairingCodeResponse, NodeView } from './types.ts';
+import type { NodePairingCodeResponse, NodeView } from './types.ts';
 
 export const SignedTargetSchema = Type.Union([
   Type.Object({ kind: Type.Literal('device_action_answer'), askId: Type.String({ minLength: 1 }) }),
   Type.Object({ kind: Type.Literal('backup_restore'), backupId: Type.String({ minLength: 1 }) }),
   Type.Object({ kind: Type.Literal('money_draft_confirm'), draftId: Type.String({ minLength: 1 }) }),
   Type.Object({ kind: Type.Literal('note_unlock'), noteId: Type.String({ minLength: 1 }) }),
-  Type.Object({ kind: Type.Literal('agreement_confirm'), agreementId: Type.String({ minLength: 1 }) }),
-  Type.Object({ kind: Type.Literal('agreement_edit'), agreementId: Type.String({ minLength: 1 }) }),
   Type.Object({ kind: Type.Literal('node_pairing_code') }),
   Type.Object({ kind: Type.Literal('node_limits'), nodeId: Type.String({ minLength: 1 }) }),
   // M5 乙路：工具组的开关是用户确认字段。
@@ -35,10 +33,6 @@ export function signedPath(target: SignedTarget): string {
       return `${MONEY_DRAFTS_PATH}/${encodeURIComponent(target.draftId)}/confirm`;
     case 'note_unlock':
       return `${NOTES_PATH}/${encodeURIComponent(target.noteId)}/unlock`;
-    case 'agreement_confirm':
-      return `${AGREEMENTS_PATH}/${encodeURIComponent(target.agreementId)}/confirm`;
-    case 'agreement_edit':
-      return `${AGREEMENTS_PATH}/${encodeURIComponent(target.agreementId)}/edit`;
     case 'node_pairing_code':
       return NODE_PAIRING_CODES_PATH;
     case 'node_limits':
@@ -55,7 +49,6 @@ export type SignedResult =
   | { kind: 'backup_restored'; preview: RestorePreview }
   | { kind: 'money_draft'; draft: MoneyDraftView }
   | { kind: 'note_unlocked' }
-  | { kind: 'agreement'; agreement: AgreementView }
   | { kind: 'node_code'; code: NodePairingCodeResponse }
   | { kind: 'node'; node: NodeView }
   | { kind: 'tool_group'; group: ToolGroupView }

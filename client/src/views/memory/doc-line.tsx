@@ -29,7 +29,8 @@ export type LineLook = 'doc' | 'how' | 'row';
 export function sourceRoute(source: MemoryLineSource): Route | null {
   switch (source.kind) {
     case 'system': return { view: 'memory', noteId: null };
-    case 'agreement': return { view: 'memory', noteId: null, objectType: 'agreement', objectId: source.id };
+    // 从旧约定、旧词表迁进来的行：那两样 11-15 退役了，只说出处，点不过去。
+    case 'agreement': return null;
     case 'message': return mainLineRoute(source.id);
     case 'note': return { view: 'notes', noteId: source.id };
     case 'book': return { view: 'books', noteId: null, bookId: source.id };

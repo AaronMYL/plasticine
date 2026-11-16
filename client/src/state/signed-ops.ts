@@ -42,10 +42,6 @@ export const SIGNED_OPS_STORAGE_KEY = 'plasticine.signed-ops';
 const RELOADED_WHILE_RUNNING = '页面重新载入时这个操作还在路上，尚未取得服务回执。结果待核实，点「再核实」。';
 const SIGNED_OUT = '会话失效，这次没有执行。重新配对后点「重发」，用的还是同一个标识和同样的内容。';
 
-export function agreementOpKey(agreementId: string): string {
-  return `agreement:${agreementId}:confirm`;
-}
-
 function readStored(storage: KeyValueStorage | null): SignedOp[] {
   if (storage === null) {
     return [];

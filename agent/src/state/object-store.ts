@@ -79,8 +79,6 @@ export interface StoreSpec<O extends TSchema, I extends TSchema, P extends TSche
   /** Values for optional non-null fields the caller left out. */
   defaults: Readonly<Record<string, unknown>>;
   confirmed?: readonly ConfirmedRule[];
-  /** Only agreements set this (decision 82): old guide sections come over already in effect. */
-  migrationImport?: boolean;
   /** Fields computed from the input, e.g. a source's w from its kind. */
   derive?: (values: Readonly<Record<string, unknown>>) => Record<string, unknown>;
   requireReasonKind?: boolean;
@@ -93,7 +91,6 @@ interface WriteRules {
   table: string;
   objectType?: string | undefined;
   confirmedInput?: TSchema | undefined;
-  migrationImport?: boolean | undefined;
 }
 
 /** Versioned tables need a valid change record; some also need its reason kind. */
@@ -111,27 +108,6 @@ function checkedChange(
     throw new StateError('invalid_input', message, { field: 'reasonKind' });
   }
   return meta;
-}
-
-/**
- * Confirmed fields carried over from the old system: only for a table that allows it (agreements), only from
- * actor `migration`, only on a row marked migratedDefault. Everything else must go through device confirmation.
- */
-function importedFields(
-  rules: WriteRules,
-  imported: unknown,
-  change: Change | undefined,
-  options: CreateOptions,
-): Record<string, unknown> {
-  const { table, confirmedInput } = rules;
-  if (rules.migrationImport !== true || confirmedInput === undefined) {
-    throw new StateError('invalid_input', `${table} 不接受带确认字段的迁移写入（只有旧指南迁成约定可以）`);
-  }
-  if (change?.actor !== 'migration' || options.migratedDefault !== true) {
-    throw new StateError('invalid_input', `只有迁移能带着确认字段新建 ${table}，而且要标 migratedDefault`);
-  }
-  const values = checked(confirmedInput, imported, 'invalid_input', `迁移 ${table} 的确认字段`);
-  return normalizeTimes(confirmedInput, definedEntries(values as Readonly<Record<string, unknown>>));
 }
 
 function sameValue(a: unknown, b: unknown): boolean {
@@ -158,25 +134,19 @@ export class ObjectStore<O extends TSchema, I extends TSchema, P extends TSchema
     this.#hasConfirmationColumns = 'confirmedByDeviceAt' in spec.columns;
   }
 
-  /**
-   * `imported`: confirmed fields carried over from the old system (decision 82), only for a spec with migrationImport,
-   * only from actor `migration`, only on a row marked migratedDefault (shown as 「待你确认」).
-   */
-  create(input: Static<I>, change?: Change, options: CreateOptions = {}, imported?: Static<C>): Static<O> {
+  create(input: Static<I>, change?: Change, options: CreateOptions = {}): Static<O> {
     const { table } = this.#spec;
     rejectConfirmedFields(table, this.#spec.confirmed ?? [], input);
     const checkedInput = definedEntries(checked(this.#spec.input, input, 'invalid_input', `新建 ${table}`));
     const values = normalizeTimes(this.#spec.input, checkedInput);
     const extra = checked(CreateOptionsSchema, options, 'invalid_input', `新建 ${table} 的选项`);
     const meta = checkedChange(this.#spec, change, false);
-    const carried = imported === undefined ? {} : importedFields(this.#spec, imported, meta, extra);
     const now = this.#context.now();
     const draft: Record<string, unknown> = {
       ...Object.fromEntries(Object.keys(this.#spec.columns).map((field) => [field, null])),
       // A copy: an array default handed back and changed in place must not leak into the next new row.
       ...structuredClone(this.#spec.defaults),
       ...values,
-      ...carried,
       ...this.#spec.derive?.(values),
       id: extra.id ?? this.#context.newId(),
       createdAt: now,
@@ -192,8 +162,7 @@ export class ObjectStore<O extends TSchema, I extends TSchema, P extends TSchema
     const { names, placeholders } = sqlColumns(this.#spec.columns);
     this.#context.db.transaction(() => {
       this.#write(`INSERT INTO ${table} (${names}) VALUES (${placeholders})`, encodeRow(this.#spec.columns, draft));
-      const fields = [...Object.keys(values), ...Object.keys(carried)];
-      this.#recordVersion(draft, 1, fields, meta, undefined, migratedDefault);
+      this.#recordVersion(draft, 1, Object.keys(values), meta, undefined, migratedDefault);
       this.#indexed(draft);
     });
     return created;

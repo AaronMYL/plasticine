@@ -23,7 +23,7 @@ export {
   SOURCE_WEIGHTS,
   STANDING_PROJECT_IDS,
 } from '../../../agent/shared/state.ts';
-// 「怎么替你做事」那份记忆文档的标识（第 4 批）：旧地址 #/memory/agreements 打开它。
+// 「怎么替你做事」那份记忆文档的标识（第 4 批）。
 export {
   RULES_DOC_ID,
 } from '../../../agent/shared/state.ts';
@@ -61,9 +61,6 @@ export {
 export {
   moneyAmounts,
 } from '../../../agent/shared/money-amounts.ts';
-export {
-  proposedAgreementText,
-} from '../../../agent/shared/agreement-diff.ts';
 // 图书：高亮四色、上限、大纲和重点的形状（state-books.ts）。
 export {
   BOOK_CONTEXT_CHARS,

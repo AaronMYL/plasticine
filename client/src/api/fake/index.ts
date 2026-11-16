@@ -25,7 +25,6 @@ import { FakeBackups } from './fake-backups.ts';
 import { seedCognition } from './cognition-seed.ts';
 import { seedDaily } from './daily-seed.ts';
 import { FakeEventBus } from './event-bus.ts';
-import { FakeAgreements } from './fake-agreements.ts';
 import { FakeAttachments } from './fake-attachments.ts';
 import { FakeBooks } from './fake-books.ts';
 import { seedBooks } from './seed-books.ts';
@@ -105,7 +104,6 @@ export interface FakeControl {
   asks: FakeAsks;
   push: FakePush;
   memory: FakeMemory;
-  agreements: FakeAgreements;
   projects: FakeProjects;
   /** 第 110 条：书签（2026-11-04 起和信息流收藏分开）。 */
   bookmarks: FakeBookmarks;
@@ -253,8 +251,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   const clientUpdates = new FakeClientUpdates(session, bus);
   const backups = new FakeBackups({ session, bus, notes, asks, receipts, now });
   const push = new FakePush({ session, receipts, now });
-  const agreements = new FakeAgreements({ session, bus, now });
-  const memory = new FakeMemory({ session, bus, receipts, agreements, now });
+  const memory = new FakeMemory({ session, bus, receipts, now });
   const projects = new FakeProjects({ session, bus, receipts, lines: () => lines.all(), now });
   const feed = new FakeFeed({ session, bus, receipts, now, installStepMs: options.streamStepMs > 0 ? 900 : 0,
     publishWork: (work) => spaces.ensureGenerated({ id: `space-${work.id}`, title: work.title,
@@ -285,7 +282,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
   });
   const moneyDrafts = new FakeMoneyDrafts({ session, bus, receipts, now, attachments, asks,
     money: toolGroups.control.money });
-  const signed = new FakeSigned({ session, receipts, agreements, asks, notes, backups, memoryTopics,
+  const signed = new FakeSigned({ session, receipts, asks, notes, backups, memoryTopics,
     nodes, faults, moneyDrafts });
   signed.setToolGroups(toolGroups.control.toolGroups);
   const systems = new FakeSystems(session);
@@ -327,7 +324,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     session.seedDevice('Windows 笔记本', 'relay');
     seedNotes(notes, now());
     seedBooks(books, lines, now());
-    seedCognition({ memory, agreements }, now());
+    seedCognition({ memory }, now());
     seedDaily({ feed, projects }, now());
     seedBookmarks(bookmarks);
     webTabs.seed(demoWebTabsLayout(now()));
@@ -366,7 +363,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     lines,
     tasks,
     modelProviders,
-    search: new FakeSearch({ session, notes, lines, memoryTopics, agreements, feed, bookmarks, now, spaces, books }),
+    search: new FakeSearch({ session, notes, lines, memoryTopics, feed, bookmarks, now, spaces, books }),
     systems,
     translate: new FakeTranslate(session, modelProviders),
     compose: new FakeCompose(session, contacts),
@@ -387,7 +384,6 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     moneyDrafts,
     clientUpdates,
     backups,
-    agreements,
     signed,
     projects,
     bookmarks,
@@ -426,7 +422,6 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       asks,
       push,
       memory,
-      agreements,
       projects,
       bookmarks,
       webTabs,

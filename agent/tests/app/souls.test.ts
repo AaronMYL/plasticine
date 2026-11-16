@@ -6,8 +6,7 @@ import { afterEach, test } from 'node:test';
 import { Value } from 'typebox/value';
 import { SoulResponseSchema, SoulRevisionDiffResponseSchema } from '../../shared/api/index.ts';
 import { MAIN_SOUL_OPENING } from '../../shared/soul-text.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newRequestId } from './signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
 
 let t: TestApp | undefined;
 

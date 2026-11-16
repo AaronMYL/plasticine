@@ -51,7 +51,7 @@ describe('真事件流 · 连接', () => {
           'tasks_changed',
         'note_invalidated', 'project_invalidated', 'book_changed', 'ask_created', 'ask_answered', 'ask_updated',
         'memory_entry_changed', 'calendar_changed',
-        'agreement_changed', 'feed_item_changed', 'node_changed', 'node_action_recorded', 'money_changed',
+        'feed_item_changed', 'node_changed', 'node_action_recorded', 'money_changed',
         'inbox_changed', 'tool_group_changed', 'video_changed', 'browser_changed', 'contacts_changed', 'contact_item',
         'line_changed', 'line_text', 'line_thinking', 'line_tool', 'line_message', 'line_queue',
         'web_tabs_changed', 'bookmarks_changed', 'space_changed', 'notify', 'notify_kinds_changed',
@@ -223,7 +223,7 @@ describe('真事件流 · ready 和认不出的事件', () => {
   it('认不出的事件（不合 schema、不是 JSON、类型对不上）不猜，当作补不上了', () => {
     const { source, events } = connect();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    source.emit('agreement_changed', { type: 'agreement_changed', agreement: { id: 'x' } });
+    source.emit('memory_entry_changed', { type: 'memory_entry_changed', entry: { id: 'x' } });
     source.emit('attachment_changed', 'not json');
     source.emit('ready', { type: 'attachment_changed', attachment: null });
     expect(events).toEqual([{ type: 'resync' }, { type: 'resync' }, { type: 'resync' }]);

@@ -1,7 +1,6 @@
-import { TERM_TIER_LABELS, type BackupObjectKind } from '../../api/shared.ts';
+import type { BackupObjectKind } from '../../api/shared.ts';
 export const BACKUP_KIND: Record<BackupObjectKind, string> = {
   note: '笔记',
-  agreement: '约定',
   memory_entry: '记忆',
 };
 const COUNTS: Record<string, string> = {
@@ -52,9 +51,6 @@ const EVIDENCE_KIND: Record<string, string> = {
 export function backupFieldValue(key: string, value: unknown): string {
   if (value == null) {
     return '未填写';
-  }
-  if (key === 'termTier') {
-    return Object.entries(TERM_TIER_LABELS).find(([tier]) => tier === value)?.[1] ?? '待补';
   }
   if (key === 'kind') {
     return EVIDENCE_KIND[String(value)] ?? '其他内容';

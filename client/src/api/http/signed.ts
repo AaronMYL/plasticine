@@ -3,9 +3,7 @@
 
 import type { SignedApi } from '../client.ts';
 import {
-  AgreementResponseSchema,
   AnswerAskResponseSchema,
-  AgreementViewSchema,
   NodePairingCodeResponseSchema,
   NodeResponseSchema,
   NodeViewSchema,
@@ -26,8 +24,6 @@ const WHAT: Readonly<Record<SignedSend['target']['kind'], string>> = {
   backup_restore: '按对象恢复',
   money_draft_confirm: '确认记账',
   note_unlock: '解锁笔记',
-  agreement_confirm: '确认约定',
-  agreement_edit: '修改生效约定',
   node_pairing_code: '领节点配对码',
   node_limits: '改节点上限',
   tool_group: '开关工具组',
@@ -76,15 +72,6 @@ export class HttpSigned implements SignedApi {
       case 'note_unlock': {
         await this.transport.request({ ...base, schema: UnlockNoteResponseSchema });
         return { kind: 'note_unlocked' };
-      }
-      case 'agreement_edit':
-      case 'agreement_confirm': {
-        const response = await this.transport.request({
-          ...base,
-          schema: AgreementResponseSchema,
-          refine: conflictWith(AgreementViewSchema),
-        });
-        return { kind: 'agreement', agreement: response.agreement };
       }
       case 'node_pairing_code': {
         const code = await this.transport.request({ ...base, schema: NodePairingCodeResponseSchema });

@@ -3,8 +3,7 @@ import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import { afterEach, test } from 'node:test';
 import { YOU_DOC_ID, type MemoryInference, type MemoryLine } from '../../shared/state.ts';
 import { addLine, proposeInference } from '../../src/memory/docs/memory-doc-writes.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newDeviceKey, newRequestId, signedCall, type TestDeviceKey } from './signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId, send } from './helpers.ts';
 
 let t: TestApp | undefined;
 
@@ -13,12 +12,11 @@ afterEach(async () => {
   t = undefined;
 });
 
-async function start(): Promise<{ t: TestApp; cookie: string; key: TestDeviceKey }> {
+async function start(): Promise<{ t: TestApp; cookie: string }> {
   t = await startTestApp();
   const cookie = await pair(t);
-  const key = newDeviceKey();
   t.clock.advance(20 * 60_000);
-  return { t, cookie, key };
+  return { t, cookie };
 }
 
 /** 他在主线上说的一句，按 line:<线>:<seq> 认。 */
@@ -74,7 +72,7 @@ test('读一份文档：行带原话摘录和会话，要时带上退休的；�
 });
 
 test('本人会话确认推断后写成文档里的一行并链回原话；没登录不写，定过再来 409', async () => {
-  const { t: app, cookie, key } = await start();
+  const { t: app, cookie } = await start();
   const message = said(app, '又是半夜两点');
   const guess = inference(app, '作息偏晚', message);
   const path = `/v2/memory/inferences/${guess.id}/confirm`;
@@ -91,19 +89,19 @@ test('本人会话确认推断后写成文档里的一行并链回原话；没�
   const stored = app.state.memoryCuration.inferences.require(guess.id);
   assert.notEqual(stored.confirmedByDeviceId, null);
   assert.equal(stored.lineId, written['id']);
-  const again = await signedCall(app, 'POST', path, { requestId: newRequestId(), version: stored.version },
-    { cookie, key });
+  const again = await send(app, 'POST', path, { requestId: newRequestId(), version: stored.version },
+    { cookie });
   assert.equal(again.status, 409);
   assert.equal(json(again)['code'], 'conflict');
 });
 
 test('否掉推断：本人会话记下决定、不成行；拿不准的列表只剩没定的', async () => {
-  const { t: app, cookie, key } = await start();
+  const { t: app, cookie } = await start();
   const message = said(app, '周末想去爬山');
   const kept = inference(app, '喜欢户外', message);
   const dropped = inference(app, '每周末都去爬山', message);
-  const reply = await signedCall(app, 'POST', `/v2/memory/inferences/${dropped.id}/reject`,
-    { requestId: newRequestId(), version: 1, reason: '只是这周想去' }, { cookie, key });
+  const reply = await send(app, 'POST', `/v2/memory/inferences/${dropped.id}/reject`,
+    { requestId: newRequestId(), version: 1, reason: '只是这周想去' }, { cookie });
   assert.equal(reply.status, 200, JSON.stringify(reply.body));
   assert.equal(json(reply)['line'], null);
   assert.equal(app.state.memoryDocs.lines.live(YOU_DOC_ID).length, 0);

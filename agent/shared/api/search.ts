@@ -9,8 +9,8 @@ export const SEARCH_PATH = `${API_PREFIX}/search`;
 export const SEARCH_TYPES = ['notes', 'conversation', 'memory', 'feed', 'bookmarks', 'spaces', 'books'] as const;
 export const SearchTypeSchema = Type.Enum(SEARCH_TYPES);
 export type SearchType = Static<typeof SearchTypeSchema>;
-export const SearchKindSchema = Type.Enum(['note', 'message', 'memory_doc', 'agreement', 'term', 'feed_item',
-  'bookmark', 'space', 'book']);
+export const SearchKindSchema = Type.Enum(['note', 'message', 'memory_doc', 'feed_item', 'bookmark', 'space',
+  'book']);
 export type SearchKind = Static<typeof SearchKindSchema>;
 
 export const SearchQuerySchema = Type.Object({

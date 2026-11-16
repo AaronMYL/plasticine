@@ -4,7 +4,7 @@
 //   这里不自动重发：没带标识的请求重发可能做两次，带标识的由界面决定什么时候核实。
 // - 回答先过 shared 里的 schema（typebox Value.Check），不过就当格式错误，不拿来用。
 // - 401（code = unauthorized）通知壳回到配对页；其余错误按状态码和 code 分类，文案用服务端给的中文。旧接口的 403 签名类错误
-//   （signature_* / device_key_missing）照通用分类走，不通知壳。
+//   （signature_*）照通用分类走，不通知壳。
 // - 需要按原文幂等的请求给 rawBody，去重始终使用这串字节，不再序列化一遍。旧钥匙接口沿用此协议。
 
 import type { Static, TSchema } from 'typebox';

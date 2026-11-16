@@ -242,22 +242,6 @@ const memoryLine: IndexSource = {
   },
 };
 
-const agreement: IndexSource = {
-  name: 'agreement',
-  kind: 'memory',
-  version: 1,
-  keys: pagedKeys('agreements', 'id'),
-  load({ db }, ref) {
-    const row = byId(db, 'agreements', ref);
-    if (row === undefined) {
-      return null;
-    }
-    const body = ['text', 'scope', 'user_quote'].map((key) => text(row, key)).join('\n');
-    return { ...base('memory', row, row['kind'] === 'term' ? 'term' : 'agreement'),
-      title: text(row, 'title') || text(row, 'text'), body, detail: '' };
-  },
-};
-
 // 第 2 版（第 8 条）：抓取时存下的中文标题、译文和摘要也收进来，搜中文能找到英文帖。
 const feedItem: IndexSource = {
   name: 'feed_item',
@@ -353,5 +337,5 @@ const space: IndexSource = {
 };
 
 /** 来源登记。加一类就是在这里加一项，再在它的写路径里调 changed。 */
-export const SEARCH_SOURCES: readonly IndexSource[] = [note, message, memoryDoc, memoryLine, agreement, feedItem,
-  bookmark, book, bookAnnotation, space];
+export const SEARCH_SOURCES: readonly IndexSource[] = [note, message, memoryDoc, memoryLine, feedItem, bookmark, book,
+  bookAnnotation, space];

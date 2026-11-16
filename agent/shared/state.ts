@@ -26,4 +26,3 @@ export * from './state-tasks.ts';
 export * from './state-timed.ts';
 export * from './state-translate.ts';
 export * from './state-receipts.ts';
-export * from './terms.ts';

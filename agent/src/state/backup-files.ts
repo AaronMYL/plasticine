@@ -21,10 +21,9 @@ export const BackupManifestSchema = Type.Object({
   counts: Type.Record(Type.String(), Type.Integer({ minimum: 0 })),
 });
 export type BackupManifest = Static<typeof BackupManifestSchema>;
-// 能按对象恢复的三种（2026-11-05 关切、判断、证据、来源、任务的表删掉了）。
+// 能按对象恢复的两种（2026-11-05 关切、判断、证据、来源、任务的表删掉了；11-15 旧约定的表也删了）。
 export const BACKUP_TABLES = {
   note: 'notes',
-  agreement: 'agreements',
   memory_entry: 'memory_entries',
 } as const;
 export function sha256(bytes: Buffer | string): string {

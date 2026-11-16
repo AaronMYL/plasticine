@@ -1,5 +1,5 @@
 // 服务端的 SSE 事件 → 界面用的实时事件。服务端给的都是整行 / 整张卡 / 整个视图，这里只换一个名字：卡换成 ask.*，
-// 记忆和约定换成 memory / agreement，信息流条目、节点、设备动作、记账、站内信、工具组、云端浏览器、联系人原样带过来。
+// 旧记忆条目换成 memory，信息流条目、节点、设备动作、记账、站内信、工具组、云端浏览器、联系人原样带过来。
 // 2026-11-05 旧对话的「一轮」（run_started → message_delta → message_created → run_ended）删了：对话走线，线的事件
 // 由 events.ts 直接包成 { type: 'line' }，不经这里。
 
@@ -55,8 +55,6 @@ export class ServerEventMapper {
         return [{ type: 'feed.changed', item: event.item }];
       case 'memory_entry_changed':
         return [{ type: 'memory.changed', entry: event.entry }];
-      case 'agreement_changed':
-        return [{ type: 'agreement.changed', agreement: event.agreement }];
       case 'ask_created':
         return [{ ...event, type: 'ask.created' }];
       case 'ask_answered':

@@ -29,8 +29,6 @@ export function revokeDevice(context: RequestContext): Reply {
   const at = context.deps.now().toISOString();
   const device = state.transaction(() => {
     state.sessions.revokeForDevice(id, at);
-    // Its signing key goes with it (M3): it can sign nothing, and the same browser may pair again with it.
-    state.deviceKeys.revokeForDevice(id, at);
     return state.devices.revoke(id, at);
   });
   // Its open streams stop now, not at their next heartbeat.

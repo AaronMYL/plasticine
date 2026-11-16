@@ -7,6 +7,10 @@ import type { Database } from './db.ts';
 import { backupObjectAccess } from './backup-objects.ts';
 import { BACKUP_TABLES, sha256 } from './backup-files.ts';
 import { recordVersion } from './versions.ts';
+function hasTable(db: Database, name: string): boolean {
+  return db.get("SELECT 1 AS found FROM sqlite_schema WHERE type = 'table' AND name = $name", { name }) !== undefined;
+}
+
 export function sanitizeRecoveredDatabase(db: Database, current: Database, directory: string, at: string) {
   const later: { kind: BackupObjectKind; id: string; currentVersion: number; backupVersion: number | null }[] = [];
   for (const [kind, table] of Object.entries(BACKUP_TABLES)) {
@@ -24,8 +28,18 @@ export function sanitizeRecoveredDatabase(db: Database, current: Database, direc
   }
   db.transaction(() => {
     // 所有旧会话、节点凭证、配对码、推送凭据失效；值不在日志或恢复报告中出现。
-    for (const table of ['devices', 'device_keys', 'sessions', 'nodes', 'push_subscriptions']) {
+    for (const table of ['devices', 'sessions', 'nodes', 'push_subscriptions']) {
       db.run(`UPDATE ${table} SET revoked_at = $at`, { at });
+    }
+    // 11-15 以前的备份里还有旧的设备钥匙和旧约定两张表（现在的库没有了）：有就照旧让它们失效。
+    if (hasTable(db, 'device_keys')) {
+      db.run('UPDATE device_keys SET revoked_at = $at', { at });
+    }
+    if (hasTable(db, 'agreements')) {
+      db.run(
+        "UPDATE agreements SET state = CASE WHEN state = 'revoked' THEN state ELSE 'under_review' END, " +
+          'effective_at = NULL, confirmed_by_device_id = NULL, confirmed_by_device_at = NULL',
+      );
     }
     for (const [table, column] of [
       ['sessions', 'token_hash'],
@@ -47,10 +61,6 @@ export function sanitizeRecoveredDatabase(db: Database, current: Database, direc
     db.run("UPDATE api_requests SET body = '{}', expires_at = $at", { at });
     db.run('UPDATE nodes SET limits = NULL, confirmed_by_device_id = NULL, confirmed_by_device_at = NULL');
     db.run('UPDATE tool_groups SET enabled = 0, confirmed_by_device_id = NULL, confirmed_by_device_at = NULL');
-    db.run(
-      "UPDATE agreements SET state = CASE WHEN state = 'revoked' THEN state ELSE 'under_review' END, " +
-        'effective_at = NULL, confirmed_by_device_id = NULL, confirmed_by_device_at = NULL',
-    );
     db.run("UPDATE asks SET status = 'withdrawn' WHERE status = 'open'");
     // 2026-11-05 起是线：恢复出来的线一律停下（status idle），不在新库里自己接着跑。
     db.run("UPDATE lines SET status = 'idle', paused_until = NULL WHERE status IN ('running', 'waiting', 'paused')");
@@ -85,7 +95,6 @@ export function sanitizeRecoveredDatabase(db: Database, current: Database, direc
       ['notes', 'private', 'private = 1'],
       ['notes', 'read_only', 'read_only = 1'],
       ['memory_entries', 'stale', 'stale = 1'],
-      ['agreements', 'state', "state = 'revoked'"],
     ]) {
       for (const row of current.all(`SELECT id, ${column} AS value FROM ${table} WHERE ${predicate}`)) {
         db.run(`UPDATE ${table} SET ${column} = $value WHERE id = $id`, {
@@ -95,7 +104,7 @@ export function sanitizeRecoveredDatabase(db: Database, current: Database, direc
       }
     }
     const access = backupObjectAccess({ db, now: () => at, newId: randomUUID }, join(directory, 'notes'));
-    for (const kind of ['agreement', 'memory_entry'] as const) {
+    for (const kind of ['memory_entry'] as const) {
       const table = BACKUP_TABLES[kind];
       db.run(`UPDATE ${table} SET version = version + 1, updated_at = $at`, { at });
       for (const row of db.all(`SELECT id FROM ${table}`)) {

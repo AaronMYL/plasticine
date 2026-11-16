@@ -4,7 +4,6 @@ import { ApiError } from '../errors.ts';
 import type { SearchKind, SearchQuery, SearchResponse } from '../shared.ts';
 import type { FakeNotes } from './fake-notes.ts';
 import type { FakeMemoryTopics } from './fake-memory-topics.ts';
-import type { FakeAgreements } from './fake-agreements.ts';
 import type { FakeFeed } from './fake-feed.ts';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 import type { FakeSession } from './fake-session.ts';
@@ -14,7 +13,7 @@ import type { FakeSpaces } from './fake-spaces.ts';
 
 interface Deps {
   session: FakeSession; notes: FakeNotes; lines: FakeLines; memoryTopics: FakeMemoryTopics;
-  agreements: FakeAgreements; feed: FakeFeed; now: () => Date; bookmarks: FakeBookmarks;
+  feed: FakeFeed; now: () => Date; bookmarks: FakeBookmarks;
   spaces: FakeSpaces; books: FakeBooks;
 }
 const doc = (kind: SearchKind, row: { id: string; updatedAt: string }, title: string, text: string,
@@ -41,8 +40,6 @@ export class FakeSearch implements SearchApi {
     for (const row of d.memoryTopics.searchable()) {
       yield doc('memory_doc', row, row.title, row.text, '记忆');
     }
-    for (const row of d.agreements.all()) yield doc(row.kind === 'term' ? 'term' : 'agreement', row,
-      row.title || row.text, `${row.text}\n${row.scope}\n${row.userQuote ?? ''}`);
     for (const row of d.feed.all()) if (row.reaction !== 'dislike') {
       yield doc('feed_item', { id: row.id, updatedAt: row.arrivedAt }, row.title,
         `${row.summary ?? ''}\n${row.why ?? ''}\n${row.note ?? ''}\n${row.topic ?? ''}`);

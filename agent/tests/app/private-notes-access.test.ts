@@ -68,8 +68,6 @@ test('私密导入来源和原话出处可直接读，已合并原版的真正�
   const change = { actor: 'user' as const, reason: '隔离来源测试' };
   const entry = t.state.memory.create({ kind: 'quote', basis: 'self_reported', text: quote,
     sourceId: 'source-user-said', provenance: '笔记原文', anchor: { kind: 'note', ref: original.id } }, change);
-  const agreement = t.state.agreements.create({ kind: 'collaboration', text: '保留原文', scope: '共同讨论',
-    userQuote: quote, quotedAt: entry.createdAt }, change);
   for (const cookie of readers) {
     const source = await call(t, 'GET', `/v2/notes/${original.id}/import`, { cookie });
     assert.equal(source.status, 200);
@@ -82,7 +80,7 @@ test('私密导入来源和原话出处可直接读，已合并原版的真正�
     const read = await call(t, 'GET', `/v2/notes/${original.id}`, { cookie });
     assert.equal(read.status, 200);
     assert.equal(json(read)['readOnly'], true);
-    for (const path of [`/v2/memory/entries/${entry.id}`, `/v2/agreements/${agreement.id}`]) {
+    for (const path of [`/v2/memory/entries/${entry.id}`]) {
       const response = await call(t, 'GET', path, { cookie });
       assert.equal(response.status, 200);
       const context = json(response)['sourceContext'] as { kind: string; ref: string; text: string };
@@ -143,7 +141,6 @@ test('旧 unlock 仅兼容已可读状态，不登记解锁、确认或请求回
   }
   assert.deepEqual(t.state.notes.require(note.id), note);
   assert.equal(t.state.notes.versions(note.id).length, 1);
-  assert.equal(t.state.deviceKeys.liveFor(system.device.id), undefined);
 });
 
 test('笔记直接读取仍要求有效会话，退出或撤销后不能读正文、图片、搜索或兼容 unlock', async () => {

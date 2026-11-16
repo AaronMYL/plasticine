@@ -1,8 +1,8 @@
-// 记忆、约定、设备钥匙的真实现：路径和请求体照 shared，409 带 current 交给界面对照，本人确认请求原样发送正文；
+// 旧记忆条目和本人确认请求的真实现：路径和请求体照 shared，409 带 current 交给界面对照，本人确认请求原样发送正文；
 // 旧接口的 403 签名类错误不当成会话失效。事件流认 M3 的四种事件。
 
 import { describe, expect, it, vi } from 'vitest';
-import { agreementView, memoryEntryView } from '../../src/api/fake/cognition-views.ts';
+import { memoryEntryView } from '../../src/api/fake/cognition-views.ts';
 import { createHttpApi } from '../../src/api/http/index.ts';
 import type { FetchLike, ResponseLike } from '../../src/api/http/transport.ts';
 import type { LiveEvent } from '../../src/api/types.ts';
@@ -55,40 +55,33 @@ describe('真接口 · 记忆（旧条目只读）', () => {
 });
 
 describe('真接口 · 本人确认请求', () => {
-  const edited = agreementView({ id: 'a/1', text: '改好', version: 3 });
-  const bodyText = '{"requestId":"req_abcdefgh","version":2,"text":"改好","scope":"范围"}';
+  const switched = { id: 'inbox', label: '收件箱', description: '', tools: [], enabled: false, version: 3,
+    confirmedAt: '2026-10-27T02:00:00.000Z' };
+  const bodyText = '{"requestId":"req_abcdefgh","version":2,"enabled":false}';
   const send = {
-    target: { kind: 'agreement_edit', agreementId: 'a/1' },
+    target: { kind: 'tool_group', groupId: 'in/box' },
     bodyText,
     signedAt: '2026-10-27T02:00:00.000Z',
     signature: 'c2ln',
   } as const;
 
   it('按本人会话发送原样请求体，旧签名字段也不会生成签名头', async () => {
-    const { http, calls } = api(json(200, { agreement: edited }));
+    const { http, calls } = api(json(200, { group: switched }));
     const result = await http.signed.send(send);
-    expect(result).toEqual({ kind: 'agreement', agreement: edited });
-    expect(calls[0]).toMatchObject({ method: 'POST', url: '/v2/agreements/a%2F1/edit', bodyText });
+    expect(result).toEqual({ kind: 'tool_group', group: switched });
+    expect(calls[0]).toMatchObject({ method: 'POST', url: '/v2/tool-groups/in%2Fbox', bodyText });
     expect(calls[0]?.headers).toMatchObject({ 'content-type': 'application/json' });
     expect(calls[0]?.headers).not.toHaveProperty('x-plasticine-signed-at');
     expect(calls[0]?.headers).not.toHaveProperty('x-plasticine-signature');
   });
 
   it('403 签名类错误：带着服务端的 code 抛出，不通知壳回配对页', async () => {
-    for (const code of ['signature_required', 'signature_invalid', 'signature_expired', 'device_key_missing']) {
+    for (const code of ['signature_required', 'signature_invalid', 'signature_expired']) {
       const { http, unauthorized } = api(json(403, { error: '签名不对，没有执行。', code, next: '重新签一次再发。' }));
       const failure = await http.signed.send(send).catch((e) => e);
       expect(failure).toMatchObject({ code, status: 403, kind: 'invalid' });
       expect(unauthorized).not.toHaveBeenCalled();
     }
-  });
-
-  it('确认约定：发往 /v2/agreements/:id/confirm，回答里的约定交出去', async () => {
-    const agreement = agreementView({ id: 'a1', text: '对账先看差异', version: 2 });
-    const { http, calls } = api(json(200, { agreement }));
-    const target = { kind: 'agreement_confirm', agreementId: 'a1' } as const;
-    expect(await http.signed.send({ ...send, target })).toEqual({ kind: 'agreement', agreement });
-    expect(calls[0]?.url).toBe('/v2/agreements/a1/confirm');
   });
 });
 
@@ -103,7 +96,7 @@ describe('真事件流 · M3 的事件', () => {
       throw new Error('没有建 EventSource');
     }
     source.emit('memory_entry_changed', { type: 'memory_entry_changed', entry: ENTRY }, '7');
-    source.emit('agreement_changed', { type: 'agreement_changed', agreement: { id: 'j' } }, '8');
+    source.emit('memory_entry_changed', { type: 'memory_entry_changed', entry: { id: 'j' } }, '8');
     expect(events[0]).toEqual({ type: 'memory.changed', entry: ENTRY });
     expect(events[1]).toEqual({ type: 'resync' });
     expect(http.events.resumable()).toBe(true);

@@ -27,7 +27,6 @@ import {
   LOCAL_SESSION_PATH,
   PASSWORD_SESSION_PATH,
   ACTIONS_PATH,
-  AGREEMENTS_PATH,
   ASKS_PATH,
   BACKSTAGE_PATH,
   BACKSTAGE_RULES_PATH,
@@ -45,7 +44,6 @@ import {
   BROWSER_PATH,
   BROWSER_STREAM_PATH,
   BROWSER_TABS_PATH,
-  DEVICE_KEYS_PATH,
   DEVICES_PATH,
   EVENTS_PATH,
   FEED_ITEMS_PATH,
@@ -128,7 +126,6 @@ import { batchLibrary, batchNotes, emptyLibrary, emptyNotes } from './library-ba
 import { adoptSubscriptionRule, getReviewSummary, getSubscription, listSubscriptions, runSubscriptionNow,
   updateSubscription } from './subscriptions.ts';
 import { TRANSLATE_MODEL_PATH, TRANSLATE_PATH, TRANSLATE_SETTINGS_PATH } from '../../shared/api/translate.ts';
-import { confirmAgreement, editAgreement, getAgreement, listAgreements } from './agreements.ts';
 import { ApiError } from './api-error.ts';
 import { answerAsk, askAboutAsk, deferAsk, feedbackAsk, getAsk, listAsks } from './asks.ts';
 import { completeUpload, getAttachment, getAttachmentContent, getAttachmentText, lookupAttachment, openUpload,
@@ -151,7 +148,6 @@ import { createSkill, draftSkillRequest, getSkill, installSkill, listSkills, lis
 import { decideClientUpdate, listClientUpdates, previewClientUpdate } from './client-updates.ts';
 import { CONTACT_ROUTES } from './contact-routes.ts';
 import type { HttpMethod, Route } from './context.ts';
-import { getDeviceKey, registerDeviceKey } from './device-keys.ts';
 import { listDevices, revokeDevice } from './devices.ts';
 import { getAccountState, handleAvailability, patchAccount, setAccountPassword } from './account.ts';
 import { getOwnUrl, putOwnUrl } from './own-url.ts';
@@ -228,7 +224,6 @@ import { notifyKinds, pushKey, pushStatus, reportPresence, saveNotifyKinds, subs
 import { search } from './search.ts';
 import { currentSession, logout } from './session.ts';
 import { getSystemOperations } from './system-operations.ts';
-import { createTerm, proposeTerm, termDecodings } from './terms.ts';
 import { getDailySettings, updateDailySettings } from './today.ts';
 import { listToolGroups, setToolGroup } from './tool-groups.ts';
 import { getTranslateSettings, setTranslateSettings, translatePage } from './translate.ts';
@@ -276,8 +271,6 @@ export const ROUTES: readonly Route[] = [
   { method: 'DELETE', path: SESSION_PATH, auth: true, handler: logout },
   { method: 'GET', path: DEVICES_PATH, auth: true, handler: listDevices },
   { method: 'DELETE', path: `${DEVICES_PATH}/:id`, auth: true, handler: revokeDevice },
-  { method: 'GET', path: DEVICE_KEYS_PATH, auth: true, handler: getDeviceKey },
-  { method: 'POST', path: DEVICE_KEYS_PATH, auth: true, handler: registerDeviceKey },
   { method: 'GET', path: EVENTS_PATH, auth: true, handler: streamEvents },
   { method: 'GET', path: SKILLS_PATH, auth: true, handler: listSkills },
   { method: 'GET', path: `${SKILLS_PATH}/:name`, auth: true, handler: getSkill },
@@ -328,13 +321,6 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: '/v2/money/drafts/:id/confirm', auth: true, handler: confirmMoneyDraft },
   { method: 'POST', path: '/v2/money/drafts/:id/reject', auth: true, handler: rejectMoneyDraft },
   // 词表（约定里的词语）。
-  { method: 'POST', path: AGREEMENTS_PATH, auth: true, handler: createTerm },
-  { method: 'PUT', path: `${AGREEMENTS_PATH}/:id`, auth: true, handler: proposeTerm },
-  { method: 'GET', path: `${AGREEMENTS_PATH}/:id/decodings`, auth: true, handler: termDecodings },
-  { method: 'GET', path: AGREEMENTS_PATH, auth: true, handler: listAgreements },
-  { method: 'GET', path: `${AGREEMENTS_PATH}/:id`, auth: true, handler: getAgreement },
-  { method: 'POST', path: `${AGREEMENTS_PATH}/:id/confirm`, auth: true, handler: confirmAgreement },
-  { method: 'POST', path: `${AGREEMENTS_PATH}/:id/edit`, auth: true, handler: editAgreement },
   { method: 'GET', path: '/v2/files/text', auth: true, handler: readTextFile },
   { method: 'PUT', path: '/v2/files/text', auth: true, handler: writeTextFile },
   // 图书（用户 2026-11-01 定）。

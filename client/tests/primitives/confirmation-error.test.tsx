@@ -8,11 +8,11 @@ import { memoryStorage } from '../helpers.tsx';
 it.each([false, true])('老缓存缺钥匙错误刷新后只改显示，保留原请求与待核实状态：%s', (unresolved) => {
   const storage = memoryStorage();
   const ops = new SignedOps(storage);
-  const original = ops.begin('agreement:old:confirm', '确认约定', '旧约定',
-    { kind: 'agreement_confirm', agreementId: 'old' },
-    (requestId) => ({ requestId, version: 1, decision: 'confirm' }));
-  if (unresolved) ops.fail(original.key, uncertainError('确认约定'));
-  ops.fail(original.key, new ApiError({ kind: 'invalid', code: 'device_key_missing',
+  const original = ops.begin('tool-group:inbox', '关掉工具组', '收件箱',
+    { kind: 'tool_group', groupId: 'inbox' },
+    (requestId) => ({ requestId, version: 1, enabled: false }));
+  if (unresolved) ops.fail(original.key, uncertainError('关掉工具组'));
+  ops.fail(original.key, new ApiError({ kind: 'invalid', code: 'signature_required',
     message: '这台设备没有签名钥匙，重新配对后才能授权设备动作、恢复备份、解锁私密笔记。',
     next: '在服务器上生成配对码，重新配对这台设备。' }));
   const stored = storage.data.get(SIGNED_OPS_STORAGE_KEY);

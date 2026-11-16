@@ -27,3 +27,24 @@ test('从上批库做一致性副本，七项新迁移保留行和外键，源�
   await assert.rejects(rehearseMigrations(source, destination), /EEXIST/);
   db.close();
 });
+
+test('迁移自己声明会删的表（0141 的旧约定、设备钥匙）没了不算意外，单独列在报告里', async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'migration-rehearsal-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const source = join(directory, 'source.sqlite');
+  const db = openDatabase(source);
+  const at = '2026-11-15T00:00:00.000Z';
+  migrate(db, MIGRATIONS.filter((migration) => migration.id < '0141'), () => at);
+  db.run(`INSERT INTO devices (id, created_at, updated_at, version, name, first_seen_at, last_seen_at)
+    VALUES ('device-1', $at, $at, 1, '电脑', $at, $at)`, { at });
+  db.run(`INSERT INTO device_keys (id, created_at, updated_at, version, device_id, public_key, thumbprint)
+    VALUES ('key-1', $at, $at, 1, 'device-1', '{}', $thumb)`, { at, thumb: 'a'.repeat(64) });
+  db.close();
+  const report = await rehearseMigrations(source, join(directory, 'copy'));
+  assert.equal(report.passed, true);
+  assert.deepEqual(report.applied, ['0141-drop-agreements']);
+  assert.deepEqual(report.rowChanges, []);
+  assert.deepEqual(report.declaredLosses.find((row) => row.table === 'device_keys'),
+    { table: 'device_keys', before: 1, after: null });
+  assert.equal(report.after.devices, 1);
+});

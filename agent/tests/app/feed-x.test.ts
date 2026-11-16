@@ -5,8 +5,7 @@ import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { Value } from 'typebox/value';
 import { FeedListResponseSchema, FeedSourcesResponseSchema, XTimelineDueSchema } from '../../shared/api/index.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newDeviceKey, newRequestId, registerKey, signedCall } from './signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId, send } from './helpers.ts';
 
 let t: TestApp | undefined;
 
@@ -16,10 +15,8 @@ afterEach(async () => {
 });
 
 async function pairedNode(app: TestApp, cookie: string): Promise<string> {
-  const key = newDeviceKey();
-  assert.equal((await registerKey(app, cookie, key)).status, 201);
-  const code = await signedCall(app, 'POST', '/v2/nodes/pairing-codes', { requestId: newRequestId('code') },
-    { cookie, key });
+  const code = await send(app, 'POST', '/v2/nodes/pairing-codes', { requestId: newRequestId('code') },
+    { cookie });
   const reply = await call(app, 'POST', '/v2/nodes/pair', { body: { requestId: newRequestId('pair'),
     code: String(json(code)['code']), name: '家里的 Mac', platform: 'macos', appVersion: '0.5.0', protocolVersion: 1,
     capabilities: ['file_read'] } });

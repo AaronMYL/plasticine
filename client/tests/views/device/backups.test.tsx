@@ -9,7 +9,6 @@ import { PushDeviceContext } from '../../../src/api/push-device.ts';
 import { LiveProvider } from '../../../src/live.tsx';
 import { ClientStateProvider, createClientState } from '../../../src/state/context.tsx';
 import { BackupRestoreCard } from '../../../src/views/device/backup-restore-card.tsx';
-import { BackupComparison } from '../../../src/views/device/backup-comparison.tsx';
 import { backupFieldLabel, backupFieldValue } from '../../../src/views/device/backup-labels.ts';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -108,22 +107,6 @@ it('恢复回执丢失后沿用原请求核实，不重复恢复或删除恢复�
   expect(send.mock.calls[1]![0]).toEqual(send.mock.calls[0]![0]);
   expect((await app.api.notes.get('note_restore')).version).toBe(version);
   expect((await app.api.backups.list()).backups).toHaveLength(2);
-});
-
-it('词表备份的嵌套对照用日常词（用法：精确 / 比喻），差异展开、共同内容折叠', () => {
-  const { container } = render(
-    <BackupComparison
-      kind="agreement"
-      before={JSON.stringify({ proposedTerm: { text: '原定义', termTier: 'exact' } })}
-      after={JSON.stringify({ proposedTerm: { text: '新定义', termTier: 'metaphor' } })}
-    />,
-  );
-  expect(container.textContent).toContain('用法：精确');
-  expect(container.textContent).toContain('用法：比喻');
-  expect(container.textContent).not.toContain('档位');
-  expect(container.textContent).not.toMatch(/proposedTerm|termTier|metaphor|exact/);
-  expect(screen.getAllByText('差异内容').every((node) => node.parentElement?.hasAttribute('open'))).toBe(true);
-  expect(screen.getAllByText('前面相同的内容').every((node) => !node.parentElement?.hasAttribute('open'))).toBe(true);
 });
 
 it('备份标签不用行话：证据种类写「实际结果」，定义域写「范围」（第 5 批用词收尾）', () => {

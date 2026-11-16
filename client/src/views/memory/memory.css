@@ -1,42 +1,11 @@
 /*
- * 记忆页的约定（2026-11-03 起单独一段；原来的原话 | 解释 | 约定三栏去掉了）和引用的条目：行之间 1px --line，
- * 没有卡片、没有阴影。「它提议」= 左侧 1px --fg3 细线 + 小签；diff 删去的 --fg2 删除线。
+ * 记忆页单独读一条整理前的旧记忆（引用里的原话，#/memory/entries/<id>）：没有卡片、没有阴影。
+ * 旧约定那一段 11-15 随旧约定一起退役。
  */
 
-/* 约定那一段：一栏，读的页（11-15 内容区两种宽度：.page-read），页头和正文同宽。 */
-.agreements-page > :not(.page-head) {
+/* 读的页（11-15 内容区两种宽度：.page-read），页头和正文同宽。 */
+.memory-entry-page > :not(.page-head) {
   width: 100%;
-}
-
-.agreements-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-
-.mem-list {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.mem-entry {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.mem-title {
-  margin: 0;
-  font-size: var(--text-body);
-  line-height: var(--text-body-line);
-  font-weight: 600;
 }
 
 .mem-text {
@@ -44,47 +13,6 @@
   font-size: var(--text-body);
   line-height: var(--text-body-line);
   overflow-wrap: anywhere;
-}
-
-.mem-text.is-stale {
-  color: var(--fg2);
-}
-
-.mem-tags,
-.mem-actions,
-.mem-confirm {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-2);
-}
-
-.mem-actions {
-  gap: var(--space-1) var(--space-4);
-}
-
-/* 行尾 ⋯（在对话里提 · 来路 · 修改 · 撤回，2026-11-04 第 2 批）：排在种类、状态那一行的最右边。 */
-.mem-more {
-  margin-left: auto;
-}
-
-.mem-confirm {
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
-}
-
-.mem-meta,
-.mem-applicability {
-  margin: 0;
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
-  color: var(--fg2);
-  overflow-wrap: anywhere;
-}
-
-.mem-meta {
-  font-size: var(--text-tag);
-  line-height: var(--text-tag-line);
 }
 
 .mem-quote {
@@ -98,86 +26,10 @@
   quotes: '「' '」';
 }
 
-.mem-proposal {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding-left: var(--space-3);
-  border-left: 1px solid var(--fg3);
-}
-
-.mem-proposal .tag {
-  align-self: flex-start;
-}
-
-.mem-diff {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
-}
-
-.mem-diff-removed {
-  color: var(--fg2);
-}
-
-.mem-more {
-  align-self: flex-start;
-}
-
 .mem-detail {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   padding-left: var(--space-3);
   border-left: 1px solid var(--line2);
-}
-
-.mem-facts {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: var(--space-1) var(--space-3);
-  margin: 0;
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
-}
-
-.mem-facts dt {
-  color: var(--fg2);
-}
-
-.mem-facts dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-/* 来路 / 用户编辑记录：每次改动一行，等宽的版本号和时间。 */
-.change-log {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.change-log-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-2);
-  font-size: var(--text-caption);
-  line-height: var(--text-caption-line);
-}
-
-.change-log-meta {
-  font-size: var(--text-tag);
-  line-height: var(--text-tag-line);
-  color: var(--fg2);
-}
-
-.change-log-reason {
-  flex-basis: 100%;
-  overflow-wrap: anywhere;
 }

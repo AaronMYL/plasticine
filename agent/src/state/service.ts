@@ -4,7 +4,6 @@
 
 import { randomUUID } from 'node:crypto';
 import { dirname, join } from 'node:path';
-import { createAgreementStore } from './agreements.ts';
 import { createApiRequestLog } from './api-requests.ts';
 import { createAskStore } from './asks.ts';
 import { createFeedTranslationStore } from './feed-translations.ts';
@@ -19,7 +18,6 @@ import { createClientUpdateStore } from './client-updates.ts';
 import { createContactMessageStore } from './contact-messages.ts';
 import { createDailySettingsStore } from './daily-settings.ts';
 import { MEMORY_DATABASE, openDatabase } from './db.ts';
-import { createDeviceKeyStore } from './device-keys.ts';
 import { createDeviceStore } from './devices.ts';
 import { createDeviceTimeZoneStore } from './device-time-zones.ts';
 import { createOwnerAccountStore } from './owner-account.ts';
@@ -76,7 +74,6 @@ import { createHeartbeatFacts } from './heartbeat-facts.ts';
 import { createLoopStore } from './loop.ts';
 import { createSoulStore } from './souls.ts';
 import { createSystemOperationsStore } from './system-operations.ts';
-import { createTermDecodings } from './term-decodings.ts';
 import { createToolGroupStore } from './tool-groups.ts';
 import { createTranslateSettingsStore } from './translate-settings.ts';
 import { createTranslationCache } from './translation-cache.ts';
@@ -132,8 +129,6 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     // 竖排网页标签的摆放（11-08 起存在本体里，迁移 0109）和网站图标的缓存（0110）。
     webTabs: createWebTabsStore(context),
     favicons: createFaviconStore(context),
-    agreements: createAgreementStore(context),
-    termDecodings: createTermDecodings(context),
     attachments: createAttachmentStore(context, attachmentDirectory),
     networkAttachments: createNetworkAttachmentStore(context),
     moneyDrafts: createMoneyDraftStore(context),
@@ -154,7 +149,6 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     legacyIds: createLegacyIdMap(context),
     legacyRows: createLegacyRowStore(context),
     devices: createDeviceStore(context),
-    deviceKeys: createDeviceKeyStore(context),
     pairingCodes: createPairingCodeStore(context),
     sessions: createSessionStore(context),
     apiRequests: createApiRequestLog(context),

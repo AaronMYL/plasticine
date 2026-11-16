@@ -21,7 +21,6 @@ export type FaultOperation =
   | 'cognition'
   | 'judgment_status'
   | 'signed'
-  | 'register_key'
   | 'concern'
   | 'project'
   | 'brief_read'
@@ -88,7 +87,6 @@ const OPERATION_LABELS: Record<FaultOperation, string> = {
   push: '登记系统通知',
   judgment_status: '改判断状态',
   signed: '签名操作',
-  register_key: '登记签名钥匙',
   concern: '改关切',
   project: '改项目',
   brief_read: '回来汇报',

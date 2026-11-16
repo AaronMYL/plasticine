@@ -124,7 +124,6 @@ test('他明说记住的当场写进主题文档（下一轮就在上下文里�
   // 第13批三层：他说的偏好和说法进「关于你」，不再往「规则」里写。
   assert.match(requests[0]?.system ?? '', /说法[\s\S]*专有名词[\s\S]*memdoc-you[\s\S]*「X」指的是/);
   assert.match(requests[0]?.system ?? '', /\[\[那篇的名字\]\]/);
-  assert.equal(state.agreements.list({ kind: 'term' }, { limit: 10, offset: 0 }).length, 0);
 });
 
 test('他改口说的规矩改那一行：旧说法进归档、新行留「之前」；今天已经记过的同一件事不再记', async () => {

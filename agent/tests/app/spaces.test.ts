@@ -5,8 +5,7 @@ import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { REVIEW_SUBSCRIPTION_ID, researchDraft, writeSpace } from '../../src/subs/index.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newRequestId } from './signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
 
 let t: TestApp | undefined;
 

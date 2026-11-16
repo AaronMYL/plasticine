@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { fauxAssistantMessage, type FauxResponseFactory } from '@earendil-works/pi-ai';
-import { call, json, openEvents, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newDeviceKey, newRequestId, registerKey, signedCall } from './signing.ts';
+import { call, json, openEvents, pair, startTestApp, type TestApp, newRequestId, send } from './helpers.ts';
 
 let t: TestApp | undefined;
 
@@ -80,11 +79,9 @@ test('本人会话无钥匙即可开关工具组，记录确认并通知，模�
 test('全面授权的新默认不覆盖用户显式关闭云端命令，下一轮仍隐藏且保存真实确认版本', async () => {
   t = await startTestApp();
   const cookie = await pair(t);
-  const key = newDeviceKey();
-  await registerKey(t, cookie, key);
-  const off = await signedCall(t, 'POST', '/v2/tool-groups/cloud_ssh', {
+  const off = await send(t, 'POST', '/v2/tool-groups/cloud_ssh', {
     requestId: newRequestId('ssh-off'), version: 0, enabled: false,
-  }, { cookie, key });
+  }, { cookie });
   assert.equal(off.status, 200);
   const saved = t.state.toolGroups.get('cloud_ssh');
   assert.ok(saved?.confirmedByDeviceId);
@@ -98,25 +95,23 @@ test('全面授权的新默认不覆盖用户显式关闭云端命令，下一�
 test('开关的版本旧了 409 带现在那一组；没有的组 404', async () => {
   t = await startTestApp();
   const cookie = await pair(t);
-  const key = newDeviceKey();
-  await registerKey(t, cookie, key);
-  const on = await signedCall(t, 'POST', '/v2/tool-groups/cloud_ssh', {
+  const on = await send(t, 'POST', '/v2/tool-groups/cloud_ssh', {
     requestId: newRequestId('tg'),
     version: 0,
     enabled: true,
-  }, { cookie, key });
+  }, { cookie });
   assert.equal(on.status, 200, JSON.stringify(on.body));
-  const stale = await signedCall(t, 'POST', '/v2/tool-groups/cloud_ssh', {
+  const stale = await send(t, 'POST', '/v2/tool-groups/cloud_ssh', {
     requestId: newRequestId('tg'),
     version: 0,
     enabled: false,
-  }, { cookie, key });
+  }, { cookie });
   assert.equal(stale.status, 409);
   assert.equal(((json(stale)['current'] as Body)['enabled']), true);
-  const missing = await signedCall(t, 'POST', '/v2/tool-groups/rm_rf', {
+  const missing = await send(t, 'POST', '/v2/tool-groups/rm_rf', {
     requestId: newRequestId('tg'),
     version: 0,
     enabled: true,
-  }, { cookie, key });
+  }, { cookie });
   assert.equal(missing.status, 404);
 });

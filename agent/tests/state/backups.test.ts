@@ -5,7 +5,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openState } from '../../src/state/index.ts';
 import { brainChange, device, userSource } from './helpers.ts';
-import { proposedAgreementText } from '../../shared/agreement-diff.ts';
 
 test('一致快照含笔记全部版本，逐对象恢复留新版本；篡改、基准变化和删除不越过', () => {
   const directory = mkdtempSync(join(tmpdir(), 'backup-state-'));
@@ -34,27 +33,6 @@ test('一致快照含笔记全部版本，逐对象恢复留新版本；篡改�
     assert.throws(() => state.backups.restore(deleted.id, deleted.digest, proof));
     writeFileSync(join(directory, 'backups', backup.id, 'notes', note.bodyFile), 'bad');
     assert.equal(state.backups.verify(backup.id).valid, false);
-  } finally {
-    state.close();
-    rmSync(directory, { recursive: true, force: true });
-  }
-});
-
-test('有效约定只写提议，不覆盖现在的约定', () => {
-  const directory = mkdtempSync(join(tmpdir(), 'backup-protected-'));
-  const state = openState({ path: join(directory, 'plasticine.sqlite') });
-  try {
-    const agreement = state.agreements.create({ kind: 'collaboration', text: '旧约定', scope: '合作' }, brainChange());
-    const backup = state.backups.begin('protected-backup', 'manual');
-    state.backups.complete(backup.id);
-    state.agreements.update(agreement.id, 1, { text: '当前有效约定' }, brainChange());
-    state.agreements.confirm(agreement.id, 2, { state: 'active' }, device(), '用户采纳');
-    const term = state.backups.preview(backup.id, 'agreement-preview', 'agreement', agreement.id);
-    state.backups.restore(term.id, term.digest, device());
-    const current = state.agreements.require(agreement.id);
-    assert.equal(current.text, '当前有效约定');
-    assert.equal(current.state, 'active');
-    assert.equal(proposedAgreementText(current.text, current.proposedDiff ?? ''), '旧约定');
   } finally {
     state.close();
     rmSync(directory, { recursive: true, force: true });

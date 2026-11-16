@@ -26,14 +26,21 @@ export async function rehearseMigrations(sourcePath: string, destination: string
     const before = counts(db);
     const applied = migrate(db, MIGRATIONS, () => new Date().toISOString());
     const after = counts(db);
-    const changed = Object.entries(before).filter(([table, count]) => table !== 'schema_migrations'
-      && after[table] !== count).map(([table, count]) => ({ table, before: count, after: after[table] }));
+    // 迁移自己声明会删的表（loses）：变少、没了不算意外，单独列出来；变多照样算意外。
+    const ran = MIGRATIONS.filter((entry) => applied.includes(entry.id));
+    const loses = new Set(ran.flatMap((entry) => entry.loses ?? []));
+    const moved = Object.entries(before).filter(([table, count]) => table !== 'schema_migrations'
+      && after[table] !== count).map(([table, count]) => ({ table, before: count, after: after[table] ?? null }));
+    const declared = (row: { table: string; before: number; after: number | null }): boolean =>
+      loses.has(row.table) && (row.after ?? 0) <= row.before;
+    const changed = moved.filter((row) => !declared(row));
+    const declaredLosses = moved.filter(declared);
     const foreignKeys = db.all('PRAGMA foreign_key_check');
     const integrity = db.all('PRAGMA integrity_check').map((row) => String(row['integrity_check']));
     const repeated = migrate(db, MIGRATIONS, () => new Date().toISOString());
     const passed = changed.length === 0 && foreignKeys.length === 0
       && integrity.length === 1 && integrity[0] === 'ok' && repeated.length === 0;
-    const report = { passed, applied, unchangedRows: changed.length === 0, rowChanges: changed,
+    const report = { passed, applied, unchangedRows: changed.length === 0, rowChanges: changed, declaredLosses,
       foreignKeyErrors: foreignKeys.length, integrity, repeated, before, after };
     await writeFile(join(directory, 'migration-report.json'), JSON.stringify(report, null, 2), { mode: 0o600 });
     if (!passed) throw new Error('迁移副本核对未通过，检查 migration-report.json；源库未改动。');

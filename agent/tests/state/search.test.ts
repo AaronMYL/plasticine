@@ -111,15 +111,6 @@ test('回填时读不出一篇笔记就明确失败，不把部分结果或零�
   assert.deepEqual(t.state.search.query({ q: '重要' }).results.map((row) => row.id), [note.id]);
 });
 
-test('记忆中的约定和术语可查找', () => {
-  const agreement = t.state.agreements.create({ kind: 'collaboration', text: '远足约定', scope: '周末' }, brainChange());
-  const term = t.state.agreements.create({ kind: 'term', title: '远足', text: '步行探索', scope: '通用',
-    termTier: 'exact' }, brainChange());
-  const found = t.state.search.query({ q: '远足', type: 'memory' }).results;
-  assert.deepEqual(new Set(found.map((row) => row.kind)), new Set(['agreement', 'term']));
-  assert.deepEqual(new Set(found.map((row) => row.id)), new Set([agreement.id, term.id]));
-});
-
 test('⌘K 能搜到图书（书名、作者），结果的种类是 book、类型是 books', () => {
   const book = t.state.books.create({ title: '冰川与人', author: '沈复', language: 'zh', format: 'epub',
     fileName: '冰川与人.epub', sourceBytes: 1024, sourceSha256: 'd'.repeat(64), coverAsset: null,

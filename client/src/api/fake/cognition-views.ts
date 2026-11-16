@@ -2,7 +2,6 @@
 // 假实现、本地开发的预置数据和测试共用。
 
 import type {
-  AgreementView,
   MemoryEntryView,
 } from '../types.ts';
 
@@ -23,31 +22,6 @@ export function memoryEntryView(seed: MemorySeed): MemoryEntryView {
     archivedAt: null,
     migrated: false,
     awaitingConfirmation: false,
-    openDisagreementId: null,
-    createdAt: AT,
-    updatedAt: AT,
-    version: 1,
-    ...seed,
-  };
-}
-
-export type AgreementSeed = Pick<AgreementView, 'id' | 'text'> & Partial<AgreementView>;
-
-export function agreementView(seed: AgreementSeed): AgreementView {
-  return {
-    kind: 'collaboration',
-    title: null,
-    scope: '所有对话',
-    userQuote: null,
-    quotedAt: null,
-    perUseConfirmation: false,
-    premises: [],
-    state: 'active',
-    proposedDiff: null,
-    effectiveAt: AT,
-    migrated: false,
-    awaitingConfirmation: false,
-    confirmedByDeviceAt: null,
     openDisagreementId: null,
     createdAt: AT,
     updatedAt: AT,

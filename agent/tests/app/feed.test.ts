@@ -4,8 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { join } from 'node:path';
 import { REPLAYED_HEADER, type FeedItemView } from '../../shared/api/index.ts';
 import { compareFeedItems } from '../../shared/feed-order.ts';
-import { call, json, openEvents, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newRequestId } from './signing.ts';
+import { call, json, openEvents, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
 import { assertNoPrivateText, captureLogs, CREDENTIAL_PARAMS, PRIVATE_ERROR_TEXT } from '../safety-helpers.ts';
 import { ARTICLE_URLS, unsafeUrl } from '../url-fixtures.ts';
 

@@ -4,7 +4,6 @@
 
 import { Type, type Static } from 'typebox';
 import { MEMORY_BASES, MEMORY_KINDS } from '../state.ts';
-import { AgreementListResponseSchema } from './agreements.ts';
 import { API_PREFIX, IdSchema, IsoTimeSchema } from './common.ts';
 import {
   ChangeRecordViewSchema,
@@ -64,7 +63,6 @@ export type MemoryBoardQuery = Static<typeof MemoryBoardQuerySchema>;
 export const MemoryBoardResponseSchema = Type.Object({
   quotes: MemoryColumnSchema,
   interpretations: MemoryColumnSchema,
-  agreements: AgreementListResponseSchema,
 });
 export type MemoryBoardResponse = Static<typeof MemoryBoardResponseSchema>;
 

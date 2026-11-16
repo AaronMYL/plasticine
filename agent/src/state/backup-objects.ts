@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { BackupObject, BackupObjectKind } from '../../shared/api/backups.ts';
-import { AgreementPatchSchema, MemoryEntryPatchSchema, type DeviceConfirmation } from '../../shared/state.ts';
-import { createAgreementStore } from './agreements.ts';
+import { MemoryEntryPatchSchema, type DeviceConfirmation } from '../../shared/state.ts';
 import { createMemoryStore } from './memory.ts';
 import { createNoteStore } from './notes.ts';
 import { NoteBodies } from './note-bodies.ts';
@@ -16,19 +15,17 @@ export function backupObjectLabel(value: Values): string {
 }
 const FIELDS = {
   note: ['markdown'],
-  agreement: ['proposedDiff'],
   memory_entry: ['text', 'applicability', 'provenance'],
 } as const;
 export const RESTORE_EXCLUDED = [
   '删除、撤销、失效及生命周期状态',
-  '已确认的 p、现实结果、有效约定及设备权限',
+  '已确认的设备权限',
   '登录、配对、执行节点身份、推送及外部凭据',
   '任务执行、外部动作和发布队列',
 ];
 export function backupObjectAccess(context: StoreContext, notesDirectory: string) {
   const notes = createNoteStore(context, new NoteBodies(notesDirectory));
   const stores = {
-    agreement: createAgreementStore(context),
     memory_entry: createMemoryStore(context),
   };
   const read = (kind: BackupObjectKind, id: string): Values | null => {
@@ -82,23 +79,6 @@ export function backupObjectAccess(context: StoreContext, notesDirectory: string
         blocked.push('来源已变化，请通过原对象重新核对内容。');
       }
       const patch: Values = Object.fromEntries(FIELDS[kind].map((field) => [field, source[field] ?? null]));
-      if (kind === 'agreement') {
-        if (source['kind'] === 'term') {
-          delete patch['proposedDiff'];
-          patch['proposedTerm'] = {
-            title: source['title'],
-            text: source['text'],
-            scope: source['scope'],
-            termTier: source['termTier'],
-          };
-        } else {
-          // 第三批约定提议按完整 -/+ 差异确认；恢复只能提议，不能直接覆盖有效约定。
-          patch['proposedDiff'] = [
-            ...String(current?.['text'] ?? '').split('\n').map((line) => `- ${line}`),
-            ...String(source['text']).split('\n').map((line) => `+ ${line}`),
-          ].join('\n');
-        }
-      }
       const before = Object.fromEntries(Object.keys(patch).map((key) => [key, current?.[key] ?? null]));
       return { patch, before, blocked, fields: Object.keys(patch) };
     },
@@ -112,13 +92,6 @@ export function backupObjectAccess(context: StoreContext, notesDirectory: string
       switch (kind) {
         case 'note':
           return notes.save(id, version, { markdown: String(patch['markdown']) }).version;
-        case 'agreement':
-          return createAgreementStore(context).update(
-            id,
-            version,
-            checked(AgreementPatchSchema, patch, 'invalid_input', '约定提议恢复'),
-            change,
-          ).version;
         case 'memory_entry':
           return createMemoryStore(context).update(
             id,

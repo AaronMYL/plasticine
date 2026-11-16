@@ -13,12 +13,10 @@ export { ASSET_NAME_PATTERN, ASSETS_DIRECTORY, digestOf } from './note-bodies.ts
 export type { BodyDigest, NoteAsset } from './note-bodies.ts';
 export { previewOf, titleOf, UNTITLED_NOTE } from './notes.ts';
 export type { NoteFilter, NoteStore } from './notes.ts';
-export type { AgreementFilter, AgreementStore } from './agreements.ts';
 export type { ApiRequestLog } from './api-requests.ts';
 export type { AskStore } from './asks.ts';
 export type { PushSubscriptionStore } from './push-subscriptions.ts';
 export type { ProjectStore, TodoPatch } from './projects.ts';
-export type { DeviceKeyStore } from './device-keys.ts';
 export type { DeviceStore } from './devices.ts';
 export type { LegacyRecordOutcome, LegacyRowStore } from './legacy-rows.ts';
 export type { PairingCodeStore } from './pairing-codes.ts';

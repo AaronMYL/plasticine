@@ -6,7 +6,6 @@ import {
   COGNITION_PAGE_DEFAULT,
   MemoryBoardQuerySchema,
   MemoryEntriesQuerySchema,
-  type AgreementListResponse,
   type MemoryBoardResponse,
   type MemoryColumn,
   type MemoryEntryDetail,
@@ -14,7 +13,7 @@ import {
 } from '../../shared/api/index.ts';
 import type { MemoryEntry } from '../../shared/state.ts';
 import { ApiError, notFoundError } from './api-error.ts';
-import { agreementView, changeRecords, memoryEntryView } from './cognition-views.ts';
+import { changeRecords, memoryEntryView } from './cognition-views.ts';
 import { memorySource } from './cognition-source.ts';
 import { param, requireAuth, type AppDeps, type Reply, type RequestContext } from './context.ts';
 import { checkInput, queryObject } from './validate.ts';
@@ -29,14 +28,6 @@ function column(deps: AppDeps, kind: MemoryEntry['kind'], includeArchived: boole
   return result;
 }
 
-function agreementColumn(deps: AppDeps, limit: number): AgreementListResponse {
-  const page = deps.state.agreements.newestFirst({}, { limit: limit + 1, offset: 0 });
-  return {
-    agreements: page.slice(0, limit).map((agreement) => agreementView(agreement)),
-    nextOffset: page.length > limit ? limit : null,
-  };
-}
-
 /** GET /v2/memory */
 export function getMemoryBoard(context: RequestContext): Reply {
   requireAuth(context);
@@ -47,7 +38,6 @@ export function getMemoryBoard(context: RequestContext): Reply {
   const body: MemoryBoardResponse = {
     quotes: column(context.deps, 'quote', archived, limit, 0, query),
     interpretations: column(context.deps, 'interpretation', archived, limit, 0, query),
-    agreements: agreementColumn(context.deps, limit),
   };
   return { status: 200, body };
 }

@@ -1,6 +1,6 @@
 // 接口错误分类（《实施方案》第 5 节四条约定）。
 // 界面只看 kind：uncertain 是「结果待核实」，不是失败；unauthorized 触发重新登录；conflict 带服务端当前版本。
-// 签名被拒（403 signature_* / device_key_missing）不是 unauthorized：会话还好好的，只是这一次没签对。
+// 签名被拒（403 signature_*）不是 unauthorized：会话还好好的，只是这一次没签对。
 
 import type { NoteView } from './types.ts';
 
@@ -86,7 +86,6 @@ export const SIGNATURE_REFUSAL_CODES: readonly string[] = [
   'signature_required',
   'signature_invalid',
   'signature_expired',
-  'device_key_missing',
 ];
 
 export function isSignatureRefusal(cause: unknown): boolean {

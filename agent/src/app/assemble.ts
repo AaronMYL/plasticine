@@ -52,7 +52,7 @@ import { errorCategory, safeLog } from '../util/index.ts';
 import { join } from 'node:path';
 import { LETTER_BRIEF, MAIN_THREAD_PATH, type BackupObjectKind } from '../../shared/api/index.ts';
 import { createApp, type App } from './app.ts';
-import { agreementView, memoryEntryView } from './cognition-views.ts';
+import { memoryEntryView } from './cognition-views.ts';
 import { assembleLines, type LineAssembly } from './assemble-lines.ts';
 import { publicUrlSource } from './public-url.ts';
 import { lineReplyAlert } from './reply-alerts.ts';
@@ -467,12 +467,10 @@ export function assembleApp(options: AssembleOptions): App {
   });
 }
 
-/** 按对象恢复提交以后告诉打开的页面：笔记只带身份（各设备按自己的解锁状态重读），约定、旧记忆条目带新样子。 */
+/** 按对象恢复提交以后告诉打开的页面：笔记只带身份（各设备按自己的解锁状态重读），旧记忆条目带新样子。 */
 function publishRestored(state: StateService, hub: EventHub, kind: BackupObjectKind, id: string): void {
   if (kind === 'note') {
     hub.publish({ type: 'note_invalidated', noteId: id });
-  } else if (kind === 'agreement') {
-    hub.publish({ type: 'agreement_changed', agreement: agreementView(state.agreements.require(id)) });
   } else {
     hub.publish({ type: 'memory_entry_changed', entry: memoryEntryView(state.memory.require(id)) });
   }

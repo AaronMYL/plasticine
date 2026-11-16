@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { call, json, pair, startTestApp } from './helpers.ts';
-import { newDeviceKey, registerKey, signedCall } from './signing.ts';
+import { call, json, pair, startTestApp, send } from './helpers.ts';
 import { brainChange } from '../state/helpers.ts';
 
 test('备份无下载旁路；本人老会话无钥匙按预览恢复，重试只新增一版且先留安全快照', async () => {
@@ -71,8 +70,6 @@ test('恢复提交后广播对象的新版本，拒绝恢复和重放不再广�
   const app = await startTestApp();
   try {
     const cookie = await pair(app);
-    const key = newDeviceKey();
-    await registerKey(app, cookie, key);
     const note = app.state.notes.create({ markdown: '原笔记', author: 'user', folder: '笔记' });
     const memory = app.state.memory.create({ kind: 'interpretation', text: '原解释', basis: 'inferred',
       sourceId: 'source-own-reasoning', provenance: '推理' }, brainChange());
@@ -98,12 +95,12 @@ test('恢复提交后广播对象的新版本，拒绝恢复和重放不再广�
       const body = { requestId: `event-restore-${kind}`, previewId: preview['id'], digest: preview['digest'],
         backupName: preview['backupName'], askVersion: preview['askVersion'] };
       const path = `/v2/backups/${backup.id}/restore`;
-      const rejected = await signedCall(app, 'POST', path, { ...body, digest: '0'.repeat(64) }, { cookie, key });
+      const rejected = await send(app, 'POST', path, { ...body, digest: '0'.repeat(64) }, { cookie });
       assert.equal(rejected.status, 409);
       assert.equal(calls.length, 0);
-      assert.equal((await signedCall(app, 'POST', path, body, { cookie, key })).status, 200);
+      assert.equal((await send(app, 'POST', path, body, { cookie })).status, 200);
       assert.equal(calls.length, 1);
-      assert.equal((await signedCall(app, 'POST', path, body, { cookie, key })).status, 200);
+      assert.equal((await send(app, 'POST', path, body, { cookie })).status, 200);
       assert.equal(calls.length, 1);
       app.app.deps.hub.publish = publish;
     }
@@ -116,8 +113,6 @@ test('当前正文丢失仍可恢复：先保留标有缺口的当前快照，�
   const app = await startTestApp();
   try {
     const cookie = await pair(app);
-    const key = newDeviceKey();
-    await registerKey(app, cookie, key);
     const note = app.state.notes.create({ markdown: '可恢复的正文', author: 'user', folder: '笔记' });
     const backup = app.state.backups.begin('backup-missing-source', 'manual');
     app.state.backups.complete(backup.id);
@@ -128,7 +123,7 @@ test('当前正文丢失仍可恢复：先保留标有缺口的当前快照，�
         body: { requestId: 'preview-missing-current', kind: 'note', objectId: note.id },
       }),
     );
-    const restored = await signedCall(
+    const restored = await send(
       app,
       'POST',
       `/v2/backups/${backup.id}/restore`,
@@ -139,7 +134,7 @@ test('当前正文丢失仍可恢复：先保留标有缺口的当前快照，�
         backupName: preview['backupName'],
         askVersion: preview['askVersion'],
       },
-      { cookie, key },
+      { cookie },
     );
     assert.equal(restored.status, 200);
     assert.equal(app.state.notes.readBody(app.state.notes.require(note.id)), '可恢复的正文');

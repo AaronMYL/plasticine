@@ -6,7 +6,7 @@ import type { StateService } from '../state/index.ts';
 
 type JsonObject = Record<string, unknown>;
 type PreservedFields = WeakMap<object, ReadonlySet<string>>;
-type TextState = Pick<StateService, 'memory' | 'agreements' | 'apiRequests'>;
+type TextState = Pick<StateService, 'memory' | 'apiRequests'>;
 
 function object(value: unknown): JsonObject | undefined {
   return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as JsonObject : undefined;
@@ -90,13 +90,6 @@ export function responseTextPolicy(pathname: string, body: unknown, state: TextS
     attachment(fields, root?.['attachment']);
   } else if (/^\/v2\/conversation\/attachments(?:\/(?:requests\/)?[^/]+)?(?:\/complete)?\/?$/.test(pathname)) {
     attachment(fields, root);
-  } else if (/^\/v2\/agreements(?:\/[^/]+(?:\/(?:edit|confirm))?)?\/?$/.test(pathname)) {
-    const keys = ['text', 'scope', 'userQuote'];
-    userFields(fields, root?.['agreement'], state, keys);
-    userFields(fields, root?.['current'], state, keys);
-    each(root?.['agreements'], (value) => userFields(fields, value, state, keys));
-    memoryHistory(fields, root?.['history']);
-    memoryHistory(fields, root?.['lineage']);
   } else if (/^\/v2\/memory(?:\/entries(?:\/[^/]+(?:\/archive)?)?)?\/?$/.test(pathname)) {
     memory(fields, root?.['entry'], state);
     memory(fields, root?.['current'], state);
@@ -104,8 +97,6 @@ export function responseTextPolicy(pathname: string, body: unknown, state: TextS
     for (const column of ['quotes', 'interpretations']) {
       each(object(root?.[column])?.['entries'], (entry) => memory(fields, entry, state));
     }
-    each(object(root?.['agreements'])?.['agreements'], (value) =>
-      userFields(fields, value, state, ['text', 'scope', 'userQuote']));
     memoryHistory(fields, root?.['history']);
   } else if (pathname.startsWith('/v2/lines/')) {
     lineBody(fields, root);
@@ -144,21 +135,6 @@ function bookmark(fields: PreservedFields, value: unknown): void {
       fields.set(row, new Set(['target']));
     }
   });
-}
-
-function userFields(fields: PreservedFields, value: unknown, state: TextState, keys: string[]): void {
-  const row = object(value);
-  if (row === undefined || typeof row['id'] !== 'string' || typeof row['version'] !== 'number') {
-    return;
-  }
-  const history = state.agreements.history(row['id'])
-    .filter((entry) => entry.version <= Number(row['version']));
-  const snapshot = history.find((entry) => entry.version === row['version'])?.snapshot;
-  const kept = keys.filter((key) => snapshot?.[key] === row[key]
-    && history.findLast((entry) => entry.fields.includes(key))?.actor === 'user');
-  if (kept.length > 0) {
-    fields.set(row, new Set([...(fields.get(row) ?? []), ...kept]));
-  }
 }
 
 /** 新内核的线：用户自己说的话（线里的用户消息、排队的消息）原样回给他；回答、工具结果照旧清洗。 */

@@ -45,7 +45,7 @@ export interface AttachmentsApi {
 }
 import type { SignedResult, SignedSend, SignedTarget } from './signed-targets.ts';
 import type {
-  AddFeedItemRequest, AgreementDetail, AgreementListQuery, AgreementListResponse, AnswerAskRequest, AnswerAskResponse,
+  AddFeedItemRequest, AnswerAskRequest, AnswerAskResponse,
   AskAboutRequest, AskAboutResponse, AskListResponse, AskView, CreateNoteRequest, DailySettingsView, DeferAskRequest,
   DeferAskResponse, DeviceView, EventHandlers, FeedItemView, FeedListQuery, FeedListResponse, FeedSourcesResponse,
   FeedSourceView, MemoryEntryDetail, NodeActionView, NodeListResponse, NodeView, NoteMetaView, NoteSearch, NoteView,
@@ -135,16 +135,6 @@ export interface PushApi {
 export interface MemoryApi {
   /** GET /v2/memory/entries/:id：一条整理前的原话（只读，引用里的原话出处用）。 */
   entry(id: string, signal?: AbortSignal): Promise<MemoryEntryDetail>;
-}
-
-export interface AgreementsApi {
-  create(input: import('./shared.ts').CreateTermRequest): Promise<import('./shared.ts').AgreementView>;
-  propose(id: string, input: import('./shared.ts').ProposeTermRequest): Promise<import('./shared.ts').AgreementView>;
-  decodings(id: string, signal?: AbortSignal): Promise<import('./shared.ts').TermDecodingList>;
-  /** GET /v2/agreements?offset=：约定栏往后翻一页（第一页在 /v2/memory 里）。 */
-  list(query: AgreementListQuery, signal?: AbortSignal): Promise<AgreementListResponse>;
-  /** GET /v2/agreements/:id */
-  get(id: string, signal?: AbortSignal): Promise<AgreementDetail>;
 }
 
 export interface SignedApi {
@@ -330,7 +320,6 @@ export interface PlasticineApi extends ToolGroupApi, ThingsApi, ContactsClientAp
   asks: AsksApi;
   push: PushApi;
   memory: MemoryApi;
-  agreements: AgreementsApi;
   signed: SignedApi;
   projects: ProjectsApi;
   today: TodayApi;

@@ -14,8 +14,8 @@
 //   rules.rewrite --plan <方案.json> --because "用户原话" [--op-id 号]
 //   memory.move --plan <[{lineId,version,toDocId}]> --because "用户原话"   把几行记忆挪到别的文档
 //   memory.cleanup.add --plan <[{toDocId,text}]> --because "用户原话"     整理清单里新加几条，等用户勾选
-//   memory.layers --plan <{moves:[{lineId,version,toDocId,section?}],agreements:[{agreementId,section,text?}]}>
-//     --because "用户原话"                    记忆分层的搬家：几行挪到新的几层，在用的旧约定写成承诺和授权里的行
+//   memory.layers --plan <{moves:[{lineId,version,toDocId,section?}]}> --because "用户原话"
+//                                           记忆分层的搬家：几行挪到新的几层，记忆页有记录、能搬回去
 //   suggestions.dismiss --ids <id,id,…> --because "用户原话"            把几条建议收起（标成忽略，不删）
 //   inbox.archive --sources patrol,feedback,interview --because "用户原话"  这几个系统来源的来信归档（不删）
 //                                            整理「规则」：一行换成几行或挪进归档（memory/rules/rules-rewrite.ts）
@@ -83,19 +83,13 @@ function readPlan(path: string): NonNullable<MaintenanceRequest['plan']> {
   return value as NonNullable<MaintenanceRequest['plan']>;
 }
 
-/** memory.layers 的 --plan 是一个对象：moves（挪哪几行）和 agreements（哪几条旧约定写成行），至少给一样。 */
-function readLayersPlan(path: string): Pick<MaintenanceRequest, 'moves' | 'agreements'> {
-  const value = readJson(path) as { moves?: unknown; agreements?: unknown } | null;
-  const list = (items: unknown): unknown[] | undefined =>
-    (Array.isArray(items) && items.length > 0 ? items : undefined);
-  const moves = list(value?.moves);
-  const agreements = list(value?.agreements);
-  if (moves === undefined && agreements === undefined) {
-    throw new MaintCliError('--plan 要是 {"moves":[…],"agreements":[…]}，至少给一样。');
+/** memory.layers 的 --plan 是一个对象：{"moves":[…]}（挪哪几行）。 */
+function readLayersPlan(path: string): Pick<MaintenanceRequest, 'moves'> {
+  const value = readJson(path) as { moves?: unknown } | null;
+  if (!Array.isArray(value?.moves) || value.moves.length === 0) {
+    throw new MaintCliError('--plan 要是 {"moves":[…]}，至少一行。');
   }
-  return { ...(moves === undefined ? {} : { moves: moves as NonNullable<MaintenanceRequest['moves']> }),
-    ...(agreements === undefined ? {}
-      : { agreements: agreements as NonNullable<MaintenanceRequest['agreements']> }) };
+  return { moves: value.moves as NonNullable<MaintenanceRequest['moves']> };
 }
 
 /** 命令行参数 → 一条维护命令（或一句只读查询）。 */

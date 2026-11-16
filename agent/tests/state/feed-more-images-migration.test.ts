@@ -16,7 +16,7 @@ test('0140：信息流条目加 more_images，旧条目是空数组，封面不�
     db.run(`INSERT INTO feed_items (id, created_at, updated_at, version, source_id, origin, title, summary, why,
       dedupe_key, day, arrived_at, image_url, image_ratio) VALUES ('item-1', $at, $at, 1, 'src-x', 'feed', '一条帖子',
       '', '', 'x:1', '2026-11-14', $at, 'https://pbs.twimg.com/media/a.jpg', 0.6)`, { at });
-    assert.deepEqual(migrate(db, MIGRATIONS, () => at), ['0140-feed-more-images']);
+    assert.deepEqual(migrate(db, MIGRATIONS, () => at), ['0140-feed-more-images', '0141-drop-agreements']);
     const row = db.get('SELECT image_url, image_ratio, more_images FROM feed_items WHERE id = $id', { id: 'item-1' });
     assert.deepEqual({ ...row },
       { image_url: 'https://pbs.twimg.com/media/a.jpg', image_ratio: 0.6, more_images: '[]' });

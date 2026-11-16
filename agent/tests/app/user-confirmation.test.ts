@@ -2,11 +2,10 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { request } from 'node:http';
 import { afterEach, test } from 'node:test';
-import { DEVICE_KEY_REGISTRATION_WINDOW_MS, REPLAYED_HEADER } from '../../shared/api/index.ts';
+import { REPLAYED_HEADER } from '../../shared/api/index.ts';
 import { BrowserSessions } from '../../src/app/browser-sessions.ts';
 import { SESSION_TTL_MS } from '../../src/app/config.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newDeviceKey, newRequestId, registerKey } from './signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
 
 let app: TestApp | undefined;
 afterEach(async () => {
@@ -29,9 +28,9 @@ function toggle(t: TestApp, requestId = newRequestId()) {
   return { requestId, version: current?.version ?? 0, enabled: !(current?.enabled ?? true) };
 }
 
-test('老的本人会话没有钥匙也能确认，来源取当前设备和服务端时间，不重新配对', async () => {
+test('老的本人会话也能确认，来源取当前设备和服务端时间，不重新配对', async () => {
   const { t, cookie, device } = await setup();
-  t.clock.advance(DEVICE_KEY_REGISTRATION_WINDOW_MS + 60_000);
+  t.clock.advance(11 * 60_000);
   const before = t.clock.now().getTime();
   const reply = await call(t, 'POST', PATH, { cookie, body: toggle(t) });
   assert.equal(reply.status, 200, JSON.stringify(reply.body));
@@ -40,15 +39,12 @@ test('老的本人会话没有钥匙也能确认，来源取当前设备和服�
   assert.equal(group?.confirmedByDeviceId, device.id);
   assert.ok(Date.parse(group!.confirmedByDeviceAt!) >= before);
   assert.ok(Date.parse(group!.confirmedByDeviceAt!) <= t.clock.now().getTime());
-  assert.equal(t.state.deviceKeys.liveFor(device.id), undefined);
   assert.deepEqual(t.state.devices.list().map((row) => row.id), [device.id]);
   assert.equal((await call(t, 'GET', '/v2/session', { cookie })).status, 200);
 });
 
-test('旧钥匙及缺失、损坏、过期签名头都不影响本人确认，旧钥匙记录不改', async () => {
+test('旧客户端带来的缺失、损坏、过期签名头都不影响本人确认', async () => {
   const { t, cookie, device } = await setup();
-  assert.equal((await registerKey(t, cookie, newDeviceKey())).status, 201);
-  const registered = t.state.deviceKeys.liveFor(device.id)!;
   const legacyHeaders: Record<string, string>[] = [
     {},
     { 'x-plasticine-signed-at': 'yesterday', 'x-plasticine-signature': 'invalid-legacy-header' },
@@ -59,11 +55,7 @@ test('旧钥匙及缺失、损坏、过期签名头都不影响本人确认，�
     const reply = await call(t, 'POST', PATH, { cookie, headers, body: toggle(t) });
     assert.equal(reply.status, 200, JSON.stringify(reply.body));
     assert.equal(t.state.toolGroups.get('inbox')?.confirmedByDeviceId, device.id);
-    assert.deepEqual(t.state.deviceKeys.get(registered.id), registered);
   }
-  const revoked = t.state.deviceKeys.revoke(registered.id, t.clock.now().toISOString());
-  assert.equal((await call(t, 'POST', PATH, { cookie, body: toggle(t) })).status, 200);
-  assert.deepEqual(t.state.deviceKeys.get(registered.id), revoked);
 });
 
 test('本人确认重试只写一次，同一请求改内容或路径仍拒绝，版本冲突仍返回当前版本', async () => {
@@ -148,7 +140,6 @@ test('全部本人确认入口拒绝系统会话，不把内部浏览器记成�
   const system = new BrowserSessions(t.state, t.clock.now).open();
   const cookie = system.cookie.split(';')[0]!;
   const paths = [
-    '/v2/agreements/missing/confirm', '/v2/agreements/missing/edit',
     '/v2/memory/inferences/missing/confirm', '/v2/memory/inferences/missing/reject',
     '/v2/memory/uncertain/missing', '/v2/money/drafts/missing/confirm',
     '/v2/nodes/missing/limits', PATH, '/v2/asks/missing/answer', '/v2/nodes/pairing-codes',
@@ -162,5 +153,4 @@ test('全部本人确认入口拒绝系统会话，不把内部浏览器记成�
     assert.equal(t.state.apiRequests.find(requestId), undefined);
   }
   assert.equal(t.state.toolGroups.get('inbox'), undefined);
-  assert.equal(t.state.deviceKeys.liveFor(system.device.id), undefined);
 });

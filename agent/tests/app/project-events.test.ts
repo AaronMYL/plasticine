@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { call, json, openEvents, pair, startTestApp, type SseStream, type TestApp } from './helpers.ts';
-import { newRequestId } from './signing.ts';
+import { call, json, openEvents, pair, startTestApp, type SseStream, type TestApp, newRequestId } from './helpers.ts';
 
 let app: TestApp | undefined;
 let stream: SseStream | undefined;

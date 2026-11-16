@@ -5,8 +5,7 @@ import { afterEach, test } from 'node:test';
 import type { NodeActionEnvelope, NodeActionReport } from '../../shared/api/index.ts';
 import { DEVICE_PER_HOUR_MAX } from '../../shared/state.ts';
 import { DEFAULT_DEVICE_LIMITS, type NodeTransport } from '../../src/devices/index.ts';
-import { call, json, openEvents, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newDeviceKey, newRequestId, signedCall, type TestDeviceKey } from './signing.ts';
+import { call, json, openEvents, pair, startTestApp, type TestApp, newRequestId, send } from './helpers.ts';
 
 let t: TestApp | undefined;
 
@@ -18,7 +17,6 @@ afterEach(async () => {
 interface Signed {
   t: TestApp;
   cookie: string;
-  key: TestDeviceKey;
 }
 
 const sent: NodeActionEnvelope[] = [];
@@ -33,13 +31,12 @@ async function signedApp(): Promise<Signed> {
   sent.length = 0;
   t = await startTestApp([], { nodeTransport: transport });
   const cookie = await pair(t);
-  const key = newDeviceKey();
   t.clock.advance(20 * 60_000);
-  return { t, cookie, key };
+  return { t, cookie };
 }
 
 async function issueCode(s: Signed, requestId = newRequestId('code')): Promise<{ code: string; requestId: string }> {
-  const reply = await signedCall(s.t, 'POST', '/v2/nodes/pairing-codes', { requestId }, s);
+  const reply = await send(s.t, 'POST', '/v2/nodes/pairing-codes', { requestId }, s);
   assert.equal(reply.status, 201, JSON.stringify(reply.body));
   return { code: String(json(reply)['code']), requestId };
 }
@@ -67,16 +64,6 @@ function hello(s: Signed, credential: string) {
   const body = { appVersion: '0.1.1', protocolVersion: 1, capabilities: ['file_read'] };
   return call(s.t, 'POST', '/v2/nodes/hello', { body, headers: { authorization: `Bearer ${credential}` } });
 }
-
-test('老的本人会话无钥匙也能领取节点配对码', async () => {
-  const s = await signedApp();
-  const unsigned = await signedCall(s.t, 'POST', '/v2/nodes/pairing-codes', { requestId: newRequestId() }, {
-    ...s,
-    unsigned: true,
-  });
-  assert.equal(unsigned.status, 201);
-  assert.equal(typeof json(unsigned)['code'], 'string');
-});
 
 test('领码的回答丢了重发：换一个新码，旧码作废；明文的码不进接口回执', async () => {
   const s = await signedApp();
@@ -138,9 +125,9 @@ test('本人会话改上限后节点拿到新上限；版本旧了 409 带现在
   const node = json(changed)['node'] as Record<string, unknown>;
   assert.equal(node['limitsVersion'], 1);
   assert.equal(node['limitsAreDefault'], false);
-  const replay = await signedCall(s.t, 'POST', path, body, s);
+  const replay = await send(s.t, 'POST', path, body, s);
   assert.equal(replay.headers.get('x-plasticine-replayed'), '1');
-  const stale = await signedCall(s.t, 'POST', path, { ...body, requestId: newRequestId() }, s);
+  const stale = await send(s.t, 'POST', path, { ...body, requestId: newRequestId() }, s);
   assert.equal(stale.status, 409);
   assert.equal((json(stale)['current'] as Record<string, unknown>)['limitsVersion'], 1);
   const reported = await hello(s, credential);
@@ -181,7 +168,7 @@ test('设备动作超上限被拒并报告：动作列表里是被拒和原因�
     roots: ['~/Documents'],
     classes: { ...DEFAULT_DEVICE_LIMITS.classes, read: { mode: 'allow' as const, perHour: 1 } },
   };
-  const set = await signedCall(s.t, 'POST', `/v2/nodes/${nodeId}/limits`, {
+  const set = await send(s.t, 'POST', `/v2/nodes/${nodeId}/limits`, {
     requestId: newRequestId(),
     limitsVersion: 0,
     limits,

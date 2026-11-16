@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { TextModelError, type TextRequest } from '../../src/kernel/index.ts';
 import { type TextStep } from '../tools/helpers.ts';
+import { YOU_DOC_ID } from '../../shared/state.ts';
+import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writes.ts';
 import { call, json, pair, startTestApp } from './helpers.ts';
 
 const SETTINGS = '/v2/translate/settings';
@@ -93,8 +95,12 @@ test('用词表开着时把在用的词带进提示，设置里关掉就不带',
   const app = await startTestApp([echo]);
   try {
     const cookie = await pair(app);
-    app.state.agreements.importEffective({ kind: 'term', title: 'harness', text: '任务协作的外壳，译作「工作链」',
-      scope: '', termTier: 'exact' }, app.clock.now().toISOString(), {}, '测试用词');
+    // 词表现在取「关于你」里写成「X」指的是 … 的行；别的行不算词。
+    ensureMemoryDocs(app.state);
+    const anchors = [{ kind: 'message' as const, ref: 'msg-1' }];
+    for (const line of ['「harness」指的是任务协作的外壳，译作「工作链」', '周末不提工作上的事']) {
+      addLine(app.state, { docId: YOU_DOC_ID, text: line, basis: 'stated', anchors }, { actor: 'brain', ref: 'run' });
+    }
     const text = { items: [{ id: 'p1', text: 'A good harness matters.' }] };
     await call(app, 'POST', '/v2/translate', { cookie, body: body(text) });
     assert.match(app.requests[0]?.system ?? '', /工作链/);

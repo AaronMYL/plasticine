@@ -1,9 +1,9 @@
-// Stored memory entries and agreements → the API's views (shared/api). Only field selection and joins; no decisions.
+// Stored memory entries → the API's views (shared/api). Only field selection and joins; no decisions.
 // 2026-11-05：判断、证据、来源账、≠ 标记删掉；旧记忆条目的来源（sources 表）随来源账一起删了，source 恒为 null，
 // openDisagreementId 恒为 null（字段留给旧客户端）。
 
-import type { AgreementView, ChangeRecordView, MemoryEntryView } from '../../shared/api/index.ts';
-import type { Agreement, MemoryEntry, VersionEntry } from '../../shared/state.ts';
+import type { ChangeRecordView, MemoryEntryView } from '../../shared/api/index.ts';
+import type { MemoryEntry, VersionEntry } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 
 // The 验证程度 side of a judgment (《UI 方案》第 8 节判断页右栏): p, the prior, the proposal, the outcome and the
@@ -53,31 +53,5 @@ export function memoryEntryView(entry: MemoryEntry): MemoryEntryView {
     createdAt: entry.createdAt,
     updatedAt: entry.updatedAt,
     version: entry.version,
-  };
-}
-
-export function agreementView(agreement: Agreement): AgreementView {
-  return {
-    id: agreement.id,
-    kind: agreement.kind,
-    title: agreement.title,
-    text: agreement.text,
-    scope: agreement.scope,
-    userQuote: agreement.userQuote,
-    quotedAt: agreement.quotedAt,
-    perUseConfirmation: agreement.perUseConfirmation,
-    premises: agreement.premises,
-    state: agreement.state,
-    proposedDiff: agreement.proposedDiff,
-    termTier: agreement.termTier,
-    proposedTerm: agreement.proposedTerm,
-    effectiveAt: agreement.effectiveAt,
-    migrated: agreement.migratedDefault,
-    awaitingConfirmation: false,
-    confirmedByDeviceAt: agreement.confirmedByDeviceAt,
-    openDisagreementId: null,
-    createdAt: agreement.createdAt,
-    updatedAt: agreement.updatedAt,
-    version: agreement.version,
   };
 }

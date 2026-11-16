@@ -10,6 +10,7 @@ import { ComposePredictor } from '../loop/index.ts';
 import { ensureDefaultProjects } from '../projects/index.ts';
 import { ensureMemoryDocs, type MemoryCurator } from '../memory/index.ts';
 import { NoteAssistant } from '../notes/index.ts';
+import { YOU_DOC_ID } from '../../shared/state.ts';
 import { PageTranslator, type GlossaryTerm } from '../web/index.ts';
 import type { MoneyDraftDesk, PaymentReader } from '../life/index.ts';
 import { Presence, type AskDesk, type Presenter, type PushService, type ScanScheduler } from '../attention/index.ts';
@@ -24,7 +25,7 @@ import type { CalendarSync } from '../calendar/index.ts';
 import type { Heartbeat } from '../heartbeat/index.ts';
 import type { NetworkService, TunnelService } from '../network/index.ts';
 import type { SkillShop, SkillStore } from '../skills/index.ts';
-import { allPages, type StateService } from '../state/index.ts';
+import type { StateService } from '../state/index.ts';
 import type { BackupService, ClientReleases } from '../system/index.ts';
 import { AttemptLimiter } from './attempt-limiter.ts';
 import {
@@ -141,11 +142,18 @@ export function askBoard(deps: Pick<AppDeps, 'desk'>): { currentId: string | nul
     + (board.current === null ? 0 : 1) };
 }
 
-/** 记忆里在用的词表（生效的词语约定），给网页翻译当术语对照。 */
+/** 「关于你」里记的说法写成「X」指的是 …（记忆整理的规矩）：这一种行取出词和意思。 */
+const TERM_LINE = /^「(?<term>[^」]{1,80})」\s*指的是\s*(?<meaning>.+)$/su;
+
+/**
+ * 记忆里的词表，给网页翻译当术语对照。11-15 以前取的是旧约定里生效的词语约定；那张表删了以后，取「关于你」里
+ * 在用的「X」指的是 … 那些行（现在词就是这样记的）。
+ */
 function glossaryTerms(state: StateService): GlossaryTerm[] {
-  return allPages((page) => state.agreements.list({ state: 'active', kind: 'term' }, page))
-    .map((term) => ({ term: term.title ?? '', meaning: term.text, scope: term.scope }))
-    .filter((term) => term.term.trim() !== '');
+  return state.memoryDocs.lines.live(YOU_DOC_ID).flatMap((line) => {
+    const found = TERM_LINE.exec(line.text.trim())?.groups;
+    return found === undefined ? [] : [{ term: found['term']!.trim(), meaning: found['meaning']!.trim(), scope: '' }];
+  }).filter((term) => term.term !== '');
 }
 
 /** 网页翻译缓存按模型分开：现在线上用的那个模型；还没选定（或测试里没装模型连接）记成 default，缓存要一个非空的名字。 */

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { DEFAULT_DEVICE_LIMITS } from '../../src/devices/index.ts';
-import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newDeviceKey, newRequestId, signedCall } from './signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId, send } from './helpers.ts';
 
 let t: TestApp | undefined;
 afterEach(async () => {
@@ -13,16 +12,15 @@ afterEach(async () => {
 async function setup() {
   t = await startTestApp([], { dryRun: false });
   const cookie = await pair(t);
-  const key = newDeviceKey();
   t.clock.advance(20 * 60_000);
-  const signed = { t, cookie, key };
-  const codeReply = await signedCall(t, 'POST', '/v2/nodes/pairing-codes', { requestId: newRequestId() }, signed);
+  const signed = { t, cookie };
+  const codeReply = await send(t, 'POST', '/v2/nodes/pairing-codes', { requestId: newRequestId() }, signed);
   const paired = await call(t, 'POST', '/v2/nodes/pair', { body: { requestId: newRequestId(),
     code: json(codeReply)['code'], name: 'Mac', platform: 'macos', appVersion: '1.0', protocolVersion: 1,
     capabilities: ['file_read', 'file_write', 'file_delete', 'screen_capture'] } });
   const nodeId = String(json(paired)['nodeId']);
   const headers = { authorization: `Bearer ${String(json(paired)['credential'])}` };
-  await signedCall(t, 'POST', `/v2/nodes/${nodeId}/limits`, { requestId: newRequestId(), limitsVersion: 0,
+  await send(t, 'POST', `/v2/nodes/${nodeId}/limits`, { requestId: newRequestId(), limitsVersion: 0,
     limits: { ...DEFAULT_DEVICE_LIMITS, roots: ['~/Documents'] } }, signed);
   return { ...signed, nodeId, headers };
 }

@@ -415,3 +415,16 @@ export async function uploadAttachment(t: TestApp, cookie: string, input: { requ
   if (done.status !== 200) throw new Error(`附件没传完（${done.status}）：${JSON.stringify(done.body)}`);
   return json(done);
 }
+
+let requestCounter = 0;
+/** A fresh request id that fits RequestIdSchema. */
+export function newRequestId(prefix = 'req'): string {
+  requestCounter += 1;
+  return `${prefix}-${String(requestCounter).padStart(8, '0')}`;
+}
+
+/** 带 requestId 的写请求（以前要设备签名的那几个接口）：照会话把 body 原样发出去。 */
+export function send(t: TestApp, method: string, path: string, body: Record<string, unknown>,
+  session: { cookie: string }): Promise<ApiReply> {
+  return call(t, method, path, { cookie: session.cookie, body });
+}

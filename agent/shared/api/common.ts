@@ -39,9 +39,6 @@ export const API_ERROR_CODES = [
   'signature_required',
   'signature_invalid',
   'signature_expired',
-  'device_key_missing',
-  'device_key_exists',
-  'device_key_too_late',
   // M3: 原话永不改写，只能删（《从零方案》第 9 节）.
   'quote_immutable',
   // M4: 回来四句话还在整理 / 已经在别处点过（409，带 current）.

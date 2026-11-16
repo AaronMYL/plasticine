@@ -4,13 +4,12 @@
 // 开着的，重建时把订阅再交给服务端一次。2026-11-05 Harness 重做：旧的对话、任务、关切、判断、首页汇报、事、启用都拿掉了。
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { Value } from 'typebox/value';
 import type { PlasticineApi } from './api/client.ts';
 import { useApi } from './api/context.tsx';
 import { DIRECT_OPEN_EVENT } from './api/direct/direct-channel.ts';
 import { EventsHub } from './state/events-hub.ts';
 import { usePushDevice } from './api/push-device.ts';
-import { AgreementViewSchema, MAIN_LINE_ALIAS } from './api/shared.ts';
+import { MAIN_LINE_ALIAS } from './api/shared.ts';
 import { useClientState } from './state/context.tsx';
 import { useStore } from './state/use-store.ts';
 import { Store } from './state/store.ts';
@@ -27,8 +26,6 @@ import { TranscriberStore } from './views/feed/transcriber-store.ts';
 import { LinesStore } from './views/lines/line-store.ts';
 import { MatesStore } from './views/mates/mates-store.ts';
 import { MateActions } from './views/mates/mate-actions.ts';
-import { AgreementStore } from './views/memory/agreement-store.ts';
-import { CognitionActions, settleCognitionDraft } from './views/memory/cognition-actions.ts';
 import { ModelStore } from './views/models/model-store.ts';
 import { DailySettingsStore } from './views/settings/daily-settings.ts';
 import { PushSwitch } from './views/settings/push-switch.ts';
@@ -54,8 +51,6 @@ export interface Live {
   asks: AsksStore;
   models: ModelStore;
   /** 记忆页「约定」那一段（2026-11-03 起旧的原话 / 解释三栏去掉）。 */
-  agreements: AgreementStore;
-  cognitionActions: CognitionActions;
   signer: SignedSender;
   push: PushSwitch;
   dailySettings: DailySettingsStore;
@@ -93,37 +88,21 @@ export function useTimeZone(): string {
 type ClientParts = ReturnType<typeof useClientState>;
 
 function createLive(api: PlasticineApi, parts: ClientParts, push: PushSwitch): Live {
-  const { actionOps, inlineDrafts, signedOps, editDrafts, feedUi } = parts;
+  const { actionOps, inlineDrafts, signedOps, feedUi } = parts;
   const timeZone = new Store(deviceTimeZone());
   const hub = new EventsHub(api.events);
   const signer = new SignedSender({ api: api.signed, ops: signedOps });
-  const agreements = new AgreementStore(api, hub, signer);
-  const cognitionActions = new CognitionActions({ agreements });
   const toolGroups = createToolGroupStores(api, hub, () => new Date(), timeZone.get());
   const toolGroupActions = new ToolGroupActions({ api, stores: toolGroups, ops: actionOps, drafts: inlineDrafts });
   const memoryTopics = new MemoryTopicsStore(api, signer);
   const asks = new AsksStore(api, hub);
-  signer.onResult((result, op) => {
+  signer.onResult((result) => {
     if (result.kind === 'device_action_answer') {
       void asks.reload();
-    } else if (result.kind === 'agreement') {
-      agreements.applyAgreement(result.agreement);
-      if (op.target.kind === 'agreement_edit') {
-        const body: Record<string, unknown> = JSON.parse(op.bodyText);
-        settleCognitionDraft(editDrafts, op.key, body, result.agreement.version);
-      }
     } else if (result.kind === 'tool_group') {
       toolGroups.toolGroups.apply({ type: 'tool_group.changed', group: result.group });
     } else if (result.kind === 'memory_uncertain') {
       memoryTopics.applyAnswered(result.item);
-    }
-  });
-  signer.onConflict((op, current) => {
-    if (op.target.kind === 'agreement_edit') {
-      cognitionActions.conflict(op.key, current);
-    } else if (op.target.kind === 'agreement_confirm' && Value.Check(AgreementViewSchema, current)) {
-      // 约定没有草稿：换上现在那一版，再点就是按新版确认。
-      agreements.applyAgreement(current);
     }
   });
   const devices = new DeviceStore(api, hub);
@@ -141,8 +120,6 @@ function createLive(api: PlasticineApi, parts: ClientParts, push: PushSwitch): L
     mateActions: new MateActions(api, actionOps, mates),
     asks,
     models: new ModelStore(api),
-    agreements,
-    cognitionActions,
     signer,
     push,
     dailySettings: new DailySettingsStore({ api, ops: actionOps, drafts: inlineDrafts, onSaved: () => undefined }),
@@ -178,7 +155,6 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
     live.lines.start();
     live.mates.start();
     live.asks.start();
-    live.agreements.start();
     live.bookmarks.start();
     live.feed.start();
     live.devices.start();
@@ -214,7 +190,6 @@ export function LiveProvider({ children }: { children: ReactNode }): ReactNode {
       live.devices.stop();
       live.feed.stop();
       live.bookmarks.stop();
-      live.agreements.stop();
       live.asks.stop();
       live.lines.stop();
       live.mates.stop();

@@ -2,7 +2,6 @@ export * from './soul.ts';
 // Request, response and event schemas of the /v2 API, one file per resource. The server validates against these;
 // the client imports the same types from here (plasticine-code 底线 4).
 
-export * from './agreements.ts';
 export * from './asks.ts';
 export * from './outbound.ts';
 export * from './browser.ts';
@@ -11,7 +10,6 @@ export * from './contacts.ts';
 export * from './projects.ts';
 export * from './attachments.ts';
 export * from './money-drafts.ts';
-export * from './device-keys.ts';
 export * from './devices.ts';
 export * from './device-ios.ts';
 export * from './events.ts';
@@ -45,7 +43,6 @@ export * from './calendar.ts';
 export * from './tool-groups.ts';
 export * from './client-updates.ts';
 export * from './backups.ts';
-export * from './agreement-edit.ts';
 export * from './node-channel.ts';
 export * from './mac-bridge.ts';
 export * from './desktop-bridge.ts';

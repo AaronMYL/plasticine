@@ -135,14 +135,12 @@ describe('记忆 · 主题目录', () => {
       .toMatch(/不管有没有把握/);
   });
 
-  it('带 id 的旧词表链接 #/memory/terms/<id> 单独读那一条（只读引用页，不再有词表编辑）', async () => {
-    await renderApp({ hash: '#/memory/terms/agr_term', setup: (fake) => {
-      fake.control.agreements.seed({ id: 'agr_term', kind: 'term', title: '接上', text: '回到上次停下的那一步。' });
-    } });
-    const focus = await within(main()).findByRole('region', { name: '引用的条目' });
-    expect(await within(focus).findByText(/回到上次停下的那一步/)).toBeTruthy();
-    expect(within(main()).queryByRole('region', { name: '词表' })).toBeNull();
-    expect(within(main()).queryByRole('button', { name: '词语版本与编辑' })).toBeNull();
+  it('带 id 的旧约定、旧词表链接（#/memory/agreements/<id>、#/memory/terms/<id>）也到规则搬家：那两样退役了', async () => {
+    await renderApp({ hash: '#/memory/terms/agr_term', setup: seed });
+    expect(await within(main()).findByRole('heading', { level: 1, name: '规则搬家' })).toBeTruthy();
+    window.location.hash = '#/memory/agreements/agr_1';
+    expect(await within(main()).findByRole('heading', { level: 1, name: '规则搬家' })).toBeTruthy();
+    expect(within(main()).queryByRole('region', { name: '引用的条目' })).toBeNull();
   });
 
   it('文档里的 [[名字]] 是双链：点了打开那一篇；页头能改档位，改了目录上的小签跟着变', async () => {

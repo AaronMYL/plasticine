@@ -3,8 +3,7 @@ import { afterEach, test } from 'node:test';
 import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import { BrowserSessions } from '../../src/app/browser-sessions.ts';
 import { SESSION_TTL_MS } from '../../src/app/config.ts';
-import { call, cookieFrom, json, pair, startTestApp, type TestApp } from './helpers.ts';
-import { newDeviceKey, newRequestId, registerKey } from './signing.ts';
+import { call, cookieFrom, json, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
 
 let app: TestApp | undefined;
 afterEach(async () => {
@@ -39,8 +38,6 @@ test('已配对节点打开自身网页用独立系统会话，不要求配对�
   assert.equal(json(session)['actor'], 'system');
   const repeated = await call(t, 'POST', '/v2/nodes/browser-session', { headers, body: {} });
   assert.equal(cookieFrom(repeated), cookie, '同一个内部浏览器复用有效会话');
-  assert.equal((await registerKey(t, cookie, newDeviceKey())).status, 403);
-  assert.equal((await registerKey(t, user, newDeviceKey())).status, 201);
 });
 
 test('没有节点凭证不能换内部会话，localhost 和 Plasticine UA 不产生登录权限', async () => {

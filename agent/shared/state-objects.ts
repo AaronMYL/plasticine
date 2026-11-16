@@ -6,7 +6,6 @@
 
 import { Type, type Static } from 'typebox';
 import { CONFIRMATION_META, IdSchema, IsoTimeSchema, Nullable, OBJECT_META } from './state-common.ts';
-import { TermDefinitionSchema, TermTierSchema } from './terms.ts';
 
 const STRICT = { additionalProperties: false };
 const Text = Type.String({ minLength: 1 });
@@ -204,46 +203,6 @@ export const EvidencePatchSchema = Type.Partial(EvidenceInputSchema, STRICT);
 export type EvidencePatch = Static<typeof EvidencePatchSchema>;
 export const EvidenceSchema = Type.Object({ ...OBJECT_META, ...Type.Required(EvidenceInputSchema).properties });
 export type Evidence = Static<typeof EvidenceSchema>;
-
-// 约定：生效与撤只经设备确认；普通写入只能把它置为待议（under_review）。
-export const AGREEMENT_KINDS = ['collaboration', 'term'] as const;
-export const AGREEMENT_STATES = ['active', 'under_review', 'revoked'] as const;
-export const AgreementInputSchema = Type.Object(
-  {
-    kind: Type.Enum(AGREEMENT_KINDS),
-    text: Text,
-    scope: Type.String(),
-    title: Type.Optional(Nullable(Type.String())),
-    userQuote: Type.Optional(Nullable(Type.String())),
-    quotedAt: Type.Optional(Nullable(IsoTimeSchema)),
-    perUseConfirmation: Type.Optional(Type.Boolean()),
-    premises: Type.Optional(Type.Array(Text)),
-    proposedDiff: Type.Optional(Nullable(Type.String({
-      description: '整段正文 diff：旧行以 - 空格开头，新行以 + 空格开头；上下文行以空格开头。旧侧必须等于当前正文。',
-    }))),
-    termTier: Type.Optional(Nullable(TermTierSchema)),
-    proposedTerm: Type.Optional(Nullable(TermDefinitionSchema)),
-  },
-  STRICT,
-);
-export type AgreementInput = Static<typeof AgreementInputSchema>;
-export const AgreementPatchSchema = Type.Partial(
-  Type.Object({ ...AgreementInputSchema.properties, state: Type.Literal('under_review') }),
-  STRICT,
-);
-export type AgreementPatch = Static<typeof AgreementPatchSchema>;
-export const AgreementConfirmedSchema = Type.Partial(
-  Type.Object({ state: Type.Enum(AGREEMENT_STATES), effectiveAt: Nullable(IsoTimeSchema) }),
-  { ...STRICT, minProperties: 1 },
-);
-export type AgreementConfirmed = Static<typeof AgreementConfirmedSchema>;
-export const AgreementSchema = Type.Object({
-  ...OBJECT_META,
-  ...CONFIRMATION_META,
-  ...Type.Required(AgreementInputSchema).properties,
-  ...Type.Required(AgreementConfirmedSchema).properties,
-});
-export type Agreement = Static<typeof AgreementSchema>;
 
 // 记忆条目：原话和解释分开存（第 4 节两条分离原则），用户删除只打 deletedAt，不删行。
 export const MEMORY_KINDS = ['quote', 'interpretation'] as const;

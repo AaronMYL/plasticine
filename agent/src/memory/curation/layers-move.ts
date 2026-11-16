@@ -1,29 +1,24 @@
-// 记忆分层的搬家（11-15 Aaron：「线上数据和记忆搬家也同意你做了」）：现有的行按层挪到承诺和授权、主动告诉你、做事经验，
-// 在用的旧约定写成承诺和授权里的一行（出处指回那条约定）。Claude 先分好，经维护入口一次落库（有一行已经改过整批不动）；
-// 每一行「加了一行」的事件里带着这一批的操作号，记忆页的搬家记录按它列出来，每条能搬回去。
-// 搬回去：从文档搬来的回到原来那一篇、原来那一段，出处不变；从旧约定来的收回（进「已收回」）。
+// 记忆分层的搬家（11-15 Aaron：「线上数据和记忆搬家也同意你做了」）：现有的行按层挪到承诺和授权、主动告诉你、做事经验。
+// Claude 先分好，经维护入口一次落库（有一行已经改过整批不动）；每一行「加了一行」的事件里带着这一批的操作号，
+// 记忆页的搬家记录按它列出来，每条能搬回去。
+// 搬回去：从文档搬来的回到原来那一篇、原来那一段，出处不变。11-15 那次搬家还把一条在用的旧约定写成了一行
+// （事件里没有 movedFrom）：旧约定的表随后删了，这样的行搬回去就是收回（进「已收回」）。
 
 import {
-  GRANTS_DOC_ID, memorySectionIn, memorySectionsOf, type MemoryDoc, type MemoryDocEvent, type MemoryLine,
-  type MemoryLineSection,
+  memorySectionIn, memorySectionsOf, type MemoryDoc, type MemoryDocEvent, type MemoryLine, type MemoryLineSection,
 } from '../../../shared/state.ts';
-import type { AgreementMoveItem, MemoryMoveItem } from '../../../shared/api/maintenance.ts';
+import type { MemoryMoveItem } from '../../../shared/api/maintenance.ts';
 import type { StateService } from '../../state/index.ts';
-import { addLine, docEvent, retireLine, type Writer } from '../docs/memory-doc-writes.ts';
+import { docEvent, retireLine, type Writer } from '../docs/memory-doc-writes.ts';
 import { moveLine, type CleanupState } from './memory-cleanup.ts';
 
-export type LayersState = CleanupState & Pick<StateService, 'agreements' | 'maintenanceOperations'>;
+export type LayersState = CleanupState & Pick<StateService, 'maintenanceOperations'>;
 
 export const LAYERS_OP = 'memory.layers';
 /** 搬之前的样子留几天：过了就没有这页记录、也不能搬回去了（要挪的在各页里一条条挪）。 */
 export const LAYERS_KEEP_DAYS = 7;
 /** toDocId 写成 how:<名字>：做事经验里那个工具、网站或流程的一篇，没有就建。 */
 const HOW_PREFIX = 'how:';
-
-export interface LayersPlan {
-  moves: readonly MemoryMoveItem[];
-  agreements: readonly AgreementMoveItem[];
-}
 
 function targetDoc(state: LayersState, toDocId: string, writer: Writer): MemoryDoc {
   if (!toDocId.startsWith(HOW_PREFIX)) {
@@ -47,13 +42,13 @@ function targetDoc(state: LayersState, toDocId: string, writer: Writer): MemoryD
   return doc;
 }
 
-/** 一次落库：有一行已经改过（版本对不上）、有一条约定不在用，整批不动。 */
-export function applyLayersMove(state: LayersState, plan: LayersPlan, operationId: string):
-  { moved: number; fromAgreements: number } {
+/** 一次落库：有一行已经改过（版本对不上），整批不动。 */
+export function applyLayersMove(state: LayersState, moves: readonly MemoryMoveItem[], operationId: string):
+  { moved: number } {
   const writer: Writer = { actor: 'system', ref: `maintenance:${operationId}` };
   const tag = { layers: operationId };
   return state.transaction(() => {
-    for (const move of plan.moves) {
+    for (const move of moves) {
       const line = state.memoryDocs.lines.require(move.lineId);
       if (line.retiredAt !== null || line.version !== move.version) {
         throw new Error(`记忆 ${move.lineId} 已经改过，这次没有搬。`);
@@ -61,17 +56,7 @@ export function applyLayersMove(state: LayersState, plan: LayersPlan, operationI
       const target = targetDoc(state, move.toDocId, writer);
       moveLine(state, line, target.id, writer, move.section ?? memorySectionIn(target.kind, line.section), tag);
     }
-    for (const item of plan.agreements) {
-      const agreement = state.agreements.require(item.agreementId);
-      if (agreement.state !== 'active') {
-        throw new Error(`约定 ${item.agreementId} 不在用了，这次没有搬。`);
-      }
-      const target = targetDoc(state, item.toDocId ?? GRANTS_DOC_ID, writer);
-      addLine(state, { docId: target.id, section: item.section, text: (item.text ?? agreement.text).trim(),
-        basis: 'stated', anchors: [{ kind: 'agreement', ref: agreement.id }],
-        eventDetail: { ...tag, fromAgreement: agreement.id } }, writer);
-    }
-    return { moved: plan.moves.length, fromAgreements: plan.agreements.length };
+    return { moved: moves.length };
   });
 }
 

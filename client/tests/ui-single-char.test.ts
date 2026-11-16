@@ -32,7 +32,6 @@ const ALLOWED: Readonly<Record<string, readonly string[]>> = {
   'client/src/views/site/collab-demo.tsx': ['杰'],
   'client/src/views/site/site-page.tsx': ['杰'],
   // 「第 n 版」「有 n 篇」「删 《技能》？……」：JSX 里夹着数字、名字拼的一句话。
-  'client/src/views/memory/change-log.tsx': ['第'],
   'client/src/views/notes/note-versions.tsx': ['第'],
   'client/src/views/notes/note-import.tsx': ['有'],
   'client/src/views/spaces/subscription-settings.tsx': ['日', '一', '二', '三', '四', '五', '六', '第'],

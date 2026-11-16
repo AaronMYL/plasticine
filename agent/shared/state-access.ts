@@ -87,27 +87,3 @@ export const ApiRequestRecordSchema = Type.Object(
 );
 export type ApiRequestRecord = Static<typeof ApiRequestRecordSchema>;
 
-/**
- * 旧设备签名钥匙历史（保留兼容，不再作为本人确认门槛）：ECDSA P-256 公钥，JWK 只留四个公开成员。私钥成员 `d`
- * 不在这里，严格模式下带了 `d` 的钥匙过不了校验，所以私钥永远进不了库。
- */
-const Base64Url32 = Type.String({ pattern: '^[A-Za-z0-9_-]{43}$' });
-export const PublicJwkSchema = Type.Object(
-  { kty: Type.Literal('EC'), crv: Type.Literal('P-256'), x: Base64Url32, y: Base64Url32 },
-  STRICT,
-);
-export type PublicJwk = Static<typeof PublicJwkSchema>;
-
-/** One key per device at a time; `thumbprint` is the RFC 7638 SHA-256 thumbprint in hex. */
-export const DeviceKeyInputSchema = Type.Object(
-  { deviceId: IdSchema, publicKey: PublicJwkSchema, thumbprint: HashSchema },
-  STRICT,
-);
-export type DeviceKeyInput = Static<typeof DeviceKeyInputSchema>;
-export const DeviceKeyPatchSchema = Type.Object({ revokedAt: IsoTimeSchema }, STRICT);
-export const DeviceKeySchema = Type.Object({
-  ...RECORD_META,
-  ...DeviceKeyInputSchema.properties,
-  revokedAt: Nullable(IsoTimeSchema),
-});
-export type DeviceKey = Static<typeof DeviceKeySchema>;

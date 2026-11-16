@@ -7,7 +7,6 @@ import type { CognitionSourceDetail } from '../shared.ts';
 import type { ChangeRecordView, MemoryEntryDetail, MemoryEntryView } from '../types.ts';
 import { memoryEntryView, type MemorySeed } from './cognition-views.ts';
 import type { FakeEventBus } from './event-bus.ts';
-import type { FakeAgreements } from './fake-agreements.ts';
 import type { FakeSession } from './fake-session.ts';
 import { changeRecord } from './history.ts';
 import type { FakeReceipts } from './receipts.ts';
@@ -16,7 +15,6 @@ export interface FakeMemoryDeps {
   session: FakeSession;
   bus: FakeEventBus;
   receipts: FakeReceipts;
-  agreements: FakeAgreements;
   now: () => Date;
 }
 

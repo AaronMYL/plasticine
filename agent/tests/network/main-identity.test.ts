@@ -6,8 +6,7 @@ import { afterEach, test } from 'node:test';
 import { generateIdentityKeys } from '../../src/network/index.ts';
 import { identitySection } from '../../src/lines/prompt.ts';
 import { aiNameOf } from '../../src/mates/main-identity.ts';
-import { call, json, pair, startTestApp, type TestApp } from '../app/helpers.ts';
-import { newRequestId } from '../app/signing.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId } from '../app/helpers.ts';
 import { post, type Body } from './helpers.ts';
 
 const opened: TestApp[] = [];

@@ -4,16 +4,19 @@ import { createFakeApi } from '../../src/api/fake/index.ts';
 import type { SignedSend, SignedTarget } from '../../src/api/signed-targets.ts';
 import { NOW } from '../helpers.tsx';
 
-const TARGET: SignedTarget = { kind: 'agreement_edit', agreementId: 'agr_1' };
-const BODY = '{"requestId":"req_abcdefgh","version":1,"text":"改好","scope":"范围"}';
+// 拿「拿不准的一条说对」当例子（旧约定退役以后，本人确认的写操作里假实现现成有种子的一种）。
+const TARGET: SignedTarget = { kind: 'tool_group', groupId: 'inbox' };
+const BODY = '{"requestId":"req_abcdefgh","version":0,"enabled":false}';
 
 function setup() {
   const fake = createFakeApi({ seed: false, streamStepMs: 0, now: () => NOW });
   fake.control.session.signInForDevelopment('测试机');
   fake.control.session.backdate(11 * 60 * 1000);
-  fake.control.agreements.seed({ id: 'agr_1', text: '原文', scope: '范围', state: 'active' });
   return fake;
 }
+
+const inbox = async (fake: ReturnType<typeof setup>) =>
+  (await fake.api.toolGroups.list()).groups.find((group) => group.id === 'inbox');
 
 describe('假实现 · 本人会话确认', () => {
   it.each<Partial<SignedSend>>([
@@ -23,29 +26,27 @@ describe('假实现 · 本人会话确认', () => {
     const request = { target: TARGET, bodyText: BODY, ...legacy };
     const first = await fake.api.signed.send(request);
     const again = await fake.api.signed.send(request);
-    expect(first).toMatchObject({ kind: 'agreement', agreement: { text: '改好', version: 2 } });
+    expect(first).toMatchObject({ kind: 'tool_group', group: { enabled: false, version: 1 } });
     expect(again).toEqual(first);
-    expect(fake.control.agreements.find('agr_1')?.version).toBe(2);
+    expect((await inbox(fake))?.version).toBe(1);
   });
 
   it('同一个 requestId 换了请求体仍被拒，不覆盖已确认内容', async () => {
     const fake = setup();
     await fake.api.signed.send({ target: TARGET, bodyText: BODY });
-    await expect(fake.api.signed.send({ target: TARGET, bodyText: BODY.replace('改好', '另一版') }))
+    await expect(fake.api.signed.send({ target: TARGET, bodyText: BODY.replace('false', 'true') }))
       .rejects.toMatchObject({ code: 'request_id_reused', status: 409 });
-    expect(fake.control.agreements.find('agr_1')?.text).toBe('改好');
+    expect((await inbox(fake))?.enabled).toBe(false);
   });
 
   const targets: SignedTarget[] = [
     TARGET,
-    { kind: 'agreement_confirm', agreementId: 'agr_1' },
     { kind: 'device_action_answer', askId: 'ask_1' },
     { kind: 'backup_restore', backupId: 'backup_1' },
     { kind: 'money_draft_confirm', draftId: 'draft_1' },
     { kind: 'note_unlock', noteId: 'note_1' },
     { kind: 'node_pairing_code' },
     { kind: 'node_limits', nodeId: 'node_1' },
-    { kind: 'tool_group', groupId: 'group_1' },
     { kind: 'memory_uncertain', uncertainId: 'uncertain_1' },
   ];
   it.each(targets.filter((target) => target.kind !== 'note_unlock'))('系统会话不能写本人确认：$kind', async (target) => {
@@ -53,13 +54,13 @@ describe('假实现 · 本人会话确认', () => {
     fake.control.session.signInForDevelopment('Plasticine 浏览器', 'system');
     await expect(fake.api.signed.send({ target, bodyText: BODY }))
       .rejects.toMatchObject({ code: 'user_confirmation_required', status: 403 });
-    expect(fake.control.agreements.find('agr_1')?.text).toBe('原文');
+    fake.control.session.signInForDevelopment('测试机');
+    expect((await inbox(fake))?.version).toBe(0);
   });
   it.each(targets)('会话已失效仍需登录：$kind', async (target) => {
     const fake = setup();
     fake.control.session.expire();
     await expect(fake.api.signed.send({ target, bodyText: BODY }))
       .rejects.toMatchObject({ code: 'unauthorized', status: 401 });
-    expect(fake.control.agreements.find('agr_1')?.text).toBe('原文');
   });
 });

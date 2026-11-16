@@ -16,7 +16,6 @@ import { HttpCompose } from './compose.ts';
 import { HttpTranslate } from './translate.ts';
 import type { PlasticineApi } from '../client.ts';
 import { HttpAccount } from './account.ts';
-import { HttpAgreements } from './agreements.ts';
 import { HttpAttachments } from './attachments.ts';
 import { HttpBooks } from './books.ts';
 import { createBookmarksHttp } from './bookmarks.ts';
@@ -102,7 +101,6 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     asks: new HttpAsks(transport),
     push: new HttpPush(transport),
     memory: new HttpMemory(transport),
-    agreements: new HttpAgreements(transport),
     signed: new HttpSigned(transport),
     projects: new HttpProjects(transport),
     today: new HttpToday(transport),

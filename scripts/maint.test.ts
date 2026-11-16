@@ -38,19 +38,18 @@ test('mail.refetch：--limit 是这次补几封（1 到 200 的整数），带�
   assert.throws(() => parseMaintArgs(['mail.refetch', '--limit', '五十'], {}, NOW), /--limit/);
 });
 
-test('memory.layers：--plan 是一个对象（挪哪几行、哪几条旧约定写成行），至少给一样', async () => {
+test('memory.layers：--plan 是一个对象 {"moves":[…]}，至少一行', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'maint-layers-'));
   try {
     const plan = join(dir, 'plan.json');
-    await writeFile(plan, JSON.stringify({ moves: [{ lineId: 'line-1', version: 1, toDocId: 'memdoc-proactive',
-      section: 'never' }], agreements: [{ agreementId: 'agreement-1', section: 'allow' }] }));
+    const moves = [{ lineId: 'line-1', version: 1, toDocId: 'memdoc-proactive', section: 'never' }];
+    await writeFile(plan, JSON.stringify({ moves }));
     const parsed = parseMaintArgs(['memory.layers', '--plan', plan, '--because', '记忆搬家同意你做',
       '--op-id', 'layers-1'], {}, NOW);
     assert.deepEqual(parsed.request, { operationId: 'layers-1', op: 'memory.layers', because: '记忆搬家同意你做',
-      moves: [{ lineId: 'line-1', version: 1, toDocId: 'memdoc-proactive', section: 'never' }],
-      agreements: [{ agreementId: 'agreement-1', section: 'allow' }] });
+      moves });
     await writeFile(plan, JSON.stringify({ moves: [] }));
-    assert.throws(() => parseMaintArgs(['memory.layers', '--plan', plan], {}, NOW), /至少给一样/);
+    assert.throws(() => parseMaintArgs(['memory.layers', '--plan', plan], {}, NOW), /至少一行/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

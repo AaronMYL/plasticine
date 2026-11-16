@@ -70,7 +70,6 @@ export interface Route {
    * 页面上说明打不开，而不是让 decodeURIComponent 抛错、整个壳渲染不出来。
    */
   invalidNoteId?: string;
-  termId?: string | null;
   feedItemId?: string | null;
   messageId?: string | null;
   objectId?: string | null;
@@ -78,8 +77,8 @@ export interface Route {
   tasksSection?: TasksSection;
   /** 项目页打开的是哪一个（#/projects/<id>）；列表时为 null。 */
   projectId?: string | null;
-  /** 记忆页单独读一条的对象（引用里的原话、约定、来源）。 */
-  objectType?: 'memory_entry' | 'agreement';
+  /** 记忆页单独读一条的对象（引用里整理前的原话）。 */
+  objectType?: 'memory_entry';
   /** 图书页打开的是哪一本（#/books/<id>）；图书馆时为 null。 */
   bookId?: string | null;
   /** 记忆页打开的是哪一份主题文档（#/memory/topics/<id>）；目录时不带。 */
@@ -310,18 +309,18 @@ export function parseHash(hash: string): Route {
     return { view, noteId: null, projectId: id === undefined ? null : decodedOrNull(id) };
   }
   if (view === 'memory' && id !== undefined) {
-    const types = { entries: 'memory_entry', agreements: 'agreement' } as const;
     // 判断、来源证据删了：#/memory/judgments…、#/memory/sources… 就是记忆页本身。
     if (id === 'judgments' || id === 'sources') {
       return { view, noteId: null };
     }
-    if (id in types) {
-      return { view, noteId: null, objectType: types[id as keyof typeof types],
-        objectId: sub === undefined ? null : decodedOrNull(sub) };
+    // 旧约定、旧词表 11-15 退役：它们的旧地址（带不带哪一条）都到规则搬家。
+    if (id === 'agreements' || id === 'terms') {
+      return { view, noteId: null, memoryRules: true };
     }
-  }
-  if (view === 'memory' && id === 'terms') {
-    return { view, noteId: null, termId: sub === undefined ? null : decodedOrNull(sub) };
+    if (id === 'entries') {
+      const objectId = sub === undefined ? null : decodedOrNull(sub);
+      return { view, noteId: null, objectType: 'memory_entry', objectId };
+    }
   }
   return { view, noteId: null };
 }
@@ -540,9 +539,6 @@ export function routeHash(route: Route): string {
   if (route.view === 'memory' && route.memoryConflicts === true) return '#/memory/conflicts';
   if (route.view === 'memory' && route.memoryCleanup === true) return '#/memory/cleanup';
   if (route.view === 'memory' && route.memoryLayers === true) return '#/memory/layers';
-  if (route.view === 'memory' && route.objectType === 'agreement' && route.objectId == null) {
-    return '#/memory/agreements';
-  }
   if (route.view === 'projects' && route.projectId != null) {
     return productLink('project', route.projectId);
   }
@@ -559,11 +555,7 @@ export function routeHash(route: Route): string {
     return `${productLink('book', route.bookId)}${position}`;
   }
   if (route.objectId != null && route.objectType !== undefined) {
-    const paths = { memory_entry: 'memory/entries', agreement: 'memory/agreements' };
-    return `#/${paths[route.objectType]}/${encodeURIComponent(route.objectId)}`;
-  }
-  if (route.view === 'memory' && route.termId !== undefined) {
-    return route.termId === null ? '#/memory/terms' : `#/memory/terms/${encodeURIComponent(route.termId)}`;
+    return `#/memory/entries/${encodeURIComponent(route.objectId)}`;
   }
   if (route.view === 'notes' && route.noteId !== null) {
     return productLink('note', route.noteId);

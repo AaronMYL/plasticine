@@ -22,11 +22,12 @@ test('模块出口不给数据库句柄：没有 db、没有通用存储、没�
 });
 
 test('关掉再打开，写过的对象都还在', () => {
-  const agreement = t.state.agreements.create({ kind: 'collaboration', text: '先问再做', scope: '合作' }, brainChange());
+  const entry = t.state.memory.create({ kind: 'quote', basis: 'self_reported', text: '先问再做',
+    sourceId: 'source-user-said', provenance: '对话' }, brainChange());
   t.close();
   const reopened = stateModule.openState({ path: t.path });
   try {
-    assert.equal(reopened.agreements.require(agreement.id).text, agreement.text);
+    assert.equal(reopened.memory.require(entry.id).text, entry.text);
     assert.deepEqual(reopened.newlyApplied, []);
   } finally {
     reopened.close();

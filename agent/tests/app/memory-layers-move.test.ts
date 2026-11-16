@@ -1,5 +1,6 @@
-// 记忆分层的搬家（11-15 Aaron 同意由 Claude 做）：经维护入口一次落库——几行按层挪到承诺和授权、主动告诉你、做事经验，
-// 在用的旧约定写成承诺和授权里的行；记忆页有一页记录，每条能搬回去（回到原来那一篇、原来那一段，出处不变）。
+// 记忆分层的搬家（11-15 Aaron 同意由 Claude 做）：经维护入口一次落库——几行按层挪到承诺和授权、主动告诉你、做事经验；
+// 记忆页有一页记录，每条能搬回去（回到原来那一篇、原来那一段，出处不变）。11-15 那次还把一条旧约定写成了一行
+// （事件里带 layers、没有 movedFrom）：旧约定的表删了以后这样的行照样列在记录里，搬回去是收回。
 
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
@@ -9,7 +10,7 @@ import { LayersMoveResponseSchema, MEMORY_LAYERS_MOVE_PATH, MEMORY_LAYERS_MOVE_U
 import { GRANTS_DOC_ID, PROACTIVE_DOC_ID, YOU_DOC_ID } from '../../shared/state.ts';
 import { MaintenanceFailure, runMaintenance } from '../../src/app/maintenance.ts';
 import { layersMoveView, undoLayersMove } from '../../src/memory/index.ts';
-import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writes.ts';
+import { addLine, docEvent, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writes.ts';
 import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
 
 let t: TestApp | undefined;
@@ -25,9 +26,14 @@ function said(app: TestApp, text: string) {
   return addLine(app.state, { docId: YOU_DOC_ID, text, basis: 'stated', anchors }, { actor: 'brain', ref: 'run' });
 }
 
-function agreement(app: TestApp, text: string) {
-  return app.state.agreements.importEffective({ kind: 'collaboration', text, scope: '共同讨论' },
-    '2026-10-21T00:00:00.000Z', null, '旧约定');
+/** 11-15 线上那次搬家里从旧约定写成的那种行：出处指回旧约定，事件带这一批的操作号、没有 movedFrom。 */
+function fromOldAgreement(app: TestApp, operationId: string, text: string, section: 'allow' | 'ask') {
+  const writer = { actor: 'system' as const, ref: `maintenance:${operationId}` };
+  const line = addLine(app.state, { docId: GRANTS_DOC_ID, section, text, basis: 'stated',
+    anchors: [{ kind: 'agreement', ref: 'agreement-old-1' }] }, writer);
+  docEvent(app.state, GRANTS_DOC_ID, line.id, 'line_added', writer,
+    { section, basis: 'stated', layers: operationId, fromAgreement: 'agreement-old-1' });
+  return line;
 }
 
 async function record(app: TestApp, cookie: string): Promise<LayersMoveResponse> {
@@ -36,7 +42,7 @@ async function record(app: TestApp, cookie: string): Promise<LayersMoveResponse>
   return body;
 }
 
-test('搬家：几行按层挪过去、旧约定写成行；记录里列出搬了哪些、原来在哪、没动的有几行', async () => {
+test('搬家：几行按层挪过去；记录里列出搬了哪些、原来在哪、没动的有几行，从旧约定来的也在', async () => {
   t = await startTestApp();
   const cookie = await pair(t);
   ensureMemoryDocs(t.state);
@@ -44,12 +50,11 @@ test('搬家：几行按层挪过去、旧约定写成行；记录里列出搬�
   const home = said(t, '住在杭州');
   const quiet = said(t, '周末不提工作上的事');
   const mail = said(t, '发邮件之前先把草稿给我看');
-  const old = agreement(t, '定时任务可以自己加，加完告诉我');
   const done = runMaintenance({ state: t.state }, { operationId: 'layers-move-1', op: 'memory.layers', because: BECAUSE,
     moves: [{ lineId: quiet.id, version: quiet.version, toDocId: PROACTIVE_DOC_ID, section: 'never' },
-      { lineId: mail.id, version: mail.version, toDocId: 'how:发邮件', section: 'do' }],
-    agreements: [{ agreementId: old.id, section: 'allow', text: '定时任务可以自己加，加完告诉你' }] });
-  assert.deepEqual(done.result, { moved: 2, fromAgreements: 1 });
+      { lineId: mail.id, version: mail.version, toDocId: 'how:发邮件', section: 'do' }] });
+  assert.deepEqual(done.result, { moved: 2 });
+  fromOldAgreement(t, 'layers-move-1', '定时任务可以自己加，加完告诉你', 'allow');
   const never = t.state.memoryDocs.lines.live(PROACTIVE_DOC_ID);
   assert.deepEqual(never.map((line) => [line.section, line.text, line.anchors]),
     [['never', '周末不提工作上的事', anchors]]);
@@ -58,7 +63,7 @@ test('搬家：几行按层挪过去、旧约定写成行；记录里列出搬�
   assert.equal(t.state.memoryDocs.lines.live(how!.id)[0]?.basis, 'stated', '他说的做法，不是试出来的');
   const granted = t.state.memoryDocs.lines.live(GRANTS_DOC_ID)[0]!;
   assert.deepEqual([granted.section, granted.text, granted.anchors],
-    ['allow', '定时任务可以自己加，加完告诉你', [{ kind: 'agreement', ref: old.id }]]);
+    ['allow', '定时任务可以自己加，加完告诉你', [{ kind: 'agreement', ref: 'agreement-old-1' }]]);
   assert.deepEqual(t.state.memoryDocs.lines.live(YOU_DOC_ID).map((line) => line.id), [home.id]);
 
   const { move } = await record(t, cookie);
@@ -80,11 +85,10 @@ test('搬回去一条：回到原来那一篇，出处不变，记录里不再�
   ensureMemoryDocs(t.state);
   const quiet = said(t, '周末不提工作上的事');
   const style = said(t, '一句话说完，细节放链接里');
-  const old = agreement(t, '改线上数据之前先问');
   runMaintenance({ state: t.state }, { operationId: 'layers-move-2', op: 'memory.layers', because: BECAUSE,
     moves: [{ lineId: quiet.id, version: quiet.version, toDocId: PROACTIVE_DOC_ID, section: 'never' },
-      { lineId: style.id, version: style.version, toDocId: PROACTIVE_DOC_ID, section: 'style' }],
-    agreements: [{ agreementId: old.id, section: 'ask' }] });
+      { lineId: style.id, version: style.version, toDocId: PROACTIVE_DOC_ID, section: 'style' }] });
+  fromOldAgreement(t, 'layers-move-2', '改线上数据之前先问', 'ask');
   const before = (await record(t, cookie)).move!;
   const moved = before.items.find((item) => item.text === '周末不提工作上的事')!;
   const one = await call(t, 'POST', MEMORY_LAYERS_MOVE_UNDO_PATH, { cookie,

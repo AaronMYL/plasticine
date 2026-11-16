@@ -6,7 +6,7 @@ import type { MemoryAnchor } from '../../shared/state.ts';
 import { clip } from '../util/index.ts';
 import type { StateService } from '../state/index.ts';
 
-export type SourceState = Pick<StateService, 'lineMessages' | 'lines' | 'notes' | 'agreements' | 'memory'
+export type SourceState = Pick<StateService, 'lineMessages' | 'lines' | 'notes' | 'memory'
   | 'contactMessages'>;
 
 const LABEL_CHARS = 20;
@@ -46,10 +46,8 @@ export function sourceOf(state: SourceState, anchor: MemoryAnchor): MemoryLineSo
       at: note?.updatedAt ?? EPOCH };
   }
   if (anchor.kind === 'agreement' || anchor.kind === 'term') {
-    // 迁进「怎么替你做事」的行指回原来那条约定或词表条目（词表也存在约定表里；两张都不动，点过去只读那一条）。
-    const agreement = state.agreements.get(anchor.ref);
-    return { kind: 'agreement', id: anchor.ref, label: anchor.kind === 'term' ? '词表' : '约定',
-      at: agreement?.createdAt ?? EPOCH };
+    // 从旧约定、旧词表迁进来的行：那两样 11-15 退役、表删了，这里只说它是从哪来的，点不过去。
+    return { kind: 'agreement', id: anchor.ref, label: anchor.kind === 'term' ? '旧词表' : '旧约定', at: EPOCH };
   }
   if (anchor.kind === 'work') {
     // 记忆分层：Plasticine 做事时试出来的，出处是那条线（哪件事）；点过去是那条线。
