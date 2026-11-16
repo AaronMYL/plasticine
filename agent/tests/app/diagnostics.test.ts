@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { Diagnostics, whereOf } from '../../src/app/diagnostics.ts';
+import { matchRoute } from '../../src/app/router.ts';
 import { createServerHealthTool } from '../../src/app/server-health-tool.ts';
 import { toolContext } from '../tools/helpers.ts';
 import { call, pair, startTestApp, type TestApp } from './helpers.ts';
@@ -56,4 +57,10 @@ test('server_health 给齐服务、机器和汇总', async () => {
   assert.ok(result.service.rssMb > 0);
   assert.ok(result.machine.cores > 0);
   assert.equal(result.routes[0]?.route, 'GET /v2/lines');
+});
+
+test('设备领动作的长轮询标成 longPoll，不记进慢请求', () => {
+  const match = matchRoute('GET', '/v2/nodes/actions/next');
+  assert.equal(match.kind, 'found');
+  assert.equal(match.kind === 'found' && match.route.longPoll, true);
 });

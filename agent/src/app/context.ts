@@ -148,6 +148,8 @@ export interface Route {
    */
   node?: boolean;
   handler: Handler;
+  /** 长轮询：耗时是等出来的，不记进慢请求（11-16 服务日志）。 */
+  longPoll?: boolean;
 }
 
 export function requireAuth(context: RequestContext): AuthContext {

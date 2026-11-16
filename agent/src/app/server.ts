@@ -17,6 +17,8 @@ interface Asker {
   own: boolean;
   /** 认出来的路由模板（`/v2/lines/:lineId`）；没认出来是 null。日志和体检只记它，不记真路径。 */
   route: string | null;
+  /** 长轮询（设备领动作）：等出来的耗时不算慢。 */
+  longPoll: boolean;
 }
 
 async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse, asker: Asker):
@@ -25,6 +27,7 @@ async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse,
   const match = matchRoute(req.method ?? 'GET', url.pathname);
   if (match.kind === 'found') {
     asker.route = match.route.path;
+    asker.longPoll = match.route.longPoll === true;
   }
   if (match.kind === 'none') {
     throw new ApiError(404, 'not_found', '没有这个接口。', { next: '核对路径；接口都以 /v2/ 开头。' });
@@ -67,6 +70,9 @@ function writeError(deps: AppDeps, pathname: string, res: ServerResponse, error:
 /** 记一个请求的耗时（等回答写完）；慢的写日志。流式的（事件流）不算。 */
 function timeRequest(deps: AppDeps, res: ServerResponse, asker: Asker, method: string, started: number): void {
   res.once('finish', () => {
+    if (asker.longPoll) {
+      return;
+    }
     const ms = performance.now() - started;
     const route = asker.route ?? '(未知路由)';
     deps.diagnostics.request(route, method, res.statusCode, ms);
@@ -78,7 +84,7 @@ function timeRequest(deps: AppDeps, res: ServerResponse, asker: Asker, method: s
 
 async function handle(deps: AppDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
   let pathname = '';
-  const asker: Asker = { own: false, route: null };
+  const asker: Asker = { own: false, route: null, longPoll: false };
   const method = req.method ?? 'GET';
   const started = performance.now();
   try {

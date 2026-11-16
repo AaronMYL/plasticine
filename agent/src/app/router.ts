@@ -476,7 +476,7 @@ export const ROUTES: readonly Route[] = [
   // 执行节点（App 一侧要会话；节点一侧凭证在 authorization 头里，自己验）。
   { method: 'GET', path: NODES_PATH, auth: true, handler: listNodes },
   { method: 'GET', path: NODE_ACTIONS_PATH, auth: true, handler: listNodeActions },
-  { method: 'GET', path: NODE_NEXT_ACTION_PATH, auth: false, node: true, handler: nextNodeAction },
+  { method: 'GET', path: NODE_NEXT_ACTION_PATH, auth: false, node: true, longPoll: true, handler: nextNodeAction },
   { method: 'POST', path: `${NODE_ACTIONS_PATH}/:id/result`, auth: false, node: true, handler: reportNodeAction },
   { method: 'POST', path: NODE_PAIRING_CODES_PATH, auth: true, handler: issueNodePairingCode },
   { method: 'POST', path: `${NODES_PATH}/:id/revoke`, auth: true, handler: revokeNodeHandler },
