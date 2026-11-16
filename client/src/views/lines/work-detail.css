@@ -107,7 +107,7 @@
 
 .work-plan-bar {
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--tint2);
   overflow: hidden;
 }
@@ -138,7 +138,7 @@
 
 .work-plan-step > .glyph {
   flex: none;
-  margin: 0 3px;
+  margin: 0 var(--space-hair);
 }
 
 .work-plan-step[data-status='done'],

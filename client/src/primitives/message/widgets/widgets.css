@@ -193,7 +193,7 @@
 .widget-table-sort {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-hair);
   padding: 0;
   border: 0;
   background: none;
@@ -317,7 +317,7 @@
   width: 8px;
   height: 8px;
   margin-right: var(--space-1);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* ---------- 工具卡 ---------- */
