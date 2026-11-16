@@ -154,6 +154,8 @@
 | `--ch-report-accent` | `#a1674e` |
 | `--ch-size-hero` | `52px` |
 | `--ch-size-lead` | `17px` |
+| `--ch-size-display` | `clamp(38px, 6vw, 76px)` |
+| `--ch-size-title` | `clamp(30px, 4vw, 48px)` |
 | `--ch-size-section` | `40px` |
 | `--ch-size-figure` | `26px` |
 | `--ch-size-window` | `20px` |
@@ -161,6 +163,9 @@
 | `--ch-size-section-phone` | `28px` |
 | `--ch-size-card` | `18px` |
 | `--ch-shadow-button` | `0 8px 28px rgba(211, 146, 116, 0.28)` |
+| `--ch-shadow-stage` | `0 0 0 1px var(--line2), 0 40px 120px rgb(0 0 0 / 55%)` |
+| `--ch-shadow-phone` | `0 0 0 1px var(--line2), 0 0 0 10px var(--layer-bar), 0 40px 100px rgb(0 0 0 / 55%)` |
+| `--ch-shadow-spark` | `0 0 12px var(--accent)` |
 | `--ch-shadow-panel` | `inset 0 0 0 1px var(--ch-line), 0 30px 80px rgba(0, 0, 0, 0.45)` |
 | `--ch-shadow-node` | `inset 0 0 0 1px rgba(211, 146, 116, 0.45)` |
 | `--ch-shadow-node-peer` | `inset 0 0 0 1px rgba(159, 178, 208, 0.45)` |

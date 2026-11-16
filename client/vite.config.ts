@@ -12,6 +12,7 @@ import { buildVersion } from './build-version.ts';
 import { apiMode } from './src/api/select-api.ts';
 
 const AGENT_ORIGIN = 'http://127.0.0.1:8790';
+const RELAY_PAGES = ['download.html', 'site.html', 'demo.html'];
 const { buildId, builtAt } = buildVersion();
 
 export default defineConfig(({ mode }) => {
@@ -23,14 +24,16 @@ export default defineConfig(({ mode }) => {
       __PLASTICINE_BUILT_AT__: JSON.stringify(builtAt) },
     build: { rollupOptions: { input: { main: fileURLToPath(new URL('./index.html', import.meta.url)),
       download: fileURLToPath(new URL('./download.html', import.meta.url)),
-      site: fileURLToPath(new URL('./site.html', import.meta.url)) } } },
+      site: fileURLToPath(new URL('./site.html', import.meta.url)),
+      demo: fileURLToPath(new URL('./demo.html', import.meta.url)) } } },
     experimental: {
       renderBuiltUrl(filename, context) {
-        // 下载页和官网由中继独立服务；共享 chunk 的相对 import、CSS 的相对字体仍在这个资源前缀下。
-        if (context.hostType === 'html' && (context.hostId === 'download.html' || context.hostId === 'site.html')) {
+        // 下载页、官网和官网里嵌的演示页由中继独立服务；共享 chunk 的相对 import、CSS 的相对字体仍在这个资源前缀下。
+        if (context.hostType === 'html' && RELAY_PAGES.includes(context.hostId)) {
           return `/download/ui/${filename}`;
         }
-        if (context.hostType === 'css') return { relative: true };
+        // 按需加载的页面预取样式时也用相对地址：演示页的资源在 /download/ui/assets/ 下，主应用在 /assets/ 下。
+        if (context.hostType === 'css' || context.hostType === 'js') return { relative: true };
         return undefined;
       },
     },

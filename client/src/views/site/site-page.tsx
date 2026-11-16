@@ -1,10 +1,9 @@
-// Cyber Hunter 官网（11-09 设计稿，他看过说「按照这个做」）：页头 · 首屏（一句话 + 协作演示）· 功能（五个小演示）·
-// 上手五步 · 下载 · 页脚。演示都写死，标「演示」；下载地址只来自发布清单（指向 GitHub Releases）。
+// Cyber Hunter 官网（11-15 他看过会动的预览说「就按照这版做」）：页头 · 首屏 · 舞台（真界面自动演示）· 手机直连 ·
+// 端到端加密的范围 · 下载 · 常见问题 · 页脚。整页底下是应用里那套动态背景。下载地址只来自发布清单。
 
-import { useState, type ReactNode } from 'react';
-import { CollabDemo } from './collab-demo.tsx';
-import { FEATURES, FeatureDemo, type FeatureId } from './feature-demos.tsx';
+import { useRef, type ReactNode } from 'react';
 import { HeroDownload, SiteDownloads } from './site-download.tsx';
+import { Cipher, PhoneLink, Sea, Stage } from './site-stage.tsx';
 
 const REPO = 'https://github.com/AaronMYL/plasticine';
 
@@ -27,10 +26,11 @@ function Header(): ReactNode {
       <div className="ch-wrap ch-header-row">
         <Brand />
         <nav className="ch-nav" aria-label="页面导航">
-          <a className="ch-nav-link" href="#collab">协作</a>
-          <a className="ch-nav-link" href="#features">功能</a>
-          <a className="ch-nav-link" href="#start">上手</a>
+          <a className="ch-nav-link" href="#stage">演示</a>
+          <a className="ch-nav-link" href="#phone">手机</a>
+          <a className="ch-nav-link" href="#encryption">加密</a>
           <a className="ch-nav-link" href="#download">下载</a>
+          <a className="ch-nav-link" href="#faq">常见问题</a>
           <a className="ch-nav-link" href={REPO}>GitHub</a>
         </nav>
         <a className="ch-btn ch-btn-primary ch-btn-small" href="#download">下载</a>
@@ -41,101 +41,65 @@ function Header(): ReactNode {
 
 function Hero(): ReactNode {
   return (
-    <section id="top" className="ch-hero">
-      <div className="ch-grid-bg" />
-      <div className="ch-glow" />
-      <div className="ch-wrap ch-hero-grid">
-        <div className="ch-hero-copy">
-          <h1 className="ch-h1">个人 AI 工作台，也能和联系人的 AI 协作</h1>
-          <p className="ch-lead">Plasticine 运行在你自己的电脑或服务器上。通过 Cyber Hunter 把任务交给联系人和他们的 AI，消息端到端加密。</p>
-          <div className="ch-row" style={{ marginTop: 8 }}>
-            <HeroDownload />
-            <a className="ch-btn ch-btn-ghost" href="#features">看看能做什么</a>
-          </div>
-          <div className="ch-facts ch-mono"><span>免费</span><span>开源（AGPL-3.0）</span><span>数据只存在你自己的设备上</span></div>
-        </div>
-        <CollabDemo />
+    <section id="top" className="ch-wrap site-hero">
+      <h1 className="site-h1">个人 AI 工作台，也能和联系人的 AI 协作</h1>
+      <p className="site-lead">Plasticine 运行在你自己的电脑或服务器上。主线带着一组队友替你读、写、动手；
+        也能和联系人的 Plasticine 互相交任务，消息端到端加密。</p>
+      <div className="site-actions">
+        <HeroDownload />
+        <a className="ch-btn ch-btn-ghost" href="#stage">看演示</a>
       </div>
+      <div className="ch-facts ch-mono"><span>免费</span><span>开源（AGPL-3.0）</span><span>数据只存在你自己的设备上</span></div>
     </section>
   );
 }
 
-function Features(): ReactNode {
-  const [id, setId] = useState<FeatureId>('notes');
-  const feature = FEATURES.find((item) => item.id === id) ?? FEATURES[0];
-  if (feature === undefined) return null;
+function Phone(): ReactNode {
   return (
-    <section id="features" className="ch-section">
-      <div className="ch-wrap ch-stack">
-        <div className="ch-section-head">
-          <span className="ch-eyebrow ch-mono">Plasticine</span>
-          <h2 className="ch-h2">一个人用</h2>
-        </div>
-        <div className="ch-tabs" role="tablist" aria-label="功能">
-          {FEATURES.map((item) => (
-            <button key={item.id} type="button" role="tab" className="ch-tab" aria-selected={item.id === id}
-              aria-controls="ch-feature-panel" onClick={() => setId(item.id)}>{item.label}</button>
-          ))}
-        </div>
-        <div className="ch-feature" id="ch-feature-panel" role="tabpanel" aria-label={feature.label}>
-          <div className="ch-feature-copy" key={`copy-${id}`}>
-            <h3 className="ch-rise">{feature.title}</h3>
-            <p className="ch-rise-2">{feature.line}</p>
-            <span className="ch-pill ch-mono" style={{ alignSelf: 'flex-start', marginTop: 6 }}><i />演示 · 点右边试试</span>
-          </div>
-          <div className="ch-win">
-            <div className="ch-winbar" aria-hidden="true">
-              <b /><b /><b /><span className="ch-mono" style={{ marginLeft: 6 }}>{feature.window}</span>
-            </div>
-            <div className="ch-winbody" key={id}><FeatureDemo id={id} /></div>
-          </div>
-        </div>
-      </div>
+    <section id="phone" className="ch-wrap site-section">
+      <span className="site-label">手机</span>
+      <h2 className="site-h2">手机网页直连你的电脑</h2>
+      <p className="site-lead">不用装应用：手机浏览器打开你自己的地址，登录后用的就是电脑上那一个 Plasticine。</p>
+      <PhoneLink />
     </section>
   );
 }
 
-const TUTORIAL: ReadonlyArray<{ title: string; line: string; mini: ReactNode; column?: boolean }> = [
-  { title: '下载安装', line: 'Windows、Mac 各一个安装包。', mini: (
-    <span className="ch-btn ch-btn-primary ch-btn-small" aria-hidden="true">安装</span>) },
-  { title: '建账号', line: '起一个 @账号，设个密码。', column: true, mini: <>
-    <span className="ch-field ch-mono">@xiaolin</span>
-    <span className="ch-field" style={{ letterSpacing: '0.2em', color: 'var(--ch-fg3)' }}>••••••••</span>
-  </> },
-  { title: '连模型', line: '选一个模型服务，登录你的订阅。', mini: <>
-    <span className="ch-chip ch-chip-mute">ChatGPT</span><span className="ch-chip">Claude</span>
-    <span className="ch-chip ch-chip-mute">更多</span>
-  </> },
-  { title: '加联系人', line: '输入对方的 @账号，对方同意就连上。', mini: <>
-    <span className="ch-dot">你</span><span className="ch-mini-link" /><span className="ch-dot ch-dot-peer">杰</span>
-  </> },
-  { title: '发起协作', line: '说要做什么，需要谁就邀请谁。', mini: (
-    <span className="ch-bubble ch-bubble-me" style={{ fontSize: 12, padding: '6px 10px', maxWidth: '100%' }}>
-      帮我和阿杰排个行程</span>) },
+function Encryption(): ReactNode {
+  return (
+    <section id="encryption" className="ch-wrap site-section">
+      <span className="site-label">加密</span>
+      <h2 className="site-h2">端到端加密保护什么</h2>
+      <Cipher text="封面按这个尺寸来。" />
+      <ul className="site-scope">
+        <li><strong>加密的</strong>和联系人、群组的消息，任务卡和附件；手机到你电脑的连接。</li>
+        <li><strong>中继看得到的</strong>谁发给谁、什么时候、是消息还是任务，以及任务到了哪一步。</li>
+        <li><strong>不在范围里的</strong>你发给模型提供商的内容；存在你电脑上的数据，由你的电脑保管。</li>
+      </ul>
+    </section>
+  );
+}
+
+const FAQ: readonly { ask: string; answer: string }[] = [
+  { ask: '数据存在哪里？', answer: '存在运行 Plasticine 的那台电脑或服务器上。Cyber Hunter 的中继只转发加密后的消息，读不到内容。' },
+  { ask: '要自己准备模型吗？', answer: '要。在设置里连上你自己的模型账号，对话内容会发给你选的模型提供商，费用也付给他们。' },
+  { ask: '队友是什么？', answer: '你给主线配的专职 AI，各有自己的设定，记忆是共用的。主线把事交给队友，队友之间也能交接、领任务卡。' },
+  { ask: '手机上怎么用？', answer: '用手机浏览器打开你自己的地址并登录，不用装应用。电脑要开着并且联网。' },
+  { ask: '收费吗？', answer: 'Plasticine 免费、开源（AGPL-3.0）。' },
 ];
 
-function Start(): ReactNode {
+function Faq(): ReactNode {
   return (
-    <section id="start" className="ch-section">
-      <div className="ch-wrap ch-stack">
-        <div className="ch-section-head">
-          <span className="ch-eyebrow ch-mono">上手</span>
-          <h2 className="ch-h2">五步上手</h2>
-        </div>
-        <ol className="ch-tuts">
-          {TUTORIAL.map((item, index) => (
-            <li key={item.title} className="ch-tut">
-              <div className={item.column === true ? 'ch-mini ch-mini-col' : 'ch-mini'} aria-hidden="true">
-                {item.mini}
-              </div>
-              <div>
-                <div className="ch-no ch-mono">{`0${index + 1}`}</div>
-                <h3>{item.title}</h3>
-                <p>{item.line}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
+    <section id="faq" className="ch-wrap site-section">
+      <span className="site-label">常见问题</span>
+      <h2 className="site-h2">常见问题</h2>
+      <div className="site-faq">
+        {FAQ.map((item) => (
+          <details key={item.ask} className="site-faq-item">
+            <summary>{item.ask}</summary>
+            <p>{item.answer}</p>
+          </details>
+        ))}
       </div>
     </section>
   );
@@ -171,14 +135,18 @@ function Footer(): ReactNode {
 }
 
 export function SitePage(): ReactNode {
+  const page = useRef<HTMLDivElement>(null);
   return (
-    <div className="ch">
+    <div className="ch" ref={page}>
+      <Sea page={page} />
       <Header />
       <main>
         <Hero />
-        <Features />
-        <Start />
+        <section className="ch-wrap"><Stage /></section>
+        <Phone />
+        <Encryption />
         <Download />
+        <Faq />
       </main>
       <Footer />
     </div>

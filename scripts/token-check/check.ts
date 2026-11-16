@@ -147,19 +147,23 @@ export const SITE_TOKENS: readonly string[] = [
   'ch-peer-bg', 'ch-link-active', 'ch-link-mine', 'ch-link-peer', 'ch-flow', 'ch-stage-bg', 'ch-accent-wash',
   'ch-blue-wash', 'ch-ok-wash', 'ch-blue-line', 'ch-accent-line', 'ch-mark', 'ch-paper', 'ch-ink', 'ch-ink2',
   'ch-highlight', 'ch-accent-line-strong', 'ch-paper-meta', 'ch-error', 'ch-report-accent', 'ch-size-hero',
-  'ch-size-lead', 'ch-size-section', 'ch-size-figure', 'ch-size-window', 'ch-size-hero-phone',
-  'ch-size-section-phone', 'ch-size-card', 'ch-shadow-button', 'ch-shadow-panel', 'ch-shadow-node',
+  'ch-size-lead', 'ch-size-display', 'ch-size-title', 'ch-size-section', 'ch-size-figure', 'ch-size-window',
+  'ch-size-hero-phone',
+  'ch-size-section-phone', 'ch-size-card', 'ch-shadow-button', 'ch-shadow-stage', 'ch-shadow-phone',
+  'ch-shadow-spark', 'ch-shadow-panel', 'ch-shadow-node',
   'ch-shadow-node-peer', 'ch-shadow-node-active', 'ch-shadow-node-peer-active', 'ch-shadow-bubble',
   'ch-shadow-bubble-peer', 'ch-shadow-invite', 'ch-shadow-window', 'ch-shadow-book', 'ch-shadow-archive',
 ];
 
 export const SITE_FONT_TOKENS: readonly string[] = [
-  'ch-size-hero', 'ch-size-lead', 'ch-size-section', 'ch-size-figure', 'ch-size-window', 'ch-size-hero-phone',
+  'ch-size-hero', 'ch-size-lead', 'ch-size-display', 'ch-size-title', 'ch-size-section', 'ch-size-figure',
+  'ch-size-window', 'ch-size-hero-phone',
   'ch-size-section-phone', 'ch-size-card',
 ];
 
 export const SITE_SHADOW_TOKENS: readonly string[] = [
-  'ch-shadow-button', 'ch-shadow-panel', 'ch-shadow-node', 'ch-shadow-node-peer', 'ch-shadow-node-active',
+  'ch-shadow-button', 'ch-shadow-stage', 'ch-shadow-phone', 'ch-shadow-spark', 'ch-shadow-panel', 'ch-shadow-node',
+  'ch-shadow-node-peer', 'ch-shadow-node-active',
   'ch-shadow-node-peer-active', 'ch-shadow-bubble', 'ch-shadow-bubble-peer', 'ch-shadow-invite',
   'ch-shadow-window', 'ch-shadow-book', 'ch-shadow-archive',
 ];

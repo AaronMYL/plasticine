@@ -28,9 +28,6 @@ const ALLOWED: Readonly<Record<string, readonly string[]>> = {
   // 提供商列表里头像方块上的一个字、抖音卡的来源方块（装饰，读屏不念，名字在旁边）。
   'client/src/views/models/model-store.ts': ['通', '智'],
   'client/src/views/feed/feed-body.tsx': ['抖'],
-  // 官网示例联系人的装饰头像，完整名字「阿杰」在旁边。
-  'client/src/views/site/collab-demo.tsx': ['杰'],
-  'client/src/views/site/site-page.tsx': ['杰'],
   // 「第 n 版」「有 n 篇」「删 《技能》？……」：JSX 里夹着数字、名字拼的一句话。
   'client/src/views/notes/note-versions.tsx': ['第'],
   'client/src/views/notes/note-import.tsx': ['有'],
@@ -52,10 +49,9 @@ export function singleCharHits(path: string, source: string): string[] {
 }
 
 describe('中文命名不用单字', () => {
-  it('官网头像只放行指定文件的「杰」，其他字和应用中的名字仍检查', () => {
+  it('官网和应用中的名字一样检查，没有放行的单字', () => {
     const avatar = '<span>杰</span>';
-    expect(singleCharHits(`${ROOT}/client/src/views/site/collab-demo.tsx`, avatar)).toEqual([]);
-    expect(singleCharHits(`${ROOT}/client/src/views/site/site-page.tsx`, avatar)).toEqual([]);
+    expect(singleCharHits(`${ROOT}/client/src/views/site/site-page.tsx`, avatar)).toHaveLength(1);
     expect(singleCharHits(`${ROOT}/client/src/views/home/home.tsx`, avatar)).toHaveLength(1);
     expect(singleCharHits(`${ROOT}/client/src/views/site/site-page.tsx`, '<button>改</button>')).toHaveLength(1);
   });
