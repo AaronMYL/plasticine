@@ -130,6 +130,8 @@ export class FakeNodes implements NodesApi {
       limitsAreDefault: true,
       limitsConfirmedAt: null,
       usage: { read: 0, write: 0, delete: 0, command: 0, browser: 0, input: 0 },
+      online: true,
+      work: { state: 'idle', actionId: null, kind: null, step: null, since: null, reportedAt: at },
       version: 1,
     });
   }

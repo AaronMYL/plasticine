@@ -1,0 +1,57 @@
+// 每种设备动作最多做多久（11-16）：18:48 那次截图在隐藏标签上一直不返回，整个设备服务跟着卡住、不再报到。
+// 现在每个动作都有时限（设备照它放下卡住的动作，服务器照它判「卡住」），到点就交回「卡在哪一步、能不能直接再做」，
+// 设备服务接着领下一个；那个没返回的就地放下。
+// 时限按动作本身最慢的正常情况定，留足余量；跑命令按它自己带的时限再加半分钟。
+
+import type { DeviceActionKind } from './state.ts';
+
+const SECOND = 1000;
+const DEFAULT_LIMIT_MS = 120 * SECOND;
+const COMMAND_EXTRA_MS = 30 * SECOND;
+const COMMAND_DEFAULT_MS = 300 * SECOND;
+
+const LIMITS_MS: Partial<Record<DeviceActionKind, number>> = {
+  tab_list: 15 * SECOND,
+  tab_shot: 25 * SECOND,
+  tab_point: 30 * SECOND,
+  tab_type: 30 * SECOND,
+  tab_click: 30 * SECOND,
+  tab_fill: 30 * SECOND,
+  tab_act: 45 * SECOND,
+  tab_perceive: 60 * SECOND,
+  tab_read: 60 * SECOND,
+  tab_open: 60 * SECOND,
+  tab_navigate: 60 * SECOND,
+  screen_capture: 30 * SECOND,
+  input_click: 45 * SECOND,
+  input_type: 45 * SECOND,
+  app_open: 30 * SECOND,
+  browser_open: 20 * SECOND,
+  browser_read: 90 * SECOND,
+  file_list: 60 * SECOND,
+  file_read: 60 * SECOND,
+  file_write: 60 * SECOND,
+  file_delete: 60 * SECOND,
+  calendar_list: 60 * SECOND,
+  calendar_create: 60 * SECOND,
+  reminder_list: 60 * SECOND,
+  reminder_create: 60 * SECOND,
+  reminder_complete: 60 * SECOND,
+};
+
+/** 只读、做两遍也没有副作用的：卡住了可以直接再做。 */
+const RETRYABLE: ReadonlySet<DeviceActionKind> = new Set<DeviceActionKind>(['tab_list', 'tab_shot', 'tab_perceive',
+  'tab_read', 'screen_capture', 'file_list', 'file_read', 'browser_read', 'calendar_list', 'reminder_list',
+  'photo_list', 'photo_read', 'location_current']);
+
+export function actionLimitMs(kind: DeviceActionKind, params: Record<string, unknown>): number {
+  if (kind === 'run_command') {
+    const own = typeof params.timeoutMs === 'number' && params.timeoutMs > 0 ? params.timeoutMs : null;
+    return own === null ? COMMAND_DEFAULT_MS : own + COMMAND_EXTRA_MS;
+  }
+  return LIMITS_MS[kind] ?? DEFAULT_LIMIT_MS;
+}
+
+export function actionRetryable(kind: DeviceActionKind): boolean {
+  return RETRYABLE.has(kind);
+}

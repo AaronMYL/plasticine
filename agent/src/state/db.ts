@@ -21,6 +21,30 @@ function isThenable(value: unknown): boolean {
   return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
 }
 
+/**
+ * 慢查询（11-16：19:02 那次服务卡住，性能采样里大半时间在同步读库，却查不到是哪一句）：一句查询超过这么久就交给
+ * watchSlowQueries 登记的回调（app/diagnostics.ts 记日志、给 server_health 看）。只传语句本身，不传参数。
+ */
+export const SLOW_QUERY_MS = 200;
+let slowQuery: ((sql: string, ms: number) => void) | null = null;
+
+export function watchSlowQueries(callback: ((sql: string, ms: number) => void) | null): void {
+  slowQuery = callback;
+}
+
+function timed<T>(sql: string, work: () => T): T {
+  if (slowQuery === null) {
+    return work();
+  }
+  const started = performance.now();
+  const value = work();
+  const ms = performance.now() - started;
+  if (ms >= SLOW_QUERY_MS) {
+    slowQuery(sql, ms);
+  }
+  return value;
+}
+
 export class Database {
   readonly #db: DatabaseSync;
   readonly #writerKey: string | undefined;
@@ -39,15 +63,15 @@ export class Database {
   }
 
   run(sql: string, params: Params = {}): number {
-    return Number(this.#prepare(sql).run(params).changes);
+    return timed(sql, () => Number(this.#prepare(sql).run(params).changes));
   }
 
   get(sql: string, params: Params = {}): Row | undefined {
-    return this.#prepare(sql).get(params);
+    return timed(sql, () => this.#prepare(sql).get(params));
   }
 
   all(sql: string, params: Params = {}): Row[] {
-    return this.#prepare(sql).all(params);
+    return timed(sql, () => this.#prepare(sql).all(params));
   }
 
   /**

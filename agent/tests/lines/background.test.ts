@@ -129,7 +129,7 @@ test('线的工具：看线列表、读一条线、给一条线插话、停一�
         fauxToolCall('read_line', { lineId: child.id }, { id: 'r1' })], { stopReason: 'toolUse' }),
       fauxAssistantMessage([fauxToolCall('tell_line', { lineId: child.id, text: '顺便看版本' }, { id: 't1' })],
         { stopReason: 'toolUse' }),
-      fauxAssistantMessage([fauxToolCall('stop_line', { lineId: child.id }, { id: 'x1' })], { stopReason: 'toolUse' }),
+      fauxAssistantMessage([fauxToolCall('line_pause', { lineId: child.id }, { id: 'x1' })], { stopReason: 'toolUse' }),
       fauxAssistantMessage('停了。'),
     ],
   });
@@ -138,7 +138,7 @@ test('线的工具：看线列表、读一条线、给一条线插话、停一�
   await until(() => h.kernel.view('main').lastAnswer === '停了。', '主对话答完');
   await h.kernel.settled();
   const results = h.kernel.read('main', 50).messages.filter((message) => message.role === 'toolResult');
-  assert.deepEqual(results.map((message) => message.tool), ['list_lines', 'read_line', 'tell_line', 'stop_line']);
+  assert.deepEqual(results.map((message) => message.tool), ['list_lines', 'read_line', 'tell_line', 'line_pause']);
   assert.ok(results.every((message) => message.ok === true));
   assert.ok(results[0]?.text.includes('慢慢查'));
   assert.ok(results[2]?.text.includes('"outcome":"steered"'));
@@ -275,4 +275,42 @@ test('上限是现算的：调大了，排着队的线接着开跑，不用等�
     gate.resolve('好');
   }
   await h.kernel.settled();
+});
+
+test('任务收尾的工具：撤回排着的一句、接着做暂停的、结束重复的、归档再恢复（11-16）', async () => {
+  const h = await harness();
+  const old = h.kernel.spawn('main', { title: '旧的海投', goal: '打招呼', projectId: null });
+  const twin = h.kernel.spawn('main', { title: '重复的海投', goal: '打招呼', projectId: null });
+  const staleId = (): string => h.handle.state.lineQueue.queued(old.id)
+    .find((item) => item.text === '作废的一句')?.id ?? 'none';
+  scriptByLine(h, {
+    '标题「旧的海投」': [fauxAssistantMessage('先做到这'), fauxAssistantMessage('接着做完了')],
+    '标题「重复的海投」': [fauxAssistantMessage('也做到这')],
+    [MAIN]: [
+      () => fauxAssistantMessage([fauxToolCall('line_queue_withdraw', { lineId: old.id, queueId: staleId() },
+        { id: 'w1' }), fauxToolCall('line_resume', { lineId: old.id }, { id: 'r1' }),
+      fauxToolCall('line_end', { lineId: twin.id }, { id: 'e1' })], { stopReason: 'toolUse' }),
+      fauxAssistantMessage([fauxToolCall('line_archive', { lineId: twin.id }, { id: 'a1' })],
+        { stopReason: 'toolUse' }),
+      fauxAssistantMessage([fauxToolCall('line_archive', { lineId: twin.id, restore: true }, { id: 'a2' })],
+        { stopReason: 'toolUse' }),
+      fauxAssistantMessage('收好了。'),
+    ],
+  });
+  await h.kernel.settled();
+  h.kernel.halt(old.id);
+  h.kernel.send(old.id, { text: '作废的一句' });
+  h.kernel.send(old.id, { text: '接着打招呼' });
+  h.kernel.send('main', { text: '旧的接着做，重复的收掉' });
+  await until(() => h.kernel.view('main').lastAnswer === '收好了。', '主对话答完');
+  await h.kernel.settled();
+  const results = h.kernel.read('main', 50).messages.filter((message) => message.role === 'toolResult');
+  assert.ok(results.every((message) => message.ok === true), JSON.stringify(results.map((r) => r.text)));
+  assert.equal(h.kernel.view(old.id).lastAnswer, '接着做完了');
+  const said = h.handle.state.lineMessages.after(old.id, 0).filter((row) => row.role === 'user')
+    .map((row) => JSON.stringify(row.message));
+  assert.ok(said.some((text) => text.includes('接着打招呼')));
+  assert.ok(!said.some((text) => text.includes('作废的一句')));
+  assert.equal(h.kernel.view(twin.id).pauseReason, 'stopped');
+  assert.equal(h.kernel.view(twin.id).archivedAt, null);
 });

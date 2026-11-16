@@ -1,0 +1,59 @@
+import assert from 'node:assert/strict';
+import { afterEach, test } from 'node:test';
+import { Diagnostics, whereOf } from '../../src/app/diagnostics.ts';
+import { createServerHealthTool } from '../../src/app/server-health-tool.ts';
+import { toolContext } from '../tools/helpers.ts';
+import { call, pair, startTestApp, type TestApp } from './helpers.ts';
+
+// 11-16：服务卡住时查得到是哪条请求、哪句查询；server_health 按路由汇总给 AI。
+let app: TestApp | undefined;
+
+afterEach(async () => {
+  await app?.close();
+  app = undefined;
+});
+
+test('每个请求按路由模板记下耗时和状态，不记真路径里的 id', async () => {
+  const t = await startTestApp();
+  app = t;
+  const cookie = await pair(t);
+  await call(t, 'GET', '/v2/lines?limit=5', { cookie });
+  await call(t, 'GET', '/v2/lines/main?limit=5', { cookie });
+  await call(t, 'GET', '/v2/lines/line-not-there?limit=5', { cookie });
+  const routes = t.app.deps.diagnostics.snapshot(5).routes.map((row) => row.route);
+  assert.ok(routes.includes('GET /v2/lines'), routes.join());
+  assert.ok(routes.some((route) => route.startsWith('GET /v2/lines/:')), routes.join());
+  assert.ok(!routes.some((route) => route.includes('line-not-there')));
+});
+
+test('汇总：总耗时排前面；出错带原文和代码位置；慢查询只留语句开头', async () => {
+  let now = Date.parse('2026-11-16T11:02:00.000Z');
+  const diagnostics = new Diagnostics(() => now);
+  diagnostics.request('/v2/lines/:lineId', 'GET', 200, 900);
+  diagnostics.request('/v2/lines/:lineId', 'GET', 502, 3000);
+  diagnostics.request('/v2/asks', 'GET', 200, 5);
+  diagnostics.error('/v2/lines', 'GET', 500, new Error('数据库忙'));
+  diagnostics.sql('SELECT *   FROM line_messages\n WHERE line_id = $lineId', 450);
+  now += 60_000;
+  const snapshot = diagnostics.snapshot(10);
+  assert.equal(snapshot.routes[0]?.route, 'GET /v2/lines/:lineId');
+  assert.equal(snapshot.routes[0]?.failed, 1);
+  assert.equal(snapshot.routes[0]?.maxMs, 3000);
+  assert.equal(snapshot.errors[0]?.error, '数据库忙');
+  assert.match(snapshot.errors[0]?.where ?? '', /agent\/tests\/app\/diagnostics\.test\.ts:\d+/);
+  assert.equal(snapshot.slowQueries[0]?.sql, 'SELECT * FROM line_messages WHERE line_id = $lineId');
+  now += 20 * 60_000;
+  assert.deepEqual(diagnostics.snapshot(10).routes, []);
+  assert.equal(whereOf('不是错误'), null);
+});
+
+test('server_health 给齐服务、机器和汇总', async () => {
+  const diagnostics = new Diagnostics();
+  diagnostics.request('/v2/lines', 'GET', 200, 1950);
+  const answer = await createServerHealthTool(diagnostics).execute({ minutes: 5 }, toolContext('health'));
+  const result = JSON.parse(answer) as {
+    service: { rssMb: number }; machine: { cores: number; topProcesses: string[] }; routes: { route: string }[] };
+  assert.ok(result.service.rssMb > 0);
+  assert.ok(result.machine.cores > 0);
+  assert.equal(result.routes[0]?.route, 'GET /v2/lines');
+});

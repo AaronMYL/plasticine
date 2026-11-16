@@ -26,7 +26,7 @@ import { HttpContacts, HttpGroupTasks, HttpNetworkTasks } from './contacts.ts';
 import { HttpNetwork, HttpVisibility } from './network.ts';
 import { HttpProjects } from './projects.ts';
 import { HttpDevices } from './devices.ts';
-import { HttpEvents, type CreateEventSource } from './events.ts';
+import { HttpEvents, type CreateEventSource, type StaleHandling } from './events.ts';
 import { HttpFeed } from './feed.ts';
 import { LocalEvents } from './local-events.ts';
 import { createToolGroupHttp } from './tool-groups.ts';
@@ -47,6 +47,8 @@ export interface HttpApiOptions {
   createEventSource?: CreateEventSource;
   timeoutMs?: number;
   now?: () => Date;
+  /** 事件一直认不出时怎么刷新整页（测试给假的）。 */
+  stale?: StaleHandling;
 }
 
 export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
@@ -70,6 +72,7 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
       session.current().catch((cause: unknown) => console.warn('事件流断了，查登录状态也没成功', cause));
     },
     ...(options.now === undefined ? {} : { now: options.now }),
+    ...(options.stale === undefined ? {} : { stale: options.stale }),
   });
   return {
     soul: createSoulHttp(transport),

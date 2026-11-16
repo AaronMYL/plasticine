@@ -33,10 +33,10 @@ const CODE_SCOPE = `POST ${NODE_PAIRING_CODES_PATH}`;
 /** GET /v2/nodes */
 export function listNodes(context: RequestContext): Reply {
   requireAuth(context);
-  const { state, now } = context.deps;
+  const { state, devices, now } = context.deps;
   const at = now();
   const body: NodeListResponse = {
-    nodes: state.nodes.list({ limit: MAX_PAGE_SIZE }).map((node) => nodeView(state, node, at)),
+    nodes: state.nodes.list({ limit: MAX_PAGE_SIZE }).map((node) => nodeView(state, node, at, devices)),
     defaults: DEFAULT_DEVICE_LIMITS,
     protectedPaths: PROTECTED_DEVICE_PATHS.map((rule) => `${rule.pattern}（${rule.why}）`),
   };
@@ -106,7 +106,7 @@ export async function revokeNodeHandler(context: RequestContext): Promise<Reply>
   const { state, devices, now } = context.deps;
   return idempotent(context, body.requestId, (after) => {
     const node = devices.revoke(id, auth.device.id, after);
-    const reply: NodeResponse = { node: nodeView(state, node, now()) };
+    const reply: NodeResponse = { node: nodeView(state, node, now(), devices) };
     return { status: 200, body: reply };
   });
 }
@@ -119,14 +119,14 @@ export function setNodeLimitsHandler(context: RequestContext): Promise<Reply> {
   return confirmedWrite(context, check, (body, confirmation, after) => {
     try {
       const node = devices.setLimits(id, body.limitsVersion, body.limits, confirmation, after);
-      const reply: NodeResponse = { node: nodeView(state, node, now()) };
+      const reply: NodeResponse = { node: nodeView(state, node, now(), devices) };
       return { status: 200, body: reply };
     } catch (error) {
       const current = state.nodes.get(id);
       if (error instanceof DeviceError && error.code === 'version_conflict' && current !== undefined) {
         throw new ApiError(409, 'version_conflict', error.message, {
           next: '先看现在的上限，再改。',
-          extra: { current: nodeView(state, current, now()) },
+          extra: { current: nodeView(state, current, now(), devices) },
         });
       }
       throw error;

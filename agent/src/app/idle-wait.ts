@@ -4,7 +4,7 @@
 import type { IdleWait } from '../devices/index.ts';
 import type { StateService } from '../state/index.ts';
 
-/** 他 30 秒没动键鼠算空闲（devices/holds.ts）；设备每分钟报一次，五秒看一回够了。 */
+/** 他 30 秒没动键鼠算空闲（devices/holds.ts）；设备每 20 秒报一次，五秒看一回够了。 */
 const POLL_MS = 5_000;
 /** 最多在一步里等这么久，再久就把「他正在用」交回给线，让它换路或晚点再试。 */
 const MAX_WAIT_MS = 15 * 60_000;

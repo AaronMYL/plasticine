@@ -70,7 +70,7 @@ test('队友不能借插话启动主线授权，也不能叫停其他队友', as
     await h.kernel.settled();
     assert.deepEqual(sent, []);
     assert.equal(h.handle.state.lineMessages.after(MAIN_LINE_ID, 0).length, 0);
-    h.respond([call('stop_line', { lineId: b.lineId }, 'stop-other'), fauxAssistantMessage('结束')]);
+    h.respond([call('line_pause', { lineId: b.lineId }, 'stop-other'), fauxAssistantMessage('结束')]);
     h.kernel.send(a.lineId, { text: '尝试叫停' });
     await h.kernel.settled();
     assert.equal(h.kernel.view(b.lineId).status, 'idle');

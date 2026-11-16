@@ -278,6 +278,15 @@ export const NodePairResponseSchema = Type.Object({
 });
 export type NodePairResponse = Static<typeof NodePairResponseSchema>;
 
+/** 设备正在做的动作：哪一个、做到哪一步、从什么时候开始（设备的钟）。 */
+export const NodeBusySchema = Type.Object({
+  actionId: IdSchema,
+  kind: DeviceActionKindSchema,
+  step: Type.String({ maxLength: 200 }),
+  since: IsoTimeSchema,
+}, STRICT);
+export type NodeBusy = Static<typeof NodeBusySchema>;
+
 /** POST /v2/nodes/hello (Bearer credential) → 200 NodeHelloResponse. */
 export const NodeHelloRequestSchema = Type.Object(
   {
@@ -288,6 +297,8 @@ export const NodeHelloRequestSchema = Type.Object(
      * 可选：用户最近一次键鼠活动距今多少秒。报了而且用户正在用，点击 / 输入就等着，不和用户抢；不报照现状执行。
      */
     idleSeconds: Type.Optional(Type.Integer({ minimum: 0, maximum: NODE_IDLE_SECONDS_MAX })),
+    /** 11-16：报到单独定时，做动作时照报；在做的那一个动作（没在做就不报）。 */
+    busy: Type.Optional(NodeBusySchema),
   },
   STRICT,
 );
@@ -297,8 +308,27 @@ export const NodeHelloResponseSchema = Type.Object({
   nodeId: IdSchema,
   limits: DeviceLimitsSchema,
   limitsVersion: Type.Integer({ minimum: 0 }),
+  /** 11-16：AI 要看这台设备的日志，设备另起一条请求把这个时间以后的日志传到 NODE_LOGS_PATH（不走动作通道）。 */
+  logsWanted: Type.Optional(Type.Object({ requestId: IdSchema, since: IsoTimeSchema }, STRICT)),
+  /** 11-16：这些动作不用做了（AI 取消的）；正在做的就地放下，交回「取消了」。 */
+  cancel: Type.Optional(Type.Array(IdSchema, { maxItems: 50 })),
 });
 export type NodeHelloResponse = Static<typeof NodeHelloResponseSchema>;
+
+/** POST /v2/nodes/logs（节点凭证）：设备日志，一行一条，按时间排；只有服务器要了才传（hello 的 logsWanted）。 */
+export const NODE_LOGS_PATH = `${NODES_PATH}/logs`;
+export const NODE_LOG_LINES_MAX = 3_000;
+export const NODE_LOG_TEXT_MAX = 1_000;
+/** 一次上传最大字节数（3000 行 × 1000 字 × UTF-8）。 */
+export const NODE_LOGS_MAX_BYTES = 10 * 1024 * 1024;
+export const NodeLogUploadSchema = Type.Object({
+  requestId: IdSchema,
+  lines: Type.Array(Type.Object({ at: IsoTimeSchema, text: Type.String({ maxLength: NODE_LOG_TEXT_MAX }) }, STRICT),
+    { maxItems: NODE_LOG_LINES_MAX }),
+  /** 这段时间里的日志比上限多，前面的没传。 */
+  truncated: Type.Boolean(),
+}, STRICT);
+export type NodeLogUpload = Static<typeof NodeLogUploadSchema>;
 
 /** What the cloud sends a node for one action. */
 export const NodeActionEnvelopeSchema = Type.Object(
@@ -333,6 +363,22 @@ export const NodeActionReportSchema = Type.Object(
 );
 export type NodeActionReport = Static<typeof NodeActionReportSchema>;
 
+/**
+ * 动作通道：idle 空着；busy 在做一个动作（还在它的时限里）；stuck 做了超过时限还没交回，或设备报到时说在做、服务器这边
+ * 已经不认这个动作了。客户端离线时是最后一次报到时的样子。
+ */
+export const NODE_WORK_STATES = ['idle', 'busy', 'stuck'] as const;
+export const NodeWorkSchema = Type.Object({
+  state: Type.Enum(NODE_WORK_STATES),
+  actionId: OrNull(IdSchema),
+  kind: OrNull(DeviceActionKindSchema),
+  step: OrNull(Type.String()),
+  since: OrNull(IsoTimeSchema),
+  /** 这个样子是哪次报到说的。 */
+  reportedAt: OrNull(IsoTimeSchema),
+}, STRICT);
+export type NodeWork = Static<typeof NodeWorkSchema>;
+
 export const NodeViewSchema = Type.Object({
   id: IdSchema,
   name: NodeNameSchema,
@@ -350,6 +396,9 @@ export const NodeViewSchema = Type.Object({
   limitsConfirmedAt: OrNull(IsoTimeSchema),
   /** Actions of each class sent in the last hour (the per-hour limit counts these). */
   usage: Type.Record(Type.String(), Type.Integer({ minimum: 0 })),
+  /** 11-16：两项分开说——客户端连着没有（90 秒内报过到），和动作通道在干什么。 */
+  online: Type.Boolean(),
+  work: NodeWorkSchema,
   version: Type.Integer({ minimum: 1 }),
 });
 export type NodeView = Static<typeof NodeViewSchema>;

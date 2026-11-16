@@ -1,9 +1,10 @@
-// 线的工具：开条线去做、看线列表、读一条线、给一条线插话、停一条线。
+// 线的工具：开条线去做、看线列表、读一条线、给一条线插话；暂停、接着做、结束、归档 / 恢复、撤回排着的一句（11-16）。
 // 「开条线去做」建一条后台线并开跑（同时在跑的后台线最多 3 条，多的排队）；它做完把最后那段话贴回发起它的线。
 
 import { Type } from 'typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
-import { LINE_STATUSES, LINE_TITLE_MAX_CHARS, type LineMessageView, type LineView } from '../../shared/api/lines.ts';
+import { LINE_STATUSES, LINE_TITLE_MAX_CHARS, type LineMessageView, type LineView,
+  type QueuedMessageView } from '../../shared/api/lines.ts';
 import { clip } from './messages.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';
@@ -19,10 +20,16 @@ const MESSAGE_CHARS = 2_000;
 export interface LineControl {
   spawn(parentLineId: string, input: { title: string; goal: string; projectId: string | null;
     resumeParent?: boolean }, toolCallId?: string): LineView;
-  list(filter: { statuses?: readonly LineView['status'][]; limit: number }): LineView[];
-  read(lineId: string, limit: number): { line: LineView; messages: LineMessageView[] };
+  list(filter: { statuses?: readonly LineView['status'][]; includeArchived?: boolean; limit: number }): LineView[];
+  read(lineId: string, limit: number): { line: LineView; messages: LineMessageView[]; queue: QueuedMessageView[] };
   tell(lineId: string, text: string): { line: LineView; outcome: 'steered' | 'started' | 'queued' };
   halt(lineId: string): LineView;
+  /** 11-16：任务收尾（Aaron 定「全部放开」）：接着做、结束、归档 / 恢复、撤回排着的一句。 */
+  retry(lineId: string): LineView;
+  end(lineId: string): LineView;
+  archive(lineId: string): LineView;
+  restore(lineId: string): LineView;
+  withdraw(lineId: string, queueId: string): { line: LineView; item: QueuedMessageView };
 }
 
 const LineId = Type.String({ minLength: 1, description: 'The line id (from start_line or list_lines)' });
@@ -38,7 +45,20 @@ const StartParameters = Type.Object({
 
 const ListParameters = Type.Object({
   status: Type.Optional(Type.Enum(LINE_STATUSES)),
+  mateId: Type.Optional(Type.String({ minLength: 1, description: '只看这位队友的' })),
+  parentLineId: Type.Optional(Type.String({ minLength: 1, description: '只看从这条线派出去的' })),
+  includeArchived: Type.Optional(Type.Boolean({ description: '连归档了的一起列' })),
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: LIST_MAX })),
+}, { additionalProperties: false });
+
+const ArchiveParameters = Type.Object({
+  lineId: LineId,
+  restore: Type.Optional(Type.Boolean({ description: 'true：把归档了的恢复出来（恢复后是暂停，要接着做再 line_resume）' })),
+}, { additionalProperties: false });
+
+const WithdrawParameters = Type.Object({
+  lineId: LineId,
+  queueId: Type.String({ minLength: 1, description: 'read_line 结果 queue 里那一句的 id' }),
 }, { additionalProperties: false });
 
 const ReadParameters = Type.Object({
@@ -57,7 +77,8 @@ function brief(line: LineView): Record<string, unknown> {
   return { id: line.id, kind: line.kind, title: line.title, status: line.status, activity: line.activity,
     pauseReason: line.pauseReason, outcome: line.outcome,
     failure: line.failure, pausedUntil: line.pausedUntil, queued: line.queued, lastAnswer: line.lastAnswer,
-    parentLineId: line.parentLineId, projectId: line.projectId, updatedAt: line.updatedAt };
+    parentLineId: line.parentLineId, mateId: line.mateId ?? null, projectId: line.projectId,
+    archivedAt: line.archivedAt ?? null, updatedAt: line.updatedAt };
 }
 
 function json(value: unknown) {
@@ -89,8 +110,12 @@ function listTool(control: LineControl): AgentTool<typeof ListParameters> {
     replay: 'safe',
     async execute(_id, raw) {
       const args = checkedArgs(ListParameters, raw, 'list_lines');
+      const filtered = args.mateId !== undefined || args.parentLineId !== undefined;
       const lines = control.list({ ...(args.status === undefined ? {} : { statuses: [args.status] }),
-        limit: args.limit ?? LIST_MAX });
+        includeArchived: args.includeArchived ?? false, limit: filtered ? LIST_MAX * 4 : args.limit ?? LIST_MAX })
+        .filter((line) => (args.mateId === undefined || line.mateId === args.mateId)
+          && (args.parentLineId === undefined || line.parentLineId === args.parentLineId))
+        .slice(0, args.limit ?? LIST_MAX);
       return json({ lines: lines.map(brief) });
     },
   };
@@ -105,10 +130,12 @@ function readTool(control: LineControl): AgentTool<typeof ReadParameters> {
     replay: 'safe',
     async execute(_id, raw) {
       const args = checkedArgs(ReadParameters, raw, 'read_line');
-      const { line, messages } = control.read(args.lineId, args.limit ?? READ_DEFAULT);
+      const { line, messages, queue } = control.read(args.lineId, args.limit ?? READ_DEFAULT);
       return json({ line: brief(line), messages: messages.map((message) => ({ seq: message.seq, role: message.role,
         text: clip(message.text, MESSAGE_CHARS), origin: message.origin,
-        steps: message.steps.map((step) => step.say), ok: message.ok })) });
+        steps: message.steps.map((step) => step.say), ok: message.ok })),
+      queue: queue.map((item) => ({ id: item.id, text: clip(item.text, MESSAGE_CHARS), status: item.status,
+        createdAt: item.createdAt })) });
     },
   };
 }
@@ -127,15 +154,60 @@ function tellTool(control: LineControl): AgentTool<typeof TellParameters> {
   };
 }
 
-function stopTool(control: LineControl): AgentTool<typeof StopParameters> {
+type LineVerb = 'line_pause' | 'line_resume' | 'line_end';
+
+const VERBS: Readonly<Record<LineVerb, { label: string; description: string; run(control: LineControl, id: string)
+  : LineView }>> = {
+  line_pause: { label: '暂停一条线',
+    description: '暂停一条线：正在跑的这一轮停下，进度和排着的话都留着，以后 line_resume 接着做。',
+    run: (control, id) => control.halt(id) },
+  line_resume: { label: '接着做一条线',
+    description: '让暂停了或失败了的线从停下的地方接着做（排着的话照顺序发出）。他暂停的也可以：他又提起这件事、'
+      + '或设备恢复了，就接着做原来那条，不要另开一条。停止了的不能再接着做。',
+    run: (control, id) => control.retry(id) },
+  line_end: { label: '结束一条线',
+    description: '结束一条线：不再做，记录留着，排着的话撤回；结束了不能再接着做。重复的、作废的、已经由别的线做完的'
+      + '任务用它收尾。主对话不能结束。',
+    run: (control, id) => control.end(id) },
+};
+
+function verbTool(control: LineControl, name: LineVerb): AgentTool<typeof StopParameters> {
+  const verb = VERBS[name];
   return {
-    name: 'stop_line',
-    label: '停一条线',
-    description: '叫停一条线正在跑的这一轮（排队的消息留着）。',
+    name,
+    label: verb.label,
+    description: verb.description,
     parameters: StopParameters,
     async execute(_id, raw) {
-      const args = checkedArgs(StopParameters, raw, 'stop_line');
-      return json({ stopped: brief(control.halt(args.lineId)) });
+      const args = checkedArgs(StopParameters, raw, name);
+      return json({ line: brief(verb.run(control, args.lineId)) });
+    },
+  };
+}
+
+function archiveTool(control: LineControl): AgentTool<typeof ArchiveParameters> {
+  return {
+    name: 'line_archive',
+    label: '归档一条线',
+    description: '把一条线收进最近删除（可恢复，不真删）：还在做的停下，排着的话撤回。restore: true 把它恢复出来。',
+    parameters: ArchiveParameters,
+    async execute(_id, raw) {
+      const args = checkedArgs(ArchiveParameters, raw, 'line_archive');
+      return json({ line: brief(args.restore === true ? control.restore(args.lineId) : control.archive(args.lineId)) });
+    },
+  };
+}
+
+function withdrawTool(control: LineControl): AgentTool<typeof WithdrawParameters> {
+  return {
+    name: 'line_queue_withdraw',
+    label: '撤回排着的一句',
+    description: '撤回一条线里还没发出的一句话（read_line 结果的 queue 里有 id）。已经被这一轮取走的撤不回。',
+    parameters: WithdrawParameters,
+    async execute(_id, raw) {
+      const args = checkedArgs(WithdrawParameters, raw, 'line_queue_withdraw');
+      const { line, item } = control.withdraw(args.lineId, args.queueId);
+      return json({ line: brief(line), withdrawn: { id: item.id, status: item.status } });
     },
   };
 }
@@ -171,6 +243,26 @@ function scopedControl(control: LineControl, state: LineAccessState, scope: Line
       requireAccess(id, 'control');
       return control.halt(id);
     },
+    retry: (id) => {
+      requireAccess(id, 'control');
+      return control.retry(id);
+    },
+    end: (id) => {
+      requireAccess(id, 'control');
+      return control.end(id);
+    },
+    archive: (id) => {
+      requireAccess(id, 'control');
+      return control.archive(id);
+    },
+    restore: (id) => {
+      requireAccess(id, 'control');
+      return control.restore(id);
+    },
+    withdraw: (id, queueId) => {
+      requireAccess(id, 'control');
+      return control.withdraw(id, queueId);
+    },
   };
 }
 
@@ -184,7 +276,11 @@ export function lineTools(control: LineControl, state: LineAccessState): KernelT
       create: (scope) => readTool(scopedControl(control, state, scope)) },
     { name: 'tell_line', say: () => '给一条线插话', hardLine: () => null,
       create: (scope) => tellTool(scopedControl(control, state, scope)) },
-    { name: 'stop_line', say: () => '停一条线', hardLine: () => null,
-      create: (scope) => stopTool(scopedControl(control, state, scope)) },
+    ...(Object.keys(VERBS) as LineVerb[]).map((name): KernelTool => ({ name, say: () => VERBS[name].label,
+      hardLine: () => null, create: (scope) => verbTool(scopedControl(control, state, scope), name) })),
+    { name: 'line_archive', say: (args) => (args['restore'] === true ? '恢复一条线' : '归档一条线'),
+      hardLine: () => null, create: (scope) => archiveTool(scopedControl(control, state, scope)) },
+    { name: 'line_queue_withdraw', say: () => '撤回排着的一句', hardLine: () => null,
+      create: (scope) => withdrawTool(scopedControl(control, state, scope)) },
   ];
 }

@@ -1,5 +1,6 @@
 // The shapes every resource file shares: what the service is built from, what a handler gets, what it returns.
 
+import type { Diagnostics } from './diagnostics.ts';
 import type { Video } from '../video/index.ts';
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http';
 import type { Device, Session } from '../../shared/state.ts';
@@ -35,6 +36,8 @@ import type { DirectHub } from '../direct/index.ts';
 
 export interface AppDeps {
   state: StateService;
+  /** 11-16：请求耗时、出错、慢查询、事件循环延迟（diagnostics.ts），server_health 读它。 */
+  diagnostics: Diagnostics;
   /** 登录着的设备这次怎么连进来的（本机 / 直连 / 经中继 / 自己的网址），只在内存里。 */
   devicePaths: DevicePaths;
   /** 直连的握手和通道（direct/hub.ts）。 */

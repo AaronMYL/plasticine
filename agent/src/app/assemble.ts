@@ -13,8 +13,8 @@ import { autoOnlyPermissionGate, createShowWidgetsTool, getTimeTool, ToolRegistr
 import { ensureRulesDoc, createMemoryDocTools, MemoryCurator } from '../memory/index.ts';
 import { createBookTools } from '../books/index.ts';
 import {
-  createDeviceActionGate, createDeviceActionTool, createDeviceNodesTool, createPageSendTool, DeviceService,
-  type NodeTransport,
+  createDeviceActionGate, createDeviceActionTool, createDeviceCancelTool, createDeviceLogsTool, createDeviceNodesTool,
+  createPageSendTool, DeviceService, type NodeTransport,
 } from '../devices/index.ts';
 import {
   BACKGROUND_TIME_ZONE, createDaily, createFeedCommentGenerator, createFeedSelector, createFeedTranslator,
@@ -45,11 +45,14 @@ import { kernelText, type Illustrator, type TextModels } from '../kernel/index.t
 import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
 import { mainIdentity, MateGroupTasks, mateGroupTaskTools, Mates, mateTools } from '../mates/index.ts';
 import { realLater, sleepFor, type LineKernel } from '../lines/index.ts';
+import { resumeAfterDevice } from './device-resume.ts';
+import { Diagnostics } from './diagnostics.ts';
+import { createServerHealthTool } from './server-health-tool.ts';
 import { idleWait } from './idle-wait.ts';
 import { TunnelService, type TunnelServiceOptions } from '../network/index.ts';
 import { Tasks } from '../tasks/index.ts';
 import { BackupService, ClientReleases } from '../system/index.ts';
-import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
+import { MAIN_LINE_ID, type StateService, watchSlowQueries } from '../state/index.ts';
 import { errorCategory, safeLog } from '../util/index.ts';
 import { join } from 'node:path';
 import { LETTER_BRIEF, MAIN_THREAD_PATH, type BackupObjectKind } from '../../shared/api/index.ts';
@@ -216,11 +219,13 @@ export function assembleApp(options: AssembleOptions): App {
   const transport = options.nodeTransport === undefined ? {} : { transport: options.nodeTransport };
   // 日历同步（第 15 条）后面才装好（时区跟着定时走）：Mac 一上线就叫它拉一次。
   let calendarSync: CalendarSync | null = null;
-  const devices = new DeviceService({ state, now, desk, dryRun: options.dryRun, ...transport,
+  const devices: DeviceService = new DeviceService({ state, now, desk, dryRun: options.dryRun, ...transport,
+    logsDirectory: join(options.stateDirectory, 'device-logs'),
     cameOnline: (node, at) => {
       record(deviceTrigger({ nodeId: node.id, online: true, at, label: node.name }));
       calendarSync?.kick(true);
-    } });
+    },
+    cameBack: (node, at) => resumeAfterDevice(state, () => late.get(), devices.waits.take(node.id), node.name, at) });
   devices.approvals?.onResult((result) => late.get().tell(result.lineId, result.text));
   const clientUpdates = new ClientReleases({ state, manifestPath: options.clientManifestPath ?? null,
     receiptPath: join(options.stateDirectory, 'client-release.json'),
@@ -275,11 +280,20 @@ export function assembleApp(options: AssembleOptions): App {
     },
     changed: () => hub.publish({ type: 'video_changed' }) });
   ffmpeg = () => video.kit.ffmpeg();
+  // 11-16：服务体检（请求耗时、出错、慢查询、事件循环延迟），日志里写清哪条请求、哪句查询，server_health 给 AI 看。
+  const diagnostics = new Diagnostics();
+  watchSlowQueries((sql, ms) => {
+    diagnostics.sql(sql, ms);
+    safeLog('warn', 'sql_slow', { sql: sql.replace(/\s+/g, ' ').trim(), durationMs: ms });
+  });
+  diagnostics.start((mark) => safeLog('warn', 'event_loop_lag', { durationMs: mark.p99Ms }));
   const registry = new ToolRegistry();
   const noteTools = createNoteTools(state, (noteId) => hub.publish({ type: 'note_invalidated', noteId }));
   const tools = [...noteTools, ...createBookTools(state), getTimeTool,
     createPaymentTool(moneyDrafts, paymentReader), createDeviceNodesTool(devices),
-    createDeviceActionTool(devices.actions), createPageSendTool(state, devices.actions), ...toolGroupTools(toolGroups),
+    createDeviceLogsTool(state, devices), createDeviceCancelTool(devices), createServerHealthTool(diagnostics),
+    createDeviceActionTool(devices.actions, devices.waits), createPageSendTool(state, devices.actions),
+    ...toolGroupTools(toolGroups),
     ...projectTools({ state, changed: (projectId) => hub.publish({ type: 'project_invalidated', projectId }) }),
     ...createMemoryDocTools(state),
     ...createServerCommandTools(server), ...createSkillTools(skills),
@@ -325,7 +339,7 @@ export function assembleApp(options: AssembleOptions): App {
   const permission = createDeviceActionGate(devices.actions, autoOnlyPermissionGate, devices.approvals,
     idleWait({ state, now, sleep: (ms, signal) => sleepFor(realLater, ms, signal), whoOf: (mateId) =>
       (mateId === null ? mainIdentity(state).name : state.mates.get(mateId)?.name ?? '队友'),
-    post: (input) => notices.post(input) }));
+    post: (input) => notices.post(input) }), devices.waits);
   const lines = assembleLines(options.lines, { state, desk, hub, now, publicUrl,
     skillsContext: (lineId) => skills.context(`line:${lineId}`),
     lineChanged: (lineId) => network.lineChanged(lineId),
@@ -434,6 +448,7 @@ export function assembleApp(options: AssembleOptions): App {
     scans.add(scan);
   }
   return createApp({
+    diagnostics,
     browserSessions,
     toolGroups,
     memoryCurator,

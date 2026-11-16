@@ -13,10 +13,19 @@ import {
 const NOW = new Date('2026-10-27T02:00:00.000Z');
 const UNAUTHORIZED = { error: '这台设备还没登录。', code: 'unauthorized', next: '重新配对。' };
 
+let clock = 0;
+const reloads: number[] = [];
+let lastReload: number | null = null;
+const stale = { now: () => clock, reload: () => reloads.push(clock), lastReload: () => lastReload,
+  markReload: (at: number) => { lastReload = at; } };
+
 function connect(...responses: Array<ReturnType<typeof json>>) {
   const sources = eventSources();
   const { fetch, calls } = fakeFetch(...responses.map((response) => () => response));
-  const http = createHttpApi({ fetch, createEventSource: sources.create, now: () => NOW });
+  clock = 1_000_000;
+  reloads.length = 0;
+  lastReload = null;
+  const http = createHttpApi({ fetch, createEventSource: sources.create, now: () => NOW, stale });
   const unauthorized = vi.fn();
   http.onUnauthorized(unauthorized);
   const events: LiveEvent[] = [];
@@ -220,13 +229,33 @@ describe('真事件流 · ready 和认不出的事件', () => {
     expect(events).toEqual([{ type: 'resync' }]);
   });
 
-  it('认不出的事件（不合 schema、不是 JSON、类型对不上）不猜，当作补不上了', () => {
+  it('认不出的事件（不合 schema、不是 JSON、类型对不上）不猜，当作补不上了；一分钟里只重拉一次', () => {
     const { source, events } = connect();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     source.emit('memory_entry_changed', { type: 'memory_entry_changed', entry: { id: 'x' } });
     source.emit('attachment_changed', 'not json');
+    expect(events).toEqual([{ type: 'resync' }]);
+    clock += 61_000;
     source.emit('ready', { type: 'attachment_changed', attachment: null });
-    expect(events).toEqual([{ type: 'resync' }, { type: 'resync' }, { type: 'resync' }]);
+    expect(events).toEqual([{ type: 'resync' }, { type: 'resync' }]);
     expect(warn).toHaveBeenCalled();
+    expect(reloads).toEqual([]);
+  });
+
+  it('新服务多给的字段（11-16 线多了 handedOff）：删掉再认，不重拉', () => {
+    const { source, events } = connect();
+    source.emit('line_text', { type: 'line_text', lineId: 'line-main', delta: '你好', extra: 1 }, '7');
+    expect(events).toEqual([{ type: 'line', event: { type: 'line_text', lineId: 'line-main', delta: '你好' } }]);
+  });
+
+  it('重拉过还一直认不出：这一页是旧代码，刷新整页，十分钟里只刷一次', () => {
+    const { source, events } = connect();
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    for (let index = 0; index < 6; index += 1) {
+      source.emit('line_queue', { type: 'line_queue', lineId: 'line-main' }, String(index));
+      clock += 1_000;
+    }
+    expect(events).toEqual([{ type: 'resync' }]);
+    expect(reloads).toEqual([1_002_000]);
   });
 });

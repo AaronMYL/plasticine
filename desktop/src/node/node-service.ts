@@ -1,22 +1,26 @@
-// 让 Plasticine 用这台电脑（设计稿 Settings-System 最后一行）：设备服务。照 Mac 壳 node-service.swift 的走法：
-// 有凭证就 hello（启动时、每 60 秒，带会做的事和他多久没动键鼠）、先交没交上的回执、再长轮询领动作；同一个动作 id
-// 只做一次。401 停下来显示「需要重新配对」；网络错按 1、2、4…32 秒退避。本体换了（设置 · 系统里切换）就整个换过去。
+// 让 Plasticine 用这台电脑（设计稿 Settings-System 最后一行）：设备服务。有凭证就 hello（带会做的事、他多久没动键鼠、
+// 在做哪个动作做到哪一步）、先交没交上的回执、再长轮询领动作；同一个动作 id 只做一次。401 停下来显示「需要重新配对」；
+// 网络错按 1、2、4…32 秒退避。本体换了（设置 · 系统里切换）就整个换过去。
+// 11-16：报到单独一个循环，每 20 秒一次，做动作时照报——以前报到和做动作在同一个循环里，18:48 一次截图不返回，
+// 设备就再没报到，服务器当它离线。报到的回复里服务器可以要日志（另起一条请求传，不走动作通道）、取消动作。
 
-import type { NodeActionResultRequest, NodeWireAction } from '../../../agent/shared/api/index.ts';
+import { NODE_HELLO_EVERY_MS, type NodeActionResultRequest, type NodeBusy, type NodeHelloResponse, type NodeLogUpload,
+  type NodeWireAction } from '../../../agent/shared/api/index.ts';
 import type { DeviceServiceStatus } from '../../../agent/shared/api/desktop-bridge.ts';
 import { DEVICE_ACTION_KINDS, type DeviceActionKind, type DeviceLimits } from '../../../agent/shared/state.ts';
 import { InvalidActionId, type ActionJournal } from './action-journal.ts';
 import type { CredentialStore } from './credential-store.ts';
 import { NodeUnauthorized, type NodeApi, type NodeIdentity } from './node-api.ts';
 
-export const HELLO_EVERY_MS = 60_000;
+export const HELLO_EVERY_MS = NODE_HELLO_EVERY_MS;
 export const RETRY_DELAYS_MS = [1_000, 2_000, 4_000, 8_000, 16_000, 32_000];
 
 export interface ActionRunner {
   /** 这台电脑现在会做的事（助手报的方法、网页标签在不在）。 */
   capabilities(): Promise<DeviceActionKind[]>;
-  /** 照上限判、该问就问、做、回执；不抛错（出错写进回执）。 */
-  execute(action: NodeWireAction, limits: DeviceLimits): Promise<NodeActionResultRequest>;
+  /** 照上限判、该问就问、做、回执；不抛错（出错写进回执）。做到哪一步报给 progress；cancel 了就放下。 */
+  execute(action: NodeWireAction, limits: DeviceLimits, progress?: (step: string) => void, cancel?: AbortSignal)
+    : Promise<NodeActionResultRequest>;
   /** 系统权限没给的几样，给设置页列出来。 */
   missing(): Promise<DeviceServiceStatus['missing']>;
 }
@@ -32,6 +36,12 @@ export interface NodeServiceDeps {
   sleep(ms: number, signal: AbortSignal): Promise<void>;
   now(): number;
   log(line: string): void;
+  /** 本机日志里这个时间以后的行（上传给服务器看，最多 NODE_LOG_LINES_MAX 行，多了截掉前面的）。 */
+  logsSince(since: string): Omit<NodeLogUpload, 'requestId'>;
+}
+
+interface Busy extends NodeBusy {
+  cancel: AbortController;
 }
 
 interface Session {
@@ -48,6 +58,8 @@ export class NodeService {
   private limitsValue: DeviceLimits | null = null;
   private readonly listeners = new Set<(status: DeviceServiceStatus) => void>();
   private wake: (() => void) | null = null;
+  private busy: Busy | null = null;
+  private lastLogRequest: string | null = null;
 
   constructor(deps: NodeServiceDeps, paused: boolean) {
     this.deps = deps;
@@ -162,21 +174,25 @@ export class NodeService {
     }
   }
 
-  /** 连着的时候一直在这里：hello、交回执、领动作、做。暂停或出错时返回 / 抛出。 */
+  /** 连着的时候一直在这里：先报到一次，再一边单独定时报到、一边交回执、领动作、做。暂停或出错时返回 / 抛出。 */
   private async serve(session: Session, api: NodeApi, credential: string): Promise<void> {
+    const hello = await this.hello(api, credential);
+    const journal = this.deps.journal(session.server, hello.nodeId);
+    const beat = new AbortController();
+    const stop = (): void => beat.abort();
+    session.abort.signal.addEventListener('abort', stop, { once: true });
+    void this.heartbeat(api, credential, beat.signal);
+    try {
+      await this.work(session, api, credential, journal);
+    } finally {
+      beat.abort();
+      session.abort.signal.removeEventListener('abort', stop);
+    }
+  }
+
+  private async work(session: Session, api: NodeApi, credential: string, journal: ActionJournal): Promise<void> {
     const signal = session.abort.signal;
-    let helloAt = Number.NEGATIVE_INFINITY;
-    let journal: ActionJournal | null = null;
     while (!signal.aborted && !this.paused) {
-      if (this.deps.now() - helloAt >= HELLO_EVERY_MS || journal === null) {
-        const capabilities = await this.deps.runner.capabilities();
-        const hello = await api.hello(credential, { appVersion: this.deps.identity.appVersion, capabilities,
-          idleSeconds: await this.deps.idleSeconds() });
-        helloAt = this.deps.now();
-        this.limitsValue = hello.limits;
-        journal = this.deps.journal(session.server, hello.nodeId);
-        this.set({ state: 'online', problem: null, capabilities, missing: await this.deps.runner.missing() });
-      }
       for (const unsent of journal.unsent()) {
         await api.result(credential, unsent.id, unsent.result);
         journal.uploaded(unsent.id);
@@ -193,13 +209,82 @@ export class NodeService {
               : '这台电脑无法保存动作回执，这一步没有执行。请检查存储空间或回执记录。' });
           continue;
         }
-        const limits = this.limitsValue;
-        const result = limits === null ? { status: 'refused' as const, refusalLayer: 'device' as const,
-          error: '还没拿到设备上限，这一步没做。' } : await this.deps.runner.execute(action, limits);
+        const result = await this.perform(action);
         journal.finish(action.id, result);
+        this.deps.log(`交结果：${action.kind} ${action.id}`);
         await api.result(credential, action.id, result);
         journal.uploaded(action.id);
       }
+    }
+  }
+
+  /** 做一个动作：记下在做什么、做到哪一步（报到时带上），做完清掉。 */
+  private async perform(action: NodeWireAction): Promise<NodeActionResultRequest> {
+    const limits = this.limitsValue;
+    if (limits === null) {
+      return { status: 'refused', refusalLayer: 'device', error: '还没拿到设备上限，这一步没做。' };
+    }
+    const started = this.deps.now();
+    const busy: Busy = { actionId: action.id, kind: action.kind, step: '领到了',
+      since: new Date(started).toISOString(), cancel: new AbortController() };
+    this.busy = busy;
+    this.deps.log(`开始做：${action.kind} ${action.id}`);
+    try {
+      const result = await this.deps.runner.execute(action, limits, (step) => {
+        busy.step = step.slice(0, 200);
+      }, busy.cancel.signal);
+      this.deps.log(`做完：${action.kind} ${action.id} ${result.status}${result.errorCode === undefined ? ''
+        : ` ${result.errorCode}`} ${this.deps.now() - started}ms`);
+      return result;
+    } finally {
+      if (this.busy === busy) {
+        this.busy = null;
+      }
+    }
+  }
+
+  private async hello(api: NodeApi, credential: string): Promise<NodeHelloResponse> {
+    const capabilities = await this.deps.runner.capabilities();
+    const busy = this.busy === null ? null : { actionId: this.busy.actionId, kind: this.busy.kind,
+      step: this.busy.step, since: this.busy.since };
+    const hello = await api.hello(credential, { appVersion: this.deps.identity.appVersion, capabilities,
+      idleSeconds: await this.deps.idleSeconds(), busy });
+    this.limitsValue = hello.limits;
+    this.set({ state: 'online', problem: null, capabilities, missing: await this.deps.runner.missing() });
+    this.answer(api, credential, hello);
+    return hello;
+  }
+
+  /** 单独的报到循环：不管动作做没做完，每 20 秒报一次。出错只记一笔，下一次再报。 */
+  private async heartbeat(api: NodeApi, credential: string, signal: AbortSignal): Promise<void> {
+    while (!signal.aborted) {
+      await this.deps.sleep(HELLO_EVERY_MS, signal);
+      if (signal.aborted || this.paused) { return; }
+      try {
+        await this.hello(api, credential);
+      } catch (error) {
+        this.deps.log(`报到失败：${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  }
+
+  /** 报到回复里服务器要的：取消在做的动作、传日志（另起一条请求，不等它）。 */
+  private answer(api: NodeApi, credential: string, hello: NodeHelloResponse): void {
+    const busy = this.busy;
+    if (busy !== null && (hello.cancel ?? []).includes(busy.actionId)) {
+      this.deps.log(`服务器取消了：${busy.kind} ${busy.actionId}`);
+      busy.cancel.abort();
+    }
+    const wanted = hello.logsWanted;
+    if (wanted !== undefined && wanted.requestId !== this.lastLogRequest) {
+      this.lastLogRequest = wanted.requestId;
+      const upload = { requestId: wanted.requestId, ...this.deps.logsSince(wanted.since) };
+      void api.uploadLogs(credential, upload).then(() => {
+        this.deps.log(`日志已上传：${upload.lines.length} 行`);
+      }, (error: unknown) => {
+        this.lastLogRequest = null;
+        this.deps.log(`日志上传失败：${error instanceof Error ? error.message : String(error)}`);
+      });
     }
   }
 

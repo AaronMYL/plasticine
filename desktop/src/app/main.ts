@@ -32,6 +32,7 @@ import { installMenu, installTray, type MenuActions, type MenuState } from './ap
 import { attachContextMenu, attachQuoteShortcut } from './context-menu.ts';
 import { registerBridge } from './bridge-ipc.ts';
 import { NOTIFICATION_SETTINGS_URLS, testNotice } from './notify-test.ts';
+import { NODE_LOG_LINES_MAX } from '../../../agent/shared/api/devices.ts';
 import { TEST_NOTICE_BODY } from '../../../agent/shared/api/push.ts';
 import { CHANNELS } from './channels.ts';
 import { desktopPaths, type ShellPlatform } from './desktop-paths.ts';
@@ -40,7 +41,7 @@ import { LocalServer } from './local-server.ts';
 import { MainWindow } from './main-window.ts';
 import { OAuthCapture } from './oauth-capture.ts';
 import { openPermission } from './permissions.ts';
-import { fetchBytes, launchDetached, launchServer, logger, readUrl, resources, runChecked, spawnHelper,
+import { fetchBytes, launchDetached, launchServer, logger, logsSince, readUrl, resources, runChecked, spawnHelper,
   waitHealthy } from './runtime.ts';
 import { ServerPlace } from './server-place.ts';
 import { defaultSettings, SettingsStore } from './settings-store.ts';
@@ -149,7 +150,8 @@ async function start(): Promise<void> {
         clearTimeout(timer);
         resolve();
       }, { once: true });
-    }), now: Date.now, log }, settings.get().devicePaused);
+    }), now: Date.now, log, logsSince: (since) => logsSince(paths.logs, since, NODE_LOG_LINES_MAX) },
+  settings.get().devicePaused);
   const feeds = new FeedRunner({ session: web, userAgent: tabAgent, log,
     pageScript: (name) => readPageScript(join(__dirname, 'pages'), name),
     node: () => {

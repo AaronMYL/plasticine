@@ -150,8 +150,14 @@ async function waitIdle(devices: DeviceActionPort, screened: Omit<ActionRequest,
 }
 
 /** Hard refusals and device limits first, recorded and reported at once; then whatever comes after. */
+/** 等设备回来接着做（device-waits.ts）：离线没发出、发出后结果不明的，记一笔。 */
+export interface WaitPort {
+  add(runId: string | null, nodeId: string, why: string): void;
+}
+
 export function createDeviceActionGate(devices: DeviceActionPort, fallback: PermissionGate,
-  approvals?: { request(request: ActionRequest): { id: string } }, idleWait?: IdleWait): PermissionGate {
+  approvals?: { request(request: ActionRequest): { id: string } }, idleWait?: IdleWait, waits?: WaitPort)
+  : PermissionGate {
   return {
     async check(request) {
       if (request.tool.name !== DEVICE_ACTION_TOOL || !Value.Check(DeviceActionParameters, request.args)) {
@@ -186,6 +192,11 @@ export function createDeviceActionGate(devices: DeviceActionPort, fallback: Perm
       if (rerouted !== null) {
         return { allowed: false, message: rerouted };
       }
+      if (hold?.why === 'offline') {
+        waits?.add(request.runId ?? null, screened.nodeId, `离线，「${request.args.purpose}」没发出`);
+        return { allowed: false, message: `${WAIT_MESSAGES.offline}${waits === undefined ? ''
+          : '它一回来，这条任务会收到一句提醒，从这一步接着做；在那之前别另开任务。'}` };
+      }
       if (hold !== null) {
         return { allowed: false, message: hold.why === 'capability_missing'
           ? missingCapability(hold, request.args.action) : WAIT_MESSAGES[hold.why] };
@@ -218,7 +229,7 @@ async function recapture(call: Call): Promise<never> {
   throw new ToolFailure(`截图过期，这一步没有发出：${done}。先看新截图重新定位，再发点击或输入。`);
 }
 
-export function createDeviceActionTool(devices: DeviceActionPort): Tool {
+export function createDeviceActionTool(devices: DeviceActionPort, waits?: WaitPort): Tool {
   return defineTool({
     name: DEVICE_ACTION_TOOL,
     label: '设备动作',
@@ -286,6 +297,7 @@ export function createDeviceActionTool(devices: DeviceActionPort): Tool {
         throw new ToolFailure(outcome.reason ?? '设备动作没有做成。');
       }
       if (outcome.status === 'unknown' || outcome.status === 'queued') {
+        waits?.add(context.runId ?? null, args.nodeId, `「${args.purpose}」结果不明：${outcome.reason ?? ''}`);
         throw new ToolUncertain(outcome.reason ?? '动作尚未取得回执，请先核实，不要重复发送。');
       }
       if (outcome.status === 'dry_run') {

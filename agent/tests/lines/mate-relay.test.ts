@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { fauxAssistantMessage } from '@earendil-works/pi-ai';
 import type { MateDraft } from '../../shared/api/mates.ts';
 import { Mates } from '../../src/mates/service.ts';
+import { mateTools } from '../../src/mates/tools.ts';
 import { MAIN_LINE_ID } from '../../src/state/index.ts';
 import { startKernel, until } from './helpers.ts';
 
@@ -55,5 +56,31 @@ test('群组里的交接和队友自己开的后台活不另贴', async () => {
     const own = h.kernel.read(a.lineId, 20).messages;
     assert.equal(own.filter((message) => message.role === 'handoff').length, 0);
     assert.equal(own.find((message) => message.role === 'lineReport')?.relay, undefined);
+  } finally { await h.close(); }
+});
+
+test('交给手上还有没做完任务的队友：不另开，列出那几条让接着做；确实是另一件事带 newTask 才开（11-16）', async () => {
+  const h = await startKernel();
+  try {
+    const mates = new Mates(h.handle.state, () => h.kernel);
+    const mate = mates.create(draft);
+    h.respond([fauxAssistantMessage('做到一半')]);
+    const old = mates.handoff({ mateId: mate.id, sourceLineId: MAIN_LINE_ID, goal: '海投' }, undefined, [],
+      { resumeParent: false });
+    await h.kernel.settled();
+    h.kernel.halt(old.id);
+    const tool = mateTools(mates).find((item) => item.name === 'mate_handoff')!
+      .create({ lineId: MAIN_LINE_ID, kind: 'main', projectId: null } as never);
+    const first = (await tool.execute('t1', { mateId: mate.id, goal: '恢复海投' })).content[0] as { text: string };
+    const refused = JSON.parse(first.text) as { handedOff: boolean; unfinished: { id: string }[] };
+    assert.equal(refused.handedOff, false);
+    assert.deepEqual(refused.unfinished.map((line) => line.id), [old.id]);
+    assert.equal(h.kernel.list({ kind: 'background', limit: 10 }).length, 1);
+    h.respond([fauxAssistantMessage('另一件做完'), fauxAssistantMessage('好')]);
+    const second = (await tool.execute('t2', { mateId: mate.id, goal: '改简历', newTask: true }))
+      .content[0] as { text: string };
+    const opened = JSON.parse(second.text) as { line: { id: string } };
+    assert.notEqual(opened.line.id, old.id);
+    await h.kernel.settled();
   } finally { await h.close(); }
 });

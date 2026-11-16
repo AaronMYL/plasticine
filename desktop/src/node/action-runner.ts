@@ -10,6 +10,7 @@ import type { DeviceActionKind, DeviceLimits } from '../../../agent/shared/state
 import { HelperCallError } from '../../../agent/shared/desktop-helper-client.ts';
 import { HELPER_DEVICE_KINDS } from '../../../agent/shared/desktop-helper-protocol.ts';
 import { HelperUnavailable, type HelperProcess } from '../helper/helper-process.ts';
+import { actionLimitMs, actionRetryable } from '../../../agent/shared/device-action-limits.ts';
 import { runDeviceAction, SHELL_DEVICE_KINDS } from './device-executors.ts';
 import type { DeviceGuard } from './device-guard.ts';
 import type { ActionRunner } from './node-service.ts';
@@ -29,9 +30,25 @@ export class TabActionError extends Error {
 /** 设备这道墙在执行时（找到元素、看到真实页面以后）拒了：回 refused，不是失败。 */
 export class DeviceRefused extends Error {}
 
+/** 做到哪一步了（报到时带上，卡住时写进回执）。 */
+export type StepReporter = (step: string) => void;
+
 export interface TabActionPort {
   available(): boolean;
-  run(action: DeviceActionParams): Promise<Record<string, unknown>>;
+  run(action: DeviceActionParams, step?: StepReporter): Promise<Record<string, unknown>>;
+}
+
+/** 做了超过时限，或者被取消：那个没返回的就地放下，回执里说卡在哪。 */
+class ActionAbandoned extends Error {
+  readonly cancelled: boolean;
+  readonly step: string;
+  readonly afterMs: number;
+  constructor(cancelled: boolean, step: string, afterMs: number) {
+    super(cancelled ? 'cancelled' : 'timed out');
+    this.cancelled = cancelled;
+    this.step = step;
+    this.afterMs = afterMs;
+  }
 }
 
 export interface ActionRunnerDeps {
@@ -49,6 +66,8 @@ export interface ActionRunnerDeps {
   readUrl(url: string): Promise<{ text: string; truncated: boolean }>;
   now(): Date;
   log(line: string): void;
+  /** 每种动作的时限（测试给短的）；默认 shared/device-action-limits.ts。 */
+  limitMs?: (kind: DeviceActionKind, params: Record<string, unknown>) => number;
 }
 
 const TAB_KINDS = new Set<DeviceActionKind>(['tab_list', 'tab_read', 'tab_open', 'tab_navigate', 'tab_click',
@@ -98,7 +117,8 @@ export class DeviceActionRunner implements ActionRunner {
     return missing;
   }
 
-  async execute(wire: NodeWireAction, limits: DeviceLimits): Promise<NodeActionResultRequest> {
+  async execute(wire: NodeWireAction, limits: DeviceLimits, progress: StepReporter = () => undefined,
+    cancel?: AbortSignal): Promise<NodeActionResultRequest> {
     const candidate: unknown = { ...wire.params, kind: wire.kind };
     if (!Value.Check(DeviceActionParamsSchema, candidate)) {
       return refused('这一步的参数不全或不对，设备不替本体补判断。');
@@ -111,14 +131,17 @@ export class DeviceActionRunner implements ActionRunner {
     if (decision.kind === 'refuse') {
       return refused(decision.reason);
     }
-    if (decision.kind === 'confirm' && !await this.deps.confirm(decision.reason)) {
-      return refused('你在这台电脑上点了「不做」。');
+    if (decision.kind === 'confirm') {
+      progress('等你在这台电脑上点「做」');
+      if (!await this.deps.confirm(decision.reason)) {
+        return refused('你在这台电脑上点了「不做」。');
+      }
     }
     let result: Record<string, unknown>;
     try {
-      result = await this.run(action, limits);
+      result = await this.limited(action, limits, progress, cancel);
     } catch (error) {
-      return this.failure(error);
+      return this.failure(error, action.kind);
     }
     this.deps.guard.record(action);
     if (!Value.Check(DEVICE_RESULT_SCHEMAS[action.kind], result)) {
@@ -128,9 +151,42 @@ export class DeviceActionRunner implements ActionRunner {
     return { status: 'executed', result };
   }
 
-  private async run(action: DeviceActionParams, limits: DeviceLimits): Promise<Record<string, unknown>> {
+  /** 照这种动作的时限做；到点或被取消就不等了（那个承诺放着不管，结果来了也不再用）。 */
+  private limited(action: DeviceActionParams, limits: DeviceLimits, progress: StepReporter,
+    cancel: AbortSignal | undefined): Promise<Record<string, unknown>> {
+    const started = this.deps.now().getTime();
+    let step = '开始做';
+    const report: StepReporter = (next) => {
+      step = next;
+      progress(next);
+    };
+    report('开始做');
+    const limitMs = (this.deps.limitMs ?? actionLimitMs)(action.kind, action as unknown as Record<string, unknown>);
+    return new Promise((resolve, reject) => {
+      const give = (cancelled: boolean): void => {
+        clearTimeout(timer);
+        reject(new ActionAbandoned(cancelled, step, this.deps.now().getTime() - started));
+      };
+      const timer = setTimeout(() => give(false), limitMs);
+      const onCancel = (): void => give(true);
+      cancel?.addEventListener('abort', onCancel, { once: true });
+      this.run(action, limits, report).then((value) => {
+        clearTimeout(timer);
+        cancel?.removeEventListener('abort', onCancel);
+        resolve(value);
+      }, (error: unknown) => {
+        clearTimeout(timer);
+        cancel?.removeEventListener('abort', onCancel);
+        reject(error);
+      });
+    });
+  }
+
+  private async run(action: DeviceActionParams, limits: DeviceLimits, step: StepReporter)
+    : Promise<Record<string, unknown>> {
     if ((HELPER_DEVICE_KINDS as readonly string[]).includes(action.kind)
       || (SHELL_DEVICE_KINDS as readonly string[]).includes(action.kind)) {
+      step((HELPER_DEVICE_KINDS as readonly string[]).includes(action.kind) ? '交给系统助手做' : '在这台电脑上做');
       const result = await runDeviceAction(action, { helper: this.deps.helper, paths: this.deps.paths,
         localRoots: this.deps.localRoots(), cloudRoots: limits.roots, trash: this.deps.trash });
       if (result !== null) {
@@ -138,7 +194,7 @@ export class DeviceActionRunner implements ActionRunner {
       }
     }
     if (TAB_KINDS.has(action.kind)) {
-      return this.deps.tabs.run(action);
+      return this.deps.tabs.run(action, step);
     }
     if (action.kind === 'browser_open') {
       await this.deps.openExternal(action.url);
@@ -150,7 +206,19 @@ export class DeviceActionRunner implements ActionRunner {
     throw new HelperUnavailable('这台电脑不会做这一步（是 iPhone 的事）。');
   }
 
-  private failure(error: unknown): NodeActionResultRequest {
+  private failure(error: unknown, kind: DeviceActionKind): NodeActionResultRequest {
+    if (error instanceof ActionAbandoned) {
+      const seconds = Math.round(error.afterMs / 1000);
+      if (error.cancelled) {
+        this.deps.log(`设备动作 ${kind} 被取消：做到「${error.step}」，${seconds} 秒`);
+        return { ...failed(`取消了：做到「${error.step}」时放下了，结果待核实。`, 'cancelled') };
+      }
+      const retryable = actionRetryable(kind);
+      this.deps.log(`设备动作 ${kind} 超时：卡在「${error.step}」，${seconds} 秒`);
+      return { ...failed(`做了 ${seconds} 秒还没做完，卡在「${error.step}」，已经放下；`
+        + (retryable ? '这一步只读，可以直接再做。' : '先核实做没做成，再决定要不要再做。'), 'timed_out'),
+      timedOut: { step: error.step, afterMs: error.afterMs, retryable } };
+    }
     if (error instanceof PathRefused || error instanceof DeviceRefused) {
       return refused(error.message);
     }

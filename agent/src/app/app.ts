@@ -12,6 +12,7 @@ import { ensureMemoryDocs, type MemoryCurator } from '../memory/index.ts';
 import { NoteAssistant } from '../notes/index.ts';
 import { YOU_DOC_ID } from '../../shared/state.ts';
 import { PageTranslator, type GlossaryTerm } from '../web/index.ts';
+import type { Diagnostics } from './diagnostics.ts';
 import type { MoneyDraftDesk, PaymentReader } from '../life/index.ts';
 import { Presence, type AskDesk, type Presenter, type PushService, type ScanScheduler } from '../attention/index.ts';
 import type { Daily } from '../daily/index.ts';
@@ -56,6 +57,7 @@ import { DirectHub } from '../direct/index.ts';
 
 export interface AppOptions {
   state: StateService;
+  diagnostics: Diagnostics;
   text: TextModels;
   publicUrl?: () => string;
   desk: AskDesk;
@@ -187,6 +189,7 @@ export function createApp(options: AppOptions): App {
   const devicePaths = new DevicePaths(direct.marker);
   const deps: AppDeps = {
     state: options.state,
+    diagnostics: options.diagnostics,
     devicePaths,
     direct,
     text: options.text,
@@ -303,6 +306,7 @@ export function createApp(options: AppOptions): App {
         options.scans.stop();
         options.tasks.stop();
         options.devices.stop();
+        options.diagnostics.stop();
         bookInsights.stop();
         options.memoryCurator.stop();
         // 第 113 条：先让同步循环停下（中止长轮询），免得它在关掉的服务上重连、记一条假的「连不上」。

@@ -70,11 +70,90 @@ test('只有过时回执，不把结果不明改成设备没接这一步', async
   now += 1;
   const pending = perform('still-waiting');
   await service.nextAction(nodeId, 0, signal());
-  now += 120_001;
+  // 设备一直报到、说还在做这一步（11-16 起报到单独定时）：不算离开，也不算没接。
+  for (let step = 0; step < 4; step += 1) {
+    now += 30_000;
+    stillDoing('still-waiting');
+  }
+  now += 1;
   service.channel.sweep();
   assert.equal(t.state.nodeActions.byActionId('still-waiting')?.status, 'sent');
   service.stop();
   await pending;
+});
+
+function hello(busy: { actionId: string; kind: 'file_read'; step: string; since: string } | null) {
+  const node = t.state.nodes.require(nodeId);
+  return service.hello(node, { appVersion: '1', protocolVersion: 1, capabilities: node.capabilities,
+    ...(busy === null ? {} : { busy }) });
+}
+
+function stillDoing(actionId: string) {
+  return hello({ actionId, kind: 'file_read', step: '读文件', since: new Date(START).toISOString() });
+}
+
+test('设备报到说在做，动作通道是「在做」；超过时限还在做是「卡住」；又空了算缓过来（11-16）', async () => {
+  const back: string[] = [];
+  service.stop();
+  service = new DeviceService({ state: t.state, now: () => new Date(now), dryRun: false,
+    cameBack: (node) => back.push(node.id) });
+  const pending = perform('slow-read');
+  await service.nextAction(nodeId, 0, signal());
+  stillDoing('slow-read');
+  assert.equal(service.work(nodeId).state, 'busy');
+  assert.equal(service.work(nodeId).step, '读文件');
+  for (let step = 0; step < 4; step += 1) {
+    now += 30_000;
+    stillDoing('slow-read');
+  }
+  assert.equal(service.work(nodeId).state, 'stuck');
+  assert.equal(service.listNodes()[0]?.work.state, 'stuck');
+  now += 1_000;
+  hello(null);
+  assert.equal(service.work(nodeId).state, 'idle');
+  assert.deepEqual(back, [nodeId]);
+  service.stop();
+  await pending;
+});
+
+test('发给设备的动作，设备连着两次报到都说没在做，就记结果不明，不再干等十分钟', async () => {
+  const pending = perform('lost-one');
+  await service.nextAction(nodeId, 0, signal());
+  now += 20_000;
+  hello(null);
+  assert.equal(t.state.nodeActions.byActionId('lost-one')?.status, 'sent');
+  now += 20_000;
+  hello(null);
+  const row = t.state.nodeActions.byActionId('lost-one')!;
+  assert.equal(row.status, 'unknown');
+  assert.match(row.reason ?? '', /没在做这一步/);
+  assert.equal((await pending).status, 'unknown');
+});
+
+test('设备领走动作后 90 秒没再报到，记结果不明并说设备回来后会接着做', async () => {
+  const pending = perform('gone-one');
+  await service.nextAction(nodeId, 0, signal());
+  now += 91_000;
+  service.channel.sweep();
+  const row = t.state.nodeActions.byActionId('gone-one')!;
+  assert.equal(row.status, 'unknown');
+  assert.match(row.reason ?? '', /90 秒没再报到/);
+  await pending;
+});
+
+test('取消：没领走的直接作废，在做的下次报到时让设备放下', async () => {
+  const queued = perform('cancel-queued');
+  assert.equal(service.cancel('cancel-queued'), 'queued');
+  assert.equal((await queued).status, 'refused');
+  assert.match(t.state.nodeActions.byActionId('cancel-queued')?.reason ?? '', /取消了/);
+  const running = perform('cancel-running');
+  await service.nextAction(nodeId, 0, signal());
+  stillDoing('cancel-running');
+  assert.equal(service.cancel('cancel-running'), 'sent');
+  assert.deepEqual(stillDoing('cancel-running').cancel, ['cancel-running']);
+  service.reportResult(nodeId, 'cancel-running', { status: 'failed', error: '取消了', errorCode: 'cancelled' });
+  await running;
+  assert.equal(service.cancel('no-such'), null);
 });
 
 test('重启后的旧结果不明动作不重发，仅同设备后续回执能补上明确原因', async () => {

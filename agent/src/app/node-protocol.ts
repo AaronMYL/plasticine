@@ -7,6 +7,8 @@ import {
   NODE_CREDENTIAL_SCHEME,
   NODE_PAIR_PATH,
   NodeHelloRequestSchema,
+  NODE_LOGS_MAX_BYTES,
+  NodeLogUploadSchema,
   NodePairRequestSchema,
   PAIRING_REPLAY_WINDOW_MS,
   REPLAYED_HEADER,
@@ -123,11 +125,22 @@ export async function helloNodeHandler(context: RequestContext): Promise<Reply> 
   requireNode(context);
   const body = checkInput(NodeHelloRequestSchema, await readJsonBody(context.req), '节点报到');
   // The body may have taken a while: a node revoked meanwhile gets nothing.
-  const updated = context.deps.devices.hello(requireNode(context), body);
+  const answer = context.deps.devices.hello(requireNode(context), body);
+  const updated = answer.node;
   const reply: NodeHelloResponse = {
     nodeId: updated.id,
     limits: effectiveLimits(updated),
     limitsVersion: updated.limitsVersion,
+    ...(answer.logsWanted === null ? {} : { logsWanted: answer.logsWanted }),
+    ...(answer.cancel.length === 0 ? {} : { cancel: answer.cancel }),
   };
   return { status: 200, body: reply };
+}
+
+/** POST /v2/nodes/logs：设备传上来的日志（服务器在报到回复里要了才传，11-16）。 */
+export async function nodeLogsHandler(context: RequestContext): Promise<Reply> {
+  requireNode(context);
+  const body = checkInput(NodeLogUploadSchema, await readJsonBody(context.req, NODE_LOGS_MAX_BYTES), '设备日志');
+  context.deps.devices.receiveLogs(requireNode(context).id, body);
+  return { status: 200, body: {} };
 }

@@ -73,6 +73,10 @@ const EVENTS = {
   sse_failed: '事件推送失败，已关闭对应连接',
   after_commit_failed: '请求已提交，后续动作失败',
   request_failed: '请求处理失败',
+  request_slow: '一个请求处理得慢（超过 500 毫秒）',
+  sql_slow: '一次数据库查询慢（超过 200 毫秒）',
+  event_loop_lag: '这一分钟里服务被同步工作占住过（事件循环延迟高）',
+  device_resume_failed: '设备回来了，但没能告诉等它的任务接着做',
   library_batch_item_failed: '批量处理中的一项没有完成，结果保留供重试',
   error_response_failed: '错误响应未发出，连接已断开',
   memory_curation_failed: '记忆整理这一次没做成，原因已记在整理作业里，稍后重试',
@@ -158,6 +162,11 @@ export interface LogFields {
   table?: LogTable;
   status?: number;
   counts?: Partial<Record<Counter, number | null>>;
+  /** 11-16：请求的路由模板（`/v2/lines/:lineId` 这种，不带 id 和正文）、方法、耗时；慢查询的语句开头。 */
+  route?: string;
+  method?: string;
+  durationMs?: number;
+  sql?: string;
 }
 
 export function logCategory(value: unknown): ErrorCategory {
@@ -197,9 +206,13 @@ export function safeLog(level: 'log' | 'warn' | 'error', event: LogEvent, fields
     // 日志里的链接洗掉像凭据的参数（11-14 起库里存原链接，抓取出错的说法里可能带着它）。
     if (error !== undefined) { entry['errorMessage'] = cleanOutboundText(failureText(error)); }
     if (error instanceof Error && error.stack !== undefined) { entry['errorStack'] = cleanOutboundText(error.stack); }
-    for (const key of ['stepKey', 'logPath']) {
+    for (const key of ['stepKey', 'logPath', 'route', 'method', 'sql']) {
       const value = ownValue(fields, key);
-      if (typeof value === 'string') { entry[key] = value; }
+      if (typeof value === 'string') { entry[key] = value.slice(0, 200); }
+    }
+    const duration = ownValue(fields, 'durationMs');
+    if (typeof duration === 'number' && Number.isFinite(duration) && duration >= 0) {
+      entry['durationMs'] = Math.round(duration);
     }
     const id = ownValue(fields, 'objectId');
     if (typeof id === 'string') {

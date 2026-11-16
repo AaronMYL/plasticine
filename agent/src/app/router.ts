@@ -88,6 +88,7 @@ import {
   MONEY_STATS_PATH,
   NODE_ACTIONS_PATH,
   NODE_HELLO_PATH,
+  NODE_LOGS_PATH,
   NODE_NEXT_ACTION_PATH,
   NODE_PAIR_PATH,
   NODE_PAIRING_CODES_PATH,
@@ -209,7 +210,7 @@ import { confirmMoneyDraft, createMoneyDraft, editMoneyDraft, getMoneyDraft, get
 import { addMoneyAccount, editMoney, editMoneyAccount, getMoney, getMoneyStats, recordMoney, removeMoney }
   from './money.ts';
 import { nextNodeAction, reportNodeAction } from './node-actions.ts';
-import { helloNodeHandler, pairNodeHandler } from './node-protocol.ts';
+import { helloNodeHandler, nodeLogsHandler, pairNodeHandler } from './node-protocol.ts';
 import { nodeBrowserSession } from './node-browser.ts';
 import { issueNodePairingCode, listNodeActions, listNodes, revokeNodeHandler, setNodeLimitsHandler } from './nodes.ts';
 import { unlockNote } from './note-access.ts';
@@ -482,6 +483,7 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: `${NODES_PATH}/:id/limits`, auth: true, handler: setNodeLimitsHandler },
   { method: 'POST', path: NODE_PAIR_PATH, auth: false, handler: pairNodeHandler },
   { method: 'POST', path: NODE_HELLO_PATH, auth: false, node: true, handler: helloNodeHandler },
+  { method: 'POST', path: NODE_LOGS_PATH, auth: false, node: true, handler: nodeLogsHandler },
   { method: 'POST', path: NODE_BROWSER_SESSION_PATH, auth: false, node: true, handler: nodeBrowserSession },
   // Mac 自更新（app/mac-updates.ts）：节点 Bearer，不是会话。
   { method: 'GET', path: MAC_LATEST_PATH, auth: false, handler: getMacLatest },

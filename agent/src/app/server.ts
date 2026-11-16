@@ -9,17 +9,23 @@ import { pickEncoding, sensitivePath } from './compression.ts';
 import type { AppDeps, HandlerResult } from './context.ts';
 import { sendBytes, sendJson } from './http.ts';
 import { responseTextPolicy } from './outbound-policy.ts';
+import { SLOW_REQUEST_MS } from './diagnostics.ts';
 import { matchRoute } from './router.ts';
 
 /** 谁在问：他自己的设备（会话或节点）回原链接，不清洗（11-14 Aaron 定「自己用不清洗，分享出去才清洗」）。 */
 interface Asker {
   own: boolean;
+  /** 认出来的路由模板（`/v2/lines/:lineId`）；没认出来是 null。日志和体检只记它，不记真路径。 */
+  route: string | null;
 }
 
 async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse, asker: Asker):
   Promise<HandlerResult> {
   const url = new URL(req.url ?? '/', 'http://localhost');
   const match = matchRoute(req.method ?? 'GET', url.pathname);
+  if (match.kind === 'found') {
+    asker.route = match.route.path;
+  }
   if (match.kind === 'none') {
     throw new ApiError(404, 'not_found', '没有这个接口。', { next: '核对路径；接口都以 /v2/ 开头。' });
   }
@@ -39,12 +45,16 @@ async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse,
   return match.route.handler({ req, res, url, params: match.params, auth, deps });
 }
 
-function writeError(deps: AppDeps, pathname: string, res: ServerResponse, error: unknown, own: boolean): void {
+function writeError(deps: AppDeps, pathname: string, res: ServerResponse, error: unknown, asker: Asker,
+  method: string): void {
   const mapped = toApiError(error);
   if (mapped.unexpected) {
-    // 路径本身也可能带凭据或用户内容，只记录受控错误类别。
-    safeLog('error', 'request_failed', { category: errorCategory(error) });
+    // 路径本身也可能带凭据或用户内容，只记路由模板；11-16 起带上错误原文和位置（日志工具会洗掉像凭据的东西）。
+    const route = asker.route ?? '(未知路由)';
+    safeLog('error', 'request_failed', { category: errorCategory(error), route, method, error });
+    deps.diagnostics.error(route, method, mapped.error.status, error);
   }
+  const own = asker.own;
   if (res.headersSent) {
     res.destroy();
     return;
@@ -54,15 +64,30 @@ function writeError(deps: AppDeps, pathname: string, res: ServerResponse, error:
     !own);
 }
 
+/** 记一个请求的耗时（等回答写完）；慢的写日志。流式的（事件流）不算。 */
+function timeRequest(deps: AppDeps, res: ServerResponse, asker: Asker, method: string, started: number): void {
+  res.once('finish', () => {
+    const ms = performance.now() - started;
+    const route = asker.route ?? '(未知路由)';
+    deps.diagnostics.request(route, method, res.statusCode, ms);
+    if (ms >= SLOW_REQUEST_MS) {
+      safeLog('warn', 'request_slow', { route, method, status: res.statusCode, durationMs: ms });
+    }
+  });
+}
+
 async function handle(deps: AppDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
   let pathname = '';
-  const asker: Asker = { own: false };
+  const asker: Asker = { own: false, route: null };
+  const method = req.method ?? 'GET';
+  const started = performance.now();
   try {
     pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
     const result = await respond(deps, req, res, asker);
     if (result === 'streamed') {
       return;
     }
+    timeRequest(deps, res, asker, method, started);
     if (result.bytes !== undefined) {
       const { data, type, download } = result.bytes;
       sendBytes(res, result.status, data, type, { ...(download === undefined ? {} : { download }),
@@ -74,7 +99,8 @@ async function handle(deps: AppDeps, req: IncomingMessage, res: ServerResponse):
       sendJson(res, result.status, body, result.headers ?? {}, policy, encoding, !asker.own);
     }
   } catch (error) {
-    writeError(deps, pathname, res, error, asker.own);
+    timeRequest(deps, res, asker, method, started);
+    writeError(deps, pathname, res, error, asker, method);
   }
 }
 

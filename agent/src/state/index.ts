@@ -9,6 +9,7 @@ export type { OpenStateOptions, StateService } from './service.ts';
 export { StateError, STATE_ERROR_CODES } from './errors.ts';
 export type { StateErrorCode } from './errors.ts';
 export { allPages, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from './object-store.ts';
+export { SLOW_QUERY_MS, watchSlowQueries } from './db.ts';
 export { ASSET_NAME_PATTERN, ASSETS_DIRECTORY, digestOf } from './note-bodies.ts';
 export type { BodyDigest, NoteAsset } from './note-bodies.ts';
 export { previewOf, titleOf, UNTITLED_NOTE } from './notes.ts';

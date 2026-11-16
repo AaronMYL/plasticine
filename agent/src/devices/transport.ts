@@ -4,7 +4,7 @@
 
 import { Value } from 'typebox/value';
 import {
-  DEVICE_RESULT_SCHEMAS, NodeActionResultRequestSchema,
+  DEVICE_RESULT_SCHEMAS, NODE_ONLINE_MS, NodeActionResultRequestSchema,
   type NodeActionEnvelope, type NodeActionReport, type NodeActionResultRequest, type NodeWireAction,
 } from '../../shared/api/index.ts';
 import type { NodeAction, NodeActionPatch } from '../../shared/state.ts';
@@ -48,6 +48,14 @@ const MISSING_RECEIPT_MS = 2 * 60_000;
 const MISSING_RECEIPT = '设备没接这一步：等待已超过两分钟，同设备后续动作已有回执，'
   + '但这一步没有执行回执，结果仍待核实；不再重发，请检查设备动作记录。';
 
+// 11-16：设备单独定时报到、带上在做哪个。发给它的动作，它连着两次报到都说没在做、也没交结果，就不再干等到十分钟期限。
+const NOT_DOING = '设备说它没在做这一步，也没交结果：结果不明，先核实（可以看 device_logs），不要直接再发。';
+const NOT_DOING_AFTER_MS = 15_000;
+const NOT_DOING_HELLOS = 2;
+const WITHDRAWN = '取消了：还没发给设备就收回了，这一步没有做。';
+const WENT_AWAY = '设备领走这一步以后 90 秒没再报到（可能关了、睡了或卡死了）：结果不明，先核实，不要直接再发；'
+  + '设备回来后这条任务会接着做。';
+
 /** Durable outbox: only taking an action changes queued to sent, before the HTTP response is written. */
 export class PollingNodeTransport implements NodeTransport {
   readonly managesDelivery = true;
@@ -58,6 +66,8 @@ export class PollingNodeTransport implements NodeTransport {
   #timer: ReturnType<typeof setTimeout> | undefined;
   #stopped = false;
   #changed: (row: NodeAction) => void = () => undefined;
+  /** 发给设备、设备报到时说没在做的动作，各被说了几次。 */
+  readonly #notDoing = new Map<string, number>();
 
   constructor(state: ChannelState, now: () => Date) {
     this.#state = state;
@@ -179,7 +189,8 @@ export class PollingNodeTransport implements NodeTransport {
       throw new DeviceError('invalid_input', '动作结果字段不符合该动作的格式，请按协议重新上报。');
     }
     // 失败的种类（截图过期这类）跟着结果存下，工具据此自动重截（第 102 条）。
-    const result = body.errorCode === undefined ? body.result ?? null : { ...body.result, errorCode: body.errorCode };
+    const result = body.errorCode === undefined ? body.result ?? null : { ...body.result, errorCode: body.errorCode,
+      ...(body.timedOut === undefined ? {} : { timedOut: body.timedOut }) };
     this.#update(row, { status: body.status, result,
       reason: body.error ?? (body.status === 'refused' ? '设备拒绝了这一步。' : null),
       refusalLayer: body.status === 'refused' ? 'device' : null,
@@ -188,11 +199,40 @@ export class PollingNodeTransport implements NodeTransport {
     this.sweep();
   }
 
+  /** 设备报到了，说它在做 busy（没在做是 null）：发给它的别的动作，过了一会儿还被说没在做，就算结果不明。 */
+  heard(nodeId: string, busy: string | null): void {
+    const now = this.#now().getTime();
+    for (const row of this.#state.nodeActions.pending()) {
+      if (row.nodeId !== nodeId || row.status !== 'sent' || row.actionId === busy
+        || now - Date.parse(row.deliveredAt ?? row.requestedAt) < NOT_DOING_AFTER_MS) {
+        continue;
+      }
+      const times = (this.#notDoing.get(row.actionId) ?? 0) + 1;
+      this.#notDoing.set(row.actionId, times);
+      if (times >= NOT_DOING_HELLOS) {
+        this.#notDoing.delete(row.actionId);
+        this.#update(row, { status: 'unknown', reason: NOT_DOING });
+        for (const check of [...this.#reports]) { check(); }
+      }
+    }
+  }
+
+  /** AI 取消还没领走的动作：作废，等它的工具马上得知。 */
+  withdraw(row: NodeAction): void {
+    if (row.status !== 'queued') { return; }
+    this.#update(row, { status: 'refused', refusalLayer: 'node', reason: WITHDRAWN });
+    for (const check of [...this.#reports]) { check(); }
+  }
+
   sweep(): void {
     if (this.#stopped) { return; }
     const now = this.#now().getTime();
     for (const row of this.#state.nodeActions.pending()) {
       if (row.deadline !== null && Date.parse(row.deadline) <= now) { this.#expire(row); }
+      else if (row.status === 'sent' && this.#silentSince(row.nodeId) + NODE_ONLINE_MS <= now) {
+        this.#update(row, { status: 'unknown', reason: WENT_AWAY });
+        for (const check of [...this.#reports]) { check(); }
+      }
     }
     for (const row of this.#state.nodeActions.unreportedWithLaterReceipt()) {
       const sentAt = Date.parse(row.deliveredAt ?? row.requestedAt);
@@ -234,8 +274,10 @@ export class PollingNodeTransport implements NodeTransport {
 
   #schedule(): void {
     clearTimeout(this.#timer);
-    const deadlines = this.#state.nodeActions.pending().flatMap((row) =>
-      row.deadline === null ? [] : [Date.parse(row.deadline)]);
+    const deadlines = this.#state.nodeActions.pending().flatMap((row) => [
+      ...(row.deadline === null ? [] : [Date.parse(row.deadline)]),
+      ...(row.status === 'sent' ? [this.#silentSince(row.nodeId) + NODE_ONLINE_MS] : []),
+    ]);
     for (const row of this.#state.nodeActions.unreportedWithLaterReceipt()) {
       if (row.reason !== MISSING_RECEIPT) {
         deadlines.push(Date.parse(row.deliveredAt ?? row.requestedAt) + MISSING_RECEIPT_MS);
@@ -244,6 +286,12 @@ export class PollingNodeTransport implements NodeTransport {
     if (deadlines.length === 0) { return; }
     this.#timer = setTimeout(() => this.sweep(), Math.max(1, Math.min(...deadlines) - this.#now().getTime()));
     this.#timer.unref();
+  }
+
+  /** 这台设备最后一次报到或领动作的时间（毫秒）；没有这台设备就当刚报过。 */
+  #silentSince(nodeId: string): number {
+    const node = this.#state.nodes.get(nodeId);
+    return node === undefined ? this.#now().getTime() : Date.parse(node.lastSeenAt);
   }
 
   #update(row: NodeAction, patch: NodeActionPatch): void {

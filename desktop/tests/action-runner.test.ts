@@ -19,7 +19,8 @@ function wire(kind: string, params: Record<string, unknown>, deadline = '2099-01
   return { id: `a-${kind}`, kind: kind as NodeWireAction['kind'], params, deadline };
 }
 
-function runner(t: { after(fn: () => void): void }, options: { tabs?: TabActionPort; confirm?: boolean } = {}) {
+function runner(t: { after(fn: () => void): void },
+  options: { tabs?: TabActionPort; confirm?: boolean; limitMs?: number } = {}) {
   const dir = realpathSync(tempDir(t));
   const helper = new HelperProcess({ spawn: () => spawnFakeHelper(), roots: () => [dir], log: () => undefined });
   t.after(() => helper.stop());
@@ -32,7 +33,8 @@ function runner(t: { after(fn: () => void): void }, options: { tabs?: TabActionP
     },
     openExternal: async () => undefined, trash: async (path) => { rmSync(path); },
     readUrl: async () => ({ text: '', truncated: false }),
-    now: () => new Date('2026-11-08T00:00:00.000Z'), log: () => undefined });
+    now: () => new Date('2026-11-08T00:00:00.000Z'), log: () => undefined,
+    ...(options.limitMs === undefined ? {} : { limitMs: () => options.limitMs! }) });
   return { run, dir, asked };
 }
 
@@ -101,4 +103,33 @@ test('结果形状不对按待核实报，不当做成了', async (t) => {
   const result = await run.execute(wire('tab_list', {}), LIMITS);
   assert.equal(result.status, 'failed');
   assert.match(result.error ?? '', /待核实/);
+});
+
+test('动作超过时限就放下：回执说卡在哪一步；只读的可以直接再做，点击要先核实（11-16）', async (t) => {
+  const tabs: TabActionPort = { available: () => true, run: (_action, step) => {
+    step?.('截标签画面');
+    return new Promise(() => undefined);
+  } };
+  const { run } = runner(t, { tabs, limitMs: 30 });
+  const steps: string[] = [];
+  const shot = await run.execute(wire('tab_shot', { tabId: 't-1' }), LIMITS, (step) => steps.push(step));
+  assert.equal(shot.status, 'failed');
+  assert.equal(shot.errorCode, 'timed_out');
+  assert.equal(shot.timedOut?.step, '截标签画面');
+  assert.equal(shot.timedOut?.retryable, true);
+  assert.deepEqual(steps, ['开始做', '截标签画面']);
+  const point = await run.execute(wire('tab_point', { tabId: 't-1', x: 1, y: 1 }), LIMITS);
+  assert.equal(point.errorCode, 'timed_out');
+  assert.equal(point.timedOut?.retryable, false);
+  assert.match(point.error ?? '', /先核实/);
+});
+
+test('取消了就放下，回执写取消了', async (t) => {
+  const tabs: TabActionPort = { available: () => true, run: () => new Promise(() => undefined) };
+  const { run } = runner(t, { tabs, limitMs: 60_000 });
+  const cancel = new AbortController();
+  const pending = run.execute(wire('tab_shot', { tabId: 't-1' }), LIMITS, undefined, cancel.signal);
+  cancel.abort();
+  const result = await pending;
+  assert.equal(result.errorCode, 'cancelled');
 });

@@ -3,7 +3,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { errorText } from '../../api/errors.ts';
-import type { NodeView } from '../../api/shared.ts';
+import { DEVICE_KIND_LABELS, type NodeView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
 import { Icon } from '../../shell/icons.tsx';
@@ -16,6 +16,28 @@ import { timeText } from '../../shell/time-text.ts';
 /** 这台电脑是什么：Mac 和 Windows 的桌面客户端是同一套，都列在这里。 */
 const PLATFORM_NAMES: Readonly<Partial<Record<NodeView['platform'], string>>> = { macos: 'Mac', windows: 'Windows',
   linux: 'Linux' };
+
+const MINUTE_MS = 60_000;
+/** 服务一分钟最多推一次「又报到了」，所以最后报到时间最多旧一分钟；再加上 90 秒才算离线。 */
+const OFFLINE_AFTER_MS = 150_000;
+
+/** 11-16：连着没有、动作通道在干什么，分开说（以前只看最后报到时间，动作卡住被当成离线）。 */
+export function nodeStatusText(node: NodeView, now: Date): string {
+  if (!node.online || now.getTime() - Date.parse(node.lastSeenAt) > OFFLINE_AFTER_MS) {
+    return `离线 · ${timeText(node.lastSeenAt, now)}`;
+  }
+  const { work } = node;
+  if (work.state === 'idle' || work.kind === null) {
+    return `在线 · ${timeText(node.lastSeenAt, now)}`;
+  }
+  const what = `${DEVICE_KIND_LABELS[work.kind]}${work.step === null ? '' : `（${work.step}）`}`;
+  if (work.state === 'stuck') {
+    const minutes = work.since === null ? 0
+      : Math.max(1, Math.round((now.getTime() - Date.parse(work.since)) / MINUTE_MS));
+    return `卡住了 · ${what} · ${minutes} 分钟`;
+  }
+  return `在做 · ${what}`;
+}
 
 export function NodeDevices(): ReactNode {
   const live = useLive();
@@ -40,7 +62,7 @@ export function NodeDevices(): ReactNode {
       <ul className="account-rows" aria-label="替你动手的电脑">
         {macs.map((node) => (
           <SettingRow key={node.id} as="li" lead={<Icon name="mac" />}
-            name={`${node.name} · ${PLATFORM_NAMES[node.platform] ?? '电脑'}`} sub={timeText(node.lastSeenAt, now)}>
+            name={`${node.name} · ${PLATFORM_NAMES[node.platform] ?? '电脑'}`} sub={nodeStatusText(node, now)}>
             <RevealMore label={`「${node.name}」的更多操作`} actions={[{ icon: 'close', label: '撤销',
               onSelect: () => setConfirm(node) }]} />
           </SettingRow>

@@ -12,8 +12,8 @@ import { claimPendingGroupTask } from './group-tasks.ts';
 import { mainIdentity } from './main-identity.ts';
 
 const immediate: After = (action) => action();
-type MateState = Pick<StateService, 'mates' | 'mateGroups' | 'lines' | 'lineMessages' | 'transaction' | 'memoryDocs'
-  | 'memoryCuration' | 'projects' | 'kernelSettings' | 'souls'>;
+type MateState = Pick<StateService, 'mates' | 'mateGroups' | 'lines' | 'lineMessages' | 'lineQueue' | 'transaction'
+  | 'memoryDocs' | 'memoryCuration' | 'projects' | 'kernelSettings' | 'souls'>;
 
 export class Mates {
   readonly #state: MateState;
@@ -70,6 +70,19 @@ export class Mates {
       this.#state.lines.update(line.id, { mateGroupId: group.id, modelPurpose: 'main' });
       return group;
     });
+  }
+
+  /**
+   * 这位队友手上没做完的交接（11-16：恢复 BOSS 海投时又开了一条，旧的暂停着、排着话一直挂着）：交新的之前先看，
+   * 同一件事接着做旧的（line_resume / tell_line），作废的用 line_end 收掉。
+   */
+  unfinished(mateId: string): { id: string; title: string; status: string; pauseReason: string | null;
+    queued: number; updatedAt: string }[] {
+    return this.#state.lines.withStatus(['running', 'queued', 'waiting', 'paused', 'failed'])
+      .filter((line) => line.mateId === mateId && line.parentLineId !== null && line.archivedAt === null
+        && line.pauseReason !== 'stopped')
+      .map((line) => ({ id: line.id, title: line.title, status: line.status, pauseReason: line.pauseReason,
+        queued: this.#state.lineQueue.queued(line.id).length, updatedAt: line.updatedAt }));
   }
 
   handoff(input: Omit<MateHandoffRequest, 'requestId'>, after: After = immediate,

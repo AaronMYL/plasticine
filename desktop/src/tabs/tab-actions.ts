@@ -8,12 +8,12 @@
 
 import { createHash, randomUUID } from 'node:crypto';
 import { Value } from 'typebox/value';
-import { nativeImage } from 'electron';
+import type { NativeImage } from 'electron';
 import type { DeviceActionParams, PageOperateEvent } from '../../../agent/shared/api/index.ts';
 import { PagePerceptionSchema } from '../../../agent/shared/api/page-operate.ts';
 import { classifyLane, isPaymentPage } from '../../../agent/shared/device-lanes.ts';
-import { DeviceRefused, TabActionError, type TabActionPort } from '../node/action-runner.ts';
-import { trustedClick, trustedInsert, withDebugger } from './cdp.ts';
+import { DeviceRefused, TabActionError, type StepReporter, type TabActionPort } from '../node/action-runner.ts';
+import { trustedClick, trustedInsert } from './cdp.ts';
 import type { Located, TargetFacts } from './tab-dom.ts';
 import type { Tab, TabViews } from './tab-views.ts';
 
@@ -45,6 +45,25 @@ const FILL_ERRORS: Readonly<Record<string, string>> = {
   card: '银行卡号、安全码这类不由 Plasticine 填。',
 };
 
+/** 截一次画面最多等这么久；Electron 的截图在画面出不来时可能一直不返回。 */
+const CAPTURE_MS = 8_000;
+/** 垫到最底层显示出来以后等一帧画好。 */
+const BOTTOM_SETTLE_MS = 200;
+
+/** 等一个可能永远不返回的承诺，到点回 null（那个承诺放着不管）。 */
+function within<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    promise.then((value) => {
+      clearTimeout(timer);
+      resolve(value);
+    }, (error: unknown) => {
+      clearTimeout(timer);
+      reject(error instanceof Error ? error : new Error(String(error)));
+    });
+  });
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -72,7 +91,7 @@ export class TabActions implements TabActionPort {
     return active !== null && this.deps.windowFocused() && this.deps.tabs.frame !== null ? active.id : null;
   }
 
-  async run(action: DeviceActionParams): Promise<Record<string, unknown>> {
+  async run(action: DeviceActionParams, step: StepReporter = () => undefined): Promise<Record<string, unknown>> {
     switch (action.kind) {
       case 'tab_list':
         return { tabs: this.deps.tabs.list().map((tab) => ({ tabId: tab.id, url: tab.view.webContents.getURL(),
@@ -99,7 +118,7 @@ export class TabActions implements TabActionPort {
       case 'tab_act':
         return this.act(action);
       case 'tab_shot':
-        return this.shot(action.tabId);
+        return this.shot(action.tabId, step);
       case 'tab_point':
         return this.point(action.tabId, action.x, action.y);
       case 'tab_type':
@@ -230,22 +249,44 @@ export class TabActions implements TabActionPort {
   }
 
   /** 截这个标签的画面，缩到视口的 CSS 像素（tab_point 的坐标照它）；标签藏着也截，不让它露出来。 */
-  private async shot(tabId: string): Promise<Record<string, unknown>> {
+  /**
+   * 截这个标签的画面，不切前台。11-16：隐藏的标签上用调试协议截图会一直不返回（18:48 那次整台设备卡住就在这里），
+   * 所以不再走调试协议：先照常截；截到空图，就把这个标签垫到最底层、短暂设为可见再截一次（在 Plasticine 界面和
+   * 正在看的标签后面），截完照原样藏回去。每一步都有时限。
+   */
+  private async shot(tabId: string, step: StepReporter): Promise<Record<string, unknown>> {
     const tab = this.tab(tabId);
+    step('读标签的视口大小');
     const size = await this.call(tabId, 'viewport', {});
     const width = Number(size.width);
     const height = Number(size.height);
-    let image = await tab.view.webContents.capturePage(undefined, { stayHidden: true });
-    if (image.isEmpty()) {
-      const data = await withDebugger(tab.view.webContents, async (send) =>
-        (await send('Page.captureScreenshot', { format: 'png', fromSurface: true }) as { data: string }).data);
-      image = nativeImage.createFromBuffer(Buffer.from(data, 'base64'));
+    step('截标签画面');
+    let image = await within(tab.view.webContents.capturePage(undefined, { stayHidden: true }), CAPTURE_MS);
+    if ((image === null || image.isEmpty()) && !tab.view.getVisible()) {
+      step('标签在后台：垫到最底层短暂显示再截');
+      image = await this.shotFromBottom(tab);
     }
-    if (image.isEmpty()) {
+    if (image === null || image.isEmpty()) {
       throw new TabActionError(null, '这个标签现在截不到画面（可能还没载入完），过一会儿再试。');
     }
+    step('压成 JPEG');
     const jpeg = image.resize({ width, height }).toJPEG(SHOT_QUALITY).toString('base64');
     return { tabId, url: tab.view.webContents.getURL(), jpeg, width, height };
+  }
+
+  private async shotFromBottom(tab: Tab): Promise<NativeImage | null> {
+    this.deps.tabs.toBottom(tab.id);
+    tab.view.setVisible(true);
+    try {
+      tab.view.webContents.invalidate();
+      await sleep(BOTTOM_SETTLE_MS);
+      return await within(tab.view.webContents.capturePage(), CAPTURE_MS);
+    } finally {
+      // 期间他切过来看这个标签了就别藏。
+      if (this.viewing() !== tab.id) {
+        tab.view.setVisible(false);
+      }
+    }
   }
 
   /** 按画面上的位置点一下：先认点到的是什么，像提交的不点；点用调试协议发可信点击，不动真鼠标。 */

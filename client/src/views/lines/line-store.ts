@@ -75,6 +75,8 @@ export class LinesStore {
   private readonly hub: EventsHub;
   /** 打开过的线：键是打开时用的 id（主对话是 main），值是那条线的数据。 */
   private readonly threads = new Map<string, Store<LineThreadData>>();
+  /** 重拉时没人在看、没跟着重拉的线：下次有人要时再拉。 */
+  private readonly stale = new Set<string>();
   /** 主对话真正的 id（读到第一页之后才知道）。 */
   private mainId: string | null = null;
   /** 隐藏后仍保留最新版本，晚到的旧事件不能把已归档工作加回来。 */
@@ -124,6 +126,9 @@ export class LinesStore {
   thread(lineId: string): Store<LineThreadData> {
     const existing = this.threads.get(lineId);
     if (existing !== undefined) {
+      if (this.stale.delete(lineId)) {
+        void this.loadLatest(lineId);
+      }
       return existing;
     }
     const store = new Store<LineThreadData>(EMPTY_THREAD);
@@ -316,7 +321,17 @@ export class LinesStore {
     return key === MAIN_LINE_ALIAS ? (this.mainId ?? key) : key;
   }
 
+  /**
+   * 补不上时整份重拉：线列表加正在看的线。11-16 以前把这一页打开过的每条线都重拉（一次 30 多个请求），没在看的
+   * 记成旧的，下次打开时再拉。
+   */
   private async reloadAll(): Promise<void> {
-    await Promise.all([this.loadList(), ...[...this.threads.keys()].map((key) => this.loadLatest(key))]);
+    const watched = [...this.threads.entries()].filter(([, store]) => store.watched()).map(([key]) => key);
+    for (const key of this.threads.keys()) {
+      if (!watched.includes(key)) {
+        this.stale.add(key);
+      }
+    }
+    await Promise.all([this.loadList(), ...watched.map((key) => this.loadLatest(key))]);
   }
 }

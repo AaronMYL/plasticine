@@ -5,9 +5,10 @@
 import { Value } from 'typebox/value';
 import { ComputerFetchJobsResponseSchema, DOUYIN_NODE_PATH, DouyinJobsResponseSchema, FEED_COMPUTER_FETCH_PATH,
   FEED_X_PATH, FEED_XHS_PATH, NODE_HELLO_PATH, NODE_NEXT_ACTION_PATH,
-  NODE_PAIR_PATH, NODE_POLL_MAX_SECONDS, NODE_PROTOCOL_VERSION, NODES_PATH, NodeHelloResponseSchema,
+  NODE_LOGS_PATH, NODE_PAIR_PATH, NODE_POLL_MAX_SECONDS, NODE_PROTOCOL_VERSION, NODES_PATH, NodeHelloResponseSchema,
   NodeNextActionResponseSchema, NodePairResponseSchema, XTimelineDueSchema, type DouyinJob,
-  type DouyinReport, type NodeActionResultRequest, type NodeHelloResponse, type NodePairResponse, type NodeWireAction,
+  type DouyinReport, type NodeActionResultRequest, type NodeBusy, type NodeHelloResponse, type NodeLogUpload,
+  type NodePairResponse, type NodeWireAction,
   type XTimelineDue, type XTimelineReport, XhsDueSchema, type XhsDue, type XhsReport, type ComputerFetchJob,
   type ComputerFetchReport } from '../../../agent/shared/api/index.ts';
 import type { Static, TSchema } from 'typebox';
@@ -58,11 +59,17 @@ export class NodeApi {
   }
 
   async hello(credential: string, input: { appVersion: string; capabilities: readonly DeviceActionKind[];
-    idleSeconds: number | null }): Promise<NodeHelloResponse> {
+    idleSeconds: number | null; busy?: NodeBusy | null }): Promise<NodeHelloResponse> {
     const body = { appVersion: input.appVersion, protocolVersion: NODE_PROTOCOL_VERSION,
       capabilities: [...input.capabilities],
-      ...(input.idleSeconds === null ? {} : { idleSeconds: input.idleSeconds }) };
+      ...(input.idleSeconds === null ? {} : { idleSeconds: input.idleSeconds }),
+      ...(input.busy === undefined || input.busy === null ? {} : { busy: input.busy }) };
     return this.json(NODE_HELLO_PATH, credential, { method: 'POST', body }, NodeHelloResponseSchema);
+  }
+
+  /** 服务器要了才传的日志（hello 的 logsWanted），和动作通道无关。 */
+  async uploadLogs(credential: string, upload: NodeLogUpload): Promise<void> {
+    await this.request(NODE_LOGS_PATH, credential, { method: 'POST', body: upload }, REQUEST_TIMEOUT_MS);
   }
 
   /** 长轮询：没有活回 null（204）。 */

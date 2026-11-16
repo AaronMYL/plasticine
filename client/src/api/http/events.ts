@@ -5,6 +5,7 @@
 // 每条事件先过 shared 的 EveryStreamEventSchema（卡、记忆和约定、信息流、节点和设备动作、记账、站内信、工具组、
 // 云端浏览器、联系人），线的事件过 LineStreamEventSchema。
 
+import type { Static, TSchema } from 'typebox';
 import { Value } from 'typebox/value';
 import type { EventsApi } from '../client.ts';
 import { EVENTS_PATH, EveryStreamEventSchema, LineStreamEventSchema, type LineStreamEvent } from '../shared.ts';
@@ -77,7 +78,49 @@ export interface HttpEventsOptions {
   /** 浏览器放弃重连时调：去问一次会话，401 就会经接口层回到配对页。 */
   onGiveUp: () => void;
   now?: () => Date;
+  /** 认不出事件时怎么刷新整页（测试给假的）；默认 BROWSER_STALE。 */
+  stale?: StaleHandling;
 }
+
+/**
+ * 认不出的事件（11-16）：以前每来一条就整份重拉一次（线列表 + 打开过的每条线）。18:06 换版后线多了一个字段，
+ * 没刷新的旧页面每条「线变了」都认不出，一分钟几百个请求，把服务压垮了。现在：多出来的字段先删掉再认（新服务多给的
+ * 东西旧页面用不上）；还认不出才重拉，而且一分钟最多一次；重拉过还是认不出，说明这一页是旧代码，刷新整页（十分钟最多一次）。
+ */
+const RESYNC_EVERY_MS = 60_000;
+const RELOAD_EVERY_MS = 10 * 60_000;
+const RELOAD_KEY = 'plasticine.staleReloadAt';
+
+export interface StaleHandling {
+  now(): number;
+  /** 刷新整页（旧代码认不出新服务的事件）。 */
+  reload(): void;
+  /** 上次因为这个刷新整页是什么时候（存在本页会话里，拿不到是 null）。 */
+  lastReload(): number | null;
+  markReload(at: number): void;
+}
+
+export const BROWSER_STALE: StaleHandling = {
+  now: () => Date.now(),
+  reload: () => window.location.reload(),
+  lastReload: () => {
+    try {
+      const value = Number(window.sessionStorage.getItem(RELOAD_KEY));
+      return Number.isFinite(value) && value > 0 ? value : null;
+    } catch {
+      // 拿不到会话存储（隐私模式之类）：当没刷过。
+      return null;
+    }
+  },
+  markReload: (at) => {
+    try {
+      window.sessionStorage.setItem(RELOAD_KEY, String(at));
+    } catch (error) {
+      // 存不了就算了：最坏多刷新一次。
+      console.warn('记不下刷新时间', error);
+    }
+  },
+};
 
 function parseData(data: string): unknown {
   try {
@@ -88,11 +131,26 @@ function parseData(data: string): unknown {
   }
 }
 
+/** 认得出就回它；多了字段（新服务多给的）删掉再认；还认不出回 null。 */
+function recognized<T extends TSchema>(schema: T, value: unknown): Static<T> | null {
+  if (Value.Check(schema, value)) {
+    return value;
+  }
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+  const cleaned = Value.Clean(schema, structuredClone(value));
+  return Value.Check(schema, cleaned) ? cleaned : null;
+}
+
 export class HttpEvents implements EventsApi {
   private readonly options: HttpEventsOptions;
   private readonly mapper: ServerEventMapper;
   /** 最后一条带 id 的事件；浏览器放弃之后重新订阅时用它接上。 */
   private lastEventId: string | null = null;
+  /** 上次因为认不出事件重拉的时间；重拉过以后又认不出的条数。 */
+  private resyncedAt: number | null = null;
+  private strayAfterResync = 0;
 
   constructor(options: HttpEventsOptions) {
     this.options = options;
@@ -159,10 +217,9 @@ export class HttpEvents implements EventsApi {
     if (event.lastEventId !== '') {
       this.lastEventId = event.lastEventId;
     }
-    const value = parseData(event.data);
-    if (!Value.Check(LineStreamEventSchema, value) || value.type !== type) {
-      console.warn(`事件流里有一条认不出的 ${type} 事件，重新拉一遍`, event.data);
-      return [{ type: 'resync' }];
+    const value = recognized(LineStreamEventSchema, parseData(event.data));
+    if (value === null || value.type !== type) {
+      return this.stray(type);
     }
     return [{ type: 'line', event: value }];
   }
@@ -171,13 +228,32 @@ export class HttpEvents implements EventsApi {
     if (event.lastEventId !== '') {
       this.lastEventId = event.lastEventId;
     }
-    const value = parseData(event.data);
-    if (!Value.Check(EveryStreamEventSchema, value) || value.type !== type) {
-      // 认不出的事件可能正是改了界面的那一条：不猜，当作补不上了，重新拉一遍。
-      console.warn(`事件流里有一条认不出的 ${type} 事件，重新拉一遍`, event.data);
+    const value = recognized(EveryStreamEventSchema, parseData(event.data));
+    if (value === null || value.type !== type) {
+      // 认不出的事件可能正是改了界面的那一条：不猜，当作补不上了，重新拉一遍（一分钟最多一次）。
       this.mapper.reset();
-      return [{ type: 'resync' }];
+      return this.stray(type);
     }
     return this.mapper.apply(value);
+  }
+
+  /** 认不出一条事件：一分钟里只重拉一次；重拉过还认不出就是旧代码，刷新整页（十分钟最多一次）。 */
+  private stray(type: string): LiveEvent[] {
+    const stale = this.options.stale ?? BROWSER_STALE;
+    const now = stale.now();
+    if (this.resyncedAt !== null && now - this.resyncedAt < RESYNC_EVERY_MS) {
+      this.strayAfterResync += 1;
+      const last = stale.lastReload();
+      if (this.strayAfterResync >= 2 && (last === null || now - last >= RELOAD_EVERY_MS)) {
+        console.warn(`事件流里的 ${type} 这一页一直认不出，多半是新版本上线了，刷新整页`);
+        stale.markReload(now);
+        stale.reload();
+      }
+      return [];
+    }
+    console.warn(`事件流里有一条认不出的 ${type} 事件，重新拉一遍`);
+    this.resyncedAt = now;
+    this.strayAfterResync = 0;
+    return [{ type: 'resync' }];
   }
 }

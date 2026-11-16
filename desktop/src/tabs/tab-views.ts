@@ -185,6 +185,14 @@ export class TabViews {
     });
   }
 
+  /** 把一个没在显示的标签垫到最底层（截后台标签的画面时用：短暂显示也在界面和正在看的标签后面）。 */
+  toBottom(tabId: string): void {
+    const tab = this.tabs.get(tabId);
+    if (tab !== undefined && tab !== this.active) {
+      this.deps.window.contentView.addChildView(tab.view, 0);
+    }
+  }
+
   /** 叫这个标签里的 preload 做一件事（tab-preload.ts 的 op）。 */
   call(tabId: string, op: string, args: Record<string, unknown> = {}): Promise<unknown> {
     const tab = this.tabs.get(tabId);

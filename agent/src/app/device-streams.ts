@@ -10,7 +10,7 @@ export function attachDeviceStreams(deps: AppDeps): void {
     nodeChanged(nodeId) {
       const node = state.nodes.get(nodeId);
       if (node !== undefined) {
-        hub.publish({ type: 'node_changed', node: nodeView(state, node, deps.now()) });
+        hub.publish({ type: 'node_changed', node: nodeView(state, node, deps.now(), devices) });
       }
     },
     actionRecorded(action) {
@@ -18,7 +18,7 @@ export function attachDeviceStreams(deps: AppDeps): void {
       const node = state.nodes.get(action.nodeId);
       if (node !== undefined) {
         // The node's hourly usage moved with it.
-        hub.publish({ type: 'node_changed', node: nodeView(state, node, deps.now()) });
+        hub.publish({ type: 'node_changed', node: nodeView(state, node, deps.now(), devices) });
       }
     },
   });

@@ -2,9 +2,10 @@
 // 拉起本体和助手、等健康检查、读网址、解 zip、拉起和自己脱钩的进程。开发和冒烟测试时可以用环境变量指到别处。
 
 import { spawn, type ChildProcess, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, openSync, renameSync, statSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { net } from 'electron';
+import { NODE_LOG_TEXT_MAX } from '../../../agent/shared/api/devices.ts';
 import { HelperUnavailable } from '../helper/helper-process.ts';
 import { serverEnvironment } from './local-server.ts';
 import { LOCAL_SERVER_URL } from './server-target.ts';
@@ -29,6 +30,35 @@ export function logger(directory: string): (line: string) => void {
     process.stdout.write(entry);
     appendFileSync(file, entry);
   };
+}
+
+const LOG_LINE = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z) (.*)$/;
+const LOG_TEXT_MAX = NODE_LOG_TEXT_MAX;
+
+/**
+ * 日志里这个时间以后的行（上一份和这一份按时间接起来），给服务器看（11-16：卡住时 AI 要能单独拿到客户端日志）。
+ * 多于 max 行只留最后 max 行；不是「时间 正文」样子的行（跨行的出错栈）并进上一行。
+ */
+export function logsSince(directory: string, since: string, max: number)
+  : { lines: { at: string; text: string }[]; truncated: boolean } {
+  const lines: { at: string; text: string }[] = [];
+  for (const name of ['desktop.log.1', 'desktop.log']) {
+    const file = join(directory, name);
+    if (!existsSync(file)) {
+      continue;
+    }
+    for (const raw of readFileSync(file, 'utf8').split('\n')) {
+      const match = LOG_LINE.exec(raw);
+      if (match?.[1] !== undefined && match[2] !== undefined) {
+        lines.push({ at: match[1], text: match[2].slice(0, LOG_TEXT_MAX) });
+      } else if (raw.trim() !== '' && lines.length > 0) {
+        const last = lines[lines.length - 1]!;
+        last.text = `${last.text}\n${raw}`.slice(0, LOG_TEXT_MAX);
+      }
+    }
+  }
+  const after = lines.filter((line) => line.at >= since);
+  return { lines: after.slice(-max), truncated: after.length > max };
 }
 
 export interface Resources {

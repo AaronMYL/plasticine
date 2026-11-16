@@ -8,7 +8,7 @@ import type { DeviceServiceStatus } from '../../agent/shared/api/desktop-bridge.
 import { ActionJournal } from '../src/node/action-journal.ts';
 import { CredentialStore } from '../src/node/credential-store.ts';
 import { NodeApi } from '../src/node/node-api.ts';
-import { NodeService } from '../src/node/node-service.ts';
+import { NodeService, type NodeServiceDeps } from '../src/node/node-service.ts';
 import { tempDir } from './helpers.ts';
 
 const LIMITS = { roots: [], apps: [], sites: [], unattendedInput: true, classes: {
@@ -20,6 +20,8 @@ interface FakeServer {
   url: string;
   results: { id: string; body: unknown }[];
   hellos: unknown[];
+  logs: unknown[];
+  helloReply: Record<string, unknown>;
   queue: unknown[];
   authorized: boolean;
   close(): Promise<void>;
@@ -35,7 +37,7 @@ async function body(req: IncomingMessage): Promise<unknown> {
 
 async function fakeServer(): Promise<FakeServer> {
   const state = { results: [] as { id: string; body: unknown }[], hellos: [] as unknown[], queue: [] as unknown[],
-    authorized: true };
+    authorized: true, logs: [] as unknown[], helloReply: {} as Record<string, unknown> };
   const send = (res: ServerResponse, status: number, value?: unknown): void => {
     res.writeHead(status, { 'content-type': 'application/json' });
     res.end(value === undefined ? '' : JSON.stringify(value));
@@ -50,7 +52,10 @@ async function fakeServer(): Promise<FakeServer> {
         send(res, 401, { error: 'no' });
       } else if (path === '/v2/nodes/hello') {
         state.hellos.push(value);
-        send(res, 200, { nodeId: 'node-1', limits: LIMITS, limitsVersion: 1 });
+        send(res, 200, { nodeId: 'node-1', limits: LIMITS, limitsVersion: 1, ...state.helloReply });
+      } else if (path === '/v2/nodes/logs') {
+        state.logs.push(value);
+        send(res, 200, {});
       } else if (path === '/v2/nodes/actions/next') {
         const action = state.queue.shift();
         if (action === undefined) {
@@ -75,8 +80,11 @@ async function fakeServer(): Promise<FakeServer> {
     }) });
 }
 
+type Execute = NodeServiceDeps['runner']['execute'];
+
 function service(dir: string, executed: string[],
-  journal = (server: string, nodeId: string) => new ActionJournal(join(dir, 'actions'), server, nodeId)): NodeService {
+  journal = (server: string, nodeId: string) => new ActionJournal(join(dir, 'actions'), server, nodeId),
+  execute?: Execute): NodeService {
   const credentials = new CredentialStore(join(dir, 'cred'), null, { available: () => true,
     encrypt: (text) => Buffer.from(text), decrypt: (data) => data.toString() });
   return new NodeService({
@@ -85,10 +93,10 @@ function service(dir: string, executed: string[],
     journal,
     runner: {
       capabilities: async () => ['file_read', 'tab_list'],
-      execute: async (action) => {
+      execute: execute ?? (async (action) => {
         executed.push(action.id);
         return { status: 'executed', result: { content: 'x' } };
-      },
+      }),
       missing: async () => ['screen'],
     },
     identity: { name: '测试电脑', platform: 'linux', appVersion: '0.0.0' },
@@ -103,6 +111,7 @@ function service(dir: string, executed: string[],
     }),
     now: () => Date.now(),
     log: () => undefined,
+    logsSince: (since) => ({ lines: [{ at: since, text: '开始做：tab_shot act-9' }], truncated: false }),
   }, false);
 }
 
@@ -259,4 +268,63 @@ test('复合与超长编号映射后可保存回执，重启重放也只执行�
 test('远程只认 https；这台电脑上的本体可以是 http', () => {
   assert.throws(() => new NodeApi('http://example.com/', fetch), /https/);
   assert.equal(new NodeApi('http://127.0.0.1:8790/v2', fetch).origin, 'http://127.0.0.1:8790/');
+});
+
+async function waitFor(check: () => boolean): Promise<void> {
+  while (!check()) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}
+
+test('一个动作一直不返回时照常报到，报到里带着在做哪个动作、做到哪一步（11-16 截图卡住）', async (t) => {
+  const server = await fakeServer();
+  const dir = tempDir(t);
+  const node = service(dir, [], undefined, (_action, _limits, progress) => {
+    progress?.('截标签画面');
+    return new Promise(() => undefined);
+  });
+  t.after(async () => {
+    node.stop();
+    await server.close();
+  });
+  node.useServer(server.url);
+  server.queue.push({ id: 'act-9', kind: 'tab_shot', params: { tabId: 't-1' }, deadline: '2026-11-08T10:00:00.000Z' });
+  await node.pair('ABCD-1234');
+  await waitFor(() => server.hellos.some((hello) => (hello as { busy?: unknown }).busy !== undefined));
+  const before = server.hellos.length;
+  await waitFor(() => server.hellos.length >= before + 2);
+  const last = server.hellos.at(-1) as { busy?: { actionId: string; kind: string; step: string } };
+  assert.equal(last.busy?.actionId, 'act-9');
+  assert.equal(last.busy?.kind, 'tab_shot');
+  assert.equal(last.busy?.step, '截标签画面');
+});
+
+test('报到回复要日志就另起一条请求传上去，同一次要的只传一次；要取消的动作就地放下', async (t) => {
+  const server = await fakeServer();
+  const dir = tempDir(t);
+  let cancelled = false;
+  const node = service(dir, [], undefined, (_action, _limits, _progress, cancel) => new Promise((resolve) => {
+    cancel?.addEventListener('abort', () => {
+      cancelled = true;
+      resolve({ status: 'failed', error: '取消了', errorCode: 'cancelled' });
+    }, { once: true });
+  }));
+  t.after(async () => {
+    node.stop();
+    await server.close();
+  });
+  server.helloReply = { logsWanted: { requestId: 'logs-0001', since: '2026-11-16T10:00:00.000Z' } };
+  node.useServer(server.url);
+  await node.pair('ABCD-1234');
+  await waitFor(() => server.logs.length > 0);
+  await waitFor(() => server.hellos.length >= 5);
+  assert.equal(server.logs.length, 1);
+  assert.deepEqual((server.logs[0] as { requestId: string }).requestId, 'logs-0001');
+  server.queue.push({ id: 'act-5', kind: 'tab_shot', params: { tabId: 't-1' }, deadline: '2026-11-08T10:00:00.000Z' });
+  await waitFor(() => server.hellos.some((hello) => (hello as { busy?: unknown }).busy !== undefined));
+  server.helloReply = { cancel: ['act-5'] };
+  await waitFor(() => server.results.some((result) => result.id === 'act-5'));
+  assert.equal(cancelled, true);
+  assert.equal((server.results.find((result) => result.id === 'act-5')?.body as { errorCode: string }).errorCode,
+    'cancelled');
 });

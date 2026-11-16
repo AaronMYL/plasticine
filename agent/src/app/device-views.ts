@@ -1,7 +1,8 @@
 // M5 甲路的行 → 接口视图（shared/api/devices.ts）：执行节点、设备动作。只挑字段和补标签，不做决定。
 // 节点视图里没有凭证散列：散列也不出服务端。
 
-import { DEVICE_KIND_LABELS, type NodeActionView, type NodeView } from '../../shared/api/index.ts';
+import { DEVICE_KIND_LABELS, NODE_ONLINE_MS, type NodeActionView, type NodeView, type NodeWork }
+  from '../../shared/api/index.ts';
 import { DEVICE_ACTION_CLASSES, type DeviceNode, type NodeAction } from '../../shared/state.ts';
 import { effectiveLimits } from '../devices/index.ts';
 import type { StateService } from '../state/index.ts';
@@ -9,7 +10,13 @@ import type { StateService } from '../state/index.ts';
 // 每小时次数按最近一小时数（devices/actions.ts）。
 const HOUR_MS = 60 * 60 * 1000;
 
-export function nodeView(state: Pick<StateService, 'nodeActions'>, node: DeviceNode, now: Date): NodeView {
+/** 11-16：设备的两项状态（连着没有、动作通道在干什么），由 devices/ 的 NodeWorkBoard 给。 */
+export interface WorkSource {
+  work(nodeId: string): NodeWork;
+}
+
+export function nodeView(state: Pick<StateService, 'nodeActions'>, node: DeviceNode, now: Date,
+  devices: WorkSource): NodeView {
   const since = new Date(now.getTime() - HOUR_MS).toISOString();
   const usage: Record<string, number> = {};
   for (const actionClass of DEVICE_ACTION_CLASSES) {
@@ -30,6 +37,8 @@ export function nodeView(state: Pick<StateService, 'nodeActions'>, node: DeviceN
     limitsAreDefault: node.limits === null,
     limitsConfirmedAt: node.confirmedByDeviceAt,
     usage,
+    online: node.revokedAt === null && now.getTime() - Date.parse(node.lastSeenAt) <= NODE_ONLINE_MS,
+    work: devices.work(node.id),
     version: node.version,
   };
 }

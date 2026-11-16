@@ -8,9 +8,10 @@ import { NODE_ACTIONS_PATH } from './devices.ts';
 
 const STRICT = { additionalProperties: false };
 export const NODE_NEXT_ACTION_PATH = `${NODE_ACTIONS_PATH}/next`;
-// Mac 每 25 秒重新长轮询；90 秒没有心跳才显示离线。
+// Mac 每 25 秒重新长轮询；90 秒没有心跳才显示离线。11-16 起设备每 20 秒单独报到一次，做动作时也报。
 export const NODE_POLL_MAX_SECONDS = 25;
 export const NODE_ONLINE_MS = 90_000;
+export const NODE_HELLO_EVERY_MS = 20_000;
 // 包含屏幕 PNG 的 base64；仅节点结果接口使用这个请求上限。
 export const NODE_RESULT_MAX_BYTES = 24 * 1024 * 1024;
 export const NodeNextActionQuerySchema = Type.Object({
@@ -35,14 +36,25 @@ export const NodeNextActionResponseSchema = Type.Object({ action: NodeWireAction
  * 先重新感知。这两种都不算设备没做成。
  * 不报照旧按一般失败处理。
  */
-export const DEVICE_FAILURE_CODES = ['screenshot_stale', 'user_present', 'submit_needs_you', 'page_stale'] as const;
+export const DEVICE_FAILURE_CODES = ['screenshot_stale', 'user_present', 'submit_needs_you', 'page_stale', 'timed_out',
+  'cancelled'] as const;
 export type DeviceFailureCode = (typeof DEVICE_FAILURE_CODES)[number];
+/** retryable：只读的（截图、读页面、列文件）可以直接再做；点、填、发、写、跑命令要先核实做没做成。 */
+export const DeviceTimeoutSchema = Type.Object({
+  step: Type.String({ maxLength: 200 }),
+  afterMs: Type.Integer({ minimum: 0 }),
+  retryable: Type.Boolean(),
+}, STRICT);
+export type DeviceTimeout = Static<typeof DeviceTimeoutSchema>;
+
 export const NodeActionResultRequestSchema = Type.Object({
   status: Type.Union([Type.Literal('executed'), Type.Literal('failed'), Type.Literal('refused')]),
   result: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
   error: Type.Optional(Type.String()),
   errorCode: Type.Optional(Type.Enum(DEVICE_FAILURE_CODES)),
   refusalLayer: Type.Optional(Type.Literal('device')),
+  /** 11-16：做了超过时限还没做完（errorCode timed_out）：卡在哪一步、等了多久、能不能直接再做一遍。 */
+  timedOut: Type.Optional(DeviceTimeoutSchema),
 }, STRICT);
 export type NodeActionResultRequest = Static<typeof NodeActionResultRequestSchema>;
 

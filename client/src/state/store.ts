@@ -23,6 +23,11 @@ export class Store<T> {
     }
   }
 
+  /** 有没有人在看（组件挂着、订着）。 */
+  watched(): boolean {
+    return this.listeners.size > 0;
+  }
+
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
     return () => {
