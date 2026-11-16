@@ -20,6 +20,7 @@ import { MODEL_PURPOSES, requiresImages, type ModelPurpose } from '../../shared/
 import type { CompleteOptions, ModelChoice, ModelSource } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
 import { SqliteCredentialStore } from './credentials.ts';
+import { customProvider, readCustomProviders, type CustomProviderConfig } from './custom-providers.ts';
 
 export type KernelModelState = Pick<StateService, 'kernelCredentials' | 'kernelSettings'>;
 
@@ -93,6 +94,10 @@ function priceOf(model: Model<Api>): number | null {
 
 const INHERIT: ModelOverride = { model: null, thinking: null };
 
+function customInfo(config: CustomProviderConfig | undefined): ModelProviderView['custom'] {
+  return config === undefined ? null : { baseUrl: config.baseUrl, protocol: config.protocol };
+}
+
 /** 设置里和 pi-ai 叫法不一样的几家（11-14：pi 的老 Codex 登录叫「ChatGPT（Codex）」，出图走它）。 */
 const PROVIDER_NAMES: Readonly<Record<string, string>> = { 'openai-codex': 'ChatGPT（Codex）' };
 
@@ -100,7 +105,7 @@ export class KernelModels implements ModelSource {
   readonly models: MutableModels;
   readonly credentials: SqliteCredentialStore;
   readonly #state: KernelModelState;
-  readonly #order: string[];
+  readonly #builtin: string[];
 
   constructor(options: KernelModelsOptions) {
     this.#state = options.state;
@@ -111,7 +116,24 @@ export class KernelModels implements ModelSource {
     for (const provider of providers) {
       this.models.setProvider(provider);
     }
-    this.#order = providers.map((provider) => provider.id);
+    this.#builtin = providers.map((provider) => provider.id);
+    for (const config of this.customConfigs()) {
+      this.models.setProvider(customProvider(config));
+    }
+  }
+
+  /** 自定义的几家（custom-providers.ts），排在内置的后面。 */
+  customConfigs(): CustomProviderConfig[] {
+    return readCustomProviders(this.#state);
+  }
+
+  #order(): string[] {
+    return [...this.#builtin, ...this.customConfigs().map((config) => config.id)];
+  }
+
+  /** 装上或换掉一家自定义的（保存时用）；卸掉用 models.deleteProvider。 */
+  register(config: CustomProviderConfig): void {
+    this.models.setProvider(customProvider(config));
   }
 
   readonly streamFn: ModelSource['streamFn'] = (model, context, options) =>
@@ -135,7 +157,8 @@ export class KernelModels implements ModelSource {
   /** 列表照 pi-ai 的提供商顺序，一律平级；没有对话模型的（只做分类、出图的）不列。 */
   providers(): ModelProviderView[] {
     const enabled = this.enabled();
-    return this.#order.flatMap((id) => {
+    const custom = new Map(this.customConfigs().map((config) => [config.id, config]));
+    return this.#order().flatMap((id) => {
       const provider = this.models.getProvider(id);
       if (provider === undefined || provider.getModels().length === 0) {
         return [];
@@ -155,6 +178,7 @@ export class KernelModels implements ModelSource {
           contextWindow: model.contextWindow, reasoning: model.reasoning,
           thinkingLevels: getSupportedThinkingLevels(model), input: model.input })),
         enabled: enabled[provider.id] ?? [],
+        custom: customInfo(custom.get(provider.id)),
       }];
     });
   }
@@ -198,7 +222,7 @@ export class KernelModels implements ModelSource {
 
   /** 目录：pi-ai 的提供商和模型，连没连、目录价；给共用的解析规则用。 */
   #catalog(): CatalogProvider[] {
-    return this.#order.flatMap((id) => {
+    return this.#order().flatMap((id) => {
       const provider = this.models.getProvider(id);
       if (provider === undefined || provider.getModels().length === 0) {
         return [];

@@ -6,7 +6,8 @@ import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import {
   providerDisplayName, THINKING_LABELS, type ListModelProvidersResponse, type ModelChoiceView, type ModelOverride,
-  type ModelProviderView, type ModelPurpose, type SaveModelConfigRequest,
+  type ModelProviderView, type ModelPurpose, type SaveCustomProviderRequest, type SaveModelConfigRequest,
+  type TestModelConnectionRequest, type TestModelConnectionResponse,
 } from '../../api/shared.ts';
 import { Store } from '../../state/store.ts';
 
@@ -142,6 +143,34 @@ export class ModelStore {
     if (value === null) return NOT_READ;
     return this.saveFresh({ version: value.version, purposes: [], enabled: [{ provider: providerId,
       models: [...models] }] });
+  }
+
+  /** 存一家自定义提供商；成了回它的 id（新建的从前后两份列表里认出来）。 */
+  async saveCustom(input: Omit<SaveCustomProviderRequest, 'requestId'>):
+    Promise<{ problem: string | null; id: string | null }> {
+    const before = new Set((this.store.get().value?.providers ?? []).map((item) => item.id));
+    try {
+      const value = await this.api.modelProviders.saveCustom({ requestId: createRequestId(), ...input });
+      this.apply(value);
+      const fresh = value.providers.find((item) => item.custom !== null && !before.has(item.id));
+      return { problem: null, id: input.id ?? fresh?.id ?? null };
+    } catch (cause) {
+      return { problem: errorText(cause), id: null };
+    }
+  }
+
+  async removeCustom(providerId: string): Promise<string | null> {
+    return this.write(() => this.api.modelProviders.removeCustom(providerId, createRequestId()));
+  }
+
+  /** 测试连接：回每一步的结论；请求本身没成回一句原因。 */
+  async testConnection(input: Omit<TestModelConnectionRequest, 'requestId'>):
+    Promise<TestModelConnectionResponse | string> {
+    try {
+      return await this.api.modelProviders.testConnection({ requestId: createRequestId(), ...input });
+    } catch (cause) {
+      return errorText(cause);
+    }
   }
 
   /** 选了马上存；别处刚改过（版本对不上）就重新读一份，让界面回到真实状态，再说一句。 */

@@ -18,6 +18,13 @@ import {
   ListLinesResponseSchema,
   ImageModelResponseSchema,
   ListModelProvidersResponseSchema,
+  CONNECTION_TEST_TIMEOUT_MS,
+  CUSTOM_PROVIDERS_PATH,
+  customProviderRemovePath,
+  MODEL_CONNECTION_TEST_PATH,
+  TestModelConnectionResponseSchema,
+  type SaveCustomProviderRequest,
+  type TestModelConnectionRequest,
   MODEL_CONFIG_PATH,
   MODEL_DEFAULT_PATH,
   MODEL_IMAGE_PATH,
@@ -123,6 +130,9 @@ export class HttpLines implements LinesApi {
   }
 }
 
+/** 服务端两步各最多等一会儿，再留一点路上的时间。 */
+const TEST_TIMEOUT_MS = CONNECTION_TEST_TIMEOUT_MS * 2 + 10_000;
+
 export class HttpModelProviders implements ModelProvidersApi {
   private readonly transport: Transport;
 
@@ -178,5 +188,20 @@ export class HttpModelProviders implements ModelProvidersApi {
   saveConfig(body: SaveModelConfigRequest) {
     return this.transport.request({ method: 'POST', path: MODEL_CONFIG_PATH, body,
       schema: ListModelProvidersResponseSchema, what: '保存模型设置', lostAs: 'uncertain' });
+  }
+
+  saveCustom(body: SaveCustomProviderRequest) {
+    return this.transport.request({ method: 'POST', path: CUSTOM_PROVIDERS_PATH, body,
+      schema: ListModelProvidersResponseSchema, what: '保存自定义提供商', lostAs: 'uncertain' });
+  }
+
+  removeCustom(providerId: string, requestId: string) {
+    return this.transport.request({ method: 'POST', path: customProviderRemovePath(providerId), body: { requestId },
+      schema: ListModelProvidersResponseSchema, what: '删除自定义提供商', lostAs: 'uncertain' });
+  }
+
+  testConnection(body: TestModelConnectionRequest) {
+    return this.transport.request({ method: 'POST', path: MODEL_CONNECTION_TEST_PATH, body,
+      schema: TestModelConnectionResponseSchema, what: '测试连接', lostAs: 'failed', timeoutMs: TEST_TIMEOUT_MS });
   }
 }

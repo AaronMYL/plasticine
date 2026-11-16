@@ -18,6 +18,9 @@ import type {
   ListLinesQuery,
   ImageModelResponse,
   ListModelProvidersResponse,
+  SaveCustomProviderRequest,
+  TestModelConnectionRequest,
+  TestModelConnectionResponse,
   ProviderLoginView,
   ReadLineResponse,
   SaveModelConfigRequest,
@@ -85,4 +88,10 @@ export interface ModelProvidersApi {
   /** POST /v2/model-default */
   setDefault(body: SetDefaultModelRequest): Promise<ListModelProvidersResponse>;
   saveConfig(body: SaveModelConfigRequest): Promise<ListModelProvidersResponse>;
+  /** POST /v2/model-providers/custom：新建或改一家自定义提供商（11-16）。 */
+  saveCustom(body: SaveCustomProviderRequest): Promise<ListModelProvidersResponse>;
+  /** POST /v2/model-providers/custom/:id/remove */
+  removeCustom(providerId: string, requestId: string): Promise<ListModelProvidersResponse>;
+  /** POST /v2/model-providers/test：用还没保存的配置试一次。 */
+  testConnection(body: TestModelConnectionRequest): Promise<TestModelConnectionResponse>;
 }

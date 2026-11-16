@@ -4,7 +4,7 @@ import { mainModelText, withMainChoice } from '../../../src/views/mates/model-fi
 
 const provider = {
   id: 'deepseek', name: 'deepseek', methods: ['api_key' as const], loginLabel: null, connected: 'oauth' as const,
-  account: null, plan: null, keyLast4: null, enabled: ['m'],
+  account: null, plan: null, keyLast4: null, enabled: ['m'], custom: null,
   models: [{ id: 'm', name: 'M 1', contextWindow: 1, reasoning: true, thinkingLevels: ['medium' as const,
     'high' as const], input: ['text' as const] }],
 };

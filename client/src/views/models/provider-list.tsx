@@ -76,13 +76,15 @@ function ProviderRow({ provider, onAction, compact, pending }: { provider: Model
   );
 }
 
-export function ProviderList({ providers, onAction, columns = 1, compact = false, pending = null }: {
+export function ProviderList({ providers, onAction, columns = 1, compact = false, pending = null, extra = null }: {
   providers: readonly ModelProviderView[];
   onAction: (provider: ModelProviderView, action: ProviderAction) => void;
   columns?: 1 | 2;
   /** 连接页（设计稿 Connect-Model）：行矮一点，「其他 n 家」是最后一行。 */
   compact?: boolean;
   pending?: ProviderPending | null;
+  /** 列表最后加的一行（设置里「自定义提供商」）。 */
+  extra?: ReactNode;
 }): ReactNode {
   const [expanded, setExpanded] = useState(false);
   const { featured, more } = arrangeProviders(providers);
@@ -95,6 +97,7 @@ export function ProviderList({ providers, onAction, columns = 1, compact = false
           <ProviderRow key={provider.id} provider={provider} onAction={onAction} compact={compact}
             pending={pending?.id === provider.id ? pending.node : null} />
         ))}
+        {extra}
         {rowMore ? (
           <li className="provider-row" data-compact="true">
             <button type="button" className="provider-more-row" aria-expanded={false}

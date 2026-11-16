@@ -7,8 +7,10 @@ import {
   clampToLevels, MODEL_PURPOSES, ModelResolver, THINKING_LEVELS,
   type CatalogProvider, type ImageModelResponse, type ListModelProvidersResponse, type ModelChoiceView,
   type ModelEnabledChange, type ModelOverride, type ModelProviderView, type ModelPurpose, type ProviderLoginView,
-  type SaveModelConfigRequest, type SetDefaultModelRequest,
+  type SaveCustomProviderRequest, type SaveModelConfigRequest, type SetDefaultModelRequest,
+  type TestModelConnectionRequest, type TestModelConnectionResponse,
 } from '../shared.ts';
+import { fakeConnectionTest } from './fake-connection-test.ts';
 import type { FakeSession } from './fake-session.ts';
 
 // price：假的目录价（每百万 token 输入加输出），心跳、做梦挑便宜的靠它。
@@ -21,7 +23,7 @@ type FakeProvider = Omit<ModelProviderView, 'models' | 'enabled'> & { models: Fa
 
 function provider(id: string, name: string, oauth: string | null, models: FakeModel[]): FakeProvider {
   return { id, name, methods: oauth === null ? ['api_key'] : ['oauth', 'api_key'], loginLabel: oauth, connected: null,
-    account: null, plan: null, keyLast4: null, models };
+    account: null, plan: null, keyLast4: null, models, custom: null };
 }
 
 const PROVIDERS: readonly FakeProvider[] = [
@@ -49,6 +51,8 @@ export class FakeModelProviders implements ModelProvidersApi {
   private version = 0;
   private readonly overrides = new Map<ModelPurpose, ModelOverride>();
   private readonly enabled = new Map<string, string[]>();
+  /** 自定义的几家，排在内置的后面。 */
+  private readonly customs: FakeProvider[] = [];
   private serial = 0;
 
   constructor(session: FakeSession) {
@@ -180,8 +184,55 @@ export class FakeModelProviders implements ModelProvidersApi {
     return this.view();
   }
 
+  async saveCustom(body: SaveCustomProviderRequest): Promise<ListModelProvidersResponse> {
+    this.session.require();
+    const before = body.id === null ? undefined : this.customs.find((item) => item.id === body.id);
+    if (body.id !== null && before === undefined) this.require(body.id);
+    this.serial += 1;
+    const id = before?.id ?? `custom-${String(this.serial).padStart(4, '0')}`;
+    const models = [...new Set(body.models.map((item) => item.trim()).filter((item) => item !== ''))]
+      .map((item) => model(item, item, 0, false));
+    const saved: FakeProvider = { ...provider(id, body.name.trim(), null, models), methods: [], connected: 'api_key',
+      custom: { baseUrl: body.baseUrl.replace(/\/+$/, ''), protocol: body.protocol } };
+    const index = this.customs.findIndex((item) => item.id === id);
+    if (index < 0) this.customs.push(saved);
+    else this.customs[index] = saved;
+    this.connected.set(id, 'api_key');
+    const was = this.enabled.get(id) ?? [];
+    const added = models.filter((item) => !(before?.models ?? []).some((old) => old.id === item.id));
+    this.enabled.set(id, models.map((item) => item.id).filter((item) => was.includes(item)
+      || added.some((fresh) => fresh.id === item)));
+    this.version += 1;
+    return this.view();
+  }
+
+  async removeCustom(providerId: string): Promise<ListModelProvidersResponse> {
+    this.session.require();
+    const index = this.customs.findIndex((item) => item.id === providerId);
+    if (index < 0) this.require(providerId);
+    this.customs.splice(index, 1);
+    this.connected.delete(providerId);
+    this.enabled.delete(providerId);
+    if (this.chosen?.provider === providerId) this.chosen = null;
+    for (const [purpose, chosen] of this.overrides) {
+      if (chosen.model?.provider !== providerId) continue;
+      this.overrides.set(purpose, { model: null, thinking: chosen.thinking });
+    }
+    this.version += 1;
+    return this.view();
+  }
+
+  async testConnection(body: TestModelConnectionRequest): Promise<TestModelConnectionResponse> {
+    this.session.require();
+    return fakeConnectionTest(body);
+  }
+
+  private all(): FakeProvider[] {
+    return [...PROVIDERS, ...this.customs];
+  }
+
   private catalog(): CatalogProvider[] {
-    return PROVIDERS.map((item) => ({ id: item.id, name: item.name, connected: this.connected.has(item.id),
+    return this.all().map((item) => ({ id: item.id, name: item.name, connected: this.connected.has(item.id),
       models: item.models }));
   }
 
@@ -189,14 +240,14 @@ export class FakeModelProviders implements ModelProvidersApi {
     const enabled = Object.fromEntries(this.enabled);
     return new ModelResolver(this.catalog(), { default: this.chosen, overrides: Object.fromEntries(this.overrides),
       enabled }, (providerId, modelId, level) => {
-      const found = PROVIDERS.find((item) => item.id === providerId)?.models.find((item) => item.id === modelId);
+      const found = this.all().find((item) => item.id === providerId)?.models.find((item) => item.id === modelId);
       return found === undefined ? level : clampToLevels(found.thinkingLevels, level);
     });
   }
 
   private view(): ListModelProvidersResponse {
     const resolver = this.resolver();
-    const providers = PROVIDERS.map((item): ModelProviderView => {
+    const providers = this.all().map((item): ModelProviderView => {
       const connected = this.connected.get(item.id) ?? null;
       return { ...item, models: item.models.map(({ price: _price, ...rest }) => rest), connected,
         account: connected === 'oauth' ? 'me@example.com' : null,
@@ -211,7 +262,7 @@ export class FakeModelProviders implements ModelProvidersApi {
   }
 
   private require(providerId: string): FakeProvider {
-    const found = PROVIDERS.find((item) => item.id === providerId);
+    const found = this.all().find((item) => item.id === providerId);
     if (found === undefined) {
       throw new ApiError({ kind: 'invalid', code: 'not_found', status: 404, message: `没有这家模型提供商：${providerId}。` });
     }

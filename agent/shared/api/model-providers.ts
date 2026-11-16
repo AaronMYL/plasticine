@@ -5,6 +5,7 @@
 import { Type, type Static } from 'typebox';
 import { Nullable } from '../state-common.ts';
 import { API_PREFIX, IdSchema, RequestIdSchema } from './common.ts';
+import { CustomProviderInfoSchema } from './custom-providers.ts';
 import { MODEL_PURPOSE_IDS } from './model-purposes.ts';
 
 const STRICT = { additionalProperties: false };
@@ -58,6 +59,8 @@ export const ModelProviderViewSchema = Type.Object({
   models: Type.Array(ProviderModelViewSchema),
   /** 这家启用了哪几个模型（模型 id，照 models 的顺序）；没启用的不出现在任何选择器里。 */
   enabled: Type.Array(Type.String()),
+  /** 自定义提供商的地址和协议（custom-providers.ts）；内置的是 null。 */
+  custom: Nullable(CustomProviderInfoSchema),
 }, STRICT);
 export type ModelProviderView = Static<typeof ModelProviderViewSchema>;
 

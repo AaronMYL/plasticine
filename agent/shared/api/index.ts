@@ -87,6 +87,7 @@ export * from './heartbeat.ts';
 export * from './line-details.ts';
 export * from './hub-events.ts';
 export * from './model-providers.ts';
+export * from './custom-providers.ts';
 export * from './model-purposes.ts';
 export * from './model-names.ts';
 export * from './model-resolve.ts';

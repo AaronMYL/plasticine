@@ -12,3 +12,6 @@ export { TranslateModel } from './translate-model.ts';
 export { kernelText, NO_MODEL_TEXT, TextModelError, thinkingOf } from './text.ts';
 export type { TextAnswer, TextDeltas, TextImage, TextMessage, TextModelErrorKind, TextModels, TextRequest }
   from './text.ts';
+export { removeCustomProvider, saveCustomProvider, storedCustomKey } from './custom-provider-admin.ts';
+export { testConnection } from './connection-test.ts';
+export type { ConnectionTestDeps, ConnectionTestInput } from './connection-test.ts';

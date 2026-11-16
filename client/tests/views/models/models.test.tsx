@@ -80,7 +80,7 @@ describe('连接模型', () => {
     const provider = (id: string, connected: 'oauth' | null = null) => ({ id, name: id, methods: ['api_key' as const],
       loginLabel: null, connected, account: null, plan: null, keyLast4: null,
       models: [{ id: 'm', name: 'M 1', contextWindow: 1, reasoning: true,
-        thinkingLevels: ['high' as const], input: ['text' as const] }], enabled: ['m'] });
+        thinkingLevels: ['high' as const], input: ['text' as const] }], enabled: ['m'], custom: null });
     const { featured, more } = arrangeProviders([provider('groq'), provider('deepseek'), provider('mistral', 'oauth')]);
     expect(featured.map((item) => item.id)).toEqual(['deepseek', 'mistral']);
     expect(more.map((item) => item.id)).toEqual(['groq']);

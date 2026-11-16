@@ -10,7 +10,8 @@ import {
   SetProviderKeyRequestSchema,
   StartProviderLoginRequestSchema,
 } from '../../shared/api/index.ts';
-import { KernelModelError, type KernelModels, type ProviderLogins } from '../kernel/index.ts';
+import { KernelModelError, type ConnectionTestDeps, type KernelModels, type ProviderLogins }
+  from '../kernel/index.ts';
 import { ApiError } from './api-error.ts';
 import { kernelImagesOf } from './assemble-spaces.ts';
 import { param, requireAuth, type Reply, type RequestContext } from './context.ts';
@@ -21,6 +22,8 @@ import { checkInput } from './validate.ts';
 export interface KernelModelParts {
   models: KernelModels;
   logins: ProviderLogins;
+  /** 测试连接用的 fetch 和超时（测试里换成假的；不给就是真的网络）。 */
+  connectionTest?: ConnectionTestDeps;
 }
 
 export function parts(context: RequestContext): KernelModelParts {
@@ -51,7 +54,7 @@ export async function guarded<T>(work: () => Promise<T> | T): Promise<T> {
   }
 }
 
-function listBody(kernel: KernelModelParts) {
+export function listBody(kernel: KernelModelParts) {
   return { providers: kernel.models.providers(), chosen: kernel.models.chosen(), effective: kernel.models.effective(),
     defaultIssue: kernel.models.defaultIssue(), ...kernel.models.settings() };
 }
