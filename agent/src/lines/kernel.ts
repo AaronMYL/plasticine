@@ -23,7 +23,7 @@ import { pageSubmitAskTool } from './page-submit-tool.ts';
 import { linePrompt } from './prompt.ts';
 import { productMap } from './product-map.ts';
 import { lineReport, pauseNotice } from './reports.ts';
-import { backwards, handoffMessage, relayOf } from './relay.ts';
+import { askerOf, backwards, handoffMessage, relayOf } from './relay.ts';
 import { lineResult } from './results.ts';
 import { LineRunner, type DriveMode, type DriveOutcome, type RunnerHost, type Toolset } from './runner.ts';
 import { realLater, type KernelTool, type Later, type LineScope } from './types.ts';
@@ -566,17 +566,23 @@ export class LineKernel implements LineControl, SideControl {
     return lineResult(this.#state, line.id);
   }
 
-  tell(lineId: string, text: string): { line: LineView; outcome: 'steered' | 'started' | 'queued' } {
+  tell(lineId: string, text: string, fromLineId?: string):
+    { line: LineView; outcome: 'steered' | 'started' | 'queued' } {
     const line = this.#unarchived(lineId);
     this.#relayHandoff(line, text);
+    // 记下是哪条线的哪一句插的话：做完的结论也交回给它（#report）。
+    const source = fromLineId === undefined || fromLineId === line.id ? undefined
+      : this.#state.lineMessages.last(fromLineId, 'assistant');
+    const origin = source === undefined ? { kind: 'delegation' as const }
+      : { kind: 'delegation' as const, ref: lineRef(source.lineId, source.seq) };
     const runner = this.#runners.get(line.id);
     if (runner?.busy() === true) {
-      const item = this.#state.lineQueue.add(line.id, text, [], { kind: 'delegation' });
+      const item = this.#state.lineQueue.add(line.id, text, [], origin);
       runner.steer(item);
       this.#publishQueue(line.id);
       return { line: this.view(line.id), outcome: 'steered' };
     }
-    const sent = this.send(line.id, { text, origin: { kind: 'delegation' } });
+    const sent = this.send(line.id, { text, origin });
     return { line: sent.line, outcome: sent.outcome };
   }
 
@@ -876,11 +882,23 @@ export class LineKernel implements LineControl, SideControl {
     } catch (error) {
       safeLog('error', 'line_report_hook_failed', { category: errorCategory(error) });
     }
+    this.#reportAsker(line, outcome, plain);
     if (this.#post(parent.id, report) === null) {
       return;
     }
     if (line.resumeParent && (outcome === 'done' || outcome === 'failed') && parent.status === 'idle') {
       this.#launch(parent.id, 'continue');
+    }
+  }
+
+  /** 别的线插话叫它做的，结论也交回那条线；那条线空着就接着做（整理后回用户），不靠队友自己去通知。 */
+  #reportAsker(line: LineRow, outcome: ReportOutcome, report: ReturnType<typeof lineReport>): void {
+    const asker = askerOf(this.#state, line);
+    if (asker === null || this.#post(asker.id, report) === null) {
+      return;
+    }
+    if ((outcome === 'done' || outcome === 'failed') && asker.status === 'idle') {
+      this.#launch(asker.id, 'continue');
     }
   }
 

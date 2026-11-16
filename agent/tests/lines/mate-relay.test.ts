@@ -84,3 +84,39 @@ test('交给手上还有没做完任务的队友：不另开，列出那几条�
     await h.kernel.settled();
   } finally { await h.close(); }
 });
+
+test('主线插话叫别人派出的线接着查：结论也交回主线，主线接着整理（11-16 线上漏通知）', async () => {
+  const h = await startKernel();
+  try {
+    const mates = new Mates(h.handle.state, () => h.kernel);
+    const mate = mates.create(draft);
+    h.respond([fauxAssistantMessage('第一轮查完'), fauxAssistantMessage('好的')]);
+    const child = h.kernel.spawn(mate.lineId, { title: '排障', goal: '查 Mac 通道', projectId: null });
+    await h.kernel.settled();
+    h.kernel.tell(MAIN_LINE_ID, '开始');
+    await h.kernel.settled();
+    h.respond([fauxAssistantMessage('追查完：窗口是 tab_show 切的'), fauxAssistantMessage('整理：是 tab_show 切的')]);
+    h.kernel.tell(child.id, '接着查是谁切的窗口', MAIN_LINE_ID);
+    await until(() => h.kernel.read(MAIN_LINE_ID, 20).messages.at(-1)?.text === '整理：是 tab_show 切的', '主线整理完');
+    const reports = h.kernel.read(MAIN_LINE_ID, 20).messages.filter((message) => message.role === 'lineReport');
+    assert.equal(reports.length, 1);
+    assert.equal(reports[0]!.childLineId, child.id);
+    assert.equal(h.kernel.read(mate.lineId, 20).messages.filter((message) => message.role === 'lineReport').length, 2);
+    await h.kernel.settled();
+  } finally { await h.close(); }
+});
+
+test('派它的那条线自己插话：不重复交两份', async () => {
+  const h = await startKernel();
+  try {
+    h.respond([fauxAssistantMessage('派出去'), fauxAssistantMessage('做完'), fauxAssistantMessage('再做完')]);
+    h.kernel.tell(MAIN_LINE_ID, '开始');
+    await h.kernel.settled();
+    const child = h.kernel.spawn(MAIN_LINE_ID, { title: '查资料', goal: '查', projectId: null });
+    await h.kernel.settled();
+    h.kernel.tell(child.id, '再查一处', MAIN_LINE_ID);
+    await h.kernel.settled();
+    const reports = h.kernel.read(MAIN_LINE_ID, 20).messages.filter((message) => message.role === 'lineReport');
+    assert.equal(reports.length, 2);
+  } finally { await h.close(); }
+});

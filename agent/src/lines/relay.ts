@@ -14,6 +14,21 @@ export interface RelayTarget {
 }
 
 type RelayState = Pick<StateService, 'lines' | 'mates'>;
+type AskerState = Pick<StateService, 'lines' | 'lineMessages'>;
+
+/**
+ * 最近一次是别的线插话叫它做的（11-16 线上：主线给求职顾问派出的开发线插话追查，开发查完结论只贴回了已暂停的求职顾问，
+ * 想通知主线又没有权限，主线一直没等到）：结论也该交回插话的那条线。是派它的那条线自己、或者它自己，就不另交。
+ */
+export function askerOf(state: AskerState, child: LineRow): LineRow | null {
+  const ref = state.lineMessages.lastDelegation(child.id)?.meta?.origin?.ref;
+  const from = ref === undefined ? undefined : state.lineMessages.said(ref);
+  if (from === undefined || from.lineId === child.id || from.lineId === child.parentLineId) {
+    return null;
+  }
+  const asker = state.lines.get(from.lineId);
+  return asker === undefined || asker.archivedAt !== null ? null : asker;
+}
 
 /** 这条后台线是不是一次交接：是就回谁交给谁、贴到哪位队友的对话里；不是回 null。 */
 export function relayOf(state: RelayState, child: LineRow): RelayTarget | null {

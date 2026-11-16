@@ -379,6 +379,13 @@ function createLineMessageTable(context: StoreContext) {
         ORDER BY seq LIMIT 1`, { lineId, role });
       return row === undefined ? undefined : messageOf(row);
     },
+    /** 最近一条带来源引用的委派（别的线派来、插进来的话）；没有是 undefined。 */
+    lastDelegation(lineId: string): LineMessageRow | undefined {
+      const row = db.get(`SELECT * FROM line_messages WHERE line_id = $lineId AND role = 'user'
+        AND json_extract(meta, '$.origin.kind') = 'delegation' AND json_extract(meta, '$.origin.ref') IS NOT NULL
+        ORDER BY seq DESC LIMIT 1`, { lineId });
+      return row === undefined ? undefined : messageOf(row);
+    },
     /** 成果历史只取停下或写到上限的回答；过程里的工具调用不算一版。 */
     resultBefore(lineId: string, before: number): LineMessageRow | undefined {
       const row = db.get(`SELECT * FROM line_messages WHERE line_id = $lineId AND seq < $before

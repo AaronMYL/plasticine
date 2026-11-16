@@ -22,7 +22,9 @@ export interface LineControl {
     resumeParent?: boolean }, toolCallId?: string): LineView;
   list(filter: { statuses?: readonly LineView['status'][]; includeArchived?: boolean; limit: number }): LineView[];
   read(lineId: string, limit: number): { line: LineView; messages: LineMessageView[]; queue: QueuedMessageView[] };
-  tell(lineId: string, text: string): { line: LineView; outcome: 'steered' | 'started' | 'queued' };
+  /** fromLineId：谁插的话（11-16：做完的结论也贴回给它，不只贴给派它的那条线）。 */
+  tell(lineId: string, text: string, fromLineId?: string):
+    { line: LineView; outcome: 'steered' | 'started' | 'queued' };
   halt(lineId: string): LineView;
   /** 11-16：任务收尾（Aaron 定「全部放开」）：接着做、结束、归档 / 恢复、撤回排着的一句。 */
   retry(lineId: string): LineView;
@@ -220,7 +222,8 @@ function scopedControl(control: LineControl, state: LineAccessState, scope: Line
   const requireAccess = (id: string, mode: 'read' | 'control'): void => {
     if (!accessibleLine(state, scope, id, mode)) {
       throw new Error(mode === 'read' ? '只能读取自己的对话、交接结果和所属群组的公共对话。'
-        : '只能给自己的对话和后台工作插话或叫停；跨队友协作请用 mate_handoff。');
+        : '只能给自己的对话和后台工作插话或叫停；跨队友协作请用 mate_handoff。做完的结论会自动交回派你和插话给你的'
+          + '那条线，不用自己去通知。');
     }
   };
   return {
@@ -237,7 +240,7 @@ function scopedControl(control: LineControl, state: LineAccessState, scope: Line
     },
     tell: (id, text) => {
       requireAccess(id, 'control');
-      return control.tell(id, text);
+      return control.tell(id, text, scope.lineId);
     },
     halt: (id) => {
       requireAccess(id, 'control');
