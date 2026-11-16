@@ -26,6 +26,10 @@ test('0141：三张旧表删掉，索引里约定那一类清掉，别的索引�
     db.run(`INSERT INTO versions (id, object_type, object_id, version, actor, reason, fields, snapshot, created_at,
       migrated_default) VALUES ('version-1', 'agreement', 'agreement-1', 1, 'user', '旧约定', '[]', '{}', $at, 0)`,
     { at });
+    // 0143：早就退役的对象（任务、判断……）的历史也删。
+    db.run(`INSERT INTO versions (id, object_type, object_id, version, actor, reason, fields, snapshot, created_at,
+      migrated_default) VALUES ('version-3', 'task', 'task-1', 1, 'brain', '旧任务', '[]', '{}', $at, 0)`,
+    { at });
     db.run(`INSERT INTO versions (id, object_type, object_id, version, actor, reason, fields, snapshot, created_at,
       migrated_default) VALUES ('version-2', 'memory_entry', 'entry-1', 1, 'user', '旧记忆', '[]', '{}', $at, 0)`,
     { at });
@@ -33,7 +37,8 @@ test('0141：三张旧表删掉，索引里约定那一类清掉，别的索引�
       AND name IN ('agreements', 'term_decodings', 'device_keys') ORDER BY name`).map((row) => String(row['name']));
     assert.deepEqual(tables(), ['agreements', 'device_keys', 'term_decodings']);
 
-    assert.deepEqual(migrate(db, MIGRATIONS, () => at), [ID, '0142-drop-agreement-history']);
+    assert.deepEqual(migrate(db, MIGRATIONS, () => at),
+      [ID, '0142-drop-agreement-history', '0143-drop-retired-history']);
     assert.deepEqual(tables(), []);
     assert.deepEqual(db.all('SELECT source FROM search_docs').map((row) => row['source']), ['note']);
     assert.deepEqual(db.all("SELECT rowid FROM search_fts WHERE search_fts MATCH '定时任务'").length, 1);
