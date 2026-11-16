@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import type { NodeWireAction } from '../../agent/shared/api/index.ts';
 import type { DeviceLimits } from '../../agent/shared/state.ts';
 import { HelperProcess } from '../src/helper/helper-process.ts';
+import type { DeskPort } from '../src/node/desk-actions.ts';
 import { DeviceActionRunner, TabActionError, type TabActionPort } from '../src/node/action-runner.ts';
 import { DeviceGuard } from '../src/node/device-guard.ts';
 import { realPathSystem } from '../src/node/path-policy.ts';
@@ -25,8 +26,19 @@ function runner(t: { after(fn: () => void): void },
   const helper = new HelperProcess({ spawn: () => spawnFakeHelper(), roots: () => [dir], log: () => undefined });
   t.after(() => helper.stop());
   const asked: string[] = [];
+  const clipped: string[] = [];
+  const roots: string[] = [];
+  const opened: string[] = [];
   const tabs: TabActionPort = options.tabs ?? { available: () => true, run: async () => ({ tabs: [], viewing: null }) };
-  const run = new DeviceActionRunner({ helper, tabs, guard: new DeviceGuard(), paths: realPathSystem('linux', dir),
+  const desk: DeskPort = { state: () => ({ idleSeconds: 42, locked: false, onBattery: true, keptAwake: true }),
+    clipboardRead: async () => ({ text: '剪贴板里的字', html: null }), clipboardWrite: async (text) => {
+      clipped.push(text);
+    }, chooseFolder: async () => dir, addRoot: (path) => {
+      roots.push(path);
+    }, open: async (target) => {
+      opened.push(target);
+    } };
+  const run = new DeviceActionRunner({ helper, tabs, guard: new DeviceGuard(), paths: realPathSystem('linux', dir), desk,
     localRoots: () => [dir], confirm: async (message) => {
       asked.push(message);
       return options.confirm ?? false;
@@ -35,7 +47,7 @@ function runner(t: { after(fn: () => void): void },
     readUrl: async () => ({ text: '', truncated: false }),
     now: () => new Date('2026-11-08T00:00:00.000Z'), log: () => undefined,
     ...(options.limitMs === undefined ? {} : { limitMs: () => options.limitMs! }) });
-  return { run, dir, asked };
+  return { run, dir, asked, clipped, roots, opened };
 }
 
 test('能力：助手报了的方法 + 网页标签 + 壳自己会的', async (t) => {
@@ -158,4 +170,29 @@ test('取消了就放下，回执写取消了', async (t) => {
   cancel.abort();
   const result = await pending;
   assert.equal(result.errorCode, 'cancelled');
+});
+
+test('电脑本机（11-16）：状态、剪贴板、请他选文件夹（加进授权）、找文件、用应用打开都由壳做', async (t) => {
+  const { run, dir, clipped, roots, opened } = runner(t);
+  writeFileSync(join(dir, '示例简历.pdf'), '%PDF');
+  const state = await run.execute(wire('device_state', {}), LIMITS);
+  assert.deepEqual(state, { status: 'executed', result: { idleSeconds: 42, locked: false, onBattery: true,
+    keptAwake: true } });
+  assert.equal((await run.execute(wire('clipboard_write', { text: '复制给你', html: null }), LIMITS)).status,
+    'executed');
+  assert.deepEqual(clipped, ['复制给你']);
+  const folder = await run.execute(wire('folder_request', { reason: '要读你的简历文件夹' }), LIMITS);
+  assert.deepEqual(folder, { status: 'executed', result: { path: dir } });
+  assert.deepEqual(roots, [dir]);
+  const found = await run.execute(wire('file_find', { root: dir, name: '简历', limit: 10 }), LIMITS);
+  assert.equal(found.status, 'executed');
+  assert.deepEqual((found.result as { matches: { path: string }[] }).matches.map((match) => match.path),
+    [join(dir, '示例简历.pdf')]);
+  await run.execute(wire('open_in_app', { target: join(dir, '示例简历.pdf'), app: null }), LIMITS);
+  await run.execute(wire('open_in_app', { target: 'https://example.com', app: null }), LIMITS);
+  assert.deepEqual(opened, [join(dir, '示例简历.pdf'), 'https://example.com']);
+  const outside = await run.execute(wire('open_in_app', { target: '/etc/hosts', app: null }), LIMITS);
+  assert.equal(outside.status, 'refused');
+  const script = await run.execute(wire('app_script', { script: 'return 1' }), LIMITS);
+  assert.equal(script.status, 'failed');
 });

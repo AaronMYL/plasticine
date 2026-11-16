@@ -40,6 +40,32 @@ export async function trustedClick(contents: WebContents, x: number, y: number):
   });
 }
 
+/** 拖动分几步走。 */
+const DRAG_STEPS = 10;
+
+/** 把指针停在这一点（可信的移动事件）：要悬停才出来的菜单、提示。 */
+export async function trustedHover(contents: WebContents, x: number, y: number): Promise<void> {
+  await withDebugger(contents, async (send) => {
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none', clickCount: 0 });
+  });
+}
+
+/** 从一点按住拖到另一点，中间分几步走（滑块、排序、拖进上传区要看到中间的移动）。 */
+export async function trustedDrag(contents: WebContents, from: { x: number; y: number },
+  to: { x: number; y: number }): Promise<void> {
+  await withDebugger(contents, async (send) => {
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...from, button: 'none', clickCount: 0 });
+    await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...from, button: 'left', buttons: 1,
+      clickCount: 1 });
+    for (let step = 1; step <= DRAG_STEPS; step += 1) {
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: from.x + ((to.x - from.x) * step) / DRAG_STEPS,
+        y: from.y + ((to.y - from.y) * step) / DRAG_STEPS, button: 'left', buttons: 1, clickCount: 0 });
+    }
+    await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...to, button: 'left', buttons: 0,
+      clickCount: 1 });
+  });
+}
+
 /** 往当前焦点里输入文字（输入法那条路，页面收到的是真的输入事件）。 */
 export async function trustedInsert(contents: WebContents, text: string): Promise<void> {
   await withDebugger(contents, async (send) => {

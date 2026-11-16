@@ -2,6 +2,7 @@
 import { Type, type Static } from 'typebox';
 import { DeviceActionKindSchema, type DeviceActionKind } from '../state-devices.ts';
 import { IdSchema, IsoTimeSchema } from './common.ts';
+import { DESK_RESULT_SCHEMAS } from './device-desk.ts';
 import { IOS_RESULT_SCHEMAS } from './device-ios.ts';
 import { PageActResultSchema, PagePerceptionSchema } from './page-operate.ts';
 import { NODE_ACTIONS_PATH } from './devices.ts';
@@ -142,6 +143,7 @@ export const DEVICE_RESULT_SCHEMAS = {
   file_fetch: Type.Object({ path: Text, name: Text, bytes: Type.Integer({ minimum: 0 }), base64: Type.String() },
     STRICT),
   file_put: Type.Object({ path: Text, bytes: Type.Integer({ minimum: 0 }) }, STRICT),
+  ...DESK_RESULT_SCHEMAS,
   ...IOS_RESULT_SCHEMAS,
 } satisfies Record<DeviceActionKind, object>;
 

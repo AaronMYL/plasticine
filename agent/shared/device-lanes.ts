@@ -207,6 +207,24 @@ function secretLane(action: DeviceActionParams, purpose: string): LaneDecision |
     case 'shortcut_run':
       return SETTINGS_WORDS.test(action.name) || SETTINGS_WORDS.test(purpose)
         ? confirm('快捷指令会改系统设置或碰密码') : null;
+    // 11-16 第二批：剪贴板里原有的东西是他的，要他点头才读；AppleScript 能做任何事，碰密码、系统设置、
+    // 模拟按键的先问；真键盘真鼠标、本机应用里的操作和点按一样看用途。
+    case 'clipboard_read':
+      return confirm('要读你剪贴板里现有的东西');
+    case 'app_script':
+      return SETTINGS_WORDS.test(purpose) || /keystroke|key code|password|密码|System Events/i.test(action.script)
+        ? confirm('脚本会模拟按键、碰密码或改系统设置') : null;
+    case 'input_key':
+    case 'input_scroll':
+    case 'input_mouse':
+    case 'window_act':
+    case 'app_menu':
+      return SETTINGS_WORDS.test(purpose) ? confirm('用途是在系统设置或密码里操作') : null;
+    case 'app_act':
+      return SETTINGS_APPS.test(action.app.trim()) || SETTINGS_WORDS.test(purpose)
+        ? confirm('要在系统设置或密码管理里操作') : null;
+    case 'open_in_app':
+      return action.app !== null && SETTINGS_APPS.test(action.app.trim()) ? confirm('要打开系统设置或密码管理') : null;
     default:
       return null;
   }

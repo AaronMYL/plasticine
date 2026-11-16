@@ -108,10 +108,14 @@ test('Mac 助手回的日程多带日历颜色和有没有别人参加，iPhone 
 test('按权限算能力：没给日历就不报日历，文件和命令总是报', () => {
   const none = helperCapabilities({ screen: false, accessibility: false, calendar: 'denied',
     reminders: 'not_determined' });
-  assert.deepEqual(none, ['file_list', 'file_read', 'file_write', 'run_command']);
+  assert.deepEqual(none, ['file_list', 'file_read', 'file_write', 'run_command', 'app_list']);
   const all = helperCapabilities({ screen: true, accessibility: true, calendar: 'granted', reminders: 'granted' });
   assert.deepEqual(all, [...HELPER_DEVICE_KINDS]);
   const writeOnly = helperCapabilities({ screen: false, accessibility: false, calendar: 'write_only',
     reminders: 'granted' });
   assert.ok(!writeOnly.includes('calendar_list') && writeOnly.includes('reminder_list'));
+  // 11-16：助手不会那个方法（旧助手、Windows 还没做的）就不报那项能力。
+  const old = helperCapabilities({ screen: true, accessibility: true, calendar: 'granted', reminders: 'granted' },
+    ['files.list', 'screenshot', 'click', 'type']);
+  assert.deepEqual(old, ['file_list', 'screen_capture', 'input_click', 'input_type']);
 });

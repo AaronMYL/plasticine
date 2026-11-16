@@ -11,6 +11,7 @@ import { HelperCallError } from '../../../agent/shared/desktop-helper-client.ts'
 import { HELPER_DEVICE_KINDS } from '../../../agent/shared/desktop-helper-protocol.ts';
 import { HelperUnavailable, type HelperProcess } from '../helper/helper-process.ts';
 import { actionLimitMs, actionRetryable } from '../../../agent/shared/device-action-limits.ts';
+import { DESK_MAC_KINDS, DESK_SHELL_KINDS, runDeskAction, type DeskPort } from './desk-actions.ts';
 import { runDeviceAction, SHELL_DEVICE_KINDS } from './device-executors.ts';
 import type { DeviceGuard } from './device-guard.ts';
 import type { ActionRunner } from './node-service.ts';
@@ -52,6 +53,10 @@ class ActionAbandoned extends Error {
 }
 
 export interface ActionRunnerDeps {
+  /** 「电脑本机」里要 Electron 的几样（剪贴板、选文件夹、电源状态、用应用打开）。 */
+  desk: DeskPort;
+  /** 做事时别让电脑睡着（11-16）：开始拿一个，做完还回去。 */
+  keepAwake?: () => () => void;
   helper: HelperProcess;
   tabs: TabActionPort;
   guard: DeviceGuard;
@@ -72,7 +77,7 @@ export interface ActionRunnerDeps {
 
 const TAB_KINDS = new Set<DeviceActionKind>(['tab_list', 'tab_read', 'tab_open', 'tab_navigate', 'tab_click',
   'tab_fill', 'tab_perceive', 'tab_act', 'tab_shot', 'tab_point', 'tab_type', 'tab_close', 'tab_wait', 'tab_key',
-  'tab_scroll', 'tab_paste', 'tab_show', 'tab_upload']);
+  'tab_scroll', 'tab_paste', 'tab_show', 'tab_upload', 'tab_hover', 'tab_drag', 'tab_downloads', 'tab_dialog']);
 
 function refused(error: string): NodeActionResultRequest {
   return { status: 'refused', refusalLayer: 'device', error };
@@ -94,7 +99,8 @@ export class DeviceActionRunner implements ActionRunner {
   /** hello 里报的能力：助手按系统权限报的（helperCapabilities）+ 壳自己会的（浏览器、网页标签、删除、打开应用）。 */
   async capabilities(): Promise<DeviceActionKind[]> {
     const fromHelper = await this.deps.helper.capabilities();
-    const kinds: DeviceActionKind[] = ['browser_open', 'browser_read', 'app_open', ...fromHelper];
+    const kinds: DeviceActionKind[] = ['browser_open', 'browser_read', 'app_open', ...fromHelper,
+      ...DESK_SHELL_KINDS, ...(this.deps.paths.platform === 'darwin' ? DESK_MAC_KINDS : [])];
     if (fromHelper.includes('file_list')) {
       kinds.push('file_delete', 'file_fetch', 'file_put');
     }
@@ -139,10 +145,13 @@ export class DeviceActionRunner implements ActionRunner {
       }
     }
     let result: Record<string, unknown>;
+    const awake = this.deps.keepAwake?.();
     try {
       result = await this.limited(action, limits, progress, cancel);
     } catch (error) {
       return this.failure(error, action.kind);
+    } finally {
+      awake?.();
     }
     this.deps.guard.record(action);
     if (!Value.Check(DEVICE_RESULT_SCHEMAS[action.kind], result)) {
@@ -185,6 +194,11 @@ export class DeviceActionRunner implements ActionRunner {
 
   private async run(action: DeviceActionParams, limits: DeviceLimits, step: StepReporter)
     : Promise<Record<string, unknown>> {
+    const desk = await runDeskAction(action, { desk: this.deps.desk, paths: this.deps.paths,
+      localRoots: this.deps.localRoots(), cloudRoots: limits.roots });
+    if (desk !== null) {
+      return desk;
+    }
     if ((HELPER_DEVICE_KINDS as readonly string[]).includes(action.kind)
       || (SHELL_DEVICE_KINDS as readonly string[]).includes(action.kind)) {
       step((HELPER_DEVICE_KINDS as readonly string[]).includes(action.kind) ? '交给系统助手做' : '在这台电脑上做');

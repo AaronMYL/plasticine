@@ -14,6 +14,7 @@ package final class HelperDispatcher: HelperHandling {
     private let screen = ScreenActions()
     private let files = FileActions()
     private let calendar = CalendarStore()
+    private let ax = AXActions()
     private var roots: [String]
 
     package init(roots: [String] = [FileManager.default.homeDirectoryForCurrentUser.path]) {
@@ -43,6 +44,36 @@ package final class HelperDispatcher: HelperHandling {
         case .type: return try await screen.type(try params.string("text", maxChars: HelperProtocol.typeMaxChars))
         case .key: return try await screen.key(try KeyChord.parse(try params.string("keys", maxChars: 60)))
         case .scroll: return try await scroll(params)
+        case .mouse:
+            let point = 0...HelperProtocol.pointMax
+            return try await screen.mouse(op: try params.string("op", maxChars: 10),
+                                          x: try params.int("x", in: point), y: try params.int("y", in: point),
+                                          toX: try params.optionalInt("toX", in: point),
+                                          toY: try params.optionalInt("toY", in: point))
+        case .screenshotRegion:
+            let point = 0...HelperProtocol.pointMax
+            return try await screen.region(x: try params.int("x", in: point), y: try params.int("y", in: point),
+                                           width: try params.int("width", in: 1...HelperProtocol.pointMax),
+                                           height: try params.int("height", in: 1...HelperProtocol.pointMax))
+        case .screenshotWindow: return try await screen.window(try params.string("window", maxChars: 40))
+        case .appsList: return try ax.apps()
+        case .windowsList: return try ax.windows()
+        case .windowAct:
+            return try ax.windowAct(try params.string("window", maxChars: 40),
+                                    op: try params.string("op", maxChars: 20),
+                                    x: try params.optionalInt("x", in: -100_000...100_000),
+                                    y: try params.optionalInt("y", in: -100_000...100_000),
+                                    width: try params.optionalInt("width", in: 1...HelperProtocol.pointMax),
+                                    height: try params.optionalInt("height", in: 1...HelperProtocol.pointMax))
+        case .axPerceive: return try ax.perceive(try params.string("app", maxChars: 200))
+        case .axAct:
+            return try ax.act(try params.string("app", maxChars: 200),
+                              version: try params.string("version", maxChars: 40),
+                              n: try params.int("n", in: 1...100_000), op: try params.string("op", maxChars: 20),
+                              text: try params.optionalString("text", maxChars: 4_000, allowEmpty: true))
+        case .menuList: return try ax.menu(try params.string("app", maxChars: 200), press: nil)
+        case .menuPress:
+            return try ax.menu(try params.string("app", maxChars: 200), press: try params.string("path", maxChars: 300))
         case .filesList, .filesRead, .filesWrite: return try await file(method, params)
         case .commandRun: return try await command(params)
         case .calendarList: return try await calendar.calendars()

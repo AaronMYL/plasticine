@@ -76,7 +76,7 @@ export class HelperProcess {
   /** 按系统权限算 hello 里该报的助手能力（helperCapabilities，和助手同一份规则）。 */
   async capabilities(): Promise<HelperDeviceKind[]> {
     const status = await this.permissions();
-    return status === null ? [] : helperCapabilities(status);
+    return status === null ? [] : helperCapabilities(status, await this.methods());
   }
 
   /** 授权目录改了：告诉正在跑的助手（没在跑的下次拉起时会先配置）。 */

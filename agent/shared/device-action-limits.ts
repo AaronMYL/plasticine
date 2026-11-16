@@ -41,6 +41,31 @@ const LIMITS_MS: Partial<Record<DeviceActionKind, number>> = {
   file_read: 60 * SECOND,
   file_write: 60 * SECOND,
   file_delete: 60 * SECOND,
+  device_state: 15 * SECOND,
+  clipboard_read: 15 * SECOND,
+  clipboard_write: 15 * SECOND,
+  // 等他在系统的「选择文件夹」里选：给足五分钟。
+  folder_request: 300 * SECOND,
+  file_find: 90 * SECOND,
+  open_in_app: 30 * SECOND,
+  app_script: 120 * SECOND,
+  shortcut_list: 30 * SECOND,
+  calendar_update: 60 * SECOND,
+  tab_hover: 30 * SECOND,
+  tab_drag: 30 * SECOND,
+  tab_downloads: 15 * SECOND,
+  tab_dialog: 15 * SECOND,
+  input_key: 45 * SECOND,
+  input_scroll: 45 * SECOND,
+  input_mouse: 45 * SECOND,
+  screen_zoom: 30 * SECOND,
+  window_capture: 30 * SECOND,
+  app_list: 15 * SECOND,
+  window_list: 20 * SECOND,
+  window_act: 20 * SECOND,
+  app_perceive: 60 * SECOND,
+  app_act: 30 * SECOND,
+  app_menu: 30 * SECOND,
   calendar_list: 60 * SECOND,
   calendar_create: 60 * SECOND,
   reminder_list: 60 * SECOND,
@@ -52,7 +77,8 @@ const LIMITS_MS: Partial<Record<DeviceActionKind, number>> = {
 const RETRYABLE: ReadonlySet<DeviceActionKind> = new Set<DeviceActionKind>(['tab_list', 'tab_shot', 'tab_wait',
   'tab_close', 'tab_perceive', 'tab_show', 'tab_scroll', 'file_fetch',
   'tab_read', 'screen_capture', 'file_list', 'file_read', 'browser_read', 'calendar_list', 'reminder_list',
-  'photo_list', 'photo_read', 'location_current']);
+  'photo_list', 'photo_read', 'location_current', 'device_state', 'file_find', 'shortcut_list', 'tab_downloads',
+  'screen_zoom', 'window_capture', 'app_list', 'window_list', 'app_perceive', 'tab_hover']);
 
 export function actionLimitMs(kind: DeviceActionKind, params: Record<string, unknown>): number {
   if (kind === 'run_command') {

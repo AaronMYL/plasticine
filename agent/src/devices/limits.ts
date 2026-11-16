@@ -113,6 +113,36 @@ export function factsOf(action: DeviceActionParams): ActionFacts {
       // 记这一步的那一句和编号，不记要填的字（同 tab_fill）。
       return { actionClass, target: `标签 ${action.tabId} ${clipped(action.step, 40)}`
         + (action.act.n === undefined ? '' : `（#${action.act.n}）`) };
+    default:
+      return deskFacts(action, actionClass);
+  }
+}
+
+/** 11-16 第二批「电脑本机」那几种：记做了什么、对着哪儿，不记剪贴板、脚本、填的字。 */
+function deskFacts(action: DeviceActionParams, actionClass: ActionFacts['actionClass']): ActionFacts {
+  const label = DEVICE_KIND_LABELS[action.kind];
+  switch (action.kind) {
+    case 'file_find':
+      return { actionClass, target: `${action.root} 找「${clipped(action.name, 40)}」` };
+    case 'open_in_app':
+      return { actionClass, target: `${action.app ?? '默认应用'} 打开 ${clipped(action.target, 120)}` };
+    case 'calendar_update':
+      return { actionClass, target: `${label} ${action.eventId}` };
+    case 'tab_hover':
+    case 'tab_drag':
+    case 'tab_dialog':
+      return { actionClass, target: `标签 ${action.tabId} ${label}` };
+    case 'window_capture':
+    case 'window_act':
+      return { actionClass, target: `窗口 ${action.window} ${action.kind === 'window_act' ? action.op : ''}`.trim() };
+    case 'app_perceive':
+      return { actionClass, target: `${action.app} 的界面` };
+    case 'app_act':
+      return { actionClass, target: `${action.app} #${action.n} ${action.op}` };
+    case 'app_menu':
+      return { actionClass, target: `${action.app} 菜单${action.path === null ? '' : `「${clipped(action.path, 60)}」`}` };
+    default:
+      return { actionClass, target: label };
   }
 }
 
@@ -136,6 +166,8 @@ function pathsOf(action: DeviceActionParams): string[] {
       return [action.path];
     case 'run_command':
       return [action.cwd, ...pathsInCommand(action.command)];
+    case 'file_find':
+      return [action.root];
     default:
       return [];
   }

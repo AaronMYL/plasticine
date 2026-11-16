@@ -16,6 +16,7 @@ import { PagePerceptionSchema } from '../../../agent/shared/api/page-operate.ts'
 import { classifyLane, isPaymentPage } from '../../../agent/shared/device-lanes.ts';
 import { DeviceRefused, TabActionError, type StepReporter, type TabActionPort } from '../node/action-runner.ts';
 import { type KeyStroke, trustedClick, trustedInsert, trustedKey, trustedWheel } from './cdp.ts';
+import { runMoreTab } from './tab-more.ts';
 import { KeyRefused, keyStroke } from './key-spec.ts';
 import { placeFiles } from './tab-upload.ts';
 import type { Located, TargetFacts } from './tab-dom.ts';
@@ -153,6 +154,12 @@ export class TabActions implements TabActionPort {
         return { tabId: action.tabId };
       case 'tab_upload':
         return this.upload(action, step);
+      case 'tab_hover':
+      case 'tab_drag':
+      case 'tab_downloads':
+      case 'tab_dialog':
+        return runMoreTab(action, { tab: (id) => this.tab(id), present: (tab) => this.present(tab),
+          call: (id, op, args) => this.call(id, op, args) });
       default:
         throw new TabActionError(null, '这一步不是网页标签的事。');
     }

@@ -30,6 +30,7 @@ import { enterLocal, localGrantFor, probePlace } from './account-client.ts';
 import { readHostProfile } from './host-profile.ts';
 import { installMenu, installTray, type MenuActions, type MenuState } from './app-menu.ts';
 import { attachContextMenu, attachQuoteShortcut } from './context-menu.ts';
+import { deskPort, KeepAwake } from './desk-port.ts';
 import { registerBridge } from './bridge-ipc.ts';
 import { NOTIFICATION_SETTINGS_URLS, testNotice } from './notify-test.ts';
 import { NODE_LOG_LINES_MAX } from '../../../agent/shared/api/devices.ts';
@@ -86,7 +87,9 @@ async function start(): Promise<void> {
   uiSession(uiAgent);
   const main = new MainWindow(platform, join(__dirname, 'preload-ui.cjs'), () => undefined);
   const ui = main.ui.webContents;
-  const web = webSession(() => main.window, tabAgent);
+  // 后台标签里网站要权限不弹框（tabs 在下面才建，晚取）。
+  let hiddenTab = (_contents: WebContents): boolean => false;
+  const web = webSession(() => main.window, tabAgent, (contents) => hiddenTab(contents));
   const local = new LocalServer({
     launch: (localToken) => launchServer({ node: files.node ?? '', server: files.server ?? '',
       state: paths.serverState, logs: paths.logs, platform, localToken }),
@@ -139,7 +142,17 @@ async function start(): Promise<void> {
     encrypt: (text) => safeStorage.encryptString(text),
     decrypt: (data) => safeStorage.decryptString(data),
   });
-  const runner = new DeviceActionRunner({ helper, tabs: tabActions, guard: new DeviceGuard(),
+  hiddenTab = (contents) => {
+    const tab = tabs.tabOf(contents);
+    return tab !== null && !tab.view.getVisible();
+  };
+  const awake = new KeepAwake();
+  const desk = deskPort({ window: () => main.window, awake, platform, addRoot: (path) => {
+    settings.update((current) => ({ ...current, roots: [...new Set([...current.roots, path])] }));
+    void helper.configure();
+  } });
+  const runner = new DeviceActionRunner({ helper, tabs: tabActions, guard: new DeviceGuard(), desk,
+    keepAwake: () => awake.hold(),
     paths: realPathSystem(platform, homedir()), localRoots: () => settings.get().roots,
     confirm: (message) => confirmBox(main, message), openExternal: (url) => shell.openExternal(url), readUrl,
     trash: (path) => shell.trashItem(path),

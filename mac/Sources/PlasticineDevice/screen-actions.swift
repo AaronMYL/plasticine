@@ -16,7 +16,7 @@ struct ScreenShot {
 @MainActor
 package final class ScreenActions {
     // 点击坐标依据的截图：screen_capture 存下，点击按它换算；它过期（显示器变、App 重启置空）就报 screenshot_stale。
-    private var lastShot: ScreenShot?
+    var lastShot: ScreenShot?
 
     package init() {}
 
@@ -74,7 +74,7 @@ package final class ScreenActions {
     }
 
     /// 点击坐标依据的截图：没有或已失效（显示器变了）就报 screenshot_stale，服务端重截。
-    private func currentShot() throws -> ScreenShot {
+    func currentShot() throws -> ScreenShot {
         guard let shot = lastShot, shot.display == CGMainDisplayID(),
               shot.geometry.frame == CGDisplayBounds(shot.display) else {
             throw DeviceFailure.stale
@@ -83,7 +83,7 @@ package final class ScreenActions {
     }
 
     // 第 102 条「点击 / 输入后再截一张」：回执带动作之后截图的摘要和画面有没有变化；原图不进回执。
-    private func afterShot(before: ScreenShot?) async -> JSONValue {
+    func afterShot(before: ScreenShot?) async -> JSONValue {
         guard let after = try? await grab() else { return .object([:]) }
         var shot: [String: JSONValue] = [
             "sha256": .string(after.sha256), "width": .number(Double(after.image.width)),
@@ -101,7 +101,7 @@ package final class ScreenActions {
         return .object(fields)
     }
 
-    private func grab() async throws -> ScreenShot {
+    func grab() async throws -> ScreenShot {
         guard SystemAccess.screen else {
             SystemAccess.requestScreen()
             throw DeviceFailure.refused("需要屏幕录制权限")
@@ -143,7 +143,7 @@ package final class ScreenActions {
         up.post(tap: .cghidEventTap)
     }
 
-    private func postMove(_ point: CGPoint) throws {
+    func postMove(_ point: CGPoint) throws {
         guard let move = CGEvent(mouseEventSource: nil, mouseType: .mouseMoved,
                                  mouseCursorPosition: point, mouseButton: .left) else {
             throw DeviceFailure.failed("无法移动鼠标，请检查辅助功能权限。")
@@ -191,7 +191,7 @@ package final class ScreenActions {
         }
     }
 
-    private func requireAccessibility() throws {
+    func requireAccessibility() throws {
         guard SystemAccess.accessibility else {
             SystemAccess.requestAccessibility()
             throw DeviceFailure.refused("需要辅助功能权限")

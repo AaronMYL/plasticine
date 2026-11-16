@@ -12,6 +12,7 @@ export * from './attachments.ts';
 export * from './money-drafts.ts';
 export * from './devices.ts';
 export * from './device-ios.ts';
+export * from './device-desk.ts';
 export * from './events.ts';
 export * from './stream-events.ts';
 export * from './device-events.ts';

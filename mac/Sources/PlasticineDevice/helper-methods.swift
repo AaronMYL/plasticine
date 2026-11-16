@@ -13,6 +13,16 @@ package enum HelperMethod: String, CaseIterable {
     case type
     case key
     case scroll
+    case mouse
+    case screenshotRegion = "screenshot.region"
+    case screenshotWindow = "screenshot.window"
+    case appsList = "apps.list"
+    case windowsList = "windows.list"
+    case windowAct = "window.act"
+    case axPerceive = "ax.perceive"
+    case axAct = "ax.act"
+    case menuList = "menu.list"
+    case menuPress = "menu.press"
     case filesList = "files.list"
     case filesRead = "files.read"
     case filesWrite = "files.write"
@@ -28,7 +38,7 @@ package enum HelperMethod: String, CaseIterable {
     /// 每个方法认的参数名；多出来的一律拒。
     package var parameters: Set<String> {
         switch self {
-        case .info, .permissionsStatus, .screenshot, .calendarList: return []
+        case .info, .permissionsStatus, .screenshot, .calendarList, .appsList, .windowsList: return []
         case .configure: return ["roots"]
         case .cancel: return ["requestId"]
         case .permissionsRequest: return ["kind"]
@@ -36,6 +46,13 @@ package enum HelperMethod: String, CaseIterable {
         case .type: return ["text"]
         case .key: return ["keys"]
         case .scroll: return ["dx", "dy", "x", "y"]
+        case .mouse: return ["op", "x", "y", "toX", "toY"]
+        case .screenshotRegion: return ["x", "y", "width", "height"]
+        case .screenshotWindow: return ["window"]
+        case .windowAct: return ["window", "op", "x", "y", "width", "height"]
+        case .axPerceive, .menuList: return ["app"]
+        case .axAct: return ["app", "version", "n", "op", "text"]
+        case .menuPress: return ["app", "path"]
         case .filesList, .filesRead: return ["path"]
         case .filesWrite: return ["path", "content", "baseVersion"]
         case .commandRun: return ["command", "cwd", "timeoutSeconds", "maxOutputBytes"]

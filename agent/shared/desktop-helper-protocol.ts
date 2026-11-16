@@ -13,6 +13,7 @@ import {
   CalendarEventSchema, CalendarInfoSchema, IOS_NOTES_MAX_CHARS, IOS_RESULT_SCHEMAS, IOS_TITLE_MAX_CHARS,
   ReminderItemSchema,
 } from './api/device-ios.ts';
+import { DESK_RESULT_SCHEMAS } from './api/device-desk.ts';
 import type { DeviceActionParams } from './api/devices.ts';
 import { DEVICE_RESULT_SCHEMAS } from './api/node-channel.ts';
 import type { DeviceActionKind } from './state.ts';
@@ -105,6 +106,39 @@ export const HELPER_METHODS = {
       y: Type.Optional(Point) }, STRICT),
     result: InputResult,
   },
+  // 11-16 第二批「电脑本机」：真鼠标的双击、右键、中键、移过去、拖动（按最近一次截图）；截一块原尺寸的高清图、
+  // 截一个窗口；列应用、列窗口、改窗口；读应用的界面结构（带编号）、按编号在后台做（辅助功能，不动鼠标）、菜单。
+  mouse: {
+    params: Type.Object({ op: Type.Union([Type.Literal('double'), Type.Literal('right'), Type.Literal('middle'),
+      Type.Literal('move'), Type.Literal('drag')]), x: Point, y: Point, toX: Type.Optional(Point),
+    toY: Type.Optional(Point) }, STRICT),
+    result: InputResult,
+  },
+  'screenshot.region': {
+    params: Type.Object({ x: Point, y: Point, width: Point, height: Point }, STRICT),
+    result: DEVICE_RESULT_SCHEMAS.screen_capture,
+  },
+  'screenshot.window': { params: Type.Object({ window: Id }, STRICT), result: DEVICE_RESULT_SCHEMAS.screen_capture },
+  'apps.list': { params: Empty, result: DESK_RESULT_SCHEMAS.app_list },
+  'windows.list': { params: Empty, result: DESK_RESULT_SCHEMAS.window_list },
+  'window.act': {
+    params: Type.Object({ window: Id, op: Type.String({ minLength: 1, maxLength: 20 }),
+      x: Type.Optional(Type.Integer()), y: Type.Optional(Type.Integer()), width: Type.Optional(Point),
+      height: Type.Optional(Point) }, STRICT),
+    result: DESK_RESULT_SCHEMAS.window_act,
+  },
+  'ax.perceive': { params: Type.Object({ app: Id }, STRICT), result: DESK_RESULT_SCHEMAS.app_perceive },
+  'ax.act': {
+    params: Type.Object({ app: Id, version: Id, n: Type.Integer({ minimum: 1 }),
+      op: Type.String({ minLength: 1, maxLength: 20 }), text: Type.Optional(Type.String({ maxLength: 4_000 })) },
+    STRICT),
+    result: DESK_RESULT_SCHEMAS.app_act,
+  },
+  'menu.list': { params: Type.Object({ app: Id }, STRICT), result: DESK_RESULT_SCHEMAS.app_menu },
+  'menu.press': {
+    params: Type.Object({ app: Id, path: Type.String({ minLength: 1, maxLength: 300 }) }, STRICT),
+    result: DESK_RESULT_SCHEMAS.app_menu,
+  },
   'files.list': { params: Type.Object({ path: Path }, STRICT), result: DEVICE_RESULT_SCHEMAS.file_list },
   'files.read': { params: Type.Object({ path: Path }, STRICT), result: DEVICE_RESULT_SCHEMAS.file_read },
   'files.write': {
@@ -179,7 +213,20 @@ export interface HelperCall {
 export const HELPER_DEVICE_KINDS = [
   'file_list', 'file_read', 'file_write', 'run_command', 'screen_capture', 'input_click', 'input_type',
   'calendar_list', 'calendar_create', 'reminder_list', 'reminder_create', 'reminder_complete',
+  'calendar_update', 'input_key', 'input_scroll', 'input_mouse', 'screen_zoom', 'window_capture', 'app_list',
+  'window_list', 'window_act', 'app_perceive', 'app_act', 'app_menu',
 ] as const satisfies readonly DeviceActionKind[];
+
+/** 每种设备动作要助手会哪个方法（helper.info 的 methods 里没有就不报这项能力：旧助手、Windows 还没做的）。 */
+const KIND_METHODS: Readonly<Record<HelperDeviceKind, HelperMethod>> = {
+  file_list: 'files.list', file_read: 'files.read', file_write: 'files.write', run_command: 'command.run',
+  screen_capture: 'screenshot', input_click: 'click', input_type: 'type', calendar_list: 'calendar.events',
+  calendar_create: 'calendar.create', reminder_list: 'reminders.list', reminder_create: 'reminders.create',
+  reminder_complete: 'reminders.complete', calendar_update: 'calendar.update', input_key: 'key',
+  input_scroll: 'scroll', input_mouse: 'mouse', screen_zoom: 'screenshot.region', window_capture: 'screenshot.window',
+  app_list: 'apps.list', window_list: 'windows.list', window_act: 'window.act', app_perceive: 'ax.perceive',
+  app_act: 'ax.act', app_menu: 'menu.list',
+};
 export type HelperDeviceKind = (typeof HELPER_DEVICE_KINDS)[number];
 
 /**
@@ -206,21 +253,67 @@ export function helperCallFor(action: DeviceActionParams): HelperCall | null {
     case 'reminder_create':
       return { method: 'reminders.create', params: { title: action.title, due: action.due, notes: action.notes } };
     case 'reminder_complete': return { method: 'reminders.complete', params: { reminderId: action.reminderId } };
+    default: return deskCallFor(action);
+  }
+}
+
+/** 不给的可选项不传（助手的参数是扁平对象，null 不收）。 */
+function present(params: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== null && value !== undefined));
+}
+
+/** 11-16 第二批「电脑本机」那几种换成助手调用。 */
+function deskCallFor(action: DeviceActionParams): HelperCall | null {
+  switch (action.kind) {
+    case 'calendar_update':
+      return { method: 'calendar.update', params: present({ eventId: action.eventId, title: action.title,
+        start: action.start, end: action.end, location: action.location, notes: action.notes,
+        confirmed: action.confirmed }) };
+    case 'input_key': return { method: 'key', params: { keys: action.keys } };
+    case 'input_scroll': return { method: 'scroll', params: present({ dx: action.dx, dy: action.dy, x: action.x,
+      y: action.y }) };
+    case 'input_mouse': return { method: 'mouse', params: present({ op: action.op, x: action.x, y: action.y,
+      toX: action.toX, toY: action.toY }) };
+    case 'screen_zoom': return { method: 'screenshot.region', params: { x: action.x, y: action.y,
+      width: action.width, height: action.height } };
+    case 'window_capture': return { method: 'screenshot.window', params: { window: action.window } };
+    case 'app_list': return { method: 'apps.list', params: {} };
+    case 'window_list': return { method: 'windows.list', params: {} };
+    case 'window_act': return { method: 'window.act', params: present({ window: action.window, op: action.op,
+      x: action.x, y: action.y, width: action.width, height: action.height }) };
+    case 'app_perceive': return { method: 'ax.perceive', params: { app: action.app } };
+    case 'app_act': return { method: 'ax.act', params: present({ app: action.app, version: action.version,
+      n: action.n, op: action.op, text: action.text }) };
+    case 'app_menu': return action.path === null ? { method: 'menu.list', params: { app: action.app } }
+      : { method: 'menu.press', params: { app: action.app, path: action.path } };
     default: return null;
   }
 }
 
 /**
  * 按 permissions.status 算壳该在 hello 里报哪些设备能力：没给屏幕录制就不报截图，没给辅助功能就不报点按，
- * 日历和提醒事项要完全访问。文件和命令不要系统权限，总是报。
+ * 日历和提醒事项要完全访问。文件和命令不要系统权限，总是报。11-16 起再看助手会不会那个方法（methods 不给就不看）。
  */
-export function helperCapabilities(status: HelperResult<'permissions.status'>): HelperDeviceKind[] {
+export function helperCapabilities(status: HelperResult<'permissions.status'>, methods?: readonly string[])
+  : HelperDeviceKind[] {
   return HELPER_DEVICE_KINDS.filter((kind) => {
+    if (methods !== undefined && !methods.includes(KIND_METHODS[kind])) return false;
     switch (kind) {
-      case 'screen_capture': return status.screen;
+      case 'screen_capture':
+      case 'screen_zoom':
+      case 'window_capture': return status.screen;
       case 'input_click':
-      case 'input_type': return status.accessibility;
+      case 'input_type':
+      case 'input_key':
+      case 'input_scroll':
+      case 'input_mouse':
+      case 'window_act':
+      case 'window_list':
+      case 'app_perceive':
+      case 'app_act':
+      case 'app_menu': return status.accessibility;
       case 'calendar_list':
+      case 'calendar_update':
       case 'calendar_create': return status.calendar === 'granted';
       case 'reminder_list':
       case 'reminder_create':

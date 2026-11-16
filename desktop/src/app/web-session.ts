@@ -4,7 +4,7 @@
 
 import { existsSync } from 'node:fs';
 import { extname, basename, join } from 'node:path';
-import { app, dialog, session, type BaseWindow, type Session } from 'electron';
+import { app, dialog, session, type BaseWindow, type Session, type WebContents } from 'electron';
 
 export const WEB_PARTITION = 'persist:plasticine-web';
 const ASKED: ReadonlySet<string> = new Set(['media', 'geolocation', 'notifications', 'clipboard-read']);
@@ -24,13 +24,49 @@ export function uniqueDownload(directory: string, name: string, exists: (path: s
   return candidate;
 }
 
+/** 一个下载（11-16 tab_downloads 给 Plasticine 看：网页上点了下载，存哪了、下完没有）。 */
+export interface DownloadEntry {
+  name: string;
+  path: string;
+  url: string;
+  bytes: number;
+  state: 'progressing' | 'completed' | 'cancelled' | 'interrupted';
+  startedAt: string;
+}
+
+/** 最近的下载，新的在前；只记这次打开 Plasticine 以来的。 */
+const DOWNLOADS_KEPT = 50;
+const downloads: DownloadEntry[] = [];
+
+export function recentDownloads(): DownloadEntry[] {
+  return downloads.map((entry) => ({ ...entry }));
+}
+
 function saveDownloads(target: Session): void {
   target.on('will-download', (_event, item) => {
-    item.setSavePath(uniqueDownload(app.getPath('downloads'), item.getFilename(), existsSync));
+    // 设好存哪就不弹「存储为」：后台标签下载时不把框弹到他眼前。
+    const path = uniqueDownload(app.getPath('downloads'), item.getFilename(), existsSync);
+    item.setSavePath(path);
+    const entry: DownloadEntry = { name: basename(path), path, url: item.getURL(), bytes: 0, state: 'progressing',
+      startedAt: new Date().toISOString() };
+    downloads.unshift(entry);
+    downloads.splice(DOWNLOADS_KEPT);
+    item.on('updated', () => {
+      entry.bytes = item.getReceivedBytes();
+    });
+    item.once('done', (_done, state) => {
+      entry.bytes = item.getReceivedBytes();
+      entry.state = state;
+    });
   });
 }
 
-export function webSession(window: () => BaseWindow | null, userAgent: string): Session {
+/**
+ * hidden：这个页面现在没给他看（后台标签）。11-16 线上：后台标签里网站要权限会把系统对话框弹到他眼前；
+ * 现在后台的一律先不给（他把标签切出来、网站再要时照常问）。
+ */
+export function webSession(window: () => BaseWindow | null, userAgent: string,
+  hidden: (contents: WebContents) => boolean = () => false): Session {
   const web = session.fromPartition(WEB_PARTITION);
   web.setUserAgent(userAgent);
   saveDownloads(web);
@@ -40,7 +76,7 @@ export function webSession(window: () => BaseWindow | null, userAgent: string): 
       callback(true);
       return;
     }
-    if (!ASKED.has(permission)) {
+    if (!ASKED.has(permission) || hidden(contents)) {
       callback(false);
       return;
     }

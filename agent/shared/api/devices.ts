@@ -34,6 +34,7 @@ import {
 import { API_PREFIX, IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
 import { DevicePathSchema, HAND_ACTION_PARAM_SCHEMAS, HAND_KIND_CLASSES, HAND_KIND_LABELS,
   WebTabIdSchema } from './device-hands.ts';
+import { DESK_ACTION_PARAM_SCHEMAS, DESK_KIND_CLASSES, DESK_KIND_LABELS } from './device-desk.ts';
 import { IOS_ACTION_PARAM_SCHEMAS, IOS_KIND_CLASSES, IOS_KIND_LABELS } from './device-ios.ts';
 import { OrNull } from './lineage.ts';
 import { PAGE_STEP_MAX_CHARS, PageActSchema } from './page-operate.ts';
@@ -119,6 +120,7 @@ export const DEVICE_KIND_LABELS: Readonly<Record<DeviceActionKind, string>> = {
   tab_point: '在网页标签里按位置点',
   tab_type: '在网页标签里打字',
   ...HAND_KIND_LABELS,
+  ...DESK_KIND_LABELS,
   ...IOS_KIND_LABELS,
 };
 
@@ -162,6 +164,7 @@ export const DEVICE_KIND_CLASSES: Readonly<Record<DeviceActionKind, DeviceAction
   tab_point: 'input',
   tab_type: 'input',
   ...HAND_KIND_CLASSES,
+  ...DESK_KIND_CLASSES,
   ...IOS_KIND_CLASSES,
 };
 
@@ -266,6 +269,7 @@ export const DeviceActionParamsSchema = Type.Union([
     text: Type.String({ minLength: 1, maxLength: 200 }), gone: Type.Optional(Type.Boolean()),
     timeoutSeconds: Type.Integer({ minimum: 1, maximum: TAB_WAIT_MAX_SECONDS }) }, STRICT),
   ...HAND_ACTION_PARAM_SCHEMAS,
+  ...DESK_ACTION_PARAM_SCHEMAS,
   ...IOS_ACTION_PARAM_SCHEMAS,
 ]);
 export type DeviceActionParams = Static<typeof DeviceActionParamsSchema>;

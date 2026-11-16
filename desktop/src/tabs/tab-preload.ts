@@ -3,13 +3,14 @@
 // tab:translate。用户在标签里按下鼠标报 tab:pointer（界面收起非模态浮层）。
 
 import { extractPage, type ExtractPageCommand } from '../../../client/src/mac/extract-page.ts';
-import { ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import { circlePage, pageOperate } from 'plasticine:page-scripts';
 import type { TranslateDelivery, TranslatePageConfig } from '../../../agent/shared/api/mac-translate.ts';
 import { WEB_PAGE_TEXT_MAX_CHARS } from '../../../agent/shared/api/mac-bridge.ts';
 import { browserHost } from '../../../client/src/mac/translate-page-host.ts';
 import { installPageTranslator, type PageTranslator } from '../../../client/src/mac/translate-page.ts';
 import { TAB_CHANNELS } from '../app/channels.ts';
+import { DIALOG_ARM_EVENT, DIALOG_SEEN_EVENT, dialogGuard, type SeenDialog } from './tab-dialogs.ts';
 import { clickMarked, fillMarked, focusedFacts, focusIsButton, hasText, locate, markedCenter, pageState, pasteInto,
   readPage, scrollPosition, viewportSize, visibleText } from './tab-dom.ts';
 
@@ -81,6 +82,10 @@ async function run(call: Call): Promise<unknown> {
     case 'translate.apply':
       translatorOf().apply(args.delivery as TranslateDelivery);
       return true;
+    case 'dialog-arm':
+      window.dispatchEvent(new CustomEvent(DIALOG_ARM_EVENT, { detail: JSON.stringify({ accept: args.accept === true,
+        text: typeof args.text === 'string' ? args.text : null }) }));
+      return { armed: guarded, last: lastDialog };
     default:
       throw new Error(`网页标签不会 ${call.op}。`);
   }
@@ -92,6 +97,20 @@ ipcRenderer.on(TAB_CHANNELS.call, (_event, call: Call) => {
     (error: unknown) => ipcRenderer.send(TAB_CHANNELS.reply, { id: call.id, ok: false,
       error: error instanceof Error ? error.message : String(error) }),
   );
+});
+
+// 后台标签的弹框不弹到他眼前（tab-dialogs.ts）：页面脚本跑之前装好；弹过的记下来。
+let lastDialog: SeenDialog | null = null;
+let guarded = true;
+try {
+  contextBridge.executeInMainWorld({ func: dialogGuard });
+} catch (error) {
+  // 装不上（特殊页面）就照常弹；tab_dialog 回执里说清楚没装上。
+  guarded = error instanceof Error ? false : guarded;
+}
+window.addEventListener(DIALOG_SEEN_EVENT, (event) => {
+  const detail = (event as CustomEvent<unknown>).detail;
+  lastDialog = typeof detail === 'string' ? JSON.parse(detail) as SeenDialog : lastDialog;
 });
 
 // 每个文档载入就装上翻译脚本（和 Mac 壳一样）：它先报一次 page，壳按想要的状态接着开。
