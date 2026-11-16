@@ -10,14 +10,14 @@
 import type { Migration } from './migrate.ts';
 
 const TABLES = ['term_decodings', 'agreements', 'device_keys'] as const;
-// 查找索引和它的 FTS 影子表里约定那一类的行也没了。
-const SEARCH_TABLES = ['search_docs', 'search_sources', 'search_gaps', 'search_fts_data', 'search_fts_idx',
-  'search_fts_docsize'] as const;
+// 查找索引里约定那一类的行也没了；FTS 的几张内部表跟着变（删词条是往里记一笔，行数可能反而多）。
+const SEARCH_TABLES = ['search_docs', 'search_sources', 'search_gaps', 'search_fts', 'search_fts_data',
+  'search_fts_idx', 'search_fts_docsize'] as const;
 
 export const migration: Migration = {
   id: '0141-drop-agreements',
   destructive: true,
-  loses: [...TABLES, ...SEARCH_TABLES],
+  changes: [...TABLES, ...SEARCH_TABLES],
   up(db) {
     db.exec(`INSERT INTO search_fts (search_fts, rowid, title, body, detail)
       SELECT 'delete', id, title, body, detail FROM search_docs WHERE source = 'agreement'`);

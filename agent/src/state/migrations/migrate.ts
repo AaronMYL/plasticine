@@ -30,10 +30,11 @@ export interface Migration {
   /** 删表、删行、改表名的迁移（只从 FIRST_DESTRUCTIVE 起）。 */
   destructive?: true;
   /**
-   * 这次迁移会删掉、或删掉里面一些行的表。上线前在库的副本上演练（scripts/rehearse-migrations.ts）时，这几张表
-   * 行数变少、整张没了不算意外，单独列在报告里；别的表行数一变演练就不过。
+   * 这次迁移会让行数变的表：删掉的表、删掉一些行的表，还有跟着变的全文索引内部表（那几张的行数可增可减）。
+   * 上线前在库的副本上演练（scripts/rehearse-migrations.ts）时，这几张表的变化不算意外，前后行数单独列在报告里
+   * 给人看；别的表行数一变演练就不过。
    */
-  loses?: readonly string[];
+  changes?: readonly string[];
   up(db: MigrationDb, files: MigrationFiles): void;
 }
 
