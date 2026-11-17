@@ -1,6 +1,6 @@
 // 边生成边送的 SSE 回答（笔记续写 2026-11-09 起；11-13 预测消息共用）：只送给发请求的这一页，不进事件总线（总线是广播
 // 加补播缓冲，打字时一秒好几段的增量会挤掉别的事件，也会推到别的设备上）。头等第一段字到了再发：那之前失败（没连
-// 模型、额度用完）照旧回普通的错误回答。页面断开（打字作废、换段）就叫停模型。
+// 模型、额度用完）照旧回普通的错误回答。页面断开（打字作废、换段）就叫停模型，这一次不算失败。
 
 import { errorCategory, safeLog } from '../util/index.ts';
 import { toApiError } from './api-error.ts';
@@ -33,6 +33,12 @@ export async function streamReply<Done>(context: RequestContext,
     const view = await run(controller.signal, (delta) => write({ type: 'text', delta }));
     write({ type: 'done', view });
   } catch (error) {
+    // 页面自己断开的（接着打字、换了一段、关了页）：模型已经跟着叫停，不是服务出错。不记成失败的请求、不进诊断，
+    // 也不往断掉的连接上回 500（11-17：线上一天四百多条 request_failed 都是这样来的）。
+    if (controller.signal.aborted) {
+      res.end();
+      return 'streamed';
+    }
     if (!started) {
       throw error;
     }

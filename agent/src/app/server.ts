@@ -48,8 +48,19 @@ async function respond(deps: AppDeps, req: IncomingMessage, res: ServerResponse,
   return match.route.handler({ req, res, url, params: match.params, auth, deps });
 }
 
+/**
+ * 页面自己断开了（接着打字、切走、关页），处理到一半跟着被叫停：没有人在等这个回答，不算服务出错。
+ * 只认「连接已经关了」加「被叫停」这两样同时成立；别的错照旧记。
+ */
+export function abandonedByClient(res: Pick<ServerResponse, 'closed' | 'writableEnded'>, error: unknown): boolean {
+  return res.closed && !res.writableEnded && error instanceof Error && error.name === 'AbortError';
+}
+
 function writeError(deps: AppDeps, pathname: string, res: ServerResponse, error: unknown, asker: Asker,
   method: string): void {
+  if (abandonedByClient(res, error)) {
+    return;
+  }
   const mapped = toApiError(error);
   if (mapped.unexpected) {
     // 路径本身也可能带凭据或用户内容，只记路由模板；11-16 起带上错误原文和位置（日志工具会洗掉像凭据的东西）。
