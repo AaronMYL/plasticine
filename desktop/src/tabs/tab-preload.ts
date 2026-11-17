@@ -1,4 +1,5 @@
-// 每个网页标签的 preload（独立脚本世界，sandbox；构建时打成一个文件）。页面自己的脚本看不到这里，也拿不到消息通道。
+// 每个网页标签的 preload（独立脚本世界，sandbox；构建时打成一个文件）。11-16 起内嵌框里也跑一份（主进程按框
+// sendToFrame 叫它读、点跨源框里的元素）。页面自己的脚本看不到这里，也拿不到消息通道。
 // 主进程经 tab:call 叫这里做事（翻译、圈一块、问这一页、DOM 动作），这里经 tab:reply 回；翻译脚本自己发的消息走
 // tab:translate。用户在标签里按下鼠标报 tab:pointer（界面收起非模态浮层）。
 
@@ -113,10 +114,13 @@ window.addEventListener(DIALOG_SEEN_EVENT, (event) => {
   lastDialog = typeof detail === 'string' ? JSON.parse(detail) as SeenDialog : lastDialog;
 });
 
-// 每个文档载入就装上翻译脚本（和 Mac 壳一样）：它先报一次 page，壳按想要的状态接着开。
-window.addEventListener('DOMContentLoaded', () => {
-  translatorOf();
-}, { once: true });
+// 每个文档载入就装上翻译脚本（和 Mac 壳一样）：它先报一次 page，壳按想要的状态接着开。11-16 起 preload 也在内嵌框里
+// 跑（跨源框里的读和点），翻译只装在最外面这一页。
+if (window.top === window) {
+  window.addEventListener('DOMContentLoaded', () => {
+    translatorOf();
+  }, { once: true });
+}
 
 window.addEventListener('pointerdown', (event) => {
   if (event.isTrusted) {

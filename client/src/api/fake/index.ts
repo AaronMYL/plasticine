@@ -145,7 +145,7 @@ export interface FakeApi {
 /** 本地开发的线和模型连接：场景看地址里的 ?scene=（lines-seed.ts）；硬线卡答了，主对话接着跑。 */
 function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProviders; asks: FakeAsks;
   contacts: FakeContacts; outbound: FakeOutbound; attachments: FakeAttachments; connections: FakeConnections;
-  pushes: FakePushes; projectId: string | null }, now: Date): void {
+  pushes: FakePushes; spaces: FakeSpaces; projectId: string | null }, now: Date): void {
   const { lines, modelProviders, asks } = deps;
   const search = typeof window === 'undefined' ? '' : window.location.search;
   // ?net=connect：新装、一家模型都没连（第一次打开的第一步）。
@@ -183,7 +183,7 @@ function seedNewKernel(deps: { lines: FakeLines; modelProviders: FakeModelProvid
   }
   // ?scene=plans：图表、能算的表、步骤清单、连接、推送记录（plans-scene-seed.ts）。
   if (scene === 'plans') {
-    seedPlansScene(lines, deps.connections, deps.pushes, now);
+    seedPlansScene(lines, deps.connections, deps.pushes, deps.spaces, now);
     return;
   }
   if (scene === 'schedule') {
@@ -385,7 +385,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
       seedNetworkScene({ contacts, network }, now(), netScene);
     }
     const cyberHunter = projects.names().find((item) => item.name === 'Cyber Hunter')?.id ?? null;
-    seedNewKernel({ lines, modelProviders, asks, contacts, outbound, attachments, connections, pushes,
+    seedNewKernel({ lines, modelProviders, asks, contacts, outbound, attachments, connections, pushes, spaces,
       projectId: cyberHunter }, now());
     if (typeof window !== 'undefined'
       && new URLSearchParams(window.location.search).get('scene') === 'network-attachments') {

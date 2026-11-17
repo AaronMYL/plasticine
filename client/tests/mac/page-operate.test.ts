@@ -402,6 +402,31 @@ it('感知报告内嵌文档数量，供原生层识别未登记或不可读框�
   expect(await run({ op: 'perceive' })).toMatchObject({ frameCount: 2 });
 });
 
+it('桌面版（frames inline）：同源内嵌框读进去一起编号，点得到框里的；读不进去的（跨源）只报个数', async () => {
+  document.body.innerHTML = '<button>外面</button><iframe></iframe><iframe></iframe>';
+  const [same, closed] = Array.from(document.querySelectorAll('iframe'));
+  same!.contentDocument!.body.innerHTML = '<button id="inner">里面</button>';
+  Object.defineProperty(closed!, 'contentDocument', { get() { throw new Error('跨源'); } });
+  let clicked = 0;
+  same!.contentDocument!.getElementById('inner')!.addEventListener('click', () => { clicked += 1; });
+  const page = await run({ op: 'perceive', frames: 'inline' });
+  expect((page.elements as Json[]).map((item) => item.name)).toEqual(['外面', '里面']);
+  expect(page.outline).toContain('〔内嵌框〕');
+  expect(page.frameCount).toBe(1);
+  const done = await run({ op: 'act', version: page.version, act: { op: 'click', n: 2 } });
+  expect(done).toMatchObject({ ok: true, target: { name: '里面' } });
+  expect(clicked).toBe(1);
+});
+
+it('base 让编号从几往后数（桌面版把跨源框接在后面）；按编号做时还是用框里自己的编号', async () => {
+  document.body.innerHTML = '<button>一</button><button>二</button>';
+  const page = await run({ op: 'perceive', base: 10 });
+  expect((page.elements as Json[]).map((item) => item.n)).toEqual([11, 12]);
+  expect(page.outline).toContain('[11 按钮「一」]');
+  expect(await run({ op: 'act', version: page.version, act: { op: 'click', n: 2 } }))
+    .toMatchObject({ ok: true, target: { name: '二' } });
+});
+
 
 it('真实注入脚本的感知结果符合共享回执协议，不让内部计数字段堵住补报', async () => {
   document.body.innerHTML = '<p>只读正文</p><iframe></iframe>';

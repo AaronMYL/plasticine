@@ -27,6 +27,7 @@ const EVENTS = {
   line_turn_hook_failed: '一条线停下后告诉记忆整理 / 跨用户任务时出错，线本身没受影响',
   line_report_hook_failed: '后台线贴回结果时发系统通知出错，结果照常贴回',
   notice_push_failed: '主线通知已经发在主线上，系统通知（网页推送）没发出去',
+  push_withdraw_failed: '推送已经记成撤回，给手机换成「已撤回」的那条没推出去',
   push_failed: '系统通知发送失败，卡仍在对话和清单里',
   push_rejected: '系统通知被推送服务拒收',
   ask_notify_failed: '卡的系统通知失败，记录已保存',

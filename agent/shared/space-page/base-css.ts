@@ -91,4 +91,21 @@ body.pz-editing [data-e]:hover{background:var(--tint)}
 body.pz-editing [data-e]:focus{outline:1.5px solid var(--fg);outline-offset:4px;background:var(--bg)}
 body.pz-editing .pz-fixed{pointer-events:none}
 body.pz-editing figure.pz-fixed,body.pz-editing svg.pz-fixed{opacity:.45}
+/* 图表（11-16，client/src/views/spaces/space-charts.ts 画）：和对话里的图表同一个样子。 */
+.pz-chart{position:relative;min-height:200px}
+.pz-chart-plot{position:relative}
+.pz-chart svg{display:block;width:100%;height:auto;overflow:visible}
+.pz-chart-grid{stroke:var(--line)}
+.pz-chart-tick{font-family:var(--mono);font-size:11px;fill:var(--fg2)}
+.pz-chart-latest{font-family:var(--mono);font-size:11px;font-weight:600;fill:var(--fg)}
+.pz-chart-point{fill:var(--bg)}
+.pz-chart-tip{position:absolute;display:flex;flex-direction:column;padding:4px 8px;border-radius:8px;
+background:var(--bg);box-shadow:inset 0 0 0 1px var(--line2);font-size:12px;line-height:18px;white-space:nowrap;
+pointer-events:none}
+.pz-chart-tip[hidden]{display:none}
+.pz-chart-tip span{color:var(--fg2)}
+.pz-chart-tip b{font-family:var(--mono);font-weight:400}
+.pz-chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:12px;line-height:18px;color:var(--fg2)}
+.pz-chart-legend i{display:inline-block;width:8px;height:8px;margin-right:4px;border-radius:4px}
+.pz-chart-bad{min-height:0;font-size:13px;color:var(--err)}
 `;

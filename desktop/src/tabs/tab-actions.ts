@@ -18,7 +18,8 @@ import { DeviceRefused, TabActionError, type StepReporter, type TabActionPort } 
 import { type KeyStroke, trustedClick, trustedInsert, trustedKey, trustedWheel } from './cdp.ts';
 import { runMoreTab } from './tab-more.ts';
 import { KeyRefused, keyStroke } from './key-spec.ts';
-import { placeFiles } from './tab-upload.ts';
+import { TabFrames } from './tab-frames.ts';
+import { uploadTo } from './tab-upload.ts';
 import type { Located, TargetFacts } from './tab-dom.ts';
 import type { Tab, TabViews } from './tab-views.ts';
 
@@ -89,9 +90,14 @@ function digest(state: unknown): { url: string; title: string; digest: string } 
 
 export class TabActions implements TabActionPort {
   private readonly deps: TabActionDeps;
+  /** 跨源内嵌框（11-16）：读进来接在主页面后面，按编号找回是哪个框。 */
+  private readonly frames: TabFrames;
 
   constructor(deps: TabActionDeps) {
     this.deps = deps;
+    this.frames = new TabFrames({ call: (id, op, args) => deps.tabs.call(id, op, args),
+      callFrame: (id, frame, op, args) => deps.tabs.callFrame(id, frame, op, args),
+      crossFrames: (id) => deps.tabs.crossFrames(id) });
   }
 
   available(): boolean {
@@ -278,8 +284,9 @@ export class TabActions implements TabActionPort {
   }
 
   private async perceive(tabId: string): Promise<Record<string, unknown>> {
-    const page = await this.call(tabId, 'operate', { request: { op: 'perceive' } });
-    if (!Value.Check(PagePerceptionSchema, page)) {
+    this.tab(tabId);
+    const page = await this.frames.perceive(tabId);
+    if (page === null || !Value.Check(PagePerceptionSchema, page)) {
       throw new TabActionError(null, '页面结构没读出来，请重试。');
     }
     return page;
@@ -431,21 +438,12 @@ export class TabActions implements TabActionPort {
     return { tabId, tag: String(done.tag), handled: done.handled === true, matches: done.matches === true };
   }
 
-  /** 往编号 n 的上传框放文件（tab-upload.ts）：先认出这个编号是文件框还是「上传」按钮。 */
+  /** 往编号 n 的上传框放文件（tab-upload.ts）。 */
   private async upload(action: Extract<DeviceActionParams, { kind: 'tab_upload' }>, step: StepReporter)
     : Promise<Record<string, unknown>> {
     const tab = this.tab(action.tabId);
     this.present(tab);
-    const nonce = randomUUID();
-    const mark = await this.call(tab.id, 'operate', { request: { op: 'mark', version: action.version, n: action.n,
-      nonce } });
-    if (mark.found !== true) {
-      throw new TabActionError('page_stale', '页面变了，编号过期了，先重新感知。');
-    }
-    if (mark.file === true && mark.multiple !== true && action.files.length > 1) {
-      throw new TabActionError(null, '这个上传框一次只收一个文件：分几次传。');
-    }
-    const via = await placeFiles(tab.view.webContents, mark, nonce, action.files, step);
+    const via = await uploadTo(tab.view.webContents, this.frames, tab.id, action, step);
     await sleep(SETTLE_MS);
     return { tabId: tab.id, files: action.files.map((file) => file.name), via };
   }
@@ -460,8 +458,15 @@ export class TabActions implements TabActionPort {
       tabId: tab.id, actionId, status, step });
     report('run', action.step);
     const before = await this.perceive(tab.id);
-    const done = await this.call(tab.id, 'operate', { request: { op: 'act', version: action.version,
-      act: action.act, allowSubmit: action.submitAsk !== null } });
+    // 编号可能在跨源内嵌框里（tab-frames.ts）：换成那个框里的编号和版本去做，回来的编号再换回来。
+    const route = this.frames.route(tab.id, action.version, 'n' in action.act ? action.act.n : undefined);
+    const done = route === null ? { ok: false, error: 'stale' } : await this.frames.call(tab.id, route, 'operate', {
+      request: { op: 'act', version: route.version, act: route.n === undefined ? action.act
+        : { ...action.act, n: route.n }, allowSubmit: action.submitAsk !== null } }) as Record<string, unknown>;
+    if (route !== null && typeof done.target === 'object' && done.target !== null) {
+      const target = done.target as { n?: unknown };
+      done.target = { ...target, n: typeof target.n === 'number' ? target.n + route.base : target.n };
+    }
     if (done.ok !== true) {
       if (done.error === 'submit') {
         report('wait', '要提交了，等你定');

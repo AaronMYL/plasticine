@@ -217,7 +217,7 @@ export const HELPER_DEVICE_KINDS = [
   'window_list', 'window_act', 'app_perceive', 'app_act', 'app_menu',
 ] as const satisfies readonly DeviceActionKind[];
 
-/** 每种设备动作要助手会哪个方法（helper.info 的 methods 里没有就不报这项能力：旧助手、Windows 还没做的）。 */
+/** 每种设备动作要助手会哪个方法（helper.info 的 methods 里没有就不报这项能力：旧助手没有的）。 */
 const KIND_METHODS: Readonly<Record<HelperDeviceKind, HelperMethod>> = {
   file_list: 'files.list', file_read: 'files.read', file_write: 'files.write', run_command: 'command.run',
   screen_capture: 'screenshot', input_click: 'click', input_type: 'type', calendar_list: 'calendar.events',

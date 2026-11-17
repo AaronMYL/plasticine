@@ -98,9 +98,15 @@ function notificationOf(payload) {
   };
 }
 
+// 同一个 tag 的新通知换掉旧的那条（撤回的推送换成「这条推送已撤回」、同一张卡的更新）：还挂着旧的就悄悄换，不再响一次。
+async function show(title, options) {
+  const existing = options.tag === undefined ? [] : await self.registration.getNotifications({ tag: options.tag });
+  await self.registration.showNotification(title, existing.length > 0 ? { ...options, silent: true } : options);
+}
+
 self.addEventListener('push', (event) => {
   const { title, options } = notificationOf(readPayload(event));
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(show(title, options));
 });
 
 async function openPath(path) {

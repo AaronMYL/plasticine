@@ -6,7 +6,7 @@
 // 并切过去（opened）；http(s) 以外的链接交给系统。
 
 import { randomUUID } from 'node:crypto';
-import { WebContentsView, shell, type BaseWindow, type Session, type WebContents } from 'electron';
+import { WebContentsView, shell, webFrameMain, type BaseWindow, type Session, type WebContents } from 'electron';
 import type { WebTabEvent, WebTabFrame, WebTabsSync } from '../../../agent/shared/api/mac-bridge.ts';
 import { TAB_CHANNELS } from '../app/channels.ts';
 import { dispatchMouse, type ForwardedMouse } from './tab-input.ts';
@@ -17,6 +17,15 @@ import { reportedUrl } from './tab-url.ts';
 
 /** 叫标签里的脚本做事的时限：圈一块要等他框，给足五分钟；别的 30 秒。 */
 const CALL_TIMEOUT_MS = 30_000;
+/** 跨源内嵌框里跑脚本最多等这么久（不让脚本的框、没载完的框不拖住整页的感知）。 */
+const FRAME_CALL_MS = 4_000;
+
+/** 一个跨源内嵌框（11-16）：它自己的 preload 在里面跑注入脚本。 */
+export interface FrameRef {
+  processId: number;
+  routingId: number;
+  url: string;
+}
 const CIRCLE_TIMEOUT_MS = 5 * 60_000;
 /** 壳自己开的标签等界面认领的时限：过了还没进清单就关掉。 */
 const CLAIM_MS = 10_000;
@@ -222,6 +231,34 @@ export class TabViews {
     });
   }
 
+  /** 这个标签里主页面读不进去的内嵌框（跨源、沙箱）：主页面的注入脚本只读得进同源的。 */
+  crossFrames(tabId: string): FrameRef[] {
+    const main = this.tabs.get(tabId)?.view.webContents.mainFrame;
+    if (main === undefined) {
+      return [];
+    }
+    return main.framesInSubtree.filter((frame) => frame !== main && frame.parent !== null
+      && frame.origin !== frame.parent.origin && /^https?:/.test(frame.url))
+      .map((frame) => ({ processId: frame.processId, routingId: frame.routingId, url: frame.url }));
+  }
+
+  /** 叫某个内嵌框里的 preload 做一件事（框没了或没回话就失败，调用方跳过这个框）。 */
+  callFrame(tabId: string, ref: FrameRef, op: string, args: Record<string, unknown> = {}): Promise<unknown> {
+    const frame = this.tabs.has(tabId) ? webFrameMain.fromId(ref.processId, ref.routingId) : undefined;
+    if (frame === undefined || frame.isDestroyed()) {
+      return Promise.reject(new Error('这个内嵌框没了。'));
+    }
+    const id = randomUUID();
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.calls.delete(id);
+        reject(new Error('内嵌框没有按时回话。'));
+      }, FRAME_CALL_MS);
+      this.calls.set(id, { resolve, reject, timer });
+      frame.send(TAB_CHANNELS.call, { id, op, args });
+    });
+  }
+
   /** tab:reply 进来的回话。 */
   reply(message: { id?: unknown; ok?: unknown; value?: unknown; error?: unknown }): void {
     const pending = typeof message.id === 'string' ? this.calls.get(message.id) : undefined;
@@ -259,8 +296,10 @@ export class TabViews {
   }
 
   private create(tabId: string, url: string, openedBy: 'user' | 'plasticine'): Tab {
+    // preload 也在内嵌框里跑（11-16）：跨源内嵌框里的元素要在那个框自己的独立脚本世界里读和点。
     const view = new WebContentsView({ webPreferences: { session: this.deps.session, preload: this.deps.preload,
-      contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false } });
+      contextIsolation: true, sandbox: true, nodeIntegration: false, nodeIntegrationInSubFrames: true,
+      spellcheck: false } });
     view.setVisible(false);
     // 后台开的标签不露出来也要有大小：不然页面按 0 宽排版、截图是空的。
     view.setBounds(hiddenBounds(this.frameValue));

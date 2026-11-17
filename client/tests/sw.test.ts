@@ -37,14 +37,15 @@ function fakeCaches() {
   };
 }
 
-function worker(clients: FakeClient[] = [], fetch: ReturnType<typeof vi.fn> = vi.fn()) {
+function worker(clients: FakeClient[] = [], fetch: ReturnType<typeof vi.fn> = vi.fn(), shownTags: string[] = []) {
   const listeners = new Map<string, Listener>();
   const showNotification = vi.fn(async () => undefined);
+  const getNotifications = vi.fn(async ({ tag }: { tag: string }) => (shownTags.includes(tag) ? [{ tag }] : []));
   const openWindow = vi.fn(async () => null);
   const caches = fakeCaches();
   const self = {
     location: { origin: 'https://plasticine.example' },
-    registration: { showNotification },
+    registration: { showNotification, getNotifications },
     clients: { matchAll: vi.fn(async () => clients), openWindow, claim: vi.fn(async () => undefined) },
     addEventListener: (type: string, listener: Listener) => listeners.set(type, listener),
     skipWaiting: vi.fn(async () => undefined),
@@ -78,6 +79,14 @@ describe('service worker · 立刻打断的系统通知', () => {
       data: { url: '/#/tasks' },
     });
     expect(JSON.stringify(showNotification.mock.calls)).not.toContain('秘密');
+  });
+
+  it('同一个 tag 的还挂着（撤回的推送、卡的更新）：悄悄换掉，不再响一次', async () => {
+    const { fire, showNotification } = worker([], vi.fn(), ['push:p1']);
+    await fire('push', pushData({ title: 'Plasticine', body: '「示例」这条推送已撤回', url: '/#/plasticine',
+      tag: 'push:p1' }));
+    expect(showNotification).toHaveBeenCalledWith('Plasticine', { body: '「示例」这条推送已撤回', tag: 'push:p1',
+      data: { url: '/#/plasticine' }, silent: true });
   });
 
   it('push 不是 JSON 或少了字段：显示固定的一句，不把收到的东西贴出来', async () => {

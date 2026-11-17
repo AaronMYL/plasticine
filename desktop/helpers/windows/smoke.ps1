@@ -37,6 +37,27 @@ try {
   if ($Reply.error.code -ne "screenshot_stale") { throw "没截图就点没报 screenshot_stale" }
   $Reply = Ask "h8" "screenshot" @{}
   if ($Reply.result.width -lt 1) { throw "screenshot 没回图：$($Reply | ConvertTo-Json -Compress)" }
+  # 11-16 第二批：新方法都报了；按键写法不对拒；列应用、列窗口回列表；读一个不存在的进程报 failed（顺带把
+  # UI Automation 的程序集加载一遍）。
+  $Reply = Ask "h9" "helper.info" @{}
+  foreach ($Name in @("key", "scroll", "mouse", "screenshot.region", "screenshot.window", "apps.list", "windows.list",
+      "window.act", "ax.perceive", "ax.act", "menu.list", "menu.press")) {
+    if ($Reply.result.methods -notcontains $Name) { throw "helper.info 没报 $Name" }
+  }
+  $Reply = Ask "h10" "key" @{ keys = "hyper+q" }
+  if ($Reply.error.code -ne "refused") { throw "认不出的修饰键没拒：$($Reply | ConvertTo-Json -Compress)" }
+  $Reply = Ask "h11" "apps.list" @{}
+  if ($null -eq $Reply.result -or $null -eq $Reply.result.apps) {
+    throw "apps.list 不对：$($Reply | ConvertTo-Json -Compress)"
+  }
+  $Reply = Ask "h12" "windows.list" @{}
+  if ($null -eq $Reply.result -or $null -eq $Reply.result.windows) {
+    throw "windows.list 不对：$($Reply | ConvertTo-Json -Compress)"
+  }
+  $Reply = Ask "h13" "ax.perceive" @{ app = "999999" }
+  if ($Reply.error.code -ne "failed") { throw "读不存在的应用没报 failed：$($Reply | ConvertTo-Json -Compress)" }
+  $Reply = Ask "h14" "screenshot.region" @{ x = 0; y = 0; width = 40; height = 30 }
+  if ($Reply.result.width -lt 1) { throw "screenshot.region 没回图：$($Reply | ConvertTo-Json -Compress)" }
   Write-Host "助手冒烟通过"
 } finally {
   $Writer.Close()

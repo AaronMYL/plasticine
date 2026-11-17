@@ -12,6 +12,9 @@ const store = window.__plasticineOperate || (window.__plasticineOperate = {});
 if (!Array.isArray(store.numberings)) {
   store.numberings = [];
 }
+if (request.frames === 'inline') {
+  store.inline = true;
+}
 
 const WORDS = {
   pay: /付款|支付|结账|结算|下单|购买|买单|订购|充值|转账|汇款|打款|\bpay\b|pay now|checkout|check out|\bbuy\b|purchase|place order|order now/i,
@@ -55,11 +58,14 @@ const paymentUrl = (raw) => {
   return PAY_HOSTS.some((item) => host === item || host.endsWith('.' + item)) || PAY_PATH.test(parsed.pathname);
 };
 
+// 内嵌框里的节点按它自己那一页的窗口算样式。
+const styleOf = (node) => ((node.ownerDocument && node.ownerDocument.defaultView) || window).getComputedStyle(node);
+
 const ownHidden = (node) => {
   if (node.hidden || node.getAttribute('aria-hidden') === 'true' || node.tagName === 'PLASTICINE-DOT') {
     return true;
   }
-  const style = getComputedStyle(node);
+  const style = styleOf(node);
   return style.display === 'none' || style.visibility === 'hidden';
 };
 
@@ -126,14 +132,14 @@ const labelText = (el) => {
   }
   const by = el.getAttribute('aria-labelledby');
   if (by) {
-    const text = by.split(/\s+/).map((id) => doc.getElementById(id)).filter(Boolean)
+    const text = by.split(/\s+/).map((id) => el.ownerDocument.getElementById(id)).filter(Boolean)
       .map((node) => node.textContent).join(' ');
     if (text.trim()) {
       return text;
     }
   }
   if (el.id) {
-    const forLabel = doc.querySelector('label[for="' + CSS.escape(el.id) + '"]');
+    const forLabel = el.ownerDocument.querySelector('label[for="' + CSS.escape(el.id) + '"]');
     if (forLabel && forLabel.textContent.trim()) {
       return forLabel.textContent;
     }
@@ -320,14 +326,15 @@ const hash = (text) => {
 
 // 页面上靠 cursor:pointer 能点、却没写成链接按钮的那一块（会话列表一行、卡片）：取最外层的那一个；整屏大的不算。
 const pointerRoot = (el) => {
-  if (el.matches(INTERACTIVE) || el === doc.body || el === doc.documentElement) {
+  const own = el.ownerDocument;
+  if (el.matches(INTERACTIVE) || el === own.body || el === own.documentElement) {
     return false;
   }
-  if (getComputedStyle(el).cursor !== 'pointer') {
+  if (styleOf(el).cursor !== 'pointer') {
     return false;
   }
   const parent = el.parentElement;
-  if (parent && getComputedStyle(parent).cursor === 'pointer') {
+  if (parent && styleOf(parent).cursor === 'pointer') {
     return false;
   }
   return el.getBoundingClientRect().height <= window.innerHeight * 0.6;
@@ -337,31 +344,95 @@ const pointerRoot = (el) => {
 const uploadLabel = (el, layout) => el.tagName === 'LABEL' && el.control
   && String(el.control.type).toLowerCase() === 'file' && !visible(el.control, layout);
 
-const candidates = (layout) => {
-  const interactive = Array.from(doc.querySelectorAll(INTERACTIVE + ', label'))
+// 读得进去的内嵌框（同源、看得见）里的那一页；读不进去的（跨源）只数个数。
+const innerDoc = (frame) => {
+  let inner = null;
+  try {
+    inner = frame.contentDocument;
+  } catch (error) {
+    inner = null;
+  }
+  return inner && inner.documentElement ? inner : null;
+};
+
+const frameShown = (frame) => {
+  if (hiddenByStyle(frame)) {
+    return false;
+  }
+  const rect = frame.getBoundingClientRect();
+  return !hasLayout() || rect.width > 0 && rect.height > 0;
+};
+
+// 这一页和它里面读得进去的内嵌框（深度优先，按页面上的顺序）。
+const docsOf = (root) => {
+  const list = [root];
+  if (!store.inline) {
+    return list;
+  }
+  for (const frame of Array.from(root.querySelectorAll('iframe, frame'))) {
+    const inner = innerDoc(frame);
+    if (inner && frameShown(frame)) {
+      list.push(...docsOf(inner));
+    }
+  }
+  return list;
+};
+
+const closedIn = (page) => Array.from(page.querySelectorAll('iframe, frame'))
+  .filter((frame) => !innerDoc(frame) && frameShown(frame)).length;
+
+const closedFrames = () => (store.inline ? docsOf(doc).reduce((count, page) => count + closedIn(page), 0)
+  : doc.querySelectorAll('iframe, frame').length);
+
+const candidatesIn = (page, layout) => {
+  const interactive = Array.from(page.querySelectorAll(INTERACTIVE + ', label'))
     .filter((el) => el.tagName !== 'LABEL' || uploadLabel(el, layout));
-  if (!layout || !doc.body) {
+  if (!layout || !page.body) {
     return interactive;
   }
   const known = new Set(interactive);
-  return Array.from(doc.body.querySelectorAll('*')).filter((el) => known.has(el) || pointerRoot(el));
+  return Array.from(page.body.querySelectorAll('*')).filter((el) => known.has(el) || pointerRoot(el));
+};
+
+const candidates = (layout) => docsOf(doc).reduce((all, page) => all.concat(candidatesIn(page, layout)), []);
+
+// 内嵌框里的元素在最外面这一页上的位置：一层层加上框自己的位置和边框。
+const frameOffset = (el) => {
+  let x = 0;
+  let y = 0;
+  for (let view = el.ownerDocument.defaultView; view && view !== window; view = view.parent) {
+    const frame = view.frameElement;
+    if (!frame) {
+      break;
+    }
+    const rect = frame.getBoundingClientRect();
+    x += rect.left + frame.clientLeft;
+    y += rect.top + frame.clientTop;
+  }
+  return { x, y };
 };
 
 // 页面上填的值和表单发往哪里：输入框、勾选、下拉、可编辑区的全文，表单的 action / method / target 和按钮的 formaction。
 // 提交前和那一版比，变了就不提交（审批绑的就是这些，不是整页 HTML）。
-const fieldsOf = () => {
-  const values = Array.from(doc.querySelectorAll('input, textarea, select')).map((el) =>
+const fieldsIn = (page) => {
+  const values = Array.from(page.querySelectorAll('input, textarea, select')).map((el) =>
     [el.value, el.checked, el.selectedIndex]);
-  const editors = Array.from(doc.querySelectorAll('[contenteditable]'))
+  const editors = Array.from(page.querySelectorAll('[contenteditable]'))
     .filter((el) => (el.getAttribute('contenteditable') || '').toLowerCase() !== 'false')
     .map((el) => el.textContent);
-  const forms = Array.from(doc.querySelectorAll('form')).map((form) =>
+  const forms = Array.from(page.querySelectorAll('form')).map((form) =>
     [form.getAttribute('action'), form.getAttribute('method'), form.getAttribute('target')]);
-  const overrides = Array.from(doc.querySelectorAll('[formaction]')).map((el) => el.getAttribute('formaction'));
-  return JSON.stringify([values, editors, forms, overrides]);
+  const overrides = Array.from(page.querySelectorAll('[formaction]')).map((el) => el.getAttribute('formaction'));
+  return [values, editors, forms, overrides];
 };
 
-const perceive = () => {
+// 有内嵌框时每一页各一份（编辑器在框里，填的字也要算进去）。
+const fieldsOf = () => {
+  const pages = docsOf(doc);
+  return JSON.stringify(pages.length === 1 ? fieldsIn(doc) : pages.map(fieldsIn));
+};
+
+const perceive = (base) => {
   const layout = hasLayout();
   const elements = [];
   const items = [];
@@ -378,7 +449,7 @@ const perceive = () => {
       continue;
     }
     elements.push(el);
-    const item = describe(el, elements.length);
+    const item = describe(el, base + elements.length);
     items.push(item);
     numbered.set(el, item);
   }
@@ -429,6 +500,15 @@ const perceive = () => {
     if (ownHidden(node)) {
       return;
     }
+    if ((tag === 'IFRAME' || tag === 'FRAME') && store.inline) {
+      const inner = innerDoc(node);
+      if (inner && frameShown(node)) {
+        push('\n〔内嵌框〕\n');
+        walk(inner.body || inner.documentElement);
+        push('\n〔内嵌框完〕\n');
+      }
+      return;
+    }
     const item = numbered.get(node);
     if (item) {
       push('\n' + elementLine(item) + '\n');
@@ -473,7 +553,7 @@ const perceive = () => {
     }
   }
   return { version: current.version, url: location.href, title: doc.title, outline, totalChars: total,
-    frameCount: doc.querySelectorAll('iframe, frame').length,
+    frameCount: closedFrames(),
     truncated: total > size, elements: items, imageHeavy: textChars < 200 && pictures > 0, digest };
 };
 
@@ -499,9 +579,10 @@ const pointAt = (el) => {
     el.scrollIntoView({ block: 'center', inline: 'nearest' });
   }
   const rect = el.getBoundingClientRect();
+  const offset = frameOffset(el);
   const mark = dot();
-  mark.style.left = Math.round(rect.left + Math.min(rect.width / 2, 24)) + 'px';
-  mark.style.top = Math.round(rect.top + rect.height / 2) + 'px';
+  mark.style.left = Math.round(offset.x + rect.left + Math.min(rect.width / 2, 24)) + 'px';
+  mark.style.top = Math.round(offset.y + rect.top + rect.height / 2) + 'px';
 };
 
 const luhnCard = (text) => (String(text).match(/(?:\d[ -]?){13,19}/g) || []).some((match) => {
@@ -524,7 +605,8 @@ const luhnCard = (text) => (String(text).match(/(?:\d[ -]?){13,19}/g) || []).som
 });
 
 const setValue = (el, value) => {
-  const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const view = el.ownerDocument.defaultView || window;
+  const proto = el.tagName === 'TEXTAREA' ? view.HTMLTextAreaElement.prototype : view.HTMLInputElement.prototype;
   const setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
   setter.call(el, value);
   el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -587,8 +669,8 @@ const pressEnter = (el) => {
 };
 
 const scrollArea = (el) => {
-  for (let node = el; node && node !== doc.documentElement; node = node.parentElement) {
-    const style = getComputedStyle(node);
+  for (let node = el; node && node !== node.ownerDocument.documentElement; node = node.parentElement) {
+    const style = styleOf(node);
     if (/(auto|scroll|overlay)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) {
       return node;
     }
@@ -616,8 +698,10 @@ const markForUpload = (request) => {
   target.setAttribute('data-plasticine-upload', String(request.nonce));
   pointAt(el);
   const rect = el.getBoundingClientRect();
+  const offset = frameOffset(el);
   const center = rect.width > 0 && rect.height > 0
-    ? { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) } : null;
+    ? { x: Math.round(offset.x + rect.left + rect.width / 2), y: Math.round(offset.y + rect.top + rect.height / 2) }
+    : null;
   return { found: true, file: Boolean(input), multiple: Boolean(input && input.multiple),
     accept: input ? String(input.accept || '') : '', role: roleOf(el), name: nameOf(el), center };
 };
@@ -713,17 +797,26 @@ if (request.op === 'read') {
   return JSON.stringify({ text });
 }
 if (request.op === 'perceive') {
-  return JSON.stringify(perceive());
+  return JSON.stringify(perceive(Math.max(0, Math.floor(Number(request.base) || 0))));
 }
 if (request.op === 'at') {
   // 按位置点之前认一下点到的是什么（11-16 tab_point）：往上找到能点的那一层，按同一套规矩判是不是提交。
-  const x = Number(request.x);
-  const y = Number(request.y);
+  let x = Number(request.x);
+  let y = Number(request.y);
+  let page = doc;
   let el = typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(x, y) : null;
-  while (el && el !== doc.body && !el.matches(INTERACTIVE) && !(hasLayout() && pointerRoot(el))) {
+  // 点到同源内嵌框上：换成框里那一页的坐标接着找。
+  while (el && store.inline && (el.tagName === 'IFRAME' || el.tagName === 'FRAME') && innerDoc(el)) {
+    const rect = el.getBoundingClientRect();
+    x -= rect.left + el.clientLeft;
+    y -= rect.top + el.clientTop;
+    page = innerDoc(el);
+    el = page.elementFromPoint(x, y);
+  }
+  while (el && el !== page.body && !el.matches(INTERACTIVE) && !(hasLayout() && pointerRoot(el))) {
     el = el.parentElement;
   }
-  if (!el || el === doc.body) {
+  if (!el || el === page.body) {
     return JSON.stringify({ found: false });
   }
   return JSON.stringify({ found: true, role: roleOf(el), name: nameOf(el), submit: submitKind(el) || null });

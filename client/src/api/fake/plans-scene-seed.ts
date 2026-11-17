@@ -2,13 +2,29 @@
 // （列了 5 步、做到第 3 步）；设置里三个连接（一个没连上）；主动告诉你里三条推到手机的记录（一条撤回了）。
 // 全是虚构的公司和人。
 
-import type { ChartWidget, LineMessageView, TableWidget } from '../shared.ts';
+import { EMPTY_SPACE_DOC, type ChartWidget, type LineMessageView, type TableWidget } from '../shared.ts';
 import type { FakeConnections, FakePushes } from './fake-connections.ts';
+import type { FakeSpaces } from './fake-spaces.ts';
 import { MAIN_LINE_ID, type FakeLines } from './fake-lines.ts';
 
 type Draft = Omit<LineMessageView, 'lineId' | 'seq'>;
 
 export const PLANS_TASK_ID = 'line-plans-boss';
+export const PLANS_SPACE_ID = 'sp_plans_chart';
+
+// 空间里的图表（space-charts.ts）：一张柱状、一张两组的折线。
+const SPACE_CHART = JSON.stringify({ type: 'bar', unit: '份', series: [{ name: '打招呼', points: [['11-10', 12],
+  ['11-11', 18], ['11-12', 9], ['11-13', 22], ['11-14', 31], ['11-15', 27], ['11-16', 37]]
+  .map(([x, y]) => ({ x, y })) }] });
+const SPACE_LINES = JSON.stringify({ type: 'line', series: [{ name: '投递', points: [['第 1 周', 20], ['第 2 周', 34],
+  ['第 3 周', 41]].map(([x, y]) => ({ x, y })) }, { name: '回复', points: [['第 1 周', 2], ['第 2 周', 5],
+  ['第 3 周', 9]].map(([x, y]) => ({ x, y })) }] });
+const SPACE_HTML = '<header class="rp-hero"><div><h1 class="rp-h1">这周投递多了，<em>回复跟着涨</em></h1>'
+  + '<p class="rp-deck">按示例招聘网站上的记录整理。</p></div></header>'
+  + `<figure class="ch"><figcaption class="ch-h"><b>最近 7 天打招呼</b><span class="meta">份</span></figcaption>`
+  + `<div class="pz-chart" data-chart='${SPACE_CHART}'></div><p class="ch-src">来源：投递记录</p></figure>`
+  + `<figure class="ch"><figcaption class="ch-h"><b>每周投递和回复</b><span class="meta">份</span></figcaption>`
+  + `<div class="pz-chart" data-chart='${SPACE_LINES}'></div><p class="ch-src">来源：投递记录</p></figure>`;
 
 function message(fields: Partial<Draft> & { createdAt: string }): Draft {
   return { role: 'assistant', text: '', origin: null, thinking: null, thinkingMs: null, steps: [], toolCallId: null,
@@ -28,8 +44,8 @@ const TABLE: TableWidget = { kind: 'table', id: 'w-plans-table', caption: '这�
     { company: '示例数据', role: '产品助理', day: '11-15', state: '未读', talks: '1' },
     { company: '样例智能', role: 'AI 产品经理', day: '11-14', state: '已回', talks: '2' }] };
 
-export function seedPlansScene(lines: FakeLines, connections: FakeConnections, pushes: FakePushes, now: Date):
-  void {
+export function seedPlansScene(lines: FakeLines, connections: FakeConnections, pushes: FakePushes,
+  spaces: FakeSpaces, now: Date): void {
   const at = (minutes: number): string => new Date(now.getTime() - minutes * 60_000).toISOString();
   const said = '今天投了多少？给我看看这周的情况。';
   lines.record(MAIN_LINE_ID, message({ role: 'user', text: said, origin: { kind: 'user', userText: said },
@@ -54,6 +70,10 @@ export function seedPlansScene(lines: FakeLines, connections: FakeConnections, p
     lineId: PLANS_TASK_ID, url: `/#/work/${PLANS_TASK_ID}` }, 8);
   pushes.seed({ id: 'push_plans_2', title: '公众号第一篇排好了，等你预览', from: '公众号主编',
     lineId: MAIN_LINE_ID, url: '/#/plasticine' }, 39);
+  spaces.addIssue({ id: PLANS_SPACE_ID, title: '这周的投递', kind: 'space', author: 'ai', subscriptionId: null,
+    issueNumber: null, edition: null, genre: 'report', html: SPACE_HTML, doc: EMPTY_SPACE_DOC, createdAt: at(30),
+    updatedAt: at(30), revisions: [{ doc: EMPTY_SPACE_DOC, genre: 'report', html: SPACE_HTML, change: null,
+      rule: null }] });
   pushes.seed({ id: 'push_plans_3', title: '明早 9 点的面试提前半小时出门', from: '主线', lineId: MAIN_LINE_ID,
     url: '/#/plasticine' }, 79, true);
 }

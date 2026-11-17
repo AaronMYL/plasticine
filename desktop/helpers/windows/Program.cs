@@ -3,7 +3,9 @@
 //   壳 → 助手  { id, method, params? }
 //   助手 → 壳  { id, result } 或 { id, error: { code, message } }（读不懂的一行 id 是 null）
 // 这一版先做最小的一套：helper.info / configure、cancel、permissions.status / request、screenshot、click、type、
-// files.list / read / write、command.run。日历、提醒事项、key、scroll 不报（壳就不报那几项能力）。
+// files.list / read / write、command.run。日历、提醒事项不报（壳就不报那几项能力）。
+// 11-16 第二批「电脑本机」加：key、scroll、mouse、screenshot.region / window、apps.list、windows.list、window.act、
+// ax.perceive / act（UI Automation）、menu.list / press。
 // 规矩（设备上限、删除确认、付款关死）在壳那头；这里只照参数做、照实回报，授权目录外的路径照样拒（refused）。
 // 和托盘一样用每台 Windows 都自带的 .NET Framework 4.x 和 csc 编（C# 5：不用 $"" 插值、?.、=> 成员）。
 using System;
@@ -28,7 +30,9 @@ namespace Plasticine.Helper
         public const int ProtocolVersion = 1;
         public static readonly string[] Methods = {
             "helper.info", "helper.configure", "cancel", "permissions.status", "permissions.request",
-            "screenshot", "click", "type", "files.list", "files.read", "files.write", "command.run"
+            "screenshot", "click", "type", "files.list", "files.read", "files.write", "command.run",
+            "key", "scroll", "mouse", "screenshot.region", "screenshot.window", "apps.list", "windows.list", "window.act",
+            "ax.perceive", "ax.act", "menu.list", "menu.press"
         };
 
         static readonly object WriteLock = new object();
@@ -157,6 +161,35 @@ namespace Plasticine.Helper
                     return Screen.Click(Params.Int(p, "x"), Params.Int(p, "y"));
                 case "type":
                     return Screen.Type(Params.String(p, "text"));
+                case "key":
+                    return Screen.Key(Params.String(p, "keys"));
+                case "scroll":
+                    return Screen.Scroll(Params.OptionalInt(p, "dx", 0), Params.OptionalInt(p, "dy", 0),
+                        Params.NullableInt(p, "x"), Params.NullableInt(p, "y"));
+                case "mouse":
+                    return Screen.Mouse(Params.String(p, "op"), Params.Int(p, "x"), Params.Int(p, "y"),
+                        Params.NullableInt(p, "toX"), Params.NullableInt(p, "toY"));
+                case "screenshot.region":
+                    return Screen.Region(Params.Int(p, "x"), Params.Int(p, "y"), Params.Int(p, "width"),
+                        Params.Int(p, "height"));
+                case "screenshot.window":
+                    return Windows.Capture(Params.String(p, "window"));
+                case "apps.list":
+                    return Windows.Apps();
+                case "windows.list":
+                    return Windows.List();
+                case "window.act":
+                    return Windows.Act(Params.String(p, "window"), Params.String(p, "op"), Params.NullableInt(p, "x"),
+                        Params.NullableInt(p, "y"), Params.NullableInt(p, "width"), Params.NullableInt(p, "height"));
+                case "ax.perceive":
+                    return Uia.Perceive(Params.String(p, "app"));
+                case "ax.act":
+                    return Uia.Act(Params.String(p, "app"), Params.String(p, "version"), Params.Int(p, "n"),
+                        Params.String(p, "op"), Params.OptionalString(p, "text"));
+                case "menu.list":
+                    return Menus.Run(Params.String(p, "app"), null);
+                case "menu.press":
+                    return Menus.Run(Params.String(p, "app"), Params.String(p, "path"));
                 case "files.list":
                     return Files.List(Params.String(p, "path"));
                 case "files.read":

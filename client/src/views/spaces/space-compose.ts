@@ -7,6 +7,7 @@ import type { SpaceGenre } from '../../api/shared.ts';
 import { BASE_CSS, tokenCss, type SpaceToken } from '../../../../agent/shared/space-page/base-css.ts';
 import { LETTER_CSS } from '../../../../agent/shared/space-page/letter-css.ts';
 import { REPORT_CSS } from '../../../../agent/shared/space-page/report-css.ts';
+import { spaceCharts } from './space-charts.ts';
 import { spaceRuntime, type SpaceFrameMode } from './space-runtime.ts';
 
 export const SPACE_CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
@@ -55,5 +56,7 @@ export function composeSpaceDocument(input: ComposeInput): string {
     // 点图看大图（11-14 图片统一）：链接里的图照旧是链接。
     + 'body:not(.pz-thumb) img{cursor:zoom-in}body:not(.pz-thumb) a img{cursor:pointer}</style>'
     + `<script>(${spaceRuntime.toString()})(${JSON.stringify(input.mode)});</script>`
+    // 图表（11-16）：.pz-chart[data-chart] 画成和对话里一样的图（space-charts.ts）。
+    + `<script>(${spaceCharts.toString()})();</script>`
     + `</head><body class="${classes}">${input.body}</body></html>`;
 }

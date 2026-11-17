@@ -63,7 +63,10 @@ export const REPORT_GUIDE = `报告（genre "report"）：按内容自由排版�
   <span class="bl">类别</span><span class="track"><i class="gl" style="left:50%"></i><i class="b" style="width:83%"></i>
   <i class="b2" style="width:12%"></i></span><span class="bv">83%<i>12%</i></span></div>（b2 是第二个系列，没有就不写；
   b lo 是浅色对照），刻度 <div class="ax"><span></span><span class="tk"><span style="left:0">0</span>…</span><span></span>
-  </div>。别的图（折线、散点、时间段）用内联 <svg viewBox="…">，线和点用 var(--hue-sky) 等，字用 <text>；数一个都不能编。
+  </div>。柱状、折线、散点最省事的写法：<div class="pz-chart" data-chart='{"type":"bar","unit":"份","series":[{"name":
+  "投递","points":[{"x":"11-10","y":12},{"x":"11-11","y":18}]}]}'></div>（type 是 bar / line / scatter，最多 6 组、每组
+  60 个点；一组时最新一根自动用强调色、几组自动配图例；指上去出数），放在 figure.ch 里、配图名和来源。时间段这类别的图
+  用内联 <svg viewBox="…">，线和点用 var(--hue-sky) 等，字用 <text>；数一个都不能编。
 - 状态小签：<span class="stt"><span class="sq" style="--h:var(--hue-sky)"></span>已同行评审</span>；sq 加 pre 是斜纹
   （未评审 / 预印本），加 watch 是空心（待追踪）。
 - 流程：<div class="chain"><span>A</span><i class="i-arrow"></i><span>B</span></div>

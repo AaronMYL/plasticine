@@ -5,7 +5,8 @@ import type { WebContents } from 'electron';
 
 const PROTOCOL_VERSION = '1.3';
 
-export type CdpSend = (method: string, params: Record<string, unknown>) => Promise<unknown>;
+/** sessionId：跨源内嵌框那个 target 的会话（Target.setAutoAttach flatten 挂上来的）；不给是这个标签本身。 */
+export type CdpSend = (method: string, params: Record<string, unknown>, sessionId?: string) => Promise<unknown>;
 
 const busy = new WeakMap<WebContents, Promise<unknown>>();
 
@@ -19,7 +20,9 @@ export async function withDebugger<T>(contents: WebContents, work: (send: CdpSen
       debug.attach(PROTOCOL_VERSION);
     }
     try {
-      return await work((method, params) => debug.sendCommand(method, params) as Promise<unknown>);
+      const send: CdpSend = (method, params, sessionId) =>
+        debug.sendCommand(method, params, sessionId) as Promise<unknown>;
+      return await work(send);
     } finally {
       if (attachedHere && debug.isAttached()) {
         debug.detach();

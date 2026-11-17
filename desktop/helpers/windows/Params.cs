@@ -39,6 +39,15 @@ namespace Plasticine.Helper
             return (int)value;
         }
 
+        /// <summary>可选的整数：没给或给了 null 是 null。</summary>
+        public static int? NullableInt(Dictionary<string, object> p, string name)
+        {
+            object value;
+            if (!p.TryGetValue(name, out value) || value == null) return null;
+            if (!(value is int)) throw new HelperError("invalid_params", "参数 " + name + " 应该是整数。");
+            return (int)value;
+        }
+
         public static List<string> StringList(Dictionary<string, object> p, string name)
         {
             object value;
