@@ -26,8 +26,6 @@ import { createSkillTools, SkillShop, SkillStore, type SkillShopOptions } from '
 import { projectTools } from '../projects/index.ts';
 import { AskDesk, Notices, Presenter, MessageAlerts, Presence, ProjectWatch, PushService, readNotifyKinds, routeAsks,
   ScanScheduler, type AskResolver, type PushTransport, type VapidKeys } from '../attention/index.ts';
-import { bookmarkTrigger, deviceTrigger, ensureIntake, feedTrigger, IntakeDesk, mailTrigger, ruleGoal,
-  type RecordInput } from '../intake/index.ts';
 import { kernelText, type Illustrator, type TextModels } from '../kernel/index.ts';
 import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
 import { mainIdentity, MateGroupTasks, mateGroupTaskTools, Mates, mateTools } from '../mates/index.ts';
@@ -70,7 +68,6 @@ import { createWidgetFacts } from './widget-facts.ts';
 import { assembleTimed } from './assemble-timed.ts';
 import { heartbeatChecklistTool } from '../heartbeat/index.ts';
 import { cachedConflicts, CalendarSync, calendarTools } from '../calendar/index.ts';
-import { interestHit } from '../../shared/feed-order.ts';
 import { VIDEO_SKILL_NAME, createVideo, publishToFeed, transcriberFromEnv, type KitPlan, type KitPorts,
   type Transcriber, type VideoMedia }
   from '../video/index.ts';
@@ -193,22 +190,6 @@ export function assembleApp(options: AssembleOptions): App {
   const presenter = new Presenter(state);
   const desk = new AskDesk({ state, presenter, now });
   const late = new LateLines();
-  // 进门（第 102 条）：来源记成触发，命中一条在用的规则就开一条后台线（贴回主对话）。
-  ensureIntake(state);
-  const intake = new IntakeDesk(state);
-  intake.setHandlers({
-    open: (trigger, rule) => {
-      // 项目逾期 / 停滞的提醒信 ProjectWatch 已经直接发了，不再开线做同一件事。
-      if (rule.code === 'project_overdue') {
-        return null;
-      }
-      return late.get().open({ title: `${rule.name}：${trigger.summary}`.slice(0, 120), goal: ruleGoal(rule, trigger),
-        projectId: null, parentLineId: MAIN_LINE_ID, origin: { kind: 'trigger', ref: trigger.id } }).id;
-    },
-  });
-  const record = (input: RecordInput): void => {
-    intake.record(input);
-  };
   const backups = new BackupService({ state, desk, now, automatic: options.automaticBackups ?? true,
     restored: (kind, id) => publishRestored(state, hub, kind, id),
     changed: () => hub.publish({ type: 'backups_changed' }) });
@@ -218,7 +199,6 @@ export function assembleApp(options: AssembleOptions): App {
   const devices: DeviceService = new DeviceService({ state, now, desk, dryRun: options.dryRun, ...transport,
     logsDirectory: join(options.stateDirectory, 'device-logs'),
     cameOnline: (node, at) => {
-      record(deviceTrigger({ nodeId: node.id, online: true, at, label: node.name }));
       calendarSync?.kick(true);
     },
     cameBack: (node, at) => resumeAfterDevice(state, () => late.get(), devices.waits.take(node.id), node.name, at) });
@@ -240,7 +220,6 @@ export function assembleApp(options: AssembleOptions): App {
     ...(options.mailImages === undefined ? {} : { mailImages: options.mailImages }),
     ...(options.linkPreviews === undefined ? {} : { linkPreviews: options.linkPreviews }),
     ...(options.favicons === undefined ? {} : { favicons: options.favicons }),
-    onMail: (message) => record(mailTrigger(message, { knownSender: state.inboxReplies.sentTo(message.fromAddress) })),
   });
   const moneyDrafts = new MoneyDraftDesk({ state, desk, money: toolGroups.life.money, now,
     changed: (id) => hub.publish({ type: 'money_draft_changed', draft: moneyDrafts.view(id) }),
@@ -250,7 +229,7 @@ export function assembleApp(options: AssembleOptions): App {
   const memoryCurator = new MemoryCurator({ state, now,
     model: options.memoryCuration === false ? null : { models: text } });
   let tunnel: TunnelService | undefined;
-  const network = createNetwork(options, { state, now, desk, hub, text, late, record,
+  const network = createNetwork(options, { state, now, desk, hub, text, late,
     joined: () => tunnel?.wake(), alert: (alert) => messageAlerts?.contact(alert) });
   const tunnelSettings = options.network?.tunnel;
   if (tunnelSettings !== undefined) {
@@ -410,8 +389,6 @@ export function assembleApp(options: AssembleOptions): App {
     feedCommentGenerator: createFeedCommentGenerator(text),
     feedTranslator: createFeedTranslator(text),
     feedTranslatorModel: () => text.snapshot?.('translation').identity ?? null,
-    onFeedItem: (item) => record(feedTrigger(item, interestHit(item))),
-    onBookmark: (bookmark) => record(bookmarkTrigger(bookmark)),
     ...(options.feedFetcher === undefined ? {} : {
       externalFeed: { fetcher: options.feedFetcher, select: createFeedSelector(text) },
     }),
@@ -479,7 +456,6 @@ export function assembleApp(options: AssembleOptions): App {
     ...(options.sseHeartbeatMs === undefined ? {} : { sseHeartbeatMs: options.sseHeartbeatMs }),
     devices,
     dryRun: options.dryRun,
-    intake,
     macDownloads: new MacDownloads({ directory: join(options.stateDirectory, MAC_DOWNLOADS_DIR), publicUrl }),
     network, lines, tasks, lineTimers, video,
     heartbeat: timed.heartbeat,

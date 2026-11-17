@@ -4,10 +4,9 @@
 // 2026-11-05 Harness 重做：任务的暂停 / 取消 / 归档、判断分流、「怎么替你做事」的一次性迁移删掉；status 改数线。
 
 import {
-  MAIL_REFETCH_DEFAULT_LIMIT, MAINTENANCE_WRITE_OPS, type MaintenanceOp, type MaintenanceRequest,
+  MAIL_REFETCH_DEFAULT_LIMIT, MAINTENANCE_WRITE_OPS, type MaintenanceRequest,
   type MaintenanceResponse, type MemoryMoveItem,
 } from '../../shared/api/maintenance.ts';
-import type { RuleMode } from '../../shared/state.ts';
 import { CloudToolError, type RefetchReport } from '../cloud-tools/index.ts';
 import { addClaudeItems, applyLayersMove, ensureMemoryDocs, moveLine, rewriteRules } from '../memory/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
@@ -43,30 +42,6 @@ function because(request: MaintenanceRequest): string {
   return text;
 }
 
-function changeRuleMode(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string) {
-  const { state } = deps;
-  if (request.code === undefined || request.mode === undefined) {
-    throw new MaintenanceFailure('invalid_input', '「rules.mode」要给规则代号（--code）和档位（--mode off|observe|auto）。');
-  }
-  const rule = state.rules.byCode(request.code);
-  if (rule === undefined) {
-    throw new MaintenanceFailure('not_found', `没有代号是 ${request.code} 的规则。`);
-  }
-  const to: RuleMode = request.mode;
-  if (rule.mode === to) {
-    return { code: rule.code, mode: rule.mode, changed: false };
-  }
-  const reason = `Claude 依你的原话改成「${to}」：「${quote}」`;
-  const updated = state.transaction(() => {
-    const changed = state.rules.update(rule.id, rule.version, { mode: to },
-      { actor: 'system', actorRef: `maintenance:${request.operationId}`, reason });
-    state.rules.addEvent({ ruleId: rule.id, kind: 'mode_changed', fromMode: rule.mode, toMode: to,
-      ruleVersion: changed.ruleVersion, actor: 'maintenance', reason });
-    return changed;
-  });
-  return { code: updated.code, mode: updated.mode, changed: true };
-}
-
 function status(state: StateService) {
   const lines: Record<string, number> = {};
   for (const line of state.lines.list({ limit: 1_000 })) {
@@ -74,22 +49,11 @@ function status(state: StateService) {
   }
   return {
     lines,
-    rules: state.rules.all().map((rule) => ({ code: rule.code, mode: rule.mode })),
     recent: state.maintenanceOperations.recent().map((row) => ({ id: row.id, op: row.op, createdAt: row.createdAt })),
   };
 }
 
-function read(state: StateService, op: MaintenanceOp): unknown {
-  if (op === 'status') {
-    return status(state);
-  }
-  return state.rules.all().map((rule) => ({ code: rule.code, name: rule.name, mode: rule.mode }));
-}
-
 function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string): unknown {
-  if (request.op === 'rules.mode') {
-    return changeRuleMode(deps, request, quote);
-  }
   if (request.op === 'mail.refetch') {
     throw new MaintenanceFailure('invalid_input', '「mail.refetch」要连 Gmail，走 performMaintenance。');
   }
@@ -212,7 +176,7 @@ function moveMemoryLines(state: StateService, moves: readonly MemoryMoveItem[], 
 }
 
 function record(state: StateService, request: MaintenanceRequest, quote: string, result: unknown): void {
-  const args = { code: request.code ?? null, mode: request.mode ?? null, limit: request.limit ?? null,
+  const args = { limit: request.limit ?? null,
     plan: request.plan ?? null, ...(request.moves === undefined ? {} : { moves: request.moves }),
     ...(request.adds === undefined ? {} : { adds: request.adds }),
     ...(request.ids === undefined ? {} : { ids: request.ids }),
@@ -239,7 +203,7 @@ async function refetchMail(deps: MaintenanceDeps, request: MaintenanceRequest): 
 export function runMaintenance(deps: MaintenanceDeps, request: MaintenanceRequest): MaintenanceResponse {
   const { state } = deps;
   if (!MAINTENANCE_WRITE_OPS.includes(request.op)) {
-    return { operationId: request.operationId, op: request.op, replayed: false, result: read(state, request.op) };
+    return { operationId: request.operationId, op: request.op, replayed: false, result: status(state) };
   }
   const previous = state.maintenanceOperations.get(request.operationId);
   if (previous !== undefined) {

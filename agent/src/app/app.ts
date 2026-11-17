@@ -17,7 +17,6 @@ import type { MoneyDraftDesk, PaymentReader } from '../life/index.ts';
 import { Presence, type AskDesk, type Presenter, type PushService, type ScanScheduler } from '../attention/index.ts';
 import type { Daily } from '../daily/index.ts';
 import type { DeviceService } from '../devices/index.ts';
-import type { IntakeDesk } from '../intake/index.ts';
 import type { Video } from '../video/index.ts';
 import type { TextModels } from '../kernel/index.ts';
 import type { LineKernel } from '../lines/index.ts';
@@ -85,7 +84,6 @@ export interface AppOptions {
   skillShop: SkillShop;
   /** 记忆的后台整理（用户 2026-11-02 定）：主线每一轮结束后入队一次。 */
   memoryCurator: MemoryCurator;
-  intake: IntakeDesk;
   /** Mac 自更新的包（app/mac-updates.ts）。 */
   macDownloads?: MacDownloads;
   /** 第 113 条：这台实例在网络上的那一头（network/）。 */
@@ -225,7 +223,6 @@ export function createApp(options: AppOptions): App {
     toolGroups: options.toolGroups,
     skills: options.skills,
     skillShop: options.skillShop,
-    intake: options.intake,
     macDownloads: options.macDownloads ?? null,
     network: options.network,
     tunnel: options.tunnel ?? null,

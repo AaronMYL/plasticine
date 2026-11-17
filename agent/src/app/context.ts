@@ -13,7 +13,6 @@ import type { PageTranslator } from '../web/index.ts';
 import type { MoneyDraftDesk, PaymentReader } from '../life/index.ts';
 import type { Daily } from '../daily/index.ts';
 import type { DeviceService } from '../devices/index.ts';
-import type { IntakeDesk } from '../intake/index.ts';
 import type { TextModels } from '../kernel/index.ts';
 import type { LineKernel } from '../lines/index.ts';
 import type { NetworkService, TunnelService } from '../network/index.ts';
@@ -88,8 +87,6 @@ export interface AppDeps {
   skills: SkillStore;
   /** 技能页的「添加」：商店清单、从网址、从文件（11-13）。 */
   skillShop: SkillShop;
-  /** 第 102 条：进门（来源记成触发，命中规则开后台线）。 */
-  intake: IntakeDesk;
   /** 第 102 条：Mac 自更新的包（状态目录 downloads/mac/）；没装配就是 null，接口回 404。 */
   macDownloads: MacDownloads | null;
   /** 第 113 条：这台实例在 Cyber Hunter 网络上的那一头（network/）。 */

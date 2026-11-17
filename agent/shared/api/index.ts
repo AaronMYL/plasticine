@@ -81,7 +81,6 @@ export * from './memory-library.ts';
 export * from './rules-doc.ts';
 export * from './network.ts';
 export * from './visibility.ts';
-export * from './backstage.ts';
 export * from './lines.ts';
 export * from './schedule-card.ts';
 export * from './tasks-board.ts';

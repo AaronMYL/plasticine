@@ -5,7 +5,7 @@ import { FeedComments } from './feed-comments.ts';
 import type { FeedCommentGenerator } from '../../shared/feed-comments.ts';
 import type { Scan } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
-import type { Bookmark, FeedItem } from '../../shared/state.ts';
+import type { FeedItem } from '../../shared/state.ts';
 import { BookmarkDesk } from './bookmarks.ts';
 import { FeedDesk } from './feed.ts';
 import { InterestDesk } from './interests.ts';
@@ -45,10 +45,6 @@ export interface DailyOptions {
   /** 第 8 条：抓取时翻成中文（「翻译」模型用途）；不给就不翻，条目照原文显示。 */
   feedTranslator?: FeedTranslator;
   feedTranslatorModel?: () => string | null;
-  /** 第 102 条：信息流的新条目同时记一条触发（进门）。 */
-  onFeedItem?: (item: FeedItem) => void;
-  /** 第 110 条：新加的书签也记一条触发。 */
-  onBookmark?: (bookmark: Bookmark) => void;
 }
 
 export function createDaily(options: DailyOptions) {
@@ -62,7 +58,6 @@ export function createDaily(options: DailyOptions) {
   const added = (item: FeedItem): void => {
     feed.announce(item);
     translations?.added(item);
-    options.onFeedItem?.(item);
   };
   const externalFeed = options.externalFeed === undefined ? null : new ExternalFeed({
     state, now, ...options.externalFeed, onAdded: added,
@@ -76,8 +71,7 @@ export function createDaily(options: DailyOptions) {
   const comments = options.feedCommentGenerator === undefined ? null : new FeedComments({ state,
     generate: options.feedCommentGenerator, changed: (item) => feed.announce(item) });
   const interests = new InterestDesk({ state });
-  const bookmarks = new BookmarkDesk({ state, now,
-    ...(options.onBookmark === undefined ? {} : { onAdded: options.onBookmark }) });
+  const bookmarks = new BookmarkDesk({ state, now });
   const scans: Scan[] = [
     { name: '每日外部信息流', run: () => externalFeed?.scan() },
     { name: '信息流订阅', run: () => subscriptions.scan() },

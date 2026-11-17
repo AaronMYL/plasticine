@@ -28,8 +28,6 @@ import {
   PASSWORD_SESSION_PATH,
   ACTIONS_PATH,
   ASKS_PATH,
-  BACKSTAGE_PATH,
-  BACKSTAGE_RULES_PATH,
   BOOKMARKS_IMPORT_PATH,
   BOOKMARKS_ORDER_PATH,
   BOOKMARKS_PATH,
@@ -132,7 +130,6 @@ import { ApiError } from './api-error.ts';
 import { answerAsk, askAboutAsk, deferAsk, feedbackAsk, getAsk, listAsks } from './asks.ts';
 import { completeUpload, getAttachment, getAttachmentContent, getAttachmentText, lookupAttachment, openUpload,
   uploadChunk } from './attachments.ts';
-import { getBackstage, setBackstageRule } from './backstage.ts';
 import { createBackup, getBackup, getRestorePreview, listBackups, previewRestore, restoreBackup } from './backups.ts';
 import {
   applyImport, cancelExport, cancelImport, completeImport, downloadExport, importChunk, migrationStatus, startExport,
@@ -151,7 +148,7 @@ import { ackBrowser, streamBrowser } from './browser-stream.ts';
 import { actBrowser, getBrowser, getBrowserFrame, openBrowser, settleAction, tabBrowser } from './browser.ts';
 import { createSkill, draftSkillRequest, getSkill, installSkill, listSkills, listSkillStore, previewSkill, removeSkill }
   from './skills.ts';
-import { decideClientUpdate, listClientUpdates, previewClientUpdate } from './client-updates.ts';
+import { clientVersion } from './client-updates.ts';
 import { CONTACT_ROUTES } from './contact-routes.ts';
 import type { HttpMethod, Route } from './context.ts';
 import { listDevices, revokeDevice } from './devices.ts';
@@ -307,11 +304,7 @@ export const ROUTES: readonly Route[] = [
   { method: 'GET', path: '/v2/conversation/attachments/:id/content', auth: true, handler: getAttachmentContent },
   { method: 'GET', path: '/v2/conversation/attachments/:id/text', auth: true, handler: getAttachmentText },
   // 客户端版本（设置 · 系统 ·「版本更新」）。
-  { method: 'GET', path: '/v2/client-version', auth: true, handler: listClientUpdates },
-  { method: 'GET', path: '/v2/self/client-updates', auth: true, handler: listClientUpdates },
-  { method: 'POST', path: '/v2/self/client-updates/:id/decision', auth: true, handler: decideClientUpdate },
-  { method: 'GET', path: '/v2/client-preview/:id', auth: true, handler: previewClientUpdate },
-  { method: 'GET', path: '/v2/client-preview/:id/assets/:asset', auth: true, handler: previewClientUpdate },
+  { method: 'GET', path: '/v2/client-version', auth: true, handler: clientVersion },
   // 本机备份。
   { method: 'GET', path: '/v2/backups', auth: true, handler: listBackups },
   { method: 'POST', path: '/v2/backups', auth: true, handler: createBackup },
@@ -405,8 +398,6 @@ export const ROUTES: readonly Route[] = [
   { method: 'GET', path: `${MEMORY_ENTRIES_PATH}/:id`, auth: true, handler: getMemoryEntry },
   // 首页（只剩等你和今天的数）、常驻项目 Plasticine 的后台。
   { method: 'GET', path: HOME_PATH, auth: true, handler: getHome },
-  { method: 'GET', path: BACKSTAGE_PATH, auth: true, handler: getBackstage },
-  { method: 'POST', path: `${BACKSTAGE_RULES_PATH}/:code`, auth: true, handler: setBackstageRule },
   // 记忆主题与记忆文档。
   { method: 'GET', path: MEMORY_TOPICS_PATH, auth: true, handler: listMemoryTopics },
   { method: 'GET', path: `${MEMORY_TOPICS_PATH}/:id`, auth: true, handler: getMemoryTopic },

@@ -5,9 +5,7 @@
 // 数据目录按 --state、PLASTICINE_STATE、默认值的顺序取。
 //
 // 命令：
-//   status                                   线按状态计数、规则档位、最近的维护操作
-//   rules.list
-//   rules.mode --code feed_interest --mode off --because "用户原话" [--op-id 号]
+//   status                                   线按状态计数、最近的维护操作
 //   mail.refetch [--limit 30] --because "用户原话" [--op-id 号]
 //                                            还没补格式的旧邮件从 Gmail「所有邮件」只读地找回整封、原地补（默认 30 封，
 //                                            最多 200）；结果报找到 / 没找到 / 出错和还剩几封，还剩的换个操作号再跑
@@ -39,7 +37,6 @@ import {
   type MaintenanceOp,
   type MaintenanceRequest,
 } from '../agent/shared/api/maintenance.ts';
-import { RULE_MODES, type RuleMode } from '../agent/shared/state.ts';
 
 /** 线上状态目录（systemd 里的 PLASTICINE_STATE）。 */
 const DEFAULT_STATE = '/home/plasticine/state/agent';
@@ -58,10 +55,6 @@ export interface ParsedCommand {
 
 function isOp(value: string): value is MaintenanceOp {
   return (MAINTENANCE_OPS as readonly string[]).includes(value);
-}
-
-function isMode(value: string): value is RuleMode {
-  return (RULE_MODES as readonly string[]).includes(value);
 }
 
 function newOperationId(now: Date): string {
@@ -111,8 +104,6 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
     allowPositionals: true,
     options: {
       because: { type: 'string' },
-      code: { type: 'string' },
-      mode: { type: 'string' },
       'op-id': { type: 'string' },
       state: { type: 'string' },
       limit: { type: 'string' },
@@ -133,9 +124,6 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
   if (command === undefined || !isOp(command)) {
     throw new MaintCliError(`不认识的命令「${command ?? ''}」。可用：${MAINTENANCE_OPS.join('、')}、db.read。`);
   }
-  if (values.mode !== undefined && !isMode(values.mode)) {
-    throw new MaintCliError(`--mode 只能是 ${RULE_MODES.join(' / ')}。`);
-  }
   const limit = values.limit === undefined ? undefined : Number(values.limit);
   if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > MAIL_REFETCH_MAX_LIMIT)) {
     throw new MaintCliError(`--limit 要是 1 到 ${MAIL_REFETCH_MAX_LIMIT} 的整数。`);
@@ -144,8 +132,6 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
     operationId: values['op-id'] ?? newOperationId(now),
     op: command,
     ...(values.because === undefined ? {} : { because: values.because }),
-    ...(values.code === undefined ? {} : { code: values.code }),
-    ...(values.mode === undefined ? {} : { mode: values.mode as RuleMode }),
     ...(limit === undefined ? {} : { limit }),
     ...(values.sources === undefined ? {} : { sources: values.sources.split(',').map((source) => source.trim())
       .filter((source) => source !== '') as NonNullable<MaintenanceRequest['sources']> }),

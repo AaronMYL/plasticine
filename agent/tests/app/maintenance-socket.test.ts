@@ -10,7 +10,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { openMaintenanceSocket, type MaintenanceSocket } from '../../src/app/maintenance-socket.ts';
-import { ensureIntake } from '../../src/intake/index.ts';
 import { openState, type StateService } from '../../src/state/index.ts';
 
 let h: { state: StateService; close(): void };
@@ -19,7 +18,6 @@ let socket: MaintenanceSocket | undefined;
 
 beforeEach(async () => {
   const state = openState({ path: ':memory:' });
-  ensureIntake(state);
   h = { state, close: () => state.close() };
   directory = await mkdtemp(join(tmpdir(), 'plasticine-maint-'));
 });
@@ -61,16 +59,16 @@ function call(path: string, method: string, body: string): Promise<{ status: num
   });
 }
 
-test('socket 权限 0600；POST 一条维护命令，回 JSON 结果，规则真的改了', async () => {
+test('socket 权限 0600；POST 一条维护命令，回 JSON 结果，操作真的记下了', async () => {
   socket = await openMaintenanceSocket(join(directory, 'maintenance.sock'), { state: h.state });
   const info = await stat(join(directory, 'maintenance.sock'));
   assert.equal(info.mode & 0o777, 0o600);
-  const body = JSON.stringify({ operationId: 'op-sock-1', op: 'rules.mode', code: 'feed_interest', mode: 'auto',
-    because: '打开收录' });
+  const body = JSON.stringify({ operationId: 'op-sock-1', op: 'inbox.archive', sources: ['patrol'],
+    because: '把巡查的来信归档' });
   const reply = await call('/v1/maintenance', 'POST', body);
   assert.equal(reply.status, 200);
   assert.equal((reply.json as { replayed: boolean }).replayed, false);
-  assert.equal(h.state.rules.byCode('feed_interest')?.mode, 'auto');
+  assert.equal(h.state.maintenanceOperations.get('op-sock-1')?.op, 'inbox.archive');
 });
 
 test('参数不合 schema 回 400；缺原话回 400 带原因；别的路径 404', async () => {
@@ -78,7 +76,7 @@ test('参数不合 schema 回 400；缺原话回 400 带原因；别的路径 40
   const bad = await call('/v1/maintenance', 'POST', JSON.stringify({ operationId: 'x', op: 'drop_everything' }));
   assert.equal(bad.status, 400);
   const noQuote = await call('/v1/maintenance', 'POST',
-    JSON.stringify({ operationId: 'op-sock-2', op: 'rules.mode', code: 'feed_interest', mode: 'auto' }));
+    JSON.stringify({ operationId: 'op-sock-2', op: 'inbox.archive', sources: ['patrol'] }));
   assert.equal(noQuote.status, 400);
   assert.equal((noQuote.json as { error: string }).error, 'because_required');
   const other = await call('/v1/other', 'POST', '{}');

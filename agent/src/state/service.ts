@@ -14,7 +14,7 @@ import { createBackupStore } from './backups.ts';
 import { BookFiles } from './book-files.ts';
 import { createBookStores } from './books.ts';
 import { createBookmarkStore } from './bookmarks.ts';
-import { createClientUpdateStore } from './client-updates.ts';
+import { createClientPublicationStore } from './client-publications.ts';
 import { createContactMessageStore } from './contact-messages.ts';
 import { createDailySettingsStore } from './daily-settings.ts';
 import { MEMORY_DATABASE, openDatabase } from './db.ts';
@@ -28,7 +28,6 @@ import { createFeedItemStore } from './feed-items.ts';
 import { createFeedSourceStatusStore } from './feed-source-status.ts';
 import { createFeedSourceStore } from './feed-sources.ts';
 import { createInboxStores } from './inbox.ts';
-import { createIntakeStores } from './intake.ts';
 import { createKernelSettingsStores } from './kernel-settings.ts';
 import { createLegacyIdMap } from './legacy-ids.ts';
 import { createLegacyRowStore } from './legacy-rows.ts';
@@ -135,7 +134,7 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     attachments: createAttachmentStore(context, attachmentDirectory),
     networkAttachments: createNetworkAttachmentStore(context),
     moneyDrafts: createMoneyDraftStore(context),
-    clientUpdates: createClientUpdateStore(context),
+    clientPublications: createClientPublicationStore(context),
     // 旧的记忆条目（只读，后台整理进主题文档）。
     memory: createMemoryStore(context),
     // 记忆文档（用户 2026-11-02 定）：按主题整理的活文档，和后台整理的队列、推断、迁移进度。
@@ -190,7 +189,6 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     translateSettings: createTranslateSettingsStore(context),
     translationCache: createTranslationCache(context),
     // 进门（第 102 条）：来源、触发、去向、规则。命中规则开后台线。
-    ...createIntakeStores(context),
     // 联系人与 Cyber Hunter 网络（第 113 条）：账号、联系人、信、跨用户任务、档位、分身说过的话。
     ...createNetworkStores(context),
     contactMessages: createContactMessageStore(context),

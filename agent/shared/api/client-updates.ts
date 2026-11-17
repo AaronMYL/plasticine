@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Type, type Static } from 'typebox';
-import { IdSchema, IsoTimeSchema, RequestIdSchema } from './common.ts';
+import { IdSchema, IsoTimeSchema } from './common.ts';
 const STRICT = { additionalProperties: false };
 export const ClientManifestSchema = Type.Object(
   {
@@ -35,27 +35,6 @@ export const ClientPublicationSchema = Type.Object(
   STRICT,
 );
 export type ClientPublication = Static<typeof ClientPublicationSchema>;
-export const ClientUpdateSchema = Type.Object(
-  {
-    manifest: ClientManifestSchema,
-    status: Type.Enum(['candidate', 'queued', 'published', 'deferred']),
-    selfChangeId: Type.Union([IdSchema, Type.Null()]),
-    taskId: Type.Union([IdSchema, Type.Null()]),
-  },
-  STRICT,
-);
-export type ClientUpdate = Static<typeof ClientUpdateSchema>;
-export const ClientUpdatesResponseSchema = Type.Object(
-  {
-    current: Type.Union([ClientManifestSchema, Type.Null()]),
-    updates: Type.Array(ClientUpdateSchema),
-    history: Type.Array(ClientPublicationSchema),
-    channelReady: Type.Boolean(),
-    error: Type.Union([Type.String(), Type.Null()]),
-  },
-  STRICT,
-);
-export type ClientUpdatesResponse = Static<typeof ClientUpdatesResponseSchema>;
 /**
  * GET /v2/client-version（2026-11-12《首次使用解耦》）：界面只比版本号，不带整份资源清单（清单约 870 KB，原来每分钟
  * 一个窗口传一份）。protocol 留着：界面要看新版本跟不跟自己的接口版本兼容。
@@ -80,8 +59,8 @@ export const ClientVersionSchema = Type.Object(
 );
 export type ClientVersion = Static<typeof ClientVersionSchema>;
 
-/** 整份发布记录收成界面要的那几样。 */
-export function clientVersionOf(view: ClientUpdatesResponse): ClientVersion {
+/** 现在这一版的清单（没有就是 null）和读清单时的出错说明，收成界面要的那几样。 */
+export function clientVersionOf(view: { current: ClientManifest | null; error: string | null }): ClientVersion {
   const current = view.current;
   return {
     current: current === null ? null : {
@@ -93,13 +72,3 @@ export function clientVersionOf(view: ClientUpdatesResponse): ClientVersion {
     error: view.error,
   };
 }
-export const ClientUpdateDecisionSchema = Type.Object(
-  {
-    requestId: RequestIdSchema,
-    currentBuildId: Type.Union([IdSchema, Type.Null()]),
-    targetBuildId: IdSchema,
-    decision: Type.Enum(['publish', 'rollback', 'defer']),
-  },
-  STRICT,
-);
-export type ClientUpdateDecision = Static<typeof ClientUpdateDecisionSchema>;

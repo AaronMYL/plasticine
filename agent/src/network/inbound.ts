@@ -45,8 +45,6 @@ const NOTES = {
   safety: '对方的安全码变了：中继上他的钥匙和你记下的不一样。核对安全码之前，用新钥匙签的信都会丢掉。',
 } as const;
 const HELLO_TEXT = '想加你为联系人';
-// 记成来源的几类：人写的话、问我的 Plasticine、别人的 Plasticine 说的话、发来的任务。
-const SOURCE_KINDS: readonly EnvelopeKind[] = ['hello', 'text', 'ai_text', 'ask_ai', 'task_offer'];
 
 function hasMessage(value: { text: string; attachments?: readonly unknown[] }): boolean {
   return value.text.trim() !== '' || (value.attachments?.length ?? 0) > 0;
@@ -180,9 +178,6 @@ export class Inbound {
       result.message.taskId === null ? [] : [result.message.taskId]));
     if (result.message.kind === 'ask_ai') {
       outcome.questions.push(result.message.id);
-    }
-    if (SOURCE_KINDS.includes(envelope.kind)) {
-      this.#context.recordSource(result.message, result.contact);
     }
   }
 

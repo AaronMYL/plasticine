@@ -11,7 +11,6 @@ export * from './state-inbox.ts';
 export * from './state-life.ts';
 export * from './state-memory-docs.ts';
 export * from './state-memory-journal.ts';
-export * from './state-intake.ts';
 export * from './state-network.ts';
 export * from './state-groups.ts';
 export * from './state-notes.ts';

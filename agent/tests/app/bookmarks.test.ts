@@ -178,16 +178,13 @@ test('导入：坏网址和已经有的跳过，一次里重复的只留一条�
     ['https://weather.com.cn/', null, 'import']);
 });
 
-test('信息流收藏和书签分开：收藏不加书签、不记来源；同一网址的书签在书签页移除，信息流收藏不受影响', async () => {
+test('信息流收藏和书签分开：收藏不加书签；同一网址的书签在书签页移除，信息流收藏不受影响', async () => {
   const { app, cookie } = await start();
   const itemId = feedItem(app);
   const saved = await call(app, 'POST', `/v2/feed/items/${itemId}/save`, { cookie,
     body: { requestId: newRequestId('sv'), version: 1, saved: true } });
   assert.equal(saved.status, 200, JSON.stringify(saved.body));
   assert.deepEqual(await list(app, cookie), [], '收藏不进书签');
-  const bookmarkTriggers = app.state.triggers.since('2000-01-01T00:00:00.000Z')
-    .filter((trigger) => trigger.kind === 'bookmark.added');
-  assert.deepEqual(bookmarkTriggers, [], '收藏不经书签记事与来源');
   const bookmark = await add(app, cookie, { kind: 'web', title: '本地优先软件', target: 'https://example.com/lofi' });
   assert.equal(bookmark['origin'], 'manual');
   const removed = await call(app, 'POST', `/v2/bookmarks/${String(bookmark['id'])}/remove`, { cookie,
@@ -214,16 +211,10 @@ test('没归项目的书签推一个项目：同一个网站的多半在哪个�
   assert.equal(rows.find((row) => row['title'] === 'a')?.['suggestedProjectId'], null);
 });
 
-test('加了书签记进来源（书签 · 只记）；⌘K 查得到名字和存下的正文快照', async () => {
+test('加了书签：⌘K 查得到名字和存下的正文快照', async () => {
   const { app, cookie } = await start();
   const row = await add(app, cookie, { kind: 'web', title: 'Agents that ask before they act',
     target: 'https://arxiv.org/abs/2510.00001', snapshot: { text: '先问再做的代理在可逆性低的动作前停下。', totalChars: 18 } });
-  const source = app.state.intakeSources.byKind('bookmark')[0];
-  assert.equal(source?.label, '书签');
-  const triggers = app.state.triggers.since('2000-01-01T00:00:00.000Z')
-    .filter((trigger) => trigger.sourceId === source?.id);
-  assert.deepEqual(triggers.map((trigger) => [trigger.kind, trigger.refId]), [['bookmark.added', row['id']]]);
-  assert.deepEqual(app.state.dispositions.forTrigger(triggers[0]!.id).map((entry) => entry.kind), ['recorded']);
   const search = json(await call(app, 'GET', `/v2/search?q=${encodeURIComponent('可逆性')}`, { cookie }));
   assert.deepEqual((search['results'] as Body[]).map((result) => [result['kind'], result['id']]),
     [['bookmark', row['id']]]);

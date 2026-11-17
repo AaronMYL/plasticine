@@ -3,17 +3,16 @@
 // 记进 maintenance_operations；同一个操作号重放只回原来的结果，不再动一次。
 
 import { Type, type Static } from 'typebox';
-import { MEMORY_LINE_SECTIONS, RULE_MODES } from '../state.ts';
+import { MEMORY_LINE_SECTIONS } from '../state.ts';
 import { SOUL_SECTIONS } from './soul.ts';
 
 /**
- * 只读：status、rules.list；其余是写操作，要原话。2026-11-05 Harness 重做：任务没了，tasks.*（暂停 / 取消 / 归档）
+ * 只读：status；其余是写操作，要原话。11-17：进门规则删了，rules.list、rules.mode 跟着删（rules.rewrite 管的是记忆里的
+ * 「规则」文档，不是一回事，留着）。2026-11-05 Harness 重做：任务没了，tasks.*（暂停 / 取消 / 归档）
  * 删掉；判断页、「怎么替你做事」的一次性迁移（judgments.*、rulesdoc.*）早已做完，一起删了。在跑的线看 status。
  */
 export const MAINTENANCE_OPS = [
   'status',
-  'rules.list',
-  'rules.mode',
   'mail.refetch',
   // 11-11：Aaron 让 Claude 整理「规则」——一行拆成几行、改成平常话、过时的挪进归档；每行留原来的来源。
   'rules.rewrite',
@@ -31,7 +30,7 @@ export const MAINTENANCE_OPS = [
 ] as const;
 export type MaintenanceOp = (typeof MAINTENANCE_OPS)[number];
 
-export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['rules.mode', 'mail.refetch', 'rules.rewrite',
+export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['mail.refetch', 'rules.rewrite',
   'memory.move', 'memory.cleanup.add', 'memory.layers', 'suggestions.dismiss', 'inbox.archive'];
 
 /** memory.move 的一项：这一行挪到 toDocId。 */
@@ -73,8 +72,6 @@ export const MaintenanceRequestSchema = Type.Object(
     op: Type.Enum(MAINTENANCE_OPS),
     /** 用户的原话；写操作必填。 */
     because: Type.Optional(Type.String({ maxLength: 2_000 })),
-    code: Type.Optional(Type.String({ pattern: '^[a-z][a-z0-9_]{1,40}$' })),
-    mode: Type.Optional(Type.Enum(RULE_MODES)),
     /** mail.refetch 这次补几封。 */
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: MAIL_REFETCH_MAX_LIMIT })),
     /** rules.rewrite 的整理方案。 */

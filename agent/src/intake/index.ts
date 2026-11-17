@@ -1,14 +1,6 @@
-// intake/：进门（第 102 条，docs/specs/things-and-sources.md 第 2 节）。来源实例、触发、粗筛、去向；命中规则就开一条
-// 后台线（开线由 app/ 注入，intake/ 不碰 lines/）。它不调模型。
+// intake/：来信的两个工具（列收件箱、读一封）。11-17：这里原来还有「进门」——每来一样东西记一条触发、过粗筛、
+// 命中规则就开一条后台线。四条规则 11-06 都并进了心跳、线上一直关着，记下的触发也没有别处在读，连同规则开关的
+// 接口一起删了。
 
-export { coarseFilter, fromPerson } from './coarse-filter.ts';
-export type { CoarseDecision, FilterContext } from './coarse-filter.ts';
-export { IntakeDesk } from './desk.ts';
-export type { IntakeHandlers, RecordInput, RecordOutcome } from './desk.ts';
-export { ensureIntake, IPHONE_SOURCE_LABEL, RULE_CODES } from './seed.ts';
-export type { RuleCode } from './seed.ts';
-export { threadKeys } from './thread-keys.ts';
-export { bookmarkTrigger, contactTrigger, deviceTrigger, feedTrigger, mailTrigger, ruleGoal } from './triggers.ts';
-export type { MailFacts } from './triggers.ts';
 export { createListInboxTool } from './list-inbox-tool.ts';
 export { createReadInboxTool } from './read-inbox-tool.ts';

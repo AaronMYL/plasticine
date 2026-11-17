@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { clientVersionOf, type ClientUpdatesResponse } from '../../shared/api/index.ts';
+import { clientVersionOf, type ClientManifest } from '../../shared/api/index.ts';
 import { call, json, pair, startTestApp } from './helpers.ts';
 
-function manyAssets(count: number): ClientUpdatesResponse['updates'][number]['manifest']['assets'] {
+function manyAssets(count: number): ClientManifest['assets'] {
   return Array.from({ length: count }, (_, index) => ({
     path: `assets/chunk-${index}.js`,
     bytes: 1_000 + index,
@@ -12,7 +12,7 @@ function manyAssets(count: number): ClientUpdatesResponse['updates'][number]['ma
 }
 
 test('查新版本只回版本号、时间、接口版本和一句说明，不带资源清单', () => {
-  const view: ClientUpdatesResponse = {
+  const view: { current: ClientManifest; error: null } = {
     current: {
       buildId: 'build-2026-11-12',
       builtAt: '2026-11-12T08:58:36.000Z',
@@ -20,9 +20,6 @@ test('查新版本只回版本号、时间、接口版本和一句说明，不�
       summary: '网页版本更新',
       assets: manyAssets(900),
     },
-    updates: [],
-    history: [],
-    channelReady: false,
     error: null,
   };
   const slim = clientVersionOf(view);
@@ -40,8 +37,7 @@ test('查新版本只回版本号、时间、接口版本和一句说明，不�
 });
 
 test('没有部署清单时也是同一个形状；出错只回一句', () => {
-  const view: ClientUpdatesResponse = { current: null, updates: [], history: [], channelReady: false,
-    error: '客户端发布记录校验失败，请检查部署清单。' };
+  const view = { current: null, error: '客户端发布记录校验失败，请检查部署清单。' };
   assert.deepEqual(clientVersionOf(view), { current: null, error: '客户端发布记录校验失败，请检查部署清单。' });
 });
 
@@ -53,4 +49,15 @@ test('GET /v2/client-version 回小形状，不再带发布历史和候选', asy
   assert.equal(reply.status, 200);
   assert.deepEqual(json(reply), { current: null, error: null });
   assert.equal(reply.headers.get('cache-control'), 'no-store');
+});
+
+test('自迭代时代的发布提请接口没有了：候选、提请、预览都是 404', async (t) => {
+  const app = await startTestApp();
+  t.after(() => app.close());
+  const cookie = await pair(app);
+  const gone = ['/v2/self/client-updates', '/v2/client-preview/build-1', '/v2/client-preview/build-1/assets/a.js'];
+  for (const path of gone) {
+    assert.equal((await call(app, 'GET', path, { cookie })).status, 404, path);
+  }
+  assert.equal((await call(app, 'POST', '/v2/self/client-updates/build-1/decision', { cookie })).status, 404);
 });

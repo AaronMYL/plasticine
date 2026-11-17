@@ -165,7 +165,6 @@ test('0059–0062：旧对话进主线、关切成待办、产出成笔记，退
       assert.equal(state.asks.get('ask-task'), undefined);
       assert.equal(state.asks.get('ask-money')?.taskId, null);
       assert.equal(state.receipts.get('act-1')?.taskId, null);
-      assert.equal(state.rules.byCode('self_fix'), undefined);
     } finally {
       state.close();
     }

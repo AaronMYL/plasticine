@@ -20,7 +20,6 @@ import {
   EditMoneyDraftRequestSchema,
   ConfirmMoneyDraftRequestSchema,
   RejectMoneyDraftRequestSchema,
-  ClientUpdateDecisionSchema,
   CreateBackupRequestSchema, RestorePreviewRequestSchema, RestoreBackupRequestSchema,
 } from '../api/shared.ts';
 import { MATES_ACTION_REQUEST_SCHEMAS } from './mates-action-requests.ts';
@@ -37,8 +36,6 @@ export const ActionRequestSchema = Type.Union([
   Type.Object({ kind: Type.Literal('backup_create'), body: CreateBackupRequestSchema }),
   Type.Object({ kind: Type.Literal('backup_preview'), backupId: Type.String(), body: RestorePreviewRequestSchema }),
   Type.Object({ kind: Type.Literal('backup_restore'), backupId: Type.String(), body: RestoreBackupRequestSchema }),
-  Type.Object({ kind: Type.Literal('client_update_decision'), buildId: Type.String(),
-    body: ClientUpdateDecisionSchema }),
   Type.Object({ kind: Type.Literal('money_draft_create'), body: CreateMoneyDraftRequestSchema }),
   Type.Object({ kind: Type.Literal('money_draft_edit'), draftId: Type.String(), body: EditMoneyDraftRequestSchema }),
   Type.Object({ kind: Type.Literal('money_draft_confirm'), draftId: Type.String(),

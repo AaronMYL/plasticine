@@ -2,7 +2,6 @@
 // 该通知的交给推送。只给 assemble.ts 用。
 
 import type { AskDesk, ContactAlert } from '../attention/index.ts';
-import { contactTrigger, type RecordInput } from '../intake/index.ts';
 import type { TextModels } from '../kernel/index.ts';
 import type { LineKernel } from '../lines/index.ts';
 import { DEFAULT_RELAY_URL, NetworkService } from '../network/index.ts';
@@ -20,7 +19,6 @@ interface NetworkParts {
   text: TextModels;
   /** 新内核（装好以前先占位）。 */
   late: { get(): LineKernel };
-  record: (input: RecordInput) => void;
   /** 加入网络以后（叫醒隧道）。 */
   joined: () => void;
   /** 第13批：对方发来的一句该通知时（推送服务装好以前是空的）。 */
@@ -63,7 +61,6 @@ export function createNetwork(options: AssembleOptions, parts: NetworkParts): Ne
     ...(settings.pollWaitSeconds === undefined ? {} : { pollWaitSeconds: settings.pollWaitSeconds }),
     ...(settings.fetch === undefined ? {} : { fetch: settings.fetch }),
     responder: settings.responder !== false,
-    recordSource: (message, contact) => parts.record(contactTrigger(message, contact)),
     changed: (change) => {
       publishNetworkChange({ state, hub, activity: (task) => network.taskActivity(task),
         execution: (task) => network.taskExecution(task) }, change);

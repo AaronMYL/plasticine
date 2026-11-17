@@ -67,7 +67,7 @@ function factsFor(item: HeartbeatItem, context: FactContext): HeartbeatFact[] {
   switch (item.kind) {
     case 'mail':
       return facts.mail(since(now, MAIL_WINDOW_MS)).map((row) => fact(`mail:${row.id}`,
-        `${row.kind === 'mail.known_sender' ? '来信' : '会议邀请'}：${row.from}《${row.title}》`));
+        `${row.kind === 'known_sender' ? '来信' : '会议邀请'}：${row.from}《${row.title}》`));
     case 'calendar':
       return (context.calendar?.conflicts(now, new Date(now.getTime() + CALENDAR_AHEAD_MS)) ?? [])
         .map((row) => fact(`calendar:${row.id}`, row.text));

@@ -35,7 +35,6 @@ export type { SuggestionStore } from './suggestions.ts';
 export type { DeviceTimeZone, DeviceTimeZoneStore } from './device-time-zones.ts';
 export type { OwnerAccount, OwnerAccountStore, OwnerCredentials } from './owner-account.ts';
 export type { CalendarSnapshotStore } from './calendar-snapshots.ts';
-export type { IntakeStores } from './intake.ts';
 export type { IssuedReceipt, ReceiptStore } from './receipts.ts';
 export type { DailySettingsStore, SettingsRead } from './daily-settings.ts';
 export { FEED_TRANSLATE_ATTEMPTS_MAX } from './feed-translations.ts';

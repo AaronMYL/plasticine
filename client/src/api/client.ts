@@ -6,7 +6,7 @@ import type { ContactsClientApi } from './contacts-client.ts';
 import type { ToolGroupApi } from './tool-groups-client.ts';
 import type { ThingsApi } from './things-client.ts';
 import type {
-  AttachmentView, Backup, BackupDetail, BackupList, ClientUpdate, ClientUpdateDecision, ClientVersion,
+  AttachmentView, Backup, BackupDetail, BackupList, ClientVersion,
   CreateBackupRequest, CreateMoneyDraftRequest, EditMoneyDraftRequest, MoneyDraftSummary, MoneyDraftView,
   PurgeOriginalsRequest, PurgeOriginalsResponse, PushStatus, PushTestResponse, RejectMoneyDraftRequest, RestorePreview,
   RestorePreviewRequest, UploadAttachmentMeta,
@@ -20,7 +20,6 @@ export interface BackupsApi {
 }
 export interface ClientUpdatesApi {
   list(signal?: AbortSignal): Promise<ClientVersion>;
-  decide(id: string, input: ClientUpdateDecision): Promise<ClientUpdate>;
 }
 
 export interface MoneyDraftsApi {

@@ -3,7 +3,7 @@
 
 import type { LineStatus } from '../../shared/api/lines.ts';
 import type { NetworkTaskExecution } from '../../shared/api/contacts.ts';
-import type { Contact, ContactMessage, NetworkIdentity } from '../../shared/state.ts';
+import type { Contact, NetworkIdentity } from '../../shared/state.ts';
 import type { AskDesk } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
 import { NetworkError } from './errors.ts';
@@ -52,8 +52,6 @@ export interface NetworkContext {
   newId: () => string;
   desk: AskDesk;
   lines: NetworkLines;
-  /** 收到的人话、AI 话记成来源（app/ 接到进门的触发）。 */
-  recordSource: (message: ContactMessage, contact: Contact) => void;
   /** 提交以后才调。 */
   changed: (change: NetworkChange) => void;
   /** 照这台实例加入时的中继地址（没加入时用配置的默认地址）。 */

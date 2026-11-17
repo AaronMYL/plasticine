@@ -6,25 +6,27 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
-import { MaintCliError, parseMaintArgs, readDatabase, sendMaintenance } from './maint.ts';
+import { parseMaintArgs, readDatabase, sendMaintenance } from './maint.ts';
 
 const NOW = new Date('2026-11-04T10:00:00.000Z');
 
-test('规则改档位：带原话和操作号；状态目录默认线上那个', () => {
-  const parsed = parseMaintArgs(['rules.mode', '--code', 'feed_interest', '--mode', 'off', '--because', '先关掉',
-    '--op-id', 'op-2026-11-04-rule'], {}, NOW);
+test('归档系统来信：带原话和操作号；状态目录默认线上那个', () => {
+  const parsed = parseMaintArgs(['inbox.archive', '--sources', 'patrol, feedback', '--because', '旧的巡查报告收起来',
+    '--op-id', 'op-2026-11-04-archive'], {}, NOW);
   assert.equal(parsed.kind, 'socket');
   assert.equal(parsed.stateDir, '/home/plasticine/state/agent');
-  assert.deepEqual(parsed.request, { operationId: 'op-2026-11-04-rule', op: 'rules.mode', because: '先关掉',
-    code: 'feed_interest', mode: 'off' });
+  assert.deepEqual(parsed.request, { operationId: 'op-2026-11-04-archive', op: 'inbox.archive',
+    because: '旧的巡查报告收起来', sources: ['patrol', 'feedback'] });
 });
 
-test('没给操作号就生成一个；PLASTICINE_STATE 改状态目录；规则档位只收 off / observe / auto', () => {
-  const parsed = parseMaintArgs(['rules.mode', '--code', 'feed_interest', '--mode', 'off', '--because', '关掉'],
+test('没给操作号就生成一个；PLASTICINE_STATE 改状态目录；退役的规则命令和选项不再认', () => {
+  const parsed = parseMaintArgs(['inbox.archive', '--sources', 'patrol', '--because', '收起来'],
     { PLASTICINE_STATE: '/tmp/state' }, NOW);
   assert.equal(parsed.stateDir, '/tmp/state');
   assert.match(parsed.request?.operationId ?? '', /^maint-20261104100000-[a-z0-9]+$/);
-  assert.throws(() => parseMaintArgs(['rules.mode', '--code', 'x', '--mode', 'loud'], {}, NOW), MaintCliError);
+  assert.throws(() => parseMaintArgs(['rules.mode', '--because', '关掉'], {}, NOW), /不认识的命令/);
+  assert.throws(() => parseMaintArgs(['rules.list'], {}, NOW), /不认识的命令/);
+  assert.throws(() => parseMaintArgs(['status', '--code', 'feed_interest'], {}, NOW), /--code/);
   assert.throws(() => parseMaintArgs(['drop'], {}, NOW), /不认识的命令/);
 });
 

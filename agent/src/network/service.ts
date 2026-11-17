@@ -57,7 +57,6 @@ export interface NetworkServiceOptions {
   pollWaitSeconds?: number;
   /** 替主人答话开不开线（线上开；测试默认关，拿不准一律问主人）。 */
   responder: boolean;
-  recordSource: (message: ContactMessage, contact: Contact) => void;
   changed: (change: NetworkChange) => void;
   newId?: () => string;
 }
@@ -105,7 +104,6 @@ export class NetworkService {
       newId: options.newId ?? randomUUID,
       desk: options.desk,
       lines: options.lines,
-      recordSource: options.recordSource,
       changed: options.changed,
       relay: () => this.#client(this.relayUrl()),
       kickOutbox: () => this.#sync.kick(),

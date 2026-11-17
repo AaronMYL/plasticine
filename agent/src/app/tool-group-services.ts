@@ -46,8 +46,6 @@ export interface ToolGroupOptions {
   now: () => Date;
   transports?: Partial<CloudTransports>;
   checkCredentialMode?: boolean;
-  /** 第 102 条：新收的信同时记一条触发（进门）。 */
-  onMail?: (message: InboxMessage) => void;
   /** 邮件图片代理怎么解析和核地址（测试换成固定表；默认系统 DNS + 拒绝内网）。 */
   mailImages?: MailImageFetchOptions;
   linkPreviews?: LinkPreviewFetchOptions;
@@ -83,7 +81,6 @@ export function createToolGroupServices(options: ToolGroupOptions): ToolGroupSer
     ...(options.checkCredentialMode === undefined ? {} : { checkCredentialMode: options.checkCredentialMode }),
     onMail: (message) => {
       inbox?.announce(message);
-      options.onMail?.(message);
     },
   });
   inbox = new InboxDesk({ state, mail: cloud.mail, dryRun, now });

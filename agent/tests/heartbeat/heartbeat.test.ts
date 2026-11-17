@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import type { NoticeInput } from '../../src/attention/index.ts';
 import { DEFAULT_ITEMS, Heartbeat, inQuiet } from '../../src/heartbeat/index.ts';
-import { ensureIntake, IntakeDesk, mailTrigger } from '../../src/intake/index.ts';
 import type { TextModels, TextRequest } from '../../src/kernel/index.ts';
 import type { SuggestionInputDraft } from '../../src/tasks/index.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
@@ -59,11 +58,9 @@ function world(answers: string[], options: { noModel?: boolean; caught?: string[
 }
 
 function inviteMail(title: string): void {
-  ensureIntake(t.state);
-  const message = t.state.inboxMessages.add({ source: 'email', fromAddress: 'lin@example.test', fromName: '小林',
+  t.state.inboxMessages.add({ source: 'email', fromAddress: 'lin@example.test', fromName: '小林',
     title, body: '请确认', receivedAt: '2026-11-07T05:00:00.000Z', messageId: `<${title}@example.test>`,
-    attachments: ['invite.ics'] }).message;
-  new IntakeDesk(t.state).record(mailTrigger(message, { knownSender: false }));
+    attachments: ['invite.ics'] });
 }
 
 test('安静时段跨午夜：23:00–08:00 不跳', () => {
