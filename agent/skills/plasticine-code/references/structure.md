@@ -97,7 +97,7 @@ client/
     primitives/   通用零件：一个零件一个目录（index.tsx + styles.css）
     shell/        壳：侧栏、标签与路由、对话容器、手机底栏、浮层、页头、图标、网页标签工具条
     views/        页面：一个页面一个目录
-    mac/ ios/     注入原生外壳网页里的脚本
+    mac/          注入原生外壳网页里的脚本
     tokens.css    令牌（浅色、深色各一份）
     main.tsx      App 入口；site.tsx、download.tsx 是官网和下载页的入口
   tests/          和 src/ 同样的目录；根上的 ui-*.test.ts 是界面规矩的自动检查

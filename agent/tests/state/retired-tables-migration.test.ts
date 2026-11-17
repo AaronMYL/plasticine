@@ -17,7 +17,7 @@ function names(db: ReturnType<typeof openDatabase>, type: 'table' | 'index'): st
     .map((row) => String(row['name']));
 }
 
-test('0147 删掉九张退役的表，留着的表行数不变，设备动作多两个索引', () => {
+test('0147 删掉九张退役的表和 iPhone 才做的三种旧动作，留着的不动，设备动作多两个索引', () => {
   const db = openDatabase(MEMORY_DATABASE);
   try {
     const clock = (): string => '2026-11-17T00:00:00.000Z';
@@ -39,6 +39,17 @@ test('0147 删掉九张退役的表，留着的表行数不变，设备动作多
       VALUES ('t2', 's1', 'feed.interest_hit', 'k2', '[]', 'system', 'feed', 't', 't', 'feed_item', 'f1', '一条', '{}')`);
     db.run("UPDATE triggers SET ref_id = 'm1' WHERE id = 't1'");
     db.run("INSERT INTO client_publications (id, metadata) VALUES ('p1', '{}')");
+    // 设备动作：只有 iPhone 原生 App 才做的三种删掉，别的留着。
+    const action = (id: string, kind: string): void => {
+      db.run(`INSERT INTO node_actions (id, created_at, updated_at, version, action_id, node_id, kind, action_class,
+        target, params_digest, status, origin, requested_at)
+        VALUES ($id, ${META}, $id, 'n1', $kind, 'read', '目标', 'digest', 'executed', 'line', 't')`, { id, kind });
+    };
+    action('a1', 'photo_list');
+    action('a2', 'photo_read');
+    action('a3', 'location_current');
+    action('a4', 'calendar_list');
+    action('a5', 'tab_read');
     const seen = ['mail:t1', 'waiting:line:l1', 'feed:t2', 'mail:gone', 'stuck:l2'];
     db.run(`INSERT INTO timed_slots (id, created_at, updated_at, version, source, config, memo)
       VALUES ('heartbeat', ${META}, 'heartbeat', '{}', $memo)`, { memo: JSON.stringify({ seen, other: 1 }) });
@@ -50,6 +61,7 @@ test('0147 删掉九张退役的表，留着的表行数不变，设备动作多
     const after = names(db, 'table');
     assert.deepEqual(after, before.filter((table) => !RETIRED.includes(table)));
     assert.equal(db.get('SELECT count(*) AS n FROM client_publications')?.['n'], 1);
+    assert.deepEqual(db.all('SELECT id FROM node_actions ORDER BY id').map((row) => row['id']), ['a4', 'a5']);
     // 上一跳见过的来信、信息流换成原记录的 id；找不到触发的和别的种类原样留着，别的定时那一行不动。
     const memo = JSON.parse(String(db.get("SELECT memo FROM timed_slots WHERE id = 'heartbeat'")?.['memo'])) as
       { seen: string[]; other: number };

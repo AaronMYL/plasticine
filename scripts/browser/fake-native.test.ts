@@ -11,7 +11,6 @@ import { fakeNativeConfig, fakeNativeScript, nativeCallProblem, type FakeNativeR
 
 interface Host {
   plasticineDesktop?: Record<string, unknown> & { webTabs: Record<string, (...args: unknown[]) => unknown> };
-  plasticineIOS?: Record<string, unknown> & { webTabs: Record<string, (...args: unknown[]) => unknown> };
   __plasticineFakeNative: FakeNativeRecord;
   __plasticineWebTabEvent?: (event: unknown) => void;
 }
@@ -61,7 +60,6 @@ test('注入脚本装好 Mac 桥：记下每次调用，快照合协议，新标
   const host = install('mac');
   const mac = host.plasticineDesktop;
   assert.ok(mac !== undefined);
-  assert.equal(host.plasticineIOS, undefined);
   const events: unknown[] = [];
   host.__plasticineWebTabEvent = (event) => events.push(event);
   const sync = { tabs: [{ tabId: 't1', url: 'https://blog.example.org/local-first-sync' }], active: 't1',
@@ -78,7 +76,7 @@ test('注入脚本装好 Mac 桥：记下每次调用，快照合协议，新标
   assert.deepEqual(calls.map(nativeCallProblem), [null, null, null]);
 });
 
-test('Mac 桥有登录（第 3 批）：网站、来源、导入结果合共享 schema，调用记下来按协议核对；iPhone 没有', async () => {
+test('Mac 桥有登录（第 3 批）：网站、来源、导入结果合共享 schema，调用记下来按协议核对', async () => {
   const host = install('mac');
   const logins = host.plasticineDesktop?.['logins'] as Record<string, (...args: unknown[]) => unknown> | undefined;
   assert.ok(logins !== undefined);
@@ -106,12 +104,12 @@ test('圈一块默认一直等，网页发 circle_cancel 回 null；打开开关
   assert.ok(Value.Check(WebCircleResultSchema, answered));
 });
 
-test('协议外的调用逐条说出原因：同步缺字段、未知命令、未知工具、iPhone 不认识的原生页', () => {
+test('协议外的调用逐条说出原因：同步缺字段、未知命令、未知工具、桥上没有的方法', () => {
   const cases: [NativeCall, RegExp][] = [
     [{ channel: 'plasticineTabs', method: 'sync', args: [{ tabs: [] }] }, /active|frame/],
     [{ channel: 'plasticineTabs', method: 'command', args: ['t1', 'teleport'] }, /back/],
     [{ channel: 'plasticineTabs', method: 'tool', args: ['t1', { kind: 'teleport' }] }, /./],
-    [{ channel: 'plasticine', method: 'open', args: ['camera'] }, /settings/],
+    [{ channel: 'plasticine', method: 'open', args: ['camera'] }, /桥上没有/],
     [{ channel: 'plasticineTabs', method: 'reload', args: [] }, /桥上没有/],
     [{ channel: 'plasticineChrome', method: 'titlebar', args: [{ height: 44 }] }, /noDrag|layout/],
     [{ channel: 'plasticineLogins', method: 'import', args: [{ from: 'firefox', passwords: false }] }, /from/],

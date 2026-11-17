@@ -53,9 +53,9 @@ async function devServer(): Promise<{ base: string; close(): Promise<void> }> {
 
 const MEDIA = `JSON.stringify({ hover: matchMedia('(hover: hover)').matches,
   coarse: matchMedia('(pointer: coarse)').matches, ua: navigator.userAgent,
-  mac: window.plasticineDesktop !== undefined, ios: window.plasticineIOS !== undefined })`;
+  mac: window.plasticineDesktop !== undefined })`;
 
-interface Media { hover: boolean; coarse: boolean; ua: string; mac: boolean; ios: boolean }
+interface Media { hover: boolean; coarse: boolean; ua: string; mac: boolean }
 
 async function media(page: Cdp): Promise<Media> {
   return JSON.parse(await page.evaluate<string>(MEDIA)) as Media;
@@ -74,7 +74,7 @@ test('装成 Mac：有鼠标、PlasticineMac 标记和桥，网页标签同步�
   assert.equal(facts.hover, true, '电脑按有鼠标');
   assert.equal(facts.coarse, false);
   assert.match(facts.ua, /PlasticineMac\/[0-9.]+$/);
-  assert.deepEqual([facts.mac, facts.ios], [true, false]);
+  assert.equal(facts.mac, true);
   await until(page, `window.__plasticineFakeNative.calls.some((call) => call.method === 'titlebar')`, '顶栏布局');
   // 网页标签只在「网页」栏里（11-07 两层侧栏）：进网页栏点一个标签。
   await page.evaluate(`location.hash = '#/web'`);
@@ -107,7 +107,7 @@ test('手机网页：触屏、没有桥、五项底栏；项目只读承接、�
   assert.equal(facts.hover, false, '手机没有悬停');
   assert.equal(facts.coarse, true);
   assert.doesNotMatch(facts.ua, /Plasticine(Mac|IOS)\//);
-  assert.deepEqual([facts.mac, facts.ios], [false, false]);
+  assert.equal(facts.mac, false);
   assert.equal(await page.evaluate('innerWidth'), 390);
   await until(page, `document.querySelector('nav.phone-bar') !== null`, '底栏');
   assert.deepEqual(await page.evaluate(`Array.from(document.querySelectorAll('nav.phone-bar .phone-tab'))

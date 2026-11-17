@@ -11,7 +11,7 @@ import { WEB_PAGE_TOOLS, type WebPageToolName } from '../../agent/shared/api/web
 
 export const CLIENT_NAMES = ['mac', 'phone', 'web'] as const;
 export type ClientName = (typeof CLIENT_NAMES)[number];
-export type NativeKind = 'mac' | 'ios';
+export type NativeKind = 'mac';
 
 export interface ClientProfile {
   name: ClientName;

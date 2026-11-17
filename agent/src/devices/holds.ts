@@ -1,5 +1,5 @@
 // 第 102 条「设备失败先分类」：派发前就看得出来的几种情况，不发出去，也不当失败。
-// - 离线（iPhone 除外：它的动作本来就排队到下次打开 App）→ 这一步不发，等它上线；
+// - 离线 → 这一步不发，等它上线（建日程、建提醒、标完成除外：排队到它上线再做）；
 // - 能力缺失（hello 没报这项能力，多半是没给屏幕录制 / 辅助功能权限）→ 派发前就拒，告诉他去系统设置打开；
 // - 别的线正在截图 / 点击 / 输入（租约）→ 等；
 // - 用户正在用（hello 报的空闲秒数）→ 点击 / 输入等。
@@ -38,14 +38,14 @@ const LINE_RUN_PREFIX = 'line:';
 // 占着屏幕的线还在这几种状态才算占着；停了、做完了的租约作废。
 const HOLDING_STATUSES: readonly string[] = ['running', 'waiting'];
 
-// 第 15 条（11-06 定）：Mac 不在线时，建日程、建提醒、标完成这几样排队到它上线再做（「排队并告诉他」），和 iPhone 一样
-// 期限 24 小时；读日程、读提醒等它在线（不在线时首页和工具读缓存）。
+// 第 15 条（11-06 定）：Mac 不在线时，建日程、建提醒、标完成这几样排队到它上线再做（「排队并告诉他」），期限 24 小时；
+// 读日程、读提醒等它在线（不在线时首页和工具读缓存）。
 export const OFFLINE_QUEUE_KINDS: readonly DeviceActionKind[] = ['calendar_create', 'reminder_create',
   'reminder_complete'];
 
-/** 这台节点现在发这一种动作是排进队列等它下次上线（iPhone 一律如此，Mac 只是离线时的那几样）。 */
+/** 这台节点现在发这一种动作是排进队列等它下次上线（离线时的那几样）。 */
 export function queuesUntilOnline(node: DeviceNode, kind: DeviceActionKind, now: Date): boolean {
-  return node.platform === 'ios' || OFFLINE_QUEUE_KINDS.includes(kind) && !nodeOnline(node, now);
+  return OFFLINE_QUEUE_KINDS.includes(kind) && !nodeOnline(node, now);
 }
 
 export function nodeOnline(node: DeviceNode, now: Date): boolean {
@@ -90,15 +90,12 @@ const REMEDIES: Partial<Readonly<Record<DeviceActionKind, string>>> = {
   app_act: '辅助功能',
   app_menu: '辅助功能',
   calendar_update: '日历（完全访问）',
-  // iPhone（第 4 批）：没报这些能力多半是没给对应的隐私权限（设置 → 隐私与安全性）。
+  // 没报这些能力多半是没给对应的隐私权限（系统设置 → 隐私与安全性）。
   calendar_list: '日历（完全访问）',
   calendar_create: '日历（完全访问）',
   reminder_list: '提醒事项',
   reminder_create: '提醒事项',
   reminder_complete: '提醒事项',
-  photo_list: '照片',
-  photo_read: '照片',
-  location_current: '定位',
 };
 
 function includes(kinds: readonly string[], kind: string): boolean {

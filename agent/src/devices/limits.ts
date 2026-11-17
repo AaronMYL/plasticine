@@ -63,15 +63,11 @@ export function factsOf(action: DeviceActionParams): ActionFacts {
       return { actionClass, target: `${DEVICE_KIND_LABELS[action.kind]} ${action.from} – ${action.to}` };
     case 'reminder_complete':
       return { actionClass, target: `${DEVICE_KIND_LABELS[action.kind]} ${action.reminderId}` };
-    case 'photo_read':
-      return { actionClass, target: `${DEVICE_KIND_LABELS[action.kind]} ${action.photoId}` };
     case 'screen_capture':
     case 'input_click':
     case 'input_type':
     case 'tab_list':
     case 'reminder_list':
-    case 'photo_list':
-    case 'location_current':
       return { actionClass, target: DEVICE_KIND_LABELS[action.kind] };
     case 'tab_open':
       return { actionClass, target: action.url };

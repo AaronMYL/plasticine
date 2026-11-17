@@ -62,15 +62,14 @@ export interface ActionOutcome {
   result: unknown;
   /** An earlier outcome of the same action id, returned without doing anything. */
   reused: boolean;
-  /** iPhone：动作排进了队列，下次打开 App 时执行；没有等它，回执到了才算做了。 */
+  /** 动作排进了队列，设备上线后执行；没有等它，回执到了才算做了。 */
   detached?: boolean;
 }
 
 // 「离线规则：派发时写明期限」：一个动作发出后 10 分钟内没开始就不开始（同执行资格的默认租约）。
 export const ACTION_TTL_MS = 10 * 60 * 1000;
-// 第 102 条：iPhone 的动作是「下次打开 App 时执行」，期限默认 24 小时。
-export const IOS_ACTION_TTL_MS = 24 * 60 * 60 * 1000;
-const QUEUED_REASON = '已排队：下次打开 iPhone 上的 Plasticine 时执行（24 小时内）；还没有做，回执到了才算做了。';
+// 排队等设备上线的动作（holds.ts 的 OFFLINE_QUEUE_KINDS）期限 24 小时。
+export const QUEUED_ACTION_TTL_MS = 24 * 60 * 60 * 1000;
 const MAC_QUEUED_REASON = (name: string): string => `「${name}」现在不在线，已排队：Mac 上线后执行（24 小时内）；`
   + '还没有做，回执到了才算做了。';
 const HOUR_MS = 60 * 60 * 1000;
@@ -171,13 +170,13 @@ export class DeviceActions {
     if (queuesUntilOnline(node, request.action.kind, this.#now()) && prepared.row.status === 'queued') {
       // 不占着工具等 24 小时：回执由长轮询通道收下后再结（service.ts 的接续）。
       this.#detached(prepared.row.actionId);
-      const reason = node.platform === 'ios' ? QUEUED_REASON : MAC_QUEUED_REASON(node.name);
-      return { ...outcomeOf(prepared.row, false), status: 'queued', reason, detached: true };
+      return { ...outcomeOf(prepared.row, false), status: 'queued', reason: MAC_QUEUED_REASON(node.name),
+        detached: true };
     }
     return outcomeOf(await this.#send(prepared.row, node, request), false);
   }
 
-  /** Called with the action id of every iPhone action left in the queue without a caller waiting for it. */
+  /** Called with the action id of every action left in the queue without a caller waiting for it. */
   onDetached(listener: (actionId: string) => void): void {
     this.#detached = listener;
   }
@@ -202,7 +201,7 @@ export class DeviceActions {
     return submitHoldForRun(this.#state, runId, nodeId, tabId);
   }
 
-  /** 第 3 批：节点不在时这一步该在哪做（route.ts，他的原话：不用登录的云端先做、登录不上的等 Mac、iPhone 能做的也行）。 */
+  /** 第 3 批：节点不在时这一步该在哪做（route.ts，他的原话：不用登录的云端先做、登录不上的等 Mac）。 */
   route(request: Omit<ActionRequest, 'actionId'>, needsLogin: boolean): PlaceChoice {
     return choosePlace(request.action.kind, needsLogin, this.#state.nodes.list({ limit: MAX_PAGE_SIZE }),
       this.#now());
@@ -263,7 +262,7 @@ export class DeviceActions {
         send: false, reused: false };
     }
     const issuedAt = this.#now();
-    const ttl = queuesUntilOnline(node, request.action.kind, issuedAt) ? IOS_ACTION_TTL_MS : ACTION_TTL_MS;
+    const ttl = queuesUntilOnline(node, request.action.kind, issuedAt) ? QUEUED_ACTION_TTL_MS : ACTION_TTL_MS;
     const envelope: NodeActionEnvelope = {
       protocolVersion: NODE_PROTOCOL_VERSION, actionId: request.actionId, nodeId: node.id,
       issuedAt: issuedAt.toISOString(), expiresAt: new Date(issuedAt.getTime() + ttl).toISOString(),

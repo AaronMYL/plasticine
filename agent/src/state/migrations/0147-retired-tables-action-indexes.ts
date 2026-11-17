@@ -1,6 +1,6 @@
 // 11-17 全量审计的四件库内的事里，表结构这两件（另两件「回执正文只留 30 天」「过期接口回执清掉」是每天跑的清理，
 // 在 system/record-sweep.ts，不在迁移里）：
-// 一、设备动作表补两个索引。这张表只进不出（线上 3 万多行、76 MB）：
+// 一、设备动作表补两个索引。这张表只进不出（线上 76 MB，大头是回执正文）：
 //   - (requested_at, id)：设备页「最近的动作」和每天清旧回执正文都按时间扫，原来没有索引可用，整表排序；
 //   - (run_id, node_id, requested_at)：一条线在一台设备上做过什么（发出去之前核对这一页的提交），原来按设备扫。
 // 二、删掉没有代码再读写的九张表：
@@ -12,6 +12,8 @@
 //     现在心跳直接读站内信和信息流自己的表（state/heartbeat-facts.ts）。
 //   心跳记着上一跳见过哪些事（timed_slots.memo.seen），来信和信息流那几个 key 原来带的是触发的 id，现在带原记录的
 //   id：删表之前照触发表换过来，升级后的第一跳才不会把已经看过的来信、信息流当成新的再说一遍。
+// 三、只有 iPhone 原生 App 才做的三种设备动作（列相册、读一张照片、取当前位置）从种类表里拿掉了（shared/state-devices.ts），
+//   这三种的旧动作记录跟着删：留着的话读设备动作时会因为不认识种类报错。腾讯云上一条也没有。
 // 线上删之前这九张表先整张导出留底 7 天（ship.ts keep）。删的时候用零覆盖（secure_delete）。
 
 import type { Migration } from './migrate.ts';
@@ -30,10 +32,12 @@ const SEEN_KEYS = `UPDATE timed_slots SET memo = json_set(memo, '$.seen', json((
     FROM json_each(timed_slots.memo, '$.seen') seen)))
   WHERE source = 'heartbeat' AND json_type(memo, '$.seen') = 'array'`;
 
+const IPHONE_ONLY_KINDS = ['photo_list', 'photo_read', 'location_current'] as const;
+
 export const migration: Migration = {
   id: '0147-retired-tables-action-indexes',
   destructive: true,
-  changes: [...RETIRED_TABLES],
+  changes: [...RETIRED_TABLES, 'node_actions'],
   up(db) {
     db.exec('CREATE INDEX node_actions_requested ON node_actions (requested_at, id)');
     db.exec('CREATE INDEX node_actions_run_node ON node_actions (run_id, node_id, requested_at)');
@@ -43,6 +47,7 @@ export const migration: Migration = {
       for (const table of RETIRED_TABLES) {
         db.exec(`DROP TABLE ${table}`);
       }
+      db.exec(`DELETE FROM node_actions WHERE kind IN (${IPHONE_ONLY_KINDS.map((kind) => `'${kind}'`).join(', ')})`);
     } finally {
       db.exec('PRAGMA secure_delete = OFF');
     }

@@ -44,7 +44,7 @@ const SaveParameters = Type.Object({
   fromUrl: Type.Optional(Type.String({ minLength: 8, maxLength: 2_000, pattern: '^https?://',
     description: '公网上一个文件的网址：下载下来存。' })),
   fromDeviceAction: Type.Optional(Type.String({ minLength: 1, maxLength: 300,
-    description: '一次设备动作的 actionId（device_action 回的）：tab_shot、photo_read 是 JPEG（存成 .jpg），'
+    description: '一次设备动作的 actionId（device_action 回的）：tab_shot 是 JPEG（存成 .jpg），'
       + 'screen_capture 是 PNG。' })),
   overwrite: Type.Optional(Type.Boolean({ description: '已有同名文件时换掉它（旧的进最近删除，能还原）。' })),
 }, { additionalProperties: false });

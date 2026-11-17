@@ -1,5 +1,5 @@
-// 模拟的原生桥：验收和截图时把无头 Chromium 装成 Mac / iPhone 客户端（2026-11-04 他定）。
-// 形状按 agent/shared/api/mac-bridge.ts 的 PlasticineMacBridge / PlasticineIOSBridge 写，类型检查管住方法和参数；
+// 模拟的原生桥：验收和截图时把无头 Chromium 装成 Mac 客户端（2026-11-04 他定；iPhone 原生 App 11-05 删了，手机按网页验收）。
+// 形状按 agent/shared/api/mac-bridge.ts 的 PlasticineMacBridge 写，类型检查管住方法和参数；
 // 网页每次调桥都记下来（window.__plasticineFakeNative.calls），验收结束时 checkNativeCalls 按共享 schema 逐条校验，
 // 协议一改，模拟的客户端和用它的验收就跟着失败。
 // 网页标签不真开（原生 WKWebView 在这里没有），只按协议回状态、快照和工具回执；画面是一张画出来的「网页」。
@@ -8,8 +8,8 @@ import { deflateSync, crc32 } from 'node:zlib';
 import { Value } from 'typebox/value';
 import type { TSchema } from 'typebox';
 import {
-  ChromeMessageSchema, IOS_NATIVE_PAGES, WEB_TAB_COMMANDS, WebTabEventSchema, WebTabsSyncSchema,
-  type PlasticineIOSBridge, type PlasticineMacBridge, type WebPageSnapshot, type WebTabEvent, type WebTabsSync,
+  ChromeMessageSchema, WEB_TAB_COMMANDS, WebTabEventSchema, WebTabsSyncSchema,
+  type PlasticineMacBridge, type WebPageSnapshot, type WebTabEvent, type WebTabsSync,
   type WindowChrome,
 } from '../../agent/shared/api/mac-bridge.ts';
 import { TranslateDeliverySchema, TranslateEventSchema, TranslatePageConfigSchema,
@@ -57,7 +57,6 @@ export interface FakeNativeRecord {
 /** 页面全局里模拟桥要碰的几样（脚本在浏览器里跑，根 tsconfig 没有 DOM 类型，只写用到的）。 */
 interface FakeHost {
   plasticineDesktop?: PlasticineMacBridge;
-  plasticineIOS?: PlasticineIOSBridge;
   __plasticineWebTabEvent?: (event: unknown) => void;
   __plasticineFakeNative?: FakeNativeRecord;
   document?: FakeDocument;
@@ -281,16 +280,7 @@ function installFakeNative(host: FakeHost, config: FakeNativeConfig, paint: Pain
         },
       },
     };
-    return;
   }
-  host.plasticineIOS = {
-    version: config.version,
-    open(page) {
-      note('plasticine', 'open', [page]);
-    },
-    webTabs,
-    translate,
-  };
 }
 
 /** 注入页面的脚本：在任何网页脚本之前装好桥。 */
@@ -444,7 +434,6 @@ export function nativeCallProblem(call: NativeCall): string | null {
     'plasticineLogins.import': () => schemaProblem(LoginImportRequestSchema, first),
     'plasticineLogins.forget': () => text(first),
     'plasticineLogins.openFullDiskAccess': () => null,
-    'plasticine.open': () => oneOf(IOS_NATIVE_PAGES, first),
   };
   const check = checks[key];
   return check === undefined ? `桥上没有 ${key}` : check();

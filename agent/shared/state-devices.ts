@@ -78,16 +78,14 @@ export const DEVICE_ACTION_KINDS = [
   'app_perceive',
   'app_act',
   'app_menu',
-  // 第 102 条第 4 批：iPhone 的手（日历与提醒事项、相册、快捷指令、位置；文件沿用上面的 file_* 三种）。
+  // 日历、提醒事项、快捷指令（shared/api/device-ios.ts）：最早是 iPhone App 的，现在 Mac 的助手做。只有 iPhone 才做的
+  // photo_list、photo_read、location_current 11-17 拿掉（迁移 0147 把这三种的旧记录删了）。
   'calendar_list',
   'calendar_create',
   'reminder_list',
   'reminder_create',
   'reminder_complete',
-  'photo_list',
-  'photo_read',
   'shortcut_run',
-  'location_current',
 ] as const;
 export const DeviceActionKindSchema = Type.Enum(DEVICE_ACTION_KINDS);
 export type DeviceActionKind = Static<typeof DeviceActionKindSchema>;
@@ -143,6 +141,7 @@ export const DeviceLimitsSchema = Type.Object(
 );
 export type DeviceLimits = Static<typeof DeviceLimitsSchema>;
 
+// 'ios' 留着只为读得出旧的设备记录：iPhone 原生 App 11-05 删了，不会再有新的。
 export const NODE_PLATFORMS = ['macos', 'ios', 'windows', 'linux', 'browser'] as const;
 export const NodePlatformSchema = Type.Enum(NODE_PLATFORMS);
 

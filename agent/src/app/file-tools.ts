@@ -15,7 +15,7 @@ const DOWNLOAD_TIMEOUT_MS = 60_000;
 
 /** 设备动作的回执里哪一项是整份图或文件（base64）。 */
 const DEVICE_FILE_FIELDS: Readonly<Partial<Record<string, string>>> = { tab_shot: 'jpeg', screen_capture: 'png',
-  photo_read: 'jpeg', file_fetch: 'base64' };
+  file_fetch: 'base64' };
 
 /** 一次设备动作交回的图或文件：要做成了的、有图或文件的那几种。 */
 export function deviceFileOf(state: StateService, actionId: string): Buffer {

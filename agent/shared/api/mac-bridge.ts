@@ -1,5 +1,4 @@
 // Mac 原生壳和网页界面之间的桥（mac/README.md「网页桥接」）。Swift 侧按这里的形状收发，网页侧从这里导入类型。
-// 网页标签和翻译这两份 iPhone 0.2.0 起也用（文件末尾 PlasticineIOSBridge）。
 //
 // 第 102 条第 3 批：网页标签由原生 WKWebView 画在中间区上面（独立的数据存储，用户自己的登录留在 Mac 上）。
 // 网页 → 原生：window.plasticineMac.webTabs 的四个方法，都经 `plasticineTabs` 消息通道，只收本站主 frame 的消息：
@@ -178,25 +177,4 @@ export interface PlasticineMacBridge {
   translate?: import('./mac-translate.ts').PlasticineMacTranslate;
   /** 第 3 批起才有：这台 Mac 上登录着的网站、从 Chrome / Safari 搬一次登录（mac-logins.ts）。 */
   logins?: import('./mac-logins.ts').PlasticineMacLogins;
-}
-
-// iPhone 原生壳（ios/，第 102 条第 4 批）注入 window.plasticineIOS。网页用它打开原生页面：设置与自检、拍照、语音；
-// 「问 Plasticine」（快捷指令 / Siri）由 App 调 window.__plasticineAsk(text) 发到对话里。
-// iPhone 0.2.0 起（第 114 条，第 3 批「iPhone 外链」）：站外链接开成 Plasticine 自己的网页标签，和 Mac 用同一份协议——
-// webTabs（上面的 WebTabsSync / WebTabCommand / WebPageSnapshot，消息通道同名 `plasticineTabs`）和 translate
-// （mac-translate.ts，通道 `plasticineTranslate`），原生 → 网页的事件也是同一对 window.__plasticineWebTabEvent /
-// __plasticineTranslateEvent。平台差别只在原生层：每次 sync 都按 hitRegions 垫在主网页下面；不在前的标签用到时才载入；
-// open_external 交给 Safari；左右滑前进后退、下拉重新载入由原生网页自己做。没有 webTabs 的旧 App 外链照旧跳出去。
-export const IOS_NATIVE_PAGES = ['settings', 'photo', 'voice'] as const;
-export type IosNativePage = (typeof IOS_NATIVE_PAGES)[number];
-// 「问 Plasticine」一句话的上限：和快捷指令输入同档。
-export const IOS_ASK_MAX_CHARS = 4_000;
-
-export interface PlasticineIOSBridge {
-  version: string;
-  open(page: IosNativePage): void;
-  /** 0.2.0 起才有：网页标签（和 Mac 同一份协议）。 */
-  webTabs?: PlasticineMacWebTabs;
-  /** 0.2.0 起才有：沉浸式翻译（mac-translate.ts）。 */
-  translate?: import('./mac-translate.ts').PlasticineMacTranslate;
 }

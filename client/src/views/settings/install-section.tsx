@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react';
-import type { PlasticineIOSBridge } from '../../api/shared.ts';
-import '../../ios/bridge.ts';
-import { hostIosPages, inDesktopApp } from '../../shell/host.ts';
+import { inDesktopApp } from '../../shell/host.ts';
 import { SectionHead } from './section-head.tsx';
-import { SettingRow } from './setting-row.tsx';
 
 export function installationSteps(userAgent: string): string {
   if (/iPhone|iPad|iPod/.test(userAgent)) {
@@ -15,30 +12,7 @@ export function installationSteps(userAgent: string): string {
   return '在 Chrome 或 Edge 地址栏点安装图标；Safari 可从「文件」选择「添加到程序坞」。从图标打开是独立窗口。';
 }
 
-// iPhone App 里不用「添加到主屏幕」：换成三个原生页面入口（ios/ 的设置与自检、拍照、语音）。
-function IosSection({ bridge }: { bridge: PlasticineIOSBridge }): ReactNode {
-  return <section className="block">
-    <SectionHead title="iPhone App" tip="配对、授权的文件夹和地点、各项能力能不能用，都在原生的设置与自检里。" />
-    <SettingRow name="设置与自检">
-      <button type="button" className="secondary-button" aria-label="设置与自检"
-        onClick={() => bridge.open('settings')}>打开</button>
-    </SettingRow>
-    <SettingRow name="拍照交给 Plasticine">
-      <button type="button" className="secondary-button" aria-label="拍照交给 Plasticine"
-        onClick={() => bridge.open('photo')}>拍照</button>
-    </SettingRow>
-    <SettingRow name="说给 Plasticine">
-      <button type="button" className="secondary-button" aria-label="说给 Plasticine"
-        onClick={() => bridge.open('voice')}>说一句</button>
-    </SettingRow>
-  </section>;
-}
-
 export function InstallSection(): ReactNode {
-  const bridge = hostIosPages();
-  if (bridge !== null) {
-    return <IosSection bridge={bridge} />;
-  }
   // Mac App 本身就是装好的客户端，「装到主屏幕」那句对它没用（2026-11-04 第 3 批打磨）。
   if (inDesktopApp()) {
     return null;

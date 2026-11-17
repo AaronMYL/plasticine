@@ -13,7 +13,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
   from 'react';
 import { useLive } from '../live.tsx';
 import { useMacCommands } from '../mac/use-mac-commands.ts';
-import { useIosAsk } from '../ios/use-ios-ask.ts';
 import { Sheet } from '../primitives/sheet/index.tsx';
 import { useClientState } from '../state/context.tsx';
 import { useRememberedScroll } from '../state/use-remembered-scroll.ts';
@@ -266,10 +265,6 @@ export function Shell(): ReactNode {
       || (layout.phone && chatOpen), showTab, openPage: go, steps: pageSteps });
   const webChrome = useWebChrome(expandChat, useCallback((noteId: string) => go({ view: 'notes', noteId }), [go]));
   useQuoteCommands(webChrome.quote);
-  useIosAsk(() => {
-    setPanel(null);
-    expandChat();
-  });
   // ⌘K 全局切换；⌘[ / ⌘] 后退前进（网页标签上交给网页自己）；鼠标侧键同样。
   useEffect(() => {
     const keys = (event: KeyboardEvent): void => {

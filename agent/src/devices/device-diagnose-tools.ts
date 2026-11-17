@@ -26,7 +26,7 @@ export function createDeviceNodesTool(devices: Pick<DeviceService, 'listNodes'>)
     description: '列出配对的设备：id、平台、版本、会做的事、上限，和两项状态——online：客户端 90 秒内报过到；'
       + 'work：动作通道在干什么（idle 空着；busy 在做哪个动作、做到哪一步；stuck 超过时限还没交回）。'
       + 'online 是 false 不等于他那边断了：先看 work 和 lastSeenAt，拿不准就用 device_logs 查。'
-      + 'device_action 要用在线设备的 id；iPhone 常不在线，它的动作等 App 下次打开才做。',
+      + 'device_action 要用在线设备的 id。',
     parameters: Type.Object({}, { additionalProperties: false }),
     replay: 'safe', effect: 'read', permission: 'auto', roles: ['conversation', 'worker'], timeoutMs: 1_000,
     execute: () => Promise.resolve(JSON.stringify(devices.listNodes())),

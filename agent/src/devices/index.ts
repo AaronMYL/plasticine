@@ -2,7 +2,7 @@
 // 设备侧上限（用户确认字段）、受保护路径，以及每个设备动作：先落盘再发、同一 action_id 不重做、超上限一律当场拒。
 // 它不调模型，不规划；默认经长轮询 NodeTransport 发动作，测试可注入假节点。
 
-export { ACTION_TTL_MS, DeviceActions, IDLE_SINK, IOS_ACTION_TTL_MS } from './actions.ts';
+export { ACTION_TTL_MS, DeviceActions, IDLE_SINK, QUEUED_ACTION_TTL_MS } from './actions.ts';
 export { inputLeaseHolder, nodeOnline, OFFLINE_QUEUE_KINDS, queuesUntilOnline, userActive } from './holds.ts';
 export type { DeviceHold, DeviceWaitReason } from './holds.ts';
 export { classifyLane, DEVICE_LANES, isPaymentPage } from './lanes.ts';

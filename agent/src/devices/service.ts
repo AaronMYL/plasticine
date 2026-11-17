@@ -98,7 +98,7 @@ export class DeviceService {
       this.approvals?.settled(row);
       this.#settleRecovered(row.actionId);
     });
-    // iPhone 排队的动作没有工具在等：回执到了照「接续」的路交回（第 102 条）。
+    // 排队等设备上线的动作没有工具在等：回执到了照「接续」的路交回（第 102 条）。
     this.actions.onDetached((actionId) => { this.#recovered.add(actionId); });
     this.actions.attach({ nodeChanged: (id) => this.#sink.nodeChanged(id), actionRecorded: (row) => {
       settleScheduleSend(options.state, row);

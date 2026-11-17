@@ -77,7 +77,7 @@ const LIMITS_MS: Partial<Record<DeviceActionKind, number>> = {
 const RETRYABLE: ReadonlySet<DeviceActionKind> = new Set<DeviceActionKind>(['tab_list', 'tab_shot', 'tab_wait',
   'tab_close', 'tab_perceive', 'tab_show', 'tab_scroll', 'file_fetch',
   'tab_read', 'screen_capture', 'file_list', 'file_read', 'browser_read', 'calendar_list', 'reminder_list',
-  'photo_list', 'photo_read', 'location_current', 'device_state', 'file_find', 'shortcut_list', 'tab_downloads',
+  'device_state', 'file_find', 'shortcut_list', 'tab_downloads',
   'screen_zoom', 'window_capture', 'app_list', 'window_list', 'app_perceive', 'tab_hover']);
 
 export function actionLimitMs(kind: DeviceActionKind, params: Record<string, unknown>): number {
