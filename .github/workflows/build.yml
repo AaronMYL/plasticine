@@ -90,10 +90,20 @@ jobs:
           npm ci --no-audit --no-fund
           sudo apt-get update -q && sudo apt-get install -y -q fonts-noto-cjk
       - name: 浏览器回归
+        shell: bash
         env:
           PLASTICINE_TEST_BROWSER: /usr/bin/google-chrome
           TZ: Asia/Shanghai
-        run: cd client && npm run test:browser
+        # 这台两核机器上 Chrome 偶尔掉页（「Inspected target navigated or closed」这类），没过的文件单独再跑一次；
+        # 再跑还不过才算失败。
+        run: |
+          cd client
+          if ! npm run test:browser 2>&1 | tee "$RUNNER_TEMP/browser.log"; then
+            files=$(grep -oE 'test at browser-tests/[^:]+' "$RUNNER_TEMP/browser.log" | sed 's/^test at //' | sort -u)
+            if [ -z "$files" ]; then exit 1; fi
+            echo "再跑一次没过的：$files"
+            node --test --test-concurrency=1 $files
+          fi
 
   desktop-mac:
     # 桌面客户端（Electron 壳）的 Mac 包：带本体、Node（通用二进制）和设备助手（通用二进制，
