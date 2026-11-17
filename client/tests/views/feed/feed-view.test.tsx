@@ -13,6 +13,12 @@ function main(): HTMLElement {
   return screen.getByRole('main');
 }
 
+function mainArea(): HTMLElement {
+  const area = main().closest<HTMLElement>('.shell-main-area');
+  if (area === null) throw new Error('没有主区');
+  return area;
+}
+
 function board(): HTMLElement {
   return within(main()).getByRole('region', { name: '条目' });
 }
@@ -37,11 +43,11 @@ function segment(name: string): HTMLElement {
   return within(column()).getByRole('button', { name: new RegExp(`^${SOURCES[name] ?? name}`) });
 }
 
-/** 关注点（多少、搜什么）在第二栏「兴趣」那一行 ⋯ 的「设置…」里。 */
+/** 关注点（多少、搜什么）在第二栏「兴趣」那一行 ⋯ 的「设置…」里；面板挂在主区的浮层上（不在 main 里面）。 */
 function openSources(): HTMLElement {
   fireEvent.click(within(column()).getByRole('button', { name: '「兴趣」的操作' }));
   fireEvent.click(screen.getByRole('menuitem', { name: '设置…' }));
-  return within(main()).getByRole('dialog', { name: '兴趣 · 设置' });
+  return within(mainArea()).getByRole('dialog', { name: '兴趣 · 设置' });
 }
 
 function ago(hours: number): string {

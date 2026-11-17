@@ -10,6 +10,12 @@ function main(): HTMLElement {
   return screen.getByRole('main');
 }
 
+function mainArea(): HTMLElement {
+  const area = main().closest<HTMLElement>('.shell-main-area');
+  if (area === null) throw new Error('没有主区');
+  return area;
+}
+
 function seed(fake: FakeApi): void {
   fake.control.feed.seedSource({ id: 'src_sync', kind: 'interest', label: '本地优先同步', query: 'local-first' });
   fake.control.feed.seedItem({ id: 'f_1', title: '一篇', sourceId: 'src_sync', origin: 'feed' });
@@ -23,7 +29,8 @@ describe('信息流 · 加来源 Sheet', () => {
     const open = within(screen.getByRole('complementary', { name: '阅读' })).getByRole('button', { name: '加来源' });
     expect(open.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(open);
-    const sheet = within(main()).getByRole('dialog', { name: '加来源' });
+    // 面板挂在主区的浮层上（11-17：不再按调用方画在哪摆），和 main 并排。
+    const sheet = within(mainArea()).getByRole('dialog', { name: '加来源' });
     expect(sheet.className).toContain('sheet-panel');
     expect(sheet.getAttribute('aria-modal')).toBeNull();
     const kinds = ['博客', 'Reddit', '兴趣', 'X', '小红书', '抖音收藏'];
@@ -41,7 +48,7 @@ describe('信息流 · 加来源 Sheet', () => {
     expect(within(sheet).getByRole('region', { name: '加关注点' })).toBeTruthy();
     expect(open.getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(within(sheet).getByRole('button', { name: '关掉加来源' }));
-    expect(within(main()).queryByRole('dialog', { name: '加来源' })).toBeNull();
+    expect(within(mainArea()).queryByRole('dialog', { name: '加来源' })).toBeNull();
     expect(within(main()).getByRole('listitem', { name: '一篇' })).toBeTruthy();
   });
 
