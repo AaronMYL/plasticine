@@ -2,7 +2,6 @@
 // 自签证书：中继的主域名在 ACME 证书到手前先用一张顶着（进程能起来，浏览器会警告），本机演示和测试里的假实例也用它。
 // Node 自己不会签证书；用 @peculiar/x509（acme-client 本来就带着它）加 WebCrypto 的 P-256。
 
-import { webcrypto } from 'node:crypto';
 import {
   BasicConstraintsExtension,
   cryptoProvider,
@@ -30,9 +29,16 @@ function pem(label: string, der: ArrayBuffer): string {
 }
 
 /** 给这些名字签一张自签证书，`days` 天有效。第一个名字也写进 CN。 */
+// 用全局的 crypto（Node 24 自带）而不是 node:crypto 的 webcrypto：两者是同一个对象，但全局的那个在带 DOM 类型的
+// 地方（界面的浏览器验收也会引到这里）和不带 DOM 的地方都对得上类型。
+const webcrypto = globalThis.crypto;
+
 export async function selfSignedCertificate(hosts: readonly string[], days: number): Promise<CertificatePair> {
   cryptoProvider.set(webcrypto);
   const keys = await webcrypto.subtle.generateKey(ALGORITHM, true, ['sign', 'verify']);
+  if (!('privateKey' in keys)) {
+    throw new Error('生成证书钥匙时没拿到一对公私钥');
+  }
   const notBefore = new Date(Date.now() - BACKDATE_MS);
   const certificate = await X509CertificateGenerator.createSelfSigned({
     serialNumber: Buffer.from(webcrypto.getRandomValues(new Uint8Array(8))).toString('hex').replace(/^[89a-f]/, '1'),
@@ -44,7 +50,7 @@ export async function selfSignedCertificate(hosts: readonly string[], days: numb
     extensions: [
       new BasicConstraintsExtension(false, undefined, true),
       new ExtendedKeyUsageExtension([ExtendedKeyUsage.serverAuth]),
-      new SubjectAlternativeNameExtension(hosts.map((host) => ({ type: 'dns', value: host }))),
+      new SubjectAlternativeNameExtension(hosts.map((host) => ({ type: 'dns' as const, value: host }))),
     ],
   });
   const key = await webcrypto.subtle.exportKey('pkcs8', keys.privateKey);

@@ -34,7 +34,8 @@ export const fetchTransport: PushTransport = async (endpoint, request) => {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: request.headers,
-    body: request.body,
+    // 包成 Uint8Array：Buffer 在带 DOM 类型的地方（界面的浏览器验收会引到这里）不算请求正文。
+    body: new Uint8Array(request.body),
     // A push endpoint that redirects is not one to follow with the user's encrypted notification.
     redirect: 'error',
     signal: AbortSignal.timeout(PUSH_TIMEOUT_MS),

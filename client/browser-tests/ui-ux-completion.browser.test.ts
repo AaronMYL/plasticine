@@ -11,7 +11,6 @@ import { pair, startTestApp, type TestApp } from '../../agent/tests/app/helpers.
 const SIZES = [[1440, 900], [768, 1024], [390, 844], [500, 500]] as const;
 // 设置是一页（第 2 批）：分类在左栏，内容在右边。
 const SETTINGS = `document.querySelector('.settings-dialog')`;
-const SIDEBAR = `document.querySelector('.rail')`;
 
 async function until(done: () => boolean | Promise<boolean>, label: string): Promise<void> {
   const deadline = Date.now() + 12_000;
@@ -221,7 +220,12 @@ test('普通用户完整路径：设置通用的时区、信息流单条直达�
   await page.evaluate(`location.hash = '#/settings'`);
   await until(() => page.evaluate(`Boolean(${SETTINGS})`), '设置弹框');
   await click(page, '通用', SETTINGS);
-  await click(page, '选择时区', SETTINGS);
+  // 11-14 起时区是一行「跟随设备」开关：关掉才出搜索（time-zone-field.tsx）。测试浏览器的设备时区可能就是上海，
+  // 先关「跟随设备」再搜、再挑，才算真的改了设置。
+  await page.evaluate(`(() => {
+    const follow = document.querySelector('.settings-time-zone input[role="switch"]');
+    if (follow.checked) follow.click();
+  })()`);
   await fill(page, '.settings-time-zone input[type="search"]', '北京');
   const zoneButton = `Array.from(document.querySelectorAll('[aria-label="可选时区"] button'))
     .find(button => button.textContent.includes('Asia/Shanghai'))`;

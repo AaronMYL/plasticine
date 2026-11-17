@@ -4,7 +4,7 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { click, layouts, startStack, text, until } from './helpers.ts';
+import { layouts, startStack, text, until } from './helpers.ts';
 
 test('记忆：整理前的推测单独读，只读；浏览不改资料、不调模型', async (t) => {
   const { app, page } = await startStack(t, { realClock: true, hash: '/memory' });

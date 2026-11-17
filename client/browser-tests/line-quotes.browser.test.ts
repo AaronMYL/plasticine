@@ -118,7 +118,7 @@ for (const client of ['mac', 'phone'] as const) {
     await until(page, `!document.querySelector('.line-quotes')`, '引用与草稿已发送');
     await app.app.deps.lines.settled();
     const own = app.app.deps.lines.read('main', 50).messages.findLast((message) => message.origin?.kind === 'user');
-    assert.ok(own?.text.includes(selected));
+    assert.ok(own !== undefined && own.text.includes(selected));
     assert.ok(own.text.endsWith(DRAFT));
     assert.equal(own.origin?.userText, DRAFT, '引用没有变成用户原话');
     await reloadPage(page);

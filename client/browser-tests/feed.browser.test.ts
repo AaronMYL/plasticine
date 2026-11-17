@@ -161,9 +161,9 @@ test('E53–59/70：真实刷新、语义归属、收藏、评论失败接续、
   const existing = app.state.feedItems.page({}, {}).find((item) => item.title === '已有条目')!;
   await page.evaluate(`location.hash = '#/feed/${existing.id}'`);
   await until(() => page.evaluate(`document.body.textContent.includes('旧版接上的一句')`), '旧双方评论');
-  // 关注点和屏蔽的网站在第二栏「按关注点的新闻」那一行 ⋯ 的「设置…」里（第 7 批第 10 条）。
+  // 关注点和屏蔽的网站在第二栏「兴趣」那一行 ⋯ 的「设置…」里（第 7 批第 10 条；11-14 起那一行叫「兴趣」）。
   await page.evaluate(`location.hash = '#/feed'`);
-  await click(page, '「按关注点的新闻」的操作');
+  await click(page, '「兴趣」的操作');
   await click(page, '设置…');
   await click(page, '加关注点');
   await until(() => page.evaluate(`Boolean(document.querySelector('.feed-interest input[maxlength="200"]'))`), '关注点表单');

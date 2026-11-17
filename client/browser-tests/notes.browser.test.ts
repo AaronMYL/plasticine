@@ -31,6 +31,13 @@ async function click(page: Cdp, text: string, scope = 'document'): Promise<void>
   await until(() => page.evaluate(`Boolean(${selector})`), text);
   await page.evaluate(`${selector}.click()`);
 }
+/** 对照面板的采用按钮写着选了几处（「采用这 2 处」，11-15 起），不管几处都点它。 */
+async function adoptPicked(page: Cdp): Promise<void> {
+  const selector = `Array.from(document.querySelectorAll('.note-review button')).find(b => b.getClientRects().length
+    && !b.disabled && /^采用这 \\d+ 处$/.test(b.textContent.trim()))`;
+  await until(() => page.evaluate(`Boolean(${selector})`), '采用这几处');
+  await page.evaluate(`${selector}.click()`);
+}
 async function openFolders(page: Cdp): Promise<void> {
   if (await page.evaluate(`Boolean(document.querySelector('.note-folders')?.getClientRects().length)`)) return;
   const fromList = await page.evaluate(`Array.from(document.querySelectorAll('button')).some(button =>
@@ -241,13 +248,16 @@ test('笔记阅读布局：按主区宽度让出目录和列表，管理面板�
   };
   await resizeNotes(page, 2048, 1215);
   assert.equal(await page.evaluate(`document.querySelector('.notes-columns').dataset.layout`), 'wide');
+  // 11-15 起文件夹在第二栏顶上的「选择文件夹」里（文件夹和列表合成一栏）。
+  await openFolders(page);
   await click(page, `${longFolder} 4`);
-  await until(() => page.evaluate(`document.querySelector('.note-list-heading h2')?.textContent
-    === ${JSON.stringify(longFolder)}`), '长目录列表标题');
+  const heading = `(document.querySelector('.note-list-heading h2')
+    ?? document.querySelector('.note-collection-toggle span'))`;
+  await until(() => page.evaluate(`${heading}?.textContent === ${JSON.stringify(longFolder)}`), '长目录列表标题');
   await until(() => page.evaluate(`document.querySelectorAll('.note-row').length === 4
     && Boolean(document.querySelector('.note-body .ProseMirror'))`), '长目录笔记列表及正文');
   assert.equal(await page.evaluate(`(() => {
-    const title = document.querySelector('.note-list-heading h2').getBoundingClientRect();
+    const title = ${heading}.getBoundingClientRect();
     const count = document.querySelector('.note-list-count').getBoundingClientRect();
     return title.right < count.left;
   })()`), true, '长目录标题不压计数');
@@ -255,6 +265,7 @@ test('笔记阅读布局：按主区宽度让出目录和列表，管理面板�
     await page.evaluate(`document.documentElement.dataset.theme = '${theme}'`);
     await measure(`notes-long-folder-2048-${theme}`);
   }
+  await openFolders(page);
   await click(page, '全部 21');
   await page.evaluate(`location.hash = '#/notes/${note.id}'`);
   await until(() => page.evaluate(`document.querySelector('.note-body')?.textContent.includes('工作室里的阅读空间') === true`),
@@ -321,8 +332,9 @@ test('笔记阅读布局：按主区宽度让出目录和列表，管理面板�
   await resizeNotes(page, 1440, 900);
   await page.evaluate(`document.querySelector('.note-list').scrollTop = 160`);
   const scroll = await page.evaluate<number>(`document.querySelector('.note-list').scrollTop`);
-  await click(page, '收起列表');
-  await click(page, '展开列表');
+  // 第二栏（笔记列表）的收起和展开是全站同一对按钮（11-15 起）。
+  await click(page, '收起侧栏');
+  await click(page, '展开侧栏');
   assert.equal(await page.evaluate(`document.querySelector('.note-list').scrollTop`), scroll, '收起再展开列表保留位置');
   await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   assert.equal(await page.evaluate(`getComputedStyle(document.querySelector('.note-editor')).animationName`), 'none');
@@ -458,10 +470,13 @@ test('D45/47/48：浏览器预测采用、AI对照保留新输入、保存冲突
   await shots(page, 'notes-ai-review', async () => {
     await page.evaluate(`document.querySelector('.note-review')?.scrollIntoView({ block: 'start' })`);
   });
-  await page.evaluate(`document.querySelectorAll('.note-review input[type="checkbox"]')[1].click()`);
+  // 11-15 起顶上多了「全选」：按「第 2 处」找它那一项，不按第几个勾选框。
+  await page.evaluate(`Array.from(document.querySelectorAll('.note-review label'))
+    .find(label => label.textContent.includes('第 2 处')).querySelector('input[type="checkbox"]').click()`);
   await page.evaluate(`${EDITOR}.commands.insertContentAt(${EDITOR}.state.doc.content.size, '<p>继续写下的一句</p>')`);
-  await click(page, '采用所选');
-  assert.ok(await page.evaluate(`${EDITOR}.getText().includes('甲段改') && ${EDITOR}.getText().includes('继续写下的一句')`));
+  await adoptPicked(page);
+  await until(() => page.evaluate(`${EDITOR}.getText().includes('甲段改') && ${EDITOR}.getText().includes('继续写下的一句')`),
+    '采用所选并保留新输入');
   assert.ok(!await page.evaluate(`${EDITOR}.getText().includes('乙段改')`));
   await until(() => app.state.notes.readBody(app.state.notes.require(note.id)).includes('继续写下的一句'), '采用后保存');
   await page.evaluate(`${EDITOR}.commands.insertContentAt(${EDITOR}.state.doc.content.size, '<p>本地未存</p>')`);
@@ -701,7 +716,7 @@ test('笔记选段写作：保留选择与上下文，自定义要求、编辑�
   await shots(page, 'notes-edit-draft', async () => {
     await page.evaluate(`document.querySelector('.note-review')?.scrollIntoView({ block: 'start' })`);
   });
-  await click(page, '采用所选');
+  await adoptPicked(page);
   await until(() => app.state.notes.readBody(app.state.notes.require(note.id)).includes('自己再调整'), '所选修改保存');
   assert.equal(await page.evaluate(`${EDITOR}.getMarkdown()`), '前文背景。\n\n自己再调整后的句子。\n\n后文结论。');
   await page.send('Emulation.setDeviceMetricsOverride', {
@@ -728,7 +743,8 @@ test('D37：改名已落地但回执丢失，切页刷新后原请求核实；�
   await page.evaluate(`document.querySelector('[aria-label="管理文件夹旧文件夹"]').click()`);
   await input(page, '.note-folder-edit input', '新文件夹');
   await page.evaluate(`(() => {
-    const save = Array.from(document.querySelector('.note-folder-edit').querySelectorAll('button'))
+    // 「保存名称」在面板底部（11-15 起面板的按钮都在底栏），不在表单里。
+    const save = Array.from(document.querySelector('[role="dialog"][aria-label="管理文件夹"]').querySelectorAll('button'))
       .find(button => button.textContent.trim() === '保存名称');
     save.click(); save.click();
   })()`);

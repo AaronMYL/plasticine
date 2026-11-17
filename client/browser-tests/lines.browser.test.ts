@@ -47,10 +47,12 @@ test('网页连接模型：一家都没连照样进首页，「等你」里一�
   await until(page, adding, '设置里的提供商');
   await page.evaluate(`${adding}.querySelector('.provider-more, .provider-more-row')?.click()`);
   await click(page, '填 key', `(${adding}).querySelector('[aria-label="Fake Key"]')`);
-  await fill(page, '.settings-dialog input[type="password"]', 'key-value-for-browser-tests');
+  // 设置 · AI 里还有联网搜索的 key 框（web-search-section.tsx）：只找连接那一步（.settings-connect）里的。
+  await fill(page, '.settings-dialog .settings-connect input[type="password"]', 'key-value-for-browser-tests');
   await click(page, '连接', `document.querySelector('.settings-dialog')`);
   await settle(() => kernel.models.credentials.connectedType('fake-key') === 'api_key', '真服务端存了 key');
-  await until(page, `!document.querySelector('.settings-dialog input[type="password"]')`, 'key 表单收起');
+  await until(page, `!document.querySelector('.settings-dialog .settings-connect input[type="password"]')`,
+    'key 表单收起');
   assert.equal(await page.evaluate(text('key-value-for-browser-tests')), false, '页面不回显 key');
   await reloadPage(page);
   const connected = `document.querySelector('.settings-dialog [aria-label="连着的提供商"]')`;

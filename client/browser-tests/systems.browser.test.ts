@@ -166,7 +166,7 @@ test('主区出错不挡对话；浏览器控制；退出这台后用密码登�
       return snapshot;
     },
   };
-  const { app, page } = await startStack(t, { realClock: true, plugins: [pageFailure],
+  const { page } = await startStack(t, { realClock: true, plugins: [pageFailure],
     app: { cloudTransports: { browser: transport } } });
 
   await page.evaluate('globalThis.__pageFailure = true');
