@@ -16,10 +16,16 @@ type Body = Record<string, unknown>;
 async function toolsOffered(app: TestApp, cookie: string, requestId: string): Promise<string[]> {
   let offered: string[] = [];
   const step: FauxResponseFactory = (context) => {
-    // pi 的工具声明在系统消息上（toolsAdded / toolsRemoved），按顺序叠出这一轮能用的。
+    // pi 的工具声明在系统消息上（toolsAdded / toolsRemoved），按顺序叠出这一轮能用的；内核优化第四批起不常用的
+    // 只在系统提示「本轮实际可用工具」里列名字（tool_search 找出来再声明），也算这一轮能用的。
     const names = new Set<string>();
     for (const message of context.messages) {
       if (message.role === 'system') {
+        const prompt = typeof message.content === 'string' ? message.content
+          : message.content.map((part) => part.text).join('');
+        for (const name of /本轮实际可用工具：([^。\n]*)。/u.exec(prompt)?.[1]?.split('、') ?? []) {
+          names.add(name);
+        }
         for (const tool of message.toolsAdded ?? []) {
           names.add(tool.name);
         }

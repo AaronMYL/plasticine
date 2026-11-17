@@ -9,12 +9,15 @@ import {
 } from '../../shared/api/maintenance.ts';
 import { CloudToolError, type RefetchReport } from '../cloud-tools/index.ts';
 import { addClaudeItems, applyLayersMove, ensureMemoryDocs, moveLine, rewriteRules } from '../memory/index.ts';
+import type { LineKernel } from '../lines/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
 
 export interface MaintenanceDeps {
   state: StateService;
   /** 收信那一侧（mail.refetch 用）；AppDeps 里就是 toolGroups。 */
   toolGroups?: { cloud: { mailRefetch: { run(limit: number, signal: AbortSignal): Promise<RefetchReport> } } };
+  /** line.start 开后台线用；AppDeps 里就是线的内核。 */
+  lines?: Pick<LineKernel, 'open'>;
 }
 
 // 一次 mail.refetch 最多跑这么久：每块（十封）自己有 3 分钟的时限，200 封二十块，正常几分钟；超过就停，补过的已经存下。
@@ -95,6 +98,9 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
     }
     return dismissSuggestions(deps.state, request.ids, `maintenance:${request.operationId}`);
   }
+  if (request.op === 'line.start') {
+    return startLine(deps, request);
+  }
   if (request.op === 'inbox.archive') {
     if (request.sources === undefined) {
       throw new MaintenanceFailure('invalid_input', '「inbox.archive」要给 --sources（patrol,feedback,interview 里的几个）。');
@@ -102,6 +108,19 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
     return archiveInbox(deps.state, request.sources);
   }
   throw new MaintenanceFailure('invalid_input', `不认识的写操作「${request.op}」。`);
+}
+
+/** 开一条后台线，交代给它一件事；做完照常贴回主线。发起记成系统（这次维护），不是他的话。 */
+function startLine(deps: MaintenanceDeps, request: MaintenanceRequest) {
+  if (request.line === undefined) {
+    throw new MaintenanceFailure('invalid_input', '「line.start」要给 --plan（{title, goal}）。');
+  }
+  if (deps.lines === undefined) {
+    throw new MaintenanceFailure('unavailable', '这台服务没有线的内核。');
+  }
+  const view = deps.lines.open({ title: request.line.title, goal: request.line.goal, projectId: null,
+    parentLineId: deps.state.lines.main().id, origin: { kind: 'system', ref: `maintenance:${request.operationId}` } });
+  return { lineId: view.id };
 }
 
 /** 一次最多归档这么多封（这几个来源是停用的旧功能留下的，量很小；真到了这个数说明弄错了，停下）。 */

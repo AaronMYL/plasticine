@@ -13,11 +13,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { parseArgs } from 'node:util';
+import type { AgentTool } from '@earendil-works/pi-agent-core';
 import type { Message } from '@earendil-works/pi-ai';
 import { assembleApp } from '../agent/src/app/assemble.ts';
 import { generateVapidKeys } from '../agent/src/attention/index.ts';
 import { KernelModels, ProviderLogins } from '../agent/src/kernel/index.ts';
-import { convertToLlm, historyMessages } from '../agent/src/lines/index.ts';
+import { convertToLlm, declareLoaded, historyMessages } from '../agent/src/lines/index.ts';
 import { openState, type StateService } from '../agent/src/state/index.ts';
 import { casesByRef, DEFAULT_PICK, pickCases, type ReplayCase } from './replay/cases.ts';
 import { replayCase, summarize, type CaseResult } from './replay/run.ts';
@@ -55,13 +56,14 @@ const CONTEXT_ROWS = 30;
 const OPENING_ROLES: ReadonlySet<string> = new Set(['user', 'handoff', 'lineReport', 'notice']);
 
 /** 当时那一句，连同它前面这条线里的一段，照线上送给模型的样子（收起、截断）转好。 */
-function contextOf(state: StateService, item: ReplayCase): Message[] {
+/** 这一句前面的一段，照内核的样子：调用过的按需工具在那一步前面声明（tool-loadout.ts）。 */
+function contextOf(state: StateService, item: ReplayCase, deferred: ReadonlyMap<string, AgentTool>): Message[] {
   const rows = state.lineMessages.page(item.lineId, item.seq + 1, CONTEXT_ROWS).rows;
   const start = rows.findIndex((row) => OPENING_ROLES.has(row.role));
   if (rows.at(-1)?.seq !== item.seq || start === -1) {
     throw new ReplayError(`副本里没有 ${item.ref}`);
   }
-  return convertToLlm(historyMessages(item.lineId, rows.slice(start)));
+  return convertToLlm(declareLoaded(historyMessages(item.lineId, rows.slice(start)), deferred));
 }
 
 function readRefs(path: string): string[] {
@@ -131,7 +133,9 @@ async function replay(state: StateService, work: string,
     const signal = AbortSignal.timeout(CASE_TIMEOUT_MS);
     const model = { model: choice.model, complete: (context: Parameters<KernelModels['complete']>[1],
       abort: AbortSignal) => models.complete(choice.model, context, { signal: abort, reasoning: choice.thinking }) };
-    results.push(await replayCase(item, preview, contextOf(state, item), model, signal));
+    const declared = new Set(preview.tools.map((tool) => tool.name));
+    const deferred = new Map(preview.all.filter((tool) => !declared.has(tool.name)).map((tool) => [tool.name, tool]));
+    results.push(await replayCase(item, preview, contextOf(state, item, deferred), model, signal));
   }
   const report = { model: kernel.preview('main').choice?.model.id ?? null, surface, summary: summarize(results),
     refs: cases.map((item) => item.ref), results };

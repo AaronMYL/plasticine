@@ -17,6 +17,7 @@ import { ACTION_TTL_MS, type ActionOutcome, type ActionRequest } from './actions
 import { BROWSE_KINDS, type PlaceChoice } from './route.ts';
 import { PAGE_SEND_KINDS } from './page-send.ts';
 import { proveDeviceAction } from './proof.ts';
+import { actionHint, deviceActionFace } from './device-action-face.ts';
 import { splitDeviceImage } from './device-images.ts';
 import type { DeviceHold } from './holds.ts';
 import type { Refusal } from './limits.ts';
@@ -247,7 +248,7 @@ export function createDeviceActionTool(devices: DeviceActionPort, waits?: WaitPo
       + '不动他的鼠标、不把窗口切到前面，网页上的每一步都用它们。DOM 里认不出要的东西（会话列表的一行、画布）时，用 tab_shot 看这个标签的画面，tab_point 点画面上的一个位置，tab_type'
       + ' 往焦点里打字。screen_capture、input_click、input_type、app_open 动的是他真的屏幕和鼠标：只用于本机应用，不用于 Plasticine 的网页标签；'
       + '他在用电脑时会等他停下。tab_list 拿标签 id；tab_read 读 DOM 的字、链接和表单（接着读用 nextOffset）；tab_open / tab_navigate 开网页；'
-      + 'tab_click 按 CSS 选择器或看得到的字点（只能对上一个）；tab_fill 按选择器填；tab_wait 等一段字出现或消失（代替一遍遍读）；tab_close 关 Plasticine 自己开的、'
+      + 'tab_fill 按选择器填；tab_wait 等一段字出现或消失（代替一遍遍读）；tab_close 关 Plasticine 自己开的、'
       + '用完的标签。tab_key 按一个键或组合键（Escape 关弹窗、方向键在下拉里移动、Meta+A 全选；回车不按、复制粘贴不按）；tab_scroll 在画面某个位置滚（会话列表、弹窗里的长列表）；'
       + 'tab_paste 往焦点里粘贴（给 html 就带格式，公众号这类编辑器认排版；不碰他的剪贴板）。上传文件用 tab_upload，要他本人登录、扫码、输验证码用 tab_handoff，'
       + '文件在设备和文件页之间搬用 device_file_get / device_file_put（这几件不用 tab_upload、file_fetch、file_put 这几种动作；'
@@ -273,6 +274,8 @@ export function createDeviceActionTool(devices: DeviceActionPort, waits?: WaitPo
     timeoutMs: DEVICE_ACTION_TIMEOUT_MS,
     maxResultChars: DEVICE_ACTION_RESULT_CHARS,
     parameters: DeviceActionParameters,
+    declared: deviceActionFace(),
+    argsHint: actionHint,
     async execute(args, context) {
       if (args.action.kind === 'tab_show' && !context.callId.endsWith(HANDOFF_SHOW_CALL_SUFFIX)) {
         throw new ToolFailure(SHOW_REFUSED);

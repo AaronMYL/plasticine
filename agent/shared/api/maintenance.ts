@@ -27,11 +27,14 @@ export const MAINTENANCE_OPS = [
   'suggestions.dismiss',
   // 11-12 全量优化：Aaron 同意把消息里「采访、巡查、反馈」这几行旧功能留下的归档（不删，还在收信的「已归档」里）。
   'inbox.archive',
+  // 11-17 内核优化：Aaron 让 Claude 把「19 号量真实使用的效果」放进 Plasticine 的定时、他早上点确认。维护入口开一条
+  // 后台线，交代它起草那张卡（schedule_propose 出卡等他确认）；线的发起记成系统（这次维护），不冒充他说的话。
+  'line.start',
 ] as const;
 export type MaintenanceOp = (typeof MAINTENANCE_OPS)[number];
 
 export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['mail.refetch', 'rules.rewrite',
-  'memory.move', 'memory.cleanup.add', 'memory.layers', 'suggestions.dismiss', 'inbox.archive'];
+  'memory.move', 'memory.cleanup.add', 'memory.layers', 'suggestions.dismiss', 'inbox.archive', 'line.start'];
 
 /** memory.move 的一项：这一行挪到 toDocId。 */
 export const MemoryMoveItemSchema = Type.Object({
@@ -82,6 +85,9 @@ export const MaintenanceRequestSchema = Type.Object(
     ids: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 80 }), { minItems: 1, maxItems: 100 })),
     /** inbox.archive 归档哪几个系统来源的来信（巡查、反馈、采访）。 */
     sources: Type.Optional(Type.Array(Type.Enum(['patrol', 'feedback', 'interview']), { minItems: 1, maxItems: 3 })),
+    /** line.start 开的后台线：标题和交代给它的事。 */
+    line: Type.Optional(Type.Object({ title: Type.String({ minLength: 1, maxLength: 60 }),
+      goal: Type.String({ minLength: 1, maxLength: 4_000 }) }, { additionalProperties: false })),
     /** memory.cleanup.add 新加哪几条。 */
     adds: Type.Optional(Type.Array(MemoryCleanupAddSchema, { minItems: 1, maxItems: 200 })),
   },

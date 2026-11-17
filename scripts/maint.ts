@@ -17,6 +17,7 @@
 //   suggestions.dismiss --ids <id,id,…> --because "用户原话"            把几条建议收起（标成忽略，不删）
 //   inbox.archive --sources patrol,feedback,interview --because "用户原话"  这几个系统来源的来信归档（不删）
 //                                            整理「规则」：一行换成几行或挪进归档（memory/rules/rules-rewrite.ts）
+//   line.start --plan <{title,goal}> --because "用户原话"     开一条后台线交代一件事（发起记成系统，做完贴回主线）
 //   db.read "SELECT …"                       只读打开数据库查一句（不经服务，库以只读方式打开）
 //
 // 2026-11-05 Harness 重做：任务没了，tasks.* 删掉；judgments.*、rulesdoc.* 的一次性迁移早已做完，一起删了。
@@ -85,7 +86,15 @@ function readLayersPlan(path: string): Pick<MaintenanceRequest, 'moves'> {
   return { moves: value.moves as NonNullable<MaintenanceRequest['moves']> };
 }
 
-/** 命令行参数 → 一条维护命令（或一句只读查询）。 */
+/** line.start 的 --plan 是一个对象：{"title":…,"goal":…}。 */
+function readLinePlan(path: string): Pick<MaintenanceRequest, 'line'> {
+  const value = readJson(path) as { title?: unknown; goal?: unknown } | null;
+  if (typeof value?.title !== 'string' || typeof value.goal !== 'string') {
+    throw new MaintCliError('--plan 要是 {"title":"…","goal":"…"}。');
+  }
+  return { line: { title: value.title, goal: value.goal } };
+}
+
 /** 计划文件按命令放进请求里对应的那一栏。 */
 function planField(command: string, plan: NonNullable<MaintenanceRequest['plan']>): Partial<MaintenanceRequest> {
   if (command === 'memory.move') {
@@ -95,6 +104,14 @@ function planField(command: string, plan: NonNullable<MaintenanceRequest['plan']
     return { adds: plan as unknown as NonNullable<MaintenanceRequest['adds']> };
   }
   return { plan };
+}
+
+/** --plan 按命令读成请求里的那一栏。 */
+function planOf(command: MaintenanceOp, path: string): Partial<MaintenanceRequest> {
+  if (command === 'memory.layers') {
+    return readLayersPlan(path);
+  }
+  return command === 'line.start' ? readLinePlan(path) : planField(command, readPlan(path));
 }
 
 export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv = process.env,
@@ -137,8 +154,7 @@ export function parseMaintArgs(argv: readonly string[], env: NodeJS.ProcessEnv =
       .filter((source) => source !== '') as NonNullable<MaintenanceRequest['sources']> }),
     ...(values.ids === undefined ? {}
       : { ids: values.ids.split(',').map((id) => id.trim()).filter((id) => id !== '') }),
-    ...(values.plan === undefined ? {}
-      : command === 'memory.layers' ? readLayersPlan(values.plan) : planField(command, readPlan(values.plan))),
+    ...(values.plan === undefined ? {} : planOf(command, values.plan)),
   };
   return { kind: 'socket', stateDir, request };
 }

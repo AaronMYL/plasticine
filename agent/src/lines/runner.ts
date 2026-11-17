@@ -31,7 +31,10 @@ export type RunnerState = Pick<StateService, 'lines' | 'lineMessages' | 'lineDay
   | 'asks' | 'transaction'>;
 
 export interface Toolset {
+  /** 能执行的全部工具。 */
   tools: AgentTool[];
+  /** 声明了才给模型的（内核优化第四批，tool-loadout.ts）；不给就是全部一开始声明。 */
+  deferred?: ReadonlyMap<string, AgentTool>;
   meta(name: string): KernelTool | undefined;
 }
 
@@ -378,7 +381,7 @@ export class LineRunner {
   #transcript(): AgentMessage[] {
     const line = this.#host.state.lines.require(this.lineId);
     const transcript = buildTranscript(this.#host.state, line, this.#host.prompt(line), this.#toolset.tools,
-      this.#seqOf);
+      this.#seqOf, this.#toolset.deferred);
     const vision = this.#choice !== null && seesImages(this.#choice.model);
     const images = line.sealedPrompt === null ? [] : this.#host.contextImages?.(this.lineId) ?? [];
     const scoped = withContextImages(transcript, images, vision, this.#seqOf);

@@ -11,6 +11,7 @@ import { contextWindow } from './day-context.ts';
 import { clipLargeResult } from './large-results.ts';
 import { answerText, isAssistant, isToolResult } from './messages.ts';
 import { collapseStale, staleBoundary, type CallLike } from './stale-results.ts';
+import { declareLoaded } from './tool-loadout.ts';
 
 export type TranscriptState = Pick<StateService, 'lines' | 'lineMessages' | 'lineDays'>;
 
@@ -63,15 +64,16 @@ export function historyMessages(lineId: string, rows: readonly Pick<LineMessageR
 }
 
 export function buildTranscript(state: TranscriptState, line: LineRow, prompt: string, tools: readonly AgentTool[],
-  seqOf: WeakMap<object, number>): AgentMessage[] {
-  const system = createInitialSystemMessage(prompt, tools.map(toToolDeclaration));
+  seqOf: WeakMap<object, number>, deferred: ReadonlyMap<string, AgentTool> = new Map()): AgentMessage[] {
+  const declared = tools.filter((tool) => !deferred.has(tool.name));
+  const system = createInitialSystemMessage(prompt, declared.map(toToolDeclaration));
   const head: AgentMessage[] = system === undefined ? [] : [system];
   const window = contextWindow(state, line);
   if (window.summary !== null && window.summary.trim() !== '') {
     head.push({ role: 'lineSummary', summary: window.summary, timestamp: 0 });
   }
   const history = historyMessages(line.id, state.lineMessages.after(line.id, window.after), seqOf);
-  return trimFailedTail([...head, ...history]);
+  return trimFailedTail([...head, ...declareLoaded(history, deferred)]);
 }
 
 export interface Dangling {

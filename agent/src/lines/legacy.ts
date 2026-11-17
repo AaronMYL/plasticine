@@ -4,6 +4,7 @@
 // 结果太长截短。工具组开关（他关掉的组）由 enabled 决定，关掉的工具这条线看不到。
 
 import type { AgentTool, AgentToolResult } from '@earendil-works/pi-agent-core';
+import { Value } from 'typebox/value';
 import type { ImageContent, TextContent } from '@earendil-works/pi-ai';
 import type { ModelImage } from '../../shared/model.ts';
 import { ToolFailure, type PermissionGate, type Tool, type ToolContext } from '../tools/index.ts';
@@ -50,18 +51,29 @@ function failure(error: unknown): Error {
   return new Error(failureText(error));
 }
 
+/** 松的那一面放过、严格的没过：哪一处不对，加上这一种要哪些参数。 */
+function argsProblem(tool: Tool, params: unknown): string {
+  const first = Value.Errors(tool.parameters, params)[0];
+  const where = first === undefined ? '' : `（${first.instancePath || '/'} ${first.message}）`;
+  const hint = tool.argsHint?.(params) ?? null;
+  return `「${tool.name}」的参数不合要求${where}，这次没有执行。${hint === null ? '' : hint}`;
+}
+
 function legacyAgentTool(tool: Tool, meta: LegacyMeta, scope: LineScope, options: LegacyOptions): AgentTool {
   return {
     name: tool.name,
     label: tool.label,
     description: tool.description,
-    parameters: tool.parameters,
+    parameters: tool.declared ?? tool.parameters,
     // 只读、可重放的旧工具重启后可以安全重做；其余（once）结果不明时如实说，不重做。
     ...(tool.replay === 'safe' ? { replay: 'safe' as const } : {}),
     ...(tool.parallel ? {} : { executionMode: 'sequential' as const }),
     async execute(toolCallId, params, signal) {
       if (options.enabled?.(tool.name) === false) {
         throw new Error('这件工具已关闭。打开对应工具组后才能使用。');
+      }
+      if (tool.declared !== undefined && !Value.Check(tool.parameters, params)) {
+        throw new Error(argsProblem(tool, params));
       }
       const args = argsRecord(params);
       const runId = `line:${scope.lineId}`;

@@ -16,8 +16,11 @@ const MODULES = [
   ['授权：对外发出前核对账号、收件人、内容和有效范围', ['outbound_', 'grant_']],
 ] as const;
 
-/** 每次请求从实际可用工具生成；关闭工具组后提示里也不再声称能用。 */
-export function productMap(tools: readonly { name: string }[]): string {
+/**
+ * 每次请求从实际可用工具生成；关闭工具组后提示里也不再声称能用。direct 给了（内核优化第四批）：没一开始声明的
+ * 工具名照样列出来，说清先用 tool_search 找出来。
+ */
+export function productMap(tools: readonly { name: string }[], direct?: ReadonlySet<string>): string {
   const names = [...new Set(tools.map((tool) => tool.name))];
   const modules = MODULES.map(([label, prefixes]) => {
     const available = names.filter((name) => prefixes.some((prefix) => name.startsWith(prefix)));
@@ -28,5 +31,7 @@ export function productMap(tools: readonly { name: string }[]): string {
     '- 资料库：#/library；最近删除：#/library/trash；定时：#/tasks/timed；记忆：#/memory。',
     '内置网页通过 device_action 的 tab_* 动作操作；系统 Chrome 和整台电脑通过设备截屏、点按、输入操作。',
     '改已有内容先读取版本，改在原处；自己写的新报告和整理稿放资料库空间。回复给可打开的站内入口。',
-    `本轮实际可用工具：${names.join('、')}。`].join('\n');
+    `本轮实际可用工具：${names.join('、')}。`,
+    ...(direct === undefined ? [] : ['工具列表里一开始只有常用的几件；上面列了名字、工具列表里还没有的，先用 tool_search '
+      + '按名字或要做的事找出来（可以一次找几件），找到后下一步就能直接调用。'])].join('\n');
 }

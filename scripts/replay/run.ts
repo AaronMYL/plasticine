@@ -18,7 +18,10 @@ export interface ReplayModel {
 
 export interface ReplayPreview {
   prompt: string;
+  /** 一开始声明给模型的。 */
   tools: AgentTool[];
+  /** 能执行的全部（内核优化第四批：其余的 tool_search 找到以后才声明）；不给就是 tools。 */
+  all?: AgentTool[];
 }
 
 export interface CaseResult {
@@ -44,23 +47,40 @@ function toolCalls(message: AssistantMessage) {
   return message.content.flatMap((part) => (part.type === 'toolCall' ? [part] : []));
 }
 
-/** 找工具的那几次照常执行，结果接在后面再问。 */
-async function discover(preview: ReplayPreview, message: AssistantMessage, signal: AbortSignal): Promise<Message[]> {
+function loadedNames(details: unknown): string[] {
+  const loaded: unknown = typeof details === 'object' && details !== null ? Reflect.get(details, 'loaded') : undefined;
+  return Array.isArray(loaded) ? loaded.filter((name): name is string => typeof name === 'string') : [];
+}
+
+/** 找工具的那几次照常执行，结果接在后面；找到的工具照内核的样子在结果后面声明，再问。 */
+async function discover(preview: ReplayPreview, message: AssistantMessage, declared: Set<string>,
+  signal: AbortSignal): Promise<Message[]> {
+  const all = preview.all ?? preview.tools;
   const results: Message[] = [];
+  const added: AgentTool[] = [];
   for (const call of toolCalls(message)) {
-    const tool = preview.tools.find((item) => item.name === call.name);
-    const result = tool === undefined ? { content: [{ type: 'text' as const, text: '没有这件工具' }] }
+    const tool = all.find((item) => item.name === call.name);
+    const result = tool === undefined ? { content: [{ type: 'text' as const, text: '没有这件工具' }], details: {} }
       : await tool.execute(call.id, call.arguments, signal);
     results.push({ role: 'toolResult', toolCallId: call.id, toolName: call.name, content: result.content,
       isError: tool === undefined, timestamp: Date.now() });
+    for (const name of loadedNames(result.details)) {
+      const found = all.find((item) => item.name === name);
+      if (found !== undefined && !declared.has(name)) {
+        declared.add(name);
+        added.push(found);
+      }
+    }
   }
-  return results;
+  return added.length === 0 ? results
+    : [...results, { role: 'system', content: '', toolsAdded: added.map(toToolDeclaration), timestamp: Date.now() }];
 }
 
 export async function replayCase(item: ReplayCase, preview: ReplayPreview, opening: readonly Message[],
   model: ReplayModel, signal: AbortSignal): Promise<CaseResult> {
   const system = createInitialSystemMessage(preview.prompt, preview.tools.map(toToolDeclaration));
   const messages: AgentMessage[] = [...(system === undefined ? [] : [system]), ...opening];
+  const declared = new Set(preview.tools.map((tool) => tool.name));
   const result: CaseResult = { ref: item.ref, kind: item.kind, expected: item.expected, got: [], match: 'none',
     asks: 0, firstPrompt: 0, totalPrompt: 0, output: 0, error: null };
   try {
@@ -81,7 +101,7 @@ export async function replayCase(item: ReplayCase, preview: ReplayPreview, openi
         result.match = judge(item.expected, result.got);
         return result;
       }
-      messages.push(answer, ...await discover(preview, answer, signal));
+      messages.push(answer, ...await discover(preview, answer, declared, signal));
     }
     result.error = `问了 ${MAX_ASKS} 次都只在找工具`;
   } catch (error) {

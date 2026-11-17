@@ -32,6 +32,7 @@ import { realLater, type KernelTool, type Later, type LineScope, type ModelChoic
 import { lineView, NO_ACTIVITY, pageMessages, queuedView } from './views.ts';
 import { rollDay } from './day-context.ts';
 import { readResultTool } from './large-results.ts';
+import { splitLoadout, toolSearchTool, type CatalogEntry } from './tool-loadout.ts';
 import { chats, replyFor, retitled, SIDES_LIMIT, toggleReaction, type SideControl }
   from './side-chats.ts';
 import type { WelcomeStart } from '../../shared/welcome-start.ts';
@@ -55,6 +56,7 @@ export class LineKernel implements LineControl, SideControl {
   readonly #runners = new Map<string, LineRunner>();
   readonly #timers = new Map<string, () => void>();
   readonly #tools: KernelTool[];
+  readonly #direct: ReadonlySet<string> | undefined;
   readonly #host: RunnerHost;
   #stopping = false;
 
@@ -76,7 +78,26 @@ export class LineKernel implements LineControl, SideControl {
     this.#tools = [askUserTool(askHost), ...lineTools(this, this.#state),
       outcomeTool(this.#state), readResultTool(this.#state), ...loopTools(this.#state),
       planTool(this.#state, (lineId) => this.#publishLine(lineId)), ...submits, ...asking, ...(options.tools ?? [])];
+    const direct = options.directTools === undefined ? undefined : new Set(options.directTools);
+    this.#direct = direct;
+    this.#tools.push(toolSearchTool((scope) => this.#catalog(scope), () => direct !== undefined));
     this.#host = this.#runnerHost();
+  }
+
+  /** 这种线这一轮能用的工具（关掉的组、只给别的线的不算）。 */
+  #available(kind: LineScope['kind']): KernelTool[] {
+    return this.#tools.filter((tool) => (tool.enabled?.() ?? true)
+      && (tool.lineKinds === undefined || tool.lineKinds.includes(kind)));
+  }
+
+  /** tool_search 找的范围：这条线能用、一开始没声明的。 */
+  #catalog(scope: LineScope): CatalogEntry[] {
+    const direct = this.#direct;
+    return this.#available(scope.kind).filter((tool) => direct !== undefined && !direct.has(tool.name)
+      && tool.name !== 'tool_search').map((tool) => {
+      const agentTool = tool.create(scope);
+      return { name: agentTool.name, label: agentTool.label, description: agentTool.description };
+    });
   }
 
   #runnerHost(): RunnerHost {
@@ -85,12 +106,11 @@ export class LineKernel implements LineControl, SideControl {
     return {
       state: this.#state,
       models: this.#options.models,
-      toolset: (scope: LineScope): Toolset => ({
-        tools: (this.#state.lines.get(scope.lineId)?.sealedPrompt ?? null) !== null ? []
-          : this.#tools.filter((tool) => (tool.enabled?.() ?? true)
-            && (tool.lineKinds === undefined || tool.lineKinds.includes(scope.kind))).map((tool) => tool.create(scope)),
-        meta: (name) => meta.get(name),
-      }),
+      toolset: (scope: LineScope): Toolset => {
+        const tools = (this.#state.lines.get(scope.lineId)?.sealedPrompt ?? null) !== null ? []
+          : this.#available(scope.kind).map((tool) => tool.create(scope));
+        return { tools, deferred: splitLoadout(tools, this.#direct).deferred, meta: (name) => meta.get(name) };
+      },
       purpose: (line) => {
         if (line.sealedPrompt !== null) {
           return 'network_reply';
@@ -101,8 +121,7 @@ export class LineKernel implements LineControl, SideControl {
         return line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind);
       },
       prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.(), this.#now()),
-        productMap(this.#tools.filter((tool) => (tool.enabled?.() ?? true)
-          && (tool.lineKinds === undefined || tool.lineKinds.includes(line.kind)))),
+        productMap(this.#available(line.kind), this.#direct),
         this.#options.skillsContext?.(line.id) ?? ''].filter((part) => part.trim() !== '').join('\n\n'),
       publish: (event) => this.#options.publish(event),
       gate: this.#gate,
@@ -197,13 +216,15 @@ export class LineKernel implements LineControl, SideControl {
    * 这条线下一次请求会带什么：系统提示、工具、用哪个模型（回放用，scripts/replay/）。只读，不开跑、不写库。
    * 和 runner 里每次请求前装的是同一份（prompt、toolset、purpose 都从 #host 取）。
    */
-  preview(lineId: string): { prompt: string; tools: AgentTool[]; choice: ModelChoice | undefined } {
+  preview(lineId: string): { prompt: string; tools: AgentTool[]; all: AgentTool[]; choice: ModelChoice | undefined } {
     const line = this.line(lineId);
     const scope: LineScope = { lineId: line.id, kind: line.kind, projectId: line.projectId,
       ...(line.mateId == null ? {} : { actorId: line.mateId }) };
     const purpose = this.#host.purpose?.(line) ?? 'main';
-    return { prompt: this.#host.prompt(line), tools: this.#host.toolset(scope).tools,
-      choice: this.#options.models.current(purpose) };
+    const toolset = this.#host.toolset(scope);
+    const deferred = toolset.deferred ?? new Map();
+    return { prompt: this.#host.prompt(line), tools: toolset.tools.filter((tool) => !deferred.has(tool.name)),
+      all: toolset.tools, choice: this.#options.models.current(purpose) };
   }
 
   view(lineId: string): LineView {

@@ -205,3 +205,21 @@ test('inbox.archive：把巡查、反馈、采访留下的来信归档（不删�
   assert.match(failure(() => runMaintenance(deps(), { operationId: 'op-inbox-2', op: 'inbox.archive',
     because: '归档' })).message, /--sources/);
 });
+
+test('line.start：开一条后台线、贴回主线，发起记成这次维护；没有线的内核、没给标题和事都不做', () => {
+  const opened: unknown[] = [];
+  const lines = { open: (input: unknown) => {
+    opened.push(input);
+    return { id: 'line-new' } as never;
+  } };
+  const main = h.state.lines.main();
+  const reply = runMaintenance({ state: h.state, lines }, { operationId: 'op-line-1', op: 'line.start',
+    because: '19 号的提醒放 Plasticine 定时', line: { title: '起草 19 号的提醒', goal: '用 schedule_propose 起草' } });
+  assert.deepEqual(reply.result, { lineId: 'line-new' });
+  assert.deepEqual(opened, [{ title: '起草 19 号的提醒', goal: '用 schedule_propose 起草', projectId: null,
+    parentLineId: main.id, origin: { kind: 'system', ref: 'maintenance:op-line-1' } }]);
+  assert.equal(failure(() => runMaintenance({ state: h.state }, { operationId: 'op-line-2', op: 'line.start',
+    because: 'x', line: { title: 't', goal: 'g' } })).code, 'unavailable');
+  assert.equal(failure(() => runMaintenance({ state: h.state, lines }, { operationId: 'op-line-3', op: 'line.start',
+    because: 'x' })).code, 'invalid_input');
+});

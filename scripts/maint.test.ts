@@ -79,3 +79,18 @@ test('服务没开时说清是维护入口没开', async () => {
   await assert.rejects(() => sendMaintenance('/tmp/plasticine-no-such.sock',
     { operationId: 'op-x', op: 'status' }), /维护入口没开/);
 });
+
+test('line.start：--plan 是 {title, goal}', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'maint-line-'));
+  try {
+    const plan = join(directory, 'line.json');
+    await writeFile(plan, JSON.stringify({ title: '起草提醒', goal: '用 schedule_propose' }));
+    const parsed = parseMaintArgs(['line.start', '--plan', plan, '--because', '放进定时', '--op-id', 'op-line'], {}, NOW);
+    assert.deepEqual(parsed.request, { operationId: 'op-line', op: 'line.start', because: '放进定时',
+      line: { title: '起草提醒', goal: '用 schedule_propose' } });
+    await writeFile(plan, '[]');
+    assert.throws(() => parseMaintArgs(['line.start', '--plan', plan, '--because', 'x'], {}, NOW), /title/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

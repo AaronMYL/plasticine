@@ -5,7 +5,7 @@
 import type { AskDesk } from '../attention/index.ts';
 import type { PermissionGate, Tool, ToolRegistry } from '../tools/index.ts';
 import {
-  adaptLegacyTool, attachmentReadTool, conversationSearchTool, effectiveLimit, experienceTool, forgetTool,
+  adaptLegacyTool, attachmentReadTool, DIRECT_TOOLS, conversationSearchTool, effectiveLimit, experienceTool, forgetTool,
   legacySayings, LineKernel, machineLoad, readWorkLimit, rememberTool, serverCommandTool, type Compactor,
   type DriveOutcome, type KernelOptions, type KernelTool, type Later, type MachineLoad, type ModelSource,
   type SubmitHoldPort, tabHandoffTool, type AskToolHost,
@@ -127,6 +127,7 @@ export function assembleLines(assembly: LineAssembly, parts: LineParts): LineKer
       }
     },
     tools: [...legacy, ...wrapped, ...parts.tools ?? [], ...assembly.tools?.(parts) ?? []],
+    directTools: DIRECT_TOOLS,
     now: parts.now,
     // 主线和旁聊按他设置里的时区分天（第 17 条）；没设按北京时间。
     zone: () => parts.state.dailySettings.read().settings.timeZone ?? DEFAULT_ZONE,

@@ -42,10 +42,10 @@ agent/
 | `state/` | 唯一写 SQLite 的地方。一类对象一个文件，只做存取；`migrations/` 只加不改 |
 | `app/` | HTTP / WS 接口：一个资源一个文件，路由一张表（`router.ts`）；`assemble*.ts` 把各模块装起来；`main.ts` 是进程入口 |
 | `kernel/` | 模型与凭证：pi-ai 的全部内置提供商，凭证存库；旁路调用的 `TextModels` |
-| `lines/` | 线：主对话一条 main 线，花时间的事开后台线；排队、叫停、硬线先问、重试、额度暂停、重启续跑、上下文压缩、较早的查看结果收起（`stale-results.ts`）、拦不收敛（`loop-guard.ts`：打转提醒和停下、每 60 步对进度、兜底步数） |
+| `lines/` | 线：主对话一条 main 线，花时间的事开后台线；排队、叫停、硬线先问、重试、额度暂停、重启续跑、上下文压缩、较早的查看结果收起（`stale-results.ts`）、拦不收敛（`loop-guard.ts`：打转提醒和停下、每 60 步对进度、兜底步数）、工具面（`tool-loadout.ts`：一开始只声明常用的 20 件，其余 `tool_search` 找出来再声明） |
 | `tools/` | 工具怎么登记、出错怎么说、要不要先问；几个不属于任何业务的通用工具（看时间、小部件、读附件文字） |
 | `cloud-tools/` | 云端执行器：SSH 命令、云端浏览器、邮件收发、附件转文字 |
-| `devices/` | 设备服务的云端一侧：节点配对和凭证、动作下发和上限、设备工具 |
+| `devices/` | 设备服务的云端一侧：节点配对和凭证、动作下发和上限、设备工具（`device_action` 给模型看的松的一面在 `device-action-face.ts`，执行前照原来的联合严格核） |
 | `direct/` | 直连：页面和本体之间的 WebRTC 握手与数据通道 |
 | `network/` | Cyber Hunter 网络上本体的这一头：身份钥匙、联系人、消息、分身答话 |
 | `system/` | 这台服务器自己的事：每日备份、对外动作的回执幂等、客户端发布记录 |
@@ -56,7 +56,7 @@ agent/
 
 | 模块 | 管什么 |
 |---|---|
-| `memory/` | 记忆，按七层分（11-15）：关于你、人物、项目、话题之外，做事经验（`how`，只有它允许 Plasticine 自己写，依据 `tried`）、承诺和授权（`memdoc-grants`）、主动告诉你（`memdoc-proactive`）各有固定位置。`docs/` 现行文档、「记住一句」和记做事经验，`journal/` 今天的记录和忘掉，`curation/` 后台整理（一句话进哪一层在 `layer-rules.ts`），`dream/` 每晚做梦和它的定时，`rules/` 旧规则文档 |
+| `memory/` | 记忆，按七层分（11-15）：关于你、人物、项目、话题之外，做事经验（`how`，只有它允许 Plasticine 自己写，依据 `tried`）、承诺和授权（`memdoc-grants`）、主动告诉你（`memdoc-proactive`）各有固定位置。`docs/` 现行文档、「记住一句」和记做事经验，`journal/` 今天的记录和忘掉，`curation/` 后台整理（一句话进哪一层在 `layer-rules.ts`），`dream/` 每晚做梦和它的定时，`rules/` 旧规则文档，`retro/` 后台线做完后的事后复盘（写做事经验和技能，直接生效）；做事经验按网站带出在 `docs/experience-recall.ts` |
 | `mates/` | 队友、群组、主线的身份；每位的 Soul |
 | `attention/` | 注意力与渠道：触发扫描、四档渠道、要你定的卡、推送 |
 | `tasks/` | 任务：定时线、照卡发送、建议 |

@@ -41,9 +41,15 @@ async function send(t: TestApp, cookie: string, text: string): Promise<void> {
   await t.app.deps.lines?.settled();
 }
 
+/** 模型能用的：一开始声明的，加上系统提示「本轮实际可用工具」里列了名字、要用时 tool_search 找出来的（第四批）。 */
 function offered(context: TranscriptContext): string[] {
   const system = context.messages.find((message) => message.role === 'system');
-  return system?.role === 'system' ? (system.toolsAdded ?? []).map((tool) => tool.name) : [];
+  if (system?.role !== 'system') {
+    return [];
+  }
+  const prompt = typeof system.content === 'string' ? system.content : system.content.map((part) => part.text).join('');
+  const listed = /本轮实际可用工具：([^。\n]*)。/u.exec(prompt)?.[1]?.split('、') ?? [];
+  return [...(system.toolsAdded ?? []).map((tool) => tool.name), ...listed];
 }
 
 async function messages(t: TestApp, cookie: string) {

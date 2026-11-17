@@ -40,6 +40,12 @@ export interface ToolSpec<P extends TSchema> {
   timeoutMs: number;
   maxResultChars?: number;
   parameters: P;
+  /**
+   * 给模型看的那一面（内核优化第四批）：比 parameters 松、短；不给就是 parameters。执行前照样按 parameters 严格核，
+   * 核不过时 argsHint 给一句「这一种要哪些参数」。
+   */
+  declared?: TSchema;
+  argsHint?(args: unknown): string | null;
   outbound?(args: Static<P>): OutboundSpec | null;
   execute(args: Static<P>, context: ToolContext): Promise<string>;
 }
@@ -47,6 +53,8 @@ export interface ToolSpec<P extends TSchema> {
 /** A tool as the registry and dispatcher see it: defaults filled in, arguments checked again on the way in. */
 export interface Tool extends Omit<ToolDescriptor, 'parameters'> {
   parameters: TSchema;
+  declared?: TSchema;
+  argsHint?(args: unknown): string | null;
   outbound?(args: unknown): OutboundSpec | null;
   execute(args: unknown, context: ToolContext): Promise<string>;
 }
