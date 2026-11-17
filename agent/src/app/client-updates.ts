@@ -1,4 +1,4 @@
-import { ClientUpdateDecisionSchema, clientVersionOf } from '../../shared/api/index.ts';
+import { ClientUpdateDecisionSchema } from '../../shared/api/index.ts';
 import { param, requireAuth, type RequestContext, type Reply } from './context.ts';
 import { readJsonBodyWithDigest } from './http.ts';
 import { idempotent } from './idempotency.ts';
@@ -7,7 +7,7 @@ import { checkInput } from './validate.ts';
 export function listClientUpdates(context: RequestContext): Reply {
   requireAuth(context);
   context.deps.clientUpdates.scan();
-  return { status: 200, body: clientVersionOf(context.deps.clientUpdates.view()) };
+  return { status: 200, body: context.deps.clientUpdates.version() };
 }
 export async function decideClientUpdate(context: RequestContext): Promise<Reply> {
   requireAuth(context);

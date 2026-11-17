@@ -14,7 +14,7 @@ export function getSystemOperations(context: RequestContext): Reply {
   const { state, now, clientUpdates, toolGroups, scans } = context.deps;
   const disk = statfsSync(toolGroups.stateDirectory);
   const body: SystemOperations = { ...state.systemOperations.read(),
-    version: clientUpdates.view().current?.buildId ?? null,
+    version: clientUpdates.version().current?.buildId ?? null,
     uptimeSeconds: Math.max(0, (now().getTime() - Date.parse(context.deps.startedAt)) / 1000),
     scans: scans.status(), diskFreeBytes: disk.bavail * disk.bsize, diskTotalBytes: disk.blocks * disk.bsize,
     diskLow: disk.bavail * disk.bsize < DISK_LOW_BYTES,

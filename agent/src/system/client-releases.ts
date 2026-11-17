@@ -2,13 +2,15 @@
 // 2026-11-05 Harness 重做：发布、回退不再经自迭代，改由发布流程（安装包）发；这里的「发布 / 回退」只回一句怎么做，
 // 「先不」照旧记下。
 
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { readClientPreview } from './client-preview.ts';
-import type {
-  ClientManifest,
-  ClientUpdatesResponse,
-  ClientUpdateDecision,
-  ClientUpdate,
+import {
+  clientVersionOf,
+  type ClientManifest,
+  type ClientUpdatesResponse,
+  type ClientUpdateDecision,
+  type ClientUpdate,
+  type ClientVersion,
 } from '../../shared/api/index.ts';
 import { StateError, type StateService } from '../state/index.ts';
 import { errorCategory, safeLog } from '../util/index.ts';
@@ -19,15 +21,35 @@ export interface ClientReleaseOptions {
   receiptPath: string;
   changed?: () => void;
 }
+/** 一个文件现在的样子（改动时间和大小）；不在是 'none'。 */
+function stamp(path: string | null): string {
+  if (path === null || !existsSync(path)) {
+    return 'none';
+  }
+  const info = statSync(path);
+  return `${info.mtimeMs}:${info.size}`;
+}
+
 export class ClientReleases {
   readonly #options: ClientReleaseOptions;
   #current: ClientManifest | null = null;
   #error: string | null = null;
+  /** 上一次看到的部署清单和发布回执（改动时间和大小）：没变就不重读、不重登记。 */
+  #seen: string | null = null;
   constructor(options: ClientReleaseOptions) {
     this.#options = options;
   }
+  /**
+   * 看部署清单和发布回执有没有换。界面每分钟查一次新版本都会走到这里：两份文件都没变就什么都不做（11-17：原来每次都
+   * 重读清单、重新登记、重查整张表）。
+   */
   scan(): void {
     const { manifestPath, receiptPath, state } = this.#options;
+    const seen = `${stamp(manifestPath)}|${stamp(receiptPath)}`;
+    if (seen === this.#seen) {
+      return;
+    }
+    this.#seen = seen;
     this.#current = null;
     this.#error = null;
     if (manifestPath === null || !existsSync(manifestPath)) {
@@ -52,6 +74,11 @@ export class ClientReleases {
       safeLog('warn', 'client_release_invalid', { category: errorCategory(error) });
       this.#error = '客户端发布记录校验失败，请检查部署清单。';
     }
+  }
+  /** 界面查新版本要的那几样（现在这一版的版本号、时间、接口版本、一句说明）：不读库。 */
+  version(): ClientVersion {
+    return clientVersionOf({ current: this.#current, error: this.#error, channelReady: false, updates: [],
+      history: [] });
   }
   view(): ClientUpdatesResponse {
     return {

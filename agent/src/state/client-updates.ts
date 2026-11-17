@@ -16,8 +16,14 @@ export function createClientUpdateStore({ db }: StoreContext) {
     db
       .all('SELECT metadata FROM client_updates ORDER BY rowid DESC')
       .map((row) => readRow(Update, { metadata: 'json' }, row, '客户端候选').metadata);
+  // 11-17：按 id 只读这一行。原来每次都把整张表读出来逐行校验（每一行是一份几百个资源的清单），界面每分钟查一次
+  // 新版本就要读两三遍，发了一百多版以后一次要半秒多，还占住整个服务。
+  const find = (id: string): ClientUpdate | undefined => {
+    const row = db.get('SELECT metadata FROM client_updates WHERE id = $id', { id });
+    return row === undefined ? undefined : readRow(Update, { metadata: 'json' }, row, '客户端候选').metadata;
+  };
   const require = (id: string): ClientUpdate => {
-    const row = list().find((item) => item.manifest.buildId === id);
+    const row = find(id);
     if (row === undefined) {
       throw new StateError('not_found', '没有这份客户端构建。');
     }
@@ -33,7 +39,7 @@ export function createClientUpdateStore({ db }: StoreContext) {
     require,
     update,
     register(manifest: ClientManifest): void {
-      const existing = list().find((item) => item.manifest.buildId === manifest.buildId);
+      const existing = find(manifest.buildId);
       if (existing !== undefined && JSON.stringify(existing.manifest) !== JSON.stringify(manifest)) {
         throw new StateError('invalid_input', '构建标识对应的资源已经变更。');
       }
