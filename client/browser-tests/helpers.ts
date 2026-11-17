@@ -217,9 +217,20 @@ export async function size(page: Cdp, width: number, height: number): Promise<vo
   await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
 }
 
+/** 换页时正在跑的那次求值会被作废（CDP 回「Inspected target navigated or closed」）：等着的话算还没好，接着等。 */
+async function check(page: Cdp, expression: string): Promise<boolean> {
+  try {
+    return await page.evaluate<boolean>(`Boolean(${expression})`);
+  } catch (error) {
+    const switching = /navigated or closed|Execution context was destroyed/;
+    if (error instanceof Error && switching.test(error.message)) return false;
+    throw error;
+  }
+}
+
 export async function until(page: Cdp, expression: string, label: string, ms = WAIT_MS): Promise<void> {
   const deadline = Date.now() + ms;
-  while (!await page.evaluate<boolean>(`Boolean(${expression})`)) {
+  while (!await check(page, expression)) {
     if (Date.now() > deadline) {
       const seen = await page.evaluate<string>(`location.hash + ' ' + (document.body?.innerText ?? '').slice(0, 600)`)
         .catch(() => '读不到页面');
