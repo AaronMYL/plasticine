@@ -1,13 +1,14 @@
 // 第三级：服务器命令合成一件（他 11-05 定：cloud_ssh_run 和 server_command 合并）。不写 host 就在 Plasticine 自己的
 // 服务器上跑（旧的 server_exec：应用账号、已有 sudo、输出存盘）；写了 host 就经 SSH 在名单上的那台主机跑（旧的
 // cloud_ssh_run）。两边的执行逻辑原样复用旧工具；读长输出仍用 server_command_read。服务器是 Plasticine 自己的电脑
-// （第 97 条），不加硬线。
+// （第 97 条），一般不加硬线；11-17 起只有两样先问他：改自己的程序目录、重启或停掉自己的服务（own-program.ts）。
 
 import { Type } from 'typebox';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { SERVER_COMMAND_MAX_MS } from '../../shared/server-command.ts';
 import type { Tool } from '../tools/index.ts';
 import { adaptLegacyTool, type LegacyOptions } from './legacy.ts';
+import { OWN_PROGRAM_CONSEQUENCES, ownProgramTouch, type OwnProgramTouch } from './own-program.ts';
 import { checkedArgs } from './tool-args.ts';
 import type { KernelTool, LineScope } from './types.ts';
 
@@ -39,7 +40,8 @@ function serverAgentTool(parts: ServerToolParts, scope: LineScope, options: Lega
     label: '服务器命令',
     description: '在 Plasticine 自己的服务器上以应用账号跑一段脚本（Windows 上是 PowerShell，别的是 bash；要时用 sudo -n），或者写 host 在 SSH'
       + ' 名单里的那台主机上跑。回状态、退出码和 stdout / stderr 的开头；其余用 server_command_read 读。看 exitCode：跑完不等于成功。不要打印密钥。查服务卡没卡、哪条请求慢、'
-      + '哪句查询慢，先用 server_health。',
+      + '哪句查询慢，先用 server_health。改 /opt/plasticine 里 Plasticine 自己的程序、重启或停掉 Plasticine 自己的服务会先出一张卡问用户：'
+      + '程序有问题就说清哪里不对、建议怎么改，等发新版，不要自己在线上改。',
     parameters: ServerCommandParameters,
     async execute(toolCallId, raw, signal, onUpdate) {
       const args = checkedArgs(ServerCommandParameters, raw, 'server_command');
@@ -55,11 +57,20 @@ function serverAgentTool(parts: ServerToolParts, scope: LineScope, options: Lega
   };
 }
 
+/** 在本机跑的脚本动不动 Plasticine 自己的程序或服务；写了 host 的是别的主机，不看。 */
+function ownTouch(args: Record<string, unknown>): OwnProgramTouch | null {
+  if (typeof args['host'] === 'string' || typeof args['script'] !== 'string') {
+    return null;
+  }
+  return ownProgramTouch(args['script'], typeof args['cwd'] === 'string' ? args['cwd'] : undefined);
+}
+
 export function serverCommandTool(parts: ServerToolParts, options: LegacyOptions): KernelTool {
   return {
     name: 'server_command',
     say: (args) => (typeof args['host'] === 'string' ? `在 ${args['host']} 上跑命令` : '在服务器上跑命令'),
-    hardLine: () => null,
+    hardLine: (args) => (ownTouch(args) === null ? null : 'permission'),
+    consequence: (args) => OWN_PROGRAM_CONSEQUENCES[ownTouch(args) ?? 'program'],
     enabled: () => (options.enabled?.(parts.local.name) ?? true)
       || (parts.remote !== undefined && (options.enabled?.(parts.remote.name) ?? true)),
     create: (scope) => serverAgentTool(parts, scope, options),
