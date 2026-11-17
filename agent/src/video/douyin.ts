@@ -13,6 +13,7 @@ import {
   type DouyinSyncView,
   type VideoWorkView,
 } from '../../shared/api/index.ts';
+import { isComputerPlatform } from '../../shared/state.ts';
 import { waitingTranscriber, type StateService, type VideoWorkRow } from '../state/index.ts';
 import type { VideoWorker } from './worker.ts';
 
@@ -29,9 +30,6 @@ export const DOUYIN_ERROR_TEXT: Readonly<Record<NonNullable<DouyinReport['error'
   load_failed: '电脑上抖音没载出来，稍后再同步。',
   not_found: '这条作品没了（删了或设了私密）。',
 };
-
-/** 装了桌面客户端、能领抖音活的电脑。 */
-const COMPUTER_PLATFORMS: ReadonlySet<string> = new Set(['macos', 'windows', 'linux']);
 
 export type DouyinState = Pick<StateService, 'videoWorks' | 'videoFolders' | 'videoMacJobs' | 'nodes'>;
 
@@ -69,7 +67,7 @@ export class DouyinFavorites {
    */
   macOnline(): boolean {
     const since = this.#now().getTime() - NODE_ONLINE_MS;
-    return this.#state.nodes.list({ limit: 50 }).some((node) => COMPUTER_PLATFORMS.has(node.platform)
+    return this.#state.nodes.list({ limit: 50 }).some((node) => isComputerPlatform(node.platform)
       && node.revokedAt === null && Date.parse(node.lastSeenAt) >= since);
   }
 

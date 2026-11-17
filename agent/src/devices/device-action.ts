@@ -105,8 +105,8 @@ function missingCapability(hold: DeviceHold, action: DeviceActionParams): string
 }
 
 /**
- * 节点离线时照他的原话分路（devices/route.ts）：只是看网页、不用登录的改去云端先做；iPhone 在线且会这一步的换去
- * iPhone；都不是才等 Mac。回 null 就照原来等节点上线。
+ * 节点离线时照他的原话分路（devices/route.ts）：另一台电脑或 iPhone 在线且会这一步的换去那一台；只是看网页、不用登录的
+ * 改去云端先做；都不是才等电脑。回 null 就照原来等节点上线。
  */
 function reroute(devices: DeviceActionPort, screened: Omit<ActionRequest, 'actionId'>, needsLogin: boolean,
   hold: DeviceHold): string | null {
@@ -116,9 +116,11 @@ function reroute(devices: DeviceActionPort, screened: Omit<ActionRequest, 'actio
   const choice = devices.route(screened, needsLogin);
   if (choice.place === 'cloud' && BROWSE_KINDS.includes(screened.action.kind)) {
     return `「${hold.nodeName}」不在线。${choice.reason}：改用 cloud_browser_open / cloud_browser_observe 在云端做这一步，`
-      + '不等 Mac。要用他的登录才等 Mac：动作上写 needsLogin: true 再发。这一步没有发出。';
+      + '不等电脑。要用他的登录才等电脑：动作上写 needsLogin: true 再发。这一步没有发出。';
   }
-  if (choice.place === 'iphone' && choice.nodeId !== null && choice.nodeId !== screened.nodeId) {
+  // 另一台电脑（或 iPhone）在线、会这一步：换到那一台，不干等这台上线。
+  if ((choice.place === 'mac' || choice.place === 'iphone') && choice.nodeId !== null
+    && choice.nodeId !== screened.nodeId) {
     return `「${hold.nodeName}」不在线。${choice.reason}：换 nodeId ${choice.nodeId} 再发这一步。这一步没有发出。`;
   }
   return null;
@@ -291,7 +293,8 @@ export function createDeviceActionTool(devices: DeviceActionPort, waits?: WaitPo
       if (outcome.status === 'queued' && outcome.detached === true) {
         throw new ToolUncertain(outcome.reason ?? '动作已排队，还没有做；回执到了会作为一条消息回到这条线。');
       }
-      if (staleScreenshot(outcome) && (args.action.kind === 'input_click' || args.action.kind === 'input_type')) {
+      // 真键鼠的每一种（点、打字、按键、滚动、双击右键拖动）都照截图上的位置做：截图过期一律先重截。
+      if (staleScreenshot(outcome) && args.action.kind.startsWith('input_')) {
         return recapture(call);
       }
       if (failureCode(outcome) === 'user_present') {

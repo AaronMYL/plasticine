@@ -146,6 +146,12 @@ export type DeviceLimits = Static<typeof DeviceLimitsSchema>;
 export const NODE_PLATFORMS = ['macos', 'ios', 'windows', 'linux', 'browser'] as const;
 export const NodePlatformSchema = Type.Enum(NODE_PLATFORMS);
 
+/** 装了桌面客户端的电脑：他的登录、文件和应用都在这上面。Mac、Windows、Linux 一样算（11-17 收成这一处）。 */
+const COMPUTER_PLATFORMS: readonly string[] = ['macos', 'windows', 'linux'];
+export function isComputerPlatform(platform: string): boolean {
+  return COMPUTER_PLATFORMS.includes(platform);
+}
+
 export const NODE_NAME_MAX_CHARS = 60;
 export const NodeNameSchema = Type.String({ minLength: 1, maxLength: NODE_NAME_MAX_CHARS });
 export const NodeVersionSchema = Type.String({ minLength: 1, maxLength: 40 });

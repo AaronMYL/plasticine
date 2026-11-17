@@ -22,9 +22,14 @@ export interface DeviceHold {
 
 // 租约：一条线最后一次截图 / 点击 / 输入之后两分钟内，这台节点的屏幕归它（一串「截图 → 点击 → 再截图」不被插队）。
 export const INPUT_LEASE_MS = 2 * 60_000;
-export const LEASED_KINDS = ['screen_capture', 'input_click', 'input_type'] as const;
-// 用户在场让路只管点击和输入；截图不抢用户的键鼠。
-export const PRESENCE_KINDS = ['input_click', 'input_type'] as const;
+// 11-17：截一块、截一个窗口、真键盘、真鼠标的滚动和拖动是 11-16 加的动作，当时没登记进来，别的线能插到一串
+// 「截图 → 点」中间。
+export const LEASED_KINDS = ['screen_capture', 'screen_zoom', 'window_capture', 'input_click', 'input_type',
+  'input_key', 'input_scroll', 'input_mouse'] as const;
+// 用户在场让路：动真键盘真鼠标的、改他眼前窗口的（提到前面、最小化、挪、改大小）都等他停下；截图不抢用户的键鼠。
+// 11-17：按键、滚动、双击右键拖动、改窗口原来不在这里，他正在用电脑时也会直接做（工具说明写的是「会等他停下」）。
+export const PRESENCE_KINDS = ['input_click', 'input_type', 'input_key', 'input_scroll', 'input_mouse',
+  'window_act'] as const;
 // 最近 30 秒内动过键鼠算「正在用」。
 export const USER_ACTIVE_IDLE_SECONDS = 30;
 // hello 每 60 秒一次：两次没到（再留 10 秒余量）就当没报，照现状执行。
@@ -72,8 +77,19 @@ export function inputLeaseHolder(state: HoldState, nodeId: string, runId: string
 
 const REMEDIES: Partial<Readonly<Record<DeviceActionKind, string>>> = {
   screen_capture: '屏幕录制',
+  screen_zoom: '屏幕录制',
+  window_capture: '屏幕录制',
   input_click: '辅助功能',
   input_type: '辅助功能',
+  input_key: '辅助功能',
+  input_scroll: '辅助功能',
+  input_mouse: '辅助功能',
+  window_list: '辅助功能',
+  window_act: '辅助功能',
+  app_perceive: '辅助功能',
+  app_act: '辅助功能',
+  app_menu: '辅助功能',
+  calendar_update: '日历（完全访问）',
   // iPhone（第 4 批）：没报这些能力多半是没给对应的隐私权限（设置 → 隐私与安全性）。
   calendar_list: '日历（完全访问）',
   calendar_create: '日历（完全访问）',

@@ -3,7 +3,7 @@
 // 不重复开同一件事（先看这里有没有在做）、没做成的有人跟（看原因换办法或告诉他缺什么）、要用电脑的事先知道电脑在不在。
 // 只读库，不调模型；没有这些表的地方（测试里的内核）就不写这一节。
 
-import type { DeviceNode } from '../../shared/state.ts';
+import { isComputerPlatform, type DeviceNode } from '../../shared/state.ts';
 import type { LineRow, StateService } from '../state/index.ts';
 
 export type StatusState = Partial<Pick<StateService, 'lines' | 'nodes' | 'mates'>>;
@@ -16,7 +16,6 @@ const TITLE_MAX = 40;
 const REASON_MAX = 80;
 /** 没做成的只看最近两天：更早的他多半已经看过或不要了。 */
 const FAILED_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
-const COMPUTERS: ReadonlySet<string> = new Set(['macos', 'windows', 'linux']);
 
 function clip(text: string, max: number): string {
   const chars = Array.from(text.trim().replace(/\s+/g, ' '));
@@ -37,7 +36,7 @@ function group(title: string, lines: readonly LineRow[], render: (line: LineRow)
 }
 
 function computers(nodes: readonly DeviceNode[], now: Date): string {
-  const own = nodes.filter((node) => node.revokedAt === null && COMPUTERS.has(node.platform));
+  const own = nodes.filter((node) => node.revokedAt === null && isComputerPlatform(node.platform));
   if (own.length === 0) {
     return '电脑：还没有连上电脑。要用他电脑上的登录、文件、应用的事现在做不了，直接告诉他要先在电脑上装客户端并连上。';
   }
