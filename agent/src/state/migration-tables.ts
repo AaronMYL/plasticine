@@ -15,29 +15,29 @@ const CONTENT = [
   'memory_conflicts', 'memory_doc_events', 'memory_doc_lines', 'memory_docs', 'memory_dream_changes', 'memory_dreams',
   'memory_entries', 'memory_inferences', 'memory_journal', 'money_accounts', 'money_categories', 'money_drafts',
   'money_entries', 'net_group_members', 'net_groups', 'net_responses', 'network_attachments', 'network_tasks',
-  'note_folders', 'note_versions', 'notes', 'project_events', 'project_items', 'projects', 'pushes', 'rule_events',
-  'rules', 'said_log', 'schedules', 'soul_revisions', 'souls', 'space_revisions', 'space_rewrites',
+  'note_folders', 'note_versions', 'notes', 'project_events', 'project_items', 'projects', 'pushes',
+  'said_log', 'schedules', 'soul_revisions', 'souls', 'space_revisions', 'space_rewrites',
   'space_subscriptions', 'spaces', 'suggestions', 'versions', 'video_works', 'visibility_marks',
 ] as const;
 
 const HISTORY = [
   'feed_fetch_runs', 'feed_refresh_runs', 'feed_source_status', 'heartbeat_beats', 'legacy_ids',
   'legacy_rows', 'line_approvals', 'line_queue', 'line_wakes', 'line_watches', 'memory_curation_jobs',
-  'memory_doc_migration', 'memory_entry_migrations', 'notification_mail_status', 'receipts', 'schedule_sends',
+  'memory_doc_migration', 'memory_entry_migrations', 'receipts', 'schedule_sends',
   'timed_slots', 'translation_cache', 'web_favicons',
 ] as const;
 
 const MACHINE = [
   'calendar_snapshots', 'connections', 'daily_settings', 'device_time_zones', 'devices', 'inbox_sync',
-  'intake_sources', 'kernel_credentials', 'kernel_settings', 'loop_grants', 'mail_fallback_settings',
+  'kernel_credentials', 'kernel_settings', 'loop_grants',
   'network_identity', 'node_actions', 'node_pairing_codes', 'nodes', 'outbound_grants', 'outbound_log',
-  'owner_account', 'pairing_codes', 'push_subscriptions', 'sessions', 'tool_groups', 'translate_settings',
-  'trigger_dispositions', 'triggers', 'video_folders', 'video_mac_jobs', 'web_tab_groups', 'web_tab_layout',
+  'owner_account', 'push_subscriptions', 'sessions', 'tool_groups', 'translate_settings',
+  'video_folders', 'video_mac_jobs', 'web_tab_groups', 'web_tab_layout',
   'web_tabs', 'web_tabs_closed',
 ] as const;
 
 const LOCAL = [
-  'api_requests', 'backups', 'client_publications', 'client_updates', 'maintenance_operations', 'restore_previews',
+  'api_requests', 'backups', 'client_publications', 'maintenance_operations', 'restore_previews',
 ] as const;
 
 /** 全文索引的几张（FTS5 的影子表由 search_fts 自己管，不单独动）。 */

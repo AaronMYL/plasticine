@@ -25,7 +25,6 @@ const NATURAL_KEYS: ReadonlyArray<{ table: string; key: string; extra?: Readonly
   { table: 'feed_sources', key: 'ref' },
   { table: 'feed_items', key: 'dedupe_key' },
   { table: 'inbox_messages', key: 'message_id' },
-  { table: 'rules', key: 'code' },
   { table: 'memory_docs', key: 'project_id', extra: [['memory_journal', 'doc_id'], ['memory_doc_events', 'doc_id']] },
 ];
 

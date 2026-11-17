@@ -51,7 +51,8 @@ test('迁移自己声明会变的表（0141 的旧约定、设备钥匙、查找
   assert.equal(report.passed, true);
   assert.deepEqual(report.applied,
     ['0141-drop-agreements', '0142-drop-agreement-history', '0143-drop-retired-history', '0144-mate-relays',
-      '0145-wakes-watches', '0146-plans-pushes-connections']);
+      '0145-wakes-watches', '0146-plans-pushes-connections',
+      '0147-retired-tables-action-indexes']);
   assert.deepEqual(report.rowChanges, []);
   assert.deepEqual(report.declaredChanges.find((row) => row.table === 'device_keys'),
     { table: 'device_keys', before: 1, after: null });

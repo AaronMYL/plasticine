@@ -44,7 +44,6 @@ export function sanitizeRecoveredDatabase(db: Database, current: Database, direc
     for (const [table, column] of [
       ['sessions', 'token_hash'],
       ['nodes', 'credential_hash'],
-      ['pairing_codes', 'code_hash'],
       ['node_pairing_codes', 'code_hash'],
     ] as const) {
       for (const row of db.all(`SELECT id FROM ${table}`)) {
@@ -54,7 +53,7 @@ export function sanitizeRecoveredDatabase(db: Database, current: Database, direc
         });
       }
     }
-    for (const table of ['pairing_codes', 'node_pairing_codes', 'sessions']) {
+    for (const table of ['node_pairing_codes', 'sessions']) {
       db.run(`UPDATE ${table} SET expires_at = $at`, { at });
     }
     db.run("UPDATE push_subscriptions SET endpoint = 'https://invalid.local/' || id, p256dh = '', auth = ''");
