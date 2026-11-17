@@ -1,6 +1,6 @@
-// 桌面客户端（Electron 壳，《优化清单》第 14 条）的发布：安装包工作流的发布一步在 publish-packages.ts 之后跑这个，
+// 桌面客户端（Electron 壳，《优化清单》第 14 条）的发布：发布到自己的目录时跑这个（官方发布走 github-release.ts），
 // 把这一版的桌面包（Mac 的 zip / dmg、Windows 的安装程序）放进同一个版本目录 <根>/<版本>/，再换根上的 desktop.json。
-// 不碰 manifest.json：已装的 Linux 更新器、旧 Mac App、Windows 托盘按严格 schema 读它（agent/shared/desktop-release.ts）。
+// 不碰 manifest.json：已装的 Linux 更新器按严格 schema 读它（agent/shared/desktop-release.ts）。
 //   node scripts/packages/publish-desktop.ts --artifacts <下载下来的包> --version <版本> --commit <候选 SHA> \
 //     [--root /var/www/cyberhunter-download] [--base-url https://cyberhunter.top/download]
 // 带版本号的文件只能原样重发；版本目录里已有同名但内容不一样的就拒绝。清单只往新的版本换。

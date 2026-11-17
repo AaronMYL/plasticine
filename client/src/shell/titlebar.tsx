@@ -2,7 +2,7 @@
 // 一条横贯全宽、44 高（TITLEBAR_HEIGHT）的标题栏，底色和图标栏一样。左边让出红绿灯（壳报真实宽度，全屏、Windows 为 0），
 // 然后 ← →（⌘[ ⌘]）、收起 / 展开第二栏（⌘\）、一道细线、当前页名；右边是页面放自己操作的槽（TitlebarActions 用 portal
 // 放进来），Windows 的最小化 / 最大化 / 关闭在最右端，槽让开它们（壳量出来的 controlsRight）。
-// 整条是拖窗口的地方（-webkit-app-region: drag，按钮 no-drag）；Swift Mac App 认不了 CSS，按钮的矩形报给它（window-chrome.ts）。
+// 整条是拖窗口的地方（-webkit-app-region: drag，按钮 no-drag）。
 // 只在桌面客户端里出现（有窗口外观桥时）；网页版、手机没有，页面照原样画自己的页头（useInTitlebar 判断）。
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties,
@@ -12,7 +12,6 @@ import type { WindowChrome } from '../api/shared.ts';
 import { toggleShortcut, type ColumnToggle } from './columns/column-toggle.tsx';
 import { IconButton } from './icon-button.tsx';
 import { goBack, goForward, useNavHistory } from './nav-history.ts';
-import { useTitlebarReport } from './window-chrome.ts';
 import './titlebar.css';
 
 /** 红绿灯不在时（全屏、Windows、Linux）标题栏左边留的空。 */
@@ -95,7 +94,6 @@ export function Titlebar({ title, chrome, column, state }: TitlebarProps): React
   const { canBack, canForward } = useNavHistory();
   const shown = state.claimed?.title ?? title;
   const count = state.claimed?.count;
-  useTitlebarReport(bar, `${shown}|${count ?? ''}|${column?.collapsed ?? 'none'}`);
   const style = {
     '--titlebar-lights': `${Math.max(chrome.trafficLightInset, EDGE)}px`,
     '--titlebar-controls': `${chrome.controlsRight ?? 0}px`,

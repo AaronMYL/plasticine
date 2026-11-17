@@ -52,9 +52,9 @@ npm run smoke                           # Linux：xvfb 里打开壳、开网页�
 - `desktop-windows`：Node、`helpers/windows/build.ps1` 编助手、`smoke.ps1` 冒烟、图标 → `electron-builder --win` →
   静默装、等本机本体答上。
 - `desktop-release`（发布时，服务包发好之后）：`scripts/packages/publish-desktop.ts` 把桌面包放进同一个版本目录，换
-  `desktop.json`（不碰 `manifest.json`：已装的 Linux 更新器、旧 Mac App、托盘按严格 schema 读它）。
+  `desktop.json`（不碰 `manifest.json`：已装的 Linux 更新器按严格 schema 读它）。
 
-桌面包失败不挡服务包的发布。旧的 Swift Mac App 不读 `desktop.json`，不会被换成 Electron 版（第 18 条：手动装一次）。
+桌面包失败不挡服务包的发布。
 
 ## 第一次打开（11-08 首次使用流程）
 

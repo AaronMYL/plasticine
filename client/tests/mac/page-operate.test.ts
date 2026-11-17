@@ -2,7 +2,6 @@
 // 判「这一下是不是提交」的规则（付款、发帖发消息、删除、改设置、一般的表单提交；搜索、登录、下一步、翻页不算）；
 // 提交没放行就不点；密码框、卡号不填；光点用 --run；页面变了要重新感知。Mac 和 iPhone 的 Swift 各带一份，一字不差。
 
-import { readFileSync } from 'node:fs';
 import { Value } from 'typebox/value';
 import { PagePerceptionSchema } from '../../../agent/shared/api/index.ts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -307,15 +306,6 @@ describe('区域里滚和上传前打记号（11-16）', () => {
       .toMatchObject({ found: true, file: false });
     expect(document.querySelector('button')?.getAttribute('data-plasticine-upload')).toBe('nonce-2');
     expect(await run({ op: 'mark', version: 'old', n: 1, nonce: 'x' })).toMatchObject({ found: false, error: 'stale' });
-  });
-});
-
-describe('Mac 带的和这里一样', () => {
-  it('Mac 的 Swift 原样带着这一段（iOS 工程 2026-11-05 删了）', () => {
-    for (const path of ['../../../mac/Sources/Plasticine/page-operate-script.swift']) {
-      const swift = readFileSync(new URL(path, import.meta.url), 'utf8');
-      expect(swift).toContain(`static let source = #"""\n${PAGE_OPERATE_SCRIPT}\n"""#`);
-    }
   });
 });
 

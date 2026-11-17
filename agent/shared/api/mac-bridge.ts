@@ -1,4 +1,5 @@
-// Mac 原生壳和网页界面之间的桥（mac/README.md「网页桥接」）。Swift 侧按这里的形状收发，网页侧从这里导入类型。
+// 桌面壳和网页界面之间的桥（mac/README.md「网页桥接」）。名字里的 Mac 是历史：最早是 Swift Mac App（11-17 删了），
+// 现在由 Electron 壳（Mac、Windows 共用）按这里的形状收发，网页侧从这里导入类型。
 //
 // 第 102 条第 3 批：网页标签由原生 WKWebView 画在中间区上面（独立的数据存储，用户自己的登录留在 Mac 上）。
 // 网页 → 原生：window.plasticineMac.webTabs 的四个方法，都经 `plasticineTabs` 消息通道，只收本站主 frame 的消息：
@@ -18,7 +19,7 @@
 //   opened  原生层开了一个新标签（网页里的新窗口、target=_blank，或 Plasticine 的 tab_open），网页把它加进标签清单；
 //   closed  网页自己 window.close() 了。
 //   icon    （11-08 加）这个标签的网站图标变了：{ tabId, pageUrl, icon: 'data:image/…' }（desktop-bridge.ts 的
-//           WebTabIconEventSchema，≤ 64 KB）。Electron 壳听 page-favicon-updated 报；Swift Mac App 不报，网页侧就用本体代取的
+//           WebTabIconEventSchema，≤ 64 KB）。Electron 壳听 page-favicon-updated 报；壳没报时网页侧就用本体代取的
 //           （/v2/favicon）。网页收到后当这个标签的图标，并按 pageUrl 的域名存进本体的图标缓存，别的设备也用上。
 //   operate 第 3 批「问这一页 → 操作整页」：Plasticine 在这个标签里做的一步（page-operate.ts 的 PageOperateEvent），
 //           对话框里列出来；同一个 actionId 先报 run，做完报 done，提交没放行报 wait，没做成报 err。
@@ -124,13 +125,10 @@ export interface PlasticineMacWebTabs {
 // 窗口外观（2026-11-03，Mac 0.3.0：交通灯并进 Plasticine 自己的顶栏，只加不改）。11-08《第 7 批》第 1 条起照 ChatGPT
 // 桌面版：界面在窗口最上面画一条横贯全宽、TITLEBAR_HEIGHT 高的标题栏（红绿灯、← →、收起第二栏、当前页名，右边是页面
 // 的操作），红绿灯竖直居中在里面。
-// 原生 → 网页：window.plasticine{Desktop,Mac}.windowChrome.current() 同步回 WindowChrome（全屏时 trafficLightInset 为 0）；
-//   换外观、进出全屏时调 window.__plasticineWindowChrome(WindowChrome)（Swift 内部另有 __plasticineNativeWindowChrome，
-//   网页不用管）。Electron 壳按系统版本报真实的红绿灯宽度（desktop/src/app/traffic-lights.ts），Swift App 报 78。
-// 网页 → 原生（只有 Swift Mac App）：windowChrome.titlebar(TitlebarLayout) 经消息通道 `plasticineChrome` 发
-//   { type: 'titlebar', layout: TitlebarLayout }，不要回执。WKWebView 里 -webkit-app-region 不起作用，标题栏里哪些矩形是
-//   按钮由网页报，其余由原生当拖窗口区（双击照系统设置缩放）；网页第一次调 titlebar 时窗口才换成无系统标题栏的外观。
-//   Electron 壳没有 titlebar()：标题栏自己标 -webkit-app-region，Chromium 直接认。
+// 壳 → 网页：window.plasticineDesktop.windowChrome.current() 同步回 WindowChrome（全屏时 trafficLightInset 为 0）；
+//   换外观、进出全屏时调 window.__plasticineWindowChrome(WindowChrome)。壳按系统版本报真实的红绿灯宽度
+//   （desktop/src/app/traffic-lights.ts）。
+// 拖窗口：标题栏自己标 -webkit-app-region，Chromium 直接认（旧 Swift Mac App 要网页报按钮矩形的 titlebar() 11-17 随它删了）。
 /** 标题栏的高度（CSS 像素）：红绿灯的中线对齐它的中线。 */
 export const TITLEBAR_HEIGHT = 44;
 
@@ -146,24 +144,9 @@ export const WindowChromeSchema = Type.Object({
 }, STRICT);
 export type WindowChrome = Static<typeof WindowChromeSchema>;
 
-export const TitlebarLayoutSchema = Type.Object({
-  height: Type.Number({ minimum: 0, maximum: 400 }),
-  /** 不可拖动的矩形（按钮、标签、地址栏），相对网页视口；其余顶栏区域可拖动窗口。 */
-  noDrag: Type.Array(WebTabFrameSchema, { maxItems: HIT_REGIONS_MAX }),
-}, STRICT);
-export type TitlebarLayout = Static<typeof TitlebarLayoutSchema>;
-
-/** `plasticineChrome` 消息通道上的消息体（window.plasticineMac.windowChrome.titlebar 发的就是它）。 */
-export const ChromeMessageSchema = Type.Object({
-  type: Type.Literal('titlebar'),
-  layout: TitlebarLayoutSchema,
-}, STRICT);
-
 export interface PlasticineMacWindowChrome {
   /** 回的是未校验的数据，网页侧按 WindowChromeSchema 校验后再用。 */
   current(): unknown;
-  /** 只有 Swift Mac App 有：标题栏里不可拖动的矩形（见上面的说明）。Electron 壳用 CSS 的 -webkit-app-region，不要它。 */
-  titlebar?(layout: TitlebarLayout): void;
 }
 
 export interface PlasticineMacBridge {

@@ -59,7 +59,7 @@ export function ChangePlace(): ReactNode {
 
 /** 登记这台设备用的名字（设备列表里看得出是哪台）；不让人填，按浏览器认。 */
 export function suggestedDeviceName(agent: string = navigator.userAgent): string {
-  if (/PlasticineMac\//.test(agent) || /Electron\//.test(agent)) {
+  if (/PlasticineDesktop\//.test(agent) || /Electron\//.test(agent)) {
     return /Windows/i.test(agent) ? 'Windows 电脑' : 'Mac';
   }
   if (/iPhone/i.test(agent)) return 'iPhone';

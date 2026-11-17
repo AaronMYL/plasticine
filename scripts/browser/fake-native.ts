@@ -8,7 +8,7 @@ import { deflateSync, crc32 } from 'node:zlib';
 import { Value } from 'typebox/value';
 import type { TSchema } from 'typebox';
 import {
-  ChromeMessageSchema, WEB_TAB_COMMANDS, WebTabEventSchema, WebTabsSyncSchema,
+  WEB_TAB_COMMANDS, WebTabEventSchema, WebTabsSyncSchema,
   type PlasticineMacBridge, type WebPageSnapshot, type WebTabEvent, type WebTabsSync,
   type WindowChrome,
 } from '../../agent/shared/api/mac-bridge.ts';
@@ -41,7 +41,7 @@ export interface FakeNativeConfig {
 
 /** 网页调桥的一次记录。channel 是原生那边的消息通道名（mac-bridge.ts、mac-translate.ts）。 */
 export interface NativeCall {
-  channel: 'plasticineTabs' | 'plasticineTranslate' | 'plasticineChrome' | 'plasticineMac' | 'plasticineLogins'
+  channel: 'plasticineTabs' | 'plasticineTranslate' | 'plasticineDesktop' | 'plasticineLogins'
     | 'plasticine';
   method: string;
   args: unknown[];
@@ -266,7 +266,7 @@ function installFakeNative(host: FakeHost, config: FakeNativeConfig, paint: Pain
     host.plasticineDesktop = {
       version: config.version,
       notify(title, body, hash) {
-        note('plasticineMac', 'notify', [title, body, hash]);
+        note('plasticineDesktop', 'notify', [title, body, hash]);
       },
       webTabs,
       translate,
@@ -274,9 +274,6 @@ function installFakeNative(host: FakeHost, config: FakeNativeConfig, paint: Pain
       windowChrome: {
         current() {
           return { ...config.chrome };
-        },
-        titlebar(layout) {
-          note('plasticineChrome', 'titlebar', [layout]);
         },
       },
     };
@@ -318,7 +315,7 @@ const FAKE_LOGINS: FakeNativeConfig['logins'] = {
   result: { sites: 120, cookies: 1840, passwords: 0, skipped: 4, problem: null },
 };
 
-/** Swift Mac App 报的红绿灯让出宽度（78；Electron 壳按系统版本报，见 desktop/src/app/traffic-lights.ts）。 */
+/** 模拟的红绿灯让出宽度（壳按系统版本报真实的，见 desktop/src/app/traffic-lights.ts）。 */
 const MAC_TRAFFIC_LIGHT_INSET = 78;
 // 画出来的「网页」：白底、一条标题、八行正文的灰条，宽按悬停预览缩略图（WEB_THUMBNAIL_WIDTH）。
 const PICTURE_HEIGHT = 320;
@@ -427,8 +424,7 @@ export function nativeCallProblem(call: NativeCall): string | null {
     'plasticineTranslate.configure': () => text(first)
       ?? (second === null ? null : schemaProblem(TranslatePageConfigSchema, second)),
     'plasticineTranslate.deliver': () => text(first) ?? schemaProblem(TranslateDeliverySchema, second),
-    'plasticineChrome.titlebar': () => schemaProblem(ChromeMessageSchema, { type: 'titlebar', layout: first }),
-    'plasticineMac.notify': () => text(first) ?? (typeof second === 'string' ? null : '正文不是字符串'),
+    'plasticineDesktop.notify': () => text(first) ?? (typeof second === 'string' ? null : '正文不是字符串'),
     'plasticineLogins.sites': () => null,
     'plasticineLogins.sources': () => null,
     'plasticineLogins.import': () => schemaProblem(LoginImportRequestSchema, first),

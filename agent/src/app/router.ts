@@ -69,8 +69,6 @@ import {
   INBOX_PATH,
   INBOX_READ_ALL_PATH,
   INBOX_REPLIES_PATH,
-  MAC_DOWNLOADS_PATH,
-  MAC_LATEST_PATH,
   MEMORY_DOCS_PATH,
   MEMORY_DREAMS_PATH,
   MEMORY_ENTRIES_PATH,
@@ -201,7 +199,6 @@ import { LINE_ROUTES } from './line-routes.ts';
 import { TASK_ROUTES } from './task-routes.ts';
 import { HEARTBEAT_ROUTES } from './heartbeat.ts';
 import { CALENDAR_ROUTES } from './calendar.ts';
-import { getMacDownload, getMacLatest } from './mac-updates.ts';
 import { confirmMemoryInference, editMemoryLine, getMemoryDoc, getMemoryDocDirectory, listMemoryInferences,
   rejectMemoryInference, retireMemoryLine } from './memory-docs.ts';
 import { answerUncertain, getMemoryTopic, listMemoryTopics } from './memory-topics.ts';
@@ -494,9 +491,6 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: NODE_HELLO_PATH, auth: false, node: true, handler: helloNodeHandler },
   { method: 'POST', path: NODE_LOGS_PATH, auth: false, node: true, handler: nodeLogsHandler },
   { method: 'POST', path: NODE_BROWSER_SESSION_PATH, auth: false, node: true, handler: nodeBrowserSession },
-  // Mac 自更新（app/mac-updates.ts）：节点 Bearer，不是会话。
-  { method: 'GET', path: MAC_LATEST_PATH, auth: false, handler: getMacLatest },
-  { method: 'GET', path: `${MAC_DOWNLOADS_PATH}/:file`, auth: false, handler: getMacDownload },
   // 第 3 批信息流：Mac 在线时读 X「关注」时间线（app/feed-x.ts）：节点 Bearer。
   { method: 'GET', path: FEED_X_PATH, auth: false, node: true, handler: getXTimelineDue },
   { method: 'POST', path: FEED_X_PATH, auth: false, node: true, handler: reportXTimeline },

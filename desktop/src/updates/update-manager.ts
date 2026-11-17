@@ -2,7 +2,6 @@
 // 设置 · 系统「客户端」那一行），他点了才下载、核对 SHA-256 和大小（边下边报进度，圆形进度用），下好由界面存好笔记
 // 再叫 install 换上（11-12 Aaron 定：点了才下、下完直接重开）；换版本和坏版本退回由 update-scripts.ts 的脚本在
 // 客户端退出后做。一步回退：Mac 换回「上一版」的 Contents，Windows 静默装回上一版的安装程序。每 6 小时自动查一次。
-// 旧的 Swift Mac App 不读 desktop.json，不会被换成 Electron 版（第 18 条：他手动装一次）。
 
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';

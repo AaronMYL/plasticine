@@ -75,7 +75,6 @@ export * from './skills.ts';
 // app/memory-topics.ts）；进门的 iPhone 接口（第 4 批）先留好。
 export * from './project-tag.ts';
 export * from './home.ts';
-export * from './mac-updates.ts';
 export * from './memory-topics.ts';
 export * from './memory-library.ts';
 export * from './rules-doc.ts';

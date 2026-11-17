@@ -24,7 +24,6 @@ import type { SourceLimiter } from './source-limiter.ts';
 import { ApiError, unauthorized } from './api-error.ts';
 import type { EventHub } from './event-hub.ts';
 import type { ToolGroupServices } from './tool-group-services.ts';
-import type { MacDownloads } from './mac-updates.ts';
 import type { KernelModelParts } from './model-providers.ts';
 import type { BrowserSessions } from './browser-sessions.ts';
 import type { Tasks } from '../tasks/index.ts';
@@ -87,8 +86,6 @@ export interface AppDeps {
   skills: SkillStore;
   /** 技能页的「添加」：商店清单、从网址、从文件（11-13）。 */
   skillShop: SkillShop;
-  /** 第 102 条：Mac 自更新的包（状态目录 downloads/mac/）；没装配就是 null，接口回 404。 */
-  macDownloads: MacDownloads | null;
   /** 第 113 条：这台实例在 Cyber Hunter 网络上的那一头（network/）。 */
   network: NetworkService;
   /** <handle>.cyberhunter.top 的隧道；和中继同机的实例、测试没装是 null。 */

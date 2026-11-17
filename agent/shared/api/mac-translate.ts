@@ -1,7 +1,6 @@
 // 沉浸式翻译的桥（Mac 0.4.0，第 2 批）：网页标签里注入的脚本（client/src/mac/translate-page.ts，跑在独立脚本世界里）
 // 切段、排队、插译文；段落经原生层交给网页界面，网页界面调 POST /v2/translate，译文再经原生层送回脚本。设备不调模型，
-// 只执行写明参数的动作（第 102 条「手只执行写明参数的动作」）。Swift 侧按这里的形状收发
-// （mac/Sources/Plasticine/web-translate-protocol.swift）。
+// 只执行写明参数的动作（第 102 条「手只执行写明参数的动作」）。桌面壳按这里的形状收发。
 //
 // 网页 → 原生：window.plasticineMac.translate（0.4.0 起才有，消息通道 `plasticineTranslate`，只收本站主 frame）
 //   configure(tabId, TranslatePageConfig | null)   开 / 关 / 换显示方式 / 重试。run 换了就是重新开（关掉还原后重切，

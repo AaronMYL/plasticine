@@ -74,10 +74,8 @@ export function LoginFlow({ provider, onDone, onCancel }: { provider: ModelProvi
         <h2 className="connect-step-title">在浏览器里登录 {name}…</h2>
       </div>
       <div className="connect-links">
-        {flow.route === 'copy' ? null : (
-          <button type="button" className="text-button" disabled={flow.login?.url == null}
-            onClick={flow.reopen}>重新打开登录页</button>
-        )}
+        <button type="button" className="text-button" disabled={flow.login?.url == null}
+          onClick={flow.reopen}>重新打开登录页</button>
         <CopyLink url={flow.login?.url ?? null} />
         <button type="button" className="text-button text-button-quiet" onClick={flow.cancel}>取消</button>
       </div>

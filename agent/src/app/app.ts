@@ -45,7 +45,6 @@ import { attachFeedStreams } from './feed.ts';
 import type { ToolGroupServices } from './tool-group-services.ts';
 import { attachToolGroupStreams } from './tool-group-streams.ts';
 import { withClientFiles } from './static-client.ts';
-import type { MacDownloads } from './mac-updates.ts';
 import type { KernelModelParts } from './model-providers.ts';
 import { createRequestHandler } from './server.ts';
 import { SourceLimiter } from './source-limiter.ts';
@@ -84,8 +83,6 @@ export interface AppOptions {
   skillShop: SkillShop;
   /** 记忆的后台整理（用户 2026-11-02 定）：主线每一轮结束后入队一次。 */
   memoryCurator: MemoryCurator;
-  /** Mac 自更新的包（app/mac-updates.ts）。 */
-  macDownloads?: MacDownloads;
   /** 第 113 条：这台实例在网络上的那一头（network/）。 */
   network: NetworkService;
   /** 2026-11-05：<handle>.cyberhunter.top 的隧道（network/tunnel.ts）；和中继同机的实例不装。 */
@@ -223,7 +220,6 @@ export function createApp(options: AppOptions): App {
     toolGroups: options.toolGroups,
     skills: options.skills,
     skillShop: options.skillShop,
-    macDownloads: options.macDownloads ?? null,
     network: options.network,
     tunnel: options.tunnel ?? null,
     lines: options.lines,

@@ -1,5 +1,5 @@
 // 沉浸式翻译的切段规则（Mac 0.4.0，第 2 批）：哪些块能整段译、取出原文、判断是不是已经是目标语言。纯函数，只看 DOM，
-// 不改页面。translate-page.ts 用它；scripts/generate-translate-script.ts 把这几份去掉类型后拼成一段注入网页标签。
+// 不改页面。translate-page.ts 用它，和另外几份一起打进注入网页标签的脚本。
 // 自足：不引别的值（只能 import type）。
 
 /** 这几个数和 agent/shared/api 里的上限一致（这里不能引值，测试核对两边一样）。 */

@@ -43,7 +43,8 @@ test('已配对节点打开自身网页用独立系统会话，不要求配对�
 test('没有节点凭证不能换内部会话，localhost 和 Plasticine UA 不产生登录权限', async () => {
   const { t, user } = await fixture();
   assert.equal((await call(t, 'POST', '/v2/nodes/browser-session', { cookie: user, body: {} })).status, 401);
-  assert.equal((await call(t, 'GET', '/v2/session', { headers: { 'user-agent': 'PlasticineMac/0.7.4' } })).status, 401);
+  const agent = { 'user-agent': 'PlasticineDesktop/0.7.4' };
+  assert.equal((await call(t, 'GET', '/v2/session', { headers: agent })).status, 401);
 });
 
 test('系统会话发到主线的文字记录真实 system 来源，撤销节点同时使会话失效', async () => {

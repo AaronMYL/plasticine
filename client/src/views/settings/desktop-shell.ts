@@ -1,6 +1,6 @@
 // 设置 · 系统里桌面客户端那几行用的壳接口（agent/shared/api/desktop-bridge.ts 的 PlasticineDesktopBridge）：本体跑在哪、
-// 客户端更新、系统通知、让 Plasticine 用这台电脑。只有 Electron 壳有（window.plasticineDesktop 带 server）；网页、手机、
-// 旧 Mac App 没有，这几行就不出。壳回的数据先按共享 schema 校验；壳报的状态变化经 window.__plasticineDesktopEvent
+// 客户端更新、系统通知、让 Plasticine 用这台电脑。只有 Electron 壳有（window.plasticineDesktop 带 server）；网页、手机
+// 没有，这几行就不出。壳回的数据先按共享 schema 校验；壳报的状态变化经 window.__plasticineDesktopEvent
 // 进来，这里转成一个 window 事件，几处一起听。
 
 import { useEffect, useState } from 'react';

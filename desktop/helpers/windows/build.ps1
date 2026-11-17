@@ -1,5 +1,5 @@
 # 编 Windows 系统助手（desktop/helpers/windows/*.cs → PlasticineHelper.exe），用每台 Windows 自带的 .NET Framework 4.x
-# 和 csc（和托盘 scripts/packages/windows/build.ps1 同一个做法，不加依赖）。
+# 和 csc（不加依赖）。
 #   pwsh desktop/helpers/windows/build.ps1 -Out desktop/resources-dev/helper
 param([Parameter(Mandatory = $true)][string]$Out)
 $ErrorActionPreference = "Stop"

@@ -25,7 +25,7 @@ const FILE_MODE = 0o644;
 const PUBLIC_VERIFY_TIMEOUT_MS = 20_000;
 
 export interface PublishOptions {
-  /** 工作流下载下来的这一版：四个包和 server-manifest.json。 */
+  /** 工作流下载下来的这一版：服务包、安装脚本和 server-manifest.json。 */
   artifacts: string;
   version: string;
   /** 发布工作流请求的候选 SHA；不能仅凭文件名认领别的提交的产物。 */
@@ -35,13 +35,11 @@ export interface PublishOptions {
   now?: Date;
 }
 
-/** 这一版的四个包（安装包工作流的文件名）；少一个就失败，说清楚少的是哪个。 */
-export function releaseFiles(directory: string, version: string): Required<ReleaseFiles> {
+/** 这一版的服务包和安装脚本（构建工作流的文件名）；少一个就失败，说清楚少的是哪个。桌面包另走 desktop.json。 */
+export function releaseFiles(directory: string, version: string): ReleaseFiles {
   const files = {
     server: join(directory, `plasticine-server-${version}.tar.gz`),
     installer: join(directory, INSTALLER),
-    mac: join(directory, `Plasticine-mac-${version}.zip`),
-    windows: join(directory, `Plasticine-Setup-${version}.exe`),
   };
   for (const file of Object.values(files)) {
     if (!existsSync(file)) {
@@ -64,12 +62,10 @@ function replaceFile(source: string, target: string): void {
 }
 
 /** 版本目录：没有就拷好再改名；已有就要逐个一样（重跑同一版），不一样就拒绝。 */
-function placeVersion(files: Required<ReleaseFiles>, directory: string): Required<ReleaseFiles> {
+function placeVersion(files: ReleaseFiles, directory: string): ReleaseFiles {
   const placed = {
     server: join(directory, basename(files.server)),
     installer: join(directory, basename(files.installer)),
-    mac: join(directory, basename(files.mac)),
-    windows: join(directory, basename(files.windows)),
   };
   if (existsSync(directory)) {
     const differs = (Object.keys(files) as (keyof ReleaseFiles)[])

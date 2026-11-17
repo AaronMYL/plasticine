@@ -20,10 +20,9 @@
 // 不填（error 'card'）。判「是不是提交」的规则见 submitKind，测试在 client/tests/mac/page-operate.test.ts。
 //
 // 点击放到下一个任务里做：点了可能整页跳走，这个脚本世界就没了，回不了执行结果；原生层等页面稳定后再 perceive 一次
-// 读回点完的样子（mac/Sources/Plasticine/tab-actions.swift）。
+// 读回点完的样子。
 //
-// 这一段 JS 只写一份（下面的字符串），Mac 的 mac/Sources/Plasticine/page-operate-script.swift 和 iPhone 的
-// ios/Core/Sources/PlasticineCore/page-operate-script.swift 原样带一份；测试核对三份一样，并在 jsdom 里跑它。
+// 这一段 JS 只写一份（下面的字符串），桌面壳打包时取它（desktop/build/bundle.ts）；测试在 jsdom 里跑它。
 // 字符串里不用反引号和 ${。
 
 /** 页面上的光点：方向 I 的 --run（浅色 #5a6b85）；网页标签里读不到 Plasticine 的令牌，写死同一个值（测试核对）。 */

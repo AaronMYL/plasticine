@@ -25,6 +25,7 @@ export const ReleaseManifestSchema = Type.Object({
   assets: Type.Object({
     server: ReleaseAssetSchema,
     linuxInstaller: ReleaseAssetSchema,
+    /** 旧 Swift Mac App、旧 Windows 安装包（11-17 删了，不再写）：只为读得懂发布点上的旧清单。 */
     mac: Type.Optional(ReleaseAssetSchema),
     windows: Type.Optional(ReleaseAssetSchema),
   }, { additionalProperties: false }),

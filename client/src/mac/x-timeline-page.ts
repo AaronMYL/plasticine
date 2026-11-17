@@ -3,8 +3,7 @@
 // 先切到「关注」那一栏（第13批起也切「为你推荐」、也读书签页），再一边往下翻一边收帖子——作者、头像、正文、
 // 图（11-14 起最多四张）、时间、链接——交回去，再交给服务端（agent/shared/api/feed-x.ts 的 XPost）。
 // 只读不点别的；广告（没有时间链接的）跳过。
-// scripts/generate-x-timeline-script.ts 把它去掉类型写进 mac/Sources/Plasticine/x-timeline-script.swift，所以这里不
-// import 运行时的东西。
+// 桌面壳打包时把它单独打成一段注入脚本（desktop/build/bundle.ts），所以这里不 import 运行时的东西。
 //
 // X 改版时最先坏的是这些选择器：读不到帖子时原生层报 layout_changed，设置里那一行写「X 改版了」。
 

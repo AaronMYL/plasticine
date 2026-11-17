@@ -1,7 +1,6 @@
 // 圈一块注入网页标签的脚本（第 2 批「浏览器」）：在 jsdom 里跑它——点一个元素回它的字，拖一个框回框住的字（按块换行，
 // 图片带 alt），不读输入框里填的内容；Esc、原生取消回 null，盖的那一层收走。Mac 和 iPhone 的 Swift 各带一份，一字不差。
 
-import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WEB_CIRCLE_TEXT_MAX_CHARS } from '../../src/api/shared.ts';
 import { CIRCLE_PAGE_SCRIPT, CIRCLE_TEXT_MAX_CHARS } from '../../src/mac/circle-page.ts';
@@ -93,12 +92,8 @@ describe('圈一块的注入脚本', () => {
     expect(document.querySelector('plasticine-circle')).toBeNull();
   });
 
-  it('上限和接口一致；Mac 的 Swift 带一份一字不差的脚本（iOS 工程 2026-11-05 删了）', () => {
+  it('上限和接口一致', () => {
     expect(CIRCLE_TEXT_MAX_CHARS).toBe(WEB_CIRCLE_TEXT_MAX_CHARS);
     expect(CIRCLE_PAGE_SCRIPT).toContain(`const MAX_CHARS = ${CIRCLE_TEXT_MAX_CHARS};`);
-    for (const path of ['../../../mac/Sources/Plasticine/circle-page-script.swift']) {
-      const swift = readFileSync(new URL(path, import.meta.url), 'utf8');
-      expect(swift).toContain(`static let source = #"""\n${CIRCLE_PAGE_SCRIPT}\n"""#`);
-    }
   });
 });

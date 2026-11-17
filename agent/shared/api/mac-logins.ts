@@ -6,7 +6,7 @@
 //
 // 全在本机做，只在他点「导入」时做：读 Chrome 的 Cookie 要钥匙串里的「Chrome Safe Storage」（系统弹框问他允不允许），
 // 读 Safari 的 Cookie 要「完全磁盘访问」；不经服务器、不进日志。网页界面只拿到站点名、个数和结果（下面的形状），
-// 拿不到 Cookie 的值。原生做法在 mac/Sources/Plasticine/login-*.swift。
+// 拿不到 Cookie 的值。壳那边的做法在 desktop/src/ 里。
 //
 // 网页 → 原生：window.plasticineMac.logins 的几个方法，经消息通道 `plasticineLogins`，只收本站主 frame 的消息，都要回执。
 

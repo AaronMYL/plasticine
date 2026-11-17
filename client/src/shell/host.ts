@@ -1,8 +1,7 @@
 // 界面调用壳的唯一入口（第 14 条：界面调用壳的接口统一成一个，两端实现同一份）。背后是桌面壳注入的
 // window.plasticineDesktop（11-08 起 Electron 壳，Mac、Windows 共用；agent/shared/api/desktop-bridge.ts）。
-// 还装着的 Swift Mac App 挂的是旧名字 window.plasticineMac，只在 bridge() 里认，等它被 Electron 版换掉就删这一处。
-// iPhone 原生 App 11-05 删了（手机上用网页），它的 window.plasticineIOS 11-17 从这里拿掉。界面里别的地方不直接碰 window.plasticine*。没有壳（网页版、手机浏览器）时一律回
-// null，界面照网页的做法走。
+// 旧 Swift Mac App 和它的旧名字 window.plasticineMac 11-17 删了；iPhone 原生 App 11-05 删了（手机上用网页）。
+// 界面里别的地方不直接碰 window.plasticine*。没有壳（网页版、手机浏览器）时一律回 null，界面照网页的做法走。
 
 import { Value } from 'typebox/value';
 import {
@@ -17,11 +16,11 @@ import '../mac/bridge.ts';
 /** 跑在哪：桌面客户端、普通浏览器（手机上也是浏览器）。 */
 export type HostKind = 'desktop' | 'web';
 
-const DESKTOP_AGENT = /(?:^|\s)PlasticineMac\/[^\s]+(?:\s|$)/;
+const DESKTOP_AGENT = /(?:^|\s)PlasticineDesktop\/[^\s]+(?:\s|$)/;
 
-/** 桌面壳的桥：Electron 壳的新名字，或旧 Swift Mac App 的旧名字。 */
+/** 桌面壳（Electron）注入的桥。 */
 function bridge(): HostBridge | undefined {
-  return window.plasticineDesktop ?? window.plasticineMac;
+  return window.plasticineDesktop;
 }
 
 export function hostKind(): HostKind {

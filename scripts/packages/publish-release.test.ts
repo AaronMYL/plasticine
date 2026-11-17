@@ -17,14 +17,12 @@ function scratch(t: { after(fn: () => void): void }): string {
   return directory;
 }
 
-/** 发布工作流下载下来的一版：四个包 + 服务包里的 manifest.json。 */
+/** 构建下载下来的一版：服务包、安装脚本 + 服务包里的 manifest.json。 */
 function artifacts(root: string, version: string, extra = ''): string {
   const directory = join(root, `artifacts-${version}`);
   mkdirSync(directory, { recursive: true });
   writeFileSync(join(directory, `plasticine-server-${version}.tar.gz`), `server ${version}${extra}`);
   writeFileSync(join(directory, 'install.sh'), `#!/bin/sh\n# ${version}\n`);
-  writeFileSync(join(directory, `Plasticine-mac-${version}.zip`), `mac ${version}`);
-  writeFileSync(join(directory, `Plasticine-Setup-${version}.exe`), `exe ${version}`);
   writeFileSync(join(directory, 'server-manifest.json'), JSON.stringify({ schema: 1, name: 'plasticine-server',
     version, commit: 'c'.repeat(40), builtAt: '2026-11-05T09:30:12.000Z', node: '>=24.11',
     releaseUrl: DEFAULT_RELEASE_URL, excluded: [] }));
@@ -35,14 +33,14 @@ test('发布点默认是 https://cyberhunter.top/download（2026-11-05 他定）
   assert.equal(DEFAULT_RELEASE_URL, 'https://cyberhunter.top/download');
 });
 
-test('一版的文件：四个包按版本号找，少一个就说清楚缺哪个', (t) => {
+test('一版的文件：服务包和安装脚本按版本号找，少一个就说清楚缺哪个', (t) => {
   const root = scratch(t);
   const directory = artifacts(root, V1);
   const files = releaseFiles(directory, V1);
   assert.equal(files.server, join(directory, `plasticine-server-${V1}.tar.gz`));
-  assert.equal(files.windows, join(directory, `Plasticine-Setup-${V1}.exe`));
-  rmSync(files.mac ?? '');
-  assert.throws(() => releaseFiles(directory, V1), /Plasticine-mac-2026\.1105\.093012\.zip/);
+  assert.equal(files.installer, join(directory, 'install.sh'));
+  rmSync(files.server);
+  assert.throws(() => releaseFiles(directory, V1), /plasticine-server-2026\.1105\.093012\.tar\.gz/);
 });
 
 test('发布：包拷进 <版本>/，根上换 manifest.json 和 install.sh；清单里的地址指向这一版的目录', (t) => {
@@ -57,7 +55,7 @@ test('发布：包拷进 <版本>/，根上换 manifest.json 和 install.sh；�
     `https://cyberhunter.top/download/${V1}/plasticine-server-${V1}.tar.gz`);
   assert.equal(manifest.assets.server.sha256,
     sha256Hex(readFileSync(join(target, V1, `plasticine-server-${V1}.tar.gz`))));
-  assert.ok(manifest.assets.mac !== undefined && manifest.assets.windows !== undefined);
+  assert.deepEqual(Object.keys(manifest.assets), ['server', 'linuxInstaller']);
   assert.equal(readFileSync(join(target, 'install.sh'), 'utf8'), `#!/bin/sh\n# ${V1}\n`);
   assert.ok(existsSync(join(target, V1, 'install.sh')));
   assert.equal(statSync(join(target, 'manifest.json')).mode & 0o777, 0o644);

@@ -1,6 +1,6 @@
 // 信息流里 X 上他关注的人（第 3 批，用户 11-04 定）：用他在 Plasticine 浏览器里的 X 登录，Mac 在线时定时读「关注」
 // 时间线。第13批（11-14 Aaron）：桌面客户端读「正在关注」「为你推荐」「书签」三处，一条帖子带上在哪几处看到的（places）；
-// 没写的（Mac App 还只读关注）算「正在关注」。Mac App 按这个口径实现（mac/Sources/Plasticine/x-timeline-reader.swift）：
+// 没写的算「正在关注」。桌面客户端按这个口径实现（desktop/src/feeds/feed-runner.ts）：
 //   GET  /v2/nodes/feed/x（节点 Bearer）→ { due, everyMinutes }：到没到读的时候（来源关着就永远不到）；
 //   POST /v2/nodes/feed/x（节点 Bearer）{ requestId, posts, error } → { added }：读到的帖子交给服务端入库，
 //        没读到就只给 error（没登录 / X 改版取不到 / 页面没打开），设置里那一行写原因，不弹卡。

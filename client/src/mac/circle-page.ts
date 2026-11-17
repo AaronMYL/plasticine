@@ -4,9 +4,8 @@
 // { text, url, title }（JSON 字符串），按 Esc 或原生调 window.__plasticineCircleCancel() 回 null。
 // 只读页面上看得见的字（文本节点、图片的 alt），从不读输入框里填的内容。描边用 Plasticine 的前景色 1.5px，和设计稿一样。
 //
-// 这一段 JS 只写一份（下面的字符串），Mac 的 mac/Sources/Plasticine/circle-page-script.swift 和 iPhone 的
-// ios/Core/Sources/PlasticineCore/circle-page-script.swift 原样带一份；tests/mac/circle-page.test.ts 核对三份一样，
-// 并在 jsdom 里跑它。字符串里不用反引号和 ${。
+// 这一段 JS 只写一份（下面的字符串），桌面壳打包时取它（desktop/build/bundle.ts）；tests/mac/circle-page.test.ts
+// 在 jsdom 里跑它。字符串里不用反引号和 ${。
 
 /** 和 agent/shared/api/web-page-tools.ts 的 WEB_CIRCLE_TEXT_MAX_CHARS 一致（这里不能引值，测试核对）。 */
 export const CIRCLE_TEXT_MAX_CHARS = 20_000;

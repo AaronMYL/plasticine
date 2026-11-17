@@ -11,7 +11,7 @@ afterEach(() => {
 
 it('桌面客户端标识支持注入对象和 User-Agent，普通浏览器不会误认（界面只经 host.ts 问壳）', () => {
   expect(inDesktopApp()).toBe(false);
-  vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 PlasticineMac/1.2.3');
+  vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 PlasticineDesktop/1.2.3');
   expect(inDesktopApp()).toBe(true);
 });
 

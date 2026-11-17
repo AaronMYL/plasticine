@@ -3,7 +3,6 @@
 //   external.capture(1455, 10 分钟) 在这台电脑上等回调，拿到就交给本体已有的「贴回调地址」接口，界面只显示
 //   「在浏览器里登录…」并自动完成；本机实例照旧由本体自己收回调。
 // - 普通网页：新窗口开授权页；连的是远程实例时浏览器跳回的 localhost 在这台电脑上、本体收不到，留「贴回调地址」。
-// - 旧 Swift Mac App（没有 external）：站外链接会开进 App 自己的标签、连接页看不到，只给复制链接 + 贴回调地址。
 // 隔一会儿问一次走到哪了；登录成了、失败了、取消了都收拾掉在等的回调。
 
 import { useEffect, useRef, useState } from 'react';
@@ -12,7 +11,7 @@ import { errorText } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
 import type { ModelProviderView, ProviderLoginView } from '../../api/shared.ts';
 import { useLive } from '../../live.tsx';
-import { hostExternal, hostLocalGrant, inDesktopApp } from '../../shell/host.ts';
+import { hostExternal, hostLocalGrant } from '../../shell/host.ts';
 
 /** 隔多久问一次登录走到哪了（浏览器那边授权完，服务端自己收到回调）。 */
 const LOGIN_POLL_MS = 2000;
@@ -22,19 +21,15 @@ export const OAUTH_CALLBACK_PORT = 1455;
 export const OAUTH_CAPTURE_MS = 10 * 60 * 1000;
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
-/** 怎么拿回调：本体自己收、桌面客户端在本机等、他贴回来、旧 App 里复制链接再贴。 */
-export type CallbackRoute = 'server' | 'capture' | 'paste' | 'copy';
+/** 怎么拿回调：本体自己收、桌面客户端在本机等、他贴回来。 */
+export type CallbackRoute = 'server' | 'capture' | 'paste';
 
 async function callbackRoute(): Promise<CallbackRoute> {
   // 桌面客户端：拿得到本机令牌就是壳自己拉起的本机本体（它自己收回调），拿不到就是连着远程。
   if (hostExternal() !== null) {
     return (await hostLocalGrant()) !== null ? 'server' : 'capture';
   }
-  const local = LOCAL_HOSTS.has(window.location.hostname);
-  if (inDesktopApp()) {
-    return 'copy';
-  }
-  return local ? 'server' : 'paste';
+  return LOCAL_HOSTS.has(window.location.hostname) ? 'server' : 'paste';
 }
 
 export interface ProviderLogin {
@@ -75,7 +70,7 @@ export function useProviderLogin(provider: ModelProviderView, onDone: () => void
     const external = hostExternal();
     if (external !== null) {
       external.open(view.url);
-    } else if (how !== 'copy') {
+    } else {
       window.open(view.url, '_blank', 'noopener,noreferrer');
     }
     if (how === 'capture' && external !== null && !capturing.current) {

@@ -1,6 +1,6 @@
 // 沉浸式翻译注入脚本在浏览器里的外部能力（从 translate-page.ts 拆出来：那份只管切段、排队、插译文）。
-// IntersectionObserver 看视口和往下一屏，setTimeout 攒批，消息交给原生层给的 post。和另外三份一起由
-// scripts/generate-translate-script.ts 拼进注入脚本，所以只能 import type。
+// IntersectionObserver 看视口和往下一屏，setTimeout 攒批，消息交给壳给的 post。和另外三份一起打进注入脚本，
+// 所以只能 import type。
 
 import type { TranslatePriority } from '../api/shared.ts';
 import type { TranslatorHost, TranslatorOutbound } from './translate-page.ts';

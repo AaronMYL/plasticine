@@ -1,8 +1,6 @@
-// 沉浸式翻译注入网页标签的脚本（Mac 0.4.0，第 2 批）。Mac 原生层把它作为 WKUserScript 注入每个网页标签的独立脚本世界
-// （页面自己的脚本碰不到这里的函数），scripts/generate-translate-script.ts 把这一份和
-// translate-page-rules.ts（切段规则）、translate-page-look.ts（样子、工具条和重试标记）、translate-page-host.ts
-// （浏览器里的外部能力）去掉类型拼起来，生成 Mac 和 iPhone 的 translate-page-script.swift。四份之间的 import 拼的时候
-// 抹掉，所以只引这四份和 import type。
+// 沉浸式翻译注入网页标签的脚本（第 2 批）。桌面壳的网页标签 preload（desktop/src/tabs/tab-preload.ts）装它，跑在
+// 页面自己的脚本碰不到的地方。和 translate-page-rules.ts（切段规则）、translate-page-look.ts（样子、工具条和重试标记）、
+// translate-page-host.ts（浏览器里的外部能力）四份一起，只引这四份和 import type。
 //
 // 做什么：切段（正文段落、标题、列表项、表格格、引用、图注……；跳过导航、页头页脚、按钮、输入框、代码、可编辑区、隐藏的、
 // 已经是目标语言的）→ 视口里的先送、往下一屏的后送（IntersectionObserver）→ 新冒出来的内容接着切（MutationObserver，

@@ -1,6 +1,6 @@
-// 三个安装包共用的发布清单（docs/install-packages.md）：服务包里的 manifest.json 说「我是哪一版」，
-// 发布点上的 manifest.json 说「最新是哪一版、每个包在哪、SHA-256 是多少」。Linux 的更新器（updater.ts）、
-// Mac App（mac/Sources/Plasticine/release-update.swift）、Windows 托盘（windows/tray/PlasticineTray.cs）都按这一份读。
+// 服务包的发布清单（docs/install-packages.md）：服务包里的 manifest.json 说「我是哪一版」，发布点上的 manifest.json
+// 说「最新是哪一版、服务包和安装脚本在哪、SHA-256 是多少」。Linux 的更新器（updater.ts）按这一份读；桌面客户端
+// 读另一份 desktop.json（agent/shared/desktop-release.ts）。
 
 import { createHash } from 'node:crypto';
 import { Type, type Static } from 'typebox';

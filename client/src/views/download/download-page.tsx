@@ -2,7 +2,7 @@
 // 读 /download/desktop.json（agent/shared/desktop-release.ts）认出系统——Mac / Windows 的主按钮直接下桌面客户端
 // （Mac 给 dmg）；次级链接：另一个系统、装在服务器上（点开显示 Linux 命令和复制，命令来自 manifest.json 的安装脚本）、
 // 已经有 Plasticine？去登录（填 @账号或地址跳过去）。手机上：先在电脑上装好，再用手机扫码打开；「已经有了，去登录」。
-// 旧 Swift Mac App / Windows 托盘版不再作为主下载。包的地址和版本只来自发布清单，读不到不编。
+// 包的地址和版本只来自发布清单，读不到不编。
 
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Icon } from '../../shell/icons.tsx';

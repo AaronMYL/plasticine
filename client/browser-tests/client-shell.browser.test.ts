@@ -61,7 +61,7 @@ async function media(page: Cdp): Promise<Media> {
   return JSON.parse(await page.evaluate<string>(MEDIA)) as Media;
 }
 
-test('装成 Mac：有鼠标、PlasticineMac 标记和桥，网页标签同步、⋯ 菜单、圈一块都按桥协议往来', async (t) => {
+test('装成 Mac：有鼠标、PlasticineDesktop 标记和桥，网页标签同步、⋯ 菜单、圈一块都按桥协议往来', async (t) => {
   const server = await devServer();
   const browser = await launchBrowser();
   t.after(async () => {
@@ -73,7 +73,7 @@ test('装成 Mac：有鼠标、PlasticineMac 标记和桥，网页标签同步�
   const facts = await media(page);
   assert.equal(facts.hover, true, '电脑按有鼠标');
   assert.equal(facts.coarse, false);
-  assert.match(facts.ua, /PlasticineMac\/[0-9.]+$/);
+  assert.match(facts.ua, /PlasticineDesktop\/[0-9.]+$/);
   assert.equal(facts.mac, true);
   await until(page, `window.__plasticineFakeNative.calls.some((call) => call.method === 'titlebar')`, '顶栏布局');
   // 网页标签只在「网页」栏里（11-07 两层侧栏）：进网页栏点一个标签。

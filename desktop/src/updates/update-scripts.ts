@@ -1,7 +1,7 @@
 // 客户端自更新最后那一步的脚本（客户端退出以后由它换版本、重新打开、看新版起没起来，起不来就退回上一版）。
 // 写成纯文本生成，测试里在 Linux 上把 Mac 的那份真跑一遍（open、lsregister 换成假的）。
-// - Mac：只换 Plasticine.app 里的 Contents，文件夹本身不动——Dock、「应用程序」、登录项记的是这个文件夹（0.7.1 修过的
-//   Dock 图标失效，mac/README.md「自签证书与自更新」）。旧的 Contents 挪进「上一版」留着回退。
+// - Mac：只换 Plasticine.app 里的 Contents，文件夹本身不动——Dock、「应用程序」、登录项记的是这个文件夹（旧 Swift App
+//   0.7.1 修过的 Dock 图标失效就是这个原因，desktop/README.md「自更新」）。旧的 Contents 挪进「上一版」留着回退。
 // - Windows：静默跑 NSIS 安装程序（/S --updated --force-run），新版起不来就静默装回上一版的安装程序。
 // 「起来了」= 新版主窗口载入完写下的记号文件（started-<版本>）；等不到就算坏版本，退回并记下这一版不再自动装
 // （和 Linux 包 updater.ts 的健康检查同一个意思）。

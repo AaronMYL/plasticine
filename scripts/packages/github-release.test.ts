@@ -24,9 +24,6 @@ function build(root: string): { artifacts: string; desktop: string } {
   mkdirSync(desktop);
   writeFileSync(join(artifacts, `plasticine-server-${VERSION}.tar.gz`), 'server');
   writeFileSync(join(artifacts, 'install.sh'), '#!/bin/sh\n');
-  writeFileSync(join(artifacts, `Plasticine-mac-${VERSION}.zip`), 'mac');
-  writeFileSync(join(artifacts, `Plasticine-Setup-${VERSION}.exe`), 'exe');
-  writeFileSync(join(artifacts, 'mac-package.json'), '{}');
   writeFileSync(join(artifacts, 'server-manifest.json'), JSON.stringify({ schema: 1, name: 'plasticine-server',
     version: VERSION, commit: COMMIT, builtAt: '2026-11-09T17:00:18.000Z', node: '>=24.11',
     releaseUrl: 'https://cyberhunter.top/download', excluded: [] }));
@@ -41,16 +38,17 @@ test('附件地址是 GitHub 给的固定下载地址，标签 v<版本>', () =>
   assert.throws(() => assetBase('not a repo', VERSION), /仓库名不对/);
 });
 
-test('一版整理成附件：七个包 + Mac 身份记录 + 两份清单，清单里的地址都指向这个 Release，校验值对得上', (t) => {
+test('一版整理成附件：服务包、安装脚本、三个桌面包 + 两份清单，清单里的地址都指向这个 Release，校验值对得上', (t) => {
   const root = scratch(t);
   const out = join(root, 'release');
   const result = buildGithubRelease({ ...build(root), commit: COMMIT, repo: REPO, out,
     now: new Date('2026-11-09T17:10:00Z') });
   assert.equal(result.tag, `v${VERSION}`);
-  assert.equal(result.files.length, 10);
+  assert.equal(result.files.length, 7);
   const base = assetBase(REPO, VERSION);
   const manifest = parseReleaseManifest(readFileSync(join(out, 'manifest.json'), 'utf8'));
   assert.equal(manifest.commit, COMMIT);
+  assert.deepEqual(Object.keys(manifest.assets), ['server', 'linuxInstaller']);
   assert.equal(manifest.assets.server.url, `${base}plasticine-server-${VERSION}.tar.gz`);
   assert.equal(manifest.assets.linuxInstaller.url, `${base}install.sh`);
   const desktop = parseDesktopManifest(readFileSync(join(out, 'desktop.json'), 'utf8'));

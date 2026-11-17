@@ -60,7 +60,6 @@ import { scanDiskNotice } from './disk-notice.ts';
 import { reportAnnouncement } from './report-announcement.ts';
 import { createNetwork } from './assemble-network.ts';
 import { EventHub } from './event-hub.ts';
-import { MAC_DOWNLOADS_DIR, MacDownloads } from './mac-updates.ts';
 import { createToolGroupServices, toolGroupScans, toolGroupTools, toolEnabled } from './tool-group-services.ts';
 import { BrowserSessions } from './browser-sessions.ts';
 import type { KernelModelParts } from './model-providers.ts';
@@ -456,7 +455,6 @@ export function assembleApp(options: AssembleOptions): App {
     ...(options.sseHeartbeatMs === undefined ? {} : { sseHeartbeatMs: options.sseHeartbeatMs }),
     devices,
     dryRun: options.dryRun,
-    macDownloads: new MacDownloads({ directory: join(options.stateDirectory, MAC_DOWNLOADS_DIR), publicUrl }),
     network, lines, tasks, lineTimers, video,
     heartbeat: timed.heartbeat,
     ...(options.migration === undefined ? {} : { migration: options.migration }),

@@ -1,7 +1,8 @@
 // 给这一版的几个包算 SHA-256 和大小，写发布点上的 manifest.json（发布时由 publish-release.ts 调）。资源地址写成这一版
 // 自己的目录（https://cyberhunter.top/download/<版本>/），清单和包换版本的那一刻也不会对不上。
 //   node scripts/packages/write-release-manifest.ts --base-url https://cyberhunter.top/download/<版本> \
-//     --server <tar.gz> --installer <install.sh> [--mac <zip>] [--windows <exe>] --out manifest.json
+//     --server <tar.gz> --server-manifest <json> --installer <install.sh> --out manifest.json
+// 旧 Swift Mac App 和旧 Windows 安装包 11-17 删了，清单不再写 mac / windows 两项（schema 里留着可选，只为读旧清单）。
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
@@ -12,8 +13,6 @@ import { PACKAGE_NODE_VERSION, parseReleaseManifest, parseServerManifest, sha256
 export interface ReleaseFiles {
   server: string;
   installer: string;
-  mac?: string;
-  windows?: string;
 }
 
 function asset(file: string, baseUrl: string): ReleaseAsset {
@@ -36,8 +35,6 @@ export function releaseManifest(files: ReleaseFiles, serverManifestText: string,
     assets: {
       server: asset(files.server, baseUrl),
       linuxInstaller: asset(files.installer, baseUrl),
-      ...(files.mac === undefined ? {} : { mac: asset(files.mac, baseUrl) }),
-      ...(files.windows === undefined ? {} : { windows: asset(files.windows, baseUrl) }),
     },
   };
   // 写出去之前按读的人同一份 schema 再核一遍。
@@ -50,8 +47,6 @@ if (import.meta.main) {
     server: { type: 'string' },
     'server-manifest': { type: 'string' },
     installer: { type: 'string' },
-    mac: { type: 'string' },
-    windows: { type: 'string' },
     out: { type: 'string', default: 'manifest.json' },
   } });
   const baseUrl = values['base-url'];
@@ -60,10 +55,8 @@ if (import.meta.main) {
     console.error('要给 --base-url、--server、--server-manifest、--installer。');
     process.exitCode = 2;
   } else {
-    const manifest = releaseManifest({ server: values.server, installer: values.installer,
-      ...(values.mac === undefined ? {} : { mac: values.mac }),
-      ...(values.windows === undefined ? {} : { windows: values.windows }) },
-    readFileSync(values['server-manifest'], 'utf8'), baseUrl, new Date());
+    const manifest = releaseManifest({ server: values.server, installer: values.installer },
+      readFileSync(values['server-manifest'], 'utf8'), baseUrl, new Date());
     writeFileSync(values.out, `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(JSON.stringify({ version: manifest.version, assets: Object.keys(manifest.assets) }));
   }

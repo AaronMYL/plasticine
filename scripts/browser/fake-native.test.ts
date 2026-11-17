@@ -5,7 +5,7 @@ import { Value } from 'typebox/value';
 import { WebPageSnapshotSchema, WindowChromeSchema } from '../../agent/shared/api/mac-bridge.ts';
 import { WebCircleResultSchema, WebPageImageSchema, WEB_PAGE_TOOLS } from '../../agent/shared/api/web-page-tools.ts';
 import { LoginImportResultSchema, LoginSourcesSchema, SiteLoginsSchema } from '../../agent/shared/api/mac-logins.ts';
-import { clientProfile, plistVersion, supportedTools } from './client-profile.ts';
+import { clientProfile } from './client-profile.ts';
 import { fakeNativeConfig, fakeNativeScript, nativeCallProblem, type FakeNativeRecord,
   type NativeCall } from './fake-native.ts';
 
@@ -23,9 +23,10 @@ function install(client: 'mac'): Host {
   return window;
 }
 
-test('Mac 的身份从原生源码读：版本号进 User-Agent，网页工具和 Swift 报的一样；手机是不带桥的手机浏览器', () => {
+test('Mac 是桌面客户端：User-Agent 带 PlasticineDesktop，网页工具和壳一样全报；手机是不带桥的手机浏览器', () => {
   const mac = clientProfile('mac');
-  assert.match(mac.userAgent, /(?:^|\s)PlasticineMac\/[0-9.]+$/);
+  assert.match(mac.userAgent, /(?:^|\s)PlasticineDesktop\/[0-9.]+$/);
+  assert.deepEqual(mac.tools, [...WEB_PAGE_TOOLS]);
   assert.equal(mac.width, 1440);
   assert.equal(mac.touch, false);
   assert.ok(mac.tools.includes('downloads'));
@@ -36,13 +37,6 @@ test('Mac 的身份从原生源码读：版本号进 User-Agent，网页工具�
   const web = clientProfile('web');
   assert.equal(web.native, null);
   assert.doesNotMatch(web.userAgent, /Plasticine/);
-});
-
-test('原生源码的版本号和工具清单按格式读，报了网页侧不认识的工具就报错', () => {
-  assert.equal(plistVersion('<key>CFBundleShortVersionString</key>\n\t<string>0.4.0</string>'), '0.4.0');
-  assert.deepEqual(supportedTools('static let supported = ["find", "zoom"]'), ['find', 'zoom']);
-  assert.throws(() => supportedTools('static let supported = ["find", "teleport"]'), /teleport/);
-  assert.throws(() => plistVersion('<plist/>'), /CFBundleShortVersionString/);
 });
 
 test('模拟原生回的快照、截图、圈一块、窗口外观都合共享 schema', () => {
@@ -111,7 +105,6 @@ test('协议外的调用逐条说出原因：同步缺字段、未知命令、�
     [{ channel: 'plasticineTabs', method: 'tool', args: ['t1', { kind: 'teleport' }] }, /./],
     [{ channel: 'plasticine', method: 'open', args: ['camera'] }, /桥上没有/],
     [{ channel: 'plasticineTabs', method: 'reload', args: [] }, /桥上没有/],
-    [{ channel: 'plasticineChrome', method: 'titlebar', args: [{ height: 44 }] }, /noDrag|layout/],
     [{ channel: 'plasticineLogins', method: 'import', args: [{ from: 'firefox', passwords: false }] }, /from/],
     [{ channel: 'plasticineLogins', method: 'forget', args: [''] }, /非空/],
   ];
