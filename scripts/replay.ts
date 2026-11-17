@@ -13,12 +13,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { parseArgs } from 'node:util';
-import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import type { Message } from '@earendil-works/pi-ai';
 import { assembleApp } from '../agent/src/app/assemble.ts';
 import { generateVapidKeys } from '../agent/src/attention/index.ts';
 import { KernelModels, ProviderLogins } from '../agent/src/kernel/index.ts';
-import { convertToLlm } from '../agent/src/lines/index.ts';
+import { convertToLlm, historyMessages } from '../agent/src/lines/index.ts';
 import { openState, type StateService } from '../agent/src/state/index.ts';
 import { casesByRef, DEFAULT_PICK, pickCases, type ReplayCase } from './replay/cases.ts';
 import { replayCase, summarize, type CaseResult } from './replay/run.ts';
@@ -51,17 +50,18 @@ function tokenExpiry(state: StateService, providerId: string): number | null {
   return typeof expires === 'number' ? expires : null;
 }
 
-function openingOf(state: StateService, item: ReplayCase): Message {
-  const row = state.lineMessages.get(item.lineId, item.seq);
-  if (row === undefined) {
+/** 这一句之前最多带这么多条（同一条线里），从一句人话或交接开始，不从半截工具结果开始。 */
+const CONTEXT_ROWS = 30;
+const OPENING_ROLES: ReadonlySet<string> = new Set(['user', 'handoff', 'lineReport', 'notice']);
+
+/** 当时那一句，连同它前面这条线里的一段，照线上送给模型的样子（收起、截断）转好。 */
+function contextOf(state: StateService, item: ReplayCase): Message[] {
+  const rows = state.lineMessages.page(item.lineId, item.seq + 1, CONTEXT_ROWS).rows;
+  const start = rows.findIndex((row) => OPENING_ROLES.has(row.role));
+  if (rows.at(-1)?.seq !== item.seq || start === -1) {
     throw new ReplayError(`副本里没有 ${item.ref}`);
   }
-  const converted = convertToLlm([row.message as AgentMessage]);
-  const first = converted[0];
-  if (first === undefined) {
-    throw new ReplayError(`${item.ref} 转不成模型消息`);
-  }
-  return first;
+  return convertToLlm(historyMessages(item.lineId, rows.slice(start)));
 }
 
 function readRefs(path: string): string[] {
@@ -131,7 +131,7 @@ async function replay(state: StateService, work: string,
     const signal = AbortSignal.timeout(CASE_TIMEOUT_MS);
     const model = { model: choice.model, complete: (context: Parameters<KernelModels['complete']>[1],
       abort: AbortSignal) => models.complete(choice.model, context, { signal: abort, reasoning: choice.thinking }) };
-    results.push(await replayCase(item, preview, openingOf(state, item), model, signal));
+    results.push(await replayCase(item, preview, contextOf(state, item), model, signal));
   }
   const report = { model: kernel.preview('main').choice?.model.id ?? null, surface, summary: summarize(results),
     refs: cases.map((item) => item.ref), results };

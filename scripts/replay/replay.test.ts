@@ -91,7 +91,7 @@ test('一件：找工具照常执行再问，真正的第一次调用拿来判�
       { stopReason: 'toolUse' }),
   ]);
   const result = await replayCase(item, { prompt: '系统', tools: [searchTool] },
-    { role: 'user', content: '问', timestamp: 1 }, model, AbortSignal.timeout(5_000));
+    [{ role: 'user', content: '问', timestamp: 1 }], model, AbortSignal.timeout(5_000));
   assert.deepEqual(result.got, ['read_line']);
   assert.equal(result.match, 'exact');
   assert.equal(result.asks, 2);
@@ -106,7 +106,7 @@ test('一件：找工具照常执行再问，真正的第一次调用拿来判�
 test('一件：模型出错记下原因，不当成判错', async () => {
   const item = { ref: 'line:a:1', lineId: 'a', seq: 1, kind: 'main', expected: ['read_line'] };
   const { model } = scripted([fauxAssistantMessage('', { stopReason: 'error', errorMessage: '额度用完' })]);
-  const result = await replayCase(item, { prompt: '系统', tools: [] }, { role: 'user', content: '问', timestamp: 1 },
+  const result = await replayCase(item, { prompt: '系统', tools: [] }, [{ role: 'user', content: '问', timestamp: 1 }],
     model, AbortSignal.timeout(5_000));
   assert.equal(result.error, '额度用完');
 });

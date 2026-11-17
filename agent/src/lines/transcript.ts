@@ -6,7 +6,7 @@
 import type { AgentMessage, AgentTool, AgentToolCall } from '@earendil-works/pi-agent-core';
 import { createInitialSystemMessage, toToolDeclaration, type AssistantMessage, type ToolResultMessage }
   from '@earendil-works/pi-ai';
-import type { LineRow, StateService } from '../state/index.ts';
+import type { LineMessageRow, LineRow, StateService } from '../state/index.ts';
 import { contextWindow } from './day-context.ts';
 import { clipLargeResult } from './large-results.ts';
 import { answerText, isAssistant, isToolResult } from './messages.ts';
@@ -33,19 +33,15 @@ export function continuable(messages: AgentMessage[]): boolean {
   return last !== undefined && last.role !== 'assistant' && last.role !== 'system';
 }
 
-export function buildTranscript(state: TranscriptState, line: LineRow, prompt: string, tools: readonly AgentTool[],
-  seqOf: WeakMap<object, number>): AgentMessage[] {
-  const system = createInitialSystemMessage(prompt, tools.map(toToolDeclaration));
-  const head: AgentMessage[] = system === undefined ? [] : [system];
-  const window = contextWindow(state, line);
-  if (window.summary !== null && window.summary.trim() !== '') {
-    head.push({ role: 'lineSummary', summary: window.summary, timestamp: 0 });
-  }
-  const rows = state.lineMessages.after(line.id, window.after);
-  // 较早的「看一眼」和旧图收起（stale-results.ts）；界线按批往前推，不每一步都改前面的内容。
+/**
+ * 库里的一段消息送给模型的样子：较早的「看一眼」和旧图收起（stale-results.ts，界线按批往前推），大块结果只放开头
+ * 和引用，他叫停时记下的空回答不送。回放（scripts/replay/）也用这一段，所以量出来的和线上送的是同一个样子。
+ */
+export function historyMessages(lineId: string, rows: readonly Pick<LineMessageRow, 'seq' | 'message'>[],
+  seqOf: WeakMap<object, number> = new WeakMap()): AgentMessage[] {
   const boundary = staleBoundary(rows.at(-1)?.seq ?? 0);
   const calls = new Map<string, CallLike>();
-  const history = rows.flatMap((row) => {
+  return rows.flatMap((row) => {
     const stored = row.message as AgentMessage;
     if (isAssistant(stored)) {
       for (const part of stored.content) {
@@ -55,9 +51,8 @@ export function buildTranscript(state: TranscriptState, line: LineRow, prompt: s
       }
     }
     const message = isToolResult(stored)
-      ? clipLargeResult(collapseStale(stored, calls.get(stored.toolCallId), row.seq, boundary), line.id, row.seq)
+      ? clipLargeResult(collapseStale(stored, calls.get(stored.toolCallId), row.seq, boundary), lineId, row.seq)
       : stored;
-    // 他叫停时记下的空回答只给界面看（「停下了」），不送给模型。
     if (isAssistant(message) && message.stopReason === 'aborted' && answerText(message) === ''
       && !message.content.some((part) => part.type === 'toolCall')) {
       return [];
@@ -65,6 +60,17 @@ export function buildTranscript(state: TranscriptState, line: LineRow, prompt: s
     seqOf.set(message, row.seq);
     return [message];
   });
+}
+
+export function buildTranscript(state: TranscriptState, line: LineRow, prompt: string, tools: readonly AgentTool[],
+  seqOf: WeakMap<object, number>): AgentMessage[] {
+  const system = createInitialSystemMessage(prompt, tools.map(toToolDeclaration));
+  const head: AgentMessage[] = system === undefined ? [] : [system];
+  const window = contextWindow(state, line);
+  if (window.summary !== null && window.summary.trim() !== '') {
+    head.push({ role: 'lineSummary', summary: window.summary, timestamp: 0 });
+  }
+  const history = historyMessages(line.id, state.lineMessages.after(line.id, window.after), seqOf);
   return trimFailedTail([...head, ...history]);
 }
 

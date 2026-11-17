@@ -15,6 +15,7 @@ export { NO_MODEL_REASON } from './runner.ts';
 export type { DriveOutcome } from './runner.ts';
 export { checkedArgs } from './tool-args.ts';
 export { convertToLlm, contentText } from './messages.ts';
+export { historyMessages } from './transcript.ts';
 export type { LineReportMessage, LineSummaryMessage } from './messages.ts';
 export { adaptLegacyTool } from './legacy.ts';
 export type { LegacyMeta, LegacyOptions } from './legacy.ts';

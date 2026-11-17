@@ -1,4 +1,5 @@
-// 回放一件（内核优化第三批，11-17）：用这条线现在的系统提示和工具面，加上当时那一句话，问一次真模型，看它先调什么。
+// 回放一件（内核优化第三批，11-17）：用这条线现在的系统提示和工具面，加上当时那一句话和它前面的一段，问一次真模型，
+// 看它先调什么。
 // 不执行任何工具（不点网页、不跑命令、不发消息）；只有「找工具」这一类（tool_search）照常执行再问一次，最多三问。
 // 只记工具名和 token 数，不记模型写的正文。
 
@@ -56,10 +57,10 @@ async function discover(preview: ReplayPreview, message: AssistantMessage, signa
   return results;
 }
 
-export async function replayCase(item: ReplayCase, preview: ReplayPreview, opening: Message,
+export async function replayCase(item: ReplayCase, preview: ReplayPreview, opening: readonly Message[],
   model: ReplayModel, signal: AbortSignal): Promise<CaseResult> {
   const system = createInitialSystemMessage(preview.prompt, preview.tools.map(toToolDeclaration));
-  const messages: AgentMessage[] = [...(system === undefined ? [] : [system]), opening];
+  const messages: AgentMessage[] = [...(system === undefined ? [] : [system]), ...opening];
   const result: CaseResult = { ref: item.ref, kind: item.kind, expected: item.expected, got: [], match: 'none',
     asks: 0, firstPrompt: 0, totalPrompt: 0, output: 0, error: null };
   try {

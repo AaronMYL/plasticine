@@ -23,7 +23,7 @@ export interface PickOptions {
   perLine: number;
 }
 
-export const DEFAULT_PICK: PickOptions = { count: 12, background: 4, perLine: 3 };
+export const DEFAULT_PICK: PickOptions = { count: 14, background: 5, perLine: 3 };
 
 interface CandidateRow {
   line_id: string;
