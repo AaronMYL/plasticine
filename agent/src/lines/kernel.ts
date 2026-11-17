@@ -2,6 +2,7 @@
 // 只做六件事（上下文、循环、线、触发、边界、看得见管得住），不做验收轮、诊断轮、契约、回执审查、认领租约、失败签名。
 // 写库的部分是同步的，可以放进接口的幂等事务里；开跑、推事件放在 after（事务提交之后）做。
 
+import type { AgentTool } from '@earendil-works/pi-agent-core';
 import type { Ask, AskPurpose } from '../../shared/state.ts';
 import { MAIN_LINE_ALIAS, type ChatsResponse, type LineMessageView, type LineStatus, type LineTopic, type LineView,
   type QueuedMessageView } from '../../shared/api/lines.ts';
@@ -27,7 +28,7 @@ import { askerOf, backwards, handoffMessage, relayOf } from './relay.ts';
 import { planTool } from './plan-tool.ts';
 import { lineResult } from './results.ts';
 import { LineRunner, type DriveMode, type DriveOutcome, type RunnerHost, type Toolset } from './runner.ts';
-import { realLater, type KernelTool, type Later, type LineScope } from './types.ts';
+import { realLater, type KernelTool, type Later, type LineScope, type ModelChoice } from './types.ts';
 import { lineView, NO_ACTIVITY, pageMessages, queuedView } from './views.ts';
 import { rollDay } from './day-context.ts';
 import { readResultTool } from './large-results.ts';
@@ -189,6 +190,19 @@ export class LineKernel implements LineControl, SideControl {
       throw new LineError('not_found', '没有这条线。', '刷新线列表后再试。');
     }
     return line;
+  }
+
+  /**
+   * 这条线下一次请求会带什么：系统提示、工具、用哪个模型（回放用，scripts/replay/）。只读，不开跑、不写库。
+   * 和 runner 里每次请求前装的是同一份（prompt、toolset、purpose 都从 #host 取）。
+   */
+  preview(lineId: string): { prompt: string; tools: AgentTool[]; choice: ModelChoice | undefined } {
+    const line = this.line(lineId);
+    const scope: LineScope = { lineId: line.id, kind: line.kind, projectId: line.projectId,
+      ...(line.mateId == null ? {} : { actorId: line.mateId }) };
+    const purpose = this.#host.purpose?.(line) ?? 'main';
+    return { prompt: this.#host.prompt(line), tools: this.#host.toolset(scope).tools,
+      choice: this.#options.models.current(purpose) };
   }
 
   view(lineId: string): LineView {
