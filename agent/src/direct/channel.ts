@@ -135,7 +135,10 @@ export class DirectChannelServer {
 
   #start(id: number, method: string, path: string, headers: Record<string, string>, port: number,
     body: boolean): void {
-    const outgoing = request({ host: '127.0.0.1', port, method, path, headers }, (res) => {
+    // 正文是一块块到的，长度事先不知道：明说分块传。Node 只给 POST、PUT、PATCH 自动分块，带正文的 DELETE 不写这一句
+    // 就没有长度也没有分块，本机服务读不了，回一个不带格式的 400（11-17：桌面客户端走直连删笔记报「服务回了 400」）。
+    const framed = body ? { ...headers, 'transfer-encoding': 'chunked' } : headers;
+    const outgoing = request({ host: '127.0.0.1', port, method, path, headers: framed }, (res) => {
       void this.#relay(id, res);
     });
     this.#inFlight.set(id, outgoing);

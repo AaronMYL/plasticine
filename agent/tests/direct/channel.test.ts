@@ -86,6 +86,23 @@ test('带正文的请求：正文分块进去', async () => {
   server.close();
 });
 
+test('带正文的 DELETE 也进得去：经直连删一篇笔记（11-17 桌面客户端删笔记回 400）', async () => {
+  const { t, target } = await signedIn();
+  const { pipe, seen, done } = fakePipe();
+  const server = new DirectChannelServer(pipe, () => target);
+  const note = t.state.notes.create({ markdown: '要删的一篇', folder: '笔记', author: 'user' });
+  const payload = new TextEncoder().encode(JSON.stringify({ requestId: 'direct-delete-note-1' }));
+  server.receive(JSON.stringify({ t: 'req', id: 9, method: 'DELETE', path: `/v2/notes/${note.id}`,
+    headers: { 'content-type': 'application/json' }, body: true }));
+  server.receive(encodeChunk(9, payload));
+  server.receive(JSON.stringify({ t: 'end', id: 9 }));
+  await done(9);
+  const head = seen.frames.find((frame) => frame.id === 9 && frame.t === 'res');
+  assert.equal(head?.t === 'res' ? head.status : null, 200, bodyText(seen, 9));
+  assert.notEqual(t.state.notes.get(note.id)?.deletedAt ?? null, null);
+  server.close();
+});
+
 test('登录、账号、握手类接口不转；没有端口时也不转', async () => {
   const { target } = await signedIn();
   const { pipe, seen, done } = fakePipe();
