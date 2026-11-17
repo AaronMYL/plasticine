@@ -8,9 +8,10 @@ export type { DeviceHold, DeviceWaitReason } from './holds.ts';
 export { classifyLane, DEVICE_LANES, isPaymentPage } from './lanes.ts';
 export type { DeviceLane, LaneDecision } from './lanes.ts';
 export { proveDeviceAction } from './proof.ts';
-export { PAGE_SUBMIT_CONTEXT_KEY, PageSubmitContextSchema, submitHoldForRun, submitRefusal, tabTrace }
-  from './page-submits.ts';
-export type { PageSubmitContext, SubmitHold, TabTrace } from './page-submits.ts';
+export { PAGE_SUBMIT_CONTEXT_KEY, PageSubmitContextSchema, submitHoldForRun, submitRefusal } from './page-submits.ts';
+export type { PageSubmitContext, SubmitHold } from './page-submits.ts';
+export { tabTrace, UNVERIFIED_PASTE } from './page-trace.ts';
+export type { TabTrace } from './page-trace.ts';
 export { createPageSendTool, PAGE_SEND_KINDS, PAGE_SEND_TOOL, webChannel } from './page-send.ts';
 export { BROWSE_KINDS, choosePlace, DEVICE_PLACES, PLACE_REASONS } from './route.ts';
 export type { DevicePlace, PlaceChoice } from './route.ts';

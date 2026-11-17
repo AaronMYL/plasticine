@@ -18,6 +18,7 @@ import type { OutboundLog } from '../../shared/outbound.ts';
 import type { NodeAction, ScheduleSend } from '../../shared/state.ts';
 import type { StateService } from '../state/index.ts';
 import type { Refusal } from './limits.ts';
+import { changesTab, tabIdOf } from './page-trace.ts';
 
 /** 新内核的线发的设备动作，run_id 是 line:<线>（lines/legacy.ts）。 */
 const LINE_RUN_PREFIX = 'line:';
@@ -91,83 +92,18 @@ function latestHold(actions: NodeAction[], tabId: string): SubmitHold | null {
   return null;
 }
 
-/** 会改动网页标签的动作：拦下提交以后这个标签上又做过其中一种，那次拦下就不再作数。 */
-const TAB_CHANGES: readonly string[] = ['tab_act', 'tab_click', 'tab_fill', 'tab_point', 'tab_type', 'tab_navigate'];
-
 /**
- * 被拦下的那次提交之后，这条线在这个标签上又点过、填过、打过字或换过页（11-16：设备上的编号不再绑整页 HTML，
- * 页面自己变不作废；脑自己动过这个标签，就得重新点一次发送、重新拦下再放行）。
+ * 被拦下的那次提交之后，这条线在这个标签上又点过、填过、打过字、粘贴过或换过页（11-16：设备上的编号不再绑整页 HTML，
+ * 页面自己变不作废；脑自己动过这个标签，就得重新点一次发送、重新拦下再放行）。哪些动作算「动过」见 page-trace.ts。
  */
 export function changedSinceHold(state: ActionsState, runId: string, nodeId: string, hold: SubmitHold): boolean {
   const rows = state.nodeActions.forRunNode(runId, nodeId);
   const at = rows.findIndex((row) => row.actionId === hold.actionId);
-  return rows.slice(at + 1).some((row) => tabIdOf(row) === hold.tabId && TAB_CHANGES.includes(row.kind)
+  return rows.slice(at + 1).some((row) => tabIdOf(row) === hold.tabId && changesTab(row.kind)
     && row.status !== 'refused');
 }
 
-/** 这条线在这个标签上最近看到的页面地址、最近一次填进去的字（照卡发送核网站和内容用，tasks/send-permit.ts）。 */
-export interface TabTrace {
-  url: string | null;
-  filled: string | null;
-}
-
-/** tab_type 打进去的字（11-16：按位置点开输入框再打字也算填进去的原文）。 */
-function typedOf(row: NodeAction): string | null {
-  const envelope = row.envelope;
-  const action: unknown = typeof envelope === 'object' && envelope !== null ? Reflect.get(envelope, 'action') : null;
-  if (typeof action !== 'object' || action === null || Reflect.get(action, 'kind') !== 'tab_type') {
-    return null;
-  }
-  const text: unknown = Reflect.get(action, 'text');
-  return typeof text === 'string' ? text : null;
-}
-
-function tabIdOf(row: NodeAction): string | null {
-  const envelope = row.envelope;
-  if (typeof envelope !== 'object' || envelope === null) {
-    return null;
-  }
-  const action: unknown = Reflect.get(envelope, 'action');
-  const tabId: unknown = typeof action === 'object' && action !== null ? Reflect.get(action, 'tabId') : null;
-  return typeof tabId === 'string' ? tabId : null;
-}
-
-function urlOf(result: unknown): string | null {
-  if (typeof result !== 'object' || result === null) {
-    return null;
-  }
-  for (const key of ['after', 'page']) {
-    const part: unknown = Reflect.get(result, key);
-    const url: unknown = typeof part === 'object' && part !== null ? Reflect.get(part, 'url') : null;
-    if (typeof url === 'string' && url !== '') {
-      return url;
-    }
-  }
-  const url: unknown = Reflect.get(result, 'url');
-  return typeof url === 'string' && url !== '' ? url : null;
-}
-
-export function tabTrace(state: ActionsState, runId: string, nodeId: string, tabId: string): TabTrace {
-  let url: string | null = null;
-  let filled: string | null = null;
-  for (const row of state.nodeActions.forRunNode(runId, nodeId)) {
-    if (tabIdOf(row) !== tabId || row.status !== 'executed') {
-      continue;
-    }
-    url = urlOf(row.result) ?? url;
-    const action = tabActOf(row);
-    if (action !== null && action.act.op === 'fill') {
-      filled = action.act.value;
-    }
-    const typed = typedOf(row);
-    if (typed !== null) {
-      filled = typed;
-    }
-  }
-  return { url, filled };
-}
-
-const TOUCHED = '拦下发送以后这个标签上又点过、填过或换过页：重新感知，再点一次发送，拦下后再放行。';
+const TOUCHED = '拦下发送以后这个标签上又点过、填过、粘贴过或换过页：重新感知，再点一次发送，拦下后再放行。';
 
 /** 这条线在这个标签上最近一次被拦下的提交之后又动过这个标签。 */
 function touched(state: ActionsState, runId: string, nodeId: string, tabId: string): boolean {

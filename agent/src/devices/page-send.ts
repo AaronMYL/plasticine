@@ -5,7 +5,8 @@
 // 放行凭据是这次调用的发送记录（outbound_log）：page-submits.ts 核对是这条线的、还在等结果、拦下的就是这一下、只用一次。
 
 import { Type } from 'typebox';
-import { submitHoldForRun, tabTrace } from './page-submits.ts';
+import { submitHoldForRun } from './page-submits.ts';
+import { tabTrace, UNVERIFIED_PASTE } from './page-trace.ts';
 import type { ActionOutcome, ActionRequest } from './actions.ts';
 import type { Refusal } from './limits.ts';
 import { proveDeviceAction } from './proof.ts';
@@ -90,6 +91,9 @@ export function createPageSendTool(state: SendState, devices: PageSendPort): Too
       const host = trace.url === null ? null : hostOf(trace.url);
       if (host === null || webChannel(host) !== webChannel(args.site)) {
         throw new ToolFailure(`这一页不在 ${args.site} 上（现在是 ${host ?? '没读到地址'}），没有发。`);
+      }
+      if (trace.unverifiedPaste) {
+        throw new ToolFailure(UNVERIFIED_PASTE);
       }
       if (trace.filled !== null && trace.filled.trim() !== args.text.trim()) {
         throw new ToolFailure('输入框里填的和要发的原文不一样，没有发：照填进去的原样写 text，或者重新填。');

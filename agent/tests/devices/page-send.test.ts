@@ -158,5 +158,5 @@ test('拦下发送以后线又在这个标签上填过（哪怕是同一段话�
   await until(() => h.kernel.view(line.id).status === 'idle', '这一轮结束');
   assert.equal(clicked(sent), 0);
   const results = h.handle.state.lineMessages.after(line.id, 0).filter((row) => row.role === 'toolResult');
-  assert.match(JSON.stringify(results.at(-1)?.message), /又点过、填过或换过页/);
+  assert.match(JSON.stringify(results.at(-1)?.message), /又点过、填过、粘贴过或换过页/);
 });

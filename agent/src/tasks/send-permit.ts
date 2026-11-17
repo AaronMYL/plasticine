@@ -7,7 +7,7 @@
 // devices/page-submits.ts 再核一遍是这一下、只用一次。哪一条不过都不放行，原因回给模型：照旧先问他。
 
 import type { ScheduleSend } from '../../shared/state.ts';
-import { submitHoldForRun, tabTrace } from '../devices/index.ts';
+import { submitHoldForRun, tabTrace, UNVERIFIED_PASTE } from '../devices/index.ts';
 import { MAIN_LINE_ID, type StateService } from '../state/index.ts';
 import { ensureScheduleGrant } from '../outbound/index.ts';
 import { argsDigest } from '../system/index.ts';
@@ -86,6 +86,9 @@ export function grantSend(state: PermitState, request: PermitRequest,
   const trace = tabTrace(state, runId, request.nodeId, request.tabId);
   if (trace.url === null || !siteAllowed(outward.site, trace.url)) {
     throw new PermitRefused(`这一页不在卡上的网站（${outward.site}）。`);
+  }
+  if (trace.unverifiedPaste) {
+    throw new PermitRefused(UNVERIFIED_PASTE);
   }
   if (trace.filled !== null && trace.filled.trim() !== request.content.trim()) {
     throw new PermitRefused('输入框里填的和要发的内容不一样。');
