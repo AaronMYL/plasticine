@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { toastStore } from '../../../src/primitives/toast/index.tsx';
 import { NOW, renderApp, seedNote, settle } from '../../helpers.tsx';
 
 /** 新建一篇：手机在页头（「新建」）；电脑在笔记栏目第二栏的列表顶上（「新建笔记」，11-15 两栏合成一栏）。 */
@@ -125,17 +126,22 @@ describe('笔记页', () => {
     expect(editor.getText()).toContain('第三版');
   });
 
-  it('删除要点两次，移到最近删除后回到列表', async () => {
+  it('删除不先问：点了就进最近删除、回到列表，底部给撤销；点撤销放回来（11-17 Aaron 弹框）', async () => {
     const app = await renderApp({ hash: '#/notes/n1', setup: (fake) => seedNote(fake, 'n1', '# 要删的') });
     await noteEditor();
     fireEvent.click(screen.getByLabelText('更多笔记操作'));
     fireEvent.click(screen.getByRole('button', { name: '删除笔记' }));
-    fireEvent.click(screen.getByRole('button', { name: '移到最近删除' }));
     await waitFor(() => expect(window.location.hash).toBe('#/notes'));
     expect(await app.api.notes.list({})).toHaveLength(0);
     await waitFor(() => expect(screen.getByText('还没有笔记。')).toBeTruthy());
     // 11-15 空的一种样子：能新建的给一个次按钮。
     expect(screen.getAllByRole('button', { name: '新建笔记' }).length).toBeGreaterThan(1);
+    expect(screen.queryByRole('group', { name: '确认删除笔记' })).toBeNull();
+    const toast = toastStore.get();
+    expect(toast?.text).toBe('已把「要删的」移到最近删除');
+    act(() => toast?.action?.run());
+    await waitFor(() => expect(toastStore.get()?.text).toBe('「要删的」放回来了'));
+    expect(await app.api.notes.list({})).toHaveLength(1);
   });
 
   it('迁过来的笔记里旧的 /v1 图片地址画成 /v2 的，存回去的 Markdown 一字不改', async () => {
@@ -272,7 +278,6 @@ describe('笔记页', () => {
     const remove = vi.spyOn(app.api.notes, 'remove');
     fireEvent.click(screen.getByLabelText('更多笔记操作'));
     fireEvent.click(screen.getByRole('button', { name: '删除笔记' }));
-    fireEvent.click(screen.getByRole('button', { name: '移到最近删除' }));
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('结果待核实'));
     fireEvent.click(screen.getByRole('button', { name: '再核实' }));
     await waitFor(() => expect(window.location.hash).toBe('#/notes'));
@@ -294,7 +299,6 @@ describe('笔记页', () => {
     const remove = vi.spyOn(app.api.notes, 'remove');
     fireEvent.click(screen.getByLabelText('更多笔记操作'));
     fireEvent.click(screen.getByRole('button', { name: '删除笔记' }));
-    fireEvent.click(screen.getByRole('button', { name: '移到最近删除' }));
     await waitFor(() => expect(screen.getByText(/删除一篇笔记的结果待核实/)).toBeTruthy());
     window.location.hash = '#/today';
     await waitFor(() => expect(screen.queryByText(/删除一篇笔记的结果待核实/)).toBeNull());

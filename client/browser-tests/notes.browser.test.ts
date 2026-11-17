@@ -412,7 +412,6 @@ test('D37–44/49/52：真实HTTP文件夹、全文搜索、元信息、格式�
   await until(() => page.evaluate(`document.querySelectorAll('.note-row').length === 1`), '正文全文搜索');
   await click(page, '更多笔记操作');
   await click(page, '删除笔记', `document.querySelector('.note-actions-pop')`);
-  await click(page, '移到最近删除');
   await until(() => page.evaluate(`location.hash === '#/notes'`), '删除后返回');
   await openFolders(page);
   await until(() => page.evaluate(`Boolean(document.querySelector('button[aria-label="最近删除 1"]'))`), '回收站计数');

@@ -13,7 +13,7 @@ import { createRequestId } from '../../api/request-id.ts';
 import type { NoteView } from '../../api/types.ts';
 import { useClientState } from '../../state/context.tsx';
 import { deleteNoteOp, restoreNoteOp } from '../../state/note-ops.ts';
-import { deleteNote } from './note-delete.ts';
+import { removeNoteWithUndo } from './note-delete.ts';
 import { restoreNote } from './note-restore.ts';
 import { useStore } from '../../state/use-store.ts';
 import { useTelemetry } from '../../telemetry.ts';
@@ -78,7 +78,6 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
   const deleteKey = deleteNoteOp(note.id);
   const deleteOp = useStore(noteOps.store).get(deleteKey);
   const restoreOp = useStore(noteOps.store).get(restoreNoteOp(note.id));
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [extensions] = useState(noteExtensions);
   const [proposal, setProposal] = useState<NoteProposal | null>(null);
@@ -188,10 +187,8 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
     return true;
   });
 
-  const remove = async (): Promise<void> => {
-    if (await deleteNote(api, noteOps, note.id)) {
-      onDeleted();
-    }
+  const remove = (): void => {
+    void removeNoteWithUndo(api, noteOps, current, onDeleted);
   };
 
   const takeTheirs = (): void => {
@@ -210,7 +207,7 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
 
   const actions = <NoteActions note={current} label="更多笔记操作" extra={[
     { label: '版本历史', icon: 'history', onSelect: () => setHistoryOpen(true) },
-    ...readOnly ? [] : [{ label: '删除笔记', icon: 'trash', onSelect: () => setConfirmDelete(true) } as const],
+    ...readOnly ? [] : [{ label: '删除笔记', icon: 'trash', onSelect: remove } as const],
   ]} beforeChange={async () => {
     await saver.flush();
     return saver.readyForRefresh() ? saver.current() : null;
@@ -255,16 +252,6 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
       </div>}
 
       {quoteStatus === null ? null : <p className="note-status" role="status">{quoteStatus}</p>}
-      {!readOnly && confirmDelete ? <div className="note-toolbar" role="group" aria-label="确认删除笔记">
-          <>
-            <button type="button" className="chip-button" onClick={() => void remove()}>
-              移到最近删除
-            </button>
-            <button type="button" className="text-button text-button-quiet" onClick={() => setConfirmDelete(false)}>
-              先不
-            </button>
-          </>
-      </div> : null}
       {saveState.error === null ? null : <p className="note-error">{saveState.error}</p>}
       {syncError === null ? null : (
         <p className="note-error" role="alert">

@@ -9,7 +9,7 @@ import type { NoteMetaView } from '../../api/types.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { useRememberedScroll } from '../../state/use-remembered-scroll.ts';
 import { NoteActions } from './note-actions.tsx';
-import { deleteNote } from './note-delete.ts';
+import { removeNoteWithUndo } from './note-delete.ts';
 import { useApi } from '../../api/context.tsx';
 import { useClientState } from '../../state/context.tsx';
 import { groupByDay } from './note-time.ts';
@@ -132,7 +132,7 @@ export function NoteList(props: NoteListProps): ReactNode {
                   </span>
                 </button>
                 {props.selection?.active ? null : <NoteActions note={note} label={`《${note.title || '未命名'}》的操作`}
-                  remove={() => void deleteNote(api, noteOps, note.id)} />}
+                  remove={() => void removeNoteWithUndo(api, noteOps, note)} />}
               </li>
             ))}
           </ul>

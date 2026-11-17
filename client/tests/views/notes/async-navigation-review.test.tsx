@@ -61,7 +61,6 @@ it('删除已生效而回执迟到，打开另一篇后仍停留在新笔记', a
   });
   fireEvent.click(screen.getByLabelText('更多笔记操作'));
   fireEvent.click(screen.getByRole('button', { name: '删除笔记' }));
-  fireEvent.click(screen.getByRole('button', { name: '移到最近删除' }));
   await waitFor(() => expect(remove).toHaveBeenCalledOnce());
   act(() => { window.location.hash = '#/notes/n2'; });
   await waitFor(() => expect(document.querySelector('.ProseMirror')?.textContent).toContain('正在阅读的另一篇'));

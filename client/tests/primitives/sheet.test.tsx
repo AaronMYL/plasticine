@@ -24,6 +24,25 @@ describe('浮层原语', () => {
     expect(screen.queryByTestId('sheet-scrim')).toBeNull();
   });
 
+  it('电脑上的面板挂到主区上，不落在调用方那一栏里（笔记的文件夹面板 11-17 被夹在第二栏）；手机抽屉原地画', () => {
+    const tree = (variant: SheetVariant): ReactNode => (
+      <div className="shell">
+        <aside data-testid="second-column">
+          <Sheet open variant={variant} title="文件夹" onClose={() => undefined}><p>内容</p></Sheet>
+        </aside>
+        <div className="shell-main-area" data-testid="main-area" />
+      </div>
+    );
+    const desktop = render(tree('panel'));
+    const dialog = screen.getByRole('dialog', { name: '文件夹' });
+    expect(screen.getByTestId('main-area').contains(dialog)).toBe(true);
+    expect(screen.getByTestId('main-area').contains(screen.getByTestId('sheet-scrim'))).toBe(true);
+    expect(screen.getByTestId('second-column').contains(dialog)).toBe(false);
+    desktop.unmount();
+    render(tree('drawer'));
+    expect(screen.getByTestId('second-column').contains(screen.getByRole('dialog', { name: '文件夹' }))).toBe(true);
+  });
+
   it('电脑上开着：焦点移进面板，面板不是模态', () => {
     render(<Harness variant="panel" />);
     fireEvent.click(screen.getByRole('button', { name: '打开记账' }));

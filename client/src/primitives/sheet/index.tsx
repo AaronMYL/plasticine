@@ -59,6 +59,9 @@ export function SheetFooter({ children, className }: { children: ReactNode; clas
   return foot === null ? null : createPortal(children, foot);
 }
 
+/** 面板挂在哪：壳的主区（shell/shell.tsx）。 */
+const PANEL_HOST = '.shell-main-area';
+
 export function Sheet(props: SheetProps): ReactNode {
   const panel = useRef<HTMLDivElement>(null);
   const [foot, setFoot] = useState<HTMLElement | null>(null);
@@ -69,7 +72,10 @@ export function Sheet(props: SheetProps): ReactNode {
   if (!props.open) {
     return null;
   }
-  return (
+  // 桌面的面板是按主区摆的（上、右、下各离主区 16）。调用方可能把它画在第二栏里（笔记的文件夹面板 11-17 就落在
+  // 第二栏里被裁掉、点不到），所以一律挂到主区上，不靠调用方画在哪；没有主区（单独渲染、测试）就原地画。
+  const host = isDrawer ? null : document.querySelector<HTMLElement>(PANEL_HOST);
+  const content = (
     <>
       <div className={`sheet-scrim sheet-scrim-${props.variant}`} data-testid="sheet-scrim"
         aria-hidden onClick={props.onClose} />
@@ -101,4 +107,5 @@ export function Sheet(props: SheetProps): ReactNode {
       </div>
     </>
   );
+  return host === null ? content : createPortal(content, host);
 }

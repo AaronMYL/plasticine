@@ -80,7 +80,6 @@ describe('笔记完整工作区', () => {
     expect(document.querySelectorAll('.note-row')).toHaveLength(1);
     fireEvent.click(screen.getByLabelText('更多笔记操作'));
     fireEvent.click(screen.getByRole('button', { name: '删除笔记' }));
-    fireEvent.click(screen.getByRole('button', { name: '移到最近删除' }));
     await waitFor(() => expect(window.location.hash).toBe('#/notes'));
     fireEvent.click(await within(await openFolders()).findByRole('button', { name: '最近删除 1' }));
     await settle(350);
