@@ -1,6 +1,6 @@
 name: Build packages
 run-name: "Build packages · ${{ github.sha }}"
-# Builds the Linux server package, the Windows installer, the Mac App and the Electron desktop clients for Mac and
+# Builds the Linux server package and the Electron desktop clients for Mac and
 # Windows from one commit, smoke-tests each, keeps them as run artifacts (30 days), and when everything passed attaches
 # them to a GitHub Release tagged v<version> (old releases stay, for rollback). Only GitHub-hosted runners; no secrets
 # beyond the job's own token. The download site (cyberhunter.top/download) only mirrors the release's manifest files.
@@ -27,7 +27,7 @@ jobs:
           echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
   linux:
-    # 服务包（三个安装包共用）+ Linux 安装脚本；在临时前缀 + 假 systemctl 里把真服务包从头到尾装一遍。
+    # 服务包（Linux 和桌面客户端共用）+ Linux 安装脚本；在临时前缀 + 假 systemctl 里把真服务包从头到尾装一遍。
     needs: request
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -71,132 +71,34 @@ jobs:
           path: dist/packages
           retention-days: 30
 
-  windows:
-    # 安装程序 + 冒烟：静默装、服务答 /v2/health、升级、卸载留数据、带 /DELETEDATA=1 卸载删数据；
-    # 另外在 Windows 上跑服务器命令（PowerShell）的测试。
-    needs: [request, linux]
-    runs-on: windows-latest
-    timeout-minutes: 40
+  browser:
+    # 浏览器回归（11-17 起进发布前的必经一步）：无头 Chrome 装成桌面客户端、手机、网页，跟着现在的界面一条条走。
+    needs: request
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.request.outputs.commit }}
           fetch-depth: 1
           persist-credentials: false
-      - uses: actions/download-artifact@v4
-        with:
-          name: plasticine-server-${{ needs.request.outputs.short }}
-          path: dist/packages
       - uses: actions/setup-node@v4
         with:
           node-version: 24.22.1
-      - name: 装依赖
-        run: npm ci --no-audit --no-fund
-      - name: Windows 上的服务器命令
-        run: >-
-          node --test agent/tests/cloud-tools/server-shell.test.ts
-          agent/tests/cloud-tools/server-command-windows.test.ts
-      - name: 编安装程序
-        shell: pwsh
-        env:
-          VERSION: ${{ needs.linux.outputs.version }}
-        run: >-
-          ./scripts/packages/windows/build.ps1
-          -ServerTarball "dist/packages/plasticine-server-$env:VERSION.tar.gz" -Out dist/windows
-      - name: 冒烟
-        shell: pwsh
-        env:
-          VERSION: ${{ needs.linux.outputs.version }}
-        run: ./scripts/packages/windows/smoke.ps1 -Setup "dist/windows/Plasticine-Setup-$env:VERSION.exe"
-      - name: 冒烟日志
-        if: always()
-        shell: pwsh
+      - name: 装依赖和中文字体
         run: |
-          Get-ChildItem "$env:RUNNER_TEMP/*install-*.log" -ErrorAction SilentlyContinue | ForEach-Object {
-            "== $($_.Name)"; Get-Content $_.FullName -Tail 80
-          }
-          $logs = Join-Path $env:LOCALAPPDATA "Plasticine\logs"
-          if (Test-Path $logs) { Get-ChildItem $logs | ForEach-Object { "== $($_.Name)"; Get-Content $_.FullName -Tail 80 } }
-      - name: 保存 Windows 冒烟日志
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: plasticine-windows-smoke-${{ needs.request.outputs.short }}
-          path: ${{ runner.temp }}/*install-*.log
-          retention-days: 30
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
-        with:
-          name: plasticine-windows-${{ needs.request.outputs.short }}
-          path: dist/windows/*.exe
-          retention-days: 30
-
-  mac:
-    # App 自带 Node 和服务；swift test；全新环境下打开 App（默认「这台 Mac」），等本机服务答 /v2/health。
-    needs: [request, linux]
-    runs-on: macos-15
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.request.outputs.commit }}
-          fetch-depth: 1
-          persist-credentials: false
-      - uses: actions/download-artifact@v4
-        with:
-          name: plasticine-server-${{ needs.request.outputs.short }}
-          path: dist/packages
-      - name: 带上 Node
-        run: bash scripts/packages/mac/fetch-node.sh 24.22.1 dist/packages/node
-      - name: 编译与打包
-        shell: bash
+          npm ci --no-audit --no-fund
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-noto-cjk
+      - name: 浏览器回归
         env:
-          VERSION: ${{ needs.linux.outputs.version }}
-        run: |
-          set -euo pipefail
-          cd mac
-          bash build.sh --server "../dist/packages/plasticine-server-$VERSION.tar.gz" --node ../dist/packages/node
-      - name: 打开 App，等本机服务
-        shell: bash
-        run: |
-          set -euo pipefail
-          open -n mac/build/Plasticine.app
-          for _ in $(seq 1 90); do
-            if curl -fsS --max-time 2 http://127.0.0.1:8790/v2/health; then
-              echo
-              curl -fsS --max-time 5 http://127.0.0.1:8790/ | grep -q '<html'
-              pkill -x Plasticine || true
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "App 带的服务 90 秒内没答上健康检查" >&2
-          tail -n 80 "$HOME/Library/Logs/Plasticine/server.log" 2>/dev/null || true
-          exit 1
-      # 放在打开 App 之后：「这台 Mac」只在全新环境下默认选中，测试先跑可能先建了数据目录。
-      - name: 单元测试
-        run: cd mac && swift test
-      - name: 压缩 App
-        shell: bash
-        env:
-          VERSION: ${{ needs.linux.outputs.version }}
-          COMMIT: ${{ needs.request.outputs.commit }}
-        run: |
-          set -euo pipefail
-          mkdir -p dist/mac
-          ditto -c -k --keepParent mac/build/Plasticine.app "dist/mac/Plasticine-mac-$VERSION.zip"
-          python3 scripts/packages/mac/package-identity.py --zip "dist/mac/Plasticine-mac-$VERSION.zip" \
-            --version "$VERSION" --commit "$COMMIT" --out dist/mac/mac-package.json
-      - uses: actions/upload-artifact@v4
-        with:
-          name: plasticine-mac-package-${{ needs.request.outputs.short }}
-          path: dist/mac
-          retention-days: 30
+          PLASTICINE_TEST_BROWSER: /usr/bin/google-chrome
+          TZ: Asia/Shanghai
+        run: cd client && npm run test:browser
 
   desktop-mac:
     # 桌面客户端（Electron 壳）的 Mac 包：带本体、Node（通用二进制）和设备助手（通用二进制，
     # 作为 App 的附属可执行文件放进 Contents/MacOS），临时签名；用户的 Mac 上第一次打开时用本机证书重签。打开 App 等本机
-    # 本体答上，再问一次助手。失败不挡服务包的发布（release 不等它）。
+    # 本体答上，再问一次助手；设备助手的 swift test 也在这里跑。
     needs: [request, linux]
     runs-on: macos-15
     timeout-minutes: 50
@@ -229,6 +131,8 @@ jobs:
           cp "$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/plasticine-helper" \
             ../desktop/stage/helper/plasticine-helper
           lipo -info ../desktop/stage/helper/plasticine-helper
+      - name: 设备助手的单元测试
+        run: cd mac && swift test
       - name: 打包
         shell: bash
         env:
@@ -276,7 +180,7 @@ jobs:
 
   desktop-windows:
     # 桌面客户端的 Windows 包：NSIS 安装程序（不签名，SmartScreen 点「仍要运行」），带本体、Node、C# 设备助手。
-    # 先编助手并照协议冒烟，打包后静默装、等本机本体答上。失败不挡服务包的发布。
+    # 先编助手并照协议冒烟，打包后静默装、等本机本体答上；Windows 上跑服务器命令（PowerShell）的测试也在这里。
     needs: [request, linux]
     runs-on: windows-latest
     timeout-minutes: 50
@@ -298,6 +202,10 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           Push-Location desktop; npm ci --no-audit --no-fund; Pop-Location
+      - name: Windows 上的服务器命令
+        run: >-
+          node --test agent/tests/cloud-tools/server-shell.test.ts
+          agent/tests/cloud-tools/server-command-windows.test.ts
       - name: 备好本体、Node、助手、图标
         shell: pwsh
         env:
@@ -364,7 +272,7 @@ jobs:
   release:
     # 11-09 他定：安装包发到本仓库的 GitHub Releases（标签 v<版本>，旧版本都留着，方便回退）；官网和自动更新的下载地址
     # 都指向这里。全部构建和冒烟都过了才发；同一版已经发过就不动（带版本号的文件不能换）。
-    needs: [request, linux, windows, mac, desktop-mac, desktop-windows]
+    needs: [request, linux, browser, desktop-mac, desktop-windows]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -381,14 +289,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: plasticine-server-${{ needs.request.outputs.short }}
-          path: dist/artifacts
-      - uses: actions/download-artifact@v4
-        with:
-          name: plasticine-windows-${{ needs.request.outputs.short }}
-          path: dist/artifacts
-      - uses: actions/download-artifact@v4
-        with:
-          name: plasticine-mac-package-${{ needs.request.outputs.short }}
           path: dist/artifacts
       - uses: actions/download-artifact@v4
         with:
