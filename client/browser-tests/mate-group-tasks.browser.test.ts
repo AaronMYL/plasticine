@@ -14,9 +14,9 @@ for (const client of ['mac', 'phone'] as const) {
       const { app, page } = await startStack(t, { client, realClock: true, hash: '/plasticine',
         beforeOpen(app) {
           const mates = new Mates(app.state, () => app.app.deps.lines);
-          const first = mates.create({ name: '资料研究员', role: '核对原始资料', avatar: '研', hue: 'sky',
+          const first = mates.create({ name: '资料研究员', role: '核对原始资料', avatar: 'circle', hue: 'sky',
             soul: '核实来源，列出结论。', purpose: null });
-          const second = mates.create({ name: '文字编辑', role: '校对文字', avatar: '编', hue: 'olive',
+          const second = mates.create({ name: '文字编辑', role: '校对文字', avatar: 'mochi', hue: 'olive',
             soul: '保留原意。', purpose: null });
           const group = mates.createGroup({ name: '阅读小组', mateIds: [first.id, second.id] });
           groupId = group.id;
