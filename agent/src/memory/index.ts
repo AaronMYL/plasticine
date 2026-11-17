@@ -4,6 +4,7 @@
 // - curation/  后台整理、全量整理、找说法冲突
 // - dream/     每晚做梦：读什么、整理、「昨晚整理了什么」页上的撤销和挑选，和每晚 1 点到点叫它的定时（night.ts）
 // - rules/     原来的「规则」那一份：改一行、整理、搬去 Soul 和「关于你」
+// - retro/     事后复盘：后台线做完以后提炼做事经验和技能（内核优化第二批）
 // Soul 不在这里（mates/）。只经 state/ 读写库，模型调用经 kernel/ 的 TextModels。
 
 export { addClaudeItems, applyCleanup, moveLine, runCleanup, startCleanup } from './curation/memory-cleanup.ts';
@@ -23,6 +24,11 @@ export {
   todaySection,
 } from './docs/memory-docs-context.ts';
 export { noteExperience } from './docs/experience.ts';
+export { recallExperience, touchedKeys } from './docs/experience-recall.ts';
+export type { RecallCall } from './docs/experience-recall.ts';
+export { Retrospector } from './retro/retrospect.ts';
+export type { RetroDeps, RetroResult, RetroSkills } from './retro/retrospect.ts';
+export type { RetroSkill } from './retro/retro-material.ts';
 export type { ExperienceInput, ExperienceResult } from './docs/experience.ts';
 export { createMemoryDocTools } from './docs/tools-docs.ts';
 export { RememberParameters, rememberWithSources } from './docs/tools-remember.ts';

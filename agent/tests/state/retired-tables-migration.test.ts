@@ -6,6 +6,7 @@ import { MEMORY_DATABASE, openDatabase } from '../../src/state/db.ts';
 import { migrate, MIGRATIONS } from '../../src/state/migrations/index.ts';
 
 const ID = '0147-retired-tables-action-indexes';
+const UP_TO = MIGRATIONS.filter((entry) => entry.id <= ID);
 const RETIRED = [
   'trigger_dispositions', 'triggers', 'intake_sources', 'rule_events', 'rules',
   'pairing_codes', 'mail_fallback_settings', 'notification_mail_status', 'client_updates',
@@ -56,7 +57,7 @@ test('0147 删掉九张退役的表和 iPhone 才做的三种旧动作，留着�
     db.run(`INSERT INTO timed_slots (id, created_at, updated_at, version, source, config, memo)
       VALUES ('dream', ${META}, 'dream', '{}', '{"last":"x"}')`);
 
-    assert.deepEqual(migrate(db, MIGRATIONS, clock), [ID]);
+    assert.deepEqual(migrate(db, UP_TO, clock), [ID]);
 
     const after = names(db, 'table');
     assert.deepEqual(after, before.filter((table) => !RETIRED.includes(table)));
@@ -72,7 +73,7 @@ test('0147 删掉九张退役的表和 iPhone 才做的三种旧动作，留着�
     const indexes = names(db, 'index');
     assert.equal(indexes.includes('node_actions_requested'), true);
     assert.equal(indexes.includes('node_actions_run_node'), true);
-    assert.deepEqual(migrate(db, MIGRATIONS, clock), []);
+    assert.deepEqual(migrate(db, UP_TO, clock), []);
   } finally {
     db.close();
   }

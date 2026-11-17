@@ -24,6 +24,8 @@ export interface ExperienceInput {
   lineId: string;
   /** 同一件事有了新结果：改这一行，旧说法留作「之前」。 */
   replacesLineId?: string;
+  /** 这一篇对应哪些网站或应用（域名、应用名）：线碰到它们时带出这一篇（内核优化第二批）。 */
+  sites?: readonly string[];
 }
 
 export type ExperienceResult =
@@ -49,30 +51,41 @@ export function noteExperience(state: DocState, input: ExperienceInput, writer: 
   if (looksLikeSecret(text)) {
     return { saved: false, reason: '像密钥，不记' };
   }
-  const anchors = [{ kind: 'work' as const, ref: `line:${input.lineId}` }];
   return state.transaction((): ExperienceResult => {
-    const existing = findHowDoc(state, topic);
-    if (input.replacesLineId !== undefined) {
-      const old = state.memoryDocs.lines.get(input.replacesLineId);
-      if (old === undefined || old.retiredAt !== null || existing === undefined || old.docId !== existing.id) {
-        return { saved: false, reason: '要改的那一行不在这一篇在用的行里' };
-      }
-      if (normalized(old.text) === normalized(text)) {
-        return { saved: false, reason: '和原来一样' };
-      }
-      return { saved: true, doc: existing, created: false, line: reviseLine(state, old, text, anchors, writer) };
+    const result = writeExperience(state, input, topic, text, writer);
+    // 这条记过了也把网站补上：以后碰到这些网站照样带出这一篇。
+    const doc = result.saved ? result.doc : findHowDoc(state, topic);
+    if (doc !== undefined && input.sites !== undefined) {
+      state.memoryDocs.usage.addSites(doc.id, input.sites);
     }
-    if (existing !== undefined
-      && state.memoryDocs.lines.live(existing.id).some((line) => sameThing(line.text, text))) {
-      return { saved: false, reason: '这条已经记过' };
-    }
-    const doc = existing ?? state.memoryDocs.docs.create({ kind: 'how', title: topic,
-      summary: clip(input.summary ?? `做「${topic}」这类事的做法和坑；动手之前读`, MEMORY_DOC_SUMMARY_MAX_CHARS),
-      createdBy: writer.actor });
-    if (existing === undefined) {
-      docEvent(state, doc.id, null, 'doc_created', writer, { title: doc.title });
-    }
-    const line = addLine(state, { docId: doc.id, section: input.section, text, basis: 'tried', anchors }, writer);
-    return { saved: true, doc, created: existing === undefined, line };
+    return result;
   });
+}
+
+function writeExperience(state: DocState, input: ExperienceInput, topic: string, text: string, writer: Writer)
+  : ExperienceResult {
+  const anchors = [{ kind: 'work' as const, ref: `line:${input.lineId}` }];
+  const existing = findHowDoc(state, topic);
+  if (input.replacesLineId !== undefined) {
+    const old = state.memoryDocs.lines.get(input.replacesLineId);
+    if (old === undefined || old.retiredAt !== null || existing === undefined || old.docId !== existing.id) {
+      return { saved: false, reason: '要改的那一行不在这一篇在用的行里' };
+    }
+    if (normalized(old.text) === normalized(text)) {
+      return { saved: false, reason: '和原来一样' };
+    }
+    return { saved: true, doc: existing, created: false, line: reviseLine(state, old, text, anchors, writer) };
+  }
+  if (existing !== undefined
+    && state.memoryDocs.lines.live(existing.id).some((line) => sameThing(line.text, text))) {
+    return { saved: false, reason: '这条已经记过' };
+  }
+  const doc = existing ?? state.memoryDocs.docs.create({ kind: 'how', title: topic,
+    summary: clip(input.summary ?? `做「${topic}」这类事的做法和坑；动手之前读`, MEMORY_DOC_SUMMARY_MAX_CHARS),
+    createdBy: writer.actor });
+  if (existing === undefined) {
+    docEvent(state, doc.id, null, 'doc_created', writer, { title: doc.title });
+  }
+  const line = addLine(state, { docId: doc.id, section: input.section, text, basis: 'tried', anchors }, writer);
+  return { saved: true, doc, created: existing === undefined, line };
 }

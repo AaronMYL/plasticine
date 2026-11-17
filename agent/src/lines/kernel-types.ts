@@ -52,6 +52,11 @@ export interface KernelOptions {
   /** 已加载方法每次请求重新装入；作用域与 skill_read 的 line:<id> 一致。 */
   skillsContext?: (lineId: string) => string;
   /**
+   * 一步做完以后要带出的做事经验（内核优化第二批）：碰到哪个网站就把那一篇挂在结果后面。shown 是这条线已经带过的，
+   * 同一篇只带一次。没有要带的回 null。
+   */
+  recall?: (call: { name: string; args: unknown }, resultText: string, shown: Set<string>) => string | null;
+  /**
    * 一轮停下以后（写完库、贴回发起的线之后）告诉外面：主线做完一轮排记忆整理、跨用户任务的线做完发交付。
    * 出错只记日志，不影响线。
    */

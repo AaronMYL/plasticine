@@ -16,6 +16,7 @@ import { migration as mateRelays } from './0144-mate-relays.ts';
 import { migration as wakesWatches } from './0145-wakes-watches.ts';
 import { migration as plansPushesConnections } from './0146-plans-pushes-connections.ts';
 import { migration as retiredTablesActionIndexes } from './0147-retired-tables-action-indexes.ts';
+import { migration as memoryDocUsage } from './0148-memory-doc-usage.ts';
 import { migration as lineArchive } from './0066-line-archive.ts';
 import { migration as searchIndex } from './0067-search-index.ts';
 import { migration as memoryLayers } from './0070-memory-layers.ts';
@@ -242,6 +243,7 @@ export const MIGRATIONS: readonly Migration[] = [
   wakesWatches,
   plansPushesConnections,
   retiredTablesActionIndexes,
+  memoryDocUsage,
 ];
 
 export { appliedMigrations, migrate } from './migrate.ts';

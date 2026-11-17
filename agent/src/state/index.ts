@@ -24,6 +24,8 @@ export type { SessionStore } from './sessions.ts';
 export type { LegacyIdMap, LegacyTarget } from './legacy-ids.ts';
 export type { MemoryFilter, MemoryStore } from './memory.ts';
 export type { MemoryDocStores } from './memory-docs.ts';
+export { MAX_DOC_SITES, siteKey } from './memory-doc-usage.ts';
+export type { DocUsage } from './memory-doc-usage.ts';
 export type { MemoryCurationStores } from './memory-curation.ts';
 export type { MemoryJournalStore } from './memory-journal.ts';
 export type { MemoryDreamStore } from './memory-dreams.ts';

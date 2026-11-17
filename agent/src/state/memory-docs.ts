@@ -26,6 +26,7 @@ import {
 } from '../../shared/state.ts';
 import { checked, encodeRow, OBJECT_META_COLUMNS, readRow, type ColumnMap } from './codec.ts';
 import { fromSqliteError, StateError } from './errors.ts';
+import { createMemoryDocUsageStore } from './memory-doc-usage.ts';
 import { allPages, ObjectStore, type StoreContext, type StoreSpec } from './object-store.ts';
 
 const DOC_COLUMNS: ColumnMap = {
@@ -300,6 +301,7 @@ export function createMemoryDocStores(context: StoreContext) {
     docs: createDocStore(context),
     lines: createLineStore(context),
     events: createEventStore(context),
+    usage: createMemoryDocUsageStore(context),
   };
 }
 

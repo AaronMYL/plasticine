@@ -17,6 +17,8 @@ function parameters() {
     text: Type.String({ minLength: 1, maxLength: 500, description: '一句能照着做的话，写清条件和做法' }),
     summary: Type.Optional(Type.String({ minLength: 1, maxLength: 150,
       description: '新建这一篇时的一句话说明：讲什么、什么时候该读' })),
+    sites: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 80 }), { maxItems: 4,
+      description: '这一篇对应的网站域名或应用名（如 mp.weixin.qq.com、微信）：以后碰到它们时自动带出这一篇' })),
     replacesLineId: Type.Optional(Type.String({ minLength: 1,
       description: '同一件事有了新结果时，改那一行（行标识照 read_memory_doc 里的写）' })),
   }, { additionalProperties: false });
@@ -37,7 +39,8 @@ function createExperience(state: DocState, scope: LineScope): AgentTool<Experien
       const args = checkedArgs(schema, raw, 'note_experience');
       const result = noteExperience(state, { topic: args.topic, section: args.kind, text: args.text,
         lineId: scope.lineId, ...(args.summary === undefined ? {} : { summary: args.summary }),
-        ...(args.replacesLineId === undefined ? {} : { replacesLineId: args.replacesLineId }) },
+        ...(args.replacesLineId === undefined ? {} : { replacesLineId: args.replacesLineId }),
+        ...(args.sites === undefined ? {} : { sites: args.sites }) },
       { actor: 'brain', ref: `line:${scope.lineId}` });
       const text = result.saved
         ? JSON.stringify({ saved: true, doc: result.doc.title, lineId: result.line.id,

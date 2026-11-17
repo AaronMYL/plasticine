@@ -110,6 +110,7 @@ export class LineKernel implements LineControl, SideControl {
       attachments: (ids) => this.#notes(ids),
       images: (ids) => imagesOf(this.#state, ids),
       ...(this.#options.contextImages === undefined ? {} : { contextImages: this.#options.contextImages }),
+      ...(this.#options.recall === undefined ? {} : { recall: this.#options.recall }),
       now: this.#now,
       later: this.#later,
       setStatus: (lineId, status, patch) => this.#setStatus(lineId, status, patch),
@@ -545,6 +546,13 @@ export class LineKernel implements LineControl, SideControl {
     const message: LineNoticeMessage = { role: 'notice', key: input.key, text: input.text, brief: input.brief,
       timestamp: this.#now().getTime() };
     return this.#post(main.id, message);
+  }
+
+  /** 系统通知发在指定的线上（事后复盘记下了什么，发在复盘的那条线上）。线正在跑时插进这一轮、返回 null。 */
+  noticeOn(lineId: string, input: { key: string; text: string; brief: string }): LineMessageView | null {
+    const message: LineNoticeMessage = { role: 'notice', key: input.key, text: input.text, brief: input.brief,
+      timestamp: this.#now().getTime() };
+    return this.#post(this.line(lineId).id, message);
   }
 
   /**

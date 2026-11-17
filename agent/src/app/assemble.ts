@@ -10,7 +10,8 @@ import {
   type LinkPreviewFetchOptions, type MailImageFetchOptions,
 } from '../cloud-tools/index.ts';
 import { autoOnlyPermissionGate, createShowWidgetsTool, getTimeTool, ToolRegistry, type Tool } from '../tools/index.ts';
-import { ensureRulesDoc, createMemoryDocTools, MemoryCurator } from '../memory/index.ts';
+import { ensureRulesDoc, createMemoryDocTools, MemoryCurator, recallExperience, Retrospector }
+  from '../memory/index.ts';
 import { createBookTools } from '../books/index.ts';
 import {
   createDeviceActionGate, createDeviceActionTool, createDeviceCancelTool, createDeviceLogsTool, createDeviceNodesTool,
@@ -23,6 +24,7 @@ import {
 import { createNoteTools } from '../notes/index.ts';
 import { createPaymentTool, MoneyDraftDesk, PaymentReader } from '../life/index.ts';
 import { createSkillTools, SkillShop, SkillStore, type SkillShopOptions } from '../skills/index.ts';
+import { retroSkills } from './retro-skills.ts';
 import { projectTools } from '../projects/index.ts';
 import { AskDesk, Notices, Presenter, MessageAlerts, Presence, ProjectWatch, PushService, readNotifyKinds, routeAsks,
   ScanScheduler, type AskResolver, type PushTransport, type VapidKeys } from '../attention/index.ts';
@@ -225,6 +227,11 @@ export function assembleApp(options: AssembleOptions): App {
     attachmentChanged: (id) => hub.publish({ type: 'attachment_changed',
       attachment: state.attachments.require(id) }) });
   const paymentReader = new PaymentReader({ state, drafts: moneyDrafts, models: text });
+  // 事后复盘（内核优化第二批）：后台线做完以后提炼做事经验和技能；测试里和记忆整理一起关。
+  const retrospector = options.memoryCuration === false ? null : new Retrospector({ state, models: text,
+    skills: retroSkills(skills), notify: (lineId, said) => {
+      late.get().noticeOn(lineId, { key: `retro:${lineId}:${now().getTime()}`, text: said, brief: '复盘记下了' });
+    } });
   const memoryCurator = new MemoryCurator({ state, now,
     model: options.memoryCuration === false ? null : { models: text } });
   let tunnel: TunnelService | undefined;
@@ -317,6 +324,7 @@ export function assembleApp(options: AssembleOptions): App {
   const lineTimers = assembleLineTimers({ state, now, hub, lines: () => late.get(), devices: devices.actions });
   const lines = assembleLines(options.lines, { state, desk, hub, now, publicUrl,
     skillsContext: (lineId) => skills.context(`line:${lineId}`),
+    recall: (call, resultText, shown) => recallExperience(state, call, resultText, shown),
     lineChanged: (lineId) => network.lineChanged(lineId),
     contextImages: (lineId) => network.attachments.contextImages(lineId),
     tools: [...mateTools(new Mates(state, () => late.get())),
@@ -357,6 +365,9 @@ export function assembleApp(options: AssembleOptions): App {
       network.lineEnded(line.id, outcome);
       if (line.kind === 'background') {
         tasks.ended(line.id);
+      }
+      if (line.kind === 'background' && (outcome === 'done' || outcome === 'failed')) {
+        retrospector?.enqueue(line);
       }
     },
     // 贴回主线的后台线结果：没做成、没做完的再发一条系统通知；做成的只在主线上（11-07 他定「只在没做成时弹」）。

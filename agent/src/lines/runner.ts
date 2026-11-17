@@ -48,6 +48,8 @@ export interface RunnerHost {
   /** 这些附件里的图（给能看图的模型）。 */
   images: ImagesOf;
   contextImages?: (lineId: string) => import('@earendil-works/pi-ai').ImageContent[];
+  /** 做事经验按网站带出（kernel-types.ts 的 recall）。 */
+  recall?: (call: { name: string; args: unknown }, resultText: string, shown: Set<string>) => string | null;
   now(): Date;
   later: Later;
   /** 改线的状态并推 line_changed（kernel 做，带上实时状态那一行）。 */
@@ -88,6 +90,8 @@ export class LineRunner {
   // 拦不收敛（loop-guard.ts）：一次驱动一份；halt 是内核叫停这件事的原因，停下后线记成没做完、交回发起的一方。
   #guard = new LoopGuard({ hardStops: false });
   #halt: string | null = null;
+  // 这条线已经带出过的做事经验（同一篇只带一次；重启后可能再带一次，无妨）。
+  readonly #recalled = new Set<string>();
   #activity: Activity = NO_ACTIVITY;
   readonly #inFlight = new Map<string, string>();
   // 刷新后要和实时一样（0063）：这一条回答的思考从什么时候开始、想了多久；每一步结果那一句，等工具结果写库时带上。
@@ -415,14 +419,26 @@ export class LineRunner {
   /** 一步做完：打转、原地重读、该对进度了，就在结果后面加一句提醒；该停下了记下原因，这一批做完就停。 */
   #afterToolCall(context: AfterToolCallContext): AfterToolCallResult | undefined {
     const args = argsOf(context.args);
-    const after = this.#guard.after({ name: context.toolCall.name, args }, context.isError,
-      contentText(context.result.content));
+    const resultText = contentText(context.result.content);
+    const after = this.#guard.after({ name: context.toolCall.name, args }, context.isError, resultText);
     this.#haltFor(after.halt, context.toolCall.name, args);
-    if (after.notes.length === 0 && this.#halt === null) {
+    const recalled = context.isError ? null : this.#recall({ name: context.toolCall.name, args }, resultText);
+    const texts = [...(recalled === null ? [] : [recalled]), ...after.notes];
+    if (texts.length === 0 && this.#halt === null) {
       return undefined;
     }
-    const notes = after.notes.map((text) => ({ type: 'text' as const, text }));
+    const notes = texts.map((text) => ({ type: 'text' as const, text }));
     return { content: [...context.result.content, ...notes], ...(this.#halt === null ? {} : { terminate: true }) };
+  }
+
+  /** 带出做事经验；出错只记日志，不挡这一步。 */
+  #recall(call: { name: string; args: unknown }, resultText: string): string | null {
+    try {
+      return this.#host.recall?.(call, resultText, this.#recalled) ?? null;
+    } catch (error) {
+      safeLog('warn', 'experience_recall_failed', { category: errorCategory(error) });
+      return null;
+    }
   }
 
   /** 内核叫停这件事：写给他看的原因（线记成没做完，后台线照常交回发起的一方）。 */
