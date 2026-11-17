@@ -29,6 +29,7 @@ const EVENTS = {
   notice_push_failed: '主线通知已经发在主线上，系统通知（网页推送）没发出去',
   push_withdraw_failed: '推送已经记成撤回，给手机换成「已撤回」的那条没推出去',
   push_failed: '系统通知发送失败，卡仍在对话和清单里',
+  push_retried: '系统通知第一次没连上推送服务，原样再发一次',
   push_rejected: '系统通知被推送服务拒收',
   ask_notify_failed: '卡的系统通知失败，记录已保存',
   message_alert_push_failed: '新消息的系统通知没发出去',

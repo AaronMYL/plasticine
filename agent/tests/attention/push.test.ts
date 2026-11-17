@@ -283,6 +283,32 @@ test('推送服务不通：记下失败、写日志，卡照样在清单里', as
   assert.match(h.state.pushSubscriptions.byEndpoint('https://push.example.com/send/abc')?.lastError ?? '', /发送失败/);
 });
 
+test('推送服务一时连不上：原样再发一次就到了，不记失败；推送服务拒收的不重发', async () => {
+  let calls = 0;
+  let answer = 201;
+  push = new PushService({
+    state: h.state,
+    keys: generateVapidKeys(),
+    subject: 'https://plasticine.test',
+    now: h.clock.now,
+    transport: async () => {
+      calls += 1;
+      if (calls === 1) {
+        throw new TypeError('fetch failed');
+      }
+      return { status: answer };
+    },
+  });
+  const phone = device('手机');
+  push.subscribe(phone, 'https://push.example.com/send/retry', fakeBrowser().keys);
+  assert.deepEqual(await push.test(phone), { sent: 1, error: null });
+  assert.equal(calls, 2);
+  assert.equal(h.state.pushSubscriptions.byEndpoint('https://push.example.com/send/retry')?.lastError, null);
+  answer = 500;
+  assert.equal((await push.test(phone)).sent, 0);
+  assert.equal(calls, 3);
+});
+
 test('测试通知（第13批）：只发给这台设备的订阅，回发出几条、没发成的原因；没开通知就直说', async () => {
   const mac = device('Mac');
   const phone = device('iPhone');

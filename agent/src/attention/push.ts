@@ -156,6 +156,19 @@ export class PushService implements Notifier {
     this.#state.pushSubscriptions.record(subscription.id, subscription.generation, patch);
   }
 
+  /**
+   * 推送服务一时连不上就原样再发一次，还不行才算失败（11-17：线上到苹果的推送服务偶尔超时，一天丢二十来条通知）。
+   * 同一条通知带同一个 tag，万一两次都到了，设备上后一条盖掉前一条。推送服务答了的（哪怕是拒收）不重发。
+   */
+  async #deliver(endpoint: string, request: PushRequest): Promise<{ status: number }> {
+    try {
+      return await this.#transport(endpoint, request);
+    } catch (error) {
+      safeLog('warn', 'push_retried', { category: errorCategory(error) });
+      return this.#transport(endpoint, request);
+    }
+  }
+
   async #send(subscription: PushSubscription, payload: Buffer): Promise<'delivered' | 'gone' | 'failed'> {
     const now = this.#now();
     let status: number;
@@ -170,7 +183,7 @@ export class PushService implements Notifier {
         },
         body: encryptPayload(payload, subscription),
       };
-      ({ status } = await this.#transport(subscription.endpoint, request));
+      ({ status } = await this.#deliver(subscription.endpoint, request));
     } catch (error) {
       const reason = errorCategory(error);
       safeLog('error', 'push_failed', { objectId: subscription.id, category: reason });
