@@ -14,14 +14,15 @@ export const TOOL_SEARCH = 'tool_search';
 export const SEARCH_LIMIT = 6;
 
 /**
- * 一开始就声明的工具：线上 11-03 至 11-17 调用量最多的（server_command 1,117 次……start_line 30 次），加上问他。
- * 一共 20 件，再加 tool_search。只给某几种线的（line_outcome 只给后台线）照样按线的种类筛。
+ * 一开始就声明的工具：线上 11-03 至 11-17 调用量最多的（server_command 1,117 次……start_line 30 次），加上问他、
+ * 后台线开头列计划的 line_plan（26 次；回放里它放进按需以后，有一件后台线开头没先列计划）。只给某几种线的照样按线的
+ * 种类筛：主线、旁聊 20 件，后台线多一件 line_outcome；都再加 tool_search。
  */
 export const DIRECT_TOOLS: readonly string[] = [
   'server_command', 'device_action', 'server_command_read', 'read_result', 'read_line', 'tell_line',
   'cloud_browser_observe', 'line_outcome', 'read_memory_doc', 'space_read', 'cloud_browser_open', 'page_send',
   'cloud_browser_act', 'read_project', 'line_wake_later', 'file_save', 'remember', 'start_line', 'skill_read',
-  'ask_user',
+  'ask_user', 'line_plan',
 ];
 
 export interface Loadout {
