@@ -27,7 +27,7 @@ import type { Heartbeat } from '../heartbeat/index.ts';
 import type { NetworkService, TunnelService } from '../network/index.ts';
 import type { SkillShop, SkillStore } from '../skills/index.ts';
 import type { StateService } from '../state/index.ts';
-import type { BackupService, ClientReleases } from '../system/index.ts';
+import type { BackupService, ClientReleases, MigrationService } from '../system/index.ts';
 import { AttemptLimiter } from './attempt-limiter.ts';
 import {
   HOST,
@@ -79,6 +79,7 @@ export interface AppOptions {
   paymentReader: PaymentReader;
   clientUpdates: ClientReleases;
   backups: BackupService;
+  migration?: MigrationService;
   skills: SkillStore;
   /** 技能页的「添加」：商店清单、从网址、从文件（11-13）。 */
   skillShop: SkillShop;
@@ -204,6 +205,7 @@ export function createApp(options: AppOptions): App {
     paymentReader: options.paymentReader,
     clientUpdates: options.clientUpdates,
     backups: options.backups,
+    migration: options.migration ?? null,
     memoryCurator: options.memoryCurator,
     hub,
     desk: options.desk,

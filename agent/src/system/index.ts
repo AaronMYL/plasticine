@@ -10,3 +10,8 @@ export type { ReplayDecision, ReplayInput } from './receipts.ts';
 export { ClientReleases } from './client-releases.ts';
 export type { ClientReleaseOptions } from './client-releases.ts';
 export { manifestDigest, readClientManifest, readClientPublication, recordClientRelease } from './client-manifest.ts';
+export {
+  applyPendingMigration, deriveKey, MigrationFileError, MigrationProblem, MigrationService, packState, readHeader,
+  readPending, readResult, readSummary, RESTART_EXIT_CODE, stageArchive, stageForRestart, TooNewError,
+} from './migration/index.ts';
+export type { MigrationServiceOptions, PendingMigration } from './migration/index.ts';

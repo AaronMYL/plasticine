@@ -290,6 +290,8 @@ export interface PlasticineApi extends ToolGroupApi, ThingsApi, ContactsClientAp
   /** 11-16：设置 · AI · 连接（MCP）和推到手机的记录。 */
   connections: import('./connections-client.ts').ConnectionsApi;
   pushes: import('./connections-client.ts').PushesApi;
+  /** 11-16：设置 · 系统「数据迁移」。 */
+  migration: import('./migration-client.ts').MigrationApi;
   /** 任务栏目（《优化清单》第 3、4、5 条）。 */
   tasks: import('./tasks-client.ts').TasksApi;
   search: SearchApi;

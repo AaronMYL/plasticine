@@ -74,3 +74,9 @@ export type { SoulRevisionRow, SoulRow } from './souls.ts';
 export type { LineWake, LineWatch, WatchCheck, WatchInput } from './line-timers.ts';
 export type { PushRow } from './pushes.ts';
 export type { ConnectionRow } from './connections.ts';
+export { MIGRATION_TABLES, tablesOf, type MigrationTableClass } from './migration-tables.ts';
+export {
+  contentCounts, copyDatabase, handleOf, keepMachineTables, schemaOf, stripSnapshot, unknownMigrations, upgradeStaged,
+  type MigrationDbCounts,
+} from './migration-db.ts';
+export { mergeDatabase, type MergeOutcome } from './migration-merge.ts';

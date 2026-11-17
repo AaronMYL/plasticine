@@ -33,6 +33,7 @@ import { openMaintenanceSocket } from './maintenance-socket.ts';
 import { stopOnStdinEof, stopSignal } from './stop-signal.ts';
 import { KernelModels, ProviderLogins } from '../kernel/index.ts';
 import { createCompactor } from '../lines/index.ts';
+import { applyPendingMigration, MigrationService, RESTART_EXIT_CODE } from '../system/index.ts';
 
 interface Settings {
   stateDir: string;
@@ -85,6 +86,14 @@ async function main(): Promise<number> {
     safeLog('error', 'restore_review_required');
     return 2;
   }
+  // 数据迁移（11-16）：重启前选好的合并、替换或退回，开库之前做完；做坏了不拦启动，下次再接着做。
+  try {
+    if (applyPendingMigration(config.stateDir, () => new Date()) !== null) {
+      safeLog('log', 'migration_applied');
+    }
+  } catch (error) {
+    safeLog('error', 'migration_apply_failed', { category: errorCategory(error) });
+  }
   const state = openState({
     path: join(config.stateDir, DATABASE_FILE),
     notesDirectory: join(config.stateDir, NOTES_DIRECTORY),
@@ -103,8 +112,15 @@ async function main(): Promise<number> {
     const clientManifestPath = process.env['PLASTICINE_CLIENT_MANIFEST']
       ?? (clientDirectory === undefined ? '/var/www/plasticine/current/client-manifest.json'
         : join(clientDirectory, 'client-manifest.json'));
+    let restart: () => void = () => undefined;
+    const restarting = new Promise<string>((resolve) => {
+      restart = () => resolve('migration');
+    });
+    const migration = new MigrationService({ stateDirectory: config.stateDir, now: () => new Date(),
+      snapshot: (path) => state.snapshotTo(path), restart: () => restart() });
     const app = assembleApp({
       state,
+      migration,
       dryRun: config.dryRun,
       vapidKeys,
       vapidSubject: config.vapidSubject,
@@ -130,11 +146,13 @@ async function main(): Promise<number> {
         safeLog('warn', 'maintenance_socket_failed', { category: errorCategory(error) });
         return undefined;
       });
-    await stopSignal({ process, ...(stopOnStdinEof(process.env) ? { stdin: process.stdin } : {}) });
+    const reason = await Promise.race([restarting,
+      stopSignal({ process, ...(stopOnStdinEof(process.env) ? { stdin: process.stdin } : {}) })]);
     safeLog('log', 'service_stopping');
     await maintenance?.close();
     await app.stop();
-    return 0;
+    // 数据迁移选好了：退出码 75，systemd（Restart=on-failure）和桌面客户端都会再拉起来，开库前做完。
+    return reason === 'migration' ? RESTART_EXIT_CODE : 0;
   } finally {
     state.close();
   }

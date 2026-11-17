@@ -88,6 +88,9 @@ description: 写、改、审 Plasticine 的代码时使用：代码规矩的正�
   不拿 db 句柄。
 - 迁移只加不改旧迁移，迁移号在 `state/migrations/` 里顺延；要删表、删列时新开一条 `destructive` 迁移，并在它的 `changes` 里写明哪些表的行数会变（副本演练时别的表行数一变就不过）。新迁移先问维护者，
   上线前在线上库的副本上演练。产品里删用户数据只记 `deleted_at` / `removed_at`；例外是「最近删除」的清空和永久删除。
+- 新表要在 `state/migration-tables.ts` 登记归哪一类（他的东西 / 这台的记录 / 密钥和设置 / 只属于这台 / 索引）：
+  数据迁移（11-16）按这个决定导不导出、只要数据的带不带、合并时并不并。状态目录里新的东西同样要在
+  `system/migration/layout.ts` 的名单里写清楚带不带。
 - 用户原话、系统处理、推测、现实结果分开记，各留真实来源；系统不能冒充用户确认，不替用户补写答案。
 - 来源权重 `w` 只表示来源，不当真值或权限判断；唯一的用法是上下文超预算时的截断顺序。
 - 每个有副作用的动作带稳定的动作标识，重放不重复执行（`system/` 的 external-once 和 receipts）。
@@ -134,6 +137,7 @@ description: 写、改、审 Plasticine 的代码时使用：代码规矩的正�
 | 日志只经 `util/` | `agent/tests/util/log.test.ts` |
 | 界面的令牌、用词、图标、布局 | 见 plasticine-visual 的 `page-spec.md` 末尾 |
 | 公开仓库不带真人资料 | `node scripts/scan-tests.ts`（推送前） |
+| 库里每张表都归了迁移的类 | `agent/tests/state/migration-db.test.ts` |
 
 真有例外，在那一行写「例外：原因」或登记在对应检查的名单里，并写进这份规范。在 Plasticine 内部，技能用
 `skills_search` 找、`skill_read` 读正文和参考。

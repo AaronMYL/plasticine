@@ -44,6 +44,7 @@ export * from './calendar.ts';
 export * from './tool-groups.ts';
 export * from './client-updates.ts';
 export * from './backups.ts';
+export * from './migration.ts';
 export * from './node-channel.ts';
 export * from './mac-bridge.ts';
 export * from './desktop-bridge.ts';

@@ -76,6 +76,7 @@ import './client-update.css';
 import { ContextMenuLayer } from './context-menu.tsx';
 import { useQuoteCommands } from './use-quote-commands.ts';
 import { watchSegmented } from './segmented-slide.ts';
+import { announceMigrationResult } from '../views/settings/migration-restart.tsx';
 
 /** 桌面客户端标题栏的高（有标题栏时才设）：盖住整个窗口的弹框层从它下面开始。 */
 const TITLEBAR_ROOM = '--titlebar-room';
@@ -119,6 +120,8 @@ export function Shell(): ReactNode {
   const memory = useSectionMemory(route, overlaid);
   // 分段控件换一项时底块滑过去（11-15 动效一套）。
   useEffect(() => watchSegmented(document.body), []);
+  // 数据迁移（11-16）：重启回来、页面重新载入以后说一句做成了什么。
+  useEffect(() => announceMigrationResult(), []);
   // 旧地址（#/conversation…、#/messages/plasticine…、#/bookmarks）规整成新的，不多一步历史。
   // 按地址栏此刻的样子规整（不按这一轮渲染时的：设置弹框会在同一轮里把地址换成它自己的）。
   useEffect(() => {

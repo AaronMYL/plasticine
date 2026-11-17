@@ -27,6 +27,7 @@ import { hashPassword } from '../../src/app/password-hash.ts';
 import { TextModelError, type TextAnswer } from '../../src/kernel/index.ts';
 import type { ModelSource } from '../../src/lines/index.ts';
 import { openState, type StateService } from '../../src/state/index.ts';
+import { MigrationService } from '../../src/system/index.ts';
 import { scriptedText, type TextStep } from '../tools/helpers.ts';
 
 export const START_MS = Date.parse('2026-10-27T08:00:00.000Z');
@@ -114,6 +115,8 @@ export interface TestAppOptions {
   kernelModels?: (state: StateService) => NonNullable<AssembleOptions['kernelModels']>;
   /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；不给 = 没设，本机令牌一律不认。 */
   localToken?: string;
+  /** 数据迁移（11-16）：给了就装上，选好以后的重启请求交给它。 */
+  migrationRestart?: () => void;
 }
 
 // Ticks only when woken in tests, so a test sees exactly the work it started.
@@ -175,6 +178,9 @@ export async function startTestApp(steps: TextStep[] = [], options: TestAppOptio
     lines: { models: source, machineLoad: () => ({ cores: 2, load1: 0, freeRatio: 0.5 }), ...options.lines },
     ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels(state) }),
     localToken: options.localToken ?? null,
+    ...(options.migrationRestart === undefined ? {} : { migration: new MigrationService({ stateDirectory: directory,
+      now: clock.now, snapshot: (path) => state.snapshotTo(path), restart: options.migrationRestart,
+      diskFree: () => 1e12 }) }),
   });
   if (options.startTasks !== false) {
     app.start();

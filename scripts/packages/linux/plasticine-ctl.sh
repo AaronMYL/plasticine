@@ -1,8 +1,10 @@
 #!/bin/sh
 # install.sh 装成 /usr/local/bin/plasticine：日常几件事不用记长命令（docs/install-packages.md）。
-#   plasticine status | update | rollback | logs | restart | password | setup-link
+#   plasticine status | update | rollback | logs | restart | password | setup-link | export | import
 # password：重设主人密码（输两遍、不回显；脚本里 plasticine password --stdin 读一行）。
 # setup-link [--handle <@账号>|--domain <域名>]：还没建账号时再拿一条一次性建账号链接。这两条要动库，以 plasticine 用户跑；不是 root 先 sudo。
+# export [--data-only] <文件>：导出数据迁移文件（全部的问两遍口令）；import --merge|--replace <文件>：解开后重启服务，
+# 开库前合并或替换（数据迁移，11-16）。文件路径要 plasticine 用户读写得到（比如 /var/lib/plasticine 下面）。
 set -eu
 
 APP="/opt/plasticine"
@@ -55,8 +57,19 @@ case "${1:-status}" in
     fi
     exit "$code"
     ;;
+  export)
+    shift
+    [ "$(id -u)" = "0" ] || exec sudo "$0" export "$@"
+    as_service_user migration-cli.ts export "$@"
+    ;;
+  import)
+    shift
+    [ "$(id -u)" = "0" ] || exec sudo "$0" import "$@"
+    as_service_user migration-cli.ts import "$@"
+    $RESTART
+    ;;
   *)
-    echo "用法：plasticine status|update|rollback|logs|restart|password|setup-link" >&2
+    echo "用法：plasticine status|update|rollback|logs|restart|password|setup-link|export|import" >&2
     exit 2
     ;;
 esac

@@ -267,6 +267,10 @@ export function openState(options: OpenStateOptions) {
     /** Migrations this open applied; empty when the library was already current. */
     newlyApplied,
     schemaVersion: (): string[] => appliedMigrations(db),
+    /** 数据迁移导出（11-16）：把整库一致地复制到 path（VACUUM INTO，含 WAL 里还没并回去的；path 不能已存在）。 */
+    snapshotTo: (path: string): void => {
+      db.run('VACUUM INTO $path', { path });
+    },
     /** Runs `work` atomically, e.g. a task's status change together with its task_events row (harness 5.3). */
     transaction: <T>(work: () => T): T => db.transaction(work),
     /** 同 transaction，期间删掉、改掉的内容用零覆盖（11-07 他定「删除」真的抹掉；只给「忘掉」用）。 */

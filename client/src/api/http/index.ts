@@ -2,6 +2,7 @@
 // 默认用浏览器自己的；同源请求，会话在 HttpOnly cookie 里，前端不碰。
 
 import { HttpConnections, HttpPushes } from './connections.ts';
+import { HttpMigration } from './migration.ts';
 import { HttpWebSearch } from './web-search.ts';
 import { createNetworkAttachmentsHttp } from './network-attachments.ts';
 import { createMatesHttp } from './mates.ts';
@@ -88,6 +89,7 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     webSearch: new HttpWebSearch(transport),
     connections: new HttpConnections(transport),
     pushes: new HttpPushes(transport),
+    migration: new HttpMigration(transport),
     search: new HttpSearch(transport),
     systems: new HttpSystems(transport),
     translate: new HttpTranslate(transport),

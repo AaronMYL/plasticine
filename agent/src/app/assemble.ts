@@ -39,7 +39,7 @@ import { createServerHealthTool } from './server-health-tool.ts';
 import { idleWait } from './idle-wait.ts';
 import { TunnelService, type TunnelServiceOptions } from '../network/index.ts';
 import { Tasks } from '../tasks/index.ts';
-import { BackupService, ClientReleases } from '../system/index.ts';
+import { BackupService, ClientReleases, type MigrationService } from '../system/index.ts';
 import { MAIN_LINE_ID, type StateService, watchSlowQueries } from '../state/index.ts';
 import { errorCategory, safeLog } from '../util/index.ts';
 import { join } from 'node:path';
@@ -84,6 +84,8 @@ export interface AssembleOptions {
   /** 内置技能目录（测试用；默认 agent/builtin-skills）。 */
   builtinSkills?: string;
   automaticBackups?: boolean;
+  /** 设置 · 系统「数据迁移」（11-16，main.ts 装；测试不装）。 */
+  migration?: MigrationService;
   /** Development dry run of external effects (decision 8). */
   dryRun: boolean;
   vapidKeys: VapidKeys;
@@ -446,6 +448,7 @@ export function assembleApp(options: AssembleOptions): App {
   scans.add({ name: '已记账原图清理', run: () => moneyDrafts.purge() });
   scans.add({ name: '客户端发布记录', run: () => clientUpdates.scan() });
   scans.add({ name: '日历同步', run: () => calendar.scan() });
+  scans.add({ name: '数据迁移清理', run: () => options.migration?.sweep() });
   for (const scan of [...daily.scans, ...video.scans, ...toolGroupScans(toolGroups)]) {
     scans.add(scan);
   }
@@ -476,12 +479,9 @@ export function assembleApp(options: AssembleOptions): App {
     dryRun: options.dryRun,
     intake,
     macDownloads: new MacDownloads({ directory: join(options.stateDirectory, MAC_DOWNLOADS_DIR), publicUrl }),
-    network,
-    lines,
-    tasks,
-    lineTimers,
-    video,
+    network, lines, tasks, lineTimers, video,
     heartbeat: timed.heartbeat,
+    ...(options.migration === undefined ? {} : { migration: options.migration }),
     calendar,
     ...(tunnel === undefined ? {} : { tunnel }),
     ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels }),

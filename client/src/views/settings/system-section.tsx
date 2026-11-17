@@ -8,6 +8,7 @@
 // 在桌面客户端（Electron 壳）里最上面另有「Plasticine 跑在哪」「这台电脑」两段（desktop-place.tsx、
 // desktop-computer.tsx，第 14 条），日历和提醒事项挪到它们后面，和这台电脑的事放在一起。
 //   备份      每天几点 ·「现在备份」，最近几份一行一份，「全部备份」开按对象恢复。
+//   数据迁移  导出、从另一台导入、导入前的数据（11-16，migration-section.tsx）。
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
@@ -22,6 +23,7 @@ import { formatClock } from '../../primitives/message/states.ts';
 import { Backups } from '../device/backups.tsx';
 import { choiceName } from '../models/model-store.ts';
 import { CalendarAccess } from './calendar-access.tsx';
+import { MigrationBlock } from './migration-section.tsx';
 import { DesktopComputer } from './desktop-computer.tsx';
 import { DesktopPlace } from './desktop-place.tsx';
 import { NodeDevices } from './node-devices.tsx';
@@ -146,6 +148,7 @@ export function SystemSection(): ReactNode {
       <NodeDevices />
       {desktop ? null : <CalendarAccess />}
       <BackupBlock />
+      <MigrationBlock />
     </>
   );
 }

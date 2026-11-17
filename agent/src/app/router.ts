@@ -134,6 +134,10 @@ import { completeUpload, getAttachment, getAttachmentContent, getAttachmentText,
   uploadChunk } from './attachments.ts';
 import { getBackstage, setBackstageRule } from './backstage.ts';
 import { createBackup, getBackup, getRestorePreview, listBackups, previewRestore, restoreBackup } from './backups.ts';
+import {
+  applyImport, cancelExport, cancelImport, completeImport, downloadExport, importChunk, migrationStatus, startExport,
+  startImport, undoMigration, unlockImport,
+} from './migration.ts';
 import { createBookAnnotation, deleteBookAnnotation, dismissKeyPoint, exportBookNotes, generateBookInsight,
   getBookInsight, listBookAnnotations, listBookDiscussions, updateBookAnnotation } from './book-notes.ts';
 import { addBookmark, editBookmark, importBookmarks, listBookmarks, orderBookmarks, removeBookmark,
@@ -314,6 +318,18 @@ export const ROUTES: readonly Route[] = [
   { method: 'GET', path: '/v2/backups/:id', auth: true, handler: getBackup },
   { method: 'POST', path: '/v2/backups/:id/restore-preview', auth: true, handler: previewRestore },
   { method: 'POST', path: '/v2/backups/:id/restore', auth: true, handler: restoreBackup },
+  // 数据迁移（11-16）：导出两种、导入（分块传、口令、合并或替换）、退回。
+  { method: 'GET', path: '/v2/migration', auth: true, handler: migrationStatus },
+  { method: 'POST', path: '/v2/migration/export', auth: true, handler: startExport },
+  { method: 'POST', path: '/v2/migration/export/cancel', auth: true, handler: cancelExport },
+  { method: 'GET', path: '/v2/migration/export/file', auth: true, handler: downloadExport },
+  { method: 'POST', path: '/v2/migration/import', auth: true, handler: startImport },
+  { method: 'PUT', path: '/v2/migration/import/chunks/:offset', auth: true, handler: importChunk },
+  { method: 'POST', path: '/v2/migration/import/complete', auth: true, handler: completeImport },
+  { method: 'POST', path: '/v2/migration/import/unlock', auth: true, handler: unlockImport },
+  { method: 'POST', path: '/v2/migration/import/apply', auth: true, handler: applyImport },
+  { method: 'POST', path: '/v2/migration/import/cancel', auth: true, handler: cancelImport },
+  { method: 'POST', path: '/v2/migration/undo', auth: true, handler: undoMigration },
   { method: 'GET', path: '/v2/restore-previews/:previewId', auth: true, handler: getRestorePreview },
   // 记账草案（付款截图）。
   { method: 'POST', path: '/v2/money/drafts', auth: true, handler: createMoneyDraft },

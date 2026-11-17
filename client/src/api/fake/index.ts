@@ -9,6 +9,7 @@ import { seedFilesScene } from './files-scene-seed.ts';
 import { seedPlansScene } from './plans-scene-seed.ts';
 import { FakeWebSearch } from './fake-web-search.ts';
 import { FakeConnections, FakePushes } from './fake-connections.ts';
+import { FakeMigration } from './fake-migration.ts';
 import { seedRelayScene } from './relay-scene-seed.ts';
 import { renderBookPage } from '../../../../agent/shared/book-space-page.ts';
 import { renderWebArchive } from '../../../../agent/shared/web-archive-page.ts';
@@ -400,6 +401,8 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     webSearch: new FakeWebSearch(session, now),
     connections,
     pushes,
+    migration: new FakeMigration(session, now, typeof window === 'undefined' ? null
+      : new URLSearchParams(window.location.search).get('scene')),
     search: new FakeSearch({ session, notes, lines, memoryTopics, feed, bookmarks, now, spaces, books }),
     systems,
     translate: new FakeTranslate(session, modelProviders),

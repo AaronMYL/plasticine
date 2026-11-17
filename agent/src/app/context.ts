@@ -19,7 +19,7 @@ import type { LineKernel } from '../lines/index.ts';
 import type { NetworkService, TunnelService } from '../network/index.ts';
 import type { SkillShop, SkillStore } from '../skills/index.ts';
 import type { StateService } from '../state/index.ts';
-import type { BackupService, ClientReleases } from '../system/index.ts';
+import type { BackupService, ClientReleases, MigrationService } from '../system/index.ts';
 import type { AttemptLimiter } from './attempt-limiter.ts';
 import type { SourceLimiter } from './source-limiter.ts';
 import { ApiError, unauthorized } from './api-error.ts';
@@ -56,6 +56,8 @@ export interface AppDeps {
   moneyDrafts: MoneyDraftDesk;
   clientUpdates: ClientReleases;
   backups: BackupService;
+  /** 设置 · 系统「数据迁移」（11-16）；main.ts 装，测试里装出来的应用可能没有。 */
+  migration: MigrationService | null;
   memoryCurator: MemoryCurator;
   hub: EventHub;
   desk: AskDesk;
