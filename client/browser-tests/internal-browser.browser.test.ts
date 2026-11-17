@@ -12,8 +12,18 @@ test('自访网页无需再配对，真实 Cookie 覆盖用户登录；撤销只
     internalCookies: () => sessions.cookies(base) });
   t.after(() => transport.close());
   const signal = () => AbortSignal.timeout(15_000);
-  const actor = () => page.evaluate<string>(`fetch('/v2/session').then(async response =>
+  const ask = () => page.evaluate<string>(`fetch('/v2/session').then(async response =>
     response.ok ? (await response.json()).actor ?? 'user' : String(response.status))`);
+  // 会话失效时页面自己会换到登录页：正好撞上换页，这一问作废，换好再问一次。
+  const actor = async (): Promise<string> => {
+    try {
+      return await ask();
+    } catch (error) {
+      if (!(error instanceof Error) || !error.message.includes('navigated or closed')) throw error;
+      await until(page, 'document.readyState === "complete"', '换页之后');
+      return ask();
+    }
+  };
   assert.equal(await actor(), 'user');
   await page.send('Network.setCookie', { name: 'external_login', value: 'external-test',
     url: 'https://external.test/', httpOnly: true, secure: true });
