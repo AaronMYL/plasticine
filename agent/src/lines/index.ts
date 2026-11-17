@@ -1,5 +1,6 @@
 // lines/：新内核（2026-11-05 他定：Harness 推倒重做）。用 pi-agent-core 的 Agent 跑「线」：主对话一条 main 线，
-// 要花时间的事开后台线；排队、立即发送、叫停；硬线工具先问他；失败重试、额度暂停、重启续跑。
+// 要花时间的事开后台线；排队、立即发送、叫停；硬线工具先问他；失败重试、额度暂停、重启续跑；上下文压缩、
+// 较早的查看结果收起、拦不收敛（打转检测、对进度、兜底步数）。
 // 外面只经这里：app/ 拿 LineKernel 挂接口，assemble 把业务工具包成 KernelTool 交进来。
 
 export { LineKernel } from './kernel.ts';
@@ -29,8 +30,8 @@ export { conversationSearchTool } from './search-tool.ts';
 export { forgetTool } from './forget-tool.ts';
 export { attachmentReadTool } from './attachment-read-tool.ts';
 export type { SubmitHoldPort } from './page-submit-tool.ts';
-export { COMPACTION_KEEP_RECENT_TOKENS, COMPACTION_RESERVE_TOKENS, contextTokens, createCompactor, findCut,
-  serializeForSummary } from './compaction.ts';
+export { COMPACTION_KEEP_RECENT_TOKENS, COMPACTION_RESERVE_TOKENS, compactionThreshold, contextTokens,
+  createCompactor, findCut, serializeForSummary } from './compaction.ts';
 export { MAX_DAY_COMPACTIONS, contextWindow, localDay, rollDay, segmented } from './day-context.ts';
 export { LARGE_RESULT_CHARS, READ_RESULT_TOOL } from './large-results.ts';
 export { OPEN_SIDE_TOOL, titleFromText } from './side-chats.ts';

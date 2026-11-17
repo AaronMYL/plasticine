@@ -12,8 +12,11 @@ import type { KernelTool, LineScope } from './types.ts';
 
 /** 结果超过这么多字就只放开头：约一两千 token，一页网页全文远超这个。 */
 export const LARGE_RESULT_CHARS = 8_000;
-/** 放进上下文的开头这么长：够判断要不要再取。 */
-export const RESULT_HEAD_CHARS = 1_500;
+/**
+ * 放进上下文的开头这么长：多数时候够用，不用再按段取（原来是 1 500：线上 12 天里 device_action 有 398 次结果被截，
+ * 接着用 read_result 翻了 243 次，每翻一次都是带着整个上下文的一步；11-17 放宽）。
+ */
+export const RESULT_HEAD_CHARS = 4_000;
 /** read_result 一次最多取这么多：小于上面的门槛，取回来的那段本身不会再被截。 */
 export const RESULT_PAGE_CHARS = 6_000;
 export const READ_RESULT_TOOL = 'read_result';

@@ -1,5 +1,6 @@
 // 一条线送给模型的上下文，全从库里装：系统提示（含工具声明）+ 压缩摘要 + 摘要之后的消息。主线和旁聊按天分段
-// （day-context.ts）：摘要和起点都只看今天；大块的工具结果只放开头和引用（large-results.ts）。
+// （day-context.ts）：摘要和起点都只看今天；大块的工具结果只放开头和引用（large-results.ts）；较早的「看一眼」
+// 和旧图收成一行（stale-results.ts）。
 // 还有两件跟库里消息形状有关的判断：末尾能不能接着跑、重启前是不是停在一组工具调用中间。
 
 import type { AgentMessage, AgentTool, AgentToolCall } from '@earendil-works/pi-agent-core';
@@ -9,6 +10,7 @@ import type { LineRow, StateService } from '../state/index.ts';
 import { contextWindow } from './day-context.ts';
 import { clipLargeResult } from './large-results.ts';
 import { answerText, isAssistant, isToolResult } from './messages.ts';
+import { collapseStale, staleBoundary, type CallLike } from './stale-results.ts';
 
 export type TranscriptState = Pick<StateService, 'lines' | 'lineMessages' | 'lineDays'>;
 
@@ -39,9 +41,22 @@ export function buildTranscript(state: TranscriptState, line: LineRow, prompt: s
   if (window.summary !== null && window.summary.trim() !== '') {
     head.push({ role: 'lineSummary', summary: window.summary, timestamp: 0 });
   }
-  const history = state.lineMessages.after(line.id, window.after).flatMap((row) => {
+  const rows = state.lineMessages.after(line.id, window.after);
+  // 较早的「看一眼」和旧图收起（stale-results.ts）；界线按批往前推，不每一步都改前面的内容。
+  const boundary = staleBoundary(rows.at(-1)?.seq ?? 0);
+  const calls = new Map<string, CallLike>();
+  const history = rows.flatMap((row) => {
     const stored = row.message as AgentMessage;
-    const message = isToolResult(stored) ? clipLargeResult(stored, line.id, row.seq) : stored;
+    if (isAssistant(stored)) {
+      for (const part of stored.content) {
+        if (part.type === 'toolCall') {
+          calls.set(part.id, part);
+        }
+      }
+    }
+    const message = isToolResult(stored)
+      ? clipLargeResult(collapseStale(stored, calls.get(stored.toolCallId), row.seq, boundary), line.id, row.seq)
+      : stored;
     // 他叫停时记下的空回答只给界面看（「停下了」），不送给模型。
     if (isAssistant(message) && message.stopReason === 'aborted' && answerText(message) === ''
       && !message.content.some((part) => part.type === 'toolCall')) {

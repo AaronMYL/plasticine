@@ -140,7 +140,7 @@ test('大块的工具结果不进上下文：只放开头和引用，read_result
   await h.kernel.settled();
   assert.equal(seen.length, 1);
   assert.ok(seen[0]!.startsWith('开头'));
-  assert.ok(seen[0]!.length < 3_000, '只放开头');
+  assert.ok(seen[0]!.length < 5_000, '只放开头（4 000 字加一句引用）');
   assert.ok(seen[0]!.includes(`line:${MAIN_LINE_ID}:3`), '带着取全文的引用');
   assert.ok(fetched.includes('结尾'), '按段取回了后面');
   const stored = h.handle.state.lineMessages.get(MAIN_LINE_ID, 3);

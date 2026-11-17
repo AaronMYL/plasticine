@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { fauxAssistantMessage, fauxToolCall, type TranscriptContext } from '@earendil-works/pi-ai';
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
-import { createCompactor, findCut, serializeForSummary } from '../../src/lines/index.ts';
+import { compactionThreshold, createCompactor, findCut, serializeForSummary } from '../../src/lines/index.ts';
 import { MAIN_LINE_ID } from '../../src/state/index.ts';
 import { echoTool, startKernel, type Harness } from './helpers.ts';
 
@@ -104,4 +104,15 @@ test('切点只落在用户的话或回答上，不把工具结果和它的调�
   assert.equal(findCut(messages, 1_000_000), 0, '攒不够就不切');
   const text = serializeForSummary([{ role: 'user', content: '问', timestamp: 1 }, call]);
   assert.ok(text.includes('[AI 调用工具]：echo({"text":"x"})'));
+});
+
+test('到多少该压：窗口的一半和工作预算里小的那个；小窗口不低于压完本来就有的量，也不高过原来的上限', () => {
+  const reserve = 16_384;
+  const keep = 20_000;
+  const fixed = 40_000;
+  assert.equal(compactionThreshold(272_000, reserve, keep, fixed), 100_000, '大窗口到工作预算就压');
+  assert.equal(compactionThreshold(1_000_000, reserve, keep, fixed), 100_000);
+  assert.equal(compactionThreshold(160_000, reserve, keep, fixed), 80_000, '窗口的一半');
+  assert.equal(compactionThreshold(128_000, reserve, keep, fixed), fixed + keep + 8_192, '一半太低，留出压完的量');
+  assert.equal(compactionThreshold(64_000, reserve, keep, fixed), 64_000 - reserve, '小窗口照原来的上限');
 });

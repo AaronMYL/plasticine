@@ -1,4 +1,4 @@
-// 第四级：压缩。一条线越跑越长，估计的 token 超过「模型一次能读的长度 − 留给回答的余量」时，把早先的消息总结成一段
+// 第四级：压缩。一条线越跑越长，估计的 token 超过工作预算（compactionThreshold）时，把早先的消息总结成一段
 // 存到线的 summary（summary_seq 记到第几条为止），只把摘要 + 最近的消息送给模型。做法参考 pi-coding-agent 的压缩
 // （core/compaction：留最近约 2 万 token、只在用户话或回答处切、不在工具结果处切、再压时在上一次摘要上更新），
 // 只参考不依赖。库里的消息一条不删，摘要只决定送给模型的是哪些。
@@ -15,6 +15,13 @@ import type { ModelChoice, ModelSource } from './types.ts';
 /** 和 pi-coding-agent 的默认一样：余量 16 384（够一次回答），留最近约 2 万 token 原样不压。 */
 export const COMPACTION_RESERVE_TOKENS = 16_384;
 export const COMPACTION_KEEP_RECENT_TOKENS = 20_000;
+/**
+ * 上下文的工作预算（内核优化第一批，11-17）：窗口再大，也到「窗口的一半」和这个数里小的那个就压。原来要等到窗口快满
+ * 才压，线上平均每次请求带 10 万 token、后台线 100 步以后 16 万。
+ */
+export const COMPACTION_WORK_BUDGET_TOKENS = 100_000;
+/** 固定的那部分（系统提示和工具）加保留的最近消息之上，再留这么多才值得压：不然刚压完又到线。 */
+export const COMPACTION_HEADROOM_TOKENS = 8_192;
 // 摘要里每条工具结果最多带这么多字：要的是做了什么、结论，不是原文。
 const TOOL_RESULT_CHARS = 2_000;
 
@@ -173,6 +180,15 @@ export async function summarize(models: ModelSource, choice: ModelChoice, messag
   return summary;
 }
 
+/**
+ * 到多少 token 该压：「窗口的一半」和工作预算里小的那个；但不低于压完以后本来就有的量（小窗口的模型），
+ * 也不高于原来的上限（窗口减去留给回答的余量）。fixed 是系统提示和工具估出来的 token。
+ */
+export function compactionThreshold(window: number, reserve: number, keep: number, fixed: number): number {
+  const target = Math.min(Math.floor(window / 2), COMPACTION_WORK_BUDGET_TOKENS);
+  return Math.min(window - reserve, Math.max(target, fixed + keep + COMPACTION_HEADROOM_TOKENS));
+}
+
 export interface CompactorDeps {
   state: CompactionState;
   models: ModelSource;
@@ -191,10 +207,12 @@ export function createCompactor(deps: CompactorDeps) {
   return async (line: LineRow, messages: AgentMessage[], seqOf: (message: AgentMessage) => number | undefined,
     choice: ModelChoice, options: { force: boolean; signal?: AbortSignal }): Promise<AgentMessage[]> => {
     const window = choice.model.contextWindow;
-    if (!options.force && (window <= 0 || contextTokens(messages) <= window - reserve)) {
+    const head = messages.filter((message) => message.role === 'system');
+    const fixed = head.reduce((sum, message) => sum + messageTokens(message), 0);
+    if (!options.force && (window <= 0
+      || contextTokens(messages) <= compactionThreshold(window, reserve, keep, fixed))) {
       return messages;
     }
-    const head = messages.filter((message) => message.role === 'system');
     const history = messages.filter((message) => message.role !== 'system' && message.role !== 'lineSummary');
     const cut = findCut(history, options.force ? Math.min(keep, Math.floor(window / 4)) : keep);
     const kept = history.slice(cut);

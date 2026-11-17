@@ -4,8 +4,9 @@
 // 排队的消息：这一轮要停时（finishTurn）交给 followUp，按顺序一起发出；「立即发送」交给 steer，插进正在跑的这一轮。
 // 写进库那一刻才把排队的那条记成 sent，所以中途断掉也不丢。
 
-import { Agent, runToolCall, type AgentMessage, type AgentTool, type AgentToolCall, type AgentToolResult,
-  type AgentTurnContext, type BeforeToolCallContext, type BeforeToolCallResult } from '@earendil-works/pi-agent-core';
+import { Agent, runToolCall, type AfterToolCallContext, type AfterToolCallResult, type AgentMessage, type AgentTool,
+  type AgentToolCall, type AgentToolResult, type AgentTurnContext, type BeforeToolCallContext,
+  type BeforeToolCallResult } from '@earendil-works/pi-agent-core';
 import type { AssistantMessage, UserMessage } from '@earendil-works/pi-ai';
 import type { LineStatus, LineStreamEvent } from '../../shared/api/lines.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
@@ -14,7 +15,8 @@ import type { LineMessageMeta, LinePatch, LineRow, QueuedRow, StateService } fro
 import { questionAnswerOrigin } from './ask-tools.ts';
 import { classifyFailure, exhaustedText, RETRY_DELAYS_MS, retryingText, type FailureVerdict } from './failure.ts';
 import type { HardLineGate } from './hard-line.ts';
-import { answerText, convertToLlm, messageView, resultSummary, userMessage, type AttachmentNote,
+import { LoopGuard, STEP_LIMIT, type HaltCause } from './loop-guard.ts';
+import { answerText, contentText, convertToLlm, messageView, resultSummary, userMessage, type AttachmentNote,
   type PostedMessage, type SayOf } from './messages.ts';
 import { buildTranscript, continuable, danglingCalls } from './transcript.ts';
 import { sleepFor, type KernelTool, type Later, type LineScope, type ModelChoice, type ModelSource,
@@ -83,6 +85,9 @@ export class LineRunner {
   #lastAssistant: AssistantMessage | null = null;
   #attempts = 0;
   #compactedForOverflow = false;
+  // 拦不收敛（loop-guard.ts）：一次驱动一份；halt 是内核叫停这件事的原因，停下后线记成没做完、交回发起的一方。
+  #guard = new LoopGuard({ hardStops: false });
+  #halt: string | null = null;
   #activity: Activity = NO_ACTIVITY;
   readonly #inFlight = new Map<string, string>();
   // 刷新后要和实时一样（0063）：这一条回答的思考从什么时候开始、想了多久；每一步结果那一句，等工具结果写库时带上。
@@ -109,6 +114,7 @@ export class LineRunner {
         return { context: { messages: this.#transcript(), tools: this.#toolset.tools } };
       },
       beforeToolCall: (context, signal) => this.#beforeToolCall(context, signal),
+      afterToolCall: async (context) => this.#afterToolCall(context),
       finishTurn: (turn) => this.#finishTurn(turn),
       steeringMode: 'all',
       followUpMode: 'all',
@@ -139,6 +145,8 @@ export class LineRunner {
     this.#stop = null;
     this.#attempts = 0;
     this.#compactedForOverflow = false;
+    this.#guard = new LoopGuard({ hardStops: this.#scope.kind === 'background' });
+    this.#halt = null;
     this.#activity = { text: THINKING_ACTIVITY, since: this.#host.now().toISOString() };
     this.#drive = this.#run(mode);
     return true;
@@ -277,6 +285,9 @@ export class LineRunner {
         this.#agent.steer(report);
       }
       await this.#agent.continue();
+      if (this.#halt !== null && this.#stop === null) {
+        return this.#fail(this.#halt);
+      }
       const verdict = this.#verdict();
       if (verdict === 'stopped') {
         return this.#stopped();
@@ -389,8 +400,39 @@ export class LineRunner {
     if (tool.enabled?.() === false) {
       return disabled;
     }
+    const guarded = this.#guard.before({ name: context.toolCall.name, args: context.args });
+    if (guarded !== null) {
+      this.#haltFor(guarded.halt, context.toolCall.name, argsOf(context.args));
+      return { block: true, reason: guarded.block, terminate: this.#halt !== null };
+    }
+    if (this.#halt !== null) {
+      return { block: true, reason: '这件事已经由内核停下，这一步不再做。', terminate: true };
+    }
     const result = await this.#host.gate.check(this.#scope, tool, context.toolCall, argsOf(context.args), signal);
     return tool.enabled?.() === false ? disabled : result;
+  }
+
+  /** 一步做完：打转、原地重读、该对进度了，就在结果后面加一句提醒；该停下了记下原因，这一批做完就停。 */
+  #afterToolCall(context: AfterToolCallContext): AfterToolCallResult | undefined {
+    const args = argsOf(context.args);
+    const after = this.#guard.after({ name: context.toolCall.name, args }, context.isError,
+      contentText(context.result.content));
+    this.#haltFor(after.halt, context.toolCall.name, args);
+    if (after.notes.length === 0 && this.#halt === null) {
+      return undefined;
+    }
+    const notes = after.notes.map((text) => ({ type: 'text' as const, text }));
+    return { content: [...context.result.content, ...notes], ...(this.#halt === null ? {} : { terminate: true }) };
+  }
+
+  /** 内核叫停这件事：写给他看的原因（线记成没做完，后台线照常交回发起的一方）。 */
+  #haltFor(cause: HaltCause | null, tool: string, args: ToolArgs): void {
+    if (cause === null || this.#halt !== null) {
+      return;
+    }
+    this.#halt = cause === 'step_limit'
+      ? `已经做了 ${STEP_LIMIT} 步还没做完，先停下了。看一下进展，要接着做就点继续。`
+      : `同一种操作连续没做成（${this.#host.sayOf(tool, args)}），先停下了。换个办法或者补上缺的东西，再点继续。`;
   }
 
   /** 这一轮要停了（没有工具要做）：把排队的消息按顺序交给 followUp，pi 接着发出去。 */
@@ -449,6 +491,9 @@ export class LineRunner {
         this.#setActivity(THINKING_ACTIVITY);
       }
     } else if (event.type === 'message_end') {
+      if (event.message.role === 'assistant') {
+        this.#guard.step();
+      }
       this.#persist(event.message);
     } else if (event.type === 'tool_execution_start') {
       const say = this.#host.sayOf(event.toolName, argsOf(event.args));
