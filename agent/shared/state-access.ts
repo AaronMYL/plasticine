@@ -1,6 +1,6 @@
-// Login and request records of the API: devices, one-time pairing codes, long-lived sessions (decision 90 ②) and
-// the idempotency log (《实施方案》第 5 节约定 1). Only SHA-256 hashes of pairing codes and session tokens are stored;
-// the plain values exist only in the pairing script's output and the device's cookie.
+// Login and request records of the API: devices, long-lived sessions (decision 90 ②) and the idempotency log
+// (《实施方案》第 5 节约定 1). Only SHA-256 hashes of session tokens are stored; the plain value exists only in the
+// device's cookie. (Browser pairing codes were retired 11-08; the node pairing codes are in state-devices.ts.)
 // Import from shared/state.ts.
 
 import { Type, type Static } from 'typebox';
@@ -36,19 +36,6 @@ export const DeviceSchema = Type.Object({
   revokedAt: Nullable(IsoTimeSchema),
 });
 export type Device = Static<typeof DeviceSchema>;
-
-/** A code is used at most once: `usedAt` and `deviceId` are set together when a device exchanges it. */
-export const PairingCodeInputSchema = Type.Object({ codeHash: HashSchema, expiresAt: IsoTimeSchema }, STRICT);
-export type PairingCodeInput = Static<typeof PairingCodeInputSchema>;
-export const PairingCodePatchSchema = Type.Object({ usedAt: IsoTimeSchema, deviceId: IdSchema }, STRICT);
-export type PairingCodePatch = Static<typeof PairingCodePatchSchema>;
-export const PairingCodeSchema = Type.Object({
-  ...RECORD_META,
-  ...PairingCodeInputSchema.properties,
-  usedAt: Nullable(IsoTimeSchema),
-  deviceId: Nullable(IdSchema),
-});
-export type PairingCode = Static<typeof PairingCodeSchema>;
 
 export const SessionInputSchema = Type.Object(
   { tokenHash: HashSchema, deviceId: IdSchema, expiresAt: IsoTimeSchema, lastSeenAt: IsoTimeSchema },

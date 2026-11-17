@@ -57,7 +57,6 @@ import { createOutboundStores } from './outbound.ts';
 import { NoteBodies } from './note-bodies.ts';
 import { createNoteStore } from './notes.ts';
 import type { StoreContext } from './object-store.ts';
-import { createPairingCodeStore } from './pairing-codes.ts';
 import { createProjectStore } from './projects.ts';
 import { createPushSubscriptionStore } from './push-subscriptions.ts';
 import { createReceiptStore } from './receipts.ts';
@@ -153,7 +152,6 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     legacyIds: createLegacyIdMap(context),
     legacyRows: createLegacyRowStore(context),
     devices: createDeviceStore(context),
-    pairingCodes: createPairingCodeStore(context),
     sessions: createSessionStore(context),
     apiRequests: createApiRequestLog(context),
     notes: createNoteStore(context, notes),

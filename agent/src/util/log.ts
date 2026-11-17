@@ -108,8 +108,6 @@ const EVENTS = {
   service_stopping: '收到停止信号，线停下、重启后接着跑',
   startup_failed: '服务启动或停止失败，请检查配置和状态目录',
   state_directory_required: '需要设置 PLASTICINE_STATE 后再运行',
-  pairing_created: '配对码已生成，仅在交互终端显示',
-  pairing_failed: '配对码生成失败，请在服务器交互终端重试',
   password_reset_failed: '主人密码没改成，请核对 PLASTICINE_STATE 和权限后重试',
   setup_link_failed: '建账号链接没生成出来，请核对 PLASTICINE_STATE 和权限后重试',
   terminal_required: '此操作需要交互终端，不能把授权代码写入日志或重定向输出',

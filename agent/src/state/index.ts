@@ -20,7 +20,6 @@ export type { PushSubscriptionStore } from './push-subscriptions.ts';
 export type { ProjectStore, TodoPatch } from './projects.ts';
 export type { DeviceStore } from './devices.ts';
 export type { LegacyRecordOutcome, LegacyRowStore } from './legacy-rows.ts';
-export type { PairingCodeStore } from './pairing-codes.ts';
 export type { SessionStore } from './sessions.ts';
 export type { LegacyIdMap, LegacyTarget } from './legacy-ids.ts';
 export type { MemoryFilter, MemoryStore } from './memory.ts';

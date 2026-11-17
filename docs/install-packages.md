@@ -48,8 +48,7 @@
   `sudo plasticine export [--data-only] <文件>`（全部的问两遍口令，只要数据的不加密）、
   `sudo plasticine import --merge|--replace <文件>`（加了密的问口令，解开后自己重启服务，开库前做完）。
   文件要放在 `plasticine` 用户读写得到的地方；导入前的那一份留 7 天，在设置 · 系统里能退回。
-- 老实例（有登录着的设备、还没设密码）照常用，登录着时设一次密码。旧的配对码脚本 `pairing-cli.ts` 还在，但登录页
-  不再收配对码。
+- 老实例（有登录着的设备、还没设密码）照常用，登录着时设一次密码。登录页不收配对码，生成配对码的旧脚本 11-17 删了。
 
 Linux、Windows 和带 bundled server manifest 的 Mac 读发布点的 `manifest.json`；Mac 不随当前连接本机或远端而切换更新来源。
 版本比装着的新才下载，核对 SHA-256 和大小再换上。
