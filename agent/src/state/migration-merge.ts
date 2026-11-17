@@ -122,6 +122,51 @@ function columnsOf(db: DatabaseSync, schema: string, table: string): string[] {
   return db.prepare(`PRAGMA ${schema}.table_info(${quoted(table)})`).all().map((row) => String(row['name']));
 }
 
+function primaryKey(db: DatabaseSync, table: string): string[] {
+  return db.prepare(`PRAGMA main.table_info(${quoted(table)})`).all()
+    .filter((row) => Number(row['pk']) > 0)
+    .sort((left, right) => Number(left['pk']) - Number(right['pk']))
+    .map((row) => String(row['name']));
+}
+
+/**
+ * 把导进来那份里这台没有的行插进来，返回插了几行。编号已经有的先筛掉（不让表上的触发器为它们报错）；整批插不进
+ * （老库里留着的触发器、别的约束）就一行一行插，插不进的那行算两边都有、留这台的。
+ */
+function insertMissing(db: DatabaseSync, table: string): number {
+  const shared = new Set(columnsOf(db, 'src', table));
+  const list = columnsOf(db, 'main', table).filter((column) => shared.has(column)).map(quoted).join(', ');
+  const key = primaryKey(db, table);
+  const missing = key.length === 0 ? '1'
+    : `NOT EXISTS (SELECT 1 FROM main.${quoted(table)} m WHERE ${key.map((column) =>
+      `m.${quoted(column)} IS s.${quoted(column)}`).join(' AND ')})`;
+  const insert = `INSERT OR IGNORE INTO main.${quoted(table)} (${list}) SELECT ${list.split(', ')
+    .map((column) => `s.${column}`).join(', ')} FROM src.${quoted(table)} s WHERE ${missing}`;
+  db.exec('SAVEPOINT migration_table');
+  try {
+    const changes = Number(db.prepare(insert).run().changes);
+    db.exec('RELEASE migration_table');
+    return changes;
+  } catch {
+    db.exec('ROLLBACK TO migration_table');
+    db.exec('RELEASE migration_table');
+  }
+  let changes = 0;
+  const rowids = db.prepare(`SELECT s.rowid AS r FROM src.${quoted(table)} s WHERE ${missing}`).all();
+  const one = db.prepare(`${insert} AND s.rowid = ?`);
+  for (const row of rowids) {
+    db.exec('SAVEPOINT migration_row');
+    try {
+      changes += Number(one.run(Number(row['r'])).changes);
+      db.exec('RELEASE migration_row');
+    } catch {
+      db.exec('ROLLBACK TO migration_row');
+      db.exec('RELEASE migration_row');
+    }
+  }
+  return changes;
+}
+
 /** 把导进来的那份（已经升到这份代码的结构）并进这台的库。 */
 export function mergeDatabase(currentPath: string, stagedPath: string, options: { at: string; label: string }):
   MergeOutcome {
@@ -139,12 +184,8 @@ export function mergeDatabase(currentPath: string, stagedPath: string, options: 
       const last = new Map(tables.map((name) => [name,
         Number(db.prepare(`SELECT coalesce(max(rowid), 0) AS n FROM main.${quoted(name)}`).get()?.['n'] ?? 0)]));
       for (const name of tables) {
-        const shared = new Set(columnsOf(db, 'src', name));
-        const list = columnsOf(db, 'main', name).filter((column) => shared.has(column)).map(quoted).join(', ');
         const offered = Number(db.prepare(`SELECT count(*) AS n FROM src.${quoted(name)}`).get()?.['n'] ?? 0);
-        const result = db.prepare(`INSERT OR IGNORE INTO main.${quoted(name)} (${list})
-          SELECT ${list} FROM src.${quoted(name)}`).run();
-        kept += offered - Number(result.changes);
+        kept += offered - insertMissing(db, name);
       }
       repairForeignKeys(db, last);
       resetSearchIndex(db);

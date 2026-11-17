@@ -184,3 +184,21 @@ test('替换：只要数据的那份换进来时，这台的密钥、设备、�
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('合并：这台库里有老的触发器拦某些行，整批插不进就一行一行插，拦下的那行算留这台的，别的照样并进来', () => {
+  const directory = scratch();
+  try {
+    const here = seed(join(directory, 'here'), 'a');
+    const there = seed(join(directory, 'there'), 'b');
+    const db = new DatabaseSync(here);
+    db.exec(`CREATE TRIGGER old_guard BEFORE INSERT ON notes WHEN NEW.title = 'b 的笔记'
+      BEGIN SELECT RAISE(ABORT, 'old trigger says no'); END`);
+    db.close();
+    const outcome = mergeDatabase(here, there, { at: AT, label: '@b-handle' });
+    assert.equal(outcome.added.notes, 0);
+    assert.equal(outcome.added.lines, 2);
+    assert.deepEqual(rows(here, "SELECT title FROM notes").map((row) => row['title']), ['a 的笔记']);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

@@ -36,6 +36,8 @@ function source(directory: string): StateService {
   state.lineMessages.append(main.id, 'user', { role: 'user', content: '那台的话' });
   write(join(directory, 'files', '报告.md'), '那台的报告');
   write(join(directory, 'files', '只有那台.md'), '只在那台');
+  write(join(directory, 'files', '资料', '一.md'), '那台的资料一');
+  write(join(directory, 'files', '资料', '二.md'), '那台的资料二');
   write(join(directory, 'skills', 'demo', 'SKILL.md'), '---\nname: demo\ndescription: 那台\n---\n');
   write(join(directory, 'credentials', 'mail.json'), '{"token":"fake-source-token"}');
   write(join(directory, 'web-push-vapid.json'), '{"fake":"source"}');
@@ -123,7 +125,7 @@ test('全部导出（加密）→ 合并进另一台 → 退回；只要数据�
       error instanceof MigrationProblem && error.code === 'wrong_passphrase');
     const opened = await first.unlock('fake passphrase 1');
     assert.equal(opened.import?.summary?.counts.notes, 1);
-    assert.equal(opened.import?.summary?.counts.files, 2);
+    assert.equal(opened.import?.summary?.counts.files, 4);
     await until(() => first.status().import?.state === 'staged', '解开');
     assert.deepEqual(first.apply('merge').restarting, true);
     assert.equal(restarts, 1);
@@ -132,7 +134,7 @@ test('全部导出（加密）→ 合并进另一台 → 退回；只要数据�
     const merged = applyPendingMigration(here, now);
     assert.equal(merged?.kind, 'merge');
     assert.equal(merged?.added?.notes, 1);
-    assert.equal(merged?.added?.files, 2);
+    assert.equal(merged?.added?.files, 4);
     assert.deepEqual(noteTitles(here), ['这台的笔记', '那台的笔记']);
     assert.equal(readFileSync(join(here, 'files', '报告.md'), 'utf8'), '这台的报告');
     assert.equal(readFileSync(join(here, 'files', '报告（另一台）.md'), 'utf8'), '那台的报告');
@@ -150,6 +152,7 @@ test('全部导出（加密）→ 合并进另一台 → 退回；只要数据�
     assert.deepEqual(noteTitles(here), ['这台的笔记']);
     assert.equal(existsSync(join(here, 'files', '报告（另一台）.md')), false);
     assert.equal(existsSync(join(here, 'files', '只有那台.md')), false);
+    assert.equal(existsSync(join(here, 'files', '资料')), false);
     assert.equal(existsSync(join(here, 'skills', 'demo')), false);
 
     const data = await exportFrom(exporter, 'export-data', 'data', null);

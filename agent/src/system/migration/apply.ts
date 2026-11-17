@@ -160,6 +160,18 @@ function mergeTree(source: string, target: string, relative: string, rename: boo
   return kept;
 }
 
+/** 一个路径下有几个普通文件（整个目录挪进来时按里面的文件数算）。 */
+function fileCount(path: string): number {
+  const info = lstatSync(path);
+  if (info.isFile()) {
+    return 1;
+  }
+  if (!info.isDirectory()) {
+    return 0;
+  }
+  return readdirSync(path).reduce((sum, name) => sum + fileCount(join(path, name)), 0);
+}
+
 function merge(stateDirectory: string, pending: PendingMigration, at: string): MigrationResult {
   const staged = migrationPath(stateDirectory, IMPORTS_DIRECTORY, pending.id, STAGED_DIRECTORY);
   const before = migrationPath(stateDirectory, BEFORE_DIRECTORY, pending.id);
@@ -186,7 +198,7 @@ function merge(stateDirectory: string, pending: PendingMigration, at: string): M
     kept += mergeTree(source, join(stateDirectory, item), item, item === 'files', added);
     const fresh = added.slice(start);
     if (item === 'files') {
-      files += fresh.length;
+      files += fresh.reduce((sum, path) => sum + fileCount(join(stateDirectory, ...path.split('/'))), 0);
     }
     if (item === 'skills') {
       skills += fresh.length;
