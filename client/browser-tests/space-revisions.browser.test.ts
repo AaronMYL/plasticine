@@ -20,7 +20,8 @@ for (const client of ['mac', 'phone'] as const) {
       // 手机上点「Plasticine」就是主线（11-12），不用再点进去。
       await fill(page, 'textarea[aria-label="问一句"]', '把读完的数量改成三本');
       await click(page, '发送');
-      await until(page, `document.querySelector('.space-revision-card')`, '保存后的版本卡');
+      // 主线答完才出卡：CI 的两核机器上要十几秒，多等一会儿。
+      await until(page, `document.querySelector('.space-revision-card')`, '保存后的版本卡', 30_000);
       await page.evaluate(`document.documentElement.dataset.theme = ${JSON.stringify(theme)}`);
       await pause(80);
       assert.equal(await page.evaluate('document.documentElement.dataset.theme'), theme);

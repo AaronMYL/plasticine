@@ -75,7 +75,8 @@ test('装成 Mac：有鼠标、PlasticineDesktop 标记和桥，网页标签同�
   assert.equal(facts.coarse, false);
   assert.match(facts.ua, /PlasticineDesktop\/[0-9.]+$/);
   assert.equal(facts.mac, true);
-  await until(page, `window.__plasticineFakeNative.calls.some((call) => call.method === 'titlebar')`, '顶栏布局');
+  // 拖窗口靠标题栏自己标的 -webkit-app-region，不再报按钮矩形（只给旧 Swift App 的，11-17 删了）。
+  await until(page, `document.querySelector('.titlebar') !== null`, '桌面客户端的标题栏');
   // 网页标签只在「网页」栏里（11-07 两层侧栏）：进网页栏点一个标签。
   await page.evaluate(`location.hash = '#/web'`);
   await click(page, '.web-tab-row');
