@@ -5,7 +5,6 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import type { Plugin } from 'vite';
-import { SIGNATURE_HEADER, SIGNED_AT_HEADER } from '../../agent/shared/api/index.ts';
 import type { TestApp } from '../../agent/tests/app/helpers.ts';
 import type { Cdp } from '../../scripts/browser/cdp.ts';
 import type { ClientName } from '../../scripts/browser/client-profile.ts';
@@ -25,7 +24,6 @@ interface ObservedRequest {
   path: string;
   method: string;
   requestId: string | null;
-  signed: boolean;
   status: number | null;
 }
 
@@ -43,14 +41,11 @@ function withoutSigning(): Plugin {
         const observed = path.startsWith('/v2/device-keys') || path.endsWith('/unlock')
           || path === '/v2/nodes/pairing-codes';
         if (!observed) return send(input, init);
-        const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
         const body = typeof init?.body === 'string' ? JSON.parse(init.body) : {};
         const entries = read();
         const index = entries.length;
         entries.push({ path, method: init?.method ?? (input instanceof Request ? input.method : 'GET'),
-          requestId: body.requestId ?? null,
-          signed: headers.has(${JSON.stringify(SIGNATURE_HEADER)}) || headers.has(${JSON.stringify(SIGNED_AT_HEADER)}),
-          status: null });
+          requestId: body.requestId ?? null, status: null });
         sessionStorage.setItem(key, JSON.stringify(entries));
         const response = await send(input, init);
         const completed = read();
@@ -73,10 +68,9 @@ async function observed(page: Cdp): Promise<ObservedRequest[]> {
   return page.evaluate(`JSON.parse(sessionStorage.getItem(${JSON.stringify(REQUEST_LOG)}) || '[]')`);
 }
 
-async function noKeyRequirement(page: Cdp, app: TestApp, deviceId: string): Promise<void> {
+async function noKeyRequirement(page: Cdp): Promise<void> {
   assert.equal(await page.evaluate('typeof indexedDB'), 'undefined', '确实没有 IndexedDB');
   assert.equal(await page.evaluate('typeof crypto.subtle'), 'undefined', '确实没有 WebCrypto 签名能力');
-  assert.equal(app.state.deviceKeys.liveFor(deviceId), undefined, '服务端仍未登记公钥');
   assert.deepEqual((await observed(page)).filter((entry) => entry.path.startsWith('/v2/device-keys')), [],
     '正常业务和刷新都不请求钥匙接口');
   assert.deepEqual((await observed(page)).filter((entry) => entry.path.endsWith('/unlock')), [],
@@ -135,13 +129,13 @@ for (const client of PROFILES) {
     assert.ok(app.clock.now().getTime() - Date.parse(session.createdAt) >= OLD_SESSION_MS);
     assert.equal(await page.evaluate('matchMedia("(pointer: coarse)").matches'), client === 'phone',
       '手机使用触屏网页身份，电脑使用 Mac App 身份');
-    await noKeyRequirement(page, app, session.deviceId);
+    await noKeyRequirement(page);
 
     await visitNote(page, noteId);
     assert.equal(await page.evaluate(`/解锁|钥匙|签名/.test(document.querySelector('.note-pane').textContent)`), false);
     assert.equal(app.state.notes.require(noteId).private, true, '保留私密分类，不用改为公开来实现读取');
     assert.equal(await page.evaluate(text(TITLE, '.note-pane')), true, '直接显示真实标题');
-    await noKeyRequirement(page, app, session.deviceId);
+    await noKeyRequirement(page);
     await evidence(page, client, 'note-open');
 
     await click(page, '更多笔记操作');
@@ -154,7 +148,7 @@ for (const client of PROFILES) {
 
     await reloadPage(page);
     await until(page, text(CONTENT, '.note-body .ProseMirror'), '刷新后直接读取私密正文');
-    await noKeyRequirement(page, app, session.deviceId);
+    await noKeyRequirement(page);
     // 「添加设备」和 Mac 专用码 11-08 随配对码一起去掉了（《决定》），这里只看备份。
     await page.evaluate(`location.hash = '#/settings/system'`);
     await click(page, '全部备份', SETTINGS);
@@ -167,7 +161,7 @@ for (const client of PROFILES) {
     assert.equal(await page.evaluate(text('确认解锁')), false, '备份读取也没有额外解锁');
     assert.equal(app.state.notes.require(noteId).version, 2, '读取和预览没有实际恢复笔记');
     assert.equal(app.state.backups.require(backupId).status, 'ready');
-    await noKeyRequirement(page, app, session.deviceId);
+    await noKeyRequirement(page);
     await evidence(page, client, 'backup-preview');
   });
 }
@@ -210,7 +204,7 @@ test('本实例系统浏览器可直接读私密笔记且仍是系统来源，�
   assert.equal(await page.evaluate(`fetch(${JSON.stringify(`/v2/notes/${noteId}`)})
     .then(response => response.status)`), 200, '本实例系统浏览器沿普通笔记的认证读取');
   assert.equal(app.state.notes.require(noteId).version, 1, '读取不伪造本人修改或确认');
-  await noKeyRequirement(page, app, system.device.id);
+  await noKeyRequirement(page);
 
   app.state.sessions.revoke(user.id, app.clock.now().toISOString());
   await setCookie(page, cookie, base);
@@ -225,5 +219,5 @@ test('本实例系统浏览器可直接读私密笔记且仍是系统来源，�
   await reloadPage(page);
   await until(page, 'document.querySelector(".login") !== null', '撤销后刷新回到登录页');
   assert.equal(await page.evaluate(text(CONTENT)), false, '撤销后不展示私密正文');
-  await noKeyRequirement(page, app, user.deviceId);
+  await noKeyRequirement(page);
 });

@@ -23,8 +23,6 @@ test('自访网页无需再配对，真实 Cookie 覆盖用户登录；撤销只
   await until(page, 'document.querySelector(".shell-main") !== null', '系统浏览器直接打开内部页面');
   assert.equal(await actor(), 'system');
   const internalDevice = sessions.open().device;
-  assert.equal(app.state.deviceKeys.liveFor(internalDevice.id), undefined,
-    '系统页面不登记个人确认钥匙');
   const written = await page.evaluate<{ status: number; author: string }>(`fetch('/v2/notes', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ requestId: crypto.randomUUID(), markdown: '系统浏览器真实提交' })
