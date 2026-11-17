@@ -1,11 +1,13 @@
 /*
- * 提示条（11-14 界面统一）：主区底部居中、离底 24；手机上在底栏上面（主区本来就停在底栏上面）。
+ * 提示条（11-14 界面统一）：主区底部居中（对话框开着时在它左边那一块里居中）、离底 24；手机上在底栏上面（主区本来就停在底栏上面）。
  * 浮层底色、圆角 12、一种阴影；出现时从 0.96 轻弹到 1，收起时淡出；系统开「减少动态效果」时不动。
  */
 
 .toast-slot {
   position: absolute;
-  right: 0;
+  /* 对话框开着时浮在主区右侧、盖在主区上面（--dock-room 由对话框报）：提示条在剩下那一块里居中，
+     不然「撤销」会被对话框盖住（11-17 走查笔记删除时看到的）。 */
+  right: var(--dock-room, 0px);
   bottom: 24px;
   left: 0;
   z-index: var(--z-window);
@@ -62,8 +64,14 @@
   outline-offset: 2px;
 }
 
+/* 手机上右下角有 Plasticine 的圆球（离主区底 16、56 高，chat-dialog.css）：提示条停在它上面，
+   不然「撤销」被圆球盖住（11-17 走查）。写笔记时圆球再高一行，提示条跟着。 */
 .shell[data-phone='true'] .toast-slot {
-  bottom: 16px;
+  bottom: calc(16px + 56px + 12px);
+}
+
+.shell[data-phone='true']:has(.note-ai-tools) .toast-slot {
+  bottom: calc(16px + 56px + 48px + 12px);
 }
 
 .shell[data-phone='true'] .toast-action {

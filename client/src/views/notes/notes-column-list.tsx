@@ -52,7 +52,9 @@ export function NotesListColumn({ route, navigate }: { route: Route; navigate: (
           toggle.current = button;
           setFolders((current) => current === null ? anchorOf(button) : null);
         }}
-        tools={<IconButton icon="plus" label="新建笔记" onClick={() => navigate({ view: 'notes', noteId: 'new' })} />}
+        // 最近删除里不给「新建」：在那儿新建没有意义，还把「清空」挤得文件夹名只剩一个字（11-17 走查）。
+        tools={collection.kind === 'deleted' ? undefined
+          : <IconButton icon="plus" label="新建笔记" onClick={() => navigate({ view: 'notes', noteId: 'new' })} />}
         trail={<ColumnCollapseButton />}
         onCreate={() => navigate({ view: 'notes', noteId: 'new' })}
       />

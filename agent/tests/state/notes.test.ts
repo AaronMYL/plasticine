@@ -60,6 +60,8 @@ test('标题和摘要照旧版算：首个非空行去掉标记、摘要把图�
   assert.equal(titleOf('\n\n## **重要** 的事\n第二行'), '重要 的事');
   assert.equal(titleOf('   \n'), '新笔记');
   assert.equal(previewOf('标题\n看 ![图](/v1/notes/assets/a.png) 和\n```chart\n{}\n```'), '看 ［图片］ 和 ［图表］');
+  assert.equal(previewOf('# 标题\n\n- [ ] 待办一\n- [x] 待办二\n\n看 [这篇](https://example.com/a) 再说'),
+    '待办一 待办二 看 这篇 再说');
 });
 
 test('保存带版本：对得上就写新正文、版本加一；对不上就报版本冲突，正文不动', () => {

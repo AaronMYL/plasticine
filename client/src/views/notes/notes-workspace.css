@@ -367,6 +367,13 @@
   margin-bottom: 0;
 }
 
+/* 最近删除那一行：「清空」做小一号，文件夹名「最近删除」留得下（11-17 走查：被挤成「最…」）。 */
+.note-list-tools .bulk-danger {
+  height: 28px;
+  padding: 0 var(--space-2);
+  gap: var(--space-1);
+}
+
 /* ---------- 11-15 界面统一：电脑上列表就是笔记栏目的第二栏（notes-column-list.tsx） ---------- */
 
 .column .note-list {

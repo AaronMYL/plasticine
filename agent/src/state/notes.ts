@@ -90,6 +90,9 @@ export function previewOf(markdown: string): string {
     .join(' ')
     .replace(/```[\s\S]*?```/g, '［图表］')
     .replace(/!\[[^\]]*]\([^)]*\)/g, '［图片］')
+    // 链接只留文字；待办前面的「[ ]」「[x]」不显示（11-17 走查：列表预览里露出「[ ] 待办一 [x] 待办二」）。
+    .replace(/\[([^\]]*)]\([^)]*\)/g, '$1')
+    .replace(/(^|\s)\[[ xX]](?=\s)/g, '$1')
     .replace(/[#*_`>|-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
