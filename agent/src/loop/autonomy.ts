@@ -3,16 +3,35 @@
 // 「这类以后我直接做？」（硬线：权限变化每次都问）。他点了「以后直接做」才放：这一类之后推出来的卡不再出，按推荐项
 // 直接做，做完告诉他；他说一句「这类还是先问我」就收回（loop_take_back）。收回或答了「还是先问我」以后重新数。
 // 有几种可能、资料里没有、硬线的卡不管放没放手都照常问。
+// 11-17 内核优化第三批（类别由代码定）：带推荐项的卡必须写叫法，叫法由代码对到用过的上（canonicalTopic）；
+// 带推荐项的卡不管依据是哪种都记一笔（推荐项就是预测），放手卡只在推出来的卡上出。
 
 import type { Ask } from '../../shared/state.ts';
 import type { AskDesk, AskResolver, Changes } from '../attention/index.ts';
 import type { StateService } from '../state/index.ts';
-import { normalizeTopic, OFFER_STREAK, streak, type LoopOutcome } from './tally.ts';
+import { canonicalTopic, normalizeTopic, OFFER_STREAK, streak, type LoopOutcome } from './tally.ts';
 
 export const OFFER_PURPOSE = 'loop_offer';
 export type AutonomyState = Pick<StateService, 'loop'>;
 
 interface OptionLike { id: string; label: string; recommended?: boolean | undefined }
+
+/** 带推荐项的卡没写叫法：回一句给模型看的说明（退回重发）；对得上回 null。 */
+export function topicProblem(topic: string | undefined, options: readonly OptionLike[]): string | null {
+  const recommended = options.some((option) => option.recommended === true);
+  if (!recommended || (topic !== undefined && normalizeTopic(topic) !== null)) {
+    return null;
+  }
+  return '带推荐项的卡要写 topic：这类事的叫法（2–8 个字，同一类每次用同一个词，如「排日程」「回邮件」）。';
+}
+
+/** 这张卡的叫法：对到用过的叫法上；没写回 undefined。 */
+export function askTopic(state: AutonomyState, topic: string | undefined): string | undefined {
+  if (topic === undefined) {
+    return undefined;
+  }
+  return canonicalTopic(topic, state.loop.topics('ask')) ?? undefined;
+}
 
 /** 这一类他放过手、这张又是推出来的卡：不出卡，回推荐的那一项。别的情况回 null，照常出卡。 */
 export function autoChoice(state: AutonomyState, topic: string | undefined, basis: string,
@@ -24,11 +43,11 @@ export function autoChoice(state: AutonomyState, topic: string | undefined, basi
   return options.find((option) => option.recommended === true) ?? null;
 }
 
-/** 出了推出来的卡：推荐项记成这一次的预测（同一张卡只记一次）。 */
+/** 出了带推荐项的卡：推荐项记成这一次的预测（同一张卡只记一次）。 */
 export function recordAsk(state: AutonomyState, ask: Ask, topic: string | undefined): void {
   const name = topic === undefined ? null : normalizeTopic(topic);
   const recommended = ask.options.find((option) => option.recommended);
-  if (name === null || ask.basis !== 'inferred' || recommended === undefined) {
+  if (name === null || recommended === undefined) {
     return;
   }
   state.loop.record({ area: 'ask', topic: name, ref: ask.id, expected: recommended.label });
@@ -44,15 +63,19 @@ function outcomeOf(ask: Ask): LoopOutcome | null {
   return answer.optionId !== null && answer.optionId === recommended?.id && !extra ? 'kept' : 'changed';
 }
 
-/** 卡答了：记结果；这一类连续原样收下够了、还没放手、也没有开着的放手卡，回这一类的叫法（该出放手卡了）。 */
+/**
+ * 卡答了：记结果；这张是推出来的卡、这一类连续原样收下够了、还没放手、也没有开着的放手卡，回这一类的叫法
+ * （该出放手卡了）。
+ */
 export function settleAsk(state: AutonomyState, ask: Ask, topic: string | undefined): string | null {
   const name = topic === undefined ? null : normalizeTopic(topic);
   const outcome = outcomeOf(ask);
-  if (name === null || outcome === null || ask.basis !== 'inferred') {
+  if (name === null || outcome === null || !ask.options.some((option) => option.recommended)) {
     return null;
   }
   state.loop.resolveByRef('ask', ask.id, outcome, ask.answer?.label ?? null);
-  if (outcome !== 'kept' || state.loop.grants.active(name) !== undefined || state.loop.offers.open(name)) {
+  if (ask.basis !== 'inferred' || outcome !== 'kept' || state.loop.grants.active(name) !== undefined
+    || state.loop.offers.open(name)) {
     return null;
   }
   const since = [state.loop.grants.lastRevokedAt(name), state.loop.offers.lastDeclinedAt(name)]

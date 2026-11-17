@@ -83,6 +83,11 @@ export function createLoopStore(context: StoreContext) {
     resolveByRef(area: LoopArea, ref: string, outcome: LoopOutcome, actual: string | null = null): boolean {
       return resolveRow('ref = $ref AND area = $area', { ref, area }, outcome, actual);
     },
+    /** 这一处用过的叫法，最近用的在前（新卡的叫法对到已有的上）。 */
+    topics(area: LoopArea, limit = 200): string[] {
+      return db.all(`SELECT topic FROM loop_records WHERE area = $area GROUP BY topic
+        ORDER BY max(created_at) DESC LIMIT $limit`, { area, limit }).map((row) => str(row, 'topic'));
+    },
     /** 这一处每类事的三个数（只数有结果的）。 */
     tallies(area: LoopArea): Tally[] {
       return db.all(`SELECT topic,

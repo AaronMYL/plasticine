@@ -60,6 +60,36 @@ export function normalizeTopic(raw: string): string | null {
   return text === '' ? null : Array.from(text).slice(0, TOPIC_MAX).join('');
 }
 
+/** 比叫法时用的样子：去掉空白和标点、字母小写。 */
+function topicKey(text: string): string {
+  return text.toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
+}
+
+/**
+ * 新卡的叫法对到已经用过的上（11-17 内核优化第三批：类别由代码定）：去掉空白标点后一样的，或者一个包含另一个
+ * （都至少两个字）的，用已有的那个；已有的按最近用过的先比。对不上就是新的一类。
+ */
+export function canonicalTopic(raw: string, known: readonly string[]): string | null {
+  const name = normalizeTopic(raw);
+  if (name === null) {
+    return null;
+  }
+  const key = topicKey(name);
+  if (key === '') {
+    return name;
+  }
+  const same = known.find((topic) => topicKey(topic) === key);
+  if (same !== undefined) {
+    return same;
+  }
+  const near = known.find((topic) => {
+    const other = topicKey(topic);
+    const shorter = Math.min(Array.from(other).length, Array.from(key).length);
+    return shorter >= 2 && (other.includes(key) || key.includes(other));
+  });
+  return near ?? name;
+}
+
 /** 冷下来的一类现在能不能再放一条出去：最后一次有结果之后过了 COLD_RETRY_MS。 */
 export function coldRetryDue(tally: Tally, now: Date): boolean {
   return tally.lastDecidedAt === null || now.getTime() - Date.parse(tally.lastDecidedAt) >= COLD_RETRY_MS;

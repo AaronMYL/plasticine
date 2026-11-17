@@ -6,7 +6,7 @@ import { fauxAssistantMessage, fauxToolCall, type TranscriptContext } from '@ear
 import type { Ask } from '../../shared/state.ts';
 import { Changes } from '../../src/attention/index.ts';
 import { offerResolver, OFFER_PURPOSE } from '../../src/loop/autonomy.ts';
-import { OFFER_STREAK } from '../../src/loop/tally.ts';
+import { canonicalTopic, OFFER_STREAK } from '../../src/loop/tally.ts';
 import { startKernel, until, type Harness } from '../lines/helpers.ts';
 
 const open: Harness[] = [];
@@ -81,4 +81,51 @@ test('five kept answers in a row earn an offer; a grant skips the card; taking i
   h.kernel.send('main', { text: '再约' });
   await until(() => h.kernel.view('main').status === 'waiting', '收回以后照常出卡');
   assert.equal(questions(h, 'line_question').length, before + 1);
+});
+
+// 11-17 内核优化第三批：类别由代码定。
+test('叫法对到用过的上：去掉空白标点一样的、互相包含的都认成已有的那一类', () => {
+  const known = ['排日程', '回邮件', 'GitHub 提交'];
+  assert.equal(canonicalTopic(' 排 日程。', known), '排日程');
+  assert.equal(canonicalTopic('回邮件给客户', known), '回邮件');
+  assert.equal(canonicalTopic('github提交', known), 'GitHub 提交');
+  assert.equal(canonicalTopic('整理笔记', known), '整理笔记', '对不上就是新的一类');
+  assert.equal(canonicalTopic('回', ['回邮件']), '回', '一个字的不往上靠');
+  assert.equal(canonicalTopic('  ', known), null);
+});
+
+test('带推荐项的卡没写叫法：卡不出，退回让模型补上；补上以后照常出', async () => {
+  const h = await startKernel({});
+  open.push(h);
+  const bare = fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: '下周三上午开会？',
+    basis: 'inferred', options: [{ id: 'yes', label: '周三上午', recommended: true }, { id: 'no', label: '换个时间' }] },
+  { id: 'bare' })], { stopReason: 'toolUse' });
+  h.respond([bare, (context: TranscriptContext) => {
+    assert.match(lastResult(context), /要写 topic/);
+    return askCall('fixed');
+  }, fauxAssistantMessage('好了')]);
+  h.kernel.send('main', { text: '约个会' });
+  await until(() => h.kernel.view('main').status === 'waiting', '补上以后出卡');
+  assert.equal(questions(h, 'line_question').length, 1);
+  assert.equal(questions(h, 'line_question')[0]?.context?.['topic'], '排日程');
+});
+
+test('有几种可能的卡带推荐项也记一笔，叫法对到用过的上；连续收下够了也不出放手卡', async () => {
+  const h = await startKernel({});
+  open.push(h);
+  const optionsCall = (id: string, topic: string) => fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'decide',
+    question: '周三还是周四？', basis: 'options', topic,
+    options: [{ id: 'yes', label: '周三', recommended: true }, { id: 'no', label: '周四' }] }, { id })],
+  { stopReason: 'toolUse' });
+  const script = [];
+  for (let index = 0; index < OFFER_STREAK; index += 1) {
+    script.push(optionsCall(`opt-${index}`, index === 0 ? '排日程' : '排 日程！'), fauxAssistantMessage(`第 ${index} 次`));
+  }
+  h.respond(script);
+  for (let index = 0; index < OFFER_STREAK; index += 1) {
+    await round(h, index, 'yes');
+  }
+  assert.deepEqual(h.handle.state.loop.tallies('ask').map((tally) => [tally.topic, tally.kept]),
+    [['排日程', OFFER_STREAK]]);
+  assert.equal(questions(h, OFFER_PURPOSE).length, 0, '放手卡只在推出来的卡上出');
 });

@@ -140,7 +140,8 @@ test('问他（ask_user）：出一张卡、线进 waiting，他选的就是工�
     fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'decide', question: '周五还是周六？', basis: 'options',
       options: [{ id: 'fri', label: '周五' }] }, { id: 'ask-bad' })], { stopReason: 'toolUse' }),
     fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'decide', question: '周五还是周六？', basis: 'options',
-      options: [{ id: 'fri', label: '周五', recommended: true }, { id: 'sat', label: '周六' }] }, { id: 'ask-1' })],
+      topic: '排日程', options: [{ id: 'fri', label: '周五', recommended: true }, { id: 'sat', label: '周六' }] },
+    { id: 'ask-1' })],
     { stopReason: 'toolUse' }),
     (context) => fauxAssistantMessage(`结果：${lastResult(context)}`),
   ]);
@@ -162,7 +163,7 @@ test('暂缓普通问题会释放主线，排队的新消息继续处理，但�
   const h = await harness([]);
   h.respond([
     fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: '现在继续处理吗？',
-      basis: 'inferred', options: [{ id: 'yes', label: '继续处理', recommended: true },
+      basis: 'inferred', topic: '处理', options: [{ id: 'yes', label: '继续处理', recommended: true },
         { id: 'no', label: '暂不处理' }] }, { id: 'deferred-question' })], { stopReason: 'toolUse' }),
     fauxAssistantMessage('旧问题暂缓。'),
     fauxAssistantMessage('收到新消息。'),
@@ -206,7 +207,7 @@ test('暂缓的问题稍后作答仍送回原线，保留实际答案来源', as
   const h = await harness([]);
   h.respond([
     fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: '选周五吗？', basis: 'inferred',
-      options: [{ id: 'yes', label: '周五', recommended: true }, { id: 'no', label: '暂不安排' }] },
+      topic: '排日程', options: [{ id: 'yes', label: '周五', recommended: true }, { id: 'no', label: '暂不安排' }] },
     { id: 'answer-later' })], { stopReason: 'toolUse' }),
     fauxAssistantMessage('先处理别的。'), fauxAssistantMessage('收到周五的答案。'),
   ]);

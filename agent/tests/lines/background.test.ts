@@ -173,7 +173,8 @@ test('等他回答的线让出执行位置：三条都停在卡上时，第四�
   scriptByLine(h, {
     ...Object.fromEntries(titles.map((title) => [`标题「${title}」`, [
       fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: `${title}现在继续吗？`,
-        basis: 'missing', options: [{ id: 'yes', label: '继续', recommended: true }, { id: 'no', label: '先不' }] },
+        basis: 'missing', topic: '继续',
+        options: [{ id: 'yes', label: '继续', recommended: true }, { id: 'no', label: '先不' }] },
       { id: `ask-${title}` })], { stopReason: 'toolUse' }),
       fauxAssistantMessage(`${title}做完了`),
     ]])),
@@ -200,7 +201,8 @@ test('排着队的线在别的线开始等他回答时接上，不用等谁做�
   scriptByLine(h, {
     '标题「问」': [
       fauxAssistantMessage([fauxToolCall('ask_user', { kind: 'confirm', question: '现在继续吗？', basis: 'missing',
-        options: [{ id: 'yes', label: '继续', recommended: true }, { id: 'no', label: '先不' }] }, { id: 'ask-q' })],
+        topic: '继续', options: [{ id: 'yes', label: '继续', recommended: true }, { id: 'no', label: '先不' }] },
+      { id: 'ask-q' })],
       { stopReason: 'toolUse' }),
       fauxAssistantMessage('问做完了'),
     ],
