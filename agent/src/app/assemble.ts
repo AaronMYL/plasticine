@@ -39,7 +39,7 @@ import { createServerHealthTool } from './server-health-tool.ts';
 import { idleWait } from './idle-wait.ts';
 import { TunnelService, type TunnelServiceOptions } from '../network/index.ts';
 import { Tasks } from '../tasks/index.ts';
-import { BackupService, ClientReleases, type MigrationService } from '../system/index.ts';
+import { BackupService, ClientReleases, RecordSweep, type MigrationService } from '../system/index.ts';
 import { MAIN_LINE_ID, type StateService, watchSlowQueries } from '../state/index.ts';
 import { errorCategory, safeLog } from '../util/index.ts';
 import { join } from 'node:path';
@@ -449,6 +449,8 @@ export function assembleApp(options: AssembleOptions): App {
   scans.add({ name: '客户端发布记录', run: () => clientUpdates.scan() });
   scans.add({ name: '日历同步', run: () => calendar.scan() });
   scans.add({ name: '数据迁移清理', run: () => options.migration?.sweep() });
+  const recordSweep = new RecordSweep(state, now);
+  scans.add({ name: '旧回执清理', run: () => recordSweep.run() });
   for (const scan of [...daily.scans, ...video.scans, ...toolGroupScans(toolGroups)]) {
     scans.add(scan);
   }

@@ -30,6 +30,7 @@ const EVENTS = {
   push_withdraw_failed: '推送已经记成撤回，给手机换成「已撤回」的那条没推出去',
   push_failed: '系统通知发送失败，卡仍在对话和清单里',
   push_retried: '系统通知第一次没连上推送服务，原样再发一次',
+  records_swept: '清了一批旧的设备动作回执正文（count）和过期的接口回执（deleted）',
   push_rejected: '系统通知被推送服务拒收',
   ask_notify_failed: '卡的系统通知失败，记录已保存',
   message_alert_push_failed: '新消息的系统通知没发出去',

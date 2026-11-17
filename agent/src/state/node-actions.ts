@@ -101,6 +101,15 @@ export function createNodeActionStore(context: StoreContext) {
           AND status IN ('queued', 'sent', 'executed', 'failed', 'unknown')`,
         { node_id: nodeId, since, ...params }, { limit: 1 }, 'requested_at DESC, id DESC')[0];
     },
+    /**
+     * 早于 before 的动作只留一行记录（做了什么、成没成、回执的摘要），回执正文（读回来的网页全文、截图说明这类）清掉；
+     * 一次最多 limit 行，回清了几行。还没有结果的（排着、发出去了、结果不明）不动。
+     */
+    trimResults(before: string, limit: number): number {
+      return context.db.run(`UPDATE node_actions SET result = NULL WHERE id IN (
+        SELECT id FROM node_actions WHERE requested_at < $before AND result IS NOT NULL
+          AND status IN ('executed', 'failed', 'refused', 'dry_run') LIMIT $limit)`, { before, limit });
+    },
     /** Newest first; with a node id only that node's. */
     recent(nodeId: string | null, page: Page = {}): NodeAction[] {
       if (nodeId === null) {

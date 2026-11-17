@@ -8,6 +8,7 @@ export type { DefiniteFailure, ExternalAction, ExternalOutcome } from './externa
 export { argsDigest, canonicalJson, decideReplay } from './receipts.ts';
 export type { ReplayDecision, ReplayInput } from './receipts.ts';
 export { ClientReleases } from './client-releases.ts';
+export { NODE_ACTION_RESULT_DAYS, RecordSweep, SWEEP_BATCH } from './record-sweep.ts';
 export type { ClientReleaseOptions } from './client-releases.ts';
 export { manifestDigest, readClientManifest, readClientPublication, recordClientRelease } from './client-manifest.ts';
 export {
