@@ -45,7 +45,10 @@ export function noteChanges(before: string, after: string): NoteChange[] {
 
 /** 对照期间的新输入按位置接续。重叠改动必须重新对照，不覆盖已经写下的字。 */
 export function applyNoteChanges(base: string, current: string, selected: readonly NoteChange[]): string {
-  const local = noteChanges(base, current);
+  // 两边都补一个行尾再比：原文最后一行没有换行时，在它后面接着写会让这一行从「乙段」变成「乙段\n」，
+  // 按行比就成了「最后一行改过了」，选中的那处被误判成冲突（11-17 浏览器回归：整篇润色后接着写一句再采用）。
+  // 补的那个换行在最末尾，不影响任何一处改动的位置。
+  const local = noteChanges(`${base}\n`, `${current}\n`);
   const mapped = selected.map((change) => {
     const overlaps = local.some((edit) => change.start < edit.end && edit.start < change.end
       || change.start === change.end && edit.start <= change.start && edit.end >= change.start
