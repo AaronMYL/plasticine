@@ -25,6 +25,7 @@ export const CHANNELS = {
   devicePause: 'desktop:device-pause',
   devicePermission: 'desktop:device-permission',
   helperCall: 'desktop:helper-call',
+  renderPage: 'desktop:render-page',
   chromeCurrent: 'chrome:current',
   tabsSync: 'tabs:sync',
   tabsCommand: 'tabs:command',

@@ -5,7 +5,8 @@
 // 内容上、看不见的 44px 拖动区删了，windowChrome 也不再有 titlebar()（那是 Swift Mac App 才要的）。
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { DevicePairRequest, DesktopPermission, PlasticineDesktopExternal, PlasticineDesktopServer,
+import type { DevicePairRequest, DesktopPermission, PlasticineDesktopExternal, PlasticineDesktopRender,
+  PlasticineDesktopServer,
   ServerChoice } from '../../../agent/shared/api/desktop-bridge.ts';
 import type { LoginImportRequest } from '../../../agent/shared/api/mac-logins.ts';
 import type { WebTabCommand, WebTabsSync } from '../../../agent/shared/api/mac-bridge.ts';
@@ -175,6 +176,10 @@ const bridge = {
     call: (method: string, params: Record<string, unknown>): Promise<unknown> =>
       ipcRenderer.invoke(CHANNELS.helperCall, method, params),
   },
+  render: {
+    page: (html: string, format: 'pdf' | 'png'): Promise<unknown> =>
+      ipcRenderer.invoke(CHANNELS.renderPage, html, format),
+  } satisfies PlasticineDesktopRender,
 };
 
 if (shellInfo !== null) {

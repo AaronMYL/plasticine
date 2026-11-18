@@ -42,6 +42,7 @@ import { LocalServer } from './local-server.ts';
 import { MainWindow } from './main-window.ts';
 import { OAuthCapture } from './oauth-capture.ts';
 import { openPermission } from './permissions.ts';
+import { renderPage } from './page-render.ts';
 import { fetchBytes, launchDetached, launchServer, logger, logsSince, readUrl, resources, runChecked, spawnHelper,
   waitHealthy } from './runtime.ts';
 import { ServerPlace } from './server-place.ts';
@@ -257,6 +258,7 @@ async function start(): Promise<void> {
     },
     openPermission: (permission) => openPermission(platform, permission, helper, log),
     helperCall: (method, params) => helper.call(method, params as never),
+    renderPage: (html, format) => renderPage(html, format),
     chromeCurrent: () => main.chrome(),
     tabsSync: (state) => tabs.sync(state), tabsCommand: (tabId, command) => {
       if (command === 'close') {

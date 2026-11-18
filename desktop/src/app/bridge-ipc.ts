@@ -4,7 +4,8 @@
 
 import { ipcMain, type IpcMainEvent, type IpcMainInvokeEvent, type WebContents } from 'electron';
 import { Value } from 'typebox/value';
-import { DESKTOP_PERMISSIONS, DevicePairRequestSchema, ServerChoiceSchema, type DesktopPermission,
+import { DESKTOP_PERMISSIONS, DevicePairRequestSchema, RENDER_HTML_MAX_CHARS, ServerChoiceSchema,
+  type DesktopPermission,
   type DevicePairRequest, type ServerChoice } from '../../../agent/shared/api/desktop-bridge.ts';
 import { LoginImportRequestSchema, type LoginImportRequest } from '../../../agent/shared/api/mac-logins.ts';
 import { WEB_TAB_COMMANDS, type WebTabsSync }
@@ -60,6 +61,8 @@ export interface ShellServices {
   openPermission(permission: DesktopPermission): void;
   /** 界面直接调系统助手（client/src/mac/desktop-helper.ts）：只放行协议里的方法，参数先过 schema。 */
   helperCall(method: HelperMethod, params: Record<string, unknown>): Promise<unknown>;
+  /** 资料库导出：一页网页出成 PDF 或长图（page-render.ts）。 */
+  renderPage(html: string, format: 'pdf' | 'png'): Promise<Uint8Array>;
   chromeCurrent(): unknown;
   tabsSync(state: WebTabsSync): void;
   tabsCommand(tabId: string, command: string): void;
@@ -197,6 +200,13 @@ export function registerBridge(services: ShellServices): void {
       return invalid(CHANNELS.helperCall);
     }
     return services.helperCall(name, (params ?? {}) as Record<string, unknown>);
+  });
+  handle(CHANNELS.renderPage, (html, format) => {
+    if (typeof html !== 'string' || html.length === 0 || html.length > RENDER_HTML_MAX_CHARS
+      || (format !== 'pdf' && format !== 'png')) {
+      return invalid(CHANNELS.renderPage);
+    }
+    return services.renderPage(html, format);
   });
   on(CHANNELS.tabsSync, (state) => {
     const { sync, dropped } = readSync(state);

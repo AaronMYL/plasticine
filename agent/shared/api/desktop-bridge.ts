@@ -194,6 +194,15 @@ export interface PlasticineDesktopHelper {
   call(method: string, params: Record<string, unknown>): Promise<unknown>;
 }
 
+/**
+ * 资料库导出成 PDF、长图（11-18）：界面把拼好的整页网页交给壳，壳在一个看不见、不连网的窗口里排好，回 PDF 或 PNG 的
+ * 字节（Uint8Array，未校验）。html 最多 RENDER_HTML_MAX_CHARS 字。旧版客户端没有这一样，界面就交给本体（云端浏览器）。
+ */
+export interface PlasticineDesktopRender {
+  page(html: string, format: 'pdf' | 'png'): Promise<unknown>;
+}
+export const RENDER_HTML_MAX_CHARS = 40 * 1024 * 1024;
+
 export interface PlasticineDesktopBridge {
   version: string;
   platform: DesktopPlatform;
@@ -213,4 +222,5 @@ export interface PlasticineDesktopBridge {
   device: PlasticineDesktopDevice;
   helper: PlasticineDesktopHelper;
   external: PlasticineDesktopExternal;
+  render?: PlasticineDesktopRender;
 }
