@@ -26,7 +26,7 @@ function DoneRow({ ask }: { ask: AskView }): ReactNode {
   const where = ask.status === 'answered' ? placeText(ask.answer?.place) : null;
   const meta = [timeText(at, new Date(), timeZone), where].filter((part) => part !== null);
   return <button type="button" className="ask-done" data-ask-id={ask.id} data-status={ask.status}
-    aria-expanded={open} title={open ? '收起' : '展开看全文'} onClick={() => setOpen((value) => !value)}>
+    aria-expanded={open} onClick={() => setOpen((value) => !value)}>
     <Icon name={ask.status === 'answered' ? 'check' : 'close'} size={14} />
     <span className="ask-done-question">{ask.question}</span>
     <span className="ask-done-answer">{doneText(ask)}</span>
