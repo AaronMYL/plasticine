@@ -60,7 +60,8 @@ export type {
 export { checkPublicHttpsUrl, displayUrl, isPrivateHost } from './urls.ts';
 export { officeText, xlsxSheets } from './office-text.ts';
 export type { OfficeKind, SheetRows } from './office-text.ts';
-export { printPdf, PRINT_HTML_MAX_CHARS } from './pdf-print.ts';
+export { printPdf, PRINT_HTML_MAX_CHARS, renderPage } from './pdf-print.ts';
+export type { RenderFormat } from './pdf-print.ts';
 export { AUDIO_FORMATS, convertMedia, editImage, IMAGE_FORMATS, IMAGE_SIDE_MAX, JOIN_SIZE_DEFAULT, VIDEO_FORMATS }
   from './media-convert.ts';
 export type { EditOptions, ImageOp, MediaInput } from './media-convert.ts';

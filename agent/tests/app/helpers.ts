@@ -78,6 +78,8 @@ export interface TestApp {
 
 export interface TestAppOptions {
   feedFetcher?: FeedFetcher;
+  /** 资料库导出成 PDF、长图：不给就是一个不起浏览器、直接报错的假的。 */
+  renderPage?: (html: string, format: 'pdf' | 'png', signal: AbortSignal) => Promise<Buffer>;
   automaticBackups?: boolean;
   /** 记忆整理（默认关，免得脚本模型多收请求）。 */
   memoryCuration?: boolean;
@@ -178,6 +180,9 @@ export async function startTestApp(steps: TextStep[] = [], options: TestAppOptio
     lines: { models: source, machineLoad: () => ({ cores: 2, load1: 0, freeRatio: 0.5 }), ...options.lines },
     ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels(state) }),
     localToken: options.localToken ?? null,
+    renderPage: options.renderPage ?? (async () => {
+      throw new Error('测试不起浏览器：要导出 PDF、长图就给假的 renderPage');
+    }),
     ...(options.migrationRestart === undefined ? {} : { migration: new MigrationService({ stateDirectory: directory,
       now: clock.now, snapshot: (path) => state.snapshotTo(path), restart: options.migrationRestart,
       diskFree: () => 1e12 }) }),

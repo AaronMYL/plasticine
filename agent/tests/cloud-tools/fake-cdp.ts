@@ -84,6 +84,9 @@ export async function fakeCdp() {
           elements: [{ id: 'e1', tag: 'button', role: 'button', text: elementLabel, label: '', disabled: false,
             focused: false, bounds: { x: 10, y: 20, width: 100, height: 40 } }] } } };
       }
+      if (String(params['expression']).includes('scrollHeight')) {
+        return { result: { type: 'number', value: 3000 } };
+      }
       if (String(params['expression']).includes('document.activeElement')) {
         return { result: { type: 'boolean', value: editable } };
       }

@@ -4,6 +4,7 @@
 // close the connections. Closing the library is the caller's last step.
 
 import { createServer, type Server } from 'node:http';
+import { renderPage, type RenderFormat } from '../cloud-tools/index.ts';
 import { adoptMateSouls } from '../mates/index.ts';
 import { BookInsightService } from '../books/index.ts';
 import { ComposePredictor } from '../loop/index.ts';
@@ -108,6 +109,8 @@ export interface AppOptions {
   video: Video;
   /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；没设是 null，本机令牌一律不认。 */
   localToken?: string | null;
+  /** 资料库导出成 PDF、长图：测试给假的；不给就借云端浏览器。 */
+  renderPage?: (html: string, format: RenderFormat, signal: AbortSignal) => Promise<Buffer>;
 }
 
 export interface App {
@@ -211,6 +214,7 @@ export function createApp(options: AppOptions): App {
     passwordLimiter: new SourceLimiter({ perSource: PASSWORD_FAILURE_LIMIT, global: PASSWORD_GLOBAL_FAILURE_LIMIT,
       windowMs: PASSWORD_FAILURE_WINDOW_MS }, () => now().getTime()),
     localToken: options.localToken ?? null,
+    renderPage: options.renderPage ?? ((html, format, signal) => renderPage(html, format, signal)),
     now,
     daily: options.daily,
     scans: options.scans,

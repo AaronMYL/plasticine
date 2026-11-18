@@ -1,5 +1,6 @@
 // The shapes every resource file shares: what the service is built from, what a handler gets, what it returns.
 
+import type { RenderFormat } from '../cloud-tools/index.ts';
 import type { Diagnostics } from './diagnostics.ts';
 import type { Video } from '../video/index.ts';
 import type { IncomingMessage, OutgoingHttpHeaders, ServerResponse } from 'node:http';
@@ -70,6 +71,8 @@ export interface AppDeps {
   passwordLimiter: SourceLimiter;
   /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；没设是 null（服务器上的实例都是）。 */
   localToken: string | null;
+  /** 资料库导出成 PDF、长图（11-18）：借云端浏览器排版；测试给假的。 */
+  renderPage: (html: string, format: RenderFormat, signal: AbortSignal) => Promise<Buffer>;
   now: () => Date;
   /** M4: 信息流、关注点、书签. */
   daily: Daily;

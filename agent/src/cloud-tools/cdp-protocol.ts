@@ -36,6 +36,7 @@ export const CdpReadSchema = Type.Object({ data: Type.String(), base64Encoded: T
   eof: Type.Boolean() });
 export const CdpTextSchema = Type.Object({ result: Type.Object({ value: Type.String() }) });
 export const CdpBooleanSchema = Type.Object({ result: Type.Object({ value: Type.Boolean() }) });
+export const CdpNumberSchema = Type.Object({ result: Type.Object({ value: Type.Number() }) });
 export const CdpFrameSchema = Type.Object({
   sessionId: Type.Integer(), data: Type.String({ maxLength: 4_000_000, pattern: '^[A-Za-z0-9+/=]+$' }),
   metadata: Type.Object({ deviceWidth: Type.Number({ exclusiveMinimum: 0, maximum: 4096 }),

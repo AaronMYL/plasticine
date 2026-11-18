@@ -1,10 +1,11 @@
-// 一页 HTML 打印成 PDF（11-16 生成 PDF、转 PDF 用）：借云端共享浏览器，开一个隔离的浏览器上下文和一个后台标签，
-// 把 HTML 直接放进页面（不经网址、不去网上拿东西），等字体和图片好了用 Page.printToPDF 按流取回，最后关掉标签和上下文。
+// 一页 HTML 打印成 PDF（11-16 生成 PDF、转 PDF 用）或截成一张长图（11-18 资料库导出）：借云端共享浏览器，开一个隔离的
+// 浏览器上下文和一个后台标签，把 HTML 直接放进页面（不经网址、不去网上拿东西），等字体和图片好了用 Page.printToPDF
+// 按流取回、或者把视口拉到整页那么高截一张 PNG，最后关掉标签和上下文。
 // 这个标签的地址带固定的记号，云端浏览器的标签列表不列它（cdp-browser.ts 按记号滤掉）。
 
 import { CDP_ENDPOINT, CdpConnection } from './cdp-connection.ts';
-import { CdpBrowserContextSchema, CdpFrameTreeSchema, CdpReadSchema, CdpSessionSchema, CdpStreamSchema,
-  CdpTargetSchema, cdpValue } from './cdp-protocol.ts';
+import { CdpBrowserContextSchema, CdpDataSchema, CdpFrameTreeSchema, CdpNumberSchema, CdpReadSchema, CdpSessionSchema,
+  CdpStreamSchema, CdpTargetSchema, cdpValue } from './cdp-protocol.ts';
 import { CloudToolError } from './errors.ts';
 
 /** 打印用的标签的地址：标签列表按这个前缀滤掉。 */
@@ -18,6 +19,14 @@ const READ_CHUNK = 1024 * 1024;
 const CLEANUP_TIMEOUT_MS = 5_000;
 const READY = `Promise.all([document.fonts.ready,
   ...Array.from(document.images, (image) => image.decode().catch(() => null))]).then(() => true)`;
+/** 长图的宽度（资料库的报告按 1120 宽排）。 */
+export const SHOT_WIDTH = 1200;
+/** 长图最高这么多像素（浏览器截图的上限附近）；再高就截到这里。 */
+const SHOT_MAX_HEIGHT = 16_000;
+/** 图表这类靠页面脚本画的东西，字体和图片好了以后再等一下。 */
+const SETTLE_MS = 400;
+
+export type RenderFormat = 'pdf' | 'png';
 
 /** 流的句柄属于打印它的那个标签：读、关都要带上标签的会话。 */
 async function readStream(connection: CdpConnection, sessionId: string, handle: string, signal: AbortSignal):
@@ -41,12 +50,31 @@ async function readStream(connection: CdpConnection, sessionId: string, handle: 
   return Buffer.concat(parts);
 }
 
-async function printIn(connection: CdpConnection, sessionId: string, html: string, signal: AbortSignal):
-  Promise<Buffer> {
+async function shotIn(connection: CdpConnection, sessionId: string, signal: AbortSignal): Promise<Buffer> {
+  const metrics = { width: SHOT_WIDTH, height: 900, deviceScaleFactor: 1, mobile: false };
+  await connection.send('Emulation.setDeviceMetricsOverride', metrics, signal, sessionId);
+  const measured = cdpValue(CdpNumberSchema, await connection.send('Runtime.evaluate', {
+    expression: 'Math.ceil(document.documentElement.scrollHeight)', returnByValue: true }, signal, sessionId));
+  const height = Math.max(1, Math.min(SHOT_MAX_HEIGHT, measured.result.value));
+  // 不太长的用两倍清晰度；太长的用一倍，免得超过浏览器能截的大小。
+  const scale = height * 2 <= SHOT_MAX_HEIGHT ? 2 : 1;
+  await connection.send('Emulation.setDeviceMetricsOverride', { ...metrics, height, deviceScaleFactor: scale }, signal,
+    sessionId);
+  const shot = cdpValue(CdpDataSchema, await connection.send('Page.captureScreenshot',
+    { format: 'png', captureBeyondViewport: false }, signal, sessionId));
+  return Buffer.from(shot.data, 'base64');
+}
+
+async function renderIn(connection: CdpConnection, sessionId: string, html: string, format: RenderFormat,
+  signal: AbortSignal): Promise<Buffer> {
   const tree = cdpValue(CdpFrameTreeSchema, await connection.send('Page.getFrameTree', {}, signal, sessionId));
   await connection.send('Page.setDocumentContent', { frameId: tree.frameTree.frame.id, html }, signal, sessionId);
   await connection.send('Runtime.evaluate', { expression: READY, awaitPromise: true, returnByValue: true }, signal,
     sessionId);
+  if (format === 'png') {
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+    return shotIn(connection, sessionId, signal);
+  }
   const printed = cdpValue(CdpStreamSchema, await connection.send('Page.printToPDF', {
     printBackground: true,
     preferCSSPageSize: true,
@@ -57,8 +85,14 @@ async function printIn(connection: CdpConnection, sessionId: string, html: strin
 
 /** HTML → PDF 的字节。浏览器没起来时抛「浏览器还没起来」。 */
 export async function printPdf(html: string, signal: AbortSignal, endpoint = CDP_ENDPOINT): Promise<Buffer> {
+  return renderPage(html, 'pdf', signal, endpoint);
+}
+
+/** HTML → PDF 或一张长图（PNG）的字节。 */
+export async function renderPage(html: string, format: RenderFormat, signal: AbortSignal, endpoint = CDP_ENDPOINT)
+  : Promise<Buffer> {
   if (html.length > PRINT_HTML_MAX_CHARS) {
-    throw new CloudToolError('invalid_input', '内容太大了（超过 40 MB），拆成几份再生成 PDF。');
+    throw new CloudToolError('invalid_input', '内容太大了（超过 40 MB），拆成几份再导出。');
   }
   const connection = await CdpConnection.connect(endpoint, signal, () => undefined);
   let context: string | null = null;
@@ -70,7 +104,7 @@ export async function printPdf(html: string, signal: AbortSignal, endpoint = CDP
       { url: PRINT_PAGE_URL, browserContextId: context, background: true }, signal)).targetId;
     const session = cdpValue(CdpSessionSchema, await connection.send('Target.attachToTarget',
       { targetId: target, flatten: true }, signal));
-    return await printIn(connection, session.sessionId, html, signal);
+    return await renderIn(connection, session.sessionId, html, format, signal);
   } finally {
     // 收尾不跟着调用方取消：取消了也要把标签和上下文关掉。关不掉不影响结果：上下文建的时候说了连接一断就收掉。
     const cleanup = AbortSignal.timeout(CLEANUP_TIMEOUT_MS);

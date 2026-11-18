@@ -94,6 +94,9 @@ import {
   NOTES_EXPORT_PATH,
   NOTES_IMPORT_PATH,
   NOTES_PATH,
+  PAGE_RENDER_PATH,
+  SPACES_EXPORT_PATH,
+  SPACES_IMPORT_PATH,
   COMPOSE_OUTCOME_PATH,
   COMPOSE_PREDICT_PATH,
   PROJECTS_PATH,
@@ -217,6 +220,7 @@ import { nodeBrowserSession } from './node-browser.ts';
 import { issueNodePairingCode, listNodeActions, listNodes, revokeNodeHandler, setNodeLimitsHandler } from './nodes.ts';
 import { unlockNote } from './note-access.ts';
 import { exportNoteFiles, importNoteFiles } from './notes-transfer.ts';
+import { exportSpaceFiles, importSpaceFiles, renderPageFile } from './spaces-transfer.ts';
 import { assistNote, assistOutcome, changeNoteFolder, getNoteImport, listNoteFolders, restoreNote, uploadNoteImage }
   from './notes-workspace.ts';
 import { createNote, deleteNote, getNote, getNoteAsset, getNoteVersion, listNotes, listNoteVersions, saveNote }
@@ -411,6 +415,9 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: `${MEMORY_DREAMS_PATH}/changes/:id/choose`, auth: true, handler: chooseMemoryDreamChange },
   // 第 6、7 条（11-06）：空间、订阅（研究周报、个人回顾）、首页「回顾」。
   { method: 'GET', path: SPACES_PATH, auth: true, handler: listSpaces },
+  { method: 'POST', path: SPACES_IMPORT_PATH, auth: true, handler: importSpaceFiles },
+  { method: 'POST', path: SPACES_EXPORT_PATH, auth: true, handler: exportSpaceFiles },
+  { method: 'POST', path: PAGE_RENDER_PATH, auth: true, handler: renderPageFile },
   { method: 'GET', path: `${SPACES_PATH}/:id`, auth: true, handler: getSpace },
   { method: 'GET', path: `${SPACES_PATH}/:id/versions`, auth: true, handler: getSpaceVersions },
   { method: 'PUT', path: `${SPACES_PATH}/:id`, auth: true, handler: saveSpace },

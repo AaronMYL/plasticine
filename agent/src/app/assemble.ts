@@ -132,6 +132,8 @@ export interface AssembleOptions {
   illustrator?: Illustrator | null;
   /** 生成 PDF 用的打印（11-16）：测试给假的，不起浏览器；不给就借云端共享浏览器打印。 */
   printPdf?: (html: string, signal: AbortSignal) => Promise<Buffer>;
+  /** 资料库导出成 PDF、长图（11-18）：测试给假的；不给就借云端浏览器。 */
+  renderPage?: (html: string, format: 'pdf' | 'png', signal: AbortSignal) => Promise<Buffer>;
   /** 桌面客户端给本体的本机令牌（PLASTICINE_LOCAL_TOKEN）；不给或 null = 不认本机令牌。 */
   localToken?: string | null;
 }
@@ -474,6 +476,7 @@ export function assembleApp(options: AssembleOptions): App {
     ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels }),
     ...(options.clientDirectory === undefined ? {} : { clientDirectory: options.clientDirectory }),
     localToken: options.localToken ?? null,
+    ...(options.renderPage === undefined ? {} : { renderPage: options.renderPage }),
   });
 }
 
