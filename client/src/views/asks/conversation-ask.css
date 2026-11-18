@@ -37,6 +37,54 @@
 
 .ask-done-meta {
   flex: none;
+  white-space: nowrap;
+}
+
+/* 答过的那一行是按钮：点一下展开看全文（11-18）。 */
+button.ask-done {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--text-caption);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+
+button.ask-done:hover {
+  background: var(--tint2);
+}
+
+/* 答案（自己打的可能很长）：最多占一半宽，截短。 */
+.ask-done-answer {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 展开：勾在左，问题、答案、时间在右边一行一行排，全文折行。 */
+.ask-done[aria-expanded='true'] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  row-gap: var(--space-1);
+  padding-block: var(--space-2);
+}
+
+.ask-done[aria-expanded='true'] > svg {
+  margin-top: 2px;
+}
+
+.ask-done[aria-expanded='true'] > span {
+  grid-column: 2;
+  max-width: none;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .wait-pin {

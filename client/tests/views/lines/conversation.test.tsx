@@ -143,7 +143,12 @@ describe('和 Plasticine 的对话', () => {
     await waitFor(async () => expect((await app.api.asks.get('ask-clean')).status).toBe('answered'));
     expect((await app.api.asks.get('ask-clean')).answer?.place).toEqual({ kind: 'line', lineId: MAIN_LINE_ID });
     await waitFor(() => expect(conv().queryByRole('button', { name: /等你 1/ })).toBeNull());
-    expect(await conv().findByText(/选了「彻底清掉」/)).toBeTruthy();
+    const done = (await conv().findByText(/选了「彻底清掉」/)).closest('button');
+    expect(done?.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(done!);
+    expect(done?.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(done!);
+    expect(done?.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('笔记引用连版本写进消息：读回来是引用片、写明第几版；引用合计超过上限先说，不发', async () => {

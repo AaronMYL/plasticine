@@ -1,5 +1,7 @@
 // 对话里的一张卡（11-16 卡片回到对话里）：开着的照原样画（谁、哪件事问的写在标题下面）；答过、撤回的在原处收成一行，
 // 写答了什么、几点、在哪定的；先不过的收成一行「先放着」，点开还能答。
+// 答过的那一行：问题和答案太长都截短（答案最多占一半宽），点一下展开看全文，再点收回（11-18 Aaron：自己打的长答案
+// 原来不截短，把这一行和整个对话区撑出横向滚动条）。
 
 import { useState, type ReactNode } from 'react';
 import type { AskView } from '../../api/types.ts';
@@ -19,14 +21,17 @@ function doneText(ask: AskView): string {
 function DoneRow({ ask }: { ask: AskView }): ReactNode {
   const timeZone = useTimeZone();
   const placeText = usePlaceText();
+  const [open, setOpen] = useState(false);
   const at = ask.answeredAt ?? ask.createdAt;
   const where = ask.status === 'answered' ? placeText(ask.answer?.place) : null;
-  const meta = [doneText(ask), timeText(at, new Date(), timeZone), where].filter((part) => part !== null);
-  return <p className="ask-done" data-ask-id={ask.id} data-status={ask.status}>
+  const meta = [timeText(at, new Date(), timeZone), where].filter((part) => part !== null);
+  return <button type="button" className="ask-done" data-ask-id={ask.id} data-status={ask.status}
+    aria-expanded={open} title={open ? '收起' : '展开看全文'} onClick={() => setOpen((value) => !value)}>
     <Icon name={ask.status === 'answered' ? 'check' : 'close'} size={14} />
     <span className="ask-done-question">{ask.question}</span>
-    <span className="ask-done-meta">{meta.join(' · ')}</span>
-  </p>;
+    <span className="ask-done-answer">{doneText(ask)}</span>
+    <span className="ask-done-meta">{`· ${meta.join(' · ')}`}</span>
+  </button>;
 }
 
 function DeferredRow({ ask }: { ask: AskView }): ReactNode {
