@@ -40,5 +40,6 @@ export function reportTooPlain(html: string): string | null {
     '  两三样东西比较用对照表（rt）；先后用时间线（rp-time）或流程（chain）；你自己的判断放进 byai 或 rp-note。',
     '· 段落只留把这些块连起来的那几句，每节不超过两三段；最后一节是来源索引（srcs）。',
     `· 现在用到的块：${used.length === 0 ? '一个都没有' : used.join('、')}。数和图只用材料里有的，不为了好看编。`,
+    '· 每种块怎么写在 space-writing 技能里（skill_read），这条线还没读过就先读。',
   ].filter((line) => line !== '').join('\n');
 }

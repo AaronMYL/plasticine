@@ -62,7 +62,8 @@ test('找工具：名字对上的最前；中文按两个字一组也找得到',
 
 test('线里：一开始只声明常用的和 tool_search；找到的下一步声明了、能调用', async () => {
   const sent: string[] = [];
-  const h = await startKernel({ tools: [echoTool(), mailTool(sent)], extra: { directTools: ['echo'] } });
+  const directTools = { main: ['echo'], side: ['echo'], background: ['echo'] };
+  const h = await startKernel({ tools: [echoTool(), mailTool(sent)], extra: { directTools } });
   open.push(h);
   const declared: string[][] = [];
   const seen = (context: TranscriptContext): void => {

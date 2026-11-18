@@ -26,7 +26,7 @@ import { illustrate, type Illustrated } from './illustrate.ts';
 import { reportTooPlain } from './page-richness.ts';
 import { dropDeadMessageLinks } from './space-page.ts';
 import { runSubscription, type RunPort, type RunState } from './run.ts';
-import { LETTER_GUIDE, REPORT_GUIDE, SPACE_RULES } from './space-guide.ts';
+import { SPACE_RULES, SPACE_SKILL } from './space-guide.ts';
 import { changeSubscription, editSpace, writeSpace, type SpaceWritten } from './writes.ts';
 
 export type ToolState = RunState & Pick<StateService, 'transaction' | 'dailySettings' | 'notes' | 'lineMessages'>;
@@ -85,7 +85,10 @@ function written(result: SpaceWritten, art: Illustrated['outcome']): Record<stri
 
 const WRITE_DESCRIPTION = 'Plasticine 写的东西（报告、周报、核查、整理稿、草稿）都写成空间（整页网页），不写进笔记。'
   + '新建省略 id；改已有的先 space_read 再带 id 和 version（小改用 space_edit）。他让改某一期时只改这一期，change 写改了'
-  + `什么；能长期适用的写进 rule 让他决定。\n${SPACE_RULES}\n${REPORT_GUIDE}\n${LETTER_GUIDE}`;
+  + '什么；能长期适用的写进 rule 让他决定。\n'
+  // 11-18 内核优化：报告、来信的版式细则（原来 6.8 千字）挪进内置技能，这里只留规矩；后台线一开始就带这件工具。
+  + `写之前先用 skill_read 读「${SPACE_SKILL}」技能（同一条线读过一次就行）：报告、核查、来信各自的结构和现成的块、`
+  + `类名都在里面，照着用，不自己造样式。\n${SPACE_RULES}`;
 
 /** issued：订阅新出了一期（样刊出来时附「开启定时」卡，sample-card.ts）。 */
 export function subsTools(state: ToolState, port: () => RunPort, now: () => Date,

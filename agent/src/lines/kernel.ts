@@ -56,7 +56,7 @@ export class LineKernel implements LineControl, SideControl {
   readonly #runners = new Map<string, LineRunner>();
   readonly #timers = new Map<string, () => void>();
   readonly #tools: KernelTool[];
-  readonly #direct: ReadonlySet<string> | undefined;
+  readonly #direct: Readonly<Record<LineScope['kind'], ReadonlySet<string>>> | undefined;
   readonly #host: RunnerHost;
   #stopping = false;
 
@@ -78,7 +78,9 @@ export class LineKernel implements LineControl, SideControl {
     this.#tools = [askUserTool(askHost), ...lineTools(this, this.#state),
       outcomeTool(this.#state), readResultTool(this.#state), ...loopTools(this.#state),
       planTool(this.#state, (lineId) => this.#publishLine(lineId)), ...submits, ...asking, ...(options.tools ?? [])];
-    const direct = options.directTools === undefined ? undefined : new Set(options.directTools);
+    const given = options.directTools;
+    const direct = given === undefined ? undefined
+      : { main: new Set(given.main), side: new Set(given.side), background: new Set(given.background) };
     this.#direct = direct;
     this.#tools.push(toolSearchTool((scope) => this.#catalog(scope), () => direct !== undefined));
     this.#host = this.#runnerHost();
@@ -92,7 +94,7 @@ export class LineKernel implements LineControl, SideControl {
 
   /** tool_search 找的范围：这条线能用、一开始没声明的。 */
   #catalog(scope: LineScope): CatalogEntry[] {
-    const direct = this.#direct;
+    const direct = this.#direct?.[scope.kind];
     return this.#available(scope.kind).filter((tool) => direct !== undefined && !direct.has(tool.name)
       && tool.name !== 'tool_search').map((tool) => {
       const agentTool = tool.create(scope);
@@ -109,7 +111,8 @@ export class LineKernel implements LineControl, SideControl {
       toolset: (scope: LineScope): Toolset => {
         const tools = (this.#state.lines.get(scope.lineId)?.sealedPrompt ?? null) !== null ? []
           : this.#available(scope.kind).map((tool) => tool.create(scope));
-        return { tools, deferred: splitLoadout(tools, this.#direct).deferred, meta: (name) => meta.get(name) };
+        const deferred = splitLoadout(tools, this.#direct?.[scope.kind]).deferred;
+        return { tools, deferred, meta: (name) => meta.get(name) };
       },
       purpose: (line) => {
         if (line.sealedPrompt !== null) {
@@ -121,7 +124,7 @@ export class LineKernel implements LineControl, SideControl {
         return line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind);
       },
       prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.(), this.#now()),
-        productMap(this.#available(line.kind), this.#direct),
+        productMap(this.#available(line.kind), this.#direct?.[line.kind]),
         this.#options.skillsContext?.(line.id) ?? ''].filter((part) => part.trim() !== '').join('\n\n'),
       publish: (event) => this.#options.publish(event),
       gate: this.#gate,

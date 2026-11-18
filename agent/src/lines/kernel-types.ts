@@ -10,6 +10,7 @@ import type { LineReportMessage } from './messages.ts';
 import type { DriveOutcome, RunnerHost } from './runner.ts';
 import type { AskToolHost } from './ask-tools.ts';
 import type { SubmitHoldPort } from './page-submit-tool.ts';
+import type { DirectTools } from './tool-loadout.ts';
 import type { KernelTool, Later, ModelSource } from './types.ts';
 
 /** 同时在跑的后台线上限（他 11-05 定）：多出的排队，有线跑完就接上。 */
@@ -50,10 +51,10 @@ export interface KernelOptions {
   /** 他现在的时区（设置里能改）；主线和旁聊按它分天。不给用 timeZone。 */
   zone?: () => string;
   /**
-   * 一开始就声明给模型的工具（内核优化第四批，lines/tool-loadout.ts 的 DIRECT_TOOLS）；其余按需用 tool_search 找出来。
-   * 不给就全部一开始声明，也没有 tool_search。
+   * 各种线一开始就声明给模型的工具（内核优化第四批，lines/tool-loadout.ts 的 DIRECT_TOOLS）；其余按需用 tool_search
+   * 找出来。不给就全部一开始声明，也没有 tool_search。
    */
-  directTools?: readonly string[];
+  directTools?: DirectTools;
   /** 已加载方法每次请求重新装入；作用域与 skill_read 的 line:<id> 一致。 */
   skillsContext?: (lineId: string) => string;
   /**

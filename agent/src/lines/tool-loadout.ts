@@ -1,4 +1,4 @@
-// 工具面（内核优化第四批，11-17）：一开始只给模型常用的十几件（DIRECT_TOOLS，按线上两周的调用量挑），其余的在系统提示
+// 工具面（内核优化第四批，11-17）：一开始只给模型常用的十几件（DIRECT_TOOLS，按线的种类分），其余的在系统提示
 // 里只列名字；要用时 tool_search 按名字或要做的事找出来，找到的从下一次请求起声明给模型（pi-ai 的 toolsAdded：
 // 声明插在对话中间，前面的缓存不动）。能执行的一直是全部工具，所以模型照着名字直接调一件还没声明的也做得了，
 // 下一次请求在那一步前面补上声明。声明从库里的记录推出来（tool_search 的结果、调用过的工具），每次请求重装时一样。
@@ -7,23 +7,35 @@ import type { AgentMessage, AgentTool } from '@earendil-works/pi-agent-core';
 import { toToolDeclaration, type SystemMessage } from '@earendil-works/pi-ai';
 import { Type } from 'typebox';
 import { checkedArgs } from './tool-args.ts';
+import type { LineKind } from '../../shared/api/index.ts';
 import type { KernelTool, LineScope } from './types.ts';
 
 export const TOOL_SEARCH = 'tool_search';
 /** 一次最多找出几件。 */
 export const SEARCH_LIMIT = 6;
 
-/**
- * 一开始就声明的工具：线上 11-03 至 11-17 调用量最多的（server_command 1,117 次……start_line 30 次），加上问他、
- * 后台线开头列计划的 line_plan（26 次；回放里它放进按需以后，有一件后台线开头没先列计划）。只给某几种线的照样按线的
- * 种类筛：主线、旁聊 20 件，后台线多一件 line_outcome；都再加 tool_search。
- */
-export const DIRECT_TOOLS: readonly string[] = [
-  'server_command', 'device_action', 'server_command_read', 'read_result', 'read_line', 'tell_line',
-  'cloud_browser_observe', 'line_outcome', 'read_memory_doc', 'space_read', 'cloud_browser_open', 'page_send',
-  'cloud_browser_act', 'read_project', 'line_wake_later', 'file_save', 'remember', 'start_line', 'skill_read',
-  'ask_user', 'line_plan',
-];
+// 一开始就声明哪些（11-18 Aaron 定：要高频通用的，不一定 20 件；梳理见私有仓库《讨论/内核优化-1117》最后一节）。
+// 按线上 21 天、93 条线里一件工具用过几条线、几天挑，不只看次数（page_send 69 次只在 2 条线里连着用）；按线的种类分：
+// 主线、旁聊是总管，后台线是干活的，两边用的几乎不重叠；跟着走的一起给（device_action 要 device_nodes 给的设备 id，
+// 结果截断要 read_result）；系统提示点名要用的一开始就在（mate_handoff、conversation_search、skill_read）。
+
+/** 每种线都给。 */
+const COMMON = ['read_line', 'tell_line', 'read_result', 'read_memory_doc', 'read_project', 'list_projects',
+  'conversation_search', 'skill_read', 'ask_user'];
+/** 主线、旁聊：总管。 */
+const COORDINATE = ['list_lines', 'start_line', 'mate_handoff', 'remember'];
+/** 后台线：干活。space_write 的说明 11-18 瘦过（版式细则挪进 space-writing 技能）才放进来。 */
+const WORK = ['server_command', 'server_command_read', 'device_nodes', 'device_action', 'cloud_browser_open',
+  'cloud_browser_observe', 'cloud_browser_read', 'space_read', 'space_write', 'line_plan', 'line_outcome'];
+
+export type DirectTools = Readonly<Record<LineKind, readonly string[]>>;
+
+/** 各种线一开始声明的工具（都再加 tool_search）：主线、旁聊 14 件，后台线 21 件。 */
+export const DIRECT_TOOLS: DirectTools = {
+  main: [...COMMON, ...COORDINATE],
+  side: [...COMMON, ...COORDINATE],
+  background: [...COMMON, ...WORK],
+};
 
 export interface Loadout {
   /** 一开始声明给模型的。 */

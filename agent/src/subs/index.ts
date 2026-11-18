@@ -32,6 +32,6 @@ export { ASSET_PATH, illustrate } from './illustrate.ts';
 export type { Illustrated, IllustrateOptions } from './illustrate.ts';
 export { REWRITE_ATTEMPTS_MAX, REWRITE_CHANGE, requiredNumbers, SpaceRewriter } from './rewrite.ts';
 export type { RewriteOptions, RewriteResult, RewriteState } from './rewrite.ts';
-export { LETTER_GUIDE, REPORT_GUIDE, SPACE_RULES } from './space-guide.ts';
+export { LETTER_GUIDE, REPORT_GUIDE, SPACE_RULES, SPACE_SKILL } from './space-guide.ts';
 export type { SpacePageHooks } from './tools.ts';
 export type { FollowUp } from './follow-ups.ts';
