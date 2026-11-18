@@ -16,11 +16,11 @@ beforeEach(async () => {
 });
 afterEach(async () => { await t.close(); });
 
-test('本人和系统浏览器直接读取私密正文、历史图片与全局全文查找，读取不改历史或来源', async () => {
-  const asset = t.state.notes.writeAsset(Buffer.from('historical private image'), 'image/png');
+test('本人和系统浏览器直接读取笔记正文、历史图片与全局全文查找，读取不改历史或来源', async () => {
+  const asset = t.state.notes.writeAsset(Buffer.from('historical note image'), 'image/png');
   const path = `/v2/notes/assets/${asset.name}`;
   const original = t.state.notes.create({ markdown: `# 阅读随记\n![图片](${path})`,
-    folder: '笔记', author: 'user', private: true });
+    folder: '笔记', author: 'user' });
   const markdown = '# 阅读随记\n' + '前文'.repeat(150) + '独有搜索词';
   const current = t.state.notes.save(original.id, 1, { markdown });
   const versions = t.state.notes.versions(original.id);
@@ -28,7 +28,6 @@ test('本人和系统浏览器直接读取私密正文、历史图片与全局�
     const read = await call(t, 'GET', `/v2/notes/${original.id}`, { cookie });
     assert.equal(read.status, 200);
     assert.equal(json(read)['markdown'], markdown);
-    assert.equal(json(read)['private'], true);
     assert.equal(json(read)['readOnly'], false);
     const history = await call(t, 'GET', `/v2/notes/${original.id}/versions`, { cookie });
     assert.equal(history.status, 200);
@@ -38,7 +37,7 @@ test('本人和系统浏览器直接读取私密正文、历史图片与全局�
     assert.equal(json(old)['markdown'], t.state.notes.readBody(original));
     const image = await call(t, 'GET', path, { cookie });
     assert.equal(image.status, 200);
-    assert.equal(Buffer.from(image.body as ArrayBuffer).toString(), 'historical private image');
+    assert.equal(Buffer.from(image.body as ArrayBuffer).toString(), 'historical note image');
     const search = await call(t, 'GET', '/v2/search?q=独有搜索词&type=notes', { cookie });
     assert.equal(search.status, 200);
     const matches = json(search)['results'] as { id: string; title: string; excerpt: string }[];
@@ -51,11 +50,11 @@ test('本人和系统浏览器直接读取私密正文、历史图片与全局�
   assert.equal(json(await call(t, 'GET', '/v2/session', { cookie: readers[1]! }))['actor'], 'system');
 });
 
-test('私密导入来源和原话出处可直接读，已合并原版的真正只读属性仍保留', async () => {
+test('导入来源和原话出处可直接读，已合并原版的真正只读属性仍保留', async () => {
   const merged = t.state.notes.create({ markdown: '# 合并结果\n合并正文', folder: '笔记',
-    author: 'ai', private: true }, { legacyPayload: { note: { merges: [{ fromId: 'old-original' }] } } });
+    author: 'ai' }, { legacyPayload: { note: { merges: [{ fromId: 'old-original' }] } } });
   const original = t.state.notes.create({ markdown: '# 导入原版\n原文正文', folder: '已合并（原版）',
-    author: 'user', private: true, readOnly: true }, { legacyPayload: { note: {
+    author: 'user', readOnly: true }, { legacyPayload: { note: {
       versions: { import: 1, proofread: 2 }, history: [
         { revision: 1, markdown: '导入原文' }, { revision: 2, markdown: '校对原文' },
       ], mergedInto: { id: 'old-result' },
@@ -95,20 +94,19 @@ test('私密导入来源和原话出处可直接读，已合并原版的真正�
   assert.deepEqual(t.state.notes.require(original.id), original);
 });
 
-test('系统浏览器可读私密备份标题和预览，实际覆盖恢复仍只能由本人确认', async () => {
-  const note = t.state.notes.create({ markdown: '# 阅读随记\n备份中的正文', folder: '笔记', author: 'user', private: true });
-  const backup = t.state.backups.begin('private-backup-read', 'manual');
+test('系统浏览器可读备份标题和预览，实际覆盖恢复仍只能由本人确认', async () => {
+  const note = t.state.notes.create({ markdown: '# 阅读随记\n备份中的正文', folder: '笔记', author: 'user' });
+  const backup = t.state.backups.begin('note-backup-read', 'manual');
   t.state.backups.complete(backup.id);
   const current = t.state.notes.save(note.id, 1, { markdown: '# 阅读随记\n现在的正文' });
   for (const cookie of readers) {
     const detail = await call(t, 'GET', `/v2/backups/${backup.id}`, { cookie });
     assert.equal(detail.status, 200);
-    const object = (json(detail)['objects'] as { id: string; label: string; private: boolean }[])
+    const object = (json(detail)['objects'] as { id: string; label: string }[])
       .find((row) => row.id === note.id)!;
     assert.equal(object.label, '阅读随记');
-    assert.equal(object.private, true);
     const preview = await call(t, 'POST', `/v2/backups/${backup.id}/restore-preview`, { cookie,
-      body: { requestId: `private-preview-${cookie === user ? 'user' : 'system'}`, kind: 'note', objectId: note.id } });
+      body: { requestId: `note-preview-${cookie === user ? 'user' : 'system'}`, kind: 'note', objectId: note.id } });
     assert.equal(preview.status, 200);
     assert.equal(json(preview)['before'], '# 阅读随记\n现在的正文');
     assert.equal(json(preview)['after'], '# 阅读随记\n备份中的正文');
@@ -128,7 +126,7 @@ test('系统浏览器可读私密备份标题和预览，实际覆盖恢复仍�
 });
 
 test('旧 unlock 仅兼容已可读状态，不登记解锁、确认或请求回执，系统会话也无需本人身份', async () => {
-  const note = t.state.notes.create({ markdown: '# 旧客户端\n正文', folder: '笔记', author: 'user', private: true });
+  const note = t.state.notes.create({ markdown: '# 旧客户端\n正文', folder: '笔记', author: 'user' });
   for (const cookie of readers) {
     const body = { requestId: `legacy-unlock-${cookie === user ? 'user' : 'system'}` };
     for (let i = 0; i < 2; i += 1) {
@@ -144,8 +142,8 @@ test('旧 unlock 仅兼容已可读状态，不登记解锁、确认或请求回
 });
 
 test('笔记直接读取仍要求有效会话，退出或撤销后不能读正文、图片、搜索或兼容 unlock', async () => {
-  const asset = t.state.notes.writeAsset(Buffer.from('private image'), 'image/png');
-  const note = t.state.notes.create({ markdown: '# 私密\n正文', folder: '笔记', author: 'user', private: true });
+  const asset = t.state.notes.writeAsset(Buffer.from('note image'), 'image/png');
+  const note = t.state.notes.create({ markdown: '# 周记\n正文', folder: '笔记', author: 'user' });
   assert.equal((await call(t, 'DELETE', '/v2/session', { cookie: user })).status, 200);
   t.state.devices.revoke(system.device.id, t.clock.now().toISOString());
   for (const cookie of [undefined, ...readers]) {
@@ -161,10 +159,10 @@ test('笔记直接读取仍要求有效会话，退出或撤销后不能读正�
   assert.deepEqual(t.state.notes.require(note.id), note);
 });
 
-test('系统浏览器保存已读私密笔记仍按 AI 记录版本，不冒充本人', async () => {
-  const note = t.state.notes.create({ markdown: '本人原文', folder: '笔记', author: 'user', private: true });
+test('系统浏览器保存笔记仍按 AI 记录版本，不冒充本人', async () => {
+  const note = t.state.notes.create({ markdown: '本人原文', folder: '笔记', author: 'user' });
   const response = await call(t, 'PUT', `/v2/notes/${note.id}`, { cookie: readers[1]!,
-    body: { requestId: 'system-private-note-save', version: 1, markdown: '内部浏览器改稿' } });
+    body: { requestId: 'system-note-save', version: 1, markdown: '内部浏览器改稿' } });
   assert.equal(response.status, 200);
   assert.equal(json(response)['author'], 'ai');
   assert.equal(t.state.notes.versions(note.id)[0]?.author, 'ai');

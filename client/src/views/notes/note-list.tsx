@@ -116,9 +116,7 @@ export function NoteList(props: NoteListProps): ReactNode {
                     ? props.selection.toggle({ kind: 'note', id: note.id, title: note.title || '未命名' }, event.shiftKey)
                     : props.onOpen(note.id)}
                 >
-                  <span className="note-row-title">{note.private ? <span aria-label="私密">
-                    <Icon name="lock" size={14} />
-                  </span> : null}
+                  <span className="note-row-title">
                     {note.title === '' ? '未命名' : note.title}
                     {isAiNote(note) ? <AiMark /> : null}
                   </span>

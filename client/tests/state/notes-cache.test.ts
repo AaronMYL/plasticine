@@ -239,27 +239,6 @@ describe('列表与持久缓存', () => {
     expect(reads.get).toHaveBeenCalledTimes(2);
   });
 
-  it('私密正文及预览不落盘；再次打开直接从已配对会话读取', async () => {
-    const storage = memoryStorage();
-    const value = cache(storage);
-    const reads = api();
-    const secret = noteView({ id: 'private', private: true, title: '内部标题', preview: '私密预览', markdown: '私密正文' });
-    reads.get.mockResolvedValue(secret);
-    reads.list.mockResolvedValue([toMeta(secret)]);
-    const stop = value.observeNote(reads, 'private');
-    await value.loadNote(reads, 'private');
-    await value.loadList(reads, {});
-    expect(value.store.get().get('private')?.note?.markdown).toBe('私密正文');
-    const saved = storage.getItem(NOTE_CACHE_STORAGE_KEY);
-    expect(saved).not.toContain('内部标题');
-    expect(saved).not.toContain('私密预览');
-    expect(saved).not.toContain('私密正文');
-    stop();
-    expect(value.store.get().has('private')).toBe(false);
-    value.observeNote(reads, 'private');
-    expect(reads.get).toHaveBeenCalledTimes(2);
-  });
-
   it('七天到期、设备变更、退出均清除旧快照；容量有界且配额失败不影响内存使用', async () => {
     const storage = memoryStorage();
     let now = 1000;

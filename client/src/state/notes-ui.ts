@@ -52,16 +52,14 @@ export class NotesUi {
   set(patch: Partial<NotesUiState>): void {
     this.store.set((current) => ({ ...current, ...patch }));
   }
-  openNote(note: { id: string; title: string; private: boolean }): void {
+  openNote(note: { id: string; title: string }): void {
     const current = this.store.get();
     const recent = current.recentNotes ?? [];
     if (current.activeNoteId === note.id && current.reading === true
-      && (note.private ? !recent.some((row) => row.id === note.id)
-        : recent[0]?.id === note.id && recent[0].title === (note.title || '未命名'))) return;
+      && recent[0]?.id === note.id && recent[0].title === (note.title || '未命名')) return;
     this.set({ activeNoteId: note.id, reading: true,
-      recentNotes: note.private ? recent.filter((row) => row.id !== note.id)
-        : [{ id: note.id, title: note.title || '未命名', openedAt: new Date().toISOString() },
-          ...recent.filter((row) => row.id !== note.id)].slice(0, 3) });
+      recentNotes: [{ id: note.id, title: note.title || '未命名', openedAt: new Date().toISOString() },
+        ...recent.filter((row) => row.id !== note.id)].slice(0, 3) });
   }
   showList(): void { this.set({ activeNoteId: null, reading: false }); }
   /** 新建成功：记下这一篇，等编辑器挂上来取。 */

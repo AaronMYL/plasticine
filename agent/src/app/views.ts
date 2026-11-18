@@ -23,7 +23,6 @@ export function noteMetaView(note: NoteRecord): NoteMetaView {
     title: note.title,
     folder: note.folder,
     pinned: note.pinned,
-    private: note.private,
     readOnly: note.readOnly,
     author: note.author,
     preview: note.preview,

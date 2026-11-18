@@ -23,14 +23,14 @@ test('不把模型捏造的联系人或笔记变成有效关联', () => {
   assert.throws(() => parseNoteSupplements(JSON.stringify(input), []), /关联/);
 });
 
-test('关联上下文只带正文提到的已有非私密笔记', async () => {
+test('关联上下文只带正文提到的已有笔记', async () => {
   const t = await openTestState();
   const state = t.state;
   try {
     const publicNote = state.notes.create({ markdown: '# 路线记录\n周末去过的小路。', author: 'user', folder: '笔记' });
-    state.notes.create({ markdown: '# 私人记录\n不应传给模型。', author: 'user', folder: '笔记', private: true });
+    state.notes.create({ markdown: '# 采购清单\n正文没有提到的另一篇。', author: 'user', folder: '笔记' });
     const refs = noteSupplementReferences(state, { action: 'interject',
-      markdown: '这里提到路线记录，也提到了私人记录。' });
+      markdown: '这里提到路线记录，别的没提。' });
     assert.deepEqual(refs, [{ kind: 'note', id: publicNote.id, label: '路线记录' }]);
   } finally { await t.cleanup(); }
 });

@@ -24,8 +24,6 @@ export const NoteInputSchema = Type.Object(
     folder: NoteFolderSchema,
     author: Type.Enum(NOTE_AUTHORS),
     pinned: Type.Optional(Type.Boolean()),
-    // Private notes stay out of the conversation context (old behaviour).
-    private: Type.Optional(Type.Boolean()),
     // Originals kept after a merge in the old notebook: readable, never edited.
     readOnly: Type.Optional(Type.Boolean()),
   },
@@ -62,7 +60,6 @@ export const NoteRecordSchema = Type.Object({
   title: Type.String({ minLength: 1 }),
   folder: NoteFolderSchema,
   pinned: Type.Boolean(),
-  private: Type.Boolean(),
   readOnly: Type.Boolean(),
   author: Type.Enum(NOTE_AUTHORS),
   preview: Type.String(),

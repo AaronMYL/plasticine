@@ -22,11 +22,7 @@ export function libraryTools(services: LibraryServices, changed: (id: string) =>
           return json(run(checkedArgs(parameters, input, name), `${scope.lineId}:${callId}`));
         } }) };
   }
-  const access = (id: string) => {
-    const note = state.notes.require(id);
-    if (note.private) throw new Error('这是私密笔记，请在笔记页面操作。');
-    return note;
-  };
+  const access = (id: string) => state.notes.require(id);
   const batch = (args: ReturnType<typeof checkedArgs<typeof LibraryBatchParameters>>) => {
     for (const item of args.items) {
       if (item.kind === 'note' && (args.action !== 'purge' || state.notes.get(item.id) !== undefined)) access(item.id);
@@ -38,11 +34,10 @@ export function libraryTools(services: LibraryServices, changed: (id: string) =>
   const tools: KernelTool[] = [
     tool('library_list', '查看资料库', '列出笔记、空间、图书和文件。deleted=true 查看最近删除；文件夹逐层用 path。',
       LibraryListParameters, ({ deleted, path }) => {
-        if (deleted) return { items: [...trashItems(services), ...trashItems(services, true)]
-          .filter((item) => item.kind !== 'note' || !state.notes.require(item.id).private) };
+        if (deleted) return { items: [...trashItems(services), ...trashItems(services, true)] };
         return {
-          notes: allPages((page) => state.notes.list({ readable: (note) => !note.private }, page))
-            .filter((note) => !note.private).map(({ id, title, folder, version }) => ({ id, title, folder, version })),
+          notes: allPages((page) => state.notes.list({}, page))
+            .map(({ id, title, folder, version }) => ({ id, title, folder, version })),
           spaces: allPages((page) => state.spaces.list({}, page))
             .map(({ id, title, category, folder, version }) => ({ id, title, category, folder, version })),
           books: state.books.live().map(({ id, title, folder, version }) => ({ id, title, folder, version })),
@@ -92,8 +87,7 @@ export function libraryTools(services: LibraryServices, changed: (id: string) =>
     expectCount: Type.Integer({ minimum: 0 }) }, { additionalProperties: false });
   tools.push({ ...tool('library_empty', '清空最近删除', '先 library_list(deleted=true)，传完整项目清单和数量。',
     Empty, ({ items, expectCount }) => {
-      const actual = [...trashItems(services), ...trashItems(services, true)]
-        .filter((item) => item.kind !== 'note' || !state.notes.require(item.id).private);
+      const actual = [...trashItems(services), ...trashItems(services, true)];
       const keys = (list: typeof items) => list.map((item) => `${item.kind}:${item.id}`).sort().join('\n');
       if (actual.length !== expectCount || keys(actual) !== keys(items)) {
         throw new Error('最近删除已变化，请重新查看清单后确认。');

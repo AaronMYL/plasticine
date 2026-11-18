@@ -2,8 +2,8 @@
 // 在索引里该是什么样（不该收就是 null）、改了它还要跟着重算哪些。写路径在各自 store 的同一个事务里调
 // SearchIndex.changed(来源, 引用)，回填和增量用的是同一个 load，所以两边收进来的内容一样。
 //
-// 档位（第 113 条）：材料（笔记、记忆主题、项目）按 visibility_marks 里用户确认过的那一档；没标、只有建议的、
-// 上了锁的笔记一律私密。其余几类（对话、书签、信息流、图书）还没有标档位的地方，都是私密。
+// 档位（第 113 条）：材料（笔记、记忆主题、项目）按 visibility_marks 里用户确认过的那一档；没标、只有建议的
+// 一律私密。其余几类（对话、书签、信息流、图书）还没有标档位的地方，都是私密。
 // 归档：记忆里退休的行（改写、合并、不再成立）和退休的文档算归档；他说「忘掉」的行不收。
 
 import { TIERS, type Tier } from '../../shared/api/visibility.ts';
@@ -125,7 +125,7 @@ const note: IndexSource = {
     } catch (cause) {
       throw new StateError('corrupt_record', '有笔记正文暂时无法读取。请重试，或先选择其他内容类型继续查找。', { cause });
     }
-    const tier = row['private'] === 1 ? 'private' : materialTier(db, 'note', ref);
+    const tier = materialTier(db, 'note', ref);
     return { ...base('note', row, 'note'), title: text(row, 'title'), body, detail: text(row, 'folder'), tier };
   },
 };

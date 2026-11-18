@@ -272,7 +272,6 @@ export function createBackupStore(context: StoreContext, options: BackupStoreOpt
           sourceVersion: Number(source['version']),
           digest,
           fields: plan.fields,
-          private: source['private'] === true || current?.['private'] === true,
           before: display(kind === 'note' ? plan.before['markdown'] : plan.before),
           after: display(kind === 'note' ? plan.patch['markdown'] : plan.patch),
           excluded: RESTORE_EXCLUDED,

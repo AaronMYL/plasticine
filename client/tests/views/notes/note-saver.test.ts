@@ -12,7 +12,6 @@ function note(markdown: string, version = 1): NoteView {
     title: '计划',
     folder: 'notes',
     pinned: false,
-    private: false,
     createdAt: NOW.toISOString(),
     updatedAt: NOW.toISOString(),
     preview: '',

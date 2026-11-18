@@ -1,4 +1,4 @@
-import { DEFAULT_NOTE_FOLDER, NoteFolderSchema, type NoteRecord } from '../../shared/state.ts';
+import { DEFAULT_NOTE_FOLDER, NoteFolderSchema } from '../../shared/state.ts';
 import type { NoteFoldersView } from '../../shared/api/notes-workspace.ts';
 import { checked } from './codec.ts';
 import { StateError } from './errors.ts';
@@ -112,5 +112,3 @@ export function createNoteFolders(
   }
   return { list, create, rename, move, remove };
 }
-
-export type NoteReadable = (note: NoteRecord) => boolean;

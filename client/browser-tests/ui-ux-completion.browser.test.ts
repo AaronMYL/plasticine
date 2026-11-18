@@ -124,9 +124,9 @@ function searchFixtures(app: TestApp) {
   const feed = app.state.feedItems.add({ sourceId: source.id, origin: 'feed', title: '远足路线的旧信息',
     summary: '保存之前核对路线，再决定集合地点。', day: '2026-10-01',
     arrivedAt: '2026-10-01T02:00:00.000Z', dedupeKey: 'ui-search-old-feed' }).item;
-  const privateNote = app.state.notes.create({ folder: '笔记', author: 'user',
-    markdown: '# 远足私密内容\n\n私密行程正文可以直接阅读。', private: true });
-  return { note, privateNote, feed, topic };
+  const second = app.state.notes.create({ folder: '笔记', author: 'user',
+    markdown: '# 远足行程安排\n\n行程正文可以直接阅读。' });
+  return { note, second, feed, topic };
 }
 
 /** ⌘K 浮层（11-12 起查找和切换是同一个浮层，入口在左边图标栏）：填词，等结果出来。 */
@@ -149,15 +149,15 @@ async function choose(page: Cdp, title: string): Promise<void> {
 }
 
 async function verifySearch(page: Cdp, app: TestApp, fixtures: ReturnType<typeof searchFixtures>): Promise<void> {
-  const { note, privateNote, feed, topic } = fixtures;
+  const { note, second, feed, topic } = fixtures;
   await openPalette(page, '远足');
   await until(() => page.evaluate(`Boolean(${paletteRow('旅行准备')})`), '正文深处命中的笔记');
-  assert.equal(await page.evaluate(`Boolean(${paletteRow('远足私密内容')})`), true, '登录后同样查到自己的私密笔记');
+  assert.equal(await page.evaluate(`Boolean(${paletteRow('远足行程安排')})`), true, '登录后同样查到自己的另一篇笔记');
   await capture(page, 'search-all-content', '.palette');
-  await choose(page, '远足私密内容');
-  await until(() => page.evaluate(`location.hash === ${JSON.stringify(`#/notes/${privateNote.id}`)}
-    && document.querySelector('.note-pane .ProseMirror')?.textContent.includes('私密行程正文可以直接阅读')`),
-  '私密查找结果直接打开正文');
+  await choose(page, '远足行程安排');
+  await until(() => page.evaluate(`location.hash === ${JSON.stringify(`#/notes/${second.id}`)}
+    && document.querySelector('.note-pane .ProseMirror')?.textContent.includes('行程正文可以直接阅读')`),
+  '查找结果直接打开正文');
   assert.equal(await page.evaluate(`document.querySelector('.note-pane').textContent.includes('确认解锁')`), false);
   await openPalette(page, '远足');
   await choose(page, '旅行准备');

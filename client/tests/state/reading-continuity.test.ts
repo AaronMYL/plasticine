@@ -7,7 +7,7 @@ import { memoryStorage } from '../helpers.tsx';
 it('读到第二篇后刷新仍回到原文，主动返回列表则保持列表，最近阅读仍可继续', () => {
   const storage = memoryStorage();
   const ui = new NotesUi(storage);
-  ui.openNote({ id: 'second', title: '第二篇', private: false });
+  ui.openNote({ id: 'second', title: '第二篇' });
   const restored = new NotesUi(storage);
   expect(restored.store.get().activeNoteId).toBe('second');
   expect(restored.store.get().recentNotes?.[0]?.id).toBe('second');
@@ -18,13 +18,13 @@ it('读到第二篇后刷新仍回到原文，主动返回列表则保持列表�
   expect(list.recentNotes?.[0]?.id).toBe('second');
 });
 
-it('私密笔记不保留标题或最近阅读记录，删除后清除对应入口', () => {
+it('最近阅读按打开的先后排，删除后清除对应入口', () => {
   const ui = new NotesUi();
-  ui.openNote({ id: 'plain', title: '普通', private: false });
-  ui.openNote({ id: 'locked', title: '秘密', private: true });
-  expect(ui.store.get().recentNotes?.map((note) => note.id)).toEqual(['plain']);
-  ui.forgetNote('plain');
-  expect(ui.store.get().recentNotes).toEqual([]);
+  ui.openNote({ id: 'first', title: '第一篇' });
+  ui.openNote({ id: 'second', title: '第二篇' });
+  expect(ui.store.get().recentNotes?.map((note) => note.id)).toEqual(['second', 'first']);
+  ui.forgetNote('second');
+  expect(ui.store.get().recentNotes?.map((note) => note.id)).toEqual(['first']);
 });
 
 it('对话框收起与否全局记一份（设计稿 2026-11-03）：在笔记页收起，读书、信息流也是圆球；侧栏选择刷新后保留，手机全屏不自动重开', () => {

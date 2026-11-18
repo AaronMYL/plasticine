@@ -7,7 +7,6 @@ import { defineTool, type Tool } from '../tools/index.ts';
 export function createNoteTools(state: StateService, changed: (id: string) => void): Tool[] {
   const access = (id: string) => {
     const note = state.notes.require(id);
-    if (note.private) { throw new Error('这是私密笔记，不会自动送入对话。需要讨论时，请明确复制愿意提供的文字。'); }
     if (note.deletedAt !== null) { throw new Error('这篇笔记在最近删除中，请先恢复。'); }
     return note;
   };
@@ -19,8 +18,8 @@ export function createNoteTools(state: StateService, changed: (id: string) => vo
       roles: ['conversation', 'worker', 'verifier', 'diagnosis'], timeoutMs: 1000,
       parameters: NoteSearchParameters,
       async execute({ q }) {
-        const notes = state.notes.list({ q, readable: (note) => !note.private }, { limit: 100 });
-        return JSON.stringify(notes.filter((note) => !note.private).map((note) => ({
+        const notes = state.notes.list({ q }, { limit: 100 });
+        return JSON.stringify(notes.map((note) => ({
           id: note.id, title: note.title, folder: note.folder, version: note.version, preview: note.preview,
         })));
       },
@@ -52,7 +51,7 @@ export function createNoteTools(state: StateService, changed: (id: string) => vo
           }, 'ai');
         } else {
           if (input.title === undefined) { throw new Error('新建需要标题；请先查找是否已有同名笔记。'); }
-          const existing = state.notes.list({ q: input.title, readable: (row) => !row.private }, { limit: 500 })
+          const existing = state.notes.list({ q: input.title }, { limit: 500 })
             .find((row) => row.title === input.title);
           if (existing !== undefined) {
             throw new Error(`已有《${input.title}》（${existing.id}），请先读取再追加，不重复新建。`);

@@ -34,7 +34,6 @@ export const BackupObjectSchema = Type.Object(
     id: IdSchema,
     label: Type.String(),
     version: Type.Integer({ minimum: 1 }),
-    private: Type.Boolean(),
   },
   STRICT,
 );
@@ -66,7 +65,6 @@ export const RestorePreviewSchema = Type.Object(
     digest: Digest,
     before: Type.String(),
     after: Type.String(),
-    private: Type.Boolean(),
     fields: Type.Array(Type.String()),
     excluded: Type.Array(Type.String()),
     blocked: Type.Array(Type.String()),

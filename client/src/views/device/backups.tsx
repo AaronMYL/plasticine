@@ -219,7 +219,7 @@ export function Backups({ trigger = false }: { trigger?: boolean }): ReactNode {
               {detail.objects.map((item) => (
                 <div className="tool-row" key={`${item.kind}:${item.id}`}>
                   <span className="tool-row-main">
-                    {item.private ? '私密' : ''}{BACKUP_KIND[item.kind]} · {item.label} · 第 {item.version} 版
+                    {BACKUP_KIND[item.kind]} · {item.label} · 第 {item.version} 版
                   </span>
                   <button
                     className="text-button"

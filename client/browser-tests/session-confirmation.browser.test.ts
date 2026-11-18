@@ -106,19 +106,19 @@ async function visitNote(page: Cdp, id: string): Promise<void> {
   await until(page, `document.querySelector('.note-pane .ProseMirror') !== null
     || ${text('确认解锁', '.note-pane')}`, '笔记请求已完成');
   assert.equal(await page.evaluate(text('确认解锁', '.note-pane')), false, '配对后不应再有确认解锁关卡');
-  await until(page, text(CONTENT, '.note-body .ProseMirror'), '直接显示私密正文');
+  await until(page, text(CONTENT, '.note-body .ProseMirror'), '直接显示笔记正文');
 }
 
 for (const client of PROFILES) {
-  test(`${client}：登录后直接读私密正文、历史和备份预览，刷新也不需要解锁`, async (t) => {
+  test(`${client}：登录后直接读笔记正文、历史和备份预览，刷新也不需要解锁`, async (t) => {
     let noteId = '';
     let backupId = '';
     const { app, page, cookie } = await startStack(t, { client, hash: '/notes', realClock: true,
       plugins: [withoutSigning()], beforeOpen(testApp) {
         const note = testApp.state.notes.create({ markdown: `# ${TITLE}\n\n${HISTORY}`,
-          folder: '笔记', author: 'user', private: true });
+          folder: '笔记', author: 'user' });
         noteId = note.id;
-        const backup = testApp.state.backups.begin(`private-browser-${client}`, 'manual');
+        const backup = testApp.state.backups.begin(`note-browser-${client}`, 'manual');
         testApp.state.backups.complete(backup.id);
         backupId = backup.id;
         testApp.state.notes.save(noteId, note.version, { markdown: `# ${TITLE}\n\n${HISTORY}\n\n${CONTENT}` });
@@ -133,7 +133,6 @@ for (const client of PROFILES) {
 
     await visitNote(page, noteId);
     assert.equal(await page.evaluate(`/解锁|钥匙|签名/.test(document.querySelector('.note-pane').textContent)`), false);
-    assert.equal(app.state.notes.require(noteId).private, true, '保留私密分类，不用改为公开来实现读取');
     assert.equal(await page.evaluate(text(TITLE, '.note-pane')), true, '直接显示真实标题');
     await noKeyRequirement(page);
     await evidence(page, client, 'note-open');
@@ -147,14 +146,14 @@ for (const client of PROFILES) {
     await click(page, '关掉笔记版本');
 
     await reloadPage(page);
-    await until(page, text(CONTENT, '.note-body .ProseMirror'), '刷新后直接读取私密正文');
+    await until(page, text(CONTENT, '.note-body .ProseMirror'), '刷新后直接读取笔记正文');
     await noKeyRequirement(page);
     // 「添加设备」和 Mac 专用码 11-08 随配对码一起去掉了（《决定》），这里只看备份。
     await page.evaluate(`location.hash = '#/settings/system'`);
     await click(page, '全部备份', SETTINGS);
     await click(page, '校验与恢复');
     await click(page, `预览恢复 ${TITLE}`);
-    await until(page, `document.querySelector('.backup-restore-card') !== null`, '直接打开私密备份预览');
+    await until(page, `document.querySelector('.backup-restore-card') !== null`, '直接打开备份预览');
     await until(page, `document.querySelector('.settings-dialog') === null`, '设置已收起，不遮挡恢复预览');
     await until(page, text(CONTENT, '.backup-restore-card'), '预览显示当前正文');
     assert.equal(await page.evaluate(text(HISTORY, '.backup-restore-card')), true, '预览显示备份正文');
@@ -177,11 +176,11 @@ async function deniedWrite(page: Cdp, path: string, requestId: string): Promise<
   }).then(async response => ({ status: response.status, code: (await response.json()).code }))`);
 }
 
-test('本实例系统浏览器可直接读私密笔记且仍是系统来源，撤销后不能继续读取', async (t) => {
+test('本实例系统浏览器可直接读笔记且仍是系统来源，撤销后不能继续读取', async (t) => {
   let noteId = '';
   const { app, page, cookie, base } = await startStack(t, { hash: '/notes', plugins: [withoutSigning()],
     beforeOpen(testApp) {
-      noteId = testApp.state.notes.create({ markdown: CONTENT, folder: '笔记', author: 'user', private: true }).id;
+      noteId = testApp.state.notes.create({ markdown: CONTENT, folder: '笔记', author: 'user' }).id;
       testApp.clock.advance(OLD_SESSION_MS);
     } });
   await until(page, 'document.querySelector(".shell-main") !== null', '已配对页面可用');
@@ -218,6 +217,6 @@ test('本实例系统浏览器可直接读私密笔记且仍是系统来源，�
   }
   await reloadPage(page);
   await until(page, 'document.querySelector(".login") !== null', '撤销后刷新回到登录页');
-  assert.equal(await page.evaluate(text(CONTENT)), false, '撤销后不展示私密正文');
+  assert.equal(await page.evaluate(text(CONTENT)), false, '撤销后不展示笔记正文');
   await noKeyRequirement(page);
 });

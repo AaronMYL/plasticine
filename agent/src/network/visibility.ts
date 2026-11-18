@@ -41,14 +41,14 @@ export function suggestTier(entry: { kind: 'memory_topic'; doc: MemoryDoc } | { 
   return null;
 }
 
-/** 档位页的材料：在用的记忆主题（项目档案归项目那一行）、全部项目、没删没上锁的笔记。 */
+/** 档位页的材料：在用的记忆主题（项目档案归项目那一行）、全部项目、没删的笔记。 */
 export function listMaterials(state: MaterialState): MaterialEntry[] {
   const topics = state.memoryDocs.docs.live().filter((doc) => doc.kind !== 'project')
     .map((doc): MaterialEntry => ({ kind: 'memory_topic', id: doc.id, title: doc.title,
       suggestion: suggestTier({ kind: 'memory_topic', doc }) }));
   const projects = state.projects.all().map((project): MaterialEntry => ({ kind: 'project', id: project.id,
     title: project.name, suggestion: suggestTier({ kind: 'project', project }) }));
-  const notes = allPages((page) => state.notes.list({}, page)).filter((note) => !note.private)
+  const notes = allPages((page) => state.notes.list({}, page))
     .map((note): MaterialEntry => ({ kind: 'note', id: note.id, title: note.title, suggestion: null }));
   const spaces = allPages((page) => state.spaces.list({}, page))
     .map((space): MaterialEntry => ({ kind: 'space', id: space.id, title: space.title, suggestion: null }));
@@ -102,7 +102,7 @@ function materialOf(state: MaterialState, kind: MaterialKind, id: string): { tit
       : { title: space.title, text: space.html === null ? spaceDocText(space.doc) : spaceHtmlText(space.html) };
   }
   const note = state.notes.get(id);
-  if (note === undefined || note.deletedAt !== null || note.private) {
+  if (note === undefined || note.deletedAt !== null) {
     return null;
   }
   return { title: note.title, text: state.notes.readBody(note) };

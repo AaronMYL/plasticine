@@ -33,14 +33,12 @@ test('移除文件夹先确认去向，笔记和版本正文都保留；重排�
   throwsState(() => t.state.notes.folders.rename('笔记', '新名字'), 'invalid_input');
 });
 
-test('正文全文搜索在分页之前匹配，模型工具仍可独立排除私密笔记', () => {
-  create('笔记', `普通标题\n${'别的内容'.repeat(80)}\n正文深处的关键词`);
+test('正文全文搜索在分页之前匹配', () => {
+  const deep = create('笔记', `普通标题\n${'别的内容'.repeat(80)}\n正文深处的关键词`);
   create('笔记', '普通标题\n没有匹配');
-  const secret = t.state.notes.create({ markdown: '私密\n正文深处的关键词', folder: '笔记', author: 'user', private: true });
-  const matches = t.state.notes.list({ q: '关键词', readable: (note) => !note.private }, { limit: 1 });
-  assert.equal(matches.length, 1);
-  assert.notEqual(matches[0]?.id, secret.id);
-  assert.deepEqual(t.state.notes.list({ q: '关键词', readable: (note) => !note.private }, { limit: 1, offset: 1 }), []);
+  const matches = t.state.notes.list({ q: '关键词' }, { limit: 1 });
+  assert.deepEqual(matches.map((note) => note.id), [deep.id]);
+  assert.deepEqual(t.state.notes.list({ q: '关键词' }, { limit: 1, offset: 1 }), []);
 });
 
 test('恢复是幂等的，AI 保存保留作者和原始版本，已完成写入不会重复', () => {

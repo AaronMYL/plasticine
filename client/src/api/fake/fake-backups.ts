@@ -61,7 +61,6 @@ export class FakeBackups implements BackupsApi {
         id: note.id,
         version: note.version,
         label: note.title,
-        private: note.private,
       })),
     };
   }
@@ -113,7 +112,6 @@ export class FakeBackups implements BackupsApi {
         baseVersion: current.version,
         sourceVersion: note.version,
         digest: 'b'.repeat(64),
-        private: note.private || current.private,
         before: current.markdown,
         after: note.markdown,
         fields: ['markdown'],

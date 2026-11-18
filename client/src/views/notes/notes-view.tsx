@@ -45,7 +45,7 @@ function OpenNotePane({ noteId, onDeleted }: { noteId: string | null; onDeleted:
     if (opened === null || opened.id !== noteId) return;
     if (opened.deletedAt !== null) notesUi.forgetNote(opened.id);
     else notesUi.openNote(opened);
-  }, [notesUi, noteId, opened?.id, opened?.title, opened?.private, opened?.deletedAt]);
+  }, [notesUi, noteId, opened?.id, opened?.title, opened?.deletedAt]);
   // 换了一篇时，第一轮渲染里 open 还是上一篇：只有读到的正是这一篇才算就绪，才恢复它的滚动位置。
   const ready = open.status === 'ready' && open.note.id === noteId;
   const { ref, onScroll } = useRememberedScroll<HTMLDivElement>(`notes:editor:${noteId ?? ''}`, ready);

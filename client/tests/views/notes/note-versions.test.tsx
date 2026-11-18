@@ -14,21 +14,21 @@ async function editor(): Promise<Editor> {
 }
 
 describe('笔记版本', () => {
-  it('私密笔记打开就有正文和版本历史，不显示或调用解锁', async () => {
+  it('笔记打开就有正文和版本历史，不显示或调用解锁', async () => {
     const app = await renderApp({
       hash: '#/notes/n1',
       setup: (fake) => {
-        seedNote(fake, 'n1', '# 私密内容', { private: true });
+        seedNote(fake, 'n1', '# 周末安排');
         vi.spyOn(fake.api.signed, 'send');
       },
     });
-    expect((await editor()).getText()).toContain('私密内容');
+    expect((await editor()).getText()).toContain('周末安排');
     expect(screen.queryByRole('button', { name: /解锁/ })).toBeNull();
-    expect(await app.api.notes.list({})).toEqual([expect.objectContaining({ title: '私密内容', private: true })]);
+    expect(await app.api.notes.list({})).toEqual([expect.objectContaining({ title: '周末安排' })]);
     fireEvent.click(screen.getByLabelText('更多笔记操作'));
     fireEvent.click(screen.getByRole('button', { name: '版本历史' }));
     fireEvent.click(await screen.findByRole('button', { name: /查看第 1 版/ }));
-    expect((await screen.findByLabelText('历史正文')).textContent).toContain('私密内容');
+    expect((await screen.findByLabelText('历史正文')).textContent).toContain('周末安排');
     expect(app.api.signed.send).not.toHaveBeenCalled();
   });
   it('浏览历史不改草稿，确认恢复前保存草稿，原版和恢复前的版本都保留', async () => {

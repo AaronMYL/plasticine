@@ -78,17 +78,15 @@ test('事务回滚时索引跟着回滚；改了、删了、恢复的笔记索�
   assert.deepEqual(ids('后来的说法'), [note.id]);
 });
 
-test('按最高档位过滤：只有用户确认过的档位算数，没标的、只有建议的、上锁的笔记都是私密', () => {
+test('按最高档位过滤：只有用户确认过的档位算数，没标的、只有建议的都是私密', () => {
   const open = t.state.notes.create({ markdown: '合作笔记 灯塔', folder: '笔记', author: 'user' });
   const proposed = t.state.notes.create({ markdown: '建议笔记 灯塔', folder: '笔记', author: 'user' });
-  const locked = t.state.notes.create({ markdown: '上锁笔记 灯塔', private: true, folder: '笔记', author: 'user' });
   const plain = t.state.notes.create({ markdown: '没标笔记 灯塔', folder: '笔记', author: 'user' });
   t.state.visibilityMarks.put('note', open.id, 0, { tier: 'partner', proposed: null, confirmed: true });
   t.state.visibilityMarks.put('note', proposed.id, 0, { proposed: 'public', confirmed: false });
-  t.state.visibilityMarks.put('note', locked.id, 0, { tier: 'public', proposed: null, confirmed: true });
   const { doc } = memoryDoc('爬山', '灯塔那条路好走');
   t.state.visibilityMarks.put('memory_topic', doc.id, 0, { tier: 'friend', proposed: null, confirmed: true });
-  assert.deepEqual(ids('灯塔'), [open.id, proposed.id, locked.id, plain.id, doc.id].sort());
+  assert.deepEqual(ids('灯塔'), [open.id, proposed.id, plain.id, doc.id].sort());
   assert.deepEqual(ids('灯塔', { maxTier: 'public' }), []);
   assert.deepEqual(ids('灯塔', { maxTier: 'partner' }), [open.id]);
   assert.deepEqual(ids('灯塔', { maxTier: 'friend' }), [open.id, doc.id].sort());

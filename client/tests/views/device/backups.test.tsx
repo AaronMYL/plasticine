@@ -13,14 +13,10 @@ import { backupFieldLabel, backupFieldValue } from '../../../src/views/device/ba
 
 afterEach(() => vi.unstubAllGlobals());
 
-it.each([
-  { width: 1440, private: true }, { width: 1440, private: false },
-  { width: 390, private: true }, { width: 390, private: false },
-])('$width 像素 private=$private：预览关闭设置并显示正文，真正恢复仍等本人确认', async (input) => {
-  const app = await renderApp({ width: input.width,
-    setup: (fake) => seedNote(fake, 'backup_note', '# 备忘', { private: input.private }) });
+it.each([{ width: 1440 }, { width: 390 }])('$width 像素：预览关闭设置并显示正文，真正恢复仍等本人确认', async (input) => {
+  const app = await renderApp({ width: input.width, setup: (fake) => seedNote(fake, 'backup_note', '# 备忘') });
   await act(async () => {
-    await app.api.backups.create({ requestId: 'req_private_backup_ui' });
+    await app.api.backups.create({ requestId: 'req_note_backup_ui' });
     app.control.notes.externalEdit('backup_note', '# 备忘\n\n当前内容');
   });
   const preview = vi.spyOn(app.api.backups, 'preview');
@@ -45,7 +41,7 @@ it.each([
   await within(restore).findByText('这个对象已恢复为新版本。');
   expect(send).toHaveBeenCalledTimes(1);
   expect(send.mock.calls[0]![0].target.kind).toBe('backup_restore');
-  expect(await app.api.notes.get('backup_note')).toMatchObject({ private: input.private, markdown: '# 备忘' });
+  expect(await app.api.notes.get('backup_note')).toMatchObject({ markdown: '# 备忘' });
 });
 
 async function restoreCard() {

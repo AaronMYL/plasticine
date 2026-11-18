@@ -51,7 +51,6 @@ export function backupObjectAccess(context: StoreContext, notesDirectory: string
             kind: kind as BackupObjectKind,
             id,
             version: Number(row['version']),
-            private: note?.private ?? false,
             label: backupObjectLabel(read(kind as BackupObjectKind, id) ?? {}),
           });
         }

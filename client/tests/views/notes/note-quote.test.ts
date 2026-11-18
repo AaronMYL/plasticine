@@ -4,10 +4,10 @@ import { buildNoteQuote } from '../../../src/views/notes/note-quote.ts';
 import { Outbox } from '../../../src/state/outbox.ts';
 import { memoryStorage, seedNote } from '../../helpers.tsx';
 
-async function savedNote(markdown: string, privateNote = false) {
+async function savedNote(markdown: string) {
   const fake = createFakeApi({ seed: false, streamStepMs: 0 });
   fake.control.session.signInForDevelopment('测试机');
-  seedNote(fake, 'note_quote', markdown, { version: 7, private: privateNote });
+  seedNote(fake, 'note_quote', markdown, { version: 7 });
   return fake.api.notes.get('note_quote');
 }
 
@@ -25,9 +25,7 @@ describe('笔记引用范围', () => {
     expect(excerpt.id).not.toBe(quote.id);
   });
 
-  it('私密或超出引用容量的笔记清楚报错，不降级为六百字摘要', async () => {
-    const privateNote = await savedNote('私密', true);
-    expect(() => buildNoteQuote(privateNote)).toThrow(/私密/);
+  it('超出引用容量的笔记清楚报错，不降级为六百字摘要', async () => {
     const large = await savedNote('字'.repeat(120_001));
     expect(() => buildNoteQuote(large)).toThrow(/选段|拆分/);
   });

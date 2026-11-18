@@ -18,10 +18,10 @@ function say(role: 'user' | 'assistant', text: string, lineId = t.state.lines.ma
   return `line:${lineId}:${t.state.lineMessages.append(lineId, role, message).seq}`;
 }
 
-test('界面统一查找覆盖私密笔记全文、所有线上的对话、记忆和信息流，排除已删除内容', () => {
+test('界面统一查找覆盖笔记全文、所有线上的对话、记忆和信息流，排除已删除内容', () => {
   const note = t.state.notes.create({ markdown: '# 一篇笔记\n' + '前文'.repeat(300) + '冰川计划细节',
     folder: '笔记', author: 'user' });
-  const privateNote = t.state.notes.create({ markdown: '# 冰川私密', private: true, folder: '笔记', author: 'user' });
+  const second = t.state.notes.create({ markdown: '# 冰川另一篇', folder: '笔记', author: 'user' });
   const removed = t.state.notes.create({ markdown: '# 冰川已删除', folder: '笔记', author: 'user' });
   t.state.notes.markDeleted(removed.id);
   const message = say('user', '冰川对话');
@@ -44,7 +44,7 @@ test('界面统一查找覆盖私密笔记全文、所有线上的对话、记�
   const response = t.state.search.query({ q: '冰川' });
   assert.equal(Value.Check(SearchResponseSchema, response), true);
   assert.deepEqual(new Set(response.results.map((row) => row.id)),
-    new Set([note.id, privateNote.id, message, backgroundSaid, memory.id, feed.id]));
+    new Set([note.id, second.id, message, backgroundSaid, memory.id, feed.id]));
   assert.match(response.results.find((row) => row.id === note.id)!.excerpt, /冰川计划细节/);
   assert.equal(response.total, 6);
   assert.deepEqual(new Set(t.state.search.query({ q: '冰川', type: 'conversation' }).results.map((row) => row.id)),

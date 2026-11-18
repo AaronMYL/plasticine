@@ -46,9 +46,9 @@ test('恢复历史正文另存新版本，来源可查，重复请求不多存�
   assert.equal(t.state.notes.readVersion(id, 2)?.markdown, '第二版');
 });
 
-test('私密笔记的正文、标题、全文搜索和历史由配对会话直接读取，无逐篇解锁', async () => {
-  const markdown = '# 阅读随记\n私密正文\n' + '前文'.repeat(150) + '深处的线索';
-  const note = t.state.notes.create({ markdown, folder: '笔记', author: 'user', private: true });
+test('笔记的正文、标题、全文搜索和历史由配对会话直接读取，无逐篇解锁', async () => {
+  const markdown = '# 阅读随记\n开头一段\n' + '前文'.repeat(150) + '深处的线索';
+  const note = t.state.notes.create({ markdown, folder: '笔记', author: 'user' });
   t.clock.advance(20 * 60_000);
   for (const suffix of ['', '/versions', '/versions/1']) {
     const response = await call(t, 'GET', `/v2/notes/${note.id}${suffix}`, { cookie });
@@ -57,8 +57,8 @@ test('私密笔记的正文、标题、全文搜索和历史由配对会话直�
   const list = json(await call(t, 'GET', '/v2/notes', { cookie }));
   const listed = (list['notes'] as Record<string, unknown>[])[0]!;
   assert.equal(listed['title'], '阅读随记');
-  assert.match(String(listed['preview']), /私密正文/);
-  assert.equal(listed['private'], true);
+  assert.match(String(listed['preview']), /开头一段/);
+  assert.equal('private' in listed, false);
   assert.equal(listed['readOnly'], false);
   const found = json(await call(t, 'GET', '/v2/notes?q=深处的线索', { cookie }));
   assert.deepEqual((found['notes'] as { id: string }[]).map((row) => row.id), [note.id]);

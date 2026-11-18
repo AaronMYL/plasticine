@@ -32,7 +32,6 @@ export const NoteMetaViewSchema = Type.Object({
   title: Type.String(),
   folder: Type.String(),
   pinned: Type.Boolean(),
-  private: Type.Boolean(),
   readOnly: Type.Boolean(),
   author: Type.Enum(NOTE_AUTHORS),
   preview: Type.String(),

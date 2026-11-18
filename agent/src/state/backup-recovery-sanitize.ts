@@ -91,7 +91,6 @@ export function sanitizeRecoveredDatabase(db: Database, current: Database, direc
       ['money_entries', 'deleted_at', 'deleted_at IS NOT NULL'],
       ['money_accounts', 'archived_at', 'archived_at IS NOT NULL'],
       ['inbox_messages', 'archived_at', 'archived_at IS NOT NULL'],
-      ['notes', 'private', 'private = 1'],
       ['notes', 'read_only', 'read_only = 1'],
       ['memory_entries', 'stale', 'stale = 1'],
     ]) {

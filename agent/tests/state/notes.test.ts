@@ -23,27 +23,6 @@ function input(overrides: Partial<NoteInput> = {}): NoteInput {
 
 const notesDir = (): string => join(dirname(t.path), 'notes');
 
-test('私密图片只按真实本站图片引用精确归属，正文提及、前缀相似与站外图不误伤', () => {
-  const note = t.state.notes.create(input({ private: true, markdown: [
-    '普通文字 public.png 以及 /v2/notes/assets/public.png',
-    '![较长资源](/v2/notes/assets/prefix-public.png)',
-    '![站外](https://elsewhere.test/v2/notes/assets/public.png)',
-    '`![代码](/v2/notes/assets/public.png)`',
-    '```md\n![代码块](/v2/notes/assets/public.png)\n```',
-    '![本站](/v2/notes/assets/private%2Epng?version=1#图)',
-    '<img src="/v2/notes/assets/html.png">',
-    '![引用图][picture]\n\n[picture]: /v1/notes/assets/legacy.png "旧图"',
-    '![绝对本站](https://plasticine.test/v2/notes/assets/absolute.png)',
-  ].join('\n\n') }));
-  assert.deepEqual(t.state.notes.privateAssetNotes('public.png', 'https://plasticine.test'), []);
-  for (const name of ['prefix-public.png', 'private.png', 'html.png', 'legacy.png', 'absolute.png']) {
-    assert.deepEqual(t.state.notes.privateAssetNotes(name, 'https://plasticine.test'), [note.id]);
-  }
-  t.state.notes.save(note.id, note.version, { markdown: '图片已从当前正文移走' });
-  assert.deepEqual(t.state.notes.privateAssetNotes('private.png'), [note.id]);
-  assert.deepEqual(t.state.notes.privateAssetNotes('legacy.png'), [note.id]);
-});
-
 test('新建一篇：正文写成 notes/ 下的文件，行里记着字节数和 SHA-256', () => {
   const note = t.state.notes.create(input());
   const file = readFileSync(join(notesDir(), note.bodyFile));

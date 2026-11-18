@@ -64,7 +64,7 @@ function create(state: StateService, network: NetworkService): AgentTool<typeof 
         throw new Error(`找不到「${args.to}」：要是互加了的好友的 @handle，或者群名。`);
       }
       const note = args.noteId === undefined ? undefined : state.notes.get(args.noteId);
-      const attachment = note === undefined || note.private ? null
+      const attachment = note === undefined ? null
         : `${note.title}\n\n${state.notes.readBody(note)}`.slice(0, ATTACHMENT_MAX_CHARS);
       const requestId = `card-${toolCallId}`.slice(0, 100);
       const task = found.kind === 'group'
@@ -92,7 +92,7 @@ export function taskCardTool(state: StateService, network: NetworkService): Kern
       if (found === null || identity === undefined) { return null; }
       const noteId = text(args, 'noteId');
       const note = noteId === null ? undefined : state.notes.get(noteId);
-      const attachment = note === undefined || note.private ? null
+      const attachment = note === undefined ? null
         : `${note.title}\n\n${state.notes.readBody(note)}`.slice(0, ATTACHMENT_MAX_CHARS);
       return { channel: found.kind === 'group' ? 'cyberhunter.group' : 'cyberhunter.contact',
         account: identity.accountId, recipients: [found.id], category: 'task_card',

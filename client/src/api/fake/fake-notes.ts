@@ -184,8 +184,7 @@ export class FakeNotes implements NotesApi {
   async assist(id: string, input: NoteAssistRequest, signal?: AbortSignal): Promise<NoteAssistView> {
     this.requireAccess(id);
     signal?.throwIfAborted();
-    const related = [...this.notes.values()].find((note) => note.id !== id && !note.private
-      && note.deletedAt === null);
+    const related = [...this.notes.values()].find((note) => note.id !== id && note.deletedAt === null);
     if (input.action === 'interject') return { markdown: '', label: '补充建议', suggestions: this.withLoopIds([
       { kind: 'structure', text: '把经过与想法分成两节', draft: `## 经过\n\n${input.selected ?? input.markdown}` },
       { kind: 'supplement', text: '补上需要核实的时间', draft: '具体时间：[待确认]。' },
@@ -356,7 +355,6 @@ export class FakeNotes implements NotesApi {
     return {
       folder: DEFAULT_NOTE_FOLDER,
       pinned: false,
-      private: false,
       readOnly: false,
       author: 'user',
       deletedAt: null,

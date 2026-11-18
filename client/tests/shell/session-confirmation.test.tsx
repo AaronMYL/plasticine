@@ -24,16 +24,16 @@ it('没有 WebCrypto 和 IndexedDB 的浏览器用 @账号和密码也能登录�
   await screen.findByRole('heading', { name: HOME_HEADING });
 });
 
-it('没有 WebCrypto 和 IndexedDB 的已配对老会话直接读取私密笔记，没有解锁步骤', async () => {
+it('没有 WebCrypto 和 IndexedDB 的已配对老会话直接读取笔记，没有解锁步骤', async () => {
   withoutSigningStorage();
-  const app = await renderApp({ hash: '#/notes/private', setup(fake) {
+  const app = await renderApp({ hash: '#/notes/memo', setup(fake) {
     fake.control.session.backdate(11 * 60 * 1000);
-    seedNote(fake, 'private', '# 示例私密正文', { private: true });
+    seedNote(fake, 'memo', '# 示例笔记正文');
     vi.spyOn(fake.api.signed, 'send');
   } });
-  await waitFor(() => expect(document.querySelector('.ProseMirror')?.textContent).toContain('示例私密正文'));
+  await waitFor(() => expect(document.querySelector('.ProseMirror')?.textContent).toContain('示例笔记正文'));
   expect(screen.queryByRole('button', { name: /解锁/ })).toBeNull();
   expect(screen.queryByText(/签名钥匙|重新配对后才能|换一台设备/)).toBeNull();
   expect(app.api.signed.send).not.toHaveBeenCalled();
-  expect(await app.api.notes.get('private')).toMatchObject({ private: true, readOnly: false });
+  expect(await app.api.notes.get('memo')).toMatchObject({ readOnly: false });
 });

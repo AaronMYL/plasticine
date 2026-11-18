@@ -29,9 +29,8 @@ import {
 import type { Params } from './db.ts';
 import { fromSqliteError, notFound, StateError, versionConflict } from './errors.ts';
 import type { BodyDigest, NoteBodies } from './note-bodies.ts';
-import { createNoteFolders, type NoteReadable } from './note-folders.ts';
+import { createNoteFolders } from './note-folders.ts';
 import { createNoteImportDetails } from './note-import-details.ts';
-import { noteAssetRefs } from './note-asset-refs.ts';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type StoreContext } from './object-store.ts';
 
 const COLUMNS: ColumnMap = {
@@ -39,7 +38,6 @@ const COLUMNS: ColumnMap = {
   title: 'text',
   folder: 'text',
   pinned: 'boolean',
-  private: 'boolean',
   readOnly: 'boolean',
   author: 'text',
   preview: 'text',
@@ -104,7 +102,6 @@ export interface NoteFilter {
   folder?: string;
   q?: string;
   deletedOnly?: boolean;
-  readable?: NoteReadable;
 }
 
 const MOVED_OUT = 'moved_to_space_id IS NULL';
@@ -163,7 +160,6 @@ export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
       legacyPayload: extra.legacyPayload ?? null,
       folder: values.folder,
       pinned: values.pinned ?? false,
-      private: values.private ?? false,
       readOnly: values.readOnly ?? false,
       author: values.author,
       bodyFile,
@@ -318,8 +314,7 @@ export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
     const all = context.db.all(`SELECT * FROM notes WHERE ${where} ORDER BY pinned DESC, updated_at DESC, id DESC`,
       filter.folder === undefined ? {} : { folder: filter.folder });
     return all.map((row) => readRow(NoteRecordSchema, COLUMNS, row, 'notes'))
-      .filter((note) => (filter.readable?.(note) ?? true)
-        && bodies.read(note.bodyFile).toLocaleLowerCase().includes(query))
+      .filter((note) => bodies.read(note.bodyFile).toLocaleLowerCase().includes(query))
       .slice(offset, offset + limit);
   }
 
@@ -355,17 +350,6 @@ export function createNoteStore(context: StoreContext, bodies: NoteBodies) {
     readAsset: bodies.readAsset.bind(bodies),
     writeAsset: bodies.writeAsset.bind(bodies),
     assetPath: bodies.assetPath.bind(bodies),
-    /** 查找私密笔记当前正文和历史版本里的图片引用。 */
-    privateAssetNotes(name: string, origin?: string): string[] {
-      const rows = context.db.all('SELECT id FROM notes WHERE private = 1 AND purged_at IS NULL');
-      return rows.map((row) => String(row['id'])).filter((id) => {
-        const files = new Set([require(id).bodyFile, ...versions(id).map((version) => version.bodyFile)]);
-        return [...files].some((file) => {
-          const text = bodies.read(file);
-          return noteAssetRefs(text, origin).has(name);
-        });
-      });
-    },
     /** The notes directory itself; only the importer needs it (to place copied pictures). */
     directory: (): string => bodies.directory,
   };

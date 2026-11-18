@@ -1,4 +1,4 @@
-// ⌘K 全局切换（11-07 设计稿 Palette）的完整操作路径：统一索引查得到私密笔记全文、对话，删掉的不出；结果按组列、点了
+// ⌘K 全局切换（11-07 设计稿 Palette）的完整操作路径：统一索引查得到笔记全文、对话，删掉的不出；结果按组列、点了
 // 直达；输入法选词时不查；新查询取消旧请求；↑↓ 选、↵ 打开、Esc 收起；「让 Plasticine 做」把这句话放进对话框。
 
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -31,16 +31,16 @@ describe('⌘K 全局切换', () => {
     expect(panel.textContent).not.toContain('⌘↵');
   });
 
-  it('查得到私密笔记全文，删掉的不出；点一条直达并收起', async () => {
+  it('查得到笔记全文，删掉的不出；点一条直达并收起', async () => {
     await renderApp({ setup: ({ control }) => {
       control.notes.seed({ id: 'glacier', markdown: '# 旅行记录\n' + '前文'.repeat(200) + '冰川路线' });
-      control.notes.seed({ id: 'secret', markdown: '# 冰川私密', private: true });
+      control.notes.seed({ id: 'second', markdown: '# 冰川另一篇' });
       control.notes.seed({ id: 'deleted', markdown: '# 冰川删除', deletedAt: '2026-10-27T01:00:00.000Z' });
     } });
     const panel = await openPalette();
     type(panel, '冰川');
     const result = await within(panel).findByRole('option', { name: /旅行记录/ });
-    expect(within(panel).getByRole('option', { name: /冰川私密/ })).toBeTruthy();
+    expect(within(panel).getByRole('option', { name: /冰川另一篇/ })).toBeTruthy();
     expect(panel.textContent).not.toContain('冰川删除');
     expect(panel.textContent).toContain('笔记');
     fireEvent.click(result);
@@ -48,14 +48,14 @@ describe('⌘K 全局切换', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '搜索和切换' })).toBeNull());
   });
 
-  it('查到私密正文后直接打开笔记，不请求解锁', async () => {
+  it('查到正文后直接打开笔记，不请求解锁', async () => {
     const app = await renderApp({ setup: (fake) => {
-      fake.control.notes.seed({ id: 'private-hit', markdown: '# 私密行程\n\n只有正文写着雾凇路线', private: true });
+      fake.control.notes.seed({ id: 'body-hit', markdown: '# 冬天行程\n\n只有正文写着雾凇路线' });
       vi.spyOn(fake.api.signed, 'send');
     } });
     const panel = await openPalette();
     type(panel, '雾凇路线');
-    fireEvent.click(await within(panel).findByRole('option', { name: /私密行程/ }));
+    fireEvent.click(await within(panel).findByRole('option', { name: /冬天行程/ }));
     await waitFor(() => expect(document.querySelector('.ProseMirror')?.textContent).toContain('只有正文写着雾凇路线'));
     expect(screen.queryByRole('button', { name: /解锁/ })).toBeNull();
     expect(app.api.signed.send).not.toHaveBeenCalled();

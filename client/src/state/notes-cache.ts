@@ -100,8 +100,6 @@ export class NotesCache {
         return;
       }
       this.readers.delete(id);
-      // 私密正文仍不持久缓存；再次进入从已配对会话直接读取，不增加解锁状态。
-      if (this.store.get().get(id)?.note?.private) { this.invalidateNote(id, true); }
     };
   }
 
@@ -121,7 +119,7 @@ export class NotesCache {
     const pending = this.reads.get(id);
     if (pending !== undefined) { return pending.promise; }
     const value = this.store.get().get(id) ?? EMPTY_NOTE;
-    if (!force && value.note !== null && !value.note.private && this.fresh(value.checkedAt)) {
+    if (!force && value.note !== null && this.fresh(value.checkedAt)) {
       return Promise.resolve();
     }
     const flight = { controller: new AbortController(), promise: Promise.resolve() };
@@ -174,10 +172,6 @@ export class NotesCache {
     const old = this.store.get().get(note.id) ?? EMPTY_NOTE;
     if (note.version < Math.max(old.note?.version ?? 0, old.expectedVersion)) {
       this.setNote(note.id, { ...old, loading: false });
-      return;
-    }
-    if (note.private && !this.readers.has(note.id)) {
-      this.invalidateNote(note.id, true);
       return;
     }
     const confirmed = old.note?.version === note.version ? old.note : note;
@@ -251,8 +245,7 @@ export class NotesCache {
   private observeVersion(note: NoteMetaView, fromList = false): void {
     const value = this.store.get().get(note.id);
     if (value === undefined) { return; }
-    if (note.private && value.note !== null && !value.note.private) { this.invalidateNote(note.id, true); }
-    else if (note.version > Math.max(value.note?.version ?? 0, value.expectedVersion)) {
+    if (note.version > Math.max(value.note?.version ?? 0, value.expectedVersion)) {
       if (fromList && value.note === null && value.loading) {
         this.setNote(note.id, { ...value, expectedVersion: note.version });
         return;

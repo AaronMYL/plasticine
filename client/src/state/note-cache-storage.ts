@@ -1,8 +1,7 @@
-// 已确认的普通笔记缓存与草稿分开；只在会话核实后按设备读取，私密正文从不写入。
+// 已确认的笔记缓存与草稿分开；只在会话核实后按设备读取。
 import { Type, type Static } from 'typebox';
 import { Value } from 'typebox/value';
 import { NoteMetaViewSchema, NoteViewSchema } from '../api/shared.ts';
-import type { NoteMetaView } from '../api/types.ts';
 import type { KeyValueStorage } from './outbox.ts';
 
 export const NOTE_CACHE_STORAGE_KEY = 'plasticine:note-cache:v1';
@@ -39,7 +38,7 @@ export function restoreNotes(storage: KeyValueStorage | null, owner: string, now
       return empty;
     }
     const current = (time: number): boolean => time <= now && now - time <= NOTE_CACHE_MAX_AGE_MS;
-    return { notes: value.notes.filter((row) => !row.note.private && current(row.cachedAt))
+    return { notes: value.notes.filter((row) => current(row.cachedAt))
       .slice(0, NOTE_CACHE_MAX_STORED),
     list: value.list !== null && current(value.list.cachedAt) ? value.list : null };
   } catch (cause) {
@@ -49,15 +48,11 @@ export function restoreNotes(storage: KeyValueStorage | null, owner: string, now
   }
 }
 
-function publicMeta(note: NoteMetaView): NoteMetaView {
-  return note.private ? { ...note, title: '私密笔记', preview: '' } : note;
-}
-
 export function persistNotes(storage: KeyValueStorage | null, owner: string, notes: readonly StoredNote[],
   list: StoredNoteList | null): void {
   if (storage === null) { return; }
-  const rows = notes.filter((row) => !row.note.private).slice(0, NOTE_CACHE_MAX_STORED);
-  let safeList = list === null ? null : { ...list, notes: list.notes.map(publicMeta) };
+  const rows = notes.slice(0, NOTE_CACHE_MAX_STORED);
+  let safeList = list;
   const encode = (): string => JSON.stringify({ version: 1, owner, notes: rows, list: safeList });
   let payload = encode();
   // 不把一个被截断的列表冒充完整列表。列表太大就只保存正文缓存。

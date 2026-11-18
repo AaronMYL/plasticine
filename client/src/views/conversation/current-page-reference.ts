@@ -16,7 +16,6 @@ export async function currentPageReference(tab: CurrentTab | null, api: Plastici
       link: productLink('space', space.id) };
   } else if (route?.view === 'notes' && route.noteId !== null) {
     const note = await api.notes.get(route.noteId);
-    if (note.private) return null;
     source = { type: 'note', id: note.id, title: note.title, version: note.version,
       link: productLink('note', note.id) };
   } else if (route?.bookId != null) {

@@ -87,7 +87,6 @@ export function noteView(fields: Partial<NoteView> = {}): NoteView {
     title: '计划',
     folder: '笔记',
     pinned: false,
-    private: false,
     readOnly: false,
     author: 'user',
     preview: '第一段',

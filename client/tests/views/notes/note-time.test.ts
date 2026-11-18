@@ -16,7 +16,6 @@ function meta(id: string, updatedAt: Date, pinned = false): NoteMetaView {
     bytes: 0,
     version: 1,
     author: 'user',
-    private: false,
     readOnly: false,
     deletedAt: null,
     migrated: false,

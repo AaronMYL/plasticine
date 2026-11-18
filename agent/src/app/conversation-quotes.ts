@@ -59,10 +59,6 @@ function resolveQuote(state: StateService, quote: ConversationQuoteInput): Resol
       '引用的笔记不存在或已移到回收站，这条消息没有发送。',
       { field: 'quotes', next: '请把消息放回输入框，移除这个引用，或恢复笔记后重新引用。' });
   }
-  if (note.private) {
-    throw new ApiError(403, 'note_quote_private', '这篇笔记是私密笔记，不能直接引用给对话模型。',
-      { field: 'quotes', next: '请移除引用；需要讨论时，明确复制愿意提供的文字到输入框。' });
-  }
   const markdown = readQuotedVersion(state, note, reference.version);
   return { label: `《${titleOf(markdown)}》`,
     text: reference.scope === 'full' ? markdown : reference.text, noteReference: reference };

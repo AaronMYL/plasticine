@@ -144,7 +144,7 @@ test('当前正文丢失仍可恢复：先保留标有缺口的当前快照，�
   }
 });
 
-test('每日备份同日只一份；私密笔记备份标题与预览直接可读', async () => {
+test('每日备份同日只一份；笔记备份标题与预览直接可读', async () => {
   const app = await startTestApp([], { automaticBackups: true });
   try {
     const cookie = await pair(app);
@@ -152,24 +152,22 @@ test('每日备份同日只一份；私密笔记备份标题与预览直接可�
     app.app.deps.backups.scan();
     await new Promise<void>((resolve) => setImmediate(resolve));
     assert.equal(app.state.backups.list().filter((row) => row.reason === 'daily').length, 1);
-    const note = app.state.notes.create({ markdown: '私密内容', author: 'user', folder: '笔记', private: true });
-    const backup = app.state.backups.begin('backup-private-001', 'manual');
+    const note = app.state.notes.create({ markdown: '周末安排', author: 'user', folder: '笔记' });
+    const backup = app.state.backups.begin('backup-note-001', 'manual');
     app.state.backups.complete(backup.id);
     const response = await call(app, 'POST', `/v2/backups/${backup.id}/restore-preview`, {
       cookie,
-      body: { requestId: 'backup-private-preview', kind: 'note', objectId: note.id },
+      body: { requestId: 'backup-note-preview', kind: 'note', objectId: note.id },
     });
     assert.equal(response.status, 200);
-    assert.equal(json(response)['after'], '私密内容');
-    assert.equal(json(response)['private'], true);
+    assert.equal(json(response)['after'], '周末安排');
     const detail = json(await call(app, 'GET', `/v2/backups/${backup.id}`, { cookie }));
-    const item = (detail['objects'] as { id: string; label: string; private: boolean }[])
+    const item = (detail['objects'] as { id: string; label: string }[])
       .find((row) => row.id === note.id)!;
-    assert.equal(item.label, '私密内容');
-    assert.equal(item.private, true);
+    assert.equal(item.label, '周末安排');
     const read = await call(app, 'GET', `/v2/restore-previews/${String(json(response)['id'])}`, { cookie });
     assert.equal(read.status, 200);
-    assert.equal(json(read)['after'], '私密内容');
+    assert.equal(json(read)['after'], '周末安排');
   } finally {
     await app.close();
   }
