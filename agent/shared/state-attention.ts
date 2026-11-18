@@ -34,9 +34,6 @@ export const ASK_PURPOSES = [
   'subscription_schedule',
   // 预测闭环（11-13 Aaron 定）：某一类事他连续 5 次原样同意，问「这类以后我直接做？」（loop/autonomy.ts）。
   'loop_offer',
-  // 依赖自动升级（11-18 Aaron 定）：服务器查到 pi-ai、electron 这些的新版、试过以后问他升不升；他点了，服务器的值班程序
-  // 从库里读到答案接着做（app/maintenance.ts 的 upgrade.ask），这里不接后续。
-  'upgrade_offer',
 ] as const;
 export const AskPurposeSchema = Type.Enum(ASK_PURPOSES);
 export type AskPurpose = Static<typeof AskPurposeSchema>;
@@ -67,8 +64,6 @@ export const ASK_PURPOSE_LINES: Readonly<Record<AskPurpose, { line: AskLine; bas
   subscription_schedule: { line: 'by_confidence', basis: 'inferred' },
   // 放手是权限变化，硬线：不管把握多大都问他。
   loop_offer: { line: 'hard_line', basis: 'hard_line' },
-  // 换上新版是改他在用的东西，硬线：每次都问。
-  upgrade_offer: { line: 'hard_line', basis: 'hard_line' },
 };
 
 /** 四档渠道（《从零方案》第 6 节，关切上已有同一份 CHANNELS）：不打扰 · 下次汇报 · 弹框 · 立刻打断。 */

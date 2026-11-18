@@ -7,7 +7,6 @@ import {
   MAIL_REFETCH_DEFAULT_LIMIT, MAINTENANCE_WRITE_OPS, type MaintenanceRequest,
   type MaintenanceResponse, type MemoryMoveItem,
 } from '../../shared/api/maintenance.ts';
-import type { AskDesk } from '../attention/index.ts';
 import { CloudToolError, type RefetchReport } from '../cloud-tools/index.ts';
 import { addClaudeItems, applyLayersMove, ensureMemoryDocs, moveLine, rewriteRules } from '../memory/index.ts';
 import type { LineKernel } from '../lines/index.ts';
@@ -19,8 +18,6 @@ export interface MaintenanceDeps {
   toolGroups?: { cloud: { mailRefetch: { run(limit: number, signal: AbortSignal): Promise<RefetchReport> } } };
   /** line.start 开后台线用；AppDeps 里就是线的内核。 */
   lines?: Pick<LineKernel, 'open'>;
-  /** upgrade.ask 出卡用；AppDeps 里就是卡的总台。 */
-  desk?: Pick<AskDesk, 'commit' | 'raise'>;
 }
 
 // 一次 mail.refetch 最多跑这么久：每块（十封）自己有 3 分钟的时限，200 封二十块，正常几分钟；超过就停，补过的已经存下。
@@ -104,9 +101,6 @@ function write(deps: MaintenanceDeps, request: MaintenanceRequest, quote: string
   if (request.op === 'line.start') {
     return startLine(deps, request);
   }
-  if (request.op === 'upgrade.ask') {
-    return askUpgrade(deps, request);
-  }
   if (request.op === 'inbox.archive') {
     if (request.sources === undefined) {
       throw new MaintenanceFailure('invalid_input', '「inbox.archive」要给 --sources（patrol,feedback,interview 里的几个）。');
@@ -127,32 +121,6 @@ function startLine(deps: MaintenanceDeps, request: MaintenanceRequest) {
   const view = deps.lines.open({ title: request.line.title, goal: request.line.goal, projectId: null,
     parentLineId: deps.state.lines.main().id, origin: { kind: 'system', ref: `maintenance:${request.operationId}` } });
   return { lineId: view.id };
-}
-
-/**
- * 依赖自动升级（11-18）：值班程序试过新版，出一张卡问他升不升。同一个 key 只出一张（再来拿回原来那张）；
- * 答案不在这里接，值班程序读库里这张卡的状态接着做。
- */
-function askUpgrade(deps: MaintenanceDeps, request: MaintenanceRequest) {
-  const card = request.card;
-  if (card === undefined) {
-    throw new MaintenanceFailure('invalid_input', '「upgrade.ask」要给 --plan（{key, question, detail, options}）。');
-  }
-  if (deps.desk === undefined) {
-    throw new MaintenanceFailure('unavailable', '这台服务没有出卡的地方。');
-  }
-  const desk = deps.desk;
-  const ask = desk.commit((changes) => desk.raise(changes, {
-    kind: 'decide',
-    purpose: 'upgrade_offer',
-    question: card.question,
-    detail: card.detail,
-    options: card.options,
-    actionId: `upgrade:${card.key}`,
-    context: { key: card.key },
-    basis: 'hard_line',
-  }));
-  return { askId: ask.id, status: ask.status };
 }
 
 /** 一次最多归档这么多封（这几个来源是停用的旧功能留下的，量很小；真到了这个数说明弄错了，停下）。 */

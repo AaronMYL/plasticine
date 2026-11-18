@@ -94,19 +94,3 @@ test('line.start：--plan 是 {title, goal}', async () => {
     await rm(directory, { recursive: true, force: true });
   }
 });
-
-test('upgrade.ask：--plan 是那张卡', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'maint-upgrade-'));
-  try {
-    const plan = join(directory, 'card.json');
-    const card = { key: 'pi:1.5.2', question: '升级吗？', detail: '测试过了',
-      options: [{ id: 'upgrade', label: '升级', recommended: true }, { id: 'later', label: '先不' }] };
-    await writeFile(plan, JSON.stringify(card));
-    const parsed = parseMaintArgs(['upgrade.ask', '--plan', plan, '--because', '自动提升级', '--op-id', 'op-up'], {}, NOW);
-    assert.deepEqual(parsed.request, { operationId: 'op-up', op: 'upgrade.ask', because: '自动提升级', card });
-    await writeFile(plan, '{"key":"x"}');
-    assert.throws(() => parseMaintArgs(['upgrade.ask', '--plan', plan, '--because', 'x'], {}, NOW), /question/);
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-  }
-});

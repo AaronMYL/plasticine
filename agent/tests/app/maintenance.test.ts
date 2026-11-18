@@ -8,7 +8,6 @@ import { CloudToolError, type RefetchReport } from '../../src/cloud-tools/index.
 import { openState, type StateService } from '../../src/state/index.ts';
 import { RULES_DOC_ID, YOU_DOC_ID } from '../../shared/state.ts';
 import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writes.ts';
-import { AskDesk, Presenter } from '../../src/attention/index.ts';
 
 let h: { state: StateService };
 
@@ -222,26 +221,5 @@ test('line.start：开一条后台线、贴回主线，发起记成这次维护�
   assert.equal(failure(() => runMaintenance({ state: h.state }, { operationId: 'op-line-2', op: 'line.start',
     because: 'x', line: { title: 't', goal: 'g' } })).code, 'unavailable');
   assert.equal(failure(() => runMaintenance({ state: h.state, lines }, { operationId: 'op-line-3', op: 'line.start',
-    because: 'x' })).code, 'invalid_input');
-});
-
-test('upgrade.ask：出一张硬线的升级卡，同一个 key 再来拿回原来那张；没给卡、没有出卡的地方都不做', () => {
-  const now = () => new Date('2026-11-18T08:00:00Z');
-  const desk = new AskDesk({ state: h.state, presenter: new Presenter(h.state), now });
-  const card = { key: 'pi:1.5.2', question: 'pi-ai 1.5.0 → 1.5.2，测试和回放都过了，升级吗？',
-    detail: '新版带来：……', options: [{ id: 'upgrade', label: '升级', recommended: true }, { id: 'later', label: '先不' }] };
-  const first = runMaintenance({ state: h.state, desk }, { operationId: 'op-up-1', op: 'upgrade.ask',
-    because: '不能依赖你来做', card }).result as { askId: string; status: string };
-  assert.equal(first.status, 'open');
-  const ask = h.state.asks.get(first.askId);
-  assert.equal(ask?.purpose, 'upgrade_offer');
-  assert.equal(ask?.basis, 'hard_line');
-  assert.deepEqual(ask?.options.map((option) => option.label), ['升级', '先不']);
-  const again = runMaintenance({ state: h.state, desk }, { operationId: 'op-up-2', op: 'upgrade.ask',
-    because: '不能依赖你来做', card }).result as { askId: string };
-  assert.equal(again.askId, first.askId);
-  assert.equal(failure(() => runMaintenance({ state: h.state }, { operationId: 'op-up-3', op: 'upgrade.ask',
-    because: 'x', card })).code, 'unavailable');
-  assert.equal(failure(() => runMaintenance({ state: h.state, desk }, { operationId: 'op-up-4', op: 'upgrade.ask',
     because: 'x' })).code, 'invalid_input');
 });
