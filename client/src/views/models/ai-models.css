@@ -231,6 +231,13 @@
   white-space: nowrap;
 }
 
+/* 账号列出来、模型库里还没有的新型号（11-18 自动拉清单）。 */
+.ai-provider-model > .ai-provider-model-note {
+  flex: none;
+  color: var(--fg3);
+  font-size: var(--text-caption);
+}
+
 .ai-add {
   margin-bottom: var(--space-3);
   padding: var(--space-2) 0 var(--space-3);

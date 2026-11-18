@@ -119,6 +119,8 @@ async function replay(state: StateService, work: string,
     model?: string | undefined }): Promise<number> {
   const models = new KernelModels({ state });
   freezeCredentials(models);
+  // 账号上次拉到的型号（pi-ai 目录里还没有的）读回来，不联网（11-18）。
+  await models.refreshAccountModels({ network: false });
   const app = assembleApp({ state, dryRun: true, vapidKeys: generateVapidKeys(), vapidSubject: 'https://replay.invalid',
     pushTransport: async () => ({ status: 201 }), stateDirectory: work, memoryCuration: false,
     automaticBackups: false, network: { autoSync: false, responder: false },

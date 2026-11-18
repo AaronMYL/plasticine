@@ -19,14 +19,18 @@ import { DEFAULT_THINKING, ModelResolver, type CatalogProvider, type ModelSettin
 import { MODEL_PURPOSES, requiresImages, type ModelPurpose } from '../../shared/api/model-purposes.ts';
 import type { CompleteOptions, ModelChoice, ModelSource } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
-import { withCatalogAdditions } from './catalog-additions.ts';
+import { ACCOUNT_MODEL_PROVIDERS, ACCOUNT_MODELS_FRESH_MS, isEstimated, SettingsModelsStore, withAccountModels,
+  type AccountModelsOptions } from './account-models.ts';
 import { SqliteCredentialStore } from './credentials.ts';
+import { safeLog } from '../util/index.ts';
 import { customProvider, readCustomProviders, upgradeCustomProviders, type CustomProviderConfig }
   from './custom-providers.ts';
 
 export type KernelModelState = Pick<StateService, 'kernelCredentials' | 'kernelSettings'>;
 
 const DEVICE_ID_KEY = 'device_id';
+/** 服务起来后多久第一次联网问账号的型号（别和启动时的别的事挤在一起）。 */
+const ACCOUNT_MODELS_FIRST_DELAY_MS = 30_000;
 const DEFAULT_MODEL_KEY = 'default_model';
 const CONFIG_KEY = 'model_purposes';
 export { DEFAULT_THINKING };
@@ -68,6 +72,8 @@ export interface KernelModelsOptions {
   state: KernelModelState;
   /** 测试换成假的提供商；不给就是 pi-ai 内置的全部。 */
   providers?: readonly Provider[];
+  /** 拉型号清单用的 fetch、时钟（测试换成假的）。 */
+  accountModels?: AccountModelsOptions;
 }
 
 interface StoredConfig extends ModelSettings {
@@ -113,8 +119,9 @@ export class KernelModels implements ModelSource {
     this.#state = options.state;
     this.credentials = new SqliteCredentialStore(options.state);
     this.models = createModels({ credentials: this.credentials, authContext: STORED_ONLY,
-      identity: { attribution: null } });
-    const providers = (options.providers ?? builtinProviders()).map((provider) => withCatalogAdditions(provider));
+      identity: { attribution: null }, modelsStore: new SettingsModelsStore(options.state) });
+    const providers = (options.providers ?? builtinProviders())
+      .map((provider) => withAccountModels(provider, options.accountModels));
     for (const provider of providers) {
       this.models.setProvider(provider);
     }
@@ -179,11 +186,48 @@ export class KernelModels implements ModelSource {
         ...this.credentials.label(provider.id),
         models: provider.getModels().map((model) => ({ id: model.id, name: model.name,
           contextWindow: model.contextWindow, reasoning: model.reasoning,
-          thinkingLevels: getSupportedThinkingLevels(model), input: model.input })),
+          thinkingLevels: getSupportedThinkingLevels(model), input: model.input,
+          ...(isEstimated(model) ? { estimated: true } : {}) })),
         enabled: enabled[provider.id] ?? [],
         custom: customInfo(custom.get(provider.id)),
       }];
     });
+  }
+
+  /**
+   * 问账号能用哪些型号（account-models.ts）：先从库里读回上次拉到的，network 时再联网问（6 小时内问过就不问，
+   * force 不管）。出错不抛：哪家没拉成回在 failed 里。
+   */
+  async refreshAccountModels(options: { network: boolean; force?: boolean; signal?: AbortSignal }):
+    Promise<{ failed: string[] }> {
+    const result = await this.models.refresh({ providers: ACCOUNT_MODEL_PROVIDERS, allowNetwork: options.network,
+      ...(options.force === undefined ? {} : { force: options.force }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }) });
+    return { failed: [...result.errors.keys()] };
+  }
+
+  /**
+   * 服务起来时：先读回上次拉到的型号（不联网），半分钟后联网问一次，之后每 6 小时一次（11-18）。回一个停下的函数。
+   */
+  async startAccountModels(): Promise<() => void> {
+    await this.refreshAccountModels({ network: false }).catch((error: unknown) => {
+      safeLog('warn', 'account_models_failed', { error });
+    });
+    const run = (): void => {
+      void this.refreshAccountModels({ network: true }).then(({ failed }) => {
+        if (failed.length > 0) safeLog('warn', 'account_models_failed', { stepKey: failed.join(',') });
+      }, (error: unknown) => {
+        safeLog('warn', 'account_models_failed', { error });
+      });
+    };
+    const first = setTimeout(run, ACCOUNT_MODELS_FIRST_DELAY_MS);
+    const every = setInterval(run, ACCOUNT_MODELS_FRESH_MS);
+    first.unref();
+    every.unref();
+    return () => {
+      clearTimeout(first);
+      clearInterval(every);
+    };
   }
 
   supportsOAuth(providerId: string): boolean {

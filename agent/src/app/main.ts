@@ -104,6 +104,8 @@ async function main(): Promise<number> {
     const vapidKeys = await loadOrCreateVapidKeys(config.stateDir);
     // 新内核（2026-11-05 Harness 重做）：线和它的模型连接。凭证在库里，提供商一律平级。
     const kernelModels = new KernelModels({ state });
+    // 11-18：订阅账号能用的型号（pi-ai 目录里还没有的，比如刚出的 GPT-6.2）自动拉进来；先读回上次的，再定时联网问。
+    const stopAccountModels = await kernelModels.startAccountModels();
     const kernelLogins = new ProviderLogins(kernelModels);
     if (kernelModels.effective() === null) {
       safeLog('warn', 'login_required');
@@ -149,6 +151,7 @@ async function main(): Promise<number> {
     const reason = await Promise.race([restarting,
       stopSignal({ process, ...(stopOnStdinEof(process.env) ? { stdin: process.stdin } : {}) })]);
     safeLog('log', 'service_stopping');
+    stopAccountModels();
     await maintenance?.close();
     await app.stop();
     // 数据迁移选好了：退出码 75，systemd（Restart=on-failure）和桌面客户端都会再拉起来，开库前做完。

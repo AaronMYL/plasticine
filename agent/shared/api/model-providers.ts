@@ -40,6 +40,8 @@ export const ProviderModelViewSchema = Type.Object({
   reasoning: Type.Boolean(),
   thinkingLevels: Type.Array(ThinkingLevelSchema),
   input: Type.Array(Type.Enum(['text', 'image'])),
+  /** 账号列出来、pi-ai 目录里还没有的，照同系列旧型号补的：价格是估的（11-18，kernel/account-models.ts）。 */
+  estimated: Type.Optional(Type.Boolean()),
 }, STRICT);
 
 export const ModelProviderViewSchema = Type.Object({

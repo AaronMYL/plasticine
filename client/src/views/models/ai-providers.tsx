@@ -93,6 +93,9 @@ function EnabledModels({ provider }: { provider: ModelProviderView }): ReactNode
               <input type="checkbox" checked={provider.enabled.includes(model.id)}
                 onChange={(event) => toggle(model.id, event.target.checked)} />
               <span>{model.name}</span>
+              {model.estimated === true
+                ? <span className="ai-provider-model-note" title="账号列出来、模型库里还没有的新型号：价格照同系列旧型号估的">
+                  价格照旧型号估的</span> : null}
             </label>
           </li>
         ))}
