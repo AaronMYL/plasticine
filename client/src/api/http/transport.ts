@@ -28,6 +28,8 @@ export interface ResponseLike {
   text(): Promise<string>;
   readonly body?: ReadableStream<Uint8Array> | null;
   blob?(): Promise<Blob>;
+  /** 回答的头（导出的文件名在 Content-Disposition 里）；假的 fetch 可以不给。 */
+  readonly headers?: { get(name: string): string | null };
 }
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<ResponseLike>;
@@ -76,6 +78,27 @@ export interface TransportOptions {
 }
 
 type RequestOptions = Omit<RequestSpec<TSchema>, 'schema'>;
+/** 回答是一个文件的请求（导出）：没有 schema，回答就是字节。 */
+export type DownloadSpec = RequestOptions;
+
+/** 回答里要存下来的一个文件：字节和服务端起的文件名。 */
+export interface DownloadedFile {
+  blob: Blob;
+  name: string;
+}
+
+/** Content-Disposition 里的文件名（服务端写的是 filename*=UTF-8''…）；没写或解不开是 null。 */
+export function dispositionFileName(header: string | null): string | null {
+  const encoded = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(header ?? '')?.[1];
+  if (encoded !== undefined) {
+    try {
+      return decodeURIComponent(encoded.trim());
+    } catch (error) {
+      if (!(error instanceof URIError)) throw error;
+    }
+  }
+  return /filename\s*=\s*"([^"]+)"/i.exec(header ?? '')?.[1] ?? null;
+}
 
 type ParsedBody = { ok: true; value: unknown } | { ok: false; reason: string };
 
@@ -165,6 +188,19 @@ export class Transport {
       return { status: response.status, text: await response.text() };
     });
     if (result.blob !== undefined) return result.blob;
+    throw this.failure(result.status, parseBody(result.text), spec);
+  }
+
+  /** 回答是一个要存下来的文件（导出）；回答里没写文件名就用 fallbackName。 */
+  async download(spec: DownloadSpec, fallbackName: string): Promise<DownloadedFile> {
+    const result = await this.exchange(spec, 'application/octet-stream', async (response) => {
+      if (response.status >= 200 && response.status < 300 && response.blob !== undefined) {
+        const name = dispositionFileName(response.headers?.get('content-disposition') ?? null);
+        return { file: { blob: await response.blob(), name: name ?? fallbackName } };
+      }
+      return { status: response.status, text: await response.text() };
+    });
+    if (result.file !== undefined) return result.file;
     throw this.failure(result.status, parseBody(result.text), spec);
   }
 

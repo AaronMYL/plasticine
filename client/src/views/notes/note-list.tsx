@@ -4,7 +4,11 @@ import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-contr
 import type { BulkSelection } from '../bulk/use-bulk-selection.ts';
 import { AiMark } from '../../shell/glyph.tsx';
 import { isAiNote } from './ai-folder.ts';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import type { SkippedFileView } from '../../api/shared.ts';
+import { SkippedFiles } from '../transfer/skipped-files.tsx';
+import { useFilePicker } from '../transfer/use-file-picker.tsx';
+import { exportNoteFiles, importNoteFiles, NOTE_IMPORT_ACCEPT } from './note-transfer.ts';
 import type { NoteMetaView } from '../../api/types.ts';
 import { Icon } from '../../shell/icons.tsx';
 import { useRememberedScroll } from '../../state/use-remembered-scroll.ts';
@@ -44,6 +48,8 @@ export interface NoteListProps {
   trail?: ReactNode;
   /** 还没有笔记时空状态里的「新建笔记」（11-15 空的一种样子）。 */
   onCreate?: () => void;
+  /** 「导入…」进哪个文件夹（在「全部」里是 null，进「笔记」）；不给就没有导入（最近删除里）。 */
+  importFolder?: string | null | undefined;
 }
 
 export function NoteList(props: NoteListProps): ReactNode {
@@ -52,16 +58,25 @@ export function NoteList(props: NoteListProps): ReactNode {
   const now = new Date();
   const api = useApi();
   const { noteOps } = useClientState();
+  const [skipped, setSkipped] = useState<SkippedFileView[]>([]);
+  const canImport = props.importFolder !== undefined && props.trash !== true;
+  const picker = useFilePicker({ accept: NOTE_IMPORT_ACCEPT, label: '选要导入的笔记文件', onFiles: (files) => {
+    setSkipped([]);
+    void importNoteFiles(api, files, props.importFolder ?? null).then((left) => setSkipped(left ?? []));
+  } });
   // 电脑上（有文件夹名这一行）工具并进这一行；手机上文件夹名在页头，「更多操作」照旧自己一行。
   const merged = props.heading !== false;
   const bulk = props.selection === undefined ? null : <BulkHeader selection={props.selection}
     trash={props.trash ?? false} allowEmpty={props.query.trim() === ''}
+    more={canImport ? [{ icon: 'upload', label: '导入…', onSelect: picker.open }] : []}
     items={(props.notes ?? []).map((note) => ({ kind: 'note', id: note.id, title: note.title || '未命名' }))} />;
   return (
     <div className="note-list" ref={ref} onScroll={onScroll} hidden={props.hidden}>
       <div className="note-list-head">
         {merged ? null : bulk}
         {props.feedback && props.selection !== undefined ? <BulkFeedback selection={props.selection} /> : null}
+        <SkippedFiles files={skipped} onClose={() => setSkipped([])} />
+        {canImport ? picker.input : null}
         {/* 11-13 Aaron 的示意：页头那条大标题去掉，「收起列表」「新建」和列表的「更多操作」都放到文件夹名这一行。 */}
         {merged && props.selection?.active ? bulk : null}
         {props.heading === false || props.selection?.active ? null : <div className="note-list-heading">
@@ -130,6 +145,8 @@ export function NoteList(props: NoteListProps): ReactNode {
                   </span>
                 </button>
                 {props.selection?.active ? null : <NoteActions note={note} label={`《${note.title || '未命名'}》的操作`}
+                  extra={props.trash === true ? [] : [{ label: '导出', icon: 'download',
+                    onSelect: () => void exportNoteFiles(api, [note.id]) }]}
                   remove={() => void removeNoteWithUndo(api, noteOps, note)} />}
               </li>
             ))}
@@ -137,7 +154,8 @@ export function NoteList(props: NoteListProps): ReactNode {
         </section>
       ))}
       {props.selection === undefined ? null : <BulkBar selection={props.selection} trash={props.trash ?? false}
-        folders={props.folders ?? []} />}
+        folders={props.folders ?? []}
+        onExport={(items) => void exportNoteFiles(api, items.map((item) => item.id))} />}
     </div>
   );
 }

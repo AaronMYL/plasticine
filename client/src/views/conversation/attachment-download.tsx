@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { errorText } from '../../api/errors.ts';
+import { saveFile } from '../../shell/save-file.ts';
 import type { AttachmentMedia } from './attachment-gallery.tsx';
 
 export function AttachmentDownload({ item }: { item: AttachmentMedia }): ReactNode {
@@ -16,12 +17,7 @@ export function AttachmentDownload({ item }: { item: AttachmentMedia }): ReactNo
     try {
       const blob = await item.loadContent!(abort.signal);
       if (abort.signal.aborted) return;
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = item.name;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      saveFile({ blob, name: item.name });
     } catch (cause) { if (!abort.signal.aborted) setError(errorText(cause)); }
     finally { if (!abort.signal.aborted) setBusy(false); }
   };

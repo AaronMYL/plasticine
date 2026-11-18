@@ -13,6 +13,7 @@ export { SLOW_QUERY_MS, watchSlowQueries } from './db.ts';
 export { ASSET_NAME_PATTERN, ASSETS_DIRECTORY, digestOf } from './note-bodies.ts';
 export type { BodyDigest, NoteAsset } from './note-bodies.ts';
 export { previewOf, titleOf, UNTITLED_NOTE } from './notes.ts';
+export { noteAssetRefs } from './note-asset-refs.ts';
 export type { NoteFilter, NoteStore } from './notes.ts';
 export type { ApiRequestLog } from './api-requests.ts';
 export type { AskStore } from './asks.ts';

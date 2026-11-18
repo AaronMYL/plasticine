@@ -2,14 +2,16 @@
 // 写成功后在本机报 note.* 事件；服务端的 note_invalidated 也会通过 SSE 同步到已打开的笔记。
 
 import {
-  BatchResponseSchema, NOTE_LIST_MAX, NoteAssistOutcomeViewSchema, NoteAssistStreamEventSchema, noteAssistTimeoutMs,
+  BatchResponseSchema, ImportNotesResponseSchema, NOTE_LIST_MAX, NoteAssistOutcomeViewSchema,
+  NoteAssistStreamEventSchema, noteAssistTimeoutMs,
   NoteAssistViewSchema, NoteConflictSchema, NoteFoldersViewSchema, NoteImageViewSchema, NoteImportViewSchema,
-  NoteListResponseSchema, NOTES_BATCH_PATH, NOTES_EMPTY_PATH, NOTES_PATH, NoteViewSchema, type EmptyTrashRequest,
+  NoteListResponseSchema, NOTES_BATCH_PATH, NOTES_EMPTY_PATH, NOTES_EXPORT_PATH, NOTES_IMPORT_PATH, NOTES_PATH,
+  NoteViewSchema, type EmptyTrashRequest, type ImportNotesRequest, type ImportNotesResponse,
   type NoteAssistOutcome, type NoteAssistRequest, type NoteAssistView, type NoteFolderCommand, type NoteFoldersView,
   type NoteImageRequest, type NoteImageView, type NoteImportView, type NoteListResponse, type NotesBatchRequest,
 } from '../shared.ts';
 import { Value } from 'typebox/value';
-import type { NotesApi } from '../client.ts';
+import type { DownloadedFile, NotesApi } from '../client.ts';
 import { ApiError, badResponseError, NoteConflictError } from '../errors.ts';
 import { toMeta } from '../note-meta.ts';
 import type { CreateNoteRequest, NoteMetaView, NoteSearch, NoteView, SaveNoteRequest } from '../types.ts';
@@ -20,6 +22,9 @@ import type { Transport } from './transport.ts';
 function assistTimeoutMs(input: NoteAssistRequest): number {
   return noteAssistTimeoutMs(input) + (input.action === 'predict' ? 5000 : 10_000);
 }
+
+/** 导入、导出最多等这么久：几百篇带图的笔记打包、上传都要时间。 */
+const TRANSFER_TIMEOUT_MS = 120_000;
 
 /** 一页 400 篇，翻这么多页还没完就是服务端的 nextOffset 有问题，停下来报错，不无限翻。 */
 const NOTE_PAGES_MAX = 50;
@@ -195,5 +200,18 @@ export class HttpNotes implements NotesApi {
     });
     this.local.emit({ type: 'note.deleted', noteId: id });
     return note;
+  }
+
+  async importFiles(input: ImportNotesRequest): Promise<ImportNotesResponse> {
+    const result = await this.transport.request({ method: 'POST', path: NOTES_IMPORT_PATH, body: input,
+      schema: ImportNotesResponseSchema, what: '导入笔记', lostAs: 'uncertain', timeoutMs: TRANSFER_TIMEOUT_MS });
+    this.local.emit({ type: 'note.invalidated', noteId: 'folders' });
+    for (const note of result.imported) this.local.emit({ type: 'note.updated', note });
+    return result;
+  }
+
+  async exportFiles(ids: readonly string[], signal?: AbortSignal): Promise<DownloadedFile> {
+    return this.transport.download({ method: 'POST', path: NOTES_EXPORT_PATH, body: { ids }, what: '导出笔记',
+      lostAs: 'failed', timeoutMs: TRANSFER_TIMEOUT_MS, signal }, '笔记.zip');
   }
 }

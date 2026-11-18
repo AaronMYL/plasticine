@@ -299,6 +299,12 @@
   cursor: zoom-in;
 }
 
+.note-prose .note-image-missing {
+  margin: 0;
+  color: var(--fg3);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
 .note-image-zoom {
   position: absolute;
   top: var(--space-2);

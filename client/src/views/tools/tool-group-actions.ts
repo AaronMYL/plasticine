@@ -3,6 +3,7 @@
 // 同一处不让给出新内容）；表单的字在 inline-drafts（按 key 存 sessionStorage），拿到结果才清。409 带着现在那一条的先换上它。
 // 浏览器的动作说不清做没做（result_unknown）算待核实，同一个标识留着，等你在画面上看过说做成了没有。
 
+import { blobBase64 } from '../../api/base64.ts';
 import type { PlasticineApi } from '../../api/client.ts';
 import { ConflictError } from '../../api/errors.ts';
 import { createRequestId } from '../../api/request-id.ts';
@@ -61,17 +62,6 @@ function flagPatch(flag: 'read' | 'starred' | 'archived', value: boolean) {
     case 'archived':
       return { archived: value };
   }
-}
-
-async function base64Of(file: Blob): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let binary = '';
-  // In slices: String.fromCharCode with a whole 20 MB array would overflow the call stack.
-  const SLICE = 0x8000;
-  for (let at = 0; at < bytes.length; at += SLICE) {
-    binary += String.fromCharCode(...bytes.subarray(at, at + SLICE));
-  }
-  return btoa(binary);
 }
 
 export class ToolGroupActions {
@@ -162,7 +152,7 @@ export class ToolGroupActions {
   // ---------- 文件页 ----------
 
   async upload(directory: string, file: File): Promise<void> {
-    const contentBase64 = await base64Of(file);
+    const contentBase64 = await blobBase64(file);
     await this.run(filesOpKey('upload', `${directory}/${file.name}`), '上传', file.name, (requestId) => ({
       kind: 'files_upload',
       body: { requestId, directory, name: file.name, contentBase64 },

@@ -1,6 +1,7 @@
 // 笔记里的图（11-14 界面统一，Aaron 定的设计稿「图片」）：整张显示；点一下是选中，选中后图的右上角出「放大」，
 // 双击也能开。开的是全局看图（primitives/image-viewer），这篇笔记里的图按顺序都在里面，左右翻。
 // 只读的笔记选不中，点一下就开。存回去的 Markdown 不经过这里（editor-extensions.ts 的 renderHTML / renderMarkdown）。
+// 读不到的图（导入的笔记里指向别处的图，11-18 设计稿「导入之后」）：原地一行灰字「图片没带进来：路径」。
 
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { EditorView, NodeView } from '@tiptap/pm/view';
@@ -55,8 +56,20 @@ export function noteImageView(first: ProseMirrorNode, view: EditorView, getPos: 
   dom.className = 'note-image';
   const img = document.createElement('img');
   img.draggable = false;
+  const missing = document.createElement('p');
+  missing.className = 'note-image-missing';
+  missing.hidden = true;
+  img.addEventListener('error', () => {
+    missing.textContent = `图片没带进来：${text(node, 'src')}`;
+    missing.hidden = false;
+    img.hidden = true;
+  });
+  img.addEventListener('load', () => {
+    missing.hidden = true;
+    img.hidden = false;
+  });
   paint(img, node);
-  dom.append(img);
+  dom.append(img, missing);
   const zoom = document.createElement('button');
   zoom.type = 'button';
   zoom.className = 'note-image-zoom';

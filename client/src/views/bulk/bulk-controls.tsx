@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '../../shell/confirm-dialog.tsx';
-import { RevealMore } from '../../shell/reveal-more.tsx';
+import { RevealMore, type RevealAction } from '../../shell/reveal-more.tsx';
 import { Icon } from '../../shell/icons.tsx';
 import { showToast } from '../../primitives/toast/index.tsx';
 import { bulkKey, type BulkItem, type BulkSelection } from './use-bulk-selection.ts';
@@ -28,9 +28,11 @@ export function BulkCheck({ selection, item }: { selection: BulkSelection; item:
     }} /> : null;
 }
 
-export function BulkHeader({ selection, items, trash = false, allowEmpty = true, onEmpty }: {
+export function BulkHeader({ selection, items, trash = false, allowEmpty = true, onEmpty, more = [] }: {
   selection: BulkSelection; items: readonly BulkItem[]; trash?: boolean; allowEmpty?: boolean;
   onEmpty?: (confirmed: readonly BulkItem[]) => void;
+  /** 「更多操作」里排在「选择」下面的（导入…）。 */
+  more?: readonly RevealAction[];
 }): ReactNode {
   const all = useRef<HTMLInputElement>(null);
   const [purging, setPurging] = useState<readonly BulkItem[] | null>(null);
@@ -42,7 +44,7 @@ export function BulkHeader({ selection, items, trash = false, allowEmpty = true,
       onChange={selection.all} />全选</label><span className="text-meta">已选 {selection.selected.length}</span>
       <button type="button" className="text-button" disabled={selection.busy} onClick={selection.finish}>完成</button>
     </> : <RevealMore label="更多操作" actions={[{ icon: 'check', label: '选择', disabled: items.length === 0,
-      onSelect: () => selection.start() }]} />}
+      onSelect: () => selection.start() }, ...more]} />}
     {trash && allowEmpty ? <button type="button" className="secondary-button bulk-danger"
       disabled={items.length === 0 || selection.busy} onClick={() => setPurging([...items])}>
       <Icon name="trash" size={14} />清空</button> : null}
@@ -101,8 +103,10 @@ function MoveDialog({ items, folders, onMove, onClose }: { items: readonly BulkI
   </dialog>, document.body);
 }
 
-export function BulkBar({ selection, trash = false, folders = [] }: { selection: BulkSelection; trash?: boolean;
-  folders?: readonly string[] }): ReactNode {
+export function BulkBar({ selection, trash = false, folders = [], onExport }: { selection: BulkSelection;
+  trash?: boolean; folders?: readonly string[];
+  /** 「导出」：在「移到…」和「删除」之间；不给就没有。 */
+  onExport?: ((items: readonly BulkItem[]) => void) | undefined }): ReactNode {
   const [pending, setPending] = useState<{ action: 'move' | 'trash' | 'purge'; items: BulkItem[] } | null>(null);
   if (!selection.active) return null;
   const disabled = selection.busy || selection.selected.length === 0;
@@ -129,6 +133,8 @@ export function BulkBar({ selection, trash = false, folders = [] }: { selection:
       </> : <>
         <button type="button" className="text-button" disabled={disabled}
           onClick={() => ask('move')}><Icon name="folder" size={16} />移到…</button>
+        {onExport === undefined ? null : <button type="button" className="text-button" disabled={disabled}
+          onClick={() => onExport([...selection.selected])}><Icon name="download" size={16} />导出</button>}
         <button type="button" className="text-button bulk-danger" disabled={disabled}
           onClick={trashNow}><Icon name="trash" size={16} />删除</button>
       </>}

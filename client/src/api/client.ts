@@ -97,6 +97,16 @@ export interface NotesApi {
   save(id: string, input: SaveNoteRequest): Promise<NoteView>;
   /** DELETE /v2/notes/:id：移到「最近删除」，不是永久删除。 */
   remove(id: string, requestId: string): Promise<NoteView>;
+  /** POST /v2/notes/import：一次选的几个 .md / .txt 各成一篇笔记；没导入的带原因。 */
+  importFiles(input: import('./shared.ts').ImportNotesRequest): Promise<import('./shared.ts').ImportNotesResponse>;
+  /** POST /v2/notes/export：这几篇导出成一个文件（一篇没有图是 .md，其余是 zip）。 */
+  exportFiles(ids: readonly string[], signal?: AbortSignal): Promise<DownloadedFile>;
+}
+
+/** 导出下来的一个文件：字节和文件名。 */
+export interface DownloadedFile {
+  blob: Blob;
+  name: string;
 }
 
 export interface AsksApi {

@@ -1,8 +1,8 @@
 // Word、Excel、PowerPoint 读成文字（第13批，11-14 弹框同意：不加新包，自己读文件里的 XML）。.docx / .xlsx / .pptx
-// 都是 zip：读末尾的中央目录找到要的那几个文件，按 deflate 解开（node:zlib，限住解开后的大小，防压缩炸弹），从 XML 里
-// 取字——Word 按段落，Excel 按表、行（格子之间用制表符），PowerPoint 按页。读不了（不是 zip、缺文件、加密）就是 null。
+// 都是 zip（util/zip-read.ts 读）：找到要的那几个文件，从 XML 里取字——Word 按段落，Excel 按表、行（格子之间用
+// 制表符），PowerPoint 按页。读不了（不是 zip、缺文件、加密）就是 null。
 
-import { inflateRawSync } from 'node:zlib';
+import { openZip, type ZipArchive } from '../util/index.ts';
 
 export type OfficeKind = 'docx' | 'xlsx' | 'pptx';
 
@@ -12,58 +12,13 @@ export const OFFICE_TYPES: Readonly<Record<string, OfficeKind>> = {
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
 };
 
-/** 一个 XML 解开后最多这么大。 */
-const ENTRY_MAX_BYTES = 32 * 1024 * 1024;
 /** 最多读这么多张表、这么多页。 */
 const PARTS_MAX = 200;
 /** 一行最多读这么多列（Excel 最多 16384 列；位置写得离谱的格子放到最后一列，不铺几万个空格子）。 */
 const COLUMNS_MAX = 16_384;
 
-interface ZipEntry {
-  method: number;
-  compressedSize: number;
-  offset: number;
-}
-
-function centralDirectory(data: Buffer): Map<string, ZipEntry> | null {
-  const from = Math.max(0, data.length - 65_557);
-  let end = -1;
-  for (let at = data.length - 22; at >= from; at -= 1) {
-    if (data.readUInt32LE(at) === 0x06054b50) {
-      end = at;
-      break;
-    }
-  }
-  if (end < 0) return null;
-  const count = data.readUInt16LE(end + 10);
-  let at = data.readUInt32LE(end + 16);
-  const entries = new Map<string, ZipEntry>();
-  for (let index = 0; index < count; index += 1) {
-    if (at + 46 > data.length || data.readUInt32LE(at) !== 0x02014b50) return null;
-    const nameLength = data.readUInt16LE(at + 28);
-    const extraLength = data.readUInt16LE(at + 30);
-    const commentLength = data.readUInt16LE(at + 32);
-    const name = data.toString('utf8', at + 46, at + 46 + nameLength);
-    entries.set(name, { method: data.readUInt16LE(at + 10), compressedSize: data.readUInt32LE(at + 20),
-      offset: data.readUInt32LE(at + 42) });
-    at += 46 + nameLength + extraLength + commentLength;
-  }
-  return entries;
-}
-
-function entryText(data: Buffer, entry: ZipEntry): string | null {
-  const at = entry.offset;
-  if (at + 30 > data.length || data.readUInt32LE(at) !== 0x04034b50) return null;
-  const start = at + 30 + data.readUInt16LE(at + 26) + data.readUInt16LE(at + 28);
-  const raw = data.subarray(start, start + entry.compressedSize);
-  if (entry.method === 0) return raw.length > ENTRY_MAX_BYTES ? null : raw.toString('utf8');
-  if (entry.method !== 8) return null;
-  try {
-    return inflateRawSync(raw, { maxOutputLength: ENTRY_MAX_BYTES }).toString('utf8');
-  } catch (error) {
-    if (error instanceof RangeError || (error instanceof Error && 'code' in error)) return null;
-    throw error;
-  }
+function entryText(zip: ZipArchive, name: string): string | null {
+  return zip.read(name)?.toString('utf8') ?? null;
 }
 
 function decodeXml(text: string): string {
@@ -85,15 +40,14 @@ function textsOf(xml: string, tag: string): string {
   return [...xml.matchAll(pattern)].map((match) => decodeXml(match[1] ?? '')).join('');
 }
 
-function numbered(entries: Map<string, ZipEntry>, pattern: RegExp): string[] {
-  return [...entries.keys()].filter((name) => pattern.test(name))
+function numbered(zip: ZipArchive, pattern: RegExp): string[] {
+  return zip.names().filter((name) => pattern.test(name))
     .sort((a, b) => Number(/(\d+)\.xml$/.exec(a)?.[1] ?? 0) - Number(/(\d+)\.xml$/.exec(b)?.[1] ?? 0))
     .slice(0, PARTS_MAX);
 }
 
-function docxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
-  const entry = entries.get('word/document.xml');
-  const xml = entry === undefined ? null : entryText(data, entry);
+function docxText(zip: ZipArchive): string | null {
+  const xml = entryText(zip, 'word/document.xml');
   if (xml === null) return null;
   return [...xml.matchAll(/<w:p[\s>][\s\S]*?<\/w:p>/g)].map((match) => textsOf(match[0]
     .replace(/<w:tab\/>/g, '<w:t>\t</w:t>').replace(/<w:br\/>/g, '<w:t>\n</w:t>'), 'w:t'))
@@ -131,57 +85,48 @@ function sheetRows(xml: string, shared: readonly string[]): string[][] {
   });
 }
 
-function xlsxSheetsOf(data: Buffer, entries: Map<string, ZipEntry>): SheetRows[] | null {
-  const sharedEntry = entries.get('xl/sharedStrings.xml');
-  const sharedXml = sharedEntry === undefined ? '' : entryText(data, sharedEntry) ?? '';
+function xlsxSheetsOf(zip: ZipArchive): SheetRows[] | null {
+  const sharedXml = entryText(zip, 'xl/sharedStrings.xml') ?? '';
   const shared = [...sharedXml.matchAll(/<si>([\s\S]*?)<\/si>/g)].map((match) => textsOf(match[1] ?? '', 't'));
-  const bookEntry = entries.get('xl/workbook.xml');
-  const book = bookEntry === undefined ? '' : entryText(data, bookEntry) ?? '';
+  const book = entryText(zip, 'xl/workbook.xml') ?? '';
   const names = [...book.matchAll(/<sheet\b[^>]*\bname="([^"]*)"/g)].map((match) => decodeXml(match[1] ?? ''));
-  const sheets = numbered(entries, /^xl\/worksheets\/sheet\d+\.xml$/);
+  const sheets = numbered(zip, /^xl\/worksheets\/sheet\d+\.xml$/);
   if (sheets.length === 0) return null;
   return sheets.map((name, index) => {
-    const entry = entries.get(name);
-    const xml = entry === undefined ? '' : entryText(data, entry) ?? '';
+    const xml = entryText(zip, name) ?? '';
     return { name: names[index] ?? `表 ${index + 1}`, rows: sheetRows(xml, shared) };
   });
 }
 
-function xlsxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
-  const sheets = xlsxSheetsOf(data, entries);
+function xlsxText(zip: ZipArchive): string | null {
+  const sheets = xlsxSheetsOf(zip);
   if (sheets === null) return null;
   return sheets.map((sheet) => [`## ${sheet.name}`, ...sheet.rows.map((cells) => cells.join('\t'))
     .filter((line) => line !== '')].join('\n')).join('\n\n');
 }
 
-function pptxText(data: Buffer, entries: Map<string, ZipEntry>): string | null {
-  const slides = numbered(entries, /^ppt\/slides\/slide\d+\.xml$/);
+function pptxText(zip: ZipArchive): string | null {
+  const slides = numbered(zip, /^ppt\/slides\/slide\d+\.xml$/);
   if (slides.length === 0) return null;
   return slides.map((name, index) => {
-    const entry = entries.get(name);
-    const xml = entry === undefined ? '' : entryText(data, entry) ?? '';
+    const xml = entryText(zip, name) ?? '';
     const lines = [...xml.matchAll(/<a:p[\s>][\s\S]*?<\/a:p>/g)].map((match) => textsOf(match[0], 'a:t'))
       .filter((line) => line.trim() !== '');
     return [`## 第 ${index + 1} 页`, ...lines].join('\n');
   }).join('\n\n');
 }
 
-function zipEntries(data: Buffer): Map<string, ZipEntry> | null {
-  if (data.length < 22 || data.readUInt32LE(0) !== 0x04034b50) return null;
-  return centralDirectory(data);
-}
-
 /** .xlsx 的每张表按行、按格子位置读出来（转 CSV 用）；读不了是 null。 */
 export function xlsxSheets(data: Buffer): SheetRows[] | null {
-  const entries = zipEntries(data);
-  return entries === null ? null : xlsxSheetsOf(data, entries);
+  const zip = openZip(data);
+  return zip === null ? null : xlsxSheetsOf(zip);
 }
 
 /** 读成文字；读不了是 null（不是 zip、缺了要的文件、加密）。 */
 export function officeText(kind: OfficeKind, data: Buffer): string | null {
-  const entries = zipEntries(data);
-  if (entries === null) return null;
-  if (kind === 'docx') return docxText(data, entries);
-  if (kind === 'xlsx') return xlsxText(data, entries);
-  return pptxText(data, entries);
+  const zip = openZip(data);
+  if (zip === null) return null;
+  if (kind === 'docx') return docxText(zip);
+  if (kind === 'xlsx') return xlsxText(zip);
+  return pptxText(zip);
 }

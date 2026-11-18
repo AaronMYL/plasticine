@@ -6,15 +6,17 @@ import { createRequestId } from '../request-id.ts';
 import {
   DEFAULT_NOTE_FOLDER, NOTE_IMAGE_MAX_BYTES, type EmptyTrashRequest, type NoteAssistOutcome, type NoteAssistRequest,
   type NoteAssistView, type NoteFolderCommand, type NoteFoldersView, type NoteImageRequest, type NoteImageView,
-  type NoteImportView, type NotesBatchRequest, type NoteSupplement,
+  type ImportNotesRequest, type ImportNotesResponse, type NoteImportView, type NotesBatchRequest,
+  type NoteSupplement,
 } from '../shared.ts';
-import type { NotesApi } from '../client.ts';
+import type { DownloadedFile, NotesApi } from '../client.ts';
 import { ApiError, NoteConflictError } from '../errors.ts';
 import type { CreateNoteRequest, NoteMetaView, NoteSearch, NoteView, SaveNoteRequest } from '../types.ts';
 import { toMeta } from '../note-meta.ts';
 import type { FakeEventBus } from './event-bus.ts';
 import type { FakeSession } from './fake-session.ts';
 import { faultError, type FaultPlan } from './faults.ts';
+import { fakeExportFile, fakeImportDraft } from './fake-note-transfer.ts';
 import { noteBytes, notePreview, noteTitle } from './note-text.ts';
 
 export interface FakeNotesDeps {
@@ -41,6 +43,7 @@ export class FakeNotes implements NotesApi {
   private readonly notes = new Map<string, NoteView>();
   private readonly results = new Map<string, NoteView>();
   private readonly folderResults = new Map<string, NoteFoldersView>();
+  private readonly importResults = new Map<string, ImportNotesResponse>();
   private readonly deps: FakeNotesDeps;
   private sequence = 0;
   private readonly history = new Map<string, Map<number, NoteView>>();
@@ -335,6 +338,32 @@ export class FakeNotes implements NotesApi {
   peek(id: string): { title: string; markdown: string } | undefined {
     const note = this.notes.get(id);
     return note === undefined ? undefined : { title: note.title, markdown: note.markdown };
+  }
+
+  async importFiles(input: ImportNotesRequest): Promise<ImportNotesResponse> {
+    this.deps.session.require();
+    const replay = this.importResults.get(input.requestId);
+    if (replay !== undefined) { return replay; }
+    const result: ImportNotesResponse = { imported: [], skipped: [] };
+    for (const file of input.files) {
+      const draft = fakeImportDraft(file);
+      if ('reason' in draft) {
+        result.skipped.push({ name: file.name, reason: draft.reason });
+        continue;
+      }
+      this.sequence += 1;
+      const id = `note_${String(this.sequence).padStart(4, '0')}`;
+      const identity = this.identity({ id, createdAt: this.deps.now().toISOString(),
+        folder: input.folder ?? DEFAULT_NOTE_FOLDER }, 0);
+      result.imported.push(toMeta(this.write(identity, { markdown: draft.markdown })));
+    }
+    this.importResults.set(input.requestId, result);
+    return result;
+  }
+
+  async exportFiles(ids: readonly string[]): Promise<DownloadedFile> {
+    this.deps.session.require();
+    return fakeExportFile(ids.map((id) => this.find(id)));
   }
 
   private find(id: string): NoteView {

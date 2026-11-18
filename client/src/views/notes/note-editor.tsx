@@ -25,6 +25,7 @@ import { useNoteSync } from './use-note-sync.ts';
 import { NoteReview, type NoteProposal } from './note-review.tsx';
 import { NoteFormat } from './note-format.tsx';
 import { NoteActions } from './note-actions.tsx';
+import { exportNoteFiles } from './note-transfer.ts';
 import { SaveState } from './note-save-state.tsx';
 import { useScrollMargin, useStickyTools } from './use-sticky-tools.ts';
 import { NoteAi, type NoteRange } from './note-ai.tsx';
@@ -207,6 +208,7 @@ export function NoteEditor({ note, onDeleted }: NoteEditorProps): ReactNode {
 
   const actions = <NoteActions note={current} label="更多笔记操作" extra={[
     { label: '版本历史', icon: 'history', onSelect: () => setHistoryOpen(true) },
+    { label: '导出', icon: 'download', onSelect: () => void exportNoteFiles(api, [current.id]) },
     ...readOnly ? [] : [{ label: '删除笔记', icon: 'trash', onSelect: remove } as const],
   ]} beforeChange={async () => {
     await saver.flush();

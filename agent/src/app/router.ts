@@ -91,6 +91,8 @@ import {
   NODE_PAIRING_CODES_PATH,
   NODES_PATH,
   NOTE_ASSETS_PATH,
+  NOTES_EXPORT_PATH,
+  NOTES_IMPORT_PATH,
   NOTES_PATH,
   COMPOSE_OUTCOME_PATH,
   COMPOSE_PREDICT_PATH,
@@ -214,6 +216,7 @@ import { helloNodeHandler, nodeLogsHandler, pairNodeHandler } from './node-proto
 import { nodeBrowserSession } from './node-browser.ts';
 import { issueNodePairingCode, listNodeActions, listNodes, revokeNodeHandler, setNodeLimitsHandler } from './nodes.ts';
 import { unlockNote } from './note-access.ts';
+import { exportNoteFiles, importNoteFiles } from './notes-transfer.ts';
 import { assistNote, assistOutcome, changeNoteFolder, getNoteImport, listNoteFolders, restoreNote, uploadNoteImage }
   from './notes-workspace.ts';
 import { createNote, deleteNote, getNote, getNoteAsset, getNoteVersion, listNotes, listNoteVersions, saveNote }
@@ -366,6 +369,8 @@ export const ROUTES: readonly Route[] = [
   { method: 'POST', path: COMPOSE_OUTCOME_PATH, auth: true, handler: composeOutcome },
   { method: 'GET', path: NOTES_PATH, auth: true, handler: listNotes },
   { method: 'POST', path: NOTES_PATH, auth: true, handler: createNote },
+  { method: 'POST', path: NOTES_IMPORT_PATH, auth: true, handler: importNoteFiles },
+  { method: 'POST', path: NOTES_EXPORT_PATH, auth: true, handler: exportNoteFiles },
   { method: 'POST', path: `${NOTES_PATH}/:id/unlock`, auth: true, handler: unlockNote },
   { method: 'GET', path: `${NOTE_ASSETS_PATH}/:name`, auth: true, handler: getNoteAsset },
   { method: 'GET', path: `${NOTES_PATH}/:id`, auth: true, handler: getNote },

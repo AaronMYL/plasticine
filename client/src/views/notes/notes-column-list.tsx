@@ -57,6 +57,7 @@ export function NotesListColumn({ route, navigate }: { route: Route; navigate: (
           : <IconButton icon="plus" label="新建笔记" onClick={() => navigate({ view: 'notes', noteId: 'new' })} />}
         trail={<ColumnCollapseButton />}
         onCreate={() => navigate({ view: 'notes', noteId: 'new' })}
+        importFolder={collection.kind === 'folder' ? collection.name : null}
       />
       <NoteFolders value={collection} inline={false} onChange={choose}
         menu={folders === null ? null : { anchor: folders, trigger: toggle, onClose: () => setFolders(null) }} />

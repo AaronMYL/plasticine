@@ -57,6 +57,7 @@ export * from './page-operate.ts';
 export * from './mac-logins.ts';
 
 export * from './notes-workspace.ts';
+export * from './transfer.ts';
 
 export * from './systems.ts';
 
