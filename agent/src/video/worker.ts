@@ -7,6 +7,7 @@ import { DouyinResolvedSchema, type DouyinResolved } from '../../shared/api/vide
 import { Value } from 'typebox/value';
 import type { StateService, VideoWorkRow } from '../state/index.ts';
 import { failureText, safeLog } from '../util/index.ts';
+import type { Leveling } from './leveling.ts';
 import { advanceWork, type PipelinePorts } from './pipeline.ts';
 
 /** 视频自己最多同时走几条（再受 slots 限制）。 */
@@ -57,6 +58,8 @@ export class VideoWorker {
   readonly #running = new Map<string, Promise<void>>();
   readonly #waiters = new Map<string, Waiter[]>();
   readonly #transcribeLock = limiter(TRANSCRIBE_AT_ONCE);
+  /** video_parse 指定的拉平音量那一档（11-18）：只记在内存里，重启后按默认。 */
+  readonly #leveling = new Map<string, Leveling>();
 
   constructor(options: VideoWorkerOptions) {
     this.#state = options.state;
@@ -70,7 +73,13 @@ export class VideoWorker {
       askMac: (work) => {
         options.state.videoMacJobs.queue('resolve', work.workId);
       },
+      leveling: (work) => this.#leveling.get(work.id),
     };
+  }
+
+  /** 这一条转写前用哪一档拉平音量（video_parse 的 leveling）；还没转写的才用得上。 */
+  preferLeveling(id: string, leveling: Leveling): void {
+    this.#leveling.set(id, leveling);
   }
 
   /** 转一个文件（audio_transcribe）和视频解析共用一把锁：小机器上转写一次只跑一条。 */
@@ -180,6 +189,7 @@ export class VideoWorker {
     this.#notify(works.advance(id, { run: 'running', error: null }));
     try {
       const end = await advanceWork(id, this.#ports, this.#controller.signal);
+      if (end === 'summarized') this.#leveling.delete(id);
       if (end === 'waiting_mac') {
         this.#notify(works.advance(id, { run: 'waiting_mac' }));
         return;

@@ -3,6 +3,7 @@
 // cloud-tools/、video/），这里只管参数、读写文件页和回什么。
 
 import { Type, type Static } from 'typebox';
+import { LevelingSchema, type TRANSCRIBE_LEVELINGS } from '../../shared/api/video.ts';
 import { checkedArgs, type KernelTool } from '../lines/index.ts';
 import { ArtifactError } from './errors.ts';
 import { saveFile } from './file-tools.ts';
@@ -40,8 +41,19 @@ export interface MediaToolParts {
     Promise<Buffer>;
   /** 按描述出一张图；没有能出图的模型、模型拒了都回 error。 */
   draw(prompt: string, signal: AbortSignal): Promise<Drawn | { error: string }>;
-  transcribe(input: { data: Buffer; extension: string }, signal: AbortSignal):
-    Promise<{ text: string; seconds: number | null; engine: string }>;
+  transcribe(input: { data: Buffer; extension: string; leveling?: Leveling }, signal: AbortSignal):
+    Promise<FileTranscriptLike>;
+}
+
+type Leveling = (typeof TRANSCRIBE_LEVELINGS)[number];
+
+/** 转写的结果（video/file-transcribe.ts 的 FileTranscript）。 */
+export interface FileTranscriptLike {
+  text: string;
+  seconds: number | null;
+  engine: string;
+  /** 转出来多少、这次拉没拉平音量，一句话（video/leveling.ts 的 coverageText）。 */
+  coverage: string;
 }
 
 /** 逐字稿直接回给模型的最多这么长；再长的存成文件（saveTo）再分段读。 */
@@ -76,6 +88,7 @@ const TranscribeParameters = Type.Object({
   saveTo: Type.Optional(Type.String({ minLength: 1, maxLength: 1_000,
     description: '把逐字稿存成文件页里的一个 .txt 或 .md（长录音建议存）。' })),
   overwrite: Type.Optional(Type.Boolean()),
+  leveling: Type.Optional(LevelingSchema),
 }, { additionalProperties: false });
 
 function result(value: unknown) {
@@ -164,7 +177,8 @@ function transcribeTool(parts: MediaToolParts): KernelTool {
     hardLine: () => null,
     create: () => ({
       name: 'audio_transcribe', label: '音频转文字',
-      description: '把文件页里的一段录音或视频转成带时间的逐字稿（本机转写，不上传）。十分钟的录音大约一两分钟。',
+      description: '把文件页里的一段录音或视频转成带时间的逐字稿（本机转写，不上传）。十分钟的录音大约一两分钟。'
+        + '默认先量音量、太轻才拉平（leveling auto）；结果里的 coverage 说转出几句、最长一段没字在哪，空白多就换一档再转。',
       parameters: TranscribeParameters,
       async execute(_callId, input, signal) {
         const args = checkedArgs(TranscribeParameters, input, 'audio_transcribe');
@@ -174,7 +188,9 @@ function transcribeTool(parts: MediaToolParts): KernelTool {
           throw new ArtifactError('unsupported_type', `「${args.path}」不是音频或视频（能转：${MEDIA_EXTENSIONS.join('、')}）。`,
             'path');
         }
-        const transcript = await parts.transcribe({ data, extension }, signal ?? new AbortController().signal);
+        const leveling = args.leveling === undefined ? {} : { leveling: args.leveling };
+        const transcript = await parts.transcribe({ data, extension, ...leveling },
+          signal ?? new AbortController().signal);
         let saved: string | null = null;
         if (args.saveTo !== undefined) {
           saved = saveFile(parts.workspace, args.saveTo, Buffer.from(transcript.text, 'utf8'),
@@ -182,6 +198,7 @@ function transcribeTool(parts: MediaToolParts): KernelTool {
         }
         const text = Array.from(transcript.text);
         return result({ seconds: transcript.seconds, engine: transcript.engine, ...(saved === null ? {} : { saved }),
+          coverage: transcript.coverage,
           text: text.slice(0, TRANSCRIPT_REPLY_MAX).join(''),
           ...(text.length > TRANSCRIPT_REPLY_MAX ? { truncated: true, note: '太长只回了前面一段：用 saveTo 存成文件再读。' }
             : {}) });

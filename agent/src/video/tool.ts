@@ -5,6 +5,7 @@ import type { AgentTool } from '@earendil-works/pi-agent-core';
 import { VIDEO_PARSE_TOOL, VIDEO_STAGE_LABELS, VideoParseArgsSchema } from '../../shared/api/video.ts';
 import { checkedArgs, type KernelTool } from '../lines/index.ts';
 import { waitingTranscriber, type StateService, type VideoWorkRow } from '../state/index.ts';
+import { coverageOf, coverageText, transcriptStarts } from './leveling.ts';
 import { videoTarget } from './links.ts';
 import type { VideoWorker } from './worker.ts';
 
@@ -44,6 +45,8 @@ export function resultText(work: VideoWorkRow): string {
     ...list('大纲：', work.digest.outline),
     ...list('核心观点：', work.digest.points),
     ...list('和他有关：', work.digest.related),
+    ...(work.transcriptSource === 'local' ? [coverageText(coverageOf(transcriptStarts(transcript),
+      work.timing?.audioSeconds ?? work.durationSeconds), work.timing?.leveled === true)] : []),
     `逐字稿（${work.transcriptSource === null ? '未知来源' : sourceLabel[work.transcriptSource]}）：`,
     cut.length > TRANSCRIPT_IN_REPLY_MAX ? `${cut.slice(0, TRANSCRIPT_IN_REPLY_MAX).join('')}…（后面还有）` : transcript,
   ].join('\n');
@@ -65,6 +68,9 @@ function createTool(state: VideoToolState, worker: VideoWorker): AgentTool<typeo
       const target = await videoTarget(args.url, outer);
       const { work } = state.videoWorks.upsert({ platform: target.platform, workId: target.workId, url: target.url,
         title: target.platform === 'douyin' ? `抖音作品 ${target.workId}` : target.url, kind: target.kind });
+      if (args.leveling !== undefined) {
+        worker.preferLeveling(work.id, args.leveling);
+      }
       state.videoWorks.want([work.id]);
       worker.kick();
       const current = state.videoWorks.require(work.id);

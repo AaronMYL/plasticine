@@ -1,5 +1,5 @@
-// 16kHz 单声道 16 位 wav 的两件小事（第13批）：装转写组件时试转用的一段静音；抽出来的音频有多长（读 data 块的大小，
-// 不再另跑 ffprobe，组件里没带它）。
+// 16kHz 单声道 16 位 wav 的几件小事（第13批）：装转写组件时试转用的一段静音；抽出来的音频有多长（读 data 块的大小，
+// 不再另跑 ffprobe，组件里没带它）；声音数据从哪起（11-18 量音量用，leveling.ts）。
 
 import { open } from 'node:fs/promises';
 
@@ -28,27 +28,42 @@ export function silentWav(seconds: number): Buffer {
   return Buffer.concat([header, Buffer.alloc(data)]);
 }
 
-/** 文件头里的 data 块有多长 → 秒数；认不出是 null。 */
-export function wavHeaderSeconds(head: Buffer): number | null {
+/** 文件头里的 data 块：声音数据从第几个字节起、有多少字节；认不出是 null。 */
+function dataChunk(head: Buffer): { start: number; size: number } | null {
   if (head.length < 12 || head.toString('ascii', 0, 4) !== 'RIFF' || head.toString('ascii', 8, 12) !== 'WAVE') {
     return null;
   }
   for (let at = 12; at + 8 <= head.length;) {
     const id = head.toString('ascii', at, at + 4);
     const size = head.readUInt32LE(at + 4);
-    if (id === 'data') return Math.round(size / BYTES_PER_SECOND * 100) / 100;
+    if (id === 'data') return { start: at + 8, size };
     at += 8 + size + (size % 2);
   }
   return null;
 }
 
-export async function wavSeconds(path: string): Promise<number | null> {
+/** 文件头里的 data 块有多长 → 秒数；认不出是 null。 */
+export function wavHeaderSeconds(head: Buffer): number | null {
+  const chunk = dataChunk(head);
+  return chunk === null ? null : Math.round(chunk.size / BYTES_PER_SECOND * 100) / 100;
+}
+
+async function readHead(path: string): Promise<Buffer> {
   const file = await open(path, 'r');
   try {
     const head = Buffer.alloc(HEADER_SCAN_BYTES);
     const { bytesRead } = await file.read(head, 0, HEADER_SCAN_BYTES, 0);
-    return wavHeaderSeconds(head.subarray(0, bytesRead));
+    return head.subarray(0, bytesRead);
   } finally {
     await file.close();
   }
+}
+
+export async function wavSeconds(path: string): Promise<number | null> {
+  return wavHeaderSeconds(await readHead(path));
+}
+
+/** 声音数据从第几个字节起（量音量时从这里读）。 */
+export async function wavDataStart(path: string): Promise<number | null> {
+  return dataChunk(await readHead(path))?.start ?? null;
 }

@@ -16,7 +16,7 @@ export type { OfficeToolParts } from './office-tools.ts';
 export { ImageOpSchema, mediaTools, pathForMime } from './media-tools.ts';
 export { sandboxTool } from './sandbox-tool.ts';
 export type { SandboxRun, SandboxToolParts } from './sandbox-tool.ts';
-export type { Drawn, ImageOpInput, MediaToolParts } from './media-tools.ts';
+export type { Drawn, FileTranscriptLike, ImageOpInput, MediaToolParts } from './media-tools.ts';
 export {
   checkName,
   DOWNLOAD_MAX_BYTES,

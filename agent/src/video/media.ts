@@ -9,6 +9,7 @@ import { extname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { PublicFetcher, type PublicRequest } from '../cloud-tools/index.ts';
+import { LEVELING_FILTER, tooQuiet, wavLoudness, type Leveling } from './leveling.ts';
 import { wavSeconds } from './wav.ts';
 
 /** 一条视频最多下这么大：抖音 10 分钟 1080p 约 150 MB。 */
@@ -109,11 +110,35 @@ export async function extractFrame(input: string, seconds: number, signal: Abort
 }
 
 /** 抽成 16kHz 单声道 16 位 wav（转写要的样子）。回音频秒数（从 wav 文件头读，读不出是 null）。 */
-export async function extractAudio(input: string, output: string, signal: AbortSignal, ffmpeg = 'ffmpeg'):
+async function toWav(input: string, output: string, signal: AbortSignal, ffmpeg: string, leveled: boolean):
   Promise<number | null> {
-  await run('ffmpeg', ffmpeg, ['-nostdin', '-loglevel', 'error', '-y', '-i', input, '-vn', '-ac', '1', '-ar', '16000',
-    '-sample_fmt', 's16', output], signal, FFMPEG_TIMEOUT_MS);
+  await run('ffmpeg', ffmpeg, ['-nostdin', '-loglevel', 'error', '-y', '-i', input, '-vn',
+    ...(leveled ? ['-af', LEVELING_FILTER] : []), '-ac', '1', '-ar', '16000', '-sample_fmt', 's16', output], signal,
+  FFMPEG_TIMEOUT_MS);
   return wavSeconds(output);
+}
+
+export interface ExtractedAudio {
+  seconds: number | null;
+  /** 这次拉没拉平音量（leveling.ts）。 */
+  leveled: boolean;
+}
+
+/** 抽成 16kHz 单声道 wav；on 拉平音量，auto 先抽一遍量音量，太轻再拉平重抽（11-18）。 */
+export async function extractAudio(input: string, output: string, signal: AbortSignal, ffmpeg = 'ffmpeg',
+  leveling: Leveling = 'off'): Promise<ExtractedAudio> {
+  if (leveling === 'on') {
+    return { seconds: await toWav(input, output, signal, ffmpeg, true), leveled: true };
+  }
+  const seconds = await toWav(input, output, signal, ffmpeg, false);
+  if (leveling === 'off') {
+    return { seconds, leveled: false };
+  }
+  const loudness = await wavLoudness(output);
+  if (loudness === null || !tooQuiet(loudness)) {
+    return { seconds, leveled: false };
+  }
+  return { seconds: await toWav(input, output, signal, ffmpeg, true), leveled: true };
 }
 
 export interface WebVideo {

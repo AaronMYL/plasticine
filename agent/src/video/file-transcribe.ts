@@ -3,6 +3,7 @@
 
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { coverageOf, coverageText, type Coverage, type Leveling } from './leveling.ts';
 import { extractAudio } from './media.ts';
 import { transcriptText } from './subtitles.ts';
 import type { Transcriber } from './transcriber.ts';
@@ -20,12 +21,17 @@ export interface FileTranscript {
   text: string;
   seconds: number | null;
   engine: string;
+  /** 这次拉没拉平音量、转出来多少（11-18，leveling.ts）：一句给模型看的话，和数。 */
+  coverage: string;
+  leveled: boolean;
+  stats: Coverage;
 }
 
 export const NO_TRANSCRIBER = '本地转写还没装：到「设置 · AI」的「本地转写」装好（几百 MB，装一次），再转。';
 
-export async function transcribeFile(ports: FileTranscribePorts, input: { data: Buffer; extension: string },
-  signal: AbortSignal): Promise<FileTranscript> {
+/** 文件页里的录音、视频默认 auto：先量音量，太轻才拉平（11-18 Aaron 定）。 */
+export async function transcribeFile(ports: FileTranscribePorts,
+  input: { data: Buffer; extension: string; leveling?: Leveling }, signal: AbortSignal): Promise<FileTranscript> {
   const transcriber = ports.transcriber();
   if (transcriber === null) {
     throw new Error(NO_TRANSCRIBER);
@@ -35,9 +41,12 @@ export async function transcribeFile(ports: FileTranscribePorts, input: { data: 
     const source = join(dir, `in.${input.extension}`);
     const wav = join(dir, 'audio.wav');
     await writeFile(source, input.data);
-    const seconds = await extractAudio(source, wav, signal, ports.ffmpeg());
+    const audio = await extractAudio(source, wav, signal, ports.ffmpeg(), input.leveling ?? 'auto');
     const result = await ports.whileTranscribing(() => transcriber.transcribe(wav, signal));
-    return { text: transcriptText(result.lines), seconds: result.audioSeconds ?? seconds, engine: result.engine };
+    const seconds = result.audioSeconds ?? audio.seconds;
+    const stats = coverageOf(result.lines.map((line) => line.start), seconds);
+    return { text: transcriptText(result.lines), seconds, engine: result.engine, leveled: audio.leveled, stats,
+      coverage: coverageText(stats, audio.leveled) };
   } finally {
     // 这次自己建的临时目录，用完就清。
     await rm(dir, { recursive: true, force: true });

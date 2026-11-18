@@ -47,7 +47,7 @@ export { limiter, TRANSCRIBE_AT_ONCE, VIDEO_RUNS_MAX, VideoWorker } from './work
 export function realMedia(ffmpeg: () => string): VideoMedia {
   return {
     download: (url, file, signal) => downloadTo(url, file, signal),
-    extractAudio: (input, output, signal) => extractAudio(input, output, signal, ffmpeg()),
+    extractAudio: (input, output, signal, leveling) => extractAudio(input, output, signal, ffmpeg(), leveling),
     extractFrame: (input, seconds, signal) => extractFrame(input, seconds, signal, ffmpeg()),
     fetchText,
     fetchImage,

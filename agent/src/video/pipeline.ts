@@ -14,7 +14,8 @@ import { VIDEO_IMAGES_MAX, type DouyinResolved, type VideoDigest } from '../../s
 import type { TextImage } from '../kernel/index.ts';
 import type { VideoWorkRow, VideoWorkStore } from '../state/index.ts';
 import type { DigestInput, VideoDigester } from './digest.ts';
-import type { WebVideo } from './media.ts';
+import type { Leveling } from './leveling.ts';
+import type { ExtractedAudio, WebVideo } from './media.ts';
 import { parseSubtitle, transcriptText, type TranscriptLine } from './subtitles.ts';
 import type { Transcriber } from './transcriber.ts';
 import { outlineTime } from '../../shared/video-space-page.ts';
@@ -23,7 +24,7 @@ import { outlineTime } from '../../shared/video-space-page.ts';
 export interface VideoMedia {
   download(url: string, file: string, signal: AbortSignal): Promise<number>;
   extractFrame?(input: string, seconds: number, signal: AbortSignal): Promise<TextImage>;
-  extractAudio(input: string, output: string, signal: AbortSignal): Promise<number | null>;
+  extractAudio(input: string, output: string, signal: AbortSignal, leveling: Leveling): Promise<ExtractedAudio>;
   fetchText(url: string, signal: AbortSignal): Promise<string>;
   fetchImage(url: string, signal: AbortSignal): Promise<TextImage>;
   readText(path: string): Promise<string>;
@@ -45,6 +46,13 @@ export interface PipelinePorts {
   now: () => number;
   saveImage?: (image: TextImage) => string;
   publish?: (work: VideoWorkRow) => void;
+  /** 这一条要用哪一档拉平音量（video_parse 指定的，11-18）；没指定按默认：抖音 off，别的 auto。 */
+  leveling?: (work: VideoWorkRow) => Leveling | undefined;
+}
+
+/** 转写前拉不拉平音量的默认：抖音的声音本来清楚，关；别的网站、直链先量再定（11-18 Aaron 定）。 */
+export function defaultLeveling(work: Pick<VideoWorkRow, 'platform'>): Leveling {
+  return work.platform === 'douyin' ? 'off' : 'auto';
 }
 
 /** 走到哪停下了：summarized 做完、waiting_mac 等 Mac 交下载地址、waiting_transcriber 等本地转写装好。 */
@@ -178,7 +186,9 @@ async function localTranscript(work: VideoWorkRow, media: string, directory: str
     throw new NeedsTranscriber();
   }
   const audio = join(directory, 'audio.wav');
-  const seconds = await ports.media.extractAudio(media, audio, signal);
+  const extracted = await ports.media.extractAudio(media, audio, signal,
+    ports.leveling?.(work) ?? defaultLeveling(work));
+  const seconds = extracted.seconds;
   const result = await ports.transcribeLock(async () => {
     const started = ports.now();
     const done = await transcriber.transcribe(audio, signal);
@@ -193,6 +203,6 @@ async function localTranscript(work: VideoWorkRow, media: string, directory: str
     transcript: transcriptText(lines),
     transcriptSource: 'local',
     timing: { engine: transcriber.name, downloadMs, transcribeMs: result.ms, peakMb: result.done.peakMb,
-      audioSeconds: result.done.audioSeconds ?? seconds },
+      audioSeconds: result.done.audioSeconds ?? seconds, leveled: extracted.leveled },
   });
 }

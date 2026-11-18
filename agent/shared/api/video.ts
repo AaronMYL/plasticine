@@ -86,6 +86,8 @@ export const VideoTimingSchema = Type.Object({
   /** 转写进程的峰值内存（MB）。 */
   peakMb: OrNull(Type.Number({ minimum: 0 })),
   audioSeconds: OrNull(Type.Number({ minimum: 0 })),
+  /** 转写前拉没拉平音量（11-18）；之前的记录没有这一项。 */
+  leveled: Type.Optional(Type.Boolean()),
 }, { additionalProperties: false });
 export type VideoTiming = Static<typeof VideoTimingSchema>;
 
@@ -319,7 +321,15 @@ export type DouyinReportResponse = Static<typeof DouyinReportResponseSchema>;
 // ---------- 技能（对话、后台线、定时线都能调） ----------
 
 export const VIDEO_PARSE_TOOL = 'video_parse';
+/** 转写前拉不拉平音量（11-18）：on 拉平、off 不拉平、auto 先量音量太轻才拉平（agent/src/video/leveling.ts）。 */
+export const TRANSCRIBE_LEVELINGS = ['on', 'off', 'auto'] as const;
+
+export const LevelingSchema = Type.Enum(TRANSCRIBE_LEVELINGS, { description: '转写前拉不拉平音量：on 拉平（声音轻、'
+  + '远、闷，如手机放包里、会场录的）、off 不拉平、auto 先量音量太轻才拉平。上次转出来空白多、句子碎就换一档再转' });
+
 export const VideoParseArgsSchema = Type.Object({
   url: Type.String({ minLength: 8, maxLength: 4_000, description: '视频或图文作品的链接（http/https）' }),
   wait: Type.Optional(Type.Boolean({ description: '等它做完再回（后台线里用；默认 true）' })),
+  leveling: Type.Optional(Type.Enum(TRANSCRIBE_LEVELINGS, { description: '本地转写前拉不拉平音量（默认抖音 off、'
+    + '别的 auto）；只对还没转写的生效' })),
 }, { additionalProperties: false });

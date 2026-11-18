@@ -37,10 +37,12 @@ interface Calls {
   images: number;
   downloads: string[];
   transcribed: number;
+  /** 每次抽声音用的哪一档拉平音量。 */
+  leveling: string[];
 }
 
 function fakes(options: { transcriber?: boolean; downloadFails?: boolean } = {}) {
-  const calls: Calls = { summaries: [], images: 0, downloads: [], transcribed: 0 };
+  const calls: Calls = { summaries: [], images: 0, downloads: [], transcribed: 0, leveling: [] };
   const digester: VideoDigester = {
     async summarize(input) {
       calls.summaries.push(input.transcript);
@@ -57,7 +59,10 @@ function fakes(options: { transcriber?: boolean; downloadFails?: boolean } = {})
       if (options.downloadFails === true) throw new Error('远程服务器回了 403。');
       return 1000;
     },
-    async extractAudio() { return 222; },
+    async extractAudio(_input, _output, _signal, leveling) {
+      calls.leveling.push(leveling);
+      return { seconds: 222, leveled: leveling === 'on' };
+    },
     async fetchText() { return '1\n00:00:01,000 --> 00:00:02,000\n自带字幕第一句\n'; },
     async fetchImage() { return { data: 'aGk=', mimeType: 'image/jpeg' }; },
     async readText() { return ''; },
@@ -158,6 +163,8 @@ test('没有字幕：在本机下载、抽音频、本地转写，记下耗时�
   assert.equal(done.timing?.peakMb, 512);
   assert.equal(done.timing?.audioSeconds, 222);
   assert.deepEqual(s.calls.downloads, ['https://v3-web.douyinvod.com/x/video.mp4']);
+  assert.deepEqual(s.calls.leveling, ['off'], '抖音默认不拉平音量');
+  assert.equal(done.timing?.leveled, false);
 });
 
 test('图文作品：读图里的文字，结合配文总结', async () => {

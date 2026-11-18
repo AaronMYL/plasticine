@@ -64,7 +64,7 @@ test('视频解析把大纲关键帧存成资产并关联空间，重试已总�
       download: async () => {
         calls.download += 1;
         return 1;
-      }, extractAudio: async () => 90,
+      }, extractAudio: async () => ({ seconds: 90, leveled: false }),
       fetchText: async () => '', fetchImage: async () => ({ data: 'aW1hZ2U=', mimeType: 'image/png' }),
       readText: async () => '', webVideo: async () => { throw new Error('不走网页'); },
       extractFrame: async (_file: string, seconds: number) => {

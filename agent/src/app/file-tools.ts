@@ -2,7 +2,8 @@
 // 生成、转格式（office-tools.ts）接云端浏览器打印 PDF、读 Office 和 PDF 的字、ffmpeg；出图、改图、转写
 // （media-tools.ts）接出图的模型、ffmpeg、本地转写。
 
-import { fileTools, mediaTools, officeTools, sandboxTool, type Workspace } from '../artifacts/index.ts';
+import { fileTools, mediaTools, officeTools, sandboxTool, type FileTranscriptLike, type MediaToolParts,
+  type Workspace } from '../artifacts/index.ts';
 import { attachmentText, type AttachmentTransport, convertMedia, editImage, officeText, printPdf, PublicFetchError,
   PublicFetcher, Sandbox, xlsxSheets } from '../cloud-tools/index.ts';
 import type { Illustrator } from '../kernel/index.ts';
@@ -39,8 +40,8 @@ export interface FileToolOutside {
   /** ffmpeg（装了本地转写用组件里的）和本地转写。 */
   video: {
     ffmpeg(): string;
-    transcribeFile(input: { data: Buffer; extension: string }, signal: AbortSignal):
-      Promise<{ text: string; seconds: number | null; engine: string }>;
+    transcribeFile(input: Parameters<MediaToolParts['transcribe']>[0], signal: AbortSignal):
+      Promise<FileTranscriptLike>;
   };
   /** 沙盒的临时工作目录放在哪下面。 */
   sandboxRoot: string;

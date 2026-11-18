@@ -19,6 +19,7 @@ let printed: string[];
 let drawn: Awaited<ReturnType<MediaToolParts['draw']>>;
 let edits: { inputs: string[]; ops: unknown[]; output: string; options: unknown }[];
 let converted: string[];
+let levelings: string[];
 
 function tools(): KernelTool[] {
   return [
@@ -38,7 +39,11 @@ function tools(): KernelTool[] {
         return PNG;
       },
       draw: async () => drawn,
-      transcribe: async (input) => ({ text: `[00:00] 录音（${input.extension}）`, seconds: 3, engine: 'sensevoice' }) }),
+      transcribe: async (input) => {
+        levelings.push(input.leveling ?? 'default');
+        return { text: `[00:00] 录音（${input.extension}）`, seconds: 3, engine: 'sensevoice',
+          coverage: '转出 1 句；这次没拉平音量。' };
+      } }),
   ];
 }
 
@@ -57,6 +62,7 @@ beforeEach(async () => {
   printed = [];
   edits = [];
   converted = [];
+  levelings = [];
   drawn = { data: PNG, mime: 'image/png' };
 });
 
@@ -140,4 +146,8 @@ test('audio_transcribe：音视频转成逐字稿回给模型，saveTo 存一份
   assert.equal(workspace.readText('逐字稿/录音.txt').text, '[00:00] 录音（m4a）');
   workspace.upload('', 'a.md', Buffer.from('字'), false);
   await assert.rejects(run('audio_transcribe', { path: 'a.md' }), /不是音频或视频/);
+  assert.equal(done['coverage'], '转出 1 句；这次没拉平音量。', '结果带「转出来多少」');
+  await run('audio_transcribe', { path: '录音.m4a', leveling: 'on' });
+  assert.deepEqual(levelings, ['default', 'on'], 'AI 能指定拉平那一档，不指定由转写那边按默认（auto）');
+  await assert.rejects(run('audio_transcribe', { path: '录音.m4a', leveling: 'loud' }));
 });
