@@ -3,6 +3,7 @@
 // 私有仓库 `ship.ts replay [提交]` 在服务器上检出这一版、借线上的依赖跑它；本机也能对着一份库跑。
 //
 //   node scripts/replay.ts --db <plasticine.sqlite> --skills <技能目录> [--cases <引用文件>] [--count 12] [--out <报告>]
+//     [--model <同一家的另一个型号>]（换个型号比一比，比如订阅新出的 gpt-6.2-astra；思考档位照设置里的）
 //
 // 只读原库（VACUUM INTO 一份副本，在副本上装好服务但不启动）；不执行任何工具，只有找工具的那一类照常执行。
 // 订阅登录的令牌快到期时不跑：刷新会换掉线上那份的令牌（回放里刷新的令牌只存进副本），所以宁可不跑。
@@ -14,11 +15,11 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { parseArgs } from 'node:util';
 import type { AgentTool } from '@earendil-works/pi-agent-core';
-import type { Message } from '@earendil-works/pi-ai';
+import { clampThinkingLevel, type Message } from '@earendil-works/pi-ai';
 import { assembleApp } from '../agent/src/app/assemble.ts';
 import { generateVapidKeys } from '../agent/src/attention/index.ts';
 import { KernelModels, ProviderLogins } from '../agent/src/kernel/index.ts';
-import { convertToLlm, declareLoaded, historyMessages } from '../agent/src/lines/index.ts';
+import { convertToLlm, declareLoaded, historyMessages, type ModelChoice } from '../agent/src/lines/index.ts';
 import { openState, type StateService } from '../agent/src/state/index.ts';
 import { casesByRef, DEFAULT_PICK, pickCases, type ReplayCase } from './replay/cases.ts';
 import { replayCase, summarize, type CaseResult } from './replay/run.ts';
@@ -74,9 +75,24 @@ function readRefs(path: string): string[] {
   return value;
 }
 
+/** 设置里选的型号；给了 --model 就换成同一家的那一个（思考档位照旧，超出那个型号的就压到它支持的）。 */
+function withModel(models: KernelModels, choice: ModelChoice | undefined, id: string | undefined): ModelChoice {
+  if (choice === undefined) {
+    throw new ReplayError('副本里没有连上的模型');
+  }
+  if (id === undefined) {
+    return choice;
+  }
+  const model = models.models.getModel(choice.model.provider, id);
+  if (model === undefined) {
+    throw new ReplayError(`「${choice.model.provider}」没有型号「${id}」`);
+  }
+  return { model, thinking: clampThinkingLevel(model, choice.thinking) };
+}
+
 async function main(argv: string[]): Promise<number> {
   const { values } = parseArgs({ args: argv, options: { db: { type: 'string' }, skills: { type: 'string' },
-    cases: { type: 'string' }, count: { type: 'string' }, out: { type: 'string' } } });
+    cases: { type: 'string' }, count: { type: 'string' }, out: { type: 'string' }, model: { type: 'string' } } });
   if (values.db === undefined) {
     throw new ReplayError('要 --db <plasticine.sqlite>');
   }
@@ -99,7 +115,8 @@ async function main(argv: string[]): Promise<number> {
 }
 
 async function replay(state: StateService, work: string,
-  values: { cases?: string | undefined; count?: string | undefined; out?: string | undefined }): Promise<number> {
+  values: { cases?: string | undefined; count?: string | undefined; out?: string | undefined;
+    model?: string | undefined }): Promise<number> {
   const models = new KernelModels({ state });
   freezeCredentials(models);
   const app = assembleApp({ state, dryRun: true, vapidKeys: generateVapidKeys(), vapidSubject: 'https://replay.invalid',
@@ -119,10 +136,7 @@ async function replay(state: StateService, work: string,
   let surface: { promptChars: number; tools: number; toolChars: number } | null = null;
   for (const item of cases) {
     const preview = kernel.preview(item.lineId);
-    const choice = preview.choice;
-    if (choice === undefined) {
-      throw new ReplayError('副本里没有连上的模型');
-    }
+    const choice = withModel(models, preview.choice, values.model);
     const expires = tokenExpiry(state, choice.model.provider);
     if (expires !== null && expires - Date.now() < TOKEN_MARGIN_MS) {
       throw new ReplayError('订阅登录的令牌快到期了：等服务自己刷新以后再跑');
@@ -137,8 +151,8 @@ async function replay(state: StateService, work: string,
     const deferred = new Map(preview.all.filter((tool) => !declared.has(tool.name)).map((tool) => [tool.name, tool]));
     results.push(await replayCase(item, preview, contextOf(state, item, deferred), model, signal));
   }
-  const report = { model: kernel.preview('main').choice?.model.id ?? null, surface, summary: summarize(results),
-    refs: cases.map((item) => item.ref), results };
+  const report = { model: withModel(models, kernel.preview('main').choice, values.model).model.id, surface,
+    summary: summarize(results), refs: cases.map((item) => item.ref), results };
   if (values.out !== undefined) {
     writeFileSync(values.out, JSON.stringify(report, null, 1));
   }

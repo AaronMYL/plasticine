@@ -19,6 +19,7 @@ import { DEFAULT_THINKING, ModelResolver, type CatalogProvider, type ModelSettin
 import { MODEL_PURPOSES, requiresImages, type ModelPurpose } from '../../shared/api/model-purposes.ts';
 import type { CompleteOptions, ModelChoice, ModelSource } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
+import { withCatalogAdditions } from './catalog-additions.ts';
 import { SqliteCredentialStore } from './credentials.ts';
 import { customProvider, readCustomProviders, upgradeCustomProviders, type CustomProviderConfig }
   from './custom-providers.ts';
@@ -113,7 +114,7 @@ export class KernelModels implements ModelSource {
     this.credentials = new SqliteCredentialStore(options.state);
     this.models = createModels({ credentials: this.credentials, authContext: STORED_ONLY,
       identity: { attribution: null } });
-    const providers = options.providers ?? builtinProviders();
+    const providers = (options.providers ?? builtinProviders()).map((provider) => withCatalogAdditions(provider));
     for (const provider of providers) {
       this.models.setProvider(provider);
     }
