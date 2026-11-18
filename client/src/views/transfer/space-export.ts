@@ -27,7 +27,7 @@ async function rendered(api: PlasticineApi, html: string, format: 'pdf' | 'png',
   const desktop = (window as DesktopWindow).plasticineDesktop?.render;
   if (desktop !== undefined) {
     const bytes: unknown = await desktop.page(html, format);
-    if (!(bytes instanceof Uint8Array)) throw new Error('桌面客户端没交回文件，再试一次');
+    if (!(bytes instanceof Uint8Array)) throw new Error('桌面客户端没交回文件，重试');
     return bytes;
   }
   const file = await api.spaces.render({ html, format, name });
