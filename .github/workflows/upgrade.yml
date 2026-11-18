@@ -1,0 +1,190 @@
+name: Upgrade dependency
+run-name: "升级 · #${{ github.event.issue.number }}"
+# 依赖自动升级（11-18 Aaron 定）。腾讯云的值班程序查 npm，pi-ai、pi-agent-core、electron、acme-client 有新版就在本仓库
+# 开一条「[升级] …」Issue（用的是主人的令牌，所以作者是主人）：
+# - try：改版本、更新锁文件、跑全部测试（npm run check），不管过没过都推到 upgrade/… 分支，结果留在 Issue 下。
+# - merge：主人在 Plasticine 卡上点了「升级」，值班程序在 Issue 下留「合并 <SHA>」；核对分支还是那个提交才合进 main
+#   （main 动过就合并后再跑一遍测试），发起构建，关掉 Issue。后面发安装包、腾讯云换版照常由值班程序做。
+# 只认主人开的 Issue、主人留的评论；正文、评论都当不可信的输入，经 scripts/upgrade/upgrade.ts 核对后才用。
+# 写操作只用这次运行自带的令牌，不放任何密钥。
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+permissions:
+  contents: write
+  issues: write
+  actions: write
+concurrency:
+  group: upgrade-${{ github.event.issue.number }}
+  cancel-in-progress: false
+env:
+  OWNER_EMAIL: 57382192+AaronMYL@users.noreply.github.com
+
+jobs:
+  try:
+    if: >-
+      github.event_name == 'issues' && github.event.issue.user.login == 'AaronMYL'
+      && startsWith(github.event.issue.title, '[升级]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - name: 改版本
+        id: apply
+        env:
+          UPGRADE_BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+          node scripts/upgrade/upgrade.ts apply > "$RUNNER_TEMP/plan.json"
+          node -e 'const p=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));
+            console.log("branch="+p.branch); console.log("desktop="+(p.dirs.includes("desktop")?"yes":"no"))' \
+            "$RUNNER_TEMP/plan.json" >> "$GITHUB_OUTPUT"
+      - name: 装依赖、更新锁文件
+        id: install
+        env:
+          DESKTOP: ${{ steps.apply.outputs.desktop }}
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund --loglevel=error
+          if [ "$DESKTOP" = yes ]; then
+            (cd desktop && npm install --no-audit --no-fund --loglevel=error --ignore-scripts)
+          fi
+      - name: 全部测试
+        id: check
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run check 2>&1 | tee "$RUNNER_TEMP/check.log"
+      - name: 推分支
+        id: push
+        if: always() && steps.install.outcome == 'success'
+        env:
+          BRANCH: ${{ steps.apply.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git config user.name AaronMYL
+          git config user.email "$OWNER_EMAIL"
+          git checkout -q -B "$BRANCH"
+          node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).message)' \
+            "$RUNNER_TEMP/plan.json" | git commit -q -a -F -
+          git push -q -f origin "HEAD:refs/heads/$BRANCH"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: 留结果
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          BRANCH: ${{ steps.apply.outputs.branch }}
+          SHA: ${{ steps.push.outputs.sha }}
+          APPLY: ${{ steps.apply.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          CHECK: ${{ steps.check.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const env = process.env;
+            const failed = env.APPLY !== "success" ? "apply" : env.INSTALL !== "success" ? "install"
+              : env.CHECK !== "success" ? "check" : null;
+            let tests = [];
+            try {
+              tests = fs.readFileSync(env.RUNNER_TEMP + "/check.log", "utf8").split("\n")
+                .filter((line) => /^✖ |^not ok /.test(line) && !/failing tests/.test(line))
+                .map((line) => line.replace(/\s*\(\d[\d.]*ms\)\s*$/, "").slice(0, 160));
+            } catch {}
+            tests = [...new Set(tests)].slice(0, 20);
+            const result = { ok: failed === null, failed, branch: env.BRANCH || null, sha: env.SHA || null,
+              run: env.RUN_URL, tests };
+            const text = failed === null ? "✅ 全部测试通过，分支已推。"
+              : "❌ 没过（" + { apply: "改版本", install: "装依赖", check: "测试" }[failed] + "）。";
+            const lines = tests.length > 0 ? "\n\n没过的测试：\n" + tests.map((t) => "- " + t).join("\n") : "";
+            fs.writeFileSync(env.RUNNER_TEMP + "/comment.md",
+              "升级试过：" + JSON.stringify(result) + "\n\n" + text + lines + "\n\n[运行记录](" + env.RUN_URL + ")\n");
+          '
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/comment.md"
+
+  merge:
+    if: >-
+      github.event_name == 'issue_comment' && github.event.issue.pull_request == null
+      && github.event.issue.state == 'open' && github.event.comment.user.login == 'AaronMYL'
+      && startsWith(github.event.issue.title, '[升级]') && startsWith(github.event.comment.body, '合并 ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - name: 合并
+        id: merge
+        env:
+          UPGRADE_COMMENT: ${{ github.event.comment.body }}
+          TITLE: ${{ github.event.issue.title }}
+        run: |
+          set -euo pipefail
+          sha=$(node scripts/upgrade/upgrade.ts merge)
+          branch=$(git for-each-ref --format='%(refname:strip=3)' --points-at "$sha" 'refs/remotes/origin/upgrade/*' | head -1)
+          if [ -z "$branch" ]; then
+            echo "没有哪个 upgrade/ 分支停在 $sha（分支动过，要重新试）。" >&2
+            exit 1
+          fi
+          git config user.name AaronMYL
+          git config user.email "$OWNER_EMAIL"
+          before=$(git rev-parse HEAD)
+          if git merge-base --is-ancestor "$before" "$sha"; then
+            git merge -q --ff-only "$sha"
+            echo "retest=no" >> "$GITHUB_OUTPUT"
+          else
+            printf '合并自动升级：%s\n\n主人在 Plasticine 卡上点了「升级」；试的时候以后 main 动过，合并后重跑测试。\n' "$TITLE" \
+              | git merge -q --no-ff "$sha" -F -
+            echo "retest=yes" >> "$GITHUB_OUTPUT"
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+      - name: main 动过就再跑一遍测试
+        if: steps.merge.outputs.retest == 'yes'
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund --loglevel=error
+          npm run check
+      - name: 推 main、发起构建
+        id: push
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git push -q origin HEAD:refs/heads/main
+          echo "main=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          gh workflow run build.yml --repo "$GITHUB_REPOSITORY" --ref main
+      - name: 留结果
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          MAIN: ${{ steps.push.outputs.main }}
+          OUTCOME: ${{ steps.push.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          node -e '
+            const env = process.env;
+            const ok = env.OUTCOME === "success";
+            const result = { ok, main: env.MAIN || null, run: env.RUN_URL };
+            process.stdout.write("升级合并：" + JSON.stringify(result) + "\n\n"
+              + (ok ? "✅ 已合进 main，构建已发起。" : "❌ 没合并成，main 没动。") + "\n\n[运行记录](" + env.RUN_URL + ")\n");
+          ' > "$RUNNER_TEMP/comment.md"
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/comment.md"
+          if [ "$OUTCOME" = success ]; then
+            gh issue close "$ISSUE" --repo "$GITHUB_REPOSITORY"
+          fi

@@ -61,6 +61,10 @@
 3. 构建全过以后，下载站十分钟内从这次构建取包发布。装了安装包的实例会自己更新，坏版本自动退回。
 4. 带数据库迁移的改动，触发构建前先在一份真实库的副本上把迁移跑一遍，看行数、外键和完整性检查。迁移只加不改，
    装上以后退回旧版会认不得新库。
+5. 依赖自动升级（11-18）：`pi-ai`、`pi-agent-core`、`electron`、`acme-client` 有新版时，服务器开一条「[升级] …」Issue，
+   `.github/workflows/upgrade.yml` 改版本、跑 `npm run check`、推 `upgrade/…` 分支、把结果留在 Issue 下；主人在
+   Plasticine 卡上点「升级」后，服务器留「合并 <SHA>」，工作流合进 `main` 并触发构建。版本只收 x.y.z、只升不降、
+   只认名单里的包（`scripts/upgrade/upgrade.ts`）。
 
 ## 六、桌面客户端（`desktop/`）
 

@@ -30,11 +30,15 @@ export const MAINTENANCE_OPS = [
   // 11-17 内核优化：Aaron 让 Claude 把「19 号量真实使用的效果」放进 Plasticine 的定时、他早上点确认。维护入口开一条
   // 后台线，交代它起草那张卡（schedule_propose 出卡等他确认）；线的发起记成系统（这次维护），不冒充他说的话。
   'line.start',
+  // 11-18 依赖自动升级：Aaron 定「点头放在 Plasticine 卡上」。服务器的值班程序试过新版以后出卡问他升不升，
+  // 答案它从库里读（db.read），这里只出卡；同一个 key 只出一张。
+  'upgrade.ask',
 ] as const;
 export type MaintenanceOp = (typeof MAINTENANCE_OPS)[number];
 
 export const MAINTENANCE_WRITE_OPS: readonly MaintenanceOp[] = ['mail.refetch', 'rules.rewrite',
-  'memory.move', 'memory.cleanup.add', 'memory.layers', 'suggestions.dismiss', 'inbox.archive', 'line.start'];
+  'memory.move', 'memory.cleanup.add', 'memory.layers', 'suggestions.dismiss', 'inbox.archive', 'line.start',
+  'upgrade.ask'];
 
 /** memory.move 的一项：这一行挪到 toDocId。 */
 export const MemoryMoveItemSchema = Type.Object({
@@ -46,6 +50,19 @@ export const MemoryMoveItemSchema = Type.Object({
 }, { additionalProperties: false });
 export type MemoryMoveItem = Static<typeof MemoryMoveItemSchema>;
 
+
+/** upgrade.ask 出的卡：key 认这一次升级（同一个 key 只出一张），选项 1 到 4 个、推荐的最多一个。 */
+export const UpgradeCardSchema = Type.Object({
+  key: Type.String({ minLength: 1, maxLength: 80, pattern: '^[A-Za-z0-9_.:@/+-]+$' }),
+  question: Type.String({ minLength: 1, maxLength: 120 }),
+  detail: Type.String({ minLength: 1, maxLength: 4_000 }),
+  options: Type.Array(Type.Object({
+    id: Type.String({ minLength: 1, maxLength: 40, pattern: '^[a-z_]+$' }),
+    label: Type.String({ minLength: 1, maxLength: 20 }),
+    recommended: Type.Optional(Type.Boolean()),
+  }, { additionalProperties: false }), { minItems: 1, maxItems: 4 }),
+}, { additionalProperties: false });
+export type UpgradeCard = Static<typeof UpgradeCardSchema>;
 
 /** memory.cleanup.add 的一项：清单里新加一条（不注明来处）。给 person（人名）时加进这个人的那一页，没有就建一页。 */
 export const MemoryCleanupAddSchema = Type.Object({
@@ -88,6 +105,8 @@ export const MaintenanceRequestSchema = Type.Object(
     /** line.start 开的后台线：标题和交代给它的事。 */
     line: Type.Optional(Type.Object({ title: Type.String({ minLength: 1, maxLength: 60 }),
       goal: Type.String({ minLength: 1, maxLength: 4_000 }) }, { additionalProperties: false })),
+    /** upgrade.ask 出的那张卡。 */
+    card: Type.Optional(UpgradeCardSchema),
     /** memory.cleanup.add 新加哪几条。 */
     adds: Type.Optional(Type.Array(MemoryCleanupAddSchema, { minItems: 1, maxItems: 200 })),
   },

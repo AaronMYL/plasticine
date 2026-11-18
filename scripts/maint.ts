@@ -18,6 +18,8 @@
 //   inbox.archive --sources patrol,feedback,interview --because "用户原话"  这几个系统来源的来信归档（不删）
 //                                            整理「规则」：一行换成几行或挪进归档（memory/rules/rules-rewrite.ts）
 //   line.start --plan <{title,goal}> --because "用户原话"     开一条后台线交代一件事（发起记成系统，做完贴回主线）
+//   upgrade.ask --plan <{key,question,detail,options}> --because "用户原话"
+//                                            依赖自动升级：值班程序试过新版后出卡问升不升（同一个 key 只出一张）
 //   db.read "SELECT …"                       只读打开数据库查一句（不经服务，库以只读方式打开）
 //
 // 2026-11-05 Harness 重做：任务没了，tasks.* 删掉；judgments.*、rulesdoc.* 的一次性迁移早已做完，一起删了。
@@ -95,6 +97,16 @@ function readLinePlan(path: string): Pick<MaintenanceRequest, 'line'> {
   return { line: { title: value.title, goal: value.goal } };
 }
 
+/** upgrade.ask 的 --plan 是那张卡：{"key":…,"question":…,"detail":…,"options":[{id,label,recommended?}]}。 */
+function readCardPlan(path: string): Pick<MaintenanceRequest, 'card'> {
+  const value = readJson(path) as Record<string, unknown> | null;
+  if (typeof value?.['key'] !== 'string' || typeof value['question'] !== 'string'
+    || typeof value['detail'] !== 'string' || !Array.isArray(value['options'])) {
+    throw new MaintCliError('--plan 要是 {"key":"…","question":"…","detail":"…","options":[…]}。');
+  }
+  return { card: value as unknown as NonNullable<MaintenanceRequest['card']> };
+}
+
 /** 计划文件按命令放进请求里对应的那一栏。 */
 function planField(command: string, plan: NonNullable<MaintenanceRequest['plan']>): Partial<MaintenanceRequest> {
   if (command === 'memory.move') {
@@ -110,6 +122,9 @@ function planField(command: string, plan: NonNullable<MaintenanceRequest['plan']
 function planOf(command: MaintenanceOp, path: string): Partial<MaintenanceRequest> {
   if (command === 'memory.layers') {
     return readLayersPlan(path);
+  }
+  if (command === 'upgrade.ask') {
+    return readCardPlan(path);
   }
   return command === 'line.start' ? readLinePlan(path) : planField(command, readPlan(path));
 }
