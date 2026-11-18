@@ -116,20 +116,14 @@ test('服务器命令：开发期干跑只记不跑；名单上的主机没接 S
 });
 
 test('服务器命令的说明写明 Windows 上是 PowerShell、别处是 bash（安装包在 Windows 上跑）', async () => {
-  let description = '';
-  let scriptHint = '';
-  const { t, cookie } = await toolApp([(context) => {
-    const system = context.messages.find((message) => message.role === 'system');
-    const tool = system?.role === 'system' ? system.toolsAdded?.find((each) => each.name === 'server_command')
-      : undefined;
-    description = tool?.description ?? '';
-    scriptHint = JSON.stringify(tool?.parameters ?? {});
-    return fauxAssistantMessage('看到了。');
-  }]);
-  await send(t, cookie, '看看服务器命令');
+  // 11-18 起主线一开始不声明 server_command（后台线才有），说明从这条线能用的全部工具里取。
+  const { t } = await toolApp([]);
+  const tool = t.app.deps.lines.preview(t.app.deps.state.lines.main().id).all
+    .find((each) => each.name === 'server_command');
+  const description = tool?.description ?? '';
   assert.match(description, /Windows 上是 PowerShell，别的是 bash/);
   assert.doesNotMatch(description, /Runs a bash script/);
-  assert.match(scriptHint, /PowerShell on Windows, bash elsewhere/);
+  assert.match(JSON.stringify(tool?.parameters ?? {}), /PowerShell on Windows, bash elsewhere/);
 });
 
 test('卡片小部件：放在回复下面，线里那一步的结果带着部件', async () => {
