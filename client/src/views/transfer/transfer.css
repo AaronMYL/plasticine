@@ -1,0 +1,14 @@
+/* 导入导出（11-18 设计稿 ExportDialog）：格式分段占满一行，五项等分；手机上也一行放得下。 */
+.transfer-dialog {
+  gap: var(--space-4);
+}
+
+.transfer-formats {
+  display: flex;
+  width: 100%;
+}
+
+.transfer-formats .segmented-item {
+  flex: 1;
+  padding: 0 var(--space-2);
+}

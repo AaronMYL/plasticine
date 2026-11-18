@@ -9,5 +9,3 @@ export { importSpaces } from './space-import.ts';
 export type { ImportedSpaces } from './space-import.ts';
 export { DOCX_TYPE, exportSpaces, SPACE_DATA_FORMATS, spaceBlocks } from './space-export.ts';
 export type { SpaceDataFormat } from './space-export.ts';
-export { readSpaceMarker, SPACE_MARKER_ID, spaceMarkerScript } from './space-marker.ts';
-export type { SpaceMarker } from './space-marker.ts';

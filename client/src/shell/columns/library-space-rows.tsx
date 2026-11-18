@@ -1,10 +1,11 @@
 // 资料库第二栏「空间」一组的行（2026-11-08，设计稿 Library-Menu / Library-Rename / Library-Delete）：悬停（键盘聚焦、
-// 触屏常显）出行尾 ⋯：改名 / 打开 / 删除。改名在这一行原处改（回车存、Esc 取消、点到别处也存）；删除先问，删了进
+// 触屏常显）出行尾 ⋯：改名 / 打开 / 导出… / 删除。改名在这一行原处改（回车存、Esc 取消、点到别处也存）；删除先问，删了进
 // 「最近删除」，正开着的那个空间被删就回资料库首页。
 
 import { useState, type ReactNode } from 'react';
 import type { SpaceListItem } from '../../api/shared.ts';
 import { useSpaceActions, useUndoableDelete } from '../../views/library/library-actions.tsx';
+import { SpaceExportDialog } from '../../views/transfer/space-export-dialog.tsx';
 import { HueTile } from '../hue.tsx';
 import { LIBRARY_HOME } from '../library-routes.ts';
 import { RenameField } from '../rename-field.tsx';
@@ -28,6 +29,7 @@ interface SpaceRowProps {
 function SpaceRow({ space, current, navigate, onDelete }: SpaceRowProps): ReactNode {
   const actions = useSpaceActions();
   const [renaming, setRenaming] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const look = spaceLook(space);
   const lead = <HueTile hue={look.hue} icon={look.icon} size={22} />;
   if (renaming) {
@@ -47,8 +49,10 @@ function SpaceRow({ space, current, navigate, onDelete }: SpaceRowProps): ReactN
       <RevealMore label={`「${space.title}」的更多操作`} actions={[
         { icon: 'edit', label: '改名', onSelect: () => setRenaming(true) },
         { icon: 'external', label: '打开', onSelect: () => navigate(spaceRoute(space.id)) },
+        { icon: 'download', label: '导出…', onSelect: () => setExporting(true) },
         { icon: 'trash', label: '删除', danger: true, onSelect: () => onDelete(space) },
       ]} />
+      {exporting ? <SpaceExportDialog items={[space]} onClose={() => setExporting(false)} /> : null}
     </div>
   );
 }

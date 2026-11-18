@@ -31,6 +31,7 @@ import { SpaceTools } from './space-tools.tsx';
 import { SubscriptionSheet } from './subscription-sheet.tsx';
 import { useSpaceQuote } from './space-quote.ts';
 import { SpaceVersions } from './space-versions.tsx';
+import { SpaceExportDialog } from '../transfer/space-export-dialog.tsx';
 import type { Route } from '../../shell/routes.ts';
 import './spaces.css';
 import './space-frame.css';
@@ -73,6 +74,7 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   const [sheet, setSheet] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const actions = useSpaceActions();
   const undoable = useUndoableDelete();
   const mention = useMention();
@@ -122,7 +124,7 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
   };
   const tools = position !== undefined ? null : <SpaceTools space={space} phone={phone} editing={editing}
     onAsk={ask} onEdit={setEditing} onVersions={() => setVersionsOpen(true)}
-    onRename={() => setRenaming(true)} onSettings={() => setSheet(true)}
+    onRename={() => setRenaming(true)} onSettings={() => setSheet(true)} onExport={() => setExporting(true)}
     onDelete={() => undoable.remove(space.title, () => actions.remove(space.id), () => actions.restore(space.id),
       leave)} />;
   const back = (): void => (canGoBack ? goBack() : leave());
@@ -178,6 +180,7 @@ export function SpacePage({ spaceId, phone, navigate }: SpacePageProps): ReactNo
           space={{ html: space.html, genre: space.genre ?? 'report', title: space.title,
             dateLabel: bodyDate(space.createdAt) }} onEdit={saver.save} onEscape={stopEditing} />
       )}
+      {exporting ? <SpaceExportDialog items={[space]} onClose={() => setExporting(false)} /> : null}
       {!versionsOpen || current === null ? null : <SpaceVersions space={current} phone={phone}
         onClose={() => setVersionsOpen(false)} onChanged={changed} onSelect={(version) => {
           setVersionsOpen(false);

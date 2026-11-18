@@ -1,6 +1,7 @@
 // 空间页标题栏右边那几样（第 8 批第 6 条，设计稿 Report / Report-Edit / Letter / Phone-*，11-09 他确认）：
-// - 报告：「✦ 让 Plasticine 改」、✎ 改字（按下的样子）、⋯（改名、订阅设置、删除）；改字时 ⋯ 换成「完成」。
-// - 来信：「回信」、⋯（改字、改名、删除）；改字时同样有「完成」。
+// - 报告：「✦ 让 Plasticine 改」、✎ 改字（按下的样子）、⋯（改名、版本记录、订阅设置、导出…、删除）；改字时 ⋯
+//   换成「完成」。
+// - 来信：「回信」、⋯（改字、改名、版本记录、导出…、删除）；改字时同样有「完成」。
 // - 手机：返回在左边；报告是 ✦ 和 ⋯，来信只有 ⋯（回信收进去）。
 // 还没重写成网页的旧版式不能在页面上改字（没有 ✎），要改让 Plasticine 改。
 
@@ -20,6 +21,7 @@ export interface SpaceToolsProps {
   onSettings: () => void;
   onDelete: () => void;
   onVersions?: () => void;
+  onExport: () => void;
 }
 
 function moreActions(props: SpaceToolsProps, letter: boolean): RevealAction[] {
@@ -35,6 +37,7 @@ function moreActions(props: SpaceToolsProps, letter: boolean): RevealAction[] {
     actions.push({ icon: 'clock', label: '版本记录', onSelect: props.onVersions });
   }
   if (space.subscription !== null) actions.push({ icon: 'sliders', label: '订阅设置', onSelect: props.onSettings });
+  actions.push({ icon: 'download', label: '导出…', onSelect: props.onExport });
   actions.push({ icon: 'trash', label: '删除', danger: true, onSelect: props.onDelete });
   return actions;
 }

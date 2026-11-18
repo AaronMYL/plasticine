@@ -1,6 +1,7 @@
 // 资料库首页（#/library；旧地址 #/books/space 同一页）。第 8 批第 6 条（设计稿 Library-Spaces / Phone-Library，11-09）：
 // 空间是整页网页，第一屏是缩略图卡片——「最近」三张（手机上一排横滑），「全部」四列（手机两列）；卡片下面是标题、
-// 「报告 / 来信 · 时间」和 ⋯（改名、删除）。改名在卡片原处改；删除先问，删了进「最近删除」。
+// 「报告 / 来信 · 时间」和 ⋯（改名、导出…、删除）。改名在卡片原处改；删除不问，删了进「最近删除」、给撤销。
+// 「更多操作」里「选择」「导入…」（11-18 导入导出）：导入的每个文件成一个报告；多选后浮条上能导出。
 // 手机上没有第二栏，「全部」下面再列「订阅」和「最近删除」，从这里都能走到。
 
 import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
@@ -8,7 +9,11 @@ import { useBulkSelection, type BulkSelection } from '../bulk/use-bulk-selection
 import { libraryBatch } from '../bulk/bulk-api.ts';
 import { useState, type ReactNode } from 'react';
 import { useApi } from '../../api/context.tsx';
-import type { SpaceListItem } from '../../api/shared.ts';
+import type { SkippedFileView, SpaceListItem } from '../../api/shared.ts';
+import { SkippedFiles } from '../transfer/skipped-files.tsx';
+import { SpaceExportDialog, type ExportItem } from '../transfer/space-export-dialog.tsx';
+import { importSpaceFiles, SPACE_IMPORT_ACCEPT } from '../transfer/space-import.ts';
+import { useFilePicker } from '../transfer/use-file-picker.tsx';
 import { useQuery } from '../../state/use-query.ts';
 import type { LiveEvent } from '../../api/types.ts';
 import { useClientState } from '../../state/context.tsx';
@@ -49,10 +54,11 @@ interface CardProps {
   space: SpaceListItem;
   now: Date;
   onDelete: (space: SpaceListItem) => void;
+  onExport: (space: SpaceListItem) => void;
   selection: BulkSelection;
 }
 
-function SpaceCard({ space, now, onDelete, selection }: CardProps): ReactNode {
+function SpaceCard({ space, now, onDelete, onExport, selection }: CardProps): ReactNode {
   const actions = useSpaceActions();
   const [renaming, setRenaming] = useState(false);
   const meta = `${spaceCategoryLabel(space)} · ${timeText(space.updatedAt, now)}`;
@@ -75,6 +81,7 @@ function SpaceCard({ space, now, onDelete, selection }: CardProps): ReactNode {
         <span className="text-meta">{meta}</span>
         <RevealMore label={`「${space.title}」的更多操作`} actions={renaming || selection.active ? [] : [
           { icon: 'edit', label: '改名', onSelect: () => setRenaming(true) },
+          { icon: 'download', label: '导出…', onSelect: () => onExport(space) },
           { icon: 'trash', label: '删除', danger: true, onSelect: () => onDelete(space) },
         ]} />
       </div>
@@ -134,17 +141,27 @@ export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (ro
   const titled = useInTitlebar();
   const { shellPrefs } = useClientState();
   const now = new Date();
+  const [exporting, setExporting] = useState<readonly ExportItem[] | null>(null);
+  const [skipped, setSkipped] = useState<SkippedFileView[]>([]);
+  const picker = useFilePicker({ accept: SPACE_IMPORT_ACCEPT, label: '选要导入资料库的文件', onFiles: (files) => {
+    setSkipped([]);
+    void importSpaceFiles(api, files, libraryChanged).then((left) => setSkipped(left ?? []));
+  } });
   const remove = (space: SpaceListItem): void => undoable.remove(space.title, () => actions.remove(space.id),
     () => actions.restore(space.id));
   const cards = (list: readonly SpaceListItem[]): ReactNode[] => list.map((space) => (
-    <SpaceCard key={space.id} space={space} now={now} onDelete={remove} selection={selection} />));
+    <SpaceCard key={space.id} space={space} now={now} onDelete={remove} selection={selection}
+      onExport={(item) => setExporting([item])} />));
   const ask = <IconButton icon="plus" label="新空间：跟 Plasticine 说"
     onClick={() => shellPrefs.setPhoneChatOpen(true)} />;
   return (
     <div className="page lib-page lib-grid-page" data-phone={phone}>
       {titled ? null : <PageHeader title="资料库" phoneSearch={false} phoneTools={ask} />}
-      <BulkHeader selection={selection} items={bulkItems} />
+      <BulkHeader selection={selection} items={bulkItems}
+        more={[{ icon: 'upload', label: '导入…', onSelect: picker.open }]} />
       <BulkFeedback selection={selection} />
+      <SkippedFiles files={skipped} onClose={() => setSkipped([])} />
+      {picker.input}
       {error === null ? null : <p className="block-empty is-error" role="alert">{error}</p>}
       {spaces === null && error === null ? <PageLoading page /> : null}
       {spaces !== null && spaces.length === 0 ? <p className="block-empty">还没有空间。</p> : null}
@@ -162,7 +179,8 @@ export function LibraryHome({ phone, navigate }: { phone: boolean; navigate: (ro
       </>}
       {phone ? <PhoneExtras navigate={navigate} /> : null}
       <BulkBar selection={selection} folders={[...new Set((spaces ?? []).flatMap((space) =>
-        space.folder ? [space.folder] : []))]} />
+        space.folder ? [space.folder] : []))]} onExport={(items) => setExporting(items)} />
+      {exporting === null ? null : <SpaceExportDialog items={exporting} onClose={() => setExporting(null)} />}
     </div>
   );
 }

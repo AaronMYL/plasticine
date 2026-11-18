@@ -45,6 +45,14 @@ export interface SpacesApi {
   restore(id: string, input: RestoreSpaceRequest): Promise<SpaceView>;
   /** 网页里的插图（/v2/notes/assets/…）：沙盒里的页面带不了会话，由外面读好再传进去。 */
   asset(path: string, signal?: AbortSignal): Promise<Blob>;
+  /** POST /v2/spaces/import：Markdown、TXT、Word、网页文件各成一个报告；没导入的带原因。 */
+  importFiles(input: import('./shared.ts').ImportSpacesRequest): Promise<import('./shared.ts').ImportSpacesResponse>;
+  /** POST /v2/spaces/export：导出成 Markdown 或 Word（多篇是 zip）。 */
+  exportFiles(ids: readonly string[], format: 'markdown' | 'docx', signal?: AbortSignal)
+    : Promise<import('./client.ts').DownloadedFile>;
+  /** POST /v2/render：拼好的整页网页交给本体出 PDF 或长图（不在桌面客户端里时用）。 */
+  render(input: import('./shared.ts').RenderPageRequest, signal?: AbortSignal)
+    : Promise<import('./client.ts').DownloadedFile>;
 }
 
 export interface SubscriptionsApi {

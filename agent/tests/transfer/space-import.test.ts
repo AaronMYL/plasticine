@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { imageInfo, makeDocx } from '../../src/artifacts/index.ts';
 import { importSpaces } from '../../src/transfer/index.ts';
-import { spaceMarkerScript } from '../../src/transfer/space-marker.ts';
+import { spaceMarkerScript } from '../../shared/space-marker.ts';
 import { openTestState, type TestState } from '../state/helpers.ts';
 
 let t: TestState;

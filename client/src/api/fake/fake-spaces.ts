@@ -6,6 +6,7 @@ import type { SpaceListFilter, SpacesApi, SubscriptionsApi } from '../spaces-cli
 import type {
   AdoptRuleRequest,
   DeleteSpaceRequest,
+  ImportSpacesResponse,
   IssueBrief,
   MemoryDreamView,
   RestoreSpaceRequest,
@@ -13,6 +14,7 @@ import type {
   RunSubscriptionRequest,
   RunSubscriptionResponse,
   SaveSpaceRequest,
+  SpaceListItem,
   SpaceListResponse,
   SpaceView,
   Subscription,
@@ -25,6 +27,7 @@ import type { FakeEventBus } from './event-bus.ts';
 import type { FakeReceipts } from './receipts.ts';
 import type { FakeSession } from './fake-session.ts';
 import { REVIEW_ID, SEED_ASSETS, spaceSeeds, subscriptionSeeds, type SeedSpace } from './spaces-seed.ts';
+import { fakeRendered, fakeSpaceDraft, fakeSpaceFile } from './fake-space-transfer.ts';
 
 export interface FakeSpacesDeps {
   session: FakeSession;
@@ -103,6 +106,18 @@ export class FakeSpaces {
         change: null, rule: null }] });
     this.deps.bus?.emit({ type: 'space.changed', spaceId: input.id });
     return input.id;
+  }
+
+  private imported(title: string, html: string): SpaceListItem {
+    const at = this.deps.now().toISOString();
+    const doc = { stats: [], blocks: [], sources: [] };
+    const row: SeedSpace = { id: `space_import_${this.spaceRows.length + 1}`, title, kind: 'space', genre: 'report',
+      author: 'user', category: 'report', subscriptionId: null, issueNumber: null, edition: null, doc, html,
+      createdAt: at, updatedAt: at, revisions: [{ doc, genre: 'report', html, change: null, rule: null }] };
+    this.spaceRows.push(row);
+    this.deps.bus?.emit({ type: 'space.changed', spaceId: row.id });
+    return { id: row.id, title, category: 'report', kind: 'space', genre: 'report', author: 'user',
+      subscriptionId: null, issueNumber: null, edition: null, version: 1, createdAt: at, updatedAt: at };
   }
 
   /** 没删的。 */
@@ -275,6 +290,26 @@ export class FakeSpaces {
         throw notFound('这张图');
       }
       return new Blob([asset.data], { type: asset.type });
+    },
+    importFiles: (input) => {
+      this.deps.session.require();
+      return this.deps.receipts.run('save', input.requestId, 'POST /v2/spaces/import', () => {
+        const result: ImportSpacesResponse = { imported: [], skipped: [] };
+        for (const file of input.files) {
+          const draft = fakeSpaceDraft(file);
+          if ('reason' in draft) result.skipped.push({ name: file.name, reason: draft.reason });
+          else result.imported.push(this.imported(draft.title, draft.html));
+        }
+        return result;
+      });
+    },
+    exportFiles: async (ids, format) => {
+      this.deps.session.require();
+      return fakeSpaceFile(ids.map((id) => this.space(id).title), format);
+    },
+    render: async (input) => {
+      this.deps.session.require();
+      return fakeRendered(input);
     },
   };
 

@@ -14,7 +14,7 @@ import { splitFrontMatter } from './front-matter.ts';
 import { htmlBlocks } from './html-blocks.ts';
 import { splitFileName, type SkippedFile, type TransferFile } from './note-import.ts';
 import { leadingTitle, reportFragment } from './report-fragment.ts';
-import { readSpaceMarker } from './space-marker.ts';
+import { readSpaceMarker } from '../../shared/space-marker.ts';
 import { decodeText } from './text-decode.ts';
 
 export interface ImportedSpaces {

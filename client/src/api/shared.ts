@@ -3,6 +3,7 @@
 
 export * from '../../../agent/shared/api/index.ts';
 export { internalPageHash } from '../../../agent/shared/internal-page.ts';
+export { spaceMarkerScript } from '../../../agent/shared/space-marker.ts';
 export { bookmarkKey } from '../../../agent/shared/bookmarks.ts';
 export { LEGACY_PUBLIC_URLS } from '../../../agent/shared/public-url.ts';
 export * from '../../../agent/shared/reddit.ts';

@@ -1,7 +1,8 @@
 // 空间与订阅的真实现（第 6、7 条）：按 shared/api/spaces.ts 的路径发请求、按同一份 schema 校验回答。
 
 import {
-  BatchResponseSchema, LIBRARY_BATCH_PATH, LIBRARY_EMPTY_PATH, LIBRARY_TRASH_PATH, LibraryTrashResponseSchema,
+  BatchResponseSchema, ImportSpacesResponseSchema, LIBRARY_BATCH_PATH, PAGE_RENDER_PATH, SPACES_EXPORT_PATH,
+  SPACES_IMPORT_PATH, LIBRARY_EMPTY_PATH, LIBRARY_TRASH_PATH, LibraryTrashResponseSchema,
   REVIEW_PATH, ReviewSummarySchema, RunSubscriptionResponseSchema, SPACE_LIST_STANDALONE_PARAM, SpaceListResponseSchema,
   SPACES_PATH, SpaceVersionsResponseSchema, SpaceViewSchema, SubscriptionListResponseSchema, SUBSCRIPTIONS_PATH,
   SubscriptionViewSchema,
@@ -15,6 +16,8 @@ const spacePath = (id: string): string => `${SPACES_PATH}/${encodeURIComponent(i
 const subscriptionPath = (id: string): string => `${SUBSCRIPTIONS_PATH}/${encodeURIComponent(id)}`;
 
 const DeletedSchema = Type.Object({ deleted: Type.Boolean() });
+/** 导入、导出、出 PDF 最多等这么久：Word 带图、几十页的长图都要时间。 */
+const TRANSFER_TIMEOUT_MS = 120_000;
 // 网页里能用的插图只在这里（Plasticine 自己的资产，和笔记里的图同一处）。
 const ASSET_PREFIX = '/v2/notes/assets/';
 
@@ -53,6 +56,13 @@ export function createSpacesHttp(transport: Transport):
     undo: (id, input) => transport.request({ method: 'POST', path: `${spacePath(id)}/undo`, body: input,
       schema: SpaceViewSchema, what: '撤销', lostAs: 'uncertain' }),
     asset: readAsset,
+    importFiles: (input) => transport.request({ method: 'POST', path: SPACES_IMPORT_PATH, body: input,
+      schema: ImportSpacesResponseSchema, what: '导入资料库', lostAs: 'uncertain', timeoutMs: TRANSFER_TIMEOUT_MS }),
+    exportFiles: (ids, format, signal) => transport.download({ method: 'POST', path: SPACES_EXPORT_PATH,
+      body: { ids, format }, what: '导出', lostAs: 'failed', timeoutMs: TRANSFER_TIMEOUT_MS, signal },
+    `资料库.${format === 'docx' ? 'docx' : 'md'}`),
+    render: (input, signal) => transport.download({ method: 'POST', path: PAGE_RENDER_PATH, body: input,
+      what: '导出', lostAs: 'failed', timeoutMs: TRANSFER_TIMEOUT_MS, signal }, `${input.name}.${input.format}`),
   };
   const subscriptions: SubscriptionsApi = {
     list: (signal) => transport.request({ method: 'GET', path: SUBSCRIPTIONS_PATH,
