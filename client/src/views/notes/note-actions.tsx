@@ -29,7 +29,8 @@ export interface NoteExtraAction {
 
 // 笔记 ⋯（2026-11-05 第 3 条）：里面有改名输入框和文件夹选择，是一张小表单，用 Popover role="dialog"，关闭逻辑和
 // 下拉菜单是同一套（use-dismiss.ts）；表单里点、打字不收，点外面、Esc、切到网页、保存成功才收。
-export function NoteActions({ note, beforeChange, changed, extra = [], label = '笔记操作', remove }: {
+export function NoteActions({ note, beforeChange, changed, extra = [], label = '笔记操作', remove,
+  exportNote }: {
   note: NoteMetaView;
   label?: string;
   beforeChange?: () => Promise<NoteView | null>;
@@ -37,6 +38,8 @@ export function NoteActions({ note, beforeChange, changed, extra = [], label = '
   extra?: readonly NoteExtraAction[];
   /** 列表里一行的「⋯」（右键同一个）：最后一项「删除笔记」，进最近删除、能恢复（11-12 第 2 条）。 */
   remove?: (() => void) | undefined;
+  /** 「导出」（11-18）：放在删除上面。 */
+  exportNote?: (() => void) | undefined;
 }): ReactNode {
   const api = useApi();
   const { actionOps, notesCache } = useClientState();
@@ -144,8 +147,15 @@ export function NoteActions({ note, beforeChange, changed, extra = [], label = '
         disabled={busy || operation?.status === 'running'} onClick={() => void mutate('pin')}>
         <Icon name="refresh" size={16} /><span className="popover-item-label">再核实原操作</span>
       </button>}
-      {remove === undefined || note.readOnly ? null : <>
+      {exportNote === undefined ? null : <>
         <MenuSeparator />
+        <button type="button" className="popover-item" onClick={() => {
+          hide();
+          exportNote();
+        }}><Icon name="download" size={16} /><span className="popover-item-label">导出</span></button>
+      </>}
+      {remove === undefined || note.readOnly ? null : <>
+        {exportNote === undefined ? <MenuSeparator /> : null}
         <button type="button" className="popover-item is-danger" onClick={() => {
           hide();
           remove();

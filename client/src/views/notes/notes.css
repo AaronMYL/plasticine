@@ -299,6 +299,10 @@
   cursor: zoom-in;
 }
 
+.note-prose .note-image img[hidden] {
+  display: none;
+}
+
 .note-prose .note-image-missing {
   margin: 0;
   color: var(--fg3);
@@ -378,4 +382,13 @@
 
 .note-version-content input[type='checkbox'] {
   pointer-events: none;
+}
+
+/* 第二栏只有 252 宽：多选浮条里不再写「已选 n」（顶上已经有），四个操作一行放得下（11-18 多了「导出」）。 */
+.note-list .bulk-bar {
+  gap: var(--space-3);
+}
+
+.note-list .bulk-bar > .text-meta {
+  display: none;
 }

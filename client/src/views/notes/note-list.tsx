@@ -75,7 +75,6 @@ export function NoteList(props: NoteListProps): ReactNode {
       <div className="note-list-head">
         {merged ? null : bulk}
         {props.feedback && props.selection !== undefined ? <BulkFeedback selection={props.selection} /> : null}
-        <SkippedFiles files={skipped} onClose={() => setSkipped([])} />
         {canImport ? picker.input : null}
         {/* 11-13 Aaron 的示意：页头那条大标题去掉，「收起列表」「新建」和列表的「更多操作」都放到文件夹名这一行。 */}
         {merged && props.selection?.active ? bulk : null}
@@ -98,6 +97,7 @@ export function NoteList(props: NoteListProps): ReactNode {
         </div>}
         {props.selection?.active ? null : <SearchField className="note-search" label="搜索笔记" placeholder="搜索"
           value={props.query} onChange={props.onQuery} />}
+        <SkippedFiles files={skipped} onClose={() => setSkipped([])} />
       </div>
       {props.error === null ? null : (
         <p className="block-empty is-error" role="alert">
@@ -145,8 +145,7 @@ export function NoteList(props: NoteListProps): ReactNode {
                   </span>
                 </button>
                 {props.selection?.active ? null : <NoteActions note={note} label={`《${note.title || '未命名'}》的操作`}
-                  extra={props.trash === true ? [] : [{ label: '导出', icon: 'download',
-                    onSelect: () => void exportNoteFiles(api, [note.id]) }]}
+                  exportNote={props.trash === true ? undefined : () => void exportNoteFiles(api, [note.id])}
                   remove={() => void removeNoteWithUndo(api, noteOps, note)} />}
               </li>
             ))}

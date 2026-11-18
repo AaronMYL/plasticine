@@ -8,6 +8,10 @@ import { bodyDate } from '../../shell/time-text.ts';
 import { composeSpaceDocument } from './space-compose.ts';
 import { prepareSpace } from './space-document.ts';
 
+/** 打印成 PDF 时：吸顶的目录不要，卡片、图、表格不从中间断开。 */
+const PRINT_CSS = '<style>@page{size:A4;margin:14mm}@media print{.rp-nav{display:none}'
+  + 'figure,table,.rp-stat,.rp-pulse,.rp-points>*,.rp-cases>*,.rp-steps>*,.rcard{break-inside:avoid}}</style>';
+
 /** 旧版式（还没重写成网页）的空间出不了网页、PDF、长图。 */
 export class LegacySpaceError extends Error {}
 
@@ -41,7 +45,8 @@ export async function spaceExportHtml(space: SpaceView, readAsset: (path: string
   const body = await inlineAssets(prepared.body, readAsset);
   const page = composeSpaceDocument({ body, genre: space.genre, mode: 'page', tokens: {}, dark: false })
     .replace(' pz-wait', '')
-    .replace('<head>', `<head><title>${escapeText(space.title)}</title>`);
+    .replace('<head>', `<head><title>${escapeText(space.title)}</title>`)
+    .replace('</head>', `${PRINT_CSS}</head>`);
   const marker = spaceMarkerScript({ title: space.title, genre: space.genre, html: space.html });
   return page.replace(/<\/body><\/html>$/, `${marker}</body></html>`);
 }
