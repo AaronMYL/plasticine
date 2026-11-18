@@ -59,6 +59,14 @@ export interface CompleteOptions {
   /** 不给就用模型选择里的推理档。 */
   reasoning?: ThinkingLevel;
   maxTokens?: number;
+  /** 旁路调用记进 AI 用量（11-18）：做什么用、哪条线的。线上的请求不给（本来就记在线的记录里）。 */
+  usage?: UsageTag;
+}
+
+/** 旁路调用记用量时带的标签：用途 id（note_predict、compaction……），和它为哪条线做的。 */
+export interface UsageTag {
+  purpose: string;
+  lineId?: string | null;
 }
 
 export interface ModelChoice {

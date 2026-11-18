@@ -294,6 +294,8 @@ export interface PlasticineApi extends ToolGroupApi, ThingsApi, ContactsClientAp
   /** 新内核（2026-11-05）：线和模型连接。 */
   lines: import('./lines-client.ts').LinesApi;
   modelProviders: import('./lines-client.ts').ModelProvidersApi;
+  /** 11-18：设置 · AI 最上面的「用量」。 */
+  modelUsage: import('./model-usage-client.ts').ModelUsageApi;
   /** 11-16：网络搜索的密钥（Tavily）。 */
   webSearch: import('./web-search-client.ts').WebSearchApi;
   /** 11-16：设置 · AI · 连接（MCP）和推到手机的记录。 */

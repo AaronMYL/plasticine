@@ -41,7 +41,7 @@ test('0141：三张旧表删掉，索引里约定那一类清掉，别的索引�
       [ID, '0142-drop-agreement-history', '0143-drop-retired-history', '0144-mate-relays',
       '0145-wakes-watches', '0146-plans-pushes-connections',
       '0147-retired-tables-action-indexes', '0148-memory-doc-usage',
-      '0149-note-private-flag-retired']);
+      '0149-note-private-flag-retired', '0150-model-calls']);
     assert.deepEqual(tables(), []);
     assert.deepEqual(db.all('SELECT source FROM search_docs').map((row) => row['source']), ['note']);
     assert.deepEqual(db.all("SELECT rowid FROM search_fts WHERE search_fts MATCH '定时任务'").length, 1);

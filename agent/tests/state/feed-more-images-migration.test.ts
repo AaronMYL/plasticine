@@ -20,7 +20,7 @@ test('0140：信息流条目加 more_images，旧条目是空数组，封面不�
       '0142-drop-agreement-history', '0143-drop-retired-history', '0144-mate-relays',
       '0145-wakes-watches', '0146-plans-pushes-connections',
       '0147-retired-tables-action-indexes', '0148-memory-doc-usage',
-      '0149-note-private-flag-retired']);
+      '0149-note-private-flag-retired', '0150-model-calls']);
     const row = db.get('SELECT image_url, image_ratio, more_images FROM feed_items WHERE id = $id', { id: 'item-1' });
     assert.deepEqual({ ...row },
       { image_url: 'https://pbs.twimg.com/media/a.jpg', image_ratio: 0.6, more_images: '[]' });

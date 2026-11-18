@@ -2,9 +2,11 @@
 // 都要设备会话。旧路由一条不动。
 
 import { CHATS_PATH, CONNECTIONS_PATH, CUSTOM_PROVIDERS_PATH, LINES_PATH, MODEL_CONFIG_PATH, MODEL_CONNECTION_TEST_PATH,
-  MODEL_DEFAULT_PATH, MODEL_IMAGE_PATH, MODEL_PROVIDERS_PATH, SIDE_PATH, WEB_SEARCH_PATH, WEB_SEARCH_TEST_PATH }
+  MODEL_DEFAULT_PATH, MODEL_IMAGE_PATH, MODEL_PROVIDERS_PATH, MODEL_USAGE_PATH, SIDE_PATH, WEB_SEARCH_PATH,
+  WEB_SEARCH_TEST_PATH }
   from '../../shared/api/index.ts';
 import { removeCustom, saveCustom, testCustomConnection } from './custom-providers.ts';
+import { getModelUsage } from './model-usage.ts';
 import { getWebSearch, saveWebSearch, testWebSearch } from './web-search-settings.ts';
 import { createConnection, deleteConnection, listConnections, testConnection, updateConnection }
   from './connections.ts';
@@ -42,6 +44,8 @@ export const LINE_ROUTES: readonly Route[] = [
   { method: 'POST', path: `${LINES_PATH}/:id/restore`, auth: true, handler: restoreLine },
   { method: 'GET', path: MODEL_PROVIDERS_PATH, auth: true, handler: listModelProviders },
   { method: 'GET', path: MODEL_IMAGE_PATH, auth: true, handler: getImageModel },
+  // AI 用量（11-18）：设置 · AI 最上面那一块。
+  { method: 'GET', path: MODEL_USAGE_PATH, auth: true, handler: getModelUsage },
   // 写在 :id 前面：custom、test 不是提供商的 id。
   { method: 'POST', path: CUSTOM_PROVIDERS_PATH, auth: true, handler: saveCustom },
   { method: 'POST', path: `${CUSTOM_PROVIDERS_PATH}/:id/remove`, auth: true, handler: removeCustom },

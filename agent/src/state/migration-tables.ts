@@ -23,7 +23,7 @@ const CONTENT = [
 const HISTORY = [
   'feed_fetch_runs', 'feed_refresh_runs', 'feed_source_status', 'heartbeat_beats', 'legacy_ids',
   'legacy_rows', 'line_approvals', 'line_queue', 'line_wakes', 'line_watches', 'memory_curation_jobs',
-  'memory_doc_migration', 'memory_entry_migrations', 'receipts', 'schedule_sends',
+  'memory_doc_migration', 'memory_entry_migrations', 'model_calls', 'receipts', 'schedule_sends',
   'timed_slots', 'translation_cache', 'web_favicons',
 ] as const;
 

@@ -20,6 +20,7 @@ import { BrowserSection } from './browser-section.tsx';
 import { Devices } from './devices-block.tsx';
 import { InstallSection } from './install-section.tsx';
 import { ModelsSection } from '../models/models-section.tsx';
+import { UsageSection } from '../models/usage-section.tsx';
 import { SearchEngineSection } from './search-engine-section.tsx';
 import { WebSearchSection } from './web-search-section.tsx';
 import { ConnectionsSection } from './connections-section.tsx';
@@ -64,6 +65,8 @@ function Blocks({ section }: { section: SettingsSection }): ReactNode {
       </>;
     case 'ai':
       return <>
+        {/* AI 用量（11-18 Aaron 弹框选放 AI 页最上面）。 */}
+        <UsageSection />
         <ModelsSection />
         <Spot name="web-search"><WebSearchSection /></Spot>
         <Spot name="connections"><ConnectionsSection /></Spot>

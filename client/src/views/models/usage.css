@@ -1,0 +1,260 @@
+/*
+ * 设置 · AI 最上面的「用量」（usage-section.tsx，11-18 设计稿「Plasticine AI 用量统计」）。设置页本来只有一种行，这一块
+ * 是 page-spec 里写明的例外：四个数一排（手机两排）、一张柱状图（照对话里图表的画法：三条横线、等宽小字刻度、最后一根
+ * 陶土色）、按模型 / 按用途的行（行底细线上压一段 2px 的蓝条是占比）。
+ */
+
+.usage-ranges {
+  margin-left: auto;
+  align-self: center;
+}
+
+.usage-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-4);
+  animation: usage-in var(--motion-base) var(--ease-out);
+}
+
+.usage-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-5);
+  margin: 0;
+}
+
+.usage-stat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.usage-stat dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.usage-stat dd {
+  margin: 0;
+}
+
+.usage-stat-value {
+  font-family: var(--mono);
+  font-size: var(--text-number);
+  line-height: var(--text-number-line);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.usage-stat-sub {
+  color: var(--fg3);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  white-space: nowrap;
+}
+
+.usage-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.usage-chart-plot {
+  display: flex;
+  gap: var(--space-2);
+  height: 168px; /* 例外：柱状图的画布高（设计稿；usage-section.tsx 的 PLOT_HEIGHT 跟着它） */
+}
+
+.usage-chart-ticks {
+  position: relative;
+  flex: none;
+  width: 40px; /* 例外：纵轴刻度一栏宽，放得下「100M」 */
+}
+
+.usage-chart-ticks > span {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+}
+
+.usage-chart-area {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.usage-chart-line {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--line);
+}
+
+.usage-chart-bars {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-hair);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.usage-chart-bar {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+}
+
+.usage-chart-hit {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 70%;
+  max-width: 24px; /* 例外：柱子最宽 24（和对话里的图表一样） */
+}
+
+.usage-chart-hit > span {
+  width: 100%;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--hue-sky);
+  transition: height var(--motion-base) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
+}
+
+.usage-chart-bar.is-last .usage-chart-hit > span {
+  background: var(--hue-clay);
+}
+
+.usage-chart-hit:hover > span {
+  opacity: 0.8;
+}
+
+.usage-chart-axis {
+  display: flex;
+  gap: var(--space-hair);
+  padding-left: 48px; /* 例外：让开纵轴刻度那一栏（40 + 间距 8） */
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+}
+
+.usage-chart-axis > span {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: visible;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.usage-split {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.usage-groups {
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.usage-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 48px; /* 例外：设置页一行至少 48 高（设计稿） */
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* 占比：压在行底细线上的一段蓝条（宽度写在行内）。 */
+.usage-group-share {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: var(--space-hair);
+  border-radius: var(--radius-sm);
+  background: var(--hue-sky);
+}
+
+.usage-group-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.usage-group-name {
+  overflow: hidden;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-group-sub {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.usage-group-amount {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--mono);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-group-cost {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+@keyframes usage-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (max-width: 767px) {
+  .usage-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usage-body {
+    animation: none;
+  }
+
+  .usage-chart-hit > span {
+    transition: none;
+  }
+}

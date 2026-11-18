@@ -17,7 +17,7 @@ import { providerDisplayName } from '../../shared/api/model-names.ts';
 import { DEFAULT_THINKING, ModelResolver, type CatalogProvider, type ModelSettings }
   from '../../shared/api/model-resolve.ts';
 import { MODEL_PURPOSES, requiresImages, type ModelPurpose } from '../../shared/api/model-purposes.ts';
-import type { CompleteOptions, ModelChoice, ModelSource } from '../lines/index.ts';
+import type { CompleteOptions, ModelChoice, ModelSource, UsageTag } from '../lines/index.ts';
 import type { StateService } from '../state/index.ts';
 import { ACCOUNT_MODEL_PROVIDERS, ACCOUNT_MODELS_FRESH_MS, isEstimated, SettingsModelsStore, withAccountModels,
   type AccountModelsOptions } from './account-models.ts';
@@ -26,7 +26,7 @@ import { safeLog } from '../util/index.ts';
 import { customProvider, readCustomProviders, upgradeCustomProviders, type CustomProviderConfig }
   from './custom-providers.ts';
 
-export type KernelModelState = Pick<StateService, 'kernelCredentials' | 'kernelSettings'>;
+export type KernelModelState = Pick<StateService, 'kernelCredentials' | 'kernelSettings' | 'modelCalls'>;
 
 const DEVICE_ID_KEY = 'device_id';
 /** 服务起来后多久第一次联网问账号的型号（别和启动时的别的事挤在一起）。 */
@@ -146,14 +146,38 @@ export class KernelModels implements ModelSource {
     this.models.setProvider(customProvider(config));
   }
 
-  readonly streamFn: ModelSource['streamFn'] = (model, context, options) =>
-    this.models.streamSimple(model, context, options);
+  /** 线（pi-agent-core）和流式的旁路调用都走这里；带了 usage 标签的（旁路）回答写完记一笔用量。 */
+  readonly streamFn: ModelSource['streamFn'] = (model, context, options) => {
+    const { usage, ...rest } = (options ?? {}) as NonNullable<typeof options> & { usage?: UsageTag };
+    const stream = this.models.streamSimple(model, context, rest);
+    if (usage !== undefined) {
+      void Promise.resolve(stream).then((started) => started.result())
+        .then((message) => this.#recordUsage(usage, message), () => undefined);
+    }
+    return stream;
+  };
 
-  complete(model: Model<Api>, context: Context, options: CompleteOptions = {}): Promise<AssistantMessage> {
-    const { reasoning, ...rest } = options;
+  async complete(model: Model<Api>, context: Context, options: CompleteOptions = {}): Promise<AssistantMessage> {
+    const { reasoning, usage, ...rest } = options;
     // pi-ai 的 off 就是不传推理档。
-    return this.models.completeSimple(model, context,
+    const response = await this.models.completeSimple(model, context,
       reasoning === undefined || reasoning === 'off' ? rest : { ...rest, reasoning });
+    if (usage !== undefined) {
+      this.#recordUsage(usage, response);
+    }
+    return response;
+  }
+
+  /** 一次旁路调用记进 AI 用量；记不进去只写日志，不影响这次回答。 */
+  #recordUsage(tag: UsageTag, message: AssistantMessage): void {
+    try {
+      const usage = message.usage;
+      this.#state.modelCalls.record({ purpose: tag.purpose, lineId: tag.lineId ?? null, provider: message.provider,
+        model: message.model, input: usage.input, cacheRead: usage.cacheRead, cacheWrite: usage.cacheWrite,
+        output: usage.output, cost: usage.cost.total });
+    } catch (error) {
+      safeLog('warn', 'model_usage_record_failed', { error });
+    }
   }
 
   #provider(providerId: string): Provider {

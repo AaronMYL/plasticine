@@ -29,6 +29,7 @@ import { createFeedSourceStatusStore } from './feed-source-status.ts';
 import { createFeedSourceStore } from './feed-sources.ts';
 import { createInboxStores } from './inbox.ts';
 import { createKernelSettingsStores } from './kernel-settings.ts';
+import { createModelCallStore } from './model-calls.ts';
 import { createLegacyIdMap } from './legacy-ids.ts';
 import { createLegacyRowStore } from './legacy-rows.ts';
 import { createLineApprovalStore } from './line-approvals.ts';
@@ -199,6 +200,8 @@ function buildStores(context: StoreContext, notes: NoteBodies, index: SearchInde
     ...createMateStores(context),
     lineApprovals: createLineApprovalStore(context),
     ...createKernelSettingsStores(context),
+    // AI 用量（迁移 0150）：旁路调用一次一行；读时和线上的请求并在一起。
+    modelCalls: createModelCallStore(context),
     // 任务栏目（《优化清单》第 3、4 条）：定时线、照卡发送的记录、建议，和他设备当前的时区。
     ...createScheduleStores(context),
     suggestions: createSuggestionStore(context),

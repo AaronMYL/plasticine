@@ -8,6 +8,7 @@ import { seedAsksScene } from './asks-scene-seed.ts';
 import { seedFilesScene } from './files-scene-seed.ts';
 import { seedPlansScene } from './plans-scene-seed.ts';
 import { FakeWebSearch } from './fake-web-search.ts';
+import { FakeModelUsage } from './fake-model-usage.ts';
 import { FakeConnections, FakePushes } from './fake-connections.ts';
 import { FakeMigration } from './fake-migration.ts';
 import { seedRelayScene } from './relay-scene-seed.ts';
@@ -399,6 +400,7 @@ export function createFakeApi(options: FakeApiOptions): FakeApi {
     tasks,
     modelProviders,
     webSearch: new FakeWebSearch(session, now),
+    modelUsage: new FakeModelUsage(session, now),
     connections,
     pushes,
     migration: new FakeMigration(session, now, typeof window === 'undefined' ? null

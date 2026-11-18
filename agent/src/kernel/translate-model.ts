@@ -39,7 +39,8 @@ export class TranslateModel {
     return {
       current: () => this.#models.current('translation'),
       streamFn: this.#models.streamFn,
-      complete: (model, context, options) => this.#models.complete(model, context, options),
+      complete: (model, context, options) => this.#models.complete(model, context,
+        { ...options, usage: { purpose: 'translation' } }),
     };
   }
 }

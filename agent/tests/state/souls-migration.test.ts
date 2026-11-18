@@ -21,7 +21,7 @@ test('0139：主线一份起步的 Soul，每位队友一份「你是我的…�
       '0141-drop-agreements', '0142-drop-agreement-history', '0143-drop-retired-history', '0144-mate-relays',
       '0145-wakes-watches', '0146-plans-pushes-connections',
       '0147-retired-tables-action-indexes', '0148-memory-doc-usage',
-      '0149-note-private-flag-retired']);
+      '0149-note-private-flag-retired', '0150-model-calls']);
     const souls = db.all('SELECT owner, text, version FROM souls ORDER BY owner').map((row) => ({ ...row }));
     assert.deepEqual(souls, [{ owner: 'main', text: MAIN_SOUL_OPENING, version: 1 },
       { owner: 'mate_job', text: '你是我的求职顾问：简历、投递和面试准备。', version: 1 }]);

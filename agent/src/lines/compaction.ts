@@ -169,6 +169,7 @@ export async function summarize(models: ModelSource, choice: ModelChoice, messag
     const response = await models.complete(choice.model, { systemPrompt: SUMMARY_SYSTEM,
       messages: [{ role: 'user', content: prompt, timestamp: Date.now() }] }, {
       ...(signal === undefined ? {} : { signal }), reasoning: choice.thinking, maxTokens,
+      usage: { purpose: 'compaction' },
     });
     if (response.stopReason === 'error' || response.stopReason === 'aborted') {
       throw new Error(`写摘要没成：${response.errorMessage ?? response.stopReason}`);

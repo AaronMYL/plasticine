@@ -62,6 +62,7 @@ export type { NetworkTaskStores } from './network-tasks.ts';
 export type { GroupStores, MemberInput } from './groups.ts';
 export { lineRef, MAIN_LINE_ID, plainText } from './lines.ts';
 export type { DayCompaction, LineDayRow } from './line-days.ts';
+export type { ModelCallInput, UsageRow } from './model-calls.ts';
 export type { LineListFilter, LineMessageMeta, LineMessageRow, LinePatch, LineRow, LineStores, NewLine,
   SaidLine } from './lines.ts';
 export type { QueuedRow } from './line-queue.ts';

@@ -34,7 +34,7 @@ const AFTER_RETIRE = ['0063-line-message-meta', '0064-network-groups', '0065-lin
   '0142-drop-agreement-history', '0143-drop-retired-history', '0144-mate-relays',
   '0145-wakes-watches', '0146-plans-pushes-connections',
   '0147-retired-tables-action-indexes', '0148-memory-doc-usage',
-  '0149-note-private-flag-retired'];
+  '0149-note-private-flag-retired', '0150-model-calls'];
 
 // M5 乙路的迁移（排在甲路的 0011 后面）。
 const GAPS = [

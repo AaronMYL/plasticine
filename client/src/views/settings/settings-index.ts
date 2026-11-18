@@ -18,6 +18,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = [
   { section: 'general', title: '外观', words: '主题 颜色 深色 浅色 暗色 夜间 暖纸 石墨 松林 午夜 跟随系统' },
   { section: 'general', title: '时区', words: '时间 日期' },
   { section: 'general', title: '通知', words: '推送 提醒 系统通知 测试通知 新消息' },
+  { section: 'ai', title: '用量', words: '用量 统计 token 费用 花了多少 请求 次数 账单 消耗' },
   { section: 'ai', title: '模型', words: '提供商 连接 ChatGPT Claude DeepSeek API key 订阅 默认模型' },
   { section: 'ai', title: '对话', words: '主线 队友 后台线 子代理 同时做几件事 并发 排队 代答 输入建议 压缩 思考' },
   { section: 'ai', title: '例行', words: '心跳 做梦 回顾 日报 周报 研究员 订阅' },

@@ -24,6 +24,7 @@ const EVENTS = {
   line_resume_failed: '重启后接着跑一条线没起来，线的状态已保存',
   line_compaction_failed: '压缩一条线的早先内容没做成，这次照原样送给模型',
   account_models_failed: '问订阅账号能用哪些型号没问成，设置里先照旧（下次再问）',
+  model_usage_record_failed: '一次旁路调用的用量没记进去（AI 用量里少这一次），回答照常',
   experience_recall_failed: '一步做完后带出做事经验时出错，这一步照常',
   retro_failed: '一条后台线做完后的复盘没做成，记忆和技能没改',
   retro_skill_failed: '复盘想改的技能没写进去（版本变了或格式不对），做事经验照常记了',

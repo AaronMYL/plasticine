@@ -4,6 +4,7 @@
 import { HttpConnections, HttpPushes } from './connections.ts';
 import { HttpMigration } from './migration.ts';
 import { HttpWebSearch } from './web-search.ts';
+import { HttpModelUsage } from './model-usage.ts';
 import { createNetworkAttachmentsHttp } from './network-attachments.ts';
 import { createMatesHttp } from './mates.ts';
 import { createSoulHttp } from './soul.ts';
@@ -87,6 +88,7 @@ export function createHttpApi(options: HttpApiOptions = {}): PlasticineApi {
     tasks: new HttpTasks(transport),
     modelProviders: new HttpModelProviders(transport),
     webSearch: new HttpWebSearch(transport),
+    modelUsage: new HttpModelUsage(transport),
     connections: new HttpConnections(transport),
     pushes: new HttpPushes(transport),
     migration: new HttpMigration(transport),

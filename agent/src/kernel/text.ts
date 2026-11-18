@@ -135,6 +135,8 @@ export function kernelText(models: ModelSource, now: () => Date = () => new Date
     const context: Context = { systemPrompt: request.system, messages };
     const options: CompleteOptions = {
       signal,
+      // AI 用量（11-18）：旁路调用记一笔，按用途分；没给用途的算「其他」。
+      usage: { purpose: request.purpose ?? 'other' },
       reasoning: request.purpose !== undefined || request.reasoning === undefined
         ? choice.thinking : thinkingOf(request.reasoning),
       ...(request.maxOutputTokens === undefined ? {}
