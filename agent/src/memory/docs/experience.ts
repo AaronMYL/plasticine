@@ -11,6 +11,7 @@ import {
 } from '../../../shared/state.ts';
 import { looksLikeSecret, normalized, sameThing } from '../curation/memory-curation-ops.ts';
 import { addLine, docEvent, reviseLine, type DocState, type Writer } from './memory-doc-writes.ts';
+import { siteKey } from '../../state/index.ts';
 
 export interface ExperienceInput {
   /** 哪一篇：工具、网站或流程的名字（「小红书」「发邮件」）。没有这一篇就新建。 */
@@ -36,9 +37,20 @@ function clip(text: string, max: number): string {
   return Array.from(text.trim()).slice(0, max).join('');
 }
 
-function findHowDoc(state: DocState, topic: string): MemoryDoc | undefined {
+/**
+ * 记进哪一篇：标题认得出的那篇；认不出、但记了同一个网站或应用的，记进那篇（11-18 Aaron 定复盘收紧：先找同类的改，
+ * 不为换个叫法另开一篇）。都没有才是新的。
+ */
+export function findHowDoc(state: DocState, topic: string, sites?: readonly string[]): MemoryDoc | undefined {
   const key = normalized(topic);
-  return state.memoryDocs.docs.live().find((doc) => doc.kind === 'how' && normalized(doc.title) === key);
+  const docs = state.memoryDocs.docs.live().filter((doc) => doc.kind === 'how');
+  const titled = docs.find((doc) => normalized(doc.title) === key);
+  if (titled !== undefined || sites === undefined) {
+    return titled;
+  }
+  const keys = [...new Set(sites.map(siteKey).filter((site) => site !== ''))];
+  const [first] = state.memoryDocs.usage.docsFor('how', keys);
+  return first === undefined ? undefined : docs.find((doc) => doc.id === first);
 }
 
 /** 记一条做事经验。重复的不加；像密钥的不记；改的那一行必须是这一篇里在用的行。 */
@@ -54,7 +66,7 @@ export function noteExperience(state: DocState, input: ExperienceInput, writer: 
   return state.transaction((): ExperienceResult => {
     const result = writeExperience(state, input, topic, text, writer);
     // 这条记过了也把网站补上：以后碰到这些网站照样带出这一篇。
-    const doc = result.saved ? result.doc : findHowDoc(state, topic);
+    const doc = result.saved ? result.doc : findHowDoc(state, topic, input.sites);
     if (doc !== undefined && input.sites !== undefined) {
       state.memoryDocs.usage.addSites(doc.id, input.sites);
     }
@@ -65,7 +77,7 @@ export function noteExperience(state: DocState, input: ExperienceInput, writer: 
 function writeExperience(state: DocState, input: ExperienceInput, topic: string, text: string, writer: Writer)
   : ExperienceResult {
   const anchors = [{ kind: 'work' as const, ref: `line:${input.lineId}` }];
-  const existing = findHowDoc(state, topic);
+  const existing = findHowDoc(state, topic, input.sites);
   if (input.replacesLineId !== undefined) {
     const old = state.memoryDocs.lines.get(input.replacesLineId);
     if (old === undefined || old.retiredAt !== null || existing === undefined || old.docId !== existing.id) {

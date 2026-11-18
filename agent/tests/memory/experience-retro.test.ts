@@ -101,20 +101,29 @@ function fakeSkills(initial: RetroSkill[] = []): RetroSkills & { written: string
   };
 }
 
+/** 以前做成过的一件同类的事。 */
+function doneBefore(s: TestState['state'], title = '上周发的公众号文章'): string {
+  const line = s.lines.create({ kind: 'background', title, parentLineId: s.lines.main().id, projectId: null });
+  return s.lines.update(line.id, { status: 'idle' }).id;
+}
+
 test('复盘：经验记进去带上网站、技能新建；同一条线第二次只看新的一段；步数太少不复盘', async () => {
   const { state: s } = await state();
+  const before = doneBefore(s);
   const lineId = seedLine(s, 5);
   const said: string[] = [];
   const text = scriptedText([JSON.stringify({
     lessons: [{ topic: '微信公众号后台', sites: ['mp.weixin.qq.com'], kind: 'avoid',
       text: '保存按钮在页面底部，要先滚到底再点：顶部那个是预览' }],
     skill: { action: 'create', name: 'wechat-article-publish', description: '发公众号文章时用',
-      body: '1. 打开草稿箱\n2. 滚到底点保存' } })]);
+      body: '1. 打开草稿箱\n2. 滚到底点保存', sameKindLines: [before] } })]);
   const skills = fakeSkills();
   const retro = new Retrospector({ state: s, models: text.models, skills, notify: (id, words) => said.push(words) });
   const result = await retro.run(lineId, AbortSignal.timeout(5_000));
   assert.deepEqual(result, { lessons: ['微信公众号后台'], skill: '新建技能「wechat-article-publish」' });
   assert.match(text.requests[0]?.messages[0]?.content ?? '', /没找到保存按钮/, '失败的那一步在材料里');
+  assert.match(text.requests[0]?.messages[0]?.content ?? '', new RegExp(`\\[线:${before}\\] 上周发的公众号文章`),
+    '以前做成的事列在材料里');
   const doc = s.memoryDocs.docs.live().find((item) => item.kind === 'how')!;
   assert.deepEqual(s.memoryDocs.usage.get(doc.id)?.sites, ['mp.weixin.qq.com']);
   assert.equal(s.memoryDocs.lines.live(doc.id)[0]?.section, 'avoid');
@@ -183,4 +192,41 @@ test('线里：打开那个网站的那一步，结果后面带出做事经验�
   await until(() => h.kernel.view('main').lastAnswer === '打开了。', '答完');
   assert.match(seen[0] ?? '', /做事经验「微信公众号后台」/);
   assert.doesNotMatch(seen[1] ?? '', /做事经验/);
+});
+
+test('复盘收紧：新建技能要有以前做成的同一类事；没有凭据、凭据不在列表里都不建', async () => {
+  const { state: s } = await state();
+  const lineId = seedLine(s, 4);
+  const create = (sameKindLines?: string[]) => JSON.stringify({ lessons: [], skill: { action: 'create',
+    name: 'wechat-article-publish', description: '发公众号文章时用', body: '1. 打开草稿箱',
+    ...(sameKindLines === undefined ? {} : { sameKindLines }) } });
+  const attempt = async (output: string): Promise<string[]> => {
+    const skills = fakeSkills();
+    s.kernelSettings.set('retro:cursors', {});
+    await new Retrospector({ state: s, models: scriptedText([output]).models, skills, notify: () => {} })
+      .run(lineId, AbortSignal.timeout(5_000));
+    return skills.written;
+  };
+  assert.deepEqual(await attempt(create()), [], '没写凭据');
+  assert.deepEqual(await attempt(create(['不存在的线'])), [], '凭据不在列表里');
+  assert.deepEqual(await attempt(create([lineId])), [], '这一条自己不算');
+  const before = doneBefore(s);
+  assert.equal((await attempt(create([`线:${before}`]))).length, 1, '以前做成过一次，就建');
+});
+
+test('复盘收紧：同一个网站已有一篇就记进那篇；一次最多新开 1 篇', async () => {
+  const { state: s } = await state();
+  const lineId = seedLine(s, 4);
+  noteExperience(s, { topic: '公众号后台', section: 'do', text: '草稿箱在左边栏', lineId: s.lines.main().id,
+    sites: ['mp.weixin.qq.com'] }, writer);
+  const output = JSON.stringify({ lessons: [
+    { topic: '微信公众号', sites: ['mp.weixin.qq.com'], kind: 'do',
+      text: '保存按钮在底部，先滚到底' },
+    { topic: '小红书', sites: ['xiaohongshu.com'], kind: 'do', text: '发笔记要先选封面' },
+    { topic: '抖音', sites: ['douyin.com'], kind: 'do', text: '收藏夹先点开再滚动' }] });
+  const result = await new Retrospector({ state: s, models: scriptedText([output]).models, skills: fakeSkills(),
+    notify: () => {} }).run(lineId, AbortSignal.timeout(5_000));
+  assert.deepEqual(result?.lessons, ['公众号后台', '小红书']);
+  assert.deepEqual(s.memoryDocs.docs.live().filter((doc) => doc.kind === 'how').map((doc) => doc.title).sort(),
+    ['公众号后台', '小红书']);
 });

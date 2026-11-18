@@ -4,6 +4,8 @@
 // 1 个技能的新建或修改（一类事从头到尾怎么做）。规矩照 Hermes 的事后复盘：只记一类事、先改已有的、不记环境问题和
 // 「某工具不能用」、没走通的不写成做法。原来学习只靠模型做事中途记得调 note_experience，线上 12 天只调了 5 次。
 // 一次只复盘一条；同一条线下次只看上次之后的那一段（游标记在 kernel_settings，只留最近 200 条线）。
+// 11-18 体检：上线一天 7 次复盘开了 8 篇新经验、5 个新技能、没改一个已有的。Aaron 定收紧：先找同类的改；新建技能要
+// 同一类事做过两次以上——复盘时在「以前做成的事」里找到同一类的、写出线号，代码核对在列表里才建；一次最多新开 1 篇经验。
 
 import { Type, type Static } from 'typebox';
 import { SkillNameSchema } from '../../../shared/skills.ts';
@@ -12,8 +14,8 @@ import type { TextModels } from '../../kernel/index.ts';
 import type { LineRow, StateService } from '../../state/index.ts';
 import { errorCategory, safeLog } from '../../util/index.ts';
 import { looksLikeSecret } from '../curation/memory-curation-ops.ts';
-import { noteExperience } from '../docs/experience.ts';
-import { retroMaterial, type RetroSkill } from './retro-material.ts';
+import { findHowDoc, noteExperience } from '../docs/experience.ts';
+import { retroMaterial, type RetroMaterial, type RetroSkill } from './retro-material.ts';
 
 export type RetroState = Pick<StateService, 'lines' | 'lineMessages' | 'memoryDocs' | 'memoryCuration' | 'projects'
   | 'kernelSettings' | 'transaction'>;
@@ -21,6 +23,8 @@ export type RetroState = Pick<StateService, 'lines' | 'lineMessages' | 'memoryDo
 /** 这一段至少调过这么多次工具才复盘：两三步就做完的事没什么可学。 */
 export const MIN_STEPS = 4;
 export const MAX_LESSONS = 3;
+/** 一次复盘最多新开这么多篇做事经验，其余的只能记进已有的。 */
+export const MAX_NEW_DOCS = 1;
 const CURSOR_KEY = 'retro:cursors';
 const CURSOR_KEEP = 200;
 const SKILL_BODY_MAX = 12_000;
@@ -35,6 +39,8 @@ const LessonSchema = Type.Object({
 
 const SkillChangeSchema = Type.Object({
   action: Type.Enum(['create', 'update']),
+  /** 新建时必填：以前做成过的同一类事（「以前做成的事」里的线号）。 */
+  sameKindLines: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 80 }), { maxItems: 5 })),
   name: SkillNameSchema,
   description: Type.String({ minLength: 1, maxLength: 300 }),
   body: Type.String({ minLength: 1, maxLength: SKILL_BODY_MAX }),
@@ -51,14 +57,18 @@ export const RETRO_SYSTEM = [
   '输出：{"lessons":[{"topic":"网站、应用或工具的名字（照已有做事经验的标题写；没有就起一个，如「小红书」「微信公众号后台」）",'
     + '"sites":["域名或应用名，如 mp.weixin.qq.com、微信"],"kind":"do 走得通的做法 / avoid 要避开的坑","text":"一句能照着做的'
     + '规则加半句原因","replacesLineId":"要改的那一行（可选）"}],"skill":{"action":"create 或 update","name":"一类事的叫法'
-    + '（小写字母、数字、连字符）","description":"什么时候用它，一句话","body":"SKILL.md 正文（不含开头的 name/description）"}}。'
+    + '（小写字母、数字、连字符）","description":"什么时候用它，一句话","body":"SKILL.md 正文（不含开头的 name/description）",'
+    + '"sameKindLines":["新建时必填：以前做成过的同一类事的线号"]}}。'
     + '没什么可记就输出 {"lessons":[]}，不写 skill。',
   '两样东西分开放，一条东西只进一处：',
   '- 做事经验（lessons，最多 3 条）记「一个网站、应用或工具怎么操作」：入口在哪、先做什么、哪一步走不通要换什么。'
-    + '写上对应的 sites，以后碰到这个网站会自动带出。',
+    + '写上对应的 sites，以后碰到这个网站会自动带出。先记进已有的：这个网站或应用已经有一篇，topic 就照那篇的标题写，'
+    + '不换个叫法另起一篇；只有哪篇都不对应才新起，一次最多新起 1 篇。',
   '- 技能（skill，最多 1 个）记「一类事从头到尾怎么做」：步骤和顺序、每步用什么工具、他要的成品是什么样，坑写在它影响的'
-    + '那一步下面。只在这是一类会再做的事、而且这次走通了（或者这次发现读过的技能有一步是错的）才写。先改这次读过的技能'
-    + '（update，在给出的那份正文上改，整份写回）；没有覆盖这类事的才新建。名字是一类事的叫法，不是这一次的事'
+    + '那一步下面。只在这次走通了（或者这次发现读过的技能有一步是错的）才写。先改这次读过的技能'
+    + '（update，在给出的那份正文上改，整份写回）；已有的技能里有覆盖这类事的，就不新建。'
+    + '新建要有凭据：同一类事以前至少做成过一次——在「以前做成的事」里找到同一类的，把线号写进 sameKindLines；'
+    + '找不到就不建技能，这次只记做事经验（下次再做同一类事时就有凭据了）。名字是一类事的叫法，不是这一次的事'
     + '（「wechat-article-publish」可以，「fix-today-post」不行）。',
   '不记：环境问题（没装、没登录、电脑不在线、额度用完）；「某工具不能用」这类否定的话；中途出错后来自己好了的；只做一次的事；'
     + '没走通的尝试——这次没找到能用的办法就什么都不写，不把失败的几步写成「做法」。',
@@ -100,15 +110,20 @@ function skillContent(name: string, description: string, body: string): string {
   return `---\nname: ${name}\ndescription: "${safe}"\n---\n\n${body.trim()}\n`;
 }
 
-/** 能落的技能改动：新建不和已有的重名；改只改这次读过的、能改的那一个。 */
-function acceptedSkill(output: RetroOutput, skills: readonly RetroSkill[], loaded: readonly string[]) {
+/**
+ * 能落的技能改动：新建不和已有的重名，而且要给出列给它看的、以前做成的同一类事（同一类事做过两次以上才建）；
+ * 改只改这次读过的、能改的那一个。
+ */
+function acceptedSkill(output: RetroOutput, skills: readonly RetroSkill[], loaded: readonly string[],
+  recentLineIds: readonly string[]) {
   const change = output.skill;
   if (change === undefined || looksLikeSecret(change.body)) {
     return null;
   }
   const existing = skills.find((skill) => skill.name === change.name);
   if (change.action === 'create') {
-    return existing === undefined ? { change, version: null } : null;
+    const proven = (change.sameKindLines ?? []).some((id) => recentLineIds.includes(id.replace(/^线:/, '')));
+    return existing === undefined && proven ? { change, version: null } : null;
   }
   return existing !== undefined && existing.editable && loaded.includes(change.name)
     ? { change, version: existing.version } : null;
@@ -150,7 +165,7 @@ export class Retrospector {
     }
     const output = await askJson({ models: this.#deps.models }, RetroOutputSchema, RETRO_SYSTEM, material.text, signal,
       'memory_curate');
-    const result = this.#apply(line, output, listed, material.loadedSkills, material.lastSeq);
+    const result = this.#apply(line, output, listed, material, material.lastSeq);
     saveCursor(state, lineId, material.lastSeq);
     if (result.lessons.length > 0 || result.skill !== null) {
       this.#deps.notify(lineId, noticeText(result));
@@ -158,10 +173,17 @@ export class Retrospector {
     return result;
   }
 
-  #apply(line: LineRow, output: RetroOutput, skills: readonly RetroSkill[], loaded: readonly string[], seq: number)
-    : RetroResult {
+  #apply(line: LineRow, output: RetroOutput, skills: readonly RetroSkill[],
+    material: Pick<RetroMaterial, 'loadedSkills' | 'recentLineIds'>, seq: number): RetroResult {
     const lessons: string[] = [];
+    let newDocs = 0;
     for (const lesson of (output.lessons ?? []).slice(0, MAX_LESSONS)) {
+      if (findHowDoc(this.#deps.state, lesson.topic, lesson.sites) === undefined) {
+        if (newDocs >= MAX_NEW_DOCS) {
+          continue;
+        }
+        newDocs += 1;
+      }
       const saved = noteExperience(this.#deps.state, { topic: lesson.topic, section: lesson.kind, text: lesson.text,
         lineId: line.id, ...(lesson.sites === undefined ? {} : { sites: lesson.sites }),
         ...(lesson.replacesLineId === undefined ? {} : { replacesLineId: lesson.replacesLineId }) },
@@ -170,7 +192,7 @@ export class Retrospector {
         lessons.push(saved.doc.title);
       }
     }
-    const accepted = acceptedSkill(output, skills, loaded);
+    const accepted = acceptedSkill(output, skills, material.loadedSkills, material.recentLineIds);
     let skill: string | null = null;
     if (accepted !== null) {
       const { change, version } = accepted;

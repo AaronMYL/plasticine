@@ -2,13 +2,14 @@
 // 要做的事、结果、每一步调了什么和成没成——失败的那步和它后面那一步给多一点（坑和绕过去的办法都在这里），别的只要
 // 一句；再加上已有的做事经验目录和技能目录，好让它先改已有的、不重复记。做法照 Hermes 的事后复盘（agent/background_review.py）
 // 和 OpenBot 的技能建议（只看失败的步和它后面那一步，最多 80 步）。
+// 11-18 Aaron 定复盘收紧：再列最近做成的几件事，新建技能要在里面找到同一类的（同一类事做过两次以上才建）。
 
 import type { AgentMessage } from '@earendil-works/pi-agent-core';
 import type { ToolResultMessage } from '@earendil-works/pi-ai';
 import { plainText, type LineMessageRow, type LineRow, type StateService } from '../../state/index.ts';
 import { touchedKeys, experienceDocsFor } from '../docs/experience-recall.ts';
 
-export type RetroMaterialState = Pick<StateService, 'lineMessages' | 'memoryDocs'>;
+export type RetroMaterialState = Pick<StateService, 'lines' | 'lineMessages' | 'memoryDocs'>;
 
 /** 一次复盘最多看这么多步。 */
 export const MAX_STEPS = 80;
@@ -19,6 +20,11 @@ const FAILED_CHARS = 500;
 const GOAL_CHARS = 1_500;
 const ANSWER_CHARS = 1_500;
 const DOC_CHARS = 6_000;
+/** 列最近做成的几件事，给新建技能找凭据。 */
+export const RECENT_LINES = 40;
+const RECENT_TITLE_CHARS = 60;
+/** 经过至少留这么多字（目录再长也不挤掉它）。 */
+const MIN_STORY_CHARS = 8_000;
 
 export interface RetroSkill {
   name: string;
@@ -36,6 +42,8 @@ export interface RetroMaterial {
   loadedSkills: string[];
   /** 这一段最后一条消息的序号：下一次复盘从这之后看。 */
   lastSeq: number;
+  /** 列给它看的、以前做成的线：新建技能的凭据只认这里面的。 */
+  recentLineIds: string[];
 }
 
 function clip(text: string, max: number): string {
@@ -133,6 +141,19 @@ function skillSection(skills: readonly RetroSkill[], loaded: readonly string[], 
   return ['## 已有的技能', ...(list.length === 0 ? ['（还没有）'] : list), ...read].join('\n');
 }
 
+/** 以前做成的后台线（不含这一条）：做完了、没写「没做成」的，最近的在前。 */
+function recentDone(state: RetroMaterialState, line: LineRow): LineRow[] {
+  return state.lines.list({ kind: 'background', visibleOnly: true, includeArchived: true, statuses: ['idle'],
+    limit: RECENT_LINES + 1 }).filter((other) => other.id !== line.id && other.unmetReason === null)
+    .slice(0, RECENT_LINES);
+}
+
+function recentSection(lines: readonly LineRow[]): string {
+  return ['## 以前做成的事（新建技能时，在这里找同一类的，把线号写进 sameKindLines）',
+    ...(lines.length === 0 ? ['（还没有）'] : lines.map((other) => `- [线:${other.id}] ${clip(other.title,
+      RECENT_TITLE_CHARS)}（${other.updatedAt.slice(0, 10)}）`))].join('\n');
+}
+
 /** 一条线上次复盘之后这一段的材料；afterSeq 是上次复盘到的序号。 */
 export function retroMaterial(state: RetroMaterialState, line: LineRow, afterSeq: number,
   skills: readonly RetroSkill[], bodies: (name: string) => string | null): RetroMaterial {
@@ -143,18 +164,21 @@ export function retroMaterial(state: RetroMaterialState, line: LineRow, afterSeq
       : undefined;
     return typeof name === 'string' ? [name] : [];
   }))];
+  const recent = recentDone(state, line);
   const outcome = line.unmetReason !== null ? `没做成：${line.unmetReason}`
     : line.status === 'failed' ? `没做完：${line.failure ?? '原因没记'}` : '做成了';
-  const text = [
+  const story = [
     `## 这件事：「${line.title}」`,
     `交代的话：${opening(rows) || '（这一段没有）'}`,
     `结果：${outcome}`,
     `最后说的：${lastAnswer(rows) || '（没有）'}`,
     `## 经过（${steps.length} 步${steps.length > MAX_STEPS ? `，只列最后 ${MAX_STEPS} 步` : ''}）`,
     ...stepLines(steps),
-    experienceSection(state, steps),
-    skillSection(skills, loadedSkills, bodies),
   ].join('\n');
-  return { text: Array.from(text).slice(0, MAX_MATERIAL_CHARS).join(''), steps: steps.length, loadedSkills,
-    lastSeq: rows.at(-1)?.seq ?? afterSeq };
+  // 目录（已有的经验、技能、以前做成的事）先保住：先改已有的、找凭据都靠它；超了只截经过。
+  const catalog = Array.from([experienceSection(state, steps), skillSection(skills, loadedSkills, bodies),
+    recentSection(recent)].join('\n')).slice(0, MAX_MATERIAL_CHARS - MIN_STORY_CHARS).join('');
+  const text = `${Array.from(story).slice(0, MAX_MATERIAL_CHARS - catalog.length - 1).join('')}\n${catalog}`;
+  return { text, steps: steps.length, loadedSkills,
+    lastSeq: rows.at(-1)?.seq ?? afterSeq, recentLineIds: recent.map((other) => other.id) };
 }
