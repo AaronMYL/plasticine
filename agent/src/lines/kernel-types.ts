@@ -19,7 +19,8 @@ export const DEFAULT_TIME_ZONE = 'Asia/Shanghai';
 
 export type KernelState = Pick<StateService, 'lines' | 'linePlans' | 'lineMessages' | 'lineDays' | 'lineQueue'
   | 'lineApprovals' | 'mates' | 'mateGroups' | 'outboundGrants' | 'outboundLog' | 'schedules' | 'contactMessages'
-  | 'groupMessages' | 'asks' | 'transaction' | 'memoryDocs' | 'memoryJournal' | 'projects' | 'attachments'>
+  | 'maintenanceOperations' | 'groupMessages' | 'asks' | 'transaction'
+  | 'memoryDocs' | 'memoryJournal' | 'projects' | 'attachments'>
   & Partial<Pick<StateService, 'loop'>>;
 
 export type Compactor = NonNullable<RunnerHost['compact']>;

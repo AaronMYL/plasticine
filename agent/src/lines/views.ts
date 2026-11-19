@@ -22,7 +22,8 @@ export function queuedView(row: QueuedRow): QueuedMessageView {
     origin: row.origin, createdAt: row.createdAt };
 }
 
-export type ViewState = Pick<StateService, 'lineQueue' | 'lineMessages' | 'lines' | 'mates' | 'linePlans'>;
+export type ViewState = Pick<StateService, 'lineQueue' | 'lineMessages' | 'lines' | 'mates' | 'linePlans'
+  | 'maintenanceOperations'>;
 
 function outcome(state: ViewState, line: LineRow, queued: number): LineOutcome | null {
   if (line.status === 'failed') {
@@ -34,8 +35,15 @@ function outcome(state: ViewState, line: LineRow, queued: number): LineOutcome |
   if (line.status !== 'idle' || queued > 0) {
     return null;
   }
-  const last = state.lineMessages.last(line.id)?.message;
+  const tail = state.lineMessages.last(line.id);
+  const last = tail?.message;
   if (!isAssistant(last)) {
+    // 运维核实了送达、单独留底并更正状态。绑定最后消息和该次更正的行版本，不改旧消息。
+    if (line.kind === 'background' && line.pauseReason === null && line.failure === null
+      && line.unmetReason === null && tail?.role === 'toolResult') {
+      const key = `verified-completion:${line.id}:${tail.seq}:${line.updatedAt}`;
+      if (state.maintenanceOperations.get(key)?.op === 'line.verify-delivery') return 'done';
+    }
     return null;
   }
   if (last.stopReason === 'length') {
