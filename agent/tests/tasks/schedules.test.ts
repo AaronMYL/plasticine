@@ -245,3 +245,37 @@ test('一家模型都没连：到点的卡和登记进来的定时都先不跑�
   assert.equal(lines.opened.length, 1);
   assert.equal(after.length, 1);
 });
+
+for (const outcome of ['done', 'failed'] as const) {
+  test(`执行线取消自己的后续调度，不打断收尾，保留真实结果 ${outcome}`, () => {
+    const { desk, lines, notices } = setup();
+    const schedule = confirmed(desk);
+    clock = new Date('2026-11-07T14:00:10Z');
+    desk.tick();
+    lines.views.set('line-1', view('line-1', 'running'));
+    const removed = desk.remove(schedule.id, 'line-1');
+    assert.deepEqual(lines.halted, []);
+    assert.equal(removed.status, 'removed');
+    assert.equal(removed.nextAt, null);
+    assert.equal(removed.lastOutcome, null);
+    lines.views.set('line-1', view('line-1', outcome === 'done' ? 'idle' : 'failed', { outcome }));
+    desk.ended('line-1');
+    assert.equal(desk.require(schedule.id).lastOutcome, outcome);
+    clock = new Date('2026-11-10T15:00:00Z');
+    desk.tick();
+    desk.tick();
+    assert.equal(lines.opened.length, 1);
+    assert.deepEqual(lines.sent, []);
+    assert.equal(notices.length, outcome === 'done' ? 0 : 1);
+  });
+}
+
+test('其他执行线取消定时任务，仍会停下正在跑的那一轮', () => {
+  const { desk, lines } = setup();
+  const schedule = confirmed(desk);
+  clock = new Date('2026-11-07T14:00:10Z');
+  desk.tick();
+  lines.views.set('line-1', view('line-1', 'running'));
+  desk.remove(schedule.id, 'another-line');
+  assert.deepEqual(lines.halted, ['line-1']);
+});

@@ -222,15 +222,17 @@ export class ScheduleDesk {
     return updated;
   }
 
-  /** 删：只标记，行留着（照卡发送的记录要能对回这张卡）；正在跑的那一轮停下。 */
-  remove(scheduleId: string): Schedule {
+  /** 删：只标记，行留着（照卡发送的记录要能对回这张卡）；外部取消会停下当前轮，自取消只撤掉未来调度。 */
+  remove(scheduleId: string, callerLineId?: string): Schedule {
     const schedule = this.require(scheduleId);
     if (schedule.status === 'removed') {
       return schedule;
     }
     const removed = this.#state.schedules.update(schedule.id, schedule.version, { status: 'removed', nextAt: null,
       removedAt: this.#options.now().toISOString() });
-    this.#haltRunning(removed);
+    if (removed.lineId !== callerLineId) {
+      this.#haltRunning(removed);
+    }
     this.#changed();
     return removed;
   }

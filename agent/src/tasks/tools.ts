@@ -192,7 +192,7 @@ function changeTool(parts: TaskToolParts, scope: LineScope): AgentTool<typeof Ch
       if (args.action === 'resume' && current.outward !== null) {
         throw new Error('以他名义发出的定时卡要他自己在任务栏目「定时」里打开开关。');
       }
-      const changed = args.action === 'remove' ? parts.schedules.remove(current.id)
+      const changed = args.action === 'remove' ? parts.schedules.remove(current.id, scope.lineId)
         : parts.schedules.setEnabled(current.id, args.action === 'resume');
       return json({ schedule: brief(changed, parts.schedules.timeZone()) });
     },
