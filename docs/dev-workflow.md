@@ -6,7 +6,7 @@
 
 1. Node 24：`node -v` 要是 24.x。
 2. 仓库根目录 `npm ci`（`client/` 是工作区，会一起装）。桌面客户端在 `desktop/` 里另外 `npm ci`。
-3. 浏览器回归和截图用 Playwright 的 Chromium，`scripts/browser/cdp.ts` 会自己去找。
+3. 浏览器回归和截图使用本机 Chrome / Edge / Playwright Chromium，`scripts/browser/cdp.ts` 会自动探测 macOS / Windows / Linux 常见路径（也可通过 `PLASTICINE_TEST_BROWSER` 指定）。
 
 ## 二、并行开发（几件事同时做）
 
@@ -55,8 +55,6 @@
 1. 改动合进 `main`，`npm run check` 过。
 2. 在 `main` 上手动触发 `.github/workflows/build.yml`（workflow_dispatch）。它用 GitHub 托管机器打出这几样，并各自冒烟：
    - Linux 服务包
-   - Windows 安装程序
-   - Mac App
    - Mac / Windows 桌面客户端
 3. 构建全过以后，下载站十分钟内从这次构建取包发布。装了安装包的实例会自己更新，坏版本自动退回。
 4. 带数据库迁移的改动，触发构建前先在一份真实库的副本上把迁移跑一遍，看行数、外键和完整性检查。迁移只加不改，
@@ -67,7 +65,7 @@
 - Mac、Windows 共用一套 Electron 壳。
 - 设备能力按系统各写一份助手：Mac 是 `mac/` 里的 Swift 代码，Windows 在 `desktop/helpers/windows/`。
 - 改了 `desktop/` 先跑 `cd desktop && npm test`。冒烟脚本是 `desktop/build/smoke.ts`，CI 里会跑。
-- Xvfb 下可以起真窗口录屏：用 `ffmpeg -f x11grab -framerate 60` 逐帧看切换、闪烁这类问题。
+- 本地 macOS 真窗口调试可执行 `cd desktop && npm start`；在 Linux CI / Xvfb 无头环境下可用 `ffmpeg -f x11grab -framerate 60` 逐帧录屏检查切换与闪烁。
 
 ### 数据库副本演练
 

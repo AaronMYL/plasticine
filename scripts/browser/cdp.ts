@@ -98,13 +98,28 @@ export interface LocalBrowser {
   close(): Promise<void>;
 }
 
+const BROWSER_CANDIDATES = [
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  '/usr/bin/chromium',
+  '/usr/bin/google-chrome',
+] as const;
+
+/** Detects an explicit test browser path or falls back to standard OS install locations. */
+export function detectBrowserBinary(
+  configured: string | undefined = process.env['PLASTICINE_TEST_BROWSER'],
+  exists: (path: string) => boolean = existsSync,
+): string | undefined {
+  if (configured !== undefined && configured !== '') {
+    return configured;
+  }
+  return BROWSER_CANDIDATES.find(exists);
+}
+
 export async function launchBrowser(): Promise<LocalBrowser> {
-  const configured = process.env['PLASTICINE_TEST_BROWSER'];
-  const binary = configured ?? [
-    'C:/Program Files/Google/Chrome/Application/chrome.exe',
-    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-    '/usr/bin/chromium', '/usr/bin/google-chrome',
-  ].find(existsSync);
+  const binary = detectBrowserBinary();
   if (binary === undefined) {
     throw new Error('没有本地 Chromium；设置 PLASTICINE_TEST_BROWSER 后再运行浏览器回归');
   }

@@ -1,9 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FIGURES, GROUP_PREY, figureById } from '../../../src/shell/ambient/figures.ts';
 import { CreatureRaster, FLAG_EDGE } from '../../../src/shell/ambient/raster.ts';
 import { World } from '../../../src/shell/ambient/world.ts';
 
 const STEP = 1 / 60;
+
+function seededRandom(seed = 1): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
 
 function world(id: string, width = 900, height = 600, motes?: number): World {
   const figure = figureById(id);
@@ -14,7 +22,15 @@ function world(id: string, width = 900, height = 600, motes?: number): World {
 }
 
 describe('live background: simulation', () => {
-  it.each(FIGURES.map((figure) => figure.id))('%s：跑 20 秒数量不变、坐标都是有限数', (id) => {
+  beforeEach(() => {
+    vi.spyOn(Math, 'random').mockImplementation(seededRandom(42));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it.each(FIGURES.map((figure) => figure.id))('%s keeps entity counts and finite coordinates over 20 seconds', (id) => {
     const w = world(id);
     const motes = w.motes.length;
     const creatures = w.creatures.length;

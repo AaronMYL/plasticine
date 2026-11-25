@@ -7,6 +7,8 @@ import { test } from 'node:test';
 import { ShrinkingIllustrator, shrinkIllustration } from '../../src/kernel/index.ts';
 
 const hasFfmpeg = spawnSync('ffmpeg', ['-hide_banner', '-version']).status === 0;
+const hasWebp = hasFfmpeg
+  && /\blibwebp\b/.test(spawnSync('ffmpeg', ['-hide_banner', '-encoders'], { encoding: 'utf8' }).stdout ?? '');
 const signal = new AbortController().signal;
 
 function bigWebp(): Buffer {
@@ -27,7 +29,7 @@ function widthOf(data: Buffer): number {
 
 test(
   'with ffmpeg, compresses image to max-1200px WebP smaller than original',
-  { skip: hasFfmpeg ? false : 'ffmpeg is not installed on this machine' }, async () => {
+  { skip: hasWebp ? false : 'ffmpeg with libwebp is not installed on this machine' }, async () => {
   const original = bigWebp();
   const shrunk = await shrinkIllustration(original, 'image/webp', 'ffmpeg', signal);
   assert.equal(shrunk.mime, 'image/webp');

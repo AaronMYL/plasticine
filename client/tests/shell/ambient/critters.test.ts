@@ -1,10 +1,18 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CRITTER_ART, CRITTER_KINDS, mirrorFrame } from '../../../src/shell/ambient/critter-art.ts';
 import { covered, poseOf, relocateCritters } from '../../../src/shell/ambient/critters.ts';
 import { figureById, GROUP_PREY } from '../../../src/shell/ambient/figures.ts';
 import { World } from '../../../src/shell/ambient/world.ts';
 
 const STEP = 1 / 60;
+
+function seededRandom(seed = 1): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
 
 function land(id: string): World {
   const figure = figureById(id);
@@ -18,6 +26,13 @@ function run(world: World, seconds: number): void {
 }
 
 describe('live background: ground animals', () => {
+  beforeEach(() => {
+    vi.spyOn(Math, 'random').mockImplementation(seededRandom(42));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
   it('spawns one group of each of the four species inside bounds', () => {
     for (const id of ['rabbit', 'fox', 'dog', 'cat']) {
       const world = land(id);

@@ -5,8 +5,15 @@ import { crc32, deflateSync } from 'node:zlib';
 import { convertMedia, editImage } from '../../src/cloud-tools/index.ts';
 import { pixelSize } from '../../src/artifacts/office/package-xml.ts';
 
-const HAS_FFMPEG = spawnSync('ffmpeg', ['-version']).status === 0;
-const SKIP = { skip: HAS_FFMPEG ? false : 'ffmpeg is not installed on this machine' };
+const HAS_FFMPEG = spawnSync('ffmpeg', ['-hide_banner', '-version']).status === 0;
+const HAS_WEBP = HAS_FFMPEG
+  && /\blibwebp\b/.test(spawnSync('ffmpeg', ['-hide_banner', '-encoders'], { encoding: 'utf8' }).stdout ?? '');
+const HAS_DRAWTEXT = HAS_FFMPEG
+  && /\bdrawtext\b/.test(spawnSync('ffmpeg', ['-hide_banner', '-filters'], { encoding: 'utf8' }).stdout ?? '');
+
+const SKIP_FFMPEG = { skip: HAS_FFMPEG ? false : 'ffmpeg is not installed on this machine' };
+const SKIP_WEBP = { skip: HAS_WEBP ? false : 'ffmpeg with libwebp is not installed on this machine' };
+const SKIP_DRAWTEXT = { skip: HAS_DRAWTEXT ? false : 'ffmpeg with drawtext is not installed on this machine' };
 
 function rows(width: number, height: number): Buffer {
   const raw = Buffer.alloc((width * 3 + 1) * height, 0x60);
@@ -34,21 +41,34 @@ function png(width: number, height: number): Buffer {
     chunk('IDAT', deflateSync(rows(width, height))), chunk('IEND', Buffer.alloc(0))]);
 }
 
-test('converts PNG to JPEG/WebP; reports ffmpeg failure on corrupt image or missing ffmpeg', SKIP, async () => {
+test('converts PNG to JPEG; reports ffmpeg failure on corrupt image or missing ffmpeg', SKIP_FFMPEG, async () => {
   const signal = AbortSignal.timeout(60_000);
   const jpeg = await convertMedia('ffmpeg', { data: png(64, 32), extension: 'png' }, 'jpg', signal, 70);
   assert.deepEqual([...jpeg.subarray(0, 3)], [0xff, 0xd8, 0xff]);
-  const webp = await convertMedia('ffmpeg', { data: png(64, 32), extension: 'png' }, 'webp', signal);
-  assert.deepEqual(pixelSize(webp), { width: 64, height: 32 });
   await assert.rejects(convertMedia('ffmpeg', { data: Buffer.from('坏图'), extension: 'png' }, 'jpg', signal),
     /ffmpeg 没转成/);
   await assert.rejects(convertMedia('/没有/ffmpeg', { data: png(2, 2), extension: 'png' }, 'jpg', signal),
     /没有 ffmpeg/);
 });
 
+test('converts PNG to WebP when ffmpeg supports libwebp', SKIP_WEBP, async () => {
+  const signal = AbortSignal.timeout(60_000);
+  const webp = await convertMedia('ffmpeg', { data: png(64, 32), extension: 'png' }, 'webp', signal);
+  assert.deepEqual(pixelSize(webp), { width: 64, height: 32 });
+});
+
+test('edits images without text: hstack, crop, blur, resize, rotate with sizes', SKIP_FFMPEG, async () => {
+  const signal = AbortSignal.timeout(60_000);
+  const inputs = [{ data: png(64, 32), extension: 'png' }, { data: png(32, 32), extension: 'png' }];
+  const out = await editImage('ffmpeg', inputs,
+    [{ op: 'crop', x: 0, y: 0, width: 160, height: 100 }, { op: 'blur', x: 4, y: 4, width: 20, height: 20 },
+      { op: 'resize', width: 80 }, { op: 'rotate', degrees: 90 }], 'png', signal, { joinSize: 100 });
+  assert.deepEqual(pixelSize(out), { width: 50, height: 80 });
+});
+
 test(
   'edits images: hstack to match height, crop, blur, text (% & quotes), resize, rotate with sizes',
-  SKIP, async () => {
+  SKIP_DRAWTEXT, async () => {
   const signal = AbortSignal.timeout(60_000);
   const inputs = [{ data: png(64, 32), extension: 'png' }, { data: png(32, 32), extension: 'png' }];
   const out = await editImage('ffmpeg', inputs,
