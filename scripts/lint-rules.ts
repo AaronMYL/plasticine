@@ -33,6 +33,7 @@ export const LONG_FILES_ALLOWED: Readonly<Record<string, string>> = {
 const ALLOWED_DIRECTIVE = new RegExp(
   '^(?:'
   + '// SPDX-License-Identifier: \\S+|'
+  + '// swift-tools-version:\\s*\\S+|'
   + '// (?:BEGIN|END) generated \\S+|'
   + '// @(?:ts-expect-error|ts-ignore)\\b|'
   + '/\\* @vite-ignore \\*/|'
