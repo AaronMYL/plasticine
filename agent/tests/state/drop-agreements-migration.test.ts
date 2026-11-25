@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { MEMORY_DATABASE, openDatabase } from '../../src/state/db.ts';
+import { migrate, MIGRATIONS } from '../../src/state/migrations/index.ts';
+
+const ID = '0141-drop-agreements';
+
+test('0141 drops 3 legacy tables and agreement index; 0142 trims history; idempotent', () => {
+  const db = openDatabase(MEMORY_DATABASE);
+  try {
+    const at = '2026-11-15T10:00:00.000Z';
+    migrate(db, MIGRATIONS.filter((entry) => entry.id < ID), () => at);
+    const doc = (source: string, ref: string, title: string): void => {
+      db.run(`INSERT INTO search_docs (source, ref, kind, object_kind, object_id, title, body, detail, updated_at)
+        VALUES ($source, $ref, 'x', 'x', $ref, $title, '', '', $at)`, { source, ref, title, at });
+      const row = db.get('SELECT id FROM search_docs WHERE source = $source AND ref = $ref', { source, ref });
+      db.run("INSERT INTO search_fts (rowid, title, body, detail) VALUES ($id, $title, '', '')",
+        { id: row?.['id'] ?? null, title });
+    };
+    doc('agreement', 'agreement-1', '定时任务可以自己加');
+    doc('note', 'note-1', '定时任务的笔记');
+    db.run("INSERT INTO search_sources (source, version, filled_at) VALUES ('agreement', 1, $at)", { at });
+    db.run(`INSERT INTO versions (id, object_type, object_id, version, actor, reason, fields, snapshot, created_at,
+      migrated_default) VALUES ('version-1', 'agreement', 'agreement-1', 1, 'user', '旧约定', '[]', '{}', $at, 0)`,
+    { at });
+    db.run(`INSERT INTO versions (id, object_type, object_id, version, actor, reason, fields, snapshot, created_at,
+      migrated_default) VALUES ('version-3', 'task', 'task-1', 1, 'brain', '旧任务', '[]', '{}', $at, 0)`,
+    { at });
+    db.run(`INSERT INTO versions (id, object_type, object_id, version, actor, reason, fields, snapshot, created_at,
+      migrated_default) VALUES ('version-2', 'memory_entry', 'entry-1', 1, 'user', '旧记忆', '[]', '{}', $at, 0)`,
+    { at });
+    const tables = (): string[] => db.all(`SELECT name FROM sqlite_schema WHERE type = 'table'
+      AND name IN ('agreements', 'term_decodings', 'device_keys') ORDER BY name`).map((row) => String(row['name']));
+    assert.deepEqual(tables(), ['agreements', 'device_keys', 'term_decodings']);
+
+    assert.deepEqual(migrate(db, MIGRATIONS, () => at),
+      [ID, '0142-drop-agreement-history', '0143-drop-retired-history', '0144-mate-relays',
+      '0145-wakes-watches', '0146-plans-pushes-connections',
+      '0147-retired-tables-action-indexes', '0148-memory-doc-usage',
+      '0149-note-private-flag-retired', '0150-model-calls']);
+    assert.deepEqual(tables(), []);
+    assert.deepEqual(db.all('SELECT source FROM search_docs').map((row) => row['source']), ['note']);
+    assert.deepEqual(db.all("SELECT rowid FROM search_fts WHERE search_fts MATCH '定时任务'").length, 1);
+    assert.equal(db.all("SELECT 1 FROM search_sources WHERE source = 'agreement'").length, 0);
+    assert.deepEqual(db.all('SELECT object_type FROM versions').map((row) => row['object_type']), ['memory_entry']);
+    assert.deepEqual(db.all('PRAGMA foreign_key_check'), []);
+    assert.deepEqual(migrate(db, MIGRATIONS, () => at), []);
+  } finally {
+    db.close();
+  }
+});

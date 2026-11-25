@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { reportTooPlain } from '../../src/subs/page-richness.ts';
+
+const PARAGRAPH = `<p>${'这是一段很长的说明文字，没有任何结构。'.repeat(20)}</p>`;
+
+test('Short multi-paragraph drafts skip layout checks', () => {
+  assert.equal(reportTooPlain('<h1>备忘</h1><p>明天下午三点开会，带上合同。</p>'), null);
+});
+
+test('Long paragraph-only report is rejected with missing elements and layout guidance', () => {
+  const hint = reportTooPlain(`<h1>标题</h1>${PARAGRAPH.repeat(5)}`);
+  assert.match(hint ?? '', /这一页还没存/);
+  assert.match(hint ?? '', /rp-hero/);
+  assert.match(hint ?? '', /现在用到的块：一个都没有/);
+});
+
+test('Header plus >=2 built-in blocks passes; header alone is insufficient', () => {
+  const hero = '<header class="rp-hero"><h1 class="rp-h1">结论</h1><div class="rp-stats"></div></header>';
+  const rich = `${hero}<section class="rp-sec">${PARAGRAPH.repeat(4)}<div class="cards2">`
+    + '<article class="rcard"></article></div><table class="rt"></table></section>';
+  assert.equal(reportTooPlain(rich), null);
+  const onlyHero = `<header class="rp-hero"><h1 class="rp-h1">结论</h1></header>${PARAGRAPH.repeat(5)}`;
+  assert.match(reportTooPlain(onlyHero) ?? '', /现在用到的块：一个都没有/);
+  assert.doesNotMatch(reportTooPlain(onlyHero) ?? '', /开头用 rp-hero/);
+});
+
+test('Inline SVG counts as chart; script and style text excluded from body count', () => {
+  const page = `<header class="rp-hero"></header><style>${'a{}'.repeat(2000)}</style>${PARAGRAPH.repeat(4)}`
+    + '<svg viewBox="0 0 10 10"></svg><div class="lst"></div>';
+  assert.equal(reportTooPlain(page), null);
+});
+
+test('Batch 13 layout blocks (big number, case, verdict, item list) pass check', () => {
+  const head = '<p class="rp-kick"><b>研究快照</b></p>'
+    + '<header class="rp-hero"><div><h1 class="rp-h1">结论</h1></div></header>';
+  const research = `${head}<section class="rp-sec">${PARAGRAPH.repeat(4)}<div class="rp-pulse"></div>`
+    + '<div class="rp-cases"><article class="rp-case"></article></div></section>';
+  assert.equal(reportTooPlain(research), null);
+  const check = `${head}<div class="rp-verdict"></div><section class="rp-sec">${PARAGRAPH.repeat(4)}`
+    + '<div class="rp-facts"><article class="rp-fact"></article></div></section>';
+  assert.equal(reportTooPlain(check), null);
+});

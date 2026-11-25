@@ -1,0 +1,78 @@
+.shell {
+  flex-direction: row;
+  background: var(--layer-page);
+}
+
+.shell-main-area {
+  background: var(--layer-page);
+}
+
+.shell[data-phone='true'] {
+  flex-direction: column;
+}
+
+.page-enter {
+  min-height: 100%;
+  height: 100%;
+}
+
+.shell-main-web {
+  overflow: hidden;
+}
+
+body:has(.shell[data-native-web='true']),
+.shell[data-native-web='true'],
+.shell[data-native-web='true'] .shell-main-area,
+.shell[data-native-web='true'] .web-frame {
+  background: transparent;
+}
+
+.shell[data-native-web='true'] .shell-main-area {
+  position: relative;
+  isolation: isolate;
+}
+
+.shell[data-native-web='true'][data-titled] > .shell-panel {
+  background: transparent;
+}
+
+.shell[data-native-web='true'][data-titled] {
+  background: linear-gradient(var(--layer-bar), var(--layer-bar)) 56px 44px / 12px 12px no-repeat;
+}
+
+.shell[data-native-web='true'] .web-bar {
+  background: var(--layer-page);
+}
+
+.primary-button,
+.chip-button,
+.icon-button,
+.chat-ball {
+  transition: transform var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+
+.primary-button:active:not(:disabled),
+.chip-button:active:not(:disabled),
+.icon-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.chat-ball:active {
+  transform: scale(0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-button,
+  .chip-button,
+  .icon-button,
+  .chat-ball {
+    transition: none;
+  }
+
+  .primary-button:active:not(:disabled),
+  .chip-button:active:not(:disabled),
+  .icon-button:active:not(:disabled),
+  .chat-ball:active {
+    transform: none;
+  }
+}

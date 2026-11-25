@@ -1,0 +1,438 @@
+.work-sheet {
+  overflow: hidden;
+}
+
+.work-sheet .sheet-body {
+  display: flex;
+  padding: 0;
+  overflow: hidden;
+}
+
+.work-detail {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.work-scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+  padding: var(--space-5);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.work-title h2 {
+  margin: 0;
+  color: var(--fg);
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: var(--text-title-line);
+  overflow-wrap: anywhere;
+}
+
+.work-project {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  color: var(--fg2);
+}
+
+.work-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.work-state > span:nth-child(2) {
+  flex: 1;
+}
+
+.work-state[data-status='failed'] {
+  color: var(--err);
+}
+
+.work-state-note {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
+}
+
+.work-section {
+  min-width: 0;
+}
+
+.work-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.work-plan-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.work-plan-head h3 {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  font-weight: 600;
+}
+
+.work-plan-count {
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+}
+
+.work-plan-bar {
+  height: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--tint2);
+  overflow: hidden;
+}
+
+.work-plan-bar i {
+  display: block;
+  height: 100%;
+  background: var(--run);
+  transition: width var(--motion-base) var(--ease-out);
+}
+
+.work-plan-steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.work-plan-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.work-plan-step > .glyph {
+  flex: none;
+  margin: 0 var(--space-hair);
+}
+
+.work-plan-step[data-status='done'],
+.work-plan-step[data-status='skipped'] {
+  color: var(--fg2);
+}
+
+.work-plan-step[data-status='skipped'] > span {
+  text-decoration: line-through;
+  text-decoration-color: var(--line2);
+}
+
+.work-plan-step .text-button {
+  color: var(--fg2);
+}
+
+.work-section h3,
+.work-revision h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
+  font-weight: 600;
+}
+
+.work-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.work-section-head .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.work-request,
+.work-source,
+.work-progress p,
+.work-process-input {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-section-line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.work-source {
+  margin-top: var(--space-4);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line2);
+  color: var(--fg2);
+}
+
+.work-section .markdown {
+  font-size: var(--text-body);
+  line-height: var(--text-section-line);
+}
+
+.work-section .markdown > :first-child {
+  margin-top: 0;
+}
+
+.work-section .markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.work-progress p {
+  margin-top: var(--space-2);
+  color: var(--fg2);
+}
+
+.work-history {
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.work-history details {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.work-history summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
+  cursor: pointer;
+}
+
+.work-history summary > span:first-of-type {
+  flex: 1;
+}
+
+.work-history details[open] .markdown {
+  margin-top: var(--space-3);
+}
+
+.work-process {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+}
+
+.work-process-body {
+  margin-top: var(--space-3);
+}
+
+.work-process-input {
+  margin: var(--space-4) 0;
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--line2);
+  color: var(--fg2);
+}
+
+.work-footer {
+  flex: none;
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.work-compose {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+}
+
+.work-compose:focus-within {
+  border-color: var(--fg2);
+}
+
+.work-compose textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  max-height: 160px;
+  padding: 0;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.work-compose textarea::placeholder {
+  color: var(--fg3);
+}
+
+.work-send {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--fg);
+  color: var(--bg);
+  cursor: pointer;
+}
+
+.work-send:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.work-send:focus-visible,
+.work-history summary:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+}
+
+.work-queue,
+.work-send-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+}
+
+.work-error,
+.work-send-error {
+  color: var(--err);
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
+}
+
+.work-error .text-button {
+  margin-left: var(--space-2);
+}
+
+.work-placeholder {
+  align-self: flex-start;
+  padding: var(--space-5);
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.work-revision {
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.work-revision p {
+  margin: var(--space-2) 0 var(--space-4);
+  color: var(--fg2);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.work-revision textarea {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+}
+
+.work-revision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.work-manual {
+  color: var(--fg2);
+  font-size: var(--text-body);
+}
+
+.sheet-drawer.work-sheet {
+  inset: 0;
+  height: 100dvh;
+  max-height: none;
+  padding: env(safe-area-inset-top) 0 0;
+  border-radius: 0;
+}
+
+.sheet-drawer.work-sheet .sheet-handle,
+.sheet-drawer.work-sheet .sheet-close {
+  display: none;
+}
+
+.sheet-drawer.work-sheet .sheet-head {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  padding: var(--space-2) var(--space-3);
+}
+
+.sheet-drawer.work-sheet .work-back {
+  width: 44px;
+  height: 44px;
+}
+
+.sheet-drawer.work-sheet .work-scroll {
+  padding: var(--space-5) var(--space-4);
+}
+
+.sheet-drawer.work-sheet .work-footer {
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+
+.sheet-drawer.work-sheet .button-small,
+.sheet-drawer.work-sheet .work-revision-actions button,
+.sheet-drawer.work-sheet .work-task-actions button,
+.sheet-drawer.work-sheet .work-send,
+.sheet-drawer.work-sheet .text-button,
+.sheet-drawer.work-sheet .line-fold,
+.sheet-drawer.work-sheet .work-history summary {
+  min-height: 44px;
+}
+
+.sheet-drawer.work-sheet .work-send {
+  width: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-sheet {
+    animation: none;
+  }
+}

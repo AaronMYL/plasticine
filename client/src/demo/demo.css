@@ -1,0 +1,22 @@
+.demo-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-tip);
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform var(--motion-pulse) var(--ease-out), opacity var(--motion-base),
+    scale var(--motion-fast);
+}
+
+.demo-cursor[data-shown='true'] {
+  opacity: 0.85;
+}
+
+.demo-cursor[data-press='true'] {
+  scale: 0.7;
+}

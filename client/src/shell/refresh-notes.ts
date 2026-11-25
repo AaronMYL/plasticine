@@ -1,0 +1,79 @@
+import type { PlasticineApi } from '../api/client.ts';
+import { createRequestId } from '../api/request-id.ts';
+import type { ClientState } from '../state/context.tsx';
+import { NoteSaver } from '../views/notes/note-saver.ts';
+export function refreshBlockers(state: ClientState): string[] {
+  const blockers: string[] = [];
+  if (state.conversations.hasDrafts()) {
+    blockers.push('还有对话草稿或引用');
+  }
+  if (state.noteDrafts.hasAny()) {
+    blockers.push('还有未保存笔记');
+  }
+  if (state.conversations.hasAttachments()) {
+    blockers.push('还有对话附件或未完成上传');
+  }
+  if (state.outbox.hasAny()) {
+    blockers.push('还有待发送或待核实的消息');
+  }
+  if (state.noteOps.hasPending() || state.actionOps.hasPending()) {
+    blockers.push('还有写入操作待核实');
+  }
+  if (state.inlineDrafts.hasAny() || state.editDrafts.hasAny()) {
+    blockers.push('还有未保存的编辑');
+  }
+  if (state.signedOps.hasPending()) {
+    blockers.push('还有确认操作待核实');
+  }
+  if ([...state.noteDrafts.savers].some((saver) => !saver.readyForRefresh())) {
+    blockers.push('笔记尚未全部保存成功，或输入法仍在组合');
+  }
+  return blockers;
+}
+export async function saveNotesForRefresh(api: PlasticineApi, state: ClientState): Promise<string[]> {
+  const edits = state.noteDrafts.edits;
+  for (const saver of [...state.noteDrafts.savers]) {
+    await saver.flush();
+  }
+  const ids = new Set(state.noteDrafts.store.get().keys());
+  for (const operation of state.actionOps.store.get()) {
+    if (operation.request.kind === 'note_save') {
+      ids.add(operation.request.noteId);
+    }
+  }
+  const errors: string[] = [];
+  for (const id of ids) {
+    if (state.noteDrafts.savers.size > 0) {
+      if ([...state.noteDrafts.savers].some((saver) => !saver.readyForRefresh())) {
+        continue;
+      }
+    }
+    try {
+      const note = await api.notes.get(id);
+      if (note.readOnly) {
+        errors.push('有只读笔记无法保存，请回笔记页检查。');
+        continue;
+      }
+      const saver = new NoteSaver({
+        note,
+        drafts: state.noteDrafts,
+        actionOps: state.actionOps,
+        newRequestId: createRequestId,
+        save: (noteId, body) => api.notes.save(noteId, body),
+      });
+      await saver.flush();
+      saver.dispose(false);
+    } catch {
+      errors.push('有笔记没读到或没保存上，请回笔记页核对');
+    }
+  }
+  if (edits !== state.noteDrafts.edits) {
+    errors.push('保存期间有新输入，请再次确认刷新');
+  }
+  try {
+    state.conversations.saveForRefresh();
+  } catch {
+    errors.push('对话草稿未保存，请检查浏览器存储后重试');
+  }
+  return [...errors, ...refreshBlockers(state)];
+}

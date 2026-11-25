@@ -1,0 +1,258 @@
+.note-folders {
+  padding: var(--space-4) var(--space-3) var(--space-6) 0;
+  border-right: 1px solid var(--line);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.note-folders[data-inline='false'] {
+  padding: 0;
+  border: 0;
+  overflow: visible;
+}
+
+.note-folders-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 32px;
+  margin: 0 0 var(--space-3) var(--space-2);
+}
+
+.note-folders-head h2 {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: var(--text-body-line);
+  font-weight: 500;
+}
+
+.note-folder-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: var(--radius);
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.note-folder-row:hover {
+  background: var(--tint);
+}
+
+.note-folder-row:has([aria-current='true']) {
+  background: var(--tint2);
+}
+
+.note-folder-group {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.note-folder-archive {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.note-folder-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-folder-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.note-folder-count {
+  min-width: 24px;
+  text-align: right;
+  font: var(--text-tag) / var(--text-caption-line) var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg2);
+}
+
+.note-folder-manage.icon-button,
+.note-folder-spacer {
+  flex: none;
+  width: 24px;
+  min-width: 24px;
+  height: 32px;
+}
+
+.note-folder-manage {
+  transition: opacity var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+
+.note-folder-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.note-folder-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--space-4);
+}
+
+.note-folder-edit label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+}
+
+.note-folder-edit input {
+  min-width: 0;
+  width: 100%;
+  min-height: 40px;
+  border-radius: var(--radius);
+}
+
+.note-folder-edit select {
+  width: 100%;
+  min-height: 36px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+}
+
+.note-folder-position {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.note-folder-position > span {
+  margin-right: auto;
+  font-size: var(--text-caption);
+  color: var(--fg2);
+}
+
+.note-folder-remove {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-caption);
+}
+
+.note-folder-remove > summary {
+  color: var(--fg2);
+  cursor: pointer;
+}
+
+.note-folder-remove > label,
+.note-folder-remove > button {
+  margin-top: var(--space-4);
+}
+
+.notes .sheet-drawer .note-folders,
+.notes .sheet-drawer .note-folder-edit {
+  padding: var(--space-4);
+}
+
+.note-folders[data-menu='true'] .note-folder-group {
+  gap: 0;
+}
+
+.note-folders[data-menu='true'] .note-folder-archive {
+  gap: 0;
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+}
+
+.note-folders[data-menu='true'] .note-folder-button {
+  min-height: var(--control);
+  padding: var(--space-1) var(--space-3);
+}
+
+.note-folders[data-menu='true'] .note-folder-spacer {
+  display: none;
+}
+
+.note-folders[data-menu='true'] .note-folder-manage.icon-button {
+  position: absolute;
+  top: 50%;
+  right: var(--space-1);
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
+.note-folders[data-menu='true'] .note-folder-count {
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.note-folders[data-menu='true'] .note-folder-row:is(:hover, :focus-within) > .note-folder-manage {
+  opacity: 1;
+}
+
+.note-folders[data-menu='true'] .note-folder-row:has(> .note-folder-manage):is(:hover, :focus-within)
+  .note-folder-count {
+  opacity: 0;
+}
+
+.note-folder-new {
+  color: var(--fg2);
+}
+
+@media (pointer: coarse) {
+  .note-folders[data-menu='true'] .note-folder-manage.icon-button {
+    opacity: 1;
+  }
+
+  .note-folders[data-menu='true'] .note-folder-row:has(> .note-folder-manage) .note-folder-count {
+    margin-right: var(--space-6);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-folder-row,
+  .note-folder-manage,
+  .note-folder-count {
+    transition: none;
+  }
+}
+
+.note-folder-icon {
+  display: inline-flex;
+  color: var(--fg2);
+}
+
+.note-folder-button[aria-current='true'] .note-folder-icon {
+  color: var(--fg);
+}
+
+.note-folder-count {
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-tag);
+}

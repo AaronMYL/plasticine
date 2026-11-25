@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": [
+    { "name": "meeting-notes", "title": "会议纪要", "description": "把会议录音的转写整理成纪要：结论、待办、没定的问题", "category": "办公", "source": "official", "updatedAt": "2026-11-13", "files": ["SKILL.md"] },
+    { "name": "paper-reading", "title": "读论文", "description": "读一篇论文：问题、方法、结论、局限，判断值不值得细看", "category": "研究", "source": "official", "updatedAt": "2026-11-13", "files": ["SKILL.md"] },
+    { "name": "resume-fit", "title": "对着岗位改简历", "description": "拿岗位要求逐条对简历：有什么、缺什么、怎么改", "category": "写作", "source": "official", "updatedAt": "2026-11-13", "files": ["SKILL.md"] },
+    { "name": "weekly-review", "title": "每周复盘", "description": "把这一周做完的、卡住的、下周要做的理出来", "category": "办公", "source": "official", "updatedAt": "2026-11-13", "files": ["SKILL.md"] },
+    { "name": "trip-plan", "title": "旅行计划", "description": "按天排行程：交通、住处、每天走多少路", "category": "生活", "source": "official", "updatedAt": "2026-11-13", "files": ["SKILL.md"] },
+    { "name": "sheet-cleanup", "title": "表格清洗", "description": "表头错位、重复行、格式不一的表格整理干净", "category": "办公", "source": "official", "updatedAt": "2026-11-13", "files": ["SKILL.md"] }
+  ]
+}

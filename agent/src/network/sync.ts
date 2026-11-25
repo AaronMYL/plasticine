@@ -1,0 +1,186 @@
+import type { NetworkIdentity } from '../../shared/state.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
+import { requireIdentity, signerOf, type NetworkContext } from './context.ts';
+import type { Inbound } from './inbound.ts';
+import type { Outbox } from './outbox.ts';
+import type { Responder } from './responder.ts';
+import { RelayCallError } from '../../protocol/relay-client.ts';
+
+const SYNC_RETRY_BASE_MS = 2_000;
+const SYNC_RETRY_MAX_MS = 60_000;
+const IDLE_MS = 60_000;
+const OUTBOX_MIN_GAP_MS = 1_000;
+
+export interface SyncOptions {
+  autoSync: boolean;
+  pollWaitSeconds: number;
+  afterSync?: () => void;
+}
+
+function sleep(ms: number, signal: AbortSignal, wake?: (resolve: () => void) => void): Promise<void> {
+  return new Promise((resolve) => {
+    const done = (): void => {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', done);
+      resolve();
+    };
+    const timer = setTimeout(done, Math.max(ms, 0));
+    signal.addEventListener('abort', done, { once: true });
+    wake?.(done);
+  });
+}
+
+function humanError(error: unknown): string {
+  if (error instanceof RelayCallError) {
+    return error.kind === 'refused' ? `中继拒绝了同步：${error.message}` : error.message;
+  }
+  return '同步时出错了，稍后自动再试。';
+}
+
+export class SyncLoop {
+  readonly #context: NetworkContext;
+  readonly #inbound: Inbound;
+  readonly #outbox: Outbox;
+  readonly #responder: Responder;
+  readonly #options: SyncOptions;
+  readonly #controller = new AbortController();
+  readonly #loops: Promise<void>[] = [];
+  #wakePoll: (() => void) | null = null;
+  #wakeOutbox: (() => void) | null = null;
+  #syncing: Promise<number> | null = null;
+
+  constructor(context: NetworkContext, parts: { inbound: Inbound; outbox: Outbox; responder: Responder },
+    options: SyncOptions) {
+    this.#context = context;
+    this.#inbound = parts.inbound;
+    this.#outbox = parts.outbox;
+    this.#responder = parts.responder;
+    this.#options = options;
+  }
+
+  start(): void {
+    if (!this.#options.autoSync || this.#loops.length > 0) {
+      return;
+    }
+    this.#loops.push(this.#pollLoop(), this.#outboxLoop());
+  }
+
+  async stop(): Promise<void> {
+    this.#controller.abort();
+    await Promise.allSettled(this.#loops);
+  }
+
+  wake(): void {
+    this.#wakePoll?.();
+    this.#wakeOutbox?.();
+  }
+
+  kick(): void {
+    this.#wakeOutbox?.();
+  }
+
+  flush(): Promise<number> {
+    return this.#outbox.flush(this.#controller.signal);
+  }
+
+  syncOnce(waitSeconds = 0): Promise<number> {
+    this.#syncing ??= this.#sync(waitSeconds).finally(() => {
+      this.#syncing = null;
+    });
+    return this.#syncing;
+  }
+
+  async #sync(waitSeconds: number): Promise<number> {
+    const { state, now } = this.#context;
+    const identity = requireIdentity(this.#context);
+    const signer = signerOf(identity);
+    const relay = this.#context.relay();
+    try {
+      const reply = await relay.poll(signer, identity.cursor, waitSeconds, this.#controller.signal);
+      const current = requireIdentity(this.#context);
+      const outcome = await this.#inbound.receive(current, reply.envelopes);
+      if (outcome.ackIds.length > 0) {
+        await relay.ack(signer, outcome.ackIds);
+      }
+      const latest = requireIdentity(this.#context);
+      state.networkIdentity.update(latest.version, { cursor: reply.cursor, lastSyncAt: now().toISOString(),
+        lastError: null });
+      for (const change of outcome.changes) {
+        this.#context.changed(change);
+      }
+      for (const questionId of [...outcome.groupQuestions, ...outcome.questions]) {
+        await this.#context.prepareAttachments?.(questionId);
+      }
+      for (const questionId of outcome.groupQuestions) {
+        this.#answer(questionId, () => this.#responder.askedInGroup(questionId));
+      }
+      for (const questionId of outcome.questions) {
+        this.#answer(questionId, () => this.#responder.askedInChat(questionId));
+      }
+      this.#options.afterSync?.();
+      return reply.envelopes.length;
+    } catch (error) {
+      if (!this.#controller.signal.aborted) {
+        this.#recordError(error);
+      }
+      throw error;
+    }
+  }
+
+  #answer(questionId: string, open: () => void): void {
+    try {
+      open();
+    } catch (error) {
+      safeLog('error', 'network_responder_failed', { objectId: questionId, category: errorCategory(error) });
+    }
+  }
+
+  #recordError(error: unknown): void {
+    const identity = this.#context.state.networkIdentity.get();
+    if (identity !== undefined) {
+      this.#updateError(identity, humanError(error));
+    }
+    if (!(error instanceof RelayCallError)) {
+      safeLog('error', 'network_sync_failed', { category: errorCategory(error) });
+    }
+  }
+
+  #updateError(identity: NetworkIdentity, text: string): void {
+    if (identity.lastError !== text) {
+      this.#context.state.networkIdentity.update(identity.version, { lastError: text });
+    }
+  }
+
+  async #pollLoop(): Promise<void> {
+    const { signal } = this.#controller;
+    let failures = 0;
+    while (!signal.aborted) {
+      if (this.#context.state.networkIdentity.get() === undefined) {
+        await sleep(IDLE_MS, signal, (wake) => { this.#wakePoll = wake; });
+        continue;
+      }
+      try {
+        await this.syncOnce(this.#options.pollWaitSeconds);
+        failures = 0;
+      } catch {
+        failures += 1;
+        await sleep(Math.min(SYNC_RETRY_BASE_MS * 2 ** (failures - 1), SYNC_RETRY_MAX_MS), signal);
+      }
+    }
+  }
+
+  async #outboxLoop(): Promise<void> {
+    const { signal } = this.#controller;
+    while (!signal.aborted) {
+      try {
+        await this.flush();
+      } catch (error) {
+        safeLog('error', 'network_send_failed', { category: errorCategory(error) });
+      }
+      const next = this.#outbox.nextAttemptAt();
+      const due = next === undefined ? IDLE_MS : Date.parse(next) - this.#context.now().getTime();
+      const wait = Math.max(Math.min(due, IDLE_MS), OUTBOX_MIN_GAP_MS);
+      await sleep(wait, signal, (wake) => { this.#wakeOutbox = wake; });
+    }
+  }
+}

@@ -1,0 +1,433 @@
+.line-conv {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.line-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-4) 0 var(--space-2);
+}
+
+.line-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(var(--page-read), calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.line-scroll > .line-column {
+  margin-top: auto;
+}
+
+.line-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.line-day {
+  color: var(--fg2);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+  font-weight: 500;
+  text-align: center;
+}
+
+.line-note {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.line-note.is-error {
+  color: var(--err);
+}
+
+.line-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--fg);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.line-notice > svg {
+  flex: none;
+  margin-top: var(--space-1);
+  color: var(--fg2);
+}
+
+.line-input-record {
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-body-line);
+}
+
+.line-input-record > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-hair) 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.line-input-record > summary::-webkit-details-marker {
+  display: none;
+}
+
+.line-input-record > summary svg {
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.line-input-record[open] > summary svg {
+  transform: rotate(90deg);
+}
+
+.line-input-record > summary:focus-visible {
+  outline: 2px solid var(--fg2);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.line-input-text {
+  padding: var(--space-2) 0 var(--space-1) var(--space-4);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.line-turn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.line-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-self: stretch;
+  font-size: var(--text-section);
+  line-height: var(--text-long-line);
+  color: var(--fg);
+}
+
+.line-answer .markdown p {
+  margin-bottom: var(--space-3);
+}
+
+.line-answer .markdown ul,
+.line-answer .markdown ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5);
+}
+
+.line-answer .markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.line-answer .markdown code {
+  padding: var(--space-px) var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--tint2);
+}
+
+.line-thinking {
+  align-self: stretch;
+  padding: var(--space-hair) 0 var(--space-1) var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.line-fold {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 28px;
+  margin-left: calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-caption-line);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
+}
+
+.line-fold:hover,
+.line-fold[aria-expanded='true'] {
+  background: var(--tint);
+  color: var(--fg);
+}
+
+.line-fold svg {
+  color: var(--fg2);
+}
+
+.line-fold:focus-visible {
+  outline: 2px solid var(--fg2);
+  outline-offset: 1px;
+}
+
+.line-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-hair);
+  align-self: stretch;
+  margin: var(--space-hair) 0 var(--space-1);
+  padding: 0;
+  list-style: none;
+}
+
+.line-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 32px;
+}
+
+.line-step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 9.5px;
+  top: 22px;
+  bottom: -10px;
+  width: 1px;
+  background: var(--line2);
+}
+
+.line-step-icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg2);
+}
+
+.line-step-what {
+  flex: none;
+  max-width: 55%;
+  overflow: hidden;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-step-arrow {
+  flex: none;
+  color: var(--fg3);
+  font-size: var(--text-ui);
+}
+
+.line-step-result {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-step[data-ok='false'] .line-step-result {
+  color: var(--err);
+}
+
+.line-live,
+.line-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 28px;
+}
+
+.line-live-text,
+.line-state-text {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-elapsed {
+  flex: none;
+  color: var(--fg2);
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.line-state-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--fg2);
+}
+
+.line-state[data-kind='err'] .line-state-icon,
+.line-state[data-kind='err'] .line-state-text {
+  color: var(--err);
+}
+
+.line-state-sep {
+  color: var(--fg3);
+}
+
+.line-retry {
+  font-size: var(--text-body);
+}
+
+.line-spinner {
+  flex: none;
+  animation: line-spin var(--motion-spin) linear infinite;
+}
+
+.line-spinner-track {
+  stroke: var(--line2);
+}
+
+.line-spinner-arc {
+  stroke: var(--run);
+}
+
+@keyframes line-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-spinner {
+    animation: none;
+  }
+}
+
+.line-card-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.line-card.content-card {
+  gap: var(--space-hair);
+}
+
+.line-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 28px;
+}
+
+.line-card-lead {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+}
+
+.line-card-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-card-status {
+  margin: 0;
+  padding-left: var(--space-5);
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-card-status[data-status='failed'],
+.line-card-status[data-status='unmet'] {
+  color: var(--err);
+}
+
+.line-card-fold {
+  display: flex;
+  flex-direction: column;
+  padding-left: var(--space-4);
+}
+
+.line-card-note {
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.line-card-note.is-error {
+  color: var(--err);
+}
+
+.line-card-action {
+  height: 28px;
+  padding: 0 var(--space-3);
+}
+
+.shell[data-phone='true'] .line-input {
+  font-size: var(--text-long);
+  line-height: var(--text-section-line);
+}
+
+.shell[data-phone='true'] .line-stop,
+.shell[data-phone='true'] .line-send {
+  width: 36px;
+  height: 36px;
+}
+
+.shell[data-phone='true'] .line-column {
+  width: calc(100% - 32px);
+}
+
+.shell[data-phone='true'] .line-composer-dock {
+  padding: var(--space-2) 0 var(--space-3);
+}
+
+.line-scroll[data-welcome-only='true'] > .line-column {
+  margin-top: 0;
+}
+

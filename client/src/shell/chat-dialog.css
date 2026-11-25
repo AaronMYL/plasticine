@@ -1,0 +1,127 @@
+.chat-dialog {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: var(--z-dialog);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--radius-lg);
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.shell[data-titled] > .chat-dialog[data-fullscreen='false'] {
+  top: calc(44px + 8px);
+}
+
+.chat-dialog[data-fullscreen='true'] {
+  inset: 0;
+  border-radius: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.chat-dialog[data-dragging='true'] {
+  user-select: none;
+}
+
+.chat-dialog .conv {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.chat-grip {
+  position: absolute;
+  z-index: var(--z-raised);
+  touch-action: none;
+}
+
+.chat-grip-w {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  display: grid;
+  place-items: center;
+  cursor: ew-resize;
+}
+
+.chat-grip-w > span {
+  width: 3px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--line2);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.chat-grip-w:hover > span,
+.chat-grip-w:focus-visible > span,
+.chat-dialog[data-dragging='true'] .chat-grip-w > span {
+  opacity: 1;
+}
+
+.chat-grip-w:focus-visible {
+  outline: none;
+}
+
+.chat-grip-n {
+  top: 0;
+  right: 0;
+  left: 8px;
+  height: 8px;
+  display: grid;
+  place-items: center;
+  cursor: ns-resize;
+}
+
+.chat-grip-n > span {
+  width: 40px;
+  height: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--line2);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.chat-grip-n:hover > span,
+.chat-grip-n:focus-visible > span,
+.chat-dialog[data-dragging='true'] .chat-grip-n > span {
+  opacity: 1;
+}
+
+.chat-grip-n:focus-visible {
+  outline: none;
+}
+
+.chat-grip-nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+.chat-collapse {
+  flex: none;
+}
+
+.shell[data-phone='true'] .chat-ball {
+  right: 16px;
+  bottom: calc(56px + 16px + env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+}
+
+.shell[data-phone='true']:has(.note-ai-tools) .chat-ball {
+  bottom: calc(56px + 16px + 48px + env(safe-area-inset-bottom));
+}
+
+.shell[data-phone='true'] .phone-bar {
+  background: var(--layer-side);
+}

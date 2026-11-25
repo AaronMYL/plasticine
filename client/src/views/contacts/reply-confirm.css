@@ -1,0 +1,54 @@
+.reply-confirm {
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(520px, 100%);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--layer-float);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.reply-confirm-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-ui);
+  color: var(--fg2);
+}
+
+.reply-confirm-draft {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  line-height: var(--text-section-line);
+}
+
+.reply-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.contact-thread[data-phone='true'] .reply-confirm {
+  width: 100%;
+}
+
+.contact-thread[data-phone='true'] .reply-confirm-actions > button {
+  min-height: 44px;
+}
+
+.contact-thread[data-phone='true'] .reply-confirm-draft {
+  font-size: var(--text-long);
+}
+
+.reply-confirm-question {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,48 @@
+.sub-card {
+  animation: sub-card-in var(--motion-base) var(--ease-out);
+}
+
+@keyframes sub-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sub-card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sub-card-title {
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub-card-title:hover {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sub-card-answered {
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sub-card {
+    animation: none;
+  }
+}

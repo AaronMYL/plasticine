@@ -1,0 +1,194 @@
+.download-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: var(--space-7) var(--space-5);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.download-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(560px, 100%);
+  text-align: center;
+}
+
+.download-hero h1 {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-title);
+  line-height: var(--text-title-line);
+  font-weight: 600;
+}
+
+.download-sub {
+  margin: calc(-1 * var(--space-1)) 0 var(--space-5);
+  color: var(--fg2);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.primary-button.download-main {
+  width: min(280px, 100%);
+  height: 44px;
+  gap: var(--space-2);
+  font-size: var(--text-body);
+  text-decoration: none;
+}
+
+.download-note {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.download-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--err);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.download-alt {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-7);
+}
+
+.download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.download-link:hover,
+.download-link[aria-expanded='true'] {
+  color: var(--fg);
+}
+
+.download-link-strong {
+  color: var(--fg);
+}
+
+.download-link:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.download-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  margin-top: var(--space-4);
+  text-align: left;
+  animation: download-open var(--motion-base) var(--ease-out);
+}
+
+.download-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.download-command {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  overflow-x: auto;
+  border-radius: var(--radius);
+  background: var(--tint2);
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.download-label {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.download-signin {
+  max-width: 400px;
+  align-self: center;
+}
+
+.download-signin-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.download-signin-row .field-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+}
+
+.download-signin-row .primary-button {
+  height: 40px;
+}
+
+.download-phone-text {
+  margin: 0 0 var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+@keyframes download-open {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .download-panel {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .download-page {
+    padding: var(--space-7) var(--space-6);
+  }
+
+  .download-alt {
+    flex-direction: column;
+    align-items: center;
+    margin-top: var(--space-6);
+  }
+
+  .primary-button.download-main {
+    width: min(260px, 100%);
+  }
+
+  .download-signin-row .field-input {
+    font-size: var(--text-long);
+  }
+}

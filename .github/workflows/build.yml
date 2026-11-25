@@ -1,0 +1,323 @@
+name: Build packages
+run-name: "Build packages · ${{ github.sha }}"
+# Builds the Linux server package and the Electron desktop clients for Mac and
+# Windows from one commit, smoke-tests each, keeps them as run artifacts (30 days), and when everything passed attaches
+# them to a GitHub Release tagged v<version> (old releases stay, for rollback). Only GitHub-hosted runners; no secrets
+# beyond the job's own token. The download site (cyberhunter.top/download) only mirrors the release's manifest files.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: build-${{ github.sha }}
+  cancel-in-progress: false
+env:
+  RELEASE_URL: https://cyberhunter.top/download
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      commit: ${{ steps.request.outputs.commit }}
+      short: ${{ steps.request.outputs.short }}
+    steps:
+      - id: request
+        run: |
+          echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  linux:
+    needs: request
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.build.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.commit }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - name: 装依赖
+        run: npm ci --no-audit --no-fund
+      - name: 构建服务包
+        id: build
+        shell: bash
+        env:
+          COMMIT: ${{ needs.request.outputs.commit }}
+        run: |
+          set -euo pipefail
+          url="$RELEASE_URL"
+          result=$(node scripts/packages/build-server.ts --out dist/packages --commit "$COMMIT" --release-url "$url")
+          echo "$result"
+          version=$(node -e 'console.log(JSON.parse(process.argv[1]).version)' "$result")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          sed "s#^DEFAULT_RELEASE_URL=.*#DEFAULT_RELEASE_URL=\"$url\"#" scripts/packages/linux/install.sh \
+            > dist/packages/install.sh
+          tar -xzf "dist/packages/plasticine-server-$version.tar.gz" -O plasticine-server/manifest.json \
+            > dist/packages/server-manifest.json
+      - name: 安装包脚本的测试
+        run: node --test scripts/packages/*.test.ts
+      - name: Linux 端到端试装
+        run: node scripts/packages/linux-e2e.ts dist/packages/plasticine-server-*.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plasticine-server-${{ needs.request.outputs.short }}
+          path: dist/packages
+          retention-days: 30
+
+  browser:
+    needs: request
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.commit }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - name: 装依赖和中文字体
+        run: |
+          npm ci --no-audit --no-fund
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-noto-cjk
+      - name: 浏览器回归
+        shell: bash
+        env:
+          PLASTICINE_TEST_BROWSER: /usr/bin/google-chrome
+          TZ: Asia/Shanghai
+        run: |
+          cd client
+          if ! npm run test:browser 2>&1 | tee "$RUNNER_TEMP/browser.log"; then
+            files=$(grep -oE 'test at browser-tests/[^:]+' "$RUNNER_TEMP/browser.log" | sed 's/^test at //' | sort -u)
+            if [ -z "$files" ]; then exit 1; fi
+            echo "再跑一次没过的：$files"
+            node --test --test-concurrency=1 $files
+          fi
+
+  desktop-mac:
+    needs: [request, linux]
+    runs-on: macos-15
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.commit }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: plasticine-server-${{ needs.request.outputs.short }}
+          path: dist/packages
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - name: 装依赖
+        run: npm ci --no-audit --no-fund && (cd desktop && npm ci --no-audit --no-fund)
+      - name: 备好本体、Node、助手
+        shell: bash
+        env:
+          VERSION: ${{ needs.linux.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p desktop/stage/server desktop/stage/node desktop/stage/helper
+          tar -xzf "dist/packages/plasticine-server-$VERSION.tar.gz" -C desktop/stage/server --strip-components=1
+          bash scripts/packages/mac/fetch-node.sh 24.22.1 desktop/stage/node/node
+          cd mac
+          swift build -c release --arch arm64 --arch x86_64 --product plasticine-helper
+          cp "$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/plasticine-helper" \
+            ../desktop/stage/helper/plasticine-helper
+          lipo -info ../desktop/stage/helper/plasticine-helper
+      - name: 设备助手的单元测试
+        run: cd mac && swift test
+      - name: 打包
+        shell: bash
+        env:
+          VERSION: ${{ needs.linux.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd desktop
+          node build/bundle.ts
+          desktop_version=$(node -e 'console.log(process.argv[1].split(".").map(Number).join("."))' "$VERSION")
+          PLASTICINE_RELEASE_VERSION="$VERSION" npx electron-builder --mac -c electron-builder.json \
+            -c.extraMetadata.version="$desktop_version"
+          codesign --verify --deep --strict release/mac-universal/Plasticine.app
+      - name: 打开 App，等本机本体和助手
+        shell: bash
+        run: |
+          set -euo pipefail
+          app=desktop/release/mac-universal/Plasticine.app
+          printf '{"id":"h1","method":"helper.info"}\n' | "$app/Contents/MacOS/plasticine-helper" | grep '"methods"'
+          version=$(defaults read "$PWD/$app/Contents/Info.plist" CFBundleShortVersionString)
+          updates="$HOME/Library/Application Support/Plasticine/Desktop/updates"
+          mkdir -p "$updates" && date > "$updates/adopt-$version"
+          printf '{"schema":1,"server":{"mode":"this_computer","remoteUrl":null},"serverChosen":true,"notifications":true,"devicePaused":false,"roots":["%s"]}\n' \
+            "$HOME" > "$HOME/Library/Application Support/Plasticine/Desktop/settings.json"
+          open -n "$app"
+          for _ in $(seq 1 120); do
+            if curl -fsS --max-time 2 http://127.0.0.1:8790/v2/health; then
+              echo
+              pkill -f "$app/Contents/MacOS/Plasticine" || true
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "桌面客户端带的本体 120 秒内没答上健康检查" >&2
+          tail -n 80 "$HOME/Library/Logs/Plasticine/desktop.log" "$HOME/Library/Logs/Plasticine/server.log" || true
+          exit 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-mac-${{ needs.request.outputs.short }}
+          path: |
+            desktop/release/*.zip
+            desktop/release/*.dmg
+          retention-days: 30
+
+  desktop-windows:
+    needs: [request, linux]
+    runs-on: windows-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.commit }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: plasticine-server-${{ needs.request.outputs.short }}
+          path: dist/packages
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - name: 装依赖
+        shell: pwsh
+        run: |
+          npm ci --no-audit --no-fund
+          Push-Location desktop; npm ci --no-audit --no-fund; Pop-Location
+      - name: Windows 上的服务器命令
+        run: >-
+          node --test agent/tests/cloud-tools/server-shell.test.ts
+          agent/tests/cloud-tools/server-command-windows.test.ts
+      - name: 备好本体、Node、助手、图标
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.linux.outputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path desktop/stage/server, desktop/stage/node | Out-Null
+          & (Join-Path $env:WINDIR "System32\tar.exe") -xzf "dist/packages/plasticine-server-$env:VERSION.tar.gz" `
+            -C desktop/stage/server --strip-components=1
+          $Name = "node-v24.22.1-win-x64"
+          Invoke-WebRequest -UseBasicParsing -Uri "https://nodejs.org/dist/v24.22.1/$Name.zip" -OutFile "$Name.zip"
+          Invoke-WebRequest -UseBasicParsing -Uri "https://nodejs.org/dist/v24.22.1/SHASUMS256.txt" -OutFile sums.txt
+          $Want = (Select-String -Path sums.txt -Pattern " $Name.zip$").Line.Split(" ")[0]
+          if ($Want -ne (Get-FileHash -Algorithm SHA256 "$Name.zip").Hash.ToLowerInvariant()) { throw "Node 的 SHA-256 不对" }
+          Expand-Archive -Path "$Name.zip" -DestinationPath .
+          Copy-Item "$Name/node.exe" desktop/stage/node/node.exe
+          ./desktop/helpers/windows/build.ps1 -Out desktop/stage/helper
+          ./desktop/helpers/windows/smoke.ps1 -Helper desktop/stage/helper/PlasticineHelper.exe
+          ./scripts/packages/windows/make-icon.ps1 -Source client/public/icon-512.png `
+            -Destination desktop/build-resources/icon.ico
+      - name: 打包
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.linux.outputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          Push-Location desktop
+          node build/bundle.ts
+          $DesktopVersion = ($env:VERSION.Split(".") | ForEach-Object { [int64]$_ }) -join "."
+          $env:PLASTICINE_RELEASE_VERSION = $env:VERSION
+          npx electron-builder --win -c electron-builder.json "-c.extraMetadata.version=$DesktopVersion"
+          if ($LASTEXITCODE -ne 0) { throw "electron-builder 没打成" }
+          Pop-Location
+      - name: 静默装、等本机本体
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.linux.outputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $Setup = "desktop/release/Plasticine-Desktop-Setup-$env:VERSION.exe"
+          $Desk = Join-Path $env:LOCALAPPDATA "Plasticine\Desktop"
+          New-Item -ItemType Directory -Force -Path $Desk | Out-Null
+          $Settings = @{ schema = 1; server = @{ mode = "this_computer"; remoteUrl = $null }; serverChosen = $true;
+            notifications = $true; devicePaused = $false; roots = @($env:USERPROFILE) }
+          $Settings | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8NoBOM (Join-Path $Desk "settings.json")
+          Start-Process -FilePath $Setup -ArgumentList "/S", "--force-run" -Wait
+          for ($i = 0; $i -lt 120; $i++) {
+            try {
+              Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 http://127.0.0.1:8790/v2/health | Out-Null
+              Get-Process -Name Plasticine -ErrorAction SilentlyContinue | Stop-Process -Force
+              exit 0
+            } catch { Start-Sleep -Seconds 1 }
+          }
+          Get-Content "$env:LOCALAPPDATA\Plasticine\logs\desktop.log" -Tail 80 -ErrorAction SilentlyContinue
+          Get-Content "$env:LOCALAPPDATA\Plasticine\logs\server.log" -Tail 80 -ErrorAction SilentlyContinue
+          throw "桌面客户端带的本体 120 秒内没答上健康检查"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-${{ needs.request.outputs.short }}
+          path: desktop/release/*.exe
+          retention-days: 30
+
+  release:
+    needs: [request, linux, browser, desktop-mac, desktop-windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.commit }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: plasticine-server-${{ needs.request.outputs.short }}
+          path: dist/artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-mac-${{ needs.request.outputs.short }}
+          path: dist/desktop
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-windows-${{ needs.request.outputs.short }}
+          path: dist/desktop
+      - name: 整理附件和清单
+        id: assets
+        env:
+          COMMIT: ${{ needs.request.outputs.commit }}
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund --ignore-scripts
+          result=$(node scripts/packages/github-release.ts --artifacts dist/artifacts --desktop dist/desktop \
+            --commit "$COMMIT" --repo "$GITHUB_REPOSITORY" --out dist/release)
+          echo "$result"
+          echo "version=$(node -e 'console.log(JSON.parse(process.argv[1]).version)' "$result")" >> "$GITHUB_OUTPUT"
+          ls -la dist/release
+      - name: 发 GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT: ${{ needs.request.outputs.commit }}
+          VERSION: ${{ steps.assets.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="v$VERSION"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "$tag 已经发过，不动。"
+            exit 0
+          fi
+          notes="Plasticine $VERSION（提交 ${COMMIT:0:7}）。下载：Windows 用 Plasticine-Desktop-Setup-$VERSION.exe，"
+          notes+="Mac 用 Plasticine-Desktop-mac-$VERSION.dmg；服务器用 install.sh。"
+          gh release create "$tag" dist/release/* --repo "$GITHUB_REPOSITORY" --target "$COMMIT" \
+            --title "Plasticine $VERSION" --notes "$notes" --latest

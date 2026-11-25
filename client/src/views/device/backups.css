@@ -1,0 +1,32 @@
+.backup-detail {
+  padding: var(--space-4);
+  overflow-wrap: anywhere;
+}
+.backup-restore-card {
+  margin: var(--space-4);
+  overflow-wrap: anywhere;
+}
+.backup-restore-card pre {
+  white-space: pre-wrap;
+  font: inherit;
+  margin: var(--space-2) 0;
+}
+.backup-detail .tool-row {
+  flex-wrap: wrap;
+}
+.backup-comparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+.backup-comparison section {
+  min-width: 0;
+}
+.backup-comparison details {
+  margin-top: var(--space-2);
+}
+.backup-comparison summary {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}

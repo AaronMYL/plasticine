@@ -1,0 +1,20 @@
+[Unit]
+Description=Plasticine 共享浏览器
+
+[Service]
+Type=simple
+WorkingDirectory=/home/plasticine
+ExecStart=/usr/bin/xvfb-run -a -s "-screen 0 1920x1200x24" /snap/bin/chromium \
+  --no-first-run --no-default-browser-check \
+  --remote-debugging-address=127.0.0.1 --remote-debugging-port=9333 \
+  --user-data-dir=/home/plasticine/browser-profile
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillMode=control-group
+UMask=0077
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=default.target

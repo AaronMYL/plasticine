@@ -1,0 +1,89 @@
+import { mergeLayouts, normalizeLayout, sameLayout } from '../../../../agent/shared/web-tabs-layout.ts';
+import { ApiError, ConflictError } from '../errors.ts';
+import {
+  faviconHost, type MergeWebTabsRequest, type PutFaviconRequest, type PutFaviconResponse, type PutWebTabsRequest,
+  type PutWebTabsResponse, type WebTabsLayout, type WebTabsResponse,
+} from '../shared.ts';
+import type { WebTabsApi } from '../web-tabs-client.ts';
+import type { FakeEventBus } from './event-bus.ts';
+import type { FakeSession } from './fake-session.ts';
+import type { FakeReceipts } from './receipts.ts';
+import { demoFavicon } from './tabs-seed.ts';
+
+export interface FakeWebTabsDeps {
+  session: FakeSession;
+  receipts: FakeReceipts;
+  bus: FakeEventBus;
+}
+
+export class FakeWebTabs implements WebTabsApi {
+  private readonly deps: FakeWebTabsDeps;
+  private layout: WebTabsLayout = { tabs: [], pinned: [], groups: [], today: [], archived: [] };
+  private version = 0;
+  private sequence = 0;
+  private readonly remembered = new Map<string, string>();
+  icons = false;
+
+  constructor(deps: FakeWebTabsDeps) {
+    this.deps = deps;
+  }
+
+  seed(layout: WebTabsLayout): void {
+    this.layout = normalizeLayout(layout);
+    this.version = 1;
+  }
+
+  current(): WebTabsResponse {
+    return { layout: this.layout, version: this.version };
+  }
+
+  async get(): Promise<WebTabsResponse> {
+    this.deps.session.require();
+    return this.current();
+  }
+
+  async put(input: PutWebTabsRequest): Promise<PutWebTabsResponse> {
+    this.deps.session.require();
+    return this.deps.receipts.run('save', input.requestId, 'PUT /v2/web-tabs', () => {
+      if (input.baseVersion !== this.version) {
+        throw new ConflictError<WebTabsResponse>(this.current(), '竖排标签在别的设备上改过了，这次没有存。',
+          '在 current 那一份上把这几步重做一遍，带它的 version 再送。');
+      }
+      this.save(input.layout);
+      return { version: this.version };
+    });
+  }
+
+  async merge(input: MergeWebTabsRequest): Promise<WebTabsResponse> {
+    this.deps.session.require();
+    return this.deps.receipts.run('save', input.requestId, 'POST /v2/web-tabs/merge', () => {
+      this.save(mergeLayouts(this.layout, input.layout, () => `merged-${(this.sequence += 1)}`));
+      return this.current();
+    });
+  }
+
+  async rememberIcon(input: PutFaviconRequest): Promise<PutFaviconResponse> {
+    this.deps.session.require();
+    const host = faviconHost(input.pageUrl);
+    if (host === null) {
+      throw new ApiError({ kind: 'invalid', code: 'invalid_request', status: 400, message: '这不是一个网站的图标，没有存。',
+        field: 'pageUrl' });
+    }
+    this.remembered.set(host, input.icon);
+    return { host };
+  }
+
+  faviconSrc(host: string): string | null {
+    return this.remembered.get(host) ?? (this.icons ? demoFavicon(host) : null);
+  }
+
+  private save(layout: WebTabsLayout): void {
+    const next = normalizeLayout(layout);
+    if (sameLayout(next, this.layout)) {
+      return;
+    }
+    this.layout = next;
+    this.version += 1;
+    this.deps.bus.emit({ type: 'webTabs.changed', version: this.version });
+  }
+}

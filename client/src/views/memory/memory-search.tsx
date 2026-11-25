@@ -1,0 +1,66 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { errorText } from '../../api/errors.ts';
+import type { MemorySearchHit } from '../../api/shared.ts';
+import { useLive } from '../../live.tsx';
+import { Icon } from '../../shell/icons.tsx';
+import type { Route } from '../../shell/routes.ts';
+import { SearchField } from '../../primitives/search-field/index.tsx';
+
+const SEARCH_DELAY_MS = 200;
+
+function Field({ value, onChange }: { value: string; onChange: (value: string) => void }): ReactNode {
+  return (
+    <SearchField className="memory-search" label="搜记忆，含归档" value={value} onChange={onChange} />
+  );
+}
+
+function Results({ query, navigate }: { query: string; navigate: (route: Route) => void }): ReactNode {
+  const live = useLive();
+  const [hits, setHits] = useState<MemorySearchHit[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      live.memoryTopics.search(query.trim(), controller.signal).then((found) => {
+        setHits(found);
+        setError(null);
+      }, (cause: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(errorText(cause));
+        }
+      });
+    }, SEARCH_DELAY_MS);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [live.memoryTopics, query]);
+  if (error !== null) {
+    return <p className="block-empty is-error" role="alert">{error}</p>;
+  }
+  if (hits === null) {
+    return <p className="block-empty" role="status">正在搜…</p>;
+  }
+  if (hits.length === 0) {
+    return <p className="block-empty" role="status">没找到「{query.trim()}」。</p>;
+  }
+  return (
+    <ul className="topic-list memory-hits" aria-label="搜到的记忆">
+      {hits.map((hit) => (
+        <li key={hit.lineId}>
+          <button type="button" className="topic-row" data-archived={hit.archivedAt !== null}
+            onClick={() => navigate({ view: 'memory', noteId: null, topicId: hit.topicId })}>
+            <span className="topic-row-text">
+              <span className="topic-row-title memory-hit-text">{hit.text}</span>
+              <span className="topic-row-summary">{hit.topicTitle}</span>
+            </span>
+            {hit.archivedAt === null ? null : <span className="tag tag-outline-quiet">归档</span>}
+            <span className="topic-row-chevron" aria-hidden="true"><Icon name="chevron-right" size={14} /></span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export const MemorySearch = { Field, Results };

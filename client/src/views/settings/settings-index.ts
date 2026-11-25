@@ -1,0 +1,45 @@
+import type { SettingsSection } from '../../shell/routes.ts';
+
+export interface SettingsEntry {
+  section: SettingsSection;
+  title: string;
+  words: string;
+  desktopOnly?: true;
+}
+
+export const SETTINGS_INDEX: readonly SettingsEntry[] = [
+  { section: 'general', title: '外观', words: '主题 颜色 深色 浅色 暗色 夜间 暖纸 石墨 松林 午夜 跟随系统' },
+  { section: 'general', title: '时区', words: '时间 日期' },
+  { section: 'general', title: '通知', words: '推送 提醒 系统通知 测试通知 新消息' },
+  { section: 'ai', title: '用量', words: '用量 统计 token 费用 花了多少 请求 次数 账单 消耗' },
+  { section: 'ai', title: '模型', words: '提供商 连接 ChatGPT Claude DeepSeek API key 订阅 默认模型' },
+  { section: 'ai', title: '对话', words: '主线 队友 后台线 子代理 同时做几件事 并发 排队 代答 输入建议 压缩 思考' },
+  { section: 'ai', title: '例行', words: '心跳 做梦 回顾 日报 周报 研究员 订阅' },
+  { section: 'ai', title: '笔记、阅读和资料',
+    words: '笔记 续写 补充建议 翻译 信息流 图书 网页提取 视频解析 本地转写 语音转文字 出图 配图' },
+  { section: 'ai', title: '记忆和记账', words: '记忆整理 合并压缩 付款截图 记账' },
+  { section: 'ai', title: '工具和技能', words: '工具 权限 关掉 命令 skill 技能 做法' },
+  { section: 'ai', title: '网络搜索', words: 'Tavily 搜索 密钥 网页正文' },
+  { section: 'ai', title: '连接', words: 'MCP Notion GitHub 飞书 连接地址 令牌 外部工具 服务' },
+  { section: 'browser', title: '搜索引擎', words: '必应 谷歌 百度 DuckDuckGo 搜索 地址栏' },
+  { section: 'browser', title: '登录着的网站', words: '登录 cookie 网站 退出 账号', desktopOnly: true },
+  { section: 'browser', title: '导入', words: 'Chrome Safari 搬 登录 导入', desktopOnly: true },
+  { section: 'browser', title: '网页翻译', words: '翻译 双语 译文 用词表 语言' },
+  { section: 'account', title: '在别的设备上用', words: '手机 网址 二维码 域名 远程 访问' },
+  { section: 'account', title: '登录着的设备', words: '设备 退出 登出 直连 中继' },
+  { section: 'grants', title: '对外可见', words: '隐私 朋友 合作 公开 私密 档位 放开 谁能问到' },
+  { section: 'grants', title: '已经授权的', words: '授权 自动发出 发邮件 发消息 许可 对外授权 承诺 直接做' },
+  { section: 'system', title: '运行情况', words: '版本 磁盘 运行 状态 邮件' },
+  { section: 'system', title: '日历和提醒事项', words: '日历 提醒 Apple Mac' },
+  { section: 'system', title: '备份', words: '恢复 还原 备份 导出' },
+];
+
+export function searchSettings(query: string, index: readonly SettingsEntry[] = SETTINGS_INDEX): SettingsEntry[] {
+  const needle = query.trim().toLocaleLowerCase();
+  if (needle === '') {
+    return [];
+  }
+  const inTitle = index.filter((entry) => entry.title.toLocaleLowerCase().includes(needle));
+  const inWords = index.filter((entry) => !inTitle.includes(entry) && entry.words.toLocaleLowerCase().includes(needle));
+  return [...inTitle, ...inWords];
+}

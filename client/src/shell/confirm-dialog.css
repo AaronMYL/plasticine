@@ -1,0 +1,36 @@
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--err);
+  color: var(--bg);
+  font: inherit;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.danger-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.danger-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.danger-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .danger-button {
+    transition: none;
+  }
+}

@@ -1,0 +1,181 @@
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { webHash } from '../../src/state/web-tabs.ts';
+import type { PlasticineMacTranslate, PlasticineMacWebTabs } from '../../src/api/shared.ts';
+import { renderApp } from '../helpers.tsx';
+
+const URL_A = 'https://field-notes.dev/agents/what-to-remember';
+
+afterEach(() => {
+  delete window.plasticineDesktop;
+  delete window.__plasticineTranslateEvent;
+  vi.restoreAllMocks();
+});
+
+function webTabs(): PlasticineMacWebTabs {
+  return { sync: vi.fn(), command: vi.fn(), navigate: vi.fn(), snapshot: vi.fn(() => Promise.reject(new Error('不用'))) };
+}
+
+async function openWebTab(translate: PlasticineMacTranslate | undefined) {
+  window.plasticineDesktop = { version: '0.4.0', notify: vi.fn(), webTabs: webTabs(),
+    ...(translate === undefined ? {} : { translate }) };
+  const app = await renderApp();
+  let tabId = '';
+  act(() => {
+    const hash = webHash(app.state.webTabs.open(URL_A, 'What a personal agent should remember', 'user'));
+    tabId = hash.slice(hash.lastIndexOf('/') + 1);
+    window.location.hash = hash;
+  });
+  const main = screen.getByRole('main');
+  await within(main).findByRole('button', { name: /^网址/ });
+  const web = app.state.webTabs.get().tabs[0];
+  return { app, main, tabId: web?.id ?? tabId };
+}
+
+function emit(event: unknown): void {
+  act(() => window.__plasticineTranslateEvent?.(event));
+}
+
+describe('web toolbar: translate button', () => {
+  it('hides translate button when native bridge lacks translation support', async () => {
+    const { main } = await openWebTab(undefined);
+    expect(within(main).queryByRole('button', { name: '翻译这一页' })).toBeNull();
+  });
+
+  it('click starts translation with progress indicator; second click opens menu to turn off', async () => {
+    const translate = { configure: vi.fn(), deliver: vi.fn() };
+    const { app, main, tabId } = await openWebTab(translate);
+    const button = await within(main).findByRole('button', { name: '翻译这一页' });
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(button);
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    expect(within(button).getByRole('img', { name: '正在翻译' })).toBeTruthy();
+    const [, config] = translate.configure.mock.calls[0]!;
+    expect(config).toMatchObject({ target: 'zh-CN', display: 'bilingual' });
+    const spy = vi.spyOn(app.api.translate, 'translate');
+    emit({ type: 'request', tabId, run: config.run, url: URL_A, priority: 'visible', fresh: false,
+      items: [{ id: 'x-1', text: 'Remember decisions, not transcripts' }] });
+    await waitFor(() => expect(translate.deliver).toHaveBeenCalledWith(tabId, { run: config.run, failed: [],
+      items: [{ id: 'x-1', text: '记决定，不记流水账' }] }));
+    expect(spy).toHaveBeenCalledTimes(1);
+    emit({ type: 'progress', tabId, run: config.run, pending: 0, done: 1, failed: 0, chars: 35, firstScreenMs: 900 });
+    expect(within(button).queryByRole('img', { name: '正在翻译' })).toBeNull();
+    expect(within(button).getByRole('img', { name: '已翻译' })).toBeTruthy();
+    expect(button.textContent).toContain('译完了');
+    fireEvent.click(button);
+    const menu = await screen.findByRole('menu', { name: '翻译' });
+    expect(translate.configure).not.toHaveBeenLastCalledWith(tabId, null);
+    fireEvent.click(within(menu).getByRole('menuitem', { name: '关掉翻译' }));
+    expect(translate.configure).toHaveBeenLastCalledWith(tabId, null);
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('error shows error dot with reason tooltip; payment page disables button with explanation', async () => {
+    const translate = { configure: vi.fn(), deliver: vi.fn() };
+    const { app, main, tabId } = await openWebTab(translate);
+    const button = await within(main).findByRole('button', { name: '翻译这一页' });
+    vi.spyOn(app.api.translate, 'translate').mockResolvedValue({ model: 'gpt-6-luna', items: [], failure: {
+      code: 'quota', message: '订阅额度用完了，14:00 重置后能再试。', retryAt: null, retryable: false, ids: ['x-1'] } });
+    fireEvent.click(button);
+    const run = translate.configure.mock.calls[0]![1].run as string;
+    emit({ type: 'request', tabId, run, url: URL_A, priority: 'visible', fresh: false,
+      items: [{ id: 'x-1', text: 'Hello there' }] });
+    await within(button).findByRole('img', { name: '订阅额度用完了，14:00 重置后能再试。' });
+    expect(button.getAttribute('data-tip')).toBe('订阅额度用完了，14:00 重置后能再试。点一下重试没译成的段落。');
+    emit({ type: 'page', tabId, url: 'https://shop.example.com/checkout', blocked: true });
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(button.getAttribute('data-tip')).toBe('付款类页面不翻译');
+    const calls = translate.configure.mock.calls.length;
+    fireEvent.click(button);
+    expect(translate.configure.mock.calls.length).toBe(calls);
+  });
+
+  it('clicking button in error state retries same round; disabling stays in menu', async () => {
+    const translate = { configure: vi.fn(), deliver: vi.fn() };
+    const { app, main, tabId } = await openWebTab(translate);
+    const button = await within(main).findByRole('button', { name: '翻译这一页' });
+    vi.spyOn(app.api.translate, 'translate').mockResolvedValue({ model: 'gpt-6-luna', items: [], failure: {
+      code: 'busy', message: '模型服务这会儿忙，稍后再试。', retryAt: null, retryable: false, ids: ['x-1'] } });
+    fireEvent.click(button);
+    const config = translate.configure.mock.calls[0]![1];
+    emit({ type: 'request', tabId, run: config.run, url: URL_A, priority: 'visible', fresh: false,
+      items: [{ id: 'x-1', text: 'Hello there' }] });
+    await within(button).findByRole('img', { name: '模型服务这会儿忙，稍后再试。' });
+    emit({ type: 'progress', tabId, run: config.run, pending: 0, done: 0, failed: 1, chars: 11, firstScreenMs: 0 });
+    expect(button.getAttribute('aria-label')).toBe('重试翻译');
+    fireEvent.click(button);
+    expect(translate.configure).toHaveBeenLastCalledWith(tabId, config);
+    expect(within(button).getByRole('img', { name: '正在翻译' })).toBeTruthy();
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.contextMenu(button);
+    fireEvent.click(within(screen.getByRole('menu', { name: '翻译' })).getByRole('menuitem', { name: '关掉翻译' }));
+    expect(translate.configure).toHaveBeenLastCalledWith(tabId, null);
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(screen.queryByRole('menu', { name: '翻译' })).toBeNull();
+  });
+
+  it('right-click menu switches display mode, always-translate site, and default model in place', async () => {
+    const translate = { configure: vi.fn(), deliver: vi.fn() };
+    const { app, main, tabId } = await openWebTab(translate);
+    const button = await within(main).findByRole('button', { name: '翻译这一页' });
+    fireEvent.contextMenu(button);
+    const menu = screen.getByRole('menu', { name: '翻译' });
+    expect(menu.hasAttribute('data-hit-region')).toBe(true);
+    expect(within(menu).getByRole('menuitem', { name: /翻译成\s*中文/ })).toBeTruthy();
+    const always = within(menu).getByRole('switch', { name: '总是翻译 field-notes.dev' }) as HTMLInputElement;
+    expect(always.checked).toBe(true);
+    fireEvent.click(always);
+    await waitFor(async () => expect((await app.api.translate.settings()).alwaysSites)
+      .not.toContain('field-notes.dev'));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: '只看译文' }));
+    await waitFor(async () => expect((await app.api.translate.settings()).display).toBe('translation'));
+    const before = await app.api.modelProviders.list();
+    const row = await within(menu).findByRole('menuitem', { name: /^模型\s*GPT-5\.5 · 较高/ });
+    fireEvent.click(row);
+    const options = within(menu).getByRole('listbox', { name: '模型' });
+    expect(within(options).getByRole('option', { name: '跟默认' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(within(menu).getByRole('button', { name: '较低' }));
+    await waitFor(async () => expect((await app.api.modelProviders.list()).purposes
+      .find((item) => item.purpose === 'translation')?.chosen).toEqual({ model: null, thinking: 'low' }));
+    expect(await within(menu).findByRole('menuitem', { name: /^模型\s*GPT-5\.5 · 较低/ })).toBeTruthy();
+    expect((await app.api.modelProviders.list()).chosen).toEqual(before.chosen);
+    expect(screen.queryByRole('dialog', { name: '设置' })).toBeNull();
+    expect(translate.configure).not.toHaveBeenCalledWith(tabId, expect.anything());
+  });
+
+  it('always-translate site starts on load; ask-paragraph inserts source+translation quote', async () => {
+    const translate = { configure: vi.fn(), deliver: vi.fn() };
+    const { app, tabId } = await openWebTab(translate);
+    await waitFor(() => expect(window.__plasticineTranslateEvent).toBeTypeOf('function'));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+    emit({ type: 'page', tabId, url: URL_A, blocked: false });
+    expect(translate.configure).toHaveBeenCalledWith(tabId, expect.objectContaining({ target: 'zh-CN' }));
+    emit({ type: 'ask', tabId, url: URL_A, title: 'Field Notes', source: 'Most agents forget everything.',
+      translation: '大多数 agent 什么都会忘。' });
+    const quotes = app.state.conversationUi.store.get().quotes;
+    expect(quotes.map((quote) => quote.label)).toEqual(['「Field Notes」的一段']);
+    expect(quotes[0]?.text).toContain('原文：Most agents forget everything.');
+    expect(quotes[0]?.text).toContain('译文：大多数 agent 什么都会忘。');
+  });
+  it('menu closes on outside click, Esc (restoring focus), window blur, or tab switch', async () => {
+    const translate = { configure: vi.fn(), deliver: vi.fn() };
+    const { main } = await openWebTab(translate);
+    const button = await within(main).findByRole('button', { name: '翻译这一页' });
+    fireEvent.contextMenu(button);
+    expect(screen.getByRole('menu', { name: '翻译' })).toBeTruthy();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole('menu', { name: '翻译' })).toBeNull();
+    fireEvent.contextMenu(button);
+    fireEvent.keyDown(within(screen.getByRole('menu', { name: '翻译' })).getAllByRole('menuitem')[0]!,
+      { key: 'Escape' });
+    expect(screen.queryByRole('menu', { name: '翻译' })).toBeNull();
+    expect(document.activeElement).toBe(button);
+    fireEvent.contextMenu(button);
+    act(() => { window.dispatchEvent(new FocusEvent('blur')); });
+    expect(screen.queryByRole('menu', { name: '翻译' })).toBeNull();
+    fireEvent.contextMenu(button);
+    act(() => { window.dispatchEvent(new HashChangeEvent('hashchange')); });
+    expect(screen.queryByRole('menu', { name: '翻译' })).toBeNull();
+    expect(translate.configure).not.toHaveBeenCalled();
+  });
+});

@@ -1,0 +1,103 @@
+import { Type } from 'typebox';
+import type { AccountApi } from '../account-client.ts';
+import {
+  ACCOUNT_HANDLES_PATH,
+  ACCOUNT_OWN_URL_PATH,
+  ACCOUNT_WORK_LIMIT_PATH,
+  ACCOUNT_PASSWORD_PATH,
+  ACCOUNT_PATH,
+  ACCOUNT_SETUP_PATH,
+  ACCOUNT_STATE_PATH,
+  AccountPasswordResponseSchema,
+  AccountSetupResponseSchema,
+  AccountStateSchema,
+  HandleAvailabilitySchema,
+  LOCAL_SESSION_PATH,
+  LOCAL_TOKEN_HEADER,
+  OwnUrlViewSchema,
+  WorkLimitViewSchema,
+  PASSWORD_SESSION_PATH,
+  SessionViewSchema,
+  type AccountPasswordRequest,
+  type AccountPasswordResponse,
+  type AccountSetupRequest,
+  type AccountSetupResponse,
+  type AccountState,
+  type HandleAvailability,
+  type OwnUrlView,
+  type WorkLimitSetting,
+  type WorkLimitView,
+  type PasswordSessionRequest,
+  type SessionView,
+} from '../shared.ts';
+import type { Transport } from './transport.ts';
+
+const AnyBodySchema = Type.Unknown();
+
+function tokenHeader(localToken: string | null): Record<string, string> {
+  return localToken === null ? {} : { [LOCAL_TOKEN_HEADER]: localToken };
+}
+
+export class HttpAccount implements AccountApi {
+  private readonly transport: Transport;
+
+  constructor(transport: Transport) {
+    this.transport = transport;
+  }
+
+  state(signal?: AbortSignal): Promise<AccountState> {
+    return this.transport.request({ method: 'GET', path: ACCOUNT_STATE_PATH, schema: AccountStateSchema,
+      what: '读账号状态', lostAs: 'failed', signal });
+  }
+
+  handle(handle: string, signal?: AbortSignal): Promise<HandleAvailability> {
+    return this.transport.request({ method: 'GET', path: `${ACCOUNT_HANDLES_PATH}/${encodeURIComponent(handle)}`,
+      schema: HandleAvailabilitySchema, what: '查 @账号', lostAs: 'failed', signal });
+  }
+
+  setup(input: AccountSetupRequest, localToken: string | null): Promise<AccountSetupResponse> {
+    return this.transport.request({ method: 'POST', path: ACCOUNT_SETUP_PATH, body: input,
+      headers: tokenHeader(localToken), schema: AccountSetupResponseSchema, what: '建账号', lostAs: 'uncertain' });
+  }
+
+  signIn(input: PasswordSessionRequest): Promise<SessionView> {
+    return this.transport.request({ method: 'POST', path: PASSWORD_SESSION_PATH, body: input,
+      schema: SessionViewSchema, what: '登录', lostAs: 'failed' });
+  }
+
+  signInLocal(deviceName: string, localToken: string): Promise<SessionView> {
+    return this.transport.request({ method: 'POST', path: LOCAL_SESSION_PATH, body: { deviceName },
+      headers: tokenHeader(localToken), schema: SessionViewSchema, what: '登录这台电脑', lostAs: 'failed' });
+  }
+
+  setPassword(input: AccountPasswordRequest, localToken: string | null): Promise<AccountPasswordResponse> {
+    return this.transport.request({ method: 'PUT', path: ACCOUNT_PASSWORD_PATH, body: input,
+      headers: tokenHeader(localToken), schema: AccountPasswordResponseSchema, what: '设密码', lostAs: 'uncertain' });
+  }
+
+  async rename(displayName: string): Promise<AccountState> {
+    await this.transport.request({ method: 'PATCH', path: ACCOUNT_PATH, body: { displayName },
+      schema: AnyBodySchema, what: '改名字', lostAs: 'uncertain' });
+    return this.state();
+  }
+
+  ownUrl(signal?: AbortSignal): Promise<OwnUrlView> {
+    return this.transport.request({ method: 'GET', path: ACCOUNT_OWN_URL_PATH, schema: OwnUrlViewSchema,
+      what: '读自己的网址', lostAs: 'failed', signal });
+  }
+
+  setOwnUrl(ownUrl: string | null): Promise<OwnUrlView> {
+    return this.transport.request({ method: 'PUT', path: ACCOUNT_OWN_URL_PATH, body: { ownUrl },
+      schema: OwnUrlViewSchema, what: '存网址', lostAs: 'uncertain' });
+  }
+
+  workLimit(signal?: AbortSignal): Promise<WorkLimitView> {
+    return this.transport.request({ method: 'GET', path: ACCOUNT_WORK_LIMIT_PATH, schema: WorkLimitViewSchema,
+      what: '读同时做几件事', lostAs: 'failed', signal });
+  }
+
+  setWorkLimit(setting: WorkLimitSetting): Promise<WorkLimitView> {
+    return this.transport.request({ method: 'PUT', path: ACCOUNT_WORK_LIMIT_PATH, body: { setting },
+      schema: WorkLimitViewSchema, what: '改同时做几件事', lostAs: 'uncertain' });
+  }
+}

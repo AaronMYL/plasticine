@@ -1,0 +1,118 @@
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { previewable, shownAsImage } from '../../api/shared.ts';
+import { fileSize } from '../../primitives/artifact-card/format.ts';
+import { CHAT_IMAGE_BOX, ImageGrid } from '../../primitives/image-grid/index.tsx';
+import { IconButton } from '../../shell/icon-button.tsx';
+import { Icon } from '../../shell/icons.tsx';
+import { AttachmentDownload } from './attachment-download.tsx';
+import { AttachmentFilePreview } from './attachment-file-preview.tsx';
+import { attachmentExt } from './file-ext.tsx';
+import './attachment-gallery.css';
+
+export interface AttachmentMedia {
+  id: string;
+  name: string;
+  mimeType: string;
+  bytes: number;
+  url: string;
+  thumbnailUrl?: string;
+  loadContent?: (signal: AbortSignal) => Promise<Blob>;
+}
+
+const SWIPE_CLOSE_PX = 80;
+
+function Preview({ items, initial, onClose }: { items: readonly AttachmentMedia[]; initial: number;
+  onClose: () => void }): ReactNode {
+  const [index, setIndex] = useState(initial);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const item = items[index];
+  useEffect(() => {
+    const node = dialog.current;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (typeof node?.showModal === 'function') node.showModal();
+    else node?.setAttribute('open', '');
+    return () => {
+      if (typeof node?.close === 'function') node.close();
+      opener?.focus();
+    };
+  }, []);
+  if (item === undefined) return null;
+  return createPortal(<dialog ref={dialog} className="attachment-viewer" aria-label="附件预览" aria-modal="true"
+    onCancel={(event) => {
+      event.preventDefault();
+      onClose();
+    }} onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+      if (event.key === 'ArrowLeft') setIndex((value) => Math.max(0, value - 1));
+      if (event.key === 'ArrowRight') setIndex((value) => Math.min(items.length - 1, value + 1));
+    }}>
+    <header className="attachment-viewer-head"><span>{item.name}</span>
+      <span className="text-meta">{fileSize(item.bytes)}</span>
+      <AttachmentDownload key={item.id} item={item} />
+      <IconButton icon="close" label="关掉预览" onClick={onClose} /></header>
+    <div className="attachment-viewer-body" onTouchStart={(event) => {
+      const touch = event.touches[0];
+      start.current = touch === undefined ? null : { x: touch.clientX, y: touch.clientY };
+    }} onTouchEnd={(event) => {
+      const touch = event.changedTouches[0];
+      if (touch !== undefined && start.current !== null && touch.clientY - start.current.y > SWIPE_CLOSE_PX
+        && Math.abs(touch.clientX - start.current.x) < SWIPE_CLOSE_PX) onClose();
+      start.current = null;
+    }}>
+      <AttachmentFilePreview item={item} />
+    </div>
+    {items.length < 2 ? null : <nav className="attachment-viewer-nav" aria-label="附件切换">
+      <IconButton icon="back" label="上一张" disabled={index === 0}
+        onClick={() => setIndex((value) => Math.max(0, value - 1))} />
+      <span className="text-meta">{index + 1} / {items.length}</span>
+      <IconButton icon="chevron-right" label="下一张" disabled={index === items.length - 1}
+        onClick={() => setIndex((value) => Math.min(items.length - 1, value + 1))} />
+    </nav>}
+  </dialog>, document.body);
+}
+
+function FileRow({ item, mark, end }: { item: AttachmentMedia; mark: ReactNode; end: 'download' | 'chevron-right' }):
+  ReactNode {
+  return <>
+    <span className="row-card-mark" aria-hidden="true">{mark}</span>
+    <span className="row-card-text"><span className="row-card-title">{item.name}</span>
+      <span className="row-card-meta">{attachmentExt(item.name, item.mimeType)} · {fileSize(item.bytes)}</span></span>
+    <span className="row-card-end"><Icon name={end} size={16} /></span>
+  </>;
+}
+
+function DownloadFile({ item }: { item: AttachmentMedia }): ReactNode {
+  return <a className="row-card attachment-file" href={item.url} download={item.name} aria-label={`下载 ${item.name}`}>
+    <FileRow item={item} mark={attachmentExt(item.name, item.mimeType)} end="download" />
+  </a>;
+}
+
+export function AttachmentGallery({ items }: { items: readonly AttachmentMedia[] }): ReactNode {
+  const [selected, setSelected] = useState<AttachmentMedia | null>(null);
+  const images = items.filter((item) => shownAsImage(item.mimeType));
+  const files = items.filter((item) => !shownAsImage(item.mimeType));
+  const viewable = files.filter((item) => previewable(item.mimeType));
+  if (items.length === 0) return null;
+  return <div className="attachment-gallery">
+    {images.length === 0 ? null : <ImageGrid box={CHAT_IMAGE_BOX} label="图片" images={images.map((item) => ({
+      src: item.url, thumb: item.thumbnailUrl, alt: item.name, caption: item.name,
+      download: { url: item.url, name: item.name } }))} />}
+    {files.map((item) => {
+      if (!previewable(item.mimeType)) return <DownloadFile key={item.id} item={item} />;
+      const pdf = item.mimeType === 'application/pdf' && item.loadContent !== undefined;
+      return <button key={item.id} type="button" className="row-card attachment-file"
+        aria-label={`预览文件 ${item.name}`} onClick={() => setSelected(item)}>
+        <FileRow item={item} end="chevron-right"
+          mark={pdf ? <AttachmentFilePreview item={item} compact /> : attachmentExt(item.name, item.mimeType)} />
+      </button>;
+    })}
+    {selected === null ? null : <Preview key={selected.id} items={viewable}
+      initial={Math.max(0, viewable.findIndex((item) => item.id === selected.id))}
+      onClose={() => setSelected(null)} />}
+  </div>;
+}

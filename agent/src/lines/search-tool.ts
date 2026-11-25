@@ -1,0 +1,87 @@
+import type { AgentTool } from '@earendil-works/pi-agent-core';
+import { ConversationSearchParameters, type IndexLineKind } from '../../shared/search-index.ts';
+import { dayRange } from '../daily/index.ts';
+import type { StateService } from '../state/index.ts';
+import { DEFAULT_TIME_ZONE } from './kernel-types.ts';
+import { checkedArgs } from './tool-args.ts';
+import type { KernelTool, LineScope } from './types.ts';
+import { accessibleLine, type LineAccessState } from './access.ts';
+
+const TOOL_NAME = 'conversation_search';
+const DEFAULT_HITS = 8;
+const SNIPPET_SIDE_CHARS = 60;
+
+const LINE_KIND_LABELS: Readonly<Record<IndexLineKind, string>> = {
+  main: '主线', side: '旁聊', background: '后台线',
+};
+
+export type ConversationSearchState = Pick<StateService, 'search'> & LineAccessState;
+
+export function snippetAround(text: string, query: string): string {
+  const chars = Array.from(text.replace(/\s+/gu, ' ').trim());
+  const lower = chars.map((char) => char.toLocaleLowerCase());
+  const needle = Array.from(query.trim().toLocaleLowerCase());
+  let index = 0;
+  for (let at = 0; at + needle.length <= lower.length; at += 1) {
+    if (needle.every((char, offset) => lower[at + offset] === char)) {
+      index = at;
+      break;
+    }
+  }
+  const start = Math.max(0, index - SNIPPET_SIDE_CHARS);
+  const end = Math.min(chars.length, index + needle.length + SNIPPET_SIDE_CHARS);
+  return `${start > 0 ? '…' : ''}${chars.slice(start, end).join('')}${end < chars.length ? '…' : ''}`;
+}
+
+function localStamp(iso: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: DEFAULT_TIME_ZONE, year: 'numeric', month: '2-digit',
+    day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso));
+  const part = (type: string): string => parts.find((entry) => entry.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')} ${part('hour')}:${part('minute')}`;
+}
+
+function createConversationSearch(state: ConversationSearchState, scope: LineScope)
+  : AgentTool<typeof ConversationSearchParameters> {
+  return {
+    name: TOOL_NAME,
+    label: '翻对话',
+    description: '在你能看的对话里按关键词找以前的原话，可以加日期范围（YYYY-MM-DD，他的时区）和线的种类。每条命中回 ref（line:<线>:<序号>）、时间、哪条线和命中前后一小段原文，'
+      + '最相关的在前。要的是他实际说了什么、不是摘要时用它。不含工具结果。',
+    parameters: ConversationSearchParameters,
+    async execute(_toolCallId, raw) {
+      const args = checkedArgs(ConversationSearchParameters, raw, TOOL_NAME);
+      const from = args.from === undefined ? undefined : dayRange(args.from, DEFAULT_TIME_ZONE).start.toISOString();
+      const before = args.to === undefined ? undefined : dayRange(args.to, DEFAULT_TIME_ZONE).end.toISOString();
+      const hits = state.search.find({ q: args.query, kinds: ['message'],
+        ...(args.lineKind === undefined ? {} : { lineKinds: [args.lineKind] }),
+        ...(from === undefined ? {} : { from }), ...(before === undefined ? {} : { before }) })
+        .filter((hit) => hit.lineId !== null && accessibleLine(state, scope, hit.lineId));
+      if (hits.length === 0) {
+        return { content: [{ type: 'text', text: `没找到含「${args.query}」的原话。` }], details: {} };
+      }
+      const shown = hits.slice(0, args.limit ?? DEFAULT_HITS);
+      const titles = new Map<string, string>();
+      const rows = shown.map((hit) => {
+        const lineId = hit.lineId ?? '';
+        if (!titles.has(lineId)) {
+          titles.set(lineId, state.lines.get(lineId)?.title ?? lineId);
+        }
+        const where = `${titles.get(lineId)}（${hit.lineKind === null ? '线' : LINE_KIND_LABELS[hit.lineKind]}）`;
+        return `[${hit.ref}] ${localStamp(hit.updatedAt)} · ${where} · ${hit.detail}：${snippetAround(hit.body,
+          args.query)}`;
+      });
+      const head = hits.length > shown.length ? `找到 ${hits.length} 条，最相关的 ${shown.length} 条：`
+        : `找到 ${hits.length} 条：`;
+      return { content: [{ type: 'text', text: [head, ...rows].join('\n') }], details: {} };
+    },
+  };
+}
+
+export function conversationSearchTool(state: ConversationSearchState): KernelTool {
+  return {
+    name: TOOL_NAME,
+    say: (args) => (typeof args['query'] === 'string' ? `翻对话：${args['query']}` : '翻对话'),
+    hardLine: () => null,
+    create: (scope) => createConversationSearch(state, scope),
+  };
+}

@@ -1,0 +1,267 @@
+.messages .contacts-list,
+.messages[data-narrow='true'] .contacts-list {
+  width: 320px;
+  padding: var(--space-5) var(--space-3) var(--space-3);
+}
+
+.messages-filter {
+  display: flex;
+  flex: none;
+  margin: 0 var(--space-1) var(--space-3);
+}
+
+.messages-filter .segmented-item {
+  flex: 1;
+  justify-content: center;
+}
+
+.contacts[data-phone='true'] .messages-filter {
+  margin: 0 var(--space-4) var(--space-3);
+}
+
+.mail-reader {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mail-reader-head {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-5) var(--space-4) var(--space-4) var(--space-6);
+}
+
+.mail-reader-title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin-right: var(--space-2);
+}
+
+.mail-reader-subject {
+  margin: 0;
+  font-size: var(--text-title);
+  line-height: var(--text-title-line);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.mail-reader-from {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+}
+
+.mail-reader-from .contact-avatar-square {
+  border-radius: var(--radius-sm);
+}
+
+.mail-reader-sender {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-reader-address {
+  flex: 0 1000 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-reader-time,
+.mail-reader-other-time {
+  flex: none;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+  color: var(--fg2);
+}
+
+.mail-reader-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-2) var(--space-6) var(--space-6);
+  overflow-y: auto;
+}
+
+.mail-reader-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: var(--page-read);
+  margin: 0 auto;
+}
+
+.mail-reader-others {
+  display: flex;
+  flex-direction: column;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.mail-reader-other {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mail-reader-other:hover {
+  background: var(--tint);
+}
+
+.mail-reader-other:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.mail-reader-other-subject {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-reader .contact-composer {
+  flex: none;
+}
+
+.mail-reader[data-phone='true'] .mail-reader-head {
+  padding: var(--space-2) var(--space-2) var(--space-3);
+}
+
+.mail-reader[data-phone='true'] .mail-reader-body {
+  padding: 0 var(--space-4) var(--space-5);
+}
+
+.messages-list .contact-row-item {
+  position: relative;
+}
+
+.contact-row-menu {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: var(--z-raised);
+  width: 24px;
+  height: 24px;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.contact-row-item:hover > .contact-row-menu,
+.contact-row-item:focus-within > .contact-row-menu,
+.contact-row-menu[data-open='true'] {
+  opacity: 1;
+}
+
+.contact-row-item:hover .contact-row-time,
+.contact-row-item:has(> .contact-row-menu[data-open='true']) .contact-row-time {
+  visibility: hidden;
+}
+
+.contact-row[data-renaming='true'] {
+  cursor: default;
+}
+
+.contact-rename {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.contact-rename-input {
+  width: 100%;
+}
+
+.contact-rename-error {
+  margin: 0;
+  color: var(--err);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.contact-removed {
+  margin-top: var(--space-2);
+  padding: 0 var(--space-1);
+}
+
+.contact-removed-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-ui);
+  cursor: pointer;
+}
+
+.contact-removed-head > span:first-of-type {
+  flex: 1;
+  text-align: left;
+}
+
+.contact-removed-head:hover {
+  background: var(--tint);
+}
+
+.contact-removed-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: contact-removed-in var(--motion-fast) var(--ease-out);
+}
+
+.contact-removed-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
+}
+
+.contact-removed-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes contact-removed-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

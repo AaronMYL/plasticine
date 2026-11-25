@@ -1,0 +1,33 @@
+.access-warning,
+.access-empty {
+  margin: 0;
+  padding: var(--space-2) 0;
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.access-url-text {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.access-qr {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-4);
+}
+
+.access-qr .net-qr {
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.access-own {
+  display: flex;
+  flex-direction: column;
+}

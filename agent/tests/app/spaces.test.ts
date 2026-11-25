@@ -1,0 +1,180 @@
+import { fauxAssistantMessage } from '@earendil-works/pi-ai';
+import assert from 'node:assert/strict';
+import { afterEach, test } from 'node:test';
+import { REVIEW_SUBSCRIPTION_ID, researchDraft, writeSpace } from '../../src/subs/index.ts';
+import { call, json, pair, startTestApp, type TestApp, newRequestId } from './helpers.ts';
+
+let t: TestApp | undefined;
+
+afterEach(async () => {
+  await t?.close();
+  t = undefined;
+});
+
+async function start(): Promise<{ app: TestApp; cookie: string }> {
+  t = await startTestApp();
+  return { app: t, cookie: await pair(t) };
+}
+
+const HTML = '<header class="rp-hero"><h1 class="rp-h1">睡眠中的记忆重放</h1><div class="rp-stats"><div class="rp-stat">'
+  + '<div class="v"><b>14</b></div><div class="l">篇读过</div></div></div></header>'
+  + '<section class="rp-sec" id="overview"><h2>本周概览</h2><p>重放越多越好。</p></section>';
+const PAGE = { genre: 'report' as const, html: HTML };
+
+function research(app: TestApp) {
+  return app.state.subscriptions.create({ title: '认知与神经科学研究周报', kind: 'research', status: 'draft',
+    timeZone: 'Asia/Shanghai', settings: researchDraft({ topics: ['睡眠'] }) });
+}
+
+test('spaces API: 401 unauth, 404 missing space, list includes space and provenance', async () => {
+  const { app, cookie } = await start();
+  assert.equal((await call(app, 'GET', '/v2/spaces')).status, 401);
+  assert.equal((await call(app, 'GET', '/v2/spaces/nope', { cookie })).status, 404);
+  const sub = research(app);
+  writeSpace(app.state, { title: '马来西亚签证核查', ...PAGE }, 'ai');
+  writeSpace(app.state, { title: '研究周报 · 第 1 期', ...PAGE, subscriptionId: sub.id }, 'ai');
+  const list = json(await call(app, 'GET', '/v2/spaces', { cookie }))['spaces'] as Record<string, unknown>[];
+  assert.deepEqual(list.map((item) => [item['title'], item['kind'], item['genre'], item['issueNumber']]),
+    [['研究周报 · 第 1 期', 'research', 'report', 1], ['马来西亚签证核查', 'space', 'report', null]]);
+});
+
+test('user space edit saves new version as user and re-sanitizes; 409 stale, 400 empty body', async () => {
+  const { app, cookie } = await start();
+  const { space } = writeSpace(app.state, { title: '草稿', ...PAGE }, 'ai');
+  const edited = HTML.replace('睡眠中的记忆重放', '我改的结论');
+  const saved = await call(app, 'PUT', `/v2/spaces/${space.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 1, html: `${edited}<iframe src="https://x"></iframe>` } });
+  assert.equal(saved.status, 200);
+  assert.equal(json(saved)['version'], 2);
+  assert.equal(json(saved)['author'], 'user');
+  assert.equal(json(saved)['html'], edited);
+  assert.equal(json(saved)['genre'], 'report');
+  assert.equal((await call(app, 'PUT', `/v2/spaces/${space.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 1, html: HTML } })).status, 409);
+  const bad = await call(app, 'PUT', `/v2/spaces/${space.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 2, html: '<p></p>' } });
+  assert.equal(bad.status, 400);
+  assert.equal((await call(app, 'POST', `/v2/spaces/${space.id}/assist`, { cookie, body: {} })).status, 404);
+});
+
+test('Plasticine issue edit shows diff/rules; keep-rule updates sub settings, undo restores prior', async () => {
+  const { app, cookie } = await start();
+  const sub = research(app);
+  const { space: issue } = writeSpace(app.state, { title: '第 2 期', ...PAGE, subscriptionId: sub.id }, 'ai');
+  writeSpace(app.state, { id: issue.id, version: 1, title: '第 2 期', html: HTML.replace('睡眠中的', '改过的'),
+    change: '图从 4 张减到 1 张', rule: '每期最多 1 张图' }, 'ai');
+  const view = json(await call(app, 'GET', `/v2/spaces/${issue.id}`, { cookie }));
+  assert.deepEqual(view['lastChange'], { version: 2, change: '图从 4 张减到 1 张', rule: '每期最多 1 张图',
+    adopted: false });
+  const subscription = view['subscription'] as Record<string, unknown>;
+  const adopted = await call(app, 'POST', `/v2/subscriptions/${sub.id}/rules`, { cookie, body: {
+    requestId: newRequestId(), version: subscription['version'], spaceId: issue.id, spaceVersion: 2 } });
+  assert.equal(adopted.status, 200);
+  const settings = json(adopted)['settings'] as { rules: { text: string; fromIssue: number }[] };
+  assert.deepEqual(settings.rules.map((rule) => [rule.text, rule.fromIssue]), [['每期最多 1 张图', 1]]);
+  const after = json(await call(app, 'GET', `/v2/spaces/${issue.id}`, { cookie }));
+  assert.equal((after['lastChange'] as Record<string, unknown>)['adopted'], true);
+  const undone = await call(app, 'POST', `/v2/spaces/${issue.id}/undo`, { cookie, body: {
+    requestId: newRequestId(), version: 2 } });
+  assert.equal(json(undone)['version'], 3);
+  assert.equal(json(undone)['html'], HTML);
+});
+
+test('subscriptions list personal review first; 409 schedule before sample; paused has no next', async () => {
+  const { app, cookie } = await start();
+  const sub = research(app);
+  const list = json(await call(app, 'GET', '/v2/subscriptions', { cookie }))['subscriptions'] as
+    Record<string, unknown>[];
+  assert.deepEqual(list.map((item) => item['id']), [REVIEW_SUBSCRIPTION_ID, sub.id]);
+  const early = await call(app, 'PUT', `/v2/subscriptions/${sub.id}`, { cookie, body: { requestId: newRequestId(),
+    version: sub.version, status: 'active' } });
+  assert.equal(early.status, 409);
+  writeSpace(app.state, { title: '样刊', ...PAGE, subscriptionId: sub.id }, 'ai');
+  const current = app.state.subscriptions.require(sub.id);
+  const active = json(await call(app, 'PUT', `/v2/subscriptions/${sub.id}`, { cookie, body: {
+    requestId: newRequestId(), version: current.version, status: 'active' } }));
+  assert.equal(active['status'], 'active');
+  assert.equal(typeof active['nextRunAt'], 'string');
+  assert.equal((active['issues'] as unknown[]).length, 1);
+  const paused = json(await call(app, 'PUT', `/v2/subscriptions/${sub.id}`, { cookie, body: {
+    requestId: newRequestId(), version: active['version'], status: 'paused' } }));
+  assert.equal(paused['nextRunAt'], null);
+});
+
+test('generate-now opens a background line and records it on the subscription', async () => {
+  const { app, cookie } = await start();
+  const sub = research(app);
+  app.respond([fauxAssistantMessage('第 1 期写好了。')]);
+  const reply = await call(app, 'POST', `/v2/subscriptions/${sub.id}/run`, { cookie, body: {
+    requestId: newRequestId() } });
+  assert.equal(reply.status, 200);
+  const lineId = String(json(reply)['lineId']);
+  assert.equal(app.state.subscriptions.require(sub.id).lineId, lineId);
+  assert.equal(app.state.lines.get(lineId)?.kind, 'background');
+  await app.app.deps.lines.settled();
+});
+
+test('home review shows latest inbox subject and research weekly summary/stats, or null if absent', async () => {
+  const { app, cookie } = await start();
+  assert.deepEqual(json(await call(app, 'GET', '/v2/review', { cookie })), { latest: null, dream: null });
+  writeSpace(app.state, { title: '悬赏还缺赏金来源', subscriptionId: REVIEW_SUBSCRIPTION_ID, edition: 'daily',
+    genre: 'letter', html: '<p class="lt-lead">侧栏方案定稿；悬赏还缺赏金来源，卡了三天。</p><p>下一步先问赵一舟。</p>' },
+  'ai');
+  const latest = json(await call(app, 'GET', '/v2/review', { cookie }))['latest'] as Record<string, unknown>;
+  assert.equal(latest['headline'], '悬赏还缺赏金来源');
+  assert.equal(latest['edition'], 'daily');
+  assert.equal(latest['genre'], 'letter');
+  const sub = research(app);
+  writeSpace(app.state, { title: '第 1 期', ...PAGE, subscriptionId: sub.id }, 'ai');
+  const issues = json(await call(app, 'GET', `/v2/subscriptions/${sub.id}`, { cookie }))['issues'] as
+    Record<string, unknown>[];
+  assert.deepEqual([issues[0]?.['headline'], issues[0]?.['stats']], ['睡眠中的记忆重放', [{ value: '14', label: '篇读过' }]]);
+});
+
+test('deleting space moves to trash with restore; list filters non-sub; rename uses versioned PUT', async () => {
+  const { app, cookie } = await start();
+  const sub = research(app);
+  const { space: own } = writeSpace(app.state, { title: '签证核查', ...PAGE }, 'ai');
+  writeSpace(app.state, { title: '研究周报 · 第 1 期', ...PAGE, subscriptionId: sub.id }, 'ai');
+  const standalone = json(await call(app, 'GET', '/v2/spaces?standalone=true', { cookie }))['spaces'] as
+    Record<string, unknown>[];
+  assert.deepEqual(standalone.map((item) => item['title']), ['签证核查']);
+  const renamed = await call(app, 'PUT', `/v2/spaces/${own.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 1, title: '马来西亚签证核查' } });
+  assert.equal(json(renamed)['title'], '马来西亚签证核查');
+  assert.equal(json(renamed)['html'], HTML);
+  assert.equal((await call(app, 'DELETE', `/v2/spaces/${own.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 1 } })).status, 409);
+  const removed = await call(app, 'DELETE', `/v2/spaces/${own.id}`, { cookie, body: { requestId: newRequestId(),
+    version: 2 } });
+  assert.equal(removed.status, 200);
+  assert.equal((await call(app, 'GET', `/v2/spaces/${own.id}`, { cookie })).status, 404);
+  const trash = json(await call(app, 'GET', '/v2/library/trash', { cookie }))['items'] as Record<string, unknown>[];
+  assert.deepEqual(trash.map((item) => [item['kind'], item['id'], item['title']]),
+    [['space', own.id, '马来西亚签证核查']]);
+  const restored = await call(app, 'POST', `/v2/spaces/${own.id}/restore`, { cookie, body: {
+    requestId: newRequestId() } });
+  assert.equal(restored.status, 200);
+  assert.equal(json(restored)['title'], '马来西亚签证核查');
+  assert.equal((await call(app, 'GET', `/v2/spaces/${own.id}`, { cookie })).status, 200);
+  assert.deepEqual(json(await call(app, 'GET', '/v2/library/trash', { cookie }))['items'], []);
+  assert.equal((await call(app, 'POST', '/v2/spaces/nope/restore', { cookie, body: {
+    requestId: newRequestId() } })).status, 404);
+});
+
+test('space metadata round-trips via read/write API; moving folder preserves body and provenance', async () => {
+  const { app, cookie } = await start();
+  const { space } = writeSpace(app.state, { title: '示例网页', ...PAGE, category: 'webarchive',
+    sourceUrl: 'https://example.com/reading#chapter', folder: '待看' }, 'ai');
+  const saved = await call(app, 'PUT', `/v2/spaces/${space.id}`, { cookie,
+    body: { requestId: newRequestId(), version: space.version, folder: '研究' } });
+  assert.equal(saved.status, 200);
+  assert.equal(json(saved)['category'], 'webarchive');
+  assert.equal(json(saved)['folder'], '研究');
+  assert.equal(json(saved)['sourceUrl'], 'https://example.com/reading#chapter');
+  assert.equal(json(saved)['html'], HTML);
+  const list = json(await call(app, 'GET', '/v2/spaces', { cookie }))['spaces'] as Record<string, unknown>[];
+  const listed = list.find((item) => item['id'] === space.id)!;
+  assert.deepEqual([listed['title'], listed['category'], listed['sourceUrl'], listed['folder']],
+    ['示例网页', 'webarchive', 'https://example.com/reading#chapter', '研究']);
+});

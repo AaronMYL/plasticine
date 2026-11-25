@@ -1,0 +1,227 @@
+.sheet-scrim {
+  background: var(--scrim);
+}
+
+.sheet-scrim-panel {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-sheet);
+}
+
+.sheet-scrim-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  box-shadow: var(--lift);
+  border-radius: var(--radius-lg);
+  color: var(--fg);
+  min-width: 0;
+  min-height: 0;
+}
+
+.sheet:focus {
+  outline: none;
+}
+
+.sheet-panel {
+  position: absolute;
+  top: 16px;
+  right: calc(var(--dock-room, 0px) + 16px);
+  bottom: 16px;
+  z-index: var(--z-sheet);
+  width: max(320px, min(560px, calc(100% - 32px - var(--dock-room, 0px))));
+  animation: sheet-in var(--motion-slow) var(--ease-out);
+}
+
+.sheet-drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: calc(var(--z-dialog) + 1);
+  height: 85dvh;
+  max-height: calc(100dvh - env(safe-area-inset-top) - 16px);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: sheet-up var(--motion-base) var(--ease-out);
+}
+
+.sheet-handle {
+  flex: none;
+  width: 36px;
+  height: 4px;
+  margin: var(--space-2) auto 0;
+  border-radius: var(--radius-sm);
+  background: var(--line2);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+
+.sheet-head-actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--space-1);
+}
+
+.sheet-lead {
+  flex: none;
+  display: inline-flex;
+}
+
+.sheet-lead + .sheet-title { flex: 1; }
+
+.sheet-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  margin: 0;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
+  font-weight: 600;
+}
+
+.sheet-close {
+  display: grid;
+  place-items: center;
+  width: var(--control);
+  height: var(--control);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg2);
+  cursor: pointer;
+}
+
+.sheet-close:hover {
+  background: var(--tint);
+}
+
+.sheet-close:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-5);
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+
+.sheet-drawer .sheet-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.sheet-drawer .sheet-head {
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-5);
+  border-bottom: 0;
+}
+
+.sheet-drawer .sheet-head .icon-button {
+  width: var(--touch);
+  height: var(--touch);
+}
+
+.sheet-foot {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.sheet-foot:empty {
+  display: none;
+}
+
+.sheet-foot-inline {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sheet-drawer .sheet-foot {
+  padding: var(--space-3) var(--space-5);
+}
+
+.sheet-drawer .sheet-foot {
+  flex-wrap: wrap;
+}
+
+.sheet-drawer .sheet-foot > button {
+  flex: 1;
+  height: var(--touch);
+}
+
+.sheet-drawer .sheet-foot > :not(button) {
+  flex-basis: 100%;
+}
+
+.sheet-drawer .sheet-foot > :not(button):empty {
+  display: none;
+}
+
+.sheet-note {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+}
+
+.sheet-note.is-error {
+  color: var(--err);
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--space-6));
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px); /* allow-exception: mobile sheet slide-in */
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-panel,
+  .sheet-drawer {
+    animation: none;
+  }
+}
+
+.sheet-panel.sheet-fit {
+  top: 136px;
+  right: auto;
+  bottom: auto;
+  left: clamp(16px, calc(50% - 388px), 224px);
+  max-height: calc(100% - 152px);
+}
+
+.sheet-drawer.sheet-fit {
+  height: auto;
+}

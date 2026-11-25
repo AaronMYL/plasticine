@@ -1,0 +1,56 @@
+import { AiMark } from '../../shell/glyph.tsx';
+import type { ReactNode } from 'react';
+import { PROJECT_HEALTH_LABELS, type ProjectRowView } from '../../api/shared.ts';
+
+type Health = NonNullable<ProjectRowView['health']>;
+
+export function HealthMark({ health, proposed = false }: { health: Health | null; proposed?: boolean }): ReactNode {
+  if (health === null) {
+    return null;
+  }
+  const dot = health === 'ok' ? 'dot dot-ok' : 'dot proj-dot-err';
+  const label = `${PROJECT_HEALTH_LABELS[health]}${proposed ? '（Plasticine 提议）' : ''}`;
+  return (
+    <span className={`proj-health proj-health-${health}`} data-proposed={proposed ? 'true' : undefined}
+      data-tip={label} aria-label={label}>
+      <span className={dot} aria-hidden="true" />
+      {health === 'ok' ? null : PROJECT_HEALTH_LABELS[health]}
+      {proposed ? <AiMark label="Plasticine 提议" /> : null}
+    </span>
+  );
+}
+
+export function shownHealth(row: ProjectRowView): { health: Health | null; proposed: boolean } {
+  if (row.health !== null) {
+    return { health: row.health, proposed: false };
+  }
+  return { health: row.proposedHealth?.value ?? null, proposed: row.proposedHealth !== null };
+}
+
+export function NodeBar({ done, total }: { done: number; total: number }): ReactNode {
+  if (total === 0) {
+    return null;
+  }
+  return (
+    <span className="proj-nodebar-wrap">
+      <span className="proj-nodebar" aria-hidden="true">
+        {Array.from({ length: total }, (_, index) => (
+          <span key={index} className={index < done ? 'proj-seg proj-seg-done' : 'proj-seg'} />
+        ))}
+      </span>
+      <span className="text-mono proj-num" aria-label={`节点 ${done} / ${total}`}>{done}/{total}</span>
+    </span>
+  );
+}
+
+export function dueNote(days: number): string {
+  if (days === 0) {
+    return '今天';
+  }
+  return days > 0 ? `${days} 天` : `逾期 ${-days} 天`;
+}
+
+export function shortDate(date: string): string {
+  return date.slice(5);
+}
+

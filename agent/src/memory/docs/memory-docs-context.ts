@@ -1,0 +1,230 @@
+import { SOUL_SECTIONS, SOUL_SECTION_LABELS } from '../../../shared/api/soul.ts';
+import { soulSectionOf } from '../rules/soul.ts';
+import { hardLinesForModel } from '../../../shared/rules-doc.ts';
+import { GRANTS_DOC_ID, MEMORY_SECTION_LABELS, PROACTIVE_DOC_ID, RULES_DOC_ID, YOU_DOC_ID, memorySectionsOf,
+  type MemoryDoc, type MemoryDocKind, type MemoryJournalKind, type MemoryLine } from '../../../shared/state.ts';
+import type { StateService } from '../../state/index.ts';
+import { similarity } from '../curation/memory-curation-ops.ts';
+import { estimateTokens } from '../../tools/index.ts';
+
+type DocsState = Pick<StateService, 'memoryDocs' | 'projects'>;
+type TodayState = Pick<StateService, 'memoryJournal'>;
+
+export const DIRECTORY_MAX_DOCS = 60;
+export const YOU_DOC_BUDGET_TOKENS = 1_500;
+export const SEARCH_DEFAULT_LIMIT = 20;
+
+export const TODAY_BUDGET_TOKENS = 2_000;
+
+const GROUP_LABELS: Readonly<Record<MemoryDocKind, string>> = { you: '关于你和做事方式', rules: '关于你和做事方式',
+  project: '项目', person: '人', topic: '话题', skill: '技能', how: '做事经验（开工前先读相关的那一篇）',
+  grants: '说好的', proactive: '说好的' };
+const KIND_ORDER: readonly MemoryDocKind[] = ['you', 'rules', 'project', 'person', 'topic', 'skill', 'how', 'grants',
+  'proactive'];
+const WHOLE_IN_CONTEXT: readonly string[] = [GRANTS_DOC_ID, PROACTIVE_DOC_ID];
+
+const BASIS_NOTES: Readonly<Partial<Record<MemoryLine['basis'], string>>> = {
+  confirmed_inference: '（你推断、用户确认过）',
+  contact_stated: '（对方在聊天里自己说的）',
+  tried: '（你自己试出来的）',
+};
+
+const HEADER = '## 记忆（按主题整理；用户原话、已确认推断与系统默认分别保留来源）';
+const HINT = '目录里每篇一行：名字和「这篇讲什么、什么时候该读」。要用到某篇时用 read_memory_doc 按名字读整篇，'
+  + '不知道在哪篇时用 search_memory 搜；他问以前怎么定的，search_memory 带 archive 搜归档。行里的 [[名字]] 指另一篇。'
+  + '记下的事不要让用户重讲；和用户这次说的冲突时，以用户最新说的为准。';
+
+export function lineText(line: MemoryLine): string {
+  const decision = line.section === 'decision' ? '［决定］' : '';
+  const origin = line.anchors.every((anchor) => anchor.kind === 'system') ? '（系统默认）' : '';
+  const inferred = BASIS_NOTES[line.basis] ?? '';
+  const before = line.previous === null ? '' : `（之前：${line.previous}）`;
+  return `- [行:${line.id}] ${decision}${line.text}${origin}${inferred}${before}`;
+}
+
+function liveProjectIds(state: DocsState): Set<string> {
+  return new Set(state.projects.all().filter((project) => project.lifecycle !== 'done').map((project) => project.id));
+}
+
+export function directoryDocs(state: DocsState): MemoryDoc[] {
+  const projects = liveProjectIds(state);
+  return state.memoryDocs.docs.live()
+    .filter((doc) => !WHOLE_IN_CONTEXT.includes(doc.id))
+    .filter((doc) => doc.kind !== 'project' || (doc.projectId !== null && projects.has(doc.projectId)))
+    .sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind)
+      || b.updatedAt.localeCompare(a.updatedAt));
+}
+
+function youBody(state: DocsState): string[] {
+  const lines = state.memoryDocs.lines.live(YOU_DOC_ID);
+  const shown: string[] = [];
+  let used = 0;
+  for (const line of lines) {
+    const text = lineText(line);
+    const cost = estimateTokens(text);
+    if (used + cost > YOU_DOC_BUDGET_TOKENS) {
+      break;
+    }
+    used += cost;
+    shown.push(text);
+  }
+  const left = lines.length - shown.length;
+  if (left > 0) {
+    shown.push(`（关于你还有 ${left} 行这次没装，用 read_memory_doc 读 ${YOU_DOC_ID}）`);
+  }
+  return shown;
+}
+
+export function directoryLines(docs: readonly MemoryDoc[]): string[] {
+  const lines: string[] = [];
+  let group = '';
+  for (const doc of docs) {
+    const label = GROUP_LABELS[doc.kind];
+    if (label !== group) {
+      group = label;
+      lines.push(`${label}：`);
+    }
+    lines.push(`- ${doc.title}：${doc.summary === '' ? '（还没有简介）' : doc.summary}`);
+  }
+  return lines;
+}
+
+export function memoryDocsSection(state: DocsState): string {
+  const docs = directoryDocs(state).filter((doc) => state.memoryDocs.lines.size(doc.id).lines > 0);
+  if (docs.length === 0) {
+    return '';
+  }
+  const more = docs.length > DIRECTORY_MAX_DOCS ? [`（另有 ${docs.length - DIRECTORY_MAX_DOCS} 篇，用 search_memory 找）`]
+    : [];
+  const you = youBody(state);
+  return [HEADER, HINT, '### 目录', ...directoryLines(docs.slice(0, DIRECTORY_MAX_DOCS)), ...more,
+    ...(you.length === 0 ? [] : ['### 关于你', ...you])].join('\n');
+}
+
+function wholeDoc(state: Pick<StateService, 'memoryDocs'>, docId: string): string[] {
+  const doc = state.memoryDocs.docs.get(docId);
+  if (doc === undefined) {
+    return [];
+  }
+  const lines = state.memoryDocs.lines.live(docId);
+  return memorySectionsOf(doc.kind).flatMap((section) => {
+    const group = lines.filter((line) => line.section === section);
+    return group.length === 0 ? [] : [`### ${MEMORY_SECTION_LABELS[section]}`,
+      ...group.map((line) => lineText({ ...line, previous: null }))];
+  });
+}
+
+const GRANTS_HEADER = '## 承诺和授权（他说过的允许、先问、先停着，和你答应过他的事；每轮都带着）';
+const GRANTS_HINT = '做事前、出确认卡前先对一遍：「可以直接做」里有的不用再问；「先问你」里有的先问；「先停着」里的不做，'
+  + '等他开口；「答应你的」是你答应过他的，到点要做，做不了就告诉他。和他这次说的冲突时以最新的为准。'
+  + '花钱、对外答应或发出、删除和撤不回的、权限变化、必须他本人做的这几条硬线不受这里影响，照旧先问。';
+
+export function grantsDocSection(state: Pick<StateService, 'memoryDocs'>): string {
+  const body = wholeDoc(state, GRANTS_DOC_ID);
+  return body.length === 0 ? '' : [GRANTS_HEADER, GRANTS_HINT, ...body].join('\n');
+}
+
+const PROACTIVE_HEADER = '## 主动告诉他（他说过别主动提什么、什么时候别打扰、通知写成什么样）';
+const PROACTIVE_HINT = '只管你主动找他的时候（心跳、建议、主动发的消息、来信）：发之前对一遍，「别提的」不发，'
+  + '「什么时候」说的时段不发或只发要紧的，写法照「怎么通知」。他问到你的事照常回答，不受这里限制。';
+
+export function proactiveDocSection(state: Pick<StateService, 'memoryDocs'>): string {
+  const body = wholeDoc(state, PROACTIVE_DOC_ID);
+  return body.length === 0 ? '' : [PROACTIVE_HEADER, PROACTIVE_HINT, ...body].join('\n');
+}
+
+const JOURNAL_LABELS: Readonly<Record<MemoryJournalKind, string>> = { fact: '事实', decision: '决定',
+  correction: '纠正', done: '做成', remembered: '记住' };
+const TODAY_HEADER = '## 今天的记录（白天每轮记下的短记录，夜里才整理进主题文档；和主题文档冲突时以这里新的为准）';
+
+export function todaySection(state: TodayState): string {
+  const entries = state.memoryJournal.open();
+  if (entries.length === 0) {
+    return '';
+  }
+  const shown: string[] = [];
+  let used = 0;
+  for (const entry of [...entries].reverse()) {
+    const text = `- [${JOURNAL_LABELS[entry.kind]}] ${entry.text}`;
+    used += estimateTokens(text);
+    if (used > TODAY_BUDGET_TOKENS) {
+      break;
+    }
+    shown.unshift(text);
+  }
+  const left = entries.length - shown.length;
+  return [TODAY_HEADER, ...(left > 0 ? [`（更早的 ${left} 条这次没装）`] : []), ...shown].join('\n');
+}
+
+export function findDoc(state: DocsState, nameOrId: string): MemoryDoc | undefined {
+  const live = state.memoryDocs.docs.live();
+  const key = nameOrId.trim() === '怎么替你做事' ? RULES_DOC_ID : nameOrId.trim();
+  const loose = (text: string) => text.replace(/\s+/g, '').toLowerCase();
+  return live.find((doc) => doc.id === key) ?? live.find((doc) => doc.title === key)
+    ?? live.find((doc) => loose(doc.title) === loose(key));
+}
+
+const RULES_HEADER = '## 规则（所有队友共用；系统默认、用户原话和已确认推断按真实来源标记）';
+const RULES_HINT = '照这些规矩做事，不用再问他一遍；和他这次说的冲突时以最新的为准，后台整理会改那一行。';
+const MATE_RULES_HINT = '下面几条只对你这位队友；和上面共用的规则冲突时，以这几条为准。';
+
+function ruleGroups(state: Pick<StateService, 'memoryDocs'>, lines: readonly MemoryLine[]): string[] {
+  return SOUL_SECTIONS.flatMap((section) => {
+    const group = lines.filter((line) => soulSectionOf(state, line) === section);
+    return group.length === 0 ? [] : [`### ${SOUL_SECTION_LABELS[section]}`,
+      ...group.map((line) => lineText({ ...line, previous: null }))];
+  });
+}
+
+export function rulesDocSection(state: Pick<StateService, 'memoryDocs'>, mateId: string | null = null): string {
+  const hard = `硬线（不管有没有把握都先问用户；代码里也拦着）：${hardLinesForModel().join('；')}。`;
+  const live = state.memoryDocs.docs.get(RULES_DOC_ID) === undefined ? [] : state.memoryDocs.lines.live(RULES_DOC_ID);
+  const shared = live.filter((line) => line.scopeKind === 'all');
+  const own = mateId === null ? [] : live.filter((line) => line.scopeKind === 'mate' && line.scopeRef === mateId);
+  const parts = [RULES_HEADER, RULES_HINT, hard, ...ruleGroups(state, shared)];
+  if (own.length > 0) parts.push('## 只对你的规则', MATE_RULES_HINT, ...ruleGroups(state, own));
+  return parts.join('\n');
+}
+
+export interface MemoryLineHit {
+  docId: string;
+  docTitle: string;
+  line: MemoryLine;
+  score: number;
+}
+
+export function searchMemory(state: DocsState, query: string, limit = SEARCH_DEFAULT_LIMIT,
+  archive = false): MemoryLineHit[] {
+  const docs = new Map(state.memoryDocs.docs.live().map((doc) => [doc.id, doc]));
+  const hits: MemoryLineHit[] = [];
+  const lines = archive ? [...state.memoryDocs.lines.allLive(), ...state.memoryDocs.lines.allArchived()]
+    : state.memoryDocs.lines.allLive();
+  for (const line of lines) {
+    const doc = docs.get(line.docId);
+    if (doc === undefined) {
+      continue;
+    }
+    const score = similarity(line.text, query) + similarity(`${doc.title}${doc.summary}`, query) / 2;
+    if (score > 0) {
+      hits.push({ docId: doc.id, docTitle: doc.title, line, score });
+    }
+  }
+  return hits.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+export function memoryDocView(state: DocsState, doc: MemoryDoc, includeRetired = false) {
+  const lines = state.memoryDocs.lines.live(doc.id);
+  const view = (line: MemoryLine) => ({ id: line.id, section: line.section, text: line.text, basis: line.basis,
+    previous: line.previous, anchors: line.anchors });
+  return {
+    id: doc.id,
+    kind: doc.kind,
+    title: doc.title,
+    summary: doc.summary,
+    projectId: doc.projectId,
+    decisions: lines.filter((line) => line.section === 'decision').map(view),
+    lines: lines.filter((line) => line.section !== 'decision').map(view),
+    ...(includeRetired ? { archived: state.memoryDocs.lines.archived(doc.id).map((line) => ({ ...view(line),
+      archivedAt: line.archivedAt, retiredReason: line.retiredReason })) } : {}),
+  };
+}

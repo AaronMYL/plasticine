@@ -1,0 +1,18 @@
+you.example.com {
+	header {
+		Strict-Transport-Security "max-age=300"
+		X-Content-Type-Options nosniff
+	}
+	handle /v2/* {
+		reverse_proxy 127.0.0.1:8790
+	}
+	handle {
+		root * /var/www/plasticine/current
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@entry not path /assets/*
+		header @entry Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

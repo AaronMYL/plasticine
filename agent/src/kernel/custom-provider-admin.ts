@@ -1,0 +1,90 @@
+import { randomUUID } from 'node:crypto';
+import { CUSTOM_PROVIDER_PREFIX, type CustomModel, type SaveCustomProviderRequest }
+  from '../../shared/api/custom-providers.ts';
+import type { StateService } from '../state/index.ts';
+import { readCustomProviders, writeCustomProviders, type CustomProviderConfig } from './custom-providers.ts';
+import { KernelModelError, type KernelModels } from './models.ts';
+
+type CustomInput = Omit<SaveCustomProviderRequest, 'requestId'>;
+type SettingsState = Pick<StateService, 'kernelSettings'>;
+
+function checkedUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, '');
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch (error) {
+    if (error instanceof TypeError) throw new KernelModelError('invalid', 'Base URL 不是一个网址。');
+    throw error;
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new KernelModelError('invalid', 'Base URL 要以 http:// 或 https:// 开头。');
+  }
+  return trimmed;
+}
+
+function cleanModels(models: readonly CustomModel[]): CustomModel[] {
+  const seen = new Set<string>();
+  const cleaned = models.flatMap((model) => {
+    const id = model.id.trim();
+    if (id === '' || seen.has(id)) return [];
+    seen.add(id);
+    return [{ ...model, id }];
+  });
+  if (cleaned.length === 0) throw new KernelModelError('invalid', '至少填一个模型名。');
+  return cleaned;
+}
+
+export async function saveCustomProvider(kernel: KernelModels, state: SettingsState,
+  input: CustomInput): Promise<string> {
+  const configs = readCustomProviders(state);
+  const before = input.id === null ? undefined : configs.find((config) => config.id === input.id);
+  if (input.id !== null && before === undefined) {
+    throw new KernelModelError('not_found', '没有这家自定义提供商。');
+  }
+  const name = input.name.trim();
+  if (name === '') throw new KernelModelError('invalid', '名称不能空着。');
+  const config: CustomProviderConfig = {
+    id: before?.id ?? `${CUSTOM_PROVIDER_PREFIX}${randomUUID().slice(0, 8)}`,
+    name, protocol: input.protocol, baseUrl: checkedUrl(input.baseUrl), models: cleanModels(input.models),
+  };
+  const hasKey = kernel.credentials.connectedType(config.id) !== null;
+  if (input.apiKey !== undefined || !hasKey) {
+    const key = (input.apiKey ?? '').trim();
+    await kernel.credentials.modify(config.id, async () => ({ type: 'api_key', key }));
+  }
+  writeCustomProviders(state, before === undefined ? [...configs, config]
+    : configs.map((item) => (item.id === config.id ? config : item)));
+  kernel.register(config);
+  const wasEnabled = kernel.enabled()[config.id] ?? [];
+  const oldIds = (before?.models ?? []).map((model) => model.id);
+  const enabled = config.models.map((model) => model.id)
+    .filter((id) => wasEnabled.includes(id) || !oldIds.includes(id));
+  kernel.configure({ version: kernel.settings().version, purposes: [],
+    enabled: [{ provider: config.id, models: enabled }] });
+  return config.id;
+}
+
+export async function removeCustomProvider(kernel: KernelModels, state: SettingsState, id: string): Promise<void> {
+  const configs = readCustomProviders(state);
+  if (!configs.some((config) => config.id === id)) {
+    throw new KernelModelError('not_found', '没有这家自定义提供商。');
+  }
+  const settings = kernel.settings();
+  const chosen = kernel.chosen();
+  kernel.configure({
+    version: settings.version,
+    ...(chosen?.provider === id ? { default: null } : {}),
+    purposes: settings.purposes.flatMap(({ purpose, chosen: override }) => (override.model?.provider === id
+      ? [{ purpose, chosen: { model: null, thinking: override.thinking } }] : [])),
+    enabled: [{ provider: id, models: [] }],
+  });
+  writeCustomProviders(state, configs.filter((config) => config.id !== id));
+  kernel.models.deleteProvider(id);
+  await kernel.credentials.delete(id);
+}
+
+export async function storedCustomKey(kernel: KernelModels, id: string): Promise<string> {
+  const credential = await kernel.credentials.read(id);
+  return credential?.type === 'api_key' ? credential.key ?? '' : '';
+}

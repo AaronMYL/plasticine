@@ -1,0 +1,222 @@
+import assert from 'node:assert/strict';
+import { afterEach, beforeEach, test } from 'node:test';
+import { MaintenanceFailure, performMaintenance, runMaintenance } from '../../src/app/maintenance.ts';
+import { CloudToolError, type RefetchReport } from '../../src/cloud-tools/index.ts';
+import { openState, type StateService } from '../../src/state/index.ts';
+import { RULES_DOC_ID, YOU_DOC_ID } from '../../shared/state.ts';
+import { addLine, ensureMemoryDocs } from '../../src/memory/docs/memory-doc-writes.ts';
+
+let h: { state: StateService };
+
+beforeEach(() => {
+  h = { state: openState({ path: ':memory:' }) };
+});
+
+afterEach(() => {
+  h.state.close();
+});
+
+const deps = () => ({ state: h.state });
+const BECAUSE = '先把收录关掉（推荐）';
+
+function failure(work: () => unknown): MaintenanceFailure {
+  try {
+    work();
+  } catch (error) {
+    assert.ok(error instanceof MaintenanceFailure, `应当抛 MaintenanceFailure，实际 ${String(error)}`);
+    return error;
+  }
+  assert.fail('应当拒绝');
+}
+
+const ARCHIVE = { op: 'inbox.archive' as const, sources: ['patrol' as const] };
+
+test('replaying same maint op-id returns cached result without re-running or adding duplicate log', () => {
+  const request = { operationId: 'op-arch-1', ...ARCHIVE, because: BECAUSE };
+  const first = runMaintenance(deps(), request);
+  const again = runMaintenance(deps(), request);
+  assert.equal(first.replayed, false);
+  assert.equal(again.replayed, true);
+  assert.deepEqual(again.result, first.result);
+  assert.equal(h.state.maintenanceOperations.recent().length, 1);
+});
+
+test('maint write op without reason or with blank reason is rejected without logging', () => {
+  const missing = failure(() => runMaintenance(deps(), { operationId: 'op-x', ...ARCHIVE }));
+  assert.equal(missing.code, 'because_required');
+  failure(() => runMaintenance(deps(), { operationId: 'op-y', ...ARCHIVE, because: '  ' }));
+  assert.equal(h.state.maintenanceOperations.get('op-x'), undefined);
+  assert.equal(h.state.maintenanceOperations.get('op-y'), undefined);
+});
+
+test('maint status counts lines by state and lists recent ops; removed gate rules no longer listed', () => {
+  h.state.lines.main();
+  runMaintenance(deps(), { operationId: 'op-s', ...ARCHIVE, because: '归档' });
+  const status = runMaintenance(deps(), { operationId: 'op-status', op: 'status' }).result as {
+    lines: Record<string, number>; recent: { id: string }[];
+  };
+  assert.equal(status.lines['idle'], 1);
+  assert.equal('rules' in status, false);
+  assert.deepEqual(status.recent.map((row) => row.id), ['op-s']);
+});
+
+async function failsWith(work: () => Promise<unknown>, code: string): Promise<MaintenanceFailure> {
+  try {
+    await work();
+  } catch (error) {
+    assert.ok(error instanceof MaintenanceFailure, `应当抛 MaintenanceFailure，实际 ${String(error)}`);
+    assert.equal(error.code, code);
+    return error;
+  }
+  assert.fail('应当拒绝');
+}
+
+const REFETCH_QUOTE = '从 Gmail 重新抓回补齐格式，合并重复';
+const REPORT: RefetchReport = { tried: 2, found: 1, notFound: 1, errors: 0, remaining: 0,
+  items: [{ id: 'm1', outcome: 'found' }, { id: 'm2', outcome: 'not_found' }] };
+
+test('mail.refetch requires reason, logs op, replays without Gmail, defaults --limit to 30', async () => {
+  const limits: number[] = [];
+  const refetchDeps = { ...deps(), toolGroups: { cloud: { mailRefetch: { run: async (limit: number) => {
+    limits.push(limit);
+    return REPORT;
+  } } } } };
+  await failsWith(() => performMaintenance(refetchDeps, { operationId: 'op-mail-0', op: 'mail.refetch' }),
+    'because_required');
+  const first = await performMaintenance(refetchDeps, { operationId: 'op-mail-1', op: 'mail.refetch',
+    because: REFETCH_QUOTE, limit: 5 });
+  assert.equal(first.replayed, false);
+  assert.deepEqual(first.result, REPORT);
+  const again = await performMaintenance(refetchDeps, { operationId: 'op-mail-1', op: 'mail.refetch',
+    because: REFETCH_QUOTE, limit: 5 });
+  assert.equal(again.replayed, true);
+  assert.deepEqual(again.result, REPORT);
+  await performMaintenance(refetchDeps, { operationId: 'op-mail-2', op: 'mail.refetch', because: REFETCH_QUOTE });
+  assert.deepEqual(limits, [5, 30]);
+  const recorded = h.state.maintenanceOperations.get('op-mail-1');
+  assert.equal(recorded?.because, REFETCH_QUOTE);
+  assert.deepEqual(recorded?.args, { limit: 5, plan: null });
+});
+
+test('mail.refetch returns unavailable without logging if mail unconfigured; sync endpoint rejects it', async () => {
+  const refuse = { ...deps(), toolGroups: { cloud: { mailRefetch: { run: async (): Promise<RefetchReport> => {
+    throw new CloudToolError('not_configured', '收信还没接上 Gmail，没法从 Gmail 重新抓。');
+  } } } } };
+  const failure = await failsWith(() => performMaintenance(refuse, { operationId: 'op-mail-3', op: 'mail.refetch',
+    because: REFETCH_QUOTE }), 'unavailable');
+  assert.match(failure.message, /还没接上 Gmail/);
+  await failsWith(() => performMaintenance(deps(), { operationId: 'op-mail-4', op: 'mail.refetch',
+    because: REFETCH_QUOTE }), 'unavailable');
+  assert.equal(h.state.maintenanceOperations.get('op-mail-3'), undefined);
+  assert.throws(() => runMaintenance(deps(), { operationId: 'op-mail-5', op: 'mail.refetch', because: REFETCH_QUOTE }),
+    MaintenanceFailure);
+  const status = await performMaintenance(deps(), { operationId: 'op-status-2', op: 'status' });
+  assert.equal(status.op, 'status');
+});
+
+test('rule cleanup splits lines preserving source/scope, archives obsolete, replays idempotently', () => {
+  ensureMemoryDocs(h.state);
+  const old = addLine(h.state, { docId: RULES_DOC_ID, text: '- **先核实再回答。**\n- **邮件**：每天一封', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'msg-1' }] }, { actor: 'brain', ref: 'run' });
+  const stale = addLine(h.state, { docId: RULES_DOC_ID, text: '对话内容会发给模型公司', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'msg-2' }] }, { actor: 'brain', ref: 'run' });
+  const request = { operationId: 'op-rules-1', op: 'rules.rewrite' as const, because: '规则你帮我整理',
+    plan: [{ lineId: old.id, version: old.version, into: [{ text: '先核实再回答。', section: 'doing' as const }] },
+      { lineId: stale.id, version: stale.version, into: [] }] };
+  const first = runMaintenance(deps(), request);
+  assert.deepEqual(first.result, { rewritten: 1, retired: 1, added: 1 });
+  const live = h.state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.supersedes.includes(old.id));
+  assert.equal(live.length, 1);
+  assert.equal(live[0]?.previous, old.text);
+  assert.deepEqual(live[0]?.anchors, old.anchors);
+  assert.equal(live[0]?.basis, 'stated');
+  assert.notEqual(h.state.memoryDocs.lines.require(stale.id).archivedAt, null, '进归档，不是删除');
+  assert.equal(runMaintenance(deps(), request).replayed, true);
+  assert.equal(h.state.memoryDocs.lines.live(RULES_DOC_ID).filter((line) => line.supersedes.includes(old.id)).length,
+    1);
+});
+
+test('memory.move relocates lines; memory.cleanup.add queues items for review without provenance', () => {
+  ensureMemoryDocs(h.state);
+  const doc = h.state.memoryDocs.docs.create({ kind: 'topic', title: '生活', summary: '', createdBy: 'user' });
+  const line = addLine(h.state, { docId: doc.id, text: '房租每月 5 号交', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'msg-1' }] }, { actor: 'brain', ref: 'run' });
+  runMaintenance(deps(), { operationId: 'move-personal-1', op: 'memory.move', because: '直接挪好',
+    moves: [{ lineId: line.id, version: line.version, toDocId: YOU_DOC_ID }] });
+  assert.ok(h.state.memoryDocs.lines.live(YOU_DOC_ID).some((item) => item.text === '房租每月 5 号交'));
+  assert.notEqual(h.state.memoryDocs.lines.require(line.id).archivedAt, null);
+  runMaintenance(deps(), { operationId: 'claude-adds-1', op: 'memory.cleanup.add', because: '把你的记忆也整理进去',
+    adds: [{ toDocId: YOU_DOC_ID, text: '住在成都。' }, { person: '林一', text: '邻居，常一起吃饭。' }] });
+  const [item, person] = h.state.memoryCleanups.latest()?.items ?? [];
+  assert.equal(item?.kind, 'add');
+  assert.equal(item?.reason, '');
+  const page = h.state.memoryDocs.docs.live().find((candidate) => candidate.kind === 'person'
+    && candidate.title === '林一');
+  assert.equal(person?.toDocId, page?.id);
+});
+
+test('suggestions.dismiss hides pending items with prior state, skips handled, aborts if any missing', () => {
+  const make = (title: string) => h.state.suggestions.create({ title, why: '回顾里的一条', goal: title, projectId: null,
+    source: 'review', icon: 'sparkle', key: `review:test:${title}`, sourceRef: null });
+  const first = make('3．优先补读原文');
+  const second = make('最后，把纠正变成场景');
+  const started = make('已经开始做的');
+  h.state.suggestions.update(started.id, started.version, { status: 'started', actedAt: new Date().toISOString(),
+    actedByDeviceId: 'device-1' });
+  const request = { operationId: 'op-suggest-1', op: 'suggestions.dismiss' as const, because: '「建议」里 13 条半句话收起',
+    ids: [first.id, second.id, started.id] };
+  const done = runMaintenance(deps(), request);
+  assert.deepEqual(done.result, { dismissed: 2, skipped: 1, before: [
+    { id: first.id, title: '3．优先补读原文', status: 'open' },
+    { id: second.id, title: '最后，把纠正变成场景', status: 'open' },
+    { id: started.id, title: '已经开始做的', status: 'started' }] });
+  assert.equal(h.state.suggestions.get(first.id)?.status, 'dismissed');
+  assert.equal(h.state.suggestions.get(first.id)?.actedByDeviceId, 'maintenance:op-suggest-1');
+  assert.equal(h.state.suggestions.get(started.id)?.status, 'started');
+  assert.equal(runMaintenance(deps(), request).replayed, true);
+  const third = make('还摆着的一条');
+  const missing = failure(() => runMaintenance(deps(), { operationId: 'op-suggest-2', op: 'suggestions.dismiss',
+    because: '收起', ids: [third.id, 'no-such-id'] }));
+  assert.match(missing.message, /没有这条建议/);
+  assert.equal(h.state.suggestions.get(third.id)?.status, 'open');
+  assert.match(failure(() => runMaintenance(deps(), { operationId: 'op-suggest-3', op: 'suggestions.dismiss',
+    because: '收起' })).message, /--ids/);
+});
+
+test('inbox.archive archives patrol/feedback/interview items without touching email and reports IDs', () => {
+  const add = (source: 'patrol' | 'feedback' | 'interview' | 'email',
+    title: string) => h.state.inboxMessages.add({ source,
+    fromAddress: source === 'email' ? 'lin@example.test' : 'plasticine', fromName: null, title, body: title,
+    receivedAt: '2026-11-07T05:00:00.000Z', attachments: [] }).message;
+  const patrol = add('patrol', '首页头条可以换成「等你」的事');
+  const feedback = add('feedback', '按钮太小');
+  const mail = add('email', '周五下午有空');
+  const done = runMaintenance(deps(), { operationId: 'op-inbox-1', op: 'inbox.archive',
+    because: '消息里「采访、巡查、反馈」三行归档', sources: ['patrol', 'feedback', 'interview'] });
+  assert.deepEqual(done.result, { archived: 2, messages: [
+    { id: patrol.id, source: 'patrol', title: '首页头条可以换成「等你」的事' },
+    { id: feedback.id, source: 'feedback', title: '按钮太小' }] });
+  assert.notEqual(h.state.inboxMessages.require(patrol.id).archivedAt, null);
+  assert.equal(h.state.inboxMessages.require(mail.id).archivedAt, null);
+  assert.equal(h.state.inboxMessages.count({ box: 'patrol' }), 0);
+  assert.match(failure(() => runMaintenance(deps(), { operationId: 'op-inbox-2', op: 'inbox.archive',
+    because: '归档' })).message, /--sources/);
+});
+
+test('line.start launches background line posted to main; rejects if no kernel or missing title/task', () => {
+  const opened: unknown[] = [];
+  const lines = { open: (input: unknown) => {
+    opened.push(input);
+    return { id: 'line-new' } as never;
+  } };
+  const main = h.state.lines.main();
+  const reply = runMaintenance({ state: h.state, lines }, { operationId: 'op-line-1', op: 'line.start',
+    because: '19 号的提醒放 Plasticine 定时', line: { title: '起草 19 号的提醒', goal: '用 schedule_propose 起草' } });
+  assert.deepEqual(reply.result, { lineId: 'line-new' });
+  assert.deepEqual(opened, [{ title: '起草 19 号的提醒', goal: '用 schedule_propose 起草', projectId: null,
+    parentLineId: main.id, origin: { kind: 'system', ref: 'maintenance:op-line-1' } }]);
+  assert.equal(failure(() => runMaintenance({ state: h.state }, { operationId: 'op-line-2', op: 'line.start',
+    because: 'x', line: { title: 't', goal: 'g' } })).code, 'unavailable');
+  assert.equal(failure(() => runMaintenance({ state: h.state, lines }, { operationId: 'op-line-3', op: 'line.start',
+    because: 'x' })).code, 'invalid_input');
+});

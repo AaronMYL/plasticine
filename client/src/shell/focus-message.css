@@ -1,0 +1,18 @@
+.line-item.is-focused,
+.ct-item.is-focused {
+  border-radius: var(--radius-lg);
+  animation: focus-flash var(--motion-pulse) var(--ease-out);
+}
+
+@keyframes focus-flash {
+  0%, 30% { background: var(--tint2); }
+  100% { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-item.is-focused,
+  .ct-item.is-focused {
+    animation: none;
+    background: var(--tint2);
+  }
+}

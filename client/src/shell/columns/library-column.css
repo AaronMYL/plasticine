@@ -1,0 +1,7 @@
+.column-item-editing {
+  cursor: default;
+}
+
+.column-item-editing:hover {
+  background: transparent;
+}

@@ -1,0 +1,76 @@
+.page-card {
+  width: min(420px, 100%);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.page-card-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.page-card-open:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.page-card-shot {
+  display: block;
+  width: 100%;
+  aspect-ratio: 14 / 5;
+  object-fit: cover;
+  object-position: top;
+  border-bottom: 1px solid var(--line);
+  background: var(--tint2);
+}
+
+.page-card-detail > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  list-style: none;
+  cursor: pointer;
+}
+
+.page-card-detail > summary::-webkit-details-marker {
+  display: none;
+}
+
+.page-card-detail > summary:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.page-card-detail > summary > svg {
+  flex: none;
+  color: var(--fg2);
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.page-card-detail[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+.page-card-raw {
+  max-height: 240px;
+  margin: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  font: var(--text-caption) / var(--text-caption-line) var(--mono);
+  color: var(--fg2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-card-detail > summary > svg {
+    transition: none;
+  }
+}

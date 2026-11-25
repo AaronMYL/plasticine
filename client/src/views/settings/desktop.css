@@ -1,0 +1,105 @@
+.desktop-place {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.desktop-place-cards {
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-place-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 48px; /* allow-exception: settings row min height */
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.desktop-place-card:has(input:disabled) {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.desktop-place-card input[type='radio'] {
+  order: 3;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--fg);
+}
+
+.desktop-place-card input[type='radio']:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.desktop-place-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-hair);
+  min-width: 0;
+}
+
+.desktop-place-title {
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.desktop-place-detail,
+.desktop-place-live,
+.desktop-place-note {
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  text-overflow: ellipsis;
+}
+
+.desktop-place-live {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-hair);
+}
+
+.desktop-place-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--fg3);
+}
+
+.desktop-place-live[data-tone='ok'] .desktop-place-dot { background: var(--ok); }
+.desktop-place-live[data-tone='run'] .desktop-place-dot { background: var(--run); }
+.desktop-place-live[data-tone='err'] .desktop-place-dot { background: var(--err); }
+
+.desktop-place-icon {
+  order: -1;
+  display: inline-flex;
+  flex: none;
+  color: var(--fg2);
+}
+
+.desktop-place-address {
+  margin-top: var(--space-2);
+}
+
+.desktop-place-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  padding-top: var(--space-3);
+}
+
+.desktop-place-note {
+  flex: 1;
+  margin: 0;
+}
+

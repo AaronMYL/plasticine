@@ -1,0 +1,21 @@
+import { DEVICE_TIME_ZONE_PATH, PUSH_WITHDRAW_PATH, PUSHES_PATH, SUGGESTIONS_PATH, TASKS_BOARD_PATH,
+  TEAMMATE_STOP_PATH, TIMED_ENABLE_PATH, TIMED_REMOVE_PATH, TIMER_STOP_PATH } from '../../shared/api/index.ts';
+import type { Route } from './context.ts';
+import { listPushes, withdrawPush } from './pushes.ts';
+import { stopTimer } from './timers.ts';
+import { dismissSuggestion, enableTimed, readTasksBoard, removeTimed, reportTimeZone, startSuggestion, stopTeammate,
+  todoSuggestion } from './tasks.ts';
+
+export const TASK_ROUTES: readonly Route[] = [
+  { method: 'GET', path: TASKS_BOARD_PATH, auth: true, handler: readTasksBoard },
+  { method: 'POST', path: TIMED_ENABLE_PATH, auth: true, handler: enableTimed },
+  { method: 'POST', path: TIMED_REMOVE_PATH, auth: true, handler: removeTimed },
+  { method: 'POST', path: TEAMMATE_STOP_PATH, auth: true, handler: stopTeammate },
+  { method: 'POST', path: `${SUGGESTIONS_PATH}/:id/start`, auth: true, handler: startSuggestion },
+  { method: 'POST', path: `${SUGGESTIONS_PATH}/:id/todo`, auth: true, handler: todoSuggestion },
+  { method: 'POST', path: `${SUGGESTIONS_PATH}/:id/dismiss`, auth: true, handler: dismissSuggestion },
+  { method: 'POST', path: DEVICE_TIME_ZONE_PATH, auth: true, handler: reportTimeZone },
+  { method: 'POST', path: TIMER_STOP_PATH, auth: true, handler: stopTimer },
+  { method: 'GET', path: PUSHES_PATH, auth: true, handler: listPushes },
+  { method: 'POST', path: PUSH_WITHDRAW_PATH, auth: true, handler: withdrawPush },
+];

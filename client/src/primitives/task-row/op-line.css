@@ -1,0 +1,21 @@
+.op-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.op-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+}
+
+.op-line-state.is-error,
+.op-line-reason.is-error {
+  color: var(--err);
+}
+

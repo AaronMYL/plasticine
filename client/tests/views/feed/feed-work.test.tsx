@@ -1,0 +1,117 @@
+import type { FakeApi } from '../../../src/api/fake/index.ts';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { uncertainError } from '../../../src/api/errors.ts';
+import { REFETCH_DELAY_MS } from '../../../src/state/snapshot-loader.ts';
+import { NOW, renderApp, settle, HOME_HEADING } from '../../helpers.tsx';
+
+async function row(): Promise<HTMLElement> { return screen.findByRole('listitem', { name: '隔离消息' }); }
+
+function savedSegment(): HTMLElement {
+  return within(screen.getByRole('complementary', { name: '阅读' })).getByRole('button', { name: /^收藏/ });
+}
+
+function comments(): HTMLElement {
+  return screen.getByRole('region', { name: '「隔离消息」的评论' });
+}
+
+function setup(fake: FakeApi): void {
+  fake.control.feed.seedSource({ id: 'interest', kind: 'interest', label: '工具' });
+  fake.control.feed.seedItem({ id: 'f1', title: '隔离消息', sourceId: 'interest', origin: 'feed',
+    url: 'https://example.test/a/1', site: 'example.test' });
+}
+
+describe('feed workflow chain', () => {
+  it('feed Save is separate from bookmarks; Saved tab filters saved and removes unsaved items', async () => {
+    const app = await renderApp({ hash: '#/feed', setup: (fake) => {
+      setup(fake);
+      fake.control.feed.seedItem({ id: 'f2', title: '另一条', sourceId: 'interest', origin: 'feed' });
+    } });
+    await row();
+    await settle(REFETCH_DELAY_MS + 50);
+    const bookmarksList = vi.spyOn(app.api.bookmarks, 'list');
+    fireEvent.click(within(await row()).getByRole('button', { name: '收藏' }));
+    await within(await row()).findByRole('button', { name: '已收藏' });
+    await settle(REFETCH_DELAY_MS + 50);
+    expect(bookmarksList, '信息流变了不再重拉书签').not.toHaveBeenCalled();
+    expect((await app.api.bookmarks.list()).bookmarks).toEqual([]);
+    expect(savedSegment().getAttribute('aria-current')).toBeNull();
+    fireEvent.click(savedSegment());
+    await waitFor(() => expect(screen.queryByRole('listitem', { name: '另一条' })).toBeNull());
+    expect(savedSegment().getAttribute('aria-current')).toBe('page');
+    expect(window.location.hash).toBe('#/feed');
+    fireEvent.click(within(await row()).getByRole('button', { name: '已收藏' }));
+    await waitFor(() => expect(screen.queryByRole('listitem', { name: '隔离消息' })).toBeNull());
+    expect(screen.getByText('还没有收藏。')).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('complementary', { name: '阅读' })).getByRole('button', { name: /^信息流/ }));
+    await screen.findByRole('listitem', { name: '另一条' });
+    expect(within(await row()).getByRole('button', { name: '收藏' }).getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('comment draft persists across pages, lost receipt verifies with same ID, supports quoting', async () => {
+    const app = await renderApp({ hash: '#/feed/f1', setup });
+    await row();
+    fireEvent.change(within(comments()).getByRole('textbox', { name: '评论' }), { target: { value: '这条和我有关' } });
+    act(() => { window.location.hash = '#/today'; });
+    await waitFor(() => expect(document.querySelector('.feed-comments')).toBeNull());
+    act(() => { window.location.hash = '#/feed/f1'; });
+    await row();
+    expect(within(comments()).getByRole('textbox', { name: '评论' })).toHaveProperty('value', '这条和我有关');
+    const original = app.api.feed.comment.bind(app.api.feed);
+    const post = vi.spyOn(app.api.feed, 'comment').mockImplementationOnce(async (id, body) => {
+      await original(id, body);
+      throw uncertainError('评论');
+    });
+    fireEvent.click(within(comments()).getByRole('button', { name: '发送评论' }));
+    fireEvent.click(await within(await row()).findByRole('button', { name: '再核实' }));
+    expect(await within(comments()).findByText('可以留意它与你关切的联系。')).toBeTruthy();
+    expect((await app.api.feed.comments('f1')).comments).toHaveLength(2);
+    expect(post.mock.calls[0]?.[1].requestId).toBe(post.mock.calls[1]?.[1].requestId);
+    fireEvent.click(within(await row()).getByRole('button', { name: '讨论' }));
+    expect(app.state.conversationUi.store.get().quotes[0]?.sourceId).toBe('feed:f1');
+  });
+
+  it('legacy comments keep both sides and pending reason; retry resends only failed reply', async () => {
+    const app = await renderApp({ hash: '#/feed/f1', setup: (fake) => {
+      setup(fake);
+      fake.control.feed.commentRows.set('f1', [{ id: 'old', itemId: 'f1', author: 'user', text: '旧评论原话',
+        createdAt: NOW.toISOString(), replyTo: null, status: 'completed', error: null, migrated: true, version: 1 },
+      { id: 'reply', itemId: 'f1', author: 'ai', text: '', createdAt: NOW.toISOString(), replyTo: 'old',
+        status: 'failed', error: '额度不足', migrated: false, version: 1 }]);
+    } });
+    await row();
+    expect(await screen.findByText('旧评论原话')).toBeTruthy();
+    expect(screen.getByText('额度不足')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '重试这次回复' }));
+    expect(await screen.findByText('接着这条评论。')).toBeTruthy();
+    expect((await app.api.feed.comments('f1')).comments).toHaveLength(2);
+  });
+
+  it('adding interest dedupes rapid repeats with exploration ideas; muted source can be restored', async () => {
+    const app = await renderApp({ hash: '#/feed', setup });
+    await row();
+    fireEvent.click(await screen.findByRole('button', { name: '「兴趣」的操作' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '设置…' }));
+    fireEvent.click(await screen.findByRole('button', { name: '加关注点' }));
+    fireEvent.change(screen.getByLabelText('关注点名字'), { target: { value: '学习方法' } });
+    fireEvent.change(screen.getByLabelText('搜索词'), { target: { value: '学习 认知' } });
+    const add = screen.getByRole('button', { name: '添加关注点' });
+    fireEvent.click(add);
+    fireEvent.click(add);
+    await screen.findByRole('listitem', { name: '学习方法' });
+    const sources = await app.api.feed.sources();
+    expect(sources.interests.filter((source) => source.label === '学习方法')).toHaveLength(1);
+    const recent = screen.getByRole('list', { name: '最近来源' });
+    fireEvent.click(within(recent).getByRole('button', { name: '屏蔽' }));
+    fireEvent.click(await within(recent).findByRole('button', { name: '恢复' }));
+    expect(await within(recent).findByRole('button', { name: '屏蔽' })).toBeTruthy();
+    expect((await app.api.feed.list({})).items).toHaveLength(1);
+  });
+
+  it('Home hides today stats (shows only reports, waiting, working); tools open from new tab', async () => {
+    await renderApp({ hash: '#/today' });
+    await screen.findByRole('heading', { level: 1, name: HOME_HEADING });
+    expect(screen.queryByRole('contentinfo', { name: '今天的数' })).toBeNull();
+    expect(window.location.hash).toBe('#/today');
+  });
+});

@@ -1,0 +1,25 @@
+{
+  "name": "plasticine",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "engines": {
+    "node": ">=24.11"
+  },
+  "workspaces": [
+    "agent",
+    "client"
+  ],
+  "scripts": {
+    "lint": "node scripts/lint.ts && node scripts/generate-sw-payload.ts --check",
+    "typecheck": "tsc -p tsconfig.json && tsc -p client/tsconfig.json && tsc -p client/browser-tests/tsconfig.json",
+    "test": "node --import ./scripts/test-env.ts --test --test-concurrency=2 --test-reporter=spec \"scripts/**/*.test.ts\" \"agent/tests/**/*.test.ts\" \"desktop/tests/**/*.test.ts\" && npm test -w client",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "skills:sync": "node scripts/sync-skills.ts"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/ws": "8.18.1",
+    "typescript": "7.0.2"
+  }
+}

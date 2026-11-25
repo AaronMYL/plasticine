@@ -1,0 +1,135 @@
+import { readFile, stat } from 'node:fs/promises';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { pickEncoding } from './compression.ts';
+
+type Handler = (req: IncomingMessage, res: ServerResponse) => void;
+
+const IMMUTABLE = 'public, max-age=31536000, immutable';
+const ENTRY = 'index.html';
+
+const TYPES: Readonly<Record<string, string>> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json',
+  '.map': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.txt': 'text/plain; charset=utf-8',
+  '.wasm': 'application/wasm',
+};
+
+function isApi(pathname: string): boolean {
+  return pathname === '/v2' || pathname.startsWith('/v2/');
+}
+
+function insideRoot(root: string, pathname: string): string | null {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+  if (decoded.includes('\0')) {
+    return null;
+  }
+  const target = resolve(root, `.${decoded}`);
+  const offset = relative(root, target);
+  if (offset.startsWith('..') || isAbsolute(offset) || offset.split(sep).includes('..')) {
+    return null;
+  }
+  return target;
+}
+
+async function regularFile(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isFile();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT' || (error as NodeJS.ErrnoException).code === 'ENOTDIR') {
+      return false;
+    }
+    throw error;
+  }
+}
+
+function plain(res: ServerResponse, status: number, text: string, headers: Record<string, string> = {}): void {
+  res.writeHead(status, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', ...headers });
+  res.end(text);
+}
+
+const PACKED_SUFFIX = { br: '.br', gzip: '.gz' } as const;
+
+async function packedVariant(req: IncomingMessage, path: string): Promise<{ path: string; encoding: string } | null> {
+  const encoding = pickEncoding(req.headers['accept-encoding']);
+  const order = encoding === 'br' ? (['br', 'gzip'] as const) : encoding === 'gzip' ? (['gzip'] as const) : [];
+  for (const name of order) {
+    const candidate = `${path}${PACKED_SUFFIX[name]}`;
+    if (await regularFile(candidate)) return { path: candidate, encoding: name };
+  }
+  return null;
+}
+
+async function sendFile(req: IncomingMessage, res: ServerResponse, path: string, cache: string): Promise<void> {
+  const packed = await packedVariant(req, path);
+  const data = await readFile(packed === null ? path : packed.path);
+  res.writeHead(200, {
+    'content-type': TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream',
+    'content-length': data.length,
+    'cache-control': cache,
+    'x-content-type-options': 'nosniff',
+    vary: 'accept-encoding',
+    ...(packed === null ? {} : { 'content-encoding': packed.encoding }),
+  });
+  res.end(req.method === 'HEAD' ? undefined : data);
+}
+
+async function serveClient(root: string, req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    plain(res, 405, '只接受 GET / HEAD。', { allow: 'GET, HEAD' });
+    return;
+  }
+  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  const target = insideRoot(root, pathname);
+  if (target === null) {
+    plain(res, 400, '路径无效。');
+    return;
+  }
+  const isAsset = pathname.startsWith('/assets/');
+  if (pathname !== '/' && await regularFile(target)) {
+    await sendFile(req, res, target, isAsset ? IMMUTABLE : 'no-cache');
+    return;
+  }
+  if (isAsset) {
+    plain(res, 404, '没有这个文件。');
+    return;
+  }
+  await sendFile(req, res, resolve(root, ENTRY), 'no-cache');
+}
+
+export function withClientFiles(directory: string, api: Handler): Handler {
+  const root = resolve(directory);
+  return (req, res) => {
+    const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+    if (isApi(pathname)) {
+      api(req, res);
+      return;
+    }
+    serveClient(root, req, res).catch((error: unknown) => {
+      const reason = error instanceof Error ? error.message : String(error);
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
+      plain(res, 500, `读取客户端文件失败：${reason}`);
+    });
+  };
+}

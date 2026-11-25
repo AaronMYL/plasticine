@@ -1,0 +1,23 @@
+.transfer-dialog {
+  gap: var(--space-4);
+}
+
+.transfer-formats {
+  display: flex;
+  width: 100%;
+}
+
+.transfer-formats .segmented-item {
+  flex: 1;
+  padding: 0 var(--space-2);
+}
+
+.transfer-skipped {
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.transfer-skipped > button {
+  align-self: flex-end;
+}

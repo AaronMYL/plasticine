@@ -1,0 +1,234 @@
+.web-column {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.web-search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2) var(--space-2) var(--space-3);
+}
+
+.web-search-field {
+  flex: 1;
+  background: var(--bg);
+}
+
+.web-pins {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
+  list-style: none;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.web-pins[data-drop-zone='true'] {
+  background: var(--tint2);
+}
+
+.web-pin {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--tint);
+  cursor: pointer;
+}
+
+.web-pin:hover {
+  background: var(--tint2);
+}
+
+.web-pin[aria-current='page'] {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.web-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: calc(100% - 16px);
+  height: 32px;
+  margin: 0 var(--space-2);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-group-head:hover {
+  background: var(--tint);
+}
+
+.web-group[data-drop-zone='true'] .web-group-head {
+  background: var(--tint2);
+}
+
+.web-group-chevron {
+  display: flex;
+  transition: transform var(--motion-base) var(--ease-out);
+}
+
+.web-group-head[aria-expanded='false'] .web-group-chevron {
+  transform: rotate(-90deg);
+}
+
+.web-group-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-tab-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 var(--space-2);
+  border-radius: var(--radius);
+  touch-action: none;
+}
+
+.web-tab-item:hover {
+  background: var(--tint);
+}
+
+.web-tab-item:has([aria-current='page']) {
+  background: var(--tint2);
+}
+
+.web-tab-item[data-dragging='true'] {
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  cursor: grabbing;
+}
+
+.web-tab-row {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-tab-row[data-indent='true'] {
+  padding-left: var(--space-6);
+}
+
+.web-tab-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.web-tab-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-tab-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg3);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.web-tab-item:hover .web-tab-close,
+.web-tab-item:has([aria-current='page']) .web-tab-close,
+.web-tab-close:focus-visible {
+  opacity: 1;
+}
+
+.web-tab-close:hover {
+  background: var(--tint2);
+  color: var(--fg);
+}
+
+.web-column[data-dragging='true'] .web-tab-close {
+  opacity: 0;
+}
+
+.web-today {
+  min-height: 32px;
+}
+
+.web-drop-line {
+  position: absolute;
+  right: 16px;
+  left: 16px;
+  z-index: var(--z-raised);
+  height: 2px;
+  margin-top: calc(-1 * var(--space-px));
+  border-radius: var(--radius-full);
+  background: var(--fg);
+  pointer-events: none;
+}
+
+.web-new {
+  width: calc(100% - 16px);
+  color: var(--fg2);
+}
+
+.web-group-rename {
+  padding: var(--space-2);
+}
+
+.web-group-hues {
+  max-width: 200px;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-group-chevron,
+  .web-tab-close {
+    transition: none;
+  }
+}

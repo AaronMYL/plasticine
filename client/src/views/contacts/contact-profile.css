@@ -1,0 +1,225 @@
+.contact-profile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 100%;
+}
+
+.profile-who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.profile-names {
+  min-width: 0;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.profile-handle {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+  overflow-wrap: anywhere;
+}
+
+.contact-relation .segmented-item.segmented-item {
+  font-size: var(--text-ui);
+  padding: 0 var(--space-3);
+}
+
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.profile-label {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+}
+
+.profile-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.profile-list > li {
+  display: contents;
+}
+
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.profile-item-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-list .dot.profile-dot-run {
+  background: var(--run);
+}
+
+.profile-list .dot.profile-dot-ok {
+  background: var(--ok);
+}
+
+.profile-list .dot.profile-dot-err {
+  background: var(--err);
+}
+
+.profile-list .dot.profile-dot-off {
+  background: var(--fg3);
+}
+
+.profile-meta {
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
+  color: var(--fg2);
+}
+
+.profile-safety {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.profile-safety .profile-safety-button {
+  height: 32px;
+  padding: 0 var(--space-3);
+  gap: var(--space-2);
+  font-size: var(--text-ui);
+}
+
+.profile-safety-changed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.profile-safety-code {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.contact-memory {
+  outline: none;
+}
+
+.contact-memory-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.contact-memory-head .icon-button {
+  width: 24px;
+  height: 24px;
+}
+
+.contact-memory-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.contact-memory-doc:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--line2);
+  text-underline-offset: 3px;
+}
+
+.contact-memory-lines {
+  margin-top: var(--space-2);
+}
+
+.contact-memory-ask > p {
+  margin: 0 0 var(--space-2);
+  color: var(--fg);
+}
+
+.contact-memory-answers {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.contact-memory-error {
+  margin: var(--space-2) 0 0;
+  color: var(--err);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.contact-person-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 260px;
+  padding: var(--space-1);
+}
+
+.contact-person-options {
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.contact-person-linked {
+  margin-left: auto;
+  padding-left: var(--space-2);
+  color: var(--fg3);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.profile-manage {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.profile-manage .profile-remove {
+  color: var(--err);
+}

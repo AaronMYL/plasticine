@@ -1,0 +1,278 @@
+import { BulkHeader, BulkCheck, BulkBar, BulkFeedback } from '../bulk/bulk-controls.tsx';
+import { useBulkSelection } from '../bulk/use-bulk-selection.ts';
+import { libraryBatch } from '../bulk/bulk-api.ts';
+import { libraryChanged } from '../library/library-signal.ts';
+import { useLibraryTrash } from '../../shell/columns/library-subscriptions.tsx';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useApi } from '../../api/context.tsx';
+import type { FileEntryView } from '../../api/shared.ts';
+import { useLive } from '../../live.tsx';
+import { useClientState } from '../../state/context.tsx';
+import { useStore } from '../../state/use-store.ts';
+import { PendingOps } from '../pending/pending-ops.tsx';
+import { FOLDER_DRAFT } from './tool-group-actions.ts';
+import { LoadNote, shortTime } from '../../shell/load-note.tsx';
+import './tools.css';
+import { FileTextEditor } from './file-text-editor.tsx';
+import { Icon } from '../../shell/icons.tsx';
+import { IconButton } from '../../shell/icon-button.tsx';
+
+const UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
+
+function bytesText(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  return bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function draftKey(entry: FileEntryView, what: 'to' | 'confirm'): string {
+  return `files:${entry.path}:${what}`;
+}
+
+function EntryActions({ entry, mode, onDone }: { entry: FileEntryView; mode: 'move' | 'trash'; onDone: () => void }) {
+  const { toolGroupActions } = useLive();
+  const { inlineDrafts } = useClientState();
+  const drafts = useStore(inlineDrafts.store);
+  const to = drafts.get(draftKey(entry, 'to')) ?? entry.path;
+  const confirm = drafts.get(draftKey(entry, 'confirm')) ?? '';
+  const submit = async (): Promise<void> => {
+    const done = mode === 'move'
+      ? await toolGroupActions.move(entry, to.trim(), confirm)
+      : await toolGroupActions.trash(entry, confirm);
+    if (!done) {
+      return;
+    }
+    libraryChanged();
+    inlineDrafts.clear(draftKey(entry, 'to'));
+    inlineDrafts.clear(draftKey(entry, 'confirm'));
+    onDone();
+  };
+  return (
+    <div
+      className="tool-confirm"
+      role="group"
+      aria-label={mode === 'move' ? `改名或移动「${entry.name}」` : `删除「${entry.name}」`}
+    >
+      {mode === 'move' ? (
+        <label className="field">
+          <span className="field-label">新的位置</span>
+          <input
+            className="field-input field-input-mono"
+            value={to}
+            onChange={(event) => inlineDrafts.set(draftKey(entry, 'to'), event.target.value)}
+          />
+        </label>
+      ) : null}
+      <label className="field">
+        <span className="field-label">打一遍「{entry.name}」确认</span>
+        <input
+          className="field-input"
+          value={confirm}
+          onChange={(event) => inlineDrafts.set(draftKey(entry, 'confirm'), event.target.value)}
+        />
+      </label>
+      <button type="button" className="primary-button" disabled={confirm !== entry.name} onClick={() => void submit()}>
+        {mode === 'move' ? '修改' : '删除（进回收）'}
+      </button>
+      <button type="button" className="text-button text-button-quiet" onClick={onDone}>
+        不改了
+      </button>
+    </div>
+  );
+}
+
+function Trash(): ReactNode {
+  const api = useApi();
+  const { toolGroups } = useLive();
+  const { trash, error } = useLibraryTrash();
+  const entries = (trash?.items ?? []).filter((item) => item.kind === 'file' || item.kind === 'folder');
+  const changed = (): void => {
+    libraryChanged();
+    void toolGroups.files.reset();
+    void toolGroups.trash.reload();
+  };
+  const selection = useBulkSelection({ items: entries, run: (input) => libraryBatch(api.library, input),
+    onChanged: changed });
+  return <section className="block" aria-label="回收">
+    <div className="block-head"><h3 className="block-title">最近删除</h3>
+      <span className="block-meta text-mono">{entries.length}</span></div>
+    <BulkHeader selection={selection} items={entries} trash
+      onEmpty={(confirmed) => { void selection.perform('purge', undefined, [...confirmed]); }} />
+    <BulkFeedback selection={selection} />
+    {error === null ? null : <p role="alert">{error}</p>}
+    {trash !== null && entries.length === 0 ? <p className="block-empty">回收是空的。</p> : null}
+    <ul className="tool-list">{entries.map((entry) => <li key={entry.id} className="tool-row file-row">
+      <BulkCheck selection={selection} item={entry} />
+      <span className="tool-row-main">{entry.originalPath}</span>
+      <span className="file-row-side"><span className="tool-row-meta text-meta">{shortTime(entry.deletedAt)}</span>
+        {selection.active ? null : <IconButton icon="undo" label="还原" title={`还原 ${entry.originalPath}`}
+          onClick={() => void selection.perform('restore', undefined, [entry])} />}</span>
+    </li>)}</ul>
+    <BulkBar selection={selection} trash />
+  </section>;
+}
+
+export function FilesView(): ReactNode {
+  const api = useApi();
+  const { toolGroups, toolGroupActions } = useLive();
+  const { inlineDrafts } = useClientState();
+  const files = useStore(toolGroups.files.data);
+  const folder = useStore(toolGroups.folder);
+  const newFolder = useStore(inlineDrafts.store).get(FOLDER_DRAFT) ?? '';
+  const [editing, setEditing] = useState<{ path: string; mode: 'move' | 'trash' } | null>(null);
+  const [tooBig, setTooBig] = useState<string | null>(null);
+  const [pathDraft, setPathDraft] = useState(folder);
+  const [textFile, setTextFile] = useState<{ path: string; creating: boolean } | null>(null);
+  const [newText, setNewText] = useState('');
+  const upload = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    toolGroups.files.open();
+  }, [toolGroups.files]);
+  const go = (path: string): void => {
+    toolGroups.folder.set(path);
+    setPathDraft(path);
+    setEditing(null);
+    void toolGroups.files.reset();
+  };
+  const listing = files.value;
+  const bulkItems = (listing?.entries ?? []).map((entry) => ({
+    kind: entry.kind === 'directory' ? 'folder' as const : 'file' as const, id: entry.path, title: entry.name }));
+  const selection = useBulkSelection({ items: bulkItems, run: (input) => libraryBatch(api.library, input),
+    scope: folder, onChanged: () => {
+      void toolGroups.files.reset();
+      void toolGroups.trash.reload();
+      libraryChanged();
+    } });
+  return (
+    <div className="tool">
+      <PendingOps
+        label="还没了结的文件操作"
+        prefixes={['files:']}
+        visible={() => false}
+        onRetry={(key) => void toolGroupActions.retry(key)}
+      />
+      <div className="tool-bar">
+        <form className="file-path-form" onSubmit={(event) => {
+          event.preventDefault();
+          go(pathDraft.trim());
+        }}>
+          <input className="field-input" aria-label="文件路径" placeholder="工作目录或服务器绝对路径" value={pathDraft}
+            onChange={(event) => setPathDraft(event.target.value)} />
+          <button type="submit" className="text-button">前往</button>
+        </form>
+        {listing?.parent === null || listing === null ? null : (
+          <IconButton icon="chevron-up" label="上一层" onClick={() => go(listing.parent ?? '')} />
+        )}
+        <span className="tool-bar-grow" />
+        <IconButton icon="upload" label="上传" onClick={() => upload.current?.click()} />
+        <input
+          ref={upload}
+          type="file"
+          aria-label="上传文件"
+          multiple
+          hidden
+          onChange={(event) => {
+            const selected = Array.from(event.target.files ?? []);
+            event.target.value = '';
+            setTooBig(null);
+            void (async () => { for (const file of selected) {
+              if (file.size > UPLOAD_MAX_BYTES) {
+                setTooBig(`「${file.name}」超过 20 MB，没有传。`);
+                continue;
+              }
+              await toolGroupActions.upload(folder, file);
+            } })();
+          }}
+        />
+      </div>
+      <BulkHeader selection={selection} items={bulkItems} />
+      <BulkFeedback selection={selection} />
+      <div className="tool-bar" aria-label="常用位置">
+        {[['', '工作目录'], ['/', '服务器根目录'], ['/home', '用户目录'], ['/srv', '服务资料'], ['/var/log', '日志']]
+          .map(([path = '', label]) => <button type="button" className="text-button" key={path}
+            onClick={() => go(path)}>{label}</button>)}
+      </div>
+      {listing?.freeBytes === undefined ? null : <p className="text-meta">
+        磁盘剩余 {(listing.freeBytes / 1024 ** 3).toFixed(1)} GB</p>}
+      <details className="file-create">
+        <summary><Icon name="plus" />新建文件或文件夹
+          {newFolder === '' && newText === '' ? null : <span className="tag tag-neutral">草稿</span>}
+        </summary>
+        <form className="tool-form" onSubmit={(event) => {
+          event.preventDefault();
+          setTextFile({ path: `${folder}${folder.endsWith('/') || folder === '' ? '' : '/'}${newText}`,
+            creating: true });
+        }}><label className="field">新文本文件名<input className="field-input" value={newText}
+          onChange={(event) => setNewText(event.target.value)} /></label>
+          <button type="submit" className="chip-button" disabled={newText.trim() === ''}>新建文本</button></form>
+        <section className="tool-form" aria-label="新建文件夹">
+          <label className="field">
+            <span className="field-label">新文件夹的名字</span>
+            <input
+              className="field-input"
+              value={newFolder}
+              onChange={(event) => inlineDrafts.set(FOLDER_DRAFT, event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="chip-button"
+            disabled={newFolder.trim() === ''}
+            onClick={() => void toolGroupActions.createFolder(folder)}
+          >
+            新建
+          </button>
+        </section>
+      </details>
+      {textFile === null ? null :
+        <FileTextEditor key={textFile.path} {...textFile} onClose={() => setTextFile(null)} />}
+      {tooBig === null ? null : <p className="tool-sub tool-error" role="alert">{tooBig}</p>}
+      <LoadNote resource={files} what="文件夹" onRetry={() => void toolGroups.files.reload()} />
+      {files.status === 'ready' && listing?.entries.length === 0 ? <p className="block-empty">这个文件夹是空的。</p> : null}
+      <ul className="tool-list" aria-label="文件">
+        {(listing?.entries ?? []).map((entry) => (
+          <li key={entry.path} className="tool-row file-row" aria-label={entry.name} data-bulk={selection.active}
+            onClickCapture={(event) => {
+              if (selection.active && !(event.target instanceof HTMLInputElement)) {
+                event.preventDefault();
+                event.stopPropagation();
+                selection.toggle({ kind: entry.kind === 'directory' ? 'folder' : 'file',
+                  id: entry.path, title: entry.name }, event.shiftKey);
+              }
+            }}>
+            <BulkCheck selection={selection} item={{ kind: entry.kind === 'directory' ? 'folder' : 'file',
+              id: entry.path, title: entry.name }} />
+            {entry.kind === 'directory' ? (
+              <button type="button" className="text-button tool-row-main" onClick={() => go(entry.path)}>
+                <Icon name="folder" /> {entry.name}
+              </button>
+            ) : entry.type?.startsWith('text/')
+              || /\.(?:md|txt|json|css|html|js|ts|tsx|yml|yaml|log|sh)$/i.test(entry.name) ? (
+              <button type="button" className="text-button tool-row-main"
+                onClick={() => setTextFile({ path: entry.path, creating: false })}>{entry.name}</button>
+            ) : (
+              <a className="text-button tool-row-main" href={api.files.downloadUrl(entry.path)} download={entry.name}>
+                {entry.name}
+              </a>
+            )}
+            <span className="file-row-side">
+              <span className="tool-row-meta text-meta">{entry.kind === 'file' ? bytesText(entry.bytes) : '文件夹'}</span>
+              <span className="tool-row-meta text-meta">{shortTime(entry.modifiedAt)}</span>
+              {selection.active ? null : <><IconButton icon="edit" label="改名" title={`改名 ${entry.name}`}
+                onClick={() => setEditing({ path: entry.path, mode: 'move' })} />
+              <IconButton icon="trash" label="删除" title={`删除 ${entry.name}`}
+                onClick={() => setEditing({ path: entry.path, mode: 'trash' })} /></>}
+            </span>
+            {editing?.path === entry.path ? (
+              <EntryActions entry={entry} mode={editing.mode} onDone={() => setEditing(null)} />
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      <BulkBar selection={selection} folders={(listing?.entries ?? []).filter((entry) =>
+        entry.kind === 'directory').map((entry) => entry.path)} />
+      {selection.active ? null : <Trash />}
+    </div>
+  );
+}

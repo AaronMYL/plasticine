@@ -1,0 +1,62 @@
+.kit-card {
+  width: min(400px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+}
+.kit-card h2 {
+  margin: 0;
+  font-size: var(--text-long);
+  line-height: var(--text-section-line);
+  font-weight: 600;
+}
+.kit-card p {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+.kit-card .kit-error {
+  color: var(--err);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+.kit-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+.kit-progress-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  font-variant-numeric: tabular-nums;
+}
+.kit-progress-line > span:first-child { flex: 1; }
+.kit-percent {
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+}
+.kit-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--tint2);
+}
+.kit-bar i {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--run);
+  transform-origin: left;
+  transition: transform var(--motion-slow) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kit-bar i { transition: none; }
+}

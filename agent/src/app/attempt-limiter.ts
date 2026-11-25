@@ -1,0 +1,43 @@
+export class AttemptLimiter {
+  readonly #limit: number;
+  readonly #windowMs: number;
+  readonly #now: () => number;
+  #failures: number[] = [];
+
+  constructor(limit: number, windowMs: number, now: () => number = Date.now) {
+    this.#limit = limit;
+    this.#windowMs = windowMs;
+    this.#now = now;
+  }
+
+  blocked(): boolean {
+    this.#prune();
+    return this.#failures.length >= this.#limit;
+  }
+
+  recordFailure(): void {
+    this.#prune();
+    this.#failures.push(this.#now());
+  }
+
+  /** No failure left in the window (a per-source limiter can be dropped). */
+  empty(): boolean {
+    this.#prune();
+    return this.#failures.length === 0;
+  }
+
+  /** How long until the oldest failure in the window expires; 0 when not blocked. */
+  retryAfterMs(): number {
+    this.#prune();
+    const oldest = this.#failures[0];
+    if (oldest === undefined || this.#failures.length < this.#limit) {
+      return 0;
+    }
+    return Math.max(0, oldest + this.#windowMs - this.#now());
+  }
+
+  #prune(): void {
+    const cutoff = this.#now() - this.#windowMs;
+    this.#failures = this.#failures.filter((at) => at > cutoff);
+  }
+}

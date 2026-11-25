@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>工作室书架 · 模拟网站</title>
+    <link rel="stylesheet" href="../../src/tokens.css" />
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.6 var(--sans); }
+      header { display: flex; justify-content: space-between; padding: 24px 48px;
+        border-bottom: 1px solid var(--line2); }
+      nav { display: flex; gap: 24px; }
+      a { color: inherit; text-decoration-color: var(--line2); text-underline-offset: 4px; }
+      main { max-width: 1200px; margin: auto; padding: 48px; }
+      h1 { font-size: 32px; line-height: 1.5; font-weight: 600; margin: 12px 0; }
+      h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+      p { color: var(--fg2); margin: 0 0 16px; }
+      .meta { font-size: 12px; }
+      .intro { display: grid; grid-template-columns: 2fr 1fr; gap: 48px; padding-bottom: 48px; }
+      aside { border-left: 1px solid var(--line2); padding-left: 24px; }
+      .books { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+      article { border-top: 1px solid var(--line2); padding: 24px 0; }
+      .number { font: 22px/28px var(--mono); color: var(--fg2); margin-bottom: 24px; }
+      footer { border-top: 1px solid var(--line2); margin-top: 48px; padding-top: 16px; }
+      input { width: 100%; font: inherit; color: inherit; background: var(--bg); padding: 8px; }
+      @media (max-width: 767px) {
+        header { padding: 16px 24px; flex-direction: column; gap: 12px; }
+        main { padding: 24px; }
+        h1 { font-size: 24px; line-height: 32px; }
+        .intro { grid-template-columns: 1fr; gap: 16px; padding-bottom: 24px; }
+        aside { border-left: 0; padding-left: 0; }
+        .books { grid-template-columns: 1fr; gap: 0; }
+        article { display: grid; grid-template-columns: 32px 1fr; gap: 16px; padding: 24px 0; }
+        .number { margin: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <header><strong>工作室书架</strong>
+      <nav><a href="#books">书目</a><a href="#notes">读书札记</a><a href="#about">关于</a></nav></header>
+    <main>
+      <section class="intro">
+        <div><p class="meta">模拟网站 · 仅用于本地界面验收</p><h1>留一点时间，读一本书。</h1>
+          <p>关于阅读、写作和日常生活的资料。<br />把值得再读的内容，放在触手可及的地方。</p></div>
+        <aside><h2>本周阅读</h2><p>从一个问题开始，再沿着书中的线索慢慢走。</p><a href="#books">浏览全部书目 →</a></aside>
+      </section>
+      <section class="books" id="books">
+        <article><div class="number">01</div><div><h2>如何阅读一本书</h2><p>阅读方法 · 12 条摘记</p>
+          <p>发现问题，理解论点，在书页之间建立自己的联系。</p><a href="#reading">查看资料 →</a></div></article>
+        <article><div class="number">02</div><div><h2>写作与思考</h2><p>写作练习 · 8 条摘记</p>
+          <p>把模糊的想法写下来，让表达帮助思考变得清楚。</p><a href="#writing">查看资料 →</a></div></article>
+        <article><div class="number">03</div><div><h2>日常中的观察</h2><p>生活随笔 · 6 条摘记</p>
+          <p>留意那些被略过的小事，记录新的发现和问题。</p><a href="#daily">查看资料 →</a></div></article>
+      </section>
+      <footer id="notes"><label>留一句读书札记<input placeholder="今天读到了什么？" /></label></footer>
+    </main>
+  </body>
+</html>

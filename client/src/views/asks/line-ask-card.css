@@ -1,0 +1,140 @@
+.line-ask-thread {
+  margin: 0;
+  overflow: hidden;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-ask-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.line-ask-preview-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--fg2);
+}
+
+.line-ask-to {
+  color: var(--fg);
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  font-weight: 500;
+}
+
+.line-ask-subject {
+  overflow: hidden;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-ask-body {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  white-space: pre-wrap;
+}
+
+.line-ask-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-hair);
+  margin: 0;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.line-ask-fields div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.line-ask-fields dt {
+  flex: none;
+  color: var(--fg2);
+}
+
+.line-ask-fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.line-ask-detail {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  white-space: pre-wrap;
+}
+
+.line-ask-write {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.line-ask-write .field-input {
+  flex: 1;
+  resize: vertical;
+}
+
+.line-ask-error {
+  margin: 0;
+  color: var(--err);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.line-ask-task {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.line-ask-task-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.line-ask-task-to {
+  flex: 1;
+  font-size: var(--text-body);
+  font-weight: 500;
+}
+
+.line-ask-task-due {
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}
+
+.line-ask-task-goal {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.line-ask-task-file {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+}

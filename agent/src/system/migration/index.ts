@@ -1,0 +1,10 @@
+export { applyPendingMigration, readPending, readResult } from './apply.ts';
+export type { PendingMigration } from './apply.ts';
+export { cleanupMigration } from './cleanup.ts';
+export { deriveKey, MigrationFileError, MigrationWriter, readArchive, readHeader } from './format.ts';
+export { RESTART_EXIT_CODE } from './layout.ts';
+export { stageForRestart } from './offline.ts';
+export { packState } from './pack.ts';
+export { MigrationProblem, MigrationService } from './service.ts';
+export type { MigrationServiceOptions } from './service.ts';
+export { readSummary, stageArchive, TooNewError } from './unpack.ts';

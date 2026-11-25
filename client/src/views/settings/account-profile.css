@@ -1,0 +1,39 @@
+.account-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-device-via {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.account-device-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--fg3);
+}
+
+.account-device-via[data-via='direct'] .account-device-dot { background: var(--ok); }
+.account-device-via[data-via='relay'] .account-device-dot { background: var(--run); }
+
+.account-edit {
+  padding: var(--space-3) 0 var(--space-4);
+  border-bottom: 1px solid var(--line);
+  list-style: none;
+}
+
+.account-inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 400px;
+}
+

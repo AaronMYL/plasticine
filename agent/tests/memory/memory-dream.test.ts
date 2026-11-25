@@ -1,0 +1,178 @@
+import assert from 'node:assert/strict';
+import { afterEach, beforeEach, test } from 'node:test';
+import { YOU_DOC_ID } from '../../shared/state.ts';
+import { addLine, Dreamer, ensureMemoryDocs, type DreamSkills, type DreamSuggest } from '../../src/memory/index.ts';
+import type { TextModels, TextRequest } from '../../src/kernel/index.ts';
+import { openTestState, type TestState } from '../state/helpers.ts';
+
+let t: TestState;
+beforeEach(async () => { t = await openTestState(); });
+afterEach(async () => { await t.cleanup(); });
+
+const FROM = '2000-01-01T00:00:00.000Z';
+const TO = '2100-01-01T00:00:00.000Z';
+
+function say(lineId: string, text: string): string {
+  const row = t.state.lineMessages.append(lineId, 'user', { role: 'user', content: text, timestamp: 1 },
+    { origin: { kind: 'user' } });
+  return `line:${lineId}:${row.seq}`;
+}
+
+function reply(lineId: string, text: string): string {
+  const row = t.state.lineMessages.append(lineId, 'assistant', { role: 'assistant',
+    content: [{ type: 'text', text }], stopReason: 'stop', timestamp: 2 });
+  return `line:${lineId}:${row.seq}`;
+}
+
+function dreamer(answer: (request: TextRequest) => unknown, skills: DreamSkills | null = null,
+  suggest?: DreamSuggest) {
+  const asked: TextRequest[] = [];
+  const models: TextModels = {
+    async ask(request) {
+      asked.push(request);
+      return { text: JSON.stringify(answer(request)), complete: true };
+    },
+  };
+  const now = (): Date => new Date('2026-11-08T01:00:00Z');
+  return { asked, dreamer: new Dreamer({ state: t.state, models, skills, now,
+    ...(suggest === undefined ? {} : { suggest }) }) };
+}
+
+const input = { from: FROM, to: TO, today: '2026-11-08', fixSummaries: true, signal: AbortSignal.timeout(5000) };
+
+test('Skips nightly consolidation without calling model when no new chat or today log', async () => {
+  const { asked, dreamer: d } = dreamer(() => ({}));
+  const report = await d.dream(input);
+  assert.equal(report.skipped, true);
+  assert.equal(asked.length, 0);
+});
+
+test('Nightly consolidation exports chat, applies adds/edits/uncertain, archives today', async () => {
+  const main = t.state.lines.main();
+  t.state.lineDays.start(main.id, '2026-11-07', 1);
+  ensureMemoryDocs(t.state);
+  const old = addLine(t.state, { docId: YOU_DOC_ID, text: '住在北京', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'line:line-main:0' }] }, { actor: 'brain', ref: null });
+  const moved = say(main.id, '我搬到杭州了，在高新区');
+  const answer = reply(main.id, '好的，记下了。');
+  const tried = say(main.id, '用 rsync 同步不行，服务器上没装');
+  const journal = t.state.memoryJournal.add({ day: '2026-11-07', kind: 'decision', text: '悬赏平台先做验收规则',
+    anchors: [{ kind: 'message', ref: moved }], writtenBy: 'brain' });
+  const { asked, dreamer: d } = dreamer(() => ({
+    ops: [
+      { op: 'revise', line: old.id, text: '住在杭州西湖区', sources: [moved] },
+      { op: 'add', doc: YOU_DOC_ID, section: 'note', text: '悬赏平台先做验收规则', sources: [`journal:${journal.id}`] },
+      { op: 'add', doc: YOU_DOC_ID, section: 'note', text: '喜欢简短的回复', sources: [answer] },
+      { op: 'infer', doc: YOU_DOC_ID, text: '可能喜欢杭帮菜', why: '搬到杭州', sources: [moved] },
+      { op: 'retire', line: old.id, forget: true, sources: [moved] },
+    ],
+    conflicts: [{ doc: YOU_DOC_ID, candidates: [{ text: '周报周一出', sources: [moved] },
+      { text: '周报周日出', sources: [tried] }] }],
+    deadEnds: [{ text: '用 rsync 同步：服务器上没装', sources: [tried] }],
+    digests: [{ line: main.id, day: '2026-11-07', text: '他搬到杭州；悬赏平台先做验收规则。' }],
+  }));
+  const report = await d.dream(input);
+  assert.equal(asked[0]?.purpose, 'dream');
+  const material = JSON.parse(asked[0]?.messages[0]?.content ?? '{}') as { transcripts: string; journal: unknown[] };
+  assert.match(material.transcripts, new RegExp(`\\[${moved}\\] 他：我搬到杭州了`));
+  assert.match(material.transcripts, /Plasticine：好的，记下了。/);
+  assert.equal(material.journal.length, 1);
+  const changes = t.state.memoryDreams.changes(report.dream?.id ?? '');
+  assert.deepEqual(changes.map((change) => change.kind), ['replace', 'add', 'unsure', 'dead_end']);
+  assert.equal(changes[0]?.previous, '住在北京');
+  assert.equal(t.state.memoryDocs.lines.get(old.id)?.retiredAt !== null, true, '旧说法进了归档');
+  assert.equal(report.rejected >= 2, true, 'Plasticine 说的不能当事实；旧行已经改过，不能再 retire');
+  assert.equal(t.state.memoryCuration.inferences.list('pending', { limit: 10 })[0]?.text, '可能喜欢杭帮菜');
+  assert.equal(changes[2]?.candidates.length, 2);
+  assert.equal(t.state.lineDays.get(main.id, '2026-11-07')?.digest, '他搬到杭州；悬赏平台先做验收规则。');
+  assert.equal(t.state.memoryJournal.open().length, 0);
+  assert.equal(t.state.memoryJournal.archived()[0]?.dreamId, report.dream?.id);
+  assert.notEqual(report.dream?.finishedAt, null);
+  assert.equal(report.dream?.linesRead, 1);
+});
+
+test('Line edited during daytime rejects nightly edit for next night; others apply', async () => {
+  const main = t.state.lines.main();
+  ensureMemoryDocs(t.state);
+  const line = addLine(t.state, { docId: YOU_DOC_ID, text: '每天 7 点起', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'line:line-main:0' }] }, { actor: 'brain', ref: null });
+  const said = say(main.id, '我现在 6 点起，也开始跑步了');
+  const { dreamer: d } = dreamer(() => {
+    const current = t.state.memoryDocs.lines.require(line.id);
+    t.state.memoryDocs.lines.retire(current.id, current.version, 'edited');
+    return { ops: [{ op: 'revise', line: line.id, text: '每天 6 点起', sources: [said] },
+      { op: 'add', doc: YOU_DOC_ID, section: 'note', text: '开始跑步了', sources: [said] }] };
+  });
+  const report = await d.dream(input);
+  assert.equal(report.rejected, 1);
+  assert.deepEqual(t.state.memoryDreams.changes(report.dream?.id ?? '').map((change) => change.text), ['开始跑步了']);
+});
+
+test('Proven new approach saves as a new skill without modifying existing skills', async () => {
+  const main = t.state.lines.main();
+  say(main.id, '以后发版都先跑 typecheck');
+  const written: string[] = [];
+  const skills: DreamSkills = { exists: (name) => name === 'old-skill', write: (name, content) => {
+    written.push(`${name}\n${content}`);
+  } };
+  const { dreamer: d } = dreamer(() => ({ skills: [
+    { name: 'release-check', description: '发版前', body: '1. 跑 typecheck' },
+    { name: 'old-skill', description: '已有', body: '不改' },
+    { name: 'Bad Name', description: 'x', body: 'y' },
+  ] }), skills);
+  await d.dream(input);
+  assert.equal(written.length, 1);
+  assert.match(written[0] ?? '', /^release-check\n---\nname: release-check\ndescription: "发版前"/);
+});
+
+test('Open loops become up to 3 suggestions nightly, requiring title/reason/handoff', async () => {
+  const main = t.state.lines.main();
+  const said = say(main.id, '回头帮我把访谈稿整理成要点');
+  const suggested: Parameters<DreamSuggest>[0][] = [];
+  const loop = (title: string, why = '11-07 说了回头做，之后没再提') => ({ title, why,
+    goal: `${title}：稿子在资料库里，整理成 10 条要点。`, sources: [said] });
+  const { dreamer: d } = dreamer(() => ({ openLoops: [loop('把访谈稿整理成要点'), loop('', '没有标题'),
+    loop('对比三家中继的价格'), loop('补完验收一节'), loop('第四件不该提')] }), null,
+  (input) => { suggested.push(input); });
+  await d.dream(input);
+  assert.deepEqual(suggested.map((item) => item.title), ['把访谈稿整理成要点', '对比三家中继的价格', '补完验收一节']);
+  assert.equal(suggested[0]?.key, 'dream:把访谈稿整理成要点');
+  assert.equal(suggested[0]?.sourceRef, said);
+  assert.match(suggested[0]?.goal ?? '', /整理成 10 条要点/);
+});
+
+test('Dream writes tried experience with line source, undoable; rejects invalid entries', async () => {
+  const main = t.state.lines.main();
+  ensureMemoryDocs(t.state);
+  say(main.id, '帮我把小红书那篇笔记存下来');
+  const tried = reply(main.id, '第一次打不开，带上 xsec_token 以后打开了，已经存进资料库。');
+  const { dreamer: d } = dreamer(() => ({ lessons: [
+    { topic: '小红书', kind: 'do', text: '链接要带着 xsec_token 才打得开', sources: [tried] },
+    { topic: '小红书', kind: 'avoid', text: '没有出处的不记', sources: ['line:nowhere:9'] },
+    { topic: '小红书', kind: 'maybe', text: '段不对的不记', sources: [tried] },
+  ] }));
+  const report = await d.dream(input);
+  const doc = t.state.memoryDocs.docs.live().find((item) => item.kind === 'how');
+  assert.equal(doc?.title, '小红书');
+  const lines = t.state.memoryDocs.lines.live(doc!.id);
+  assert.deepEqual(lines.map((line) => [line.section, line.basis, line.text]),
+    [['do', 'tried', '链接要带着 xsec_token 才打得开']]);
+  assert.deepEqual(lines[0]!.anchors, [{ kind: 'work', ref: `line:${main.id}` }]);
+  assert.equal(report.changes, 1);
+  assert.deepEqual(report.docIds, [doc!.id]);
+  const change = t.state.memoryDreams.changes(report.dream!.id)[0]!;
+  assert.deepEqual([change.kind, change.lineId, change.text], ['add', lines[0]!.id, '链接要带着 xsec_token 才打得开']);
+});
+
+test('Dream passes user\'s do-not-suggest list before generating suggestions', async () => {
+  const main = t.state.lines.main();
+  ensureMemoryDocs(t.state);
+  addLine(t.state, { docId: 'memdoc-proactive', section: 'never', text: '股票涨跌不用说', basis: 'stated',
+    anchors: [{ kind: 'message', ref: 'line:line-main:0' }] }, { actor: 'user', ref: 'device-1' });
+  say(main.id, '今天没什么事');
+  const { asked, dreamer: d } = dreamer(() => ({}));
+  await d.dream(input);
+  const material = JSON.parse(String(asked[0]!.messages[0]!.content)) as { never: string[] };
+  assert.deepEqual(material.never, ['股票涨跌不用说']);
+  assert.match(asked[0]!.system ?? '', /先分层再写/);
+});

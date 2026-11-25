@@ -1,0 +1,78 @@
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { QuoteAction } from './quote-action.tsx';
+import './quote-selection.css';
+import { useQuoteHandler } from '../../shell/quote-registry.ts';
+import { useCloseOnContextMenu } from '../../shell/use-context-menu-close.ts';
+
+interface SelectedText {
+  text: string;
+  left: number;
+  top: number;
+}
+
+function quotePosition(element: HTMLElement, selected: DOMRect): { left: number; top: number } {
+  const source = element.getBoundingClientRect();
+  const visible = { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+  for (let parent = element.parentElement; parent !== null; parent = parent.parentElement) {
+    const style = getComputedStyle(parent);
+    const rect = parent.getBoundingClientRect();
+    if (style.overflowX !== 'visible' && style.overflowX !== '') {
+      visible.left = Math.max(visible.left, rect.left);
+      visible.right = Math.min(visible.right, rect.right);
+    }
+    if (style.overflowY !== 'visible' && style.overflowY !== '') {
+      visible.top = Math.max(visible.top, rect.top);
+      visible.bottom = Math.min(visible.bottom, rect.bottom);
+    }
+  }
+  const above = selected.top - 40;
+  const top = above >= visible.top + 4 ? above : selected.bottom + 6;
+  return { left: Math.max(visible.left + 4, Math.min(selected.left, visible.right - 140)) - source.left,
+    top: Math.max(visible.top + 4, Math.min(top, visible.bottom - 38)) - source.top };
+}
+
+export function QuoteSelection({ children, onQuote }: {
+  children: ReactNode; onQuote?: ((text: string) => void) | undefined;
+}): ReactNode {
+  const ref = useRef<HTMLDivElement>(null);
+  const [selected, setSelected] = useState<SelectedText | null>(null);
+  useCloseOnContextMenu(() => setSelected(null));
+  const readSelection = useCallback((): void => {
+    const selection = window.getSelection();
+    const element = ref.current;
+    if (selection === null || element === null || selection.isCollapsed || selection.rangeCount === 0
+      || !element.contains(selection.anchorNode) || !element.contains(selection.focusNode)) {
+      setSelected(null);
+      return;
+    }
+    const text = selection.toString().trim();
+    const range = selection.getRangeAt(0);
+    const box = typeof range.getBoundingClientRect === 'function' ? range.getBoundingClientRect() : null;
+    setSelected(text === '' ? null : { text, ...(box === null ? { left: 0, top: 0 } : quotePosition(element, box)) });
+  }, []);
+  useEffect(() => {
+    if (onQuote === undefined) return;
+    document.addEventListener('selectionchange', readSelection);
+    return () => document.removeEventListener('selectionchange', readSelection);
+  }, [onQuote, readSelection]);
+  useQuoteHandler(() => ref.current, onQuote === undefined ? null : (selection) => {
+    const text = selection.toString().trim();
+    if (text === '') return false;
+    onQuote(text);
+    return true;
+  });
+  return <div ref={ref} className="msg-selection-source" onMouseUp={readSelection}
+    onTouchEnd={readSelection} onKeyUp={readSelection}>
+    {children}
+    <QuoteAction position={onQuote === undefined ? null : selected} onQuote={() => {
+        if (selected === null || onQuote === undefined) return;
+        onQuote(selected.text);
+        setSelected(null);
+        window.getSelection()?.removeAllRanges();
+      }} onCopy={async () => {
+        if (selected === null) return;
+        await navigator.clipboard.writeText(selected.text);
+        setSelected(null);
+      }} />
+  </div>;
+}

@@ -1,0 +1,59 @@
+.compose-field {
+  display: grid;
+  min-width: 0;
+}
+
+.compose-field > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.compose-field > textarea {
+  align-self: stretch;
+}
+
+.compose-ghost-layer {
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  height: auto;
+  animation: compose-ghost-in var(--motion-fast) var(--ease-out);
+}
+
+.compose-ghost-draft {
+  color: transparent;
+}
+
+.compose-ghost {
+  color: var(--fg3);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.shell[data-phone='true'] .compose-ghost {
+  text-decoration: underline dotted var(--line2);
+  text-underline-offset: 4px;
+}
+
+.compose-ghost-key {
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius-sm);
+  color: var(--fg3);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+  vertical-align: 1px;
+}
+
+@keyframes compose-ghost-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compose-ghost-layer {
+    animation: none;
+  }
+}

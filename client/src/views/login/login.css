@@ -1,0 +1,13 @@
+.login-links {
+  justify-content: flex-start;
+}
+
+.login-gap {
+  flex: 1;
+}
+
+@media (max-width: 767px) {
+  .login-address {
+    display: none;
+  }
+}

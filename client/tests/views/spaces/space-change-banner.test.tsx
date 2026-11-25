@@ -1,0 +1,72 @@
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiProvider } from '../../../src/api/context.tsx';
+import { createFakeApi } from '../../../src/api/fake/index.ts';
+import type { SpaceView } from '../../../src/api/shared.ts';
+import { ChangeBanner } from '../../../src/views/spaces/space-change-banner.tsx';
+
+const NOW = new Date('2026-11-11T08:00:00.000Z');
+
+async function fixture() {
+  const fake = createFakeApi({ seed: false, streamStepMs: 0, now: () => NOW });
+  fake.control.session.signInForDevelopment('测试机');
+  fake.control.spaces.seed();
+  const space = { ...await fake.api.spaces.get('sp_research_2'), updatedAt: NOW.toISOString() };
+  const open = (value: SpaceView = space) => render(<ApiProvider api={fake.api}>
+    <ChangeBanner space={value} onChanged={vi.fn()} />
+  </ApiProvider>);
+  return { fake, space, open };
+}
+
+beforeEach(() => {
+  localStorage.clear();
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+describe('Space modification notice (in-page banner)', () => {
+  it('does not re-show for same space version on second open; re-shows on new version', async () => {
+    const { open, space } = await fixture();
+    const view = open();
+    expect(screen.getByRole('status')).toBeTruthy();
+    expect(localStorage.getItem('space-change-seen:sp_research_2:2')).toBe('1');
+    view.unmount();
+    const reopened = open();
+    expect(screen.queryByRole('status')).toBeNull();
+    reopened.unmount();
+    open({ ...space, version: 3, lastChange: { ...space.lastChange!, version: 3 } });
+    expect(screen.getByRole('status')).toBeTruthy();
+  });
+
+  it('renders at top of content without auto-dismissing until Close is clicked', async () => {
+    const { open } = await fixture();
+    open();
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.getByRole('status').classList.contains('banner')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: '关掉' }));
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('does not show notice for revision saved over 10 minutes ago', async () => {
+    const { open, space } = await fixture();
+    open({ ...space, updatedAt: new Date(NOW.getTime() - 600_001).toISOString() });
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('notice and dismiss still work when localStorage read/write fails', async () => {
+    const { open } = await fixture();
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('不可读'); });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('不可写'); });
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    open();
+    expect(screen.getByRole('status')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '关掉' }));
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(warning).toHaveBeenCalledTimes(2);
+  });
+});

@@ -1,0 +1,39 @@
+.spinner {
+  display: inline-block;
+  flex: none;
+  width: 14px; /* allow-exception: spinner size */
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--radius-full);
+  animation: busy-spin 720ms linear infinite; /* allow-exception: spinner cycle duration */
+}
+
+.busy-text {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+}
+
+.busy-text[data-busy='true'] > .busy-text-label {
+  visibility: hidden;
+}
+
+.busy-text > .spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+@keyframes busy-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    opacity: 0.6;
+  }
+}

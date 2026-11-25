@@ -1,0 +1,31 @@
+.rename-field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-hair);
+  min-width: 0;
+}
+
+.rename-input {
+  width: 100%;
+  min-width: 0;
+  margin: calc(-1 * var(--space-hair)) calc(-1 * var(--space-2));
+  padding: var(--space-px) var(--space-1);
+  border: 1px solid var(--fg);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  outline: none;
+}
+
+.rename-input:disabled {
+  color: var(--fg2);
+}
+
+.rename-error {
+  color: var(--err);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  white-space: normal;
+}

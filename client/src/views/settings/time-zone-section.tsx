@@ -1,0 +1,59 @@
+import { useEffect, type ReactNode } from 'react';
+import { useLive } from '../../live.tsx';
+import { OpLines } from '../../primitives/task-row/op-line.tsx';
+import { isOpenOp } from '../../state/action-ops.ts';
+import { useClientState } from '../../state/context.tsx';
+import { DAILY_SETTINGS_OP_KEY } from '../../state/daily-action-requests.ts';
+import { useStore } from '../../state/use-store.ts';
+import { useOp } from '../pending/pending-ops.tsx';
+import { TimeZoneField } from './time-zone-field.tsx';
+import { useSettingsDraft } from './settings-dialog-context.ts';
+import { PageLoading } from '../../primitives/page-loading/index.tsx';
+
+export function TimeZoneSection(): ReactNode {
+  const live = useLive();
+  const settings = live.dailySettings;
+  const { inlineDrafts } = useClientState();
+  const data = useStore(settings.data);
+  useStore(inlineDrafts.store);
+  const op = useOp(DAILY_SETTINGS_OP_KEY);
+  useEffect(() => {
+    settings.open();
+  }, [settings]);
+  const locked = op !== undefined && isOpenOp(op);
+  const problem = data.settings === null ? null : settings.problem();
+  const changed = settings.hasChanges();
+  useSettingsDraft(!locked && changed, () => settings.discard());
+  return (
+    <div className="block settings-time-zone-block">
+      {data.status === 'loading' || data.status === 'idle' ? <PageLoading rows={1} dense /> : null}
+      {data.error === null ? null : (
+        <p className="block-empty is-error" role="alert">
+          {data.error}{' '}
+          <button type="button" className="text-button" onClick={() => void settings.reload()}>
+            再读一次
+          </button>
+        </p>
+      )}
+      {data.settings === null ? null : (
+        <>
+          <TimeZoneField value={settings.field('timeZone')} disabled={locked}
+            onChange={(value) => settings.change('timeZone', value)} />
+          {problem === null ? null : <p className="block-empty is-error">{problem}</p>}
+          {changed && !locked ? (
+            <div className="set-actions">
+              <button type="button" className="secondary-button" onClick={() => settings.discard()}>取消</button>
+              <button type="button" className="primary-button" disabled={problem !== null}
+                onClick={() => void settings.save()}>保存</button>
+            </div>
+          ) : null}
+          <OpLines
+            ops={op === undefined ? [] : [op]}
+            onRetry={() => void settings.retry()}
+            onDismiss={() => settings.dismiss()}
+          />
+        </>
+      )}
+    </div>
+  );
+}

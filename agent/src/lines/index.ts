@@ -1,0 +1,39 @@
+export { LineKernel } from './kernel.ts';
+export { LineError, MAX_BACKGROUND_LINES } from './kernel-types.ts';
+export type { After, Compactor, KernelOptions, KernelState, LineErrorCode, OpenLine, SendInput, SendResult }
+  from './kernel-types.ts';
+export { HARD_LINE_KINDS, HARD_LINE_LABELS, realLater, sleepFor } from './types.ts';
+export type { CompleteOptions, HardLineKind, KernelTool, Later, LineScope, ModelChoice, ModelSource, ToolArgs,
+  UsageTag }
+  from './types.ts';
+export { DEFAULT_PAUSE_MS, RETRY_DELAYS_MS, classifyFailure, resetTime } from './failure.ts';
+export { NO_MODEL_REASON } from './runner.ts';
+export type { DriveOutcome } from './runner.ts';
+export { checkedArgs } from './tool-args.ts';
+export { convertToLlm, contentText } from './messages.ts';
+export { historyMessages } from './transcript.ts';
+export type { LineReportMessage, LineSummaryMessage } from './messages.ts';
+export { adaptLegacyTool } from './legacy.ts';
+export type { LegacyMeta, LegacyOptions } from './legacy.ts';
+export { legacySayings, legacyToolNames } from './catalog.ts';
+export type { NodeLabel } from './catalog.ts';
+export { serverCommandTool } from './server-tool.ts';
+export { answerSentence, awaitAnswer, QUESTION_PURPOSE } from './ask-tools.ts';
+export type { AskToolHost } from './ask-tools.ts';
+export { tabHandoffTool } from './handoff-tool.ts';
+export { experienceTool } from './experience-tool.ts';
+export { rememberTool } from './remember-tool.ts';
+export { conversationSearchTool } from './search-tool.ts';
+export { forgetTool } from './forget-tool.ts';
+export { attachmentReadTool } from './attachment-read-tool.ts';
+export type { SubmitHoldPort } from './page-submit-tool.ts';
+export { COMPACTION_KEEP_RECENT_TOKENS, COMPACTION_RESERVE_TOKENS, compactionThreshold, contextTokens,
+  createCompactor, findCut, serializeForSummary } from './compaction.ts';
+export { MAX_DAY_COMPACTIONS, contextWindow, localDay, rollDay, segmented } from './day-context.ts';
+export { LARGE_RESULT_CHARS, READ_RESULT_TOOL } from './large-results.ts';
+export { declareLoaded, DIRECT_TOOLS, TOOL_SEARCH } from './tool-loadout.ts';
+export { OPEN_SIDE_TOOL, titleFromText } from './side-chats.ts';
+export { BACKGROUND_LIMIT_KEY, effectiveLimit, machineLoad, readWorkLimit } from './capacity.ts';
+export type { MachineLoad } from './capacity.ts';
+export { lineDetails } from './details.ts';
+export { IMAGE_MAX_BYTES } from './images.ts';

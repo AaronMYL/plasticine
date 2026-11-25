@@ -1,0 +1,223 @@
+.web-bookmarks {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+}
+
+.web-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: calc(100% - 16px);
+  height: 28px;
+  margin: var(--space-2) var(--space-2) var(--space-hair);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-section-head:hover {
+  background: var(--tint);
+}
+
+.web-section-head:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.web-section-count {
+  color: var(--fg3);
+  font-family: var(--mono);
+  font-weight: 400;
+}
+
+.web-section-chevron {
+  display: flex;
+  margin-left: auto;
+  color: var(--fg3);
+  transition: transform var(--motion-base) var(--ease-out);
+}
+
+.web-section-head[aria-expanded='false'] .web-section-chevron {
+  transform: rotate(-90deg);
+}
+
+.web-bookmarks-body {
+  position: relative;
+}
+
+.web-bookmarks-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-bookmark-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 var(--space-2);
+  border-radius: var(--radius);
+  touch-action: none;
+}
+
+.web-bookmark-item:hover,
+.web-bookmark-item[data-menu='true'] {
+  background: var(--tint);
+}
+
+.web-bookmark-item[data-dragging='true'] {
+  background: var(--layer-float);
+  box-shadow: var(--lift);
+  cursor: grabbing;
+}
+
+.web-bookmark-row {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-bookmark-row:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.web-bookmark-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-bookmark-open {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin-right: var(--space-hair);
+  border-radius: var(--radius-full);
+  background: var(--fg3);
+}
+
+.web-bookmark-editing {
+  gap: var(--space-3);
+  height: 32px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-body);
+}
+
+.web-bookmark-editing .rename-input {
+  margin: 0 calc(-1 * var(--space-2));
+}
+
+.web-bookmark-gone {
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-ui);
+}
+
+.web-bookmark-gone:hover {
+  background: transparent;
+}
+
+.web-bookmark-gone[data-error='true'] {
+  color: var(--err);
+}
+
+.web-bookmark-gone-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-bookmark-undo {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  height: 24px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.web-bookmark-undo:hover {
+  background: var(--tint2);
+}
+
+.web-bookmark-undo:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+
+.web-bookmarks-rule {
+  flex: none;
+  height: 1px;
+  margin: var(--space-3) var(--space-4) var(--space-3);
+  border: 0;
+  background: var(--line2);
+}
+
+.web-bookmarks[data-dragging='true'] .web-bookmark-item:not([data-dragging='true']):hover {
+  background: transparent;
+}
+
+.web-bookmarks-pop {
+  width: min(320px, calc(100vw - 16px));
+  max-height: min(480px, calc(100vh - 120px));
+  overflow-y: auto;
+  padding: var(--space-1);
+}
+
+.web-bookmarks-pop .web-bookmark-item {
+  margin: 0;
+}
+
+.web-bookmarks-pop .web-bookmark-row {
+  height: 40px;
+}
+
+.web-bookmarks-pop-empty {
+  margin: var(--space-2) var(--space-3);
+  color: var(--fg2);
+  font-size: var(--text-ui);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-section-chevron {
+    transition: none;
+  }
+}

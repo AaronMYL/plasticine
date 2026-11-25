@@ -1,0 +1,121 @@
+import { Type } from 'typebox';
+import { Value } from 'typebox/value';
+import { DeviceActionParamsSchema, DEVICE_KIND_LABELS } from '../../shared/api/index.ts';
+import type { Ask, NodeAction } from '../../shared/state.ts';
+import { AttentionError, type AskDesk, type AskResolver } from '../attention/index.ts';
+import type { StateService } from '../state/index.ts';
+import type { ActionRequest, DeviceActions } from './actions.ts';
+import { factsOf } from './limits.ts';
+import { classifyLane } from './lanes.ts';
+import { normalizeActionRequest } from './action-id.ts';
+
+const Context = Type.Object({ nodeId: Type.String(), actionId: Type.String(), action: DeviceActionParamsSchema,
+  originalActionId: Type.Optional(Type.String()),
+  purpose: Type.Optional(Type.Union([Type.String(), Type.Null()])) });
+
+const LINE_RUN_PREFIX = 'line:';
+const RESULT_CHARS = 4_000;
+
+export interface ApprovedResult {
+  lineId: string;
+  text: string;
+}
+
+function lineOf(ask: Ask): string | null {
+  return ask.runId?.startsWith(LINE_RUN_PREFIX) === true ? ask.runId.slice(LINE_RUN_PREFIX.length) : null;
+}
+
+function resultText(row: NodeAction): string {
+  const head = `他授权的设备动作「${DEVICE_KIND_LABELS[row.kind]}」（${row.target}）`;
+  if (row.status === 'executed') {
+    const result = JSON.stringify(row.result ?? null);
+    const clipped = Array.from(result).slice(0, RESULT_CHARS).join('');
+    return `${head}做完了。结果：${clipped}${clipped.length < result.length ? '……（完整结果在设备动作记录里）' : ''}`;
+  }
+  if (row.status === 'unknown') {
+    return `${head}结果不明：${row.reason ?? '发出去了，但没拿到回执；先核实，不要重发。'}`;
+  }
+  if (row.status === 'dry_run') {
+    return `${head}在开发期干跑里只记下了，没有真的做。`;
+  }
+  return `${head}没做成：${row.reason ?? row.status}。`;
+}
+
+export class DeviceApprovals {
+  readonly #state: StateService;
+  readonly #desk: AskDesk;
+  readonly #wake: () => void;
+  #report: (result: ApprovedResult) => void = () => undefined;
+  readonly #reported = new Set<string>();
+  readonly resolver: AskResolver;
+
+  constructor(state: StateService, desk: AskDesk, actions: DeviceActions, wake: () => void) {
+    this.#state = state;
+    this.#desk = desk;
+    this.#wake = wake;
+    this.resolver = {
+      resolve: (changes, ask, answerer) => {
+        const lineId = lineOf(ask);
+        if (ask.answer?.optionId !== 'allow') {
+          if (lineId !== null) {
+            changes.afterCommit(() => this.#report({ lineId, text: '他没有授权这一次设备动作，动作没有发出：'
+              + '照这个决定接着做，别绕过去。' }));
+          }
+          return;
+        }
+        const confirmation = answerer.confirmation;
+        if (confirmation === undefined || confirmation.deviceId !== answerer.deviceId) {
+          throw new AttentionError('invalid_answer', '请在已配对的页面确认这一次授权。');
+        }
+        const context = ask.context;
+        if (!Value.Check(Context, context)) {
+          throw new AttentionError('invalid_answer', '动作资料不完整，请重新发起。');
+        }
+        const row = actions.enqueueApproved({ ...context, origin: 'brain', taskId: null, runId: ask.runId },
+          confirmation);
+        changes.afterCommit(() => {
+          actions.publish(row);
+          this.#wake();
+          this.settled(row);
+        });
+      },
+    };
+  }
+
+  onResult(report: (result: ApprovedResult) => void): void {
+    this.#report = report;
+  }
+
+  request(request: ActionRequest): Ask {
+    request = normalizeActionRequest(request);
+    const node = this.#state.nodes.require(request.nodeId);
+    const lane = classifyLane(request.action, request.purpose ?? '');
+    return this.#desk.commit((changes) => this.#desk.raise(changes, { kind: 'approve', purpose: 'device_action',
+      question: `授权「${DEVICE_KIND_LABELS[request.action.kind]}」这一次？`,
+      detail: [`节点：${node.name}`, `目标：${factsOf(request.action).target}`,
+        ...(request.purpose === undefined || request.purpose === null ? [] : [`用途：${request.purpose}`]),
+        ...(lane.lane === 'allow' ? [] : [`为什么要你点：${lane.reason}`]),
+        '只授权这一个动作，不改变设备上限。'].join('\n'),
+      options: [{ id: 'allow', label: '授权这一次' }, { id: 'deny', label: '不执行' }],
+      actionId: `device-approval:${request.actionId}`, taskId: null, runId: request.runId ?? null,
+      context: { nodeId: request.nodeId, actionId: request.actionId, action: request.action,
+        ...(request.originalActionId === undefined ? {} : { originalActionId: request.originalActionId }),
+        purpose: request.purpose ?? null },
+    }));
+  }
+
+  settled(row: NodeAction): void {
+    if (row.status === 'queued' || row.status === 'sent') {
+      return;
+    }
+    const ask = this.#state.asks.byActionId(`device-approval:${row.actionId}`);
+    if (ask?.status !== 'answered' || ask.answer?.optionId !== 'allow') {
+      return;
+    }
+    const lineId = lineOf(ask);
+    if (lineId !== null && !this.#reported.has(row.actionId)) {
+      this.#reported.add(row.actionId);
+      this.#report({ lineId, text: resultText(row) });
+    }
+  }
+}

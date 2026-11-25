@@ -1,0 +1,10 @@
+[Unit]
+Description=Plasticine 自更新
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/plasticine/plasticine.env
+ExecStart=/opt/plasticine/node/bin/node /opt/plasticine/current/scripts/packages/update.ts update \
+  --root /opt/plasticine --restart-command "systemctl restart plasticine.service"

@@ -1,0 +1,408 @@
+import { createModels, fauxProvider, type FauxProviderHandle, type FauxResponseStep } from '@earendil-works/pi-ai';
+import { createHash } from 'node:crypto';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import type { HubStreamEvent } from '../../shared/api/index.ts';
+import {
+  generateVapidKeys,
+  type PushRequest,
+  type PushTransport,
+  type VapidKeys,
+} from '../../src/attention/index.ts';
+import type { Tool } from '../../src/tools/registry.ts';
+import type { NodeTransport } from '../../src/devices/index.ts';
+import type { App } from '../../src/app/app.ts';
+import { assembleApp, type AssembleOptions } from '../../src/app/assemble.ts';
+import type { CloudTransports } from '../../src/cloud-tools/index.ts';
+import type { MailImageFetchOptions } from '../../src/cloud-tools/mail-image-fetch.ts';
+import type { FaviconFetchOptions } from '../../src/cloud-tools/favicon-fetch.ts';
+import type { FeedFetcher } from '../../src/daily/index.ts';
+import { SESSION_COOKIE } from '../../src/app/config.ts';
+import { hashPassword } from '../../src/app/password-hash.ts';
+import { TextModelError, type TextAnswer } from '../../src/kernel/index.ts';
+import type { ModelSource } from '../../src/lines/index.ts';
+import { openState, type StateService } from '../../src/state/index.ts';
+import { MigrationService } from '../../src/system/index.ts';
+import { scriptedText, type TextStep } from '../tools/helpers.ts';
+
+export const START_MS = Date.parse('2026-10-27T08:00:00.000Z');
+
+export interface TestClock {
+  now: () => Date;
+  advance(ms: number): void;
+}
+
+/** Moves only when told, plus one millisecond per reading so stored times are distinct and ordered. */
+export function testClock(): TestClock {
+  let current = START_MS;
+  return {
+    now: () => {
+      current += 1;
+      return new Date(current);
+    },
+    advance: (ms) => {
+      current += ms;
+    },
+  };
+}
+
+/** One request the service sent to a push service (none leaves the test: the transport is this fake). */
+export interface SentPush {
+  endpoint: string;
+  request: PushRequest;
+}
+
+export interface TestApp {
+  app: App;
+  state: StateService;
+  clock: TestClock;
+  base: string;
+  directory: string;
+  /** What the scripted text model was asked, in order. */
+  requests: ReturnType<typeof scriptedText>['requests'];
+  faux: FauxProviderHandle;
+  respond(steps: FauxResponseStep[]): void;
+  /** Web Push requests, in order. */
+  pushes: SentPush[];
+  vapidKeys: VapidKeys;
+  /** `keepDirectory`: leave the state directory for a restart over the same library. */
+  close(keepDirectory?: boolean): Promise<void>;
+}
+
+export interface TestAppOptions {
+  feedFetcher?: FeedFetcher;
+  renderPage?: (html: string, format: 'pdf' | 'png', signal: AbortSignal) => Promise<Buffer>;
+  automaticBackups?: boolean;
+  memoryCuration?: boolean;
+  extraTools?: Tool[];
+  sseHeartbeatMs?: number;
+  startTasks?: boolean;
+  /** Status the fake push service answers with. */
+  pushStatus?: number;
+  builtinSkills?: string;
+  /** An existing state directory (a restart over the same library). */
+  directory?: string;
+  /** How device actions reach nodes (a fake). */
+  nodeTransport?: NodeTransport;
+  cloudTransports?: Partial<CloudTransports>;
+  mailImages?: MailImageFetchOptions;
+  linkPreviews?: AssembleOptions['linkPreviews'];
+  skillShop?: AssembleOptions['skillShop'];
+  favicons?: FaviconFetchOptions;
+  /** The development dry run (default on, as in the service until it is switched on). */
+  dryRun?: boolean;
+  transcriberKit?: AssembleOptions['transcriberKit'];
+  network?: AssembleOptions['network'];
+  lines?: Partial<AssembleOptions['lines']>;
+  noModel?: boolean;
+  kernelModels?: (state: StateService) => NonNullable<AssembleOptions['kernelModels']>;
+  localToken?: string;
+  migrationRestart?: () => void;
+}
+
+const TEST_TICK_MS = 60_000;
+
+function fauxSource(noModel: boolean): { source: ModelSource; faux: FauxProviderHandle } {
+  const faux = fauxProvider();
+  const models = createModels();
+  models.setProvider(faux.provider);
+  const source: ModelSource = {
+    current: () => (noModel ? undefined : { model: faux.getModel(), thinking: 'off' }),
+    streamFn: models.streamSimple.bind(models),
+    complete: (model, context, options) => models.completeSimple(model, context,
+      options?.signal === undefined ? {} : { signal: options.signal }),
+  };
+  return { source, faux };
+}
+
+export async function startTestApp(steps: TextStep[] = [], options: TestAppOptions = {}): Promise<TestApp> {
+  const directory = options.directory ?? (await mkdtemp(join(tmpdir(), 'plasticine-app-')));
+  const clock = testClock();
+  const state = openState({ path: join(directory, 'plasticine.sqlite'), now: () => clock.now().toISOString() });
+  const noModel = options.noModel === true;
+  const text = scriptedText(noModel ? [new TextModelError('no_model', '还没有连接模型')] : steps);
+  const { source, faux } = fauxSource(noModel);
+  const pushes: SentPush[] = [];
+  const pushTransport: PushTransport = async (endpoint, request) => {
+    pushes.push({ endpoint, request });
+    return { status: options.pushStatus ?? 201 };
+  };
+  const vapidKeys = generateVapidKeys();
+  const app = assembleApp({
+    state,
+    text: text.models,
+    memoryCuration: options.memoryCuration ?? false,
+    automaticBackups: options.automaticBackups ?? false,
+    dryRun: options.dryRun ?? true,
+    ...(options.builtinSkills === undefined ? {} : { builtinSkills: options.builtinSkills }),
+    ...(options.feedFetcher === undefined ? {} : { feedFetcher: options.feedFetcher }),
+    ...(options.cloudTransports === undefined ? {} : { cloudTransports: options.cloudTransports }),
+    ...(options.mailImages === undefined ? {} : { mailImages: options.mailImages }),
+    ...(options.linkPreviews === undefined ? {} : { linkPreviews: options.linkPreviews }),
+    ...(options.skillShop === undefined ? {} : { skillShop: options.skillShop }),
+    ...(options.favicons === undefined ? {} : { favicons: options.favicons }),
+    transcriberKit: options.transcriberKit ?? { ports: { download: async () => {
+      throw new Error('测试不出网：要装本地转写就给假的 transcriberKit');
+    } } },
+    vapidKeys,
+    vapidSubject: 'https://plasticine.test',
+    pushTransport,
+    now: clock.now,
+    ...(options.extraTools === undefined ? {} : { extraTools: options.extraTools }),
+    ...(options.sseHeartbeatMs === undefined ? {} : { sseHeartbeatMs: options.sseHeartbeatMs }),
+    scanTickMs: TEST_TICK_MS,
+    stateDirectory: directory,
+    ...(options.nodeTransport === undefined ? {} : { nodeTransport: options.nodeTransport }),
+    network: { autoSync: false, responder: false, ...options.network },
+    lines: { models: source, machineLoad: () => ({ cores: 2, load1: 0, freeRatio: 0.5 }), ...options.lines },
+    ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels(state) }),
+    localToken: options.localToken ?? null,
+    renderPage: options.renderPage ?? (async () => {
+      throw new Error('测试不起浏览器：要导出 PDF、长图就给假的 renderPage');
+    }),
+    ...(options.migrationRestart === undefined ? {} : { migration: new MigrationService({ stateDirectory: directory,
+      now: clock.now, snapshot: (path) => state.snapshotTo(path), restart: options.migrationRestart,
+      diskFree: () => 1e12 }) }),
+  });
+  if (options.startTasks !== false) {
+    app.start();
+  }
+  const port = await app.listen(0);
+  let closed = false;
+  return {
+    app,
+    state,
+    clock,
+    base: `http://127.0.0.1:${port}`,
+    directory,
+    requests: text.requests,
+    faux,
+    respond: (next) => faux.appendResponses(next),
+    pushes,
+    vapidKeys,
+    async close(keepDirectory = false) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      await app.stop(1_000);
+      state.close();
+      if (!keepDirectory) {
+        await rm(directory, { recursive: true, force: true });
+      }
+    },
+  };
+}
+
+export interface ApiReply {
+  status: number;
+  headers: Headers;
+  body: unknown;
+}
+
+export async function call(
+  t: TestApp,
+  method: string,
+  path: string,
+  options: { body?: unknown; cookie?: string; headers?: Record<string, string> } = {},
+): Promise<ApiReply> {
+  const headers: Record<string, string> = { ...options.headers };
+  if (options.cookie !== undefined) {
+    headers['cookie'] = options.cookie;
+  }
+  const init: RequestInit = { method, headers };
+  if (options.body !== undefined) {
+    headers['content-type'] = 'application/json';
+    init.body = JSON.stringify(options.body);
+  }
+  const response = await fetch(`${t.base}${path}`, init);
+  const type = response.headers.get('content-type') ?? '';
+  const body: unknown = type.startsWith('application/json') ? await response.json() : await response.arrayBuffer();
+  return { status: response.status, headers: response.headers, body };
+}
+
+/** Narrows an untyped JSON body for assertions; the shared schemas check the real shapes elsewhere. */
+export function json(reply: ApiReply): Record<string, unknown> {
+  if (typeof reply.body !== 'object' || reply.body === null || Array.isArray(reply.body)) {
+    throw new Error(`响应体不是 JSON 对象（${reply.status}）`);
+  }
+  return reply.body as Record<string, unknown>;
+}
+
+/** `plasticine_session=<token>` from a Set-Cookie header, ready to send back. */
+export function cookieFrom(reply: ApiReply): string {
+  const header = reply.headers.get('set-cookie') ?? '';
+  const match = new RegExp(`${SESSION_COOKIE}=([^;]*)`).exec(header);
+  if (match === null || match[1] === undefined || match[1] === '') {
+    throw new Error(`响应里没有会话 cookie：${header}`);
+  }
+  return `${SESSION_COOKIE}=${match[1]}`;
+}
+
+export const TEST_PASSWORD = 'fake-test-password';
+
+export async function pair(t: TestApp, deviceName = '测试手机'): Promise<string> {
+  if (t.state.ownerAccount.credentials() === null) {
+    const { hash, salt } = await hashPassword(TEST_PASSWORD);
+    t.state.ownerAccount.setPassword(hash, salt, t.clock.now().toISOString());
+  }
+  const reply = await call(t, 'POST', '/v2/session/password', { body: { password: TEST_PASSWORD, deviceName } });
+  if (reply.status !== 201) {
+    throw new Error(`登录失败：${reply.status} ${JSON.stringify(reply.body)}`);
+  }
+  return cookieFrom(reply);
+}
+
+export interface SseFrame {
+  id: string | null;
+  event: HubStreamEvent;
+}
+
+export interface SseStream {
+  /** The next event (optionally of one type), waiting at most `timeoutMs`. */
+  next(type?: HubStreamEvent['type'], timeoutMs?: number): Promise<SseFrame>;
+  close(): void;
+}
+
+const SSE_WAIT_MS = 5_000;
+
+function parseFrame(block: string): SseFrame | undefined {
+  let id: string | null = null;
+  let data = '';
+  for (const line of block.split('\n')) {
+    if (line.startsWith('id: ')) {
+      id = line.slice('id: '.length);
+    } else if (line.startsWith('data: ')) {
+      data += line.slice('data: '.length);
+    }
+  }
+  if (data === '') {
+    return undefined;
+  }
+  return { id, event: JSON.parse(data) as HubStreamEvent };
+}
+
+export async function openEvents(t: TestApp, cookie: string, lastEventId?: string): Promise<SseStream> {
+  const controller = new AbortController();
+  const headers: Record<string, string> = { cookie };
+  if (lastEventId !== undefined) {
+    headers['last-event-id'] = lastEventId;
+  }
+  const response = await fetch(`${t.base}/v2/events`, { headers, signal: controller.signal });
+  if (response.status !== 200 || response.body === null) {
+    throw new Error(`订阅失败：${response.status}`);
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const frames: SseFrame[] = [];
+  let buffered = '';
+
+  async function pull(): Promise<void> {
+    const { value, done } = await reader.read();
+    if (done) {
+      throw new Error('事件流在等到想要的事件前就结束了');
+    }
+    buffered += decoder.decode(value, { stream: true });
+    let end = buffered.indexOf('\n\n');
+    while (end !== -1) {
+      const frame = parseFrame(buffered.slice(0, end));
+      buffered = buffered.slice(end + 2);
+      if (frame !== undefined) {
+        frames.push(frame);
+      }
+      end = buffered.indexOf('\n\n');
+    }
+  }
+
+  let inflight: Promise<void> | null = null;
+  function pullOnce(): Promise<void> {
+    inflight ??= pull().finally(() => {
+      inflight = null;
+    });
+    return inflight;
+  }
+
+  async function waitFor(work: Promise<void>, ms: number, what: string): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`等了 ${ms} 毫秒没等到 ${what}`)), ms);
+    });
+    try {
+      await Promise.race([work, timeout]);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function next(type?: HubStreamEvent['type'], timeoutMs = SSE_WAIT_MS): Promise<SseFrame> {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      const index = frames.findIndex((frame) => type === undefined || frame.event.type === type);
+      const found = index === -1 ? undefined : frames.splice(0, index + 1).at(-1);
+      if (found !== undefined) {
+        return found;
+      }
+      await waitFor(pullOnce(), Math.max(1, deadline - Date.now()), type ?? '事件');
+    }
+  }
+
+  return { next, close: () => controller.abort() };
+}
+
+export function heldStep(answer: string): { step: TextStep; started: Promise<void>; release(): void } {
+  let release = (): void => undefined;
+  let markStarted = (): void => undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const started = new Promise<void>((resolve) => {
+    markStarted = resolve;
+  });
+  const step = async (_request: unknown, signal: AbortSignal): Promise<TextAnswer> => {
+    markStarted();
+    const aborted = new Promise<void>((resolve) => {
+      signal.addEventListener('abort', () => resolve(), { once: true });
+    });
+    await Promise.race([gate, aborted]);
+    if (signal.aborted) {
+      throw new TextModelError('failed', '叫停了');
+    }
+    return { text: answer, complete: true };
+  };
+  return { step, started, release: () => release() };
+}
+
+export async function uploadAttachment(t: TestApp, cookie: string, input: { requestId: string; mimeType: string;
+  content: Buffer; name?: string }): Promise<Record<string, unknown>> {
+  const meta = { requestId: input.requestId, mimeType: input.mimeType, name: input.name ?? '资料',
+    bytes: input.content.length, sha256: createHash('sha256').update(input.content).digest('hex') };
+  const opened = await call(t, 'POST', '/v2/conversation/attachments/uploads', { cookie, body: meta });
+  if (opened.status !== 201) throw new Error(`报附件没成（${opened.status}）：${JSON.stringify(opened.body)}`);
+  const id = String((json(opened)['attachment'] as Record<string, unknown>)['id']);
+  let received = Number(json(opened)['received']);
+  while (received < input.content.length) {
+    const response = await fetch(`${t.base}/v2/conversation/attachments/${id}/chunks/${received}`, {
+      method: 'PUT', headers: { cookie, 'content-type': 'application/octet-stream' },
+      body: new Uint8Array(input.content.subarray(received, received + 4 * 1024 * 1024)),
+    });
+    const body = await response.json() as Record<string, unknown>;
+    if (response.status !== 200) throw new Error(`传附件没成（${response.status}）：${JSON.stringify(body)}`);
+    received = Number(body['received']);
+  }
+  const done = await call(t, 'POST', `/v2/conversation/attachments/${id}/complete`, { cookie });
+  if (done.status !== 200) throw new Error(`附件没传完（${done.status}）：${JSON.stringify(done.body)}`);
+  return json(done);
+}
+
+let requestCounter = 0;
+/** A fresh request id that fits RequestIdSchema. */
+export function newRequestId(prefix = 'req'): string {
+  requestCounter += 1;
+  return `${prefix}-${String(requestCounter).padStart(8, '0')}`;
+}
+
+export function send(t: TestApp, method: string, path: string, body: Record<string, unknown>,
+  session: { cookie: string }): Promise<ApiReply> {
+  return call(t, method, path, { cookie: session.cookie, body });
+}

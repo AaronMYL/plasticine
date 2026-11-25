@@ -1,0 +1,68 @@
+.markdown {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.markdown p {
+  margin: 0 0 var(--space-2);
+  white-space: pre-wrap;
+}
+.markdown p:last-child { margin-bottom: 0; }
+.markdown .markdown-p {
+  margin: 0 0 var(--space-2);
+  white-space: pre-wrap;
+}
+.markdown .markdown-p:last-child { margin-bottom: 0; }
+.markdown .markdown-image {
+  margin: var(--space-1) 0;
+  white-space: normal;
+}
+.markdown h1, .markdown h2, .markdown h3, .markdown h4 {
+  font-size: inherit;
+  margin: var(--space-4) 0 var(--space-2);
+}
+.markdown ul, .markdown ol {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-5);
+}
+.markdown a {
+  color: var(--fg);
+  text-underline-offset: 3px;
+}
+.markdown blockquote {
+  border-left: 1px solid var(--line2);
+  margin: var(--space-2) 0;
+  padding-left: var(--space-3);
+  color: var(--fg2);
+}
+.markdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius);
+  font-size: var(--text-caption);
+}
+.markdown code {
+  font-family: var(--mono);
+  font-size: var(--text-ui);
+}
+.markdown-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.markdown table {
+  border-collapse: collapse;
+  font-size: var(--text-ui);
+}
+.markdown th, .markdown td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line2);
+  text-align: left;
+}
+.markdown hr {
+  border: 0;
+  border-top: 1px solid var(--line2);
+  margin: var(--space-3) 0;
+}
+.msg-selection { align-self: flex-start; }

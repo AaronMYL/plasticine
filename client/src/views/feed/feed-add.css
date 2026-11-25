@@ -1,0 +1,304 @@
+.feed-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.feed-add-kinds {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.sheet-drawer .feed-add,
+.sheet-drawer .feed-set {
+  padding: var(--space-4);
+}
+
+.feed-add-kind {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 64px;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  cursor: pointer;
+  transition: box-shadow var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.feed-add-kind:hover {
+  background: var(--tint);
+}
+
+.feed-add-kind[aria-selected='true'] {
+  box-shadow: inset 0 0 0 1.5px var(--fg);
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.feed-add-kind:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.feed-add-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  animation: feed-add-in var(--motion-fast) var(--ease-out);
+}
+
+@keyframes feed-add-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.feed-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feed-add-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  background: var(--bg);
+}
+
+.feed-add-field:focus-within {
+  box-shadow: inset 0 0 0 1.5px var(--fg);
+}
+
+.feed-add-prefix {
+  color: var(--fg3);
+  font-family: var(--mono);
+  font-size: var(--text-ui);
+}
+
+.feed-add-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-body);
+  outline: none;
+}
+
+.feed-add-ok {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--ok);
+}
+
+.feed-add-sort {
+  align-self: flex-start;
+}
+
+.feed-add-preview {
+  min-height: 40px;
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-2);
+}
+
+.feed-add-posts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed-add-post {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  animation: feed-add-in var(--motion-fast) var(--ease-out);
+}
+
+.feed-add-post > .reddit-mark {
+  margin-top: var(--space-1);
+}
+
+.feed-add-post-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.feed-add-post-title {
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+}
+
+.feed-add-post-meta,
+.feed-add-note {
+  margin: 0;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.feed-add-note.is-error {
+  color: var(--err);
+}
+
+.feed-add-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.feed-add-hint {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+}
+
+.feed-add-login {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.feed-add-login-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-body-line);
+  font-weight: 500;
+}
+
+.feed-add-login-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--fg3);
+}
+
+.feed-add-login-dot[data-on='true'] {
+  background: var(--ok);
+}
+
+.feed-add-login-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+@media (max-width: 767px) {
+  .feed-add-kinds {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .feed-add-kind {
+    min-height: 56px;
+    font-size: var(--text-tag);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-add-kind,
+  .feed-add-body,
+  .feed-add-post {
+    transition: none;
+    animation: none;
+  }
+}
+
+.feed-set {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.feed-set-status:empty {
+  display: none;
+}
+
+.feed-set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.feed-set-label {
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.feed-set .field-label,
+.feed-add-body .field-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--fg2);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+}
+
+.feed-set .field-input,
+.feed-add-body .field-input {
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--fg);
+}
+
+.feed-add-body .feed-subscribe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.feed-add-body .feed-subscribe .field-input {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.feed-add-body .feed-subscribe-note {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.feed-add-body .feed-interest {
+  padding: 0;
+  border-top: 0;
+}

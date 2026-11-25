@@ -1,0 +1,114 @@
+.feed-kind-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feed-kind-head.is-compact {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.feed-kind-head.is-compact .feed-chips-scroll {
+  flex: 1;
+  min-width: 0;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+.feed-kind-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 32px;
+}
+
+.feed-kind-title .feed-top-title {
+  margin-right: var(--space-1);
+  font-size: var(--text-number);
+  line-height: var(--text-title-line);
+  font-weight: 600;
+}
+
+.feed-kind-gap {
+  flex: 1;
+}
+
+.feed-kind-refresh[data-busy] svg {
+  animation: feed-spin var(--motion-spin) linear infinite;
+}
+
+.feed-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.feed-chips-scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 0 calc(-1 * var(--space-4));
+  padding: 0 var(--space-4);
+  scrollbar-width: none;
+}
+
+.feed-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line2);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
+}
+
+.feed-chip:hover {
+  background: var(--tint);
+}
+
+.feed-chip[aria-pressed='true'] {
+  background: var(--fg);
+  box-shadow: none;
+  color: var(--bg);
+}
+
+.feed-chip:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.feed-chip-count {
+  font-size: var(--text-caption);
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767px) {
+  .feed-chip {
+    height: 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-kind-refresh[data-busy] svg {
+    animation: none;
+  }
+
+  .feed-chip {
+    transition: none;
+  }
+}

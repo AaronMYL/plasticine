@@ -1,0 +1,72 @@
+.space-page[data-genre='report'],
+.space-page[data-genre='letter'] {
+  overflow: hidden;
+}
+
+.space-frame {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: var(--bg);
+}
+
+.space-page[data-genre='letter'],
+.space-page[data-genre='letter'] .space-frame {
+  background: var(--bubble);
+}
+
+.space-ask {
+  gap: var(--space-2);
+  margin-right: var(--space-2);
+}
+
+.space-done {
+  margin-left: var(--space-2);
+}
+
+.space-edit-toggle[aria-pressed='true'] {
+  background: var(--tint2);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+
+.space-rename {
+  flex: none;
+  padding: var(--space-2) var(--space-5);
+  border-bottom: 1px solid var(--line);
+}
+
+.space-phone-top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  height: 52px;
+  padding: 0 var(--space-2);
+}
+
+.space-phone-top .icon-button {
+  width: 36px;
+  height: 36px;
+}
+
+.space-phone-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 var(--space-1);
+  font-size: var(--text-section);
+  font-weight: 600;
+  line-height: var(--text-body-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.space-quote-button {
+  position: fixed;
+  z-index: var(--z-selection);
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}

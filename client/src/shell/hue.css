@@ -1,0 +1,26 @@
+.hue-tile {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--tile-hue) var(--hue-wash), transparent);
+  color: var(--tile-hue);
+}
+
+.project-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+  white-space: nowrap;
+}
+
+.project-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}

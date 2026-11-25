@@ -1,0 +1,154 @@
+import assert from 'node:assert/strict';
+import { afterEach, test } from 'node:test';
+import { fauxAssistantMessage, fauxToolCall, type TranscriptContext } from '@earendil-works/pi-ai';
+import { Type } from 'typebox';
+import type { KernelTool } from '../../src/lines/index.ts';
+import { CHECKPOINT_STEPS, EXACT_FAILURE_BLOCK, kindOf, LoopGuard, SAME_KIND_FAILURE_HALT, STEP_LIMIT }
+  from '../../src/lines/loop-guard.ts';
+import { MAIN_LINE_ID } from '../../src/state/index.ts';
+import { scriptByLine, startKernel, type Harness } from './helpers.ts';
+
+const open: Harness[] = [];
+
+afterEach(async () => {
+  for (const item of open.splice(0)) {
+    await item.close();
+  }
+});
+
+const click = (target: string) => ({ name: 'device_action', args: { action: { kind: 'tab_click', text: target } } });
+
+test('Identical failing call warns on 2nd, blocks after 5; different args still run', () => {
+  const guard = new LoopGuard({ hardStops: false });
+  assert.deepEqual(guard.after(click('保存'), true, '没找到').notes, []);
+  assert.match(guard.after(click('保存'), true, '没找到').notes[0] ?? '', /同样失败 2 次/);
+  for (let count = 3; count <= EXACT_FAILURE_BLOCK; count += 1) {
+    assert.equal(guard.before(click('保存')), null);
+    guard.after(click('保存'), true, '没找到');
+  }
+  assert.match(guard.before(click('保存'))?.block ?? '', /不再执行/);
+  assert.equal(guard.before(click('提交')), null, '参数不一样的照常');
+});
+
+test('Consecutive failures of same op warn on 3rd, reset on success; main keeps going', () => {
+  const guard = new LoopGuard({ hardStops: false });
+  assert.equal(kindOf(click('甲')), 'device_action:tab_click');
+  guard.after(click('甲'), true, '错');
+  guard.after(click('乙'), true, '错');
+  assert.match(guard.after(click('丙'), true, '错').notes[0] ?? '', /连续失败 3 次/);
+  guard.after(click('丁'), false, '点好了');
+  assert.deepEqual(guard.after(click('戊'), true, '错').notes, [], '做成过一次，重新数');
+  for (let count = 0; count < SAME_KIND_FAILURE_HALT; count += 1) {
+    assert.equal(guard.after(click(`第${count}个`), true, '错').halt, null, '主线只提醒');
+  }
+});
+
+test('Background line stops after 8 consecutive same-op failures or at 300 steps', () => {
+  const guard = new LoopGuard({ hardStops: true });
+  for (let count = 1; count < SAME_KIND_FAILURE_HALT; count += 1) {
+    assert.equal(guard.after(click(`第${count}个`), true, '错').halt, null);
+  }
+  assert.equal(guard.after(click('最后一个'), true, '错').halt, 'stuck');
+  const long = new LoopGuard({ hardStops: true });
+  for (let step = 0; step < STEP_LIMIT; step += 1) {
+    long.step();
+  }
+  assert.equal(long.before({ name: 'echo', args: { text: '下一步' } })?.halt, 'step_limit');
+});
+
+test('Consecutive identical read-line warns on 2nd; identical action calls do not', () => {
+  const guard = new LoopGuard({ hardStops: true });
+  const read = { name: 'read_line', args: { lineId: 'line-a' } };
+  assert.deepEqual(guard.after(read, false, '还在做').notes, []);
+  assert.match(guard.after(read, false, '还在做').notes[0] ?? '', /一模一样/);
+  assert.deepEqual(guard.after(read, false, '做完了').notes, [], '结果变了，重新数');
+  const echo = { name: 'echo', args: { text: '同样的话' } };
+  guard.after(echo, false, '回声');
+  assert.deepEqual(guard.after(echo, false, '回声').notes, []);
+});
+
+test('Progress check reminder fires once every 60 steps', () => {
+  const guard = new LoopGuard({ hardStops: true });
+  for (let step = 0; step < CHECKPOINT_STEPS; step += 1) {
+    guard.step();
+  }
+  const echo = { name: 'echo', args: { text: '一' } };
+  assert.match(guard.after(echo, false, '回声：一').notes[0] ?? '', /已经做了 60 步/);
+  assert.deepEqual(guard.after({ name: 'echo', args: { text: '二' } }, false, '回声：二').notes, []);
+});
+
+function failingTool(ran: string[]): KernelTool {
+  const parameters = Type.Object({ target: Type.String() }, { additionalProperties: false });
+  return {
+    name: 'press',
+    say: (args) => `点「${String(args['target'] ?? '')}」`,
+    hardLine: () => null,
+    create: () => ({
+      name: 'press', label: '点', description: '点一下', parameters,
+      execute: async (_id, raw) => {
+        ran.push(String((raw as { target: string }).target));
+        throw new Error('页面上没找到这一项');
+      },
+    }),
+  };
+}
+
+function toolTexts(context: TranscriptContext): string[] {
+  return context.messages.flatMap((message) => (message.role === 'toolResult'
+    ? [message.content.flatMap((part) => (part.type === 'text' ? [part.text] : [])).join('')] : []));
+}
+
+const press = (target: string) => fauxAssistantMessage([fauxToolCall('press', { target })],
+  { stopReason: 'toolUse' as const });
+
+test('Main line warns on 2nd identical failure, blocks after 5, still finishes turn', async () => {
+  const ran: string[] = [];
+  const h = await startKernel({ tools: [failingTool(ran)] });
+  open.push(h);
+  let seen: string[] = [];
+  h.respond([
+    ...Array.from({ length: EXACT_FAILURE_BLOCK + 1 }, () => press('保存')),
+    (context) => {
+      seen = toolTexts(context);
+      return fauxAssistantMessage('保存按钮点不了，卡在这一步。');
+    },
+  ]);
+  h.kernel.send('main', { text: '帮我点保存' });
+  await h.kernel.settled();
+  assert.equal(ran.length, EXACT_FAILURE_BLOCK, '第 6 次没有真的执行');
+  assert.ok(!seen[0]?.includes('内核提醒'));
+  assert.match(seen[1] ?? '', /同样失败 2 次/);
+  assert.match(seen.at(-1) ?? '', /不再执行/);
+  assert.equal(h.kernel.view('main').status, 'idle');
+  assert.equal(h.kernel.view('main').lastAnswer, '保存按钮点不了，卡在这一步。');
+});
+
+test('Background line stops as unmet after 8 same-op failures, reports to caller line', async () => {
+  const ran: string[] = [];
+  const h = await startKernel({ tools: [failingTool(ran)] });
+  open.push(h);
+  scriptByLine(h, {
+    '这是主对话': [
+      fauxAssistantMessage([fauxToolCall('start_line', { title: '点完八个按钮', goal: '把八个按钮都点一遍' })],
+        { stopReason: 'toolUse' as const }),
+      fauxAssistantMessage('交给后台线了。'),
+      fauxAssistantMessage('后台线卡住了，按钮点不了。'),
+      fauxAssistantMessage('后台线接着做完了。'),
+    ],
+    '点完八个按钮': [...Array.from({ length: SAME_KIND_FAILURE_HALT }, (_unused, index) => press(`按钮${index + 1}`)),
+      fauxAssistantMessage('换了办法，八个都点好了。')],
+  });
+  h.kernel.send('main', { text: '把那八个按钮都点一遍' });
+  await h.kernel.settled();
+  const line = h.kernel.list({ kind: 'background', limit: 10 })[0];
+  assert.equal(line?.status, 'failed');
+  assert.match(line?.failure ?? '', /同一种操作连续没做成（点「按钮8」）/);
+  assert.equal(ran.length, SAME_KIND_FAILURE_HALT);
+  const reports = h.handle.state.lineMessages.after(MAIN_LINE_ID, 0).filter((row) => row.role === 'lineReport');
+  assert.equal(reports.length, 1);
+  assert.match(JSON.stringify(reports[0]?.message), /先停下了/);
+  h.kernel.retry(line?.id ?? '');
+  await h.kernel.settled();
+  assert.equal(h.kernel.view(line?.id ?? '').status, 'idle');
+  assert.equal(h.kernel.view(line?.id ?? '').lastAnswer, '换了办法，八个都点好了。');
+});

@@ -1,0 +1,223 @@
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import type { ContactRow, ContactThreadItem } from '../../api/shared.ts';
+import { useLive } from '../../live.tsx';
+import { useClientState } from '../../state/context.tsx';
+import { useStore } from '../../state/use-store.ts';
+import { IconButton } from '../../shell/icon-button.tsx';
+import { messagesRoute, type Route } from '../../shell/routes.ts';
+import { useFocusMessage } from '../../shell/use-focus-message.ts';
+import { useViewing } from '../../state/viewing.ts';
+import { LoadNote } from '../../shell/load-note.tsx';
+import { ContactAvatar } from './contact-avatar.tsx';
+import { ContactComposer } from './contact-composer.tsx';
+import { ContactRequests } from './contact-requests.tsx';
+import { itemTime, joinItems } from './contacts-store.ts';
+import { GroupMenu } from './group-menu.tsx';
+import { ReplyConfirms, replyAsksOf } from './reply-confirm.tsx';
+import { TaskCompose } from './task-compose.tsx';
+import { ThreadItems } from './thread-items.tsx';
+import './contact-thread.css';
+import './network.css';
+import { SearchField } from '../../primitives/search-field/index.tsx';
+
+const FOLLOW_SLACK = 48;
+
+function textsOf(item: ContactThreadItem): string[] {
+  switch (item.type) {
+    case 'message':
+      return item.message.mail === undefined ? [item.message.text] : [item.message.mail.subject, item.message.text];
+    case 'task':
+      return [item.task.title, item.task.goal, item.task.acceptance];
+    case 'group_task':
+      return [item.task.title, item.task.goal];
+    case 'exchange':
+      return [item.summary, ...item.messages.map((message) => message.text)];
+  }
+}
+
+export function findItems(items: readonly ContactThreadItem[], query: string): ContactThreadItem[] {
+  const needle = query.trim().toLowerCase();
+  if (needle === '') {
+    return [...items];
+  }
+  return items.filter((item) => textsOf(item).some((text) => text.toLowerCase().includes(needle)));
+}
+
+export interface ContactThreadProps {
+  contact: ContactRow;
+  phone: boolean;
+  now: Date;
+  profileOpen: boolean;
+  navigate: (route: Route) => void;
+  onToggleProfile: () => void;
+  onNewTask: () => void;
+  focusMessageId?: string | null;
+}
+
+function canSendTask(contact: ContactRow): boolean {
+  return (contact.kind === 'person' && contact.state === 'active') || (contact.kind === 'group' && contact.canSend);
+}
+
+function DesktopHead(props: ContactThreadProps & { finding: boolean; onFind: () => void; composing: boolean })
+  : ReactNode {
+  const { contact } = props;
+  const avatar = contact.kind === 'person' || contact.kind === 'group';
+  return (
+    <header className="ct-head">
+      <div className="ct-head-who">
+        {avatar ? <ContactAvatar row={contact} size={28} /> : null}
+        <h2 className="ct-name">{contact.name}</h2>
+        {contact.kind === 'group' ? <span className="ct-count">{contact.memberCount}</span> : null}
+      </div>
+      {canSendTask(contact)
+        ? <IconButton icon="tasks" label="发任务" aria-pressed={props.composing} onClick={props.onNewTask} /> : null}
+      <IconButton icon="search" label="在这段聊天里找" aria-pressed={props.finding} onClick={props.onFind} />
+      {contact.kind === 'group' ? <GroupMenu group={contact} onLeft={() => props.navigate(messagesRoute(null))} />
+        : null}
+      {contact.kind === 'person' ? (
+        <IconButton icon="panel-right" className="ct-profile-toggle" aria-pressed={props.profileOpen}
+          label={props.profileOpen ? `关掉${contact.name}的资料` : `打开${contact.name}的资料`}
+          onClick={props.onToggleProfile} />
+      ) : null}
+    </header>
+  );
+}
+
+function PhoneHead({ contact, navigate, onNewTask }: Pick<ContactThreadProps, 'contact' | 'navigate'
+  | 'onNewTask'>): ReactNode {
+  const { shellPrefs } = useClientState();
+  return (
+    <header className="ct-head" data-phone="true">
+      <IconButton icon="back" size={20} label="回到消息" onClick={() => navigate(messagesRoute(null))} />
+      <button type="button" className="ct-who" aria-label={`${contact.name}的资料`}
+        onClick={() => navigate(messagesRoute(contact.id, 'profile'))}>
+        <ContactAvatar row={contact} size={28} />
+        <span className="ct-name">{contact.name}</span>
+      </button>
+      {contact.kind === 'group' ? <IconButton icon="tasks" size={20} label="发任务" onClick={onNewTask} />
+        : <IconButton icon="sparkle" size={20} label="问我的 Plasticine"
+          onClick={() => shellPrefs.setPhoneChatOpen(true)} />}
+    </header>
+  );
+}
+
+function useFollowBottom(count: number, contactId: string) {
+  const list = useRef<HTMLDivElement>(null);
+  const atBottom = useRef(true);
+  useLayoutEffect(() => {
+    atBottom.current = true;
+  }, [contactId]);
+  useLayoutEffect(() => {
+    const element = list.current;
+    if (element !== null && atBottom.current) {
+      element.scrollTop = element.scrollHeight;
+    }
+  }, [count, contactId]);
+  const onScroll = (): void => {
+    const element = list.current;
+    if (element !== null) {
+      atBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight <= FOLLOW_SLACK;
+    }
+  };
+  return { list, onScroll, atBottom };
+}
+
+export function ContactThread(props: ContactThreadProps): ReactNode {
+  const { contact, phone, now, navigate } = props;
+  const { contacts, contactActions, asks } = useLive();
+  const thread = contacts.thread(contact.id);
+  const latest = useStore(thread.latest.data);
+  const earlier = useStore(thread.earlier);
+  const [query, setQuery] = useState<string | null>(null);
+  const [composing, setComposing] = useState(false);
+  useEffect(() => {
+    thread.latest.open();
+  }, [thread]);
+  useEffect(() => {
+    setQuery(null);
+    setComposing(false);
+  }, [contact.id]);
+  const withCompose = { ...props, onNewTask: () => setComposing((value) => !value) };
+  const items = joinItems(earlier.items, latest.value?.items ?? []);
+  const last = items.at(-1);
+  const lastAt = last === undefined ? null : itemTime(last);
+  const marked = useRef<string | null>(null);
+  useEffect(() => {
+    const mark = `${contact.id}|${lastAt ?? ''}`;
+    if (contact.unread > 0 && lastAt !== null && marked.current !== mark) {
+      marked.current = mark;
+      void contactActions.markRead(contact, lastAt);
+    }
+  }, [contactActions, contact, lastAt]);
+  const replyCards = replyAsksOf(useStore(asks.store).open, contact).length;
+  const { list, onScroll, atBottom } = useFollowBottom(items.length + replyCards, contact.id);
+  useViewing(`contact:${contact.id}`);
+  const focusId = props.focusMessageId ?? null;
+  const loadedFocus = focusId !== null && items.some((item) => item.type === 'message' && item.message.id === focusId);
+  const root = useRef<HTMLDivElement>(null);
+  const hasMore = earlier.hasMore ?? latest.value?.hasMore ?? false;
+  const shown = query === null ? items : findItems(items, query);
+  useFocusMessage(list, focusId === null ? null : {
+    key: `${contact.id}:${focusId}`, ready: latest.value !== null, busy: earlier.status === 'loading',
+    canLoadMore: hasMore && !loadedFocus, loadMore: () => void thread.loadEarlier(),
+    find: (root) => [...root.querySelectorAll<HTMLElement>('.ct-item[data-mid]')]
+      .find((element) => element.dataset['mid'] === focusId) ?? null,
+  }, () => {
+    atBottom.current = false;
+  });
+  const loadEarlier = (): void => {
+    if (hasMore && list.current !== null && list.current.scrollTop <= 0) {
+      void thread.loadEarlier();
+    }
+  };
+  return (
+    <div className="contact-thread" data-phone={phone} ref={root}>
+      {phone ? <PhoneHead contact={contact} navigate={navigate} onNewTask={withCompose.onNewTask} />
+        : <DesktopHead {...withCompose} composing={composing} finding={query !== null}
+          onFind={() => setQuery((value) => (value === null ? '' : null))} />}
+      {query === null ? null : (
+        <SearchField className="ct-find" label="在这段聊天里找" value={query} autoFocus onChange={setQuery}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && query === '') {
+              setQuery(null);
+            }
+          }} />
+      )}
+      <div ref={list} className="ct-items" aria-label={`和${contact.name}的聊天记录`} role="log"
+        onScroll={() => {
+          onScroll();
+          loadEarlier();
+        }}>
+        {hasMore ? <button type="button" className="text-button text-button-quiet ct-earlier"
+          disabled={earlier.status === 'loading'} onClick={() => void thread.loadEarlier()}>更早的</button> : null}
+        {earlier.error === null ? null : <p className="block-empty is-error" role="alert">{earlier.error}</p>}
+        <LoadNote resource={latest} what="聊天" onRetry={() => void thread.latest.reload()} />
+        <ThreadItems items={shown} contact={contact} now={now} navigate={navigate} />
+        {query === null ? <ReplyConfirms contact={contact} onSelf={() => {
+          root.current?.querySelector<HTMLElement>('.contact-composer textarea, .contact-composer [contenteditable]')
+            ?.focus();
+        }} /> : null}
+      </div>
+      <ThreadFoot {...withCompose} />
+      {composing && canSendTask(contact)
+        ? <TaskCompose contact={contact} phone={phone} onClose={() => setComposing(false)} /> : null}
+    </div>
+  );
+}
+
+function ThreadFoot(props: ContactThreadProps): ReactNode {
+  const { contact, phone } = props;
+  if (contact.state === 'request') {
+    return (
+      <div className="ct-request">
+        <ContactRequests onAccepted={(id) => props.navigate(messagesRoute(id))}
+          only={contact.id} />
+      </div>
+    );
+  }
+  if (!contact.canSend) {
+    return null;
+  }
+  const newTask = canSendTask(contact) ? props.onNewTask : null;
+  return <ContactComposer contact={contact} phone={phone} onNewTask={newTask} />;
+}

@@ -1,0 +1,380 @@
+import assert from 'node:assert/strict';
+import { fauxAssistantMessage } from '@earendil-works/pi-ai';
+import { createHash } from 'node:crypto';
+import { test } from 'node:test';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { call, json, pair, startTestApp, type TestApp } from './helpers.ts';
+
+const PATH = '/v2/books';
+const TXT = [
+  '浮生六记',
+  '第一章 闺房记乐',
+  '余生乾隆癸未冬十一月二十有二日，正值太平盛世，且在衣冠之家，居苏州沧浪亭畔。',
+  '东坡云：“事如春梦了无痕”，苟不记之笔墨，未免有辜彼苍之厚。',
+  '第二章 闲情记趣',
+  '余忆童稚时，能张目对日，明察秋毫。',
+].join('\n');
+
+function upload(requestId: string, fileName: string, content: Buffer) {
+  return {
+    requestId,
+    fileName,
+    bytes: content.length,
+    sha256: createHash('sha256').update(content).digest('hex'),
+    content: content.toString('base64'),
+  };
+}
+
+async function addBook(app: TestApp, cookie: string, text = TXT): Promise<Record<string, unknown>> {
+  const reply = await call(app, 'POST', PATH, { cookie, body: upload(`book-${Date.now()}`, '浮生六记.txt',
+    Buffer.from(text, 'utf8')) });
+  assert.equal(reply.status, 201, JSON.stringify(reply.body));
+  return json(reply)['book'] as Record<string, unknown>;
+}
+
+async function chapterText(app: TestApp, cookie: string, id: string, index: number): Promise<string> {
+  const chapter = json(await call(app, 'GET', `${PATH}/${id}/chapters/${index}`, { cookie }));
+  return String(chapter['html']).replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+}
+
+test('unauthenticated request cannot read library', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    assert.equal((await call(app, 'GET', PATH)).status, 401);
+  } finally {
+    await app.close();
+  }
+});
+
+test('uploading TXT book into library reads chapters; re-uploading same file returns existing book', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const book = await addBook(app, cookie);
+    assert.equal(book['format'], 'txt');
+    assert.ok(Array.isArray(book['toc']) && book['toc'].length >= 2);
+    const list = json(await call(app, 'GET', PATH, { cookie }));
+    assert.deepEqual((list['books'] as Record<string, unknown>[]).map((entry) => entry['id']), [book['id']]);
+    assert.match(await chapterText(app, cookie, String(book['id']), 1), /事如春梦了无痕/);
+    const again = await call(app, 'POST', PATH, { cookie, body: upload('book-again-1', '副本.txt',
+      Buffer.from(TXT, 'utf8')) });
+    assert.equal(again.status, 200);
+    assert.equal(json(again)['duplicate'], true);
+    assert.equal((json(again)['book'] as Record<string, unknown>)['id'], book['id']);
+  } finally {
+    await app.close();
+  }
+});
+
+test('digest mismatch or unknown format rejected from library with clear next step', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const body = upload('book-bad-sha', '坏.txt', Buffer.from('正文'));
+    const broken = await call(app, 'POST', PATH, { cookie, body: { ...body, sha256: 'f'.repeat(64) } });
+    assert.equal(broken.status, 400);
+    const unknown = await call(app, 'POST', PATH, { cookie, body: upload('book-unknown', '表格.xlsx',
+      Buffer.from([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0])) });
+    assert.ok([415, 422].includes(unknown.status), String(unknown.status));
+    assert.equal(typeof json(unknown)['error'], 'string');
+    assert.deepEqual(json(await call(app, 'GET', PATH, { cookie }))['books'], []);
+  } finally {
+    await app.close();
+  }
+});
+
+test('reading progress uses last-write-wins; book view includes progress and device name', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const first = await call(app, 'PUT', `${PATH}/${id}/progress`, { cookie,
+      body: { chapter: 1, offset: 5, percent: 0.4, deviceLabel: 'iPhone' } });
+    assert.equal(first.status, 200);
+    await call(app, 'PUT', `${PATH}/${id}/progress`, { cookie,
+      body: { chapter: 2, offset: 0, percent: 0.9, deviceLabel: 'Mac' } });
+    const progress = json(await call(app, 'GET', `${PATH}/${id}`, { cookie }))['progress'] as Record<string, unknown>;
+    assert.equal(progress['chapter'], 2);
+    assert.equal(progress['deviceLabel'], 'Mac');
+    const outside = await call(app, 'PUT', `${PATH}/${id}/progress`, { cookie,
+      body: { chapter: 40, offset: 0, percent: 1, deviceLabel: 'Mac' } });
+    assert.equal(outside.status, 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test('highlights and notes: create, recolor/annotate, delete hides from list; rejects out-of-range', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const text = await chapterText(app, cookie, id, 1);
+    const quote = '事如春梦了无痕';
+    const start = text.indexOf(quote);
+    const created = await call(app, 'POST', `${PATH}/${id}/annotations`, { cookie, body: {
+      requestId: 'annotation-1', chapter: 1, start, end: start + quote.length, quote,
+      prefix: text.slice(Math.max(0, start - 8), start), suffix: text.slice(start + quote.length).slice(0, 8),
+      color: 'ochre', deviceLabel: 'iPhone',
+    } });
+    assert.equal(created.status, 201);
+    const annotation = json(created);
+    const updated = await call(app, 'PUT', `${PATH}/${id}/annotations/${String(annotation['id'])}`, { cookie,
+      body: { requestId: 'annotation-1-edit', version: annotation['version'], color: 'sage', note: '写下来' } });
+    assert.equal(json(updated)['note'], '写下来');
+    assert.equal(json(updated)['color'], 'sage');
+    const book = json(await call(app, 'GET', `${PATH}/${id}`, { cookie }));
+    assert.equal(book['annotationCount'], 1);
+    const outside = await call(app, 'POST', `${PATH}/${id}/annotations`, { cookie, body: {
+      requestId: 'annotation-2', chapter: 1, start: 0, end: 9999, quote: '越界', prefix: '', suffix: '',
+      color: 'rose' } });
+    assert.equal(outside.status, 400);
+    await call(app, 'DELETE', `${PATH}/${id}/annotations/${String(annotation['id'])}`, { cookie,
+      body: { requestId: 'annotation-1-delete' } });
+    const list = json(await call(app, 'GET', `${PATH}/${id}/annotations`, { cookie }));
+    assert.deepEqual(list['annotations'], []);
+  } finally {
+    await app.close();
+  }
+});
+
+test('in-book search returns chapter index, position, and surrounding context', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const found = json(await call(app, 'GET', `${PATH}/${id}/search?q=${encodeURIComponent('明察秋毫')}`,
+      { cookie }));
+    const hits = found['hits'] as Record<string, unknown>[];
+    assert.equal(hits.length, 1);
+    assert.equal(hits[0]?.['match'], '明察秋毫');
+    assert.equal(hits[0]?.['chapter'], 2);
+  } finally {
+    await app.close();
+  }
+});
+
+test('quoting book excerpt in chat requires exact match and links to book discussion; rejects missing', async () => {
+  const app = await startTestApp();
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const text = await chapterText(app, cookie, id, 1);
+    const quote = '事如春梦了无痕';
+    const start = text.indexOf(quote);
+    const reference = { bookId: id, chapter: 1, start, end: start + quote.length, text: quote };
+    const path = '/v2/lines/line-main/messages';
+    const wrong = await call(app, 'POST', path, { cookie, body: {
+      requestId: 'book-quote-wrong', text: '这句出自哪里？', quotes: [{ kind: 'book',
+        bookReference: { ...reference, text: '别的话' } }] } });
+    assert.equal(wrong.status, 409);
+    app.respond([fauxAssistantMessage('出自苏轼的诗。')]);
+    const sent = await call(app, 'POST', path, { cookie, body: {
+      requestId: 'book-quote-ok', text: '这句出自哪里？', quotes: [{ kind: 'book', bookReference: reference }] } });
+    assert.equal(sent.status, 200, JSON.stringify(sent.body));
+    const deadline = Date.now() + 5000;
+    let discussions: Record<string, unknown>[] = [];
+    while (Date.now() < deadline) {
+      discussions = json(await call(app, 'GET', `${PATH}/${id}/discussions`, { cookie }))['discussions'] as
+        Record<string, unknown>[];
+      if (discussions[0]?.['answer'] !== null && discussions.length > 0) {
+        break;
+      }
+      await sleep(10);
+    }
+    assert.equal(discussions.length, 1);
+    assert.equal(discussions[0]?.['question'], '这句出自哪里？');
+    assert.equal(discussions[0]?.['chapter'], 1);
+    assert.equal(discussions[0]?.['answer'], '出自苏轼的诗。');
+    assert.match(String(discussions[0]?.['quoteLabel']), /《浮生六记》/);
+  } finally {
+    await app.close();
+  }
+});
+
+test('exporting annotations creates a note; returns clear message when no annotations exist', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const empty = await call(app, 'POST', `${PATH}/${id}/export`, { cookie, body: { requestId: 'export-empty' } });
+    assert.equal(empty.status, 409);
+    const text = await chapterText(app, cookie, id, 2);
+    const quote = '明察秋毫';
+    const start = text.indexOf(quote);
+    await call(app, 'POST', `${PATH}/${id}/annotations`, { cookie, body: { requestId: 'export-annotation',
+      chapter: 2, start, end: start + quote.length, quote, prefix: '', suffix: '', color: 'slate', note: '小时候' } });
+    const exported = json(await call(app, 'POST', `${PATH}/${id}/export`, { cookie,
+      body: { requestId: 'export-ok' } }));
+    const note = json(await call(app, 'GET', `/v2/notes/${String(exported['noteId'])}`, { cookie }));
+    assert.match(String(note['markdown']), /《浮生六记》读书笔记/);
+    assert.match(String(note['markdown']), /> 明察秋毫/);
+    assert.match(String(note['markdown']), /批注：小时候/);
+  } finally {
+    await app.close();
+  }
+});
+
+test('outline generation summarizes chapters then synthesizes and saves; bad format marks failed', async () => {
+  const digest = JSON.stringify({ chapters: [
+    { index: 0, summary: '开头。', points: [], quotes: [] },
+    { index: 1, summary: '写夫妻之乐。', points: ['为什么写'], quotes: ['事如春梦了无痕'] },
+    { index: 2, summary: '童年的观察。', points: [], quotes: ['明察秋毫'] },
+  ] });
+  const outline = JSON.stringify({ summary: '本书以夫妻生活与童年观察串起日常回忆，呈现平凡生活中的情感和趣味。',
+    note: '按卷归纳', parts: [
+    { chapter: 1, title: '闺房记乐', summary: '夫妻之乐', points: ['为什么写'] },
+    { chapter: 2, title: '闲情记趣', summary: '童年', points: [] },
+  ] });
+  const keyPoints = JSON.stringify({ points: [
+    { text: '写下来是为了留痕', quotes: [{ chapter: 1, text: '事如春梦了无痕' }] },
+    { text: '沈复很少写自己的过失', quotes: [{ chapter: 2, text: '书里没有这句' }] },
+  ] });
+  const app = await startTestApp([(digest), (outline), (keyPoints)],
+    { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const started = await call(app, 'POST', `${PATH}/${id}/insights`, { cookie,
+      body: { requestId: 'outline-1', kind: 'outline' } });
+    assert.equal(started.status, 202);
+    assert.equal(json(started)['status'], 'generating');
+    const ready = await waitInsight(app, cookie, id, 'outline');
+    assert.equal((ready['outline'] as Record<string, unknown>)['note'], '');
+    assert.equal(typeof ready['spaceId'], 'string');
+    const page = app.state.spaces.require(String(ready['spaceId']));
+    assert.equal(page.bookId, id);
+    assert.equal(page.category, 'booknote');
+    assert.match(page.html!, /data-link="book:/);
+    const points = await call(app, 'POST', `${PATH}/${id}/insights`, { cookie,
+      body: { requestId: 'points-1', kind: 'key_points' } });
+    assert.equal(points.status, 202);
+    const done = await waitInsight(app, cookie, id, 'key_points');
+    const list = (done['keyPoints'] as { points: Record<string, unknown>[] }).points;
+    assert.equal(list[0]?.['basis'], 'quoted');
+    assert.equal(list[1]?.['basis'], 'inferred');
+    assert.equal(app.requests.length, 3, '大纲和重点共用一次逐章归纳');
+    assert.deepEqual(app.requests.map((request) => request.purpose),
+      ['book_digest', 'book_outline', 'book_key_points']);
+    const dismissed = json(await call(app, 'POST', `${PATH}/${id}/insights/key_points/dismiss`, { cookie,
+      body: { requestId: 'dismiss-1', pointId: 'p2' } }));
+    assert.deepEqual(dismissed['dismissedPointIds'], ['p2']);
+  } finally {
+    await app.close();
+  }
+});
+
+test('marks outline failed with reason when model output is not valid JSON', async () => {
+  const app = await startTestApp([('我读完了，这本书很好看。')], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    await call(app, 'POST', `${PATH}/${id}/insights`, { cookie, body: { requestId: 'outline-bad', kind: 'outline' } });
+    const failed = await waitInsight(app, cookie, id, 'outline', 'failed');
+    assert.match(String(failed['error']), /JSON/);
+  } finally {
+    await app.close();
+  }
+});
+
+test('existing generate endpoint only backfills overview on legacy ready outline; retries skip model', async () => {
+  const summary = '本书以夫妻生活与童年观察串起日常回忆，呈现平凡生活中的情感和趣味。';
+  const app = await startTestApp([JSON.stringify({ summary })], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const book = app.state.books.require(id);
+    const row = app.state.bookInsights.create({ bookId: id, kind: 'outline', status: 'ready',
+      sourceSha256: book.sourceSha256 });
+    const parts = [{ chapter: 1, offset: 7, title: '闺房记乐', summary: '夫妻之乐。', points: [] },
+      { chapter: 2, offset: 9, title: '闲情记趣', summary: '童年观察。', points: [] }];
+    app.state.bookInsights.update(row.id, row.version, { content: { note: '按卷归纳', parts } });
+    const before = json(await call(app, 'GET', `${PATH}/${id}/insights/outline`, { cookie }));
+    const response = await call(app, 'POST', `${PATH}/${id}/insights`, { cookie,
+      body: { requestId: 'complete-old-outline', kind: 'outline', force: false } });
+    assert.equal(response.status, 202);
+    const limit = Date.now() + 5000;
+    while ((app.state.bookInsights.get(row.id)?.content as { summary?: string })?.summary !== summary) {
+      assert.ok(Date.now() < limit, '应在五秒内补好总述');
+      await sleep(10);
+    }
+    const after = json(await call(app, 'GET', `${PATH}/${id}/insights/outline`, { cookie }));
+    assert.equal(after['spaceId'], before['spaceId']);
+    assert.deepEqual((after['outline'] as { parts: unknown })['parts'], parts);
+    assert.deepEqual(app.requests.map((request) => request.purpose), ['book_outline']);
+    await call(app, 'POST', `${PATH}/${id}/insights`, { cookie,
+      body: { requestId: 'complete-old-outline-again', kind: 'outline', force: false } });
+    assert.equal(app.requests.length, 1);
+  } finally {
+    await app.close();
+  }
+});
+
+async function waitInsight(app: TestApp, cookie: string, id: string, kind: string,
+  status = 'ready'): Promise<Record<string, unknown>> {
+  const deadline = Date.now() + 5000;
+  for (;;) {
+    const view = json(await call(app, 'GET', `${PATH}/${id}/insights/${kind}`, { cookie }));
+    if (view['status'] === status) {
+      return view;
+    }
+    assert.ok(Date.now() < deadline, `应在五秒内变成 ${status}，现在是 ${String(view['status'])}`);
+    await sleep(10);
+  }
+}
+
+test('rename book; delete trashes and restores with annotations; re-upload restores deleted book', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const id = String((await addBook(app, cookie))['id']);
+    const renamed = await call(app, 'PATCH', `${PATH}/${id}`, { cookie, body: { requestId: 'book-rename-1',
+      title: '浮生六记（沈复）' } });
+    assert.equal(renamed.status, 200);
+    assert.equal(json(renamed)['title'], '浮生六记（沈复）');
+    assert.equal((await call(app, 'PATCH', `${PATH}/${id}`, { cookie, body: { requestId: 'book-rename-2',
+      title: '  ' } })).status, 400);
+    const text = await chapterText(app, cookie, id, 1);
+    const quote = '事如春梦了无痕';
+    const start = text.indexOf(quote);
+    const note = await call(app, 'POST', `${PATH}/${id}/annotations`, { cookie, body: { requestId: 'annotation-mark-1',
+      chapter: 1, start, end: start + quote.length, quote, prefix: text.slice(Math.max(0, start - 8), start),
+      suffix: text.slice(start + quote.length).slice(0, 8), color: 'ochre', deviceLabel: 'Mac' } });
+    assert.equal(note.status, 201, JSON.stringify(note.body));
+    await call(app, 'DELETE', `${PATH}/${id}`, { cookie, body: { requestId: 'book-delete-1' } });
+    const trash = json(await call(app, 'GET', '/v2/library/trash', { cookie }))['items'] as Record<string, unknown>[];
+    assert.deepEqual(trash.map((item) => [item['kind'], item['id'], item['title']]),
+      [['book', id, '浮生六记（沈复）']]);
+    const restored = await call(app, 'POST', `${PATH}/${id}/restore`,
+      { cookie, body: { requestId: 'book-restore-1' } });
+    assert.equal(restored.status, 200);
+    assert.equal(json(restored)['annotationCount'], 1);
+    await call(app, 'DELETE', `${PATH}/${id}`, { cookie, body: { requestId: 'book-delete-2' } });
+    const again = await call(app, 'POST', PATH, { cookie, body: upload('book-reupload', '浮生六记.txt',
+      Buffer.from(TXT, 'utf8')) });
+    assert.equal(again.status, 200);
+    assert.equal((json(again)['book'] as Record<string, unknown>)['id'], id);
+    assert.equal(json(again)['duplicate'], true);
+    assert.deepEqual(json(await call(app, 'GET', '/v2/library/trash', { cookie }))['items'], []);
+    assert.equal((await call(app, 'POST', `${PATH}/nope/restore`,
+      { cookie, body: { requestId: 'book-restore-2' } })).status,
+      404);
+  } finally {
+    await app.close();
+  }
+});
+
+test('book folder can be updated via existing update endpoint while preserving title and body', async () => {
+  const app = await startTestApp([], { startTasks: false });
+  try {
+    const cookie = await pair(app);
+    const book = await addBook(app, cookie);
+    const saved = await call(app, 'PATCH', `${PATH}/${String(book['id'])}`, { cookie,
+      body: { requestId: 'move-book-metadata', folder: '阅读' } });
+    assert.equal(saved.status, 200);
+    assert.equal(json(saved)['folder'], '阅读');
+    assert.equal(json(saved)['title'], book['title']);
+    const read = json(await call(app, 'GET', `${PATH}/${String(book['id'])}`, { cookie }));
+    assert.equal(read['folder'], '阅读');
+  } finally { await app.close(); }
+});

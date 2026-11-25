@@ -1,0 +1,15 @@
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.msg-user .msg-bubble:has(.message-link-card, .message-object-card) {
+  padding: 0;
+  background: transparent;
+  width: min(560px, 100%);
+}
+.msg-user .message-plain {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+  background: var(--bubble);
+}

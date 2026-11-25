@@ -1,0 +1,197 @@
+.feed-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.feed-card-text.is-faded {
+  -webkit-mask-image: linear-gradient(to bottom, var(--fg) calc(100% - 44px), transparent);
+  mask-image: linear-gradient(to bottom, var(--fg) calc(100% - 44px), transparent);
+}
+
+.feed-text[data-mode='full'] .feed-card-text.is-post,
+.feed-text[data-mode='original'] .feed-card-text.is-post {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+.feed-text-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  margin-top: calc(-1 * var(--space-hair));
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+}
+
+.feed-text-toggle,
+.feed-text-link {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.feed-text-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.feed-text-from {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.feed-text-link {
+  color: var(--fg2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.feed-text-link:hover,
+.feed-text-toggle:hover { color: var(--fg); }
+
+.feed-text-toggle:focus-visible,
+.feed-text-link:focus-visible {
+  outline: 2px solid var(--fg3);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.feed-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.feed-chart svg {
+  display: block;
+  overflow: visible;
+}
+.feed-chart-line {
+  fill: none;
+  stroke: var(--card-hue);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.feed-chart-bar { fill: var(--card-hue); }
+.feed-chart-axis {
+  stroke: var(--line2);
+  stroke-width: 1;
+}
+
+.feed-chart-caption {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption-line);
+  color: var(--fg2);
+}
+
+.feed-points {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
+  color: var(--fg2);
+}
+
+@media (max-width: 767px) {
+  .feed-text-toggle,
+  .feed-text-link { min-height: 32px; }
+}
+
+.feed-place {
+  flex: none;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--tint2);
+  color: var(--fg2);
+  font-size: var(--text-tag);
+  line-height: var(--text-caption-line);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.feed-article {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  font-size: var(--text-body);
+  line-height: var(--text-section-line);
+  overflow-wrap: anywhere;
+}
+
+.feed-article p,
+.feed-article ul,
+.feed-article blockquote,
+.feed-article pre { margin: 0; }
+
+.feed-article h4 {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-section);
+  line-height: var(--text-section-line);
+  font-weight: 600;
+}
+
+.feed-article ul { padding-left: var(--space-5); }
+
+.feed-article blockquote {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line2);
+  color: var(--fg2);
+}
+
+.feed-article pre {
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--tint);
+  font-family: var(--mono);
+  font-size: var(--text-caption);
+  line-height: var(--text-ui-line);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.feed-article-image {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.feed-article-image:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.feed-article img {
+  display: block;
+  max-width: min(100%, 720px);
+  max-height: 480px;
+  height: auto;
+  border-radius: var(--radius);
+}
+
+.feed-article-note {
+  margin: 0;
+  font-size: var(--text-ui);
+  line-height: var(--text-ui-line);
+  color: var(--fg2);
+}
+
+.feed-article-note.is-error { color: var(--err); }

@@ -1,0 +1,85 @@
+import {
+  BatchResponseSchema, ImportSpacesResponseSchema, LIBRARY_BATCH_PATH, PAGE_RENDER_PATH, SPACES_EXPORT_PATH,
+  SPACES_IMPORT_PATH, LIBRARY_EMPTY_PATH, LIBRARY_TRASH_PATH, LibraryTrashResponseSchema,
+  REVIEW_PATH, ReviewSummarySchema, RunSubscriptionResponseSchema, SPACE_LIST_STANDALONE_PARAM, SpaceListResponseSchema,
+  SPACES_PATH, SpaceVersionsResponseSchema, SpaceViewSchema, SubscriptionListResponseSchema, SUBSCRIPTIONS_PATH,
+  SubscriptionViewSchema,
+} from '../shared.ts';
+import type { LibraryApi, SpacesApi, SubscriptionsApi } from '../spaces-client.ts';
+import { Type } from 'typebox';
+import { ApiError } from '../errors.ts';
+import type { Transport } from './transport.ts';
+
+const spacePath = (id: string): string => `${SPACES_PATH}/${encodeURIComponent(id)}`;
+const subscriptionPath = (id: string): string => `${SUBSCRIPTIONS_PATH}/${encodeURIComponent(id)}`;
+
+const DeletedSchema = Type.Object({ deleted: Type.Boolean() });
+const TRANSFER_TIMEOUT_MS = 120_000;
+const ASSET_PREFIX = '/v2/notes/assets/';
+
+async function readAsset(path: string, signal?: AbortSignal): Promise<Blob> {
+  if (!path.startsWith(ASSET_PREFIX)) {
+    throw new ApiError({ kind: 'invalid', code: 'invalid_input', message: '这张图不是 Plasticine 自己的资产。' });
+  }
+  const response = await fetch(path, { credentials: 'same-origin', ...(signal === undefined ? {} : { signal }) });
+  if (!response.ok) {
+    throw new ApiError({ kind: response.status === 404 ? 'not_found' : 'failed', code: 'asset_unavailable',
+      status: response.status, message: `插图没读到（${response.status}）。` });
+  }
+  return response.blob();
+}
+
+export function createSpacesHttp(transport: Transport):
+  { spaces: SpacesApi; subscriptions: SubscriptionsApi; library: LibraryApi } {
+  const spaces: SpacesApi = {
+    list: (signal, filter) => transport.request({ method: 'GET', path: filter?.standalone === true
+      ? `${SPACES_PATH}?${SPACE_LIST_STANDALONE_PARAM}=true` : SPACES_PATH, schema: SpaceListResponseSchema,
+    what: '读空间', lostAs: 'failed', signal }),
+    remove: async (id, input) => {
+      await transport.request({ method: 'DELETE', path: spacePath(id), body: input, schema: DeletedSchema,
+        what: '删除空间', lostAs: 'uncertain' });
+    },
+    restore: (id, input) => transport.request({ method: 'POST', path: `${spacePath(id)}/restore`, body: input,
+      schema: SpaceViewSchema, what: '还原空间', lostAs: 'uncertain' }),
+    get: (id, signal) => transport.request({ method: 'GET', path: spacePath(id), schema: SpaceViewSchema,
+      what: '读这个空间', lostAs: 'failed', signal }),
+    versions: (id, version, signal) => transport.request({ method: 'GET',
+      path: `${spacePath(id)}/versions${version === undefined ? '' : `?version=${version}`}`,
+      schema: SpaceVersionsResponseSchema, what: '读空间版本记录', lostAs: 'failed', signal }),
+    save: (id, input) => transport.request({ method: 'PUT', path: spacePath(id), body: input,
+      schema: SpaceViewSchema, what: '保存空间', lostAs: 'uncertain' }),
+    undo: (id, input) => transport.request({ method: 'POST', path: `${spacePath(id)}/undo`, body: input,
+      schema: SpaceViewSchema, what: '撤销', lostAs: 'uncertain' }),
+    asset: readAsset,
+    importFiles: (input) => transport.request({ method: 'POST', path: SPACES_IMPORT_PATH, body: input,
+      schema: ImportSpacesResponseSchema, what: '导入资料库', lostAs: 'uncertain', timeoutMs: TRANSFER_TIMEOUT_MS }),
+    exportFiles: (ids, format, signal) => transport.download({ method: 'POST', path: SPACES_EXPORT_PATH,
+      body: { ids, format }, what: '导出', lostAs: 'failed', timeoutMs: TRANSFER_TIMEOUT_MS, signal },
+    `资料库.${format === 'docx' ? 'docx' : 'md'}`),
+    render: (input, signal) => transport.download({ method: 'POST', path: PAGE_RENDER_PATH, body: input,
+      what: '导出', lostAs: 'failed', timeoutMs: TRANSFER_TIMEOUT_MS, signal }, `${input.name}.${input.format}`),
+  };
+  const subscriptions: SubscriptionsApi = {
+    list: (signal) => transport.request({ method: 'GET', path: SUBSCRIPTIONS_PATH,
+      schema: SubscriptionListResponseSchema, what: '读订阅', lostAs: 'failed', signal }),
+    get: (id, signal) => transport.request({ method: 'GET', path: subscriptionPath(id),
+      schema: SubscriptionViewSchema, what: '读这个订阅', lostAs: 'failed', signal }),
+    update: (id, input) => transport.request({ method: 'PUT', path: subscriptionPath(id), body: input,
+      schema: SubscriptionViewSchema, what: '保存订阅设置', lostAs: 'uncertain' }),
+    adoptRule: (id, input) => transport.request({ method: 'POST', path: `${subscriptionPath(id)}/rules`, body: input,
+      schema: SubscriptionViewSchema, what: '以后都这样', lostAs: 'uncertain' }),
+    run: (id, input) => transport.request({ method: 'POST', path: `${subscriptionPath(id)}/run`, body: input,
+      schema: RunSubscriptionResponseSchema, what: '现在出一期', lostAs: 'uncertain' }),
+    review: (signal) => transport.request({ method: 'GET', path: REVIEW_PATH, schema: ReviewSummarySchema,
+      what: '读回顾', lostAs: 'failed', signal }),
+  };
+  const library: LibraryApi = {
+    batch: (body) => transport.request({ method: 'POST', path: LIBRARY_BATCH_PATH, body,
+      schema: BatchResponseSchema, what: '批量处理资料', lostAs: 'uncertain' }),
+    emptyTrash: (body) => transport.request({ method: 'POST', path: LIBRARY_EMPTY_PATH, body,
+      schema: BatchResponseSchema, what: '清空最近删除', lostAs: 'uncertain' }),
+    trash: (signal) => transport.request({ method: 'GET', path: LIBRARY_TRASH_PATH, schema: LibraryTrashResponseSchema,
+      what: '读最近删除', lostAs: 'failed', signal }),
+  };
+  return { spaces, subscriptions, library };
+}

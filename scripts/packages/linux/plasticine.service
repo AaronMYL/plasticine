@@ -1,0 +1,25 @@
+[Unit]
+Description=Plasticine
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=plasticine
+Group=plasticine
+WorkingDirectory=/opt/plasticine/current
+Environment=PLASTICINE_STATE=/var/lib/plasticine/state
+Environment=PLASTICINE_PORT=8790
+Environment=PLASTICINE_CLIENT_DIR=client/dist
+Environment=PLASTICINE_PLAIN_HTTP=1
+Environment=PLASTICINE_DRY_RUN=0
+EnvironmentFile=-/etc/plasticine/plasticine.env
+ExecStart=/opt/plasticine/node/bin/node agent/src/app/main.ts
+KillSignal=SIGTERM
+TimeoutStopSec=90
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

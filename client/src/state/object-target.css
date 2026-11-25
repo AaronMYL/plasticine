@@ -1,0 +1,5 @@
+[data-target-highlight="true"] {
+  background: var(--tint2);
+  outline: 1px solid var(--line);
+  outline-offset: -1px;
+}

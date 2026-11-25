@@ -1,0 +1,889 @@
+import type { AgentTool } from '@earendil-works/pi-agent-core';
+import type { Ask, AskPurpose } from '../../shared/state.ts';
+import { MAIN_LINE_ALIAS, type ChatsResponse, type LineMessageView, type LineStatus, type LineTopic, type LineView,
+  type QueuedMessageView } from '../../shared/api/lines.ts';
+import type { AskResolver } from '../attention/index.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
+import { lineRef, type LinePatch, type LineRow, type QueuedRow } from '../state/index.ts';
+import { answerSentence, askUserTool, questionResolver } from './ask-tools.ts';
+import { HardLineGate } from './hard-line.ts';
+import { imagesOf } from './images.ts';
+import { DEFAULT_TIME_ZONE, LineError, MAX_BACKGROUND_LINES, NOW, type After, type KernelOptions, type KernelState,
+  type OpenLine, type SendInput, type SendResult } from './kernel-types.ts';
+import { lineTools, type LineControl } from './line-tools.ts';
+import { outcomeTool } from './outcome-tool.ts';
+import { loopTools } from '../loop/index.ts';
+import { isAssistant, messageView, userMessage, type AttachmentNote, type LineNoticeMessage,
+  type LineLetterMessage, type LineWelcomeMessage, type PostedMessage,
+  type ReportOutcome } from './messages.ts';
+import { pageSubmitAskTool } from './page-submit-tool.ts';
+import { linePrompt } from './prompt.ts';
+import { productMap } from './product-map.ts';
+import { lineReport, pauseNotice } from './reports.ts';
+import { askerOf, backwards, handoffMessage, relayOf } from './relay.ts';
+import { planTool } from './plan-tool.ts';
+import { lineResult } from './results.ts';
+import { LineRunner, type DriveMode, type DriveOutcome, type RunnerHost, type Toolset } from './runner.ts';
+import { realLater, type KernelTool, type Later, type LineScope, type ModelChoice } from './types.ts';
+import { lineView, NO_ACTIVITY, pageMessages, queuedView } from './views.ts';
+import { rollDay } from './day-context.ts';
+import { readResultTool } from './large-results.ts';
+import { splitLoadout, toolSearchTool, type CatalogEntry } from './tool-loadout.ts';
+import { chats, replyFor, retitled, SIDES_LIMIT, toggleReaction, type SideControl }
+  from './side-chats.ts';
+import type { WelcomeStart } from '../../shared/welcome-start.ts';
+import { replyMarker } from '../../shared/line-reply.ts';
+import { AnswerWaits } from './waits.ts';
+import { requireClaimedGroupTask, unclaimedGroupTask } from './group-task-guard.ts';
+
+function heldByUser(line: LineRow): boolean {
+  return line.pauseReason === 'user' || line.pauseReason === 'stopped' || line.pauseReason === 'output_limit';
+}
+
+export class LineKernel implements LineControl, SideControl {
+  readonly #options: KernelOptions;
+  readonly #state: KernelState;
+  readonly #now: () => Date;
+  readonly #later: Later;
+  readonly #max: () => number;
+  readonly #waits = new AnswerWaits();
+  readonly #gate: HardLineGate;
+  readonly #runners = new Map<string, LineRunner>();
+  readonly #timers = new Map<string, () => void>();
+  readonly #tools: KernelTool[];
+  readonly #direct: Readonly<Record<LineScope['kind'], ReadonlySet<string>>> | undefined;
+  readonly #host: RunnerHost;
+  #stopping = false;
+
+  constructor(options: KernelOptions) {
+    this.#options = options;
+    this.#state = options.state;
+    this.#now = options.now ?? (() => new Date());
+    this.#later = options.later ?? realLater;
+    const max = options.maxBackground ?? MAX_BACKGROUND_LINES;
+    this.#max = typeof max === 'function' ? max : () => max;
+    const waiting = (lineId: string, on: boolean): void => this.#waiting(lineId, on);
+    const shuttingDown = (): boolean => this.#stopping;
+    const waitHost = { state: this.#state, desk: options.desk, waits: this.#waits, waiting, now: this.#now,
+      shuttingDown };
+    this.#gate = new HardLineGate(waitHost);
+    const askHost = waitHost;
+    const submits = options.submits === undefined ? [] : [pageSubmitAskTool(askHost, options.submits)];
+    const asking = (options.askTools ?? []).map((make) => make(askHost));
+    this.#tools = [askUserTool(askHost), ...lineTools(this, this.#state),
+      outcomeTool(this.#state), readResultTool(this.#state), ...loopTools(this.#state),
+      planTool(this.#state, (lineId) => this.#publishLine(lineId)), ...submits, ...asking, ...(options.tools ?? [])];
+    const given = options.directTools;
+    const direct = given === undefined ? undefined
+      : { main: new Set(given.main), side: new Set(given.side), background: new Set(given.background) };
+    this.#direct = direct;
+    this.#tools.push(toolSearchTool((scope) => this.#catalog(scope), () => direct !== undefined));
+    this.#host = this.#runnerHost();
+  }
+
+  #available(kind: LineScope['kind']): KernelTool[] {
+    return this.#tools.filter((tool) => (tool.enabled?.() ?? true)
+      && (tool.lineKinds === undefined || tool.lineKinds.includes(kind)));
+  }
+
+  #catalog(scope: LineScope): CatalogEntry[] {
+    const direct = this.#direct?.[scope.kind];
+    return this.#available(scope.kind).filter((tool) => direct !== undefined && !direct.has(tool.name)
+      && tool.name !== 'tool_search').map((tool) => {
+      const agentTool = tool.create(scope);
+      return { name: agentTool.name, label: agentTool.label, description: agentTool.description };
+    });
+  }
+
+  #runnerHost(): RunnerHost {
+    const meta = new Map(this.#tools.map((tool) => [tool.name, tool]));
+    const sayOf = (name: string, args: Record<string, unknown>): string => meta.get(name)?.say(args) ?? name;
+    return {
+      state: this.#state,
+      models: this.#options.models,
+      toolset: (scope: LineScope): Toolset => {
+        const tools = (this.#state.lines.get(scope.lineId)?.sealedPrompt ?? null) !== null ? []
+          : this.#available(scope.kind).map((tool) => tool.create(scope));
+        const deferred = splitLoadout(tools, this.#direct?.[scope.kind]).deferred;
+        return { tools, deferred, meta: (name) => meta.get(name) };
+      },
+      purpose: (line) => {
+        if (line.sealedPrompt !== null) {
+          return 'network_reply';
+        }
+        if (line.mateId != null) {
+          return this.#state.mates.require(line.mateId).purpose ?? 'main';
+        }
+        return line.modelPurpose ?? (line.kind === 'background' ? 'agent' : line.kind);
+      },
+      prompt: (line) => line.sealedPrompt ?? [linePrompt(this.#state, line, this.#options.publicUrl?.(), this.#now()),
+        productMap(this.#available(line.kind), this.#direct?.[line.kind]),
+        this.#options.skillsContext?.(line.id) ?? ''].filter((part) => part.trim() !== '').join('\n\n'),
+      publish: (event) => this.#options.publish(event),
+      gate: this.#gate,
+      sayOf,
+      attachments: (ids) => this.#notes(ids),
+      images: (ids) => imagesOf(this.#state, ids),
+      ...(this.#options.contextImages === undefined ? {} : { contextImages: this.#options.contextImages }),
+      ...(this.#options.recall === undefined ? {} : { recall: this.#options.recall }),
+      now: this.#now,
+      later: this.#later,
+      setStatus: (lineId, status, patch) => this.#setStatus(lineId, status, patch),
+      ...(this.#options.compact === undefined ? {} : { compact: this.#options.compact }),
+      ended: (lineId, outcome) => this.#ended(lineId, outcome),
+    };
+  }
+
+  resolvers(): Partial<Record<AskPurpose, AskResolver>> {
+    const answered = (ask: Ask): void => this.#answered(ask);
+    return { line_approval: this.#gate.resolver(answered), line_question: questionResolver(answered) };
+  }
+
+  start(): void {
+    this.#gate.recover();
+    this.#state.lines.main();
+    for (const line of this.#state.lines.withStatus(['running', 'waiting', 'queued']).reverse()) {
+      if (line.status === 'queued' && this.#state.lineMessages.last(line.id) === undefined) {
+        this.#pump(line.id);
+      } else {
+        this.#launch(line.id, 'resume');
+      }
+    }
+    for (const line of this.#state.lines.withStatus(['paused'])) {
+      this.#schedulePause(line);
+    }
+    const main = this.#state.lines.main();
+    if (main.status === 'idle') {
+      this.#pump(main.id);
+    }
+    this.#schedule();
+  }
+
+  backgroundLimit(): number {
+    return this.#max();
+  }
+
+  reschedule(): void {
+    this.#schedule();
+  }
+
+  async stop(): Promise<void> {
+    this.#stopping = true;
+    for (const cancel of this.#timers.values()) {
+      cancel();
+    }
+    this.#timers.clear();
+    for (const runner of this.#runners.values()) {
+      runner.abort('shutdown');
+    }
+    await Promise.all([...this.#runners.values()].map((runner) => runner.settled()));
+  }
+
+  async settled(): Promise<void> {
+    for (;;) {
+      const busy = [...this.#runners.values()].filter((runner) => runner.busy());
+      if (busy.length === 0) {
+        return;
+      }
+      await Promise.all(busy.map((runner) => runner.settled()));
+    }
+  }
+
+  line(lineId: string): LineRow {
+    if (lineId === MAIN_LINE_ALIAS) {
+      return this.#state.lines.main();
+    }
+    const line = this.#state.lines.get(lineId);
+    if (line === undefined) {
+      throw new LineError('not_found', '没有这条线。', '刷新线列表后再试。');
+    }
+    return line;
+  }
+
+  preview(lineId: string): { prompt: string; tools: AgentTool[]; all: AgentTool[]; choice: ModelChoice | undefined } {
+    const line = this.line(lineId);
+    const scope: LineScope = { lineId: line.id, kind: line.kind, projectId: line.projectId,
+      ...(line.mateId == null ? {} : { actorId: line.mateId }) };
+    const purpose = this.#host.purpose?.(line) ?? 'main';
+    const toolset = this.#host.toolset(scope);
+    const deferred = toolset.deferred ?? new Map();
+    return { prompt: this.#host.prompt(line), tools: toolset.tools.filter((tool) => !deferred.has(tool.name)),
+      all: toolset.tools, choice: this.#options.models.current(purpose) };
+  }
+
+  view(lineId: string): LineView {
+    const line = this.line(lineId);
+    return lineView(this.#state, line, this.#runners.get(line.id)?.activity() ?? NO_ACTIVITY);
+  }
+
+  status(lineId: string): LineStatus | null {
+    return this.#state.lines.get(lineId)?.status ?? null;
+  }
+
+  activity(lineId: string): { text: string; since: string } | null {
+    const line = this.#state.lines.get(lineId);
+    if (line === undefined) {
+      return null;
+    }
+    const view = this.view(line.id);
+    return view.activity === null || view.activeSince === null ? null
+      : { text: view.activity, since: view.activeSince };
+  }
+
+  list(filter: { kind?: LineView['kind']; statuses?: readonly LineStatus[]; includeArchived?: boolean; limit: number })
+    : LineView[] {
+    this.#state.lines.main();
+    return this.#state.lines.list({ ...filter, visibleOnly: true }).map((line) => this.view(line.id));
+  }
+
+  read(lineId: string, limit: number, before: number | null = null)
+    : { line: LineView; messages: LineMessageView[]; hasMore: boolean; queue: QueuedMessageView[] } {
+    const line = this.line(lineId);
+    const page = this.#state.lineMessages.page(line.id, before, limit);
+    return {
+      line: this.view(line.id),
+      messages: pageMessages(page.rows, this.#host.sayOf),
+      hasMore: page.hasMore,
+      queue: this.#state.lineQueue.queued(line.id).map(queuedView),
+    };
+  }
+
+  send(lineId: string, input: SendInput, after: After = NOW): SendResult {
+    let line = this.#unarchived(lineId);
+    if (line.pauseReason === 'stopped') throw new LineError('conflict', '这件事已经停止，不能再发消息。');
+    requireClaimedGroupTask(this.#state, line);
+    this.#requireMate(line);
+    const attachments = [...(input.attachments ?? [])];
+    const origin = input.origin ?? { kind: 'user' as const, userText: input.text };
+    const notes = this.#notes(attachments, true);
+    const title = retitled(line, input.text);
+    if (title !== null) {
+      line = this.#state.lines.update(line.id, { title });
+    }
+    if (input.replyTo !== undefined) {
+      input = { ...input, text: `${replyMarker(replyFor(this.#state, line.id, input.replyTo))}${input.text}` };
+    }
+    if (this.#busy(line)) {
+      const item = this.#state.lineQueue.add(line.id, input.text, attachments, origin);
+      if (line.status === 'idle' && workerLine(line)) {
+        this.#state.lines.update(line.id, { status: 'queued' });
+      }
+      after(() => this.#publishQueue(line.id));
+      return { outcome: 'queued', line: this.view(line.id), message: null, queued: queuedView(item) };
+    }
+    const message = userMessage(input.text, notes, this.#now().getTime());
+    const row = this.#state.transaction(() => {
+      const appended = this.#state.lineMessages.append(line.id, 'user', message, { origin });
+      this.#state.lines.update(line.id, { status: 'running', failure: null, pausedUntil: null, pauseReason: null });
+      return appended;
+    });
+    const view = messageView(row, this.#host.sayOf);
+    after(() => {
+      this.#options.publish({ type: 'line_message', message: view });
+      this.#launch(line.id, 'continue');
+    });
+    return { outcome: 'started', line: this.view(line.id), message: view, queued: null };
+  }
+
+  record(lineId: string, input: SendInput, after: After = NOW): SendResult {
+    const line = this.#unarchived(lineId);
+    requireClaimedGroupTask(this.#state, line);
+    this.#requireMate(line);
+    const notes = this.#notes(input.attachments ?? [], true);
+    const message = userMessage(input.text, notes, this.#now().getTime());
+    const row = this.#state.lineMessages.append(line.id, 'user', message,
+      { origin: input.origin ?? { kind: 'user', userText: input.text } });
+    const view = messageView(row, this.#host.sayOf);
+    after(() => this.#options.publish({ type: 'line_message', message: view }));
+    return { outcome: 'started', line: this.view(line.id), message: view, queued: null };
+  }
+
+  #requireMate(line: LineRow): void {
+    if (line.mateId != null && this.#state.mates.require(line.mateId).disabledAt !== null) {
+      throw new LineError('conflict', '这位队友已停用。');
+    }
+  }
+
+  changed(lineId: string, after: After = NOW): void {
+    after(() => this.#publishLine(lineId));
+  }
+
+  touched(lineId: string, seq: number, after: After = NOW): LineMessageView {
+    const row = this.#state.lineMessages.get(lineId, seq);
+    if (row === undefined) {
+      throw new LineError('not_found', '这条消息已经不在了。');
+    }
+    const view = messageView(row, this.#host.sayOf);
+    after(() => this.#options.publish({ type: 'line_message', message: view }));
+    return view;
+  }
+
+  withdraw(lineId: string, queueId: string, after: After = NOW): { line: LineView; item: QueuedMessageView } {
+    const line = this.line(lineId);
+    const item = this.#queued(line, queueId, true);
+    if (this.#runners.get(line.id)?.unhand(item.id) === 'taken') {
+      throw new LineError('conflict', '这条已经发出了，撤不回。');
+    }
+    const withdrawn = this.#state.lineQueue.withdraw(item.id);
+    if (this.#emptyQueued(line.id)) {
+      this.#state.lines.update(line.id, { status: 'idle' });
+    }
+    after(() => this.#publishQueue(line.id));
+    return { line: this.view(line.id), item: queuedView(withdrawn) };
+  }
+
+  sendNow(lineId: string, queueId: string, after: After = NOW): { line: LineView; item: QueuedMessageView } {
+    const line = this.#unarchived(lineId);
+    requireClaimedGroupTask(this.#state, line);
+    this.#requireMate(line);
+    const item = this.#queued(line, queueId);
+    const runner = this.#runners.get(line.id);
+    if (runner?.busy() === true) {
+      const inserted = this.#state.lineQueue.insert(item.id);
+      after(() => {
+        runner.steer(inserted);
+        this.#publishQueue(line.id);
+      });
+      return { line: this.view(line.id), item: queuedView(inserted) };
+    }
+    this.#cancelTimer(line.id);
+    const sent = this.#state.transaction(() => this.#appendQueued(line.id, [item]));
+    after(() => this.#launched(line.id, sent));
+    return { line: this.view(line.id), item: queuedView(this.#state.lineQueue.get(item.id) ?? item) };
+  }
+
+  halt(lineId: string, after: After = NOW): LineView {
+    const line = this.line(lineId);
+    this.#cancelTimer(line.id);
+    this.#state.lines.update(line.id, { status: 'paused', pauseReason: 'user', pausedUntil: null, failure: null });
+    const runner = this.#runners.get(line.id);
+    after(() => {
+      this.#publishLine(line.id);
+      runner?.abort('user');
+    });
+    return this.view(line.id);
+  }
+
+  end(lineId: string, after: After = NOW): LineView {
+    const line = this.line(lineId);
+    if (line.kind === 'main') throw new LineError('conflict', '主对话不能停止。');
+    this.#cancelTimer(line.id);
+    this.#state.transaction(() => {
+      for (const item of this.#state.lineQueue.queued(line.id)) this.#state.lineQueue.withdraw(item.id);
+      this.#state.lines.update(line.id, { status: 'paused', pauseReason: 'stopped', pausedUntil: null, failure: null });
+    });
+    const runner = this.#runners.get(line.id);
+    after(() => {
+      this.#publishLine(line.id);
+      this.#publishQueue(line.id);
+      runner?.abort('user');
+    });
+    return this.view(line.id);
+  }
+
+  retry(lineId: string, after: After = NOW): LineView {
+    const line = this.#unarchived(lineId);
+    requireClaimedGroupTask(this.#state, line);
+    this.#requireMate(line);
+    if (line.status !== 'failed' && line.status !== 'paused') {
+      throw new LineError('conflict', '这条线没有失败，也没有暂停，不用重试。');
+    }
+    if (line.pauseReason === 'stopped') {
+      throw new LineError('conflict', '这件事已经停止，不能再继续。');
+    }
+    if (this.#runners.get(line.id)?.busy() === true) {
+      throw new LineError('conflict', '这条线正在停下，稍后再继续。');
+    }
+    this.#cancelTimer(line.id);
+    if (line.pauseReason === 'output_limit' && this.#state.lineQueue.queued(line.id).length === 0) {
+      const last = this.#state.lineMessages.last(line.id, 'assistant');
+      const ref = last !== undefined && isAssistant(last.message) && last.message.stopReason === 'length'
+        ? `line:${line.id}:${last.seq}` : undefined;
+      this.#state.lineQueue.add(line.id, '接着完成上一段未写完的回答。保留已完成的内容，接着往下写。', [],
+        { kind: 'system', ...(ref === undefined ? {} : { ref }) });
+    }
+    this.#state.lines.update(line.id, { status: 'queued', pauseReason: null, pausedUntil: null, failure: null });
+    after(() => {
+      this.#publishLine(line.id);
+      this.#launch(line.id, 'resume');
+    });
+    return this.view(line.id);
+  }
+
+  archive(lineId: string, after: After = NOW): LineView {
+    const line = this.line(lineId);
+    if (line.kind === 'main') throw new LineError('conflict', '主对话不能归档。');
+    if (line.archivedAt !== null) return this.view(line.id);
+    const runner = this.#runners.get(line.id);
+    this.#state.transaction(() => {
+      for (const item of this.#state.lineQueue.queued(line.id)) this.#state.lineQueue.withdraw(item.id);
+      this.#state.lines.update(line.id, { archivedAt: this.#now().toISOString(), status: 'paused',
+        pauseReason: line.pauseReason === 'stopped' ? 'stopped' : 'user', pausedUntil: null });
+    });
+    after(() => {
+      this.#cancelTimer(line.id);
+      this.#publishLine(line.id);
+      this.#publishQueue(line.id);
+      runner?.abort('user');
+    });
+    return this.view(line.id);
+  }
+
+  restore(lineId: string, after: After = NOW): LineView {
+    const line = this.line(lineId);
+    if (line.archivedAt === null) return this.view(line.id);
+    this.#state.lines.update(line.id, { archivedAt: null, status: 'paused',
+      pauseReason: line.pauseReason === 'stopped' ? 'stopped' : 'user', pausedUntil: null });
+    after(() => this.#publishLine(line.id));
+    return this.view(line.id);
+  }
+
+  #unarchived(lineId: string): LineRow {
+    const line = this.line(lineId);
+    if (line.archivedAt !== null) throw new LineError('conflict', '这条工作已归档，请先恢复再继续。');
+    return line;
+  }
+
+  openSide(input: { title: string; topic: LineTopic | null }, after: After = NOW): LineView {
+    const line = this.#state.lines.create({ kind: 'side', parentLineId: null, projectId: null, title: input.title,
+      topic: input.topic });
+    after(() => this.#publishLine(line.id));
+    return this.view(line.id);
+  }
+
+  chats(): ChatsResponse {
+    const main = this.view(this.#state.lines.main().id);
+    const background = this.list({ kind: 'background', statuses: ['running'], limit: SIDES_LIMIT });
+    return chats(main, background, this.list({ kind: 'side', limit: SIDES_LIMIT }));
+  }
+
+  react(lineId: string, input: { seq: number; emoji: string; on: boolean }, after: After = NOW): LineMessageView {
+    const line = this.line(lineId);
+    toggleReaction(this.#state, line.id, input.seq, input.emoji, input.on);
+    return this.touched(line.id, input.seq, after);
+  }
+
+  spawn(parentLineId: string, input: { title: string; goal: string; projectId: string | null;
+    resumeParent?: boolean }, toolCallId?: string): LineView {
+    const parent = this.#unarchived(parentLineId);
+    const source = this.#state.lineMessages.last(parent.id, 'assistant');
+    const matches = toolCallId !== undefined && isAssistant(source?.message)
+      && source.message.content.some((part) => part.type === 'toolCall'
+        && part.id === toolCallId && part.name === 'start_line');
+    const origin = matches && source !== undefined
+      ? { kind: 'delegation' as const, ref: lineRef(parent.id, source.seq) } : { kind: 'delegation' as const };
+    return this.open({ ...input, parentLineId: parent.id, origin });
+  }
+
+  open(input: OpenLine, after: After = NOW): LineView {
+    const parent = input.parentLineId === null ? null : this.#unarchived(input.parentLineId);
+    const mateId = input.mateId ?? parent?.mateId ?? null;
+    if (mateId !== null && this.#state.mates.require(mateId).disabledAt !== null) {
+      throw new LineError('conflict', '这位队友已停用。');
+    }
+    this.#notes(input.attachments ?? [], true);
+    if (input.projectId !== null && this.#state.projects.get(input.projectId) === undefined) {
+      throw new LineError('invalid', `没有这个项目：${input.projectId}。`, '先用 list_projects 查项目 id。');
+    }
+    const line = this.#state.transaction(() => {
+      const created = this.#state.lines.create({ kind: 'background', parentLineId: input.parentLineId,
+        projectId: input.projectId, title: input.title, sealedPrompt: input.sealedPrompt ?? null,
+        resumeParent: input.resumeParent ?? false, modelPurpose: input.purpose ?? null,
+        mateId, mateGroupId: input.mateGroupId ?? parent?.mateGroupId ?? null });
+      this.#state.lineQueue.add(created.id, input.goal, [...(input.attachments ?? [])],
+        input.origin ?? { kind: 'delegation' });
+      return this.#state.lines.update(created.id, { status: 'queued' });
+    });
+    after(() => {
+      this.#relayHandoff(line, input.goal);
+      this.#publishLine(line.id);
+      this.#schedule();
+    });
+    return this.view(line.id);
+  }
+
+  #relayHandoff(line: LineRow, text: string): void {
+    const target = relayOf(this.#state, line);
+    if (target !== null) {
+      this.#post(target.mateLineId, handoffMessage(line, target, text, this.#now()));
+    }
+  }
+
+  notice(input: { key: string; text: string; brief: string }): LineMessageView | null {
+    const main = this.#state.lines.main();
+    const message: LineNoticeMessage = { role: 'notice', key: input.key, text: input.text, brief: input.brief,
+      timestamp: this.#now().getTime() };
+    return this.#post(main.id, message);
+  }
+
+  noticeOn(lineId: string, input: { key: string; text: string; brief: string }): LineMessageView | null {
+    const message: LineNoticeMessage = { role: 'notice', key: input.key, text: input.text, brief: input.brief,
+      timestamp: this.#now().getTime() };
+    return this.#post(this.line(lineId).id, message);
+  }
+
+  welcome(input: { text: string; starts: WelcomeStart[] }): LineMessageView | null {
+    const main = this.#state.lines.main();
+    const message: LineWelcomeMessage = { role: 'welcome', text: input.text, starts: input.starts,
+      timestamp: this.#now().getTime() };
+    return this.#post(main.id, message);
+  }
+
+  letter(input: { key: string; text: string; spaceId: string; title: string }): LineMessageView | null {
+    const main = this.#state.lines.main();
+    const message: LineLetterMessage = { role: 'letter', key: input.key, text: input.text, spaceId: input.spaceId,
+      title: input.title, timestamp: this.#now().getTime() };
+    return this.#post(main.id, message);
+  }
+
+  answer(lineId: string): string | null {
+    const line = this.#state.lines.get(lineId);
+    if (line === undefined || this.#runners.get(line.id)?.busy() === true || this.view(line.id).outcome !== 'done') {
+      return null;
+    }
+    const last = this.#state.lineMessages.last(line.id, 'assistant')?.message;
+    if (!isAssistant(last) || last.stopReason !== 'stop') {
+      return null;
+    }
+    return lineResult(this.#state, line.id);
+  }
+
+  tell(lineId: string, text: string, fromLineId?: string):
+    { line: LineView; outcome: 'steered' | 'started' | 'queued' } {
+    const line = this.#unarchived(lineId);
+    this.#relayHandoff(line, text);
+    const source = fromLineId === undefined || fromLineId === line.id ? undefined
+      : this.#state.lineMessages.last(fromLineId, 'assistant');
+    const origin = source === undefined ? { kind: 'delegation' as const }
+      : { kind: 'delegation' as const, ref: lineRef(source.lineId, source.seq) };
+    const runner = this.#runners.get(line.id);
+    if (runner?.busy() === true) {
+      const item = this.#state.lineQueue.add(line.id, text, [], origin);
+      runner.steer(item);
+      this.#publishQueue(line.id);
+      return { line: this.view(line.id), outcome: 'steered' };
+    }
+    const sent = this.send(line.id, { text, origin });
+    return { line: sent.line, outcome: sent.outcome };
+  }
+
+  #runner(lineId: string): LineRunner {
+    let runner = this.#runners.get(lineId);
+    if (runner === undefined) {
+      runner = new LineRunner(this.#host, this.#state.lines.require(lineId));
+      this.#runners.set(lineId, runner);
+    }
+    return runner;
+  }
+
+  #launch(lineId: string, mode: DriveMode): boolean {
+    if (this.#stopping || this.#runners.get(lineId)?.busy() === true) {
+      return false;
+    }
+    const line = this.#state.lines.require(lineId);
+    if (line.archivedAt !== null) return false;
+    if (unclaimedGroupTask(this.#state, line)) {
+      this.#setStatus(lineId, 'paused', { pauseReason: 'user', failure: null });
+      return false;
+    }
+    if (line.mateId != null && this.#state.mates.require(line.mateId).disabledAt !== null) {
+      this.#setStatus(lineId, 'paused', { pauseReason: 'user', failure: null });
+      return false;
+    }
+    if (line.status === 'paused' && heldByUser(line)) {
+      return false;
+    }
+    if (limitedLine(line) && this.#activeBackground() >= this.#max()) {
+      this.#setStatus(lineId, 'queued', { pauseReason: null, pausedUntil: null });
+      return false;
+    }
+    if (mode === 'continue') {
+      rollDay(this.#state, line, this.#now(), this.#zone());
+    }
+    return this.#runner(lineId).start(mode);
+  }
+
+  #launched(lineId: string, sent: readonly LineMessageView[]): void {
+    for (const message of sent) {
+      this.#options.publish({ type: 'line_message', message });
+    }
+    this.#publishQueue(lineId);
+    this.#launch(lineId, 'continue');
+  }
+
+  #busy(line: LineRow): boolean {
+    if (this.#runners.get(line.id)?.busy() === true) {
+      return true;
+    }
+    if (['queued', 'running', 'waiting', 'paused'].includes(line.status)) {
+      return true;
+    }
+    return limitedLine(line) && this.#activeBackground(line.id) >= this.#max();
+  }
+
+  #activeBackground(except?: string): number {
+    let count = 0;
+    for (const [lineId, runner] of this.#runners) {
+      const line = this.#state.lines.get(lineId);
+      if (lineId !== except && runner.busy() && limitedLine(line) && line?.status !== 'waiting') {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  #queued(line: LineRow, queueId: string, allowInserted = false): QueuedRow {
+    const item = this.#state.lineQueue.get(queueId);
+    if (item === undefined || item.lineId !== line.id) {
+      throw new LineError('not_found', '这条线上没有这条排队的消息。');
+    }
+    if (item.status === 'inserted' && !allowInserted) {
+      throw new LineError('conflict', '这条已经交给这一轮了，这一步做完就插进去。');
+    }
+    if (item.status !== 'queued' && item.status !== 'inserted') {
+      throw new LineError('conflict', item.status === 'sent' ? '这条已经发出了，撤不回。' : '这条已经撤回了。');
+    }
+    return item;
+  }
+
+  #notes(ids: readonly string[], strict = false): AttachmentNote[] {
+    return ids.flatMap((id) => {
+      const attachment = this.#state.attachments.get(id);
+      if (attachment === null) {
+        if (strict) {
+          throw new LineError('invalid', '没有这份附件。', '重新上传后再发。');
+        }
+        return [];
+      }
+      if (strict && attachment.status !== 'ready') {
+        throw new LineError('conflict', '附件还没就绪（或者没读成），这条消息没有发送。', '等它读好，或者重新上传。');
+      }
+      return [{ id, name: attachment.name }];
+    });
+  }
+
+  #appendQueued(lineId: string, items: readonly QueuedRow[]): LineMessageView[] {
+    const views = items.map((item) => {
+      const message = userMessage(item.text, this.#notes(item.attachments), this.#now().getTime());
+      const row = this.#state.lineMessages.append(lineId, 'user', message, { origin: item.origin });
+      this.#state.lineQueue.sent(item.id, row.seq);
+      return messageView(row, this.#host.sayOf);
+    });
+    this.#state.lines.update(lineId, { status: 'running', failure: null, pausedUntil: null, pauseReason: null });
+    return views;
+  }
+
+  #pump(lineId: string): boolean {
+    const items = this.#state.lineQueue.queued(lineId);
+    const line = this.#state.lines.require(lineId);
+    if (line.archivedAt !== null) return false;
+    if (unclaimedGroupTask(this.#state, line)) return false;
+    if (items.length === 0 || this.#runners.get(lineId)?.busy() === true || this.#stopping) {
+      return false;
+    }
+    if (line.status === 'paused' || line.status === 'failed' || line.status === 'waiting') {
+      return false;
+    }
+    if (limitedLine(line) && this.#activeBackground() >= this.#max()) {
+      this.#setStatus(lineId, 'queued');
+      return false;
+    }
+    const sent = this.#state.transaction(() => this.#appendQueued(lineId, items));
+    this.#launched(lineId, sent);
+    return true;
+  }
+
+  #schedule(): void {
+    const candidates = new Set([...this.#state.lines.withStatus(['queued']).reverse().map((line) => line.id),
+      ...this.#state.lineQueue.linesWithQueued()]);
+    for (const lineId of candidates) {
+      const line = this.#state.lines.get(lineId);
+      if (line === undefined || !workerLine(line) || line.archivedAt !== null
+        || (line.status !== 'idle' && line.status !== 'queued')) {
+        continue;
+      }
+      if (limitedLine(line) && this.#activeBackground() >= this.#max()) {
+        continue;
+      }
+      if (this.#emptyQueued(line.id)) {
+        this.#setStatus(line.id, 'idle');
+        continue;
+      }
+      const last = this.#state.lineMessages.last(line.id)?.message;
+      if (line.status === 'idle' || last === undefined || (isAssistant(last) && last.stopReason === 'stop')) {
+        this.#pump(line.id);
+      } else {
+        this.#launch(line.id, 'resume');
+      }
+    }
+  }
+
+  #emptyQueued(lineId: string): boolean {
+    if (this.#state.lines.require(lineId).status !== 'queued' || this.#state.lineQueue.queued(lineId).length > 0) {
+      return false;
+    }
+    const last = this.#state.lineMessages.last(lineId)?.message;
+    return last === undefined || (isAssistant(last) && last.stopReason === 'stop');
+  }
+
+  #setStatus(lineId: string, status: LineStatus, patch: LinePatch = {}): void {
+    this.#state.lines.update(lineId, { status, ...patch });
+    this.#publishLine(lineId);
+  }
+
+  #publishLine(lineId: string): void {
+    this.#options.publish({ type: 'line_changed', line: this.view(lineId) });
+  }
+
+  #publishQueue(lineId: string): void {
+    this.#options.publish({ type: 'line_queue', lineId, queue: this.#state.lineQueue.queued(lineId).map(queuedView) });
+    this.#publishLine(lineId);
+  }
+
+  #waiting(lineId: string, on: boolean): void {
+    const line = this.#state.lines.get(lineId);
+    if (line === undefined) {
+      return;
+    }
+    if (on && line.status !== 'waiting') {
+      this.#setStatus(lineId, 'waiting');
+      this.#schedule();
+    } else if (!on && line.status === 'waiting') {
+      this.#setStatus(lineId, 'running');
+    }
+  }
+
+  #answered(ask: Ask): void {
+    if (this.#waits.notify(ask.id)) {
+      return;
+    }
+    const lineId = ask.context?.['lineId'];
+    const line = typeof lineId === 'string' ? this.#state.lines.get(lineId) : undefined;
+    const callId = ask.context?.['toolCallId'];
+    if (line !== undefined && line.archivedAt === null && ask.purpose === 'line_question'
+      && ask.status === 'answered' && ask.answer !== null && ask.deferredAt !== null
+      && typeof callId === 'string' && this.#state.lineMessages.toolResult(line.id, callId) !== undefined) {
+      this.send(line.id, { text: `关于「${ask.question}」：${answerSentence(ask)}`,
+        origin: { kind: 'user', ref: `ask:${ask.id}`, userText: ask.answer.text ?? ask.answer.label } });
+      return;
+    }
+    if (line?.status === 'waiting' && this.#runners.get(line.id)?.busy() !== true) {
+      this.#launch(line.id, 'resume');
+    }
+  }
+
+  #zone(): string {
+    return this.#options.zone?.() ?? this.#options.timeZone ?? DEFAULT_TIME_ZONE;
+  }
+
+  #cancelTimer(lineId: string): void {
+    this.#timers.get(lineId)?.();
+    this.#timers.delete(lineId);
+  }
+
+  #ended(lineId: string, outcome: DriveOutcome): void {
+    try {
+      const line = this.#state.lines.require(lineId);
+      if (outcome === 'paused') {
+        this.#schedulePause(line);
+      }
+      if (line.kind === 'background' && (outcome === 'done' || outcome === 'failed')) {
+        this.#report(line, outcome);
+      }
+      if (outcome === 'done') {
+        this.#pump(line.id);
+      }
+      this.#schedule();
+    } catch (error) {
+      safeLog('error', 'line_after_failed', { category: errorCategory(error) });
+    }
+    try {
+      const line = this.#state.lines.get(lineId);
+      if (line !== undefined) {
+        this.#options.turnEnded?.(line, outcome);
+      }
+    } catch (error) {
+      safeLog('error', 'line_turn_hook_failed', { category: errorCategory(error) });
+    }
+  }
+
+  #schedulePause(line: LineRow): void {
+    this.#cancelTimer(line.id);
+    if (line.archivedAt !== null || heldByUser(line)) {
+      return;
+    }
+    const until = line.pausedUntil === null ? this.#now().getTime() : Date.parse(line.pausedUntil);
+    const wait = Math.max(0, until - this.#now().getTime());
+    this.#timers.set(line.id, this.#later(wait, () => {
+      this.#timers.delete(line.id);
+      if (this.#state.lines.get(line.id)?.status === 'paused') {
+        this.#launch(line.id, 'resume');
+      }
+    }));
+    if (line.pauseNoticedAt === null) {
+      this.#state.lines.update(line.id, { pauseNoticedAt: this.#now().toISOString() });
+      if (line.kind === 'background') {
+        this.#report(line, 'paused', pauseNotice(new Date(until), this.#options.timeZone ?? DEFAULT_TIME_ZONE));
+      }
+    }
+  }
+
+  #report(line: LineRow, outcome: ReportOutcome, notice?: string): void {
+    if (line.parentLineId === null) {
+      return;
+    }
+    const parent = this.#state.lines.get(line.parentLineId);
+    if (parent === undefined) {
+      return;
+    }
+    const target = relayOf(this.#state, line);
+    const plain = lineReport(this.#state, line, outcome, this.#now(), notice);
+    const report = target === null ? plain : { ...plain, relay: backwards(target.relay) };
+    if (target !== null) {
+      this.#post(target.mateLineId, { ...report, own: true });
+    }
+    try {
+      this.#options.reported?.(report, parent);
+    } catch (error) {
+      safeLog('error', 'line_report_hook_failed', { category: errorCategory(error) });
+    }
+    this.#reportAsker(line, outcome, plain);
+    if (this.#post(parent.id, report) === null) {
+      return;
+    }
+    if (line.resumeParent && (outcome === 'done' || outcome === 'failed') && parent.status === 'idle') {
+      this.#launch(parent.id, 'continue');
+    }
+  }
+
+  #reportAsker(line: LineRow, outcome: ReportOutcome, report: ReturnType<typeof lineReport>): void {
+    const asker = askerOf(this.#state, line);
+    if (asker === null || this.#post(asker.id, report) === null) {
+      return;
+    }
+    if ((outcome === 'done' || outcome === 'failed') && asker.status === 'idle') {
+      this.#launch(asker.id, 'continue');
+    }
+  }
+
+  #post(lineId: string, message: PostedMessage): LineMessageView | null {
+    const runner = this.#runners.get(lineId);
+    if (runner?.busy() === true) {
+      runner.deliver(message);
+      return null;
+    }
+    const row = this.#state.lineMessages.append(lineId, message.role, message);
+    const view = messageView(row, this.#host.sayOf);
+    this.#options.publish({ type: 'line_message', message: view });
+    this.#publishLine(lineId);
+    return view;
+  }
+}
+
+function workerLine(line: LineRow | undefined): boolean {
+  return line !== undefined && (line.kind === 'background' || line.mateId != null);
+}
+
+function limitedLine(line: LineRow | undefined): boolean {
+  return line?.kind === 'background' && line.sealedPrompt === null;
+}

@@ -1,0 +1,27 @@
+.web-address-bookmark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 calc(-1 * var(--space-1)) 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--fg2);
+  cursor: pointer;
+}
+
+.web-address-bookmark:hover {
+  color: var(--fg);
+}
+
+.web-address-bookmark[aria-pressed='true'] {
+  color: var(--fg);
+}
+
+.web-address-bookmark:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}

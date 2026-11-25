@@ -1,0 +1,70 @@
+import { useEffect, useRef } from 'react';
+import type { Quote } from '../api/types.ts';
+
+export interface QuoteHandler {
+  root: () => Element | null;
+  quote: (selection: Selection) => boolean;
+}
+
+const handlers = new Set<QuoteHandler>();
+
+export function registerQuoteHandler(handler: QuoteHandler): () => void {
+  handlers.add(handler);
+  return () => handlers.delete(handler);
+}
+
+export function useQuoteHandler(root: () => Element | null, quote: ((selection: Selection) => boolean) | null): void {
+  const latest = useRef({ root, quote });
+  latest.current = { root, quote };
+  const enabled = quote !== null;
+  useEffect(() => {
+    if (!enabled) return undefined;
+    return registerQuoteHandler({ root: () => latest.current.root(),
+      quote: (selection) => latest.current.quote?.(selection) ?? false });
+  }, [enabled]);
+}
+
+function elementOf(node: Node | null): Element | null {
+  if (node === null) return null;
+  return node instanceof Element ? node : node.parentElement;
+}
+
+function handlerFor(anchor: Node): QuoteHandler | null {
+  let best: { handler: QuoteHandler; root: Element } | null = null;
+  for (const handler of handlers) {
+    const root = handler.root();
+    if (root === null || !root.contains(anchor)) continue;
+    if (best === null || best.root.contains(root)) best = { handler, root };
+  }
+  return best?.handler ?? null;
+}
+
+function sourceLabel(anchor: Element | null): string {
+  const marked = anchor?.closest('[data-quote-label]')?.getAttribute('data-quote-label')?.trim();
+  if (marked !== undefined && marked !== '') return marked;
+  const heading = anchor?.closest('.page, main, [role="main"]')?.querySelector('h1, h2')?.textContent?.trim();
+  if (heading !== undefined && heading !== '') return heading;
+  return '页面';
+}
+
+export function plainQuote(text: string, label: string, sourceId: string): Quote {
+  return { id: `quote:${sourceId}:${text}`, kind: 'object', sourceId, label, text };
+}
+
+export type QuoteOutcome = 'quoted' | 'empty';
+
+export function quoteSelection(add: (quote: Quote) => void, selection: Selection | null = document.getSelection()):
+  QuoteOutcome {
+  if (selection === null || selection.isCollapsed || selection.rangeCount === 0) return 'empty';
+  const text = selection.toString().trim();
+  const anchor = selection.anchorNode;
+  if (text === '' || anchor === null) return 'empty';
+  const handler = handlerFor(anchor);
+  if (handler !== null && handler.quote(selection)) return 'quoted';
+  add(plainQuote(text, sourceLabel(elementOf(anchor)), `page:${window.location.hash || '#'}`));
+  return 'quoted';
+}
+
+export function webQuote(text: string, url: string, title: string): Quote {
+  return { id: `quote:web:${url}:${text}`, kind: 'object', sourceId: url, label: title.trim() || url, text };
+}

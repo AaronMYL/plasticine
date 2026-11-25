@@ -1,0 +1,162 @@
+import { useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+import {
+  clampToLevels, purposeInfo, requiresImages, THINKING_LABELS,
+  type ListModelProvidersResponse, type ModelOverride, type ModelPurpose, type ThinkingLevel,
+} from '../../api/shared.ts';
+import { Icon } from '../../shell/icons.tsx';
+import { Popover, type PopoverAnchor } from '../../shell/popover.tsx';
+import { providerName } from './model-store.ts';
+import './model-chooser.css';
+import { SearchField } from '../../primitives/search-field/index.tsx';
+
+export interface ChooserChange {
+  model: ModelOverride['model'];
+  thinking: ThinkingLevel | null;
+}
+
+export interface ChooserProps {
+  value: ListModelProvidersResponse;
+  purpose: ModelPurpose | null;
+  onChoose: (change: ChooserChange) => void;
+}
+
+interface Option {
+  key: string;
+  provider: string;
+  model: string;
+  name: string;
+  group: string;
+  levels: readonly ThinkingLevel[];
+}
+
+const keyOf = (ref: { provider: string; model: string } | null | undefined): string =>
+  ref == null ? '' : `${ref.provider}/${ref.model}`;
+
+export function inheritLabel(purpose: ModelPurpose): string {
+  const { fallback } = purposeInfo(purpose);
+  return fallback === 'main' ? '跟主线' : fallback === 'note_predict' ? '跟续写' : '跟默认';
+}
+
+export function chooserOptions(value: ListModelProvidersResponse, purpose: ModelPurpose | null): Option[] {
+  return value.providers.filter((provider) => provider.connected !== null).flatMap((provider) => provider.models
+    .filter((model) => provider.enabled.includes(model.id))
+    .filter((model) => !requiresImages(purpose ?? undefined) || model.input.includes('image'))
+    .map((model) => ({ key: `${provider.id}/${model.id}`, provider: provider.id, model: model.id, name: model.name,
+      group: providerName(provider), levels: model.thinkingLevels })));
+}
+
+function currentOf(value: ListModelProvidersResponse, purpose: ModelPurpose | null): ChooserChange & {
+  effective: { provider: string; model: string; thinking: ThinkingLevel } | null;
+} {
+  if (purpose === null) {
+    const chosen = value.chosen ?? value.effective;
+    return { model: chosen === null ? null : { provider: chosen.provider, model: chosen.model },
+      thinking: chosen?.thinking ?? null, effective: value.effective };
+  }
+  const view = value.purposes.find((item) => item.purpose === purpose);
+  return { model: view?.chosen.model ?? null, thinking: view?.chosen.thinking ?? null,
+    effective: view?.effective ?? null };
+}
+
+const OPTION_SELECTOR = '[role="option"]';
+
+function moveFocus(root: HTMLElement | null, event: KeyboardEvent): void {
+  if (root === null || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) {
+    return;
+  }
+  const items = [...root.querySelectorAll<HTMLElement>(OPTION_SELECTOR)];
+  if (items.length === 0) {
+    return;
+  }
+  event.preventDefault();
+  const index = items.findIndex((item) => item === document.activeElement);
+  const next = event.key === 'ArrowDown' ? Math.min(items.length - 1, index + 1) : index - 1;
+  if (next < 0) {
+    root.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
+  } else {
+    items[next]?.focus();
+  }
+}
+
+export function ModelChooserPanel({ value, purpose, onChoose, footer }: ChooserProps & { footer?: ReactNode }):
+  ReactNode {
+  const [query, setQuery] = useState('');
+  const root = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const options = useMemo(() => chooserOptions(value, purpose), [value, purpose]);
+  const current = currentOf(value, purpose);
+  const needle = query.trim().toLowerCase();
+  const shown = needle === '' ? options
+    : options.filter((item) => `${item.group} ${item.name} ${item.model}`.toLowerCase().includes(needle));
+  const groups = [...new Set(shown.map((item) => item.group))];
+  const active = options.find((item) => item.key === keyOf(current.model ?? current.effective))
+    ?? options.find((item) => item.key === keyOf(current.effective));
+  const levels = active?.levels ?? [];
+  const pickModel = (option: Option): void => {
+    const base = current.thinking ?? (purpose === null ? current.effective?.thinking ?? 'medium' : null);
+    onChoose({ model: { provider: option.provider, model: option.model },
+      thinking: base === null ? null : clampToLevels(option.levels, base) });
+  };
+  return (
+    <div className="model-chooser" ref={root} onKeyDown={(event) => moveFocus(root.current, event)}>
+      <SearchField label="搜模型" value={query} aria-controls={listId} onChange={setQuery} />
+      <div className="model-chooser-list" role="listbox" id={listId} aria-label="模型">
+        {purpose === null || needle !== '' ? null : (
+          <button type="button" role="option" aria-selected={current.model === null}
+            className="model-chooser-option" onClick={() => onChoose({ model: null, thinking: null })}>
+            <span className="model-chooser-name">{inheritLabel(purpose)}</span>
+            {current.model === null ? <Icon name="check" size={14} /> : null}
+          </button>
+        )}
+        {groups.map((group) => (
+          <div key={group} role="group" aria-label={group}>
+            <div className="model-chooser-group" aria-hidden="true">{group}</div>
+            {shown.filter((item) => item.group === group).map((item) => {
+              const selected = item.key === keyOf(current.model);
+              return (
+                <button key={item.key} type="button" role="option" aria-selected={selected}
+                  className="model-chooser-option" onClick={() => pickModel(item)}>
+                  <span className="model-chooser-name">{item.name}</span>
+                  {selected ? <Icon name="check" size={14} /> : null}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+        {shown.length === 0 ? <p className="model-chooser-empty">没有这个模型</p> : null}
+      </div>
+      {levels.length <= 1 ? null : (
+        <div className="model-chooser-thinking">
+          <span className="model-chooser-label" id={`${listId}-thinking`}>思考</span>
+          <div className="segmented" role="group" aria-labelledby={`${listId}-thinking`}>
+            {levels.map((level) => (
+              <button key={level} type="button" className="segmented-item"
+                aria-pressed={level === current.effective?.thinking}
+                onClick={() => onChoose({ model: current.model, thinking: level })}>
+                {THINKING_LABELS[level]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {footer}
+    </div>
+  );
+}
+
+export function ModelChooserPopover(props: ChooserProps & {
+  anchor: PopoverAnchor;
+  label: string;
+  onClose: () => void;
+  trigger?: RefObject<HTMLElement | null>;
+  align?: 'start' | 'end';
+  footer?: ReactNode;
+}): ReactNode {
+  const { anchor, label, onClose, trigger, align, ...panel } = props;
+  return (
+    <Popover anchor={anchor} role="dialog" label={label} align={align ?? 'end'} className="model-chooser-pop"
+      onClose={onClose} {...(trigger === undefined ? {} : { trigger })}>
+      <ModelChooserPanel {...panel} />
+    </Popover>
+  );
+}

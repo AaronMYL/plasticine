@@ -1,0 +1,82 @@
+import { FeedComments } from './feed-comments.ts';
+import type { FeedCommentGenerator } from '../../shared/feed-comments.ts';
+import type { Scan } from '../attention/index.ts';
+import type { StateService } from '../state/index.ts';
+import type { FeedItem } from '../../shared/state.ts';
+import { BookmarkDesk } from './bookmarks.ts';
+import { FeedDesk } from './feed.ts';
+import { InterestDesk } from './interests.ts';
+import { ExternalFeed } from './external-feed.ts';
+import { ComputerFetches } from './computer-fetch.ts';
+import { FeedSubscriptions } from './feed-subscriptions.ts';
+import type { FeedFetcher } from './feed-fetch.ts';
+import type { FeedSelector } from '../../shared/feed-selection.ts';
+import type { FeedTranslator } from '../../shared/feed-translation.ts';
+import { FeedTranslations } from './feed-translate.ts';
+export { FeedTranslations, sourceTextOf } from './feed-translate.ts';
+export { checkedChart, numbersIn } from './feed-chart-check.ts';
+export { FeedFetcher } from './feed-fetch.ts';
+export type { DiscoveredFeed } from './feed-fetch.ts';
+export { FEED_SOURCE_EVERY_MS, FeedSubscriptions, X_READ_ERROR_TEXT } from './feed-subscriptions.ts';
+export { ComputerFetches, handOffText } from './computer-fetch.ts';
+export { sourceSearchTerms } from './feed-candidates.ts';
+export { BookmarkDesk, checkBookmarkUrl } from './bookmarks.ts';
+export type { BookmarkDeskOptions, BookmarkState, NewBookmark } from './bookmarks.ts';
+export { BACKGROUND_TIME_ZONE, dayRange, dayStartOf, localDay, localDayStart } from './days.ts';
+export { DAILY_ERROR_CODES, DailyError } from './errors.ts';
+export type { DailyErrorCode } from './errors.ts';
+export { BUILT_IN_SOURCES, FeedDesk, RETIRED_SOURCE_REFS } from './feed.ts';
+export type { FeedSink, FeedState, ManualItem } from './feed.ts';
+export { InboxDesk, INBOX_PAGE_DEFAULT, PREVIEW_MAX_CHARS, previewOf, replyActionId } from './inbox.ts';
+export type { InboxDeskOptions, InboxFlags, InboxSink } from './inbox.ts';
+export { InterestDesk } from './interests.ts';
+export type { InterestState } from './interests.ts';
+export { checkUrl, cleanUrlQuery, isCredentialParam, linkKey, siteOf } from './urls.ts';
+export { checkLinkData, checkLinkText, cleanSite, checkSourceLinks, safeUrl } from './link-data.ts';
+
+export interface DailyOptions {
+  state: StateService;
+  now: () => Date;
+  externalFeed?: { fetcher: FeedFetcher; select: FeedSelector };
+  feedCommentGenerator?: FeedCommentGenerator;
+  feedTranslator?: FeedTranslator;
+  feedTranslatorModel?: () => string | null;
+}
+
+export function createDaily(options: DailyOptions) {
+  const { state, now } = options;
+  const feed = new FeedDesk({ state, now });
+  const translations = options.feedTranslator === undefined ? null : new FeedTranslations({
+    state, now, translate: options.feedTranslator, changed: (item) => feed.announce(item),
+    isPost: (item) => state.feedSources.get(item.sourceId)?.kind === 'x',
+    ...(options.feedTranslatorModel === undefined ? {} : { model: options.feedTranslatorModel }),
+  });
+  const added = (item: FeedItem): void => {
+    feed.announce(item);
+    translations?.added(item);
+  };
+  const externalFeed = options.externalFeed === undefined ? null : new ExternalFeed({
+    state, now, ...options.externalFeed, onAdded: added,
+  });
+  const computerFetches = new ComputerFetches(now);
+  const subscriptions = new FeedSubscriptions({ state, now, computer: computerFetches,
+    ...(options.externalFeed === undefined ? {} : { fetcher: options.externalFeed.fetcher }),
+    onAdded: added });
+  const comments = options.feedCommentGenerator === undefined ? null : new FeedComments({ state,
+    generate: options.feedCommentGenerator, changed: (item) => feed.announce(item) });
+  const interests = new InterestDesk({ state });
+  const bookmarks = new BookmarkDesk({ state, now });
+  const scans: Scan[] = [
+    { name: '每日外部信息流', run: () => externalFeed?.scan() },
+    { name: '信息流订阅', run: () => subscriptions.scan() },
+    { name: '信息流评论', run: () => comments?.resume() },
+    { name: '信息流翻成中文', run: () => translations?.scan() },
+  ];
+  return { feed, interests, scans, externalFeed, subscriptions, computerFetches, comments, bookmarks, translations,
+    added };
+}
+
+export type Daily = ReturnType<typeof createDaily>;
+export { createFeedCommentGenerator } from './feed-comment-generator.ts';
+export { createFeedSelector } from './feed-selection.ts';
+export { createFeedTranslator } from './feed-translator.ts';

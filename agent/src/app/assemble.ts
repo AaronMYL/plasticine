@@ -1,0 +1,431 @@
+import { offerResolver } from '../loop/index.ts';
+import { withMainSoul } from './soul-text.ts';
+import {
+  createServerCommandTools, ServerCommands, type CloudTransports, type FaviconFetchOptions,
+  type LinkPreviewFetchOptions, type MailImageFetchOptions,
+} from '../cloud-tools/index.ts';
+import { autoOnlyPermissionGate, createShowWidgetsTool, getTimeTool, ToolRegistry, type Tool } from '../tools/index.ts';
+import { ensureRulesDoc, createMemoryDocTools, MemoryCurator, recallExperience, Retrospector }
+  from '../memory/index.ts';
+import { createBookTools } from '../books/index.ts';
+import {
+  createDeviceActionGate, createDeviceActionTool, createDeviceCancelTool, createDeviceLogsTool, createDeviceNodesTool,
+  createPageSendTool, DeviceService, type NodeTransport,
+} from '../devices/index.ts';
+import {
+  BACKGROUND_TIME_ZONE, createDaily, createFeedCommentGenerator, createFeedSelector, createFeedTranslator,
+  type FeedFetcher,
+} from '../daily/index.ts';
+import { createNoteTools } from '../notes/index.ts';
+import { createPaymentTool, MoneyDraftDesk, PaymentReader } from '../life/index.ts';
+import { createSkillTools, SkillShop, SkillStore, type SkillShopOptions } from '../skills/index.ts';
+import { retroSkills } from './retro-skills.ts';
+import { projectTools } from '../projects/index.ts';
+import { AskDesk, Notices, Presenter, MessageAlerts, Presence, ProjectWatch, PushService, readNotifyKinds, routeAsks,
+  ScanScheduler, type AskResolver, type PushTransport, type VapidKeys } from '../attention/index.ts';
+import { kernelText, type Illustrator, type TextModels } from '../kernel/index.ts';
+import { illustratorOf, spaceRewriter } from './assemble-spaces.ts';
+import { mainIdentity, MateGroupTasks, mateGroupTaskTools, Mates, mateTools } from '../mates/index.ts';
+import { realLater, sleepFor, type LineKernel } from '../lines/index.ts';
+import { resumeAfterDevice } from './device-resume.ts';
+import { networkReadTools } from './network-read-tools.ts';
+import { Diagnostics } from './diagnostics.ts';
+import { createServerHealthTool } from './server-health-tool.ts';
+import { idleWait } from './idle-wait.ts';
+import { TunnelService, type TunnelServiceOptions } from '../network/index.ts';
+import { Tasks } from '../tasks/index.ts';
+import { BackupService, ClientReleases, RecordSweep, type MigrationService } from '../system/index.ts';
+import { MAIN_LINE_ID, type StateService, watchSlowQueries } from '../state/index.ts';
+import { errorCategory, safeLog } from '../util/index.ts';
+import { join } from 'node:path';
+import { LETTER_BRIEF, MAIN_THREAD_PATH, type BackupObjectKind } from '../../shared/api/index.ts';
+import { createApp, type App } from './app.ts';
+import { memoryEntryView } from './cognition-views.ts';
+import { assembleLines, type LineAssembly } from './assemble-lines.ts';
+import { publicUrlSource } from './public-url.ts';
+import { lineReplyAlert } from './reply-alerts.ts';
+import { taskCardTool } from './task-card-tool.ts';
+import { messageTools } from './message-tools.ts';
+import { linePort } from './subscriptions.ts';
+import { ensureReviewSubscription, SampleCards, subsTools } from '../subs/index.ts';
+import { libraryTools } from '../library/index.ts';
+import { assembleFileTools, deviceFileOf } from './file-tools.ts';
+import { pushTool } from './push-tool.ts';
+import { deviceFileTools } from './device-file-tools.ts';
+import { assembleLineTimers } from './assemble-line-timers.ts';
+import { scanDiskNotice } from './disk-notice.ts';
+import { reportAnnouncement } from './report-announcement.ts';
+import { createNetwork } from './assemble-network.ts';
+import { EventHub } from './event-hub.ts';
+import { createToolGroupServices, toolGroupScans, toolGroupTools, toolEnabled } from './tool-group-services.ts';
+import { BrowserSessions } from './browser-sessions.ts';
+import type { KernelModelParts } from './model-providers.ts';
+import { createWidgetFacts } from './widget-facts.ts';
+import { assembleTimed } from './assemble-timed.ts';
+import { heartbeatChecklistTool } from '../heartbeat/index.ts';
+import { cachedConflicts, CalendarSync, calendarTools } from '../calendar/index.ts';
+import { VIDEO_SKILL_NAME, createVideo, publishToFeed, transcriberFromEnv, type KitPlan, type KitPorts,
+  type Transcriber, type VideoMedia }
+  from '../video/index.ts';
+
+export interface AssembleOptions {
+  state: StateService;
+  publicUrl?: string;
+  clientManifestPath?: string;
+  clientDirectory?: string;
+  builtinSkills?: string;
+  automaticBackups?: boolean;
+  migration?: MigrationService;
+  /** Development dry run of external effects (decision 8). */
+  dryRun: boolean;
+  vapidKeys: VapidKeys;
+  vapidSubject: string;
+  pushTransport?: PushTransport;
+  now?: () => Date;
+  hub?: EventHub;
+  sseHeartbeatMs?: number;
+  /** More tools for the registry (tests). */
+  extraTools?: Tool[];
+  /** How often the outer loop's scans run (attention/scheduler.ts SCAN_TICK_MS). */
+  scanTickMs?: number;
+  /** The state directory: files/, credentials/, cloud-tools/, downloads/, client-release.json. */
+  stateDirectory: string;
+  /** How device actions reach nodes (a fake in tests). */
+  nodeTransport?: NodeTransport;
+  /** How the cloud tools reach outside (tests give fakes; the default connects nothing). */
+  cloudTransports?: Partial<CloudTransports>;
+  mailImages?: MailImageFetchOptions;
+  linkPreviews?: LinkPreviewFetchOptions;
+  skillShop?: SkillShopOptions;
+  favicons?: FaviconFetchOptions;
+  /** Check credential files for 0600 even on Windows (tests). */
+  checkCredentialMode?: boolean;
+  feedFetcher?: FeedFetcher;
+  transcriber?: Transcriber | null;
+  videoMedia?: VideoMedia;
+  transcriberKit?: { plan?: KitPlan | null; ports?: Partial<KitPorts> };
+  network?: NetworkAssembly;
+  lines: LineAssembly;
+  text?: TextModels;
+  memoryCuration?: boolean;
+  kernelModels?: KernelModelParts;
+  illustrator?: Illustrator | null;
+  printPdf?: (html: string, signal: AbortSignal) => Promise<Buffer>;
+  renderPage?: (html: string, format: 'pdf' | 'png', signal: AbortSignal) => Promise<Buffer>;
+  localToken?: string | null;
+}
+
+export interface NetworkAssembly {
+  relayUrl?: string;
+  tunnel?: Omit<TunnelServiceOptions, 'stateDirectory' | 'relayUrl' | 'signer' | 'now'>;
+  autoSync?: boolean;
+  pollWaitSeconds?: number;
+  fetch?: typeof fetch;
+  responder?: boolean;
+}
+
+class LateLines {
+  #kernel: LineKernel | null = null;
+
+  set(kernel: LineKernel): void {
+    this.#kernel = kernel;
+  }
+
+  get(): LineKernel {
+    if (this.#kernel === null) {
+      throw new Error('新内核还没装好');
+    }
+    return this.#kernel;
+  }
+}
+
+export function assembleApp(options: AssembleOptions): App {
+  const { state } = options;
+  const now = options.now ?? (() => new Date());
+  ensureRulesDoc(state);
+  const hub = options.hub ?? new EventHub();
+  const presence = new Presence();
+  let messageAlerts: MessageAlerts | null = null;
+  ensureReviewSubscription(state, state.dailySettings.read().settings.timeZone ?? BACKGROUND_TIME_ZONE);
+  const text = withMainSoul(options.text ?? kernelText(options.lines.models, now), state);
+  let ffmpeg = (): string => 'ffmpeg';
+  const illustrator = options.illustrator !== undefined ? options.illustrator
+    : illustratorOf(options.kernelModels, () => ffmpeg());
+  const server = new ServerCommands({ stateDirectory: options.stateDirectory, now });
+  const skills = new SkillStore({ stateDirectory: options.stateDirectory, now, shipped: [VIDEO_SKILL_NAME],
+    ...(options.builtinSkills === undefined ? {} : { builtinDirectory: options.builtinSkills }) });
+  const fixedUrl = options.publicUrl;
+  const publicUrl = fixedUrl === undefined ? publicUrlSource(state) : () => fixedUrl;
+  const presenter = new Presenter(state);
+  const desk = new AskDesk({ state, presenter, now });
+  const late = new LateLines();
+  const backups = new BackupService({ state, desk, now, automatic: options.automaticBackups ?? true,
+    restored: (kind, id) => publishRestored(state, hub, kind, id),
+    changed: () => hub.publish({ type: 'backups_changed' }) });
+  const transport = options.nodeTransport === undefined ? {} : { transport: options.nodeTransport };
+  let calendarSync: CalendarSync | null = null;
+  const devices: DeviceService = new DeviceService({ state, now, desk, dryRun: options.dryRun, ...transport,
+    logsDirectory: join(options.stateDirectory, 'device-logs'),
+    cameOnline: (node, at) => {
+      calendarSync?.kick(true);
+    },
+    cameBack: (node, at) => resumeAfterDevice(state, () => late.get(), devices.waits.take(node.id), node.name, at) });
+  devices.approvals?.onResult((result) => late.get().tell(result.lineId, result.text));
+  const clientUpdates = new ClientReleases({ state, manifestPath: options.clientManifestPath ?? null,
+    receiptPath: join(options.stateDirectory, 'client-release.json'),
+    changed: () => hub.publish({ type: 'client_version_changed' }) });
+  const browserSessions = new BrowserSessions(state, now);
+  const toolGroups = createToolGroupServices({
+    state,
+    stateDirectory: options.stateDirectory,
+    dryRun: options.dryRun,
+    now,
+    internalCookies: () => browserSessions.cookies(publicUrl()),
+    internalUrl: publicUrl(),
+    ...(options.cloudTransports === undefined ? {} : { transports: options.cloudTransports }),
+    ...(options.checkCredentialMode === undefined ? {} : { checkCredentialMode: options.checkCredentialMode }),
+    ...(options.mailImages === undefined ? {} : { mailImages: options.mailImages }),
+    ...(options.linkPreviews === undefined ? {} : { linkPreviews: options.linkPreviews }),
+    ...(options.favicons === undefined ? {} : { favicons: options.favicons }),
+  });
+  const moneyDrafts = new MoneyDraftDesk({ state, desk, money: toolGroups.life.money, now,
+    changed: (id) => hub.publish({ type: 'money_draft_changed', draft: moneyDrafts.view(id) }),
+    attachmentChanged: (id) => hub.publish({ type: 'attachment_changed',
+      attachment: state.attachments.require(id) }) });
+  const paymentReader = new PaymentReader({ state, drafts: moneyDrafts, models: text });
+  const retrospector = options.memoryCuration === false ? null : new Retrospector({ state, models: text,
+    skills: retroSkills(skills), notify: (lineId, said) => {
+      late.get().noticeOn(lineId, { key: `retro:${lineId}:${now().getTime()}`, text: said, brief: '复盘记下了' });
+    } });
+  const memoryCurator = new MemoryCurator({ state, now,
+    model: options.memoryCuration === false ? null : { models: text } });
+  let tunnel: TunnelService | undefined;
+  const network = createNetwork(options, { state, now, desk, hub, text, late,
+    joined: () => tunnel?.wake(), alert: (alert) => messageAlerts?.contact(alert) });
+  const tunnelSettings = options.network?.tunnel;
+  if (tunnelSettings !== undefined) {
+    tunnel = new TunnelService({ ...tunnelSettings, stateDirectory: options.stateDirectory,
+      relayUrl: () => network.relayUrl(), signer: () => network.signer(), now });
+  }
+  const video = createVideo({ state, now, stateDirectory: options.stateDirectory, text,
+    transcriber: options.transcriber === undefined ? transcriberFromEnv(process.env) : options.transcriber,
+    ...(options.videoMedia === undefined ? {} : { media: options.videoMedia }),
+    ...(options.transcriberKit === undefined ? {} : { kit: options.transcriberKit }),
+    transcriberChanged: (status) => hub.publish({ type: 'transcriber_changed', status }),
+    slots: () => late.get().backgroundLimit()
+      - state.lines.withStatus(['running']).filter((line) => line.kind === 'background').length,
+    interests: () => state.feedSources.all().filter((source) => source.kind === 'interest' && source.level !== 'off')
+      .map((source) => source.label),
+    summarized: (work) => {
+      const zone = state.dailySettings.read().settings.timeZone ?? BACKGROUND_TIME_ZONE;
+      const item = publishToFeed(state, work, now(), zone);
+      if (item !== null) {
+        daily.feed.announce(item);
+      }
+    },
+    changed: () => hub.publish({ type: 'video_changed' }) });
+  ffmpeg = () => video.kit.ffmpeg();
+  const diagnostics = new Diagnostics();
+  watchSlowQueries((sql, ms) => {
+    diagnostics.sql(sql, ms);
+    safeLog('warn', 'sql_slow', { sql: sql.replace(/\s+/g, ' ').trim(), durationMs: ms });
+  });
+  diagnostics.start((mark) => safeLog('warn', 'event_loop_lag', { durationMs: mark.p99Ms }));
+  const registry = new ToolRegistry();
+  const noteTools = createNoteTools(state, (noteId) => hub.publish({ type: 'note_invalidated', noteId }));
+  const tools = [...noteTools, ...createBookTools(state), getTimeTool,
+    createPaymentTool(moneyDrafts, paymentReader), createDeviceNodesTool(devices),
+    createDeviceLogsTool(state, devices), createDeviceCancelTool(devices), createServerHealthTool(diagnostics),
+    createDeviceActionTool(devices.actions, devices.waits), createPageSendTool(state, devices.actions),
+    ...toolGroupTools(toolGroups),
+    ...projectTools({ state, changed: (projectId) => hub.publish({ type: 'project_invalidated', projectId }) }),
+    ...createMemoryDocTools(state),
+    ...createServerCommandTools(server), ...createSkillTools(skills),
+    ...(options.extraTools ?? [])];
+  for (const tool of tools) {
+    registry.register(tool);
+  }
+  registry.setGate((name) => toolEnabled(state, name)
+    && (name !== 'cloud_ssh_run' || toolGroups.cloud.transportAvailable.ssh));
+  const tasks = new Tasks({ state, now,
+    scheduleLines: () => ({
+      open: (input) => late.get().open({ ...input, parentLineId: null }).id,
+      send: (lineId, text, origin) => {
+        late.get().send(lineId, { text, origin });
+      },
+      view: (lineId) => (state.lines.get(lineId) === undefined ? null : late.get().view(lineId)),
+      halt: (lineId) => {
+        late.get().halt(lineId);
+      },
+    }),
+    suggestionLines: () => ({ open: (input) => late.get().open({ ...input, parentLineId: MAIN_LINE_ID }).id }),
+    notify: (notice) => {
+      notices.post(notice);
+    },
+    changed: () => hub.publish({ type: 'tasks_changed' }),
+    projectChanged: (projectId) => hub.publish({ type: 'project_invalidated', projectId }),
+    ready: () => options.lines.models.current() !== undefined });
+  const calendarZone = (): string => tasks.schedules.timeZone();
+  const calendar = new CalendarSync({ state, devices: devices.actions, now, zone: calendarZone,
+    changed: () => hub.publish({ type: 'calendar_changed' }) });
+  calendarSync = calendar;
+  const timed = assembleTimed({ state, now, hub, tasks, lines: () => late.get(), skills,
+    calendar: cachedConflicts(state, calendarZone, now),
+    text: options.memoryCuration === false ? null : text,
+    notify: (input) => notices.post(input),
+    stalled: (at) => projectWatch.stalled(at) });
+  const permission = createDeviceActionGate(devices.actions, autoOnlyPermissionGate, devices.approvals,
+    idleWait({ state, now, sleep: (ms, signal) => sleepFor(realLater, ms, signal), whoOf: (mateId) =>
+      (mateId === null ? mainIdentity(state).name : state.mates.get(mateId)?.name ?? '队友'),
+    post: (input) => notices.post(input) }), devices.waits);
+  const lineTimers = assembleLineTimers({ state, now, hub, lines: () => late.get(), devices: devices.actions });
+  const lines = assembleLines(options.lines, { state, desk, hub, now, publicUrl,
+    skillsContext: (lineId) => skills.context(`line:${lineId}`),
+    recall: (call, resultText, shown) => recallExperience(state, call, resultText, shown),
+    lineChanged: (lineId) => network.lineChanged(lineId),
+    contextImages: (lineId) => network.attachments.contextImages(lineId),
+    tools: [...mateTools(new Mates(state, () => late.get())),
+      ...mateGroupTaskTools(new MateGroupTasks(state, () => late.get())), taskCardTool(state, network),
+      ...messageTools(state, network), ...networkReadTools(state), ...tasks.tools(), video.tool,
+      heartbeatChecklistTool(() => timed.heartbeat),
+      ...libraryTools({ state, workspace: toolGroups.artifacts.workspace },
+        (noteId) => hub.publish({ type: 'note_invalidated', noteId })),
+      ...assembleFileTools(state, toolGroups.artifacts.workspace, { attachments: toolGroups.cloud.attachments,
+        illustrator, video, sandboxRoot: join(options.stateDirectory, 'sandbox'), now, printPdf: options.printPdf }),
+      pushTool({ state, announce: (input) => notices.announce(input),
+        changed: () => hub.publish({ type: 'pushes_changed' }) }), ...lineTimers.tools(),
+      ...subsTools(state, () => linePort(lines), now, (subscriptionId) => sampleCards.offer(subscriptionId), {
+        illustrator,
+        lettered: (space, say) => {
+          lines.letter({ key: `letter:${space.id}`, text: say, spaceId: space.id, title: space.title });
+          notices.announce({ body: LETTER_BRIEF, url: MAIN_THREAD_PATH, tag: `letter:${space.id}` }, 'letter');
+        } }),
+      ...calendarTools({ state, devices: devices.actions, sync: calendar, now, zone: calendarZone })],
+    askTools: tasks.askTools(),
+    legacy: { registry, permission, dryRun: options.dryRun, sshAvailable: toolGroups.cloud.transportAvailable.ssh,
+      submits: devices.actions,
+      widgets: (recorder) => createShowWidgetsTool(createWidgetFacts(state, toolGroups.life), recorder),
+      deviceTools: (deviceAction) => deviceFileTools(deviceAction, toolGroups.artifacts.workspace,
+        (actionId) => deviceFileOf(state, actionId)) },
+    turnEnded: (line, outcome) => {
+      const alert = outcome === 'done' ? lineReplyAlert(state, line) : null;
+      if (alert !== null) {
+        messageAlerts?.line(alert);
+      }
+      if (outcome === 'done' && line.kind !== 'background') {
+        memoryCurator.enqueueLineTurn(line.id);
+      }
+      network.lineEnded(line.id, outcome);
+      if (line.kind === 'background') {
+        tasks.ended(line.id);
+      }
+      if (line.kind === 'background' && (outcome === 'done' || outcome === 'failed')) {
+        retrospector?.enqueue(line);
+      }
+    },
+    reported: (report, parent) => {
+      const announcement = parent.kind === 'main' ? reportAnnouncement(report) : null;
+      if (announcement !== null) {
+        notices.announce(announcement);
+      }
+    } });
+  late.set(lines);
+  const push = new PushService({
+    state,
+    keys: options.vapidKeys,
+    subject: options.vapidSubject,
+    now,
+    kinds: () => readNotifyKinds(state),
+    ...(options.pushTransport === undefined ? {} : { transport: options.pushTransport }),
+  });
+  presenter.setNotifier(push);
+  messageAlerts = new MessageAlerts({ presence, push, now, publish: (event) => hub.publish(event),
+    allowed: (kind) => readNotifyKinds(state)[kind] });
+  const sampleCards = new SampleCards({ state, desk, notice: (input) => { lines.notice(input); },
+    tell: (text) => { lines.tell(MAIN_LINE_ID, text); } });
+  const notices = new Notices({ state, post: (input) => lines.notice(input), push, now });
+  const daily = createDaily({ state, now,
+    feedCommentGenerator: createFeedCommentGenerator(text),
+    feedTranslator: createFeedTranslator(text),
+    feedTranslatorModel: () => text.snapshot?.('translation').identity ?? null,
+    ...(options.feedFetcher === undefined ? {} : {
+      externalFeed: { fetcher: options.feedFetcher, select: createFeedSelector(text) },
+    }),
+  });
+  const resolvers: Partial<Record<string, AskResolver>> = {
+    ...lines.resolvers(),
+    subscription_schedule: sampleCards.resolver,
+    loop_offer: offerResolver(state),
+    money_confirmation: moneyDrafts.resolver,
+    backup_restore: backups.resolver,
+    ...network.resolvers(),
+    ...(devices.approvals === undefined ? {} : { device_action: devices.approvals.resolver }),
+  };
+  desk.setResolver(routeAsks(resolvers, { resolve: () => undefined }));
+  try {
+    sampleCards.backfill();
+  } catch (error) {
+    safeLog('error', 'sample_card_backfill_failed', { category: errorCategory(error), error });
+  }
+  const scans = new ScanScheduler(options.scanTickMs === undefined ? {} : { tickMs: options.scanTickMs });
+  const projectWatch = new ProjectWatch({ state, now,
+    timeZone: BACKGROUND_TIME_ZONE,
+    changed: (projectId) => hub.publish({ type: 'project_invalidated', projectId }) });
+  scans.add({ name: '项目现状与逾期', run: () => projectWatch.scan() });
+  scans.add({ name: '记忆整理', run: () => memoryCurator.scan() });
+  const rewriter = spaceRewriter(state, text, illustrator);
+  scans.add({ name: '旧空间重写成网页', run: () => rewriter.once() });
+  scans.add({ name: '磁盘空间', run: () => scanDiskNotice({ notices, directory: options.stateDirectory, now }) });
+  scans.add({ name: '已记账原图清理', run: () => moneyDrafts.purge() });
+  scans.add({ name: '客户端发布记录', run: () => clientUpdates.scan() });
+  scans.add({ name: '日历同步', run: () => calendar.scan() });
+  scans.add({ name: '数据迁移清理', run: () => options.migration?.sweep() });
+  const recordSweep = new RecordSweep(state, now);
+  scans.add({ name: '旧回执清理', run: () => recordSweep.run() });
+  for (const scan of [...daily.scans, ...video.scans, ...toolGroupScans(toolGroups)]) {
+    scans.add(scan);
+  }
+  return createApp({
+    diagnostics,
+    browserSessions,
+    toolGroups,
+    memoryCurator,
+    skills,
+    skillShop: new SkillShop(options.skillShop ?? {}),
+    moneyDrafts,
+    paymentReader,
+    clientUpdates,
+    backups,
+    daily,
+    scans,
+    state,
+    text,
+    publicUrl,
+    desk,
+    presenter,
+    push,
+    presence,
+    now,
+    hub,
+    ...(options.sseHeartbeatMs === undefined ? {} : { sseHeartbeatMs: options.sseHeartbeatMs }),
+    devices,
+    dryRun: options.dryRun,
+    network, lines, tasks, lineTimers, video,
+    heartbeat: timed.heartbeat,
+    ...(options.migration === undefined ? {} : { migration: options.migration }),
+    calendar,
+    ...(tunnel === undefined ? {} : { tunnel }),
+    ...(options.kernelModels === undefined ? {} : { kernelModels: options.kernelModels }),
+    ...(options.clientDirectory === undefined ? {} : { clientDirectory: options.clientDirectory }),
+    localToken: options.localToken ?? null,
+    ...(options.renderPage === undefined ? {} : { renderPage: options.renderPage }),
+  });
+}
+
+function publishRestored(state: StateService, hub: EventHub, kind: BackupObjectKind, id: string): void {
+  if (kind === 'note') {
+    hub.publish({ type: 'note_invalidated', noteId: id });
+  } else {
+    hub.publish({ type: 'memory_entry_changed', entry: memoryEntryView(state.memory.require(id)) });
+  }
+}

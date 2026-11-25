@@ -1,0 +1,121 @@
+.model-chooser-pop {
+  width: 300px;
+  padding: var(--space-2);
+}
+
+.model-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.model-chooser-list {
+  display: flex;
+  flex-direction: column;
+  max-height: min(320px, 50vh);
+  margin-top: var(--space-hair);
+  overflow-y: auto;
+}
+
+.model-chooser-group {
+  padding: var(--space-2) var(--space-2) var(--space-hair);
+  color: var(--fg2);
+  font-size: var(--text-tag);
+  line-height: var(--text-tag-line);
+  font-weight: 500;
+}
+
+.model-chooser-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-chooser-option:hover,
+.model-chooser-option:focus-visible,
+.model-chooser-option[aria-selected='true'] {
+  background: var(--tint2);
+  outline: none;
+}
+
+.model-chooser-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-chooser-option > svg {
+  flex: none;
+  color: var(--fg);
+}
+
+.model-chooser-empty {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--fg2);
+  font-size: var(--text-ui);
+}
+
+.model-chooser-thinking {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding: var(--space-2) 0 0 var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.model-chooser-label {
+  flex: none;
+  color: var(--fg2);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
+.model-chooser-thinking .segmented {
+  flex: 1;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.model-chooser-thinking .segmented-item {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--space-1);
+}
+
+.model-chooser-manage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  margin-top: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg2);
+  font: inherit;
+  font-size: var(--text-ui);
+  cursor: pointer;
+}
+
+.model-chooser-manage:hover,
+.model-chooser-manage:focus-visible {
+  color: var(--fg);
+}

@@ -1,0 +1,58 @@
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { renderApp } from '../../helpers.tsx';
+import { TRANSLATE_SETTINGS_CHANGED } from '../../../src/shell/web-translate-context.tsx';
+
+async function openSection() {
+  const app = await renderApp({ hash: '#/device' });
+  fireEvent.click(within(screen.getByRole('navigation', { name: '栏目' })).getByRole('button', { name: /^设置/ }));
+  fireEvent.click(within(await screen.findByRole('dialog', { name: '设置' })).getByRole('button', { name: '浏览器' }));
+  const section = await screen.findByRole('region', { name: '网页翻译' });
+  await within(section).findByRole('button', { name: '翻译成' });
+  return { app, section };
+}
+
+async function pick(section: HTMLElement, name: string, option: string): Promise<void> {
+  fireEvent.click(within(section).getByRole('button', { name }));
+  fireEvent.click(within(await screen.findByRole('menu', { name })).getByRole('menuitemcheckbox', { name: option }));
+}
+
+describe('Settings - Browser - Web translation', () => {
+  it('shows Chinese target, bilingual, glossary enabled, and lists always-translate sites', async () => {
+    const { section } = await openSection();
+    expect(within(section).queryByRole('button', { name: '翻译模型' })).toBeNull();
+    expect(within(section).getByRole('button', { name: '翻译成' }).textContent).toBe('中文');
+    expect(within(section).getByRole('button', { name: '显示' }).textContent).toBe('双语对照');
+    expect((within(section).getByRole('switch', { name: '用词表' }) as HTMLInputElement).checked).toBe(true);
+    const sites = within(section).getByRole('list', { name: '总是翻译' });
+    expect(within(sites).getAllByRole('listitem').map((item) => item.textContent))
+      .toEqual(['field-notes.dev', 'news.ycombinator.com', 'x.com']);
+  });
+
+  it('Save persists language/display, notifies shell to reload, and drops removed sites', async () => {
+    const { app, section } = await openSection();
+    let changed = 0;
+    window.addEventListener(TRANSLATE_SETTINGS_CHANGED, () => { changed += 1; });
+    await pick(section, '翻译成', '日本語');
+    await pick(section, '显示', '只看译文');
+    fireEvent.click(within(section).getByRole('switch', { name: '用词表' }));
+    fireEvent.click(within(section).getByRole('button', { name: '不再总是翻译 x.com' }));
+    fireEvent.click(within(section).getByRole('button', { name: '保存网页翻译' }));
+    await within(section).findByRole('status');
+    expect(await app.api.translate.settings()).toMatchObject({ target: 'ja', display: 'translation', glossary: false,
+      alwaysSites: ['field-notes.dev', 'news.ycombinator.com'] });
+    expect(changed).toBe(1);
+  });
+
+  it('reports conflict keeping draft when edited elsewhere and updates only after reload', async () => {
+    const { app, section } = await openSection();
+    fireEvent.click(within(section).getByRole('switch', { name: '用词表' }));
+    const current = await app.api.translate.settings();
+    await app.api.translate.saveSettings({ ...current, target: 'en' });
+    fireEvent.click(within(section).getByRole('button', { name: '保存网页翻译' }));
+    expect((await within(section).findByRole('alert')).textContent).toContain('再读一次');
+    expect((within(section).getByRole('switch', { name: '用词表' }) as HTMLInputElement).checked).toBe(false);
+    fireEvent.click(within(section).getByRole('button', { name: '再读一次网页翻译设置' }));
+    await waitFor(() => expect(within(section).getByRole('button', { name: '翻译成' }).textContent).toBe('English'));
+  });
+});
