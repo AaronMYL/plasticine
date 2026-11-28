@@ -23,12 +23,12 @@ test('catalog filters hidden models, uses pi-ai names, inherits specs, caps Open
   assert.deepEqual(listed.map((item) => item.slug), ['gpt-9.9-astra', 'gpt-6-astra']);
   assert.equal(modelName('GPT-6.2-Sol', 'x'), 'GPT-6.2 Sol');
   assert.equal(modelName(undefined, 'gpt-x'), 'gpt-x');
-  assert.equal(baseFor('gpt-9.9-astra', catalog('openai'))?.id, 'gpt-6-astra');
-  assert.equal(baseFor('gpt-9.9-nova', catalog('openai-codex'))?.id, 'gpt-6.1-sol', '没有同系列的用版本最高的');
+  assert.equal(baseFor('gpt-9.9-astra', catalog('openai'))?.id, 'gpt-6.2-astra');
+  assert.equal(baseFor('gpt-9.9-nova', catalog('openai-codex'))?.id, 'gpt-6.2-astra', '没有同系列的用版本最高的');
   const openai = estimate(listed[0]!, catalog('openai'), 'openai');
   assert.equal(openai?.name, 'GPT-9.9 Astra');
   assert.equal(openai?.contextWindow, 272_000);
-  assert.deepEqual(openai?.cost, catalog('openai').find((model) => model.id === 'gpt-6-astra')?.cost);
+  assert.deepEqual(openai?.cost, catalog('openai').find((model) => model.id === 'gpt-6.2-astra')?.cost);
   assert.equal(estimate(listed[0]!, catalog('openai-codex'), 'openai-codex')?.contextWindow, 400_000);
   assert.deepEqual(parseListed({ data: [{ id: 'gpt-4o' }] }), [], 'API key 那种格式不认');
 });
