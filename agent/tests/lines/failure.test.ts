@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai';
-import { classifyFailure, DEFAULT_PAUSE_MS, RETRY_DELAYS_MS, resetTime } from '../../src/lines/index.ts';
+import { classifyFailure, DEFAULT_PAUSE_MS, logModelFailure, RETRY_DELAYS_MS, resetTime,
+  sanitizeModelError } from '../../src/lines/index.ts';
+import { captureLogs } from '../safety-helpers.ts';
 import { scriptByLine, startKernel, until, type Harness } from './helpers.ts';
 
 const open: Harness[] = [];
@@ -146,4 +148,30 @@ test('Reset time parses resets_at, \'try again in ~N min\', ISO, or defaults to 
   assert.equal(classifyFailure(failed('prompt is too long: 300000 tokens > 200000 maximum'), now).kind, 'overflow');
   assert.equal(classifyFailure(failed('fetch failed'), now).kind, 'retry');
   assert.equal(classifyFailure(failed('400 invalid request body'), now).kind, 'fatal');
+});
+
+test('Sanitizes Bearer tokens, sk keys, and long error text before logging', () => {
+  const raw = 'HTTP 429 Authorization: Bearer example-token-0000 with key sk-test00000000\n  failed';
+  assert.equal(sanitizeModelError(raw), 'HTTP 429 Authorization: Bearer [redacted] with key [redacted] failed');
+  const clipped = sanitizeModelError('x'.repeat(260));
+  assert.equal(clipped.length, 241);
+  assert.ok(clipped.endsWith('…'));
+});
+
+test('Logs model_call_failed with provider/model, status, and scrubbed errorMessage', (context) => {
+  const logs = captureLogs(context);
+  const now = new Date('2026-11-05T08:00:00.000Z');
+  const message = {
+    ...failed('429 rate limit with Bearer example-token-0000 and sk-test00000000'),
+    provider: 'qwen-token-plan-individual-cn',
+    model: 'qwen4-max',
+  };
+  logModelFailure(message, classifyFailure(message, now));
+  assert.equal(logs.length, 1);
+  const entry = JSON.parse(logs[0] ?? '{}') as Record<string, unknown>;
+  assert.equal(entry['event'], 'model_call_failed');
+  assert.equal(entry['category'], 'network');
+  assert.equal(entry['stepKey'], 'qwen-token-plan-individual-cn/qwen4-max');
+  assert.equal(entry['status'], 429);
+  assert.equal(entry['errorMessage'], '429 rate limit with Bearer [redacted] and [redacted]');
 });

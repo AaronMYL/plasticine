@@ -3,7 +3,8 @@ import { normalizeContext, type Api, type AssistantMessage, type Context, type I
   type Model, type TextContent } from '@earendil-works/pi-ai';
 import type { ReasoningLevel } from '../../shared/model.ts';
 import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
-import { classifyFailure, type CompleteOptions, type ModelChoice, type ModelSource } from '../lines/index.ts';
+import { classifyFailure, logModelFailure, type CompleteOptions, type ModelChoice, type ModelSource }
+  from '../lines/index.ts';
 
 export interface TextImage {
   data: string;
@@ -52,6 +53,7 @@ export class TextModelError extends Error {
 
 function failureOf(response: AssistantMessage, now: Date): TextModelError {
   const verdict = classifyFailure(response, now);
+  logModelFailure(response, verdict);
   if (verdict.kind === 'quota') {
     return new TextModelError('quota', verdict.reason, verdict.until.toISOString());
   }

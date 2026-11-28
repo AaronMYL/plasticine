@@ -21,6 +21,7 @@ const MARKS: Readonly<Record<string, string>> = {
   anthropic: 'C',
   deepseek: 'D',
   'moonshotai-cn': 'K',
+  'qwen-token-plan-individual-cn': '通',
   'qwen-token-plan-cn': '通',
   zai: '智',
   'minimax-cn': 'M',

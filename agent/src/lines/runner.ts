@@ -7,7 +7,8 @@ import type { ModelPurpose } from '../../shared/api/model-purposes.ts';
 import { errorCategory, safeLog } from '../util/index.ts';
 import type { LineMessageMeta, LinePatch, LineRow, QueuedRow, StateService } from '../state/index.ts';
 import { questionAnswerOrigin } from './ask-tools.ts';
-import { classifyFailure, exhaustedText, RETRY_DELAYS_MS, retryingText, type FailureVerdict } from './failure.ts';
+import { classifyFailure, exhaustedText, logModelFailure, RETRY_DELAYS_MS, retryingText, type FailureVerdict }
+  from './failure.ts';
 import type { HardLineGate } from './hard-line.ts';
 import { LoopGuard, STEP_LIMIT, type HaltCause } from './loop-guard.ts';
 import { answerText, contentText, convertToLlm, messageView, resultSummary, userMessage, type AttachmentNote,
@@ -296,7 +297,9 @@ export class LineRunner {
     if (last?.stopReason !== 'error') {
       return 'done';
     }
-    return classifyFailure(last, this.#host.now());
+    const verdict = classifyFailure(last, this.#host.now());
+    logModelFailure(last, verdict);
+    return verdict;
   }
 
   async #afterFailure(verdict: FailureVerdict, choice: ModelChoice): Promise<DriveOutcome | 'again'> {

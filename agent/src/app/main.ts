@@ -14,6 +14,7 @@ import { stopOnStdinEof, stopSignal } from './stop-signal.ts';
 import { KernelModels, ProviderLogins } from '../kernel/index.ts';
 import { createCompactor } from '../lines/index.ts';
 import { applyPendingMigration, MigrationService, RESTART_EXIT_CODE } from '../system/index.ts';
+import { configureNetworkDefaults } from './network-defaults.ts';
 
 interface Settings {
   stateDir: string;
@@ -56,6 +57,7 @@ function nonEmpty(value: string | undefined): string | undefined {
 }
 
 async function main(): Promise<number> {
+  configureNetworkDefaults();
   const config = settings(process.env);
   if (typeof config === 'string') {
     safeLog('error', 'startup_invalid');

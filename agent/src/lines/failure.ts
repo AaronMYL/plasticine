@@ -1,7 +1,9 @@
 import { isContextOverflow, isRetryableAssistantError, type AssistantMessage } from '@earendil-works/pi-ai';
+import { safeLog, type ErrorCategory } from '../util/index.ts';
 
 export const DEFAULT_PAUSE_MS = 60 * 60_000;
 export const RETRY_DELAYS_MS: readonly number[] = [2_000, 8_000, 30_000];
+const MODEL_ERROR_MAX_CHARS = 240;
 
 const QUOTA_PATTERN = new RegExp([
   'usage.?limit',
@@ -82,4 +84,43 @@ export function retryingText(reason: string, attempt: number): string {
 
 export function exhaustedText(reason: string, attempts: number): string {
   return `${reason}，已重试 ${attempts} 次`;
+}
+
+export function sanitizeModelError(raw: string): string {
+  const scrubbed = raw
+    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+    .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, '[redacted]')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return scrubbed.length > MODEL_ERROR_MAX_CHARS ? `${scrubbed.slice(0, MODEL_ERROR_MAX_CHARS)}…` : scrubbed;
+}
+
+function httpStatus(text: string): number | null {
+  const match = /(?:^|\b(?:status(?: code)?|HTTP)\s*)(\d{3})\b/i.exec(text);
+  const code = match?.[1] === undefined ? null : Number(match[1]);
+  return code !== null && code >= 100 && code <= 599 ? code : null;
+}
+
+function failureCategory(verdict: FailureVerdict): ErrorCategory {
+  if (verdict.kind === 'quota') {
+    return 'quota';
+  }
+  if (verdict.kind === 'overflow') {
+    return 'context_overflow';
+  }
+  if (verdict.kind === 'retry') {
+    return 'network';
+  }
+  return verdict.reason.startsWith('模型登录失效') ? 'auth' : 'unknown';
+}
+
+export function logModelFailure(message: AssistantMessage, verdict: FailureVerdict): void {
+  const raw = message.errorMessage ?? '';
+  const status = httpStatus(raw);
+  safeLog('warn', 'model_call_failed', {
+    category: failureCategory(verdict),
+    stepKey: `${message.provider}/${message.model}`,
+    ...(status === null ? {} : { status }),
+    error: sanitizeModelError(raw),
+  });
 }

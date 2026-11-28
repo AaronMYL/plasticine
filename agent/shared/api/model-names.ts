@@ -3,7 +3,8 @@ export const PROVIDER_DISPLAY_NAMES: Readonly<Record<string, string>> = {
   anthropic: 'Claude',
   deepseek: 'DeepSeek',
   'moonshotai-cn': 'Kimi',
-  'qwen-token-plan-cn': '通义千问',
+  'qwen-token-plan-individual-cn': '通义千问（个人版）',
+  'qwen-token-plan-cn': '通义千问（团队版）',
   zai: '智谱',
   'minimax-cn': 'MiniMax',
 };

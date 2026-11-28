@@ -6,7 +6,8 @@ export { HARD_LINE_KINDS, HARD_LINE_LABELS, realLater, sleepFor } from './types.
 export type { CompleteOptions, HardLineKind, KernelTool, Later, LineScope, ModelChoice, ModelSource, ToolArgs,
   UsageTag }
   from './types.ts';
-export { DEFAULT_PAUSE_MS, RETRY_DELAYS_MS, classifyFailure, resetTime } from './failure.ts';
+export { DEFAULT_PAUSE_MS, RETRY_DELAYS_MS, classifyFailure, logModelFailure, resetTime,
+  sanitizeModelError } from './failure.ts';
 export { NO_MODEL_REASON } from './runner.ts';
 export type { DriveOutcome } from './runner.ts';
 export { checkedArgs } from './tool-args.ts';
