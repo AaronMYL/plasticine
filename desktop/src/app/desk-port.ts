@@ -53,7 +53,7 @@ export function deskPort(options: { window: () => BaseWindow | null; awake: Keep
   addRoot(path: string): void }): DeskPort {
   return {
     state: () => ({ idleSeconds: powerMonitor.getSystemIdleTime(),
-      locked: powerMonitor.getSystemIdleState(0) === 'locked', onBattery: powerMonitor.isOnBatteryPower(),
+      locked: powerMonitor.getSystemIdleState(1) === 'locked', onBattery: powerMonitor.isOnBatteryPower(),
       keptAwake: options.awake.active }),
     async clipboardRead() {
       const items = await clipboard.read();

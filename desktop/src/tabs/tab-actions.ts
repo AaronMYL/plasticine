@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Value } from 'typebox/value';
-import type { NativeImage } from 'electron';
 import type { DeviceActionParams, PageOperateEvent } from '../../../agent/shared/api/index.ts';
 import { PagePerceptionSchema } from '../../../agent/shared/api/page-operate.ts';
 import { classifyLane, isPaymentPage } from '../../../agent/shared/device-lanes.ts';
@@ -9,6 +8,7 @@ import { type KeyStroke, trustedClick, trustedInsert, trustedKey, trustedWheel }
 import { runMoreTab } from './tab-more.ts';
 import { KeyRefused, keyStroke } from './key-spec.ts';
 import { TabFrames } from './tab-frames.ts';
+import { captureTabShot } from './tab-shot.ts';
 import { uploadTo } from './tab-upload.ts';
 import type { Located, TargetFacts } from './tab-dom.ts';
 import type { Tab, TabViews } from './tab-views.ts';
@@ -17,7 +17,6 @@ const PRESENT_MS = 30_000;
 const SETTLE_MS = 600;
 const FILL_SETTLE_MS = 400;
 const LOAD_WAIT_MS = 10_000;
-const SHOT_QUALITY = 80;
 const MATCH_PREFIX = 200;
 
 export interface TabActionDeps {
@@ -39,22 +38,7 @@ const FILL_ERRORS: Readonly<Record<string, string>> = {
   unscrollable: '这个编号所在的地方没有能滚的一块：换列表里的一个编号，或者 tab_shot 看一眼再用 tab_scroll 按位置滚。',
 };
 
-const CAPTURE_MS = 8_000;
 const WAIT_POLL_MS = 500;
-const BOTTOM_SETTLE_MS = 200;
-
-function within<T>(promise: Promise<T>, ms: number): Promise<T | null> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => resolve(null), ms);
-    promise.then((value) => {
-      clearTimeout(timer);
-      resolve(value);
-    }, (error: unknown) => {
-      clearTimeout(timer);
-      reject(error instanceof Error ? error : new Error(String(error)));
-    });
-  });
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -268,36 +252,21 @@ export class TabActions implements TabActionPort {
 
   private async shot(tabId: string, step: StepReporter): Promise<Record<string, unknown>> {
     const tab = this.tab(tabId);
-    step('读标签的视口大小');
-    const size = await this.call(tabId, 'viewport', {});
-    const width = Number(size.width);
-    const height = Number(size.height);
-    step('截标签画面');
-    let image = await within(tab.view.webContents.capturePage(undefined, { stayHidden: true }), CAPTURE_MS);
-    if ((image === null || image.isEmpty()) && !tab.view.getVisible()) {
-      step('标签在后台：垫到最底层短暂显示再截');
-      image = await this.shotFromBottom(tab);
-    }
-    if (image === null || image.isEmpty()) {
-      throw new TabActionError(null, '这个标签现在截不到画面（可能还没载入完），过一会儿再试。');
-    }
-    step('压成 JPEG');
-    const jpeg = image.resize({ width, height }).toJPEG(SHOT_QUALITY).toString('base64');
-    return { tabId, url: tab.view.webContents.getURL(), jpeg, width, height };
-  }
-
-  private async shotFromBottom(tab: Tab): Promise<NativeImage | null> {
-    this.deps.tabs.toBottom(tab.id);
-    tab.view.setVisible(true);
-    try {
-      tab.view.webContents.invalidate();
-      await sleep(BOTTOM_SETTLE_MS);
-      return await within(tab.view.webContents.capturePage(), CAPTURE_MS);
-    } finally {
-      if (this.viewing() !== tab.id) {
-        tab.view.setVisible(false);
-      }
-    }
+    return captureTabShot({
+      id: tab.id,
+      url: () => tab.view.webContents.getURL(),
+      visible: () => tab.view.getVisible(),
+      setVisible: (visible) => tab.view.setVisible(visible),
+      invalidate: () => tab.view.webContents.invalidate(),
+      capturePage: (options) => options === undefined
+        ? tab.view.webContents.capturePage() : tab.view.webContents.capturePage(undefined, options),
+      toBottom: () => this.deps.tabs.toBottom(tab.id),
+      viewing: () => this.viewing() === tab.id,
+      viewport: async () => {
+        const size = await this.call(tabId, 'viewport', {});
+        return { width: Number(size.width), height: Number(size.height) };
+      },
+    }, step);
   }
 
   private async wait(tabId: string, text: string, gone: boolean, timeoutMs: number, step: StepReporter)
