@@ -102,4 +102,24 @@ describe('Mock lines', () => {
     expect(sends[0]?.text).toBe('为什么？');
     expect(sends[0]?.quotes).toEqual([{ kind: 'text', label: '那句话', text: '原话' }]);
   });
+
+  it('LinesStore catches up on stream open when sending while disconnected and records mainId', async () => {
+    const { api } = setup();
+    const hub = new EventsHub(api.events);
+    const store = new LinesStore(api, hub);
+    store.start();
+    store.thread('main');
+    await flush();
+    await store.send('main', '它是谁装的？');
+    await flush();
+    expect(store.thread('main').get().line?.status).toBe('running');
+    hub.start();
+    await flush();
+    await flush();
+    const settled = store.thread('main').get();
+    expect(settled.line?.status).toBe('idle');
+    expect(settled.messages.at(-1)?.text).toContain('Cua AI, Inc.');
+    store.stop();
+    hub.stop();
+  });
 });

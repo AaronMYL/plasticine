@@ -63,7 +63,9 @@ export class LinesStore {
   private readonly stale = new Set<string>();
   private mainId: string | null = null;
   private readonly versions = new Map<string, LineView>();
+  private readonly catchUp = new Set<string>();
   private stopListening: (() => void) | null = null;
+  private stopStatus: (() => void) | null = null;
 
   constructor(api: PlasticineApi, hub: EventsHub) {
     this.api = api;
@@ -96,12 +98,25 @@ export class LinesStore {
         store.set((data) => applyLineEvent(data, id, lineEvent));
       }
     });
+    this.stopStatus = this.hub.status.subscribe(() => {
+      if (this.hub.status.get() !== 'open' || this.catchUp.size === 0) {
+        return;
+      }
+      const ids = [...this.catchUp];
+      this.catchUp.clear();
+      for (const id of ids) {
+        void this.loadLatest(id);
+      }
+    });
     void this.loadList();
   }
 
   stop(): void {
     this.stopListening?.();
     this.stopListening = null;
+    this.stopStatus?.();
+    this.stopStatus = null;
+    this.catchUp.clear();
   }
 
   thread(lineId: string): Store<LineThreadData> {
@@ -256,11 +271,15 @@ export class LinesStore {
     if (item === undefined) {
       return true;
     }
+    const disconnected = this.hub.status.get() !== 'open';
     try {
       const { text, quotes, replyTo } = item.request;
       const response = await this.api.lines.send(lineId, { requestId, text,
         ...(quotes.length === 0 ? {} : { quotes }), ...(replyTo === undefined ? {} : { replyTo }),
         ...(item.attachments.length === 0 ? {} : { attachments: item.attachments }) });
+      if (response.line.kind === 'main') {
+        this.mainId = response.line.id;
+      }
       store.set((data) => {
         const next = { ...data, line: newerLine(data.line, response.line),
           pending: data.pending.filter((candidate) => candidate.requestId !== requestId) };
@@ -271,6 +290,13 @@ export class LinesStore {
         return queued === null || next.queue.some((entry) => entry.id === queued.id) ? next
           : { ...next, queue: [...next.queue, queued] };
       });
+      if (disconnected || this.hub.status.get() !== 'open') {
+        if (this.hub.status.get() === 'open') {
+          void this.loadLatest(lineId);
+        } else if (this.stopStatus !== null) {
+          this.catchUp.add(lineId);
+        }
+      }
       return true;
     } catch (cause) {
       store.set((data) => ({ ...data, pending: data.pending.map((candidate) => (candidate.requestId === requestId
